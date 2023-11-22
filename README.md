@@ -18,7 +18,7 @@ Welcome to UnrealSharp, a plugin for Unreal Engine 5 that allows game developers
 ## Discord Community 
 Join the discord community to stay up to date with the recent updates!
 
-https://discord.gg/nH4SnqN9SM
+[Discord community](https://discord.gg/HQuJUYFxeV)
 
 ## Download
 Currently in development. Currently aiming for a 0.1 release before the end of 2023.
