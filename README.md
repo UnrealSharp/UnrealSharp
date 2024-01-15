@@ -23,7 +23,7 @@ Join the discord community to stay up to date with the recent updates!
 [Discord community](https://discord.gg/HQuJUYFxeV)
 
 ## Download
-Currently in development. Currently aiming for a 0.1 release before the end of 2023.
+Currently in development. Currently aiming for a release in January of 2024.
 
 ## Contributing
 Any contributions you make are **greatly appreciated**.
