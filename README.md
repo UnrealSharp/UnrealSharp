@@ -14,7 +14,7 @@ Welcome to UnrealSharp, a plugin for Unreal Engine 5 that allows game developers
 ## Getting Started
 ### Prerequisites
 - Unreal Engine 5+
-- IDE with C# support
+- Visual Studio / Rider
 - .NET 8
 
 ## Discord Community 
@@ -32,6 +32,6 @@ Any contributions you make are **greatly appreciated**.
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
-Discord: **olsson.**
+Discord: **olsson.** (Yes, with a dot in the end.)
 
 Or join the Discord community.
