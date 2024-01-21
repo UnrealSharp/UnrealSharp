@@ -39,3 +39,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 Discord: **olsson.** (Yes, with a dot in the end.)
 
 Or join the Discord community.
+
+## Special Thanks
+I'd like to give a huge shoutout to [MonoUE](https://mono-ue.github.io/) for the great resource for integrating C# into Unreal Engine. Some of the codebase are modified versions of their integration.
+
