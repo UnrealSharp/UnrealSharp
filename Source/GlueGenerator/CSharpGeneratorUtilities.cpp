@@ -56,6 +56,11 @@ namespace ScriptGeneratorUtilities
 				return true;
 			}
 
+			if (ParentClass->IsChildOf(UBlueprintFunctionLibrary::StaticClass()) || ParentClass->IsChildOf(UDeveloperSettings::StaticClass()))
+			{
+				return true;
+			}
+
 			if (ParentClass->GetBoolMetaData(NotBlueprintTypeMetaDataKey))
 			{
 				return false;

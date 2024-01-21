@@ -21,7 +21,8 @@ public class GlueGenerator : ModuleRules
                 "Slate",
                 "SlateCore",
                 "Projects", 
-                "StructUtils"
+                "StructUtils",
+                "DeveloperSettings"
             }
         );
         
