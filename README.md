@@ -1,4 +1,4 @@
-# UnrealSharp
+# UnrealSharp 0.1
 
 ## Introduction
 UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C# in their projects with the power of .NET 8. This plugin bridges the gap between C# and UE5, providing a seamless and efficient workflow for those who prefer C# over C++/Blueprints.
@@ -15,6 +15,11 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 - Unreal Engine 5+
 - Visual Studio / Rider
 - .NET 8
+
+## Biggest Caveats
+- Packaging not yet implemented.
+- Multiplayer is almost done, but is not currently working properly.
+- Delegates exposed to Blueprint not yet implemented, can use pure C# delegates though.
 
 ## Roadmap
 Take a look at the roadmap for planned and developed features!
