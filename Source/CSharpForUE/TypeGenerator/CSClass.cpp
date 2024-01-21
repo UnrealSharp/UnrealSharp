@@ -8,6 +8,11 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	const UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
 	TArray<uint8> ArgumentData;
 
+	if (Stack.Code)
+	{
+		++Stack.Code;
+	}
+
 	// Skip allocating memory for the argument data if there are no parameters that need to be passed
 	if (Function->NumParms == 0)
 	{
@@ -63,11 +68,6 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 		
         ArgumentData.Append(ValueAddress, FunctionParameter->GetSize());
     }
-
-	if (Stack.Code)
-	{
-		++Stack.Code;
-	}
 
 	InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, RESULT_PARAM);
 	ProcessOutParameters(OutParameters, ArgumentData);

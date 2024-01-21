@@ -22,7 +22,7 @@ enum EBuildAction
 	Weave,
 };
 
-#define HOSTFXR_VERSION "8.0.0"
+#define HOSTFXR_VERSION "8.0.1"
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
 #define HOSTFXR_LINUX "libhostfxr.so"
