@@ -22,6 +22,10 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 - Multiplayer is almost done, but is not currently not working properly.
 - Delegates exposed to Blueprint not yet implemented, can use pure C# delegates though.
 
+## Get Started
+
+Visit [Get Started](https://github.com/orgs/UnrealSharp/projects/3).
+
 ## Roadmap
 Take a look at the roadmap for planned and developed features!
 
