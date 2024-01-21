@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
+    </PropertyGroup>
+
+    
+    <ItemGroup>
+        <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
+            <OutputItemType>Analyzer</OutputItemType>
+        </ProjectReference>
+    </ItemGroup>
+    
+</Project>
