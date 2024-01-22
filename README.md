@@ -38,7 +38,7 @@ Join the discord community to stay up to date with the recent updates!
 [Discord community](https://discord.gg/HQuJUYFxeV)
 
 ## Contributing
-Any contributions you make are **greatly appreciated**.
+I accept pull requests and any contributions you make are **greatly appreciated**.
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
