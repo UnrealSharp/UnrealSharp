@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "CSNameMapper.h"
@@ -57,10 +57,7 @@ public:
 	
 	bool CanExportProperty(const UStruct* Struct, const FProperty* Property) const;
 	bool CanExportPropertyShared(const FProperty* Property) const;
-	
-	const FCSModule& FindModule(const UObject* Object);
-	const FCSModule& FindModule(FName ModuleFName);
-	
+		
 	void ExportStructMarshaller(FCSScriptBuilder& Builder, const UScriptStruct* Struct);
 
 	// Helper methods
@@ -83,11 +80,11 @@ public:
 
 	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets) const;
 
-	void RegisterClassToModule(UStruct* Struct);
+	void RegisterClassToModule(const UObject* Struct);
 
 	const FString& GetNamespace(const UObject* Object);
 
-	FCSModule& FindOrRegisterModule(const FName& ModuleName);
+	FCSModule& FindOrRegisterModule(const UObject* Object);
 
 	// Public data structures
 	struct ExtensionMethod

@@ -1,4 +1,4 @@
-﻿#include "CSScriptBuilder.h"
+#include "CSScriptBuilder.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -17,12 +17,13 @@ const FName NAME_ToolTip(TEXT("ToolTip"));
 
 void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace)
 {
-	AppendLine(FString::Printf(TEXT("using %s;"), UNREAL_SHARP_ENGINE_NAMESPACE));
-	AppendLine(FString::Printf(TEXT("using %s;"), UNREAL_SHARP_ATTRIBUTES_NAMESPACE));
-	AppendLine(TEXT("using UnrealSharp.Interop;"));
-	AppendLine(TEXT("using System.DoubleNumerics;"));
-	AppendLine(TEXT("using System.Runtime;"));
-	AppendLine(TEXT("using System.Runtime.InteropServices;"));
+	DeclareDirective(UNREAL_SHARP_ENGINE_NAMESPACE);
+	DeclareDirective(UNREAL_SHARP_ATTRIBUTES_NAMESPACE);
+	DeclareDirective(TEXT("UnrealSharp.Interop"));
+	DeclareDirective(TEXT("System.DoubleNumerics"));
+	DeclareDirective(TEXT("System.Runtime"));
+	DeclareDirective(TEXT("System.Runtime.InteropServices"));
+
 	AppendLine();
 	AppendLine(FString::Printf(TEXT("namespace %s;"), *Namespace));
 	AppendLine();
@@ -30,6 +31,13 @@ void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace)
 
 void FCSScriptBuilder::DeclareDirective(const FString& ModuleName)
 {
+	if (Directives.Contains(ModuleName))
+	{
+		return;
+	}
+
+	Directives.Add(ModuleName);
+
 	AppendLine(FString::Printf(TEXT("using %s;"), *ModuleName));
 }
 
