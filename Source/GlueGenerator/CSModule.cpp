@@ -1,10 +1,12 @@
-﻿#include "CSModule.h"
+#include "CSModule.h"
 #include "CSScriptBuilder.h"
 #include "Misc/Paths.h"
 
 FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : ModuleName(InModuleName)
 {
 	Namespace = FString::Printf(UNREAL_SHARP_NAMESPACE TEXT(".%s"), *InModuleName.ToString());
+	Namespace.ReplaceCharInline(TCHAR('-'), TCHAR('_'));
+
 	Directory = FPaths::Combine(*SourceDirectory, *InModuleName.ToString());
 
 	IFileManager& FileManager = IFileManager::Get();
