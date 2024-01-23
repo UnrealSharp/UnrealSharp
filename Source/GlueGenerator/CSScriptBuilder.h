@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/UnrealType.h"
@@ -37,7 +37,6 @@ public:
 	, IndentCount(0)
 	, IndentMode(InIndentMode)
 	{
-
 	}
 
 	void Indent()
@@ -52,58 +51,68 @@ public:
 
 	void AppendLine()
 	{
-		if (!Report.IsEmpty())
+		if (Report.Len() != 0)
 		{
-			Report += LINE_TERMINATOR;
+			Report.Append(LINE_TERMINATOR);
 		}
 
 		if (IndentMode == IndentType::Spaces)
 		{
 			for (int32 Index = 0; Index < IndentCount; Index++)
 			{
-				Report += TEXT("    ");
+				Report.Append(TEXT("    "));
 			}
 		}
 		else
 		{
 			for (int32 Index = 0; Index < IndentCount; Index++)
 			{
-				Report += TEXT("\t");
+				Report.Append(TEXT("\t"));
 			}
 		}
 	}
 
 	void Append(const FString& String)
 	{
-		Report += String;
+		Report.Append(String);
 	}
 
 	void AppendLine(const FText& Text)
 	{
 		AppendLine();
-		Report += Text.ToString();
+
+		if (const FString* SourceString = FTextInspector::GetSourceString(Text))
+		{
+			Report.Append(*SourceString);
+		}
+		else
+		{
+			Report.Append(Text.ToString());
+		}
 	}
 
 	void AppendLine(const FString& String)
 	{
 		AppendLine();
-		Report += String;
+		Report.Append(String);
 	}
 
-	void AppendLine(const char* String)
+	void AppendLine(const ANSICHAR* Line)
 	{
-		AppendLine(FString(String));
+		AppendLine();
+		Report.Append(Line);
 	}
 
 	void AppendLine(const FName& Name)
 	{
 		AppendLine();
-		Report += Name.ToString();
+		Report.Append(Name.ToString());
 	}
 
 	void AppendLine(const TCHAR* Line)
 	{
-		AppendLine(FString(Line));
+		AppendLine();
+		Report.Append(Line);
 	}
 
 	void OpenBrace()
@@ -155,17 +164,22 @@ public:
 
 	void Clear()
 	{
-		Report.Empty();
+		Report.Reset();
 	}
 
 	FText ToText() const
 	{
-		return FText::FromString(Report);
+		return FText::FromString(ToString());
 	}
 
-	const FString& GetScript() const
+	FString ToString() const
 	{
-		return Report;
+		return Report.ToString();
+	}
+
+	bool IsEmpty() const
+	{
+		return Report.Len() == 0;
 	}
 
 	void GenerateScriptSkeleton(const FString& Namespace);
@@ -174,7 +188,8 @@ public:
 
 private:
 
-	FString Report;
+	TStringBuilder<2048> Report;
+	TArray<FString> Directives;
 	int32 UnsafeBlockCount;
 	int32 IndentCount;
 	IndentType IndentMode;

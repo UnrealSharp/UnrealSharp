@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -52,14 +52,14 @@ public readonly struct SubclassOf<T>
         return Valid ? ManagedType.Name : "null";
     }
     
-    public SubclassOf<T> As<T>()
+    public SubclassOf<TChildClass> As<TChildClass>()
     {
-        if (!IsChildOf(typeof(T)))
+        if (!IsChildOf(typeof(TChildClass)))
         {
             throw new InvalidOperationException();
         }
 
-        return new SubclassOf<T>(NativeClass);
+        return new SubclassOf<TChildClass>(NativeClass);
     }
 
     public bool IsChildOf(Type type)

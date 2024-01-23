@@ -1,4 +1,4 @@
-﻿#include "CSGenerator.h"
+#include "CSGenerator.h"
 #include "CSModule.h"
 #include "CSharpGeneratorUtilities.h"
 #include "GlueGeneratorModule.h"
@@ -11,6 +11,8 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "Interfaces/IProjectManager.h"
+#include "ProjectDescriptor.h"
 
 FName FCSGenerator::AllowableBlueprintVariableType = "BlueprintType";
 FName FCSGenerator::NotAllowableBlueprintVariableType = "NotBlueprintType";
@@ -100,6 +102,12 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 	}
 
 	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
+
+	// We don't want stuff in the transient package - that stuff is just temporary
+	if (Object->GetOutermost() == GetTransientPackage())
+	{
+		return;
+	}
 	
 	if (UClass* Class = Cast<UClass>(Object))
 	{
@@ -107,7 +115,32 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		{
 			return;
 		}
-			
+
+		// If it's a SKEL class, we don't want to export it - those are just temporary classes used to hold the skeleton definition
+		// of the blueprint class before it's compiled.
+		if (Class->HasAnyFlags(RF_Transient) && Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
+		{
+			return;
+		}
+
+		// Don't generated glue for classes that have been regenerated in memory (this is the old version of the class)
+		if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
+		{
+			return;
+		}
+
+		// Don't generate glue for TRASH_ classes. These are classes that have been deleted but are still in memory.
+		if (Class->GetName().Find(TEXT("TRASH_")) != INDEX_NONE)
+		{
+			return;
+		}
+
+		// Don't generate glue for REINST_ classes. These are classes that have been recompiled but are still in memory, and will soon be TRASH_ classes.
+		if (Class->GetName().Find(TEXT("REINST_")) != INDEX_NONE)
+		{
+			return;
+		}
+		
 		RegisterClassToModule(Class);
 				
 		if (Class->IsChildOf(UInterface::StaticClass()))
@@ -134,7 +167,7 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		}
 	}
 
-	if (Builder.GetScript().IsEmpty())
+	if (Builder.IsEmpty())
 	{
 		return;
 	}
@@ -167,10 +200,9 @@ static FString GetModuleExportFilename(FName ModuleFName)
 
 void FCSGenerator::SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue)
 {
-	FName ModuleName = GetModuleFName(Package);
-	const FCSModule& BindingsPtr = FindModule(ModuleName);
+	const FCSModule& BindingsPtr = FindOrRegisterModule(Package);
 
-	FString Filename = GetModuleExportFilename(ModuleName);
+	FString Filename = GetModuleExportFilename(BindingsPtr.GetModuleName());
 	SaveGlue(&BindingsPtr, Filename, GeneratedGlue);
 }
 
@@ -195,7 +227,7 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 {
 	if (Whitelist.HasEnum(Enum) || !Blacklist.HasEnum(Enum))
 	{
-		const FCSModule& Module = FindModule(Enum);
+		const FCSModule& Module = FindOrRegisterModule(Enum);
 
 		Builder.GenerateScriptSkeleton(Module.GetNamespace());
 		Builder.AppendLine(TEXT("[UEnum]"));
@@ -472,40 +504,74 @@ bool FCSGenerator::CanExportOverridableReturnValue(const FProperty* Property)
 
 const FString& FCSGenerator::GetNamespace(const UObject* Object)
 {
-	const FCSModule& Module = FindModule(Object);
+	const FCSModule& Module = FindOrRegisterModule(Object);
 	return Module.GetNamespace();
 }
 
-void FCSGenerator::RegisterClassToModule(UStruct* Struct)
+void FCSGenerator::RegisterClassToModule(const UObject* Struct)
 {
-	const FName ModuleName = GetModuleFName(Struct);
-	FindOrRegisterModule(ModuleName);
+	FindOrRegisterModule(Struct);
 }
 
-FCSModule& FCSGenerator::FindOrRegisterModule(const FName& ModuleName)
+FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 {
+	const FName ModuleName = GetModuleFName(Struct);
+
 	FCSModule* BindingsModule = CSharpBindingsModules.Find(ModuleName);
     
 	if (!BindingsModule)
 	{
-		FString Directory = GeneratedScriptsDirectory;
+		FString Directory = TEXT("");
 		FString ProjectDirectory = FPaths::ProjectDir();
 		FString GeneratedUserContent = "Script/obj/Generated";
 
-		if (IModuleInterface* Module = FModuleManager::Get().GetModule(ModuleName))
+		if (TSharedPtr<IPlugin> Plugin = IPluginManager::Get().GetModuleOwnerPlugin(*ModuleName.ToString()))
 		{
-			if (Module->IsGameModule())
+			if (Plugin->GetType() == EPluginType::Engine || Plugin->GetType() == EPluginType::Enterprise)
+			{
+				Directory = GeneratedScriptsDirectory;
+			}
+			else
 			{
 				Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
 			}
 		}
-		else if (TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(*ModuleName.ToString()))
+		else
 		{
-			if (Plugin->GetType() == EPluginType::Project)
+			if (IModuleInterface* Module = FModuleManager::Get().GetModule(ModuleName))
 			{
-				Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
+				if (Module->IsGameModule())
+				{
+					Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
+				}
+				else
+				{
+					Directory = GeneratedScriptsDirectory;
+				}
+			}
+			else
+			{
+				// This is awful, but we have no way of knowing if the module is a game module or not without loading it.
+				// Also for whatever reason "CoreOnline" is not a module.
+				Directory = GeneratedScriptsDirectory;
 			}
 		}
+
+		if (Directory.IsEmpty())
+		{
+			if (const FProjectDescriptor* const CurrentProject = IProjectManager::Get().GetCurrentProject())
+			{
+				const FModuleDescriptor* ProjectModule =
+					CurrentProject->Modules.FindByPredicate([ModuleName](const FModuleDescriptor& Module) { return Module.Name == ModuleName; });
+
+				if (!ProjectModule)
+				{
+					printf("");
+				}
+			}
+		}
+
+		ensureMsgf(!Directory.IsEmpty(), TEXT("Generating the directory location for generating the scripts for this module failed."));
 
 		BindingsModule = &CSharpBindingsModules.Emplace(ModuleName, FCSModule(ModuleName, Directory));
 	}
@@ -513,21 +579,10 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const FName& ModuleName)
 	return *BindingsModule;
 }
 
-const FCSModule& FCSGenerator::FindModule(const UObject* Object)
-{
-	FName ModuleName = GetModuleFName(Object);
-	return FindModule(ModuleName);
-}
-
-const FCSModule& FCSGenerator::FindModule(FName ModuleFName)
-{
-	return FindOrRegisterModule(ModuleFName);
-}
-
 void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 {
 	FString InterfaceName = NameMapper.GetScriptClassName(Interface);
-	const FCSModule& BindingsModule = FindModule(Interface);
+	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
 	Builder.DeclareType("interface", InterfaceName, "", false);
@@ -543,7 +598,14 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 
 void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 {
+	if (!ensure(!ExportedTypes.Contains(Class)))
+	{
+		return;
+	}
+
 	ExportedTypes.Add(Class);
+
+	Builder.AppendLine(TEXT("// This file is automatically generated"));
 	
 	if (UClass* SuperClass = Class->GetSuperClass())
 	{
@@ -551,7 +613,7 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	}
 	
 	const FString ScriptClassName = NameMapper.GetScriptClassName(Class);
-	const FCSModule& BindingsModule = FindModule(Class);
+	const FCSModule& BindingsModule = FindOrRegisterModule(Class);
 	
 	TSet<FProperty*> ExportedProperties;
 	TSet<UFunction*> ExportedFunctions;
@@ -572,7 +634,7 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 			{
 				Interfaces.Add(InterfaceClass->GetName());
 				
-				const FCSModule& InterfaceModule = FindModule(InterfaceClass);
+				const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
 
 				const FString& InterfaceNamespace = InterfaceModule.GetNamespace();
 				
@@ -630,7 +692,7 @@ void FCSGenerator::ExportClassFunctions(FCSScriptBuilder& Builder, const UClass*
 			{
 				FuncType = FPropertyTranslator::FunctionType::ExtensionOnAnotherClass;
 
-				const FCSModule& BindingsModule = FindModule(Class);
+				const FCSModule& BindingsModule = FindOrRegisterModule(Class);
 				TArray<ExtensionMethod>& ModuleExtensionMethods = ExtensionMethods.FindOrAdd(BindingsModule.GetModuleName());
 				ModuleExtensionMethods.Add(Method);
 			}
@@ -857,7 +919,7 @@ bool FCSGenerator::GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Func
 
 void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder)
 {
-	const FCSModule& BindingsModule = FindModule(Struct);
+	const FCSModule& BindingsModule = FindOrRegisterModule(Struct);
 
 	TSet<FProperty*> ExportedProperties;
 	GetExportedProperties(ExportedProperties, Struct);
@@ -1008,11 +1070,10 @@ FString FCSGenerator::GetSuperClassName(const UClass* Class) const
 
 void FCSGenerator::SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder)
 {
-	const FName ModuleName = GetModuleFName(Object);
-	const FCSModule& BindingsPtr = FindModule(ModuleName);
+	const FCSModule& BindingsPtr = FindOrRegisterModule(Object);
 
 	const FString FileName = FString::Printf(TEXT("%s.generated.cs"), *Object->GetName());
-	SaveGlue(&BindingsPtr, FileName, ScriptBuilder.GetScript());
+	SaveGlue(&BindingsPtr, FileName, ScriptBuilder.ToString());
 }
 
 void FCSGenerator::SaveGlue(const FCSModule* Bindings, const FString& Filename, const FString& GeneratedGlue)

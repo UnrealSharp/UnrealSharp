@@ -1,23 +1,23 @@
-﻿#include "CSNameMapper.h"
+#include "CSNameMapper.h"
 #include "CSModule.h"
 #include "CSGenerator.h"
 #include "UObject/Class.h"
 
 FString FCSNameMapper::GetQualifiedName(const UClass* Class) const
 {
-	const FCSModule& BindingsModule = ScriptGenerator->FindModule(Class);
+	const FCSModule& BindingsModule = ScriptGenerator->FindOrRegisterModule(Class);
 	return FString::Printf(TEXT("%s.%s"), *BindingsModule.GetNamespace(), *GetScriptClassName(Class));
 }
 
 FString FCSNameMapper::GetQualifiedName(const UScriptStruct* Struct) const
 {
-	const FCSModule& BindingsModule = ScriptGenerator->FindModule(Struct);
+	const FCSModule& BindingsModule = ScriptGenerator->FindOrRegisterModule(Struct);
 	return FString::Printf(TEXT("%s.%s"), *BindingsModule.GetNamespace(), *GetStructScriptName(Struct));
 }
 
 FString FCSNameMapper::GetQualifiedName(const UEnum* Enum) const
 {
-	const FCSModule& BindingsModule = ScriptGenerator->FindModule(Enum->GetPackage());
+	const FCSModule& BindingsModule = ScriptGenerator->FindOrRegisterModule(Enum);
 	return FString::Printf(TEXT("%s.%s"), *BindingsModule.GetNamespace(), *Enum->GetName());
 }
 
@@ -94,7 +94,7 @@ FString DeSnakifyName(const FString &SnakeCaseString, bool uppercaseFirst = fals
 
 	bool uppercaseNext = uppercaseFirst;
 	int len = SnakeCaseString.Len();
-	int uppercaseCount;
+	int uppercaseCount = 0;
 	for (int i = 0; i < len; i++)
 	{
 		auto ch = SnakeCaseString[i];
