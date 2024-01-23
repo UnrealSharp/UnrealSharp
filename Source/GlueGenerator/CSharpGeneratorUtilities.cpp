@@ -1,4 +1,4 @@
-﻿#include "CSharpGeneratorUtilities.h"
+#include "CSharpGeneratorUtilities.h"
 #include "GlueGeneratorModule.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
@@ -472,6 +472,10 @@ FString GetFieldScriptNameImpl(const UStruct* InField, const FName InMetaDataKey
 	{
 		FieldName = InField->GetName();
 	}
+
+	// Remove '-'s and spaces from the class names.
+	FieldName.ReplaceCharInline(TCHAR('-'), TCHAR(' '));
+	FieldName.RemoveSpacesInline();
 
 	if (InField->IsChildOf<UInterface>())
 	{
