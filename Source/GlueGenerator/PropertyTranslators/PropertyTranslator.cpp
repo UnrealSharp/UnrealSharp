@@ -252,7 +252,6 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 	FString ParamsStringAPI;
 
 	bool bHasDefaultParameters = false;
-
 	const FCSNameMapper& Mapper = GetScriptNameMapper();
 
 	// if we have a self parameter and we're exporting as a class extension method, add it as the first type
@@ -265,12 +264,11 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 		ParamsStringAPIWithDefaults = ParamsStringAPI;
 	}
 
-	int paramsProcessed = 0;
+	int ParamsProcessed = 0;
 	FString ParamsStringCallNative;
 
 	for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
 	{
-		
 		FProperty* Parameter = *ParamIt;
 		const FPropertyTranslator& ParamHandler = Handler.PropertyHandlers.Find(Parameter);
 		FString CSharpParamName = Mapper.MapParameterName(Parameter);
@@ -385,7 +383,7 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 		}
 
 		ParamHandler.ExportReferences(Parameter);
-		paramsProcessed++;
+		ParamsProcessed++;
 	}
 
 	// After last parameter revert change in parameter order to call native function
@@ -501,27 +499,6 @@ void FPropertyTranslator::FunctionExporter::ExportSetter(FCSScriptBuilder& Build
 
 void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Builder, InvokeMode Mode) const
 {
-#if DO_CHECK
-	switch (Mode)
-	{
-	case InvokeMode::Getter:
-		check(Function.NumParms == 1);
-		check(ReturnProperty);
-		check(Overloads.Num() == 0)
-		break;
-	case InvokeMode::Setter:
-		check(Function.NumParms == 1);
-		check(nullptr == ReturnProperty);
-		check(Overloads.Num() == 0);
-		break;
-	case InvokeMode::Normal:
-		break;
-	default:
-		checkNoEntry();
-		break;
-	}
-#endif // DO_CHECK
-
 	const FString NativeMethodName = Function.GetName();
 
 	if (bBlueprintEvent)
@@ -701,7 +678,9 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 	}
 
 	ExportFunction(Builder, Function, FunctionType::BlueprintEvent);
-	
+
+	Builder.AppendLine("//Hide implementation function from Intellisense/ReSharper");
+	Builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
 	Builder.AppendLine(FString::Printf(TEXT("protected virtual %s %s_Implementation(%s)"), *GetManagedType(ReturnProperty), *NativeMethodName, *ParamsStringAPI));
 	Builder.OpenBrace();
 
