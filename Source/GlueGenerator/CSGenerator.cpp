@@ -525,48 +525,47 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 		FString ProjectDirectory = FPaths::ProjectDir();
 		FString GeneratedUserContent = "Script/obj/Generated";
 
-		if (TSharedPtr<IPlugin> Plugin = IPluginManager::Get().GetModuleOwnerPlugin(*ModuleName.ToString()))
+		if (TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("UnrealSharp")))
 		{
-			if (Plugin->GetType() == EPluginType::Engine || Plugin->GetType() == EPluginType::Enterprise)
+			// If this plugin is a project plugin, we want to generate all the bindings in the same directory as the plug-in
+			// since there's no reason to split the project from the plug-in, like you would need to if this was installed
+			// as an engine plugin.
+			if (ThisPlugin->GetType() == EPluginType::Project)
 			{
 				Directory = GeneratedScriptsDirectory;
 			}
 			else
 			{
-				Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
-			}
-		}
-		else
-		{
-			if (IModuleInterface* Module = FModuleManager::Get().GetModule(ModuleName))
-			{
-				if (Module->IsGameModule())
+				if (TSharedPtr<IPlugin> Plugin = IPluginManager::Get().GetModuleOwnerPlugin(*ModuleName.ToString()))
 				{
-					Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
+					if (Plugin->GetType() == EPluginType::Engine || Plugin->GetType() == EPluginType::Enterprise)
+					{
+						Directory = GeneratedScriptsDirectory;
+					}
+					else
+					{
+						Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
+					}
 				}
 				else
 				{
-					Directory = GeneratedScriptsDirectory;
-				}
-			}
-			else
-			{
-				// This is awful, but we have no way of knowing if the module is a game module or not without loading it.
-				// Also for whatever reason "CoreOnline" is not a module.
-				Directory = GeneratedScriptsDirectory;
-			}
-		}
-
-		if (Directory.IsEmpty())
-		{
-			if (const FProjectDescriptor* const CurrentProject = IProjectManager::Get().GetCurrentProject())
-			{
-				const FModuleDescriptor* ProjectModule =
-					CurrentProject->Modules.FindByPredicate([ModuleName](const FModuleDescriptor& Module) { return Module.Name == ModuleName; });
-
-				if (!ProjectModule)
-				{
-					printf("");
+					if (IModuleInterface* Module = FModuleManager::Get().GetModule(ModuleName))
+					{
+						if (Module->IsGameModule())
+						{
+							Directory = FPaths::Combine(ProjectDirectory, GeneratedUserContent);
+						}
+						else
+						{
+							Directory = GeneratedScriptsDirectory;
+						}
+					}
+					else
+					{
+						// This is awful, but we have no way of knowing if the module is a game module or not without loading it.
+						// Also for whatever reason "CoreOnline" is not a module.
+						Directory = GeneratedScriptsDirectory;
+					}
 				}
 			}
 		}
