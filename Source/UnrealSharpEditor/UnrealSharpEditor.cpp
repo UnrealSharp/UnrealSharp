@@ -2,6 +2,7 @@
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
 #include "CSharpForUE/CSManager.h"
+#include "CSharpForUE/CSDeveloperSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 
@@ -27,11 +28,14 @@ void FUnrealSharpEditorModule::StartupModule()
 		Handle);
 
 	FCSReinstancer::Get().Initialize();
+
+	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
+	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
-    
+	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
 }
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
@@ -41,6 +45,8 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		return;
 	}
 	
+	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
 		// Skip generated files in bin and obj folders
@@ -55,9 +61,14 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		{
 			continue;
 		}
-		
-		// Return on the first .cs file we encounter so we can reload.
+
 		bIsReloading = true;
+
+		// Return early and let TickDelegate handle Reload
+		if (Settings->bRequireFocusForHotReload)
+			return;
+
+		// Return on the first .cs file we encounter so we can reload.
 		Reload();
 		bIsReloading = false;
 		return;
@@ -94,6 +105,17 @@ void FUnrealSharpEditorModule::Reload()
 
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
 	FCSReinstancer::Get().Reinstance();
+}
+
+bool FUnrealSharpEditorModule::Tick(float DeltaTime)
+{
+	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus()) return true;
+
+	Reload();
+	bIsReloading = false;
+
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE
