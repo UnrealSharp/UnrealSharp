@@ -525,7 +525,7 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 		FString ProjectDirectory = FPaths::ProjectDir();
 		FString GeneratedUserContent = "Script/obj/Generated";
 
-		if (TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("UnrealSharp")))
+		if (TSharedPtr<IPlugin> ThisPlugin = IPluginManager::Get().FindPlugin(TEXT("CSharpForUE")))
 		{
 			// If this plugin is a project plugin, we want to generate all the bindings in the same directory as the plug-in
 			// since there's no reason to split the project from the plug-in, like you would need to if this was installed
