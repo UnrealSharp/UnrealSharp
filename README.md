@@ -13,7 +13,6 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 ## Prerequisites
 - Unreal Engine 5+
-- Visual Studio / Rider
 - .NET 8.0.1
 
 ## UnrealSharp 0.1 Issues
