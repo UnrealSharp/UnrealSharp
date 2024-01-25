@@ -16,7 +16,7 @@ public class ClassMetaData : TypeReferenceMetadata
     internal MethodDefinition[] BlueprintEventOverrides;
     internal TypeDefinition MyTypeDefinition;
 
-    public ClassMetaData(TypeDefinition type) : base(type)
+    public ClassMetaData(TypeDefinition type) : base(type, "UClassAttribute")
     {
         MyTypeDefinition = type;
 
@@ -34,7 +34,7 @@ public class ClassMetaData : TypeReferenceMetadata
             ErrorEmitter.Error("InvalidUnrealProperty", file, line, $"UProperties in a UClass must be property accessors. {prop.Name} is a field.");
         }
         
-        Interfaces = type.Interfaces.Where(x => InterfaceMetaData.IsBlueprintInterface(x.InterfaceType.Resolve()))
+        Interfaces = type.Interfaces.Where(x => WeaverHelper.IsUnrealSharpInterface(x.InterfaceType.Resolve()))
             .Select(interfaceOnType => interfaceOnType.InterfaceType.Name)
             .ToArray();
         
@@ -50,7 +50,7 @@ public class ClassMetaData : TypeReferenceMetadata
             where FunctionMetaData.IsBlueprintEventOverride(method) 
             select method).ToArray();
         
-        ParentClass = new TypeReferenceMetadata(type.BaseType);
+        ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
         ClassFlags = flags;
 
         var uClassAttribute = FindAttribute(type.CustomAttributes, "UClassAttribute");

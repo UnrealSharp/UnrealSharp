@@ -41,16 +41,16 @@ public static class FunctionRewriterHelpers
                 AddOffsetField(classDefinition, func.ReturnValue, func, ref paramOffsetFields, ref paramElementSizeFields);
             }
             
-            if (func.IsBlueprintEvent || func.IsRPC || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
+            if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
             {
                 FieldAttributes baseMethodAttributes = FieldAttributes.Private;
                 FieldAttributes rpcAttributes = baseMethodAttributes | FieldAttributes.InitOnly | FieldAttributes.Static;
-                FieldAttributes nativeFuncAttributes = func.IsRPC ? rpcAttributes : baseMethodAttributes;
+                FieldAttributes nativeFuncAttributes = func.IsRpc ? rpcAttributes : baseMethodAttributes;
 
                 string nativeFuncFieldName = $"{func.Name}_NativeFunction";
                 FieldDefinition nativeFunctionField = WeaverHelper.AddFieldToType(classDefinition, nativeFuncFieldName, WeaverHelper.IntPtrType, nativeFuncAttributes);
 
-                if (func.IsRPC)
+                if (func.IsRpc)
                 {
                     functionPointersToInitialize.Add(func, nativeFunctionField);
                 }

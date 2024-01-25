@@ -36,8 +36,8 @@ public enum ClassFlags : ulong
 
 [AttributeUsage(AttributeTargets.Class)]
 [ClassFlagsMap]
-public sealed class UClassAttribute(ClassFlags Flags = ClassFlags.None) : Attribute
+public sealed class UClassAttribute(ClassFlags flags = ClassFlags.None) : Attribute
 {
-    public ClassFlags Flags { get; private set; } = Flags;
+    public ClassFlags Flags { get; private set; } = flags;
     public string ConfigCategory { get; set; }
 }

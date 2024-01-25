@@ -6,7 +6,7 @@ public class StructMetaData : BaseMetaData
 {
     public PropertyMetaData[] Fields { get; set; }
     public StructFlags StructFlags { get; set; }
-    public bool BlittableStruct { get; set; }
+    public bool IsBlittableStruct { get; set; }
     public bool IsDataTableStruct { get; set; }
     
     public StructMetaData(TypeDefinition structDefinition)
@@ -29,14 +29,14 @@ public class StructMetaData : BaseMetaData
         AddMetadataAttributes(structDefinition.CustomAttributes);
         CheckIfDataTableStruct(structDefinition);
         
-        BlittableStruct = true;
+        IsBlittableStruct = true;
         bool isPlainOldData = true;
         
         foreach (var prop in Fields)
         {
             if (!prop.PropertyDataType.IsBlittable)
             {
-                BlittableStruct = false;
+                IsBlittableStruct = false;
             }
             
             if (!prop.PropertyDataType.IsPlainOldData)
@@ -54,7 +54,7 @@ public class StructMetaData : BaseMetaData
             StructFlags |= StructFlags.ZeroConstructor;
         }
 
-        if (BlittableStruct)
+        if (IsBlittableStruct)
         {
             CustomAttribute? structAttribute = FindAttribute(structDefinition.CustomAttributes, "UStructAttribute");
 
@@ -63,7 +63,7 @@ public class StructMetaData : BaseMetaData
                 return;
             }
 
-            structAttribute.Fields.Add(new CustomAttributeNamedArgument("BlittableStruct", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
+            structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittableStruct", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
         }
     }
 

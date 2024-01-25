@@ -17,7 +17,7 @@ class NativeDataCoreStructType : NativeDataBlittableStructTypeBase
             _ => structType.Name
         };
 
-        InnerType = new TypeReferenceMetadata(structType)
+        InnerType = new TypeReferenceMetadata(structType.Resolve())
         {
             Name = innerPropertyName
         };

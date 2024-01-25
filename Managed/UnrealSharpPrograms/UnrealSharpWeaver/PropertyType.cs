@@ -1,7 +1,6 @@
 ﻿namespace UnrealSharpWeaver;
 
-// Update this enum in CSMetaData.h if you change this enum
-public enum PropertyType : byte
+public enum PropertyType
 {
     Unknown,
 
@@ -27,9 +26,9 @@ public enum PropertyType : byte
     Class,
 
     Object,
-    DefaultComponent,
     LazyObject,
     WeakObject,
+    DefaultComponent,
 
     SoftClass,
     SoftObject,

@@ -2,26 +2,31 @@
 
 namespace UnrealSharpWeaver.MetaData;
 
-public class InterfaceMetaData(TypeReference typeReference) : TypeReferenceMetadata(typeReference)
+public class InterfaceMetaData : TypeReferenceMetadata
 { 
-    public FunctionMetaData[] Functions { get; set; } = FunctionMetaData.PopulateFunctionArray(typeReference.Resolve());
-
-    public static bool IsBlueprintInterface(TypeDefinition type)
+    public FunctionMetaData[] Functions { get; set; }
+    
+    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, "UInterfaceAttribute")
     {
-        if (!type.IsInterface)
-        {
-            return false;
-        }
+        AddMetadataAttributes(typeDefinition.CustomAttributes);
         
-        foreach (var method in type.Methods)
+        CustomAttribute? interfaceAttributes = 
+            FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute");
+        
+        CustomAttributeArgument? cannotImplementInterfaceInBlueprintField = 
+            WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
+        
+        if (cannotImplementInterfaceInBlueprintField != null)
         {
-            if (FunctionMetaData.IsUFunction(method))
+            var cannotImplementInterfaceInBlueprint = (bool) cannotImplementInterfaceInBlueprintField.Value.Value;
+            
+            // Only add the metadata if it's true, since it's false by default
+            if (cannotImplementInterfaceInBlueprint)
             {
-                return true;
+                MetaData.Add("CannotImplementInterfaceInBlueprint", cannotImplementInterfaceInBlueprint.ToString());
             }
         }
-
-        return false;
+        
+        Functions = FunctionMetaData.PopulateFunctionArray(typeDefinition);
     }
-    
 }

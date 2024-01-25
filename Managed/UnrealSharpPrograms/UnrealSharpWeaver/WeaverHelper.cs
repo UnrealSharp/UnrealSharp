@@ -462,7 +462,7 @@ public static class WeaverHelper
             }
                 
             bool isBlittable = false;
-            var blittableAttrib = FindAttributeField(structAttribute, "BlittableStruct");
+            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittableStruct");
                         
             if (blittableAttrib.HasValue)
             {
@@ -501,6 +501,11 @@ public static class WeaverHelper
     public static bool IsUnrealSharpStruct(TypeDefinition type)
     {
         return IsUnrealType(type, "UStructAttribute");
+    }
+    
+    public static bool IsUnrealSharpInterface(TypeDefinition type)
+    {
+        return IsUnrealType(type, "UInterfaceAttribute");
     }
 
     static bool IsUnrealType(TypeDefinition type, string attribute)

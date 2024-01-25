@@ -9,13 +9,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/BaseUAttribute.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UInterfaceAttribute.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UClassAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UClassAttribute.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UFunctionAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UFunctionAttribute.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UPropertyAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UPropertyAttribute.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/BaseMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/BaseMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/EnumMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/EnumMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/StructMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/StructMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/TypeReferenceMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/TypeReferenceMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataCoreStructType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataCoreStructType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataEnumType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataEnumType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataGenericObjectType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataGenericObjectType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataStructType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataStructType.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDefaultComponentType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDefaultComponentType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/PropertyType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/PropertyType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/UnrealSharpEditor/UnrealSharpEditor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/UnrealSharpEditor/UnrealSharpEditor.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,8 +43,8 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c2266d9aba4c4ba36aec62278534ed6bbd881431c65810dd69b8d57bbf/Path.Windows.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2e2ff5e4f118b6e4ad5f910e9fde1fd6a338b5716cff790e934a2014dc8379/File.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c2266d9aba4c4ba36aec62278534ed6bbd881431c65810dd69b8d57bbf/Path.Windows.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2e2ff5e4f118b6e4ad5f910e9fde1fd6a338b5716cff790e934a2014dc8379/File.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -116,6 +133,7 @@
       <workItem from="1705783544622" duration="1937000" />
       <workItem from="1705843025392" duration="1695000" />
       <workItem from="1705851742211" duration="1467000" />
+      <workItem from="1706210944948" duration="1340000" />
     </task>
     <servers />
   </component>
@@ -131,27 +149,13 @@
         <line-breakpoint enabled="true" type="DotNet Breakpoints">
           <url>file://$PROJECT_DIR$/UnrealSharpBuildTool/Actions/WeaveProject.cs</url>
           <line>6</line>
-          <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\CSharpForUE\Managed\UnrealSharpPrograms\UnrealSharpBuildTool\Actions\WeaveProject.cs" initialLine="6" containingFunctionPresentation="Method 'RunAction'">
-            <startOffsets>
-              <option value="138" />
-            </startOffsets>
-            <endOffsets>
-              <option value="175" />
-            </endOffsets>
-          </properties>
+          <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\CSharpForUE\Managed\UnrealSharpPrograms\UnrealSharpBuildTool\Actions\WeaveProject.cs" initialLine="6" containingFunctionPresentation="Method 'RunAction'" />
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DotNet Breakpoints">
           <url>file://$PROJECT_DIR$/UnrealSharpBuildTool/Actions/GenerateProject.cs</url>
           <line>19</line>
-          <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\CSharpForUE\Managed\UnrealSharpPrograms\UnrealSharpBuildTool\Actions\GenerateProject.cs" initialLine="19" containingFunctionPresentation="Method 'RunAction'">
-            <startOffsets>
-              <option value="529" />
-            </startOffsets>
-            <endOffsets>
-              <option value="558" />
-            </endOffsets>
-          </properties>
+          <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\CSharpForUE\Managed\UnrealSharpPrograms\UnrealSharpBuildTool\Actions\GenerateProject.cs" initialLine="19" containingFunctionPresentation="Method 'RunAction'" />
           <option name="timeStamp" value="34" />
         </line-breakpoint>
       </breakpoints>

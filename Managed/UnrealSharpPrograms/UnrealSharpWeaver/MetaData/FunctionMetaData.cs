@@ -11,7 +11,7 @@ public class FunctionMetaData : BaseMetaData
     public PropertyMetaData? ReturnValue { get; }
     public FunctionFlags FunctionFlags { get; set; }
     public bool IsBlueprintEvent { get; private set; }
-    public bool IsRPC { get; private set; }
+    public bool IsRpc { get; private set; }
     public AccessProtection AccessProtection { get; set; }
     
     public FunctionMetaData(MethodDefinition method)

@@ -77,7 +77,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 void FUnrealSharpEditorModule::Reload()
 {
-	FScopedSlowTask Progress(4, LOCTEXT("BuildCSharp", "Building C# code..."));
+	FScopedSlowTask Progress(4, LOCTEXT("ReloadingCSharp", "Building C# code..."));
 	Progress.MakeDialog();
 
 	// Build the user's project.
@@ -87,22 +87,27 @@ void FUnrealSharpEditorModule::Reload()
 	}
 
 	// Weave the user's project.
+	Progress.EnterProgressFrame(1, LOCTEXT("WeavingCSharp", "Weaving C# code..."));
 	if (!FCSManager::InvokeUnrealSharpBuildTool(EBuildAction::Weave))
 	{
 		return;
 	}
 	
 	// Unload the user's assembly, to apply the new one.
+	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
 	if (!FCSManager::Get().UnloadPlugin(FCSManager::UserManagedProjectName))
 	{
 		return;
 	}
-	
+
+	// Load the user's assembly.
+	Progress.EnterProgressFrame(1, LOCTEXT("LoadingAssembly", "Loading Assembly..."));
 	if (!FCSManager::Get().LoadUserAssembly())
 	{
 		return;
 	}
 
+	// Reinstance all blueprints.
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
 	FCSReinstancer::Get().Reinstance();
 }

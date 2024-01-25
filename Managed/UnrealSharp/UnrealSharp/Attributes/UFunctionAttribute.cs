@@ -1,14 +1,9 @@
 ﻿namespace UnrealSharp.Attributes;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class | AttributeTargets.Property)]
-class FunctionFlagsMapAttribute : Attribute
+class FunctionFlagsMapAttribute(NativeFunctionFlags flags = NativeFunctionFlags.None) : Attribute
 {
-    public NativeFunctionFlags Flags;
-
-    public FunctionFlagsMapAttribute(NativeFunctionFlags flags = NativeFunctionFlags.None)
-    {
-        Flags = flags;
-    }
+    public NativeFunctionFlags Flags = flags;
 }
 
 [Flags]

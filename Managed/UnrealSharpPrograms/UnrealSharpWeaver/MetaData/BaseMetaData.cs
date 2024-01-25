@@ -128,24 +128,25 @@ public class BaseMetaData
     
     public void AddMetadataAttributes(Collection<CustomAttribute> customAttributes)
     {
-        MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (MetaData == null)
+        {
+            MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
         
         var metaDataAttributes = WeaverHelper.FindMetaDataAttributes(customAttributes);
 
         foreach (var attrib in metaDataAttributes)
         {
-            if (attrib.ConstructorArguments.Count < 1)
+            switch (attrib.ConstructorArguments.Count)
             {
-                continue;
-            }
-            
-            if (attrib.ConstructorArguments.Count == 1)
-            {
-                MetaData.Add((string)attrib.ConstructorArguments[0].Value, "");
-            }
-            else
-            {
-                MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
+                case < 1:
+                    continue;
+                case 1:
+                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, "");
+                    break;
+                default:
+                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
+                    break;
             }
         }
     }

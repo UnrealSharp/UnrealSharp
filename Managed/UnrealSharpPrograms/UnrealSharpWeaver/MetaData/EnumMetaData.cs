@@ -6,7 +6,7 @@ public class EnumMetaData : TypeReferenceMetadata
 {
     private List<string> Items { get; set; }
 
-    public EnumMetaData(TypeDefinition enumType) : base(enumType)
+    public EnumMetaData(TypeDefinition enumType) : base(enumType, "UEnumAttribute")
     {
         Items = new List<string>();
         

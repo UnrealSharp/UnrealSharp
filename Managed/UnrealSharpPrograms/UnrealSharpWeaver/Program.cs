@@ -108,7 +108,7 @@ public static class Program
 
             try
             {
-                StartWeavingAssembly(userAssembly, userAssemblyPath, weaverOutputPath, resolver);
+                StartWeavingAssembly(userAssembly, weaverOutputPath, resolver);
                 return true;
             }
             catch (WeaverProcessError error)
@@ -125,7 +125,7 @@ public static class Program
         return false;
     }
     
-    static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyPath, string assemblyOutputPath, BaseAssemblyResolver resolver)
+    static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath, BaseAssemblyResolver resolver)
     {
         var assemblyMetaData = new ApiMetaData
         {
@@ -188,7 +188,7 @@ public static class Program
                         {
                             structs.Add(type);
                         }
-                        else if (type.IsInterface && InterfaceMetaData.IsBlueprintInterface(type))
+                        else if (type.IsInterface && WeaverHelper.IsUnrealSharpInterface(type))
                         {
                             interfaces.Add(type);
                         }
@@ -217,8 +217,8 @@ public static class Program
             throw;
         }
     }
-
-    private static void CopyDependencies(string assemblyPath, string[] knownPaths)
+    
+    static void CopyDependencies(string assemblyPath, string[] knownPaths)
     {
         string assemblyDirectory = Path.GetDirectoryName(assemblyPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
 

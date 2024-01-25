@@ -55,20 +55,14 @@ public enum PropertyFlags : ulong
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
-[PropertyFlagsMap()]
-public sealed class UPropertyAttribute : Attribute
+[PropertyFlagsMap]
+public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None) : Attribute
 {
-    public UPropertyAttribute(PropertyFlags flags = PropertyFlags.None)
-    {
-        Flags = flags;
-        ArrayDim = 1;
-    }
-
     public PropertyFlags Flags
     {
         get;
         private set;
-    }
+    } = flags;
 
     public bool DefaultComponent = false;
     public bool RootComponent = false;
@@ -81,5 +75,5 @@ public sealed class UPropertyAttribute : Attribute
     public string BlueprintSetter = "";
     public string BlueprintGetter = "";
     
-    public int ArrayDim;
+    public int ArrayDim = 1;
 }

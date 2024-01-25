@@ -5,5 +5,5 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataEnumType(TypeReference typeRef, int arrayDim) : NativeDataSimpleType(typeRef, "BlittableMarshaller`1", "EnumProperty", arrayDim, PropertyType.Enum)
 {
-    public TypeReferenceMetadata InnerProperty { get; set; } = new(typeRef);
+    public TypeReferenceMetadata InnerProperty { get; set; } = new(typeRef.Resolve());
 };

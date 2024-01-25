@@ -54,7 +54,7 @@ public static class UnrealStructProcessor
     private static void ProcessStruct(TypeDefinition type, StructMetaData metadata)
     {
         // Don't need any marshaling if they're blittable.
-        if (metadata.BlittableStruct)
+        if (metadata.IsBlittableStruct)
         {
             return;
         }

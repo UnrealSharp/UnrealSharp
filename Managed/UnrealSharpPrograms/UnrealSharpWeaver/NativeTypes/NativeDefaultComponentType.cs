@@ -30,7 +30,7 @@ class NativeDataDefaultComponent : NativeDataSimpleType
             AttachmentSocket = (string) AttachmentSocketValue.Value.Value;
         }
 
-        InnerType = new TypeReferenceMetadata(typeRef);
+        InnerType = new TypeReferenceMetadata(typeRef.Resolve());
     }
     
     public bool IsRootComponent { get; set; }
