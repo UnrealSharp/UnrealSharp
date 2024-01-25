@@ -29,4 +29,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Build Configuration")
 	TEnumAsByte<EDotNetBuildConfiguration> UserBuildConfiguration = EDotNetBuildConfiguration::Debug;
 	
+	// Whether Hot Reload should wait for the Editor to gain focus
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Hot Reload")
+	bool bRequireFocusForHotReload = false;
 };

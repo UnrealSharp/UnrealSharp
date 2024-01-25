@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "Containers/Ticker.h"
 
 class FUnrealSharpEditorModule : public IModuleInterface
 {
@@ -14,6 +15,11 @@ public:
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
     void Reload();
+
+    FTickerDelegate TickDelegate;
+    FTSTicker::FDelegateHandle TickDelegateHandle;
+
+    bool Tick(float DeltaTime);
 
     bool bIsReloading = false;
 };
