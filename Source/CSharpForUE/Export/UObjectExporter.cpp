@@ -38,22 +38,27 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 		return;
 	}
 
+	// Initialize out parameters
 	if (NativeFunction->HasAnyFunctionFlags(FUNC_HasOutParms))
 	{
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
 		{
 			FProperty* Prop = *PropIt;
 
-			if (!Prop->HasAnyPropertyFlags(CPF_Parm | CPF_OutParm) || Prop->HasAnyPropertyFlags(CPF_ReturnParm))
+			// Ignore return value
+			if (!Prop->HasAllPropertyFlags(CPF_Parm | CPF_OutParm) || Prop->HasAllPropertyFlags(CPF_ReturnParm))
 			{
 				continue;
 			}
 
-			if (!Prop->HasAnyPropertyFlags(CPF_ReferenceParm))
+			// Ignore reference parameters
+			if (Prop->HasAllPropertyFlags(CPF_ReferenceParm))
 			{
-				// TODO: Initialize value in C# instead of here
-				Prop->InitializeValue_InContainer(Params);
+				continue;
 			}
+
+			// TODO: Initialize value in C# instead of here
+			Prop->InitializeValue_InContainer(Params);
 		}
 	}
 	
