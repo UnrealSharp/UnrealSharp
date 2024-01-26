@@ -21,5 +21,8 @@ public:
 
     bool Tick(float DeltaTime);
 
+    FDelegateHandle ModuleLoadingPhaseCompleteDelegateHandle;
+    void OnAllModuleLoadingPhasesComplete();
+
     bool bIsReloading = false;
 };
