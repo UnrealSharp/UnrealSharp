@@ -32,7 +32,7 @@ Take a look at the roadmap for planned and developed features!
 [Roadmap](https://github.com/orgs/UnrealSharp/projects/3)
 
 ## Discord Community 
-Join the discord community to stay up to date with the recent updates!
+Join the discord community to stay up to date with the recent updates and plugin support!
 
 [Discord community](https://discord.gg/HQuJUYFxeV)
 
