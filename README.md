@@ -43,7 +43,7 @@ I accept pull requests and any contributions you make are **greatly appreciated*
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
-Discord: **olsson.** (Yes, with a dot in the end.)
+Discord: **olsson.** (Yes, with a dot at the end.)
 
 Or join the [Discord community](https://discord.gg/HQuJUYFxeV).
 
