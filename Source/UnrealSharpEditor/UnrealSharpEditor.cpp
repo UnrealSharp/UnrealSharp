@@ -31,14 +31,11 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-
-	ModuleLoadingPhaseCompleteDelegateHandle = FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(this, &FUnrealSharpEditorModule::OnAllModuleLoadingPhasesComplete);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
 	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
-	FCoreDelegates::OnAllModuleLoadingPhasesComplete.Remove(ModuleLoadingPhaseCompleteDelegateHandle);
 }
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
@@ -124,11 +121,6 @@ bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 	bIsReloading = false;
 
 	return true;
-}
-
-void FUnrealSharpEditorModule::OnAllModuleLoadingPhasesComplete()
-{
-	Reload();
 }
 
 #undef LOCTEXT_NAMESPACE
