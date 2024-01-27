@@ -26,9 +26,9 @@ public enum PropertyType
     Class,
 
     Object,
+    DefaultComponent,
     LazyObject,
     WeakObject,
-    DefaultComponent,
 
     SoftClass,
     SoftObject,
