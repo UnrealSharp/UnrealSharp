@@ -32,10 +32,10 @@ public:
 
 private:
 
-	static void AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName);
-	static void RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName);
+	static void AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName);
+	static void RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName);
 	static void ClearDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object);
-	static void BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, void* Parameters);
+	static void BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters);
 
 	static void* GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty);
 

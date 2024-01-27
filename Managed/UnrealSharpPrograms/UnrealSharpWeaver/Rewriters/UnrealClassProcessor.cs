@@ -53,12 +53,13 @@ public static class UnrealClassProcessor
         
         FunctionRewriterHelpers.ProcessMethods(
             functionsToRewrite, 
-            metadata, 
             classTypeDefinition,
             ref functionPointersToInitialize,
             ref functionParamSizesToInitialize,
             ref functionParamOffsetsToInitialize,
             ref functionParamElementSizesToInitialize);
+        
+        ProcessBlueprintOverrides(classTypeDefinition, metadata);
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
@@ -76,5 +77,34 @@ public static class UnrealClassProcessor
             functionParamElementSizesToInitialize,
             functionPointersToInitialize, 
             functionParamSizesToInitialize);
+    }
+
+    private static void ProcessBlueprintOverrides(TypeDefinition classDefinition, ClassMetaData classMetaData)
+    {
+        foreach (MethodDefinition method in classMetaData.BlueprintEventOverrides)
+        {
+            var implementationMethodName = method.Name + "_Implementation";
+
+            foreach (Instruction inst in method.Body.Instructions)
+            {
+                if (inst.OpCode != OpCodes.Call && inst.OpCode != OpCodes.Callvirt)
+                {
+                    continue;
+                }
+                
+                MethodReference calledMethod = (MethodReference) inst.Operand;
+                
+                if (calledMethod.Name != method.Name)
+                {
+                    continue;
+                }
+
+                MethodReference? implementationMethod = WeaverHelper.FindMethod(classDefinition, implementationMethodName);
+                inst.Operand = WeaverHelper.ImportMethod(implementationMethod);
+                break;
+            }
+            
+            method.Name = implementationMethodName;
+        }
     }
 }

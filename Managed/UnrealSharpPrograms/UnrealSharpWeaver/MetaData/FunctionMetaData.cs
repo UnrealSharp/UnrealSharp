@@ -6,7 +6,6 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class FunctionMetaData : BaseMetaData
 { 
-    public string Name { get; set; }
     public PropertyMetaData[] Parameters { get; }
     public PropertyMetaData? ReturnValue { get; }
     public FunctionFlags FunctionFlags { get; set; }
@@ -50,6 +49,7 @@ public class FunctionMetaData : BaseMetaData
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
             ParameterDefinition param = method.Parameters[i];
+            
             if (param.IsOut)
             {
                 hasOutParams = true;
@@ -88,7 +88,7 @@ public class FunctionMetaData : BaseMetaData
 
         if (hasOutParams)
         {
-            flags ^= FunctionFlags.HasOutParms;
+            flags |= FunctionFlags.HasOutParms;
         }
         
         AddMetadataAttributes(method.CustomAttributes);

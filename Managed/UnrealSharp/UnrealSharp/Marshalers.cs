@@ -128,16 +128,3 @@ public static class StringMarshaller
         }
     }
 }
-
-public static class DelegateMarshaller<T> where T : EventDispatcher 
-{
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SubclassOf<T> obj)
-    {
-        
-    }
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, string propertyName)
-    {
-        object[] args = [nativeBuffer, owner];
-        return (T) Activator.CreateInstance(typeof(T), args);
-    }
-}

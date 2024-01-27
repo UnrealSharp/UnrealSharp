@@ -9,9 +9,9 @@ void UFMulticastDelegatePropertyExporter::ExportFunctions(FRegisterExportedFunct
 	EXPORT_FUNCTION(GetSignatureFunction)
 }
 
-void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName)
+void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
 {
-	if (!IsValid(Object) || !DelegateProperty)
+	if (!DelegateProperty)
 	{
 		return;
 	}
@@ -20,9 +20,9 @@ void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastScriptDelegate* 
 	DelegateProperty->Add(NewScriptDelegate);
 }
 
-void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName)
+void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
 {
-	if (!IsValid(Object) || !DelegateProperty)
+	if (!DelegateProperty)
 	{
 		return;
 	}
@@ -41,9 +41,9 @@ void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastScriptDelegate
 	DelegateProperty->Clear();
 }
 
-void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, void* Parameters)
+void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters)
 {
-	if (!IsValid(Object) && DelegateProperty)
+	if (DelegateProperty)
 	{
 		return;
 	}

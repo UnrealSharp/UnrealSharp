@@ -36,8 +36,7 @@ class NativeDataArrayType : NativeDataType
         throw new NotImplementedException("Fixed-size arrays of dynamic arrays not yet supported.");
     }
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata,
-        PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
         

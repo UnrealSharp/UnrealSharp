@@ -18,11 +18,6 @@ abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName
     private bool IsReference;
     public override bool IsPlainOldData => true;
 
-    public virtual void GetMarshallingParams(out TypeReference[] typeParams)
-    {
-        typeParams = [];
-    }
-
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
@@ -33,8 +28,6 @@ abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName
         
         if (marshallerName.EndsWith("`1"))
         {
-            GetMarshallingParams(out typeParams);
-            
             if (typeParams.Length == 0)
             {
                 typeParams = [WeaverHelper.ImportType(CSharpType)];

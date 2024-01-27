@@ -7,6 +7,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 class NativeDataMulticastDelegate : NativeDataSimpleType
 {
     public FunctionMetaData Signature { get; set; }
+    
     public NativeDataMulticastDelegate(TypeReference delegateType, string unrealClass, int arrayDim) 
         : base(delegateType, "DelegateMarshaller`1", unrealClass, arrayDim, PropertyType.Delegate)
     {

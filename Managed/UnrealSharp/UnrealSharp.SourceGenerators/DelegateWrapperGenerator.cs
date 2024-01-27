@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -6,65 +7,86 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
+public class DelegateInheritanceSyntaxReceiver : ISyntaxReceiver
+{
+    public List<ClassDeclarationSyntax> CandidateClasses { get; } = [];
+
+    public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+    {
+        if (syntaxNode is ClassDeclarationSyntax { BaseList: not null } classDecl &&
+            classDecl.BaseList.Types.Any(bt => bt.Type.ToString().Contains("MulticastDelegate")))
+        {
+            CandidateClasses.Add(classDecl);
+        }
+    }
+}
+
 [Generator]
 public class DelegateWrapperGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context)
     {
-        // No initialization required.
+        context.RegisterForSyntaxNotifications(() => new DelegateInheritanceSyntaxReceiver());
     }
 
     public void Execute(GeneratorExecutionContext context)
     {
-        var syntaxTrees = context.Compilation.SyntaxTrees;
-
-        foreach (var tree in syntaxTrees)
+        if (context.SyntaxReceiver is not DelegateInheritanceSyntaxReceiver receiver)
         {
-            var semanticModel = context.Compilation.GetSemanticModel(tree);
-            var delegateDeclarations = tree.GetRoot().DescendantNodes().OfType<DelegateDeclarationSyntax>();
+            return;
+        }
+        
+        foreach (var classDecl in receiver.CandidateClasses)
+        {
+            // Obtain the SemanticModel for the current syntax tree
+            var model = context.Compilation.GetSemanticModel(classDecl.SyntaxTree);
 
-            foreach (var delegateDeclaration in delegateDeclarations)
+            // Get the symbol for the class declaration
+
+            if (model.GetDeclaredSymbol(classDecl) is not INamedTypeSymbol classSymbol)
             {
-                if (semanticModel.GetDeclaredSymbol(delegateDeclaration) is not INamedTypeSymbol delegateSymbol)
-                {
-                    continue;
-                }
-
-                if (delegateSymbol.ContainingType != null)
-                {
-                    continue;
-                }
-
-                string className = $"Event{delegateSymbol.Name}";
-                    
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.AppendLine("using UnrealSharp;");
-                stringBuilder.AppendLine("using UnrealSharp.Interop;");
-                stringBuilder.AppendLine();
-                stringBuilder.AppendLine($"namespace {delegateSymbol.ContainingNamespace.ToDisplayString()};");
-                stringBuilder.AppendLine();
-                
-                stringBuilder.AppendLine($"public class {className} : EventDispatcher");
-                stringBuilder.AppendLine("{");
-                
-                stringBuilder.AppendLine($"    public {className}(IntPtr nativeProperty, UnrealSharpObject owner) : base(nativeProperty, owner)");
-                stringBuilder.AppendLine("    {");
-                stringBuilder.AppendLine("    }");
-                stringBuilder.AppendLine();
-                    
-                GenerateAddFunction(stringBuilder, delegateSymbol, className);
-                GenerateRemoveFunction(stringBuilder, delegateSymbol, className);
-                GenerateBroadcastFunction(stringBuilder, delegateSymbol);
-                    
-                stringBuilder.AppendLine("}");
-                    
-                string source = stringBuilder.ToString();
-                context.AddSource($"Event{delegateSymbol.Name}.cs", SourceText.From(source, Encoding.UTF8));
+                continue;
             }
+            
+            // Check if the class inherits from MulticastDelegate
+            if (classSymbol.BaseType.Name != "MulticastDelegate" || classSymbol.BaseType is not INamedTypeSymbol multicastDelegateSymbol)
+            {
+                continue;
+            }
+            // Extract the generic type argument
+            var genericTypeArgument = multicastDelegateSymbol.TypeArguments.FirstOrDefault();
+            
+            if (genericTypeArgument == null)
+            {
+                continue;
+            }
+            
+            var typeSymbol = context.Compilation.GetSemanticModel(classDecl.SyntaxTree).GetDeclaredSymbol(classDecl);
+            string namespaceName = typeSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
+            string className = $"{classDecl.Identifier.ValueText}";
+            
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("using UnrealSharp;");
+            stringBuilder.AppendLine("using UnrealSharp.Interop;");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine($"namespace {namespaceName};");
+            stringBuilder.AppendLine();
+                
+            stringBuilder.AppendLine($"public partial class {className}");
+            stringBuilder.AppendLine("{");
+            
+            INamedTypeSymbol delegateSymbol = (INamedTypeSymbol) genericTypeArgument;
+            GenerateAddFunction(stringBuilder, delegateSymbol);
+            GenerateRemoveFunction(stringBuilder, delegateSymbol);
+                    
+            stringBuilder.AppendLine("}");
+                    
+            string source = stringBuilder.ToString();
+            context.AddSource($"{className}.generated.cs", SourceText.From(source, Encoding.UTF8));
         }
     }
 
-    void GenerateAddFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string className)
+    void GenerateAddFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
     {
         var delegateInvokeMethod = delegateSymbol.DelegateInvokeMethod;
 
@@ -75,7 +97,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         
         if (delegateInvokeMethod.Parameters.IsEmpty)
         {
-            stringBuilder.AppendLine($"    public void Add(Action action)");
+            stringBuilder.AppendLine("    public void Add(Action action)");
         }
         else
         {
@@ -89,7 +111,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
         CastToUnrealSharpObject(stringBuilder);
-        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallAddDelegate(_nativeDelegate, _owner.NativeObject, unrealSharpObject.NativeObject, action.Method.Name);");
+        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallAddDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
@@ -99,7 +121,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine();
     }
 
-    void GenerateRemoveFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string className)
+    void GenerateRemoveFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
     {
         var delegateInvokeMethod = delegateSymbol.DelegateInvokeMethod;
 
@@ -124,7 +146,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
         CastToUnrealSharpObject(stringBuilder);
-        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallRemoveDelegate(_nativeDelegate, _owner.NativeObject, unrealSharpObject.NativeObject, action.Method.Name);");
+        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
@@ -132,35 +154,6 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();
-    }
-
-    void GenerateBroadcastFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
-    {
-        var delegateInvokeMethod = delegateSymbol.DelegateInvokeMethod;
-        
-        if (delegateInvokeMethod.Parameters.Length == 0)
-        {
-            stringBuilder.AppendLine($"    public void Broadcast()");
-        }
-        else
-        {
-            stringBuilder.Append($"    public void Broadcast(");
-            stringBuilder.Append(string.Join(", ", delegateInvokeMethod.Parameters.Select(x => $"{x.Type} {x.Name}")));
-            stringBuilder.AppendLine(")");
-        }
-                    
-        stringBuilder.AppendLine("    {");
-
-        if (delegateInvokeMethod.Parameters.Length == 0)
-        {
-            stringBuilder.AppendLine("        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(_nativeDelegate, _owner.NativeObject, IntPtr.Zero);");
-        }
-        else
-        {
-            stringBuilder.AppendLine("        // The weaver will implement marshalling here."); 
-        }
-
-        stringBuilder.AppendLine("    }");
     }
 
     void CastToUnrealSharpObject(StringBuilder stringBuilder)

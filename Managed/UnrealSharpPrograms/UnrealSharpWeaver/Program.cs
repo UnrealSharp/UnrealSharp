@@ -24,6 +24,8 @@ public static class Program
     public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
     public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
     public static readonly string UFunctionCallbacks = "UFunctionExporter";
+    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
+    
     public static readonly string MarshallerSuffix = "Marshaller";
     
     public static int Main(string[] args)
