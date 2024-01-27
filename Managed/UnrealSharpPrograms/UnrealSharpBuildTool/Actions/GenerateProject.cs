@@ -98,6 +98,12 @@ public class GenerateProject : BuildToolAction
             return false;
         }
 
+        WeaveProject weaveProject = new WeaveProject();
+        if (!weaveProject.RunAction())
+        {
+            return false;
+        }
+
         return true;
     }
 
