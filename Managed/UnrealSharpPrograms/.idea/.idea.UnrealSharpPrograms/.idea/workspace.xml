@@ -9,16 +9,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/DelegateBase.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/DelegateBase.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.SourceGenerators/DelegateWrapperGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.SourceGenerators/DelegateWrapperGenerator.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/FMulticastDelegatePropertyExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/FMulticastDelegatePropertyExporter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.h" afterDir="false" />
     </list>
@@ -57,7 +50,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "XThreadsFramesViewSplitterKey": "0.6666667",
-    "git-widget-placeholder": "deleagtestest",
+    "git-widget-placeholder": "DelegatesC#",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -129,7 +122,7 @@
       <workItem from="1705843025392" duration="1695000" />
       <workItem from="1705851742211" duration="1467000" />
       <workItem from="1706210944948" duration="1340000" />
-      <workItem from="1706433837834" duration="3750000" />
+      <workItem from="1706433837834" duration="4254000" />
     </task>
     <servers />
   </component>

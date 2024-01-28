@@ -37,6 +37,7 @@ private:
 	static void ClearDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object);
 	static void BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters);
 	static void ToString(FMulticastScriptDelegate* DelegateProperty, FString& OutString);
+	static bool ContainsDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName);
 
 	static void* GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty);
 

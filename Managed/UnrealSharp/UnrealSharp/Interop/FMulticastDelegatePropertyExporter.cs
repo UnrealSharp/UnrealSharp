@@ -9,4 +9,5 @@ public static unsafe partial class FMulticastDelegatePropertyExporter
     public static delegate* unmanaged<IntPtr, IntPtr, void> BroadcastDelegate;
     public static delegate* unmanaged<IntPtr, IntPtr> GetSignatureFunction;
     public static delegate* unmanaged<IntPtr, ref UnmanagedArray, void> ToString;
+    public static delegate* unmanaged<IntPtr, IntPtr, string, NativeBool> ContainsDelegate; 
 }
