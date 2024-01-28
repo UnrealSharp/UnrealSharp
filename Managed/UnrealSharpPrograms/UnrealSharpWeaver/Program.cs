@@ -194,7 +194,7 @@ public static class Program
                         {
                             interfaces.Add(type);
                         }
-                        else if (type.BaseType is { Name: "EventDispatcher" })
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
                         {
                             delegates.Add(type);
                         }
@@ -210,8 +210,8 @@ public static class Program
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
-            UnrealClassProcessor.ProcessClasses(classes, metadata);
             UnrealDelegateProcessor.ProcessDelegateExtensions(delegates);
+            UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)
         {

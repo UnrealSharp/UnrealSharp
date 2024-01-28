@@ -9,30 +9,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/BaseUAttribute.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UInterfaceAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UClassAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UClassAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UFunctionAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UFunctionAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UPropertyAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Attributes/UPropertyAttribute.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/DelegateBase.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/DelegateBase.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/FMulticastDelegatePropertyExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/FMulticastDelegatePropertyExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/BaseMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/BaseMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/EnumMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/EnumMetaData.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/StructMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/StructMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/TypeReferenceMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/TypeReferenceMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataCoreStructType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataCoreStructType.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataEnumType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataEnumType.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataGenericObjectType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataGenericObjectType.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataStructType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataStructType.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDefaultComponentType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDefaultComponentType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/PropertyType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/PropertyType.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/UnrealSharpEditor/UnrealSharpEditor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/UnrealSharpEditor/UnrealSharpEditor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/Export/FMulticastDelegatePropertyExporter.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,8 +31,15 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/10ef96c374a9c2c2b95ade2f442765c6a64c6223e5eb36c37810d9671fcf1b76/GenericInstanceType.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3af6d45b3f89585e2759cba2b9433c9c1cb54a2574a5945b88daef23d4f7485d/FieldAttributes.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c2266d9aba4c4ba36aec62278534ed6bbd881431c65810dd69b8d57bbf/Path.Windows.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/80d59bce77312e1810ce50b68bf6b8c6a81f74319067bbb1eff010d073910/MethodReference.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2e2ff5e4f118b6e4ad5f910e9fde1fd6a338b5716cff790e934a2014dc8379/File.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/d11bb87b5371180529729fea552977f0acd05b863b8d772dd9ea146fb7b0b3/GenericInstanceMethod.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/dff04961602be888b6aaee78be3c4af71efa7947fdf611f6d6fe9b35ea45993b/ILProcessor.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/e466d67f482b0e1a84e8b7a513a33ded7b5f9c89109694b34051a07150a3c/ModuleDefinition.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/f8f4bde0a35df4a6efc1f12f7d806e657f6c172176ed79ea7327eb43f98553/TypeDefinition.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -55,29 +50,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Project.UnrealSharpBuildTool.executor&quot;: &quot;Debug&quot;,
-    &quot;.NET Project.UnrealSharpWeaver.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;XThreadsFramesViewSplitterKey&quot;: &quot;0.6666667&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Project.UnrealSharpBuildTool.executor": "Debug",
+    ".NET Project.UnrealSharpWeaver.executor": "Debug",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "XThreadsFramesViewSplitterKey": "0.6666667",
+    "git-widget-placeholder": "deleagtestest",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;rider.external.source.directories&quot;: [
-      &quot;C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache&quot;,
-      &quot;C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache&quot;,
-      &quot;C:\\Users\\olsso\\AppData\\Local\\Symbols\\src&quot;
+  "keyToStringList": {
+    "rider.external.source.directories": [
+      "C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache",
+      "C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache",
+      "C:\\Users\\olsso\\AppData\\Local\\Symbols\\src"
     ]
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected=".NET Project.UnrealSharpWeaver">
     <configuration name="UnrealSharpBuildTool" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/../../Binaries/DotNet/net8.0/UnrealSharpBuildTool.exe" />
@@ -134,6 +129,7 @@
       <workItem from="1705843025392" duration="1695000" />
       <workItem from="1705851742211" duration="1467000" />
       <workItem from="1706210944948" duration="1340000" />
+      <workItem from="1706433837834" duration="3750000" />
     </task>
     <servers />
   </component>
@@ -157,6 +153,19 @@
           <line>19</line>
           <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\CSharpForUE\Managed\UnrealSharpPrograms\UnrealSharpBuildTool\Actions\GenerateProject.cs" initialLine="19" containingFunctionPresentation="Method 'RunAction'" />
           <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs</url>
+          <line>82</line>
+          <properties documentPath="C:\Users\olsso\Documents\Unreal Projects\CropoutUnrealSharp\Plugins\UnrealSharp\Managed\UnrealSharpPrograms\UnrealSharpWeaver\Rewriters\FunctionRewriterHelpers.cs" initialLine="82" containingFunctionPresentation="Method 'ProcessMethods'">
+            <startOffsets>
+              <option value="3918" />
+            </startOffsets>
+            <endOffsets>
+              <option value="4008" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="37" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

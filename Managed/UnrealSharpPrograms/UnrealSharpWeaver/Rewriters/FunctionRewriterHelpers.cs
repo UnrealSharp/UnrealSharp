@@ -78,6 +78,10 @@ public static class FunctionRewriterHelpers
                     break;
                 }
             }
+            else
+            {
+                MakeManagedMethodInvoker(classDefinition, func, func.MethodDefinition, paramOffsetFields);
+            }
         }
     }
     

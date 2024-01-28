@@ -12,9 +12,12 @@ public class FunctionMetaData : BaseMetaData
     public bool IsBlueprintEvent { get; private set; }
     public bool IsRpc { get; private set; }
     public AccessProtection AccessProtection { get; set; }
+
+    public MethodDefinition MethodDefinition;
     
     public FunctionMetaData(MethodDefinition method)
     {
+        MethodDefinition = method;
         Name = method.Name;
 
         if (method.IsPublic)

@@ -7,6 +7,7 @@ void UFMulticastDelegatePropertyExporter::ExportFunctions(FRegisterExportedFunct
 	EXPORT_FUNCTION(ClearDelegate)
 	EXPORT_FUNCTION(BroadcastDelegate)
 	EXPORT_FUNCTION(GetSignatureFunction)
+	EXPORT_FUNCTION(ToString)
 }
 
 void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
@@ -49,6 +50,16 @@ void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDele
 	}
 	
 	DelegateProperty->ProcessMulticastDelegate<UObject>(Parameters);
+}
+
+void UFMulticastDelegatePropertyExporter::ToString(FMulticastScriptDelegate* DelegateProperty, FString& OutString)
+{
+	if (!DelegateProperty)
+	{
+		return;
+	}
+
+	OutString = DelegateProperty->ToString<UObject>();
 }
 
 void* UFMulticastDelegatePropertyExporter::GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty)

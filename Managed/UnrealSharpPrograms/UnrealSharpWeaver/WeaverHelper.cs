@@ -174,6 +174,35 @@ public static class WeaverHelper
         return parameter;
     }
     
+    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod)
+    {
+        return CopyMethod(method, overrideMethod, method.ReturnType);
+    }
+
+    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod, TypeReference returnType)
+    {
+        MethodDefinition newMethod = new MethodDefinition(method.Name, method.Attributes, returnType);
+
+        if (overrideMethod)
+        {
+            newMethod.Attributes &= ~MethodAttributes.VtableLayoutMask;
+            newMethod.Attributes &= ~MethodAttributes.NewSlot;
+            newMethod.Attributes |= MethodAttributes.ReuseSlot;
+        }
+
+        newMethod.HasThis = true;
+        newMethod.ExplicitThis = method.ExplicitThis;
+        newMethod.CallingConvention = method.CallingConvention;
+
+        foreach (ParameterDefinition parameter in method.Parameters)
+        {
+            TypeReference importedType = ImportType(parameter.ParameterType);
+            newMethod.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, importedType));
+        }
+
+        return newMethod;
+    }
+    
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
     {
         returnType ??= UserAssembly.MainModule.TypeSystem.Void;
@@ -421,7 +450,7 @@ public static class WeaverHelper
                 return new NativeDataTextType(typeRef, arrayDim);
             }
 
-            if (typeDef.BaseType.Name == "EventDispatcher")
+            if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
             {
                 return new NativeDataMulticastDelegate(typeDef, "MulticastInlineDelegateProperty", arrayDim);
             }
