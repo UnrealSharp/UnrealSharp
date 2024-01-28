@@ -223,7 +223,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("    {");
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
-        CastToUnrealSharpObject(stringBuilder);
+        CastToUnrealSharpObject(stringBuilder, "false");
         stringBuilder.AppendLine($"            return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name).ToManagedBool();");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");

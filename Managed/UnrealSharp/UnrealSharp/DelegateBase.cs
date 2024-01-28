@@ -33,7 +33,7 @@ public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new(
 {
     public static TDelegate FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {
-        var managedDelegate = new TDelegate();
+        TDelegate managedDelegate = new TDelegate();
         managedDelegate.FromNative(nativeBuffer);
         return managedDelegate;
     }
