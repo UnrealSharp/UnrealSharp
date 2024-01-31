@@ -44,25 +44,25 @@ public static class UnrealDelegateProcessor
                 }
             }
 
-            OverrideFromNative(type, delegateSignatureType, delegateBase);
-            
-            MethodReference? invokeMethod = WeaverHelper.FindMethod(type, "GetInvoker");
-            MethodDefinition getInvoker = WeaverHelper.CopyMethod(invokeMethod.Resolve(), true, delegateSignatureType);
-            type.Methods.Add(getInvoker);
-            
-            WriteInvokerMethod(type, delegateInvokeMethod, delegateConstructor, getInvoker.Resolve(), processDelegateMethod);
+            //OverrideFromNative(type, delegateSignatureType, delegateBase);
+            //WriteInvokerMethod(type, processDelegateMethod);
         }
     }
 
-    public static void WriteInvokerMethod(TypeDefinition type,
-        MethodDefinition delegateSignature,
-        MethodDefinition delegateConstructor,
-        MethodDefinition getInvoker,
-        MethodReference processDelegateMethod)
+    public static void WriteInvokerMethod(TypeDefinition type, MethodReference processDelegateMethod)
     {
-        MethodDefinition invokerMethod = WeaverHelper.AddMethodToType(type, "Invoker", WeaverHelper.VoidTypeRef);
-        FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod);
-        ILProcessor invokerMethodProcessor = invokerMethod.Body.GetILProcessor();
+        MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
+        MethodDefinition invokerMethodDefinition = invokerMethod.Resolve();
+        
+        FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethodDefinition);
+        ILProcessor invokerMethodProcessor = invokerMethodDefinition.Body.GetILProcessor();
+        invokerMethodProcessor.Body.Instructions.Clear();
+        
+        invokerMethodProcessor.Emit(OpCodes.Ldarg_0);
+        invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverHelper.IntPtrZero);
+        invokerMethodProcessor.Emit(OpCodes.Call, processDelegateMethod);
+        invokerMethodProcessor.Emit(OpCodes.Ret);
+        return;
         
         VariableDefinition? loadArguments;
 
@@ -90,7 +90,7 @@ public static class UnrealDelegateProcessor
             List<Instruction> allCleanupInstructions = [];
 
             FunctionRewriterHelpers.WriteParametersToNative(invokerMethodProcessor,
-                invokerMethod,
+                invokerMethodDefinition,
                 functionMetaData,
                 functionParamSizesToInitialize[0].Item2,
                 functionParamOffsetsToInitialize[0].Item2,
@@ -109,16 +109,7 @@ public static class UnrealDelegateProcessor
         invokerMethodProcessor.Emit(OpCodes.Call, processDelegateMethod);
         invokerMethodProcessor.Emit(OpCodes.Ret);
         
-        WeaverHelper.OptimizeMethod(invokerMethod);
-        
-        ILProcessor processor = getInvoker.Body.GetILProcessor();
-        getInvoker.Body.Instructions.Clear();
-            
-        processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Ldftn, invokerMethod);
-        processor.Emit(OpCodes.Newobj, delegateConstructor);
-        processor.Emit(OpCodes.Ret);
-        WeaverHelper.OptimizeMethod(getInvoker);
+        WeaverHelper.OptimizeMethod(invokerMethodDefinition);
     }
 
 

@@ -45,7 +45,7 @@ void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastScriptDelegate
 
 void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters)
 {
-	if (DelegateProperty)
+	if (!DelegateProperty)
 	{
 		return;
 	}

@@ -79,6 +79,11 @@ public class DelegateWrapperGenerator : ISourceGenerator
             
             GenerateAddFunction(stringBuilder, delegateSymbol);
             GenerateAddOperator(stringBuilder, delegateSymbol, className);
+
+            GenerateGetInvoker(stringBuilder, delegateSymbol);
+            GenerateInvoke(stringBuilder, delegateSymbol);
+            
+            GenerateToNative(stringBuilder, delegateSymbol);
             
             GenerateRemoveOperator(stringBuilder, delegateSymbol, className);
             GenerateRemoveFunction(stringBuilder, delegateSymbol);
@@ -90,6 +95,54 @@ public class DelegateWrapperGenerator : ISourceGenerator
             string source = stringBuilder.ToString();
             context.AddSource($"{className}.generated.cs", SourceText.From(source, Encoding.UTF8));
         }
+    }
+
+    void GenerateGetInvoker(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
+    {
+        stringBuilder.AppendLine($"    protected override {delegateSymbol} GetInvoker()");
+        stringBuilder.AppendLine("    {");
+        stringBuilder.AppendLine("        return Invoker;");
+        stringBuilder.AppendLine("    }");
+        stringBuilder.AppendLine();
+    }
+    
+    void GenerateInvoke(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
+    {
+        if (delegateSymbol.DelegateInvokeMethod == null)
+        {
+            return;
+        }
+        
+        if (delegateSymbol.DelegateInvokeMethod.Parameters.IsEmpty)
+        {
+            stringBuilder.AppendLine($"    protected void Invoker()");
+        }
+        else
+        {
+            stringBuilder.Append($"    protected void Invoker(");
+            stringBuilder.Append(string.Join(", ", delegateSymbol.DelegateInvokeMethod.Parameters.Select(x => $"{x.Type} {x.Name}")));
+            stringBuilder.Append(")");
+            stringBuilder.AppendLine();
+        }
+        
+        stringBuilder.AppendLine("    {");
+        stringBuilder.AppendLine("       ProcessDelegate(IntPtr.Zero);");
+        stringBuilder.AppendLine("    }");
+        stringBuilder.AppendLine();
+    }
+    
+    void GenerateToNative(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
+    {
+        if (delegateSymbol.DelegateInvokeMethod == null)
+        {
+            return;
+        }
+
+        stringBuilder.AppendLine("    public override void FromNative(IntPtr address)");
+        stringBuilder.AppendLine("    {");
+        stringBuilder.AppendLine("       base.FromNative(address);");
+        stringBuilder.AppendLine("    }");
+        stringBuilder.AppendLine();
     }
 
     void GenerateAddFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
