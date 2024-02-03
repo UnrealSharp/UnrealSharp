@@ -27,6 +27,6 @@ public class InterfaceMetaData : TypeReferenceMetadata
             }
         }
         
-        Functions = FunctionMetaData.PopulateFunctionArray(typeDefinition);
+        Functions = FunctionMetaData.PopulateFunctionArrays(typeDefinition);
     }
 }

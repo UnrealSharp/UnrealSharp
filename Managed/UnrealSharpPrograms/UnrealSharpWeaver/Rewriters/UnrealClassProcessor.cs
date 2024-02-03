@@ -42,22 +42,9 @@ public static class UnrealClassProcessor
         var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         PropertyRewriterHelpers.ProcessProperties(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
-
+        
         List<FunctionMetaData> functionsToRewrite = metadata.Functions.ToList();
-        functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction.FunctionMetaData));
-        
-        var functionPointersToInitialize = new Dictionary<FunctionMetaData, FieldDefinition>();
-        var functionParamSizesToInitialize = new List<Tuple<FunctionMetaData, FieldDefinition>>();
-        var functionParamOffsetsToInitialize = new List<Tuple<FunctionMetaData, List<Tuple<FieldDefinition, PropertyMetaData>>>>();
-        var functionParamElementSizesToInitialize = new List<Tuple<FunctionMetaData, List<Tuple<FieldDefinition, PropertyMetaData>>>>();
-        
-        FunctionRewriterHelpers.ProcessMethods(
-            functionsToRewrite, 
-            classTypeDefinition,
-            ref functionPointersToInitialize,
-            ref functionParamSizesToInitialize,
-            ref functionParamOffsetsToInitialize,
-            ref functionParamElementSizesToInitialize);
+        functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction));
         
         ProcessBlueprintOverrides(classTypeDefinition, metadata);
         
@@ -69,14 +56,18 @@ public static class UnrealClassProcessor
             [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)]);
         
         // Add the static constructor that will fetch the different offsets and pointers needed for a UnrealSharp class to work.
-        ConstructorBuilder.InitializePropertyAndFunctionsResources(classTypeDefinition,
-            nativeClassField,
-            offsetsToInitialize,
-            pointersToInitialize, 
-            functionParamOffsetsToInitialize, 
-            functionParamElementSizesToInitialize,
-            functionPointersToInitialize, 
-            functionParamSizesToInitialize);
+        
+        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(classTypeDefinition);
+        ILProcessor processor = staticConstructor.Body.GetILProcessor();
+        
+        foreach (var function in metadata.Functions)
+        {
+            Instruction functionPointerField = function.GetFunctionPointerLoadInstruction();
+            function.InitializeFunctionPointers(processor, functionPointerField);
+            function.InitializeFunctionParamOffsets(processor, functionPointerField);
+            function.InitializeFunctionParamSizes(processor, functionPointerField);
+            function.InitializeFunctionParamsAndPointers(processor, functionPointerField);
+        }
     }
 
     private static void ProcessBlueprintOverrides(TypeDefinition classDefinition, ClassMetaData classMetaData)

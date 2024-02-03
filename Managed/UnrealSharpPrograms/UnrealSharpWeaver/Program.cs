@@ -178,19 +178,19 @@ public static class Program
                 {
                     foreach (var type in module.Types)
                     {
-                        if (type.IsClass && type.BaseType != null && WeaverHelper.IsUnrealSharpClass(type))
+                        if (WeaverHelper.IsUnrealSharpClass(type))
                         {
                             classes.Add(type);
                         }
-                        else if (type.IsEnum && WeaverHelper.IsUnrealSharpEnum(type))
+                        else if (WeaverHelper.IsUnrealSharpEnum(type))
                         {
                             enums.Add(type);
                         }
-                        else if (type.IsValueType && WeaverHelper.IsUnrealSharpStruct(type))
+                        else if (WeaverHelper.IsUnrealSharpStruct(type))
                         {
                             structs.Add(type);
                         }
-                        else if (type.IsInterface && WeaverHelper.IsUnrealSharpInterface(type))
+                        else if (WeaverHelper.IsUnrealSharpInterface(type))
                         {
                             interfaces.Add(type);
                         }

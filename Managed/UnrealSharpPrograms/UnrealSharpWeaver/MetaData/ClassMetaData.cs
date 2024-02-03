@@ -27,7 +27,7 @@ public class ClassMetaData : TypeReferenceMetadata
         SequencePoint point = ErrorEmitter.GetSequencePointFromMemberDefinition(MyTypeDefinition);
         string file = point.Document.Url;
         int line = point.StartLine;
-        bool hasInvalidProperties = invalidProperties.Any();
+        bool hasInvalidProperties = invalidProperties.Length != 0;
 
         foreach (var prop in invalidProperties)
         {
@@ -40,11 +40,17 @@ public class ClassMetaData : TypeReferenceMetadata
         
         PopulateProperties(type);
         
-        Functions = FunctionMetaData.PopulateFunctionArray(type);
+        Functions = FunctionMetaData.PopulateFunctionArrays(type);
 
-        VirtualFunctions = type.Methods.Where(IsVirtualOrInterfaceMethod)
-            .Select(x => new VirtualFunctionMetaData(x))
-            .ToList();
+        VirtualFunctions = new List<VirtualFunctionMetaData>();
+        for (int i = type.Methods.Count - 1; i >= 0; i--)
+        {
+            MethodDefinition method = type.Methods[i];
+            if (FunctionMetaData.IsInterfaceFunction(type, method.Name))
+            {
+                VirtualFunctions.Add(new VirtualFunctionMetaData(method));
+            }
+        }
         
         BlueprintEventOverrides = (from method in type.Methods 
             where FunctionMetaData.IsBlueprintEventOverride(method) 

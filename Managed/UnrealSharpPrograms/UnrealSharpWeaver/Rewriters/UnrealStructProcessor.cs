@@ -132,14 +132,7 @@ public static class UnrealStructProcessor
         ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeStructSizeField), 
             [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod), Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructSizeMethod)]);
         
-        ConstructorBuilder.InitializePropertyAndFunctionsResources(type,
-            nativeStructSizeField,
-            propertyOffsetsToInitialize, 
-            propertyPointersToInitialize, 
-            null, 
-            null,
-            null, 
-            null);
+        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(type);
     }
 
     //Create Function with signature:
