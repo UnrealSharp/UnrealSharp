@@ -55,19 +55,27 @@ public static class UnrealClassProcessor
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
             [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)]);
         
-        // Add the static constructor that will fetch the different offsets and pointers needed for a UnrealSharp class to work.
-        
         MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(classTypeDefinition);
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
+        Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
         
         foreach (var function in metadata.Functions)
         {
-            Instruction functionPointerField = function.GetFunctionPointerLoadInstruction();
-            function.InitializeFunctionPointers(processor, functionPointerField);
-            function.InitializeFunctionParamOffsets(processor, functionPointerField);
-            function.InitializeFunctionParamSizes(processor, functionPointerField);
-            function.InitializeFunctionParamsAndPointers(processor, functionPointerField);
+            if (function.Parameters.Length == 0)
+            {
+                continue;
+            }
+            
+            VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
+            Instruction functionPointerField = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            
+            function.EmitFunctionPointers(processor, loadNativeClassField, variableDefinition);
+            function.EmitFunctionParamOffsets(processor, functionPointerField);
+            function.EmitFunctionParamSize(processor, functionPointerField);
+            function.EmitParamElementSize(processor, functionPointerField);
         }
+        
+        processor.Emit(OpCodes.Ret);
     }
 
     private static void ProcessBlueprintOverrides(TypeDefinition classDefinition, ClassMetaData classMetaData)

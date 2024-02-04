@@ -7,77 +7,36 @@ public class ClassMetaData : TypeReferenceMetadata
 {
     public TypeReferenceMetadata ParentClass { get; set; }
     public List<PropertyMetaData> Properties { get; set; }
-    public FunctionMetaData[] Functions { get; set; }
-    public List<VirtualFunctionMetaData> VirtualFunctions { get; set; }
-    public string[] Interfaces { get; set; }
+    public List<FunctionMetaData> Functions { get; set; }
+    public List<FunctionMetaData> VirtualFunctions { get; set; }
+    public List<string> Interfaces { get; set; }
     public string ConfigCategory { get; set; } 
     public ClassFlags ClassFlags { get; set; }
     
-    internal MethodDefinition[] BlueprintEventOverrides;
-    internal TypeDefinition MyTypeDefinition;
+    internal List<MethodDefinition> BlueprintEventOverrides;
+    internal readonly TypeDefinition MyTypeDefinition;
 
     public ClassMetaData(TypeDefinition type) : base(type, "UClassAttribute")
     {
         MyTypeDefinition = type;
-
-        ClassFlags flags = (ClassFlags) ExtractClassAsFlags(type, "UClassAttribute");
         
-        var invalidProperties = (from field in type.Fields where PropertyMetaData.IsUnrealProperty(field) select field).ToArray();
-
-        SequencePoint point = ErrorEmitter.GetSequencePointFromMemberDefinition(MyTypeDefinition);
-        string file = point.Document.Url;
-        int line = point.StartLine;
-        bool hasInvalidProperties = invalidProperties.Length != 0;
-
-        foreach (var prop in invalidProperties)
-        {
-            ErrorEmitter.Error("InvalidUnrealProperty", file, line, $"UProperties in a UClass must be property accessors. {prop.Name} is a field.");
-        }
-        
-        Interfaces = type.Interfaces.Where(x => WeaverHelper.IsUnrealSharpInterface(x.InterfaceType.Resolve()))
-            .Select(interfaceOnType => interfaceOnType.InterfaceType.Name)
-            .ToArray();
-        
-        PopulateProperties(type);
-        
-        Functions = FunctionMetaData.PopulateFunctionArrays(type);
-
-        VirtualFunctions = new List<VirtualFunctionMetaData>();
-        for (int i = type.Methods.Count - 1; i >= 0; i--)
-        {
-            MethodDefinition method = type.Methods[i];
-            if (FunctionMetaData.IsInterfaceFunction(type, method.Name))
-            {
-                VirtualFunctions.Add(new VirtualFunctionMetaData(method));
-            }
-        }
-        
-        BlueprintEventOverrides = (from method in type.Methods 
-            where FunctionMetaData.IsBlueprintEventOverride(method) 
-            select method).ToArray();
+        PopulateInterfaces();
+        PopulateProperties();
+        PopulateFunctions();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags = flags;
+        ClassFlags = (ClassFlags) ExtractFlagsFromClass(type, "UClassAttribute");
 
-        var uClassAttribute = FindAttribute(type.CustomAttributes, "UClassAttribute");
-
-        if (uClassAttribute != null)
-        {
-            var configCategoryProperty = uClassAttribute.Properties.FirstOrDefault(prop => prop.Name == nameof(ConfigCategory));
-            ConfigCategory = (string) configCategoryProperty.Argument.Value;
-        }
-
-        if (hasInvalidProperties)
-        {
-            throw new InvalidUnrealClassException(MyTypeDefinition,"Errors in class declaration.");
-        }
+        CustomAttribute? uClassAttribute = FindAttribute(type.CustomAttributes, "UClassAttribute");
+        CustomAttributeNamedArgument configCategoryProperty = uClassAttribute.Properties.FirstOrDefault(prop => prop.Name == nameof(ConfigCategory));
+        ConfigCategory = (string) configCategoryProperty.Argument.Value;
     }
 
-    private void PopulateProperties(TypeDefinition type)
+    private void PopulateProperties()
     {
         Properties = new List<PropertyMetaData>();
         
-        foreach (PropertyDefinition property in type.Properties)
+        foreach (PropertyDefinition property in MyTypeDefinition.Properties)
         {
             CustomAttribute? uPropertyAttribute = PropertyMetaData.GetUPropertyAttribute(property);
         
@@ -88,24 +47,49 @@ public class ClassMetaData : TypeReferenceMetadata
         }
     }
 
-    private bool IsVirtualOrInterfaceMethod(MethodDefinition method)
+    void PopulateFunctions()
     {
-        if (method.IsVirtual)
+        if (MyTypeDefinition.Methods.Count == 0)
         {
-            return true;
+            return;
         }
-
-        TypeDefinition? classToCheck = MyTypeDefinition;
-        while (classToCheck != null)
+        
+        Functions = [];
+        VirtualFunctions = [];
+        BlueprintEventOverrides = [];
+        
+        for (int i = MyTypeDefinition.Methods.Count - 1; i >= 0; i--)
         {
-            if (classToCheck.Interfaces.Any(x => x.InterfaceType.Resolve().Methods.Any(y => y.Name == method.Name)))
+            MethodDefinition method = MyTypeDefinition.Methods[i];
+
+            if (FunctionMetaData.IsUFunction(method))
             {
-                return true;
+                Functions.Add(new FunctionMetaData(method));
             }
-
-            classToCheck = classToCheck.BaseType?.Resolve();
+            else if (FunctionMetaData.IsBlueprintEventOverride(method) || FunctionMetaData.IsInterfaceFunction(MyTypeDefinition, method.Name))
+            {
+                BlueprintEventOverrides.Add(method);
+                VirtualFunctions.Add(new FunctionMetaData(method));
+            }
         }
-
-        return false;
+    }
+    
+    void PopulateInterfaces()
+    {
+        if (MyTypeDefinition.Interfaces.Count == 0)
+        {
+            return;
+        }
+        
+        Interfaces = new List<string>();
+        
+        foreach (var typeInterface in MyTypeDefinition.Interfaces)
+        {
+            var interfaceType = typeInterface.InterfaceType.Resolve();
+            if (WeaverHelper.IsUnrealSharpInterface(interfaceType))
+            {
+                Interfaces.Add(interfaceType.Name);
+            }
+        }
     }
 }

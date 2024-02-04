@@ -4,7 +4,7 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class InterfaceMetaData : TypeReferenceMetadata
 { 
-    public FunctionMetaData[] Functions { get; set; }
+    public List<FunctionMetaData> Functions { get; set; }
     
     public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, "UInterfaceAttribute")
     {
@@ -27,6 +27,14 @@ public class InterfaceMetaData : TypeReferenceMetadata
             }
         }
         
-        Functions = FunctionMetaData.PopulateFunctionArrays(typeDefinition);
+        Functions = new List<FunctionMetaData>();
+        
+        foreach (var method in typeDefinition.Methods)
+        {
+            if (method.IsAbstract && FunctionMetaData.IsUFunction(method))
+            {
+                Functions.Add(new FunctionMetaData(method));
+            }
+        }
     }
 }

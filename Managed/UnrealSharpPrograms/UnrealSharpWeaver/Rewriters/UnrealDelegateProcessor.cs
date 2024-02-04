@@ -9,8 +9,6 @@ public static class UnrealDelegateProcessor
 {
     public static void ProcessDelegateExtensions(List<TypeDefinition> delegateExtensions)
     {
-        TypeReference? delegateBase = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, "UnrealSharp", "DelegateBase`1");
-        
         foreach (TypeDefinition type in delegateExtensions)
         {
             // Find the Broadcast method

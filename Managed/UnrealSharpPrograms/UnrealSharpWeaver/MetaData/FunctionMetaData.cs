@@ -182,28 +182,6 @@ public class FunctionMetaData : BaseMetaData
         return false;
     }
 
-    public static void PopulateFunctionArrays(TypeDefinition type, 
-        out List<FunctionMetaData> functions, 
-        out List<FunctionMetaData> virtualFunctions)
-    {
-        functions = [];
-        virtualFunctions = [];
-        
-        for (int i = type.Methods.Count - 1; i >= 0; i--)
-        {
-            MethodDefinition method = type.Methods[i];
-            
-            if (IsUFunction(method))
-            {
-                functions.Add(new FunctionMetaData(method));
-            }
-            else if (IsInterfaceFunction(type, method.Name))
-            {
-                virtualFunctions.Add(new FunctionMetaData(method));
-            }
-        }
-    }
-
     public static bool IsInterfaceFunction(TypeDefinition type, string methodName)
     {
         foreach (var typeInterface in type.Interfaces)
@@ -220,15 +198,15 @@ public class FunctionMetaData : BaseMetaData
         return false;
     }
     
-    public void InitializeFunctionPointers(ILProcessor processor, Instruction loadTypeField)
+    public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, VariableDefinition functionPointerVar)
     {
         processor.Append(loadTypeField);
         processor.Emit(OpCodes.Ldstr, Name);
         processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionFromClassAndNameMethod);
-        processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionPointerField);
+        processor.Emit(OpCodes.Stloc, functionPointerVar);
     }
     
-    public void InitializeFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)
+    public void EmitFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)
     {
         foreach (var paramPair in RewriteInfo.FunctionParams)
         {
@@ -242,7 +220,14 @@ public class FunctionMetaData : BaseMetaData
         }
     }
     
-    public void InitializeFunctionParamsAndPointers(ILProcessor processor, Instruction? loadFunctionPointer)
+    public void EmitFunctionParamSize(ILProcessor processor, Instruction loadFunctionPointer)
+    {
+        processor.Append(loadFunctionPointer);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionParamsSizeMethod);
+        processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
+    }
+    
+    public void EmitParamElementSize(ILProcessor processor, Instruction? loadFunctionPointer)
     {
         foreach (var pair in RewriteInfo.FunctionParamsElements)
         {
@@ -252,13 +237,6 @@ public class FunctionMetaData : BaseMetaData
             processor.Emit(OpCodes.Call, WeaverHelper.GetArrayElementSizeMethod);
             processor.Emit(OpCodes.Stsfld, elementSizeField);
         }
-    }
-    
-    public void InitializeFunctionParamSizes(ILProcessor processor, Instruction loadFunctionPointer)
-    {
-        processor.Append(loadFunctionPointer);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionParamsSizeMethod);
-        processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
     }
     
     public Instruction GetFunctionPointerLoadInstruction()

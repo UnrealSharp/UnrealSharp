@@ -20,8 +20,7 @@ public static class FunctionRewriterHelpers
                 AddOffsetField(classDefinition, param, func, i, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
             }
 
-            paramsSizeField =
-                WeaverHelper.AddFieldToType(classDefinition, $"{func.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
+            paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{func.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
             func.RewriteInfo.FunctionParamSizeField = paramsSizeField;
         }
 
