@@ -48,7 +48,8 @@ abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName
 
             if (MarshallerClass == null)
             {
-                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName);
+                TypeDefinition propertyTypeDefinition = CSharpType.Resolve();
+                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.UserAssembly, propertyTypeDefinition.Namespace, marshallerName);
             }
         }
 
