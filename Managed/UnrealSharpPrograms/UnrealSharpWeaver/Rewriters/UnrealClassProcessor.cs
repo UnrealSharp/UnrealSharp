@@ -75,6 +75,17 @@ public static class UnrealClassProcessor
             function.EmitParamElementSize(processor, functionPointerField);
         }
         
+        foreach (var property in metadata.Properties)
+        {
+            VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+            property.InitializePropertyPointers(processor, loadNativeClassField, variableDefinition);
+            
+            Instruction propertyField = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            property.InitializePropertyOffsets(processor, propertyField);
+
+            property.PropertyDataType.WritePostInitialization(processor, property, variableDefinition);
+        }
+        
         processor.Emit(OpCodes.Ret);
     }
 

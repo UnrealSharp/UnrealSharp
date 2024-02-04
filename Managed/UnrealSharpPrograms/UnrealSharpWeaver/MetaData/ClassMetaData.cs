@@ -34,7 +34,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void PopulateProperties()
     {
-        Properties = new List<PropertyMetaData>();
+        Properties = [];
         
         foreach (PropertyDefinition property in MyTypeDefinition.Properties)
         {

@@ -83,8 +83,6 @@ public class DelegateWrapperGenerator : ISourceGenerator
             GenerateGetInvoker(stringBuilder, delegateSymbol);
             GenerateInvoke(stringBuilder, delegateSymbol);
             
-            GenerateToNative(stringBuilder, delegateSymbol);
-            
             GenerateRemoveOperator(stringBuilder, delegateSymbol, className);
             GenerateRemoveFunction(stringBuilder, delegateSymbol);
             
@@ -131,20 +129,6 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine();
     }
     
-    void GenerateToNative(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
-    {
-        if (delegateSymbol.DelegateInvokeMethod == null)
-        {
-            return;
-        }
-
-        stringBuilder.AppendLine("    public override void FromNative(IntPtr address)");
-        stringBuilder.AppendLine("    {");
-        stringBuilder.AppendLine("       base.FromNative(address);");
-        stringBuilder.AppendLine("    }");
-        stringBuilder.AppendLine();
-    }
-
     void GenerateAddFunction(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
     {
         var delegateInvokeMethod = delegateSymbol.DelegateInvokeMethod;

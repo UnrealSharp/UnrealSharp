@@ -25,12 +25,14 @@ public static class WeaverHelper
     public static MethodReference GetNativeClassFromNameMethod;
     public static MethodReference GetNativeStructFromNameMethod;
     public static MethodReference GetPropertyOffsetFromNameMethod;
+    public static MethodReference GetPropertyOffset;
     public static MethodReference GetArrayElementSizeMethod;
     public static MethodReference GetNativePropertyFromNameMethod;
     public static MethodReference GetNativeFunctionFromClassAndNameMethod;
     public static MethodReference GetNativeFunctionParamsSizeMethod;
     public static MethodReference GetNativeStructSizeMethod;
     public static MethodReference InvokeNativeFunctionMethod;
+    public static MethodReference GetSignatureFunction;
     
     public static void Initialize(AssemblyDefinition bindingsAssembly)
     {
@@ -62,12 +64,15 @@ public static class WeaverHelper
         GetNativeStructFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeStructFromName");
         GetNativeClassFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeClassFromName");
         GetPropertyOffsetFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffsetFromName");
+        GetPropertyOffset = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffset");
         GetArrayElementSizeMethod = FindExporterMethod(Program.FArrayPropertyCallbacks, "CallGetArrayElementSize");
         GetNativePropertyFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetNativePropertyFromName");
         GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
         GetNativeFunctionParamsSizeMethod = FindExporterMethod(Program.UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
         GetNativeStructSizeMethod = FindExporterMethod(Program.UScriptStructCallbacks, "CallGetNativeStructSize");
         InvokeNativeFunctionMethod = FindExporterMethod(Program.UObjectCallbacks, "CallInvokeNativeFunction");
+        GetSignatureFunction = FindExporterMethod(Program.MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
+        
     }
     
     public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
@@ -152,7 +157,7 @@ public static class WeaverHelper
     {
         if (attributes == 0)
         {
-            attributes = FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private;
+            attributes = FieldAttributes.Static | FieldAttributes.Private;
         }
         
         var field = new FieldDefinition(name, attributes, typeReference);
@@ -319,6 +324,14 @@ public static class WeaverHelper
         
         method.Body.Optimize();
         method.Body.SimplifyMacros();
+    }
+    
+    public static void RemoveReturnInstruction(MethodDefinition method)
+    {
+        if (method.Body.Instructions.Count > 0 && method.Body.Instructions[^1].OpCode == OpCodes.Ret)
+        {
+            method.Body.Instructions.RemoveAt(method.Body.Instructions.Count - 1);
+        }
     }
     
     public static NativeDataType GetDataType(TypeReference typeRef, string propertyName, Collection<CustomAttribute>? customAttributes)

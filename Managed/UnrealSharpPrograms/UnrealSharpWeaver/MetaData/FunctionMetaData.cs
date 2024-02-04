@@ -238,16 +238,4 @@ public class FunctionMetaData : BaseMetaData
             processor.Emit(OpCodes.Stsfld, elementSizeField);
         }
     }
-    
-    public Instruction GetFunctionPointerLoadInstruction()
-    {
-        if (RewriteInfo.FunctionPointerField != null)
-        {
-            return Instruction.Create(OpCodes.Ldsfld, RewriteInfo.FunctionPointerField);
-        }
-        else
-        {
-            return Instruction.Create(OpCodes.Ldloc, RewriteInfo.FunctionPointerVar);
-        }
-    }
 }

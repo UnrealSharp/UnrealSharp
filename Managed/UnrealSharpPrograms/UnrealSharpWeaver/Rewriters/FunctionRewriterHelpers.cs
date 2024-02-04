@@ -39,11 +39,6 @@ public static class FunctionRewriterHelpers
             FieldDefinition nativeFunctionField = WeaverHelper.AddFieldToType(classDefinition, nativeFuncFieldName,
                 WeaverHelper.IntPtrType, nativeFuncAttributes);
 
-            if (func.IsRpc)
-            {
-                func.RewriteInfo.SetFunctionPointerCache(nativeFunctionField);
-            }
-
             RewriteMethodAsUFunctionInvoke(classDefinition, func, nativeFunctionField, paramsSizeField, func.RewriteInfo.FunctionParams);
         }
         else if (WeaverHelper.HasAnyFlags(func.FunctionFlags, FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintNativeEvent))
@@ -401,7 +396,7 @@ public static class FunctionRewriterHelpers
     public static void AddOffsetField(TypeDefinition classDefinition, PropertyMetaData propertyMetaData, FunctionMetaData func, int Index,
         ref Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields, ref List<Tuple<FieldDefinition?, PropertyMetaData>> paramElementSizeFields)
     {
-        FieldDefinition newField = WeaverHelper.AddFieldToType(classDefinition, propertyMetaData.Name + "_" + propertyMetaData.Name + "_Offset", WeaverHelper.Int32TypeRef);
+        FieldDefinition newField = WeaverHelper.AddFieldToType(classDefinition, func.Name + "_" + propertyMetaData.Name + "_Offset", WeaverHelper.Int32TypeRef);
         paramOffsetFields[Index] = Tuple.Create(newField, propertyMetaData);
 
         if (!propertyMetaData.PropertyDataType.NeedsElementSizeField)

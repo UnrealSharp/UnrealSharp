@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.Rewriters;
 
@@ -14,7 +15,10 @@ public class PropertyMetaData : BaseMetaData
     public string BlueprintSetter { get; set; }
     public string BlueprintGetter { get; set; }
     
+    // Non-serialized for JSON
+    public FieldDefinition PropertyOffsetField;
     public readonly MemberReference MemberRef;
+    // End non-serialized
     
     static bool MethodIsCompilerGenerated(MethodDefinition method)
     {
@@ -72,7 +76,7 @@ public class PropertyMetaData : BaseMetaData
             throw new InvalidPropertyException(property, "Getter can not have a body for Unreal properties");
         }
 
-        if (setter != null && !MethodIsCompilerGenerated(setter))
+        if (setter != null && ! MethodIsCompilerGenerated(setter))
         {
             throw new InvalidPropertyException(property, "Setter can not have a body for Unreal properties");
         }
@@ -206,57 +210,29 @@ public class PropertyMetaData : BaseMetaData
 
         return definitions.Length > 0 ? definitions[0] : null;
     }
-    
-    public static bool IsUnrealProperty(FieldDefinition field)
-    {
-        if (!field.HasCustomAttributes)
-        {
-            return false;
-        }
-        
-        CustomAttribute? propertyAttribute = FindAttribute(field.CustomAttributes, "UPropertyAttribute");
-        return propertyAttribute != null;
-    }
 
     public static CustomAttribute? GetUPropertyAttribute(PropertyDefinition property)
     {
         return FindAttribute(property.CustomAttributes, "UPropertyAttribute");
     }
 
-    public static bool IsUnrealProperty(PropertyDefinition property)
-    {
-        if (!property.HasCustomAttributes)
-        {
-            return false;
-        }
-        
-        CustomAttribute? propertyAttribute = GetUPropertyAttribute(property);
-
-        if (propertyAttribute == null)
-        {
-            return false;
-        }
-        
-        if (property.HasParameters)
-        {
-            throw new InvalidPropertyException(property, "Unreal properties can not have parameters");
-        }
-
-        if(property.HasOtherMethods)
-        {
-            throw new InvalidPropertyException(property, "Unreal properties can not have other methods");
-        }
-
-        return true;
-    }
-
-    public static bool IsReferenceParameter(PropertyFlags propertyFlags)
-    {
-       return (propertyFlags & PropertyFlags.ReferenceParm) == PropertyFlags.ReferenceParm;
-    }
-    
     public static bool IsOutParameter(PropertyFlags propertyFlags)
     {
         return (propertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
+    }
+    
+    public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, VariableDefinition propertyPointer)
+    {
+        processor.Append(loadNativeType);
+        processor.Emit(OpCodes.Ldstr, Name);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
+        processor.Emit(OpCodes.Stloc, propertyPointer);
+    }
+    
+    public void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType)
+    {
+        processor.Append(loadNativeType);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffset);
+        processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
     }
 }

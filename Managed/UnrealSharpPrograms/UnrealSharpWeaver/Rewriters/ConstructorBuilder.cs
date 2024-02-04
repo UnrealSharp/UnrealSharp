@@ -44,40 +44,6 @@ public static class ConstructorBuilder
         processor.Append(field);
     }
     
-    public static void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, 
-        List<Tuple<FieldDefinition, PropertyMetaData>>? propertyPointersToInitialize)
-    {
-        if (propertyPointersToInitialize == null)
-        {
-            return;
-        }
-        
-        foreach (var nativeProp in propertyPointersToInitialize)
-        {
-            processor.Append(loadNativeType);
-            processor.Emit(OpCodes.Ldstr, nativeProp.Item2.Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
-            processor.Emit(OpCodes.Stsfld, nativeProp.Item1);
-        }
-    }
-    
-    public static void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType, 
-        List<Tuple<FieldDefinition, PropertyMetaData>>? propertyOffsetsToInitialize)
-    {
-        if (propertyOffsetsToInitialize == null)
-        {
-            return;
-        }
-        
-        foreach (var offset in propertyOffsetsToInitialize)
-        {
-            processor.Append(loadNativeType);
-            processor.Emit(OpCodes.Ldstr, offset.Item2.Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffsetFromNameMethod);
-            processor.Emit(OpCodes.Stsfld, offset.Item1);
-        }
-    }
-    
     public static void VerifySingleResult<T>(T[] results, TypeDefinition type, string endMessage)
     {
         switch (results.Length)

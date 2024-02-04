@@ -135,6 +135,11 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
         return processor;
     }
 
+    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
+    {
+        
+    }
+
     protected static void EndSimpleSetter(ILProcessor processor, MethodDefinition setter)
     {
         processor.Emit(OpCodes.Ret);

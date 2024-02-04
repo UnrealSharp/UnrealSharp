@@ -7,14 +7,14 @@ namespace UnrealSharpWeaver.Rewriters;
 
 public static class UnrealDelegateProcessor
 {
+    public static string InitializeUnrealDelegate = nameof(InitializeUnrealDelegate);
+    
     public static void ProcessDelegateExtensions(List<TypeDefinition> delegateExtensions)
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
             // Find the Broadcast method
             TypeDefinition delegateSignatureType = null;
-            MethodDefinition delegateConstructor = null;
-            MethodDefinition delegateInvokeMethod = null;
             
             foreach (TypeDefinition nestedType in type.NestedTypes)
             {
@@ -32,6 +32,7 @@ public static class UnrealDelegateProcessor
             
             
             WriteInvokerMethod(type);
+            ProcessInitialize(type, delegateSignatureType);
         }
     }
 
@@ -72,18 +73,36 @@ public static class UnrealDelegateProcessor
         WeaverHelper.OptimizeMethod(invokerMethodDefinition);
     }
     
-    static void ProcessFromNative(TypeReference baseType)
+    static void ProcessInitialize(TypeReference baseType, TypeDefinition delegateSignatureType)
     {
-        MethodReference? baseFromNative = WeaverHelper.FindMethod(baseType.Resolve(), "FromNative");
-        MethodDefinition baseFromNativeDefinition = baseFromNative.Resolve();
+        // Get the method from the delegate
+        MethodReference? invokeMethod = WeaverHelper.FindMethod(delegateSignatureType, "Invoke");
+        
+        if (invokeMethod.Parameters.Count == 0)
+        {
+            return;
+        }
+        
+        MethodDefinition initializeDelegate = WeaverHelper.AddMethodToType(baseType.Resolve(), 
+            InitializeUnrealDelegate, 
+            WeaverHelper.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
+            [WeaverHelper.IntPtrType]);
+        
+        FunctionMetaData functionMetaData = new FunctionMetaData(invokeMethod.Resolve());
 
-        var ilProcessor = baseFromNativeDefinition.Body.GetILProcessor();
-        baseFromNativeDefinition.Body.Instructions.Clear();
+        var processor = initializeDelegate.Body.GetILProcessor();
         
-        ilProcessor.Append(ilProcessor.Create(OpCodes.Ldarg_0));
-        ilProcessor.Append(ilProcessor.Create(OpCodes.Ldarg_1));
-        ilProcessor.Append(ilProcessor.Create(OpCodes.Call, baseFromNative));
-        ilProcessor.Append(ilProcessor.Create(OpCodes.Ret));
+        VariableDefinition signatureFunctionPointer = WeaverHelper.AddVariableToMethod(initializeDelegate, WeaverHelper.IntPtrType);
         
+        processor.Emit(OpCodes.Ldarg_0);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetSignatureFunction);
+        processor.Emit(OpCodes.Stloc, signatureFunctionPointer);
+        
+        Instruction loadFunctionPointer = processor.Create(OpCodes.Ldloc, signatureFunctionPointer);
+        functionMetaData.EmitFunctionParamOffsets(processor, loadFunctionPointer);
+        functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
+        functionMetaData.EmitParamElementSize(processor, loadFunctionPointer);
+        
+        processor.Emit(OpCodes.Ret);
     }
 }

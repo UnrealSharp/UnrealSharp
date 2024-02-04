@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -31,5 +32,13 @@ class NativeDataMulticastDelegate : NativeDataSimpleType
                 return;
             }
         }
+    }
+
+    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
+    {
+        PropertyDefinition propertyRef = (PropertyDefinition) propertyMetadata.MemberRef.Resolve();
+        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef.PropertyType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        processor.Emit(OpCodes.Ldloc, propertyPointer);
+        processor.Emit(OpCodes.Call, Initialize);
     }
 }
