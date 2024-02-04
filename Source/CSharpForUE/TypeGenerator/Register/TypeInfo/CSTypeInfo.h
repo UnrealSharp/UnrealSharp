@@ -8,20 +8,16 @@ struct CSHARPFORUE_API TCSharpTypeInfo
 public:
 	virtual ~TCSharpTypeInfo() = default;
 
-	TCSharpTypeInfo(const TSharedPtr<FJsonValue>& MetaData) : TypeMetaData(nullptr), TypeHandle(nullptr), Field(nullptr)
+	TCSharpTypeInfo(const TSharedPtr<FJsonValue>& MetaData) : TypeMetaData(nullptr), Field(nullptr)
 	{
 		TypeMetaData = MakeShared<TMetaData>();
 		TypeMetaData->SerializeFromJson(MetaData->AsObject());
-		TypeHandle = FCSManager::Get().GetTypeHandle(*TypeMetaData);
 	}
 
-	TCSharpTypeInfo() : TypeHandle(nullptr), Field(nullptr) {}
+	TCSharpTypeInfo() : Field(nullptr) {}
 	
 	// The meta data for this type (properties, functions et.c.)
 	TSharedPtr<TMetaData> TypeMetaData;
-
-	// Pointer to the TypeHandle in CSharp
-	uint8* TypeHandle;
 
 	// Pointer to the field of this type
 	TField* Field;
