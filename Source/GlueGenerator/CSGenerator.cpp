@@ -350,7 +350,9 @@ bool FCSGenerator::CanExportProperty(const UStruct* Struct, const FProperty* Pro
 	// Always include UProperties for whitelisted structs.
 	// If their properties where blueprint-exposed, we wouldn't have had to whitelist them!
 	bool bCanExport = !Blacklist.HasProperty(Struct, Property)
-	&& (CanExportPropertyShared(Property) || Whitelist.HasProperty(Struct, Property) || Whitelist.HasStruct(Struct));
+	&& (CanExportPropertyShared(Property)
+	|| Whitelist.HasProperty(Struct, Property)
+	|| Whitelist.HasStruct(Struct));
 	
 	if (bCanExport)
 	{

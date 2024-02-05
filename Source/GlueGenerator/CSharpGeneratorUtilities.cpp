@@ -115,7 +115,7 @@ namespace ScriptGeneratorUtilities
 
 	bool IsBlueprintExposedProperty(const FProperty* InProp)
 	{
-		return InProp->HasAnyPropertyFlags(CPF_BlueprintVisible);
+		return InProp->HasAnyPropertyFlags(CPF_BlueprintVisible | CPF_BlueprintAssignable);
 	}
 
 	bool IsBlueprintExposedFunction(const UFunction* InFunc)
