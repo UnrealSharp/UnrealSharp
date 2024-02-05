@@ -13,35 +13,23 @@ public static class UnrealDelegateProcessor
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
-            // Find the Broadcast method
-            TypeDefinition delegateSignatureType = null;
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
             
-            foreach (TypeDefinition nestedType in type.NestedTypes)
+            if (invokerMethod == null)
             {
-                foreach (MethodDefinition method in nestedType.Methods)
-                {
-                    if (method.Name != "Invoke")
-                    {
-                        continue;
-                    }
-
-                    delegateSignatureType = nestedType;
-                    break;
-                }
+                throw new Exception("Could not find Invoker method in delegate extension type");
             }
             
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
-            WriteInvokerMethod(type);
-            ProcessInitialize(type, delegateSignatureType);
+            WriteInvokerMethod(invokerMethod, functionMetaData);
+            ProcessInitialize(type, functionMetaData);
         }
     }
 
-    public static void WriteInvokerMethod(TypeDefinition type)
+    public static void WriteInvokerMethod(MethodReference invokerMethod, FunctionMetaData functionMetaData)
     {
-        MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
         MethodDefinition invokerMethodDefinition = invokerMethod.Resolve();
-        
-        FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethodDefinition);
         ILProcessor invokerMethodProcessor = invokerMethodDefinition.Body.GetILProcessor();
         Instruction test = invokerMethodProcessor.Body.Instructions[3];
         invokerMethodProcessor.Body.Instructions.Clear();
@@ -73,22 +61,12 @@ public static class UnrealDelegateProcessor
         WeaverHelper.OptimizeMethod(invokerMethodDefinition);
     }
     
-    static void ProcessInitialize(TypeReference baseType, TypeDefinition delegateSignatureType)
+    static void ProcessInitialize(TypeDefinition type, FunctionMetaData functionMetaData)
     {
-        // Get the method from the delegate
-        MethodReference? invokeMethod = WeaverHelper.FindMethod(delegateSignatureType, "Invoke");
-        
-        if (invokeMethod.Parameters.Count == 0)
-        {
-            return;
-        }
-        
-        MethodDefinition initializeDelegate = WeaverHelper.AddMethodToType(baseType.Resolve(), 
+        MethodDefinition initializeDelegate = WeaverHelper.AddMethodToType(type, 
             InitializeUnrealDelegate, 
             WeaverHelper.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
             [WeaverHelper.IntPtrType]);
-        
-        FunctionMetaData functionMetaData = new FunctionMetaData(invokeMethod.Resolve());
 
         var processor = initializeDelegate.Body.GetILProcessor();
         

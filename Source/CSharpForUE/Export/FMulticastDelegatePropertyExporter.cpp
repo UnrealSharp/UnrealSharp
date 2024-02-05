@@ -76,11 +76,6 @@ bool UFMulticastDelegatePropertyExporter::ContainsDelegate(FMulticastScriptDeleg
 
 void* UFMulticastDelegatePropertyExporter::GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty)
 {
-	if (!DelegateProperty)
-	{
-		return nullptr;
-	}
-	
 	return DelegateProperty->SignatureFunction;
 }
 

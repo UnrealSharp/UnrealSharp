@@ -4,6 +4,7 @@ using System.Text.Json;
 using CommandLine;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.Rewriters;
 
@@ -100,10 +101,8 @@ public static class Program
             
             var readerParams = new ReaderParameters
             {
-                AssemblyResolver = resolver,
                 ReadSymbols = true,
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReadingMode = ReadingMode.Deferred
+                SymbolReaderProvider = new PdbReaderProvider(),
             };
 
             AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
@@ -144,7 +143,7 @@ public static class Program
             assembly.Write(assemblyOutputPath, new WriterParameters
             {
                 WriteSymbols = true,
-                SymbolWriterProvider = new PortablePdbWriterProvider(),
+                SymbolWriterProvider = new PdbWriterProvider(),
             });
         }
         catch (Exception ex)

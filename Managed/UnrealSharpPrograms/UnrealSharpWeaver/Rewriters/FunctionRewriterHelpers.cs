@@ -28,7 +28,7 @@ public static class FunctionRewriterHelpers
         {
             AddOffsetField(classDefinition, func.ReturnValue, func, func.Parameters.Length - 1, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
         }
-
+        
         if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
         {
             FieldAttributes baseMethodAttributes = FieldAttributes.Private;
