@@ -4,7 +4,7 @@
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
 
-UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, EFunctionFlags FunctionFlags, UStruct* ParentFunction, void* ManagedMethod)
+UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction, void* ManagedMethod)
 {
 	UCSFunction* NewFunction = NewObject<UCSFunction>(Outer, UCSFunction::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionFlags;
@@ -18,13 +18,15 @@ UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name
 	NewFunction->SetManagedMethod(ManagedMethod);
 	
 	FinalizeFunctionSetup(Outer, NewFunction);
+
+	FMetaDataHelper::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	
 	return NewFunction;
 }
 
 UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FFunctionMetaData& FunctionMetaData)
 {
-	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData.FunctionFlags);
+	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData, FunctionMetaData.FunctionFlags);
 
 	// Check if this function has a return value or is just void, otherwise skip.
 	if (FunctionMetaData.ReturnValue.Type->UnrealPropertyClass != "None")
@@ -46,7 +48,7 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction)
 {
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure);
-	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FunctionFlags, ParentFunction);
+	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FFunctionMetaData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
