@@ -72,6 +72,7 @@ public:
 
 	// Subclasses must override to export the C# property's get accessor, if property usage is supported.
 	virtual void ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const;
+	virtual void OnPropertyExported(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const;
 	
 	struct FunctionOverload
 	{
@@ -120,16 +121,16 @@ public:
 		void ExportSetter(FCSScriptBuilder& Builder) const;
 
 		const FCSNameMapper& GetScriptNameMapper() const { return Handler.GetScriptNameMapper(); }
-
-	private:
+		
 		void Initialize(ProtectionMode InProtectionMode, OverloadMode InOverloadMode, BlueprintVisibility InBlueprintVisibility);
 
 		enum class InvokeMode : uint8
 		{
 			Normal,
 			Getter,
-			Setter
+			Setter,
 		};
+		
 		void ExportInvoke(FCSScriptBuilder& Builder, InvokeMode Mode) const;
 
 		void ExportDeprecation(FCSScriptBuilder& Builder) const;
@@ -145,6 +146,7 @@ public:
 		bool bBlueprintEvent;
 		FString PinvokeFunction;
 		FString PinvokeFirstArg;
+		FString CustomInvoke;
 		FString ParamsStringCall;
 		FString ParamsStringAPIWithDefaults;
 		TArray<FunctionOverload> Overloads;

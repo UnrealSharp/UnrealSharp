@@ -96,6 +96,7 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 	}
 
 	ExportReferences(Property);
+	OnPropertyExported(Builder, Property, NativePropertyName);
 	Builder.AppendLine();
 }
 
@@ -232,6 +233,10 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 		Modifiers += TEXT("static ");
 		PinvokeFunction = FString::Printf(TEXT("%s.CallInvokeNativeStaticFunction"), UObjectCallbacks);
 		PinvokeFirstArg = TEXT("NativeClassPtr");
+	}
+	else if (Function.HasAnyFunctionFlags(FUNC_Delegate))
+	{
+		CustomInvoke = "ProcessDelegate(ParamsBuffer);";
 	}
 	else
 	{
@@ -408,11 +413,11 @@ void FPropertyTranslator::FunctionExporter::ExportFunctionVariables(FCSScriptBui
 {
 	const FString NativeMethodName = Function.GetName();
 	Builder.AppendLine(FString::Printf(TEXT("// Function %s"), *Function.GetPathName()));
-	Builder.AppendLine(FString::Printf(TEXT("%sIntPtr %s_NativeFunction;"), !bBlueprintEvent ? TEXT("static readonly ") : TEXT(""), *NativeMethodName));
+	Builder.AppendLine(FString::Printf(TEXT("%sIntPtr %s_NativeFunction;"), !bBlueprintEvent ? TEXT("static ") : TEXT(""), *NativeMethodName));
 
 	if (Function.NumParms > 0)
 	{
-		Builder.AppendLine(FString::Printf(TEXT("static readonly int %s_ParamsSize;"), *NativeMethodName));
+		Builder.AppendLine(FString::Printf(TEXT("static int %s_ParamsSize;"), *NativeMethodName));
 	}
 
 	for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
@@ -534,8 +539,16 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 		}
 
 		Builder.AppendLine();
-		Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, ParamsBuffer);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
-
+		
+		if (CustomInvoke.IsEmpty())
+		{
+			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, ParamsBuffer);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
+		}
+		else
+		{
+			Builder.AppendLine(CustomInvoke);
+		}
+		
 		if (ReturnProperty || Function.HasAnyFunctionFlags(FUNC_HasOutParms))
 		{
 			Builder.AppendLine();
@@ -790,11 +803,10 @@ void FPropertyTranslator::ExportInterfaceFunction(FCSScriptBuilder& Builder, UFu
 
 void FPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	Builder.AppendLine(FString::Printf(TEXT("static readonly int %s_Offset;"), *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("static int %s_Offset;"), *NativePropertyName));
 	if (Property->ArrayDim > 1)
 	{
-		check(IsSupportedInStaticArray());
-		Builder.AppendLine(FString::Printf(TEXT("static readonly int %s_Length;"), *NativePropertyName));
+		Builder.AppendLine(FString::Printf(TEXT("static int %s_Length;"), *NativePropertyName));
 		Builder.AppendLine(FString::Printf(TEXT("%s %s_Wrapper;"), *GetCSharpFixedSizeArrayType(Property), *NativePropertyName));
 	}
 }
@@ -813,6 +825,11 @@ void FPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const 
 		FString::Printf(TEXT("%s_Offset"), *NativePropertyName),
 		false,
 		false);
+}
+
+void FPropertyTranslator::OnPropertyExported(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
+{
+	
 }
 
 void FPropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
@@ -881,5 +898,5 @@ FString FPropertyTranslator::ExportMarshallerDelegates(const FProperty *Property
 
 void FPropertyTranslator:: ExportParameterVariables(FCSScriptBuilder& Builder, UFunction* Function, const FString& NativeMethodName, FProperty* ParamProperty, const FString& NativePropertyName) const
 {
-	Builder.AppendLine(FString::Printf(TEXT("static readonly int %s_%s_Offset;"), *NativeMethodName, *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("static int %s_%s_Offset;"), *NativeMethodName, *NativePropertyName));
 }

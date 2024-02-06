@@ -79,9 +79,14 @@ public class DelegateWrapperGenerator : ISourceGenerator
             
             GenerateAddFunction(stringBuilder, delegateSymbol);
             GenerateAddOperator(stringBuilder, delegateSymbol, className);
-
+            
             GenerateGetInvoker(stringBuilder, delegateSymbol);
-            GenerateInvoke(stringBuilder, delegateSymbol);
+            
+            //Check if the class has an Invoker method already
+            if (!classSymbol.GetMembers("Invoker").Any())
+            {
+                GenerateInvoke(stringBuilder, delegateSymbol);
+            }
             
             GenerateRemoveOperator(stringBuilder, delegateSymbol, className);
             GenerateRemoveFunction(stringBuilder, delegateSymbol);
@@ -91,7 +96,8 @@ public class DelegateWrapperGenerator : ISourceGenerator
             stringBuilder.AppendLine("}");
                     
             string source = stringBuilder.ToString();
-            context.AddSource($"{className}.generated.cs", SourceText.From(source, Encoding.UTF8));
+            
+            context.AddSource($"{namespaceName}.{className}.generated.cs", SourceText.From(source, Encoding.UTF8));
         }
     }
 

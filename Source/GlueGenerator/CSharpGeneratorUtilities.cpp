@@ -252,7 +252,12 @@ namespace ScriptGeneratorUtilities
 
 	bool IsInterfaceFunction(UFunction* Function)
 	{
-		UClass* Class = CastChecked<UClass>(Function->GetOuter());
+		UClass* Class = Cast<UClass>(Function->GetOuter());
+
+		if (!Class)
+		{
+			return false;
+		}
 
 		if (Class->HasAnyClassFlags(CLASS_Interface))
 		{

@@ -838,6 +838,20 @@ void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Build
 	}
 }
 
+void FCSGenerator::ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction* Function)
+{
+	FString NativeMethodName = Function->GetName();
+	Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);"), *NativeMethodName));
+	Builder.AppendLine(FString::Printf(TEXT("%s_ParamsSize = %s.CallGetNativeFunctionParamsSize(%s_NativeFunction);"), *NativeMethodName, UFunctionCallbacks, *NativeMethodName));
+	
+	for (TFieldIterator<FProperty> It(Function, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+	{
+		FProperty* Property = *It;
+		const FPropertyTranslator& ParamHandler = PropertyTranslators->Find(Property);
+		ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
+	}
+}
+
 void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties)
 {
 	//we already warn on conflicts when exporting the properties themselves, so here we can just silently skip them

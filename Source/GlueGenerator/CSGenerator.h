@@ -76,6 +76,7 @@ public:
 	void ExportClassFunctionsStaticConstruction(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedFunctions);
 	void ExportClassOverridableFunctionsStaticConstruction(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverrideableFunctions) const;
 	void ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
+	void ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportClassOverridableFunctions(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverridableFunctions);
 
 	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets) const;

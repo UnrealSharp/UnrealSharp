@@ -47,14 +47,14 @@ void FArrayPropertyTranslator::ExportParameterStaticConstruction(FCSScriptBuilde
 void FArrayPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
 	FPropertyTranslator::ExportPropertyVariables(Builder, Property, NativePropertyName);
-	Builder.AppendLine(FString::Printf(TEXT("static readonly IntPtr %s_NativeProperty;"), *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s_NativeProperty;"), *NativePropertyName));
 	Builder.AppendLine(FString::Printf(TEXT("%s %s_Wrapper = null;"), *GetWrapperType(Property), *NativePropertyName));
 }
 
 void FArrayPropertyTranslator::ExportParameterVariables(FCSScriptBuilder& Builder, UFunction* Function, const FString& NativeMethodName, FProperty* ParamProperty, const FString& NativePropertyName) const
 {
 	FPropertyTranslator::ExportParameterVariables(Builder, Function, NativeMethodName, ParamProperty, NativePropertyName);
-	Builder.AppendLine(FString::Printf(TEXT("static readonly int %s_%s_ElementSize;"), *NativeMethodName, *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("static int %s_%s_ElementSize;"), *NativeMethodName, *NativePropertyName));
 }
 
 void FArrayPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const

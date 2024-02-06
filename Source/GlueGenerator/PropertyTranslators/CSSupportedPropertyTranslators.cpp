@@ -78,6 +78,7 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));
 
 	AddPropertyTranslator(FMulticastSparseDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
+	AddPropertyTranslator(FMulticastInlineDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
 }
 
 const FPropertyTranslator& FCSSupportedPropertyTranslators::Find(const FProperty* Property) const

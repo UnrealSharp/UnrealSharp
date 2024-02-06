@@ -23,6 +23,10 @@ int32 UFPropertyExporter::GetPropertyOffset(FProperty* Property)
 int32 UFPropertyExporter::GetPropertyOffsetFromName(UStruct* InStruct, const char* InPropertyName)
 {
 	const FProperty* FoundProperty = GetNativePropertyFromName(InStruct, InPropertyName);
+	if (!FoundProperty)
+	{
+		return -1;
+	}
 	return FoundProperty->GetOffset_ForInternal();
 }
 
