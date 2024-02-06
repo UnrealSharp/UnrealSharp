@@ -25,6 +25,11 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
     {
         FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeDelegate, parameters);
     }
+    
+    public void Clear()
+    {
+        FMulticastDelegatePropertyExporter.CallClearDelegate(NativeDelegate);
+    }
 
     protected IntPtr NativeDelegate;
 }

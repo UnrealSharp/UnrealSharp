@@ -33,33 +33,18 @@ void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastScriptDelegat
 	DelegateProperty->Remove(NewScriptDelegate);
 }
 
-void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object)
+void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastScriptDelegate* DelegateProperty)
 {
-	if (!IsValid(Object) || !DelegateProperty)
-	{
-		return;
-	}
-	
 	DelegateProperty->Clear();
 }
 
 void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters)
 {
-	if (!DelegateProperty)
-	{
-		return;
-	}
-	
 	DelegateProperty->ProcessMulticastDelegate<UObject>(Parameters);
 }
 
 void UFMulticastDelegatePropertyExporter::ToString(FMulticastScriptDelegate* DelegateProperty, FString& OutString)
 {
-	if (!DelegateProperty)
-	{
-		return;
-	}
-
 	OutString = DelegateProperty->ToString<UObject>();
 }
 
