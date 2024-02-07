@@ -124,6 +124,13 @@ public class FunctionMetaData : BaseMetaData
                 throw new InvalidUnrealFunctionException(method, "Unknown access level");
         }
 
+        CustomAttribute? ufunctionAttribute = FindAttribute(method.CustomAttributes, "UFunctionAttribute");
+
+        if (ufunctionAttribute != null)
+        {
+            AddBaseAttributes(ufunctionAttribute);
+        }
+
         if (method.IsStatic)
         {
             flags |= FunctionFlags.Static;

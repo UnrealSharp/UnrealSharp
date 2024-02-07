@@ -21,6 +21,7 @@ public:
 	static UCSFunction* CreateFunction(
 		UClass* Outer,
 		const FName& Name,
+		const FFunctionMetaData& FunctionMetaData,
 		EFunctionFlags FunctionFlags = FUNC_None,
 		UStruct* ParentFunction = nullptr,
 		void* ManagedMethod = nullptr);

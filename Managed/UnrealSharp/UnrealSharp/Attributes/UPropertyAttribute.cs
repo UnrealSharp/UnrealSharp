@@ -32,8 +32,8 @@ public enum PropertyFlags : ulong
     [PropertyFlagsMap(NativePropertyFlags.BlueprintReadOnly)]
     BlueprintReadOnly = NativePropertyFlags.BlueprintReadOnly | NativePropertyFlags.BlueprintVisible,
     
-    [PropertyFlagsMap(NativePropertyFlags.Edit)]
-    BlueprintReadWrite = NativePropertyFlags.Edit | NativePropertyFlags.BlueprintVisible,
+    [PropertyFlagsMap(NativePropertyFlags.BlueprintReadWrite)]
+    BlueprintReadWrite = NativePropertyFlags.BlueprintReadWrite,
     
     [PropertyFlagsMap(NativePropertyFlags.Net)]
     Replicated = NativePropertyFlags.Net,
@@ -56,7 +56,7 @@ public enum PropertyFlags : ulong
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 [PropertyFlagsMap]
-public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None) : Attribute
+public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None) : BaseUAttribute
 {
     public PropertyFlags Flags
     {

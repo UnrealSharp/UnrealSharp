@@ -150,6 +150,23 @@ public class BaseMetaData
             }
         }
     }
+
+    public void AddBaseAttributes(CustomAttribute? baseAttribute)
+    {
+        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
+
+        if (displayNameArgument.HasValue)
+        {
+            MetaData.Add("DisplayName", (string) displayNameArgument.Value.Value);
+        }
+
+        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(baseAttribute, "Category");
+
+        if (categoryArgument.HasValue)
+        {
+            MetaData.Add("Category", (string) categoryArgument.Value.Value);
+        }
+    }
     
     protected static bool GetBoolMetadata(Dictionary<string, string> dictionary, string key)
     {

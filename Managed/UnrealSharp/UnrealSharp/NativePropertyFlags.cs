@@ -74,9 +74,11 @@ public enum NativePropertyFlags : ulong
     /** all the properties that should never be loaded or saved */
     ComputedFlags = IsPlainOldData | NoDestructor | ZeroConstructor | HasGetValueTypeHash,
 
-    EditDefaultsOnly = Edit | BlueprintVisible | DisableEditOnInstance,
-    EditInstanceOnly = Edit | BlueprintVisible,
-    EditAnywhere = Edit | BlueprintVisible | BlueprintReadOnly,
+    EditDefaultsOnly = Edit | DisableEditOnInstance,
+    EditInstanceOnly = Edit | DisableEditOnTemplate,
+    EditAnywhere = Edit,
+    
+    BlueprintReadWrite = BlueprintVisible,
 
     AllFlags = 0xFFFFFFFFFFFFFFFF
 }

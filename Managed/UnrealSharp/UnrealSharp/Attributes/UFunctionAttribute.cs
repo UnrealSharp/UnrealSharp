@@ -42,7 +42,7 @@ public enum FunctionFlags
 
 [AttributeUsage(AttributeTargets.Method)]
 [FunctionFlagsMap(NativeFunctionFlags.Native)] 
-public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None) : Attribute
+public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None) : BaseUAttribute
 {
     public FunctionFlags Flags { get; private set; } = flags;
 }
