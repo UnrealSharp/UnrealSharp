@@ -131,6 +131,9 @@ public class PropertyMetaData : BaseMetaData
         }
         
         CustomAttribute? upropertyAttribute = FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+
+        AddBaseAttributes(upropertyAttribute);
+
         CustomAttributeArgument? blueprintSetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintSetter");
         
         if (blueprintSetterArgument.HasValue)
