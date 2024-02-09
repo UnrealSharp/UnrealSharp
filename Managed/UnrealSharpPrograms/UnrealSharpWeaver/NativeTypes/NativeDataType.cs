@@ -32,18 +32,21 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }
     public PropertyType PropertyType { get; set; } = propertyType;
+    public virtual bool IsBlittable { get { return false; } }
+    public virtual bool IsPlainOldData { get { return false; } }
     
+    // Non-json properties
     // Generic instance type for fixed-size array wrapper. Populated only when ArrayDim > 1.
     protected TypeReference FixedSizeArrayWrapperType;
     
     // Instance backing field for fixed-size array wrapper. Populated only when ArrayDim > 1.
     protected FieldDefinition FixedSizeArrayWrapperField;
+    
+    protected FieldDefinition? BackingField;
 
     private TypeReference ToNativeDelegateType;
     private TypeReference FromNativeDelegateType;
-
-    public virtual bool IsBlittable { get { return false; } }
-    public virtual bool IsPlainOldData { get { return false; } }
+    // End non-json properties
 
     protected static ILProcessor InitPropertyAccessor(MethodDefinition method)
     {
@@ -52,6 +55,16 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
         ILProcessor processor = method.Body.GetILProcessor();
         method.Body.Instructions.Clear();
         return processor;
+    }
+    
+    protected void AddBackingField(TypeDefinition type, PropertyMetaData propertyMetaData)
+    {
+        if (BackingField != null)
+        {
+            throw new Exception($"Backing field already exists for {propertyMetaData.Name} in {type.FullName}");
+        }
+        
+        BackingField = WeaverHelper.AddFieldToType(type, $"{propertyMetaData.Name}_BackingField", CSharpType, FieldAttributes.Private);
     }
     
     public static Instruction[] GetArgumentBufferInstructions(ILProcessor processor, Instruction? loadBufferInstruction, FieldDefinition offsetField)

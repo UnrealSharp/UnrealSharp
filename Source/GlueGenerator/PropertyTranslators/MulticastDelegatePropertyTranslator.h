@@ -20,5 +20,7 @@ protected:
 	virtual void OnPropertyExported(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const override;
 	//End of implementation
 
+	static FString GetBackingFieldName(const FProperty* Property);
+
 	TSet<FName> ExportedDelegates;
 };

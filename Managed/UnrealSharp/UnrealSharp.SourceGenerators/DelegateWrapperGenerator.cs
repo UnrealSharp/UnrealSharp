@@ -160,7 +160,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
         CastToUnrealSharpObject(stringBuilder);
-        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallAddDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
+        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
@@ -267,7 +267,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
         CastToUnrealSharpObject(stringBuilder, "false");
-        stringBuilder.AppendLine($"            return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name).ToManagedBool();");
+        stringBuilder.AppendLine($"            return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeProperty, NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name).ToManagedBool();");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
@@ -304,7 +304,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine("        try");
         stringBuilder.AppendLine("        {");
         CastToUnrealSharpObject(stringBuilder);
-        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
+        stringBuilder.AppendLine($"            FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeProperty, NativeDelegate, unrealSharpObject.NativeObject, action.Method.Name);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");

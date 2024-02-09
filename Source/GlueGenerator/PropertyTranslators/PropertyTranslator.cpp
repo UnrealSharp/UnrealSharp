@@ -794,6 +794,16 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 	Builder.AppendLine();
 }
 
+void FPropertyTranslator::AddNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName)
+{
+	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s;"), *GetNativePropertyField(PropertyName)));
+}
+
+FString FPropertyTranslator::GetNativePropertyField(const FString& PropertyName)
+{
+	return FString::Printf(TEXT("%s_NativeProperty"), *PropertyName);
+}
+
 void FPropertyTranslator::ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const
 {
 	FunctionExporter Exporter(*this, *Function);

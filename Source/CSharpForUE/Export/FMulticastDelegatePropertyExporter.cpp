@@ -7,48 +7,33 @@ void UFMulticastDelegatePropertyExporter::ExportFunctions(FRegisterExportedFunct
 	EXPORT_FUNCTION(ClearDelegate)
 	EXPORT_FUNCTION(BroadcastDelegate)
 	EXPORT_FUNCTION(GetSignatureFunction)
-	EXPORT_FUNCTION(ToString)
 	EXPORT_FUNCTION(ContainsDelegate)
 }
 
-void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
+void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)
 {
-	if (!DelegateProperty)
-	{
-		return;
-	}
-
 	FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);
-	DelegateProperty->Add(NewScriptDelegate);
+	DelegateProperty->AddDelegate(NewScriptDelegate, nullptr, Delegate);
 }
 
-void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
+void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)
 {
-	if (!DelegateProperty)
-	{
-		return;
-	}
-
 	FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);
-	DelegateProperty->Remove(NewScriptDelegate);
+	DelegateProperty->RemoveDelegate(NewScriptDelegate, nullptr, Delegate);
 }
 
-void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastScriptDelegate* DelegateProperty)
+void UFMulticastDelegatePropertyExporter::ClearDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate)
 {
-	DelegateProperty->Clear();
+	DelegateProperty->ClearDelegate(nullptr, Delegate);
 }
 
-void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, void* Parameters)
+void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, void* Parameters)
 {
-	DelegateProperty->ProcessMulticastDelegate<UObject>(Parameters);
+	Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+	Delegate->ProcessMulticastDelegate<UObject>(Parameters);
 }
 
-void UFMulticastDelegatePropertyExporter::ToString(FMulticastScriptDelegate* DelegateProperty, FString& OutString)
-{
-	OutString = DelegateProperty->ToString<UObject>();
-}
-
-bool UFMulticastDelegatePropertyExporter::ContainsDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Target, const char* FunctionName)
+bool UFMulticastDelegatePropertyExporter::ContainsDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)
 {
 	if (!DelegateProperty || !IsValid(Target))
 	{
@@ -56,7 +41,9 @@ bool UFMulticastDelegatePropertyExporter::ContainsDelegate(FMulticastScriptDeleg
 	}
 
 	FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);
-	return DelegateProperty->Contains(NewScriptDelegate);
+	Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+	
+	return Delegate->Contains(NewScriptDelegate);
 }
 
 void* UFMulticastDelegatePropertyExporter::GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty)
@@ -69,4 +56,15 @@ FScriptDelegate UFMulticastDelegatePropertyExporter::MakeScriptDelegate(UObject*
 	FScriptDelegate NewDelegate;
 	NewDelegate.BindUFunction(Target, FunctionName);
 	return NewDelegate;
+}
+
+const FMulticastScriptDelegate* UFMulticastDelegatePropertyExporter::TryGetSparseMulticastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate)
+{
+	// If the delegate is a sparse delegate, we need to get the multicast delegate from FSparseDelegate wrapper.
+	if (DelegateProperty->IsA<FMulticastSparseDelegateProperty>())
+	{
+		Delegate = DelegateProperty->GetMulticastDelegate(Delegate);
+	}
+
+	return Delegate;
 }
