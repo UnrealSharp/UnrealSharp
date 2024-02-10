@@ -4,8 +4,8 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataBlittableStructTypeBase : NativeDataStructType
 {
-    public NativeDataBlittableStructTypeBase(TypeReference structType, int arrayDim, string unrealPropertyName, PropertyType propertyType = PropertyType.Struct) 
-        : base(structType, "BlittableMarshaller`1", arrayDim, unrealPropertyName, propertyType)
+    public NativeDataBlittableStructTypeBase(TypeReference structType, int arrayDim, PropertyType propertyType = PropertyType.Struct) 
+        : base(structType, "BlittableMarshaller`1", arrayDim, propertyType)
     {
         
     }

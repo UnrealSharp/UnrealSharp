@@ -26,6 +26,7 @@ public enum PropertyType
     Class,
 
     Object,
+    ObjectPtr,
     DefaultComponent,
     LazyObject,
     WeakObject,

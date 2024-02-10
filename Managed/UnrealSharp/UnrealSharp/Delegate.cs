@@ -1,6 +1,10 @@
-﻿namespace UnrealSharp;
+﻿using System.Runtime.InteropServices;
+using UnrealSharp.Interop;
 
-internal struct DelegateData
+namespace UnrealSharp;
+
+[StructLayout(LayoutKind.Sequential)]
+public struct DelegateData
 {
     public WeakObjectData Object;
     public Name FunctionName;
@@ -8,18 +12,30 @@ internal struct DelegateData
 
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : class
 {
-    private DelegateData _data;
-    
-    public Name FunctionName => _data.FunctionName;
-    public WeakObject<UnrealSharpObject> Object => new(_data.Object);
+    private readonly DelegateData _data;
     
     internal Delegate(DelegateData data)
     {
         _data = data;
     }
+    
+    public Delegate(CoreUObject.Object targetObject, Name functionName)
+    {
+        _data = new DelegateData
+        {
+            FunctionName = functionName
+        };
+        
+        FWeakObjectPtrExporter.CallSetObject(ref _data.Object, targetObject.NativeObject);
+    }
+
+    public Delegate()
+    {
+        
+    }
 }
 
-public class SimpleDelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new()
+public class SimpleDelegateMarshaller<TDelegate> where TDelegate : TDelegate, new()
 {
     public static TDelegate FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {

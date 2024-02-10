@@ -308,6 +308,7 @@ void FDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObj
 {
 	FUnrealType::SerializeFromJson(JsonObject);
 	SignatureFunction.SerializeFromJson(JsonObject->GetObjectField("Signature"));
+	SignatureFunction.Name = "";
 }
 
 void FInterfaceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)

@@ -6,7 +6,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataDefaultComponent : NativeDataSimpleType
 {
-    public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, string unrealClass, int arrayDim) 
+    public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, int arrayDim) 
         : base(typeRef, marshallerName, arrayDim, PropertyType.DefaultComponent)
     {
         var upropertyAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");

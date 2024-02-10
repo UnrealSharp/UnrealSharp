@@ -44,6 +44,7 @@ enum class ECSPropertyType : uint8
 	Class,
 
 	Object,
+	ObjectPtr,
 	DefaultComponent,
 	LazyObject,
 	WeakObject,
