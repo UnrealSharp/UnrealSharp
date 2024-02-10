@@ -8,12 +8,12 @@ using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName, string unrealClass, int arrayDim, PropertyType propertyType) 
-    : NativeDataType(typeRef, unrealClass, arrayDim, propertyType)
+public abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName, int arrayDim, PropertyType propertyType) 
+    : NativeDataType(typeRef, arrayDim, propertyType)
 {
-    TypeReference MarshallerClass;
-    MethodReference ToNative;
-    MethodReference FromNative;
+    protected TypeReference MarshallerClass;
+    protected MethodReference ToNative;
+    protected MethodReference FromNative;
     
     private bool IsReference;
     public override bool IsPlainOldData => true;

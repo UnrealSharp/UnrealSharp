@@ -5,35 +5,13 @@ using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-class NativeDataMulticastDelegate : NativeDataSimpleType
+class NativeDataMulticastDelegate : NativeDataBaseDelegateType
 {
-    public FunctionMetaData Signature { get; set; }
-    
-    public NativeDataMulticastDelegate(TypeReference delegateType, string unrealClass, int arrayDim) 
-        : base(delegateType, "DelegateMarshaller`1", unrealClass, arrayDim, PropertyType.Delegate)
+    public NativeDataMulticastDelegate(TypeReference delegateType) 
+        : base(delegateType, "DelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
     {
         NeedsNativePropertyField = true;
-        
-        foreach (TypeDefinition nestedType in delegateType.Resolve().NestedTypes)
-        {
-            foreach (MethodDefinition method in nestedType.Methods)
-            {
-                if (method.Name != "Invoke")
-                {
-                    continue;
-                }
-
-                Signature = new FunctionMetaData(method)
-                {
-                    // Don't give a name to the delegate function, it'll cause a name collision with other delegates in the same class.
-                    // Let Unreal Engine handle the name generation.
-                    Name = "",
-                    FunctionFlags = FunctionFlags.Delegate | FunctionFlags.MulticastDelegate
-                };
-
-                return;
-            }
-        }
+        PropertyType = Signature.Parameters.Length == 0 ? PropertyType.MulticastInlineDelegate : PropertyType.MulticastSparseDelegate;
     }
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
@@ -60,21 +38,29 @@ class NativeDataMulticastDelegate : NativeDataSimpleType
         ILProcessor processor = BeginSimpleGetter(getter);
         Instruction loadOwner = processor.Create(OpCodes.Ldarg_0);
         
-        // Make an if-statement to check if the backing field is valid.
-        // if (MyDelegate_BackingField == null)
-        // {
-        // }
+        //processor.Emit(OpCodes.Ldarg_0);
+        //processor.Emit(OpCodes.Ldfld, BackingField);
+        //var ifEnd = Instruction.Create(OpCodes.Nop);
+        //processor.Emit(OpCodes.Brtrue, ifEnd);
+        
+        // Push the native property field onto the stack
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
+        
+        foreach (var i in loadBufferInstructions)
         {
-            processor.Append(loadOwner);
-            processor.Emit(OpCodes.Ldfld, nativePropertyField);
-            processor.Append(processor.Create(OpCodes.Brfalse, processor.Create(OpCodes.Ldarg_0)));
+            processor.Append(i);
         }
         
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
-        List<Instruction> allCleanupInstructions = loadBufferInstructions.ToList();
-        allCleanupInstructions.Add(Instruction.Create(OpCodes.Ldsfld, nativePropertyField));
+        // Push the native property field onto the stack
+        processor.Emit(OpCodes.Ldsfld, nativePropertyField);
         
-        WriteMarshalFromNative(processor, type, allCleanupInstructions.ToArray(), processor.Create(OpCodes.Ldc_I4_0), loadOwner);
+        // Push 0 onto the stack
+        processor.Emit(OpCodes.Ldc_I4_0);
+        
+        // Push this onto the stack
+        processor.Append(loadOwner);
+
+        processor.Emit(OpCodes.Call, FromNative);
         EndSimpleGetter(processor, getter);
     }
 }

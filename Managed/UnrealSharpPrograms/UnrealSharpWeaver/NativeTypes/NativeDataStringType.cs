@@ -12,7 +12,7 @@ class NativeDataStringType : NativeDataType
     private MethodReference ToNativeWithCleanup;
     private MethodReference DestructInstance;
 
-    public NativeDataStringType(TypeReference typeRef, int arrayDim) : base(typeRef, "StrProperty", arrayDim, PropertyType.Str)
+    public NativeDataStringType(TypeReference typeRef, int arrayDim) : base(typeRef, arrayDim, PropertyType.Str)
     {
         NeedsNativePropertyField = true;
     }

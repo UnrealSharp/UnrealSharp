@@ -19,7 +19,7 @@ public class FunctionMetaData : BaseMetaData
     public FunctionRewriteInfo RewriteInfo;
     // End non-serialized
     
-    public FunctionMetaData(MethodDefinition method)
+    public FunctionMetaData(MethodDefinition method, bool bOnlyCollectMetaData = false)
     {
         MethodDefinition = method;
         Name = method.Name;
@@ -39,7 +39,7 @@ public class FunctionMetaData : BaseMetaData
 
         bool hasOutParams = false;
         
-        if (method.ReturnType != WeaverHelper.VoidTypeRef)
+        if (method.ReturnType.Name != WeaverHelper.VoidTypeRef.Name)
         {
             hasOutParams = true;
             try
@@ -152,6 +152,11 @@ public class FunctionMetaData : BaseMetaData
         
         FunctionFlags = flags;
 
+        if (bOnlyCollectMetaData)
+        {
+            return;
+        }
+        
         RewriteInfo = new FunctionRewriteInfo(this);
         FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
     }

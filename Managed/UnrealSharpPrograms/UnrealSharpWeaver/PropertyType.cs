@@ -34,7 +34,8 @@ public enum PropertyType
     SoftObject,
 
     Delegate,
-    MulticastDelegate,
+    MulticastInlineDelegate,
+    MulticastSparseDelegate,
 
     Array,
     Map,

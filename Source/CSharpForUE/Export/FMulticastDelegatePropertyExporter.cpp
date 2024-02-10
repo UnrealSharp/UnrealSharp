@@ -35,14 +35,8 @@ void UFMulticastDelegatePropertyExporter::BroadcastDelegate(FMulticastDelegatePr
 
 bool UFMulticastDelegatePropertyExporter::ContainsDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)
 {
-	if (!DelegateProperty || !IsValid(Target))
-	{
-		return false;
-	}
-
 	FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);
 	Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
-	
 	return Delegate->Contains(NewScriptDelegate);
 }
 

@@ -20,6 +20,11 @@ public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObj
         FWeakObjectPtrExporter.CallSetObject(ref _data, obj?.NativeObject ?? IntPtr.Zero);
     }
     
+    internal WeakObject(WeakObjectData data)
+    {
+        _data = data;
+    }
+    
     public static implicit operator WeakObject<T>(T obj)
     {
         return new WeakObject<T>(obj);

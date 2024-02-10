@@ -15,6 +15,7 @@
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "CSDeveloperSettings.h"
+#include "Animation/WidgetAnimation.h"
 #include "Misc/MessageDialog.h"
 
 FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;

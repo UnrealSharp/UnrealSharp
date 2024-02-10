@@ -5,7 +5,7 @@
 #include "UObject/Script.h"
 #include "UObject/ObjectMacros.h"
 
-struct FMulticastDelegateMetaData;
+struct FDelegateMetaData;
 struct FFunctionMetaData;
 struct FTypeReferenceMetaData;
 struct FClassMetaData;
@@ -52,7 +52,8 @@ enum class ECSPropertyType : uint8
 	SoftObject,
 
 	Delegate,
-	MulticastDelegate,
+	MulticastInlineDelegate,
+	MulticastSparseDelegate,
 
 	Array,
 	Map,
@@ -238,7 +239,7 @@ struct FFunctionMetaData : FMemberMetaData
 	//End of implementation
 };
 
-struct FMulticastDelegateMetaData : FUnrealType
+struct FDelegateMetaData : FUnrealType
 {
 	FFunctionMetaData SignatureFunction;
 

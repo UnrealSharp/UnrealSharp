@@ -5,7 +5,7 @@ using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(textType, "TextProperty", arrayDim, PropertyType.Text)
+class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(textType, arrayDim, PropertyType.Text)
 {
     private FieldDefinition MarshalerField;
     private MethodReference MarshalerCtor;

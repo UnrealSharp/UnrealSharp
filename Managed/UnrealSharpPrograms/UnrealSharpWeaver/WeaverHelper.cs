@@ -462,10 +462,15 @@ public static class WeaverHelper
             {
                 return new NativeDataTextType(typeRef, arrayDim);
             }
+            
+            if (typeDef.BaseType.Name.Contains("Delegate"))
+            {
+                return new NativeDataDelegateType(typeRef);
+            }
 
             if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
             {
-                return new NativeDataMulticastDelegate(typeDef, "MulticastInlineDelegateProperty", arrayDim);
+                return new NativeDataMulticastDelegate(typeDef);
             }
             
             if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
@@ -646,7 +651,8 @@ public static class WeaverHelper
                     return Instruction.Create(OpCodes.Ldobj, param.ParameterType.GetElementType());
 
                 case PropertyType.Delegate:
-                case PropertyType.MulticastDelegate:
+                case PropertyType.MulticastInlineDelegate:
+                case PropertyType.MulticastSparseDelegate:
                     // Delegate/multicast delegates in C# are implemented as classes, use Ldind_Ref
                     return Instruction.Create(OpCodes.Ldind_Ref);
 
@@ -721,7 +727,8 @@ public static class WeaverHelper
                     return Instruction.Create(OpCodes.Stobj, param.ParameterType.GetElementType());
 
                 case PropertyType.Delegate:
-                case PropertyType.MulticastDelegate:
+                case PropertyType.MulticastSparseDelegate:
+                case PropertyType.MulticastInlineDelegate:
                     // Delegate/multicast delegates in C# are implemented as classes, use Stind_Ref
                     return Instruction.Create(OpCodes.Stind_Ref);
 

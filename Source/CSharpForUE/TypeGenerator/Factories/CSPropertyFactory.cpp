@@ -38,7 +38,9 @@ void FCSPropertyFactory::InitializePropertyFactory()
 	AddProperty<FStructProperty>(&CreateStructProperty);
 	AddProperty<FArrayProperty>(&CreateArrayProperty);
 	AddProperty<FEnumProperty>(&CreateEnumProperty);
-	AddProperty<FMulticastInlineDelegateProperty>(&CreateDelegateProperty);
+	AddProperty<FMulticastInlineDelegateProperty>(&CreateMulticastDelegateProperty);
+
+	AddProperty<FDelegateProperty>(&CreateDelegateProperty);
 }
 
 template <typename Property>
@@ -135,13 +137,32 @@ FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FProperty
 
 FProperty* FCSPropertyFactory::CreateDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
 {
-	TSharedPtr<FMulticastDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FMulticastDelegateMetaData>();
+	TSharedPtr<FDelegateMetaData> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
+	FDelegateProperty* DelegateProperty = CreateSimpleProperty<FDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	DelegateProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(CastChecked<UClass>(Outer), DelegateMetaData->SignatureFunction);
+	return DelegateProperty;
+}
+
+FProperty* FCSPropertyFactory::CreateMulticastDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+{
+	TSharedPtr<FDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
 
 	UClass* Class = CastChecked<UClass>(Outer);
-	FMulticastInlineDelegateProperty* DelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
-	DelegateProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
+	UFunction* SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
+
+	FMulticastDelegateProperty* MulticastDelegateProperty;
 	
-	return DelegateProperty;
+	if (SignatureFunction->NumParms)
+	{
+		MulticastDelegateProperty = CreateSimpleProperty<FMulticastSparseDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	}
+	else
+	{
+		MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	}
+
+	MulticastDelegateProperty->SignatureFunction = SignatureFunction;
+	return MulticastDelegateProperty;
 }
 
 template<typename PrimitiveProperty>

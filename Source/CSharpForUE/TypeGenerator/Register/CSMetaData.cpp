@@ -304,7 +304,7 @@ void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)
 
 
 
-void FMulticastDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
+void FDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FUnrealType::SerializeFromJson(JsonObject);
 	SignatureFunction.SerializeFromJson(JsonObject->GetObjectField("Signature"));

@@ -24,7 +24,7 @@ class NativeDataArrayType : NativeDataType
     private VariableDefinition MarshalingLocal;
     private FieldDefinition ElementSizeField;
 
-    public NativeDataArrayType(TypeReference arrayType, int arrayDim, TypeReference innerType) : base(arrayType, "ArrayProperty", arrayDim, PropertyType.Array)
+    public NativeDataArrayType(TypeReference arrayType, int arrayDim, TypeReference innerType) : base(arrayType, arrayDim, PropertyType.Array)
     {
         InnerProperty = PropertyMetaData.FromTypeReference(innerType, "Inner");
         NeedsNativePropertyField = true;

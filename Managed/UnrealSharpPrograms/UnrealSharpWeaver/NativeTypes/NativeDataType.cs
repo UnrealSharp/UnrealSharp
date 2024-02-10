@@ -24,11 +24,10 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataDefaultComponent))]
 [JsonDerivedType(typeof(NativeDataSoftObjectType))]
 [JsonDerivedType(typeof(NativeDataSoftClassType))]
-public abstract class NativeDataType(TypeReference typeRef, string unrealClass, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
+public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
     internal TypeReference CSharpType { get; set; } = typeRef;
     public int ArrayDim { get; set; } = arrayDim;
-    public string UnrealPropertyClass { get; set; } = unrealClass;
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }
     public PropertyType PropertyType { get; set; } = propertyType;
@@ -296,12 +295,12 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
                        && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/FromNative")
                 select method).ToArray();
             ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
-            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(constructors[0], new TypeReference[] { CSharpType })));
+            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));
             processor.Emit(OpCodes.Stfld, FixedSizeArrayWrapperField);
 
             // Store branch target
             processor.Emit(OpCodes.Ldarg_0);
-            Instruction branchTarget = processor.Body.Instructions[processor.Body.Instructions.Count - 1];
+            Instruction branchTarget = processor.Body.Instructions[^1];
             processor.Emit(OpCodes.Ldfld, FixedSizeArrayWrapperField);
 
             // Insert branch
