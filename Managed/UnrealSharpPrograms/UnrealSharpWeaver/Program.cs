@@ -169,6 +169,7 @@ public static class Program
             List<TypeDefinition> structs = [];
             List<TypeDefinition> enums = [];
             List<TypeDefinition> interfaces = [];
+            List<TypeDefinition> multicastDelegates = [];
             List<TypeDefinition> delegates = [];
             
             try
@@ -195,6 +196,10 @@ public static class Program
                         }
                         else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
                         {
+                            multicastDelegates.Add(type);
+                        }
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
+                        {
                             delegates.Add(type);
                         }
                     }
@@ -206,10 +211,11 @@ public static class Program
                 throw;
             }
             
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
+            UnrealDelegateProcessor.ProcessDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
-            UnrealDelegateProcessor.ProcessDelegateExtensions(delegates);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)

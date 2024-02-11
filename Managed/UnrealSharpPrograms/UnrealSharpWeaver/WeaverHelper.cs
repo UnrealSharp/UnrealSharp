@@ -298,14 +298,14 @@ public static class WeaverHelper
         return default;
     }
     
-    public static TypeDefinition CreateNewType(AssemblyDefinition assembly, string classNamespace, string newTypeName, TypeAttributes newTypeAttributes, TypeReference? baseType = null)
+    public static TypeDefinition CreateNewClass(AssemblyDefinition assembly, string classNamespace, string className, TypeAttributes attributes, TypeReference? parentClass = null)
     {
-        if (baseType == null)
+        if (parentClass == null)
         {
-            baseType = assembly.MainModule.TypeSystem.Object;
+            parentClass = assembly.MainModule.TypeSystem.Object;
         }
         
-        TypeDefinition newType = new TypeDefinition(classNamespace, newTypeName, newTypeAttributes, baseType);
+        TypeDefinition newType = new TypeDefinition(classNamespace, className, attributes, parentClass);
         assembly.MainModule.Types.Add(newType);
         return newType;
     }
@@ -332,6 +332,34 @@ public static class WeaverHelper
         {
             method.Body.Instructions.RemoveAt(method.Body.Instructions.Count - 1);
         }
+    }
+
+    public static MethodDefinition AddToNativeMethod(TypeDefinition type, TypeDefinition valueType, TypeReference[]? parameters = null)
+    {
+        if (parameters == null)
+        {
+            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType, valueType];
+        }
+        
+        MethodDefinition toNativeMethod = AddMethodToType(type, "ToNative", 
+            VoidTypeRef,
+            MethodAttributes.Public | MethodAttributes.Static, parameters);
+
+        return toNativeMethod;
+    }
+    
+    public static MethodDefinition AddFromNativeMethod(TypeDefinition type, TypeDefinition returnType, TypeReference[]? parameters = null)
+    {
+        if (parameters == null)
+        {
+            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType];
+        }
+        
+        MethodDefinition fromNative = AddMethodToType(type, "FromNative", 
+            returnType,
+            MethodAttributes.Public | MethodAttributes.Static, parameters);
+
+        return fromNative;
     }
     
     public static NativeDataType GetDataType(TypeReference typeRef, string propertyName, Collection<CustomAttribute>? customAttributes)
@@ -465,7 +493,7 @@ public static class WeaverHelper
             
             if (typeDef.BaseType.Name.Contains("Delegate"))
             {
-                return new NativeDataDelegateType(typeRef);
+                return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
             }
 
             if (typeDef.BaseType.Name.Contains("MulticastDelegate"))

@@ -121,7 +121,7 @@ public static class UnrealStructProcessor
         
         // Create a marshaller class for the struct.
         {
-            TypeDefinition structMarshallerClass = WeaverHelper.CreateNewType(WeaverHelper.UserAssembly, 
+            TypeDefinition structMarshallerClass = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, 
                 structTypeDefinition.Namespace, WeaverHelper.GetMarshallerClassName(structTypeDefinition), 
                 TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
             

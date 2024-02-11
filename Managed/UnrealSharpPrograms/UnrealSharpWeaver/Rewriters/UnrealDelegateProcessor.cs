@@ -9,7 +9,7 @@ public static class UnrealDelegateProcessor
 {
     public static string InitializeUnrealDelegate = nameof(InitializeUnrealDelegate);
     
-    public static void ProcessDelegateExtensions(List<TypeDefinition> delegateExtensions)
+    public static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions)
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
@@ -24,6 +24,56 @@ public static class UnrealDelegateProcessor
             
             WriteInvokerMethod(invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
+        }
+    }
+    
+    public static void ProcessDelegates(List<TypeDefinition> delegateExtensions)
+    {
+        TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
+            WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "DelegateData");
+        
+        TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
+                WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
+        
+        MethodReference? blittabletoNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "ToNative");
+        MethodReference? blittablefromNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "FromNative");
+        
+        blittabletoNativeMethod = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
+        blittablefromNativeMethod = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
+        
+        foreach (TypeDefinition type in delegateExtensions)
+        {
+            TypeDefinition marshaller = WeaverHelper.CreateNewClass(
+                WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
+
+            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
+            
+            // Create a delegate from the marshaller
+            MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
+            ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
+            
+            MethodReference? constructor = WeaverHelper.FindMethod(type, ".ctor", true, delegateDataStruct);
+            constructor.DeclaringType = type;
+
+            VariableDefinition delegateDataVar = WeaverHelper.AddVariableToMethod(fromNativeMethod, delegateDataStruct);
+            
+            // Load native buffer
+            processor.Emit(OpCodes.Ldarg_0);
+            
+            // Load array offset of 0
+            processor.Emit(OpCodes.Ldc_I4_0);
+            
+            // Load null
+            processor.Emit(OpCodes.Ldnull);
+            
+            processor.Emit(OpCodes.Call, blittablefromNativeMethod);
+            processor.Emit(OpCodes.Stloc, delegateDataVar);
+            
+            processor.Emit(OpCodes.Ldloc, delegateDataVar);
+            
+            MethodReference? constructorDelegate = WeaverHelper.FindMethod(type, ".ctor", true, [delegateDataStruct]);
+            processor.Emit(OpCodes.Newobj, constructorDelegate);
+            processor.Emit(OpCodes.Ret);
         }
     }
 

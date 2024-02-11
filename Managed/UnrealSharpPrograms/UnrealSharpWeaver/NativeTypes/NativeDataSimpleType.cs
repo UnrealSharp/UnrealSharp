@@ -24,15 +24,10 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
 
         IsReference = propertyMetadata.PropertyFlags.HasFlag(PropertyFlags.OutParm);
         
-        TypeReference[] typeParams = [];
+        TypeReference[] typeParams = [WeaverHelper.ImportType(CSharpType)];
         
         if (marshallerName.EndsWith("`1"))
         {
-            if (typeParams.Length == 0)
-            {
-                typeParams = [WeaverHelper.ImportType(CSharpType)];
-            }
-            
             MarshallerClass = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName, typeParams);
         }
         else
