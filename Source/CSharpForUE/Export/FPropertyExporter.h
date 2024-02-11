@@ -20,6 +20,7 @@ public:
 private:
 	
 	static FProperty* GetNativePropertyFromName(UStruct* Struct, const char* PropertyName);
+	static int32 GetPropertyOffset(FProperty* Property);
 	static int32 GetPropertyOffsetFromName(UStruct* InStruct, const char* InPropertyName);
 	static int32 GetPropertyArrayDimFromName(UStruct* InStruct, const char* PropertyName);
 	

@@ -1,27 +1,32 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.MetaData;
 
 public class FunctionMetaData : BaseMetaData
 { 
-    public string Name { get; set; }
-    public PropertyMetaData[] Parameters { get; }
-    public PropertyMetaData? ReturnValue { get; }
+    public PropertyMetaData[] Parameters { get; set; }
+    public PropertyMetaData? ReturnValue { get; set; }
     public FunctionFlags FunctionFlags { get; set; }
-    public bool IsBlueprintEvent { get; private set; }
-    public bool IsRpc { get; private set; }
+    public bool IsBlueprintEvent { get; set; }
+    public bool IsRpc { get; set; }
     public AccessProtection AccessProtection { get; set; }
     
-    public FunctionMetaData(MethodDefinition method)
+    // Non-serialized for JSON
+    public readonly MethodDefinition MethodDefinition;
+    public FunctionRewriteInfo RewriteInfo;
+    // End non-serialized
+    
+    public FunctionMetaData(MethodDefinition method, bool bOnlyCollectMetaData = false)
     {
+        MethodDefinition = method;
         Name = method.Name;
 
         if (method.IsPublic)
         {
             AccessProtection = AccessProtection.Public;
-
         }
         else if (method.IsPrivate)
         {
@@ -33,7 +38,8 @@ public class FunctionMetaData : BaseMetaData
         }
 
         bool hasOutParams = false;
-        if (method.ReturnType.FullName != "System.Void")
+        
+        if (method.ReturnType.Name != WeaverHelper.VoidTypeRef.Name)
         {
             hasOutParams = true;
             try
@@ -50,6 +56,7 @@ public class FunctionMetaData : BaseMetaData
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
             ParameterDefinition param = method.Parameters[i];
+            
             if (param.IsOut)
             {
                 hasOutParams = true;
@@ -59,6 +66,7 @@ public class FunctionMetaData : BaseMetaData
             {
                 bool byReference = false;
                 TypeReference paramType = param.ParameterType;
+                
                 if (paramType.IsByReference)
                 {
                     byReference = true;
@@ -66,6 +74,7 @@ public class FunctionMetaData : BaseMetaData
                 }
 
                 ParameterType modifier = ParameterType.Value;
+                
                 if (param.IsOut)
                 {
                     modifier = ParameterType.Out;
@@ -88,12 +97,11 @@ public class FunctionMetaData : BaseMetaData
 
         if (hasOutParams)
         {
-            flags ^= FunctionFlags.HasOutParms;
+            flags |= FunctionFlags.HasOutParms;
         }
         
         AddMetadataAttributes(method.CustomAttributes);
-
-        // Do some extra verification.  Matches functionality in FHeaderParser.
+        
         if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
         {
             IsBlueprintEvent = true;
@@ -136,19 +144,28 @@ public class FunctionMetaData : BaseMetaData
             flags |= FunctionFlags.Static;
         }
         
-        FunctionFlags relevantFlags = FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient;
-        bool isRPC = (flags & relevantFlags) != 0;
+        const FunctionFlags netFlags = FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient;
+        bool isRpc = (flags & netFlags) != 0;
         
-        if (isRPC)
+        if (isRpc)
         {
             flags |= FunctionFlags.Net;
-            if (method.ReturnType.FullName != "System.Void")
+            
+            if (method.ReturnType == WeaverHelper.VoidTypeRef)
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }
         }
         
         FunctionFlags = flags;
+
+        if (bOnlyCollectMetaData)
+        {
+            return;
+        }
+        
+        RewriteInfo = new FunctionRewriteInfo(this);
+        FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
     }
 
     public static bool IsUFunction(MethodDefinition method)
@@ -177,13 +194,6 @@ public class FunctionMetaData : BaseMetaData
         return false;
     }
 
-    public static FunctionMetaData[] PopulateFunctionArray(TypeDefinition type)
-    {
-        bool success = true;
-        var functions = type.Methods.SelectWhereErrorEmit(IsUFunction,x => new FunctionMetaData(x), out success).ToArray();
-        return functions;
-    }
-
     public static bool IsInterfaceFunction(TypeDefinition type, string methodName)
     {
         foreach (var typeInterface in type.Interfaces)
@@ -198,5 +208,46 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         return false;
+    }
+    
+    public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, Instruction setFunctionPointer)
+    {
+        processor.Append(loadTypeField);
+        processor.Emit(OpCodes.Ldstr, Name);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionFromClassAndNameMethod);
+        processor.Append(setFunctionPointer);
+    }
+    
+    public void EmitFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)
+    {
+        foreach (var paramPair in RewriteInfo.FunctionParams)
+        {
+            FieldDefinition offsetField = paramPair.Item1;
+            PropertyMetaData param = paramPair.Item2;
+                
+            processor.Append(loadFunctionPointer);
+            processor.Emit(OpCodes.Ldstr, param.Name);
+            processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffsetFromNameMethod);
+            processor.Emit(OpCodes.Stsfld, offsetField);
+        }
+    }
+    
+    public void EmitFunctionParamSize(ILProcessor processor, Instruction loadFunctionPointer)
+    {
+        processor.Append(loadFunctionPointer);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionParamsSizeMethod);
+        processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
+    }
+    
+    public void EmitParamElementSize(ILProcessor processor, Instruction? loadFunctionPointer)
+    {
+        foreach (var pair in RewriteInfo.FunctionParamsElements)
+        {
+            FieldDefinition elementSizeField = pair.Item1;
+            processor.Append(loadFunctionPointer);
+            processor.Emit(OpCodes.Ldstr, Name);
+            processor.Emit(OpCodes.Call, WeaverHelper.GetArrayElementSizeMethod);
+            processor.Emit(OpCodes.Stsfld, elementSizeField);
+        }
     }
 }

@@ -25,6 +25,7 @@ public static class PropertyRewriterHelpers
             
             if (nativePropertyField != null)
             {
+                prop.NativePropertyField = nativePropertyField;
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
             }
 
@@ -36,6 +37,9 @@ public static class PropertyRewriterHelpers
 
             string backingFieldName = RemovePropertyBackingField(type, prop);
             removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
+            
+            prop.PropertyOffsetField = offsetField;
+            
         }
 
         RemoveBackingFieldReferences(type, removedBackingFields);
@@ -180,7 +184,7 @@ public static class PropertyRewriterHelpers
     public static FieldDefinition AddOffsetField(TypeDefinition type, PropertyMetaData prop, TypeReference int32TypeRef)
     {
         var field = new FieldDefinition(prop.Name + "_Offset",
-            FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private, int32TypeRef);
+            FieldAttributes.Static | FieldAttributes.Private, int32TypeRef);
         type.Fields.Add(field);
         return field;
     }

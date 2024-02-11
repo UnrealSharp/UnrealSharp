@@ -115,7 +115,7 @@ namespace ScriptGeneratorUtilities
 
 	bool IsBlueprintExposedProperty(const FProperty* InProp)
 	{
-		return InProp->HasAnyPropertyFlags(CPF_BlueprintVisible);
+		return InProp->HasAnyPropertyFlags(CPF_BlueprintVisible | CPF_BlueprintAssignable);
 	}
 
 	bool IsBlueprintExposedFunction(const UFunction* InFunc)
@@ -252,7 +252,12 @@ namespace ScriptGeneratorUtilities
 
 	bool IsInterfaceFunction(UFunction* Function)
 	{
-		UClass* Class = CastChecked<UClass>(Function->GetOuter());
+		UClass* Class = Cast<UClass>(Function->GetOuter());
+
+		if (!Class)
+		{
+			return false;
+		}
 
 		if (Class->HasAnyClassFlags(CLASS_Interface))
 		{

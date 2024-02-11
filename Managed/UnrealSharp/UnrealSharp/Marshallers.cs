@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
@@ -126,18 +127,5 @@ public static class StringMarshaller
             nativeString->ArrayNum = 0;
             nativeString->ArrayMax = 0;
         }
-    }
-}
-
-public static class DelegateMarshaller<T> where T : EventDispatcher 
-{
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SubclassOf<T> obj)
-    {
-        
-    }
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, string propertyName)
-    {
-        object[] args = [nativeBuffer, owner];
-        return (T) Activator.CreateInstance(typeof(T), args);
     }
 }

@@ -27,7 +27,6 @@ void FUnrealType::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	if (!JsonObject->Values.IsEmpty())
 	{
-		UnrealPropertyClass = *JsonObject->GetStringField("UnrealPropertyClass");
 		ArrayDim = JsonObject->GetIntegerField("ArrayDim");
 		PropertyType = static_cast<ECSPropertyType>(JsonObject->GetIntegerField("PropertyType"));
 	}
@@ -291,7 +290,6 @@ void FDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>&
 	IsRootComponent = JsonObject->GetBoolField("IsRootComponent");
 	AttachmentComponent = JsonObject->GetStringField("AttachmentComponent");
 	AttachmentSocket = JsonObject->GetStringField("AttachmentSocket");
-	UnrealPropertyClass = "ObjectProperty";
 }
 
 void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)
@@ -304,10 +302,11 @@ void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)
 
 
 
-void FMulticastDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
+void FDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FUnrealType::SerializeFromJson(JsonObject);
 	SignatureFunction.SerializeFromJson(JsonObject->GetObjectField("Signature"));
+	SignatureFunction.Name = "";
 }
 
 void FInterfaceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)

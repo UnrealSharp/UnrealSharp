@@ -24,26 +24,29 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataDefaultComponent))]
 [JsonDerivedType(typeof(NativeDataSoftObjectType))]
 [JsonDerivedType(typeof(NativeDataSoftClassType))]
-public abstract class NativeDataType(TypeReference typeRef, string unrealClass, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
+[JsonDerivedType(typeof(NativeDataDelegateType))]
+public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
     internal TypeReference CSharpType { get; set; } = typeRef;
     public int ArrayDim { get; set; } = arrayDim;
-    public string UnrealPropertyClass { get; set; } = unrealClass;
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }
     public PropertyType PropertyType { get; set; } = propertyType;
+    public virtual bool IsBlittable { get { return false; } }
+    public virtual bool IsPlainOldData { get { return false; } }
     
+    // Non-json properties
     // Generic instance type for fixed-size array wrapper. Populated only when ArrayDim > 1.
     protected TypeReference FixedSizeArrayWrapperType;
     
     // Instance backing field for fixed-size array wrapper. Populated only when ArrayDim > 1.
     protected FieldDefinition FixedSizeArrayWrapperField;
+    
+    protected FieldDefinition? BackingField;
 
     private TypeReference ToNativeDelegateType;
     private TypeReference FromNativeDelegateType;
-
-    public virtual bool IsBlittable { get { return false; } }
-    public virtual bool IsPlainOldData { get { return false; } }
+    // End non-json properties
 
     protected static ILProcessor InitPropertyAccessor(MethodDefinition method)
     {
@@ -52,6 +55,16 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
         ILProcessor processor = method.Body.GetILProcessor();
         method.Body.Instructions.Clear();
         return processor;
+    }
+    
+    protected void AddBackingField(TypeDefinition type, PropertyMetaData propertyMetaData)
+    {
+        if (BackingField != null)
+        {
+            throw new Exception($"Backing field already exists for {propertyMetaData.Name} in {type.FullName}");
+        }
+        
+        BackingField = WeaverHelper.AddFieldToType(type, $"{propertyMetaData.Name}_BackingField", CSharpType, FieldAttributes.Private);
     }
     
     public static Instruction[] GetArgumentBufferInstructions(ILProcessor processor, Instruction? loadBufferInstruction, FieldDefinition offsetField)
@@ -135,6 +148,12 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
         return processor;
     }
 
+    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
+        Instruction loadNativePointer, Instruction setNativePointer)
+    {
+        
+    }
+
     protected static void EndSimpleSetter(ILProcessor processor, MethodDefinition setter)
     {
         processor.Emit(OpCodes.Ret);
@@ -178,35 +197,35 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
 
     // Emits IL for a default constructible and possibly generic fixed array marshaling helper object.
     // If typeParams is null, a non-generic type is assumed.
-    protected void EmitSimpleMarshalerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
+    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
     {
-        AssemblyDefinition marshalerAssembly;
-        string marshalerNamespace;
+        AssemblyDefinition marshallerAssembly;
+        string marshallerNamespace;
         
         if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
         {
-            marshalerAssembly = WeaverHelper.BindingsAssembly;
-            marshalerNamespace = Program.UnrealSharpNamespace;
+            marshallerAssembly = WeaverHelper.BindingsAssembly;
+            marshallerNamespace = Program.UnrealSharpNamespace;
         }
         else
         {
-            marshalerAssembly = CSharpType.Module.Assembly;
-            marshalerNamespace = CSharpType.Namespace;
+            marshallerAssembly = CSharpType.Module.Assembly;
+            marshallerNamespace = CSharpType.Namespace;
         }
 
-        TypeReference marshalerType;
+        TypeReference marshallerType;
         
         if (typeParams != null)
         {
-            marshalerType = WeaverHelper.FindGenericTypeInAssembly(marshalerAssembly, marshalerNamespace, marshallerTypeName, typeParams);
+            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName, typeParams);
         }
         else
         {
-            marshalerType = WeaverHelper.FindTypeInAssembly(marshalerAssembly, marshalerNamespace, marshallerTypeName);
+            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName);
         }
 
-        MethodReference fromNative = (from method in marshalerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];
-        MethodReference toNative = (from method in marshalerType.Resolve().GetMethods() where method.IsStatic && method.Name == "ToNative" select method).ToArray()[0];
+        MethodReference fromNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];
+        MethodReference toNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "ToNative" select method).ToArray()[0];
 
         if (typeParams != null)
         {
@@ -219,7 +238,7 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
     }
 
     public abstract void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type);
-    public virtual void EmitDynamicArrayMarshalerDelegates(ILProcessor processor, TypeDefinition type)
+    public virtual void EmitDynamicArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
     {
         EmitFixedArrayMarshallerDelegates(processor, type);
     }
@@ -232,24 +251,6 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
         }
         else
         {
-            /*
-              IL_0000:  ldarg.0
-              IL_0001:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0006:  brtrue.s   IL_0023
-              IL_0008:  ldarg.0
-              IL_0009:  ldarg.0
-              IL_000a:  ldsfld     int32 UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Offset
-              IL_000f:  ldsfld     int32 UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Length
-              IL_0014:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.BlittableFixedSizeArrayMarshaler`1<int32>::.ctor()
-              IL_0019:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32>::.ctor(class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject,
-                                                                                                                                          int32,
-                                                                                                                                          int32,
-                                                                                                                                          class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayMarshaler`1<!0>)
-              IL_001e:  stfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0023:  ldarg.0
-              IL_0024:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0029:  ret
-             */
             ILProcessor processor = InitPropertyAccessor(getter);
 
             processor.Emit(OpCodes.Ldarg_0);
@@ -262,7 +263,7 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
             processor.Emit(OpCodes.Ldsfld, offsetField);
             processor.Emit(OpCodes.Ldc_I4, ArrayDim);
 
-            // Allow subclasses to control construction of their own marshalers, as there may be
+            // Allow subclasses to control construction of their own marshallers, as there may be
             // generics and/or ctor parameters involved.
             EmitFixedArrayMarshallerDelegates(processor, type);
             
@@ -278,12 +279,12 @@ public abstract class NativeDataType(TypeReference typeRef, string unrealClass, 
                        && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/FromNative")
                 select method).ToArray();
             ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
-            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(constructors[0], new TypeReference[] { CSharpType })));
+            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));
             processor.Emit(OpCodes.Stfld, FixedSizeArrayWrapperField);
 
             // Store branch target
             processor.Emit(OpCodes.Ldarg_0);
-            Instruction branchTarget = processor.Body.Instructions[processor.Body.Instructions.Count - 1];
+            Instruction branchTarget = processor.Body.Instructions[^1];
             processor.Emit(OpCodes.Ldfld, FixedSizeArrayWrapperField);
 
             // Insert branch

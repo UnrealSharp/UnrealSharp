@@ -248,7 +248,7 @@ public class UnrealArrayReadWrite<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-public class UnrealArrayReadWriteMarshaler<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+public class UnrealArrayReadWriteMarshaller<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
 {
     readonly UnrealArrayReadWrite<T>[] _wrappers = new UnrealArrayReadWrite<T> [length];
 
@@ -267,13 +267,13 @@ public class UnrealArrayReadWriteMarshaler<T>(int length, IntPtr nativeProperty,
     }
 }
 
-public class UnrealArrayReadOnlyMarshaler<T>
+public class UnrealArrayReadOnlyMarshaller<T>
 {
     IntPtr NativeProperty;
     UnrealArrayReadOnly<T>[] Wrappers;
     MarshalingDelegates<T>.FromNative InnerTypeFromNative;
 
-    public UnrealArrayReadOnlyMarshaler(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public UnrealArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
     {
         NativeProperty = nativeProperty;
         Wrappers = new UnrealArrayReadOnly<T>[length];
@@ -295,13 +295,13 @@ public class UnrealArrayReadOnlyMarshaler<T>
     }
 }
 
-public class UnrealArrayCopyMarshaler<T>
+public class UnrealArrayCopyMarshaller<T>
 {
     int ElementSize;
     MarshalingDelegates<T>.ToNative InnerTypeToNative;
     MarshalingDelegates<T>.FromNative InnerTypeFromNative;
 
-    public UnrealArrayCopyMarshaler(int length, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative, int elementSize)
+    public UnrealArrayCopyMarshaller(int length, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative, int elementSize)
     {
         ElementSize = elementSize;
         InnerTypeFromNative = fromNative;

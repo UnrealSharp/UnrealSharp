@@ -5,6 +5,7 @@ void UFPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 	EXPORT_FUNCTION(GetNativePropertyFromName)
 	EXPORT_FUNCTION(GetPropertyOffsetFromName)
 	EXPORT_FUNCTION(GetPropertyArrayDimFromName)
+	EXPORT_FUNCTION(GetPropertyOffset)
 }
 
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
@@ -13,9 +14,19 @@ FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const 
 	return Property;
 }
 
+int32 UFPropertyExporter::GetPropertyOffset(FProperty* Property)
+{
+	int32 Offset = Property->GetOffset_ForInternal();
+	return Offset;
+}
+
 int32 UFPropertyExporter::GetPropertyOffsetFromName(UStruct* InStruct, const char* InPropertyName)
 {
 	const FProperty* FoundProperty = GetNativePropertyFromName(InStruct, InPropertyName);
+	if (!FoundProperty)
+	{
+		return -1;
+	}
 	return FoundProperty->GetOffset_ForInternal();
 }
 

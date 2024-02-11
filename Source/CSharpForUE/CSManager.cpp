@@ -15,6 +15,7 @@
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "CSDeveloperSettings.h"
+#include "Animation/WidgetAnimation.h"
 #include "Misc/MessageDialog.h"
 
 FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
@@ -339,9 +340,15 @@ FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, UClass* Class)
 {
 	ensureAlways(!UnmanagedToManagedMap.Contains(Object));
 
-	UClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class);
-	const auto* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ManagedClass ? ManagedClass : Class);
+	UClass* ObjectClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class);
 	
+	if (!ObjectClass)
+	{
+		// If the class is not managed, we need to find the first native class.
+		ObjectClass = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
+	}
+	
+	const auto* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ObjectClass);
 	return CreateNewManagedObject(Object, ClassInfo->TypeHandle);
 }
 

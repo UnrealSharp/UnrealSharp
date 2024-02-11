@@ -42,23 +42,11 @@ public static class UnrealClassProcessor
         var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         PropertyRewriterHelpers.ProcessProperties(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
-
+        
         List<FunctionMetaData> functionsToRewrite = metadata.Functions.ToList();
-        functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction.FunctionMetaData));
+        functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction));
         
-        var functionPointersToInitialize = new Dictionary<FunctionMetaData, FieldDefinition>();
-        var functionParamSizesToInitialize = new List<Tuple<FunctionMetaData, FieldDefinition>>();
-        var functionParamOffsetsToInitialize = new List<Tuple<FunctionMetaData, List<Tuple<FieldDefinition, PropertyMetaData>>>>();
-        var functionParamElementSizesToInitialize = new List<Tuple<FunctionMetaData, List<Tuple<FieldDefinition, PropertyMetaData>>>>();
-        
-        FunctionRewriterHelpers.ProcessMethods(
-            functionsToRewrite, 
-            metadata, 
-            classTypeDefinition,
-            ref functionPointersToInitialize,
-            ref functionParamSizesToInitialize,
-            ref functionParamOffsetsToInitialize,
-            ref functionParamElementSizesToInitialize);
+        ProcessBlueprintOverrides(classTypeDefinition, metadata);
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
@@ -67,14 +55,82 @@ public static class UnrealClassProcessor
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
             [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)]);
         
-        // Add the static constructor that will fetch the different offsets and pointers needed for a UnrealSharp class to work.
-        ConstructorBuilder.InitializePropertyAndFunctionsResources(classTypeDefinition,
-            nativeClassField,
-            offsetsToInitialize,
-            pointersToInitialize, 
-            functionParamOffsetsToInitialize, 
-            functionParamElementSizesToInitialize,
-            functionPointersToInitialize, 
-            functionParamSizesToInitialize);
+        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(classTypeDefinition);
+        ILProcessor processor = staticConstructor.Body.GetILProcessor();
+        Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
+        
+        foreach (var function in metadata.Functions)
+        {
+            if (function.Parameters.Length == 0)
+            {
+                continue;
+            }
+            
+            VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
+            Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
+            
+            function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
+            function.EmitFunctionParamOffsets(processor, loadNativePointer);
+            function.EmitFunctionParamSize(processor, loadNativePointer);
+            function.EmitParamElementSize(processor, loadNativePointer);
+            
+            foreach (var param in function.Parameters)
+            {
+                param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
+            }
+        }
+        
+        foreach (var property in metadata.Properties)
+        {
+            Instruction loadNativeProperty;
+            Instruction setNativeProperty;
+            if (property.NativePropertyField == null)
+            {
+                VariableDefinition nativePropertyVar = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+                loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
+                setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
+            }
+            else
+            {
+                loadNativeProperty = Instruction.Create(OpCodes.Ldsfld, property.NativePropertyField);
+                setNativeProperty = Instruction.Create(OpCodes.Stsfld, property.NativePropertyField);
+            }
+            
+            property.InitializePropertyPointers(processor, loadNativeClassField, setNativeProperty);
+            property.InitializePropertyOffsets(processor, loadNativeProperty);
+            property.PropertyDataType.WritePostInitialization(processor, property, loadNativeProperty, setNativeProperty);
+        }
+        
+        processor.Emit(OpCodes.Ret);
+    }
+
+    private static void ProcessBlueprintOverrides(TypeDefinition classDefinition, ClassMetaData classMetaData)
+    {
+        foreach (MethodDefinition method in classMetaData.BlueprintEventOverrides)
+        {
+            var implementationMethodName = method.Name + "_Implementation";
+
+            foreach (Instruction inst in method.Body.Instructions)
+            {
+                if (inst.OpCode != OpCodes.Call && inst.OpCode != OpCodes.Callvirt)
+                {
+                    continue;
+                }
+                
+                MethodReference calledMethod = (MethodReference) inst.Operand;
+                
+                if (calledMethod.Name != method.Name)
+                {
+                    continue;
+                }
+
+                MethodReference? implementationMethod = WeaverHelper.FindMethod(classDefinition, implementationMethodName);
+                inst.Operand = WeaverHelper.ImportMethod(implementationMethod);
+                break;
+            }
+            
+            method.Name = implementationMethodName;
+        }
     }
 }

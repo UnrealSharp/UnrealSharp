@@ -5,10 +5,10 @@ using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(textType, "TextProperty", arrayDim, PropertyType.Text)
+class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(textType, arrayDim, PropertyType.Text)
 {
-    private FieldDefinition MarshalerField;
-    private MethodReference MarshalerCtor;
+    private FieldDefinition MarshallerField;
+    private MethodReference MarshallerConstructor;
     private MethodReference FromNative;
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata,
@@ -19,12 +19,12 @@ class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(
         // Ensure that Text itself is imported.
         WeaverHelper.UserAssembly.MainModule.ImportReference(CSharpType);
 
-        TypeDefinition marshalerType = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "TextMarshaller").Resolve();
-        MarshalerCtor = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshalerType.GetConstructors() 
+        TypeDefinition marshallerType = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "TextMarshaller").Resolve();
+        MarshallerConstructor = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshallerType.GetConstructors() 
             where method.Parameters.Count == 1 
                   && method.Parameters[0].ParameterType.FullName == "System.Int32" 
             select method).ToArray()[0]);
-        FromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshalerType.GetMethods() 
+        FromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshallerType.GetMethods() 
             where method.Name == "FromNative" 
             select method).ToArray()[0]);
 
@@ -39,8 +39,8 @@ class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(
         }
         
         // Add a field to store the array wrapper for the getter.                
-        MarshalerField = new FieldDefinition(prefix + "Wrapper", FieldAttributes.Private, WeaverHelper.UserAssembly.MainModule.ImportReference(marshalerType));
-        propertyDef.DeclaringType.Fields.Add(MarshalerField);
+        MarshallerField = new FieldDefinition(prefix + "Wrapper", FieldAttributes.Private, WeaverHelper.UserAssembly.MainModule.ImportReference(marshallerType));
+        propertyDef.DeclaringType.Fields.Add(MarshallerField);
 
         // Suppress the setter.  All modifications should be done by modifying the Text object returned by the getter,
         // which will propagate the changes to the underlying native FText memory.
@@ -57,40 +57,18 @@ class NativeDataTextType(TypeReference textType, int arrayDim) : NativeDataType(
         FieldDefinition nativePropertyField)
     {
         ILProcessor processor = InitPropertyAccessor(getter);
-
-        /*
-          IL_0000:  ldarg.0
-          IL_0001:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.TextMarshaler UnrealEngine.MonoRuntime.MonoTestsObject::TestReadWriteText_Wrapper
-          IL_0006:  brtrue.s   IL_0014
-          IL_0008:  ldarg.0
-          IL_0009:  ldc.i4.1
-          IL_000a:  newobj     instance void [UnrealEngine.Runtime]UnrealEngine.Runtime.TextMarshaler::.ctor(int32)
-          IL_000f:  stfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.TextMarshaler UnrealEngine.MonoRuntime.MonoTestsObject::TestReadWriteText_Wrapper
-          IL_0014:  ldarg.0
-          IL_0015:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.TextMarshaler UnrealEngine.MonoRuntime.MonoTestsObject::TestReadWriteText_Wrapper
-          IL_001a:  ldarg.0
-          IL_001b:  call       instance native int [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject::get_NativeObject()
-          IL_0020:  ldsfld     int32 UnrealEngine.MonoRuntime.MonoTestsObject::TestReadWriteText_Offset
-          IL_0025:  call       native int [mscorlib]System.IntPtr::op_Addition(native int,
-                                                                               int32)
-          IL_002a:  ldc.i4.0
-          IL_002b:  ldarg.0
-          IL_002c:  callvirt   instance class [UnrealEngine.Runtime]UnrealEngine.Runtime.Text [UnrealEngine.Runtime]UnrealEngine.Runtime.TextMarshaler::FromNative(native int,
-                                                                                                                                                                   int32,
-                                                                                                                                                                   class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject)
-         */
         processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Ldfld, MarshalerField);
+        processor.Emit(OpCodes.Ldfld, MarshallerField);
 
         Instruction branchPosition = processor.Create(OpCodes.Ldarg_0);
         processor.Append(branchPosition);
         processor.Emit(OpCodes.Ldc_I4_1);
-        processor.Emit(OpCodes.Newobj, MarshalerCtor);
-        processor.Emit(OpCodes.Stfld, MarshalerField);
+        processor.Emit(OpCodes.Newobj, MarshallerConstructor);
+        processor.Emit(OpCodes.Stfld, MarshallerField);
 
         Instruction branchTarget = processor.Create(OpCodes.Ldarg_0);
         processor.Append(branchTarget);
-        processor.Emit(OpCodes.Ldfld, MarshalerField);
+        processor.Emit(OpCodes.Ldfld, MarshallerField);
         processor.Emit(OpCodes.Ldarg_0);
         processor.Emit(OpCodes.Call, WeaverHelper.NativeObjectGetter);
         processor.Emit(OpCodes.Ldsfld, offsetField);

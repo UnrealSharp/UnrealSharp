@@ -48,7 +48,7 @@ public struct Key
 	}
 }
 
-public static class KeyMarshaler
+public static class KeyMarshaller
 {
 	public static Key FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
 	{

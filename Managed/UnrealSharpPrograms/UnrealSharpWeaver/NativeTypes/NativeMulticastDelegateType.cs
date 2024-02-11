@@ -1,24 +1,67 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-class NativeDataMulticastDelegate : NativeDataSimpleType
+class NativeDataMulticastDelegate : NativeDataBaseDelegateType
 {
-    public FunctionMetaData Signature { get; set; }
-    public NativeDataMulticastDelegate(TypeReference delegateType, string unrealClass, int arrayDim) 
-        : base(delegateType, "DelegateMarshaller`1", unrealClass, arrayDim, PropertyType.Delegate)
+    public NativeDataMulticastDelegate(TypeReference delegateType) 
+        : base(delegateType, "DelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
     {
-        TypeDefinition delegateDefinition = delegateType.Resolve();
-        MethodDefinition invokeMethod = delegateDefinition.Methods.First(m => m.Name == "Broadcast");
-        
-        Signature = new FunctionMetaData(invokeMethod)
+        NeedsNativePropertyField = true;
+        PropertyType = Signature.Parameters.Length == 0 ? PropertyType.MulticastInlineDelegate : PropertyType.MulticastSparseDelegate;
+    }
+
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    {
+        AddBackingField(typeDefinition, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+    }
+    
+    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
+        Instruction loadNativePointer, Instruction setNativePointer)
+    {
+        if (Signature.Parameters.Length == 0)
         {
-            // Don't give a name to the delegate function, it'll cause a name collision with other delegates in the same class.
-            // Let Unreal Engine handle the name generation.
-            Name = "",
-            FunctionFlags = FunctionFlags.Delegate | FunctionFlags.MulticastDelegate
-        };
+            return;
+        }
+        
+        TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
+        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
+        processor.Append(loadNativePointer);
+        processor.Emit(OpCodes.Call, Initialize);
+    }
+
+    protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
+    {
+        ILProcessor processor = BeginSimpleGetter(getter);
+        Instruction loadOwner = processor.Create(OpCodes.Ldarg_0);
+        
+        //processor.Emit(OpCodes.Ldarg_0);
+        //processor.Emit(OpCodes.Ldfld, BackingField);
+        //var ifEnd = Instruction.Create(OpCodes.Nop);
+        //processor.Emit(OpCodes.Brtrue, ifEnd);
+        
+        // Push the native property field onto the stack
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
+        
+        foreach (var i in loadBufferInstructions)
+        {
+            processor.Append(i);
+        }
+        
+        // Push the native property field onto the stack
+        processor.Emit(OpCodes.Ldsfld, nativePropertyField);
+        
+        // Push 0 onto the stack
+        processor.Emit(OpCodes.Ldc_I4_0);
+        
+        // Push this onto the stack
+        processor.Append(loadOwner);
+
+        processor.Emit(OpCodes.Call, FromNative);
+        EndSimpleGetter(processor, getter);
     }
 }

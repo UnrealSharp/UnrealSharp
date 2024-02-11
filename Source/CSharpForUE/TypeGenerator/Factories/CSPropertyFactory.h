@@ -2,6 +2,7 @@
 
 #include "UObject/UnrealType.h"
 #include "CSharpForUE/TypeGenerator/CSFunction.h"
+#include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
 
 class FCSDefaultComponentProperty;
 struct FPropertyMetaData;
@@ -21,16 +22,12 @@ public:
 	static FProperty* CreateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags = CPF_None);
 	
 	static void GeneratePropertiesForType(UField* Outer, const TArray<FPropertyMetaData>& PropertiesMetaData, const EPropertyFlags PropertyFlags = CPF_None);
-
-	template<typename Property = FProperty>
-	static void AddProperty(FMakeNewPropertyDelegate Function);
-
-	template<typename PrimitiveProperty = FProperty>
-	static void AddSimpleProperty();
+	
+	static void AddProperty(ECSPropertyType PropertyType, FMakeNewPropertyDelegate Function);
 
 	template<typename PrimitiveProperty = FProperty>
-	static void AddSimpleProperty(const FName& Name);
-
+	static void AddSimpleProperty(ECSPropertyType PropertyType);
+ 
 	template <class FieldClass = FProperty>
 	static FieldClass* CreateSimpleProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
 
@@ -45,6 +42,7 @@ public:
 	static FProperty* CreateArrayProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
 	static FProperty* CreateEnumProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
 	static FProperty* CreateDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
+	static FProperty* CreateMulticastDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
 	
 	static bool IsOutParameter(const FProperty* InParam);
 
@@ -54,7 +52,5 @@ private:
 
 	template<typename ObjectProperty>
 	static ObjectProperty* CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags);
-	
-	static TMap<FName, FMakeNewPropertyDelegate> MakeNewPropertyFunctionMap;
 	
 };

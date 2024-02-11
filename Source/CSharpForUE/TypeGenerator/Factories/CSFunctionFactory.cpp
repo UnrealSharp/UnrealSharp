@@ -8,15 +8,14 @@ UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name
 {
 	UCSFunction* NewFunction = NewObject<UCSFunction>(Outer, UCSFunction::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionFlags;
-	
+	NewFunction->SetSuperStruct(ParentFunction);
+
 	if (ManagedMethod == nullptr)
 	{
 		ManagedMethod = FCSGeneratedClassBuilder::TryGetManagedFunction(Outer, Name);
 	}
-
-	NewFunction->SetSuperStruct(ParentFunction);
-	NewFunction->SetManagedMethod(ManagedMethod);
 	
+	NewFunction->SetManagedMethod(ManagedMethod);
 	FinalizeFunctionSetup(Outer, NewFunction);
 
 	FMetaDataHelper::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
@@ -29,7 +28,7 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData, FunctionMetaData.FunctionFlags);
 
 	// Check if this function has a return value or is just void, otherwise skip.
-	if (FunctionMetaData.ReturnValue.Type->UnrealPropertyClass != "None")
+	if (FunctionMetaData.ReturnValue.Type->PropertyType != ECSPropertyType::Unknown)
 	{
 		FCSPropertyFactory::CreateAndAssignProperty(NewFunction, FunctionMetaData.ReturnValue, CPF_Parm | CPF_ReturnParm | CPF_OutParm);
 	}

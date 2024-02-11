@@ -6,46 +6,48 @@
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedEnumBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
 
-TMap<FName, FMakeNewPropertyDelegate> FCSPropertyFactory::MakeNewPropertyFunctionMap = {};
+static TMap<ECSPropertyType, FMakeNewPropertyDelegate> MakeNewPropertyFunctionMap;
 
-void FCSPropertyFactory::InitializePropertyFactory()
+void FCSPropertyFactory ::InitializePropertyFactory()
 {
-	AddSimpleProperty<FFloatProperty>();
-	AddSimpleProperty<FDoubleProperty>();
+	AddSimpleProperty<FFloatProperty>(ECSPropertyType::Float);
+	AddSimpleProperty<FDoubleProperty>(ECSPropertyType::Double);
 	
-	AddSimpleProperty<FByteProperty>();
+	AddSimpleProperty<FByteProperty>(ECSPropertyType::Byte);
 	
-	AddSimpleProperty<FInt16Property>();
-	AddSimpleProperty<FIntProperty>();
-	AddSimpleProperty<FInt64Property>();
+	AddSimpleProperty<FInt16Property>(ECSPropertyType::Int16);
+	AddSimpleProperty<FIntProperty>(ECSPropertyType::Int);
+	AddSimpleProperty<FInt64Property>(ECSPropertyType::Int64);
 	
-	AddSimpleProperty<FUInt16Property>();
-	AddSimpleProperty<FUInt32Property>();
-	AddSimpleProperty<FUInt64Property>();
+	AddSimpleProperty<FUInt16Property>(ECSPropertyType::UInt16);
+	AddSimpleProperty<FUInt32Property>(ECSPropertyType::UInt32);
+	AddSimpleProperty<FUInt64Property>(ECSPropertyType::UInt64);
 	
-	AddSimpleProperty<FBoolProperty>();
+	AddSimpleProperty<FBoolProperty>(ECSPropertyType::Bool);
 	
-	AddSimpleProperty<FNameProperty>();
-	AddSimpleProperty<FStrProperty>();
-	AddSimpleProperty<FTextProperty>();
+	AddSimpleProperty<FNameProperty>(ECSPropertyType::Name);
+	AddSimpleProperty<FStrProperty>(ECSPropertyType::Str);
+	AddSimpleProperty<FTextProperty>(ECSPropertyType::Text);
 
-	AddProperty<FObjectProperty>(&CreateObjectProperty);
-	AddProperty<FWeakObjectProperty>(&CreateWeakObjectProperty);
-	AddProperty<FSoftObjectProperty>(&CreateSoftObjectProperty);
-	AddProperty<FSoftClassProperty>(&CreateSoftClassProperty);
-	
-	AddProperty<FClassProperty>(&CreateClassProperty);
-	AddProperty<FStructProperty>(&CreateStructProperty);
-	AddProperty<FArrayProperty>(&CreateArrayProperty);
-	AddProperty<FEnumProperty>(&CreateEnumProperty);
-	AddProperty<FMulticastInlineDelegateProperty>(&CreateDelegateProperty);
+	AddProperty(ECSPropertyType::DefaultComponent, &CreateObjectPtrProperty);
+
+	AddProperty(ECSPropertyType::Object, &CreateObjectProperty);
+	AddProperty(ECSPropertyType::WeakObject, &CreateWeakObjectProperty);
+	AddProperty(ECSPropertyType::SoftObject, &CreateSoftObjectProperty);
+	AddProperty(ECSPropertyType::ObjectPtr, &CreateObjectPtrProperty);
+	AddProperty(ECSPropertyType::SoftClass, &CreateSoftClassProperty);
+
+	AddProperty(ECSPropertyType::Class, &CreateClassProperty);
+	AddProperty(ECSPropertyType::Struct, &CreateStructProperty);
+	AddProperty(ECSPropertyType::Array, &CreateArrayProperty);
+	AddProperty(ECSPropertyType::Enum, &CreateEnumProperty);
+	AddProperty(ECSPropertyType::MulticastInlineDelegate, &CreateMulticastDelegateProperty);
+	AddProperty(ECSPropertyType::Delegate, &CreateDelegateProperty);
 }
 
-template <typename Property>
-void FCSPropertyFactory::AddProperty(FMakeNewPropertyDelegate Function)
+void FCSPropertyFactory::AddProperty(ECSPropertyType PropertyType, FMakeNewPropertyDelegate Function)
 {
-	const FName Name = Property::StaticClass()->GetFName();
-	MakeNewPropertyFunctionMap.Add(Name, Function);
+	MakeNewPropertyFunctionMap.Add(PropertyType, Function);
 }
 
 FProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
@@ -135,13 +137,32 @@ FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FProperty
 
 FProperty* FCSPropertyFactory::CreateDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
 {
-	TSharedPtr<FMulticastDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FMulticastDelegateMetaData>();
+	TSharedPtr<FDelegateMetaData> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
+	FDelegateProperty* DelegateProperty = CreateSimpleProperty<FDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	DelegateProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Outer->GetOwnerClass(), DelegateMetaData->SignatureFunction);
+	return DelegateProperty;
+}
+
+FProperty* FCSPropertyFactory::CreateMulticastDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+{
+	TSharedPtr<FDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
 
 	UClass* Class = CastChecked<UClass>(Outer);
-	FMulticastInlineDelegateProperty* DelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
-	DelegateProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
+	UFunction* SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
+
+	FMulticastDelegateProperty* MulticastDelegateProperty;
 	
-	return DelegateProperty;
+	if (SignatureFunction->NumParms)
+	{
+		MulticastDelegateProperty = CreateSimpleProperty<FMulticastSparseDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	}
+	else
+	{
+		MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	}
+
+	MulticastDelegateProperty->SignatureFunction = SignatureFunction;
+	return MulticastDelegateProperty;
 }
 
 template<typename PrimitiveProperty>
@@ -158,17 +179,11 @@ public:
 	
 };
 
-template <typename PrimitiveProperty>
-void FCSPropertyFactory::AddSimpleProperty(const FName& Name)
+template<typename PrimitiveProperty>
+void FCSPropertyFactory::AddSimpleProperty(ECSPropertyType PropertyType)
 {
 	const FMakeNewPropertyDelegate Delegate = &FPrimitivePropertyWrapper<PrimitiveProperty>::CallCreateSimpleProperty;
-	MakeNewPropertyFunctionMap.Add(Name, Delegate);
-}
-
-template<typename PrimitiveProperty>
-void FCSPropertyFactory::AddSimpleProperty()
-{
-	AddSimpleProperty<PrimitiveProperty>(PrimitiveProperty::StaticClass()->GetFName());
+	MakeNewPropertyFunctionMap.Add(PropertyType, Delegate);
 }
 
 FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
@@ -189,7 +204,7 @@ FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FPro
 
 FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
 {
-	if (const FMakeNewPropertyDelegate* DelegatePtr = MakeNewPropertyFunctionMap.Find(PropertyMetaData.Type->UnrealPropertyClass))
+	if (const FMakeNewPropertyDelegate* DelegatePtr = MakeNewPropertyFunctionMap.Find(PropertyMetaData.Type->PropertyType))
 	{
 		const FMakeNewPropertyDelegate MakeNewProperty = *DelegatePtr;
 		FProperty* NewProperty = MakeNewProperty(Outer, PropertyMetaData, PropertyFlags);
@@ -236,7 +251,8 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMeta
 		return NewProperty;
 	}
 
-	UE_LOG(LogUnrealSharp, Warning, TEXT("%hs: Property type with name %s doesn't exist. Can't create new property."), __FUNCTION__, *PropertyMetaData.Type->UnrealPropertyClass.ToString());
+	FText DisplayName = StaticEnum<ECSPropertyType>()->GetDisplayValueAsText(PropertyMetaData.Type->PropertyType);
+	UE_LOG(LogUnrealSharp, Warning, TEXT("%hs: Property type with name %s doesn't exist. Can't create new property."), __FUNCTION__, *DisplayName.ToString());
 	return nullptr;
 }
 

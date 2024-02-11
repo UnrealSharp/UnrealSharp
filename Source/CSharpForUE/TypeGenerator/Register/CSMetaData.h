@@ -5,7 +5,7 @@
 #include "UObject/Script.h"
 #include "UObject/ObjectMacros.h"
 
-struct FMulticastDelegateMetaData;
+struct FDelegateMetaData;
 struct FFunctionMetaData;
 struct FTypeReferenceMetaData;
 struct FClassMetaData;
@@ -18,6 +18,7 @@ struct FFunctionMetaData;
 struct FObjectMetaData;
 
 // Update this enum in PropertyType.cs in the UnrealSharpWeaver if you change this enum
+UENUM()
 enum class ECSPropertyType : uint8
 {
 	Unknown,
@@ -44,6 +45,7 @@ enum class ECSPropertyType : uint8
 	Class,
 
 	Object,
+	ObjectPtr,
 	DefaultComponent,
 	LazyObject,
 	WeakObject,
@@ -52,7 +54,8 @@ enum class ECSPropertyType : uint8
 	SoftObject,
 
 	Delegate,
-	MulticastDelegate,
+	MulticastInlineDelegate,
+	MulticastSparseDelegate,
 
 	Array,
 	Map,
@@ -238,7 +241,7 @@ struct FFunctionMetaData : FMemberMetaData
 	//End of implementation
 };
 
-struct FMulticastDelegateMetaData : FUnrealType
+struct FDelegateMetaData : FUnrealType
 {
 	FFunctionMetaData SignatureFunction;
 

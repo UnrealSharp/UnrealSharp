@@ -32,13 +32,15 @@ public:
 
 private:
 
-	static void AddDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName);
-	static void RemoveDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, UObject* Target, const char* FunctionName);
-	static void ClearDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object);
-	static void BroadcastDelegate(FMulticastScriptDelegate* DelegateProperty, UObject* Object, void* Parameters);
+	static void AddDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
+	static void RemoveDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
+	static void ClearDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate);
+	static void BroadcastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, void* Parameters);
+	static bool ContainsDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
 
 	static void* GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty);
 
 	static FScriptDelegate MakeScriptDelegate(UObject* Target, const char* FunctionName);
+	static const FMulticastScriptDelegate* TryGetSparseMulticastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate);
 	
 };

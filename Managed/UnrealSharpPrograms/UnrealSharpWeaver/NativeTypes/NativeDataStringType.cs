@@ -12,7 +12,7 @@ class NativeDataStringType : NativeDataType
     private MethodReference ToNativeWithCleanup;
     private MethodReference DestructInstance;
 
-    public NativeDataStringType(TypeReference typeRef, int arrayDim) : base(typeRef, "StrProperty", arrayDim, PropertyType.Str)
+    public NativeDataStringType(TypeReference typeRef, int arrayDim) : base(typeRef, arrayDim, PropertyType.Str)
     {
         NeedsNativePropertyField = true;
     }
@@ -35,7 +35,7 @@ class NativeDataStringType : NativeDataType
 
     public override void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
     {
-        EmitSimpleMarshalerDelegates(processor, "StringMarshaller", null);
+        EmitSimpleMarshallerDelegates(processor, "StringMarshaller", null);
     }
 
     protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)

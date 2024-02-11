@@ -113,29 +113,6 @@ static class ErrorEmitter
         return result;
     }
 
-    public static IEnumerable<TResultType> SelectWhereErrorEmit<TType, TResultType>(this IEnumerable<TType> values, Func<TType, bool> wherefunc, Func<TType, TResultType> selectfunc, out bool hadError)
-    {
-        List<TResultType> result = new List<TResultType>();
-        hadError = false;
-        foreach(var item in values)
-        {
-            try
-            {
-                if (wherefunc(item))
-                {
-                    result.Add(selectfunc(item));
-                }
-            }
-            catch (WeaverProcessError ex)
-            {
-                Error(ex);
-                hadError = true;
-            }
-        }
-
-        return result;
-    }
-
     private static SequencePoint ExtractFirstSequencePoint (MethodDefinition method)
     {
         return method?.DebugInformation?.SequencePoints.FirstOrDefault ();

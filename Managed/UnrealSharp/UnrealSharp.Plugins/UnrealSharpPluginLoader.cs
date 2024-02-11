@@ -17,22 +17,25 @@ namespace UnrealSharp.Plugins
             SharedAssemblies = sharedAssemblies;
             MainLoadContext = mainLoadContext;
 
-            if (string.IsNullOrEmpty(AppContext.BaseDirectory))
+            if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
-                string? baseDirectory = Path.GetDirectoryName(pluginPath);
-                if (baseDirectory != null)
+                return;
+            }
+            
+            string? baseDirectory = Path.GetDirectoryName(pluginPath);
+            
+            if (baseDirectory != null)
+            {
+                if (!Path.EndsInDirectorySeparator(baseDirectory))
                 {
-                    if (!Path.EndsInDirectorySeparator(baseDirectory))
-                    {
-                        baseDirectory += Path.DirectorySeparatorChar;
-                    }
+                    baseDirectory += Path.DirectorySeparatorChar;
+                }
 
-                    AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", baseDirectory);
-                }
-                else
-                {
-                    Console.Error.WriteLine("Failed to set AppContext.BaseDirectory. Dynamic loading of libraries may fail.");
-                }
+                AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", baseDirectory);
+            }
+            else
+            {
+                Console.Error.WriteLine("Failed to set AppContext.BaseDirectory. Dynamic loading of libraries may fail.");
             }
         }
 
@@ -57,17 +60,16 @@ namespace UnrealSharp.Plugins
 
             AssemblyLoadedPath = assemblyPath;
             
-            // Load in memory to prevent locking the file
             using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
 
-            if (File.Exists(pdbPath))
+            if (!File.Exists(pdbPath))
             {
-                using var pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                return LoadFromStream(assemblyFile, pdbFile);
+                return LoadFromStream(assemblyFile);
             }
             
-            return LoadFromStream(assemblyFile);
+            using var pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return LoadFromStream(assemblyFile, pdbFile);
         }
 
         protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)

@@ -67,7 +67,7 @@ public class BaseMetaData
 
     }
 
-    public static ulong ExtractClassAsFlags(TypeReference classReference, string flagsAttributeName)
+    public static ulong ExtractFlagsFromClass(TypeReference classReference, string flagsAttributeName)
     {
         TypeDefinition classTypeDefinition = classReference.Resolve();
         return !classTypeDefinition.HasCustomAttributes ? 0 : GetFlags(classTypeDefinition.Resolve().CustomAttributes, flagsAttributeName);

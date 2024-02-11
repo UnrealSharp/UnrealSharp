@@ -26,6 +26,7 @@ public enum PropertyType
     Class,
 
     Object,
+    ObjectPtr,
     DefaultComponent,
     LazyObject,
     WeakObject,
@@ -34,7 +35,8 @@ public enum PropertyType
     SoftObject,
 
     Delegate,
-    MulticastDelegate,
+    MulticastInlineDelegate,
+    MulticastSparseDelegate,
 
     Array,
     Map,

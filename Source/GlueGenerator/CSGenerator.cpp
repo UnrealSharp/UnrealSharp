@@ -350,7 +350,9 @@ bool FCSGenerator::CanExportProperty(const UStruct* Struct, const FProperty* Pro
 	// Always include UProperties for whitelisted structs.
 	// If their properties where blueprint-exposed, we wouldn't have had to whitelist them!
 	bool bCanExport = !Blacklist.HasProperty(Struct, Property)
-	&& (CanExportPropertyShared(Property) || Whitelist.HasProperty(Struct, Property) || Whitelist.HasStruct(Struct));
+	&& (CanExportPropertyShared(Property)
+	|| Whitelist.HasProperty(Struct, Property)
+	|| Whitelist.HasStruct(Struct));
 	
 	if (bCanExport)
 	{
@@ -836,6 +838,20 @@ void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Build
 	}
 }
 
+void FCSGenerator::ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction* Function)
+{
+	FString NativeMethodName = Function->GetName();
+	Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);"), *NativeMethodName));
+	Builder.AppendLine(FString::Printf(TEXT("%s_ParamsSize = %s.CallGetNativeFunctionParamsSize(%s_NativeFunction);"), *NativeMethodName, UFunctionCallbacks, *NativeMethodName));
+	
+	for (TFieldIterator<FProperty> It(Function, EFieldIteratorFlags::ExcludeSuper); It; ++It)
+	{
+		FProperty* Property = *It;
+		const FPropertyTranslator& ParamHandler = PropertyTranslators->Find(Property);
+		ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
+	}
+}
+
 void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties)
 {
 	//we already warn on conflicts when exporting the properties themselves, so here we can just silently skip them
@@ -980,7 +996,7 @@ void FCSGenerator::ExportStructMarshaller(FCSScriptBuilder& Builder, const UScri
 	FString StructName = NameMapper.GetStructScriptName(Struct);
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaler"), *StructName));
+	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *StructName));
 	Builder.OpenBrace();
 
 	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)"), *StructName));

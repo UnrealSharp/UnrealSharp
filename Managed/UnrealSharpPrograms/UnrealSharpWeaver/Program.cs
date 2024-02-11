@@ -4,6 +4,7 @@ using System.Text.Json;
 using CommandLine;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.Rewriters;
 
@@ -24,6 +25,8 @@ public static class Program
     public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
     public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
     public static readonly string UFunctionCallbacks = "UFunctionExporter";
+    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
+    
     public static readonly string MarshallerSuffix = "Marshaller";
     
     public static int Main(string[] args)
@@ -98,10 +101,8 @@ public static class Program
             
             var readerParams = new ReaderParameters
             {
-                AssemblyResolver = resolver,
                 ReadSymbols = true,
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReadingMode = ReadingMode.Deferred
+                SymbolReaderProvider = new PdbReaderProvider(),
             };
 
             AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
@@ -142,7 +143,7 @@ public static class Program
             assembly.Write(assemblyOutputPath, new WriterParameters
             {
                 WriteSymbols = true,
-                SymbolWriterProvider = new PortablePdbWriterProvider(),
+                SymbolWriterProvider = new PdbWriterProvider(),
             });
         }
         catch (Exception ex)
@@ -168,6 +169,7 @@ public static class Program
             List<TypeDefinition> structs = [];
             List<TypeDefinition> enums = [];
             List<TypeDefinition> interfaces = [];
+            List<TypeDefinition> multicastDelegates = [];
             List<TypeDefinition> delegates = [];
             
             try
@@ -176,23 +178,27 @@ public static class Program
                 {
                     foreach (var type in module.Types)
                     {
-                        if (type.IsClass && type.BaseType != null && WeaverHelper.IsUnrealSharpClass(type))
+                        if (WeaverHelper.IsUnrealSharpClass(type))
                         {
                             classes.Add(type);
                         }
-                        else if (type.IsEnum && WeaverHelper.IsUnrealSharpEnum(type))
+                        else if (WeaverHelper.IsUnrealSharpEnum(type))
                         {
                             enums.Add(type);
                         }
-                        else if (type.IsValueType && WeaverHelper.IsUnrealSharpStruct(type))
+                        else if (WeaverHelper.IsUnrealSharpStruct(type))
                         {
                             structs.Add(type);
                         }
-                        else if (type.IsInterface && WeaverHelper.IsUnrealSharpInterface(type))
+                        else if (WeaverHelper.IsUnrealSharpInterface(type))
                         {
                             interfaces.Add(type);
                         }
-                        else if (type.BaseType is { Name: "EventDispatcher" })
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
+                        {
+                            multicastDelegates.Add(type);
+                        }
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
                         {
                             delegates.Add(type);
                         }
@@ -205,11 +211,12 @@ public static class Program
                 throw;
             }
             
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
-            UnrealDelegateProcessor.ProcessDelegateExtensions(delegates);
         }
         catch (Exception ex)
         {

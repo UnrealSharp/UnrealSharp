@@ -21,7 +21,7 @@ void FStructPropertyTranslator::AddReferences(const FProperty* Property, TSet<UF
 
 FString FStructPropertyTranslator::GetMarshaller(const FProperty *Property) const
 {
-	return FString::Printf(TEXT("%sMarshaler"), *GetManagedType(Property));
+	return FString::Printf(TEXT("%sMarshaller"), *GetManagedType(Property));
 }
 
 void FStructPropertyTranslator::ExportCppDefaultParameterAsLocalVariable(FCSScriptBuilder& Builder, const FString& VariableName, const FString& CppDefaultValue, UFunction* Function, FProperty* ParamProperty) const

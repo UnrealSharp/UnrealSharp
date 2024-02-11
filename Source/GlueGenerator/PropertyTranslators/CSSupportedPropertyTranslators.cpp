@@ -9,6 +9,7 @@
 #include "CustomStructTypePropertyTranslator.h"
 #include "EnumPropertyTranslator.h"
 #include "FloatPropertyTranslator.h"
+#include "MulticastDelegatePropertyTranslator.h"
 #include "SoftObjectPtrPropertyTranslator.h"
 #include "NamePropertyTranslator.h"
 #include "NullPropertyTranslator.h"
@@ -75,6 +76,9 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddBlittableCustomStructPropertyTranslator("TimerHandle", UNREAL_SHARP_NAMESPACE ".TimerHandle", Blacklist);
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableStructPropertyTranslator(*this));
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));
+
+	AddPropertyTranslator(FMulticastSparseDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
+	AddPropertyTranslator(FMulticastInlineDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
 }
 
 const FPropertyTranslator& FCSSupportedPropertyTranslators::Find(const FProperty* Property) const

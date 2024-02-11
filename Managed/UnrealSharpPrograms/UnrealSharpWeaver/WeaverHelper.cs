@@ -25,12 +25,14 @@ public static class WeaverHelper
     public static MethodReference GetNativeClassFromNameMethod;
     public static MethodReference GetNativeStructFromNameMethod;
     public static MethodReference GetPropertyOffsetFromNameMethod;
+    public static MethodReference GetPropertyOffset;
     public static MethodReference GetArrayElementSizeMethod;
     public static MethodReference GetNativePropertyFromNameMethod;
     public static MethodReference GetNativeFunctionFromClassAndNameMethod;
     public static MethodReference GetNativeFunctionParamsSizeMethod;
     public static MethodReference GetNativeStructSizeMethod;
     public static MethodReference InvokeNativeFunctionMethod;
+    public static MethodReference GetSignatureFunction;
     
     public static void Initialize(AssemblyDefinition bindingsAssembly)
     {
@@ -62,12 +64,15 @@ public static class WeaverHelper
         GetNativeStructFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeStructFromName");
         GetNativeClassFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeClassFromName");
         GetPropertyOffsetFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffsetFromName");
+        GetPropertyOffset = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffset");
         GetArrayElementSizeMethod = FindExporterMethod(Program.FArrayPropertyCallbacks, "CallGetArrayElementSize");
         GetNativePropertyFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetNativePropertyFromName");
         GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
         GetNativeFunctionParamsSizeMethod = FindExporterMethod(Program.UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
         GetNativeStructSizeMethod = FindExporterMethod(Program.UScriptStructCallbacks, "CallGetNativeStructSize");
         InvokeNativeFunctionMethod = FindExporterMethod(Program.UObjectCallbacks, "CallInvokeNativeFunction");
+        GetSignatureFunction = FindExporterMethod(Program.MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
+        
     }
     
     public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
@@ -152,7 +157,7 @@ public static class WeaverHelper
     {
         if (attributes == 0)
         {
-            attributes = FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private;
+            attributes = FieldAttributes.Static | FieldAttributes.Private;
         }
         
         var field = new FieldDefinition(name, attributes, typeReference);
@@ -172,6 +177,35 @@ public static class WeaverHelper
         var parameter = new ParameterDefinition(typeReference);
         method.Parameters.Add(parameter);
         return parameter;
+    }
+    
+    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod)
+    {
+        return CopyMethod(method, overrideMethod, method.ReturnType);
+    }
+
+    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod, TypeReference returnType)
+    {
+        MethodDefinition newMethod = new MethodDefinition(method.Name, method.Attributes, returnType);
+
+        if (overrideMethod)
+        {
+            newMethod.Attributes &= ~MethodAttributes.VtableLayoutMask;
+            newMethod.Attributes &= ~MethodAttributes.NewSlot;
+            newMethod.Attributes |= MethodAttributes.ReuseSlot;
+        }
+
+        newMethod.HasThis = true;
+        newMethod.ExplicitThis = method.ExplicitThis;
+        newMethod.CallingConvention = method.CallingConvention;
+
+        foreach (ParameterDefinition parameter in method.Parameters)
+        {
+            TypeReference importedType = ImportType(parameter.ParameterType);
+            newMethod.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, importedType));
+        }
+
+        return newMethod;
     }
     
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
@@ -264,14 +298,14 @@ public static class WeaverHelper
         return default;
     }
     
-    public static TypeDefinition CreateNewType(AssemblyDefinition assembly, string classNamespace, string newTypeName, TypeAttributes newTypeAttributes, TypeReference? baseType = null)
+    public static TypeDefinition CreateNewClass(AssemblyDefinition assembly, string classNamespace, string className, TypeAttributes attributes, TypeReference? parentClass = null)
     {
-        if (baseType == null)
+        if (parentClass == null)
         {
-            baseType = assembly.MainModule.TypeSystem.Object;
+            parentClass = assembly.MainModule.TypeSystem.Object;
         }
         
-        TypeDefinition newType = new TypeDefinition(classNamespace, newTypeName, newTypeAttributes, baseType);
+        TypeDefinition newType = new TypeDefinition(classNamespace, className, attributes, parentClass);
         assembly.MainModule.Types.Add(newType);
         return newType;
     }
@@ -290,6 +324,42 @@ public static class WeaverHelper
         
         method.Body.Optimize();
         method.Body.SimplifyMacros();
+    }
+    
+    public static void RemoveReturnInstruction(MethodDefinition method)
+    {
+        if (method.Body.Instructions.Count > 0 && method.Body.Instructions[^1].OpCode == OpCodes.Ret)
+        {
+            method.Body.Instructions.RemoveAt(method.Body.Instructions.Count - 1);
+        }
+    }
+
+    public static MethodDefinition AddToNativeMethod(TypeDefinition type, TypeDefinition valueType, TypeReference[]? parameters = null)
+    {
+        if (parameters == null)
+        {
+            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType, valueType];
+        }
+        
+        MethodDefinition toNativeMethod = AddMethodToType(type, "ToNative", 
+            VoidTypeRef,
+            MethodAttributes.Public | MethodAttributes.Static, parameters);
+
+        return toNativeMethod;
+    }
+    
+    public static MethodDefinition AddFromNativeMethod(TypeDefinition type, TypeDefinition returnType, TypeReference[]? parameters = null)
+    {
+        if (parameters == null)
+        {
+            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType];
+        }
+        
+        MethodDefinition fromNative = AddMethodToType(type, "FromNative", 
+            returnType,
+            MethodAttributes.Public | MethodAttributes.Static, parameters);
+
+        return fromNative;
     }
     
     public static NativeDataType GetDataType(TypeReference typeRef, string propertyName, Collection<CustomAttribute>? customAttributes)
@@ -420,15 +490,20 @@ public static class WeaverHelper
             {
                 return new NativeDataTextType(typeRef, arrayDim);
             }
-
-            if (typeDef.BaseType.Name == "EventDispatcher")
+            
+            if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
             {
-                return new NativeDataMulticastDelegate(typeDef, "MulticastInlineDelegateProperty", arrayDim);
+                return new NativeDataMulticastDelegate(typeDef);
+            }
+            
+            if (typeDef.BaseType.Name.Contains("Delegate"))
+            {
+                return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
             }
             
             if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
             {
-                return new NativeDataDefaultComponent(customAttributes, typeDef, "ObjectMarshaller`1", "DefaultComponent", arrayDim);
+                return new NativeDataDefaultComponent(customAttributes, typeDef, "ObjectMarshaller`1", arrayDim);
             }
             
             TypeDefinition superType = typeDef;
@@ -604,7 +679,8 @@ public static class WeaverHelper
                     return Instruction.Create(OpCodes.Ldobj, param.ParameterType.GetElementType());
 
                 case PropertyType.Delegate:
-                case PropertyType.MulticastDelegate:
+                case PropertyType.MulticastInlineDelegate:
+                case PropertyType.MulticastSparseDelegate:
                     // Delegate/multicast delegates in C# are implemented as classes, use Ldind_Ref
                     return Instruction.Create(OpCodes.Ldind_Ref);
 
@@ -621,6 +697,7 @@ public static class WeaverHelper
                 case PropertyType.Unknown:
                 case PropertyType.Interface:
                 case PropertyType.Object:
+                case PropertyType.ObjectPtr:
                 case PropertyType.Str:
                 case PropertyType.Name:
                 case PropertyType.Text:
@@ -679,7 +756,8 @@ public static class WeaverHelper
                     return Instruction.Create(OpCodes.Stobj, param.ParameterType.GetElementType());
 
                 case PropertyType.Delegate:
-                case PropertyType.MulticastDelegate:
+                case PropertyType.MulticastSparseDelegate:
+                case PropertyType.MulticastInlineDelegate:
                     // Delegate/multicast delegates in C# are implemented as classes, use Stind_Ref
                     return Instruction.Create(OpCodes.Stind_Ref);
 
@@ -696,6 +774,7 @@ public static class WeaverHelper
                 case PropertyType.Unknown:
                 case PropertyType.Interface:
                 case PropertyType.Object:
+                case PropertyType.ObjectPtr:
                 case PropertyType.Str:
                 case PropertyType.DefaultComponent:
                 default:

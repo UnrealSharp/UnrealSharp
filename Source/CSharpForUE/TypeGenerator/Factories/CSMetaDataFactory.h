@@ -10,7 +10,7 @@ struct FUnrealType;
 		});
 
 #define REGISTER_METADATA(PropertyName, MetaDataName) \
-	REGISTER_METADATA_WITH_NAME(PropertyName::StaticClass()->GetFName(), MetaDataName)
+	REGISTER_METADATA_WITH_NAME(PropertyName, MetaDataName)
 
 class CSMetaDataFactory
 {
