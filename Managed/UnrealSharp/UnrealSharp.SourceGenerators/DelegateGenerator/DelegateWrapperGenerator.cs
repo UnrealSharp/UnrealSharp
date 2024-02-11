@@ -14,7 +14,7 @@ public class DelegateInheritanceSyntaxReceiver : ISyntaxReceiver
     public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
     {
         if (syntaxNode is ClassDeclarationSyntax { BaseList: not null } classDecl &&
-            classDecl.BaseList.Types.Any(bt => bt.Type.ToString().Contains("MulticastDelegate")))
+            classDecl.BaseList.Types.Any(bt => bt.Type.ToString().Contains("MulticastDelegate") || bt.Type.ToString().Contains("Delegate")))
         {
             CandidateClasses.Add(classDecl);
         }

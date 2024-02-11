@@ -23,10 +23,7 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
         NativeProperty = nativeProperty;
     }
 
-    protected void ProcessDelegate(IntPtr parameters)
-    {
-        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeDelegate, NativeProperty, parameters);
-    }
+    protected abstract void ProcessDelegate(IntPtr parameters);
     
     public void Clear()
     {

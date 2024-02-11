@@ -73,6 +73,11 @@ public static class UnrealClassProcessor
             function.EmitFunctionParamOffsets(processor, functionPointerField);
             function.EmitFunctionParamSize(processor, functionPointerField);
             function.EmitParamElementSize(processor, functionPointerField);
+            
+            foreach (var param in function.Parameters)
+            {
+                param.PropertyDataType.WritePostInitialization(processor, param, variableDefinition);
+            }
         }
         
         foreach (var property in metadata.Properties)

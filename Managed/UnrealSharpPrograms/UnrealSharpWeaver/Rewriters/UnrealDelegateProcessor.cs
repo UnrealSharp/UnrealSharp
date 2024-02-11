@@ -43,6 +43,12 @@ public static class UnrealDelegateProcessor
         
         foreach (TypeDefinition type in delegateExtensions)
         {
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            
+            WriteInvokerMethod(invokerMethod, functionMetaData);
+            ProcessInitialize(type, functionMetaData);
+            
             TypeDefinition marshaller = WeaverHelper.CreateNewClass(
                 WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
 

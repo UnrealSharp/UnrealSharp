@@ -12,7 +12,7 @@ public struct WeakObjectData
 
 public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObject
 {
-    private readonly WeakObjectData _data;
+    internal readonly WeakObjectData _data;
     public T Object => Get();
     
     public WeakObject(T obj)

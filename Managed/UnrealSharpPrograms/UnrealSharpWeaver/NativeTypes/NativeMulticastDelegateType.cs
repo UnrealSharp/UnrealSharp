@@ -19,7 +19,7 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         AddBackingField(typeDefinition, propertyMetadata);
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
     }
-
+    
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
     {
         if (Signature.Parameters.Length == 0)
@@ -27,8 +27,8 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
             return;
         }
         
-        PropertyDefinition propertyRef = (PropertyDefinition) propertyMetadata.MemberRef.Resolve();
-        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef.PropertyType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
+        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Emit(OpCodes.Ldloc, propertyPointer);
         processor.Emit(OpCodes.Call, Initialize);
     }
