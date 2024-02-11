@@ -29,6 +29,8 @@ void FCSPropertyFactory ::InitializePropertyFactory()
 	AddSimpleProperty<FStrProperty>(ECSPropertyType::Str);
 	AddSimpleProperty<FTextProperty>(ECSPropertyType::Text);
 
+	AddProperty(ECSPropertyType::DefaultComponent, &CreateObjectPtrProperty);
+
 	AddProperty(ECSPropertyType::Object, &CreateObjectProperty);
 	AddProperty(ECSPropertyType::WeakObject, &CreateWeakObjectProperty);
 	AddProperty(ECSPropertyType::SoftObject, &CreateSoftObjectProperty);
