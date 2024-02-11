@@ -9,19 +9,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriteInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/MulticastDelegate.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/ErrorEmitter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/ErrorEmitter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/FunctionMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/InterfaceMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/VirtualFunctionMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/VirtualFunctionMetaData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/ConstructorBuilder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/ConstructorBuilder.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/FunctionRewriterHelpers.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/PropertyMetaData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/MetaData/PropertyMetaData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataBaseDelegateType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataBaseDelegateType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataDelegateType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataDelegateType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeDataType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/NativeTypes/NativeMulticastDelegateType.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/PropertyRewriterHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/PropertyRewriterHelpers.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealClassProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealClassProcessor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealDelegateProcessor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/Rewriters/UnrealStructProcessor.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/WeaverHelper.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,29 +60,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Project.UnrealSharpBuildTool.executor&quot;: &quot;Debug&quot;,
-    &quot;.NET Project.UnrealSharpWeaver.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;XThreadsFramesViewSplitterKey&quot;: &quot;0.6666667&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;DelegatesC#&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Project.UnrealSharpBuildTool.executor": "Debug",
+    ".NET Project.UnrealSharpWeaver.executor": "Debug",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "XThreadsFramesViewSplitterKey": "0.5655961",
+    "git-widget-placeholder": "DelegatesC#",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;rider.external.source.directories&quot;: [
-      &quot;C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache&quot;,
-      &quot;C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache&quot;,
-      &quot;C:\\Users\\olsso\\AppData\\Local\\Symbols\\src&quot;
+  "keyToStringList": {
+    "rider.external.source.directories": [
+      "C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache",
+      "C:\\Users\\olsso\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache",
+      "C:\\Users\\olsso\\AppData\\Local\\Symbols\\src"
     ]
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected=".NET Project.UnrealSharpWeaver">
     <configuration name="UnrealSharpBuildTool" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/../../Binaries/DotNet/net8.0/UnrealSharpBuildTool.exe" />
@@ -179,5 +180,10 @@
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="Type#UnrealSharpWeaver.MetaData.PropertyMetaData" memberName="PropertyDataType" />
+      </pinned-members>
+    </pin-to-top-manager>
   </component>
 </project>

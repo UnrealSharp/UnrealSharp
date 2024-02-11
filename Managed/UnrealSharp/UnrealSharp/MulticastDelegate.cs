@@ -7,7 +7,7 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
 {
     protected override void ProcessDelegate(IntPtr parameters)
     {
-        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeDelegate, NativeProperty, parameters);
+        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeProperty, NativeDelegate, parameters);
     }
 
     public override void BindUFunction(Object targetObject, Name functionName)

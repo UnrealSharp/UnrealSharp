@@ -148,7 +148,8 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         return processor;
     }
 
-    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
+    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
+        Instruction loadNativePointer, Instruction setNativePointer)
     {
         
     }

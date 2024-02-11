@@ -491,14 +491,14 @@ public static class WeaverHelper
                 return new NativeDataTextType(typeRef, arrayDim);
             }
             
-            if (typeDef.BaseType.Name.Contains("Delegate"))
-            {
-                return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
-            }
-
             if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
             {
                 return new NativeDataMulticastDelegate(typeDef);
+            }
+            
+            if (typeDef.BaseType.Name.Contains("Delegate"))
+            {
+                return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
             }
             
             if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))

@@ -251,7 +251,8 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMeta
 		return NewProperty;
 	}
 
-	UE_LOG(LogUnrealSharp, Warning, TEXT("%hs: Property type with name %s doesn't exist. Can't create new property."), __FUNCTION__, *PropertyMetaData.Type->UnrealPropertyClass.ToString());
+	FText DisplayName = StaticEnum<ECSPropertyType>()->GetDisplayValueAsText(PropertyMetaData.Type->PropertyType);
+	UE_LOG(LogUnrealSharp, Warning, TEXT("%hs: Property type with name %s doesn't exist. Can't create new property."), __FUNCTION__, *DisplayName.ToString());
 	return nullptr;
 }
 

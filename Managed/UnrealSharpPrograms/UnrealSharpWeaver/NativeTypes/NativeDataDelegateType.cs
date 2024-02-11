@@ -12,7 +12,7 @@ public class NativeDataDelegateType : NativeDataBaseDelegateType
         
     }
     
-    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
+    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
         if (Signature.Parameters.Length == 0)
         {
@@ -24,14 +24,18 @@ public class NativeDataDelegateType : NativeDataBaseDelegateType
         
         if (propertyMetadata.MemberRef is not PropertyDefinition)
         {
-            propertyPointer = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
-            processor.Emit(OpCodes.Ldloc, propertyPointer);
+            VariableDefinition propertyPointer = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+            processor.Append(loadNativePointer);
             processor.Emit(OpCodes.Ldstr, propertyMetadata.Name);
             processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stloc, propertyPointer);
+            processor.Emit(OpCodes.Ldloc, propertyPointer);
+        }
+        else
+        {
+            processor.Append(loadNativePointer);
         }
         
-        processor.Emit(OpCodes.Ldloc, propertyPointer);
         processor.Emit(OpCodes.Call, Initialize);
     }
     

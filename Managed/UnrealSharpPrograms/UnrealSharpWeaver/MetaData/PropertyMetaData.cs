@@ -17,6 +17,7 @@ public class PropertyMetaData : BaseMetaData
     
     // Non-serialized for JSON
     public FieldDefinition PropertyOffsetField;
+    public FieldDefinition? NativePropertyField;
     public readonly MemberReference MemberRef;
     // End non-serialized
     
@@ -221,12 +222,12 @@ public class PropertyMetaData : BaseMetaData
         return (propertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
     }
     
-    public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, VariableDefinition propertyPointer)
+    public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, Instruction setPropertyPointer)
     {
         processor.Append(loadNativeType);
         processor.Emit(OpCodes.Ldstr, Name);
         processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
-        processor.Emit(OpCodes.Stloc, propertyPointer);
+        processor.Append(setPropertyPointer);
     }
     
     public void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType)

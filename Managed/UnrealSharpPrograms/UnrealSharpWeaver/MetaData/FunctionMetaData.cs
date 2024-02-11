@@ -203,12 +203,12 @@ public class FunctionMetaData : BaseMetaData
         return false;
     }
     
-    public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, VariableDefinition functionPointerVar)
+    public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, Instruction setFunctionPointer)
     {
         processor.Append(loadTypeField);
         processor.Emit(OpCodes.Ldstr, Name);
         processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionFromClassAndNameMethod);
-        processor.Emit(OpCodes.Stloc, functionPointerVar);
+        processor.Append(setFunctionPointer);
     }
     
     public void EmitFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)

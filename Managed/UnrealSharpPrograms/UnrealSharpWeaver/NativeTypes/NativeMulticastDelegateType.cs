@@ -20,7 +20,8 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
     }
     
-    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, VariableDefinition propertyPointer)
+    public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
+        Instruction loadNativePointer, Instruction setNativePointer)
     {
         if (Signature.Parameters.Length == 0)
         {
@@ -29,7 +30,7 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         
         TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
         MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
-        processor.Emit(OpCodes.Ldloc, propertyPointer);
+        processor.Append(loadNativePointer);
         processor.Emit(OpCodes.Call, Initialize);
     }
 

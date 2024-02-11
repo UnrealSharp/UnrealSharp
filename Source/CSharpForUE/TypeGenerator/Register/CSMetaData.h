@@ -18,6 +18,7 @@ struct FFunctionMetaData;
 struct FObjectMetaData;
 
 // Update this enum in PropertyType.cs in the UnrealSharpWeaver if you change this enum
+UENUM()
 enum class ECSPropertyType : uint8
 {
 	Unknown,

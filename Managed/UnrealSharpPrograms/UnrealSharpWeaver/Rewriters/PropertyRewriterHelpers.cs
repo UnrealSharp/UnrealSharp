@@ -25,6 +25,7 @@ public static class PropertyRewriterHelpers
             
             if (nativePropertyField != null)
             {
+                prop.NativePropertyField = nativePropertyField;
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
             }
 

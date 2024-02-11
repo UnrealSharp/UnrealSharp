@@ -8,7 +8,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
 {
     public NativeDataBaseDelegateType(TypeReference typeRef, string marshallerName, PropertyType propertyType) 
-        : base(typeRef, marshallerName, 0, propertyType)
+        : base(typeRef, marshallerName, 1, propertyType)
     {
         TypeDefinition delegateTypeDef = typeRef.Resolve();
         

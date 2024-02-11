@@ -67,28 +67,39 @@ public static class UnrealClassProcessor
             }
             
             VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
-            Instruction functionPointerField = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
             
-            function.EmitFunctionPointers(processor, loadNativeClassField, variableDefinition);
-            function.EmitFunctionParamOffsets(processor, functionPointerField);
-            function.EmitFunctionParamSize(processor, functionPointerField);
-            function.EmitParamElementSize(processor, functionPointerField);
+            function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
+            function.EmitFunctionParamOffsets(processor, loadNativePointer);
+            function.EmitFunctionParamSize(processor, loadNativePointer);
+            function.EmitParamElementSize(processor, loadNativePointer);
             
             foreach (var param in function.Parameters)
             {
-                param.PropertyDataType.WritePostInitialization(processor, param, variableDefinition);
+                param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
             }
         }
         
         foreach (var property in metadata.Properties)
         {
-            VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
-            property.InitializePropertyPointers(processor, loadNativeClassField, variableDefinition);
+            Instruction loadNativeProperty;
+            Instruction setNativeProperty;
+            if (property.NativePropertyField == null)
+            {
+                VariableDefinition nativePropertyVar = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+                loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
+                setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
+            }
+            else
+            {
+                loadNativeProperty = Instruction.Create(OpCodes.Ldsfld, property.NativePropertyField);
+                setNativeProperty = Instruction.Create(OpCodes.Stsfld, property.NativePropertyField);
+            }
             
-            Instruction propertyField = Instruction.Create(OpCodes.Ldloc, variableDefinition);
-            property.InitializePropertyOffsets(processor, propertyField);
-
-            property.PropertyDataType.WritePostInitialization(processor, property, variableDefinition);
+            property.InitializePropertyPointers(processor, loadNativeClassField, setNativeProperty);
+            property.InitializePropertyOffsets(processor, loadNativeProperty);
+            property.PropertyDataType.WritePostInitialization(processor, property, loadNativeProperty, setNativeProperty);
         }
         
         processor.Emit(OpCodes.Ret);
