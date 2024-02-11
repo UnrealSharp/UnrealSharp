@@ -196,35 +196,35 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
 
     // Emits IL for a default constructible and possibly generic fixed array marshaling helper object.
     // If typeParams is null, a non-generic type is assumed.
-    protected void EmitSimpleMarshalerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
+    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
     {
-        AssemblyDefinition marshalerAssembly;
-        string marshalerNamespace;
+        AssemblyDefinition marshallerAssembly;
+        string marshallerNamespace;
         
         if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
         {
-            marshalerAssembly = WeaverHelper.BindingsAssembly;
-            marshalerNamespace = Program.UnrealSharpNamespace;
+            marshallerAssembly = WeaverHelper.BindingsAssembly;
+            marshallerNamespace = Program.UnrealSharpNamespace;
         }
         else
         {
-            marshalerAssembly = CSharpType.Module.Assembly;
-            marshalerNamespace = CSharpType.Namespace;
+            marshallerAssembly = CSharpType.Module.Assembly;
+            marshallerNamespace = CSharpType.Namespace;
         }
 
-        TypeReference marshalerType;
+        TypeReference marshallerType;
         
         if (typeParams != null)
         {
-            marshalerType = WeaverHelper.FindGenericTypeInAssembly(marshalerAssembly, marshalerNamespace, marshallerTypeName, typeParams);
+            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName, typeParams);
         }
         else
         {
-            marshalerType = WeaverHelper.FindTypeInAssembly(marshalerAssembly, marshalerNamespace, marshallerTypeName);
+            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName);
         }
 
-        MethodReference fromNative = (from method in marshalerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];
-        MethodReference toNative = (from method in marshalerType.Resolve().GetMethods() where method.IsStatic && method.Name == "ToNative" select method).ToArray()[0];
+        MethodReference fromNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];
+        MethodReference toNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "ToNative" select method).ToArray()[0];
 
         if (typeParams != null)
         {
@@ -237,7 +237,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
     }
 
     public abstract void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type);
-    public virtual void EmitDynamicArrayMarshalerDelegates(ILProcessor processor, TypeDefinition type)
+    public virtual void EmitDynamicArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
     {
         EmitFixedArrayMarshallerDelegates(processor, type);
     }
@@ -250,24 +250,6 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         }
         else
         {
-            /*
-              IL_0000:  ldarg.0
-              IL_0001:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0006:  brtrue.s   IL_0023
-              IL_0008:  ldarg.0
-              IL_0009:  ldarg.0
-              IL_000a:  ldsfld     int32 UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Offset
-              IL_000f:  ldsfld     int32 UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Length
-              IL_0014:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.BlittableFixedSizeArrayMarshaler`1<int32>::.ctor()
-              IL_0019:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32>::.ctor(class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject,
-                                                                                                                                          int32,
-                                                                                                                                          int32,
-                                                                                                                                          class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayMarshaler`1<!0>)
-              IL_001e:  stfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0023:  ldarg.0
-              IL_0024:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.FixedSizeArrayReadWrite`1<int32> UnrealEngine.MonoRuntime.MonoTestsObject::TestStaticIntArray_Wrapper
-              IL_0029:  ret
-             */
             ILProcessor processor = InitPropertyAccessor(getter);
 
             processor.Emit(OpCodes.Ldarg_0);
@@ -280,7 +262,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
             processor.Emit(OpCodes.Ldsfld, offsetField);
             processor.Emit(OpCodes.Ldc_I4, ArrayDim);
 
-            // Allow subclasses to control construction of their own marshalers, as there may be
+            // Allow subclasses to control construction of their own marshallers, as there may be
             // generics and/or ctor parameters involved.
             EmitFixedArrayMarshallerDelegates(processor, type);
             

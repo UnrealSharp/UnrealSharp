@@ -20,6 +20,11 @@ public static class UnrealDelegateProcessor
                 throw new Exception("Could not find Invoker method in delegate extension type");
             }
             
+            if (invokerMethod.Parameters.Count == 0)
+            {
+                continue;
+            }
+            
             FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(invokerMethod, functionMetaData);
@@ -27,7 +32,7 @@ public static class UnrealDelegateProcessor
         }
     }
     
-    public static void ProcessDelegates(List<TypeDefinition> delegateExtensions)
+    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
             WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "DelegateData");
@@ -43,12 +48,6 @@ public static class UnrealDelegateProcessor
         
         foreach (TypeDefinition type in delegateExtensions)
         {
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
-            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
-            
-            WriteInvokerMethod(invokerMethod, functionMetaData);
-            ProcessInitialize(type, functionMetaData);
-            
             TypeDefinition marshaller = WeaverHelper.CreateNewClass(
                 WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
 
@@ -80,6 +79,18 @@ public static class UnrealDelegateProcessor
             MethodReference? constructorDelegate = WeaverHelper.FindMethod(type, ".ctor", true, [delegateDataStruct]);
             processor.Emit(OpCodes.Newobj, constructorDelegate);
             processor.Emit(OpCodes.Ret);
+            
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
+            
+            if (invokerMethod.Parameters.Count == 0)
+            {
+                continue;
+            }
+            
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            
+            WriteInvokerMethod(invokerMethod, functionMetaData);
+            ProcessInitialize(type, functionMetaData);
         }
     }
 

@@ -35,7 +35,7 @@ class NativeDataStringType : NativeDataType
 
     public override void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
     {
-        EmitSimpleMarshalerDelegates(processor, "StringMarshaller", null);
+        EmitSimpleMarshallerDelegates(processor, "StringMarshaller", null);
     }
 
     protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)

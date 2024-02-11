@@ -22,7 +22,7 @@ public class NativeDataDelegateType : NativeDataBaseDelegateType
         TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
         MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
         
-        if (propertyMetadata.MemberRef is not PropertyDefinition property)
+        if (propertyMetadata.MemberRef is not PropertyDefinition)
         {
             propertyPointer = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
             processor.Emit(OpCodes.Ldloc, propertyPointer);

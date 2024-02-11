@@ -212,7 +212,7 @@ public static class Program
             }
             
             UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessDelegates(delegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);

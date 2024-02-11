@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
+using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
@@ -41,13 +42,18 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     {
         return obj.Equals(TargetObject.Object);
     }
-    
-    public void Bind(CoreUObject.Object targetObject, Name functionName)
+
+    public override void BindUFunction(Object targetObject, Name functionName)
     {
-        _data.Object = new WeakObject<CoreUObject.Object>(targetObject)._data;
+        BindUFunction(new WeakObject<Object>(targetObject), functionName);
+    }
+
+    public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
+    {
+        _data.Object = targetObject._data;
         _data.FunctionName = functionName;
     }
-    
+
     public bool IsBound => _data.Object.ObjectIndex != 0;
     
     public void Unbind()

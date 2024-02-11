@@ -996,7 +996,7 @@ void FCSGenerator::ExportStructMarshaller(FCSScriptBuilder& Builder, const UScri
 	FString StructName = NameMapper.GetStructScriptName(Struct);
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaler"), *StructName));
+	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *StructName));
 	Builder.OpenBrace();
 
 	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)"), *StructName));

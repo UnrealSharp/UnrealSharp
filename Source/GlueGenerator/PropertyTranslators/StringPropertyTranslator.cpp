@@ -85,7 +85,7 @@ void FStringPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& 
 
 FString FStringPropertyTranslator::ExportMarshallerDelegates(const FProperty *Property, const FString &NativePropertyName) const
 {
-	return TEXT("StringMarshaller.ToNative, StringMarshaler.FromNative");
+	return TEXT("StringMarshaller.ToNative, StringMarshaller.FromNative");
 }
 
 FString FStringPropertyTranslator::ConvertCppDefaultParameterToCSharp(const FString& CppDefaultValue, UFunction* Function, FProperty* ParamProperty) const

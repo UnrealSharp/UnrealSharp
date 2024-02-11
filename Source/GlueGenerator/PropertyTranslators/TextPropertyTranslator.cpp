@@ -52,7 +52,7 @@ FString FTextPropertyTranslator::GetNullReturnCSharpValue(const FProperty* Retur
 
 FString FTextPropertyTranslator::ExportInstanceMarshallerVariables(const FProperty *Property, const FString &PropertyName) const
 {
-	return FString::Printf(TEXT("TextMarshaller InstanceMarshaler = new TextMarshaler(%s_Length);"), *PropertyName);
+	return FString::Printf(TEXT("TextMarshaller InstanceMarshaller = new TextMarshaller(%s_Length);"), *PropertyName);
 }
 
 FString FTextPropertyTranslator::ExportMarshallerDelegates(const FProperty *Property, const FString &PropertyName) const

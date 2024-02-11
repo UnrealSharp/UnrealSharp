@@ -52,9 +52,9 @@ class NativeDataArrayType : NativeDataType
 
         InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, InnerProperty);
 
-        // Instantiate generics for the direct access and copying marshalers.
-        string wrapperTypeName = "UnrealArrayReadWriteMarshaler`1";
-        string copyWrapperTypeName = "UnrealArrayCopyMarshaler`1";
+        // Instantiate generics for the direct access and copying marshallers.
+        string wrapperTypeName = "UnrealArrayReadWriteMarshaller`1";
+        string copyWrapperTypeName = "UnrealArrayCopyMarshaller`1";
 
         ArrayWrapperTypeParameters = [WeaverHelper.UserAssembly.MainModule.ImportReference(InnerProperty.PropertyDataType.CSharpType)
         ];
@@ -124,53 +124,6 @@ class NativeDataArrayType : NativeDataType
     {
         ILProcessor processor = InitPropertyAccessor(getter);
 
-        /*
-            .method public hidebysig specialname instance class [mscorlib]System.Collections.Generic.IList`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>
-                        get_Tags() cil managed
-                {
-                  // Code size       79 (0x4f)
-                  .maxstack  6
-                  IL_0000:  ldarg.0
-                  IL_0001:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWriteMarshaler`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name> UnrealEngine.Engine.Actor::Tags_Wrapper
-                  IL_0006:  brtrue.s   IL_0031
-                  IL_0008:  ldarg.0
-                  IL_0009:  ldc.i4.1
-                  IL_000a:  ldsfld     native int UnrealEngine.Engine.Actor::Tags_NativeProperty
-                  IL_000f:  ldnull
-                  IL_0010:  ldftn      void class [UnrealEngine.Runtime]UnrealEngine.Runtime.BlittableMarshaller`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::ToNative(native int,
-                                                                                                                                                                                           int32,
-                                                                                                                                                                                           class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject,
-                                                                                                                                                                                           !0)
-                  IL_0016:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.MarshalingDelegates`1/ToNative<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::.ctor(object,
-                                                                                                                                                                                                       native int)
-                  IL_001b:  ldnull
-                  IL_001c:  ldftn      !0 class [UnrealEngine.Runtime]UnrealEngine.Runtime.BlittableMarshaller`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::FromNative(native int,
-                                                                                                                                                                                           int32,
-                                                                                                                                                                                           class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject)
-                  IL_0022:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.MarshalingDelegates`1/FromNative<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::.ctor(object,
-                                                                                                                                                                                                         native int)
-                  IL_0027:  newobj     instance void class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWriteMarshaler`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::.ctor(int32,
-                                                                                                                                                                                                        native int,
-                                                                                                                                                                                                        class [UnrealEngine.Runtime]UnrealEngine.Runtime.MarshalingDelegates`1/ToNative<!0>,
-                                                                                                                                                                                                        class [UnrealEngine.Runtime]UnrealEngine.Runtime.MarshalingDelegates`1/FromNative<!0>)
-                  IL_002c:  stfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWriteMarshaler`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name> UnrealEngine.Engine.Actor::Tags_Wrapper
-                  IL_0031:  ldarg.0
-                  IL_0032:  ldfld      class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWriteMarshaler`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name> UnrealEngine.Engine.Actor::Tags_Wrapper
-                  IL_0037:  ldarg.0
-                  IL_0038:  call       instance native int [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject::get_NativeObject()
-                  IL_003d:  ldsfld     int32 UnrealEngine.Engine.Actor::Tags_Offset
-                  IL_0042:  call       native int [mscorlib]System.IntPtr::Add(native int,
-                                                                               int32)
-                  IL_0047:  ldc.i4.0
-                  IL_0048:  ldarg.0
-                  IL_0049:  callvirt   instance class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWrite`1<!0> class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealArrayReadWriteMarshaler`1<valuetype [UnrealEngine.Runtime]UnrealEngine.Runtime.Name>::FromNative(native int,
-                                                                                                                                                                                                                                                                                    int32,
-                                                                                                                                                                                                                                                                                    class [UnrealEngine.Runtime]UnrealEngine.Runtime.UnrealObject)
-                  IL_004e:  ret
-                } // end of method Actor::get_Tags
-         */
-
-
         processor.Emit(OpCodes.Ldarg_0);
         processor.Emit(OpCodes.Ldfld, ArrayWrapperField);
 
@@ -180,7 +133,7 @@ class NativeDataArrayType : NativeDataType
 
         processor.Emit(OpCodes.Ldc_I4_1);
         processor.Emit(OpCodes.Ldsfld, nativePropertyField);
-        InnerProperty.PropertyDataType.EmitDynamicArrayMarshalerDelegates(processor, type);
+        InnerProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
 
         var constructor = (from method in ArrayWrapperType.Resolve().GetConstructors()
             where (!method.IsStatic
@@ -253,7 +206,7 @@ class NativeDataArrayType : NativeDataType
         processor.Body.Variables.Add(MarshalingLocal);
 
         processor.Emit(OpCodes.Ldc_I4_1);
-        InnerProperty.PropertyDataType.EmitDynamicArrayMarshalerDelegates(processor, type);
+        InnerProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
         processor.Emit(OpCodes.Ldsfld, ElementSizeField);
         processor.Emit(OpCodes.Newobj, CopyArrayWrapperCtor);
         processor.Emit(OpCodes.Stloc, MarshalingLocal);
@@ -274,7 +227,7 @@ class NativeDataArrayType : NativeDataType
         processor.Body.Variables.Add(MarshalingLocal);
 
         processor.Emit(OpCodes.Ldc_I4_1);
-        InnerProperty.PropertyDataType.EmitDynamicArrayMarshalerDelegates(processor, type);
+        InnerProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
         processor.Emit(OpCodes.Ldsfld, ElementSizeField);
         processor.Emit(OpCodes.Newobj, CopyArrayWrapperCtor);
         processor.Emit(OpCodes.Stloc, MarshalingLocal);

@@ -32,12 +32,24 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         }
         else
         {
-            MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName, false);
-
-            if (MarshallerClass == null)
+            //TODO: Make this prettier! :(
             {
-                TypeDefinition propertyTypeDefinition = CSharpType.Resolve();
-                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.UserAssembly, propertyTypeDefinition.Namespace, marshallerName);
+                // Try to find the marshaller in the bindings assembly
+                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName, false);
+
+                if (MarshallerClass == null)
+                {
+                    TypeDefinition propertyTypeDefinition = CSharpType.Resolve();
+                    
+                    // Try to find the marshaller in the bindings again, but with the namespace of the property type.
+                    MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, propertyTypeDefinition.Namespace, marshallerName, false);
+
+                    // Finally, try to find the marshaller in the user assembly.
+                    if (MarshallerClass == null)
+                    {
+                        MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.UserAssembly, propertyTypeDefinition.Namespace, marshallerName);
+                    }
+                }
             }
         }
 
@@ -172,6 +184,6 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
             }
         }
 
-        EmitSimpleMarshalerDelegates(processor, marshallerName, typeParams);
+        EmitSimpleMarshallerDelegates(processor, marshallerName, typeParams);
     }
 }
