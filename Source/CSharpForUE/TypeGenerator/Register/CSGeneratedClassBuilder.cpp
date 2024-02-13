@@ -12,7 +12,21 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	{
 		UClass* SuperClass = FCSTypeRegistry::GetClassFromName(*TypeMetaData->ParentClass.Name);
 
-		Field->ClassFlags |= TypeMetaData->ClassFlags | CLASS_Native;
+		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
+		{
+			UBlueprint* DummyBlueprint = NewObject<UBlueprint>(Field);
+			DummyBlueprint->SkeletonGeneratedClass = Field;
+			DummyBlueprint->GeneratedClass = Field;
+			DummyBlueprint->ParentClass = SuperClass;
+
+			DummyBlueprint->bRecompileOnLoad = false;
+			DummyBlueprint->bIsRegeneratingOnLoad = false;
+		
+			Field->bCooked = true;
+			Field->ClassGeneratedBy = DummyBlueprint;
+		}
+		
+		Field->ClassFlags = TypeMetaData->ClassFlags;
 		Field->SetSuperStruct(SuperClass);
 		Field->PropertyLink = SuperClass->PropertyLink;
 		Field->ClassWithin = SuperClass->ClassWithin;
