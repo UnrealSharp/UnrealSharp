@@ -5,7 +5,7 @@
 #include "CSDeveloperSettings.generated.h"
 
 UENUM()
-enum class EDotNetBuildConfiguration : uint8
+enum EDotNetBuildConfiguration : uint8
 {
 	Debug,
 	Release
