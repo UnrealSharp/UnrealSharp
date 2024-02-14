@@ -195,6 +195,9 @@ public class PropertyMetaData : BaseMetaData
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
 
+            // Just a quality of life, if the property is set to ReplicatedUsing, it should be replicating
+            flags |= PropertyFlags.Net;
+            
             RepNotifyFunctionName = notifyMethodName;
         }
         
