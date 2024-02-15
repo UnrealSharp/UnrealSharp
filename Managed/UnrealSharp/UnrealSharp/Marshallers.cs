@@ -53,15 +53,14 @@ public static class BlittableMarshaller<T>
 
 public static class BoolMarshaller
 {
-    private const int UnmanagedBooleanSize = 1;
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, bool obj)
     {
-        BlittableMarshaller<NativeBool>.ToNative(nativeBuffer, arrayIndex, owner, obj.ToNativeBool(), UnmanagedBooleanSize);
+        BlittableMarshaller<NativeBool>.ToNative(nativeBuffer, arrayIndex, owner, obj.ToNativeBool());
     }
 
     public static bool FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {
-        return BlittableMarshaller<NativeBool>.FromNative(nativeBuffer, arrayIndex, owner, UnmanagedBooleanSize).ToManagedBool();
+        return BlittableMarshaller<NativeBool>.FromNative(nativeBuffer, arrayIndex, owner).ToManagedBool();
     }
 }
 

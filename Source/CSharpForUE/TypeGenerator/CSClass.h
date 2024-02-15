@@ -8,7 +8,7 @@
 class UCSFunction;
 
 UCLASS()
-class CSHARPFORUE_API UCSClass : public UClass
+class CSHARPFORUE_API UCSClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
 
