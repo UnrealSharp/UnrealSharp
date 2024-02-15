@@ -1,4 +1,6 @@
 ﻿#include "CSManager.h"
+
+#include "AssetToolsModule.h"
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
 #include "CSDeveloperSettings.h"
@@ -69,6 +71,13 @@ void FCSManager::InitializeUnrealSharp()
 	{
 		UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
 		UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
+
+#if WITH_EDITOR
+		// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
+		// Workaround for a hardcoded feature in the engine for Blueprints.
+		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+		AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackage->GetFName(), UnrealSharpPackage->GetFName());
+#endif
 	}
 
 	// Listen to GC callbacks.
