@@ -18,7 +18,6 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 ## UnrealSharp 0.1 Issues
 - Linux/Mac support is not yet implemented.
 - Packaging not yet implemented.
-- Multiplayer is almost done, but is not currently not working properly.
 - Hot reload is always full reload of the whole assembly. Will be reworked for 0.2 for speed.
 
 ## Get Started
