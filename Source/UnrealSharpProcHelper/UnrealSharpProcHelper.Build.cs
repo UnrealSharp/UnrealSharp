@@ -1,8 +1,8 @@
 ﻿using UnrealBuildTool;
 
-public class UnrealSharpEditor : ModuleRules
+public class UnrealSharpProcHelper : ModuleRules
 {
-    public UnrealSharpEditor(ReadOnlyTargetRules Target) : base(Target)
+    public UnrealSharpProcHelper(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -19,11 +19,8 @@ public class UnrealSharpEditor : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore",
-                "EditorSubsystem", 
-                "CSharpForUE",
-                "UnrealEd", 
-                "UnrealSharpProcHelper"
+                "SlateCore", 
+                "Projects"
             }
         );
     }

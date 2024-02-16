@@ -1,7 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "FTextExporter.h"
+﻿#include "FTextExporter.h"
 
 void UFTextExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -9,8 +6,6 @@ void UFTextExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedF
 	EXPORT_FUNCTION(FromString)
 	EXPORT_FUNCTION(FromName)
 	EXPORT_FUNCTION(CreateEmptyText)
-	EXPORT_FUNCTION(Compare)
-	EXPORT_FUNCTION(IsEmpty)
 }
 
 const TCHAR* UFTextExporter::ToString(FText* Text)
@@ -31,6 +26,7 @@ void UFTextExporter::FromString(FText* Text, const char* String)
 	}
 
 	*Text = Text->FromString(String);
+	check(true);
 }
 
 void UFTextExporter::FromName(FText* Text, FName Name)
@@ -51,24 +47,4 @@ void UFTextExporter::CreateEmptyText(FText* Text)
 	}
 
 	Text->GetEmpty();
-}
-
-bool UFTextExporter::Compare(FText* Text, FText* OtherText)
-{
-	if (!Text || !OtherText)
-	{
-		return false;
-	}
-	
-	return Text->EqualTo(*OtherText);
-}
-
-bool UFTextExporter::IsEmpty(FText* Text)
-{
-	if (!Text)
-	{
-		return true;
-	}
-
-	return Text->IsEmpty();
 }

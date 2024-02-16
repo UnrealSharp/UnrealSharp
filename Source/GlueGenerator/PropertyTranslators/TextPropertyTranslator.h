@@ -1,24 +1,19 @@
 #pragma once
-#include "PropertyTranslator.h"
 
-class FTextPropertyTranslator : public FPropertyTranslator
+#include "BlittableTypePropertyTranslator.h"
+
+class FTextPropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
 	explicit FTextPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
 
-	// FPropertyTranslator interface implementation
-	virtual bool CanHandleProperty(const FProperty* Property) const override;
-	virtual FString GetManagedType(const FProperty* Property) const override;
-	virtual void ExportPropertyStaticConstruction(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const override;
-	virtual FString ExportInstanceMarshallerVariables(const FProperty *Property, const FString &PropertyName) const override;
-	virtual FString ExportMarshallerDelegates(const FProperty *Property, const FString &PropertyName) const override;
-protected:
-	virtual void ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const override;
-	virtual bool IsSetterRequired() const override { return false; }
-	virtual void ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const override;
+	//FPropertyTranslator interface implementation
 	virtual FString GetNullReturnCSharpValue(const FProperty* ReturnProperty) const override;
-	// End of implementation
+	virtual bool CanExportDefaultParameter() const override { return false; }
+	virtual void ExportCppDefaultParameterAsLocalVariable(FCSScriptBuilder& Builder, const FString& VariableName, const FString& CppDefaultValue, UFunction* Function, FProperty* ParamProperty) const override;
+	virtual FString GetMarshaller(const FProperty* Property) const override;
+	//End of implementation
 
 
 };

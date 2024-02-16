@@ -1,5 +1,4 @@
 ﻿#include "CSManager.h"
-
 #include "AssetToolsModule.h"
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
@@ -7,8 +6,6 @@
 #include "CSharpForUE.h"
 #include "Export/FunctionsExporter.h"
 #include "GlueGenerator/CSGenerator.h"
-#include "Interfaces/IPluginManager.h"
-#include "Misc/ScopedSlowTask.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
@@ -16,22 +13,15 @@
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
-#include "CSDeveloperSettings.h"
-#include "Animation/WidgetAnimation.h"
 #include "Misc/MessageDialog.h"
+#include "UnrealSharpProcHelper/CSProcHelper.h"
 
 FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
 UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
-FString FCSManager::UserManagedProjectName = FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-FString FCSManager::PluginDirectory = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-FString FCSManager::UnrealSharpDirectory = FPaths::Combine(PluginDirectory, "Managed", "UnrealSharp");
-FString FCSManager::ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
-FString FCSManager::GeneratedClassesDirectory = FPaths::Combine(UnrealSharpDirectory, "UnrealSharp", "Generated");
-
 void FCSManager::InitializeUnrealSharp()
 {
-	FString DotNetInstallationPath = GetDotNetDirectory();
+	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
 	{
@@ -42,18 +32,21 @@ void FCSManager::InitializeUnrealSharp()
 	
 	// Build the UnrealSharpBuildTool and the Weaver.
 	// TODO: Make this a step in the build.cs instead
-	if (!BuildPrograms())
+	if (!FCSProcHelper::BuildPrograms())
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build program"));
 		return;
 	}
 	
 	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(GeneratedClassesDirectory);
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GeneratedClassesDirectory);
 
 #if WITH_EDITOR
 	// Make sure the C# API is up to date. This is only done in the editor.
-	if (!BuildBindings())
+	FString BuildConfiguration;
+	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
+	
+	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
@@ -61,7 +54,7 @@ void FCSManager::InitializeUnrealSharp()
 #endif
 	
 	// Generate the cs project. Ignore if it's already generated
-	if (!GenerateProject())
+	if (!FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 	 	return;
@@ -120,7 +113,7 @@ bool FCSManager::InitializeBindings()
 	const char_t* EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
 	const char_t* EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
-	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(GetUnrealSharpLibraryPath());
+	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
 	
 	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(*UnrealSharpLibraryAssembly,
 		EntryPointClassName,
@@ -147,7 +140,7 @@ bool FCSManager::InitializeBindings()
 
 bool FCSManager::LoadRuntimeHost()
 {
-	const FString RuntimeHostPath = GetRuntimeHostPath();
+	const FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
 
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
@@ -182,7 +175,7 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath = GetUserAssemblyPath();
+	const FString UserAssemblyPath =  FCSProcHelper::GetUserAssemblyPath();
 
 	if (!FPaths::FileExists(UserAssemblyPath))
 	{
@@ -202,7 +195,7 @@ bool FCSManager::LoadUserAssembly()
 load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() const
 {
 	hostfxr_handle HostFXR_Handle = nullptr;
-	FString RuntimeConfigPath = GetRuntimeConfigPath();
+	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
 
 	if (!FPaths::FileExists(RuntimeConfigPath))
 	{
@@ -210,8 +203,8 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() co
 		return nullptr;
 	}
 
-	FString DotNetPath = GetDotNetDirectory();
-	FString RuntimeHostPath = GetRuntimeHostPath();
+	FString DotNetPath = FCSProcHelper::GetDotNetDirectory();
+	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
 
 	hostfxr_initialize_parameters InitializeParameters;
 	InitializeParameters.dotnet_root = *DotNetPath;
@@ -239,71 +232,9 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() co
 	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
 }
 
-bool FCSManager::Build()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Build);
-}
-
-bool FCSManager::Clean()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Clean);
-}
-
-bool FCSManager::Rebuild()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Rebuild);
-}
- 
-bool FCSManager::GenerateProject()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::GenerateProject);
-}
-
 UPackage* FCSManager::GetUnrealSharpPackage()
 {
 	return UnrealSharpPackage;
-}
-
-FString FCSManager::GetRuntimeHostPath()
-{
-	FString DotNetPath = GetDotNetDirectory();
-	FString RuntimeHostPath = FPaths::Combine(DotNetPath, "host/fxr", HOSTFXR_VERSION, HOSTFXR_WINDOWS);
-	return RuntimeHostPath;
-}
-
-FString FCSManager::GetAssembliesPath()
-{
-	return FPaths::Combine(PluginDirectory, "Binaries", "DotNet", DOTNET_VERSION);
-}
-
-FString FCSManager::GetUnrealSharpLibraryPath()
-{
-	return GetAssembliesPath() / "UnrealSharp.Plugins.dll";
-}
-
-FString FCSManager::GetRuntimeConfigPath()
-{
-	return GetAssembliesPath() / "UnrealSharp.runtimeconfig.json";
-}
-
-FString FCSManager::GetUserAssemblyDirectory()
-{
-	return FPaths::Combine(FPaths::ProjectDir(), "Binaries", "UnrealSharp");
-}
-
-FString FCSManager::GetUserAssemblyPath()
-{
-	return FPaths::Combine(GetUserAssemblyDirectory(), UserManagedProjectName + ".dll");
-}
-
-FString FCSManager::GetManagedSourcePath()
-{
-	return FPaths::Combine(PluginDirectory, "Managed");
-}
-
-FString FCSManager::GetUnrealSharpBuildToolPath()
-{
-	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.exe");
 }
 
 TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
@@ -438,140 +369,6 @@ void FCSManager::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index
 void FCSManager::OnUObjectArrayShutdown()
 {
 	GUObjectArray.RemoveUObjectDeleteListener(this);
-}
-
-bool FCSManager::BuildBindings()
-{
-	int32 ReturnCode = 0;
-	FString Output;
-
-	FString BuildConfiguration;
-	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
-
-	FString Arguments = FString::Printf(TEXT("build -c %s"), *BuildConfiguration);
-	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
-}
-
-bool FCSManager::BuildPrograms()
-{
-	FString DotNetPath = GetDotNetExecutablePath();
-	FString UnrealSharpProgramsPath = FPaths::Combine(PluginDirectory, "Managed", "UnrealSharpPrograms");
-
-	int32 ReturnCode = 0;
-	FString Output;
-	return InvokeCommand(DotNetPath, "build -c Release", ReturnCode, Output, &UnrealSharpProgramsPath);
-}
-
-bool FCSManager::InvokeUnrealSharpBuildTool(EBuildAction BuildAction)
-{
-	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
-
-	FString BuildConfiguration;
-	GetDefault<UCSDeveloperSettings>()->GetUserBuildConfiguration(BuildConfiguration);
-	
-	FString Args = FString::Printf(TEXT("--Action %s"), *BuildActionCommand.ToString());
-	Args += FString::Printf(TEXT(" --BuildConfig %s"), *BuildConfiguration);
-	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
-	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
-	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
-	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginDirectory);
-	Args += FString::Printf(TEXT(" --OutputPath \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "UnrealSharp")));
-	
-	int32 ReturnCode = 0;
-	FString Output;
-	return InvokeCommand(GetUnrealSharpBuildToolPath(), Args, ReturnCode, Output);
-}
-
-bool FCSManager::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory)
-{
-	double StartTime = FPlatformTime::Seconds();
-	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
-	
-	if (!FPaths::FileExists(ProgramPath))
-	{
-		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to find %s at %s"), *ProgramPath, *ProgramName));
-		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
-		return false;
-	}
-		
-	const bool bLaunchDetached = false;
-	const bool bLaunchHidden = true;
-	const bool bLaunchReallyHidden = bLaunchHidden;
-	
-	void* ReadPipe;
-	void* WritePipe;
-	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-
-	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
-	
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath,
-														  *Arguments,
-														  bLaunchDetached,
-														  bLaunchHidden,
-														  bLaunchReallyHidden,
-														  NULL, 0, *WorkingDirectory, WritePipe, ReadPipe);
-
-	if (!ProcHandle.IsValid())
-	{
-		FString DialogText = FString::Printf(TEXT("%s failed to launch!"), *ProgramName);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return false;
-	}
-	
-	while (FPlatformProcess::IsProcRunning(ProcHandle))
-	{
-		Output += FPlatformProcess::ReadPipe(ReadPipe);
-	}
-	
-	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
-	FPlatformProcess::CloseProc(ProcHandle);
-	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
-
-	if (OutReturnCode != 0)
-	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("%s task failed (Args: %s) with return code %d"), *ProgramName, *Arguments, OutReturnCode)
-		
-		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
-		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
-		return false;
-	}
-
-	double EndTime = FPlatformTime::Seconds();
-	double ElapsedTime = (EndTime - StartTime);
-	UE_LOG(LogUnrealSharp, Log, TEXT("%s with args (%s) took %f seconds to execute."), *ProgramName, *Arguments, ElapsedTime);
-	
-	return true;
-}
-
-FString FCSManager::GetDotNetDirectory()
-{
-	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
-		
-	TArray<FString> Paths;
-	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
-
-	for (FString& Path : Paths)
-	{
-		if (!Path.Contains(TEXT("dotnet")))
-		{
-			continue;
-		}
-		
-		if (!FPaths::DirectoryExists(Path))
-		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Found path to DotNet, but the directory doesn't exist: %s"), *Path);
-			break;
-		}
-			
-		return Path;
-	}
-    
-	return "";
-}
-
-FString FCSManager::GetDotNetExecutablePath()
-{
-	return GetDotNetDirectory() + "dotnet.exe";
 }
 
 #define LOCTEXT_NAMESPACE "CSManager"

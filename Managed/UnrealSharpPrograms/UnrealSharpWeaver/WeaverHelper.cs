@@ -488,7 +488,7 @@ public static class WeaverHelper
             // see if its a UObject
             if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Text")
             {
-                return new NativeDataTextType(typeRef, arrayDim);
+                return new NativeDataTextType(typeRef);
             }
             
             if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
@@ -515,7 +515,7 @@ public static class WeaverHelper
 
             if (superType != null)
             {
-                return new NativeDataObjectType(typeRef, typeDef, "ObjectProperty", arrayDim);
+                return new NativeDataObjectType(typeRef, typeDef, arrayDim);
             }
 
             // See if this is a struct

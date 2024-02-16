@@ -4,140 +4,101 @@ using UnrealSharp.Interop;
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-struct FText
+public struct TextData
 {
-    public IntPtr ObjectPtr;
-    public IntPtr SharedReferenceCount;
+    public IntPtr ObjectPointer;
+    public int SharedReferenceCount;
+    public int WeakReferenceCount;
     public uint Flags;
 }
 
-public class Text : IEquatable<Text>, IComparable<Text>
+public class Text
 {
-    readonly UnrealSharpObject _owner;
-    readonly IntPtr _nativeInstance;
-    readonly SharedPtrTheadSafe _data;
-
-    internal static unsafe int NativeSize => sizeof(FText);
+    internal TextData Data;
     
-    internal Text(IntPtr nativeInstance)
+    public bool Empty => Data.ObjectPointer == IntPtr.Zero;
+    public static Text None = new();
+    
+    public Text()
     {
-        _nativeInstance = nativeInstance;
-        _owner = null;
-        _data = new SharedPtrTheadSafe(nativeInstance);
+        FTextExporter.CallCreateEmptyText(ref Data);
     }
-
-    internal Text(UnrealSharpObject ownerSharp, IntPtr nativeBuffer)
+    
+    public Text(string text)
     {
-        _owner = ownerSharp;
-        CheckOwnerObject();
-        _nativeInstance = nativeBuffer;
+        FTextExporter.CallFromString(ref Data, text);
+    }
+    
+    public Text(Name name) : this(name.ToString())
+    {
         
-        //Don't own a reference we're referring to a property
-        _data = ownerSharp != null ? SharedPtrTheadSafe.NonReferenceOwningSharedPtr(_nativeInstance) : new SharedPtrTheadSafe(_nativeInstance);
     }
     
-    internal Text(UnrealSharpObject ownerSharp, int propertyOffset)
+    internal Text(TextData nativeInstance)
     {
-        _owner = ownerSharp;
-        CheckOwnerObject();
-        _nativeInstance = IntPtr.Add(ownerSharp.NativeObject, propertyOffset);
-        _data = SharedPtrTheadSafe.NonReferenceOwningSharedPtr(_nativeInstance);
+        Data = nativeInstance;
     }
     
-    private Text()
+    protected bool Equals(Text other)
     {
-        _nativeInstance = Marshal.AllocHGlobal(NativeSize);
-        _data = SharedPtrTheadSafe.NewNulledSharedPtr(_nativeInstance);
+        return Data.Equals(other.Data);
     }
-    
-    public Text(string text) : this()
+
+    public override bool Equals(object obj)
     {
-        FTextExporter.CallFromString(_nativeInstance, text);
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        return obj.GetType() == this.GetType() && Equals((Text)obj);
     }
-    
-    public Text(Name text) : this(text.ToString()) {}
-    
-    ~Text()
+
+    public override int GetHashCode()
     {
-        if (_owner == null || _nativeInstance == IntPtr.Zero)
-        {
-            return;
-        }
-        
-        _data.Dispose();
-        Marshal.FreeHGlobal(_nativeInstance);
+        return Data.GetHashCode();
     }
     
-    public static Text GetEmpty()
-    {
-        Text result = new Text();
-        FTextExporter.CallCreateEmptyText(result._nativeInstance);
-        return result;
-    }
-    
-    public override string ToString() 
+    public override string ToString()
     {
         unsafe
         {
-            CheckOwnerObject(); 
-            return new string(FTextExporter.CallToString(_nativeInstance));
+            return new string(FTextExporter.CallToString(ref Data));
         }
     }
     
-    public bool Equals(Text other)
+    public static implicit operator Text(string value)
     {
-        return CompareTo(other) == 0;
+        return new Text(value);
     }
     
-    public int CompareTo(Text other)
+    public static implicit operator string(Text value)
     {
-        CheckOwnerObject(); 
-        return (byte) FTextExporter.CallCompare(_nativeInstance, other._nativeInstance);
+        return value.ToString();
     }
     
-    public bool IsEmpty
+    public static bool operator ==(Text a, Text b)
     {
-        get 
+        if (a is null || b is null)
         {
-            CheckOwnerObject();
-            return FTextExporter.CallIsEmpty(_nativeInstance).ToManagedBool();
+            return false;
         }
+        
+        return a.Data.ObjectPointer == b.Data.ObjectPointer;
     }
-    
-    private void CheckOwnerObject()
-    {
-        if (_owner != null && _owner.NativeObject == IntPtr.Zero)
-        { 
-            throw new UnrealObjectDestroyedException("Trying to access Text UProperty on destroyed object of type " + _owner.GetType().ToString());
-        }
-    }
-    public unsafe void CopyFrom(Text other)
-    {
-        other.CheckOwnerObject();
-        _data.CopyFrom(other._data);
 
-        ((FText*)_nativeInstance)->Flags = ((FText*)other._nativeInstance)->Flags;
-    }
-    public Text Clone()
+    public static bool operator !=(Text a, Text b)
     {
-        Text result = new Text();
-        result.CopyFrom(this);
-        return result;
+        return !(a == b);
     }
 }
 
-public class TextMarshaller(int length)
-{
-    private readonly Text[] _wrapper = new Text[length];
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Text obj)
+public static class TextMarshaller
+{ 
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Text obj)
     {
-        _wrapper[arrayIndex] ??= new Text(owner, nativeBuffer + arrayIndex * Text.NativeSize);
-        _wrapper[arrayIndex].CopyFrom(obj);
+        BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, owner, obj.Data);
     }
-
-    public Text FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static Text FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {
-        return _wrapper[arrayIndex] ?? (_wrapper[arrayIndex] = new Text(owner, nativeBuffer + arrayIndex * Text.NativeSize));
+        Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex, owner));
+        return data;
     }
 }

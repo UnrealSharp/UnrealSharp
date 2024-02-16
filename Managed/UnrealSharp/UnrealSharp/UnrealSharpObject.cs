@@ -189,17 +189,22 @@ public class UnrealSharpObject(IntPtr nativeObject) : IDisposable
         }
     }
     
-    public static TimerHandle SetTimer(UnrealSharpObject Object, string functionName, float duration, bool loop)
+    public static TimerHandle SetTimer(Action action, float duration, bool loop)
     {
-        if (Object == null)
-        {
-            return default;
-        }
-        
         unsafe
         {
+            if (action.Target == null)
+            {
+                return default;
+            }
+
+            if (action.Target is not UnrealSharpObject owner)
+            {
+                throw new ArgumentException("The target of the action must be an UnrealSharpObject.");
+            }
+        
             TimerHandle handle = new TimerHandle();
-            UWorldExporter.SetTimer(Object.NativeObject, functionName, duration, loop.ToNativeBool(), &handle);
+            UWorldExporter.CallSetTimer(owner.NativeObject, action.Method.Name, duration, loop.ToNativeBool(), &handle);
             return handle;
         }
     }

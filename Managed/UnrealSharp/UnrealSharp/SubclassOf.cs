@@ -13,12 +13,9 @@ public readonly struct SubclassOf<T>
     
     public SubclassOf()
     {
-        unsafe
-        {
-            Type type = typeof(T);
-            NativeClass = UCoreUObjectExporter.GetNativeClassFromName(type.Name);
-            ManagedType = type;
-        }
+        Type type = typeof(T);
+        NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(type.Name);
+        ManagedType = type;
     }
     
     public SubclassOf(Type classType)
