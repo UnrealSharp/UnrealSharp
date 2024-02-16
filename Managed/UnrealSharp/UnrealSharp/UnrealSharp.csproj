@@ -8,7 +8,6 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
     </PropertyGroup>
-
     
     <ItemGroup>
         <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">

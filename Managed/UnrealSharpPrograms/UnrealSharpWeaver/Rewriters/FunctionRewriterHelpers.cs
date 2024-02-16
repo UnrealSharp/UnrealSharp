@@ -26,7 +26,8 @@ public static class FunctionRewriterHelpers
 
         if (func.ReturnValue != null)
         {
-            AddOffsetField(classDefinition, func.ReturnValue, func, func.Parameters.Length - 1, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
+            int index = func.Parameters.Length > 0 ? func.Parameters.Length : 0;
+            AddOffsetField(classDefinition, func.ReturnValue, func, index, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
         }
         
         if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))

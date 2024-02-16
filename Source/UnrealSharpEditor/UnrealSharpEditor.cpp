@@ -5,6 +5,7 @@
 #include "CSharpForUE/CSDeveloperSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
+#include "UnrealSharpProcHelper/CSProcHelper.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -69,33 +70,36 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 			return;
 
 		// Return on the first .cs file we encounter so we can reload.
-		Reload();
+		StartHotReload();
 		bIsReloading = false;
 		return;
 	}
 }
 
-void FUnrealSharpEditorModule::Reload()
+void FUnrealSharpEditorModule::StartHotReload()
 {
 	FScopedSlowTask Progress(4, LOCTEXT("ReloadingCSharp", "Building C# code..."));
 	Progress.MakeDialog();
 
+	FString BuildConfiguration;
+	GetDefault<UCSDeveloperSettings>()->GetUserBuildConfiguration(BuildConfiguration);
+
 	// Build the user's project.
-	if (!FCSManager::InvokeUnrealSharpBuildTool(EBuildAction::Build))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build, &BuildConfiguration))
 	{
 		return;
 	}
 
 	// Weave the user's project.
 	Progress.EnterProgressFrame(1, LOCTEXT("WeavingCSharp", "Weaving C# code..."));
-	if (!FCSManager::InvokeUnrealSharpBuildTool(EBuildAction::Weave))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Weave, &BuildConfiguration))
 	{
 		return;
 	}
 	
 	// Unload the user's assembly, to apply the new one.
 	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
-	if (!FCSManager::Get().UnloadPlugin(FCSManager::UserManagedProjectName))
+	if (!FCSManager::Get().UnloadPlugin(FCSProcHelper::UserManagedProjectName))
 	{
 		return;
 	}
@@ -115,11 +119,14 @@ void FUnrealSharpEditorModule::Reload()
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
-	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus()) return true;
+	
+	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
+	{
+		return true;
+	}
 
-	Reload();
+	StartHotReload();
 	bIsReloading = false;
-
 	return true;
 }
 

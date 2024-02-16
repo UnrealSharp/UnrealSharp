@@ -22,7 +22,9 @@ public class GlueGenerator : ModuleRules
                 "SlateCore",
                 "Projects", 
                 "StructUtils",
-                "DeveloperSettings"
+                "DeveloperSettings", 
+                "UnrealSharpProcHelper", 
+                "XmlParser"
             }
         );
         

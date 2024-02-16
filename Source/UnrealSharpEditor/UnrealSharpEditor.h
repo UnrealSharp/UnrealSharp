@@ -14,7 +14,7 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void Reload();
+    void StartHotReload();
 
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;

@@ -12,22 +12,6 @@ struct FGCHandle;
 class FUSManagedObject;
 struct FCSAssembly;
 
-UENUM()
-enum EBuildAction
-{
-	Build,
-	Clean,
-	GenerateProject,
-	Rebuild,
-	Weave,
-};
-
-#define HOSTFXR_VERSION "8.0.1"
-#define HOSTFXR_WINDOWS "hostfxr.dll"
-#define HOSTFXR_MAC "libhostfxr.dylib"
-#define HOSTFXR_LINUX "libhostfxr.so"
-#define DOTNET_VERSION "net8.0"
-
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
 
@@ -45,14 +29,6 @@ public:
 	void InitializeUnrealSharp();
 
 	static UPackage* GetUnrealSharpPackage();
-	static FString GetRuntimeHostPath();;
-	static FString GetAssembliesPath();
-	static FString GetUnrealSharpLibraryPath();
-	static FString GetRuntimeConfigPath();
-	static FString GetUserAssemblyDirectory();
-	static FString GetUserAssemblyPath();
-	static FString GetManagedSourcePath();
-	static FString GetUnrealSharpBuildToolPath();
 
 	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath);
 	bool UnloadPlugin(const FString& AssemblyName);
@@ -67,20 +43,10 @@ public:
 	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName);
 	uint8* GetTypeHandle(const FTypeReferenceMetaData& TypeMetaData);
 
-	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction);
-	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* WorkingDirectory = nullptr);
-
 	bool LoadUserAssembly();
 
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
 	TMap<UObject*, FGCHandle> UnmanagedToManagedMap;
-
-	static FString PluginDirectory;
-	static FString UserManagedProjectName;
-	static FString UnrealSharpDirectory;
-	static FString GeneratedClassesDirectory;
-	static FString ScriptFolderDirectory;
-	static FString BatchFilesDirectory;
 	
 	static inline FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 
@@ -98,17 +64,6 @@ private:
 	virtual void NotifyUObjectDeleted(const UObjectBase *Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override;
 	// End FUObjectArray::FUObjectDeleteListener Api
-	
-	static bool BuildBindings();
-	static bool BuildPrograms();
-
-	static FString GetDotNetDirectory();
-	static FString GetDotNetExecutablePath();
-
-	static bool Build();
-	static bool Clean();
-	static bool Rebuild();
-	static bool GenerateProject();
 	
 	//.NET Core Host API
 	hostfxr_initialize_for_dotnet_command_line_fn Hostfxr_Initialize_For_Dotnet_Command_Line = nullptr;

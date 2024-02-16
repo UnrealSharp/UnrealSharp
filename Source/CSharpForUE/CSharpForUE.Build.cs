@@ -34,7 +34,8 @@ public class CSharpForUE : ModuleRules
 				"GlueGenerator",
 				"Projects",
 				"UMG", 
-				"DeveloperSettings"
+				"DeveloperSettings", 
+				"UnrealSharpProcHelper"
 			}
 			);
 		

@@ -21,7 +21,5 @@ private:
 	static void FromString(FText* Text, const char* String);
 	static void FromName(FText* Text, FName Name);
 	static void CreateEmptyText(FText* Text);
-	static bool Compare(FText* Text, FText* OtherText);
-	static bool IsEmpty(FText* Text);
 	
 };
