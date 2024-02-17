@@ -61,8 +61,13 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 			Prop->InitializeValue_InContainer(Params);
 		}
 	}
+
+	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
 	
-	NativeObject->ProcessEvent(NativeFunction, Params);
+	const bool bHasReturnParam = NativeFunction->GetReturnProperty() != nullptr;
+	uint8* ReturnValueAddress = bHasReturnParam ? Params + NativeFunction->ReturnValueOffset : nullptr;
+	
+	NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
 }
 
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)
