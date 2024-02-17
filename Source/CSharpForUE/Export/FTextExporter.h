@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FTextExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFTextExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

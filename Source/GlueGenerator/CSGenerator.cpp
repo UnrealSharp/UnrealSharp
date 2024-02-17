@@ -140,6 +140,11 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		{
 			return;
 		}
+
+		if (Class->HasMetaData("NotGeneratorValid"))
+		{
+			return;
+		}
 		
 		RegisterClassToModule(Class);
 				
@@ -147,7 +152,7 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		{
 			ExportInterface(Class, Builder);
 		}
-		else if (bForceExport || ShouldExportClass(Class))
+		else if (bForceExport || Class->IsChildOf(AActor::StaticClass()) || ShouldExportClass(Class))
 		{
 			ExportClass(Class, Builder);
 		}

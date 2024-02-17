@@ -6,7 +6,7 @@
 #include "FunctionsExporter.h"
 #include "FWeakObjectPtrExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFWeakObjectPtrExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

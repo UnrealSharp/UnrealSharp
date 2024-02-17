@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FNameExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFNameExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

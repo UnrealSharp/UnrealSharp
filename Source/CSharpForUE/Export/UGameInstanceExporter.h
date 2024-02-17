@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "UGameInstanceExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UUGameInstanceExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

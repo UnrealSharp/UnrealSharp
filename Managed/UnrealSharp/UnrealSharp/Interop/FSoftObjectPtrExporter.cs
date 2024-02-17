@@ -1,5 +1,3 @@
-using Object = UnrealSharp.CoreUObject.Object;
-
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]

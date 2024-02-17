@@ -63,7 +63,17 @@ public struct Name : IEquatable<Name>, IComparable<Name>
     
     public static implicit operator Name(string name)
     {
-        return string.IsNullOrEmpty(name) ? None : new Name(name);
+        return name.Length != 0 ? new Name(name) : None;
+    }
+    
+    public static implicit operator string(Name name)
+    {
+        return name.IsValid() ? name.ToString() : None.ToString();
+    }
+    
+    public static implicit operator Text(Name name)
+    {
+        return name.IsValid() ? new Text(name) : Text.None;
     }
     
     public bool Equals(Name other)

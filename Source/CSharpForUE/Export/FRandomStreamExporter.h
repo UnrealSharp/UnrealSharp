@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FRandomStreamExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFRandomStreamExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

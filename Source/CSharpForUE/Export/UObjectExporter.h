@@ -6,7 +6,7 @@
 #include "FunctionsExporter.h"
 #include "UObjectExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UUObjectExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
