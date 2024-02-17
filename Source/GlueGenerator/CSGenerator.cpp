@@ -591,7 +591,9 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
-	Builder.DeclareType("interface", InterfaceName, "", false);
+	Builder.DeclareType("interface", InterfaceName, "IBaseInterface", false);
+	
+	Builder.AppendLine(FString::Printf(TEXT("public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"%s\");"), *Interface->GetName()));
 
 	TSet<UFunction*> ExportedFunctions;
 	TSet<UFunction*> ExportedOverridableFunctions;
@@ -599,6 +601,29 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	
 	ExportInterfaceFunctions(Builder, Interface, ExportedOverridableFunctions);
 
+	Builder.CloseBrace();
+
+	Builder.AppendLine();
+	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *InterfaceName));
+	Builder.OpenBrace();
+	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, %s obj)"), *InterfaceName));
+	Builder.OpenBrace();
+	Builder.AppendLine("	InterfaceData data = new InterfaceData();");
+	Builder.AppendLine("	if (obj is CoreUObject.Object objectPointer)");
+	Builder.AppendLine("	{");
+	Builder.AppendLine("		data.ObjectPointer = objectPointer.NativeObject;");
+	Builder.AppendLine(FString::Printf(TEXT("		data.InterfacePointer = %s.NativeInterfaceClassPtr;"), *InterfaceName));
+	Builder.AppendLine("		BlittableMarshaller<InterfaceData>.ToNative(nativeBuffer, arrayIndex, owner, data);");
+	Builder.AppendLine("	}");
+	Builder.CloseBrace();
+	Builder.AppendLine();
+
+	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)"), *InterfaceName));
+	Builder.OpenBrace();
+	Builder.AppendLine("	InterfaceData interfaceData = BlittableMarshaller<InterfaceData>.FromNative(nativeBuffer, arrayIndex, owner);");
+	Builder.AppendLine("	CoreUObject.Object unrealObject = ObjectMarshaller<CoreUObject.Object>.FromNative(interfaceData.ObjectPointer, 0, owner);");
+	Builder.AppendLine(FString::Printf(TEXT("	return unrealObject as %s;"), *InterfaceName));
+	Builder.CloseBrace();
 	Builder.CloseBrace();
 }
 
