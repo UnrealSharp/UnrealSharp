@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FMatrixExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFMatrixExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

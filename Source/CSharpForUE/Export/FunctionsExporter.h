@@ -8,7 +8,7 @@ using FRegisterExportedFunction = void(*)(void*, const TCHAR*);
 
 #define EXPORT_FUNCTION(FunctionName) RegisterExportedFunction(&FunctionName, *(GetClass()->GetName() + "." + #FunctionName));
 
-UCLASS(Abstract, NotBlueprintable, NotBlueprintType)
+UCLASS(Abstract, NotBlueprintable, NotBlueprintType, meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFunctionsExporter : public UObject
 {
 	GENERATED_BODY()

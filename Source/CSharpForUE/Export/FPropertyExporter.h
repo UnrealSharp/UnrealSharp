@@ -6,7 +6,7 @@
 #include "FunctionsExporter.h"
 #include "FPropertyExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFPropertyExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

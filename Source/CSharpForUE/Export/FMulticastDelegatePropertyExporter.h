@@ -19,7 +19,7 @@ struct Interop_FScriptDelegate
 	}
 };
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFMulticastDelegatePropertyExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

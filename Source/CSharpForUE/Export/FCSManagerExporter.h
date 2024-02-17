@@ -6,7 +6,7 @@
 #include "FunctionsExporter.h"
 #include "FCSManagerExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFCSManagerExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

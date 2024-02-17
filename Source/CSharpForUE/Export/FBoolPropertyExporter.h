@@ -6,7 +6,7 @@
 #include "FunctionsExporter.h"
 #include "FBoolPropertyExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFBoolPropertyExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

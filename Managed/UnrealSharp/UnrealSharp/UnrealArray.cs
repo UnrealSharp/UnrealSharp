@@ -357,13 +357,14 @@ public class UnrealArrayCopyMarshaller<T>
 
     public static void DestructInstance (IntPtr nativeBuffer, int arrayIndex)
     {
-        unsafe
-        {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            Marshal.FreeCoTaskMem(mirror->Data);
-            mirror->Data = IntPtr.Zero;
-            mirror->ArrayMax = 0;
-            mirror->ArrayNum = 0;
-        }
+        // Not currently used
+        // unsafe
+        // {
+        //     UnmanagedArray* mirror = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
+        //     Marshal.FreeCoTaskMem(mirror->Data);
+        //     mirror->Data = IntPtr.Zero;
+        //     mirror->ArrayMax = 0;
+        //     mirror->ArrayNum = 0;
+        // }
     }
 }

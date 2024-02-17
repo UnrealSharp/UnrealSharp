@@ -14,7 +14,7 @@ struct FSpawnActorParameters_Interop
 	ESpawnActorCollisionHandlingMethod SpawnMethod;
 };
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UUWorldExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

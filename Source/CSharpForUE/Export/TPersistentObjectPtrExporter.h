@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UTPersistentObjectPtrExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

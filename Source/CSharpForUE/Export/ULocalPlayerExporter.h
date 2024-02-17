@@ -2,10 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "FunctionsExporter.h"
-#include "CSharpForUE/CSManager.h"
 #include "ULocalPlayerExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UULocalPlayerExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

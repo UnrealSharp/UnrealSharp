@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "UWidgetBlueprintLibraryExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UUWidgetBlueprintLibraryExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

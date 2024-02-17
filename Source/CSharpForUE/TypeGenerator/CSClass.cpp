@@ -80,19 +80,17 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	}
 
 	InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, RESULT_PARAM);
-	ProcessOutParameters(OutParameters, ArgumentData);
+	ProcessOutParameters(OutParameters, ArgumentData.GetData());
 	
 	// Free up memory
 	Function->DestroyStruct(LocalStruct);
 }
 
-void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, TArray<uint8>& ArgumentData)
+void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentData)
 {
-	uint8* Data = ArgumentData.GetData();
-	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
-		uint8* ValueAddress = Data + OutParameter->Property->GetOffset_ForUFunction();
+		uint8* ValueAddress = ArgumentData + OutParameter->Property->GetOffset_ForUFunction();
 		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
 	}
 }

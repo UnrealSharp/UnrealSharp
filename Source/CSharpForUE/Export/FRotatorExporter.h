@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FRotatorExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class CSHARPFORUE_API UFRotatorExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

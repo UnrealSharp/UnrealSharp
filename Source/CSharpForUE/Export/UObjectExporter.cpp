@@ -1,5 +1,6 @@
 ﻿#include "UObjectExporter.h"
 #include "CSharpForUE/CSManager.h"
+#include "CSharpForUE/TypeGenerator/CSClass.h"
 
 void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -33,12 +34,9 @@ FName UUObjectExporter::NativeGetName(UObject* Object)
 
 void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params)
 {
-	if (!IsValid(NativeObject) || !IsValid(NativeFunction))
-	{
-		return;
-	}
-
 	// Initialize out parameters
+	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
+	
 	if (NativeFunction->HasAnyFunctionFlags(FUNC_HasOutParms))
 	{
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
@@ -59,10 +57,30 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 
 			// TODO: Initialize value in C# instead of here
 			Prop->InitializeValue_InContainer(Params);
+
+			FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
+			Out->Property = Prop;
+			Out->PropAddr = Params + Prop->GetOffset_ForUFunction();
+			Out->NextOutParm = nullptr;
+			
+			if (NewStack.OutParms)
+			{
+				NewStack.OutParms->NextOutParm = Out;
+			}
+			else
+			{
+				NewStack.OutParms = Out;
+			}
 		}
 	}
+
+	uint8* ReturnValueAddress = nullptr;
+	if (NativeFunction->ReturnValueOffset != MAX_uint16)
+	{
+		ReturnValueAddress = Params + NativeFunction->ReturnValueOffset;
+	}
 	
-	NativeObject->ProcessEvent(NativeFunction, Params);
+	NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
 }
 
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)

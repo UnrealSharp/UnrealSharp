@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "GEditorExporter.generated.h"
 
-UCLASS()
+UCLASS(meta = (NotGeneratorValid))
 class UNREALSHARPEDITOR_API UGEditorExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
