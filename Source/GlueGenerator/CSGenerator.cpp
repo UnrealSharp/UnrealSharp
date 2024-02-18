@@ -589,7 +589,7 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
-	Builder.DeclareType("interface", InterfaceName, "IBaseInterface", false);
+	Builder.DeclareType("interface", InterfaceName, "", false);
 	
 	Builder.AppendLine(FString::Printf(TEXT("public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"%s\");"), *Interface->GetName()));
 
