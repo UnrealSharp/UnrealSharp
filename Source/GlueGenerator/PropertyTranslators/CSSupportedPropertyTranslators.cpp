@@ -9,6 +9,7 @@
 #include "CustomStructTypePropertyTranslator.h"
 #include "EnumPropertyTranslator.h"
 #include "FloatPropertyTranslator.h"
+#include "InterfacePropertyTranslator.h"
 #include "MulticastDelegatePropertyTranslator.h"
 #include "SoftObjectPtrPropertyTranslator.h"
 #include "NamePropertyTranslator.h"
@@ -79,6 +80,8 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 
 	AddPropertyTranslator(FMulticastSparseDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
 	AddPropertyTranslator(FMulticastInlineDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
+
+	AddPropertyTranslator(FInterfaceProperty::StaticClass(), new FCSInterfacePropertyTranslator(*this));
 }
 
 const FPropertyTranslator& FCSSupportedPropertyTranslators::Find(const FProperty* Property) const

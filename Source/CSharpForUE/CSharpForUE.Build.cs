@@ -35,7 +35,8 @@ public class CSharpForUE : ModuleRules
 				"Projects",
 				"UMG", 
 				"DeveloperSettings", 
-				"UnrealSharpProcHelper"
+				"UnrealSharpProcHelper", 
+				"EnhancedInput"
 			}
 			);
 		

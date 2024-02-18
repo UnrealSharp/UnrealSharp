@@ -210,7 +210,10 @@ namespace ScriptGeneratorUtilities
 
 	bool ShouldExportClass(const UClass* InClass)
 	{
-		return IsBlueprintExposedClass(InClass) || HasBlueprintExposedFields(InClass);
+		return IsBlueprintExposedClass(InClass)
+		|| HasBlueprintExposedFields(InClass)
+		|| InClass->IsChildOf(AActor::StaticClass())
+		|| InClass->IsChildOf(USubsystem::StaticClass());
 	}
 
 	bool ShouldExportStruct(const UScriptStruct* InStruct)

@@ -11,8 +11,6 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PhysicsEngine/PhysicsAsset.h"
-#include "Interfaces/IProjectManager.h"
-#include "ProjectDescriptor.h"
 
 FName FCSGenerator::AllowableBlueprintVariableType = "BlueprintType";
 FName FCSGenerator::NotAllowableBlueprintVariableType = "NotBlueprintType";
@@ -152,7 +150,7 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		{
 			ExportInterface(Class, Builder);
 		}
-		else if (bForceExport || Class->IsChildOf(AActor::StaticClass()) || ShouldExportClass(Class))
+		else if (bForceExport || ShouldExportClass(Class))
 		{
 			ExportClass(Class, Builder);
 		}
@@ -608,9 +606,9 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	Builder.OpenBrace();
 	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, %s obj)"), *InterfaceName));
 	Builder.OpenBrace();
-	Builder.AppendLine("	InterfaceData data = new InterfaceData();");
 	Builder.AppendLine("	if (obj is CoreUObject.Object objectPointer)");
 	Builder.AppendLine("	{");
+	Builder.AppendLine("		InterfaceData data = new InterfaceData();");
 	Builder.AppendLine("		data.ObjectPointer = objectPointer.NativeObject;");
 	Builder.AppendLine(FString::Printf(TEXT("		data.InterfacePointer = %s.NativeInterfaceClassPtr;"), *InterfaceName));
 	Builder.AppendLine("		BlittableMarshaller<InterfaceData>.ToNative(nativeBuffer, arrayIndex, owner, data);");
@@ -660,23 +658,19 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 		for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
 		{
 			UClass* InterfaceClass = ImplementedInterface.Class;
+			Interfaces.Add(InterfaceClass->GetName());
+				
+			const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
 
-			if (FKismetEditorUtilities::IsClassABlueprintImplementableInterface(InterfaceClass))
+			const FString& InterfaceNamespace = InterfaceModule.GetNamespace();
+				
+			if (DeclaredDirectives.Contains(InterfaceNamespace))
 			{
-				Interfaces.Add(InterfaceClass->GetName());
-				
-				const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
-
-				const FString& InterfaceNamespace = InterfaceModule.GetNamespace();
-				
-				if (DeclaredDirectives.Contains(InterfaceNamespace))
-				{
-					continue;
-				}
-					
-				Builder.DeclareDirective(InterfaceNamespace);
-				DeclaredDirectives.Add(InterfaceNamespace);
+				continue;
 			}
+					
+			Builder.DeclareDirective(InterfaceNamespace);
+			DeclaredDirectives.Add(InterfaceNamespace);
 		}
 	}
 
@@ -738,6 +732,7 @@ void FCSGenerator::ExportInterfaceFunctions(FCSScriptBuilder& Builder, const UCl
 	for (UFunction* Function : ExportedFunctions)
 	{
 		PropertyTranslators->Find(Function).ExportInterfaceFunction(Builder, Function);
+		
 	}
 }
 

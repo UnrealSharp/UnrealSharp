@@ -29,5 +29,6 @@ private:
 
 	static void* SpawnActor(const UObject* Outer, const FTransform& SpawnTransform, UClass* Class, const FSpawnActorParameters_Interop& ManagedSpawnedParameters);
 	static void SetTimer(UObject* Object, char* FunctionName, float Rate, bool Loop, FTimerHandle* TimerHandle);
+	static void InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle);
 	static void* GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject);
 };
