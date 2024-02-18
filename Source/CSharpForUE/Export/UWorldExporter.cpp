@@ -9,6 +9,7 @@ void UUWorldExporter::ExportFunctions(FRegisterExportedFunction RegisterExported
 {
 	EXPORT_FUNCTION(SpawnActor)
 	EXPORT_FUNCTION(SetTimer)
+	EXPORT_FUNCTION(InvalidateTimer)
 	EXPORT_FUNCTION(GetWorldSubsystem)
 }
 
@@ -46,6 +47,16 @@ void UUWorldExporter::SetTimer(UObject* Object, char* FunctionName, float Rate, 
 	TimerDelegate.BindUFunction(Object, FunctionName);
 	
 	Object->GetWorld()->GetTimerManager().SetTimer(*TimerHandle, TimerDelegate, Rate, Loop);
+}
+
+void UUWorldExporter::InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle)
+{
+	if (!IsValid(Object))
+	{
+		return;
+	}
+
+	Object->GetWorld()->GetTimerManager().ClearTimer(*TimerHandle);
 }
 
 void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)

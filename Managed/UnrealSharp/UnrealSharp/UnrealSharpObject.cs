@@ -209,6 +209,14 @@ public class UnrealSharpObject(IntPtr nativeObject) : IDisposable
         }
     }
     
+    public static void InvalidateTimer(CoreUObject.Object worldContextObject, TimerHandle handle)
+    {
+        unsafe
+        {
+            UWorldExporter.CallInvalidateTimer(worldContextObject.NativeObject, &handle);
+        }
+    }
+    
     protected void CheckObjectForValidity()
     {
         if (!UObjectExporter.CallNativeIsValid(NativeObject))
