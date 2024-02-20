@@ -24,6 +24,114 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 Visit [Get Started](https://github.com/UnrealSharp/UnrealSharp/wiki/2.-Get-Started).
 
+## Code Example
+
+```using UnrealSharp;
+using UnrealSharp.Attributes;
+using UnrealSharp.Engine;
+using UnrealSharp.Niagara;
+
+namespace ManagedCropoutSampleProject;
+
+public class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signature>
+{
+    public delegate void Signature(bool bIsPickedUp);
+}
+
+[UClass]
+public class ResourceBase : Actor, IInteractable
+{
+    protected ResourceBase(IntPtr nativeObject) : base(nativeObject)
+    {
+        SetReplicates(true);
+        RespawnTime = 500.0f;
+    }
+    
+    // The mesh of the resource
+    [UProperty(DefaultComponent = true, RootComponent = true)]
+    public StaticMeshComponent Mesh { get; set; }
+    
+    // The health component of the resource, if it has one
+    [UProperty(DefaultComponent = true)]
+    public HealthComponent HealthComponent { get; set; }
+    
+    // The time it takes for the resource to respawn
+    [UProperty(PropertyFlags.EditDefaultsOnly | PropertyFlags.BlueprintReadOnly)]
+    protected float RespawnTime { get; set; }
+    
+    // Whether the resource has been picked up, is replicated to clients.
+    [UProperty(PropertyFlags.BlueprintReadOnly, ReplicatedUsing = nameof(OnRep_IsPickedUp))]
+    protected bool bIsPickedUp { get; set; }
+    
+    // The effect to play when the resource is picked up
+    [UProperty(PropertyFlags.EditDefaultsOnly)]
+    public NiagaraSystem? PickUpEffect { get; set; }
+    
+    // The delegate to call when the resource is picked up, broadcasts on clients too.
+    [UProperty(PropertyFlags.BlueprintAssignable)]
+    public OnIsPickedUpDelegate OnIsPickedUp { get; set; }
+
+    protected override void ReceiveBeginPlay()
+    {
+        HealthComponent.OnDeath += OnDeath;
+        base.ReceiveBeginPlay();
+    }
+    
+    [UFunction]
+    protected virtual void OnDeath(Player player) {}
+
+    // Interface method implementation
+    public void OnInteract(Player player)
+    {
+        GatherResource(player);
+    }
+    
+    [UFunction(FunctionFlags.BlueprintCallable)]
+    protected void GatherResource(Player player)
+    {
+        if (bIsPickedUp)
+        {
+            return;
+        }
+        
+        player.Inventory.AddItem(this);
+        
+        // Respawn the resource after a certain amount of time
+        SetTimer(OnRespawned, RespawnTime, false);
+        
+        bIsPickedUp = true;
+        OnRep_IsPickedUp();
+    }
+    
+    [UFunction]
+    public void OnRespawned()
+    {
+        bIsPickedUp = false;
+        OnRep_IsPickedUp();
+    }
+    
+    // This is called when the bIsPickedUp property is replicated
+    [UFunction]
+    public void OnRep_IsPickedUp()
+    {
+        if (PickUpEffect != null)
+        {
+            NiagaraFunctionLibrary.SpawnSystemAtLocation(this, PickUpEffect, GetActorLocation(), GetActorRotation());
+        }
+        
+        OnIsPickedUpChanged(bIsPickedUp);
+        OnIsPickedUp.Invoke(bIsPickedUp);
+    }
+    
+    // This can be overridden in blueprints
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public void OnIsPickedUpChanged(bool bIsPickedUp)
+    {
+        SetActorHiddenInGame(bIsPickedUp);
+    }
+}
+```
+
 ## Roadmap
 Take a look at the roadmap for planned and developed features!
 
