@@ -1,9 +1,5 @@
 ﻿#include "UInputComponentExporter.h"
 
-#include "../../../../../../../../../../Program Files/Epic Games/UE_5.3/Engine/Plugins/EnhancedInput/Source/EnhancedInput/Public/EnhancedInputComponent.h"
-#include "boost/spirit/home/x3/numeric/uint.hpp"
-#include "Engine/InputAxisDelegateBinding.h"
-
 void UUInputComponentExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
 	EXPORT_FUNCTION(BindAction)
