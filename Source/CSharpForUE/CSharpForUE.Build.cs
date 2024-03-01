@@ -1,8 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
-
-using System;
-using System.IO;
-using EpicGames.Core;
+﻿using System.IO;
 using UnrealBuildTool;
 
 public class CSharpForUE : ModuleRules
@@ -31,22 +27,23 @@ public class CSharpForUE : ModuleRules
 				"Boost", 
 				"XmlParser",
 				"Json", 
-				"GlueGenerator",
 				"Projects",
 				"UMG", 
 				"DeveloperSettings", 
 				"UnrealSharpProcHelper", 
-				"EnhancedInput"
+				"EnhancedInput",
 			}
 			);
 		
 		IncludeDotNetHeaders();
 
-		if (Target.bBuildEditor)
+		if (Target.Type == TargetRules.TargetType.Editor)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"UnrealEd", "EditorSubsystem"
+				"GlueGenerator",
+				"UnrealEd", 
+				"EditorSubsystem", 
 			});
 		}
 	}

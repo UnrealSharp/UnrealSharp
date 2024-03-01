@@ -7,10 +7,14 @@
 
 class FUSScriptEngine;
 class FUSTypeFactory;
+class UObject;
+class FUSManagedObject;
+
 struct FTypeReferenceMetaData;
 struct FGCHandle;
-class FUSManagedObject;
 struct FCSAssembly;
+
+
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 

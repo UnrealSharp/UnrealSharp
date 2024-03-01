@@ -1,11 +1,9 @@
 ﻿#include "CSManager.h"
-#include "AssetToolsModule.h"
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
 #include "CSDeveloperSettings.h"
 #include "CSharpForUE.h"
 #include "Export/FunctionsExporter.h"
-#include "GlueGenerator/CSGenerator.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
@@ -13,8 +11,14 @@
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
+#include "UObject/Object.h"
 #include "Misc/MessageDialog.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+
+#if WITH_EDITOR
+#include "GlueGenerator/CSGenerator.h"
+#include "AssetToolsModule.h"
+#endif
 
 FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
 UPackage* FCSManager::UnrealSharpPackage = nullptr;
@@ -37,11 +41,12 @@ void FCSManager::InitializeUnrealSharp()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build program"));
 		return;
 	}
-	
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GeneratedClassesDirectory);
 
 #if WITH_EDITOR
+
+	// Check if the C# API is up to date.
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GeneratedClassesDirectory);
+	
 	// Make sure the C# API is up to date. This is only done in the editor.
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
@@ -51,6 +56,7 @@ void FCSManager::InitializeUnrealSharp()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
+	
 #endif
 	
 	// Generate the cs project. Ignore if it's already generated

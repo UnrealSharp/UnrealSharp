@@ -1,6 +1,9 @@
 ﻿#include "CSProcHelper.h"
 #include "UnrealSharpProcHelper.h"
+#include "Misc/App.h"
+#include "Misc/Paths.h"
 #include "Interfaces/IPluginManager.h"
+#include "Misc/MessageDialog.h"
 
 FString FCSProcHelper::UserManagedProjectName = FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 FString FCSProcHelper::PluginDirectory = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());

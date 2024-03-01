@@ -1,6 +1,5 @@
 #include "CSTypeRegistry.h"
 #include "CSharpForUE/CSharpForUE.h"
-#include "GlueGenerator/CSGenerator.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
@@ -67,7 +66,7 @@ FCSharpClassInfo* FCSTypeRegistry::FindManagedType(UClass* Class)
 
 	if (ClassInfo.Field == nullptr || ClassInfo.TypeHandle == nullptr)
 	{
-		const FString Namespace = FCSGenerator::Get().GetNamespace(Class);
+		const FString Namespace;
 		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::UserManagedProjectName, Namespace, Class->GetName());
 		ClassInfo.Field = Class;
 	}

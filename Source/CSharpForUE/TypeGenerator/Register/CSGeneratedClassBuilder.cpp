@@ -2,6 +2,7 @@
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSharpForUE/CSharpForUE.h"
 #include "UObject/UnrealType.h"
+#include "Engine/Blueprint.h"
 #include "CSharpForUE/TypeGenerator/CSClass.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -23,7 +24,10 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 			DummyBlueprint->bIsRegeneratingOnLoad = false;
 		
 			Field->bCooked = true;
+			
+			#if WITH_EDITOR
 			Field->ClassGeneratedBy = DummyBlueprint;
+			#endif
 		}
 		
 		Field->ClassFlags = TypeMetaData->ClassFlags;

@@ -24,16 +24,9 @@ public class GlueGenerator : ModuleRules
                 "StructUtils",
                 "DeveloperSettings", 
                 "UnrealSharpProcHelper", 
-                "XmlParser"
+                "XmlParser",
+                "UnrealEd"
             }
         );
-        
-        if (Target.bBuildEditor)
-        {
-            PrivateDependencyModuleNames.AddRange(new string[]
-            {
-                "UnrealEd"
-            });
-        }
     }
 }
