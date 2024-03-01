@@ -39,7 +39,6 @@ public:
 	static FString GetUnrealSharpBuildToolPath();
 
 	static bool BuildBindings(const FString& BuildConfiguration);
-	static bool BuildPrograms();
 
 	static FString GetDotNetDirectory();
 	static FString GetDotNetExecutablePath();

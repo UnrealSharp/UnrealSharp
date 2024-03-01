@@ -33,14 +33,6 @@ void FCSManager::InitializeUnrealSharp()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-	
-	// Build the UnrealSharpBuildTool and the Weaver.
-	// TODO: Make this a step in the build.cs instead
-	if (!FCSProcHelper::BuildPrograms())
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build program"));
-		return;
-	}
 
 #if WITH_EDITOR
 
@@ -56,15 +48,15 @@ void FCSManager::InitializeUnrealSharp()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
-	
-#endif
-	
+
 	// Generate the cs project. Ignore if it's already generated
 	if (!FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
-	 	return;
+		return;
 	}
+	
+#endif
 
 	//Create the package where we will store our generated types.
 	{

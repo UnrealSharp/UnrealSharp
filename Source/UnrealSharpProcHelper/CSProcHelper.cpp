@@ -18,8 +18,10 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	
 	if (!FPaths::FileExists(ProgramPath))
 	{
-		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to find %s at %s"), *ProgramPath, *ProgramName));
-		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+		FString DialogText = FString::Printf(TEXT("Failed to find %s at %s"), *ProgramName, *ProgramPath);
+		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
+		
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return false;
 	}
 		
@@ -43,6 +45,8 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	if (!ProcHandle.IsValid())
 	{
 		FString DialogText = FString::Printf(TEXT("%s failed to launch!"), *ProgramName);
+		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
+		
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return false;
 	}
@@ -58,7 +62,7 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 
 	if (OutReturnCode != 0)
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Warning, TEXT("%s task failed (Args: %s) with return code %d"), *ProgramName, *Arguments, OutReturnCode)
+		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s task failed (Args: %s) with return code %d. Error: %s"), *ProgramName, *Arguments, OutReturnCode, *Output)
 		
 		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
@@ -164,9 +168,10 @@ FString FCSProcHelper::GetDotNetDirectory()
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
 
+	FString PathDotnet = "Program Files\\dotnet\\";
 	for (FString& Path : Paths)
 	{
-		if (!Path.Contains(TEXT("dotnet")))
+		if (!Path.Contains(PathDotnet))
 		{
 			continue;
 		}
@@ -195,14 +200,4 @@ bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
 
 	FString Arguments = FString::Printf(TEXT("build -c %s"), *BuildConfiguration);
 	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
-}
-
-bool FCSProcHelper::BuildPrograms()
-{
-	FString DotNetPath = GetDotNetExecutablePath();
-	FString UnrealSharpProgramsPath = FPaths::Combine(PluginDirectory, "Managed", "UnrealSharpPrograms");
-
-	int32 ReturnCode = 0;
-	FString Output;
-	return InvokeCommand(DotNetPath, "build -c Release", ReturnCode, Output, &UnrealSharpProgramsPath);
 }

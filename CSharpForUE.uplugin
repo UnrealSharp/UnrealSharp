@@ -44,6 +44,10 @@
 		{
 			"Name": "StructUtils",
 			"Enabled": true
+		},
+		{
+			"Name": "EnhancedInput",
+			"Enabled": true
 		}
 	],
 	"SupportURL": "https://discord.gg/QHb8VjNptE"
