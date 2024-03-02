@@ -15,7 +15,12 @@ FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : Modul
 	{
 		FileManager.MakeDirectory(*FPaths::GetPath(Directory), true);
 	}
+
+	FString CSProjectFile = Directory / Namespace + ".csproj";
+	FFileHelper::SaveStringToFile(CreateCSProjectFileContent(), *CSProjectFile);
 }
+
+static FString CSProjectFileContent;
 
 FString& FCSModule::CreateCSProjectFileContent()
 {
@@ -32,6 +37,7 @@ FString& FCSModule::CreateCSProjectFileContent()
 	CSProjectFileContent += TEXT("  </PropertyGroup>\n");
 	CSProjectFileContent += TEXT("	<ItemGroup>\n");
 	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp\\UnrealSharp.csproj\"/>\n");
+	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.Core\\UnrealSharp.Core.csproj\"/>\n");
 	CSProjectFileContent += TEXT("  </ItemGroup>\n");
 	CSProjectFileContent += TEXT("</Project>\n");
 

@@ -13,8 +13,9 @@ namespace UnrealSharpWeaver;
 public static class Program
 {
     public static readonly string UnrealSharpNamespace = "UnrealSharp";
+    public static readonly string UnrealSharpCoreNamespace = UnrealSharpNamespace + ".Core";
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
-    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
+    public static readonly string AttributeNamespace = UnrealSharpCoreNamespace + ".Attributes";
     public static readonly string UnrealSharpObjectName = "UnrealSharpObject";
     public static readonly string FPropertyCallbacks = "FPropertyExporter";
     public static readonly string UClassCallbacks = "UClassExporter";

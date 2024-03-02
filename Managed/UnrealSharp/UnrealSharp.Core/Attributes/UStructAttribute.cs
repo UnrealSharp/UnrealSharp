@@ -1,4 +1,4 @@
-﻿namespace UnrealSharp.Attributes;
+﻿namespace UnrealSharp.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
 class StructFlagsMapAttribute(StructFlags flags = StructFlags.NoFlags) : Attribute

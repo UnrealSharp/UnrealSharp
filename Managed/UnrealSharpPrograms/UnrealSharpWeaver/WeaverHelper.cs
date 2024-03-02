@@ -370,7 +370,7 @@ public static class WeaverHelper
 
         if (customAttributes != null)
         {
-            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", "UPropertyAttribute");
+            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");
             
             if (propertyAttribute != null)
             {
@@ -465,7 +465,7 @@ public static class WeaverHelper
 
             if (typeDef.IsEnum)
             {
-                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
+                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.AttributeNamespace, "UEnumAttribute");
                 
                 if (enumAttribute == null)
                 {

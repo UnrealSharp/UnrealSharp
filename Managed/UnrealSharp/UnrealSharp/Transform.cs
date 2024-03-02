@@ -1,6 +1,6 @@
 using System.DoubleNumerics;
 using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
+using UnrealSharp.Core.Attributes;
 
 namespace UnrealSharp;
 

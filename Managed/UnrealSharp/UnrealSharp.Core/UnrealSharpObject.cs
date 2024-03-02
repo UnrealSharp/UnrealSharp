@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.CSharpForUE;
@@ -30,24 +31,24 @@ public class UnrealObjectDestroyedException : InvalidOperationException
     }
 }
 
-public class UnrealSharpObject(IntPtr nativeObject) : IDisposable
+public class UnrealSharpObject : IDisposable
 {
-    public IntPtr NativeObject { get; } = nativeObject;
+    public IntPtr NativeObject { get; private set; }
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
     public bool IsDestroyed => NativeObject == IntPtr.Zero;
     
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
-        BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        ConstructorInfo constructor = typeToCreate.GetConstructor(bindingFlags, null, [typeof(IntPtr)], null);
+        UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
 
-        if (constructor == null)
-        {
-            throw new Exception($"No suitable constructor found for {typeToCreate} that takes an IntPtr.");
-        }
-    
-        var newObject = constructor.Invoke([nativeObjectPtr]);
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(newObject));
+        const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        var foundConstructor = typeToCreate.GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
+        
+        createdObject.NativeObject = nativeObjectPtr;
+
+        foundConstructor.Invoke(createdObject, null);
+        
+        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(createdObject));
     }
 
     public override string ToString()
@@ -227,6 +228,7 @@ public class UnrealSharpObject(IntPtr nativeObject) : IDisposable
     
     public virtual void Dispose()
     {
+        NativeObject = IntPtr.Zero;
         GC.SuppressFinalize(this);
     }
 }

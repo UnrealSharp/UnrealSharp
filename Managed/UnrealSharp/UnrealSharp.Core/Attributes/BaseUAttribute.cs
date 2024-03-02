@@ -1,4 +1,4 @@
-﻿namespace UnrealSharp.Attributes;
+﻿namespace UnrealSharp.Core.Attributes;
 
 public class BaseUAttribute : Attribute
 {

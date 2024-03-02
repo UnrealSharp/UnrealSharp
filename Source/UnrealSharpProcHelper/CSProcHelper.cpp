@@ -9,7 +9,7 @@ FString FCSProcHelper::UserManagedProjectName = FString::Printf(TEXT("Managed%s"
 FString FCSProcHelper::PluginDirectory = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
 FString FCSProcHelper::UnrealSharpDirectory = FPaths::Combine(PluginDirectory, "Managed", "UnrealSharp");
 FString FCSProcHelper::ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
-FString FCSProcHelper::GeneratedClassesDirectory = FPaths::Combine(UnrealSharpDirectory, "UnrealSharp", "Generated");
+FString FCSProcHelper::GeneratedClassesDirectory = FPaths::Combine(UnrealSharpDirectory, "Generated");
 
 bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory)
 {

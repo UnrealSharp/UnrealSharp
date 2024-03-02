@@ -11,6 +11,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
         <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
             <OutputItemType>Analyzer</OutputItemType>
         </ProjectReference>

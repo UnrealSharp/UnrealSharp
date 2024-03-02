@@ -14,7 +14,7 @@ public class BaseMetaData
 
     public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
     {
-        CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
+        CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, flagsAttributeName);
 
         if (flagsAttribute == null)
         {
@@ -180,6 +180,6 @@ public class BaseMetaData
     
     public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
     {
-        return WeaverHelper.FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", attributeName);
+        return WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, attributeName);
     }
 }

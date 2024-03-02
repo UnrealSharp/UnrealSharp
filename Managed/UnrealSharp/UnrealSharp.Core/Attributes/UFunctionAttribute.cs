@@ -1,4 +1,4 @@
-﻿namespace UnrealSharp.Attributes;
+﻿namespace UnrealSharp.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class | AttributeTargets.Property)]
 class FunctionFlagsMapAttribute(NativeFunctionFlags flags = NativeFunctionFlags.None) : Attribute
