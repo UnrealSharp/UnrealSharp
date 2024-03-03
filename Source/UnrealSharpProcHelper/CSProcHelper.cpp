@@ -80,6 +80,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const F
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
+	FString DotNetPath = GetDotNetExecutablePath();
 	
 	FString Args = FString::Printf(TEXT("--Action %s"), *BuildActionCommand.ToString());
 
@@ -87,6 +88,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const F
 	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
 	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
+	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
 	Args += FString::Printf(TEXT(" --OutputPath \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "UnrealSharp")));
 
 	if (BuildConfiguration)

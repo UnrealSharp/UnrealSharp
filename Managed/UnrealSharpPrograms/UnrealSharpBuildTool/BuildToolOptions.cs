@@ -24,6 +24,9 @@ public class BuildToolOptions
     [Option("Action", Required = true, HelpText = "The action the build tool should process. Build / Clean / GenerateProjects")]
     public BuildAction Action { get; set; }
     
+    [Option("DotNetPath", Required = true, HelpText = "The path to the dotnet.exe")]
+    public string DotNetExecutable { get; set; }
+    
     [Option("BuildConfig", Required = false, HelpText = "Build with debug or release")]
     public BuildConfig BuildConfig { get; set; }
     

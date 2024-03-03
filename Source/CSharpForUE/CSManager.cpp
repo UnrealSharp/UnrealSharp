@@ -43,14 +43,14 @@ void FCSManager::InitializeUnrealSharp()
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
 	
-	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
+	if (false && !FCSProcHelper::BuildBindings(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
 
 	// Generate the cs project. Ignore if it's already generated
-	if (!FCSProcHelper::GenerateProject())
+	if (false && !FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 		return;

@@ -8,9 +8,10 @@ public class BuildToolProcess : Process
     {
         if (fileName == null)
         {
-            fileName = DotNetPathFinder.FindDotNetExecutable();
+            fileName = Program.buildToolOptions.DotNetExecutable;
         }
         
+        Console.WriteLine($"Using dotnet executable: {fileName}");
         StartInfo.FileName = fileName;
         StartInfo.RedirectStandardOutput = true;
         StartInfo.RedirectStandardError = true;

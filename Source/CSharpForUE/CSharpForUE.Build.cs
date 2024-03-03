@@ -117,6 +117,12 @@ public class CSharpForUE : ModuleRules
 		
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
 	}
+	
+	void IncludeUnrealSharpBinaries()
+	{
+		// Get the project's binaries folder
+		
+	}
 }
 
 

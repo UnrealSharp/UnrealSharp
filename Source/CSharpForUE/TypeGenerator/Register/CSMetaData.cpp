@@ -144,12 +144,8 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	{
 		VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
 	}
-
-	for (auto& Interface : JsonObject->GetArrayField("Interfaces"))
-	{
-		Interfaces.Add(Interface->AsString());
-	}
-	 
+	
+	JsonObject->TryGetStringArrayField("Interfaces", Interfaces);
 	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField("Properties"), Properties);
 }
 
