@@ -682,6 +682,12 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	Builder.AppendLine();
 	ExportStaticConstructor(Builder, Class, ExportedProperties, ExportedFunctions, ExportedOverridableFunctions);
 
+	//generate inheriting constructor
+	Builder.AppendLine();
+	Builder.AppendLine(FString::Printf(TEXT("protected %s(IntPtr nativeObject) : base(nativeObject)"), *ScriptClassName));
+	Builder.OpenBrace();
+	Builder.CloseBrace();
+
 	ExportClassProperties(Builder, Class, ExportedProperties);
 	ExportClassFunctions(Builder, Class, ExportedFunctions);
 	ExportClassOverridableFunctions(Builder, ExportedOverridableFunctions);	

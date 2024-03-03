@@ -11,7 +11,9 @@ struct FCSModule
 	const FString& GetGeneratedSourceDirectory() const { return Directory; }
 	const FString& GetNamespace() const { return Namespace; }
 	const FName& GetModuleName() const { return ModuleName; }
+
 	static FString& CreateCSProjectFileContent();
+	static inline FString CSProjectFileContent;
 
 private:
 

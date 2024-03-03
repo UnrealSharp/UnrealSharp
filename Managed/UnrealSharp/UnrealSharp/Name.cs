@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
-using UnrealSharp.Core.Attributes;
+using System.Text;
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;

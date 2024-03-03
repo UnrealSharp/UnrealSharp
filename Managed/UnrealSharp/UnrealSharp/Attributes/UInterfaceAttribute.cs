@@ -1,4 +1,4 @@
-﻿namespace UnrealSharp.Core.Attributes;
+﻿namespace UnrealSharp.Attributes;
 
 [AttributeUsage(AttributeTargets.Interface)]
 public sealed class UInterfaceAttribute : BaseUAttribute
