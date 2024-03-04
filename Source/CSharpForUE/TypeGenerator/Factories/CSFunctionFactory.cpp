@@ -65,7 +65,9 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 		NewFunction->AddCppProperty(FunctionProperties[i]);
 	}
 
+#if WITH_EDITOR
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
+#endif
 
 	// Override the Blueprint function. But don't let Blueprint display this overridden function.
 #if WITH_EDITOR

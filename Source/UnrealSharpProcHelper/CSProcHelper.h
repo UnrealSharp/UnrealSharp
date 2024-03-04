@@ -43,10 +43,10 @@ public:
 	static FString GetDotNetDirectory();
 	static FString GetDotNetExecutablePath();
 
-	static FString UserManagedProjectName;
-	static FString PluginDirectory;
-	static FString UnrealSharpDirectory;
-	static FString GeneratedClassesDirectory;
-	static FString ScriptFolderDirectory;
+	static FString& GetPluginDirectory();
+	static FString GetUnrealSharpDirectory();
+	static FString GetGeneratedClassesDirectory();
+	static FString GetScriptFolderDirectory();
+	static FString GetUserManagedProjectName();
 	
 };

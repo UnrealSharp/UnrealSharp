@@ -67,7 +67,7 @@ FCSharpClassInfo* FCSTypeRegistry::FindManagedType(UClass* Class)
 	if (ClassInfo.Field == nullptr || ClassInfo.TypeHandle == nullptr)
 	{
 		const FString Namespace;
-		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::UserManagedProjectName, Namespace, Class->GetName());
+		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::GetUserManagedProjectName(), Namespace, Class->GetName());
 		ClassInfo.Field = Class;
 	}
 

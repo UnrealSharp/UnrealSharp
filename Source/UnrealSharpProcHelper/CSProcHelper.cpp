@@ -5,12 +5,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 
-FString FCSProcHelper::UserManagedProjectName = FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-FString FCSProcHelper::PluginDirectory = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-FString FCSProcHelper::UnrealSharpDirectory = FPaths::Combine(PluginDirectory, "Managed", "UnrealSharp");
-FString FCSProcHelper::ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
-FString FCSProcHelper::GeneratedClassesDirectory = FPaths::Combine(UnrealSharpDirectory, "UnrealSharp", "Generated");
-
 bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory)
 {
 	double StartTime = FPlatformTime::Seconds();
@@ -130,7 +124,7 @@ FString FCSProcHelper::GetRuntimeHostPath()
 
 FString FCSProcHelper::GetAssembliesPath()
 {
-	return FPaths::Combine(PluginDirectory, "Binaries", "DotNet", DOTNET_VERSION);
+	return FPaths::Combine(GetPluginDirectory(), "Binaries", "DotNet", DOTNET_VERSION);
 }
 
 FString FCSProcHelper::GetUnrealSharpLibraryPath()
@@ -150,12 +144,12 @@ FString FCSProcHelper::GetUserAssemblyDirectory()
 
 FString FCSProcHelper::GetUserAssemblyPath()
 {
-	return FPaths::Combine(GetUserAssemblyDirectory(), UserManagedProjectName + ".dll");
+	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
 }
 
 FString FCSProcHelper::GetManagedSourcePath()
 {
-	return FPaths::Combine(PluginDirectory, "Managed");
+	return FPaths::Combine(GetPluginDirectory(), "Managed");
 }
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
@@ -195,11 +189,46 @@ FString FCSProcHelper::GetDotNetExecutablePath()
 	return GetDotNetDirectory() + "dotnet.exe";
 }
 
+FString& FCSProcHelper::GetPluginDirectory()
+{
+	static FString PluginDirectory;
+
+	if (PluginDirectory.IsEmpty())
+	{
+		TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME);
+		check(Plugin);
+		PluginDirectory = Plugin->GetBaseDir();
+	}
+
+	return PluginDirectory;
+}
+
+FString FCSProcHelper::GetUnrealSharpDirectory()
+{
+	return FPaths::Combine(GetPluginDirectory(), "Managed", "UnrealSharp");
+}
+
+FString FCSProcHelper::GetGeneratedClassesDirectory()
+{
+	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
+}
+
+FString FCSProcHelper::GetScriptFolderDirectory()
+{
+	return FPaths::ProjectDir() / "Script";
+}
+
+FString FCSProcHelper::GetUserManagedProjectName()
+{
+	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
+}
+
 bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
 {
 	int32 ReturnCode = 0;
 	FString Output;
 
 	FString Arguments = FString::Printf(TEXT("build -c %s"), *BuildConfiguration);
+	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
 	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
 }

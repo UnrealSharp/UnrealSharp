@@ -726,7 +726,6 @@ void FCSGenerator::ExportInterfaceFunctions(FCSScriptBuilder& Builder, const UCl
 	for (UFunction* Function : ExportedFunctions)
 	{
 		PropertyTranslators->Find(Function).ExportInterfaceFunction(Builder, Function);
-		
 	}
 }
 
@@ -842,6 +841,12 @@ void FCSGenerator::ExportClassFunctionsStaticConstruction(FCSScriptBuilder& Buil
 void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function)
 {
 	FString NativeMethodName = Function->GetName();
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
+	
 	Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = %s.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"%s\");"), *NativeMethodName, UClassCallbacks, *Function->GetName()));
 	
 	if (Function->NumParms > 0)
@@ -854,6 +859,11 @@ void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Build
 		FProperty* Property = *It;
 		const FPropertyTranslator& ParamHandler = PropertyTranslators->Find(Property);
 		ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
+	}
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.EndPreprocessorBlock();
 	}
 }
 
@@ -884,9 +894,19 @@ void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder,
 		{
 			continue;
 		}
+
+		if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+		{
+			Builder.BeginWithEditorOnlyBlock();
+		}
 		
 		ExportedPropertiesHash.Add(ManagedName);
 		PropertyTranslators->Find(Property).ExportPropertyStaticConstruction(Builder, Property, Property->GetName());
+
+		if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+		{
+			Builder.EndPreprocessorBlock();
+		}
 	}
 }
 

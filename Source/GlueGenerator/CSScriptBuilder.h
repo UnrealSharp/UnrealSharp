@@ -136,6 +136,22 @@ public:
 		}
 	}
 
+	void BeginWithEditorOnlyBlock()
+	{
+		static const FString WithEditorDirective = "WITH_EDITOR";
+		BeginPreprocessorBlock(WithEditorDirective);
+	}
+
+	void BeginPreprocessorBlock(const FString& DirectiveCondition)
+	{
+		AppendLine(FString::Printf(TEXT("#if %s"), *DirectiveCondition));
+	}
+
+	void EndPreprocessorBlock()
+	{
+		AppendLine(TEXT("#endif"));
+	}
+
 	void EndUnsafeBlock()
 	{
 		check(UnsafeBlockCount >= 0);

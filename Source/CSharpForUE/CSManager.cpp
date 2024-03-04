@@ -37,7 +37,7 @@ void FCSManager::InitializeUnrealSharp()
 #if WITH_EDITOR
 
 	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GeneratedClassesDirectory);
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 	
 	// Make sure the C# API is up to date. This is only done in the editor.
 	FString BuildConfiguration;

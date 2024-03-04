@@ -11,7 +11,7 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 
 void FCSharpForUEModule::StartupModule()
 {
-	//FCSManager::Get().InitializeUnrealSharp();
+	FCSManager::Get().InitializeUnrealSharp();
 }
 
 void FCSharpForUEModule::ShutdownModule()
