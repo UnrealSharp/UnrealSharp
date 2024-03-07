@@ -15,17 +15,13 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
 		{
-			UBlueprint* DummyBlueprint = NewObject<UBlueprint>(Field);
+			UBlueprint* DummyBlueprint = NewObject<UBlueprint>(Field, Field->GetFName());
 			DummyBlueprint->SkeletonGeneratedClass = Field;
 			DummyBlueprint->GeneratedClass = Field;
 			DummyBlueprint->ParentClass = SuperClass;
 
-			DummyBlueprint->bRecompileOnLoad = false;
-			DummyBlueprint->bIsRegeneratingOnLoad = false;
-		
-			Field->bCooked = true;
-			
 			#if WITH_EDITOR
+			DummyBlueprint->BlueprintDisplayName = Field->GetName();
 			Field->ClassGeneratedBy = DummyBlueprint;
 			#endif
 		}
@@ -75,6 +71,8 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 		// Setup replication properties
 		Field->SetUpRuntimeReplicationData();
+
+		Field->UpdateCustomPropertyListForPostConstruction();
 	}
 }
 

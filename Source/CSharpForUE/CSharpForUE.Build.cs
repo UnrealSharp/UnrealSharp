@@ -3,6 +3,12 @@ using System.Diagnostics;
 using System.IO;
 using UnrealBuildTool;
 
+enum BuildConfiguration
+{
+	Debug,
+	Release
+}
+
 public class CSharpForUE : ModuleRules
 {
 	private string ManagedPath;
@@ -48,10 +54,14 @@ public class CSharpForUE : ModuleRules
 		}
 		
 		IncludeDotNetHeaders();
-		
+
 		if (Target.Type == TargetRules.TargetType.Editor)
 		{
 			BuildPrograms();
+		}
+		else
+		{
+			IncludeUnrealSharpBinaries();
 		}
 	}
 
@@ -93,35 +103,44 @@ public class CSharpForUE : ModuleRules
 
 	void BuildPrograms()
 	{
+		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release);
+		Console.WriteLine("UnrealSharpPrograms built successfully!");
+	}
+	
+	void IncludeUnrealSharpBinaries()
+	{
+		string output = Path.Combine(PluginDirectory, "Intermediate", "Build", "Binaries");
+		BuildSolution(Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp.sln"), BuildConfiguration.Release, output);
+	}
+	
+	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)
+	{
+		if (!File.Exists(solutionPath))
+		{
+			throw new Exception($"Couldn't find the solution file at \"{solutionPath}\"");
+		}
+		
 		string dotnetPath = FindDotNetExecutable();
 		
 		Process process = new Process();
 		process.StartInfo.FileName = dotnetPath;
 		
 		process.StartInfo.ArgumentList.Add("build");
-		
-		string slnPath = Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln");
-		
-		if (!File.Exists(slnPath))
-		{
-			throw new Exception($"Couldn't find the solution file for UnrealSharpPrograms at \"{slnPath}\"");
-		}
-		
-		process.StartInfo.ArgumentList.Add($"\"{slnPath}\"");
+		process.StartInfo.ArgumentList.Add($"\"{solutionPath}\"");
 		
 		process.StartInfo.ArgumentList.Add("-c");
-		process.StartInfo.ArgumentList.Add("Release");
-
+		process.StartInfo.ArgumentList.Add(buildConfiguration.ToString());
+		
+		if (outputDirectory != null)
+		{
+			process.StartInfo.ArgumentList.Add("-o");
+			process.StartInfo.ArgumentList.Add(outputDirectory);
+		}
+		
 		process.Start();
 		process.WaitForExit();
 		
-		Console.WriteLine("UnrealSharpPrograms built successfully!");
-	}
-	
-	void IncludeUnrealSharpBinaries()
-	{
-		// Get the project's binaries folder
-		
+		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
 	}
 }
 

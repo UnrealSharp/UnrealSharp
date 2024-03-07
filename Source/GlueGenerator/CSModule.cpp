@@ -19,6 +19,8 @@ FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : Modul
 
 FString& FCSModule::CreateCSProjectFileContent()
 {
+	static FString CSProjectFileContent;
+	
 	if (!CSProjectFileContent.IsEmpty())
 	{
 		return CSProjectFileContent;
