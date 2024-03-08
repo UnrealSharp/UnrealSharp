@@ -210,7 +210,7 @@ FString FCSProcHelper::GetUnrealSharpDirectory()
 
 FString FCSProcHelper::GetGeneratedClassesDirectory()
 {
-	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
+	return FPaths::Combine(GetUnrealSharpDirectory(), "Generated");
 }
 
 FString FCSProcHelper::GetScriptFolderDirectory()

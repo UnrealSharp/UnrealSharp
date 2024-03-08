@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using UnrealSharp.Core.Attributes;
 
 namespace UnrealSharp.Interop;
 

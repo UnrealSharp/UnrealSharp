@@ -32,14 +32,12 @@ void FStringPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builde
 
 void FStringPropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	AddCheckObjectForValidity(Builder);
 	Builder.AppendLine(FString::Printf(TEXT("StringMarshaller.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,this,value);"),*NativePropertyName));
 }
 
 
 void FStringPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	AddCheckObjectForValidity(Builder);
 	Builder.AppendLine(FString::Printf(TEXT("return StringMarshaller.FromNative(IntPtr.Add(NativeObject,%s_Offset),0,this);"), *NativePropertyName));
 }
 

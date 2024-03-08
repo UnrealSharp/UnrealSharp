@@ -17,25 +17,34 @@ FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : Modul
 	}
 }
 
-FString& FCSModule::CreateCSProjectFileContent()
+void FCSModule::AddReferencedModule(const FName& InModuleName)
 {
-	static FString CSProjectFileContent;
-	
-	if (!CSProjectFileContent.IsEmpty())
+	if (InModuleName != ModuleName && !ReferencedModules.Contains(InModuleName))
 	{
-		return CSProjectFileContent;
+		ReferencedModules.Add(InModuleName);
 	}
-	
+}
+
+void FCSModule::CreateCSProjectFileContent(const FString& ReferencedModules, FString& CSProjectFileContent)
+{
 	CSProjectFileContent += TEXT("<Project Sdk=\"Microsoft.NET.Sdk\">\n");
 	CSProjectFileContent += TEXT("  <PropertyGroup>\n");
 	CSProjectFileContent += TEXT("    <TargetFramework>net8.0</TargetFramework>\n");
 	CSProjectFileContent += TEXT("    <ImplicitUsings>enable</ImplicitUsings>\n");
 	CSProjectFileContent += TEXT("    <Nullable>enable</Nullable>\n");
+	CSProjectFileContent += TEXT("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n");
 	CSProjectFileContent += TEXT("  </PropertyGroup>\n");
 	CSProjectFileContent += TEXT("	<ItemGroup>\n");
 	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp\\UnrealSharp.csproj\"/>\n");
+	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.Core\\UnrealSharp.Core.csproj\"/>\n");
+	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.Engine\\UnrealSharp.Engine.csproj\"/>\n");
+	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.CoreUObject\\UnrealSharp.CoreUObject.csproj\"/>\n");
+	
+	if (!ReferencedModules.IsEmpty())
+	{
+		CSProjectFileContent += ReferencedModules;
+	}
+	
 	CSProjectFileContent += TEXT("  </ItemGroup>\n");
 	CSProjectFileContent += TEXT("</Project>\n");
-
-	return CSProjectFileContent;
 }

@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Interop;
 

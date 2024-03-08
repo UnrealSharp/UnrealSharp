@@ -83,6 +83,8 @@ public:
 
 	void RegisterClassToModule(const UObject* Struct);
 
+	void CreateCSProjectFiles();
+
 	const FString& GetNamespace(const UObject* Object);
 
 	FCSModule& FindOrRegisterModule(const UObject* Object);
@@ -121,6 +123,7 @@ protected:
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;
 	
 	TMap<FName, FCSModule> CSharpBindingsModules;
+	TSet<FName> ExportedModules;
 
 	TSet<UObject*> ExportedTypes;
 	

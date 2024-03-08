@@ -1,3 +1,8 @@
+using System;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
+using UnrealSharp.Engine;
+
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]

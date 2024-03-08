@@ -1,3 +1,6 @@
+using System;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Interop;

@@ -25,8 +25,13 @@ void FPropertyTranslator::ExportReferences(const FProperty* Property) const
 	AddReferences(Property, References);
 
 	FCSGenerator& Generator = FCSGenerator::Get();
+	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(Property->GetOwnerUField());
+	
 	for (UField* Reference : References)
 	{
+		FCSModule& ReferencedModule = FCSGenerator::Get().FindOrRegisterModule(Reference);
+		Module.AddReferencedModule(ReferencedModule.GetModuleName());
+		
 		Generator.GenerateGlueForType(Reference, true);
 	}
 }
@@ -843,8 +848,6 @@ void FPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, con
 
 void FPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	AddCheckObjectForValidity(Builder);
-
 	ExportMarshalFromNativeBuffer(
 		Builder,
 		Property, 
@@ -864,7 +867,6 @@ void FPropertyTranslator::OnPropertyExported(FCSScriptBuilder& Builder, const FP
 
 void FPropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	AddCheckObjectForValidity(Builder);
 	ExportMarshalToNativeBuffer(
 		Builder, 
 		Property, 

@@ -59,10 +59,6 @@ public class CSharpForUE : ModuleRules
 		{
 			BuildPrograms();
 		}
-		else
-		{
-			IncludeUnrealSharpBinaries();
-		}
 	}
 
 	private void IncludeDotNetHeaders()
@@ -105,12 +101,6 @@ public class CSharpForUE : ModuleRules
 	{
 		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release);
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
-	}
-	
-	void IncludeUnrealSharpBinaries()
-	{
-		string output = Path.Combine(PluginDirectory, "Intermediate", "Build", "Binaries");
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp.sln"), BuildConfiguration.Release, output);
 	}
 	
 	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)

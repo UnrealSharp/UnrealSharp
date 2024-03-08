@@ -87,6 +87,8 @@ void FCSGenerator::GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess)
 	{
 		GenerateGlueForType(ObjectToProcess);
 	}
+
+	CreateCSProjectFiles();
 	
 	GeneratedFileManager.RenameTempFiles();
 	SlowTask.EnterProgressFrame(1);
@@ -516,6 +518,38 @@ const FString& FCSGenerator::GetNamespace(const UObject* Object)
 void FCSGenerator::RegisterClassToModule(const UObject* Struct)
 {
 	FindOrRegisterModule(Struct);
+}
+
+void FCSGenerator::CreateCSProjectFiles()
+{
+	for (const TPair<FName, FCSModule>& Module : CSharpBindingsModules)
+	{
+		if (ExportedModules.Contains(Module.Key))
+		{
+			continue;
+		}
+
+		if (Module.Value.GetModuleName() == "UMG")
+		{
+			check(true);
+		}
+
+		FString ModuleReferences;
+		for (const FName& ReferencedModule : Module.Value.GetReferencedModules())
+		{
+			ModuleReferences += FString::Printf(TEXT("		<ProjectReference Include=\"..\\%s\\%s.csproj\"/>\n"),
+				*ReferencedModule.ToString(),
+				*ReferencedModule.ToString());
+		}
+
+		FString CSProjectFileContent;
+		FCSModule::CreateCSProjectFileContent(ModuleReferences, CSProjectFileContent);
+		
+		FString CSProjectFilePath = FPaths::Combine(Module.Value.GetGeneratedSourceDirectory(), *FString::Printf(TEXT("%s.csproj"), *Module.Key.ToString()));
+		FFileHelper::SaveStringToFile(CSProjectFileContent, *CSProjectFilePath);
+
+		ExportedModules.Add(Module.Key);
+	}
 }
 
 FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)

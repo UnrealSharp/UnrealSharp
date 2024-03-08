@@ -38,19 +38,20 @@ void FCSManager::InitializeUnrealSharp()
 
 	// Check if the C# API is up to date.
 	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
+	return;
 	
 	// Make sure the C# API is up to date. This is only done in the editor.
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
 	
-	if (false && !FCSProcHelper::BuildBindings(BuildConfiguration))
+	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
 
 	// Generate the cs project. Ignore if it's already generated
-	if (false && !FCSProcHelper::GenerateProject())
+	if (!FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 		return;

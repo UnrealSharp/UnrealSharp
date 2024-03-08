@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj"/>
+        <ProjectReference Include="..\UnrealSharp.CoreUObject\UnrealSharp.CoreUObject.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Compile Include="..\Generated\Engine\*.cs" />
+        <Compile Include="..\Generated\AudioExtensions\*.cs" />
+        <Compile Include="..\Generated\DeveloperSettings\*.cs" />
+        <Compile Include="..\Generated\InputCore\*.cs" />
+        <Compile Include="..\Generated\SlateCore\*.cs" />
+        <Compile Include="..\Generated\NetCore\*.cs" />
+        <Compile Include="..\Generated\PhysicsCore\*.cs" />
+        <Compile Include="..\Generated\FieldNotification\*.cs" />
+        <Compile Include="..\Generated\AudioLinkCore\*.cs" />
+        <Compile Include="..\Generated\StaticMeshDescription\*.cs" />
+        <Compile Include="..\Generated\MeshDescription\*.cs" />
+        <Compile Include="..\Generated\Chaos\*.cs" />
+        <Compile Include="..\Generated\Slate\*.cs" />
+        <Compile Include="..\Generated\UMG\*.cs" />
+        <Compile Include="..\Generated\ClothingSystemRuntimeInterface\*.cs" />
+        <Compile Include="..\Generated\TypedElementRuntime\*.cs" />
+    </ItemGroup>
+
+</Project>
