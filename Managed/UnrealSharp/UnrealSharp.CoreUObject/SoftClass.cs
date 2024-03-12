@@ -1,4 +1,5 @@
 using UnrealSharp.CoreUObject.Interop;
+
 using Object = UnrealSharp.Core.UnrealSharpObject;
 
 namespace UnrealSharp.CoreUObject;

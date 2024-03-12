@@ -8,13 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
-            <OutputItemType>Analyzer</OutputItemType>
-        </ProjectReference>
+      <ProjectReference Include="..\UnrealSharp.CoreUObject\UnrealSharp.CoreUObject.csproj" />
     </ItemGroup>
 
 </Project>

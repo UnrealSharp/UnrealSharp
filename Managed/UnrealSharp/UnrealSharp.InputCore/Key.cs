@@ -1,8 +1,7 @@
-﻿using System;
-using UnrealSharp.Core;
+﻿using UnrealSharp.Core;
 using UnrealSharp.CoreUObject.Interop;
 
-namespace UnrealSharp;
+namespace UnrealSharp.InputCore;
 
 internal struct SharedPtrMirror
 {

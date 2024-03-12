@@ -26,6 +26,9 @@ public:
 	
 	void StartGenerator(const FString& OutputDirectory);
 
+	static void CreateGeneratedScriptsModule(FString& Directory);
+	static FString& GetGeneratedCSProjectString();
+
 	// Public methods
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);
 	void GenerateGlueForType(UObject* Object, bool bForceExport = false);
@@ -82,8 +85,6 @@ public:
 	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets) const;
 
 	void RegisterClassToModule(const UObject* Struct);
-
-	void CreateCSProjectFiles();
 
 	const FString& GetNamespace(const UObject* Object);
 

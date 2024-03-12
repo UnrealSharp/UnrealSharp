@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject.Interop;
+
 using Object = UnrealSharp.Core.UnrealSharpObject;
 
 namespace UnrealSharp.CoreUObject;

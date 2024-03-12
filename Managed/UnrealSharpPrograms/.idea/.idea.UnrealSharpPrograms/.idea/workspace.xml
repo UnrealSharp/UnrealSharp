@@ -9,16 +9,35 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/UnrealSharpObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/UnrealSharpObject.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolOptions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolOptions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolProcess.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolProcess.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/DotNetFinder.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/CSManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/CSManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/CSharpForUE.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/CSharpForUE.Build.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.InputCore/InputEvent.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/UnrealSharp.Core.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/UnrealSharp.Core.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/PersistentObjectPtr.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/PersistentObjectPtr.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/SoftClass.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/SoftClass.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/SoftObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/SoftObject.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/UnrealSharp.CoreUObject.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/UnrealSharp.CoreUObject.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Engine/Interop/UInputComponentExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Engine/Interop/UInputComponentExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Engine/UnrealSharp.Engine.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Engine/UnrealSharp.Engine.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Plugins/UnrealSharp.Plugins.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Plugins/UnrealSharp.Plugins.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.sln" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/ExportedFunctionsManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/ExportedFunctionsManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/GEditorExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/GEditorExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/GEngineExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/GEngineExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/ManagedCallbacks.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/ManagedCallbacks.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/SoftObjectPathExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/SoftObjectPathExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/TSharedPtrExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/TSharedPtrExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/UGameInstanceExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/UGameInstanceExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/UKismetSystemLibraryExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.CoreUObject/Interop/UKismetSystemLibraryExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/ULocalPlayerExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/ULocalPlayerExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/UWidgetBlueprintLibraryExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Core/Interop/UWidgetBlueprintLibraryExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Interop/UWorldExporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.Engine/Interop/UWorldExporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/Key.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp.InputCore/Key.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/UnrealSharp.csproj" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/CSModule.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/CSModule.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/CSModule.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/CSModule.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/GlueGenerator.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/GlueGenerator.Build.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/PropertyTranslators/PropertyTranslator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/PropertyTranslators/PropertyTranslator.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,29 +75,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Project.UnrealSharpBuildTool.executor": "Debug",
-    ".NET Project.UnrealSharpWeaver.executor": "Debug",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "XThreadsFramesViewSplitterKey": "0.5655961",
-    "git-widget-placeholder": "packaging",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Project.UnrealSharpBuildTool.executor&quot;: &quot;Debug&quot;,
+    &quot;.NET Project.UnrealSharpWeaver.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;XThreadsFramesViewSplitterKey&quot;: &quot;0.5655961&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;packaging&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "rider.external.source.directories": [
-      "C:\\Users\\oscar\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache",
-      "C:\\Users\\oscar\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache",
-      "C:\\Users\\oscar\\AppData\\Local\\Symbols\\src"
+  &quot;keyToStringList&quot;: {
+    &quot;rider.external.source.directories&quot;: [
+      &quot;C:\\Users\\oscar\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\DecompilerCache&quot;,
+      &quot;C:\\Users\\oscar\\AppData\\Roaming\\JetBrains\\Rider2023.3\\resharper-host\\SourcesCache&quot;,
+      &quot;C:\\Users\\oscar\\AppData\\Local\\Symbols\\src&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected=".NET Project.UnrealSharpWeaver">
     <configuration name="UnrealSharpBuildTool" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/../../Binaries/DotNet/net8.0/UnrealSharpBuildTool.exe" />
@@ -138,6 +157,7 @@
       <workItem from="1706433837834" duration="4254000" />
       <workItem from="1706954394927" duration="15466000" />
       <workItem from="1709456420291" duration="3342000" />
+      <workItem from="1710266007915" duration="523000" />
     </task>
     <servers />
   </component>
@@ -171,14 +191,7 @@
         <line-breakpoint enabled="true" type="DotNet Breakpoints">
           <url>file://$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs</url>
           <line>29</line>
-          <properties documentPath="C:\Users\oscar\Documents\Unreal Projects\CSharpProject\Plugins\UnrealSharp\Managed\UnrealSharpPrograms\UnrealSharpWeaver\MetaData\ClassMetaData.cs" initialLine="29" containingFunctionPresentation="Constructor 'ClassMetaData'">
-            <startOffsets>
-              <option value="1029" />
-            </startOffsets>
-            <endOffsets>
-              <option value="1120" />
-            </endOffsets>
-          </properties>
+          <properties documentPath="C:\Users\oscar\Documents\Unreal Projects\CSharpProject\Plugins\UnrealSharp\Managed\UnrealSharpPrograms\UnrealSharpWeaver\MetaData\ClassMetaData.cs" initialLine="29" containingFunctionPresentation="Constructor 'ClassMetaData'" />
           <option name="timeStamp" value="80" />
         </line-breakpoint>
       </breakpoints>

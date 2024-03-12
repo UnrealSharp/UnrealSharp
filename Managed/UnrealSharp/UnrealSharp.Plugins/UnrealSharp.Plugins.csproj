@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
+        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
     </ItemGroup>
     
 </Project>

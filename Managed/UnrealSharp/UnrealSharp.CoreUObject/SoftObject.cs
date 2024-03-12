@@ -1,6 +1,8 @@
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject.Interop;
 
+using Object = UnrealSharp.Core.UnrealSharpObject;
+
 namespace UnrealSharp.CoreUObject;
 
 public struct SoftObject<T> where T : Object

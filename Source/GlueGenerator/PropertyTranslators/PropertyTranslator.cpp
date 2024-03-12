@@ -25,13 +25,9 @@ void FPropertyTranslator::ExportReferences(const FProperty* Property) const
 	AddReferences(Property, References);
 
 	FCSGenerator& Generator = FCSGenerator::Get();
-	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(Property->GetOwnerUField());
 	
 	for (UField* Reference : References)
 	{
-		FCSModule& ReferencedModule = FCSGenerator::Get().FindOrRegisterModule(Reference);
-		Module.AddReferencedModule(ReferencedModule.GetModuleName());
-		
 		Generator.GenerateGlueForType(Reference, true);
 	}
 }

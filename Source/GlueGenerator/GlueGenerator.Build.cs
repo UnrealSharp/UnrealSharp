@@ -25,7 +25,7 @@ public class GlueGenerator : ModuleRules
                 "DeveloperSettings", 
                 "UnrealSharpProcHelper", 
                 "XmlParser",
-                "UnrealEd"
+                "UnrealEd",
             }
         );
     }

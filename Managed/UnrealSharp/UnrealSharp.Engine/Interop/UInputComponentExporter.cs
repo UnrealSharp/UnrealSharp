@@ -1,5 +1,6 @@
 ﻿using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
+using UnrealSharp.InputCore;
 
 namespace UnrealSharp.Engine.Interop;
 
