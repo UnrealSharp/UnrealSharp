@@ -25,25 +25,28 @@ void InitializeBuilders(TMap<FName, T>& Map)
 	}
 }
 
-bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
+bool FCSTypeRegistry::ProcessAssemblyMetaData(const TSharedRef<FCSAssembly>& Assembly)
 {
-	if (!FPaths::FileExists(FilePath))
+	FString MetaDataPath;
+	Assembly->GetMetaDataPath(MetaDataPath);
+	
+	if (!FPaths::FileExists(MetaDataPath))
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find metadata file at: %s"), *FilePath);
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find metadata file at: %s"), *MetaDataPath);
 		return false;
 	}
 
 	FString JsonString;
-	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
+	if (!FFileHelper::LoadFileToString(JsonString, *MetaDataPath))
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load MetaDataPath at: %s"), *FilePath);
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load MetaDataPath at: %s"), *MetaDataPath);
 		return false;
 	}
 
 	TSharedPtr<FJsonObject> JsonObject;
 	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject) || !JsonObject.IsValid())
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to parse JSON at: %s"), *FilePath);
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to parse JSON at: %s"), *MetaDataPath);
 		return false;
 	}
 

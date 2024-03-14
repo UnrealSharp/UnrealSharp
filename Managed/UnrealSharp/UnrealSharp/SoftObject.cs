@@ -1,0 +1,52 @@
+using UnrealSharp.Interop;
+using UnrealSharp.Plugins;
+
+namespace UnrealSharp;
+
+public struct SoftObject<T> where T : CoreUObject.Object
+{
+    internal PersistentObjectPtr _softObjectPtr; 
+    public SoftObjectPath SoftObjectPath => _softObjectPtr.GetUniqueId();
+    public T Object => Get();
+    
+    public SoftObject(UnrealSharpObject obj)
+    {
+        _softObjectPtr = new PersistentObjectPtr(obj);
+    }
+    
+    public SoftObject()
+    {
+        
+    }
+    
+    internal SoftObject(PersistentObjectPtrData data)
+    {
+        _softObjectPtr = new PersistentObjectPtr(data);
+    }
+    
+    public T LoadSynchronous()
+    {
+        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref _softObjectPtr.PersistentObjectPtrData);
+        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+    }
+    
+    private T Get()
+    {
+        return (T) _softObjectPtr.Get();
+    }
+    
+};
+
+public static class SoftObjectMarshaller<T> where T : UnrealSharpObject
+{
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SoftObject<T> obj)
+    {
+        BlittableMarshaller<PersistentObjectPtrData>.ToNative(nativeBuffer, arrayIndex, owner, obj._softObjectPtr.PersistentObjectPtrData);
+    }
+    
+    public static SoftObject<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    {
+        return new SoftObject<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex, owner));
+    }
+}
+

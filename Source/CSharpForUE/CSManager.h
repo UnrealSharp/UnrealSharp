@@ -32,10 +32,10 @@ public:
 
 	void InitializeUnrealSharp();
 
-	static UPackage* GetUnrealSharpPackage();
+	static UPackage& GetUnrealSharpPackage();
 
-	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath);
-	bool UnloadPlugin(const FString& AssemblyName);
+	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath, bool bLoadMetaData = true);
+	bool UnloadAssembly(const FString& AssemblyName);
 
 	FGCHandle CreateNewManagedObject(UObject* Object, UClass* Class);
 	FGCHandle CreateNewManagedObject(UObject* Object, uint8* TypeHandle);
@@ -49,7 +49,7 @@ public:
 
 	bool LoadUserAssembly();
 
-	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
+	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
 	TMap<UObject*, FGCHandle> UnmanagedToManagedMap;
 	
 	static inline FCSManagedPluginCallbacks ManagedPluginsCallbacks;

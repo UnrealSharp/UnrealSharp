@@ -78,8 +78,9 @@ public class DelegateWrapperGenerator : ISourceGenerator
             
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("using UnrealSharp;");
-            stringBuilder.AppendLine("using UnrealSharp.Core;");
+            stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine("using UnrealSharp.Interop;");
+            stringBuilder.AppendLine("using UnrealSharp.Plugins;");
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"namespace {namespaceName};");
             stringBuilder.AppendLine();

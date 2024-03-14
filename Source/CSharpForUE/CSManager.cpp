@@ -25,6 +25,7 @@ UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
 void FCSManager::InitializeUnrealSharp()
 {
+	return;
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
@@ -35,10 +36,6 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-	return;
 	
 	// Make sure the C# API is up to date. This is only done in the editor.
 	FString BuildConfiguration;
@@ -50,8 +47,14 @@ void FCSManager::InitializeUnrealSharp()
 		return;
 	}
 
+	if (!FCSProcHelper::BuildGeneratedBindings(BuildConfiguration))
+	{
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build generated bindings"));
+		return;
+	}
+
 	// Generate the cs project. Ignore if it's already generated
-	if (!FCSProcHelper::GenerateProject())
+	if (false && !FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 		return;
@@ -182,9 +185,9 @@ bool FCSManager::LoadUserAssembly()
 		return false;
 	}
 	
-	if (!LoadPlugin(UserAssemblyPath))
+	if (!LoadAssembly(UserAssemblyPath))
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
+		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load assembly %s!"), *UserAssemblyPath);
 		return false;
 	}
 
@@ -194,7 +197,7 @@ bool FCSManager::LoadUserAssembly()
 load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() const
 {
 	hostfxr_handle HostFXR_Handle = nullptr;
-	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
+	FString RuntimeConfigPath = FCSProcHelper::GetRuntimeConfigPath();
 
 	if (!FPaths::FileExists(RuntimeConfigPath))
 	{
@@ -231,46 +234,45 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() co
 	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
 }
 
-UPackage* FCSManager::GetUnrealSharpPackage()
+UPackage& FCSManager::GetUnrealSharpPackage()
 {
-	return UnrealSharpPackage;
+	return *UnrealSharpPackage;
 }
 
-TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath, bool bLoadMetaData)
 {
-	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
+	TSharedPtr<FCSAssembly> NewAssembly = MakeShared<FCSAssembly>(AssemblyPath);
 	
-	if (!NewPlugin->Load())
+	if (!NewAssembly->Load())
 	{
 		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to load Assembly with path: %s."), *AssemblyPath));
 		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
 		return nullptr;
 	}
-
-	const FString PluginName = FPaths::GetBaseFilename(AssemblyPath);
-	LoadedPlugins.Add(*PluginName, NewPlugin);
-
-	// Change from ManagedProjectName.dll > ManagedProjectName.json
-	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "json");
+	
+	LoadedAssemblies.Add(*NewAssembly->GetAssemblyName(), NewAssembly);
 
 	// Process the json file and register the types.
-	if (!FCSTypeRegistry::Get().ProcessMetaData(MetadataPath))
+	if (bLoadMetaData)
 	{
-		return nullptr;
+		if (!FCSTypeRegistry::Get().ProcessAssemblyMetaData(NewAssembly.ToSharedRef()))
+		{
+			return nullptr;
+		}
 	}
- 
+	
 	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
-	return NewPlugin;
+	return NewAssembly;
 }
 
-bool FCSManager::UnloadPlugin(const FString& AssemblyName)
+bool FCSManager::UnloadAssembly(const FString& AssemblyName)
 {
 	TSharedPtr<FCSAssembly> Assembly;
-	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))
+	if (LoadedAssemblies.RemoveAndCopyValue(*AssemblyName, Assembly))
 	{
 		return Assembly->Unload();
 	}
-
+	
 	// If we can't find the Assembly, it's probably already unloaded.
 	return true;
 }
@@ -333,7 +335,7 @@ void FCSManager::RemoveManagedObject(UObject* Object)
 
 uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName)
 {
-	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
+	const TSharedPtr<FCSAssembly> Plugin = LoadedAssemblies.FindRef(*AssemblyName);
 
 	if (!Plugin.IsValid() || !Plugin->IsAssemblyValid())
 	{

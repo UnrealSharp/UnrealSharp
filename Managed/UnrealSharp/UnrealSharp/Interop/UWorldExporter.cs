@@ -1,0 +1,14 @@
+using UnrealSharp.Attributes;
+using UnrealSharp.Engine;
+using UnrealSharp.Plugins;
+
+namespace UnrealSharp.Interop;
+
+[NativeCallbacks]
+public static unsafe partial class UWorldExporter
+{
+    public static delegate* unmanaged<IntPtr, Transform, IntPtr, ActorSpawnParameters, IntPtr> SpawnActor;
+    public static delegate* unmanaged<IntPtr, string, float, NativeBool, TimerHandle*, void> SetTimer;
+    public static delegate* unmanaged<IntPtr, TimerHandle*, void> InvalidateTimer;
+    public static delegate* unmanaged<IntPtr, IntPtr, IntPtr> GetWorldSubsystem;
+}

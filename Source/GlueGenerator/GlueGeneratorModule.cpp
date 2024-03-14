@@ -1,11 +1,15 @@
 ﻿#include "GlueGeneratorModule.h"
 
+#include "CSGenerator.h"
+#include "UnrealSharpProcHelper/CSProcHelper.h"
+
 DEFINE_LOG_CATEGORY(LogGlueGenerator);
 
 #define LOCTEXT_NAMESPACE "FGlueGeneratorModule"
 
 void FGlueGeneratorModule::StartupModule()
 {
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 }
 
 void FGlueGeneratorModule::ShutdownModule()

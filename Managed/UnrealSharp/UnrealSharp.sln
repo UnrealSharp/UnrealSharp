@@ -7,11 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Plugins", "Unre
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerators", "UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj", "{C79E8C88-94F3-403D-84CB-30014157844E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Core", "UnrealSharp.Core\UnrealSharp.Core.csproj", "{A2B5B8A7-2333-44A1-AB0B-8598581B5672}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.CoreUObject", "UnrealSharp.CoreUObject\UnrealSharp.CoreUObject.csproj", "{5DE9820A-17F8-489F-8795-FFCB7C5FAB4D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Engine", "UnrealSharp.Engine\UnrealSharp.Engine.csproj", "{AA6A1758-3C05-46E7-954F-A7E22C355281}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp", "UnrealSharp\UnrealSharp.csproj", "{A2B5B8A7-2333-44A1-AB0B-8598581B5672}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,13 +34,5 @@ Global
 		{A2B5B8A7-2333-44A1-AB0B-8598581B5672}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2B5B8A7-2333-44A1-AB0B-8598581B5672}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2B5B8A7-2333-44A1-AB0B-8598581B5672}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5DE9820A-17F8-489F-8795-FFCB7C5FAB4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5DE9820A-17F8-489F-8795-FFCB7C5FAB4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5DE9820A-17F8-489F-8795-FFCB7C5FAB4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5DE9820A-17F8-489F-8795-FFCB7C5FAB4D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AA6A1758-3C05-46E7-954F-A7E22C355281}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AA6A1758-3C05-46E7-954F-A7E22C355281}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AA6A1758-3C05-46E7-954F-A7E22C355281}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AA6A1758-3C05-46E7-954F-A7E22C355281}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

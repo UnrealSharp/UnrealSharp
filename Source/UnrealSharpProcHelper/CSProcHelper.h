@@ -39,14 +39,18 @@ public:
 	static FString GetUnrealSharpBuildToolPath();
 
 	static bool BuildBindings(const FString& BuildConfiguration);
+	static bool BuildGeneratedBindings(const FString& BuildConfiguration);
+	static bool InvokeDotNetBuild(const FString& ProjectPath, const FString& Configuration, const FString& OutputPath);
 
 	static FString GetDotNetDirectory();
 	static FString GetDotNetExecutablePath();
 
 	static FString& GetPluginDirectory();
-	static FString GetUnrealSharpDirectory();
 	static FString GetGeneratedClassesDirectory();
 	static FString GetScriptFolderDirectory();
 	static FString GetUserManagedProjectName();
+
+	static FString& GetBindingsBinariesDirectory();
+	static FString GetUnrealSharpDirectory();
 	
 };

@@ -71,11 +71,11 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddBlittableCustomStructPropertyTranslator("Vector4", "System.DoubleNumerics.Vector4", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Quat", "System.DoubleNumerics.Quaternion", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Matrix", "System.DoubleNumerics.Matrix4x4", Blacklist);
-	AddBlittableCustomStructPropertyTranslator("Rotator", UNREAL_SHARP_NAMESPACE ".Core.Rotator", Blacklist);
-	AddBlittableCustomStructPropertyTranslator("Transform", UNREAL_SHARP_NAMESPACE ".Core.Transform", Blacklist);
-	AddBlittableCustomStructPropertyTranslator("RandomStream", UNREAL_SHARP_NAMESPACE ".Core.RandomStream", Blacklist);
-	AddBlittableCustomStructPropertyTranslator("TimerHandle", UNREAL_SHARP_NAMESPACE ".Engine.TimerHandle", Blacklist);
-	AddBlittableCustomStructPropertyTranslator("SoftObjectPath", UNREAL_SHARP_NAMESPACE ".CoreUObject.SoftObjectPath", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Rotator", UNREAL_SHARP_NAMESPACE ".Rotator", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Transform", UNREAL_SHARP_NAMESPACE ".Transform", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("RandomStream", UNREAL_SHARP_NAMESPACE ".RandomStream", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("TimerHandle", UNREAL_SHARP_NAMESPACE ".TimerHandle", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("SoftObjectPath", UNREAL_SHARP_NAMESPACE ".SoftObjectPath", Blacklist);
 	
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableStructPropertyTranslator(*this));
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));

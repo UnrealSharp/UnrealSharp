@@ -32,8 +32,6 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	Initialized = true;
 	GeneratedScriptsDirectory = OutputDirectory;
 
-	CreateGeneratedScriptsModule(GeneratedScriptsDirectory);
-
 	//TODO: SUPPORT THESE BUT CURRENTLY TOO LAZY TO FIX
 	{
 		Blacklist.AddClass("AnimationBlueprintLibrary");
@@ -57,27 +55,6 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	TArray<UObject*> ObjectsToProcess;
 	GetObjectsOfClass(UField::StaticClass(), ObjectsToProcess);
 	GenerateGlueForTypes(ObjectsToProcess);
-}
-
-void FCSGenerator::CreateGeneratedScriptsModule(FString& Directory)
-{
-	if (Directory.IsEmpty())
-	{
-		return;
-	}
-
-	IFileManager& FileManager = IFileManager::Get();
-	
-	if (!FileManager.DirectoryExists(*FPaths::GetPath(Directory)))
-	{
-		FileManager.MakeDirectory(*FPaths::GetPath(Directory), true);
-	}
-
-	FString& CSProjectFileContent = GetGeneratedCSProjectString();
-	if (!FFileHelper::SaveStringToFile(CSProjectFileContent, *FPaths::Combine(Directory, "UnrealSharp.Generated.csproj")))
-	{
-		UE_LOG(LogGlueGenerator, Fatal, TEXT("Failed to write UnrealSharp.Generated.csproj"))
-	}
 }
 
 void FCSGenerator::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
@@ -544,7 +521,6 @@ void FCSGenerator::RegisterClassToModule(const UObject* Struct)
 FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 {
 	const FName ModuleName = GetModuleFName(Struct);
-
 	FCSModule* BindingsModule = CSharpBindingsModules.Find(ModuleName);
     
 	if (!BindingsModule)
@@ -931,33 +907,6 @@ void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder,
 			Builder.EndPreprocessorBlock();
 		}
 	}
-}
-
-FString& FCSGenerator::GetGeneratedCSProjectString()
-{
-	static FString CSProjectFileContent;
-
-	if (!CSProjectFileContent.IsEmpty())
-	{
-		return CSProjectFileContent;
-	}
-	
-	CSProjectFileContent += TEXT("<Project Sdk=\"Microsoft.NET.Sdk\">\n");
-	CSProjectFileContent += TEXT("  <PropertyGroup>\n");
-	CSProjectFileContent += TEXT("    <TargetFramework>net8.0</TargetFramework>\n");
-	CSProjectFileContent += TEXT("    <ImplicitUsings>enable</ImplicitUsings>\n");
-	CSProjectFileContent += TEXT("    <Nullable>enable</Nullable>\n");
-	CSProjectFileContent += TEXT("    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n");
-	CSProjectFileContent += TEXT("  </PropertyGroup>\n");
-	CSProjectFileContent += TEXT("	<ItemGroup>\n");
-	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp\\UnrealSharp.csproj\"/>\n");
-	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.Core\\UnrealSharp.Core.csproj\"/>\n");
-	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.Engine\\UnrealSharp.Engine.csproj\"/>\n");
-	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp.CoreUObject\\UnrealSharp.CoreUObject.csproj\"/>\n");
-	CSProjectFileContent += TEXT("  </ItemGroup>\n");
-	CSProjectFileContent += TEXT("</Project>\n");
-	
-	return CSProjectFileContent;
 }
 
 bool FCSGenerator::GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function)

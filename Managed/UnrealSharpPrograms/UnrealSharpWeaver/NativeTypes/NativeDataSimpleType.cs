@@ -28,14 +28,14 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         
         if (marshallerName.EndsWith("`1"))
         {
-            MarshallerClass = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName, typeParams);
+            MarshallerClass = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpCore, marshallerName, typeParams);
         }
         else
         {
             //TODO: Make this prettier! :(
             {
                 // Try to find the marshaller in the bindings assembly
-                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, marshallerName, false);
+                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpCore, marshallerName, false);
 
                 if (MarshallerClass == null)
                 {

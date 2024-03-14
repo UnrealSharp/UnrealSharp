@@ -19,8 +19,8 @@ public:
 
 	TField* CreateType()
 	{
-		UPackage* Package = FCSManager::GetUnrealSharpPackage();
-		TField* ReplacedType = FindObject<TField>(Package, *TypeMetaData->Name);
+		UPackage& Package = FCSManager::GetUnrealSharpPackage();
+		TField* ReplacedType = FindObject<TField>(&Package, *TypeMetaData->Name);
 		
 		if (ReplacedType)
 		{
@@ -28,7 +28,7 @@ public:
 			ReplacedType->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
 		}
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), *TypeMetaData->Name, RF_Public | RF_Standalone);
+		Field = NewObject<TField>(&Package, TField::StaticClass(), *TypeMetaData->Name, RF_Public | RF_Standalone);
 		
 		ApplyBlueprintAccess(Field);
 		FMetaDataHelper::ApplyMetaData(TypeMetaData->MetaData, Field);

@@ -2,6 +2,7 @@
 #include "CSReload.h"
 #include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/ReloadUtilities.h"
+#include "UnrealSharpProcHelper/CSProcHelper.h"
 
 FCSReinstancer& FCSReinstancer::Get()
 {

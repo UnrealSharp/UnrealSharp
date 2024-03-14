@@ -124,7 +124,7 @@ FString FCSProcHelper::GetRuntimeHostPath()
 
 FString FCSProcHelper::GetAssembliesPath()
 {
-	return FPaths::Combine(GetPluginDirectory(), "Binaries", "DotNet", DOTNET_VERSION);
+	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed");
 }
 
 FString FCSProcHelper::GetUnrealSharpLibraryPath()
@@ -134,7 +134,7 @@ FString FCSProcHelper::GetUnrealSharpLibraryPath()
 
 FString FCSProcHelper::GetRuntimeConfigPath()
 {
-	return GetAssembliesPath() / "UnrealSharp.runtimeconfig.json";
+	return GetAssembliesPath() / "UnrealSharp.Plugins.runtimeconfig.json";
 }
 
 FString FCSProcHelper::GetUserAssemblyDirectory()
@@ -210,7 +210,7 @@ FString FCSProcHelper::GetUnrealSharpDirectory()
 
 FString FCSProcHelper::GetGeneratedClassesDirectory()
 {
-	return FPaths::Combine(GetUnrealSharpDirectory(), "Generated");
+	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
 }
 
 FString FCSProcHelper::GetScriptFolderDirectory()
@@ -223,12 +223,34 @@ FString FCSProcHelper::GetUserManagedProjectName()
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }
 
+FString& FCSProcHelper::GetBindingsBinariesDirectory()
+{
+	static FString BindingsBinariesDirectory = FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed");
+	return BindingsBinariesDirectory;
+}
+
 bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
+{
+	static FString UnrealSharpSln = FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp.sln");
+	return InvokeDotNetBuild(UnrealSharpSln, BuildConfiguration, GetBindingsBinariesDirectory());
+}
+
+bool FCSProcHelper::BuildGeneratedBindings(const FString& BuildConfiguration)
+{
+	static FString UnrealSharpGeneratedCsProj = FPaths::Combine(GetGeneratedClassesDirectory(), "UnrealSharp.Generated.csproj");
+	return InvokeDotNetBuild(UnrealSharpGeneratedCsProj, BuildConfiguration, GetBindingsBinariesDirectory());
+}
+
+bool FCSProcHelper::InvokeDotNetBuild(const FString& ProjectPath, const FString& Configuration, const FString& OutputPath)
 {
 	int32 ReturnCode = 0;
 	FString Output;
 
-	FString Arguments = FString::Printf(TEXT("build -c %s"), *BuildConfiguration);
-	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
-	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
+	FString Arguments;
+	Arguments += TEXT("build");
+	Arguments += FString::Printf(TEXT(" \"%s\""), *ProjectPath);
+	Arguments += FString::Printf(TEXT(" -c %s "), *Configuration);
+	Arguments += FString::Printf(TEXT(" -o \"%s\""), *OutputPath);
+	
+	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output);
 }

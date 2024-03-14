@@ -60,11 +60,11 @@ class NativeDataArrayType : NativeDataType
         ];
 
         var genericWrapperTypeRef = (from type in WeaverHelper.BindingsAssembly.MainModule.Types
-            where type.Namespace == Program.UnrealSharpNamespace
+            where type.Namespace == Program.UnrealSharpCore
                   && type.Name == wrapperTypeName
             select type).ToArray()[0];
         var genericCopyWrapperTypeRef = (from type in WeaverHelper.BindingsAssembly.MainModule.Types
-            where type.Namespace == Program.UnrealSharpNamespace
+            where type.Namespace == Program.UnrealSharpCore
                   && type.Name == copyWrapperTypeName
             select type).ToArray()[0];
 

@@ -21,7 +21,7 @@ class NativeDataStringType : NativeDataType
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
 
-        string marshallerNamespace = Program.UnrealSharpNamespace;
+        string marshallerNamespace = Program.UnrealSharpCore;
         AssemblyDefinition marshallerAssembly = WeaverHelper.BindingsAssembly;
 
         TypeDefinition marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, "StringMarshaller").Resolve();

@@ -17,8 +17,8 @@ bool FCSAssembly::Load()
 		return false;
 	}
 	
-	Assembly.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath);
-	Assembly.Type = GCHandleType::WeakHandle;
+	AssemblyHandle.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath);
+	AssemblyHandle.Type = GCHandleType::WeakHandle;
 
 	if (!IsAssemblyValid())
 	{
@@ -29,19 +29,24 @@ bool FCSAssembly::Load()
 	return true;
 }
 
-bool FCSAssembly::Unload()
+bool FCSAssembly::Unload() const
 {
-	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin();
+	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin(AssemblyHandle.Handle);
 }
 
 bool FCSAssembly::IsAssemblyValid() const
 {
-	return !Assembly.IsNull();
+	return !AssemblyHandle.IsNull();
 }
 
 GCHandleIntPtr FCSAssembly::GetAssemblyHandle() const
 {
-	return Assembly.GetHandle();
+	return AssemblyHandle.GetHandle();
+}
+
+void FCSAssembly::GetMetaDataPath(FString& OutPath) const
+{
+	OutPath = FPaths::ChangeExtension(AssemblyPath, TEXT(".json"));
 }
 
 

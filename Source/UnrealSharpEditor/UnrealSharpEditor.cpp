@@ -11,6 +11,8 @@
 
 void FUnrealSharpEditorModule::StartupModule()
 {
+	FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddStatic(&FUnrealSharpEditorModule::OnAllModuleLoadingPhasesComplete);
+	
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
 	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
 	FDelegateHandle Handle;
@@ -99,7 +101,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	
 	// Unload the user's assembly, to apply the new one.
 	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
-	if (!FCSManager::Get().UnloadPlugin(FCSProcHelper::GetUserManagedProjectName()))
+	if (!FCSManager::Get().UnloadAssembly(FCSProcHelper::GetUserManagedProjectName()))
 	{
 		return;
 	}
@@ -114,6 +116,24 @@ void FUnrealSharpEditorModule::StartHotReload()
 	// Reinstance all blueprints.
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
 	FCSReinstancer::Get().Reinstance();
+}
+
+void FUnrealSharpEditorModule::OnAllModuleLoadingPhasesComplete()
+{
+	if (!FCSManager::Get().UnloadAssembly(FCSProcHelper::GetUserManagedProjectName()))
+	{
+		return;
+	}
+
+	if (!FCSProcHelper::BuildGeneratedBindings("Release"))
+	{
+		return;
+	}
+
+	if (!FCSManager::Get().LoadUserAssembly())
+	{
+		return;
+	}
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)

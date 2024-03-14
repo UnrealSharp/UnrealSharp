@@ -119,7 +119,8 @@ public class GenerateProject : BuildToolAction
             AppendCopyNugetPackages(csprojDocument);
 
             XmlElement newItemGroup = CreateItemGroup(csprojDocument);
-            AppendUnrealSharpReference(csprojDocument, newItemGroup);
+            
+            CreateNewInclude("UnrealSharp", csprojDocument, newItemGroup);
             IncludeGeneratedCode(csprojDocument, newItemGroup);
 
             csprojDocument.DocumentElement.AppendChild(newItemGroup);
@@ -157,21 +158,19 @@ public class GenerateProject : BuildToolAction
         propertyGroup.AppendChild(allowUnsafeBlocks);
     }
 
-    private void AppendUnrealSharpReference(XmlDocument doc, XmlElement itemGroup)
+    void CreateNewInclude(string moduleName, XmlDocument doc, XmlElement itemGroup)
     {
         XmlElement unrealSharpReference = doc.CreateElement("Reference");
-        unrealSharpReference.SetAttribute("Include", "UnrealSharp");
+        unrealSharpReference.SetAttribute("Include", moduleName);
 
         XmlElement newHintPath = doc.CreateElement("HintPath");
         
         string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
-        string currentVersionStr = Program.GetVersion();
-        string dllPath = Path.Combine(unrealSharpPath, "Binaries", "DotNet", currentVersionStr, "UnrealSharp.dll");
+        string dllPath = Path.Combine(unrealSharpPath, "Binaries", "Managed", $"{moduleName}.dll");
         
         newHintPath.InnerText = dllPath;
 
         unrealSharpReference.AppendChild(newHintPath);
-        
         itemGroup.AppendChild(unrealSharpReference);
     }
     

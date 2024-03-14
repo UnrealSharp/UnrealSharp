@@ -8,7 +8,7 @@
 #include "UObject/Stack.h"
 #include "PropertyTranslators/CSSupportedPropertyTranslators.h"
 
-class GLUEGENERATOR_API FCSGenerator
+class FCSGenerator
 {
 	
 public:
@@ -25,9 +25,6 @@ public:
 	}
 	
 	void StartGenerator(const FString& OutputDirectory);
-
-	static void CreateGeneratedScriptsModule(FString& Directory);
-	static FString& GetGeneratedCSProjectString();
 
 	// Public methods
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);

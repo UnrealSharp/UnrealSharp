@@ -47,9 +47,8 @@ public class CSharpForUE : ModuleRules
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"GlueGenerator",
 				"UnrealEd", 
-				"EditorSubsystem", 
+				"EditorSubsystem"
 			});
 		}
 		
@@ -99,7 +98,8 @@ public class CSharpForUE : ModuleRules
 
 	void BuildPrograms()
 	{
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release);
+		string outputDir = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release, outputDir);
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
 	}
 	
@@ -131,6 +131,7 @@ public class CSharpForUE : ModuleRules
 		process.WaitForExit();
 		
 		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
+		
 	}
 }
 

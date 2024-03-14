@@ -17,13 +17,9 @@ const FName NAME_ToolTip(TEXT("ToolTip"));
 
 void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace)
 {
-	DeclareDirective(UNREAL_SHARP_NAMESPACE);
-	DeclareDirective(TEXT("UnrealSharp.Core.Attributes"));
+	DeclareDirective(TEXT("UnrealSharp"));
+	DeclareDirective(TEXT("UnrealSharp.Attributes"));
 	DeclareDirective(TEXT("UnrealSharp.Interop"));
-	DeclareDirective(TEXT("UnrealSharp.Core"));
-	DeclareDirective(TEXT("UnrealSharp.Core.Interop"));
-	DeclareDirective(TEXT("UnrealSharp.CoreUObject"));
-	DeclareDirective(TEXT("UnrealSharp.CoreUObject.Interop"));
 	DeclareDirective(TEXT("System.DoubleNumerics"));
 	DeclareDirective(TEXT("System.Runtime"));
 	DeclareDirective(TEXT("System.Runtime.InteropServices"));

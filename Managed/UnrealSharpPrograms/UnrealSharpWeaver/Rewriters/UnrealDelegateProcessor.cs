@@ -35,10 +35,10 @@ public static class UnrealDelegateProcessor
     public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
-            WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "DelegateData");
+            WeaverHelper.BindingsAssembly, Program.UnrealSharpCore, "DelegateData");
         
         TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
-                WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
+                WeaverHelper.BindingsAssembly, Program.UnrealSharpCore, "BlittableMarshaller`1", [delegateDataStruct]);
         
         MethodReference? blittabletoNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "ToNative");
         MethodReference? blittablefromNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "FromNative");

@@ -1,15 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
-    </ItemGroup>
-    
 </Project>

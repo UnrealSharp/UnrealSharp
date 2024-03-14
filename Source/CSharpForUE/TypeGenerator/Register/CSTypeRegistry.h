@@ -31,7 +31,7 @@ public:
 		return Instance;
 	}
 
-	bool ProcessMetaData(const FString& FilePath);
+	bool ProcessAssemblyMetaData(const TSharedRef<FCSAssembly>& Assembly);
 
 	FCSharpClassInfo* FindManagedType(UClass* Class);
 	void AddPendingClass(FName ParentClass, FCSharpClassInfo* NewClass);

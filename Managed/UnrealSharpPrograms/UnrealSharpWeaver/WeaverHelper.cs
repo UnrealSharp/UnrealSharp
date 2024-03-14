@@ -54,7 +54,7 @@ public static class WeaverHelper
         IntPtrZero = FindFieldInType(IntPtrType, "Zero");
         IntPtrEqualsOperator = FindMethod(IntPtrType, "op_Equality")!;
 
-        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, Program.UnrealSharpNamespace, Program.UnrealSharpObjectName);
+        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, Program.UnrealSharpCore, Program.UnrealSharpObjectName);
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = FindMethod(unrealSharpObjectType, "get_NativeObject")!;
@@ -370,7 +370,7 @@ public static class WeaverHelper
 
         if (customAttributes != null)
         {
-            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", "UPropertyAttribute");
+            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.UnrealSharpCore + ".Attributes", "UPropertyAttribute");
             
             if (propertyAttribute != null)
             {
@@ -465,7 +465,7 @@ public static class WeaverHelper
 
             if (typeDef.IsEnum)
             {
-                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
+                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpCore + ".Attributes", "UEnumAttribute");
                 
                 if (enumAttribute == null)
                 {
@@ -486,7 +486,7 @@ public static class WeaverHelper
             }
 
             // see if its a UObject
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Text")
+            if (typeDef.Namespace == Program.UnrealSharpCore && typeDef.Name == "Text")
             {
                 return new NativeDataTextType(typeRef);
             }
@@ -519,19 +519,19 @@ public static class WeaverHelper
             }
 
             // See if this is a struct
-            CustomAttribute? structAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UStructAttribute");
+            CustomAttribute? structAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpCore + ".Attributes", "UStructAttribute");
                 
             if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
             {
                 throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
             }
                 
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Name")
+            if (typeDef.Namespace == Program.UnrealSharpCore && typeDef.Name == "Name")
             {
                 return new NativeDataNameType(typeDef, arrayDim);
             }
 
-            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Rotator"))
+            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == Program.UnrealSharpCore && typeDef.Name == "Rotator"))
             {
                 return new NativeDataCoreStructType(typeDef, arrayDim);
             }
@@ -555,7 +555,7 @@ public static class WeaverHelper
     
     public static CustomAttribute?[] FindMetaDataAttributes(IEnumerable<CustomAttribute> customAttributes)
     {
-        return FindAttributesByType(customAttributes, Program.UnrealSharpNamespace, "UMetaDataAttribute");
+        return FindAttributesByType(customAttributes, Program.UnrealSharpCore, "UMetaDataAttribute");
     }
 
     static bool HasAttribute(TypeDefinition type, string attributeName)
