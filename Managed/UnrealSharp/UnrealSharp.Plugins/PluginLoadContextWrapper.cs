@@ -18,13 +18,19 @@ public sealed class PluginLoadContextWrapper
     public bool IsCollectible => _pluginLoadContext?.IsCollectible ?? true;
     public bool IsAlive => _weakReference.IsAlive;
 
-    public static AssemblyInformation CreateAndLoadFromAssemblyName(AssemblyName assemblyName, string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible)
+    public static AssemblyInformation CreateAndLoadFromAssemblyName(AssemblyName assemblyName, 
+        string pluginPath, 
+        ICollection<string> sharedAssemblies, 
+        AssemblyLoadContext mainLoadContext, 
+        bool isCollectible, 
+        IntPtr unmanagedCallbacks, 
+        IntPtr exportFunctionsPtr)
     {
         var context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
         var reference = new WeakReference(context, trackResurrection: true);
         var wrapper = new PluginLoadContextWrapper(context, reference);
         var assembly = context.LoadFromAssemblyName(assemblyName);
-        return new AssemblyInformation(assembly, wrapper);
+        return new AssemblyInformation(assembly, wrapper, PluginsHelper.FindModule(assembly, [unmanagedCallbacks, exportFunctionsPtr]));
     }
         
     internal void Unload()

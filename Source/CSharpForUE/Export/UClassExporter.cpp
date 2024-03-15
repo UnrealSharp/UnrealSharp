@@ -1,6 +1,5 @@
 ﻿#include "UClassExporter.h"
 #include "CSharpForUE/TypeGenerator/Register/TypeInfo/CSClassInfo.h"
-#include "CSharpForUE/CSharpForUE.h"
 #include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
 
 void UUClassExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
@@ -13,25 +12,15 @@ void UUClassExporter::ExportFunctions(FRegisterExportedFunction RegisterExported
 
 UFunction* UUClassExporter::GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName)
 {
+	check(Class)
 	UFunction* Function = Class->FindFunctionByName(FunctionName);
-	
-	if (!Function)
-	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. FunctionName: %hs"), FunctionName)
-		return nullptr;
-	}
-
+	check(Function)
 	return Function;
 }
 
 UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* NativeObject, const char* FunctionName)
 {
-	if (!IsValid(NativeObject))
-	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. NativeObject is not valid."))
-		return nullptr;
-	}
-	
+	check(NativeObject)
 	return NativeObject->FindFunctionChecked(FunctionName);
 }
 

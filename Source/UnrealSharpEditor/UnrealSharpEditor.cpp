@@ -125,7 +125,7 @@ void FUnrealSharpEditorModule::OnAllModuleLoadingPhasesComplete()
 		return;
 	}
 
-	if (!FCSProcHelper::BuildGeneratedBindings("Release"))
+	if (!FCSProcHelper::BuildUnrealSharpCore("Release"))
 	{
 		return;
 	}

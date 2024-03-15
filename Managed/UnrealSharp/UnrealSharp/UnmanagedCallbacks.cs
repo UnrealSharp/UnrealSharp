@@ -29,7 +29,7 @@ public static class UnmanagedCallbacks
             {
                 throw new ArgumentNullException(nameof(nativeObject));
             }
-
+            
             return UnrealSharpObject.Create(typeToCreate, nativeObject);
         }
         catch (Exception ex)

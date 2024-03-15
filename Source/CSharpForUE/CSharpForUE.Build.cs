@@ -131,7 +131,6 @@ public class CSharpForUE : ModuleRules
 		process.WaitForExit();
 		
 		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
-		
 	}
 }
 

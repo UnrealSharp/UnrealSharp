@@ -5,5 +5,6 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <OutputPath>../../../Binaries/Managed</OutputPath>
     </PropertyGroup>
 </Project>

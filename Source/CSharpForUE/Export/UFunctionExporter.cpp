@@ -10,5 +10,6 @@ void UUFunctionExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 
 uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 {
+	check(NativeFunction)
 	return NativeFunction->ParmsSize;
 }

@@ -2,6 +2,7 @@
 #include "CSharpForUE.h"
 #include "Misc/Paths.h"
 #include "CSManager.h"
+#include "Export/FunctionsExporter.h"
 
 bool FCSAssembly::Load()
 {
@@ -17,7 +18,10 @@ bool FCSAssembly::Load()
 		return false;
 	}
 	
-	AssemblyHandle.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath);
+	AssemblyHandle.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath,
+		&FCSManagedCallbacks::ManagedCallbacks,
+		&UFunctionsExporter::StartExportingAPI);
+	
 	AssemblyHandle.Type = GCHandleType::WeakHandle;
 
 	if (!IsAssemblyValid())

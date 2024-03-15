@@ -29,6 +29,8 @@ public static class Main
                 LoadPlugin = &LoadUserAssembly,
                 UnloadPlugin = &UnloadProjectPlugin,
             };
+            
+            SharedAssemblies.Add(Assembly.GetExecutingAssembly().GetName());
 
             Console.WriteLine("UnrealSharp successfully setup!");
             return NativeBool.True;
@@ -83,22 +85,23 @@ public static class Main
             }
         }
         
-        var assemblyInformation = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
+        var assemblyInformation = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), 
+            assemblyPath, 
+            sharedAssemblies, 
+            MainLoadContext, 
+            isCollectible, 
+            unmanagedCallbacks, 
+            exportFunctionsPtr);
 
         if (!assemblyInformation.IsValid)
         {
             return default;
         }
         
+        SharedAssemblies.Add(assemblyInformation.Assembly.GetName());
         LoadedAssemblies.Add(assemblyInformation);
         
-        // See if there are any entry points in the assembly for us to call
-        MethodInfo? methodInfo = PluginsHelper.FindEntryPointMethod(assemblyInformation.Assembly);
-        
-        if (methodInfo != null)
-        {
-            methodInfo.Invoke(null, [unmanagedCallbacks, exportFunctionsPtr]);
-        }
+        assemblyInformation.StartupModule();
         
         Console.WriteLine($"Successfully loaded assembly: {assemblyInformation.Name}");
         return assemblyInformation;

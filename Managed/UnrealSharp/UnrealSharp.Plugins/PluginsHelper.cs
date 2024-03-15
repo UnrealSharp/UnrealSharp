@@ -1,40 +1,25 @@
 ﻿using System.Reflection;
-using UnrealSharp.Plugins.Attributes;
 
 namespace UnrealSharp.Plugins;
 
 public static class PluginsHelper
 {
-    public static Type? FindEntryPoint(Assembly assembly)
+    public static Module? FindModule(Assembly assembly, object[]? optionalArguments = null)
     {
         foreach (var type in assembly.GetTypes())
         {
-            if (type.GetCustomAttribute(typeof(EntryPointAttribute)) != null)
+            if (type.BaseType is not { Name: nameof(Module) })
             {
-                return type;
+                continue;
             }
+            
+            return (Module) Activator.CreateInstance(type, 
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.CreateInstance, 
+                null, optionalArguments, 
+                null, 
+                null)!;
         }
 
         return null;
-    }
-    
-    public static MethodInfo? FindEntryPointMethod(Assembly assembly)
-    {
-        Type? entryPointClass = FindEntryPoint(assembly);
-        
-        if (entryPointClass == null)
-        {
-            return null;
-        }
-        
-        foreach (var method in entryPointClass.GetMethods())
-        {
-            if (method.GetCustomAttribute(typeof(EntryPointAttribute)) != null)
-            {
-                return method;
-            }
-        }
-        
-        throw new EntryPointNotFoundException("Couldn't find entry point method");
     }
 }

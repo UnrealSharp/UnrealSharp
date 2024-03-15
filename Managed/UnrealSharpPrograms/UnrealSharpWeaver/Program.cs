@@ -12,9 +12,9 @@ namespace UnrealSharpWeaver;
 
 public static class Program
 {
-    public static readonly string UnrealSharpCore = "UnrealSharp.Core";
-    public static readonly string InteropNameSpace = UnrealSharpCore + ".Interop";
-    public static readonly string AttributeNamespace = UnrealSharpCore + ".Attributes";
+    public static readonly string UnrealSharpNamespace = "UnrealSharp";
+    public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
+    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
     public static readonly string UnrealSharpObjectName = "UnrealSharpObject";
     public static readonly string FPropertyCallbacks = "FPropertyExporter";
     public static readonly string UClassCallbacks = "UClassExporter";
@@ -66,7 +66,7 @@ public static class Program
 
         try
         {
-            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(UnrealSharpCore, new Version(0, 0, 0, 0)));
+            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(UnrealSharpNamespace, new Version(0, 0, 0, 0)));
             WeaverHelper.Initialize(unrealSharpLibraryAssembly);
             return true;
         }

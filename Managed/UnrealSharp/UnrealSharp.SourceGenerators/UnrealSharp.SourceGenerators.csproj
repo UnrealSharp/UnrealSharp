@@ -3,7 +3,6 @@
 <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <OutputPath>$(PluginBinariesFolder)</OutputPath>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 </PropertyGroup>
 

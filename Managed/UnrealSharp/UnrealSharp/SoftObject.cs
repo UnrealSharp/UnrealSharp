@@ -37,7 +37,7 @@ public struct SoftObject<T> where T : CoreUObject.Object
     
 };
 
-public static class SoftObjectMarshaller<T> where T : UnrealSharpObject
+public static class SoftObjectMarshaller<T> where T : CoreUObject.Object
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SoftObject<T> obj)
     {

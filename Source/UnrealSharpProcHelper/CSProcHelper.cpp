@@ -229,15 +229,15 @@ FString& FCSProcHelper::GetBindingsBinariesDirectory()
 	return BindingsBinariesDirectory;
 }
 
-bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
+bool FCSProcHelper::BuildUnrealSharpPlugins(const FString& BuildConfiguration)
 {
-	static FString UnrealSharpSln = FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp.sln");
-	return InvokeDotNetBuild(UnrealSharpSln, BuildConfiguration, GetBindingsBinariesDirectory());
+	static FString UnrealSharpPluginsCsProj = FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp.Plugins", "UnrealSharp.Plugins.csproj");
+	return InvokeDotNetBuild(UnrealSharpPluginsCsProj, BuildConfiguration, GetBindingsBinariesDirectory());
 }
 
-bool FCSProcHelper::BuildGeneratedBindings(const FString& BuildConfiguration)
+bool FCSProcHelper::BuildUnrealSharpCore(const FString& BuildConfiguration)
 {
-	static FString UnrealSharpGeneratedCsProj = FPaths::Combine(GetGeneratedClassesDirectory(), "UnrealSharp.Generated.csproj");
+	static FString UnrealSharpGeneratedCsProj = FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "UnrealSharp.csproj");
 	return InvokeDotNetBuild(UnrealSharpGeneratedCsProj, BuildConfiguration, GetBindingsBinariesDirectory());
 }
 

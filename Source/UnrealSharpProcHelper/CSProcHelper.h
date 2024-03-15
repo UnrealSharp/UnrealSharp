@@ -38,8 +38,8 @@ public:
 	static FString GetManagedSourcePath();
 	static FString GetUnrealSharpBuildToolPath();
 
-	static bool BuildBindings(const FString& BuildConfiguration);
-	static bool BuildGeneratedBindings(const FString& BuildConfiguration);
+	static bool BuildUnrealSharpPlugins(const FString& BuildConfiguration);
+	static bool BuildUnrealSharpCore(const FString& BuildConfiguration);
 	static bool InvokeDotNetBuild(const FString& ProjectPath, const FString& Configuration, const FString& OutputPath);
 
 	static FString GetDotNetDirectory();

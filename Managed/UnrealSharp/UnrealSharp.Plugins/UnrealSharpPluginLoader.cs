@@ -45,9 +45,12 @@ public class PluginLoadContext : AssemblyLoadContext
         {
             return null; 
         }
+        
+        Console.WriteLine($"Loading assembly: {assemblyName.Name}");
             
         if (SharedAssemblies.Contains(assemblyName.Name))
         {
+            Console.WriteLine($"Loading shared assembly: {assemblyName.Name}");
             return MainLoadContext.LoadFromAssemblyName(assemblyName);
         }
 

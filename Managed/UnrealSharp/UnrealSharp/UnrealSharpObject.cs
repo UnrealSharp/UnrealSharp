@@ -32,7 +32,7 @@ public class UnrealObjectDestroyedException : InvalidOperationException
     }
 }
 
-public class UnrealSharpObject() : IDisposable
+public class UnrealSharpObject : IDisposable
 {
     public IntPtr NativeObject { get; private set; }
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
@@ -40,8 +40,9 @@ public class UnrealSharpObject() : IDisposable
     
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
+        Console.WriteLine(typeToCreate.Name);
         UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
-
+        
         const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         var foundConstructor = typeToCreate.GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
 
@@ -73,12 +74,6 @@ public class UnrealSharpObject() : IDisposable
         {
             fixed (char* messagePtr = message)
             {
-                // Use the default color if none is provided
-                if (color.IsZero())
-                {
-                    color = new LinearColor(0.0f, 0.66f, 1);
-                }
-                
                 UKismetSystemLibraryExporter.CallPrintString(
                     NativeObject, 
                     (IntPtr) messagePtr, 

@@ -25,7 +25,6 @@ UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
 void FCSManager::InitializeUnrealSharp()
 {
-	return;
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
@@ -41,20 +40,20 @@ void FCSManager::InitializeUnrealSharp()
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
 	
-	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
+	if (!FCSProcHelper::BuildUnrealSharpPlugins(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
 
-	if (!FCSProcHelper::BuildGeneratedBindings(BuildConfiguration))
+	if (!FCSProcHelper::BuildUnrealSharpCore(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build generated bindings"));
 		return;
 	}
 
 	// Generate the cs project. Ignore if it's already generated
-	if (false && !FCSProcHelper::GenerateProject())
+	if (!FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 		return;
@@ -90,6 +89,9 @@ void FCSManager::InitializeUnrealSharp()
 	FCSPropertyFactory::InitializePropertyFactory();
 
 	// Try to load the user assembly, can be null when the project is first created.
+	FString BindingsPath = FPaths::Combine(FCSProcHelper::GetUserAssemblyDirectory(), "UnrealSharp.dll");
+	LoadAssembly(BindingsPath, false);
+	
 	LoadUserAssembly();
 }
 
