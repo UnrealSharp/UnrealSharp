@@ -3,22 +3,53 @@ using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using UnrealSharp.Interop;
 
-namespace UnrealSharp.Loader;
+namespace UnrealSharp.Plugins;
 
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct PluginsCallbacks
 {
-    public delegate* unmanaged<char*, IntPtr> LoadAssembly;
-    public delegate* unmanaged<char*, NativeBool> UnloadAssembly;
+    public delegate* unmanaged<char*, IntPtr> LoadPlugin;
+    public delegate* unmanaged<NativeBool> UnloadPlugin;
 }
 
 public static class Main
 {
     private static readonly Assembly CoreApiAssembly = typeof(UnrealSharpObject).Assembly;
-    private static readonly List<AssemblyInformation> LoadedPlugins = [];
+    private static readonly List<PluginLoadContextWrapper> LoadedPlugins = [];
     private static readonly List<AssemblyName> SharedAssemblies = [];
     private static readonly AssemblyLoadContext MainLoadContext = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default;
     private static DllImportResolver? _dllImportResolver;
+    
+    private sealed class PluginLoadContextWrapper
+    {
+        private PluginLoadContext? _pluginLoadContext;
+        private readonly WeakReference _weakReference;
+
+        private PluginLoadContextWrapper(PluginLoadContext pluginLoadContext, WeakReference weakReference)
+        {
+            _pluginLoadContext = pluginLoadContext;
+            _weakReference = weakReference;
+        }
+
+        public string? AssemblyLoadedPath => _pluginLoadContext?.AssemblyLoadedPath;
+        public bool IsCollectible => _pluginLoadContext?.IsCollectible ?? true;
+        public bool IsAlive => _weakReference.IsAlive;
+
+        public static (Assembly, PluginLoadContextWrapper) CreateAndLoadFromAssemblyName(AssemblyName assemblyName, string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible)
+        {
+            var context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
+            var reference = new WeakReference(context, trackResurrection: true);
+            var wrapper = new PluginLoadContextWrapper(context, reference);
+            var assembly = context.LoadFromAssemblyName(assemblyName);
+            return (assembly, wrapper);
+        }
+        
+        internal void Unload()
+        {
+            _pluginLoadContext?.Unload();
+            _pluginLoadContext = null;
+        }
+    }
 
     [UnmanagedCallersOnly]
     private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, PluginsCallbacks* pluginCallbacks, ManagedCallbacks* managedCallbacks, IntPtr exportFunctionsPtr)
@@ -26,13 +57,14 @@ public static class Main
         try
         {
             AlcReloadCfg.Configure(true);
+            
             SetupDllImportResolver(assemblyPath);
 
             // Initialize plugin and managed callbacks
             *pluginCallbacks = new PluginsCallbacks
             {
-                LoadAssembly = &LoadAssembly,
-                UnloadAssembly = &UnloadAssembly,
+                LoadPlugin = &LoadUserAssembly,
+                UnloadPlugin = &UnloadProjectPlugin,
             };
                 
             // Initialize exported functions
@@ -53,7 +85,7 @@ public static class Main
     }
 
     [UnmanagedCallersOnly]
-    private static unsafe IntPtr LoadAssembly(char* assemblyPath)
+    private static unsafe IntPtr LoadUserAssembly(char* assemblyPath)
     {
         try
         {
@@ -64,7 +96,14 @@ public static class Main
                 throw new Exception("Invalid assembly path provided");
             }
                 
-            return LoadPlugin(assemblyPathString, true);
+            var (loadedAssembly, newPlugin) = LoadPlugin(assemblyPathString, true);
+
+            if (newPlugin.IsAlive)
+            {
+                return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(loadedAssembly));
+            }
+
+            throw new Exception($"Failed to load plugin from: {assemblyPathString}");
         }
         catch (Exception ex)
         {
@@ -80,7 +119,7 @@ public static class Main
         NativeLibrary.SetDllImportResolver(CoreApiAssembly, _dllImportResolver);
     }
     
-    private static IntPtr LoadPlugin(string assemblyPath, bool isCollectible)
+    private static (Assembly, PluginLoadContextWrapper) LoadPlugin(string assemblyPath, bool isCollectible)
     {
         string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 
@@ -96,38 +135,24 @@ public static class Main
             }
         }
         
-        AssemblyInformation assemblyInformation = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
+        var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
 
-        if (!assemblyInformation.IsAlive)
+        if (!newPlugin.IsAlive)
         {
             return default;
         }
         
-        LoadedPlugins.Add(assemblyInformation);
-        Console.WriteLine($"Successfully loaded plugin: {assemblyInformation.Name}");
-           
-        GCHandle handle = GcHandleUtilities.AllocateWeakPointer(assemblyInformation.GetAssembly());
-        return GCHandle.ToIntPtr(handle);
+        LoadedPlugins.Add(newPlugin);
+        Console.WriteLine($"Successfully loaded plugin: {loadedAssembly.GetName().Name}");
+        return (loadedAssembly, newPlugin);
     }
     
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool UnloadAssembly(char* assemblyPath)
+    private static NativeBool UnloadProjectPlugin()
     {
         try
         {
-            string assemblyPathString = new string(assemblyPath);
-            
-            foreach (var loadedPlugin in LoadedPlugins)
-            {
-                if (loadedPlugin.Path != assemblyPathString)
-                {
-                    continue;
-                }
-                
-                return UnloadPlugin(loadedPlugin).ToNativeBool();
-            }
-
-            return NativeBool.True;
+            return UnloadPlugin(LoadedPlugins[0]).ToNativeBool();
         }
         catch (Exception e)
         {
@@ -136,27 +161,34 @@ public static class Main
         }
     }
     
-    private static bool UnloadPlugin(AssemblyInformation assemblyInformation)
+    private static bool UnloadPlugin(PluginLoadContextWrapper? pluginLoadContext)
     {
         try
         {
-            if (!assemblyInformation.IsCollectible)
+            if (pluginLoadContext == null)
+            {
+                return true;
+            }
+            
+            if (!pluginLoadContext.IsCollectible)
             {
                 Console.Error.WriteLine("Cannot unload a plugin that's not set to IsCollectible.");
                 return false;
             }
+            
+            Console.WriteLine($"Unloading plugin (Path: {pluginLoadContext.AssemblyLoadedPath}");
 
-            assemblyInformation.LoadContextWrapper.Unload();
+            pluginLoadContext.Unload();
 
             int startTimeMs = Environment.TickCount;
             bool takingTooLong = false;
 
-            while (assemblyInformation.IsAlive)
+            while (pluginLoadContext.IsAlive)
             {
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
                 GC.WaitForPendingFinalizers();
 
-                if (!assemblyInformation.IsAlive)
+                if (!pluginLoadContext.IsAlive)
                 {
                     break;
                 }
@@ -175,8 +207,9 @@ public static class Main
                 }
             }
 
-            LoadedPlugins.Remove(assemblyInformation);
-            Console.WriteLine("Plugin unloaded successfully!");
+            LoadedPlugins.Remove(pluginLoadContext);
+            Console.WriteLine($"Plugin unloaded successfully! (Path: {pluginLoadContext.AssemblyLoadedPath}");
+            
             return true;
         }
         catch (Exception e)

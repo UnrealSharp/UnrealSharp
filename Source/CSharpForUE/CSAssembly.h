@@ -5,7 +5,7 @@
 struct FCSManagedPluginCallbacks
 {
 	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*);
-	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
+	using UnloadPluginCallback = bool(__stdcall*)();
 	
 	LoadPluginCallback LoadPlugin = nullptr;
 	UnloadPluginCallback UnloadPlugin = nullptr;
@@ -13,25 +13,16 @@ struct FCSManagedPluginCallbacks
 
 struct CSHARPFORUE_API FCSAssembly
 {
-	explicit FCSAssembly(const FString& InAssemblyPath)
-		: AssemblyPath(InAssemblyPath)
-		, AssemblyName(FPaths::GetBaseFilename(InAssemblyPath))
+	explicit FCSAssembly(const FString& InAssemblyPath) : AssemblyPath(InAssemblyPath)
 	{
 	}
 
 	bool Load();
-	bool Unload() const;
+	bool Unload();
 
-	bool IsValid() const;
-	const GCHandleIntPtr& GetHandle() const;
-
-	const FString& GetAssemblyPath() { return AssemblyPath; }
-	const FString& GetAssemblyName() { return AssemblyName; }
-
-private:
+	bool IsAssemblyValid() const;
+	GCHandleIntPtr GetAssemblyHandle() const;
 	
 	FGCHandle Assembly;
 	FString AssemblyPath;
-	FString AssemblyName;
-	
 };

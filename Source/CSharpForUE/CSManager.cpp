@@ -43,14 +43,14 @@ void FCSManager::InitializeUnrealSharp()
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
 	
-	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
+	if (false && !FCSProcHelper::BuildBindings(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
 
 	// Generate the cs project. Ignore if it's already generated
-	if (!FCSProcHelper::GenerateProject())
+	if (false && !FCSProcHelper::GenerateProject())
 	{
 		InitializeUnrealSharp();
 		return;
@@ -108,7 +108,7 @@ bool FCSManager::InitializeBindings()
 	// Load assembly and get function pointer.
 	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
 	
-	const char_t* EntryPointClassName = TEXT("UnrealSharp.Loader.Main, UnrealSharp.Loader");
+	const char_t* EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
 	const char_t* EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
 	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
@@ -181,7 +181,7 @@ bool FCSManager::LoadUserAssembly()
 		return false;
 	}
 	
-	if (!LoadAssembly(UserAssemblyPath))
+	if (!LoadPlugin(UserAssemblyPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
 		return false;
@@ -235,7 +235,7 @@ UPackage* FCSManager::GetUnrealSharpPackage()
 	return UnrealSharpPackage;
 }
 
-TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
 	
@@ -262,7 +262,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 	return NewPlugin;
 }
 
-bool FCSManager::UnloadAssembly(const FString& AssemblyName)
+bool FCSManager::UnloadPlugin(const FString& AssemblyName)
 {
 	TSharedPtr<FCSAssembly> Assembly;
 	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))
@@ -334,13 +334,13 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 {
 	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
 
-	if (!Plugin.IsValid() || !Plugin->IsValid())
+	if (!Plugin.IsValid() || !Plugin->IsAssemblyValid())
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Assembly is not valid."))
 		return nullptr;
 	}
 
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Plugin->GetHandle(), *Namespace, *TypeName);
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Plugin->GetAssemblyHandle(), *Namespace, *TypeName);
 
 	if (TypeHandle == nullptr)
 	{

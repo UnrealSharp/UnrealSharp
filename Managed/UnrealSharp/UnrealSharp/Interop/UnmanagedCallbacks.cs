@@ -84,7 +84,7 @@ public static class UnmanagedCallbacks
     {
         try
         {
-            Assembly loadedAssembly = (Assembly) GCHandle.FromIntPtr(assemblyHandle).Target;
+            Assembly loadedAssembly = (Assembly)GCHandle.FromIntPtr(assemblyHandle).Target;
 
             if (loadedAssembly == null)
             {

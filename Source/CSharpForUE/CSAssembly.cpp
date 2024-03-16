@@ -5,7 +5,7 @@
 
 bool FCSAssembly::Load()
 {
-	if (IsValid())
+	if (IsAssemblyValid())
 	{
 		UE_LOG(LogUnrealSharp, Display, TEXT("%s is already loaded"), *AssemblyPath);
 		return true;
@@ -20,7 +20,7 @@ bool FCSAssembly::Load()
 	Assembly.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath);
 	Assembly.Type = GCHandleType::WeakHandle;
 
-	if (!IsValid())
+	if (!IsAssemblyValid())
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load: %s"), *AssemblyPath);
 		return false;
@@ -29,17 +29,17 @@ bool FCSAssembly::Load()
 	return true;
 }
 
-bool FCSAssembly::Unload() const
+bool FCSAssembly::Unload()
 {
-	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin(*AssemblyPath);
+	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin();
 }
 
-bool FCSAssembly::IsValid() const
+bool FCSAssembly::IsAssemblyValid() const
 {
 	return !Assembly.IsNull();
 }
 
-const GCHandleIntPtr& FCSAssembly::GetHandle() const
+GCHandleIntPtr FCSAssembly::GetAssemblyHandle() const
 {
 	return Assembly.GetHandle();
 }

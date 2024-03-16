@@ -129,7 +129,7 @@ FString FCSProcHelper::GetAssembliesPath()
 
 FString FCSProcHelper::GetUnrealSharpLibraryPath()
 {
-	return GetAssembliesPath() / "UnrealSharp.Loader.dll";
+	return GetAssembliesPath() / "UnrealSharp.Plugins.dll";
 }
 
 FString FCSProcHelper::GetRuntimeConfigPath()

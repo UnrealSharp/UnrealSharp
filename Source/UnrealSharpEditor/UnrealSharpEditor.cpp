@@ -99,7 +99,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	
 	// Unload the user's assembly, to apply the new one.
 	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
-	if (!FCSManager::Get().UnloadAssembly(FCSProcHelper::GetUserManagedProjectName()))
+	if (!FCSManager::Get().UnloadPlugin(FCSProcHelper::GetUserManagedProjectName()))
 	{
 		return;
 	}
