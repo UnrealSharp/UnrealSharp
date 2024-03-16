@@ -5,9 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp", "UnrealSharp\UnrealSharp.csproj", "{AF6ECBA6-B1C8-4B7B-B69B-2A33D7E98B67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Plugins", "UnrealSharp.Plugins\UnrealSharp.Plugins.csproj", "{8B904F39-533D-4FC1-AF21-828091405CA8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Loader", "UnrealSharp.Loader\UnrealSharp.Loader.csproj", "{8B904F39-533D-4FC1-AF21-828091405CA8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerators", "UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj", "{C79E8C88-94F3-403D-84CB-30014157844E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Utilities", "UnrealSharp.Utilities\UnrealSharp.Utilities.csproj", "{DBDC0187-9664-48D4-A33D-45BFE5471197}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +32,9 @@ Global
 		{C79E8C88-94F3-403D-84CB-30014157844E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C79E8C88-94F3-403D-84CB-30014157844E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C79E8C88-94F3-403D-84CB-30014157844E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBDC0187-9664-48D4-A33D-45BFE5471197}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBDC0187-9664-48D4-A33D-45BFE5471197}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBDC0187-9664-48D4-A33D-45BFE5471197}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBDC0187-9664-48D4-A33D-45BFE5471197}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

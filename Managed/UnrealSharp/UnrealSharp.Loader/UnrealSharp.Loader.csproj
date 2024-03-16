@@ -6,10 +6,6 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
+        <RootNamespace>UnrealSharp.Loader</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
-    </ItemGroup>
-    
 </Project>
