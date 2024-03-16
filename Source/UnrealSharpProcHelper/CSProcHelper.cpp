@@ -223,12 +223,32 @@ FString FCSProcHelper::GetUserManagedProjectName()
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }
 
+FString& FCSProcHelper::GetStagingDirectory()
+{
+	static FString StagingDirectory;
+
+	if (StagingDirectory.IsEmpty())
+	{
+		StagingDirectory = FPaths::ProjectSavedDir() / "StagedBuilds" / FPlatformProperties::IniPlatformName();
+	}
+
+	return StagingDirectory;
+}
+
 bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
 {
 	int32 ReturnCode = 0;
 	FString Output;
+	
+	FString Arguments;
+	Arguments += TEXT("build");
+	Arguments += FString::Printf(TEXT(" -c %s"), *BuildConfiguration);
 
-	FString Arguments = FString::Printf(TEXT("build -c %s"), *BuildConfiguration);
+	FString OutputDirectory = FApp::IsUnattended() ? GetStagingDirectory() : GetAssembliesPath();
+	OutputDirectory = FPaths::ConvertRelativePathToFull(OutputDirectory);
+	
+	Arguments += FString::Printf(TEXT(" --output \"%s\""), *OutputDirectory);
+	
 	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
 	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
 }

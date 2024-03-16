@@ -47,7 +47,6 @@ public class CSharpForUE : ModuleRules
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"GlueGenerator",
 				"UnrealEd", 
 				"EditorSubsystem", 
 			});
@@ -62,6 +61,12 @@ public class CSharpForUE : ModuleRules
 		else
 		{
 			IncludeUnrealSharpBinaries();
+		}
+		
+		// Get all files in managed
+		if (Target.Type == TargetRules.TargetType.Game)
+		{
+			RuntimeDependencies.Add("$(TargetOutputDir)", "$(PluginDir)/Binaries/DotNet/...");
 		}
 	}
 
@@ -141,6 +146,7 @@ public class CSharpForUE : ModuleRules
 		process.WaitForExit();
 		
 		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
+		
 	}
 }
 

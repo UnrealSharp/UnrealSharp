@@ -35,27 +35,26 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 	
 	// Make sure the C# API is up to date. This is only done in the editor.
 	FString BuildConfiguration;
 	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
-	
-	if (false && !FCSProcHelper::BuildBindings(BuildConfiguration))
+		
+	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
 		return;
 	}
 
 	// Generate the cs project. Ignore if it's already generated
-	if (false && !FCSProcHelper::GenerateProject())
+	if (!FApp::IsUnattended())
 	{
-		InitializeUnrealSharp();
-		return;
+		if (!FCSProcHelper::GenerateProject())
+		{
+			InitializeUnrealSharp();
+			return;
+		}
 	}
-	
 #endif
 
 	//Create the package where we will store our generated types.
@@ -245,9 +244,8 @@ TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
 		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
 		return nullptr;
 	}
-
-	const FString PluginName = FPaths::GetBaseFilename(AssemblyPath);
-	LoadedPlugins.Add(*PluginName, NewPlugin);
+	
+	LoadedPlugins.Add(*NewPlugin->GetAssemblyName(), NewPlugin);
 
 	// Change from ManagedProjectName.dll > ManagedProjectName.json
 	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "json");
