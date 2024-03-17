@@ -145,23 +145,28 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	ParentClass.SerializeFromJson(JsonObject->GetObjectField("ParentClass"));
 
 	JsonObject->TryGetStringField("ConfigCategory", ClassConfigName);
-
-	const TArray<TSharedPtr<FJsonValue>>* FoundFunctions;
-	JsonObject->TryGetArrayField("Functions", FoundFunctions);
-	CSharpMetaDataUtils::SerializeFunctions(*FoundFunctions, Functions);
-
-	const TArray<TSharedPtr<FJsonValue>>* FoundVirtualFunctions;
-	JsonObject->TryGetArrayField("VirtualFunctions", FoundVirtualFunctions);
-	for (const TSharedPtr<FJsonValue>& VirtualFunction : *FoundVirtualFunctions)
-	{
-		VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
-	}
-	
 	JsonObject->TryGetStringArrayField("Interfaces", Interfaces);
 
+	const TArray<TSharedPtr<FJsonValue>>* FoundFunctions;
+	if (JsonObject->TryGetArrayField("Functions", FoundFunctions))
+	{
+		CSharpMetaDataUtils::SerializeFunctions(*FoundFunctions, Functions);
+	}
+	
+	const TArray<TSharedPtr<FJsonValue>>* FoundVirtualFunctions;
+	if (JsonObject->TryGetArrayField("VirtualFunctions", FoundVirtualFunctions))
+	{
+		for (const TSharedPtr<FJsonValue>& VirtualFunction : *FoundVirtualFunctions)
+		{
+			VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
+		}
+	}
+
 	const TArray<TSharedPtr<FJsonValue>>* FoundProperties;
-	JsonObject->TryGetArrayField("Properties", FoundProperties);
-	CSharpMetaDataUtils::SerializeProperties(*FoundProperties, Properties);
+	if (JsonObject->TryGetArrayField("Properties", FoundProperties))
+	{
+		CSharpMetaDataUtils::SerializeProperties(*FoundProperties, Properties);
+	}
 }
 
 void FClassPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
@@ -298,9 +303,9 @@ void FArrayPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& Js
 void FDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FObjectMetaData::SerializeFromJson(JsonObject);
-	IsRootComponent = JsonObject->GetBoolField("IsRootComponent");
-	AttachmentComponent = JsonObject->GetStringField("AttachmentComponent");
-	AttachmentSocket = JsonObject->GetStringField("AttachmentSocket");
+	JsonObject->TryGetBoolField("IsRootComponent", IsRootComponent);
+	JsonObject->TryGetStringField("AttachmentComponent", AttachmentComponent);
+	JsonObject->TryGetStringField("AttachmentSocket", AttachmentSocket);
 }
 
 void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)
