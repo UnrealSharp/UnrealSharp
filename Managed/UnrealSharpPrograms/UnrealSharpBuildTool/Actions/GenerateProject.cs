@@ -165,8 +165,7 @@ public class GenerateProject : BuildToolAction
         XmlElement newHintPath = doc.CreateElement("HintPath");
         
         string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
-        string currentVersionStr = Program.GetVersion();
-        string dllPath = Path.Combine(unrealSharpPath, "Binaries", "DotNet", currentVersionStr, "UnrealSharp.dll");
+        string dllPath = Path.Combine(unrealSharpPath, "Binaries", "Managed", "UnrealSharp.dll");
         
         newHintPath.InnerText = dllPath;
 

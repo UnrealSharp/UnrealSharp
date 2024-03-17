@@ -74,6 +74,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const F
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
+	FString OutputPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
 	FString DotNetPath = GetDotNetExecutablePath();
 	
 	FString Args = FString::Printf(TEXT("--Action %s"), *BuildActionCommand.ToString());
@@ -83,7 +84,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const F
 	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
 	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
-	Args += FString::Printf(TEXT(" --OutputPath \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "UnrealSharp")));
+	Args += FString::Printf(TEXT(" --OutputPath \"%s\""), *OutputPath);
 
 	if (BuildConfiguration)
 	{
@@ -124,7 +125,7 @@ FString FCSProcHelper::GetRuntimeHostPath()
 
 FString FCSProcHelper::GetAssembliesPath()
 {
-	return FPaths::Combine(GetPluginDirectory(), "Binaries", "DotNet", DOTNET_VERSION);
+	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed");
 }
 
 FString FCSProcHelper::GetUnrealSharpLibraryPath()
@@ -139,7 +140,7 @@ FString FCSProcHelper::GetRuntimeConfigPath()
 
 FString FCSProcHelper::GetUserAssemblyDirectory()
 {
-	return FPaths::Combine(FPaths::ProjectDir(), "Binaries", "UnrealSharp");
+	return FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed");
 }
 
 FString FCSProcHelper::GetUserAssemblyPath()
@@ -223,18 +224,6 @@ FString FCSProcHelper::GetUserManagedProjectName()
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }
 
-FString& FCSProcHelper::GetStagingDirectory()
-{
-	static FString StagingDirectory;
-
-	if (StagingDirectory.IsEmpty())
-	{
-		StagingDirectory = FPaths::ProjectSavedDir() / "StagedBuilds" / FPlatformProperties::IniPlatformName();
-	}
-
-	return StagingDirectory;
-}
-
 bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
 {
 	int32 ReturnCode = 0;
@@ -244,7 +233,7 @@ bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
 	Arguments += TEXT("build");
 	Arguments += FString::Printf(TEXT(" -c %s"), *BuildConfiguration);
 
-	FString OutputDirectory = FApp::IsUnattended() ? GetStagingDirectory() : GetAssembliesPath();
+	FString OutputDirectory = GetAssembliesPath();
 	OutputDirectory = FPaths::ConvertRelativePathToFull(OutputDirectory);
 	
 	Arguments += FString::Printf(TEXT(" --output \"%s\""), *OutputDirectory);

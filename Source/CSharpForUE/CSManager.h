@@ -34,8 +34,8 @@ public:
 
 	static UPackage* GetUnrealSharpPackage();
 
-	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath);
-	bool UnloadPlugin(const FString& AssemblyName);
+	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath);
+	bool UnloadAssembly(const FString& AssemblyName);
 
 	FGCHandle CreateNewManagedObject(UObject* Object, UClass* Class);
 	FGCHandle CreateNewManagedObject(UObject* Object, uint8* TypeHandle);

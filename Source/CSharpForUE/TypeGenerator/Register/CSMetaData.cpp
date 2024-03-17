@@ -38,7 +38,15 @@ template<typename FlagType>
 FlagType CSharpMetaDataUtils::GetFlags(const TSharedPtr<FJsonObject>& PropertyInfo, const FString& StringField)
 {
 	uint64 FunctionFlagsInt;
-	TTypeFromString<uint64>::FromString(FunctionFlagsInt, *PropertyInfo->GetStringField(StringField));
+	FString FoundStringField;
+	PropertyInfo->TryGetStringField(StringField, FoundStringField);
+
+	if (FoundStringField.IsEmpty())
+	{
+		return static_cast<FlagType>(0);
+	}
+	
+	TTypeFromString<uint64>::FromString(FunctionFlagsInt, *FoundStringField);
 	return static_cast<FlagType>(FunctionFlagsInt);
 }
 
@@ -137,16 +145,23 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	ParentClass.SerializeFromJson(JsonObject->GetObjectField("ParentClass"));
 
 	JsonObject->TryGetStringField("ConfigCategory", ClassConfigName);
-	
-	CSharpMetaDataUtils::SerializeFunctions(JsonObject->GetArrayField("Functions"), Functions);
 
-	for (auto& VirtualFunction : JsonObject->GetArrayField("VirtualFunctions"))
+	const TArray<TSharedPtr<FJsonValue>>* FoundFunctions;
+	JsonObject->TryGetArrayField("Functions", FoundFunctions);
+	CSharpMetaDataUtils::SerializeFunctions(*FoundFunctions, Functions);
+
+	const TArray<TSharedPtr<FJsonValue>>* FoundVirtualFunctions;
+	JsonObject->TryGetArrayField("VirtualFunctions", FoundVirtualFunctions);
+	for (const TSharedPtr<FJsonValue>& VirtualFunction : *FoundVirtualFunctions)
 	{
 		VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
 	}
 	
 	JsonObject->TryGetStringArrayField("Interfaces", Interfaces);
-	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField("Properties"), Properties);
+
+	const TArray<TSharedPtr<FJsonValue>>* FoundProperties;
+	JsonObject->TryGetArrayField("Properties", FoundProperties);
+	CSharpMetaDataUtils::SerializeProperties(*FoundProperties, Properties);
 }
 
 void FClassPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
@@ -204,10 +219,11 @@ void FEnumPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& Jso
 void FEnumMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FTypeReferenceMetaData::SerializeFromJson(JsonObject);
+
+	const TArray<TSharedPtr<FJsonValue>>* OutArray;
+	JsonObject->TryGetArrayField("Items", OutArray);
 	
-	EnumHash = JsonObject->GetStringField("EnumHash");
-	
-	for (auto& Item : JsonObject->GetArrayField("Items"))
+	for (const TSharedPtr<FJsonValue>& Item : *OutArray)
 	{
 		Items.Add(Item->AsString());
 	}
@@ -253,7 +269,6 @@ void FPropertyMetaData:: SerializeFromJson(const TSharedPtr<FJsonObject>& JsonOb
 
 	JsonObject->TryGetStringField("BlueprintGetter", BlueprintGetter);
 	JsonObject->TryGetStringField("BlueprintSetter", BlueprintSetter);
-	
 	JsonObject->TryGetStringField("RepNotifyFunctionName", RepNotifyFunctionName);
 }
 

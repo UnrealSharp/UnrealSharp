@@ -26,7 +26,9 @@ public:
 		
 private:
 	
-	static void ManagedClassConstructor(const FObjectInitializer& ObjectInitializer);
+	static void ObjectConstructor(const FObjectInitializer& ObjectInitializer);
+	static void ActorConstructor(const FObjectInitializer& ObjectInitializer);
+	
 	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer, AActor* Actor, const UClass* ActorClass, const TSharedPtr<FClassMetaData>& ClassMetaData);
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FString>& Interfaces);
 };

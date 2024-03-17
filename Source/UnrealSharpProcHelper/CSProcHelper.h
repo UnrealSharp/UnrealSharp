@@ -48,7 +48,5 @@ public:
 	static FString GetGeneratedClassesDirectory();
 	static FString GetScriptFolderDirectory();
 	static FString GetUserManagedProjectName();
-
-	static FString& GetStagingDirectory();
 	
 };

@@ -3,8 +3,8 @@
 <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <OutputPath>..\..\..\Binaries\Managed\</OutputPath>
 </PropertyGroup>
 
 <ItemGroup>

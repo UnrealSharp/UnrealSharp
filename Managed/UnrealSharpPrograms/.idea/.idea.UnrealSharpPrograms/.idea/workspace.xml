@@ -9,16 +9,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="70de8eb1-fd62-47f0-9d4e-f3bde5ce5253" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/UnrealSharpObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../UnrealSharp/UnrealSharp/UnrealSharpObject.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnrealSharpPrograms/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolOptions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolOptions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolProcess.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/BuildToolProcess.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/DotNetFinder.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/CSManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/CSManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/Actions/GenerateProject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/Actions/GenerateProject.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpBuildTool/UnrealSharpBuildTool.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpBuildTool/UnrealSharpBuildTool.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnrealSharpWeaver/UnrealSharpWeaver.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/UnrealSharpWeaver/UnrealSharpWeaver.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/CSharpForUE.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/CSharpForUE.Build.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/CSharpForUE/TypeGenerator/Register/CSMetaData.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/GlueGenerator/CSGenerator.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../Source/UnrealSharpProcHelper/CSProcHelper.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,23 +26,9 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/bf5e279d9239bfef5bb1b8d6212f1b971c434606/src/libraries/System.Private.CoreLib/src/System/Array.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/10ef96c374a9c2c2b95ade2f442765c6a64c6223e5eb36c37810d9671fcf1b76/GenericInstanceType.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/387238ef9c8f8c6b1dccf4dcba4eed0e459454919b2e4b9cad11a5071789df/Dictionary.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3af6d45b3f89585e2759cba2b9433c9c1cb54a2574a5945b88daef23d4f7485d/FieldAttributes.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c2266d9aba4c4ba36aec62278534ed6bbd881431c65810dd69b8d57bbf/Path.Windows.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/7448adae497818846488e1bdf0997d459a0bd65dccaf6ca178930f2c9918e8c/FieldDefinition.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/80d59bce77312e1810ce50b68bf6b8c6a81f74319067bbb1eff010d073910/MethodReference.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/a5f449b9fc1862fd1c2e23ca936595a2fd4d8f3ac25f5632517c97b0f8fe/Tuple.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/a6571c61627e4223a64820fb081ea802d9b5adf9ad27e4cad5802124c1c78/VariableReference.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/a9964aee6bcf615a4dfe943ad2ec310269624ee8110f1eed33550d6e45f72e/VariableDefinition.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b2e2ff5e4f118b6e4ad5f910e9fde1fd6a338b5716cff790e934a2014dc8379/File.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/b7208b3f72528d22781d25fde9a55271bdf2b5aade4f03b1324579a25493cd8/List.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/d11bb87b5371180529729fea552977f0acd05b863b8d772dd9ea146fb7b0b3/GenericInstanceMethod.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/de4732c7b872321ec35770c85de139e4cf216f578e4fa12a706b29ebcda8e/MethodDefinition.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/dff04961602be888b6aaee78be3c4af71efa7947fdf611f6d6fe9b35ea45993b/ILProcessor.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/60a6bf1e1cbf38d9185ff20accbae2c1784d3873a9fd4f5dd118a2fdb63fe/TypeReference.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/e466d67f482b0e1a84e8b7a513a33ded7b5f9c89109694b34051a07150a3c/ModuleDefinition.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/f8f4bde0a35df4a6efc1f12f7d806e657f6c172176ed79ea7327eb43f98553/TypeDefinition.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/e9a270fd5aa47ba627013a4744380641a33dda093ef15387b4c397865fa31a/AssemblyDefinition.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -63,7 +46,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "XThreadsFramesViewSplitterKey": "0.5655961",
-    "git-widget-placeholder": "packaging",
+    "git-widget-placeholder": "packagingjit",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -138,6 +121,7 @@
       <workItem from="1706433837834" duration="4254000" />
       <workItem from="1706954394927" duration="15466000" />
       <workItem from="1709456420291" duration="3342000" />
+      <workItem from="1710665318010" duration="686000" />
     </task>
     <servers />
   </component>
@@ -171,14 +155,7 @@
         <line-breakpoint enabled="true" type="DotNet Breakpoints">
           <url>file://$PROJECT_DIR$/UnrealSharpWeaver/MetaData/ClassMetaData.cs</url>
           <line>29</line>
-          <properties documentPath="C:\Users\oscar\Documents\Unreal Projects\CSharpProject\Plugins\UnrealSharp\Managed\UnrealSharpPrograms\UnrealSharpWeaver\MetaData\ClassMetaData.cs" initialLine="29" containingFunctionPresentation="Constructor 'ClassMetaData'">
-            <startOffsets>
-              <option value="1029" />
-            </startOffsets>
-            <endOffsets>
-              <option value="1120" />
-            </endOffsets>
-          </properties>
+          <properties documentPath="C:\Users\oscar\Documents\Unreal Projects\CSharpProject\Plugins\UnrealSharp\Managed\UnrealSharpPrograms\UnrealSharpWeaver\MetaData\ClassMetaData.cs" initialLine="29" containingFunctionPresentation="Constructor 'ClassMetaData'" />
           <option name="timeStamp" value="80" />
         </line-breakpoint>
       </breakpoints>

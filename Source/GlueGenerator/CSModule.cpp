@@ -1,10 +1,10 @@
 #include "CSModule.h"
-#include "CSScriptBuilder.h"
 #include "Misc/Paths.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : ModuleName(InModuleName)
 {
-	Namespace = FString::Printf(UNREAL_SHARP_NAMESPACE TEXT(".%s"), *InModuleName.ToString());
+	Namespace = UUnrealSharpStatics::GetNamespace(InModuleName);
 	Namespace.ReplaceCharInline('-', '_');
 
 	Directory = FPaths::Combine(*SourceDirectory, *InModuleName.ToString());

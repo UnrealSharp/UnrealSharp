@@ -39,7 +39,8 @@ public class CSharpForUE : ModuleRules
 				"UMG", 
 				"DeveloperSettings", 
 				"UnrealSharpProcHelper", 
-				"EnhancedInput",
+				"EnhancedInput", 
+				"UnrealSharpUtilities",
 			}
 			);
 		
@@ -48,6 +49,7 @@ public class CSharpForUE : ModuleRules
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"UnrealEd", 
+				"GlueGenerator",
 				"EditorSubsystem", 
 			});
 		}
@@ -58,15 +60,12 @@ public class CSharpForUE : ModuleRules
 		{
 			BuildPrograms();
 		}
-		else
-		{
-			IncludeUnrealSharpBinaries();
-		}
 		
 		// Get all files in managed
 		if (Target.Type == TargetRules.TargetType.Game)
 		{
-			RuntimeDependencies.Add("$(TargetOutputDir)", "$(PluginDir)/Binaries/DotNet/...");
+			RuntimeDependencies.Add("$(PluginDir)/Binaries/Managed/...");
+			RuntimeDependencies.Add("$(ProjectDir)/Binaries/Managed/...");
 		}
 	}
 
@@ -108,14 +107,9 @@ public class CSharpForUE : ModuleRules
 
 	void BuildPrograms()
 	{
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release);
+		string outputPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release, outputPath);
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
-	}
-	
-	void IncludeUnrealSharpBinaries()
-	{
-		string output = Path.Combine(PluginDirectory, "Intermediate", "Build", "Binaries");
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp.sln"), BuildConfiguration.Release, output);
 	}
 	
 	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)
@@ -146,7 +140,6 @@ public class CSharpForUE : ModuleRules
 		process.WaitForExit();
 		
 		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
-		
 	}
 }
 

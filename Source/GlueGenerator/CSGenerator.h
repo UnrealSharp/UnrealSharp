@@ -8,7 +8,7 @@
 #include "UObject/Stack.h"
 #include "PropertyTranslators/CSSupportedPropertyTranslators.h"
 
-class FCSGenerator
+class GLUEGENERATOR_API FCSGenerator
 {
 	
 public:

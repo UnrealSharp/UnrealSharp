@@ -11,6 +11,7 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 FName FCSGenerator::AllowableBlueprintVariableType = "BlueprintType";
 FName FCSGenerator::NotAllowableBlueprintVariableType = "NotBlueprintType";
@@ -94,21 +95,26 @@ void FCSGenerator::GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess)
 
 void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 {
-	if (ExportedTypes.Contains(Object))
-	{
-		return;
-	}
-
-	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
-
 	// We don't want stuff in the transient package - that stuff is just temporary
 	if (Object->GetOutermost() == GetTransientPackage())
 	{
 		return;
 	}
 	
+	if (ExportedTypes.Contains(Object))
+	{
+		return;
+	}
+
+	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
+	
 	if (UClass* Class = Cast<UClass>(Object))
 	{
+		if (Cast<UBlueprintGeneratedClass>(Class))
+		{
+			return;
+		}
+		
 		if (Class->HasAnyFlags(RF_ClassDefaultObject))
 		{
 			return;
@@ -520,8 +526,7 @@ void FCSGenerator::RegisterClassToModule(const UObject* Struct)
 
 FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 {
-	const FName ModuleName = GetModuleFName(Struct);
-
+	const FName ModuleName = UUnrealSharpStatics::GetModuleName(Struct);
 	FCSModule* BindingsModule = CSharpBindingsModules.Find(ModuleName);
     
 	if (!BindingsModule)

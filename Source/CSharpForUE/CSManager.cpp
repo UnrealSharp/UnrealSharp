@@ -13,6 +13,7 @@
 #include "Misc/App.h"
 #include "UObject/Object.h"
 #include "Misc/MessageDialog.h"
+#include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
 #if WITH_EDITOR
@@ -35,20 +36,23 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-	
-	// Make sure the C# API is up to date. This is only done in the editor.
-	FString BuildConfiguration;
-	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
-		
-	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-		return;
-	}
+
+	// Check if the C# API is up to date.
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 
 	// Generate the cs project. Ignore if it's already generated
 	if (!FApp::IsUnattended())
 	{
+		// Make sure the C# API is up to date. This is only done in the editor.
+		FString BuildConfiguration;
+		GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
+		
+		if (!FCSProcHelper::BuildBindings(BuildConfiguration))
+		{
+			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
+			return;
+		}
+		
 		if (!FCSProcHelper::GenerateProject())
 		{
 			InitializeUnrealSharp();
@@ -180,7 +184,7 @@ bool FCSManager::LoadUserAssembly()
 		return false;
 	}
 	
-	if (!LoadPlugin(UserAssemblyPath))
+	if (!LoadAssembly(UserAssemblyPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
 		return false;
@@ -234,7 +238,7 @@ UPackage* FCSManager::GetUnrealSharpPackage()
 	return UnrealSharpPackage;
 }
 
-TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
 	
@@ -260,7 +264,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
 	return NewPlugin;
 }
 
-bool FCSManager::UnloadPlugin(const FString& AssemblyName)
+bool FCSManager::UnloadAssembly(const FString& AssemblyName)
 {
 	TSharedPtr<FCSAssembly> Assembly;
 	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))

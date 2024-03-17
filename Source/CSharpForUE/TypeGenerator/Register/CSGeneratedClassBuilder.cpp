@@ -1,6 +1,7 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSharpForUE/CSharpForUE.h"
+#include "CSharpForUE/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
 #include "CSharpForUE/TypeGenerator/CSClass.h"
@@ -15,12 +16,18 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
 		{
-			UBlueprint* DummyBlueprint = NewObject<UBlueprint>(Field, Field->GetFName());
+			UBlueprint* DummyBlueprint = NewObject<UCSBlueprint>(Field, Field->GetFName(), RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
 			DummyBlueprint->SkeletonGeneratedClass = Field;
 			DummyBlueprint->GeneratedClass = Field;
 			DummyBlueprint->ParentClass = SuperClass;
+			DummyBlueprint->BlueprintType = BPTYPE_Normal;
+			DummyBlueprint->BlueprintSystemVersion = UBlueprint::GetCurrentBlueprintSystemVersion();
+			DummyBlueprint->bLegacyNeedToPurgeSkelRefs = false;
+			DummyBlueprint->GenerateNewGuid();
 
 			#if WITH_EDITOR
+			DummyBlueprint->Status = BS_UpToDate;
+			DummyBlueprint->bIsNewlyCreated = true;
 			DummyBlueprint->BlueprintDisplayName = Field->GetName();
 			Field->ClassGeneratedBy = DummyBlueprint;
 			#endif
@@ -60,9 +67,24 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 	//Finalize class
 	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedClassConstructor;
-		Field->Bind();
+		if (Field->IsChildOf<AActor>())
+		{
+			Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
+		}
+		else
+		{
+			#if WITH_EDITOR
+			// Make all C# ActorComponents BlueprintSpawnableComponent
+			if (Field->IsChildOf<UActorComponent>())
+			{
+				Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
+			}
+			#endif
+			
+			Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
+		}
 		
+		Field->Bind();
 		Field->StaticLink(true);
 		Field->AssembleReferenceTokenStream();
 
@@ -73,6 +95,8 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		Field->SetUpRuntimeReplicationData();
 
 		Field->UpdateCustomPropertyListForPostConstruction();
+		
+		RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
 	}
 }
 
@@ -81,25 +105,34 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
 
-void FCSGeneratedClassBuilder::ManagedClassConstructor(const FObjectInitializer& ObjectInitializer)
+void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	UClass* Class = ObjectInitializer.GetClass();
 	UCSClass* ManagedClass = GetFirstManagedClass(Class);
-	
 	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ManagedClass);
 	
 	//Execute the native class' constructor first.
-	{
-		UClass* NativeClass = GetFirstNativeClass(Class);
-		NativeClass->ClassConstructor(ObjectInitializer);
-	}
+	UClass* NativeClass = GetFirstNativeClass(Class);
+	NativeClass->ClassConstructor(ObjectInitializer);
+	
+	// Make the actual object in C#
+	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+}
 
-	if (AActor* Actor = Cast<AActor>(ObjectInitializer.GetObj()))
-	{
-		Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
-		Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-		SetupDefaultSubobjects(ObjectInitializer, Actor, Class, ClassInfo->TypeMetaData);
-	}
+void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& ObjectInitializer)
+{
+	UClass* Class = ObjectInitializer.GetClass();
+	UCSClass* ManagedClass = GetFirstManagedClass(Class);
+	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ManagedClass);
+	
+	//Execute the native class' constructor first.
+	UClass* NativeClass = GetFirstNativeClass(Class);
+	NativeClass->ClassConstructor(ObjectInitializer);
+	
+	AActor* Actor = CastChecked<AActor>(ObjectInitializer.GetObj());
+	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
+	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
+	SetupDefaultSubobjects(ObjectInitializer, Actor, Class, ClassInfo->TypeMetaData);
 	
 	// Make the actual object in C#
 	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);

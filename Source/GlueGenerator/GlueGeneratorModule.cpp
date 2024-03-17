@@ -8,8 +8,6 @@ DEFINE_LOG_CATEGORY(LogGlueGenerator);
 
 void FGlueGeneratorModule::StartupModule()
 {
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 }
 
 void FGlueGeneratorModule::ShutdownModule()

@@ -170,7 +170,6 @@ struct FEnumPropertyMetaData : FUnrealType
 
 struct FEnumMetaData : FTypeReferenceMetaData
 {
-	FString EnumHash;
 	TArray<FString> Items;
 
 	//FTypeMetaData interface implementation
