@@ -41,7 +41,7 @@ public class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signa
 [UClass]
 public class ResourceBase : Actor, IInteractable
 {
-    protected ResourceBase(IntPtr nativeObject) : base(nativeObject)
+    public ResourceBase()
     {
         SetReplicates(true);
         RespawnTime = 500.0f;
