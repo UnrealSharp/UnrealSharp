@@ -5,13 +5,15 @@ using UnrealSharp.Attributes;
 namespace UnrealSharp;
 
 [UStruct(IsBlittable=true), StructLayout(LayoutKind.Sequential)]
-public struct Transform(Rotator rotation, Vector3 location, Vector3 scale)
+public struct Transform(Quaternion rotation, Vector3 location, Vector3 scale)
 {
-    public Rotator Rotation = rotation;
+    public Quaternion Rotation = rotation;
     public Vector3 Location = location;
+    private double u0;
     public Vector3 Scale = scale;
+    private double u1;
 
-    public static readonly Transform ZeroTransform = new(Rotator.ZeroRotator, Vector3.Zero, Vector3.One);
+    public static readonly Transform ZeroTransform = new(Quaternion.Identity, Vector3.Zero, Vector3.One);
     
     public bool Equals(Transform other)
     {
