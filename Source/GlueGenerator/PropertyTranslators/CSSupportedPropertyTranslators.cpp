@@ -63,14 +63,19 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddPropertyTranslator(FArrayProperty::StaticClass(), new FArrayPropertyTranslator(*this));
 
 	AddBlittableCustomStructPropertyTranslator("Vector2D", "System.DoubleNumerics.Vector2", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Vector2f", "System.Numerics.Vector2", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector", "System.DoubleNumerics.Vector3", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Vector3f", "System.Numerics.Vector3", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector_NetQuantize", "System.DoubleNumerics.Vector3", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector_NetQuantize10", "System.DoubleNumerics.Vector3", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector_NetQuantize100", "System.DoubleNumerics.Vector3", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector_NetQuantizeNormal", "System.DoubleNumerics.Vector3", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Vector4", "System.DoubleNumerics.Vector4", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Vector4f", "System.Numerics.Vector4", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Quat", "System.DoubleNumerics.Quaternion", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Quat4f", "System.Numerics.Quaternion", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Matrix", "System.DoubleNumerics.Matrix4x4", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("Matrix44f", "System.Numerics.Matrix4x4", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Rotator", UNREAL_SHARP_NAMESPACE ".Rotator", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("Transform", UNREAL_SHARP_NAMESPACE ".Transform", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("RandomStream", UNREAL_SHARP_NAMESPACE ".RandomStream", Blacklist);
