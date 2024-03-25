@@ -6,7 +6,7 @@ namespace UnrealSharp.Interop;
 public unsafe struct ManagedCallbacks
 {
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> ScriptManagerBridge_CreateManagedObject;
-    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, void> ScriptManagerBridge_InvokeManagedMethod;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, int> ScriptManagerBridge_InvokeManagedMethod;
     public delegate* unmanaged<IntPtr, char*, IntPtr> ScriptManagerBridge_LookupManagedMethod;
     public delegate* unmanaged<IntPtr, char*, char*, IntPtr> ScriptManagedBridge_LookupManagedType;
     public delegate* unmanaged<IntPtr, void> ScriptManagedBridge_Dispose;

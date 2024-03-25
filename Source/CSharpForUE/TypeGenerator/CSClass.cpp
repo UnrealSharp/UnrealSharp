@@ -7,6 +7,8 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 {
 	const UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
 	TArray<uint8> ArgumentData;
+	FString ExceptionMessage;
+	bool Success;
 
 	// Skip allocating memory for the argument data if there are no parameters that need to be passed
 	if (Function->NumParms == 0)
@@ -16,7 +18,12 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 			++Stack.Code;
 		}
 		
-		InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, RESULT_PARAM);
+		Success = InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, ExceptionMessage, RESULT_PARAM);
+		if (!Success)
+		{
+			const FBlueprintExceptionInfo ExceptionInfo(EBlueprintExceptionType::FatalError, FText::FromString(ExceptionMessage));
+			FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
+		}
 		return;
 	}
 	
@@ -79,7 +86,13 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 		++Stack.Code;
 	}
 
-	InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, RESULT_PARAM);
+	
+	Success = InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, ExceptionMessage, RESULT_PARAM);
+	if (!Success)
+	{
+		const FBlueprintExceptionInfo ExceptionInfo(EBlueprintExceptionType::FatalError, FText::FromString(ExceptionMessage));
+		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
+	}
 	ProcessOutParameters(OutParameters, ArgumentData.GetData());
 	
 	// Free up memory
@@ -95,8 +108,18 @@ void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentD
 	}
 }
 
-void UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, RESULT_DECL)
+bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, FString& ExceptionMessage, RESULT_DECL)
 {
 	const FGCHandle ManagedObjectHandle = FCSManager::Get().FindManagedObject(ObjectToInvokeOn);
-	FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(), Function->GetManagedMethod(), ArgumentData.GetData(), RESULT_PARAM);
+	struct { TCHAR* Data = nullptr; int ArrayNum = 0; int ArrayMax = 0; } ExceptionText;
+	int ResultCode = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(), Function->GetManagedMethod(), ArgumentData.GetData(), RESULT_PARAM, &ExceptionText);
+	if (ResultCode != 0)
+	{
+		ExceptionMessage = FString(static_cast<TCHAR*>(ExceptionText.ArrayNum, ExceptionText.Data));
+		// Commented as causing crash - possibly due to StringMarshaller allocating on the COM heap rather than the normal heap?
+		// Do we need a better way of passing strings to unreal without causing memory leaks?
+		// FMemory::Free(ExceptionText.Data);
+		return false;
+	}
+	return true;
 }

@@ -22,7 +22,7 @@ public static class UnmanagedCallbacks
                 throw new ArgumentNullException(nameof(nativeObject));
             }
 
-            Type typeToCreate = Type.GetTypeFromHandle(handle);
+            Type? typeToCreate = Type.GetTypeFromHandle(handle);
 
             if (typeToCreate == null)
             {
@@ -46,7 +46,7 @@ public static class UnmanagedCallbacks
         {
             string methodNameString = new string(methodName);
             RuntimeTypeHandle typeHandle = RuntimeTypeHandle.FromIntPtr(typeHandlePtr);
-            Type foundType = Type.GetTypeFromHandle(typeHandle);
+            Type? foundType = Type.GetTypeFromHandle(typeHandle);
 
             if (typeHandle == null || foundType == null)
             {
@@ -59,7 +59,7 @@ public static class UnmanagedCallbacks
             
             while (currentType != null)
             {
-                MethodInfo method = currentType.GetMethod(methodNameString, flags);
+                MethodInfo? method = currentType.GetMethod(methodNameString, flags);
 
                 if (method != null)
                 {
@@ -84,7 +84,7 @@ public static class UnmanagedCallbacks
     {
         try
         {
-            Assembly loadedAssembly = (Assembly)GCHandle.FromIntPtr(assemblyHandle).Target;
+            Assembly? loadedAssembly = GCHandle.FromIntPtr(assemblyHandle).Target as Assembly;
 
             if (loadedAssembly == null)
             {
@@ -96,7 +96,7 @@ public static class UnmanagedCallbacks
 
             string fullTypeName = $"{typeNamespaceString}.{typeNameString}";
 
-            Type foundType = loadedAssembly.GetType(fullTypeName, false);
+            Type? foundType = loadedAssembly.GetType(fullTypeName, false);
 
             if (foundType != null)
             {
@@ -120,17 +120,17 @@ public static class UnmanagedCallbacks
     }
         
     [UnmanagedCallersOnly]
-    public static void InvokeManagedMethod(IntPtr managedObjectPtr, IntPtr methodHandlePtr, IntPtr argumentsBuffer, IntPtr returnValueBuffer)
+    public static int InvokeManagedMethod(IntPtr managedObjectPtr, IntPtr methodHandlePtr, IntPtr argumentsBuffer, IntPtr returnValueBuffer, IntPtr exceptionTextBuffer)
     {
         try
         {
-            MethodBase methodToInvoke = MethodBase.GetMethodFromHandle(RuntimeMethodHandle.FromIntPtr(methodHandlePtr));
+            MethodBase? methodToInvoke = MethodBase.GetMethodFromHandle(RuntimeMethodHandle.FromIntPtr(methodHandlePtr));
             if (methodToInvoke == null)
             {
                 throw new Exception("methodToInvoke is null");
             }
 
-            Object managedObject = GCHandle.FromIntPtr(managedObjectPtr).Target;
+            object? managedObject = GCHandle.FromIntPtr(managedObjectPtr).Target;
             if (managedObject == null)
             {
                 throw new Exception("managedObject is null");
@@ -141,12 +141,17 @@ public static class UnmanagedCallbacks
         }
         catch (TargetInvocationException ex)
         {
+            StringMarshaller.ToNative(exceptionTextBuffer, 0, null, (ex.InnerException ?? ex).ToString());
             Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
+            return 1;
         }
         catch (Exception ex)
         {
+            StringMarshaller.ToNative(exceptionTextBuffer, 0, null, ex.ToString());
             Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
+            return 1;
         }
+        return 0;
     }
         
     [UnmanagedCallersOnly]
@@ -158,7 +163,7 @@ public static class UnmanagedCallbacks
         }
 
         GCHandle foundHandle = GCHandle.FromIntPtr(Handle);
-        IDisposable disposable = (IDisposable) foundHandle.Target;
+        IDisposable? disposable = foundHandle.Target as IDisposable;
         
         if (disposable == null)
         {

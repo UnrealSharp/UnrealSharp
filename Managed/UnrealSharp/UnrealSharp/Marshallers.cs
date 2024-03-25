@@ -85,7 +85,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
 
 public static class StringMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, string obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject? owner, string obj)
     {
         unsafe
         {
