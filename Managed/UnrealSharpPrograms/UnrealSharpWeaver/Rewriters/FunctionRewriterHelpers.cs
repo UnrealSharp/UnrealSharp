@@ -238,8 +238,8 @@ public static class FunctionRewriterHelpers
         
         if (originalMethodDef.Body.CodeSize > 0)
         {
-            string originalMethodName = originalMethodDef.Name + "_Implementation";
-            MethodDefinition implementationMethod = WeaverHelper.AddMethodToType(type, originalMethodName, originalMethodDef.ReturnType, originalMethodDef.Attributes);
+            string implementationMethodName = originalMethodDef.Name + "_Implementation";
+            MethodDefinition implementationMethod = WeaverHelper.AddMethodToType(type, implementationMethodName, originalMethodDef.ReturnType, originalMethodDef.Attributes);
             implementationMethod.Body = originalMethodDef.Body;
             
             foreach (ParameterDefinition param in originalMethodDef.Parameters)
@@ -258,7 +258,7 @@ public static class FunctionRewriterHelpers
         Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields)
     {
         // Remove the original method body. We'll replace it with a call to the native function.
-        methodDef.Body.Instructions.Clear();
+        methodDef.Body = new MethodBody(methodDef);
 
         bool staticNativeFunction = nativeFunctionField.IsStatic;
         bool hasReturnValue = methodDef.ReturnType != WeaverHelper.VoidTypeRef;
