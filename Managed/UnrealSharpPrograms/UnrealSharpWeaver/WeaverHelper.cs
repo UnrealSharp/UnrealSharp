@@ -537,7 +537,7 @@ public static class WeaverHelper
             }
                 
             bool isBlittable = false;
-            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittableStruct");
+            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittable");
                         
             if (blittableAttrib.HasValue)
             {
