@@ -49,6 +49,11 @@ public static class BlittableMarshaller<T>
     {
         return (T*)(nativeBuffer + arrayIndex * size);
     }
+    
+    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    {
+        return (T*)(nativeBuffer + arrayIndex * sizeof(T));
+    }
 }
 
 public static class BoolMarshaller
@@ -89,15 +94,10 @@ public static class StringMarshaller
     {
         unsafe
         {
-            var byteCount = (obj.Length + 1) * sizeof(char);
-            var stringMemory = Marshal.AllocCoTaskMem(byteCount);
-            Marshal.Copy(obj.ToCharArray(), 0, stringMemory, obj.Length);
-            Marshal.WriteInt16(stringMemory, obj.Length * sizeof(char), 0);
-
-            UnmanagedArray* unmanagedArray = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
-            unmanagedArray->ArrayNum = obj.Length + 1;
-            unmanagedArray->ArrayMax = unmanagedArray->ArrayNum;
-            unmanagedArray->Data = stringMemory;
+            fixed (char* stringPtr = obj)
+            {
+                FStringExporter.CallMarshalToNativeString(nativeBuffer, stringPtr);
+            }
         }
     }
 
@@ -105,26 +105,23 @@ public static class StringMarshaller
     {
         unsafe
         {
-            UnmanagedArray* nativeString = 
-                BlittableMarshaller<UnmanagedArray>
-                    .FromNativePtr(nativeBuffer, arrayIndex, owner, sizeof(UnmanagedArray));
-
-            return nativeString == null ? default : new string((char*) nativeString->Data);
+            UnmanagedArray* nativeString = BlittableMarshaller<UnmanagedArray>.FromNativePtr(nativeBuffer, arrayIndex, owner);
+            return nativeString == null ? string.Empty : new string((char*) nativeString->Data);
         }
     }
     
     public static void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        unsafe
-        {
-            UnmanagedArray* nativeString = 
-                BlittableMarshaller<UnmanagedArray>
-                    .FromNativePtr(nativeBuffer, arrayIndex, null, sizeof(UnmanagedArray));
-            
-            Marshal.FreeCoTaskMem(nativeString->Data);
-            nativeString->Data = IntPtr.Zero;
-            nativeString->ArrayNum = 0;
-            nativeString->ArrayMax = 0;
-        }
+        // unsafe
+        // {
+        //     UnmanagedArray* nativeString = 
+        //         BlittableMarshaller<UnmanagedArray>
+        //             .FromNativePtr(nativeBuffer, arrayIndex, null, sizeof(UnmanagedArray));
+        //     
+        //     Marshal.FreeCoTaskMem(nativeString->Data);
+        //     nativeString->Data = IntPtr.Zero;
+        //     nativeString->ArrayNum = 0;
+        //     nativeString->ArrayMax = 0;
+        // }
     }
 }

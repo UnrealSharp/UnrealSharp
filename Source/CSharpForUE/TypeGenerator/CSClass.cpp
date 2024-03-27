@@ -1,5 +1,6 @@
 ﻿#include "CSClass.h"
 #include "CSFunction.h"
+#include "CSharpForUE/CSDeveloperSettings.h"
 #include "CSharpForUE/CSManager.h"
 #include "Factories/CSPropertyFactory.h"
 
@@ -85,14 +86,18 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	{
 		++Stack.Code;
 	}
-
 	
 	Success = InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, ExceptionMessage, RESULT_PARAM);
+	
 	if (!Success)
 	{
-		const FBlueprintExceptionInfo ExceptionInfo(EBlueprintExceptionType::FatalError, FText::FromString(ExceptionMessage));
+		const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+		EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::NonFatalError;
+		
+		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
+	
 	ProcessOutParameters(OutParameters, ArgumentData.GetData());
 	
 	// Free up memory
@@ -111,15 +116,6 @@ void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentD
 bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, FString& ExceptionMessage, RESULT_DECL)
 {
 	const FGCHandle ManagedObjectHandle = FCSManager::Get().FindManagedObject(ObjectToInvokeOn);
-	struct { TCHAR* Data = nullptr; int ArrayNum = 0; int ArrayMax = 0; } ExceptionText;
-	int ResultCode = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(), Function->GetManagedMethod(), ArgumentData.GetData(), RESULT_PARAM, &ExceptionText);
-	if (ResultCode != 0)
-	{
-		ExceptionMessage = FString(static_cast<TCHAR*>(ExceptionText.ArrayNum, ExceptionText.Data));
-		// Commented as causing crash - possibly due to StringMarshaller allocating on the COM heap rather than the normal heap?
-		// Do we need a better way of passing strings to unreal without causing memory leaks?
-		// FMemory::Free(ExceptionText.Data);
-		return false;
-	}
-	return true;
+	int ResultCode = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(), Function->GetManagedMethod(), ArgumentData.GetData(), RESULT_PARAM, &ExceptionMessage);
+	return ResultCode == 0;
 }

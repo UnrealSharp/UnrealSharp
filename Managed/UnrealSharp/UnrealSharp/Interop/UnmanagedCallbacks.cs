@@ -136,14 +136,8 @@ public static class UnmanagedCallbacks
                 throw new Exception("managedObject is null");
             }
 
-            object[] arguments = { argumentsBuffer, returnValueBuffer };
+            object[] arguments = [argumentsBuffer, returnValueBuffer];
             methodToInvoke.Invoke(managedObject, arguments);
-        }
-        catch (TargetInvocationException ex)
-        {
-            StringMarshaller.ToNative(exceptionTextBuffer, 0, null, (ex.InnerException ?? ex).ToString());
-            Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
-            return 1;
         }
         catch (Exception ex)
         {
