@@ -199,6 +199,8 @@ public class FunctionMetaData : BaseMetaData
         foreach (var typeInterface in type.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
+            if (!InterfaceMetaData.IsUInterface(interfaceType)) { continue; }
+
             foreach (var interfaceMethod in interfaceType.Methods)
             {
                 if (interfaceMethod.Name == methodName)
