@@ -26,6 +26,14 @@ UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
 void FCSManager::InitializeUnrealSharp()
 {
+#if WITH_EDITOR
+	if (FApp::IsUnattended())
+	{
+		FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
+		return;
+	}
+#endif
+	
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
@@ -36,28 +44,17 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-
-	// Generate the cs project. Ignore if it's already generated
-	if (!FApp::IsUnattended())
+		
+	if (!FCSProcHelper::BuildBindings())
 	{
-		// Make sure the C# API is up to date. This is only done in the editor.
-		FString BuildConfiguration;
-		GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
+		return;
+	}
 		
-		if (!FCSProcHelper::BuildBindings(BuildConfiguration))
-		{
-			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-			return;
-		}
-		
-		if (!FCSProcHelper::GenerateProject())
-		{
-			InitializeUnrealSharp();
-			return;
-		}
+	if (!FCSProcHelper::GenerateProject())
+	{
+		InitializeUnrealSharp();
+		return;
 	}
 #endif
 

@@ -34,7 +34,10 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	                                                      bLaunchDetached,
 	                                                      bLaunchHidden,
 	                                                      bLaunchReallyHidden,
-	                                                      NULL, 0, *WorkingDirectory, WritePipe, ReadPipe);
+	                                                      NULL, 0,
+	                                                      *WorkingDirectory,
+	                                                      WritePipe,
+	                                                      ReadPipe);
 
 	if (!ProcHandle.IsValid())
 	{
@@ -70,15 +73,16 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	return true;
 }
 
-bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const FString* BuildConfiguration)
+bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration, const FString* InOutputDirectory)
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-	FString OutputPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
+	FString OutputPath = FPaths::ConvertRelativePathToFull(InOutputDirectory ? *InOutputDirectory : GetUserAssemblyDirectory());
 	FString DotNetPath = GetDotNetExecutablePath();
-	
-	FString Args = FString::Printf(TEXT("--Action %s"), *BuildActionCommand.ToString());
+	FString Args;
 
+	Args += FString::Printf(TEXT("\"%s\""), *GetUnrealSharpBuildToolPath());
+	Args += FString::Printf(TEXT(" --Action %s"), *BuildActionCommand.ToString());
 	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
 	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
 	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
@@ -88,22 +92,14 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const F
 
 	if (BuildConfiguration)
 	{
-		Args += FString::Printf(TEXT(" --BuildConfig %s"), *(*BuildConfiguration));
+		FText BuildConfigurationString = StaticEnum<EDotNetBuildConfiguration>()->GetDisplayNameTextByValue(static_cast<int64>(*BuildConfiguration));
+		Args += FString::Printf(TEXT(" --BuildConfig %s"), *BuildConfigurationString.ToString());
 	}
 	
 	int32 ReturnCode = 0;
 	FString Output;
-	return InvokeCommand(GetUnrealSharpBuildToolPath(), Args, ReturnCode, Output);
-}
-
-bool FCSProcHelper::Build(const FString& BuildConfiguration)
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Build, &BuildConfiguration);
-}
-
-bool FCSProcHelper::Rebuild(const FString& BuildConfiguration)
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Rebuild, &BuildConfiguration);
+	FString WorkingDirectory = GetAssembliesPath();
+	return InvokeCommand(DotNetPath, Args, ReturnCode, Output, &WorkingDirectory);
 }
 
 bool FCSProcHelper::Clean()
@@ -125,7 +121,11 @@ FString FCSProcHelper::GetRuntimeHostPath()
 
 FString FCSProcHelper::GetAssembliesPath()
 {
+#if WITH_EDITOR
 	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed");
+#else
+	return GetUserAssemblyDirectory();
+#endif
 }
 
 FString FCSProcHelper::GetUnrealSharpLibraryPath()
@@ -155,7 +155,7 @@ FString FCSProcHelper::GetManagedSourcePath()
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
-	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.exe");
+	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.dll");
 }
 
 FString FCSProcHelper::GetDotNetDirectory()
@@ -224,20 +224,18 @@ FString FCSProcHelper::GetUserManagedProjectName()
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }
 
-bool FCSProcHelper::BuildBindings(const FString& BuildConfiguration)
+bool FCSProcHelper::BuildBindings(FString* OutputPath)
 {
 	int32 ReturnCode = 0;
-	FString Output;
 	
 	FString Arguments;
-	Arguments += TEXT("build");
-	Arguments += FString::Printf(TEXT(" -c %s"), *BuildConfiguration);
-
-	FString OutputDirectory = GetAssembliesPath();
-	OutputDirectory = FPaths::ConvertRelativePathToFull(OutputDirectory);
+	Arguments += TEXT("publish");
 	
-	Arguments += FString::Printf(TEXT(" --output \"%s\""), *OutputDirectory);
-	
+	FString FullOutputPath = OutputPath ? *OutputPath : FPaths::ConvertRelativePathToFull(GetAssembliesPath());
 	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
+	
+	Arguments += FString::Printf(TEXT(" -p:PublishDir=\"%s\""), *FullOutputPath);
+
+	FString Output;
 	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
 }

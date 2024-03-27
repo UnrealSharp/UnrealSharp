@@ -14,14 +14,10 @@ struct FTypeReferenceMetaData;
 struct FGCHandle;
 struct FCSAssembly;
 
-
-
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
-
 
 class CSHARPFORUE_API FCSManager : public FUObjectArray::FUObjectDeleteListener
 {
-	
 public:
 
 	static FCSManager& Get()

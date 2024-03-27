@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using UnrealBuildTool;
@@ -11,6 +12,7 @@ enum BuildConfiguration
 
 public class CSharpForUE : ModuleRules
 {
+	
 	private string ManagedPath;
 	
 	public CSharpForUE(ReadOnlyTargetRules Target) : base(Target)
@@ -61,14 +63,13 @@ public class CSharpForUE : ModuleRules
 			BuildPrograms();
 		}
 		
-		// Get all files in managed
 		if (Target.Type == TargetRules.TargetType.Game)
 		{
-			RuntimeDependencies.Add("$(PluginDir)/Binaries/Managed/...");
-			RuntimeDependencies.Add("$(ProjectDir)/Binaries/Managed/...");
+			string ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
+			string[] dependencies = Directory.GetFiles(ManagedBinariesPath, "*.*", SearchOption.AllDirectories);
 		}
+	
 	}
-
 	private void IncludeDotNetHeaders()
 	{
 		PublicSystemIncludePaths.Add(Path.Combine(ManagedPath, "DotNetRuntime", "inc"));
@@ -112,6 +113,20 @@ public class CSharpForUE : ModuleRules
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
 	}
 	
+	void StartDotNetProcess(Collection<string> arguments)
+	{
+		string dotnetPath = FindDotNetExecutable();
+		
+		Process process = new Process();
+		process.StartInfo.FileName = dotnetPath;
+		foreach (var argument in arguments)
+		{
+			process.StartInfo.ArgumentList.Add(argument);
+		}
+		process.Start();
+		process.WaitForExit();
+	}
+	
 	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)
 	{
 		if (!File.Exists(solutionPath))
@@ -141,6 +156,7 @@ public class CSharpForUE : ModuleRules
 		
 		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
 	}
+	
 }
 
 

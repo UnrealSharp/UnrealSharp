@@ -4,7 +4,6 @@
     <LangVersion>latest</LangVersion>
     <TargetFramework>netstandard2.0</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <OutputPath>..\..\..\Binaries\Managed\</OutputPath>
 </PropertyGroup>
 
 <ItemGroup>

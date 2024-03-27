@@ -58,7 +58,7 @@ public static class Program
     {
         string currentBuildConfig = buildToolOptions.BuildConfig.ToString();
         string version = GetVersion();
-        return Path.Combine(GetScriptFolder(), $"bin/{currentBuildConfig}/{version}");
+        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, version);
     }
     
     public static string GetScriptFolder()
