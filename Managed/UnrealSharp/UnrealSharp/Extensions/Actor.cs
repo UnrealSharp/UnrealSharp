@@ -41,4 +41,22 @@ public partial class Actor
             inputComponent.BindAxis(axisName, action, consumeInput, executeWhenPaused);
         }
     }
+
+    private partial ActorComponent AddComponentByClass(SubclassOf<ActorComponent> @class, bool bManualAttachment, Transform relativeTransform, bool bDeferredFinish);
+
+    private partial void FinishAddComponent(ActorComponent component, bool bManualAttachment, Transform relativeTransform);
+
+    public T AddComponentByClass<T>(bool bManualAttachment, Transform relativeTransform) where T : ActorComponent
+        => (AddComponentByClass(new SubclassOf<ActorComponent>(typeof(T)), bManualAttachment, relativeTransform, bDeferredFinish: false) as T)!;
+
+    public T AddComponentByClass<T>(bool bManualAttachment, Transform relativeTransform, Action<T> initializerFunc) where T : ActorComponent
+    {
+        T component = (AddComponentByClass(new SubclassOf<ActorComponent>(typeof(T)), bManualAttachment, relativeTransform, bDeferredFinish: true) as T)!;
+        initializerFunc(component);
+        FinishAddComponent(component, bManualAttachment, relativeTransform);
+        return component;
+    }
+
+    public ActorComponent AddComponentByClass(SubclassOf<ActorComponent> @class, bool bManualAttachment, Transform relativeTransform)
+        => AddComponentByClass(@class, bManualAttachment, relativeTransform, bDeferredFinish: false);
 }

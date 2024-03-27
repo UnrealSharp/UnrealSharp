@@ -33,8 +33,13 @@ public class InterfaceMetaData : TypeReferenceMetadata
         {
             if (method.IsAbstract && FunctionMetaData.IsUFunction(method))
             {
-                Functions.Add(new FunctionMetaData(method));
+                Functions.Add(new FunctionMetaData(method, bOnlyCollectMetaData: true));
             }
         }
+    }
+
+    public static bool IsUInterface(TypeDefinition typeDefinition)
+    {
+        return FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute") != null;
     }
 }

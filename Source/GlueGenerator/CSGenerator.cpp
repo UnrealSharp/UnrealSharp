@@ -42,8 +42,12 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 		Whitelist.AddClass(USpringArmComponent::StaticClass()->GetFName());
 		Whitelist.AddClass(UFloatingPawnMovement::StaticClass()->GetFName());
 	}
+
+	Whitelist.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, AddComponentByClass));
 	
 	BlueprintInternalWhitelist.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, UserConstructionScript));
+	BlueprintInternalWhitelist.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, AddComponentByClass));
+	BlueprintInternalWhitelist.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, FinishAddComponent));
 		
 	PropertyTranslators.Reset(new FCSSupportedPropertyTranslators(NameMapper, Blacklist));
 
@@ -300,7 +304,7 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 
 bool FCSGenerator::CanExportFunction(const UStruct* Struct, const UFunction* Function) const
 {
-	if (Blacklist.HasFunction(Struct, Function) && !Whitelist.HasFunction(Struct, Function) || !ShouldExportFunction(Function))
+	if (Blacklist.HasFunction(Struct, Function) || (!Whitelist.HasFunction(Struct, Function) && !ShouldExportFunction(Function)))
 	{
 		return false;
 	}

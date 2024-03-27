@@ -28,6 +28,10 @@ public:
 	// The build configuration to use when building the user's assembly.
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Build Configuration")
 	TEnumAsByte<EDotNetBuildConfiguration> UserBuildConfiguration = EDotNetBuildConfiguration::Debug;
+
+	// Should we exit PIE when an exception is thrown in C#?
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Debugging")
+	bool bCrashOnException = true;
 	
 	// Whether Hot Reload should wait for the Editor to gain focus
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Hot Reload")

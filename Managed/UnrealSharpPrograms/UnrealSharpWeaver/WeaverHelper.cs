@@ -253,40 +253,56 @@ public static class WeaverHelper
         
         throw new Exception($"{typeName} not found in {typeDef}.");
     }
-    
-    public static MethodReference? FindMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
+
+    public static MethodReference? FindOwnMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
     {
-        TypeDefinition currentClass = typeDef;
-        while (currentClass != null)
+        foreach (var classMethod in typeDef.Methods)
         {
-            foreach (var classMethod in currentClass.Methods)
+            if (classMethod.Name != methodName)
             {
-                if (classMethod.Name != methodName)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                if (parameterTypes.Length > 0 && classMethod.Parameters.Count != parameterTypes.Length)
-                {
-                    continue;
-                }
+            if (parameterTypes.Length > 0 && classMethod.Parameters.Count != parameterTypes.Length)
+            {
+                continue;
+            }
 
-                bool found = true;
-                for (int i = 0; i < parameterTypes.Length; i++)
+            bool found = true;
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                if (classMethod.Parameters[i].ParameterType.FullName != parameterTypes[i].FullName)
                 {
-                    if (classMethod.Parameters[i].ParameterType.FullName != parameterTypes[i].FullName)
-                    {
-                        found = false;
-                        break;
-                    }
-                }
-
-                if (found)
-                {
-                    return ImportMethod(classMethod);
+                    found = false;
+                    break;
                 }
             }
-                    
+
+            if (found)
+            {
+                return ImportMethod(classMethod);
+            }
+        }
+
+        if (throwIfNotFound)
+        {
+            throw new Exception("Couldn't find method " + methodName + " in " + typeDef + ".");
+        }
+
+        return default;
+    }
+
+    public static MethodReference? FindMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
+    {
+        TypeDefinition? currentClass = typeDef;
+        while (currentClass != null)
+        {
+            MethodReference? method = FindOwnMethod(currentClass, methodName, throwIfNotFound: false, parameterTypes);
+            if (method != null)
+            {
+                return method;
+            }
+
             currentClass = currentClass.BaseType?.Resolve();
         }
 
@@ -537,7 +553,7 @@ public static class WeaverHelper
             }
                 
             bool isBlittable = false;
-            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittableStruct");
+            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittable");
                         
             if (blittableAttrib.HasValue)
             {

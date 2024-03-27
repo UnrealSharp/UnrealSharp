@@ -16,7 +16,7 @@ public:
 
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
 	static void ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentData);
-	static void InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, RESULT_DECL);
+	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, FString& ExceptionMessage, RESULT_DECL);
 
 	bool bCanTick = true;
 };

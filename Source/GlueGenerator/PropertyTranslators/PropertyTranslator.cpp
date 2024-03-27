@@ -211,7 +211,11 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 	switch (InProtectionMode)
 	{
 	case ProtectionMode::UseUFunctionProtection:
-		if (Function.HasAnyFunctionFlags(FUNC_Public))
+		if (Function.GetBoolMetaData(MD_BlueprintInternalUseOnly) && !Function.HasAnyFunctionFlags(FUNC_BlueprintEvent))
+		{
+			Modifiers = TEXT("private partial ");
+		}
+		else if (Function.HasAnyFunctionFlags(FUNC_Public))
 		{
 			Modifiers = TEXT("public ");
 		}
