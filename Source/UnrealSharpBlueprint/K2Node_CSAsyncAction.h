@@ -15,7 +15,11 @@ class UObject;
 UCLASS()
 class UK2Node_CSAsyncAction : public UK2Node_BaseAsyncTask
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
+
+public:
+
+	UK2Node_CSAsyncAction();
 	
 	// UK2Node interface
 	virtual void GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const override;

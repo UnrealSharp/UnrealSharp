@@ -21,8 +21,7 @@
 
 #define LOCTEXT_NAMESPACE "K2Node"
 
-UK2Node_CSAsyncAction::UK2Node_CSAsyncAction(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UK2Node_CSAsyncAction::UK2Node_CSAsyncAction()
 {
 	ProxyActivateFunctionName = GET_FUNCTION_NAME_CHECKED(UCSBlueprintAsyncActionBase, Activate);
 }
