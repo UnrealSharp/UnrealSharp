@@ -69,7 +69,7 @@ void FMulticastDelegatePropertyTranslator::OnPropertyExported(FCSScriptBuilder& 
 	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *PropertyName);
 	FString SuperClass = FString::Printf(TEXT("MulticastDelegate<%s>"), *SignatureName);
 	
-	DelegateBuilder.DeclareType("class", PropertyName, SuperClass, false, true);
+	DelegateBuilder.DeclareType("class", PropertyName, SuperClass, true);
 	
 	if (Function->NumParms > 0)
 	{
