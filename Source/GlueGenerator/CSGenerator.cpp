@@ -237,7 +237,7 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 
 		Builder.GenerateScriptSkeleton(Module.GetNamespace());
 		Builder.AppendLine(TEXT("[UEnum]"));
-		Builder.DeclareType("enum", *Enum->GetName(), "byte", false, false);
+		Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
 		
 		FString CommonPrefix;
 		int32 SkippedValueCount = 0;
@@ -592,7 +592,7 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
-	Builder.DeclareType("interface", InterfaceName, "", false);
+	Builder.DeclareType("interface", InterfaceName, "");
 	
 	Builder.AppendLine(FString::Printf(TEXT("public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"%s\");"), *Interface->GetName()));
 
@@ -678,8 +678,9 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	}
 
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
-	Builder.AppendLine(TEXT("[UClass]"));
-	Builder.DeclareType("class", ScriptClassName, GetSuperClassName(Class), Class->HasAnyClassFlags(CLASS_Abstract), true, Interfaces);
+	FString Abstract = Class->HasAnyClassFlags(CLASS_Abstract) ? "ClassFlags.Abstract" : "";
+	Builder.AppendLine(FString::Printf(TEXT("[UClass(%s)]"), *Abstract));
+	Builder.DeclareType("class", ScriptClassName, GetSuperClassName(Class), true, Interfaces);
 
 	// Generate static constructor
 	Builder.AppendLine();

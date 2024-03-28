@@ -184,7 +184,8 @@ public:
 
 	void GenerateScriptSkeleton(const FString& Namespace);
 	void DeclareDirective(const FString& ModuleName);
-	void DeclareType(const FString& TypeName, const FString& DeclaredTypeName, const FString& SuperTypeName = "", bool IsAbstract = false, bool IsPartial = true, const TArray<FString>& Interfaces = {});
+	void DeclareType(const FString& TypeName, const FString& DeclaredTypeName, const FString& SuperTypeName = "", bool IsPartial = true, const
+	                 TArray<FString>& Interfaces = {});
 
 private:
 
