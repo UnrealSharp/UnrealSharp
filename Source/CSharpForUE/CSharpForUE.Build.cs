@@ -45,8 +45,12 @@ public class CSharpForUE : ModuleRules
 				"UnrealSharpUtilities",
 			}
 			);
-		
-		if (Target.Type == TargetRules.TargetType.Editor)
+
+        PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
+
+        IncludeDotNetHeaders();
+
+		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{

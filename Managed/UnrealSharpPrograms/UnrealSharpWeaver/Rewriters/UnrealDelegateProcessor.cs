@@ -13,7 +13,7 @@ public static class UnrealDelegateProcessor
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker", throwIfNotFound: false);
             
             if (invokerMethod == null)
             {
