@@ -96,6 +96,10 @@ public class UnrealSharpObject() : IDisposable
     
     public static T NewObject<T>(CoreUObject.Object outer, SubclassOf<T> classType = default, CoreUObject.Object template = null) where T : UnrealSharpObject
     {
+        if (classType.NativeClass == IntPtr.Zero)
+        {
+            classType = new SubclassOf<T>();
+        }
         IntPtr nativeOuter = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
         
