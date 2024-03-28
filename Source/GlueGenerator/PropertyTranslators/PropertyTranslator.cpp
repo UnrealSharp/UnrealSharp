@@ -196,16 +196,21 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 {
 	ReturnProperty = Function.GetReturnProperty();
 	CSharpMethodName = GetScriptNameMapper().MapScriptMethodName(&Function);
+	if (!Function.IsA<UDelegateFunction>())
+	{
+		const FString OwnerClassName = GetScriptNameMapper().GetTypeScriptName(Function.GetOwnerClass());
+		if (OwnerClassName == CSharpMethodName)
+		{
+			// Methods in C# can't have the same name as their enclosing type, so rename it
+			CSharpMethodName = TEXT("Call") + CSharpMethodName;
+		}
+	}
 	bProtected = false;
 
 	switch (InProtectionMode)
 	{
 	case ProtectionMode::UseUFunctionProtection:
-		if (Function.GetBoolMetaData(MD_BlueprintInternalUseOnly) && !Function.HasAnyFunctionFlags(FUNC_BlueprintEvent))
-		{
-			Modifiers = TEXT("private partial ");
-		}
-		else if (Function.HasAnyFunctionFlags(FUNC_Public))
+		if (Function.HasAnyFunctionFlags(FUNC_Public))
 		{
 			Modifiers = TEXT("public ");
 		}
@@ -240,7 +245,14 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 	}
 	else if (Function.HasAnyFunctionFlags(FUNC_Delegate))
 	{
-		CustomInvoke = "ProcessDelegate(ParamsBuffer);";
+		if (Function.NumParms == 0)
+		{
+			CustomInvoke = "ProcessDelegate(IntPtr.Zero);";
+		}
+		else
+		{
+			CustomInvoke = "ProcessDelegate(ParamsBuffer);";
+		}
 	}
 	else
 	{
@@ -521,7 +533,14 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	
 	if (Function.NumParms == 0)
 	{
-		Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
+		if (CustomInvoke.IsEmpty())
+		{
+			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
+		}
+		else
+		{
+			Builder.AppendLine(CustomInvoke);
+		}
 	}
 	else
 	{
@@ -637,6 +656,10 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	{
 		OverloadBehavior = OverloadMode::SuppressOverloads;
 		CallBehavior = BlueprintVisibility::Event;
+	}
+	else if (FuncType == FunctionType::InternalWhitelisted)
+	{
+		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
 	}
 	
 	FunctionExporter Exporter(*this, *Function, ProtectionBehavior, OverloadBehavior, CallBehavior);

@@ -150,17 +150,7 @@ FProperty* FCSPropertyFactory::CreateMulticastDelegateProperty(UField* Outer, co
 	UClass* Class = CastChecked<UClass>(Outer);
 	UFunction* SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
 
-	FMulticastDelegateProperty* MulticastDelegateProperty;
-	
-	if (SignatureFunction->NumParms)
-	{
-		MulticastDelegateProperty = CreateSimpleProperty<FMulticastSparseDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
-	}
-	else
-	{
-		MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
-	}
-
+	FMulticastDelegateProperty* MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
 	MulticastDelegateProperty->SignatureFunction = SignatureFunction;
 	return MulticastDelegateProperty;
 }

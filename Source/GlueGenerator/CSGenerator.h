@@ -116,6 +116,7 @@ protected:
 	FCSInclusionLists Whitelist;
 	FCSInclusionLists Blacklist;
 	FCSInclusionLists BlueprintInternalWhitelist;
+	FCSInclusionLists OverrideInternalList;
 	FCSInclusionLists Greylist;
 
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;

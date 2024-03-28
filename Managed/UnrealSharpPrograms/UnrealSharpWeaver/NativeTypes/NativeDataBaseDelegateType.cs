@@ -34,5 +34,5 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
         }
     }
     
-    public FunctionMetaData Signature { get; set; }
+    public FunctionMetaData? Signature { get; set; }
 }

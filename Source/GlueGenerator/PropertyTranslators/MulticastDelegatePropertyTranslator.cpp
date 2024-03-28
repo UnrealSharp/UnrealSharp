@@ -71,31 +71,29 @@ void FMulticastDelegatePropertyTranslator::OnPropertyExported(FCSScriptBuilder& 
 	
 	DelegateBuilder.DeclareType("class", PropertyName, SuperClass, true);
 	
-	if (Function->NumParms > 0)
-	{
-		FunctionExporter Exporter(*this, *Function, ProtectionMode::UseUFunctionProtection, OverloadMode::SuppressOverloads, BlueprintVisibility::Call);
-		DelegateBuilder.AppendLine(FString::Printf(TEXT("public delegate void Signature(%s);"), *Exporter.ParamsStringAPIWithDefaults));
-		DelegateBuilder.AppendLine();
-		
-		Exporter.ExportFunctionVariables(DelegateBuilder);
-		DelegateBuilder.AppendLine();
-		
-		DelegateBuilder.AppendLine(FString::Printf(TEXT("protected void Invoker(%s)"), *Exporter.ParamsStringAPIWithDefaults));
-		DelegateBuilder.OpenBrace();
-		DelegateBuilder.BeginUnsafeBlock();
-		Exporter.ExportInvoke(DelegateBuilder, FunctionExporter::InvokeMode::Normal);
-		DelegateBuilder.EndUnsafeBlock();
-		DelegateBuilder.CloseBrace();
+	FunctionExporter Exporter(*this, *Function, ProtectionMode::UseUFunctionProtection, OverloadMode::SuppressOverloads, BlueprintVisibility::Call);
 
-		DelegateBuilder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
-		DelegateBuilder.OpenBrace();
-		FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(DelegateBuilder, Function);
-		DelegateBuilder.CloseBrace();
-	}
-	else
-	{
-		DelegateBuilder.AppendLine("public delegate void Signature();");
-	}
+	// Write signature delegate
+	DelegateBuilder.AppendLine(FString::Printf(TEXT("public delegate void Signature(%s);"), *Exporter.ParamsStringAPIWithDefaults));
+	DelegateBuilder.AppendLine();
+
+	// Write fields needed for native invoker
+	Exporter.ExportFunctionVariables(DelegateBuilder);
+	DelegateBuilder.AppendLine();
+
+	// Write native invoker
+	DelegateBuilder.AppendLine(FString::Printf(TEXT("protected void Invoker(%s)"), *Exporter.ParamsStringAPIWithDefaults));
+	DelegateBuilder.OpenBrace();
+	DelegateBuilder.BeginUnsafeBlock();
+	Exporter.ExportInvoke(DelegateBuilder, FunctionExporter::InvokeMode::Normal);
+	DelegateBuilder.EndUnsafeBlock();
+	DelegateBuilder.CloseBrace();
+
+	// Write delegate initializer
+	DelegateBuilder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
+	DelegateBuilder.OpenBrace();
+	FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(DelegateBuilder, Function);
+	DelegateBuilder.CloseBrace();
 	
 	DelegateBuilder.CloseBrace();
 	

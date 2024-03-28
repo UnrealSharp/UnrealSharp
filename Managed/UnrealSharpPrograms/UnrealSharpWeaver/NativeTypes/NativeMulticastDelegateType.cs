@@ -11,7 +11,6 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         : base(delegateType, "DelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
     {
         NeedsNativePropertyField = true;
-        PropertyType = Signature.Parameters.Length == 0 ? PropertyType.MulticastInlineDelegate : PropertyType.MulticastSparseDelegate;
     }
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
@@ -23,13 +22,13 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
         Instruction loadNativePointer, Instruction setNativePointer)
     {
-        if (Signature.Parameters.Length == 0)
+        if (Signature?.Parameters.Length == 0)
         {
             return;
         }
         
-        TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
-        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
+        PropertyDefinition propertyRef = (PropertyDefinition) propertyMetadata.MemberRef.Resolve();
+        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef.PropertyType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
         processor.Emit(OpCodes.Call, Initialize);
     }

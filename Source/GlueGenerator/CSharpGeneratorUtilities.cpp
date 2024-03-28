@@ -11,6 +11,7 @@
 #include "UObject/UnrealType.h"
 #include "CSScriptBuilder.h"
 #include "Interfaces/IPluginManager.h"
+#include "Kismet/BlueprintAsyncActionBase.h"
 
 const FName ScriptNameMetaDataKey = TEXT("ScriptName");
 const FName ScriptNoExportMetaDataKey = TEXT("ScriptNoExport");
@@ -211,9 +212,10 @@ namespace ScriptGeneratorUtilities
 	bool ShouldExportClass(const UClass* InClass)
 	{
 		return IsBlueprintExposedClass(InClass)
-		|| HasBlueprintExposedFields(InClass)
-		|| InClass->IsChildOf(AActor::StaticClass())
-		|| InClass->IsChildOf(USubsystem::StaticClass());
+			|| HasBlueprintExposedFields(InClass)
+			|| InClass->IsChildOf(AActor::StaticClass())
+			|| InClass->IsChildOf(USubsystem::StaticClass())
+		    || InClass->IsChildOf(UBlueprintAsyncActionBase::StaticClass());
 	}
 
 	bool ShouldExportStruct(const UScriptStruct* InStruct)
