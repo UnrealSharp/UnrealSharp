@@ -151,7 +151,7 @@ public class FunctionMetaData : BaseMetaData
         {
             flags |= FunctionFlags.Net;
             
-            if (method.ReturnType == WeaverHelper.VoidTypeRef)
+            if (method.ReturnType != WeaverHelper.VoidTypeRef)
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }
