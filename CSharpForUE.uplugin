@@ -28,6 +28,11 @@
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PreDefault"
+		},
+		{
+			"Name": "UnrealSharpBlueprint",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "PreDefault"
 		}
 	],
 	"SupportedTargetPlatforms": 
