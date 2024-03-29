@@ -28,17 +28,17 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	}
 	
 	int LocalStructSize = Function->GetStructureSize();
-    void* LocalStruct = FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize));
-    Function->InitializeStruct(LocalStruct);
+	void* LocalStruct = FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize));
+	Function->InitializeStruct(LocalStruct);
 	
-    FOutParmRec* OutParameters = nullptr;
-    FOutParmRec** LastOut = &OutParameters;
+	FOutParmRec* OutParameters = nullptr;
+	FOutParmRec** LastOut = &OutParameters;
 
 	TArrayView<uint8> ArgumentData((uint8*)FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize)), LocalStructSize);
 	
 	for (TFieldIterator<FProperty> ParamIt(Function, EFieldIteratorFlags::ExcludeSuper); ParamIt; ++ParamIt)
-    {
-        FProperty* FunctionParameter = *ParamIt;
+	{
+		FProperty* FunctionParameter = *ParamIt;
 
 		if (FunctionParameter->HasAnyPropertyFlags(CPF_ReturnParm))
 		{
@@ -61,33 +61,31 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 			ValueAddress = LocalValue;
 		}
 
-        // Add any output parameters to the output params chain
-        if (FCSPropertyFactory::IsOutParameter(FunctionParameter))
-        {
-            FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
-            Out->Property = FunctionParameter;
-            Out->PropAddr = ValueAddress;
-            Out->NextOutParm = nullptr;
+		// Add any output parameters to the output params chain
+		if (FCSPropertyFactory::IsOutParameter(FunctionParameter))
+		{
+			FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
+			Out->Property = FunctionParameter;
+			Out->PropAddr = ValueAddress;
+			Out->NextOutParm = nullptr;
 
-            // Link it to the end of the list
-            if (*LastOut)
-            {
-                (*LastOut)->NextOutParm = Out;
-                LastOut = &(*LastOut)->NextOutParm;
-            }
-            else
-            {
-                *LastOut = Out;
-            }
-        }
+			// Link it to the end of the list
+			if (*LastOut)
+			{
+				(*LastOut)->NextOutParm = Out;
+				LastOut = &(*LastOut)->NextOutParm;
+			}
+			else
+			{
+				*LastOut = Out;
+			}
+		}
 
-		// When C# marshals the parameter to it's own format, it will call GetOffset_ForInternal to determine the offset into ArgumentData to read the parameter from
-		// Let's check that the offset matches where we're currently writing into ArgumentData - if it doesn't, C# will be reading from the wrong place and we have ourselves a nasty alignment error!
 		int InternalOffset = FunctionParameter->GetOffset_ForInternal();
 		int InternalSize = FunctionParameter->GetSize();
 		check((InternalOffset + InternalSize) <= ArgumentData.Num());
 		FMemory::Memcpy(ArgumentData.GetData() + InternalOffset, ValueAddress, InternalSize);
-    }
+	}
 	
 	if (Stack.Code)
 	{
