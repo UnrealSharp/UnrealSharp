@@ -42,7 +42,7 @@ public:
 	virtual bool IsBlittable() const { return false; }
 
 	// Exports a C# property which wraps a native FProperty, suitable for use in a reference type backed by a UObject.
-	void ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted) const;
+	void ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted, const TSet<FString>& ReservedNames) const;
 	virtual FString GetPropertyName(const FProperty* Property) const;
 	virtual void ExportPropertyStaticConstruction(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const;
 	virtual void ExportParameterStaticConstruction(FCSScriptBuilder& Builder, const FString& NativeMethodName, const FProperty* Parameter) const;
@@ -52,7 +52,7 @@ public:
 	void EndWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder) const;
 
 	// Exports a C# property which mirrors a FProperty, suitable for use in a value type.
-	void ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets) const;
+	void ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
 
 	enum class FunctionType : uint8
 	{

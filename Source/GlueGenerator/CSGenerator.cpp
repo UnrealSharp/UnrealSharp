@@ -703,11 +703,25 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	Builder.AppendLine(FString::Printf(TEXT("[UClass(%s)]"), *Abstract));
 	Builder.DeclareType("class", ScriptClassName, GetSuperClassName(Class), true, Interfaces);
 
+	TSet<FString> ReservedNames;
+	for (const UFunction* Function : ExportedFunctions)
+	{
+		ReservedNames.Add(NameMapper.MapFunctionName(Function));
+	}
+	for (const UFunction* Function : ExportedOverridableFunctions)
+	{
+		ReservedNames.Add(NameMapper.MapFunctionName(Function));
+	}
+	for (const FProperty* Property : ExportedProperties)
+	{
+		ReservedNames.Add(NameMapper.ScriptifyName(Property->GetName(), EScriptNameKind::Property));
+	}
+
 	// Generate static constructor
 	Builder.AppendLine();
-	ExportStaticConstructor(Builder, Class, ExportedProperties, ExportedFunctions, ExportedOverridableFunctions);
+	ExportStaticConstructor(Builder, Class, ExportedProperties, ExportedFunctions, ExportedOverridableFunctions, ReservedNames);
 
-	ExportClassProperties(Builder, Class, ExportedProperties);
+	ExportClassProperties(Builder, Class, ExportedProperties, ReservedNames);
 	ExportClassFunctions(Builder, Class, ExportedFunctions);
 	ExportClassOverridableFunctions(Builder, ExportedOverridableFunctions);	
 	
@@ -760,16 +774,16 @@ void FCSGenerator::ExportInterfaceFunctions(FCSScriptBuilder& Builder, const UCl
 	}
 }
 
-void FCSGenerator::ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties)
+void FCSGenerator::ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames)
 {
 	for (FProperty* Property : ExportedProperties)
 	{
 		const FPropertyTranslator& PropertyTranslator = PropertyTranslators->Find(Property);
-		PropertyTranslator.ExportWrapperProperty(Builder, Property, Greylist.HasProperty(Class, Property), Whitelist.HasProperty(Class, Property));
+		PropertyTranslator.ExportWrapperProperty(Builder, Property, Greylist.HasProperty(Class, Property), Whitelist.HasProperty(Class, Property), ReservedNames);
 	}
 }
 
-void FCSGenerator::ExportStaticConstructor(FCSScriptBuilder& Builder, const UStruct* Struct ,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions)
+void FCSGenerator::ExportStaticConstructor(FCSScriptBuilder& Builder, const UStruct* Struct ,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions, const TSet<FString>& ReservedNames)
 {
 	const UClass* Class = Cast<UClass>(Struct);
 	const UScriptStruct* ScriptStruct = Cast<UScriptStruct>(Struct);
@@ -817,7 +831,7 @@ void FCSGenerator::ExportStaticConstructor(FCSScriptBuilder& Builder, const UStr
 
 	Builder.AppendLine();
 
-	ExportPropertiesStaticConstruction(Builder, ExportedProperties);
+	ExportPropertiesStaticConstruction(Builder, ExportedProperties, ReservedNames);
 
 	if (Class)
 	{
@@ -904,14 +918,14 @@ void FCSGenerator::ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Bu
 	}
 }
 
-void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties)
+void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames)
 {
 	//we already warn on conflicts when exporting the properties themselves, so here we can just silently skip them
 	TSet<FString> ExportedPropertiesHash;
 
 	for (FProperty* Property : ExportedProperties)
 	{
-		FString ManagedName = NameMapper.MapPropertyName(Property);
+		FString ManagedName = NameMapper.MapPropertyName(Property, ReservedNames);
 		
 		if (ExportedPropertiesHash.Contains(ManagedName))
 		{
@@ -1009,19 +1023,25 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 	Builder.AppendLine(PropBuilder.ToString());
 
 	Builder.DeclareType("struct", NameMapper.GetStructScriptName(Struct));
+
+	TSet<FString> ReservedNames;
+	for (const FProperty* Property : ExportedProperties)
+	{
+		ReservedNames.Add(Property->GetName());
+	}
 	
-	ExportStructProperties(Builder, Struct, ExportedProperties, bIsBlittable);
+	ExportStructProperties(Builder, Struct, ExportedProperties, bIsBlittable, ReservedNames);
 
 	if (!bIsBlittable)
 	{
 		// Generate static constructor
 		Builder.AppendLine();
 		
-		ExportStaticConstructor(Builder, Struct, ExportedProperties, {}, {});
+		ExportStaticConstructor(Builder, Struct, ExportedProperties, {}, {}, ReservedNames);
 
 		// Generate native constructor
 		Builder.AppendLine();
-		ExportMirrorStructMarshalling(Builder, Struct, ExportedProperties);
+		ExportMirrorStructMarshalling(Builder, Struct, ExportedProperties, ReservedNames);
 	}
 	
 	Builder.CloseBrace();
@@ -1034,12 +1054,12 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 }
 
 
-void FCSGenerator::ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets) const
+void FCSGenerator::ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
 {
 	for (FProperty* Property : ExportedProperties)
 	{
 		const FPropertyTranslator& PropertyTranslator = PropertyTranslators->Find(Property);
-		PropertyTranslator.ExportMirrorProperty(Builder, Property, Greylist.HasProperty(Struct, Property), bSuppressOffsets);
+		PropertyTranslator.ExportMirrorProperty(Builder, Property, Greylist.HasProperty(Struct, Property), bSuppressOffsets, ReservedNames);
 	}
 }
 
@@ -1070,7 +1090,7 @@ void FCSGenerator::ExportStructMarshaller(FCSScriptBuilder& Builder, const UScri
 	Builder.CloseBrace();
 }
 
-void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, const UScriptStruct* Struct, TSet<FProperty*> ExportedProperties) const
+void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, const UScriptStruct* Struct, TSet<FProperty*> ExportedProperties, const TSet<FString>& ReservedNames) const
 {
 	Builder.AppendLine();
 	Builder.AppendLine("// Construct by marshalling from a native buffer.");
@@ -1082,7 +1102,7 @@ void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, cons
 	{
 		const FPropertyTranslator& PropertyHandler = PropertyTranslators->Find(Property);
 		FString NativePropertyName = Property->GetName();
-		FString CSharpPropertyName = NameMapper.MapPropertyName(Property);
+		FString CSharpPropertyName = NameMapper.MapPropertyName(Property, ReservedNames);
 		PropertyHandler.ExportMarshalFromNativeBuffer(
 			Builder, 
 			Property, 
@@ -1108,7 +1128,7 @@ void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, cons
 	{
 		const FPropertyTranslator& PropertyHandler = PropertyTranslators->Find(Property);
 		FString NativePropertyName = Property->GetName();
-		FString CSharpPropertyName = NameMapper.MapPropertyName(Property);
+		FString CSharpPropertyName = NameMapper.MapPropertyName(Property, ReservedNames);
 		PropertyHandler.ExportMarshalToNativeBuffer(
 			Builder, 
 			Property, 
