@@ -39,8 +39,10 @@ public class CSharpForUE : ModuleRules
 				"EnhancedInput"
 			}
 			);
-		
-		IncludeDotNetHeaders();
+
+        PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
+
+        IncludeDotNetHeaders();
 
 		if (Target.bBuildEditor)
 		{

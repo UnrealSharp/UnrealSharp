@@ -59,7 +59,8 @@ public:
 		Normal,
 		BlueprintEvent,
 		ExtensionOnAnotherClass,
-		InterfaceFunction
+		InterfaceFunction,
+		InternalWhitelisted
 	};
 	
 	void ExportFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType) const;
