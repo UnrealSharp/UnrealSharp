@@ -36,7 +36,7 @@ public:
 	void GetExportedFunctions(TSet<UFunction*>& ExportedFunctions, TSet<UFunction*>& ExportedOverridableFunctions, const UClass* Class);
 	void GetExportedStructs(TSet<UScriptStruct*>& ExportedStructs) const;
 	
-	void ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, const UScriptStruct* Struct, TSet<FProperty*> ExportedProperties) const;
+	void ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, const UScriptStruct* Struct, TSet<FProperty*> ExportedProperties, const TSet<FString>& ReservedNames) const;
 
 	void ExportClass(UClass* Class, FCSScriptBuilder& Builder);
 	void ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder);
@@ -68,18 +68,18 @@ public:
 	
 	// Exporter methods
 	
-	void ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties);
-	void ExportStaticConstructor(FCSScriptBuilder& Builder,  const UStruct* Struct,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions);
+	void ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames);
+	void ExportStaticConstructor(FCSScriptBuilder& Builder,  const UStruct* Struct,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions, const TSet<FString>& ReservedNames);
 	void ExportClassFunctions(FCSScriptBuilder& Builder, const UClass* Class, const TSet<UFunction*>& ExportedFunctions);
 	void ExportInterfaceFunctions(FCSScriptBuilder& Builder, const UClass* Class, const TSet<UFunction*>& ExportedFunctions) const;
-	void ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties);
+	void ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames);
 	void ExportClassFunctionsStaticConstruction(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedFunctions);
 	void ExportClassOverridableFunctionsStaticConstruction(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverrideableFunctions) const;
 	void ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportClassOverridableFunctions(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverridableFunctions);
 
-	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets) const;
+	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
 
 	void RegisterClassToModule(const UObject* Struct);
 

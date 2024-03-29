@@ -17,6 +17,5 @@ public:
 
 private:
 	
-	static void* GetInputComponent(const AActor* Actor);
 	
 };

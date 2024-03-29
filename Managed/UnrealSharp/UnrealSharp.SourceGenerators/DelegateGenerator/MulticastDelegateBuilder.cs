@@ -54,7 +54,7 @@ public class MulticastDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine("            Console.WriteLine(ex);");
+        stringBuilder.AppendLine("            System.Console.WriteLine(ex);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();
@@ -89,7 +89,7 @@ public class MulticastDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine("            Console.WriteLine(ex);");
+        stringBuilder.AppendLine("            System.Console.WriteLine(ex);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        return thisDelegate;");
         stringBuilder.AppendLine("    }");
@@ -125,7 +125,7 @@ public class MulticastDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine("            Console.WriteLine(ex);");
+        stringBuilder.AppendLine("            System.Console.WriteLine(ex);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        return thisDelegate;");
         stringBuilder.AppendLine("    }");
@@ -161,7 +161,7 @@ public class MulticastDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine("            Console.WriteLine(ex);");
+        stringBuilder.AppendLine("            System.Console.WriteLine(ex);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        return false;");
         stringBuilder.AppendLine("    }");
@@ -198,7 +198,7 @@ public class MulticastDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("        catch (Exception ex)");
         stringBuilder.AppendLine("        {");
-        stringBuilder.AppendLine("            Console.WriteLine(ex);");
+        stringBuilder.AppendLine("            System.Console.WriteLine(ex);");
         stringBuilder.AppendLine("        }");
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();
