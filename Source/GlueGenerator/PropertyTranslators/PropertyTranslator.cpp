@@ -50,9 +50,9 @@ FString FPropertyTranslator::GetCSharpFixedSizeArrayType(const FProperty *Proper
 	return FString::Printf(TEXT("%s<%s>"), *ArrayType, *GetManagedType(Property));
 }
 
-void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted) const
+void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted, const TSet<FString>& ReservedNames) const
 {
-	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property);
+	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property, ReservedNames);
 	FString NativePropertyName = GetPropertyName(Property);
 
 	Builder.AppendLine(FString::Printf(TEXT("// %s"), *Property->GetFullName()));
@@ -60,7 +60,7 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 
 	if (!IsGreylisted)
 	{
-		BeginWrapperPropertyAccessorBlock(Builder, Property, NativePropertyName);
+		BeginWrapperPropertyAccessorBlock(Builder, Property, CSharpPropertyName);
 		if (Property->ArrayDim == 1)
 		{
             Builder.AppendLine(TEXT("get"));
@@ -121,9 +121,9 @@ void FPropertyTranslator::EndWrapperPropertyAccessorBlock(FCSScriptBuilder& Buil
 	Builder.CloseBrace();
 }
 
-void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets) const
+void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
 {
-	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property);
+	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property, ReservedNames);
 	FString NativePropertyName = Property->GetName();
 
 	Builder.AppendLine(FString::Printf(TEXT("// %s"), *Property->GetFullName()));
@@ -789,7 +789,7 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 			Builder,
 			ReturnProperty, 
 			TEXT("null"),
-			GetScriptNameMapper().MapPropertyName(ReturnProperty),
+			GetScriptNameMapper().MapPropertyName(ReturnProperty, {}),
 			TEXT("returnBuffer"),
 			TEXT("0"),
 			TEXT("returnValue"));

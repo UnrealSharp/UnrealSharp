@@ -236,7 +236,7 @@ namespace ScriptGeneratorUtilities
 	bool ShouldExportProperty(const FProperty* InProp)
 	{
 		const bool bCanScriptExport = !InProp->HasMetaData(ScriptNoExportMetaDataKey);
-		return bCanScriptExport && (IsBlueprintExposedProperty(InProp) || IsDeprecatedProperty(InProp));
+		return bCanScriptExport && (IsBlueprintExposedProperty(InProp) || IsDeprecatedProperty(InProp) || InProp->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic));
 	}
 
 	bool ShouldExportEditorOnlyProperty(const FProperty* InProp)
@@ -313,7 +313,27 @@ namespace ScriptGeneratorUtilities
 		{
 		case EScriptNameKind::Property:
 		case EScriptNameKind::Parameter:
-			return StripPropertyPrefix (InName);
+			return StripPropertyPrefix(InName);
+		default:;
+		}
+		return InName;
+	}
+
+	FString FScriptNameMapper::ScriptifyName(const FString& InName, const EScriptNameKind InNameKind, const TSet<FString>& ReservedNames) const
+	{
+		switch (InNameKind)
+		{
+		case EScriptNameKind::Property:
+		case EScriptNameKind::Parameter:
+		{
+			// Only strip prefixes from the name if it doesn't create a name collision
+			FString StrippedName = StripPropertyPrefix(InName);
+			if (ReservedNames.Contains(StrippedName))
+			{
+				return InName;
+			}
+			return StrippedName;
+		}
 		default: ;
 		}
 		return InName;
@@ -759,10 +779,10 @@ TArray<FString> FScriptNameMapper::GetDeprecatedScriptConstantScriptNames(const 
 	return ScriptConstantNames;
 }
 
-FString FScriptNameMapper::MapPropertyName(const FProperty* InProp) const
+FString FScriptNameMapper::MapPropertyName(const FProperty* InProp, const TSet<FString>& ReservedNames) const
 {
 	FString PropName = GetFieldScriptNameImpl(InProp, ScriptNameMetaDataKey);
-	FString ScriptName = ScriptifyName(PropName, EScriptNameKind::Property);
+	FString ScriptName = ScriptifyName(PropName, EScriptNameKind::Property, ReservedNames);
 
 	if (ScriptName == InProp->Owner.GetName())
 	{

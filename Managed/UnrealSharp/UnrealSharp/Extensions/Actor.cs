@@ -5,15 +5,6 @@ namespace UnrealSharp.Engine;
 
 public partial class Actor
 {
-    public InputComponent? InputComponent
-    {
-        get
-        {
-            IntPtr inputComponent = AActorExporter.CallGetInputComponent(NativeObject);
-            return GcHandleUtilities.GetObjectFromHandlePtr<InputComponent>(inputComponent);
-        }
-    }
-    
     public void BindAction(string actionName, EInputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
     {
         InputComponent? inputComponent = InputComponent;

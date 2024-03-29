@@ -93,6 +93,8 @@ namespace ScriptGeneratorUtilities
 
 		virtual FString ScriptifyName(const FString& InName, const EScriptNameKind InNameKind) const;
 
+		virtual FString ScriptifyName(const FString& InName, const EScriptNameKind InNameKind, const TSet<FString>& ReservedNames) const;
+
 		/** Get the native module the given field belongs to */
 		FString GetFieldModule(const FField* InField) const;
 
@@ -144,7 +146,7 @@ namespace ScriptGeneratorUtilities
 		TArray<FString> GetDeprecatedScriptConstantScriptNames(const UFunction* InFunc) const;
 
 		/** Get the script name of the given property */
-		FString MapPropertyName(const FProperty* InProp) const;
+		FString MapPropertyName(const FProperty* InProp, const TSet<FString>& ReservedNames) const;
 
 		/** Get the deprecated script names of the given property */
 		TArray<FString> GetDeprecatedPropertyScriptNames(const FProperty* InProp) const;
