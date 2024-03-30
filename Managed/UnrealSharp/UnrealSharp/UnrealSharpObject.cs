@@ -102,6 +102,11 @@ public class UnrealSharpObject() : IDisposable
         }
         IntPtr nativeOuter = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
+
+        if (nativeOuter == IntPtr.Zero)
+        {
+            throw new ArgumentException("Outer must be a valid object", nameof(outer));
+        }
         
         IntPtr handle = UObjectExporter.CallCreateNewObject(nativeOuter, classType.NativeClass, nativeTemplate);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);

@@ -362,6 +362,12 @@ public static class FunctionRewriterHelpers
         WeaverHelper.OptimizeMethod(methodDef);
     }
 
+    public static void RewriteMethodAsAsyncUFunctionImplementation(MethodDefinition methodDefinition)
+    {
+        methodDefinition.CustomAttributes.Clear();
+        methodDefinition.Name = $"{methodDefinition.Name}_Implementation";
+    }
+
     public static MethodDefinition CreateFunction(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
         if (declaringType == null)

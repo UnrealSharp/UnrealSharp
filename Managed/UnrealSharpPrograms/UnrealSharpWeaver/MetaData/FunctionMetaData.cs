@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+
 using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -166,6 +167,33 @@ public class FunctionMetaData : BaseMetaData
         
         RewriteInfo = new FunctionRewriteInfo(this);
         FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
+    }
+
+    public static bool IsAsyncUFunction(MethodDefinition method)
+    {
+        if (!method.HasCustomAttributes)
+        {
+            return false;
+        }
+
+        CustomAttribute? functionAttribute = FindAttribute(method.CustomAttributes, "UFunctionAttribute");
+        if (functionAttribute == null)
+        {
+            return false;
+        }
+
+        if (!functionAttribute.HasConstructorArguments)
+        {
+            return false;
+        }
+
+        var flags = (FunctionFlags)(int)functionAttribute.ConstructorArguments[0].Value;
+        if (flags != FunctionFlags.BlueprintCallable)
+        {
+            return false;
+        }
+
+        return method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
     }
 
     public static bool IsUFunction(MethodDefinition method)
