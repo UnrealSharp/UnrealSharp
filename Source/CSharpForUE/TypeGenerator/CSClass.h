@@ -15,8 +15,8 @@ class CSHARPFORUE_API UCSClass : public UBlueprintGeneratedClass
 public:
 
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
-	static void ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentData);
-	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArray<uint8>& ArgumentData, FString& ExceptionMessage, RESULT_DECL);
+	static void ProcessOutParameters(FOutParmRec* OutParameters, TArrayView<const uint8> ArgumentData);
+	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArrayView<const uint8> ArgumentData, FString& ExceptionMessage, RESULT_DECL);
 
 	bool bCanTick = true;
 };
