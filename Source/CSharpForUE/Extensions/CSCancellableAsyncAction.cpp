@@ -7,7 +7,7 @@ void UCSCancellableAsyncAction::Activate()
 
 void UCSCancellableAsyncAction::Cancel()
 {
-	if (HasAnyFlags(RF_ClassDefaultObject))
+	if (HasAnyFlags(RF_ClassDefaultObject | RF_PendingKill))
 	{
 		return;
 	}

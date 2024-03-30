@@ -151,20 +151,27 @@ public static class UnmanagedCallbacks
     [UnmanagedCallersOnly]
     public static void InvokeDelegate(IntPtr delegatePtr)
     {
-        if (delegatePtr == IntPtr.Zero)
+        try
         {
-            return;
+            if (delegatePtr == IntPtr.Zero)
+            {
+                return;
+            }
+
+            GCHandle foundHandle = GCHandle.FromIntPtr(delegatePtr);
+            Delegate? @delegate = foundHandle.Target as Delegate;
+
+            if (@delegate == null)
+            {
+                return;
+            }
+
+            @delegate.DynamicInvoke();
         }
-
-        GCHandle foundHandle = GCHandle.FromIntPtr(delegatePtr);
-        Delegate? @delegate = foundHandle.Target as Delegate;
-
-        if (@delegate == null)
+        catch (Exception ex)
         {
-            return;
+            Console.WriteLine($"Exception during InvokeDelegate: {ex}");
         }
-
-        @delegate.DynamicInvoke();
     }
 
     [UnmanagedCallersOnly]

@@ -35,7 +35,7 @@ public class UnrealSharpObject() : IDisposable
 {
     public IntPtr NativeObject { get; private set; }
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
-    public bool IsDestroyed => NativeObject == IntPtr.Zero;
+    public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject);
     
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
@@ -232,6 +232,7 @@ public class UnrealSharpObject() : IDisposable
     
     public virtual void Dispose()
     {
+        NativeObject = IntPtr.Zero;
         GC.SuppressFinalize(this);
     }
 }
