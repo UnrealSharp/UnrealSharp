@@ -150,14 +150,14 @@ public class AsyncWrapperGenerator : ISourceGenerator
             {
                 sourceBuilder.AppendLine($"    public static {actionClassName} {asyncMethodInfo.Method.Identifier.Text}({paramDeclListNoCancellationToken})");
                 sourceBuilder.AppendLine($"    {{");
-                sourceBuilder.AppendLine($"        var action = NewObject<{actionClassName}>();");
+                sourceBuilder.AppendLine($"        var action = NewObject<{actionClassName}>(GetTransientPackage());");
                 if (cancellationTokenParameter != null)
                 {
-                    sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => {asyncMethodInfo.ParentClass.Keyword.Text}.{asyncMethodInfo.Method.Identifier.Text}({paramNameList});");
+                    sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => {asyncMethodInfo.ParentClass.Identifier.Text}.{asyncMethodInfo.Method.Identifier.Text}({paramNameList});");
                 }
                 else
                 {
-                    sourceBuilder.AppendLine($"        action.asyncDelegate = () => {asyncMethodInfo.ParentClass.Keyword.Text}.{asyncMethodInfo.Method.Identifier.Text}({paramNameList});");
+                    sourceBuilder.AppendLine($"        action.asyncDelegate = () => {asyncMethodInfo.ParentClass.Identifier.Text}.{asyncMethodInfo.Method.Identifier.Text}({paramNameList});");
                 }
                 sourceBuilder.AppendLine($"        return action;");
                 sourceBuilder.AppendLine($"    }}");

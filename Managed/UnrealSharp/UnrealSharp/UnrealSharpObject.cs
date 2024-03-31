@@ -111,6 +111,12 @@ public class UnrealSharpObject() : IDisposable
         IntPtr handle = UObjectExporter.CallCreateNewObject(nativeOuter, classType.NativeClass, nativeTemplate);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
+
+    public static Package? GetTransientPackage()
+    {
+        IntPtr handle = UObjectExporter.CallGetTransientPackage();
+        return GcHandleUtilities.GetObjectFromHandlePtr<Package>(handle);
+    }
     
     public static T GetDefault<T>() where T : CoreUObject.Object
     {
