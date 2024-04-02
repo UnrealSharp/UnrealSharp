@@ -147,7 +147,33 @@ public static class UnmanagedCallbacks
         }
         return 0;
     }
-        
+
+    [UnmanagedCallersOnly]
+    public static void InvokeDelegate(IntPtr delegatePtr)
+    {
+        try
+        {
+            if (delegatePtr == IntPtr.Zero)
+            {
+                return;
+            }
+
+            GCHandle foundHandle = GCHandle.FromIntPtr(delegatePtr);
+            Delegate? @delegate = foundHandle.Target as Delegate;
+
+            if (@delegate == null)
+            {
+                return;
+            }
+
+            @delegate.DynamicInvoke();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception during InvokeDelegate: {ex}");
+        }
+    }
+
     [UnmanagedCallersOnly]
     public static void Dispose(IntPtr Handle)
     {
@@ -159,12 +185,11 @@ public static class UnmanagedCallbacks
         GCHandle foundHandle = GCHandle.FromIntPtr(Handle);
         IDisposable? disposable = foundHandle.Target as IDisposable;
         
-        if (disposable == null)
+        if (disposable != null)
         {
-            return;
+            disposable.Dispose();
         }
-        
-        disposable.Dispose();
+
         GcHandleUtilities.Free(foundHandle);
     }
 }

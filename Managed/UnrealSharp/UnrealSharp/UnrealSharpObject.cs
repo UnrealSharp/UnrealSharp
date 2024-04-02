@@ -35,7 +35,7 @@ public class UnrealSharpObject() : IDisposable
 {
     public IntPtr NativeObject { get; private set; }
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
-    public bool IsDestroyed => NativeObject == IntPtr.Zero;
+    public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject);
     
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
@@ -102,9 +102,20 @@ public class UnrealSharpObject() : IDisposable
         }
         IntPtr nativeOuter = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
+
+        if (nativeOuter == IntPtr.Zero)
+        {
+            throw new ArgumentException("Outer must be a valid object", nameof(outer));
+        }
         
         IntPtr handle = UObjectExporter.CallCreateNewObject(nativeOuter, classType.NativeClass, nativeTemplate);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+    }
+
+    public static Package? GetTransientPackage()
+    {
+        IntPtr handle = UObjectExporter.CallGetTransientPackage();
+        return GcHandleUtilities.GetObjectFromHandlePtr<Package>(handle);
     }
     
     public static T GetDefault<T>() where T : CoreUObject.Object
@@ -232,6 +243,7 @@ public class UnrealSharpObject() : IDisposable
     
     public virtual void Dispose()
     {
+        NativeObject = IntPtr.Zero;
         GC.SuppressFinalize(this);
     }
 }

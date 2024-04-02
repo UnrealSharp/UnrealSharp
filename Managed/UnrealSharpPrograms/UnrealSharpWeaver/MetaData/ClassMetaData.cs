@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
+
+using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -62,7 +63,11 @@ public class ClassMetaData : TypeReferenceMetadata
         {
             MethodDefinition method = MyTypeDefinition.Methods[i];
 
-            if (FunctionMetaData.IsUFunction(method))
+            if (FunctionMetaData.IsAsyncUFunction(method))
+            {
+                FunctionRewriterHelpers.RewriteMethodAsAsyncUFunctionImplementation(method);
+            }
+            else if (FunctionMetaData.IsUFunction(method))
             {
                 Functions.Add(new FunctionMetaData(method));
             }

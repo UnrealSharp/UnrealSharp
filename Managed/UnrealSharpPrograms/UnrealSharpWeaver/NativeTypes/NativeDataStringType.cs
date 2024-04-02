@@ -130,11 +130,14 @@ class NativeDataStringType : NativeDataType
     public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBuffer,
         FieldDefinition offsetField, int argIndex, ParameterDefinition paramDefinition)
     {
-        Instruction[] loadSource = 
+        Instruction[] loadSource = argIndex switch
         {
-            processor.Create(OpCodes.Ldarg_S, argIndex)
+            0 => [processor.Create(OpCodes.Ldarg_0)],
+            1 => [processor.Create(OpCodes.Ldarg_1)],
+            2 => [processor.Create(OpCodes.Ldarg_2)],
+            3 => [processor.Create(OpCodes.Ldarg_3)],
+            _ => [processor.Create(OpCodes.Ldarg_S, argIndex)],
         };
-        
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), processor.Create(OpCodes.Ldnull), loadSource);
     }

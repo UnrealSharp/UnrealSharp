@@ -5,6 +5,7 @@
 void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
 	EXPORT_FUNCTION(CreateNewObject)
+	EXPORT_FUNCTION(GetTransientPackage)
 	EXPORT_FUNCTION(NativeGetName)
 	EXPORT_FUNCTION(InvokeNativeStaticFunction);
 	EXPORT_FUNCTION(InvokeNativeFunction);
@@ -20,6 +21,18 @@ void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* 
 	
 	UObject* NewCSharpObject = NewObject<UObject>(Outer, Class, NAME_None, RF_NoFlags, Template);
 	return FCSManager::Get().FindManagedObject(NewCSharpObject).GetIntPtr();
+}
+
+void* UUObjectExporter::GetTransientPackage()
+{
+	UPackage* TransientPackage = ::GetTransientPackage();
+
+	if (!IsValid(TransientPackage))
+	{
+		return nullptr;
+	}
+
+	return FCSManager::Get().FindManagedObject(TransientPackage).GetIntPtr();
 }
 
 FName UUObjectExporter::NativeGetName(UObject* Object)
