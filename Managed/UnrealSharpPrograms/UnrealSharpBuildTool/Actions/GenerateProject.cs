@@ -5,8 +5,6 @@ namespace UnrealSharpBuildTool.Actions;
 
 public class GenerateProject : BuildToolAction
 {
-    private const string CopyLocalLockFileAssembliesName = "CopyLocalLockFileAssemblies";
-    private const string AllowUnsafeBlocksName = "AllowUnsafeBlocks";
     public override bool RunAction()
     {
         string projectName = Program.GetProjectNameAsManaged();
@@ -159,8 +157,8 @@ public class GenerateProject : BuildToolAction
             propertyGroup = doc.CreateElement("PropertyGroup");
         }
         
-        AddProperty(CopyLocalLockFileAssembliesName, "true", doc, propertyGroup);
-        AddProperty(AllowUnsafeBlocksName, "true", doc, propertyGroup);
+        AddProperty("CopyLocalLockFileAssemblies", "true", doc, propertyGroup);
+        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
     }
 
     string GetPathToBinaries()
