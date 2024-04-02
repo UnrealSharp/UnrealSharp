@@ -51,10 +51,10 @@ public class GenerateProject : BuildToolAction
             {
                 File.Delete(myClassFile);
             }
-            
-            ModifyCSProjFile(folder, csProjName);
             AddLaunchSettings();
         }
+        
+        ModifyCSProjFile(folder, csProjName);
         
         if (!File.Exists(Path.Combine(folder, $"{projectName}.sln")))
         {
@@ -115,14 +115,18 @@ public class GenerateProject : BuildToolAction
         {
             XmlDocument csprojDocument = new XmlDocument();
             csprojDocument.Load(csProjPath);
+
+            if (csprojDocument.SelectSingleNode("//ItemGroup") is not XmlElement newItemGroup)
+            {
+                newItemGroup = csprojDocument.CreateElement("ItemGroup");
+                csprojDocument.DocumentElement.AppendChild(newItemGroup);
+            }
             
-            AppendCopyNugetPackages(csprojDocument);
-
-            XmlElement newItemGroup = CreateItemGroup(csprojDocument);
+            AppendProperties(csprojDocument);
             AppendUnrealSharpReference(csprojDocument, newItemGroup);
-            IncludeGeneratedCode(csprojDocument, newItemGroup);
-
-            csprojDocument.DocumentElement.AppendChild(newItemGroup);
+            AppendSourceGeneratorReference(csprojDocument, newItemGroup);
+            AppendGeneratedCode(csprojDocument, newItemGroup);
+            
             csprojDocument.Save(csProjPath);
         }
         catch (Exception ex)
@@ -130,55 +134,95 @@ public class GenerateProject : BuildToolAction
             throw new InvalidOperationException($"An error occurred while updating the .csproj file: {ex.Message}", ex);
         }
     }
-
-    private XmlElement CreateItemGroup(XmlDocument doc)
+    
+    void AddProperty(string name, string value, XmlDocument doc, XmlNode propertyGroup)
     {
-        return doc.CreateElement("ItemGroup");
+        XmlNode? newProperty = propertyGroup.SelectSingleNode(name);
+        
+        if (newProperty == null)
+        {
+            newProperty = doc.CreateElement(name);
+            propertyGroup.AppendChild(newProperty);
+        }
+        
+        newProperty.InnerText = value; 
     }
 
-    private void AppendCopyNugetPackages(XmlDocument doc)
+    private void AppendProperties(XmlDocument doc)
     {
-        XmlNode propertyGroup = doc.SelectSingleNode("//PropertyGroup");
+        XmlNode? propertyGroup = doc.SelectSingleNode("//PropertyGroup");
         
         if (propertyGroup == null)
         {
-            throw new Exception("No property group was found in the csproj file.");
+            propertyGroup = doc.CreateElement("PropertyGroup");
         }
         
-        XmlElement copyLocalLockFileAssemblies = doc.CreateElement("CopyLocalLockFileAssemblies");
-        copyLocalLockFileAssemblies.InnerText = "true";
-        
-        propertyGroup.AppendChild(copyLocalLockFileAssemblies);
-        
-        // Allow unsafe blocks, mostly for generated code.
-        XmlElement allowUnsafeBlocks = doc.CreateElement("AllowUnsafeBlocks");
-        allowUnsafeBlocks.InnerText = "true"; 
-        
-        propertyGroup.AppendChild(allowUnsafeBlocks);
+        AddProperty("CopyLocalLockFileAssemblies", "true", doc, propertyGroup);
+        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
+    }
+
+    string GetPathToBinaries()
+    {
+        string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
+        return Path.Combine(unrealSharpPath, "Binaries", "DotNet");
+    }
+    
+    private bool ElementExists(XmlDocument doc, string elementName, string attributeName, string attributeValue)
+    {
+        XmlNodeList nodes = doc.GetElementsByTagName(elementName);
+        foreach (XmlNode node in nodes)
+        {
+            if (node.Attributes?[attributeName]?.Value == attributeValue)
+            {
+                return true;
+            }
+            else if (!string.IsNullOrEmpty(attributeValue) && node.Attributes?[attributeName]?.Value.Contains(attributeValue) == true)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void AppendUnrealSharpReference(XmlDocument doc, XmlElement itemGroup)
     {
+        if (ElementExists(doc, "Reference", "Include", "UnrealSharp"))
+        {
+            return;
+        }
+        
         XmlElement unrealSharpReference = doc.CreateElement("Reference");
         unrealSharpReference.SetAttribute("Include", "UnrealSharp");
 
         XmlElement newHintPath = doc.CreateElement("HintPath");
-        
-        string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
-        string currentVersionStr = Program.GetVersion();
-        string dllPath = Path.Combine(unrealSharpPath, "Binaries", "DotNet", currentVersionStr, "UnrealSharp.dll");
-        
-        newHintPath.InnerText = dllPath;
-
+        newHintPath.InnerText = Path.Combine(GetPathToBinaries(), Program.GetVersion(), "UnrealSharp.dll");
         unrealSharpReference.AppendChild(newHintPath);
-        
         itemGroup.AppendChild(unrealSharpReference);
     }
     
-    private void IncludeGeneratedCode(XmlDocument doc, XmlElement itemGroup)
+    private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
     {
+        string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "netstandard2.0", "UnrealSharp.SourceGenerators.dll");
+        if (ElementExists(doc, "Analyzer", "Include", sourceGeneratorPath))
+        {
+            return;
+        }
+        
+        XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
+        sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
+        itemGroup.AppendChild(sourceGeneratorReference);
+    }
+    
+    private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
+    {
+        string attributeValue = "obj/generated/**/*.cs";
+        if (ElementExists(doc, "Compile", "Include", attributeValue))
+        {
+            return;
+        }
+        
         XmlElement generatedCode = doc.CreateElement("Compile");
-        generatedCode.SetAttribute("Include", "obj/generated/**/*.cs");
+        generatedCode.SetAttribute("Include", attributeValue);
         itemGroup.AppendChild(generatedCode);
     }
     
