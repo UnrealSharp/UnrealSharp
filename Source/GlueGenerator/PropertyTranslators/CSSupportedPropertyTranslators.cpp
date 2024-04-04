@@ -15,6 +15,7 @@
 #include "NamePropertyTranslator.h"
 #include "NullPropertyTranslator.h"
 #include "ObjectPropertyTranslator.h"
+#include "SoftClassPropertyTranslator.h"
 #include "StringPropertyTranslator.h"
 #include "StructPropertyTranslator.h"
 #include "TextPropertyTranslator.h"
@@ -59,6 +60,7 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddPropertyTranslator(FObjectProperty::StaticClass(), new FObjectPropertyTranslator(*this));
 	AddPropertyTranslator(FClassProperty::StaticClass(), new FClassPropertyTranslator(*this));
 	AddPropertyTranslator(FSoftObjectProperty::StaticClass(), new FSoftObjectPtrPropertyTranslator(*this));
+	AddPropertyTranslator(FSoftClassProperty::StaticClass(), new FSoftClassPropertyTranslator(*this));
 
 	AddPropertyTranslator(FArrayProperty::StaticClass(), new FArrayPropertyTranslator(*this));
 
