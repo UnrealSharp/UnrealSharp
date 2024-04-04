@@ -10,22 +10,22 @@ public static class Program
 
     public static int Main(string[] args)
     {
-        Parser parser = new Parser(with => with.HelpWriter = null);
-        ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
-        
-        if (result.Tag == ParserResultType.NotParsed)
-        {
-            BuildToolOptions.PrintHelp(result);
-            return 1;
-        }
-        
-        buildToolOptions = result.Value;
-        
         try
         {
+            Parser parser = new Parser(with => with.HelpWriter = null);
+            ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
+        
+            if (result.Tag == ParserResultType.NotParsed)
+            {
+                BuildToolOptions.PrintHelp(result);
+                throw new Exception("Invalid arguments.");
+            }
+        
+            buildToolOptions = result.Value;
+            
             if (!BuildToolAction.InitializeAction())
             {
-                return 2;
+                throw new Exception("Failed to initialize action.");
             }
             
             Console.WriteLine($"UnrealSharpBuildTool executed {buildToolOptions.Action.ToString()} action successfully.");
@@ -33,7 +33,7 @@ public static class Program
         catch (Exception exception)
         {
             Console.WriteLine(exception.Message);
-            return 3;
+            return 1;
         }
         
         return 0;
@@ -83,7 +83,7 @@ public static class Program
 
     public static string GetWeaver()
     {
-        return "UnrealSharpWeaver.exe";
+        return "UnrealSharpWeaver.dll";
     }
     
     public static string GetVersion()

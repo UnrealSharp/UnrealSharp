@@ -8,6 +8,17 @@ public class BuildSolution : BuildToolAction
     {
         return StartBuildingSolution(Program.GetScriptFolder(), Program.buildToolOptions.BuildConfig);
     }
+    
+    private static string GetBuildConfiguration(BuildConfig buildConfig)
+    {
+        return buildConfig switch
+        {
+            BuildConfig.Debug => "Debug",
+            BuildConfig.Release => "Release",
+            BuildConfig.Publish => "Release",
+            _ => "Release"
+        };
+    }
 
     private static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig)
     {
@@ -20,13 +31,28 @@ public class BuildSolution : BuildToolAction
         
         BuildToolProcess buildSolutionProcess = new BuildToolProcess();
         
-        // Add the build command.
-        buildSolutionProcess.StartInfo.ArgumentList.Add("build");
+        if (buildConfig == BuildConfig.Publish)
+        {
+            buildSolutionProcess.StartInfo.ArgumentList.Add("publish");
+        }
+        else
+        {
+            buildSolutionProcess.StartInfo.ArgumentList.Add("build");
+        }
+        
         buildSolutionProcess.StartInfo.ArgumentList.Add($"\"{slnPath}\"");
         
-        // Add the build configuration.
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
-        buildSolutionProcess.StartInfo.ArgumentList.Add(buildConfig.ToString());
+        buildSolutionProcess.StartInfo.ArgumentList.Add(GetBuildConfiguration(buildConfig));
+
+        if (buildConfig == BuildConfig.Publish)
+        {
+            buildSolutionProcess.StartInfo.ArgumentList.Add("--self-contained");
+            buildSolutionProcess.StartInfo.ArgumentList.Add("true");
+            
+            buildSolutionProcess.StartInfo.ArgumentList.Add("--runtime");
+            buildSolutionProcess.StartInfo.ArgumentList.Add("win-x64");
+        }
 
         return buildSolutionProcess.StartBuildToolProcess();
     }
