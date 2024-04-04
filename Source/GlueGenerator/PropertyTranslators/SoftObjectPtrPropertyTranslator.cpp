@@ -2,7 +2,7 @@
 
 bool FSoftObjectPtrPropertyTranslator::CanHandleProperty(const FProperty* Property) const
 {
-	return Property->IsA(FSoftObjectProperty::StaticClass());
+	return Property->GetClass() == FSoftObjectProperty::StaticClass();
 }
 
 FString FSoftObjectPtrPropertyTranslator::GetManagedType(const FProperty* Property) const
