@@ -608,6 +608,13 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 
 void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 {
+	if (!ensure(!ExportedTypes.Contains(Interface)))
+	{
+		return;
+	}
+
+	ExportedTypes.Add(Interface);
+
 	FString InterfaceName = NameMapper.GetScriptClassName(Interface);
 	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
