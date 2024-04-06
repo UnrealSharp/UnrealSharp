@@ -26,14 +26,6 @@ UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
 void FCSManager::InitializeUnrealSharp()
 {
-#if WITH_EDITOR
-	if (FApp::IsUnattended())
-	{
-		FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-		return;
-	}
-#endif
-	
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
@@ -44,17 +36,22 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-		
-	if (!FCSProcHelper::BuildBindings())
+	
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
+	
+	if (!FApp::IsUnattended())
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-		return;
-	}
-		
-	if (!FCSProcHelper::GenerateProject())
-	{
-		InitializeUnrealSharp();
-		return;
+		if (!FCSProcHelper::BuildBindings())
+		{
+			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
+			return;
+		}
+	
+		if (!FCSProcHelper::GenerateProject())
+		{
+			InitializeUnrealSharp();
+			return;
+		}
 	}
 #endif
 
