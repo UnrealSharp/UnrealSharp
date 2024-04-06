@@ -8,12 +8,6 @@
         <OutputPath>../../../Binaries/Managed</OutputPath>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <DebugType>pdbonly</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>..\..\..\Binaries\Managed\Shipping\</OutputPath>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

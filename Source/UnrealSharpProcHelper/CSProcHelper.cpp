@@ -114,9 +114,11 @@ bool FCSProcHelper::GenerateProject()
 
 FString FCSProcHelper::GetRuntimeHostPath()
 {
-	FString DotNetPath = GetDotNetDirectory();
-	FString RuntimeHostPath = FPaths::Combine(DotNetPath, "host/fxr", HOSTFXR_VERSION, HOSTFXR_WINDOWS);
-	return RuntimeHostPath;
+#if WITH_EDITOR
+	return FPaths::Combine(GetDotNetDirectory(), "host/fxr", HOSTFXR_VERSION, HOSTFXR_WINDOWS);
+#else
+	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
+#endif
 }
 
 FString FCSProcHelper::GetAssembliesPath()

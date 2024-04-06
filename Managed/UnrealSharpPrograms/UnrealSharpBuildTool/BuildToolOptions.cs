@@ -11,12 +11,14 @@ public enum BuildAction : int
     GenerateProject,
     Rebuild,
     Weave,
+    Package,
 }
 
 public enum BuildConfig : int
 {
     Release,
     Debug,
+    Publish,
 }
 
 public class BuildToolOptions
@@ -41,6 +43,9 @@ public class BuildToolOptions
     
     [Option("OutputPath", Required = false)]
     public string OutputPath { get; set; }
+    
+    [Option("Runtime", Required = false)]
+    public string? Runtime { get; set; }
     
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; }

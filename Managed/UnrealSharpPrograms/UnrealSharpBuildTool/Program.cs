@@ -56,9 +56,24 @@ public static class Program
     
     public static string GetScriptFolderBinaries()
     {
-        string currentBuildConfig = buildToolOptions.BuildConfig.ToString();
-        string version = GetVersion();
-        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, version);
+        string currentBuildConfig = GetBuildConfiguration(buildToolOptions.BuildConfig);
+        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, GetVersion(), GetRuntimeTarget());
+    }
+    
+    public static string GetRuntimeTarget()
+    {
+        return buildToolOptions.Runtime ?? "win-x64";
+    }
+    
+    public static string GetBuildConfiguration(BuildConfig buildConfig)
+    {
+        return buildConfig switch
+        {
+            BuildConfig.Debug => "Debug",
+            BuildConfig.Release => "Release",
+            BuildConfig.Publish => "Release",
+            _ => "Release"
+        };
     }
     
     public static string GetScriptFolder()

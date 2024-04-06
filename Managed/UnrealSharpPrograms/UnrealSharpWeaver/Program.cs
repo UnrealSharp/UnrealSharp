@@ -226,10 +226,10 @@ public static class Program
             throw;
         }
     }
-    
-    static void CopyAssemblies(string destinationPath, string sourcePath)
+
+    private static void CopyAssemblies(string destinationPath, string sourcePath)
     {
-        string directoryName = Path.GetDirectoryName(destinationPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
+        var directoryName = Path.GetDirectoryName(destinationPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
 
         if (!Directory.Exists(directoryName)) 
         {
@@ -238,13 +238,13 @@ public static class Program
 
         try
         {
-            string[] dlls = Directory.GetFiles(sourcePath, "*.dll");
-            foreach (var dll in dlls) 
+            string[] dependencies = Directory.GetFiles(sourcePath, "*.*");
+            foreach (var dependency in dependencies) 
             {
-                var destPath = Path.Combine(directoryName, Path.GetFileName(dll));
-                if (!File.Exists(destPath) || new FileInfo(dll).LastWriteTimeUtc > new FileInfo(destPath).LastWriteTimeUtc)
+                var destPath = Path.Combine(directoryName, Path.GetFileName(dependency));
+                if (!File.Exists(destPath) || new FileInfo(dependency).LastWriteTimeUtc > new FileInfo(destPath).LastWriteTimeUtc)
                 {
-                    File.Copy(dll, destPath, true);
+                    File.Copy(dependency, destPath, true);
                 }
             }
         }

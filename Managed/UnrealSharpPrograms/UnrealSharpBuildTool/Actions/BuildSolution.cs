@@ -1,23 +1,10 @@
-﻿using System.Collections.ObjectModel;
-
-namespace UnrealSharpBuildTool.Actions;
+﻿namespace UnrealSharpBuildTool.Actions;
 
 public class BuildSolution : BuildToolAction
 {
     public override bool RunAction()
     {
         return StartBuildingSolution(Program.GetScriptFolder(), Program.buildToolOptions.BuildConfig);
-    }
-    
-    private static string GetBuildConfiguration(BuildConfig buildConfig)
-    {
-        return buildConfig switch
-        {
-            BuildConfig.Debug => "Debug",
-            BuildConfig.Release => "Release",
-            BuildConfig.Publish => "Release",
-            _ => "Release"
-        };
     }
 
     private static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig)
@@ -43,7 +30,7 @@ public class BuildSolution : BuildToolAction
         buildSolutionProcess.StartInfo.ArgumentList.Add($"\"{slnPath}\"");
         
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
-        buildSolutionProcess.StartInfo.ArgumentList.Add(GetBuildConfiguration(buildConfig));
+        buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(buildConfig));
 
         if (buildConfig == BuildConfig.Publish)
         {
@@ -51,7 +38,7 @@ public class BuildSolution : BuildToolAction
             buildSolutionProcess.StartInfo.ArgumentList.Add("true");
             
             buildSolutionProcess.StartInfo.ArgumentList.Add("--runtime");
-            buildSolutionProcess.StartInfo.ArgumentList.Add("win-x64");
+            buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetRuntimeTarget());
         }
 
         return buildSolutionProcess.StartBuildToolProcess();
