@@ -33,7 +33,7 @@ using UnrealSharp.Niagara;
 
 namespace ManagedCropoutSampleProject;
 
-public class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signature>
+public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signature>
 {
     public delegate void Signature(bool bIsPickedUp);
 }
