@@ -20,14 +20,8 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 			DummyBlueprint->SkeletonGeneratedClass = Field;
 			DummyBlueprint->GeneratedClass = Field;
 			DummyBlueprint->ParentClass = SuperClass;
-			DummyBlueprint->BlueprintType = BPTYPE_Normal;
-			DummyBlueprint->BlueprintSystemVersion = UBlueprint::GetCurrentBlueprintSystemVersion();
-			DummyBlueprint->bLegacyNeedToPurgeSkelRefs = false;
-			DummyBlueprint->GenerateNewGuid();
 
 			#if WITH_EDITOR
-			DummyBlueprint->Status = BS_UpToDate;
-			DummyBlueprint->bIsNewlyCreated = true;
 			DummyBlueprint->BlueprintDisplayName = Field->GetName();
 			Field->ClassGeneratedBy = DummyBlueprint;
 			#endif

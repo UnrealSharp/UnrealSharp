@@ -100,6 +100,11 @@ public static class Program
     {
         return "UnrealSharpWeaver.dll";
     }
+
+    public static string GetBindingsPath()
+    {
+        return Path.Combine(buildToolOptions.PluginDirectory, "Binaries", "Managed", GetVersion());
+    }
     
     public static string GetVersion()
     {
