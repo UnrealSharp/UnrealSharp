@@ -46,7 +46,7 @@ public static class Program
             return 1;
         }
         
-        if (!LoadUserAssembly(weaverOptions, resolver))
+        if (!LoadUserAssembly(weaverOptions))
         {
             return 2;
         }
@@ -78,7 +78,7 @@ public static class Program
         return false;
     }
     
-    static bool LoadUserAssembly(WeaverOptions weaverOptions, DefaultAssemblyResolver resolver)
+    static bool LoadUserAssembly(WeaverOptions weaverOptions)
     {
         string outputDirectory = StripQuotes(weaverOptions.OutputDirectory);
         DirectoryInfo outputDirInfo = new DirectoryInfo(outputDirectory);
@@ -109,7 +109,7 @@ public static class Program
 
             try
             {
-                StartWeavingAssembly(userAssembly, weaverOutputPath, resolver);
+                StartWeavingAssembly(userAssembly, weaverOutputPath);
                 return true;
             }
             catch (WeaverProcessError error)
@@ -126,7 +126,7 @@ public static class Program
         return false;
     }
     
-    static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath, BaseAssemblyResolver resolver)
+    static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
     {
         var assemblyMetaData = new ApiMetaData
         {
@@ -136,7 +136,9 @@ public static class Program
         WeaverHelper.ImportCommonTypes(assembly);
 
         StartProcessingAssembly(assembly, assemblyMetaData);
-        CopyDependencies(assemblyOutputPath, resolver.GetSearchDirectories());
+
+        string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName);
+        CopyAssemblies(assemblyOutputPath, sourcePath);
 
         try
         {
@@ -224,39 +226,31 @@ public static class Program
             throw;
         }
     }
-    
-    static void CopyDependencies(string assemblyPath, string[] knownPaths)
-    {
-        string assemblyDirectory = Path.GetDirectoryName(assemblyPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
 
-        if (!Directory.Exists(assemblyDirectory)) 
+    private static void CopyAssemblies(string destinationPath, string sourcePath)
+    {
+        var directoryName = Path.GetDirectoryName(destinationPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
+
+        if (!Directory.Exists(directoryName)) 
         {
-            Directory.CreateDirectory(assemblyDirectory);
+            Directory.CreateDirectory(directoryName);
         }
 
-        foreach (var path in knownPaths) 
+        try
         {
-            if (!Directory.Exists(path))
+            string[] dependencies = Directory.GetFiles(sourcePath, "*.*");
+            foreach (var dependency in dependencies) 
             {
-                continue;
-            }
-
-            try
-            {
-                string[] dlls = Directory.GetFiles(path, "*.dll");
-                foreach (var dll in dlls) 
+                var destPath = Path.Combine(directoryName, Path.GetFileName(dependency));
+                if (!File.Exists(destPath) || new FileInfo(dependency).LastWriteTimeUtc > new FileInfo(destPath).LastWriteTimeUtc)
                 {
-                    var destPath = Path.Combine(assemblyDirectory, Path.GetFileName(dll));
-                    if (!File.Exists(destPath) || new FileInfo(dll).LastWriteTimeUtc > new FileInfo(destPath).LastWriteTimeUtc)
-                    {
-                        File.Copy(dll, destPath, true);
-                    }
+                    File.Copy(dependency, destPath, true);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to copy dependencies from {path}: {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to copy dependencies from {sourcePath}: {ex.Message}");
         }
     }
     

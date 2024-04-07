@@ -6,8 +6,8 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <OutputPath>..\..\..\Binaries\DotNet\</OutputPath>
         <Nullable>enable</Nullable>
+        <OutputPath>../../../Binaries/Managed</OutputPath>
     </PropertyGroup>
     
     <ItemGroup>

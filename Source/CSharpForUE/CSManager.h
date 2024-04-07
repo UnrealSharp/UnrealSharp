@@ -7,17 +7,17 @@
 
 class FUSScriptEngine;
 class FUSTypeFactory;
+class UObject;
+class FUSManagedObject;
+
 struct FTypeReferenceMetaData;
 struct FGCHandle;
-class FUSManagedObject;
 struct FCSAssembly;
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
-
 class CSHARPFORUE_API FCSManager : public FUObjectArray::FUObjectDeleteListener
 {
-	
 public:
 
 	static FCSManager& Get()
@@ -30,8 +30,8 @@ public:
 
 	static UPackage* GetUnrealSharpPackage();
 
-	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath);
-	bool UnloadPlugin(const FString& AssemblyName);
+	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath);
+	bool UnloadAssembly(const FString& AssemblyName);
 
 	FGCHandle CreateNewManagedObject(UObject* Object, UClass* Class);
 	FGCHandle CreateNewManagedObject(UObject* Object, uint8* TypeHandle);
@@ -58,7 +58,8 @@ private:
 	bool LoadRuntimeHost();
 	bool InitializeBindings();
 	
-	load_assembly_and_get_function_pointer_fn InitializeRuntimeHost() const;
+	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
+	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
 
 	// Begin FUObjectArray::FUObjectDeleteListener Api
 	virtual void NotifyUObjectDeleted(const UObjectBase *Object, int32 Index) override;

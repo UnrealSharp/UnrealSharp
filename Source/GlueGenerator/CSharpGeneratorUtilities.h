@@ -172,12 +172,6 @@ namespace ScriptGeneratorUtilities
 		}
 	};
 
-	FName GetModuleFName(const UObject* Object)
-	{
-		UPackage* Package = Object->GetPackage();
-		return FPackageName::GetShortFName(Package->GetFName());
-	}
-
 	void InitializeToolTipLocalization();
 	FString GetEnumValueMetaData(const UEnum& InEnum, const TCHAR* MetadataKey, int32 ValueIndex);
 	FString GetEnumValueToolTip(const UEnum& InEnum, int32 ValueIndex);

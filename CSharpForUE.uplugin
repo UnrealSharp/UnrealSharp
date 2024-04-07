@@ -20,6 +20,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "UnrealSharpProcHelper",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault"
+		},
+		{
 			"Name": "GlueGenerator",
 			"Type": "Editor",
 			"LoadingPhase": "PreDefault"
@@ -43,6 +48,10 @@
 	[
 		{
 			"Name": "StructUtils",
+			"Enabled": true
+		},
+		{
+			"Name": "EnhancedInput",
 			"Enabled": true
 		}
 	],

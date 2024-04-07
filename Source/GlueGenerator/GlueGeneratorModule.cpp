@@ -1,4 +1,6 @@
 ﻿#include "GlueGeneratorModule.h"
+#include "CSGenerator.h"
+#include "UnrealSharpProcHelper/CSProcHelper.h"
 
 DEFINE_LOG_CATEGORY(LogGlueGenerator);
 

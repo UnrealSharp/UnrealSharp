@@ -6,12 +6,6 @@
 #include "UObject/Package.h"
 #include "Misc/PackageName.h"
 
-#define UNREAL_SHARP_NAMESPACE TEXT("UnrealSharp")
-#define UNREAL_SHARP_OBJECT TEXT("UnrealSharpObject")
-#define UNREAL_SHARP_RUNTIME_NAMESPACE UNREAL_SHARP_NAMESPACE TEXT(".Runtime")
-#define UNREAL_SHARP_ENGINE_NAMESPACE UNREAL_SHARP_NAMESPACE TEXT(".Engine")
-#define UNREAL_SHARP_ATTRIBUTES_NAMESPACE UNREAL_SHARP_NAMESPACE TEXT(".Attributes")
-
 // mirrored from EdGraphSchema_K2.cpp (we can't bring in Kismet into a program plugin)
 extern const FName MD_IsBlueprintBase;
 extern const FName MD_BlueprintFunctionLibrary;
@@ -134,6 +128,22 @@ public:
 			AppendLine(TEXT("unsafe"));
 			OpenBrace();
 		}
+	}
+
+	void BeginWithEditorOnlyBlock()
+	{
+		static const FString WithEditorDirective = "WITH_EDITOR";
+		BeginPreprocessorBlock(WithEditorDirective);
+	}
+
+	void BeginPreprocessorBlock(const FString& DirectiveCondition)
+	{
+		AppendLine(FString::Printf(TEXT("#if %s"), *DirectiveCondition));
+	}
+
+	void EndPreprocessorBlock()
+	{
+		AppendLine(TEXT("#endif"));
 	}
 
 	void EndUnsafeBlock()

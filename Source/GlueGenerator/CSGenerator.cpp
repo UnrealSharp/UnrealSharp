@@ -11,6 +11,7 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/ScopedSlowTask.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "UObject/Field.h"
 
@@ -103,18 +104,18 @@ void FCSGenerator::GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess)
 
 void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 {
+	// We don't want stuff in the transient package - that stuff is just temporary
+	if (Object->GetOutermost() == GetTransientPackage())
+	{
+		return;
+	}
+	
 	if (ExportedTypes.Contains(Object))
 	{
 		return;
 	}
 
 	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
-
-	// We don't want stuff in the transient package - that stuff is just temporary
-	if (Object->GetOutermost() == GetTransientPackage())
-	{
-		return;
-	}
 	
 	if (UClass* Class = Cast<UClass>(Object))
 	{
@@ -124,8 +125,8 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 			return;
 		}
 		
-		// Don't generate glue for classes that have been compiled from a blueprint
-		if (Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
+		// Don't generate glue for classes that are generated from blueprints or C#
+		if (Cast<UBlueprintGeneratedClass>(Class) || Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
 		{
 			return;
 		}
@@ -543,8 +544,7 @@ void FCSGenerator::RegisterClassToModule(const UObject* Struct)
 
 FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 {
-	const FName ModuleName = GetModuleFName(Struct);
-
+	const FName ModuleName = UUnrealSharpStatics::GetModuleName(Struct);
 	FCSModule* BindingsModule = CSharpBindingsModules.Find(ModuleName);
     
 	if (!BindingsModule)
@@ -777,7 +777,6 @@ void FCSGenerator::ExportInterfaceFunctions(FCSScriptBuilder& Builder, const UCl
 	for (UFunction* Function : ExportedFunctions)
 	{
 		PropertyTranslators->Find(Function).ExportInterfaceFunction(Builder, Function);
-		
 	}
 }
 
@@ -893,6 +892,12 @@ void FCSGenerator::ExportClassFunctionsStaticConstruction(FCSScriptBuilder& Buil
 void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function)
 {
 	FString NativeMethodName = Function->GetName();
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
+	
 	Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = %s.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"%s\");"), *NativeMethodName, UClassCallbacks, *Function->GetName()));
 	
 	if (Function->NumParms > 0)
@@ -905,6 +910,11 @@ void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Build
 		FProperty* Property = *It;
 		const FPropertyTranslator& ParamHandler = PropertyTranslators->Find(Property);
 		ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
+	}
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.EndPreprocessorBlock();
 	}
 }
 
@@ -938,9 +948,19 @@ void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder,
 		{
 			continue;
 		}
+
+		if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+		{
+			Builder.BeginWithEditorOnlyBlock();
+		}
 		
 		ExportedPropertiesHash.Add(ManagedName);
 		PropertyTranslators->Find(Property).ExportPropertyStaticConstruction(Builder, Property, Property->GetName());
+
+		if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+		{
+			Builder.EndPreprocessorBlock();
+		}
 	}
 }
 

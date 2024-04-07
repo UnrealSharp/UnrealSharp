@@ -1,5 +1,4 @@
 ﻿#include "CSManagedGCHandle.h"
-
 #include "CSManagedCallbacksCache.h"
 
 void FGCHandle::Dispose()

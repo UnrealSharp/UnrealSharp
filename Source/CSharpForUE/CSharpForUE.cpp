@@ -16,6 +16,7 @@ void FCSharpForUEModule::StartupModule()
 
 void FCSharpForUEModule::ShutdownModule()
 {
+	UE_LOG(LogUnrealSharp, Warning, TEXT("CSharpForUE module shutting down"));
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -64,26 +64,8 @@ void FSimpleTypePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuild
 
 void FSimpleTypePropertyTranslator::ExportDefaultStructParameter(FCSScriptBuilder& Builder, const FString& VariableName, const FString& CppDefaultValue, FProperty* ParamProperty, const FPropertyTranslator& Handler) const
 {
-	check(Handler.CanHandleProperty(ParamProperty));
-
 	FStructProperty* StructProperty = CastFieldChecked<FStructProperty>(ParamProperty);
-
 	FString StructName = StructProperty->Struct->GetName();
-
-	// UE only permits these structs for default params, see FHeaderParser::DefaultValueStringCppFormatToInnerFormat
-	// all of them except Color consist only of floats, and Color consists only of ints
-	// tbqh we could probably just hardcode them all like HeaderParser does
-	bool isKnownStruct = StructName == TEXT("Vector")
-		|| StructName == TEXT("Vector2D")
-		|| StructName == TEXT("Rotator")
-		|| StructName == TEXT("LinearColor")
-		|| StructName == TEXT("Color");
-
-	if (!isKnownStruct)
-	{
-		UE_LOG(LogGlueGenerator, Error, TEXT("Cannot export default initializer for struct '%s'"), *StructName);
-		return;
-	}
 
 	FString FieldInitializerList;
 	if (CppDefaultValue.StartsWith(TEXT("(")) && CppDefaultValue.EndsWith(TEXT(")")))
@@ -145,10 +127,6 @@ void FSimpleTypePropertyTranslator::ExportDefaultStructParameter(FCSScriptBuilde
 				                   : FString::Printf(TEXT("%s,"), *FieldInitializer));
 		}
 	}
-
-	// We should have found a field initializer for every property.
-	// UHT enforces this even if the ctor used to specify the C++ default relies on some default parameters, itself.
-	check(!StructPropIt);
 
 	Builder.Unindent();
 	Builder.AppendLine(TEXT("};"));

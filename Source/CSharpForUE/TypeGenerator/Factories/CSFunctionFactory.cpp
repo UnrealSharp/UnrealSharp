@@ -28,7 +28,7 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData, FunctionMetaData.FunctionFlags);
 
 	// Check if this function has a return value or is just void, otherwise skip.
-	if (FunctionMetaData.ReturnValue.Type->PropertyType != ECSPropertyType::Unknown)
+	if (FunctionMetaData.ReturnValue.Type != nullptr)
 	{
 		FCSPropertyFactory::CreateAndAssignProperty(NewFunction, FunctionMetaData.ReturnValue, CPF_Parm | CPF_ReturnParm | CPF_OutParm);
 	}
@@ -65,7 +65,9 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 		NewFunction->AddCppProperty(FunctionProperties[i]);
 	}
 
+#if WITH_EDITOR
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
+#endif
 
 	// Override the Blueprint function. But don't let Blueprint display this overridden function.
 #if WITH_EDITOR

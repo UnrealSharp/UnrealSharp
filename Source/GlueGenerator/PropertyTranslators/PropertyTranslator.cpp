@@ -52,6 +52,11 @@ FString FPropertyTranslator::GetCSharpFixedSizeArrayType(const FProperty *Proper
 
 void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted, const TSet<FString>& ReservedNames) const
 {
+	if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
+	
 	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property, ReservedNames);
 	FString NativePropertyName = GetPropertyName(Property);
 
@@ -98,6 +103,11 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 	ExportReferences(Property);
 	OnPropertyExported(Builder, Property, NativePropertyName);
 	Builder.AppendLine();
+
+	if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
+	{
+		Builder.EndPreprocessorBlock();
+	}
 }
 
 FString FPropertyTranslator::GetPropertyName(const FProperty* Property) const
@@ -661,11 +671,21 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	{
 		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
 	}
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
 	
 	FunctionExporter Exporter(*this, *Function, ProtectionBehavior, OverloadBehavior, CallBehavior);
 	Exporter.ExportFunctionVariables(Builder);
 	Exporter.ExportOverloads(Builder);
 	Exporter.ExportFunction(Builder);
+
+	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	{
+		Builder.EndPreprocessorBlock();
+	}
 }
 
 void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const

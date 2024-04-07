@@ -1,11 +1,8 @@
 ﻿#include "CSManager.h"
-#include "AssetToolsModule.h"
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
-#include "CSDeveloperSettings.h"
 #include "CSharpForUE.h"
 #include "Export/FunctionsExporter.h"
-#include "GlueGenerator/CSGenerator.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
@@ -13,8 +10,15 @@
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
+#include "UObject/Object.h"
 #include "Misc/MessageDialog.h"
+#include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+
+#if WITH_EDITOR
+#include "GlueGenerator/CSGenerator.h"
+#include "AssetToolsModule.h"
+#endif
 
 FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
 UPackage* FCSManager::UnrealSharpPackage = nullptr;
@@ -29,36 +33,26 @@ void FCSManager::InitializeUnrealSharp()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-	
-	// Build the UnrealSharpBuildTool and the Weaver.
-	// TODO: Make this a step in the build.cs instead
-	if (!FCSProcHelper::BuildPrograms())
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build program"));
-		return;
-	}
-	
-	// Check if the C# API is up to date.
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GeneratedClassesDirectory);
 
 #if WITH_EDITOR
-	// Make sure the C# API is up to date. This is only done in the editor.
-	FString BuildConfiguration;
-	GetDefault<UCSDeveloperSettings>()->GetBindingsBuildConfiguration(BuildConfiguration);
 	
-	if (!FCSProcHelper::BuildBindings(BuildConfiguration))
+	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
+	
+	if (!FApp::IsUnattended())
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-		return;
+		if (!FCSProcHelper::BuildBindings())
+		{
+			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
+			return;
+		}
+	
+		if (!FCSProcHelper::GenerateProject())
+		{
+			InitializeUnrealSharp();
+			return;
+		}
 	}
 #endif
-	
-	// Generate the cs project. Ignore if it's already generated
-	if (!FCSProcHelper::GenerateProject())
-	{
-		InitializeUnrealSharp();
-	 	return;
-	}
 
 	//Create the package where we will store our generated types.
 	{
@@ -98,8 +92,8 @@ bool FCSManager::InitializeBindings()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load Runtime Host"));
 		return false;
 	}
-
-	const auto LoadAssemblyAndGetFunctionPointer = InitializeRuntimeHost();
+	
+	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer = InitializeHostfxrSelfContained();
 	
 	if (!LoadAssemblyAndGetFunctionPointer)
 	{
@@ -183,7 +177,7 @@ bool FCSManager::LoadUserAssembly()
 		return false;
 	}
 	
-	if (!LoadPlugin(UserAssemblyPath))
+	if (!LoadAssembly(UserAssemblyPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
 		return false;
@@ -192,7 +186,7 @@ bool FCSManager::LoadUserAssembly()
 	return true;
 }
 
-load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() const
+load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
 {
 	hostfxr_handle HostFXR_Handle = nullptr;
 	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
@@ -232,12 +226,45 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() co
 	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
 }
 
+load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfContained() const
+{
+	FString MainAssemblyPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
+	std::vector Args { *MainAssemblyPath };
+	
+	hostfxr_handle HostFXR_Handle = nullptr;
+	FString DotNetPath = FCSProcHelper::GetAssembliesPath();
+	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
+
+	hostfxr_initialize_parameters InitializeParameters;
+	InitializeParameters.dotnet_root = *DotNetPath;
+	InitializeParameters.host_path = *RuntimeHostPath;
+	
+	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
+	
+	if (ReturnCode != 0 || HostFXR_Handle == nullptr)
+	{
+		Hostfxr_Close(HostFXR_Handle);
+	}
+
+	void* Load_Assembly_And_Get_Function_Pointer = nullptr;
+	ReturnCode = Hostfxr_Get_Runtime_Delegate(HostFXR_Handle, hdt_load_assembly_and_get_function_pointer, &Load_Assembly_And_Get_Function_Pointer);
+	
+	if (ReturnCode != 0 || Load_Assembly_And_Get_Function_Pointer == nullptr)
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("hostfxr_get_runtime_delegate failed with code: %d"), ReturnCode);
+	}
+
+	Hostfxr_Close(HostFXR_Handle);
+
+	return (load_assembly_and_get_function_pointer_fn) Load_Assembly_And_Get_Function_Pointer;
+}
+
 UPackage* FCSManager::GetUnrealSharpPackage()
 {
 	return UnrealSharpPackage;
 }
 
-TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
 	
@@ -247,9 +274,8 @@ TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
 		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
 		return nullptr;
 	}
-
-	const FString PluginName = FPaths::GetBaseFilename(AssemblyPath);
-	LoadedPlugins.Add(*PluginName, NewPlugin);
+	
+	LoadedPlugins.Add(*NewPlugin->GetAssemblyName(), NewPlugin);
 
 	// Change from ManagedProjectName.dll > ManagedProjectName.json
 	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "json");
@@ -264,7 +290,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadPlugin(const FString& AssemblyPath)
 	return NewPlugin;
 }
 
-bool FCSManager::UnloadPlugin(const FString& AssemblyName)
+bool FCSManager::UnloadAssembly(const FString& AssemblyName)
 {
 	TSharedPtr<FCSAssembly> Assembly;
 	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))

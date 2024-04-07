@@ -157,14 +157,15 @@ public class GenerateProject : BuildToolAction
             propertyGroup = doc.CreateElement("PropertyGroup");
         }
         
-        AddProperty("CopyLocalLockFileAssemblies", "true", doc, propertyGroup);
-        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
+        AddProperty("CopyLocalLockFileAssembliesName", "true", doc, propertyGroup);
+        AddProperty("AllowUnsafeBlocksName", "true", doc, propertyGroup);
+        AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
     }
 
     string GetPathToBinaries()
     {
         string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
-        return Path.Combine(unrealSharpPath, "Binaries", "DotNet");
+        return Path.Combine(unrealSharpPath, "Binaries", "Managed");
     }
     
     private bool ElementExists(XmlDocument doc, string elementName, string attributeName, string attributeValue)
@@ -202,7 +203,7 @@ public class GenerateProject : BuildToolAction
     
     private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
     {
-        string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "netstandard2.0", "UnrealSharp.SourceGenerators.dll");
+        string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "UnrealSharp.SourceGenerators.dll");
         if (ElementExists(doc, "Analyzer", "Include", sourceGeneratorPath))
         {
             return;

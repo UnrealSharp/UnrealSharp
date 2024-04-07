@@ -31,7 +31,7 @@ public class UnrealObjectDestroyedException : InvalidOperationException
     }
 }
 
-public class UnrealSharpObject() : IDisposable
+public class UnrealSharpObject : IDisposable
 {
     public IntPtr NativeObject { get; private set; }
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
@@ -40,14 +40,14 @@ public class UnrealSharpObject() : IDisposable
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
         UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
-
+        
         const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         var foundConstructor = typeToCreate.GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
-
-        createdObject.NativeObject = nativeObjectPtr;
         
-        foundConstructor.Invoke(createdObject, null);
+        createdObject.NativeObject = nativeObjectPtr;
 
+        foundConstructor.Invoke(createdObject, null);
+        
         return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(createdObject));
     }
 

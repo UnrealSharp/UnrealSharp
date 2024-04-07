@@ -9,7 +9,7 @@ namespace UnrealSharp.Plugins;
 public unsafe struct PluginsCallbacks
 {
     public delegate* unmanaged<char*, IntPtr> LoadPlugin;
-    public delegate* unmanaged<NativeBool> UnloadPlugin;
+    public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
 }
 
 public static class Main
@@ -74,7 +74,6 @@ public static class Main
             *managedCallbacks = ManagedCallbacks.Create();
 
             Console.WriteLine("UnrealSharp successfully setup!");
-            
             return NativeBool.True;
         }
         catch (Exception ex)
@@ -89,21 +88,7 @@ public static class Main
     {
         try
         {
-            string assemblyPathString = new string(assemblyPath);
-                
-            if (!File.Exists(assemblyPathString))
-            {
-                throw new Exception("Invalid assembly path provided");
-            }
-                
-            var (loadedAssembly, newPlugin) = LoadPlugin(assemblyPathString, true);
-
-            if (newPlugin.IsAlive)
-            {
-                return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(loadedAssembly));
-            }
-
-            throw new Exception($"Failed to load plugin from: {assemblyPathString}");
+            return LoadPlugin(new string(assemblyPath), true);
         }
         catch (Exception ex)
         {
@@ -119,12 +104,11 @@ public static class Main
         NativeLibrary.SetDllImportResolver(CoreApiAssembly, _dllImportResolver);
     }
     
-    private static (Assembly, PluginLoadContextWrapper) LoadPlugin(string assemblyPath, bool isCollectible)
+    private static IntPtr LoadPlugin(string assemblyPath, bool isCollectible)
     {
         string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-
-        var sharedAssemblies = new List<string>();
         
+        var sharedAssemblies = new List<string>();
         foreach (var sharedAssembly in SharedAssemblies)
         {
             string? sharedAssemblyName = sharedAssembly.Name;
@@ -139,20 +123,32 @@ public static class Main
 
         if (!newPlugin.IsAlive)
         {
-            return default;
+            throw new Exception($"Failed to load plugin from: {assemblyPath}");
         }
         
         LoadedPlugins.Add(newPlugin);
-        Console.WriteLine($"Successfully loaded plugin: {loadedAssembly.GetName().Name}");
-        return (loadedAssembly, newPlugin);
+        Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
+        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(loadedAssembly));
     }
     
     [UnmanagedCallersOnly]
-    private static NativeBool UnloadProjectPlugin()
+    private static unsafe NativeBool UnloadProjectPlugin(char* assemblyPath)
     {
         try
         {
-            return UnloadPlugin(LoadedPlugins[0]).ToNativeBool();
+            string assemblyPathStr = new string(assemblyPath);
+            
+            foreach (var plugin in LoadedPlugins)
+            {
+                if (plugin.AssemblyLoadedPath != assemblyPathStr)
+                {
+                    continue;
+                }
+                
+                return UnloadPlugin(plugin).ToNativeBool();
+            }
+            
+            throw new Exception($"Failed to find plugin to unload: {assemblyPathStr}");
         }
         catch (Exception e)
         {
@@ -161,19 +157,13 @@ public static class Main
         }
     }
     
-    private static bool UnloadPlugin(PluginLoadContextWrapper? pluginLoadContext)
+    private static bool UnloadPlugin(PluginLoadContextWrapper pluginLoadContext)
     {
         try
         {
-            if (pluginLoadContext == null)
-            {
-                return true;
-            }
-            
             if (!pluginLoadContext.IsCollectible)
             {
-                Console.Error.WriteLine("Cannot unload a plugin that's not set to IsCollectible.");
-                return false;
+                throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
             }
             
             Console.WriteLine($"Unloading plugin (Path: {pluginLoadContext.AssemblyLoadedPath}");
@@ -208,8 +198,7 @@ public static class Main
             }
 
             LoadedPlugins.Remove(pluginLoadContext);
-            Console.WriteLine($"Plugin unloaded successfully! (Path: {pluginLoadContext.AssemblyLoadedPath}");
-            
+            Console.WriteLine("Plugin unloaded successfully!");
             return true;
         }
         catch (Exception e)

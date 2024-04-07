@@ -1,15 +1,15 @@
 ﻿using UnrealBuildTool;
 
-public class GlueGenerator : ModuleRules
+public class UnrealSharpUtilities : ModuleRules
 {
-    public GlueGenerator(ReadOnlyTargetRules Target) : base(Target)
+    public UnrealSharpUtilities(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core"
+                "Core",
             }
         );
 
@@ -19,14 +19,7 @@ public class GlueGenerator : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore",
-                "Projects", 
-                "StructUtils",
-                "DeveloperSettings", 
-                "UnrealSharpProcHelper", 
-                "XmlParser",
-                "UnrealEd",
-                "UnrealSharpUtilities"
+                "SlateCore"
             }
         );
     }

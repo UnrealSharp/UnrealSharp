@@ -15,9 +15,11 @@ public class WeaveProject : BuildToolAction
         var outputPath = Program.GetOutputPath();
         var projectName = Program.GetProjectNameAsManaged();
 
-        BuildToolProcess weaveProcess = new BuildToolProcess(weaverPath);
+        BuildToolProcess weaveProcess = new BuildToolProcess();
         
         // Add path to the compiled binaries.
+        weaveProcess.StartInfo.ArgumentList.Add(weaverPath);
+        
         weaveProcess.StartInfo.ArgumentList.Add("-p");
         weaveProcess.StartInfo.ArgumentList.Add($"\"{Program.FixPath(scriptFolderBinaries)}\"");
 

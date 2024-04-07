@@ -16,10 +16,15 @@ public:
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
     void StartHotReload();
 
+    bool IsReloading() const { return bIsReloading; }
+
+private:
+    
+    void OnAllModulesLoaded();
+    bool Tick(float DeltaTime);
+    
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
-
-    bool Tick(float DeltaTime);
-
     bool bIsReloading = false;
+    
 };

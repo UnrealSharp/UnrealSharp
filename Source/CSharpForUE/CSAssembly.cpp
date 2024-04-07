@@ -29,19 +29,14 @@ bool FCSAssembly::Load()
 	return true;
 }
 
-bool FCSAssembly::Unload()
+bool FCSAssembly::Unload() const
 {
-	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin();
+	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin(*AssemblyPath);
 }
 
 bool FCSAssembly::IsAssemblyValid() const
 {
 	return !Assembly.IsNull();
-}
-
-GCHandleIntPtr FCSAssembly::GetAssemblyHandle() const
-{
-	return Assembly.GetHandle();
 }
 
 

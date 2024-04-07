@@ -10,6 +10,14 @@ enum EBuildAction
 	Weave,
 };
 
+UENUM()
+enum class EDotNetBuildConfiguration : uint64
+{
+	Debug,
+	Release,
+	Publish,
+};
+
 #define HOSTFXR_VERSION "8.0.1"
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
@@ -21,10 +29,7 @@ class UNREALSHARPPROCHELPER_API FCSProcHelper final
 public:
 	
 	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory = nullptr);
-	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, const FString* BuildConfiguration = nullptr);
-
-	static bool Build(const FString& BuildConfiguration);
-	static bool Rebuild(const FString& BuildConfiguration);
+	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration = nullptr, const FString* OutputDirectory = nullptr);
 	
 	static bool Clean();
 	static bool GenerateProject();
@@ -38,16 +43,15 @@ public:
 	static FString GetManagedSourcePath();
 	static FString GetUnrealSharpBuildToolPath();
 
-	static bool BuildBindings(const FString& BuildConfiguration);
-	static bool BuildPrograms();
+	static bool BuildBindings(FString* OutputPath = nullptr);
 
 	static FString GetDotNetDirectory();
 	static FString GetDotNetExecutablePath();
 
-	static FString UserManagedProjectName;
-	static FString PluginDirectory;
-	static FString UnrealSharpDirectory;
-	static FString GeneratedClassesDirectory;
-	static FString ScriptFolderDirectory;
+	static FString& GetPluginDirectory();
+	static FString GetUnrealSharpDirectory();
+	static FString GetGeneratedClassesDirectory();
+	static FString GetScriptFolderDirectory();
+	static FString GetUserManagedProjectName();
 	
 };

@@ -1,7 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "ULocalPlayerExporter.h"
+﻿#include "ULocalPlayerExporter.h"
+#include "CSharpForUE/CSManager.h"
 
 void UULocalPlayerExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {

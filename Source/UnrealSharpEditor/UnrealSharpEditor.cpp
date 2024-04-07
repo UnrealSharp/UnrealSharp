@@ -32,6 +32,11 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+	
+	if (FApp::IsUnattended())
+	{
+		FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(this, &FUnrealSharpEditorModule::OnAllModulesLoaded);
+	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -45,8 +50,14 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-	
+
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+
+	// Return early and let TickDelegate handle Reload
+	if (Settings->bRequireFocusForHotReload)
+	{
+		return;
+	}
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
@@ -62,14 +73,9 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		{
 			continue;
 		}
-
-		bIsReloading = true;
-
-		// Return early and let TickDelegate handle Reload
-		if (Settings->bRequireFocusForHotReload)
-			return;
-
+		
 		// Return on the first .cs file we encounter so we can reload.
+		bIsReloading = true;
 		StartHotReload();
 		bIsReloading = false;
 		return;
@@ -81,25 +87,22 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FScopedSlowTask Progress(4, LOCTEXT("ReloadingCSharp", "Building C# code..."));
 	Progress.MakeDialog();
 
-	FString BuildConfiguration;
-	GetDefault<UCSDeveloperSettings>()->GetUserBuildConfiguration(BuildConfiguration);
-
 	// Build the user's project.
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build, &BuildConfiguration))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build))
 	{
 		return;
 	}
 
 	// Weave the user's project.
 	Progress.EnterProgressFrame(1, LOCTEXT("WeavingCSharp", "Weaving C# code..."));
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Weave, &BuildConfiguration))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
 	{
 		return;
 	}
 	
 	// Unload the user's assembly, to apply the new one.
 	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
-	if (!FCSManager::Get().UnloadPlugin(FCSProcHelper::UserManagedProjectName))
+	if (!FCSManager::Get().UnloadAssembly(FCSProcHelper::GetUserManagedProjectName()))
 	{
 		return;
 	}
@@ -114,6 +117,15 @@ void FUnrealSharpEditorModule::StartHotReload()
 	// Reinstance all blueprints.
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
 	FCSReinstancer::Get().Reinstance();
+}
+
+void FUnrealSharpEditorModule::OnAllModulesLoaded()
+{
+	FString TestDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), "ManagedBinaries"));
+	EDotNetBuildConfiguration BuildConfiguration = EDotNetBuildConfiguration::Publish;
+	FCSProcHelper::BuildBindings(&TestDirectory);
+	FCSProcHelper::InvokeUnrealSharpBuildTool(Build, &BuildConfiguration);
+	//FCSProcHelper::InvokeUnrealSharpBuildTool(Weave, nullptr, &TestDirectory);
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)

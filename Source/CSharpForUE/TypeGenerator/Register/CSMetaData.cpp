@@ -38,7 +38,15 @@ template<typename FlagType>
 FlagType CSharpMetaDataUtils::GetFlags(const TSharedPtr<FJsonObject>& PropertyInfo, const FString& StringField)
 {
 	uint64 FunctionFlagsInt;
-	TTypeFromString<uint64>::FromString(FunctionFlagsInt, *PropertyInfo->GetStringField(StringField));
+	FString FoundStringField;
+	PropertyInfo->TryGetStringField(StringField, FoundStringField);
+
+	if (FoundStringField.IsEmpty())
+	{
+		return static_cast<FlagType>(0);
+	}
+	
+	TTypeFromString<uint64>::FromString(FunctionFlagsInt, *FoundStringField);
 	return static_cast<FlagType>(FunctionFlagsInt);
 }
 
@@ -137,20 +145,28 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	ParentClass.SerializeFromJson(JsonObject->GetObjectField("ParentClass"));
 
 	JsonObject->TryGetStringField("ConfigCategory", ClassConfigName);
+	JsonObject->TryGetStringArrayField("Interfaces", Interfaces);
+
+	const TArray<TSharedPtr<FJsonValue>>* FoundFunctions;
+	if (JsonObject->TryGetArrayField("Functions", FoundFunctions))
+	{
+		CSharpMetaDataUtils::SerializeFunctions(*FoundFunctions, Functions);
+	}
 	
-	CSharpMetaDataUtils::SerializeFunctions(JsonObject->GetArrayField("Functions"), Functions);
-
-	for (auto& VirtualFunction : JsonObject->GetArrayField("VirtualFunctions"))
+	const TArray<TSharedPtr<FJsonValue>>* FoundVirtualFunctions;
+	if (JsonObject->TryGetArrayField("VirtualFunctions", FoundVirtualFunctions))
 	{
-		VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
+		for (const TSharedPtr<FJsonValue>& VirtualFunction : *FoundVirtualFunctions)
+		{
+			VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField("Name"));
+		}
 	}
 
-	for (auto& Interface : JsonObject->GetArrayField("Interfaces"))
+	const TArray<TSharedPtr<FJsonValue>>* FoundProperties;
+	if (JsonObject->TryGetArrayField("Properties", FoundProperties))
 	{
-		Interfaces.Add(Interface->AsString());
+		CSharpMetaDataUtils::SerializeProperties(*FoundProperties, Properties);
 	}
-	 
-	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField("Properties"), Properties);
 }
 
 void FClassPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
@@ -208,10 +224,11 @@ void FEnumPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& Jso
 void FEnumMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FTypeReferenceMetaData::SerializeFromJson(JsonObject);
+
+	const TArray<TSharedPtr<FJsonValue>>* OutArray;
+	JsonObject->TryGetArrayField("Items", OutArray);
 	
-	EnumHash = JsonObject->GetStringField("EnumHash");
-	
-	for (auto& Item : JsonObject->GetArrayField("Items"))
+	for (const TSharedPtr<FJsonValue>& Item : *OutArray)
 	{
 		Items.Add(Item->AsString());
 	}
@@ -230,13 +247,22 @@ void FFunctionMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObj
 {
 	FMemberMetaData::SerializeFromJson(JsonObject);
 
-	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField("Parameters"), Parameters);
-	CSharpMetaDataUtils::SerializeProperty(JsonObject->GetObjectField("ReturnValue"), ReturnValue);
+	const TArray<TSharedPtr<FJsonValue>>* ParametersArrayField;
+	if (JsonObject->TryGetArrayField("Parameters", ParametersArrayField))
+	{
+		CSharpMetaDataUtils::SerializeProperties(*ParametersArrayField, Parameters);
+	}
 
-	//Since the return value has no name in the C# reflection. Just assign "ReturnValue" to it.
-	ReturnValue.Name = "ReturnValue";
+	const TSharedPtr<FJsonObject>* ReturnValueObject;
+	if (JsonObject->TryGetObjectField("ReturnValue", ReturnValueObject))
+	{
+		ReturnValue.SerializeFromJson(*ReturnValueObject);
 
-	IsVirtual = JsonObject->GetBoolField("IsVirtual");
+		//Since the return value has no name in the C# reflection. Just assign "ReturnValue" to it.
+		ReturnValue.Name = "ReturnValue";
+	}
+
+	JsonObject->TryGetBoolField("IsVirtual", IsVirtual);
 	FunctionFlags = CSharpMetaDataUtils::GetFlags<EFunctionFlags>(JsonObject,"FunctionFlags");
 }
 
@@ -257,7 +283,6 @@ void FPropertyMetaData:: SerializeFromJson(const TSharedPtr<FJsonObject>& JsonOb
 
 	JsonObject->TryGetStringField("BlueprintGetter", BlueprintGetter);
 	JsonObject->TryGetStringField("BlueprintSetter", BlueprintSetter);
-	
 	JsonObject->TryGetStringField("RepNotifyFunctionName", RepNotifyFunctionName);
 }
 
@@ -287,9 +312,9 @@ void FArrayPropertyMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& Js
 void FDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FObjectMetaData::SerializeFromJson(JsonObject);
-	IsRootComponent = JsonObject->GetBoolField("IsRootComponent");
-	AttachmentComponent = JsonObject->GetStringField("AttachmentComponent");
-	AttachmentSocket = JsonObject->GetStringField("AttachmentSocket");
+	JsonObject->TryGetBoolField("IsRootComponent", IsRootComponent);
+	JsonObject->TryGetStringField("AttachmentComponent", AttachmentComponent);
+	JsonObject->TryGetStringField("AttachmentSocket", AttachmentSocket);
 }
 
 void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)

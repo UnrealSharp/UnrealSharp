@@ -1,11 +1,11 @@
 #include "CSTypeRegistry.h"
 #include "CSharpForUE/CSharpForUE.h"
-#include "GlueGenerator/CSGenerator.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
 #include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 template<typename T>
 void DeserializeMetaDataObjects(const TArray<TSharedPtr<FJsonValue>>& MetaDataArray, TMap<FName, T>& Map)
@@ -67,8 +67,8 @@ FCSharpClassInfo* FCSTypeRegistry::FindManagedType(UClass* Class)
 
 	if (ClassInfo.Field == nullptr || ClassInfo.TypeHandle == nullptr)
 	{
-		const FString Namespace = FCSGenerator::Get().GetNamespace(Class);
-		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::UserManagedProjectName, Namespace, Class->GetName());
+		const FString Namespace = UUnrealSharpStatics::GetNamespace(Class);
+		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::GetUserManagedProjectName(), Namespace, Class->GetName());
 		ClassInfo.Field = Class;
 	}
 
