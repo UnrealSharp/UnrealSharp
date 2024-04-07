@@ -62,7 +62,7 @@ public static class Program
     
     public static string GetRuntimeTarget()
     {
-        return buildToolOptions.Runtime ?? "win-x64";
+        return buildToolOptions.Runtime ?? "";
     }
     
     public static string GetBuildConfiguration(BuildConfig buildConfig)

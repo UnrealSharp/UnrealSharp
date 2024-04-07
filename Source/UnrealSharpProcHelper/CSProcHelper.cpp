@@ -162,6 +162,7 @@ FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 
 FString FCSProcHelper::GetDotNetDirectory()
 {
+#if WITH_EDITOR
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
 		
 	TArray<FString> Paths;
@@ -183,7 +184,9 @@ FString FCSProcHelper::GetDotNetDirectory()
 			
 		return Path;
 	}
-    
+#else
+	return GetAssembliesPath();
+#endif
 	return "";
 }
 

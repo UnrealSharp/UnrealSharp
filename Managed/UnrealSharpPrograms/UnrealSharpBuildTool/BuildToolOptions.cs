@@ -16,8 +16,8 @@ public enum BuildAction : int
 
 public enum BuildConfig : int
 {
-    Release,
     Debug,
+    Release,
     Publish,
 }
 

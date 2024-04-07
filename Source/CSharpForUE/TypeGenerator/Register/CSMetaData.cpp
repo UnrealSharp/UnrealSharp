@@ -247,13 +247,22 @@ void FFunctionMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObj
 {
 	FMemberMetaData::SerializeFromJson(JsonObject);
 
-	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField("Parameters"), Parameters);
-	CSharpMetaDataUtils::SerializeProperty(JsonObject->GetObjectField("ReturnValue"), ReturnValue);
+	const TArray<TSharedPtr<FJsonValue>>* ParametersArrayField;
+	if (JsonObject->TryGetArrayField("Parameters", ParametersArrayField))
+	{
+		CSharpMetaDataUtils::SerializeProperties(*ParametersArrayField, Parameters);
+	}
 
-	//Since the return value has no name in the C# reflection. Just assign "ReturnValue" to it.
-	ReturnValue.Name = "ReturnValue";
+	const TSharedPtr<FJsonObject>* ReturnValueObject;
+	if (JsonObject->TryGetObjectField("ReturnValue", ReturnValueObject))
+	{
+		ReturnValue.SerializeFromJson(*ReturnValueObject);
 
-	IsVirtual = JsonObject->GetBoolField("IsVirtual");
+		//Since the return value has no name in the C# reflection. Just assign "ReturnValue" to it.
+		ReturnValue.Name = "ReturnValue";
+	}
+
+	JsonObject->TryGetBoolField("IsVirtual", IsVirtual);
 	FunctionFlags = CSharpMetaDataUtils::GetFlags<EFunctionFlags>(JsonObject,"FunctionFlags");
 }
 

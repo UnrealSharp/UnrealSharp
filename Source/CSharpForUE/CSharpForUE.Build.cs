@@ -66,13 +66,6 @@ public class CSharpForUE : ModuleRules
 		{
 			BuildPrograms();
 		}
-		
-		if (Target.Type == TargetRules.TargetType.Game)
-		{
-			string ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
-			string[] dependencies = Directory.GetFiles(ManagedBinariesPath, "*.*", SearchOption.AllDirectories);
-		}
-	
 	}
 	private void IncludeDotNetHeaders()
 	{
