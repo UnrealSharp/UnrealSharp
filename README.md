@@ -13,12 +13,10 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 ## Prerequisites
 - Unreal Engine 5.3+ (Will support earlier versions in the future)
-- .NET 8.0.1
+- .NET 8.0+
 
-## UnrealSharp 0.1 Issues
+## UnrealSharp 0.2 Issues
 - Linux/Mac support is not yet implemented.
-- Packaging not yet implemented.
-- Hot reload is always full reload of the whole assembly. Will be reworked for 0.2 for speed.
 
 ## Get Started
 
