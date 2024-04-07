@@ -16,26 +16,3 @@ FCSModule::FCSModule(FName InModuleName, const FString& SourceDirectory) : Modul
 		FileManager.MakeDirectory(*FPaths::GetPath(Directory), true);
 	}
 }
-
-FString& FCSModule::CreateCSProjectFileContent()
-{
-	static FString CSProjectFileContent;
-	
-	if (!CSProjectFileContent.IsEmpty())
-	{
-		return CSProjectFileContent;
-	}
-	
-	CSProjectFileContent += TEXT("<Project Sdk=\"Microsoft.NET.Sdk\">\n");
-	CSProjectFileContent += TEXT("  <PropertyGroup>\n");
-	CSProjectFileContent += TEXT("    <TargetFramework>net8.0</TargetFramework>\n");
-	CSProjectFileContent += TEXT("    <ImplicitUsings>enable</ImplicitUsings>\n");
-	CSProjectFileContent += TEXT("    <Nullable>enable</Nullable>\n");
-	CSProjectFileContent += TEXT("  </PropertyGroup>\n");
-	CSProjectFileContent += TEXT("	<ItemGroup>\n");
-	CSProjectFileContent += TEXT("		<ProjectReference Include=\"..\\..\\UnrealSharp\\UnrealSharp.csproj\"/>\n");
-	CSProjectFileContent += TEXT("  </ItemGroup>\n");
-	CSProjectFileContent += TEXT("</Project>\n");
-
-	return CSProjectFileContent;
-}

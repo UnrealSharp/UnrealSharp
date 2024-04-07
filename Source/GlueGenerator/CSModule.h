@@ -10,8 +10,6 @@ struct FCSModule
 	const FString& GetNamespace() const { return Namespace; }
 	const FName& GetModuleName() const { return ModuleName; }
 
-	static FString& CreateCSProjectFileContent();
-
 private:
 
 	FString Directory;
