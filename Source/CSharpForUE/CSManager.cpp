@@ -1,7 +1,6 @@
 ﻿#include "CSManager.h"
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
-#include "CSDeveloperSettings.h"
 #include "CSharpForUE.h"
 #include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
@@ -93,8 +92,8 @@ bool FCSManager::InitializeBindings()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load Runtime Host"));
 		return false;
 	}
-
-	const auto LoadAssemblyAndGetFunctionPointer = InitializeRuntimeHost();
+	
+	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer = InitializeHostfxrSelfContained();
 	
 	if (!LoadAssemblyAndGetFunctionPointer)
 	{
@@ -187,7 +186,7 @@ bool FCSManager::LoadUserAssembly()
 	return true;
 }
 
-load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() const
+load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
 {
 	hostfxr_handle HostFXR_Handle = nullptr;
 	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
@@ -225,6 +224,39 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeRuntimeHost() co
 	}
 
 	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
+}
+
+load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfContained() const
+{
+	FString MainAssemblyPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
+	std::vector Args { *MainAssemblyPath };
+	
+	hostfxr_handle HostFXR_Handle = nullptr;
+	FString DotNetPath = FCSProcHelper::GetAssembliesPath();
+	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
+
+	hostfxr_initialize_parameters InitializeParameters;
+	InitializeParameters.dotnet_root = *DotNetPath;
+	InitializeParameters.host_path = *RuntimeHostPath;
+	
+	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
+	
+	if (ReturnCode != 0 || HostFXR_Handle == nullptr)
+	{
+		Hostfxr_Close(HostFXR_Handle);
+	}
+
+	void* Load_Assembly_And_Get_Function_Pointer = nullptr;
+	ReturnCode = Hostfxr_Get_Runtime_Delegate(HostFXR_Handle, hdt_load_assembly_and_get_function_pointer, &Load_Assembly_And_Get_Function_Pointer);
+	
+	if (ReturnCode != 0 || Load_Assembly_And_Get_Function_Pointer == nullptr)
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("hostfxr_get_runtime_delegate failed with code: %d"), ReturnCode);
+	}
+
+	Hostfxr_Close(HostFXR_Handle);
+
+	return (load_assembly_and_get_function_pointer_fn) Load_Assembly_And_Get_Function_Pointer;
 }
 
 UPackage* FCSManager::GetUnrealSharpPackage()

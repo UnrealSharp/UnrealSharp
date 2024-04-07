@@ -77,10 +77,9 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNet
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-	FString OutputPath = FPaths::ConvertRelativePathToFull(InOutputDirectory ? *InOutputDirectory : GetUserAssemblyDirectory());
 	FString DotNetPath = GetDotNetExecutablePath();
+	
 	FString Args;
-
 	Args += FString::Printf(TEXT("\"%s\""), *GetUnrealSharpBuildToolPath());
 	Args += FString::Printf(TEXT(" --Action %s"), *BuildActionCommand.ToString());
 	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
@@ -88,7 +87,6 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNet
 	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
 	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
-	Args += FString::Printf(TEXT(" --OutputPath \"%s\""), *OutputPath);
 
 	if (BuildConfiguration)
 	{
@@ -114,11 +112,7 @@ bool FCSProcHelper::GenerateProject()
 
 FString FCSProcHelper::GetRuntimeHostPath()
 {
-#if WITH_EDITOR
-	return FPaths::Combine(GetDotNetDirectory(), "host/fxr", HOSTFXR_VERSION, HOSTFXR_WINDOWS);
-#else
 	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
-#endif
 }
 
 FString FCSProcHelper::GetAssembliesPath()
@@ -235,6 +229,8 @@ bool FCSProcHelper::BuildBindings(FString* OutputPath)
 	
 	FString Arguments;
 	Arguments += TEXT("publish");
+	Arguments += " --self-contained";
+	Arguments += " --runtime win-x64";
 	
 	FString FullOutputPath = OutputPath ? *OutputPath : FPaths::ConvertRelativePathToFull(GetAssembliesPath());
 	FString UnrealSharpDirectory = GetUnrealSharpDirectory();

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using UnrealBuildTool;
@@ -67,6 +66,7 @@ public class CSharpForUE : ModuleRules
 			BuildPrograms();
 		}
 	}
+	
 	private void IncludeDotNetHeaders()
 	{
 		PublicSystemIncludePaths.Add(Path.Combine(ManagedPath, "DotNetRuntime", "inc"));
@@ -105,25 +105,11 @@ public class CSharpForUE : ModuleRules
 
 	void BuildPrograms()
 	{
-		string outputPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release, outputPath);
+		string outputDirectory = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release, outputDirectory);
 		Console.WriteLine("UnrealSharpPrograms built successfully!");
 	}
-	
-	void StartDotNetProcess(Collection<string> arguments)
-	{
-		string dotnetPath = FindDotNetExecutable();
-		
-		Process process = new Process();
-		process.StartInfo.FileName = dotnetPath;
-		foreach (var argument in arguments)
-		{
-			process.StartInfo.ArgumentList.Add(argument);
-		}
-		process.Start();
-		process.WaitForExit();
-	}
-	
+
 	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)
 	{
 		if (!File.Exists(solutionPath))
@@ -150,8 +136,6 @@ public class CSharpForUE : ModuleRules
 		
 		process.Start();
 		process.WaitForExit();
-		
-		Console.WriteLine("Successfully built solution at: \"{0}\" ", solutionPath);
 	}
 	
 }

@@ -11,7 +11,7 @@ public enum BuildAction : int
     GenerateProject,
     Rebuild,
     Weave,
-    Package,
+    Publish,
 }
 
 public enum BuildConfig : int
@@ -26,8 +26,8 @@ public class BuildToolOptions
     [Option("Action", Required = true, HelpText = "The action the build tool should process. Build / Clean / GenerateProjects")]
     public BuildAction Action { get; set; }
     
-    [Option("DotNetPath", Required = true, HelpText = "The path to the dotnet.exe")]
-    public string DotNetExecutable { get; set; }
+    [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
+    public string? DotNetExecutable { get; set; }
     
     [Option("BuildConfig", Required = false, HelpText = "Build with debug or release")]
     public BuildConfig BuildConfig { get; set; }
@@ -41,14 +41,11 @@ public class BuildToolOptions
     [Option("EngineDirectory", Required = false)]
     public string EngineDirectory { get; set; }
     
-    [Option("OutputPath", Required = false)]
-    public string OutputPath { get; set; }
-    
-    [Option("Runtime", Required = false)]
-    public string? Runtime { get; set; }
-    
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; }
+    
+    [Option("ArchiveDirectory", Required = false, HelpText = "The directory where the archive should be stored.")]
+    public string? ArchiveDirectory { get; set; }
 
     public static void PrintHelp(ParserResult<BuildToolOptions> result)
     {

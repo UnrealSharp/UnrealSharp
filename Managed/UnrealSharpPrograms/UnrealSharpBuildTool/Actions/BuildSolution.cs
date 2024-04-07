@@ -1,13 +1,15 @@
-﻿namespace UnrealSharpBuildTool.Actions;
+﻿using System.Collections.ObjectModel;
 
-public class BuildSolution : BuildToolAction
+namespace UnrealSharpBuildTool.Actions;
+
+public class BuildSolution() : BuildToolAction
 {
     public override bool RunAction()
     {
         return StartBuildingSolution(Program.GetScriptFolder(), Program.buildToolOptions.BuildConfig);
     }
 
-    private static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig)
+    public static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig, Collection<string>? extraArguments = null)
     {
         slnPath = Program.FixPath(slnPath);
         
@@ -31,14 +33,13 @@ public class BuildSolution : BuildToolAction
         
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
         buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(buildConfig));
-
-        if (buildConfig == BuildConfig.Publish)
+        
+        if (extraArguments != null)
         {
-            buildSolutionProcess.StartInfo.ArgumentList.Add("--self-contained");
-            buildSolutionProcess.StartInfo.ArgumentList.Add("true");
-            
-            buildSolutionProcess.StartInfo.ArgumentList.Add("--runtime");
-            buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetRuntimeTarget());
+            foreach (var argument in extraArguments)
+            {
+                buildSolutionProcess.StartInfo.ArgumentList.Add(argument);
+            }
         }
 
         return buildSolutionProcess.StartBuildToolProcess();

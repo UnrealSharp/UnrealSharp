@@ -48,21 +48,11 @@ public static class Program
     {
         return Path.Combine(buildToolOptions.ProjectDirectory, buildToolOptions.ProjectName + ".uproject");
     }
-
-    public static string GetOutputPath()
-    {
-        return buildToolOptions.OutputPath;
-    }
     
     public static string GetScriptFolderBinaries()
     {
         string currentBuildConfig = GetBuildConfiguration(buildToolOptions.BuildConfig);
-        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, GetVersion(), GetRuntimeTarget());
-    }
-    
-    public static string GetRuntimeTarget()
-    {
-        return buildToolOptions.Runtime ?? "";
+        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, GetVersion());
     }
     
     public static string GetBuildConfiguration(BuildConfig buildConfig)
@@ -95,15 +85,27 @@ public static class Program
     {
         return "Managed" + buildToolOptions.ProjectName;
     }
+    
+    public static string GetOutputPath()
+    {
+        string rootOutput = buildToolOptions.ArchiveDirectory ?? buildToolOptions.ProjectDirectory;
+        
+        if (buildToolOptions.BuildConfig == BuildConfig.Publish)
+        {
+            rootOutput = Path.Combine(rootOutput, buildToolOptions.ProjectName);
+        }
+        
+        return Path.Combine(rootOutput, "Binaries", "Managed");
+    }
 
     public static string GetWeaver()
     {
-        return "UnrealSharpWeaver.dll";
+        return Path.Combine(GetManagedBinariesDirectory(), "UnrealSharpWeaver.dll");
     }
 
-    public static string GetBindingsPath()
+    public static string GetManagedBinariesDirectory()
     {
-        return Path.Combine(buildToolOptions.PluginDirectory, "Binaries", "Managed", GetVersion());
+        return Path.Combine(buildToolOptions.PluginDirectory, "Binaries", "Managed");
     }
     
     public static string GetVersion()

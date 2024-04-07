@@ -58,7 +58,8 @@ private:
 	bool LoadRuntimeHost();
 	bool InitializeBindings();
 	
-	load_assembly_and_get_function_pointer_fn InitializeRuntimeHost() const;
+	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
+	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
 
 	// Begin FUObjectArray::FUObjectDeleteListener Api
 	virtual void NotifyUObjectDeleted(const UObjectBase *Object, int32 Index) override;
