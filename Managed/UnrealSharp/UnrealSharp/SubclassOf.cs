@@ -4,7 +4,7 @@ using UnrealSharp.Interop;
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct SubclassOf<T>
+public readonly struct SubclassOf<T> 
 {
     internal IntPtr NativeClass { get; }
     private Type ManagedType { get; }
@@ -35,12 +35,12 @@ public readonly struct SubclassOf<T>
     {
         NativeClass = nativeClass;
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
-        ManagedType = GcHandleUtilities.GetObjectFromHandlePtr<T>(handle).GetType();
+        ManagedType = GcHandleUtilities.GetObjectFromHandlePtr(handle).GetType();
     }
     
     public T GetDefaultObject()
     {
-        IntPtr handle = UClassExporter.CallGetDefaultFromString(ManagedType.Name);
+        IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
     

@@ -4,11 +4,14 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class TypeReferenceMetadata : BaseMetaData
 {
+    public TypeReference TypeDef;
+    
     public TypeReferenceMetadata(TypeDefinition typeDef, string attributeName = "")
     {
         AssemblyName = typeDef.Module.Assembly.Name.Name;
         Namespace = typeDef.Namespace;
         Name = typeDef.Name;
+        TypeDef = typeDef;
         
         AddMetadataAttributes(typeDef.CustomAttributes);
         
