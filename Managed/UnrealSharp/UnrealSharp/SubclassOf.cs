@@ -20,6 +20,11 @@ public readonly struct SubclassOf<T>
     
     public SubclassOf(Type classType)
     {
+        if (classType == null)
+        {
+            throw new ArgumentNullException(nameof(classType));
+        }
+        
         if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)))
         {
             NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.Name);
@@ -33,6 +38,11 @@ public readonly struct SubclassOf<T>
     
     public SubclassOf(IntPtr nativeClass)
     {
+        if (nativeClass == IntPtr.Zero)
+        {
+            throw new ArgumentNullException(nameof(nativeClass));
+        }
+        
         NativeClass = nativeClass;
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
         ManagedType = GcHandleUtilities.GetObjectFromHandlePtr(handle).GetType();

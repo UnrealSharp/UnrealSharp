@@ -133,8 +133,8 @@ public class UnrealSharpObject : IDisposable
     public T SpawnActor<T>(Transform spawnTransform, 
         SubclassOf<T> actorType, 
         SpawnActorCollisionHandlingMethod spawnMethod = SpawnActorCollisionHandlingMethod.Default, 
-        UnrealSharpObject instigator = null, 
-        UnrealSharpObject owner = null) where T : Actor
+        UnrealSharpObject? instigator = null, 
+        UnrealSharpObject? owner = null) where T : Actor
     {
         ActorSpawnParameters actorSpawnParameters = new ActorSpawnParameters
         {
@@ -144,15 +144,16 @@ public class UnrealSharpObject : IDisposable
             SpawnMethod = spawnMethod,
         };
         
-        IntPtr handle = UWorldExporter.CallSpawnActor(NativeObject, spawnTransform, actorType.NativeClass, actorSpawnParameters);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        return SpawnActor(spawnTransform, actorType, actorSpawnParameters);
     }
     
-    public T SpawnActor<T>(Transform spawnTransform, 
-        SubclassOf<T> actorType, 
-        ActorSpawnParameters spawnParameters) where T : Actor
+    public T SpawnActor<T>(Transform spawnTransform, SubclassOf<T> actorType, ActorSpawnParameters spawnParameters) where T : Actor
     {
-        return SpawnActor(spawnTransform, actorType, spawnParameters);
+        unsafe
+        {
+            IntPtr handle = UWorldExporter.CallSpawnActor(NativeObject, &spawnTransform, actorType.NativeClass, ref spawnParameters);
+            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        }
     }
     
     public T GetWorldSubsystem<T>() where T : WorldSubsystem

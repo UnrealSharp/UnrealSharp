@@ -7,11 +7,12 @@ public struct ActorSpawnParameters()
 {
     private IntPtr ownerNativePtr = 0;
     private IntPtr instigatorNativePtr = 0;
+    private IntPtr templateNativePtr = 0;
     private NativeBool nativeDeferConstruction = NativeBool.False;
-
     public SpawnActorCollisionHandlingMethod SpawnMethod = SpawnActorCollisionHandlingMethod.Default;
 
     private UnrealSharpObject _owner = null; 
+    
     public UnrealSharpObject Owner
     { 
         get => _owner;
@@ -31,6 +32,18 @@ public struct ActorSpawnParameters()
         {
             _instigator = value;
             instigatorNativePtr = _instigator?.NativeObject ?? IntPtr.Zero;
+        }
+    }
+    
+    private UnrealSharpObject _template = null;
+    
+    public UnrealSharpObject Template
+    { 
+        get => _template;
+        set
+        {
+            _template = value;
+            templateNativePtr = _template?.NativeObject ?? IntPtr.Zero;
         }
     }
 

@@ -13,7 +13,7 @@ void UUWorldExporter::ExportFunctions(FRegisterExportedFunction RegisterExported
 	EXPORT_FUNCTION(GetWorldSubsystem)
 }
 
-void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform& SpawnTransform, UClass* Class, const FSpawnActorParameters_Interop& ManagedSpawnedParameters)
+void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform* SpawnTransform, UClass* Class, const FSpawnActorParameters_Interop* ManagedSpawnedParameters)
 {
 	if (!IsValid(Outer) || !IsValid(Class))
 	{
@@ -21,12 +21,13 @@ void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform& SpawnT
 	}
 
 	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Instigator = ManagedSpawnedParameters.Instigator;
-	SpawnParameters.Owner = ManagedSpawnedParameters.Owner;
-	SpawnParameters.bDeferConstruction = ManagedSpawnedParameters.DeferConstruction;
-	SpawnParameters.SpawnCollisionHandlingOverride = ManagedSpawnedParameters.SpawnMethod;
+	SpawnParameters.Instigator = ManagedSpawnedParameters->Instigator;
+	SpawnParameters.Owner = ManagedSpawnedParameters->Owner;
+	SpawnParameters.Template = ManagedSpawnedParameters->Template;
+	SpawnParameters.bDeferConstruction = ManagedSpawnedParameters->DeferConstruction;
+	SpawnParameters.SpawnCollisionHandlingOverride = ManagedSpawnedParameters->SpawnMethod;
 	
-	AActor* NewActor = Outer->GetWorld()->SpawnActor(Class, &SpawnTransform, SpawnParameters);
+	AActor* NewActor = Outer->GetWorld()->SpawnActor(Class, SpawnTransform, SpawnParameters);
 
 	if (!IsValid(NewActor))
 	{
