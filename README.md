@@ -24,7 +24,8 @@ Visit [Get Started](https://github.com/UnrealSharp/UnrealSharp/wiki/2.-Get-Start
 
 ## Code Example
 
-```using UnrealSharp;
+```c#
+using UnrealSharp;
 using UnrealSharp.Attributes;
 using UnrealSharp.Engine;
 using UnrealSharp.Niagara;
