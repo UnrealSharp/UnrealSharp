@@ -256,8 +256,8 @@ void FFunctionMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObj
 	const TSharedPtr<FJsonObject>* ReturnValueObject;
 	if (JsonObject->TryGetObjectField("ReturnValue", ReturnValueObject))
 	{
-		ReturnValue.SerializeFromJson(*ReturnValueObject);
-
+		CSharpMetaDataUtils::SerializeProperty(*ReturnValueObject, ReturnValue);
+		
 		//Since the return value has no name in the C# reflection. Just assign "ReturnValue" to it.
 		ReturnValue.Name = "ReturnValue";
 	}
