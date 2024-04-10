@@ -42,7 +42,7 @@ public static class FastInvokerManager
     {
         if (!assembly.TryGetTarget(out var foundAssembly))
         {
-            throw new Exception("Failed to get assembly");
+            return;
         }
 
         MethodInvokers.Remove(foundAssembly);
