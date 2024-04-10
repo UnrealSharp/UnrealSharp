@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using System.Text;
+
 using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
@@ -36,8 +36,15 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         unsafe
         {
             UnmanagedArray buffer = new UnmanagedArray();
-            FNameExporter.CallNameToString(this, ref buffer);
-            return new string((char*) buffer.Data);
+            try
+            {
+                FNameExporter.CallNameToString(this, ref buffer);
+                return new string((char*)buffer.Data);
+            }
+            finally
+            {
+                FStringExporter.CallDisposeString(ref buffer);
+            }
         }
     }
     
