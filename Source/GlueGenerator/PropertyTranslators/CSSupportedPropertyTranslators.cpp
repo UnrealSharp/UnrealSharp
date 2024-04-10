@@ -26,6 +26,7 @@
 #include "UObject/TextProperty.h"
 #include "UObject/EnumProperty.h"
 #include "HAL/PlatformFilemanager.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 using namespace ScriptGeneratorUtilities;
 
@@ -82,6 +83,8 @@ FCSSupportedPropertyTranslators::FCSSupportedPropertyTranslators(const FCSNameMa
 	AddBlittableCustomStructPropertyTranslator("Transform", UNREAL_SHARP_NAMESPACE ".Transform", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("RandomStream", UNREAL_SHARP_NAMESPACE ".RandomStream", Blacklist);
 	AddBlittableCustomStructPropertyTranslator("TimerHandle", UNREAL_SHARP_NAMESPACE ".TimerHandle", Blacklist);
+	AddBlittableCustomStructPropertyTranslator("ActorInstanceHandle", UNREAL_SHARP_NAMESPACE ".ActorInstanceHandle", Blacklist);
+	
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableStructPropertyTranslator(*this));
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));
 

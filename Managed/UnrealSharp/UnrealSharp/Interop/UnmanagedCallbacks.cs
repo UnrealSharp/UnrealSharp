@@ -54,7 +54,6 @@ public static class UnmanagedCallbacks
             }
             
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-
             var currentType = foundType;
             
             while (currentType != null)
@@ -63,9 +62,9 @@ public static class UnmanagedCallbacks
 
                 if (method != null)
                 {
-                    return method.MethodHandle.Value;
+                    return FastInvokerManager.CreateFastInvoker(method);
                 }
-
+                
                 currentType = currentType.BaseType;
             }
 
@@ -120,24 +119,19 @@ public static class UnmanagedCallbacks
     }
         
     [UnmanagedCallersOnly]
-    public static int InvokeManagedMethod(IntPtr managedObjectPtr, IntPtr methodHandlePtr, IntPtr argumentsBuffer, IntPtr returnValueBuffer, IntPtr exceptionTextBuffer)
+    public static int InvokeManagedMethod(IntPtr managedObjectPtr, IntPtr fastInvokerHandlePtr, IntPtr argumentsBuffer, IntPtr returnValueBuffer, IntPtr exceptionTextBuffer)
     {
         try
         {
-            MethodBase? methodToInvoke = MethodBase.GetMethodFromHandle(RuntimeMethodHandle.FromIntPtr(methodHandlePtr));
-            if (methodToInvoke == null)
-            {
-                throw new Exception("methodToInvoke is null");
-            }
-
+            FastInvoker? fastInvoker = FastInvokerManager.GetFastInvoker(fastInvokerHandlePtr);
             object? managedObject = GCHandle.FromIntPtr(managedObjectPtr).Target;
+            
             if (managedObject == null)
             {
                 throw new Exception("managedObject is null");
             }
-
-            object[] arguments = [argumentsBuffer, returnValueBuffer];
-            methodToInvoke.Invoke(managedObject, arguments);
+            
+            fastInvoker.Invoke(managedObject, argumentsBuffer, returnValueBuffer);
         }
         catch (Exception ex)
         {
@@ -183,9 +177,8 @@ public static class UnmanagedCallbacks
         }
 
         GCHandle foundHandle = GCHandle.FromIntPtr(Handle);
-        IDisposable? disposable = foundHandle.Target as IDisposable;
-        
-        if (disposable != null)
+
+        if (foundHandle.Target is IDisposable disposable)
         {
             disposable.Dispose();
         }

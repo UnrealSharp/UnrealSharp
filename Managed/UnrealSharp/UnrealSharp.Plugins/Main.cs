@@ -23,24 +23,26 @@ public static class Main
     private sealed class PluginLoadContextWrapper
     {
         private PluginLoadContext? _pluginLoadContext;
-        private readonly WeakReference _weakReference;
 
-        private PluginLoadContextWrapper(PluginLoadContext pluginLoadContext, WeakReference weakReference)
+        private PluginLoadContextWrapper(PluginLoadContext pluginLoadContext, Assembly assembly)
         {
             _pluginLoadContext = pluginLoadContext;
-            _weakReference = weakReference;
+            Assembly = new WeakReference<Assembly>(assembly);
         }
 
         public string? AssemblyLoadedPath => _pluginLoadContext?.AssemblyLoadedPath;
         public bool IsCollectible => _pluginLoadContext?.IsCollectible ?? true;
-        public bool IsAlive => _weakReference.IsAlive;
+        public bool IsAlive => _pluginLoadContext != null;
+        
+        // Be careful using this. Any hard reference at the wrong time will prevent the plugin from being unloaded.
+        // Thus breaking hot reloading.
+        public WeakReference<Assembly> Assembly { get; }
 
         public static (Assembly, PluginLoadContextWrapper) CreateAndLoadFromAssemblyName(AssemblyName assemblyName, string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible)
         {
             var context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
-            var reference = new WeakReference(context, trackResurrection: true);
-            var wrapper = new PluginLoadContextWrapper(context, reference);
             var assembly = context.LoadFromAssemblyName(assemblyName);
+            var wrapper = new PluginLoadContextWrapper(context, assembly);
             return (assembly, wrapper);
         }
         
@@ -165,6 +167,8 @@ public static class Main
             {
                 throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
             }
+            
+            FastInvokerManager.FreeAllInvokersForAssembly(pluginLoadContext.Assembly);
             
             Console.WriteLine($"Unloading plugin (Path: {pluginLoadContext.AssemblyLoadedPath}");
 

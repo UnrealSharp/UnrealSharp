@@ -1,6 +1,5 @@
 ﻿#include "UObjectExporter.h"
 #include "CSharpForUE/CSManager.h"
-#include "CSharpForUE/TypeGenerator/CSClass.h"
 
 void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -48,7 +47,6 @@ FName UUObjectExporter::NativeGetName(UObject* Object)
 void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params)
 {
 	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
-	NewStack.CurrentNativeFunction = NativeFunction;
 	
 	if (NativeFunction->HasAnyFunctionFlags(FUNC_HasOutParms))
 	{
@@ -87,7 +85,7 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 		ReturnValueAddress = Params + NativeFunction->ReturnValueOffset;
 	}
 	
-	NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
+	NativeFunction->GetNativeFunc()(NativeObject, NewStack, ReturnValueAddress);
 }
 
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)
