@@ -44,11 +44,8 @@ public static class FastInvokerManager
         {
             throw new Exception("Failed to get assembly");
         }
-        
-        if (!MethodInvokers.Remove(foundAssembly))
-        {
-            throw new Exception("No invokers found for assembly");
-        }
+
+        MethodInvokers.Remove(foundAssembly);
     }
 
     private static readonly Dictionary<Assembly, List<FastInvoker>> MethodInvokers = [];
