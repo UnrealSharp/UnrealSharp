@@ -653,6 +653,7 @@ void FPropertyTranslator::FunctionExporter::ExportDeprecation(FCSScriptBuilder& 
 
 void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType) const
 {
+	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
 	ProtectionMode ProtectionBehavior = ProtectionMode::UseUFunctionProtection;
 	OverloadMode OverloadBehavior = OverloadMode::AllowOverloads;
 	BlueprintVisibility CallBehavior = BlueprintVisibility::Call;
@@ -672,7 +673,7 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
 	}
 
-	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	if (bIsEditorOnly)
 	{
 		Builder.BeginWithEditorOnlyBlock();
 	}
@@ -682,7 +683,7 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	Exporter.ExportOverloads(Builder);
 	Exporter.ExportFunction(Builder);
 
-	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	if (bIsEditorOnly)
 	{
 		Builder.EndPreprocessorBlock();
 	}
@@ -690,11 +691,17 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 
 void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const
 {
+	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
 	FProperty* ReturnProperty = Function->GetReturnProperty();
 
 	FString ParamsStringAPI;
 	FString ParamsCallString;
 	FString NativeMethodName = Function->GetName();
+
+	if (bIsEditorOnly)
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
 
 	for (TFieldIterator<FProperty> ParamIt(Function); ParamIt; ++ParamIt)
 	{
@@ -837,6 +844,11 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 
 	Builder.EndUnsafeBlock();
 	Builder.CloseBrace(); // Invoker
+
+	if (bIsEditorOnly)
+	{
+		Builder.EndPreprocessorBlock();
+	}
 
 	Builder.AppendLine();
 }

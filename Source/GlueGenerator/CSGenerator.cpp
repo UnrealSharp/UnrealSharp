@@ -843,10 +843,8 @@ void FCSGenerator::ExportStaticConstructor(FCSScriptBuilder& Builder, const UStr
 	{
 		Builder.AppendLine();
 		ExportClassFunctionsStaticConstruction(Builder, ExportedFunctions);
-
 		Builder.AppendLine();
 		ExportClassOverridableFunctionsStaticConstruction(Builder, ExportedOverrideableFunctions);
-
 		Builder.AppendLine();
 	}
 	else
@@ -867,6 +865,13 @@ void FCSGenerator::ExportClassOverridableFunctionsStaticConstruction(FCSScriptBu
 			continue;
 		}
 
+		bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
+		
+		if (bIsEditorOnly)
+		{
+			Builder.BeginWithEditorOnlyBlock();
+		}
+		
 		FString NativeMethodName = Function->GetName();
 		Builder.AppendLine(FString::Printf(TEXT("IntPtr %s_NativeFunction = %s.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"%s\");"), *NativeMethodName, UClassCallbacks, *NativeMethodName));
 		Builder.AppendLine(FString::Printf(TEXT("%s_ParamsSize = %s.CallGetNativeFunctionParamsSize(%s_NativeFunction);"), *NativeMethodName, UFunctionCallbacks, *NativeMethodName));
@@ -875,6 +880,11 @@ void FCSGenerator::ExportClassOverridableFunctionsStaticConstruction(FCSScriptBu
 			FProperty* Property = *It;
 			const FPropertyTranslator& ParamHandler = PropertyTranslators->Find(Property);
 			ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
+		}
+
+		if (bIsEditorOnly)
+		{
+			Builder.EndPreprocessorBlock();
 		}
 
 		Builder.AppendLine();
@@ -892,8 +902,9 @@ void FCSGenerator::ExportClassFunctionsStaticConstruction(FCSScriptBuilder& Buil
 void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function)
 {
 	FString NativeMethodName = Function->GetName();
-
-	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
+	
+	if (bIsEditorOnly)
 	{
 		Builder.BeginWithEditorOnlyBlock();
 	}
@@ -912,7 +923,7 @@ void FCSGenerator::ExportClassFunctionStaticConstruction(FCSScriptBuilder& Build
 		ParamHandler.ExportParameterStaticConstruction(Builder, NativeMethodName, Property);
 	}
 
-	if (Function->HasAnyFunctionFlags(FUNC_EditorOnly))
+	if (bIsEditorOnly)
 	{
 		Builder.EndPreprocessorBlock();
 	}
