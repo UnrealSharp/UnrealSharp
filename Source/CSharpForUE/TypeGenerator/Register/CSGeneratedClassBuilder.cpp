@@ -28,6 +28,16 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		}
 		
 		Field->ClassFlags = TypeMetaData->ClassFlags;
+		if (SuperClass->HasAnyClassFlags(CLASS_Config))
+		{
+			Field->ClassFlags |= CLASS_Config;
+		}
+
+		if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
+		{
+			Field->ClassFlags |= CLASS_HasInstancedReference;
+		}
+
 		Field->SetSuperStruct(SuperClass);
 		Field->PropertyLink = SuperClass->PropertyLink;
 		Field->ClassWithin = SuperClass->ClassWithin;
