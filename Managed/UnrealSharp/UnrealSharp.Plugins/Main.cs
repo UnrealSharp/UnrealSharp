@@ -168,8 +168,6 @@ public static class Main
                 throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
             }
             
-            FastInvokerManager.FreeAllInvokersForAssembly(pluginLoadContext.Assembly);
-            
             Console.WriteLine($"Unloading plugin (Path: {pluginLoadContext.AssemblyLoadedPath}");
 
             pluginLoadContext.Unload();

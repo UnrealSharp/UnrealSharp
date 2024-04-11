@@ -62,7 +62,7 @@ public static class UnmanagedCallbacks
 
                 if (method != null)
                 {
-                    return FastInvokerManager.CreateFastInvoker(method);
+                    return method.MethodHandle.GetFunctionPointer();
                 }
                 
                 currentType = currentType.BaseType;
@@ -119,19 +119,22 @@ public static class UnmanagedCallbacks
     }
         
     [UnmanagedCallersOnly]
-    public static int InvokeManagedMethod(IntPtr managedObjectPtr, IntPtr fastInvokerHandlePtr, IntPtr argumentsBuffer, IntPtr returnValueBuffer, IntPtr exceptionTextBuffer)
+    public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle,
+        delegate*<object, IntPtr, IntPtr, void> methodPtr, 
+        IntPtr argumentsBuffer, 
+        IntPtr returnValueBuffer, 
+        IntPtr exceptionTextBuffer)
     {
         try
         {
-            FastInvoker? fastInvoker = FastInvokerManager.GetFastInvoker(fastInvokerHandlePtr);
-            object? managedObject = GCHandle.FromIntPtr(managedObjectPtr).Target;
+            object? managedObject = GCHandle.FromIntPtr(managedObjectHandle).Target;
             
             if (managedObject == null)
             {
-                throw new Exception("managedObject is null");
+                throw new ArgumentNullException(nameof(managedObject));
             }
             
-            fastInvoker.Invoke(managedObject, argumentsBuffer, returnValueBuffer);
+            methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
         }
         catch (Exception ex)
         {
@@ -153,9 +156,8 @@ public static class UnmanagedCallbacks
             }
 
             GCHandle foundHandle = GCHandle.FromIntPtr(delegatePtr);
-            Delegate? @delegate = foundHandle.Target as Delegate;
 
-            if (@delegate == null)
+            if (foundHandle.Target is not Delegate @delegate)
             {
                 return;
             }
@@ -169,14 +171,14 @@ public static class UnmanagedCallbacks
     }
 
     [UnmanagedCallersOnly]
-    public static void Dispose(IntPtr Handle)
+    public static void Dispose(IntPtr handle)
     {
-        if (Handle == IntPtr.Zero)
+        if (handle == IntPtr.Zero)
         {
             return;
         }
 
-        GCHandle foundHandle = GCHandle.FromIntPtr(Handle);
+        GCHandle foundHandle = GCHandle.FromIntPtr(handle);
 
         if (foundHandle.Target is IDisposable disposable)
         {

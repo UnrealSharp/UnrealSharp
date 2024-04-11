@@ -39,16 +39,17 @@ public class UnrealSharpObject : IDisposable
     
     internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
-        UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
+        unsafe
+        {
+            UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
         
-        const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        var foundConstructor = typeToCreate.GetConstructor(bindingFlags, null, Type.EmptyTypes, null);
+            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            var foundConstructor = (delegate*<object, void>) typeToCreate.GetConstructor(bindingFlags, Type.EmptyTypes).MethodHandle.GetFunctionPointer();
+            createdObject.NativeObject = nativeObjectPtr;
+            foundConstructor(createdObject);
         
-        createdObject.NativeObject = nativeObjectPtr;
-
-        foundConstructor.Invoke(createdObject, null);
-        
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(createdObject));
+            return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(createdObject));
+        }
     }
 
     public override string ToString()
@@ -75,7 +76,13 @@ public class UnrealSharpObject : IDisposable
                 // Use the default color if none is provided
                 if (color.IsZero())
                 {
-                    color = new LinearColor(0.0f, 0.66f, 1);
+                    color = new LinearColor
+                    {
+                        R = 0.0f,
+                        G = 0.66f,
+                        B = 1.0f,
+                        A = 1.0f
+                    };
                 }
                 
                 UKismetSystemLibraryExporter.CallPrintString(

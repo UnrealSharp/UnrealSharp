@@ -1,7 +1,15 @@
 namespace UnrealSharp.CoreUObject;
 
-public partial struct LinearColor(float R, float G, float B, float A = 1) : IEquatable<LinearColor>
+public partial struct LinearColor : IEquatable<LinearColor>
 {
+    public LinearColor(float r, float g, float b, float a = 1)
+    {
+        R = r;
+        G = g;
+        B = b;
+        A = a;
+    }
+    
     public static LinearColor operator *(LinearColor a, LinearColor b)
     {
         return new LinearColor(a.R * b.R, a.G * b.G, a.B * b.B, a.A * b.A);
@@ -55,6 +63,11 @@ public partial struct LinearColor(float R, float G, float B, float A = 1) : IEqu
     public bool Equals(LinearColor other)
     {
         return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
+    }
+    
+    public override bool Equals(object obj)
+    {
+        return obj is LinearColor other && Equals(other);
     }
 
     public override string ToString()
@@ -130,15 +143,4 @@ public partial struct LinearColor(float R, float G, float B, float A = 1) : IEqu
     public static LinearColor PurpleWhite => new(0.75f, 0.75f, 1);
     public static LinearColor TurquoiseWhite => new(0.75f, 1, 0.75f);
     public static LinearColor GrayWhite => new(0.75f, 0.75f, 0.75f);
-    public static LinearColor WhiteTransparent => new(1, 1, 1, 0.5f);
-    public static LinearColor BlackTransparent => new(0, 0, 0, 0.5f);
-    public static LinearColor RedTransparent => new(1, 0, 0, 0.5f);
-    public static LinearColor GreenTransparent => new(0, 1, 0, 0.5f);
-    public static LinearColor BlueTransparent => new(0, 0, 1, 0.5f);
-    public static LinearColor YellowTransparent => new(1, 1, 0, 0.5f);
-    public static LinearColor CyanTransparent => new(0, 1, 1, 0.5f);
-    public static LinearColor MagentaTransparent => new(1, 0, 1, 0.5f);
-    public static LinearColor OrangeTransparent => new(1, 0.5f, 0, 0.5f);
-    public static LinearColor PurpleTransparent => new(0.5f, 0, 0.5f, 0.5f);
-    public static LinearColor TurquoiseTransparent => new(0, 1, 1, 0.5f);
 }
