@@ -8,100 +8,90 @@
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
 
+#if WITH_EDITOR
+#include "Kismet2/KismetEditorUtilities.h"
+#endif
+
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	//Set the super class for this UClass.
+	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(*TypeMetaData->ParentClass.Name);
+
+#if WITH_EDITOR
+	// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
+	UBlueprint* DummyBlueprint = FKismetEditorUtilities::CreateBlueprint(SuperClass, Field, Field->GetFName(), BPTYPE_Normal, UCSBlueprint::StaticClass(), UBlueprintGeneratedClass::StaticClass());
+	DummyBlueprint->SkeletonGeneratedClass = Field;
+	DummyBlueprint->GeneratedClass = Field;
+	DummyBlueprint->ParentClass = SuperClass;
+	Field->ClassGeneratedBy = DummyBlueprint;
+#endif
+
+	Field->ClassFlags = TypeMetaData->ClassFlags;
+	
+	if (SuperClass->HasAnyClassFlags(CLASS_Config))
 	{
-		UClass* SuperClass = FCSTypeRegistry::GetClassFromName(*TypeMetaData->ParentClass.Name);
+		Field->ClassFlags |= CLASS_Config;
+	}
 
-		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-		{
-			UBlueprint* DummyBlueprint = NewObject<UCSBlueprint>(Field, Field->GetFName(), RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
-			DummyBlueprint->SkeletonGeneratedClass = Field;
-			DummyBlueprint->GeneratedClass = Field;
-			DummyBlueprint->ParentClass = SuperClass;
+	if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
+	{
+		Field->ClassFlags |= CLASS_HasInstancedReference;
+	}
 
-			#if WITH_EDITOR
-			DummyBlueprint->BlueprintDisplayName = Field->GetName();
-			Field->ClassGeneratedBy = DummyBlueprint;
-			#endif
-		}
-		
-		Field->ClassFlags = TypeMetaData->ClassFlags;
-		if (SuperClass->HasAnyClassFlags(CLASS_Config))
-		{
-			Field->ClassFlags |= CLASS_Config;
-		}
+	Field->SetSuperStruct(SuperClass);
+	Field->PropertyLink = SuperClass->PropertyLink;
+	Field->ClassWithin = SuperClass->ClassWithin;
 
-		if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
-		{
-			Field->ClassFlags |= CLASS_HasInstancedReference;
-		}
-
-		Field->SetSuperStruct(SuperClass);
-		Field->PropertyLink = SuperClass->PropertyLink;
-		Field->ClassWithin = SuperClass->ClassWithin;
-
-		if (TypeMetaData->ClassConfigName.IsEmpty())
-		{
-			Field->ClassConfigName = SuperClass->ClassConfigName;
-		}
-		else
-		{
-			Field->ClassConfigName = *TypeMetaData->ClassConfigName;
-		}
+	if (TypeMetaData->ClassConfigName.IsEmpty())
+	{
+		Field->ClassConfigName = SuperClass->ClassConfigName;
+	}
+	else
+	{
+		Field->ClassConfigName = *TypeMetaData->ClassConfigName;
 	}
 
 	//Implement all Blueprint interfaces declared
-	{
-		ImplementInterfaces(Field, TypeMetaData->Interfaces);
-	}
+	ImplementInterfaces(Field, TypeMetaData->Interfaces);
 	
 	//This will only generate functions flagged with BlueprintCallable, BlueprintEvent or virtual functions
-	{
-		const TSharedRef<FClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
-		FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassMetaDataRef);
-		FCSFunctionFactory::GenerateFunctions(Field, ClassMetaDataRef->Functions);
-	}
+	const TSharedRef<FClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
+	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassMetaDataRef);
+	FCSFunctionFactory::GenerateFunctions(Field, ClassMetaDataRef->Functions);
 	
 	//Generate properties for this class
-	{
-		FCSPropertyFactory::GeneratePropertiesForType(Field, TypeMetaData->Properties);
-	}
+	FCSPropertyFactory::GeneratePropertiesForType(Field, TypeMetaData->Properties);
 
 	//Finalize class
+	if (Field->IsChildOf<AActor>())
 	{
-		if (Field->IsChildOf<AActor>())
-		{
-			Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
-		}
-		else
-		{
-			#if WITH_EDITOR
-			// Make all C# ActorComponents BlueprintSpawnableComponent
-			if (Field->IsChildOf<UActorComponent>())
-			{
-				Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
-			}
-			#endif
-			
-			Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
-		}
-		
-		Field->Bind();
-		Field->StaticLink(true);
-		Field->AssembleReferenceTokenStream();
-
-		//Create the default object for this class
-		Field->GetDefaultObject();
-
-		// Setup replication properties
-		Field->SetUpRuntimeReplicationData();
-
-		Field->UpdateCustomPropertyListForPostConstruction();
-		
-		RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
+		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
 	}
+	else
+	{
+		#if WITH_EDITOR
+		// Make all C# ActorComponents BlueprintSpawnableComponent
+		if (Field->IsChildOf<UActorComponent>())
+		{
+			Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
+		}
+		#endif	
+		Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
+	}
+		
+	Field->Bind();
+	Field->StaticLink(true);
+	Field->AssembleReferenceTokenStream();
+
+	//Create the default object for this class
+	Field->GetDefaultObject();
+
+	// Setup replication properties
+	Field->SetUpRuntimeReplicationData();
+
+	Field->UpdateCustomPropertyListForPostConstruction();
+		
+	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
 }
 
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
@@ -219,12 +209,7 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 void* FCSGeneratedClassBuilder::TryGetManagedFunction(const UClass* Outer, const FName& MethodName)
 {
 	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::GetClassInfoFromName(Outer->GetFName());
-
-	if (!ClassInfo)
-	{
-		return nullptr;
-	}
-	
+	check(ClassInfo);
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
 	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ClassInfo->TypeHandle, *InvokeMethodName);
 }

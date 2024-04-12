@@ -53,12 +53,6 @@ public static class UnrealStructProcessor
     
     private static void ProcessStruct(TypeDefinition type, StructMetaData metadata)
     {
-        // Don't need any marshaling if they're blittable.
-        if (metadata.IsBlittableStruct)
-        {
-            return;
-        }
-        
         MethodReference? foundConstructor = WeaverHelper.FindMethod(type, ".ctor", false, WeaverHelper.IntPtrType);
         if (foundConstructor != null)
         {

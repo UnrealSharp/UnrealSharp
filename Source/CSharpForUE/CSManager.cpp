@@ -93,7 +93,13 @@ bool FCSManager::InitializeBindings()
 		return false;
 	}
 	
-	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer = InitializeHostfxrSelfContained();
+	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer;
+	
+#if WITH_EDITOR
+	LoadAssemblyAndGetFunctionPointer = InitializeHostfxr();
+#else
+	LoadAssemblyAndGetFunctionPointer = InitializeHostfxrSelfContained();
+#endif
 	
 	if (!LoadAssemblyAndGetFunctionPointer)
 	{
@@ -134,7 +140,7 @@ bool FCSManager::InitializeBindings()
 
 bool FCSManager::LoadRuntimeHost()
 {
-	const FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
+	const FString RuntimeHostPath = FCSProcHelper::GetRuntimeHostPath();
 
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
@@ -256,7 +262,7 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfConta
 
 	Hostfxr_Close(HostFXR_Handle);
 
-	return (load_assembly_and_get_function_pointer_fn) Load_Assembly_And_Get_Function_Pointer;
+	return static_cast<load_assembly_and_get_function_pointer_fn>(Load_Assembly_And_Get_Function_Pointer);
 }
 
 UPackage* FCSManager::GetUnrealSharpPackage()

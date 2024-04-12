@@ -110,9 +110,39 @@ bool FCSProcHelper::GenerateProject()
 	return InvokeUnrealSharpBuildTool(EBuildAction::GenerateProject);
 }
 
+FString FCSProcHelper::GetLatestHostFxrPath()
+{
+	FString DotNetRoot = GetDotNetDirectory();
+	FString HostFxrRoot = FPaths::Combine(DotNetRoot, "host", "fxr");
+
+	TArray<FString> Folders;
+	IFileManager::Get().FindFiles(Folders, *(HostFxrRoot / "*"), true, true);
+	
+	FString HighestVersion = "0.0.0";
+	for (const FString& Folder : Folders)
+	{
+		if (Folder > HighestVersion)
+		{
+			HighestVersion = Folder;
+		}
+	}
+
+	if (HighestVersion == "0.0.0")
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("Failed to find hostfxr version in %s"), *HostFxrRoot);
+		return "";
+	}
+	
+	return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_WINDOWS);
+}
+
 FString FCSProcHelper::GetRuntimeHostPath()
 {
+#if WITH_EDITOR
+	return GetLatestHostFxrPath();
+#else
 	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
+#endif
 }
 
 FString FCSProcHelper::GetAssembliesPath()
@@ -229,8 +259,6 @@ bool FCSProcHelper::BuildBindings(FString* OutputPath)
 	
 	FString Arguments;
 	Arguments += TEXT("publish");
-	Arguments += " --self-contained";
-	Arguments += " --runtime win-x64";
 	
 	FString FullOutputPath = OutputPath ? *OutputPath : FPaths::ConvertRelativePathToFull(GetAssembliesPath());
 	FString UnrealSharpDirectory = GetUnrealSharpDirectory();

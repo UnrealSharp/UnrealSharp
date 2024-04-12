@@ -6,24 +6,12 @@
 
 void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
-	const UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
-	FString ExceptionMessage;
-	bool Success;
+	UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
 
 	// Skip allocating memory for the argument data if there are no parameters that need to be passed
 	if (Function->NumParms == 0)
 	{
-		if (Stack.Code)
-		{
-			++Stack.Code;
-		}
-		
-		Success = InvokeManagedEvent(ObjectToInvokeOn, Function, TArrayView<const uint8>(), ExceptionMessage, RESULT_PARAM);
-		if (!Success)
-		{
-			const FBlueprintExceptionInfo ExceptionInfo(EBlueprintExceptionType::FatalError, FText::FromString(ExceptionMessage));
-			FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
-		}
+		InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, TArrayView<const uint8>(), RESULT_PARAM);
 		return;
 	}
 	
@@ -83,24 +71,13 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 
 		int InternalOffset = FunctionParameter->GetOffset_ForInternal();
 		int InternalSize = FunctionParameter->GetSize();
-		check((InternalOffset + InternalSize) <= ArgumentData.Num());
+		check(InternalOffset + InternalSize <= ArgumentData.Num());
 		FMemory::Memcpy(ArgumentData.GetData() + InternalOffset, ValueAddress, InternalSize);
 	}
 	
-	if (Stack.Code)
+	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentData, RESULT_PARAM))
 	{
-		++Stack.Code;
-	}
-	
-	Success = InvokeManagedEvent(ObjectToInvokeOn, Function, ArgumentData, ExceptionMessage, RESULT_PARAM);
-	
-	if (!Success)
-	{
-		const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
-		EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::NonFatalError;
-		
-		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
-		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
+		return;
 	}
 	
 	ProcessOutParameters(OutParameters, ArgumentData);
@@ -118,9 +95,30 @@ void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, TArrayView<const
 	}
 }
 
-bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, const UCSFunction* Function, TArrayView<const uint8> ArgumentData, FString& ExceptionMessage, RESULT_DECL)
+bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunction* Function, TArrayView<const uint8> ArgumentData, RESULT_DECL)
 {
+	if (Stack.Code)
+	{
+		++Stack.Code;
+	}
+	
 	const FGCHandle ManagedObjectHandle = FCSManager::Get().FindManagedObject(ObjectToInvokeOn);
-	int ResultCode = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(), Function->GetManagedMethod(), (void*)ArgumentData.GetData(), RESULT_PARAM, &ExceptionMessage);
-	return ResultCode == 0;
+	FString ExceptionMessage;
+	
+	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
+		Function->GetManagedMethod(),
+		(void*)ArgumentData.GetData(),
+		RESULT_PARAM,
+		&ExceptionMessage) == 0;
+	
+	if (!bSuccess)
+	{
+		const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+		EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::NonFatalError;
+		
+		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
+		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
+	}
+	
+	return bSuccess;
 }
