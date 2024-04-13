@@ -1,8 +1,11 @@
 #include "CSScriptBuilder.h"
+
+#include "CSharpGeneratorUtilities.h"
 #include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "HAL/PlatformFileManager.h"
+#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 const FName MD_IsBlueprintBase(TEXT("IsBlueprintBase"));
 const FName MD_BlueprintFunctionLibrary(TEXT("BlueprintFunctionLibrary"));
@@ -41,8 +44,12 @@ void FCSScriptBuilder::DeclareDirective(const FString& ModuleName)
 	AppendLine(FString::Printf(TEXT("using %s;"), *ModuleName));
 }
 
-void FCSScriptBuilder::DeclareType(const FString& TypeName, const FString& DeclaredTypeName, const FString& SuperTypeName, bool IsPartial, const TArray<
-                                   FString>& Interfaces)
+void FCSScriptBuilder::DeclareType(
+	const FString& TypeName,
+	const FString& DeclaredTypeName,
+	const FString& SuperTypeName,
+	bool IsPartial,
+	const TArray<FString>& Interfaces)
 {
 	FString PartialSpecifier = IsPartial ? "partial " : "";
 		
@@ -60,7 +67,7 @@ void FCSScriptBuilder::DeclareType(const FString& TypeName, const FString& Decla
 			InterfacesDeclaration += FString::Printf(TEXT(", %s"), *("I" + InterfaceName));
 		}
 	}
-		
+	
 	FString DeclarationLine = FString::Printf(TEXT("public %s%s %s%s%s"),
 	                                          *PartialSpecifier,
 	                                          *TypeName,

@@ -171,31 +171,19 @@ namespace ScriptGeneratorUtilities
 			return FCrc::StrCrc32<TCHAR>(*Key);
 		}
 	};
-
-	void InitializeToolTipLocalization();
+	
 	FString GetEnumValueMetaData(const UEnum& InEnum, const TCHAR* MetadataKey, int32 ValueIndex);
 	FString GetEnumValueToolTip(const UEnum& InEnum, int32 ValueIndex);
-	
-	FString GetFieldToolTip(const FField& InField);
-	FString GetClassToolTip(const UStruct& InStruct);
+
+	void MakeTooltip(FCSScriptBuilder& Builder, const FString& SummaryText);
+	void AppendTooltip(const FProperty* Property, FCSScriptBuilder& Builder);
+	void AppendTooltip(const UField* Function, FCSScriptBuilder& Builder);
+	void AppendTooltip(const FText& Tooltip, FCSScriptBuilder& Builder);
 
 	bool IsEnumValueValidWithoutPrefix(FString& RawName, const FString& Prefix);
-	
-	FProperty* GetFirstParam(UFunction* Function);
 
 	void AddCheckObjectForValidity(FCSScriptBuilder& Builder);
 
-	enum class BoolHierarchicalMetaDataMode : uint8
-	{
-		// any value stops the hierarchical search
-		SearchStopAtAnyValue,
-		// search stops when it encounters first true value, ignores false ones
-		SearchStopAtTrueValue
-	};
-	bool GetBoolMetaDataHeirarchical(const UClass* TestClass, FName KeyName, BoolHierarchicalMetaDataMode Mode);
-
 	bool IsBlueprintFunctionLibrary(const UClass* InClass);
-
-	bool ParseGuidFromProjectFile(FGuid& ResultGuid, const FString& ProjectPath);
 	
 }

@@ -229,6 +229,8 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 		const FCSModule& Module = FindOrRegisterModule(Enum);
 
 		Builder.GenerateScriptSkeleton(Module.GetNamespace());
+		
+		AppendTooltip(Enum, Builder);
 		Builder.AppendLine(TEXT("[UEnum]"));
 		Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
 		
@@ -268,7 +270,6 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 			{
 				++SkippedValueCount;
 				EnumValues.Pop(false);
-				continue;
 			}
 		}
 
@@ -281,6 +282,7 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 				continue;
 			}
 			
+			AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
 			Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
 		}
 
@@ -589,7 +591,8 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	const FCSModule& BindingsModule = FindOrRegisterModule(Interface);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
-	Builder.DeclareType("interface", InterfaceName, "");
+	AppendTooltip(Interface, Builder);
+	Builder.DeclareType("interface", InterfaceName);
 	
 	Builder.AppendLine(FString::Printf(TEXT("public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"%s\");"), *Interface->GetName()));
 
@@ -676,6 +679,7 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	}
 
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
+	AppendTooltip(Class, Builder);
 	FString Abstract = Class->HasAnyClassFlags(CLASS_Abstract) ? "ClassFlags.Abstract" : "";
 	Builder.AppendLine(FString::Printf(TEXT("[UClass(%s)]"), *Abstract));
 	Builder.DeclareType("class", ScriptClassName, GetSuperClassName(Class), true, Interfaces);
@@ -1028,8 +1032,8 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 	
 	PropBuilder.Finish();
 
+	AppendTooltip(Struct, Builder);
 	Builder.AppendLine(PropBuilder.ToString());
-
 	Builder.DeclareType("struct", NameMapper.GetStructScriptName(Struct));
 
 	TSet<FString> ReservedNames;

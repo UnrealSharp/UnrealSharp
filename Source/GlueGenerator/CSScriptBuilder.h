@@ -66,9 +66,24 @@ public:
 		}
 	}
 
+	void Append(FStringView String)
+	{
+		Report.Append(String);
+	}
+
 	void Append(const FString& String)
 	{
 		Report.Append(String);
+	}
+
+	void Append(const TCHAR* String)
+	{
+		Report.Append(String);
+	}
+
+	void Append(const FName& Name)
+	{
+		Report.Append(Name.ToString());
 	}
 
 	void AppendLine(const FText& Text)
@@ -83,6 +98,12 @@ public:
 		{
 			Report.Append(Text.ToString());
 		}
+	}
+
+	void AppendLine(FStringView String)
+	{
+		AppendLine();
+		Report.Append(String);
 	}
 
 	void AppendLine(const FString& String)
@@ -194,8 +215,12 @@ public:
 
 	void GenerateScriptSkeleton(const FString& Namespace);
 	void DeclareDirective(const FString& ModuleName);
-	void DeclareType(const FString& TypeName, const FString& DeclaredTypeName, const FString& SuperTypeName = "", bool IsPartial = true, const
-	                 TArray<FString>& Interfaces = {});
+	
+	void DeclareType(const FString& TypeName,
+	                 const FString& DeclaredTypeName,
+	                 const FString& SuperTypeName = "",
+	                 bool IsPartial = true,
+	                 const TArray<FString>& Interfaces = {});
 
 private:
 
