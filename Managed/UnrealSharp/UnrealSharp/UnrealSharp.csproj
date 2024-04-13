@@ -16,6 +16,11 @@
             <OutputItemType>Analyzer</OutputItemType>
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
+
+        <ProjectReference Include="..\UnrealSharp.ExtensionSourceGenerators\UnrealSharp.ExtensionSourceGenerators.csproj">
+            <OutputItemType>Analyzer</OutputItemType>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
     
 </Project>
