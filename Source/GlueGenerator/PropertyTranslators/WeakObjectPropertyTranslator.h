@@ -5,7 +5,7 @@
 class FWeakObjectPropertyTranslator : public FBlittableStructPropertyTranslator
 {
 public:
-	explicit FWeakObjectPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+	explicit FWeakObjectPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
 		: FBlittableStructPropertyTranslator(InPropertyHandlers)
 	{
 	}

@@ -2,7 +2,7 @@
 
 #include "GlueGenerator/CSScriptBuilder.h"
 
-FTextPropertyTranslator::FTextPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FTextPropertyTranslator::FTextPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FTextProperty::StaticClass(), "Text")
 {
 	

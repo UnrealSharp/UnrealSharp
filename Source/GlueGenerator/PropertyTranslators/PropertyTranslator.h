@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CSSupportedPropertyTranslators.h"
+#include "PropertyTranslatorManager.h"
 #include "GlueGenerator/CSNameMapper.h"
 
 static const FName MD_DeprecatedFunction(TEXT("DeprecatedFunction"));
@@ -12,7 +12,7 @@ class FPropertyTranslator
 public:
 	virtual ~FPropertyTranslator() = default;
 
-	FPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, EPropertyUsage InPropertyUsage)
+	FPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers, EPropertyUsage InPropertyUsage)
 	: PropertyHandlers(InPropertyHandlers)
 	, SupportedPropertyUsage(InPropertyUsage)
 	{
@@ -191,7 +191,7 @@ protected:
 	// Subclasses must override when CanExportDefaultParameter() can return false.
 	virtual void ExportCppDefaultParameterAsLocalVariable(FCSScriptBuilder& Builder, const FString& VariableName, const FString& CppDefaultValue, UFunction* Function, FProperty* ParamProperty) const;
 
-	FCSSupportedPropertyTranslators& PropertyHandlers;
+	FPropertyTranslatorManager& PropertyHandlers;
 
 private:
 	// Returns the default value for a parameter property, or an empty string if no default is defined.

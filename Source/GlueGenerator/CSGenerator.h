@@ -5,28 +5,35 @@
 #include "CSModule.h"
 #include "CSGlueGeneratorFileManager.h"
 #include "CSInclusionLists.h"
+#include "PropertyTranslatorManager.h"
 #include "UObject/Stack.h"
-#include "PropertyTranslators/CSSupportedPropertyTranslators.h"
+
+struct ExtensionMethod
+{
+	UClass* OverrideClassBeingExtended;
+	UFunction* Function;
+	FProperty* SelfParameter;
+};
+
+static const FName MD_WorldContext = "WorldContext";
+static const FName MD_WorldContextObject = "WorldContextObject";
 
 class GLUEGENERATOR_API FCSGenerator
 {
-	
 public:
+
+	FCSGenerator(): NameMapper(this)
+	{
+	}
 
 	static FCSGenerator& Get()
 	{
 		static FCSGenerator Instance;
 		return Instance;
 	}
-
-	FCSGenerator(): NameMapper(this)
-	{
-		
-	}
 	
 	void StartGenerator(const FString& OutputDirectory);
-
-	// Public methods
+	
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);
 	void GenerateGlueForType(UObject* Object, bool bForceExport = false);
 	
@@ -59,14 +66,11 @@ public:
 	bool CanExportPropertyShared(const FProperty* Property) const;
 		
 	void ExportStructMarshaller(FCSScriptBuilder& Builder, const UScriptStruct* Struct);
-
-	// Helper methods
+	
 	FString GetSuperClassName(const UClass* Class) const;
 	void SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder);
 	void SaveGlue(const FCSModule* Bindings, const FString& Filename, const FString& GeneratedGlue);
 	void SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue);
-	
-	// Exporter methods
 	
 	void ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames);
 	void ExportStaticConstructor(FCSScriptBuilder& Builder,  const UStruct* Struct,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions, const TSet<FString>& ReservedNames);
@@ -78,6 +82,8 @@ public:
 	void ExportClassFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportClassOverridableFunctions(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverridableFunctions);
+	
+	static bool GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function);
 
 	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
 
@@ -87,52 +93,21 @@ public:
 
 	FCSModule& FindOrRegisterModule(const UObject* Object);
 
-	// Public data structures
-	struct ExtensionMethod
-	{
-		UClass* OverrideClassBeingExtended;
-		UFunction* Function;
-		FProperty* SelfParameter;
-	};
-
 protected:
-	static bool GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function);
 
 	FString GeneratedScriptsDirectory;
-	
-	static FName AllowableBlueprintVariableType;
-	static FName NotAllowableBlueprintVariableType;
-	static FName BlueprintSpawnableComponent;
-	static FName Blueprintable;
-	static FName BlueprintFunctionLibrary;
-	
-	static FName ProjectGeneratedClassesDir;
 
-	TUniquePtr<FCSSupportedPropertyTranslators> PropertyTranslators;
-
+	TUniquePtr<FPropertyTranslatorManager> PropertyTranslatorManager;
 	FCSNameMapper NameMapper;
 	FCSGlueGeneratorFileManager GeneratedFileManager;
 	
-	FCSInclusionLists Whitelist;
-	FCSInclusionLists Blacklist;
-	FCSInclusionLists BlueprintInternalWhitelist;
+	FCSInclusionLists AllowList;
+	FCSInclusionLists DenyList;
+	FCSInclusionLists BlueprintInternalAllowList;
 	FCSInclusionLists OverrideInternalList;
 	FCSInclusionLists Greylist;
 
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;
-	
 	TMap<FName, FCSModule> CSharpBindingsModules;
-
 	TSet<UObject*> ExportedTypes;
-	
-	bool Initialized = false;
-
-private:
-	// Private properties
-	typedef TMap<FName, int32> UnhandledPropertyCounts;
-	mutable UnhandledPropertyCounts UnhandledProperties;
-	mutable UnhandledPropertyCounts UnhandledParameters;
-	mutable UnhandledPropertyCounts UnhandledReturnValues;
-	mutable UnhandledPropertyCounts UnhandledOverridableParameters;
-	mutable UnhandledPropertyCounts UnhandledOverridableReturnValues;
 };

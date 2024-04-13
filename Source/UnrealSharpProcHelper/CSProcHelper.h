@@ -18,11 +18,10 @@ enum class EDotNetBuildConfiguration : uint64
 	Publish,
 };
 
-#define HOSTFXR_VERSION "8.0.1"
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
 #define HOSTFXR_LINUX "libhostfxr.so"
-#define DOTNET_VERSION "net8.0"
+#define DOTNET_MAJOR_VERSION "8.0.0"
 
 class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
@@ -34,26 +33,45 @@ public:
 	static bool Clean();
 	static bool GenerateProject();
 
-	static FString GetRuntimeHostPath();
+	static bool BuildBindings(FString* OutputPath = nullptr);
+	
+	static FString GetRuntimeConfigPath();
+	
 	static FString GetAssembliesPath();
 	static FString GetUnrealSharpLibraryPath();
-	static FString GetRuntimeConfigPath();
-	static FString GetUserAssemblyDirectory();
-	static FString GetUserAssemblyPath();
-	static FString GetManagedSourcePath();
 	static FString GetUnrealSharpBuildToolPath();
 
-	static bool BuildBindings(FString* OutputPath = nullptr);
+	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
+	static FString GetUserAssemblyDirectory();
 
+	// Path to the user's assembly.
+	static FString GetUserAssemblyPath();
+
+	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
+
+	// Path to the .NET executable. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetExecutablePath();
 
+	// Path to the UnrealSharp plugin directory.
 	static FString& GetPluginDirectory();
+
+	// Path to the UnrealSharp bindings directory.
 	static FString GetUnrealSharpDirectory();
+
+	// Path to the directory where we store classes we have generated from C# > C++.
 	static FString GetGeneratedClassesDirectory();
+
+	// Path to the current project's script directory
 	static FString GetScriptFolderDirectory();
+
+	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();
 
+	// Path to the latest installed hostfxr version
 	static FString GetLatestHostFxrPath();
+
+	// Path to the runtime host. This is different in editor/builds.
+	static FString GetRuntimeHostPath();
 	
 };

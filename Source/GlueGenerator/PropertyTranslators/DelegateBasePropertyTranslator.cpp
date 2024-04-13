@@ -1,5 +1,4 @@
 ﻿#include "DelegateBasePropertyTranslator.h"
-
 #include "GlueGenerator/CSScriptBuilder.h"
 
 void FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(FCSScriptBuilder& Builder,const FProperty* Property, const FString& NativePropertyName) const

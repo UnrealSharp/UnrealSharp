@@ -129,7 +129,13 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 
 	if (HighestVersion == "0.0.0")
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("Failed to find hostfxr version in %s"), *HostFxrRoot);
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Failed to find hostfxr version in %s"), *HostFxrRoot);
+		return "";
+	}
+
+	if (HighestVersion < DOTNET_MAJOR_VERSION)
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Hostfxr version %s is less than the required version %s"), *HighestVersion, DOTNET_MAJOR_VERSION);
 		return "";
 	}
 	
@@ -174,11 +180,6 @@ FString FCSProcHelper::GetUserAssemblyPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
 }
 
-FString FCSProcHelper::GetManagedSourcePath()
-{
-	return FPaths::Combine(GetPluginDirectory(), "Managed");
-}
-
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
 	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.dll");
@@ -186,7 +187,6 @@ FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 
 FString FCSProcHelper::GetDotNetDirectory()
 {
-#if WITH_EDITOR
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
 		
 	TArray<FString> Paths;
@@ -208,9 +208,6 @@ FString FCSProcHelper::GetDotNetDirectory()
 			
 		return Path;
 	}
-#else
-	return GetAssembliesPath();
-#endif
 	return "";
 }
 

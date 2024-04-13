@@ -20,7 +20,6 @@ public:
 
 private:
     
-    void OnAllModulesLoaded();
     bool Tick(float DeltaTime);
     
     FTickerDelegate TickDelegate;

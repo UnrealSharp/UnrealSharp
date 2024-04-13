@@ -1,11 +1,13 @@
 ﻿#pragma once
+
 #include "PropertyTranslator.h"
+#include "GlueGenerator/PropertyTranslatorManager.h"
 
 class FDelegateBasePropertyTranslator : public FPropertyTranslator
 {
 public:
 	
-	FDelegateBasePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, EPropertyUsage InPropertyUsage)
+	FDelegateBasePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers, EPropertyUsage InPropertyUsage)
 	: FPropertyTranslator(InPropertyHandlers, InPropertyUsage)
 	{
 	}

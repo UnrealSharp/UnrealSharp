@@ -1,18 +1,16 @@
 #pragma once
 
-#include "CSSupportedPropertyTranslators.h"
 #include "PropertyTranslator.h"
+#include "GlueGenerator/PropertyTranslatorManager.h"
 
-class FCSSupportedPropertyTranslators;
+class FPropertyTranslatorManager;
 class FCSScriptBuilder;
-
-
 
 class FSimpleTypePropertyTranslator : public FPropertyTranslator
 {
 public:
 	
-	FSimpleTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, FFieldClass* InPropertyClass,
+	FSimpleTypePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass,
 	                              const FString& InManagedType, const FString& InMarshallerType,
 	                              EPropertyUsage InPropertyUsage = EPU_Any);
 
@@ -46,11 +44,11 @@ public:
 protected:
 	
 	// Alternate ctor for subclasses overriding GetMarshalerType()
-	FSimpleTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, FFieldClass* InPropertyClass,
+	FSimpleTypePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass,
 	                              const FString& InCSharpType, EPropertyUsage InPropertyUsage = EPU_Any);
 	
 	// Alternate ctor for subclasses overriding GetCSharpType() and GetMarshalerType()
-	FSimpleTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, FFieldClass* InPropertyClass,
+	FSimpleTypePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass,
 	                              EPropertyUsage InPropertyUsage = EPU_Any);
 
 private:

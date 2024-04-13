@@ -5,7 +5,7 @@ class FNamePropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
-	explicit FNamePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FNamePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
 
 protected:
 

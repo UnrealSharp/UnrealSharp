@@ -5,7 +5,7 @@
 class FSoftClassPropertyTranslator : public FSoftObjectPtrPropertyTranslator
 {
 public:
-	explicit FSoftClassPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+	explicit FSoftClassPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
 		: FSoftObjectPtrPropertyTranslator(InPropertyHandlers)
 	{
 	}

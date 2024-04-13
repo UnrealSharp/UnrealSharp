@@ -32,11 +32,6 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-	
-	if (FApp::IsUnattended())
-	{
-		FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(this, &FUnrealSharpEditorModule::OnAllModulesLoaded);
-	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -117,15 +112,6 @@ void FUnrealSharpEditorModule::StartHotReload()
 	// Reinstance all blueprints.
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
 	FCSReinstancer::Get().Reinstance();
-}
-
-void FUnrealSharpEditorModule::OnAllModulesLoaded()
-{
-	FString TestDirectory = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectIntermediateDir(), "ManagedBinaries"));
-	EDotNetBuildConfiguration BuildConfiguration = EDotNetBuildConfiguration::Publish;
-	FCSProcHelper::BuildBindings(&TestDirectory);
-	FCSProcHelper::InvokeUnrealSharpBuildTool(Build, &BuildConfiguration);
-	//FCSProcHelper::InvokeUnrealSharpBuildTool(Weave, nullptr, &TestDirectory);
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)

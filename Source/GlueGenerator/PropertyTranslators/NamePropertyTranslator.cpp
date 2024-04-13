@@ -1,7 +1,7 @@
 #include "NamePropertyTranslator.h"
 #include "GlueGenerator/CSScriptBuilder.h"
 
-FNamePropertyTranslator::FNamePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FNamePropertyTranslator::FNamePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FNameProperty::StaticClass(), TEXT("Name"))
 {
 	
