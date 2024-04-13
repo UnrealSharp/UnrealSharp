@@ -871,8 +871,8 @@ FString FPropertyTranslator::GetNativePropertyField(const FString& PropertyName)
 void FPropertyTranslator::ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const
 {
 	FunctionExporter Exporter(*this, *Function);
-	Exporter.ExportSignature(Builder, "public ");
-	Builder.Append(";");
+	Exporter.ExportSignature(Builder, TEXT("public "));
+	Builder.Append(TEXT(";"));
 }
 
 void FPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
