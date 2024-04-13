@@ -5,7 +5,7 @@
 #include "CSModule.h"
 #include "CSGlueGeneratorFileManager.h"
 #include "CSInclusionLists.h"
-#include "PropertyTranslatorManager.h"
+#include "CSPropertyTranslatorManager.h"
 #include "UObject/Stack.h"
 
 struct ExtensionMethod
@@ -97,7 +97,7 @@ protected:
 
 	FString GeneratedScriptsDirectory;
 
-	TUniquePtr<FPropertyTranslatorManager> PropertyTranslatorManager;
+	TUniquePtr<FCSPropertyTranslatorManager> PropertyTranslatorManager;
 	FCSNameMapper NameMapper;
 	FCSGlueGeneratorFileManager GeneratedFileManager;
 	

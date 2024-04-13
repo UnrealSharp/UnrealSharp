@@ -4,7 +4,7 @@
 class FSoftObjectPtrPropertyTranslator : public FBlittableStructPropertyTranslator
 {
 public:
-	explicit FSoftObjectPtrPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
+	explicit FSoftObjectPtrPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 		: FBlittableStructPropertyTranslator(InPropertyHandlers)
 	{
 	}

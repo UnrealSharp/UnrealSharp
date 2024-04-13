@@ -1,6 +1,6 @@
 #include "ClassPropertyTranslator.h"
 
-FClassPropertyTranslator::FClassPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
+FClassPropertyTranslator::FClassPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FClassProperty::StaticClass(), EPU_Any)
 {
 

@@ -1,7 +1,7 @@
 #include "BlittableTypePropertyTranslator.h"
 
 FBlittableTypePropertyTranslator::FBlittableTypePropertyTranslator
-(FPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InCSharpType, EPropertyUsage InPropertyUsage)
+(FCSPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InCSharpType, EPropertyUsage InPropertyUsage)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, InPropertyClass, InCSharpType, InPropertyUsage)
 {
 

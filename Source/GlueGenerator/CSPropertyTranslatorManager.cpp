@@ -1,4 +1,4 @@
-#include "PropertyTranslatorManager.h"
+#include "CSPropertyTranslatorManager.h"
 #include "GlueGenerator/CSInclusionLists.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/TextProperty.h"
@@ -28,7 +28,7 @@
 
 using namespace ScriptGeneratorUtilities;
 
-FPropertyTranslatorManager::FPropertyTranslatorManager(const FCSNameMapper& InNameMapper, FCSInclusionLists& DenyList) : NameMapper(InNameMapper)
+FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& InNameMapper, FCSInclusionLists& DenyList) : NameMapper(InNameMapper)
 {
 	NullHandler.Reset(new FNullPropertyTranslator(*this));
 
@@ -92,7 +92,7 @@ FPropertyTranslatorManager::FPropertyTranslatorManager(const FCSNameMapper& InNa
 	AddPropertyTranslator(FInterfaceProperty::StaticClass(), new FCSInterfacePropertyTranslator(*this));
 }
 
-const FPropertyTranslator& FPropertyTranslatorManager::Find(const FProperty* Property) const
+const FPropertyTranslator& FCSPropertyTranslatorManager::Find(const FProperty* Property) const
 {
 	const TArray<FPropertyTranslator*>* Translators = TranslatorMap.Find(Property->GetClass()->GetFName());
 	
@@ -111,7 +111,7 @@ const FPropertyTranslator& FPropertyTranslatorManager::Find(const FProperty* Pro
 	return *NullHandler;
 }
 
-const FPropertyTranslator& FPropertyTranslatorManager::Find(UFunction* Function) const
+const FPropertyTranslator& FCSPropertyTranslatorManager::Find(UFunction* Function) const
 {
 	FProperty* ReturnProperty = Function->GetReturnProperty();
 	
@@ -123,29 +123,29 @@ const FPropertyTranslator& FPropertyTranslatorManager::Find(UFunction* Function)
 	return *NullHandler;
 }
 
-bool FPropertyTranslatorManager::IsStructBlittable(const UScriptStruct& ScriptStruct) const
+bool FCSPropertyTranslatorManager::IsStructBlittable(const UScriptStruct& ScriptStruct) const
 {
 	return FBlittableStructPropertyTranslator::IsStructBlittable(*this, ScriptStruct);
 }
 
-void FPropertyTranslatorManager::AddPropertyTranslator(FFieldClass* PropertyClass, FPropertyTranslator* Handler)
+void FCSPropertyTranslatorManager::AddPropertyTranslator(FFieldClass* PropertyClass, FPropertyTranslator* Handler)
 {
 	TArray<FPropertyTranslator*>& Handlers = TranslatorMap.FindOrAdd(PropertyClass->GetFName());
 	Handlers.Add(Handler);
 }
 
-void FPropertyTranslatorManager::AddBlittablePropertyTranslator(FFieldClass* PropertyClass, const FString& CSharpType)
+void FCSPropertyTranslatorManager::AddBlittablePropertyTranslator(FFieldClass* PropertyClass, const FString& CSharpType)
 {
 	AddPropertyTranslator(PropertyClass, new FBlittableTypePropertyTranslator(*this, PropertyClass, CSharpType));
 }
 
-void FPropertyTranslatorManager::AddBlittableCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
+void FCSPropertyTranslatorManager::AddBlittableCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
 {
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableCustomStructTypePropertyTranslator(*this, UnrealName, CSharpName));
 	Blacklist.AddStruct(FName(UnrealName));
 }
 
-void FPropertyTranslatorManager::AddCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
+void FCSPropertyTranslatorManager::AddCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
 {
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FCustomStructTypePropertyTranslator(*this, UnrealName, CSharpName));
 	Blacklist.AddStruct(FName(UnrealName));

@@ -3,7 +3,7 @@
 #include "CSharpGeneratorUtilities.h"
 #include "GlueGeneratorModule.h"
 #include "CSScriptBuilder.h"
-#include "PropertyTranslatorManager.h"
+#include "CSPropertyTranslatorManager.h"
 #include "PropertyTranslators/PropertyTranslator.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -37,7 +37,7 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	OverrideInternalList.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, AddComponentByClass));
 	OverrideInternalList.AddFunction(AActor::StaticClass()->GetFName(), GET_FUNCTION_NAME_CHECKED(AActor, FinishAddComponent));
 
-	PropertyTranslatorManager.Reset(new FPropertyTranslatorManager(NameMapper, DenyList));
+	PropertyTranslatorManager.Reset(new FCSPropertyTranslatorManager(NameMapper, DenyList));
 
 	FModuleManager::Get().OnModulesChanged().AddRaw(this, &FCSGenerator::OnModulesChanged);
 

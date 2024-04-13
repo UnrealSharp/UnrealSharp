@@ -5,7 +5,7 @@
 class FSingleDelegatePropertyTranslator : public FDelegateBasePropertyTranslator
 {
 	public:
-		FSingleDelegatePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers) : FDelegateBasePropertyTranslator(InPropertyHandlers, EPU_Any)
+		FSingleDelegatePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers) : FDelegateBasePropertyTranslator(InPropertyHandlers, EPU_Any)
 		{
 		}
 

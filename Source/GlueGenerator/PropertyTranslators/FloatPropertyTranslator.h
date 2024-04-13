@@ -5,7 +5,7 @@ class FFloatPropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
-	explicit FFloatPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FFloatPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 protected:
 

@@ -3,7 +3,7 @@
 #include "GlueGenerator/CSScriptBuilder.h"
 
 FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator
-(FPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InManagedType, const FString& InMarshallerType, EPropertyUsage InPropertyUsage)
+(FCSPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InManagedType, const FString& InMarshallerType, EPropertyUsage InPropertyUsage)
 : FPropertyTranslator(InPropertyHandlers, InPropertyUsage), PropertyClass(InPropertyClass), ManagedType(InManagedType), MarshallerType(InMarshallerType)
 {
 
@@ -43,7 +43,7 @@ void FSimpleTypePropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuil
 	// No cleanup required for simple types
 }
 
-FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers,
+FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers,
 	FFieldClass* InPropertyClass, EPropertyUsage InPropertyUsage): FPropertyTranslator(InPropertyHandlers, InPropertyUsage)
 	                                                               , PropertyClass(InPropertyClass)
 {
@@ -137,7 +137,7 @@ FString FSimpleTypePropertyTranslator::ExportMarshallerDelegates(const FProperty
 	return FString::Printf(TEXT("%s.ToNative, %s.FromNative"), *GetMarshaller(Property), *GetMarshaller(Property));
 }
 
-FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers,
+FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers,
 	FFieldClass* InPropertyClass, const FString& InCSharpType, EPropertyUsage InPropertyUsage): FPropertyTranslator(InPropertyHandlers, InPropertyUsage)
 	, PropertyClass(InPropertyClass)
 	, ManagedType(InCSharpType)

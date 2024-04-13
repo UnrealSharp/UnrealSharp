@@ -6,9 +6,9 @@ class FBlittableStructPropertyTranslator : public FBlittableTypePropertyTranslat
 {
 public:
 	
-	explicit FBlittableStructPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FBlittableStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 	
-	static bool IsStructBlittable(const FPropertyTranslatorManager& PropertyHandlers, const UScriptStruct& ScriptStruct);
+	static bool IsStructBlittable(const FCSPropertyTranslatorManager& PropertyHandlers, const UScriptStruct& ScriptStruct);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

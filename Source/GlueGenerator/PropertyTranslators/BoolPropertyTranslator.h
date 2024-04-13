@@ -6,7 +6,7 @@ class FBoolPropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	explicit FBoolPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FBoolPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//PropertyTranslator interface
 	virtual FString GetPropertyName(const FProperty* Property) const override;

@@ -2,7 +2,7 @@
 
 TMap<FName, FString> FEnumPropertyTranslator::StrippedPrefixes;
 
-FEnumPropertyTranslator::FEnumPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
+FEnumPropertyTranslator::FEnumPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FByteProperty::StaticClass(), "", EPU_Any)
 {
 	

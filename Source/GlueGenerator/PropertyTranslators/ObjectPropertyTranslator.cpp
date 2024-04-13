@@ -1,6 +1,6 @@
 #include "ObjectPropertyTranslator.h"
 
-FObjectPropertyTranslator::FObjectPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
+FObjectPropertyTranslator::FObjectPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FObjectProperty::StaticClass(), EPU_Any)
 {
 

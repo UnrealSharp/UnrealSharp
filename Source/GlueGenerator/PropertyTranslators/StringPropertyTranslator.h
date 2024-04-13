@@ -1,13 +1,13 @@
 #pragma once
 #include "PropertyTranslator.h"
 
-class FPropertyTranslatorManager;
+class FCSPropertyTranslatorManager;
 
 class FStringPropertyTranslator : public FPropertyTranslator
 {
 public:
 	
-	explicit FStringPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FStringPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

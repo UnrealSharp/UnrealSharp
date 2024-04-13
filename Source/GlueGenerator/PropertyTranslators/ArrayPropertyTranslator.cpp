@@ -1,8 +1,8 @@
 #include "ArrayPropertyTranslator.h"
 #include "GlueGenerator/CSScriptBuilder.h"
-#include "GlueGenerator/PropertyTranslatorManager.h"
+#include "GlueGenerator/CSPropertyTranslatorManager.h"
 
-FArrayPropertyTranslator::FArrayPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers) :
+FArrayPropertyTranslator::FArrayPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers) :
 	FPropertyTranslator(InPropertyHandlers,
 	                    static_cast<EPropertyUsage>(EPU_Property | EPU_Parameter | EPU_ReturnValue |
 		                    EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue |

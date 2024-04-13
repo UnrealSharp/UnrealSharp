@@ -1,8 +1,8 @@
 #include "BitfieldPropertyTranslator.h"
 #include "GlueGenerator/CSScriptBuilder.h"
-#include "GlueGenerator/PropertyTranslatorManager.h"
+#include "GlueGenerator/CSPropertyTranslatorManager.h"
 
-FBitfieldPropertyTranslator::FBitfieldPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers)
+FBitfieldPropertyTranslator::FBitfieldPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FPropertyTranslator(InPropertyHandlers, static_cast<EPropertyUsage>(EPU_Any & ~EPU_StaticArrayProperty))
 {
 

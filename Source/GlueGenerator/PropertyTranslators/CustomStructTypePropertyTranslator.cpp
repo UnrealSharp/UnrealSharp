@@ -1,7 +1,7 @@
 #include "CustomStructTypePropertyTranslator.h"
 
 FCustomStructTypePropertyTranslator::FCustomStructTypePropertyTranslator(
-	FPropertyTranslatorManager& InPropertyHandlers, const FString& InUnrealStructName,
+	FCSPropertyTranslatorManager& InPropertyHandlers, const FString& InUnrealStructName,
 	const FString& InCSharpStructName)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FStructProperty::StaticClass(), InCSharpStructName), UnrealStructName(InUnrealStructName)
 {

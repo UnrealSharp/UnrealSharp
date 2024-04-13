@@ -22,12 +22,12 @@ enum EPropertyUsage : uint8
 	EPU_Any = 0xFF,
 };
 
-class FPropertyTranslatorManager
+class FCSPropertyTranslatorManager
 {
 public:
 	
-	virtual ~FPropertyTranslatorManager() = default;
-	FPropertyTranslatorManager(const FCSNameMapper& InNameMapper, FCSInclusionLists& CodeGenerator);
+	virtual ~FCSPropertyTranslatorManager() = default;
+	FCSPropertyTranslatorManager(const FCSNameMapper& InNameMapper, FCSInclusionLists& CodeGenerator);
 
 	const FPropertyTranslator& Find(const FProperty* Property) const;
 	const FPropertyTranslator& Find(UFunction* Property) const;

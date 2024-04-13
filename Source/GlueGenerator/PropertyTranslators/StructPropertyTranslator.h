@@ -6,7 +6,7 @@ class FStructPropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	explicit FStructPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual FString GetManagedType(const FProperty* Property) const override;

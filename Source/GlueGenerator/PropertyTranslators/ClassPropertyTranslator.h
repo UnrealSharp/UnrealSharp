@@ -5,7 +5,7 @@ class FClassPropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	explicit FClassPropertyTranslator(FPropertyTranslatorManager& InPropertyHandlers);
+	explicit FClassPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual void AddReferences(const FProperty* Property, TSet<UField*>& References) const override;
