@@ -6,7 +6,7 @@ class FCSInterfacePropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	FCSInterfacePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+	FCSInterfacePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 	: FSimpleTypePropertyTranslator(InPropertyHandlers, FInterfaceProperty::StaticClass(), EPU_Any)
 	{
 	}

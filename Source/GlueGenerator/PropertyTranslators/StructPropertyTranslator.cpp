@@ -1,6 +1,6 @@
 #include "StructPropertyTranslator.h"
 
-FStructPropertyTranslator::FStructPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FStructPropertyTranslator::FStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FStructProperty::StaticClass(), EPU_Any)
 {
 	

@@ -62,7 +62,7 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 
 	Builder.AppendLine(FString::Printf(TEXT("// %s"), *Property->GetFullName()));
 	ExportPropertyVariables(Builder, Property, NativePropertyName);
-
+	
 	if (!IsGreylisted)
 	{
 		BeginWrapperPropertyAccessorBlock(Builder, Property, CSharpPropertyName);
@@ -121,6 +121,7 @@ void FPropertyTranslator::BeginWrapperPropertyAccessorBlock(FCSScriptBuilder& Bu
 	GetPropertyProtection(Property, Protection);
 	
 	Builder.AppendLine();
+	AppendTooltip(Property, Builder);
 	const FString PropertyType = Property->ArrayDim == 1 ? GetManagedType(Property) : GetCSharpFixedSizeArrayType(Property);
 	Builder.AppendLine(FString::Printf(TEXT("%s%s %s"), GetData(Protection), *PropertyType, *CSharpPropertyName));
 	Builder.OpenBrace();
@@ -137,6 +138,7 @@ void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const 
 	FString NativePropertyName = Property->GetName();
 
 	Builder.AppendLine(FString::Printf(TEXT("// %s"), *Property->GetFullName()));
+	Builder.AppendLine();
 
 	if (!bSuppressOffsets)
 	{
@@ -147,7 +149,8 @@ void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const 
 	{
 		FString Protection;
 		GetPropertyProtection(Property, Protection);
-		
+
+		AppendTooltip(Property, Builder);
 		if (IsSetterRequired())
 		{
 			Builder.AppendLine(FString::Printf(TEXT("%s%s %s;"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
@@ -459,6 +462,7 @@ void FPropertyTranslator::FunctionExporter::ExportOverloads(FCSScriptBuilder& Bu
 	for (const FunctionOverload& Overload : Overloads)
 	{
 		Builder.AppendLine();
+		AppendTooltip(&Function, Builder);
 		ExportDeprecation(Builder);
 		Builder.AppendLine(FString::Printf(TEXT("%s%s %s(%s)"), *Modifiers, *Handler.GetManagedType(ReturnProperty), *CSharpMethodName, *Overload.ParamsStringAPIWithDefaults));
 		Builder.OpenBrace();
@@ -468,7 +472,7 @@ void FPropertyTranslator::FunctionExporter::ExportOverloads(FCSScriptBuilder& Bu
 		Overload.ParamHandler->ExportCppDefaultParameterAsLocalVariable(Builder, *Overload.CSharpParamName, Overload.CppDefaultValue, &Function, Overload.ParamProperty);
 		Builder.AppendLine(FString::Printf(TEXT("%s%s(%s);"), *ReturnStatement, *CSharpMethodName, *Overload.ParamsStringCall));
 
-		Builder.CloseBrace(); // Overloaded function
+		Builder.CloseBrace();
 	}
 }
 
@@ -476,6 +480,7 @@ void FPropertyTranslator::FunctionExporter::ExportFunction(FCSScriptBuilder& Bui
 {
 	Builder.AppendLine();
 	ExportDeprecation(Builder);
+	AppendTooltip(&Function, Builder);
 	
 	if (bBlueprintEvent)
 	{
@@ -866,8 +871,8 @@ FString FPropertyTranslator::GetNativePropertyField(const FString& PropertyName)
 void FPropertyTranslator::ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const
 {
 	FunctionExporter Exporter(*this, *Function);
-	Exporter.ExportSignature(Builder, "public ");
-	Builder.Append(";");
+	Exporter.ExportSignature(Builder, TEXT("public "));
+	Builder.Append(TEXT(";"));
 }
 
 void FPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const

@@ -5,7 +5,7 @@ class FBlittableTypePropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	FBlittableTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InCSharpType, EPropertyUsage InPropertyUsage = EPropertyUsage::EPU_Any);
+	FBlittableTypePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers, FFieldClass* InPropertyClass, const FString& InCSharpType, EPropertyUsage InPropertyUsage = EPropertyUsage::EPU_Any);
 
 	//FPropertyTranslator interface implementation
 	virtual bool IsBlittable() const override { return true; }

@@ -4,7 +4,7 @@
 class FCustomStructTypePropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
-	FCustomStructTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, const FString& InUnrealStructName, const FString& InCSharpStructName);
+	FCustomStructTypePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers, const FString& InUnrealStructName, const FString& InCSharpStructName);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

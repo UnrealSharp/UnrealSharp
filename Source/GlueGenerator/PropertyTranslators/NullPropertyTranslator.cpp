@@ -1,6 +1,7 @@
 #include "NullPropertyTranslator.h"
+#include "GlueGenerator/CSPropertyTranslatorManager.h"
 
-FNullPropertyTranslator::FNullPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FNullPropertyTranslator::FNullPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FPropertyTranslator(InPropertyHandlers, EPU_None)
 {
 	

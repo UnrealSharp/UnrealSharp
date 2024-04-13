@@ -1,15 +1,14 @@
 #pragma once
 
 #include "BlittableTypePropertyTranslator.h"
-#include "CSSupportedPropertyTranslators.h"
 
 class FBlittableStructPropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
-	explicit FBlittableStructPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FBlittableStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 	
-	static bool IsStructBlittable(const FCSSupportedPropertyTranslators& PropertyHandlers, const UScriptStruct& ScriptStruct);
+	static bool IsStructBlittable(const FCSPropertyTranslatorManager& PropertyHandlers, const UScriptStruct& ScriptStruct);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

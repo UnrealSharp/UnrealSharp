@@ -2,7 +2,11 @@
 
 #include "UObject/Field.h"
 
+class FCSInclusionLists;
 class FCSNameMapper;
+class FScriptBuilder;
+class FPropertyTranslator;
+class FNullPropertyTranslator;
 
 enum EPropertyUsage : uint8
 {
@@ -18,17 +22,12 @@ enum EPropertyUsage : uint8
 	EPU_Any = 0xFF,
 };
 
-class FScriptBuilder;
-class FPropertyTranslator;
-class FNullPropertyTranslator;
-
-class FCSSupportedPropertyTranslators
+class FCSPropertyTranslatorManager
 {
 public:
 	
-	virtual ~FCSSupportedPropertyTranslators() = default;
-	
-	FCSSupportedPropertyTranslators(const FCSNameMapper& InNameMapper, class FCSInclusionLists& CodeGenerator);
+	virtual ~FCSPropertyTranslatorManager() = default;
+	FCSPropertyTranslatorManager(const FCSNameMapper& InNameMapper, FCSInclusionLists& CodeGenerator);
 
 	const FPropertyTranslator& Find(const FProperty* Property) const;
 	const FPropertyTranslator& Find(UFunction* Property) const;

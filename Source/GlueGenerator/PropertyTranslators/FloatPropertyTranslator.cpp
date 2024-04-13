@@ -1,6 +1,6 @@
 #include "FloatPropertyTranslator.h"
 
-FFloatPropertyTranslator::FFloatPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FFloatPropertyTranslator::FFloatPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FFloatProperty::StaticClass(), "float")
 {
 

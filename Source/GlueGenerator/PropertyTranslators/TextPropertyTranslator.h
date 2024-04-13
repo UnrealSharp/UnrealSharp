@@ -6,7 +6,7 @@ class FTextPropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
-	explicit FTextPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FTextPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual FString GetNullReturnCSharpValue(const FProperty* ReturnProperty) const override;

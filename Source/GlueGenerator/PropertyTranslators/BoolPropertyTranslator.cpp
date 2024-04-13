@@ -1,6 +1,6 @@
 #include "BoolPropertyTranslator.h"
 
-FBoolPropertyTranslator::FBoolPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FBoolPropertyTranslator::FBoolPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FBoolProperty::StaticClass(), "bool", "BoolMarshaller", EPU_Any)
 {
 

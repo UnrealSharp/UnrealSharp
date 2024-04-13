@@ -1,7 +1,7 @@
 #include "BlittableCustomStructTypePropertyTranslator.h"
 
 FBlittableCustomStructTypePropertyTranslator::FBlittableCustomStructTypePropertyTranslator
-(FCSSupportedPropertyTranslators& InPropertyHandlers, const FString& InUnrealStructName, const FString& CSharpStructName)
+(FCSPropertyTranslatorManager& InPropertyHandlers, const FString& InUnrealStructName, const FString& CSharpStructName)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FStructProperty::StaticClass(), CSharpStructName, EPU_Any), UnrealStructName(InUnrealStructName)
 {
 }

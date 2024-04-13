@@ -1,8 +1,8 @@
 #include "StringPropertyTranslator.h"
-
 #include "GlueGenerator/CSScriptBuilder.h"
+#include "GlueGenerator/CSPropertyTranslatorManager.h"
 
-FStringPropertyTranslator::FStringPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FStringPropertyTranslator::FStringPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FPropertyTranslator(InPropertyHandlers, static_cast<EPropertyUsage>(EPU_Property | EPU_Parameter | EPU_ReturnValue | EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue | EPU_StaticArrayProperty))
 {
 

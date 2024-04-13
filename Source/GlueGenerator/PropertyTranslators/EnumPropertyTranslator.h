@@ -5,7 +5,7 @@ class FEnumPropertyTranslator : public FBlittableTypePropertyTranslator
 {
 public:
 	
-	explicit FEnumPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FEnumPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	static void AddStrippedPrefix(const UEnum* Enum, const FString& Prefix);
 	

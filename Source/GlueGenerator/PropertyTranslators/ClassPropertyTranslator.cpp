@@ -1,7 +1,6 @@
 #include "ClassPropertyTranslator.h"
-#include "CSSupportedPropertyTranslators.h"
 
-FClassPropertyTranslator::FClassPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FClassPropertyTranslator::FClassPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FSimpleTypePropertyTranslator(InPropertyHandlers, FClassProperty::StaticClass(), EPU_Any)
 {
 

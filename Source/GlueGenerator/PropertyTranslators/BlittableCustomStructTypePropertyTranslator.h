@@ -5,7 +5,7 @@ class FBlittableCustomStructTypePropertyTranslator : public FBlittableTypeProper
 {
 public:
 	
-	FBlittableCustomStructTypePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers, const FString& InUnrealStructName, const FString& CSharpStructName);
+	FBlittableCustomStructTypePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers, const FString& InUnrealStructName, const FString& CSharpStructName);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

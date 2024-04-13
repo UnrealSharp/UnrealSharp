@@ -1,12 +1,12 @@
 #include "BlittableStructPropertyTranslator.h"
 
-FBlittableStructPropertyTranslator::FBlittableStructPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+FBlittableStructPropertyTranslator::FBlittableStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 : FBlittableTypePropertyTranslator(InPropertyHandlers, FStructProperty::StaticClass(), "")
 {
 
 }
 
-bool FBlittableStructPropertyTranslator::IsStructBlittable(const FCSSupportedPropertyTranslators& PropertyHandlers, const UScriptStruct& Struct)
+bool FBlittableStructPropertyTranslator::IsStructBlittable(const FCSPropertyTranslatorManager& PropertyHandlers, const UScriptStruct& Struct)
 {
 	int32 CalculatedPropertySize = 0;
 	for (TFieldIterator<FProperty> PropIt(&Struct); PropIt; ++PropIt)

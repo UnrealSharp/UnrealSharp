@@ -1,11 +1,12 @@
 #pragma once
 #include "PropertyTranslator.h"
-#include "CSSupportedPropertyTranslators.h"
+
+class FCSPropertyTranslatorManager;
 
 class FBitfieldPropertyTranslator : public FPropertyTranslator
 {
 public:
-	explicit FBitfieldPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FBitfieldPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual bool CanHandleProperty(const FProperty* Property) const override;

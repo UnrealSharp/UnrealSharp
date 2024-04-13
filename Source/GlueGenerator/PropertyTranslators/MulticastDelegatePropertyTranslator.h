@@ -7,7 +7,7 @@ class FMulticastDelegatePropertyTranslator : public FDelegateBasePropertyTransla
 {
 public:
 	
-	FMulticastDelegatePropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers)
+	FMulticastDelegatePropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
 	: FDelegateBasePropertyTranslator(InPropertyHandlers, EPU_Property)
 	{
 	}

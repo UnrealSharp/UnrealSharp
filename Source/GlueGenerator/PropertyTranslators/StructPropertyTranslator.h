@@ -1,13 +1,12 @@
 #pragma once
 
-#include "CSSupportedPropertyTranslators.h"
 #include "PrimitiveTypePropertyTranslator.h"
 
 class FStructPropertyTranslator : public FSimpleTypePropertyTranslator
 {
 public:
 	
-	explicit FStructPropertyTranslator(FCSSupportedPropertyTranslators& InPropertyHandlers);
+	explicit FStructPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers);
 
 	//FPropertyTranslator interface implementation
 	virtual FString GetManagedType(const FProperty* Property) const override;
