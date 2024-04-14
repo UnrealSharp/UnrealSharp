@@ -30,7 +30,7 @@ using UnrealSharp.Attributes;
 using UnrealSharp.Engine;
 using UnrealSharp.Niagara;
 
-namespace ManagedCropoutSampleProject;
+namespace ManagedSharpProject;
 
 public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signature>
 {
@@ -38,7 +38,9 @@ public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelega
 }
 
 [UClass]
-public class ResourceBase : Actor, IInteractable
+// Partial classes are only a requirement if you want UnrealSharp to generate helper methods for your own classes too.
+// Such as: MyCustomComponent foundComponent = MyCustomComponent.Get(actorReference);
+public partial class ResourceBase : Actor, IInteractable
 {
     public ResourceBase()
     {
@@ -53,6 +55,9 @@ public class ResourceBase : Actor, IInteractable
     // The health component of the resource, if it has one
     [UProperty(DefaultComponent = true)]
     public HealthComponent HealthComponent { get; set; }
+    
+    [UProperty(PropertyFlags.EditDefaultsOnly)]
+    public int PickUpAmount { get; set; }
     
     // The time it takes for the resource to respawn
     [UProperty(PropertyFlags.EditDefaultsOnly | PropertyFlags.BlueprintReadOnly)]
@@ -75,7 +80,7 @@ public class ResourceBase : Actor, IInteractable
         HealthComponent.OnDeath += OnDeath;
         base.ReceiveBeginPlay();
     }
-    
+
     [UFunction]
     protected virtual void OnDeath(Player player) {}
 
@@ -92,8 +97,15 @@ public class ResourceBase : Actor, IInteractable
         {
             return;
         }
-        
-        player.Inventory.AddItem(this);
+
+        if (!player.Inventory.AddItem(this, PickUpAmount))
+        {
+            return;
+        }
+
+        // Get the ExperienceComponent from the PlayerState using the generated helper methods.
+        ExperienceComponent experienceComponent = ExperienceComponent.Get(player.PlayerState);
+        experienceComponent.AddExperience(PickUpAmount);
         
         // Respawn the resource after a certain amount of time
         SetTimer(OnRespawned, RespawnTime, false);
@@ -113,7 +125,7 @@ public class ResourceBase : Actor, IInteractable
     [UFunction]
     public void OnRep_IsPickedUp()
     {
-        if (PickUpEffect != null)
+        if (PickUpEffect is null)
         {
             NiagaraFunctionLibrary.SpawnSystemAtLocation(this, PickUpEffect, GetActorLocation(), GetActorRotation());
         }
