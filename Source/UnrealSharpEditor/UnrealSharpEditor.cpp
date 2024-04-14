@@ -48,12 +48,6 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
-	// Return early and let TickDelegate handle Reload
-	if (Settings->bRequireFocusForHotReload)
-	{
-		return;
-	}
-
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
 		// Skip generated files in bin and obj folders
@@ -71,6 +65,13 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		
 		// Return on the first .cs file we encounter so we can reload.
 		bIsReloading = true;
+
+		// Return early and let TickDelegate handle Reload
+		if (Settings->bRequireFocusForHotReload)
+		{
+			return;
+		}
+		
 		StartHotReload();
 		bIsReloading = false;
 		return;
