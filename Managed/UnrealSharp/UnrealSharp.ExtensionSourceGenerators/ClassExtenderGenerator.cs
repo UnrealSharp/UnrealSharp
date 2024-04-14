@@ -33,6 +33,17 @@ public class ClassExtenderGenerator : ISourceGenerator
 
         return null;
     }
+    
+    void InitializeGenerators(GeneratorExecutionContext context)
+    {
+        if (_generators.Count > 0)
+        {
+            return;
+        }
+        
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.Actor")!, new ActorExtensionGenerator());
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.ActorComponent")!, new ActorComponentExtensionGenerator());
+    }
 
     public void Execute(GeneratorExecutionContext context)
     {
@@ -41,8 +52,7 @@ public class ClassExtenderGenerator : ISourceGenerator
             return;
         }
         
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.Actor")!, new ActorExtensionGenerator());
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.ActorComponent")!, new ActorComponentExtensionGenerator());
+        InitializeGenerators(context);
         
         foreach (var classDeclaration in receiver.CandidateClasses)
         {
