@@ -209,7 +209,12 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 void* FCSGeneratedClassBuilder::TryGetManagedFunction(const UClass* Outer, const FName& MethodName)
 {
 	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::GetClassInfoFromName(Outer->GetFName());
-	check(ClassInfo);
+	
+	if (!ClassInfo)
+	{
+		return nullptr;
+	}
+	
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
 	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ClassInfo->TypeHandle, *InvokeMethodName);
 }
