@@ -139,7 +139,7 @@ public class UnrealSharpObject : IDisposable
     
     public T SpawnActor<T>(SubclassOf<T> actorType = default, 
         Transform spawnTransform = default,
-        SpawnActorCollisionHandlingMethod spawnMethod = SpawnActorCollisionHandlingMethod.Default, 
+        ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined, 
         Pawn? instigator = null, 
         Actor? owner = null) where T : Actor
     {

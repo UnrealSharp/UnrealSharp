@@ -25,7 +25,7 @@ public class ActorExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <param name=\"instigator\">The actor that caused the actor to be spawned.</param>");
         stringBuilder.AppendLine("     /// <param name=\"owner\">The actor that owns the spawned actor.</param>");
         stringBuilder.AppendLine("     /// <returns>The spawned actor.</returns>");
-        stringBuilder.AppendLine($"     public static {fullTypeName} Spawn(CoreUObject.Object worldContextObject, SubclassOf<{fullTypeName}> actorClass = default, Transform spawnTransform = default, SpawnActorCollisionHandlingMethod spawnMethod = SpawnActorCollisionHandlingMethod.Default, Pawn? instigator = null, Actor? owner = null)");
+        stringBuilder.AppendLine($"     public static {fullTypeName} Spawn(UnrealSharp.CoreUObject.Object worldContextObject, SubclassOf<{fullTypeName}> actorClass = default, Transform spawnTransform = default, UnrealSharp.Engine.ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined, Pawn? instigator = null, Actor? owner = null)");
         stringBuilder.AppendLine("     {");
         stringBuilder.AppendLine($"         return worldContextObject.SpawnActor<{fullTypeName}>(actorClass, spawnTransform, spawnMethod, instigator, owner);");
         stringBuilder.AppendLine("     }");
@@ -40,7 +40,7 @@ public class ActorExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// </summary>");
         stringBuilder.AppendLine("     /// <param name=\"worldContextObject\">The object to get the actors from.</param>");
         stringBuilder.AppendLine("     /// <param name=\"outActors\">The list to store the actors in.</param>");
-        stringBuilder.AppendLine("     public static new void GetAllActorsOfClass(CoreUObject.Object worldContextObject, out IList<Actor> outActors)");
+        stringBuilder.AppendLine("     public static new void GetAllActorsOfClass(UnrealSharp.CoreUObject.Object worldContextObject, out IList<Actor> outActors)");
         stringBuilder.AppendLine("     {");
         stringBuilder.AppendLine($"         GameplayStatics.GetAllActorsOfClass(worldContextObject, typeof({fullTypeName}), out outActors);");
         stringBuilder.AppendLine("     }");

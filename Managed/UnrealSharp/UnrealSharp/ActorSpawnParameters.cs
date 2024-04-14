@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Engine;
 
 namespace UnrealSharp;
 
@@ -9,7 +10,7 @@ public struct ActorSpawnParameters()
     private IntPtr instigatorNativePtr = 0;
     private IntPtr templateNativePtr = 0;
     private NativeBool nativeDeferConstruction = NativeBool.False;
-    public SpawnActorCollisionHandlingMethod SpawnMethod = SpawnActorCollisionHandlingMethod.Default;
+    public ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod.Undefined;
 
     private UnrealSharpObject _owner = null; 
     
