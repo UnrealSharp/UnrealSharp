@@ -38,7 +38,7 @@ public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelega
 }
 
 [UClass]
-// Partial classes are only a requirement if you want UnrealSharp to generate helper methods for your own classes too.
+// Partial classes are only a requirement if you want UnrealSharp to generate helper methods.
 // Such as: MyCustomComponent foundComponent = MyCustomComponent.Get(actorReference);
 public partial class ResourceBase : Actor, IInteractable
 {
