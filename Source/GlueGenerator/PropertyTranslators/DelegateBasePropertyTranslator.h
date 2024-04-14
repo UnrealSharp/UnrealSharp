@@ -17,5 +17,7 @@ public:
 		const FProperty* Property,
 		const FString& NativePropertyName) const override;
 	// End of implementation
+
+	static FString GetDelegateName(const FMulticastDelegateProperty* Property);
 	
 };

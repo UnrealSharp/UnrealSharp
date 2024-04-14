@@ -17,35 +17,36 @@ bool FMulticastDelegatePropertyTranslator::CanHandleProperty(const FProperty* Pr
 
 FString FMulticastDelegatePropertyTranslator::GetManagedType(const FProperty* Property) const
 {
-	return Property->GetName();
+	return GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
 }
-
-
 
 void FMulticastDelegatePropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
 {
 	AddNativePropertyField(Builder, PropertyName);
 
 	FString BackingFieldName = GetBackingFieldName(Property);
-	Builder.AppendLine(FString::Printf(TEXT("private %s %s;"), *PropertyName, *BackingFieldName));
+	FString DelegateName = GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
+	Builder.AppendLine(FString::Printf(TEXT("private %s %s;"), *DelegateName, *BackingFieldName));
 	
 	FPropertyTranslator::ExportPropertyVariables(Builder, Property, PropertyName);
 }
 
 void FMulticastDelegatePropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
 {
-	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,this,value);"), *PropertyName, *PropertyName));
+	FString DelegateName = GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
+	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,this,value);"), *DelegateName, *PropertyName));
 }
 
 void FMulticastDelegatePropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
 {
 	FString BackingFieldName = GetBackingFieldName(Property);
 	FString NativePropertyFieldName = GetNativePropertyField(PropertyName);
+	FString DelegateName = GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
 	
 	Builder.AppendLine(FString::Printf(TEXT("if (%s == null)"), *BackingFieldName));
 	Builder.OpenBrace();
 	Builder.AppendLine(FString::Printf(TEXT("%s = DelegateMarshaller<%s>.FromNative(IntPtr.Add(NativeObject, %s_Offset), %s, 0, this);"),
-		*BackingFieldName, GetData(PropertyName), GetData(PropertyName), *NativePropertyFieldName));
+		*BackingFieldName, GetData(DelegateName), GetData(PropertyName), *NativePropertyFieldName));
 	Builder.CloseBrace();
 	Builder.AppendLine(FString::Printf(TEXT("return %s;"), *BackingFieldName));
 }
@@ -60,16 +61,17 @@ void FMulticastDelegatePropertyTranslator::OnPropertyExported(FCSScriptBuilder& 
 	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(Property->GetOutermost());
 	const FMulticastDelegateProperty* DelegateProperty = CastFieldChecked<FMulticastDelegateProperty>(Property);
 	UFunction* Function = DelegateProperty->SignatureFunction;
+	FString DelegateName = GetDelegateName(DelegateProperty);
 	
 	FCSScriptBuilder DelegateBuilder(FCSScriptBuilder::IndentType::Spaces);
 
 	DelegateBuilder.GenerateScriptSkeleton(Module.GetNamespace());
 	DelegateBuilder.AppendLine();
 
-	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *PropertyName);
+	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *DelegateName);
 	FString SuperClass = FString::Printf(TEXT("MulticastDelegate<%s>"), *SignatureName);
 	
-	DelegateBuilder.DeclareType("class", PropertyName, SuperClass, true);
+	DelegateBuilder.DeclareType("class", DelegateName, SuperClass, true);
 	
 	FunctionExporter Exporter(*this, *Function, ProtectionMode::UseUFunctionProtection, OverloadMode::SuppressOverloads, BlueprintVisibility::Call);
 
@@ -97,7 +99,7 @@ void FMulticastDelegatePropertyTranslator::OnPropertyExported(FCSScriptBuilder& 
 	
 	DelegateBuilder.CloseBrace();
 	
-	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *PropertyName);
+	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
 	FCSGenerator::Get().SaveGlue(&Module, FileName, DelegateBuilder.ToString());
 }
 

@@ -10,6 +10,15 @@ void FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(FCSScript
 	
 	if (DelegateProperty->SignatureFunction->NumParms > 0)
 	{
-		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *NativePropertyName, *NativePropertyName));
+		FString DelegateName = GetDelegateName(DelegateProperty);
+		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *DelegateName, *NativePropertyName));
 	}
+}
+
+FString FDelegateBasePropertyTranslator::GetDelegateName(const FMulticastDelegateProperty* Property)
+{
+	UFunction* Function = Property->SignatureFunction;
+	FString DelegateSignatureName = Function->GetName();
+	int32 DelegateSignatureIndex = DelegateSignatureName.Find("DelegateSignature");
+	return DelegateSignatureName.Left(DelegateSignatureIndex - 2);
 }
