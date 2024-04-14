@@ -126,7 +126,7 @@ public partial class ResourceBase : Actor, IInteractable
     [UFunction]
     public void OnRep_IsPickedUp()
     {
-        if (PickUpEffect is null)
+        if (PickUpEffect is not null)
         {
             NiagaraFunctionLibrary.SpawnSystemAtLocation(this, PickUpEffect, GetActorLocation(), GetActorRotation());
         }
