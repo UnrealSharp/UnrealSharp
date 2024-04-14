@@ -9,7 +9,8 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 - **C# Integration**: Write your game logic in C#.
 - **Seamless Unreal Engine 5 Compatibility**: Fully integrated with the latest UE5 features and API.
 - **Hot reload:** Compile and reload code on the fly without having to restart the engine for changes.
-- **Automatic Bindings:** Automatically generates C# API based on what is exposed to Blueprint. Which enables marketplace code plugins a seamless integration with UnrealSharp.
+- **Automatic Bindings:** Automatically generates C# API based on what is exposed to reflection.
+- **.NET Ecosystem:** Use any NuGet package to extend functionality.
 
 ## Prerequisites
 - Unreal Engine 5.3.+ (Will support earlier versions in the future)
