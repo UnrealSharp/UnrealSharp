@@ -31,6 +31,7 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 	if (FunctionMetaData.ReturnValue.Type != nullptr)
 	{
 		FCSPropertyFactory::CreateAndAssignProperty(NewFunction, FunctionMetaData.ReturnValue, CPF_Parm | CPF_ReturnParm | CPF_OutParm);
+		NewFunction->FunctionFlags |= FUNC_HasOutParms;
 	}
 
 	// Create the function's parameters and assign them.
@@ -63,6 +64,11 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 	for (int32 i = FunctionProperties.Num(); i-- > 0;)
 	{
 		NewFunction->AddCppProperty(FunctionProperties[i]);
+
+		if (FunctionProperties[i]->HasAnyPropertyFlags(CPF_OutParm))
+		{
+			NewFunction->FunctionFlags |= FUNC_HasOutParms;
+		}
 	}
 
 #if WITH_EDITOR
