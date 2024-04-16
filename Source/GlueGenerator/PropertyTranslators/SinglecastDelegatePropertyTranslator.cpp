@@ -26,6 +26,19 @@ FString FSinglecastDelegatePropertyTranslator::GetManagedType(const FProperty* P
 	return GetDelegateName(CastFieldChecked<FDelegateProperty>(Property));
 }
 
+void FSinglecastDelegatePropertyTranslator::ExportPropertyStaticConstruction(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
+{
+	FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(Builder, Property, NativePropertyName);
+
+	const FDelegateProperty* DelegateProperty = CastFieldChecked<FDelegateProperty>(Property);
+
+	if (DelegateProperty->SignatureFunction->NumParms > 0)
+	{
+		FString DelegateName = GetDelegateName(DelegateProperty);
+		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *DelegateName, *NativePropertyName));
+	}
+}
+
 void FSinglecastDelegatePropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Owner, const FString& PropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
 {
 	FString DelegateName = GetDelegateName(CastFieldChecked<FDelegateProperty>(Property));
@@ -46,4 +59,10 @@ void FSinglecastDelegatePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScr
 FString FSinglecastDelegatePropertyTranslator::GetNullReturnCSharpValue(const FProperty* ReturnProperty) const
 {
 	return "null";
+}
+
+FString FSinglecastDelegatePropertyTranslator::GetDelegateName(const FDelegateProperty* Property)
+{
+	const UFunction* Function = Property->SignatureFunction;
+	return FDelegateBasePropertyTranslator::GetDelegateName(Function);
 }

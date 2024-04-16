@@ -197,7 +197,11 @@ void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bF
 		return;
 	}
 
-	SaveTypeGlue(DelegateSignature, Builder);
+	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(DelegateSignature);
+
+	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
+	FCSGenerator::Get().SaveGlue(&Module, FileName, Builder.ToString());
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -668,10 +672,8 @@ void FCSGenerator::ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder
 	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(SignatureFunction->GetOutermost());
 	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(SignatureFunction);
 
-	FCSScriptBuilder DelegateBuilder(FCSScriptBuilder::IndentType::Spaces);
-
-	DelegateBuilder.GenerateScriptSkeleton(Module.GetNamespace());
-	DelegateBuilder.AppendLine();
+	Builder.GenerateScriptSkeleton(Module.GetNamespace());
+	Builder.AppendLine();
 
 	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *DelegateName);
 	FString SuperClass;
@@ -684,20 +686,17 @@ void FCSGenerator::ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder
 		SuperClass = FString::Printf(TEXT("Delegate<%s>"), *SignatureName);
 	}
 
-	DelegateBuilder.DeclareType("class", DelegateName, SuperClass, true);
+	Builder.DeclareType("class", DelegateName, SuperClass, true);
 
-	PropertyTranslatorManager->Find(SignatureFunction).ExportDelegateFunction(DelegateBuilder, SignatureFunction);
+	PropertyTranslatorManager->Find(SignatureFunction).ExportDelegateFunction(Builder, SignatureFunction);
 
 	// Write delegate initializer
-	DelegateBuilder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
-	DelegateBuilder.OpenBrace();
-	FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(DelegateBuilder, SignatureFunction);
-	DelegateBuilder.CloseBrace();
+	Builder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
+	Builder.OpenBrace();
+	FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(Builder, SignatureFunction);
+	Builder.CloseBrace();
 
-	DelegateBuilder.CloseBrace();
-
-	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
-	FCSGenerator::Get().SaveGlue(&Module, FileName, DelegateBuilder.ToString());
+	Builder.CloseBrace();
 }
 
 void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)

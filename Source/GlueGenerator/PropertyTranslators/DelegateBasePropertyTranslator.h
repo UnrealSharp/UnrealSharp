@@ -18,10 +18,6 @@ public:
 		const FString& NativePropertyName) const override;
 	// End of implementation
 
-	static FString GetDelegateName(const FMulticastDelegateProperty* Property);
-
-	static FString GetDelegateName(const FDelegateProperty* Property);
-
 	static FString GetDelegateName(const UFunction* SignatureFunction);
 	
 };

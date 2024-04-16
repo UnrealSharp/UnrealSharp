@@ -26,6 +26,19 @@ FString FMulticastDelegatePropertyTranslator::GetManagedType(const FProperty* Pr
 	return GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
 }
 
+void FMulticastDelegatePropertyTranslator::ExportPropertyStaticConstruction(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
+{
+	FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(Builder, Property, NativePropertyName);
+
+	const FMulticastDelegateProperty* DelegateProperty = CastFieldChecked<FMulticastDelegateProperty>(Property);
+
+	if (DelegateProperty->SignatureFunction->NumParms > 0)
+	{
+		FString DelegateName = GetDelegateName(DelegateProperty);
+		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *DelegateName, *NativePropertyName));
+	}
+}
+
 void FMulticastDelegatePropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
 {
 	AddNativePropertyField(Builder, PropertyName);
@@ -65,4 +78,10 @@ FString FMulticastDelegatePropertyTranslator::GetNullReturnCSharpValue(const FPr
 FString FMulticastDelegatePropertyTranslator::GetBackingFieldName(const FProperty* Property)
 {
 	return FString::Printf(TEXT("%s_BackingField"), *Property->GetName());
+}
+
+FString FMulticastDelegatePropertyTranslator::GetDelegateName(const FMulticastDelegateProperty* Property)
+{
+	const UFunction* Function = Property->SignatureFunction;
+	return FDelegateBasePropertyTranslator::GetDelegateName(Function);
 }

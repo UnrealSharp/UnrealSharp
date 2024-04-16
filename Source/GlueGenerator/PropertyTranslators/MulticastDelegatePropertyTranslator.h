@@ -16,6 +16,9 @@ public:
 	virtual bool CanHandleProperty(const FProperty* Property) const override;
 	virtual void AddDelegateReferences(const FProperty* Property, TSet<UFunction*>& DelegateSignatures) const override;
 	virtual FString GetManagedType(const FProperty* Property) const override;
+	virtual void ExportPropertyStaticConstruction(FCSScriptBuilder& Builder,
+		const FProperty* Property,
+		const FString& NativePropertyName) const override;
 protected:
 	virtual void ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const override;
 	virtual void ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const override;
@@ -24,4 +27,6 @@ protected:
 	//End of implementation
 
 	static FString GetBackingFieldName(const FProperty* Property);
+
+	static FString GetDelegateName(const FMulticastDelegateProperty* Property);
 };

@@ -590,7 +590,6 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 			if (!ParamProperty->HasAnyPropertyFlags(CPF_ReturnParm) && (ParamProperty->HasAnyPropertyFlags(CPF_ReferenceParm) || !ParamProperty->HasAnyPropertyFlags(CPF_OutParm)))
 			{
 				const FPropertyTranslator& ParamHandler = Handler.PropertyHandlers.Find(ParamProperty);
-				ParamHandler.OnPropertyExported(Builder, ParamProperty, NativePropertyName);
 				FString SourceName = Mode == InvokeMode::Setter ? "value" : GetScriptNameMapper().MapParameterName(ParamProperty);
 				ParamHandler.ExportMarshalToNativeBuffer(Builder, ParamProperty, "null", NativePropertyName, "ParamsBuffer", FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativePropertyName), SourceName);
 			}
