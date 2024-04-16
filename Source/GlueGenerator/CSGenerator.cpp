@@ -5,6 +5,7 @@
 #include "CSScriptBuilder.h"
 #include "CSPropertyTranslatorManager.h"
 #include "PropertyTranslators/PropertyTranslator.h"
+#include "PropertyTranslators/DelegateBasePropertyTranslator.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interfaces/IPluginManager.h"
@@ -172,6 +173,31 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 	}
 	
 	SaveTypeGlue(Object, Builder);
+}
+
+void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport)
+{
+	// We don't want stuff in the transient package - that stuff is just temporary
+	if (DelegateSignature->GetOutermost() == GetTransientPackage())
+	{
+		return;
+	}
+
+	if (ExportedDelegates.Contains(DelegateSignature))
+	{
+		return;
+	}
+
+	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
+
+	ExportDelegate(DelegateSignature, Builder);
+
+	if (Builder.IsEmpty())
+	{
+		return;
+	}
+
+	SaveTypeGlue(DelegateSignature, Builder);
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -628,6 +654,52 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	Builder.CloseBrace();
 }
 
+void FCSGenerator::ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder& Builder)
+{
+	if (!ensure(!ExportedDelegates.Contains(SignatureFunction)))
+	{
+		return;
+	}
+
+	ensure(SignatureFunction->HasAnyFunctionFlags(FUNC_Delegate));
+
+	ExportedDelegates.Add(SignatureFunction);
+
+	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(SignatureFunction->GetOutermost());
+	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(SignatureFunction);
+
+	FCSScriptBuilder DelegateBuilder(FCSScriptBuilder::IndentType::Spaces);
+
+	DelegateBuilder.GenerateScriptSkeleton(Module.GetNamespace());
+	DelegateBuilder.AppendLine();
+
+	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *DelegateName);
+	FString SuperClass;
+	if (SignatureFunction->HasAnyFunctionFlags(FUNC_MulticastDelegate))
+	{
+		SuperClass = FString::Printf(TEXT("MulticastDelegate<%s>"), *SignatureName);
+	}
+	else
+	{
+		SuperClass = FString::Printf(TEXT("Delegate<%s>"), *SignatureName);
+	}
+
+	DelegateBuilder.DeclareType("class", DelegateName, SuperClass, true);
+
+	PropertyTranslatorManager->Find(SignatureFunction).ExportDelegateFunction(DelegateBuilder, SignatureFunction);
+
+	// Write delegate initializer
+	DelegateBuilder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
+	DelegateBuilder.OpenBrace();
+	FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(DelegateBuilder, SignatureFunction);
+	DelegateBuilder.CloseBrace();
+
+	DelegateBuilder.CloseBrace();
+
+	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
+	FCSGenerator::Get().SaveGlue(&Module, FileName, DelegateBuilder.ToString());
+}
+
 void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 {
 	if (!ensure(!ExportedTypes.Contains(Class)))
@@ -659,6 +731,7 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	{
 		TSet<FString> DeclaredDirectives;
 		
+		// Add using directives for interfaces
 		for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
 		{
 			UClass* InterfaceClass = ImplementedInterface.Class;
@@ -675,6 +748,28 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 					
 			Builder.DeclareDirective(InterfaceNamespace);
 			DeclaredDirectives.Add(InterfaceNamespace);
+		}
+
+		// Add using directives for delegates
+		for (const FProperty* Property : ExportedProperties)
+		{
+			TSet<UFunction*> DelegateSignatures;
+			PropertyTranslatorManager->Find(Property).AddDelegateReferences(Property, DelegateSignatures);
+
+			for (UFunction* DelegateSignature : DelegateSignatures)
+			{
+				FCSModule& DelegateModule = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+
+				const FString& DelegateNamespace = DelegateModule.GetNamespace();
+
+				if (DeclaredDirectives.Contains(DelegateNamespace))
+				{
+					continue;
+				}
+
+				Builder.DeclareDirective(DelegateNamespace);
+				DeclaredDirectives.Add(DelegateNamespace);
+			}
 		}
 	}
 

@@ -38,6 +38,24 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         FWeakObjectPtrExporter.CallSetObject(ref _data.Object, targetObject.NativeObject);
     }
 
+    public override void FromNative(IntPtr address, IntPtr nativeProperty)
+    {
+        // Copy the singlecast delegate data from the native property
+        unsafe
+        {
+            _data = *(DelegateData*)address;
+        }
+    }
+
+    public override void ToNative(IntPtr address)
+    {
+        // Copy the singlecast delegate data to the native property
+        unsafe
+        {
+            *(DelegateData*)address = _data;
+        }
+    }
+
     public bool IsBoundToObject(CoreUObject.Object obj)
     {
         return obj.Equals(TargetObject.Object);
@@ -72,9 +90,4 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     {
         FScriptDelegateExporter.CallBroadcastDelegate(ref _data, parameters);
     }
-}
-
-public partial class MyTestDelegate : Delegate<MyTestDelegate.MyDelegateSignature>
-{
-    public delegate void MyDelegateSignature();
 }

@@ -18,6 +18,7 @@
 #include "PropertyTranslators/NamePropertyTranslator.h"
 #include "PropertyTranslators/NullPropertyTranslator.h"
 #include "PropertyTranslators/ObjectPropertyTranslator.h"
+#include "PropertyTranslators/SinglecastDelegatePropertyTranslator.h"
 #include "PropertyTranslators/SoftClassPropertyTranslator.h"
 #include "PropertyTranslators/SoftObjectPtrPropertyTranslator.h"
 #include "PropertyTranslators/StringPropertyTranslator.h"
@@ -86,8 +87,11 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableStructPropertyTranslator(*this));
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));
 
-	AddPropertyTranslator(FMulticastSparseDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
-	AddPropertyTranslator(FMulticastInlineDelegateProperty::StaticClass(), new FMulticastDelegatePropertyTranslator(*this));
+	const auto MulticastDelegatePropertyHandler = new FMulticastDelegatePropertyTranslator(*this);
+	AddPropertyTranslator(FMulticastSparseDelegateProperty::StaticClass(), MulticastDelegatePropertyHandler);
+	AddPropertyTranslator(FMulticastInlineDelegateProperty::StaticClass(), MulticastDelegatePropertyHandler);
+
+	AddPropertyTranslator(FDelegateProperty::StaticClass(), new FSinglecastDelegatePropertyTranslator(*this));
 
 	AddPropertyTranslator(FInterfaceProperty::StaticClass(), new FCSInterfacePropertyTranslator(*this));
 }
