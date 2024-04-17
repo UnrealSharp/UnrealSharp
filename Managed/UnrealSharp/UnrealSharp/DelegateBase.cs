@@ -3,38 +3,30 @@ using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
-public abstract class IDelegateBase
+public interface IDelegateBase
 {
-    public abstract void FromNative(IntPtr address, IntPtr nativeProperty);
+    void FromNative(IntPtr address, IntPtr nativeProperty);
+
+    void ToNative(IntPtr address);
 }
 
-public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : class
+public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();
-    protected IntPtr NativeProperty;
 
     protected virtual TDelegate GetInvoker()
     {
         return null;
     }
 
-    public override void FromNative(IntPtr address, IntPtr nativeProperty)
-    {
-        NativeDelegate = address;
-        NativeProperty = nativeProperty;
-    }
+    public abstract void FromNative(IntPtr address, IntPtr nativeProperty);
+
+    public abstract void ToNative(IntPtr address);
 
     protected abstract void ProcessDelegate(IntPtr parameters);
     
     public abstract void BindUFunction(Object targetObject, Name functionName);
     public abstract void BindUFunction(WeakObject<Object> targetObject, Name functionName);
-    
-    public void Clear()
-    {
-        FMulticastDelegatePropertyExporter.CallClearDelegate(NativeDelegate, NativeProperty);
-    }
-
-    protected IntPtr NativeDelegate;
 }
 
 public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new()
@@ -48,6 +40,10 @@ public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new(
 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, object obj)
     {
-
+        if (obj is not IDelegateBase @delegate)
+        {
+            return;
+        }
+        @delegate.ToNative(nativeBuffer);
     }
 }

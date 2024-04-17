@@ -36,6 +36,7 @@ public:
 	
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);
 	void GenerateGlueForType(UObject* Object, bool bForceExport = false);
+	void GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport = false);
 	
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	
@@ -49,6 +50,7 @@ public:
 	void ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder);
 	void ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder);
 	void ExportInterface(UClass* Interface, FCSScriptBuilder& Builder);
+	void ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder& Builder);
 	
 	bool CanExportClass(UClass* Class) const;
 	bool CanDeriveFromNativeClass(UClass* Class);
@@ -110,4 +112,5 @@ protected:
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;
 	TMap<FName, FCSModule> CSharpBindingsModules;
 	TSet<UObject*> ExportedTypes;
+	TSet<UFunction*> ExportedDelegates;
 };

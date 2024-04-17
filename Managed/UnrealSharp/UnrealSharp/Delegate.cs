@@ -12,7 +12,7 @@ public struct DelegateData
     public Name FunctionName;
 }
 
-public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : class
+public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     private DelegateData _data;
     
@@ -38,9 +38,32 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         FWeakObjectPtrExporter.CallSetObject(ref _data.Object, targetObject.NativeObject);
     }
 
-    public bool IsBoundToObject(CoreUObject.Object obj)
+    public override void FromNative(IntPtr address, IntPtr nativeProperty)
     {
-        return obj.Equals(TargetObject.Object);
+        // Copy the singlecast delegate data from the native property
+        unsafe
+        {
+            _data = *(DelegateData*)address;
+        }
+    }
+
+    public override void ToNative(IntPtr address)
+    {
+        // Copy the singlecast delegate data to the native property
+        unsafe
+        {
+            *(DelegateData*)address = _data;
+        }
+    }
+
+    public bool IsBoundToObject(Object targetObject)
+    {
+        return targetObject.Equals(TargetObject.Object);
+    }
+
+    public bool IsBoundTo(Object targetObject, Name functionName)
+    {
+        return targetObject.Equals(TargetObject.Object) && FunctionName == functionName;
     }
 
     public override void BindUFunction(Object targetObject, Name functionName)
@@ -52,6 +75,33 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     {
         _data.Object = targetObject._data;
         _data.FunctionName = functionName;
+    }
+
+    public void Add(TDelegate handler)
+    {
+        if (IsBound)
+        {
+            throw new InvalidOperationException($"A singlecast delegate can only be bound to one handler at a time. Unbind it first before binding a new handler.");
+        }
+        if (handler.Target is not Object targetObject)
+        {
+            throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
+        }
+        _data.Object = new WeakObject<Object>(targetObject)._data;
+        _data.FunctionName = new Name(handler.Method.Name);
+    }
+
+    public void Remove(TDelegate handler)
+    {
+        if (handler.Target is not Object targetObject)
+        {
+            return;
+        }
+        if (!IsBoundTo(targetObject, handler.Method.Name))
+        {
+            return;
+        }
+        Unbind();
     }
 
     public bool IsBound => _data.Object.ObjectIndex != 0;
@@ -72,9 +122,4 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     {
         FScriptDelegateExporter.CallBroadcastDelegate(ref _data, parameters);
     }
-}
-
-public partial class MyTestDelegate : Delegate<MyTestDelegate.MyDelegateSignature>
-{
-    public delegate void MyDelegateSignature();
 }
