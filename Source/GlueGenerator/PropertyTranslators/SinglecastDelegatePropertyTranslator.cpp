@@ -53,7 +53,7 @@ void FSinglecastDelegatePropertyTranslator::ExportCleanupMarshallingBuffer(FCSSc
 void FSinglecastDelegatePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Owner, const FString& PropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
 {
 	FString DelegateName = GetDelegateName(CastFieldChecked<FDelegateProperty>(Property));
-	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.FromNative(IntPtr.Add(%s, %s), 0, %s, %s);"), *DelegateName, *SourceBuffer, *Offset, *Owner));
+	Builder.AppendLine(FString::Printf(TEXT("%s DelegateMarshaller<%s>.FromNative(IntPtr.Add(%s, %s), IntPtr.Zero, 0, %s);"), *AssignmentOrReturn, *DelegateName, *SourceBuffer, *Offset, *Owner));
 }
 
 FString FSinglecastDelegatePropertyTranslator::GetNullReturnCSharpValue(const FProperty* ReturnProperty) const
