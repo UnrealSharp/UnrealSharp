@@ -47,8 +47,7 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 	AddPropertyTranslator(FByteProperty::StaticClass(), EnumPropertyHandler);
 
 	AddBlittablePropertyTranslator(FByteProperty::StaticClass(), "byte");
-
-	AddPropertyTranslator(FBoolProperty::StaticClass(), new FBitfieldPropertyTranslator(*this));
+	
 	AddPropertyTranslator(FBoolProperty::StaticClass(), new FBoolPropertyTranslator(*this));
 
 	AddPropertyTranslator(FStrProperty::StaticClass(), new FStringPropertyTranslator(*this));

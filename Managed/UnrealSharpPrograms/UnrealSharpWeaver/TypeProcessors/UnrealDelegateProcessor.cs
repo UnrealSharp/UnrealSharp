@@ -3,7 +3,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class UnrealDelegateProcessor
 {
@@ -48,10 +48,7 @@ public static class UnrealDelegateProcessor
         
         foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeDefinition marshaller = WeaverHelper.CreateNewClass(
-                WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
-
-            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
+            TypeDefinition marshaller = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
             
             // Create a delegate from the marshaller
             MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
@@ -67,9 +64,6 @@ public static class UnrealDelegateProcessor
             
             // Load array offset of 0
             processor.Emit(OpCodes.Ldc_I4_0);
-            
-            // Load null
-            processor.Emit(OpCodes.Ldnull);
             
             processor.Emit(OpCodes.Call, blittablefromNativeMethod);
             processor.Emit(OpCodes.Stloc, delegateDataVar);

@@ -1,8 +1,9 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class ConstructorBuilder
 {
@@ -51,6 +52,31 @@ public static class ConstructorBuilder
                 throw new RewriteException(type, $"Could not find {endMessage}");
             case > 1:
                 throw new RewriteException(type, $"Found more than one {endMessage}");
+        }
+    }
+
+    public static void InitializeFields(MethodDefinition staticConstructor, List<PropertyMetaData> fields, Instruction loadNativeClassField)
+    {
+        ILProcessor processor = staticConstructor.Body.GetILProcessor();
+        foreach (var property in fields)
+        {
+            Instruction loadNativeProperty;
+            Instruction setNativeProperty;
+            if (property.NativePropertyField == null)
+            {
+                VariableDefinition nativePropertyVar = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+                loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
+                setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
+            }
+            else
+            {
+                loadNativeProperty = Instruction.Create(OpCodes.Ldsfld, property.NativePropertyField);
+                setNativeProperty = Instruction.Create(OpCodes.Stsfld, property.NativePropertyField);
+            }
+            
+            property.InitializePropertyPointers(processor, loadNativeClassField, setNativeProperty);
+            property.InitializePropertyOffsets(processor, loadNativeProperty);
+            property.PropertyDataType.WritePostInitialization(processor, property, loadNativeProperty, setNativeProperty);
         }
     }
 }

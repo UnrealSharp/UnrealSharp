@@ -1,7 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
-using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -10,7 +9,7 @@ public class BaseMetaData
     public string Namespace { get; set; } 
     public string Name { get; set; }
     public string AssemblyName { get; set; } 
-    public Dictionary<string, string> MetaData { get; set; }
+    public Dictionary<string, string>? MetaData { get; set; }
 
     public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
     {
@@ -32,17 +31,16 @@ public class BaseMetaData
     public static ulong ExtractBoolAsFlags(TypeDefinition attributeType, CustomAttributeNamedArgument namedArg, string flagsAttributeName)
     {
         var arg = namedArg.Argument;
-        if ((bool)arg.Value)
+        
+        if (!(bool)arg.Value)
         {
-            // Find the property definition for this argument to resolve the true value to the desired flags map.
-            var properties = (from prop in attributeType.Properties
-                              where prop.Name == namedArg.Name
-                              select prop).ToArray();
-            ConstructorBuilder.VerifySingleResult(properties, attributeType, "attribute property " + namedArg.Name);
-            return GetFlags(properties[0].CustomAttributes, flagsAttributeName);
+            return 0;
         }
-
-        return 0;
+        
+        // Find the property definition for this argument to resolve the true value to the desired flags map.
+        var properties = (from prop in attributeType.Properties where prop.Name == namedArg.Name select prop).ToArray();
+        TypeProcessors.ConstructorBuilder.VerifySingleResult(properties, attributeType, "attribute property " + namedArg.Name);
+        return GetFlags(properties[0].CustomAttributes, flagsAttributeName);
     }
 
     public static ulong ExtractStringAsFlags(TypeDefinition attributeType, CustomAttributeNamedArgument namedArg, string flagsAttributeName)
@@ -62,7 +60,7 @@ public class BaseMetaData
             return 0;
         }
         
-        ConstructorBuilder.VerifySingleResult([foundProperty], attributeType, "attribute property " + namedArg.Name);
+        TypeProcessors.ConstructorBuilder.VerifySingleResult([foundProperty], attributeType, "attribute property " + namedArg.Name);
         return GetFlags(foundProperty.CustomAttributes, flagsAttributeName);
 
     }
@@ -82,7 +80,7 @@ public class BaseMetaData
         foreach (CustomAttribute attribute in customAttributes)
         {
             TypeDefinition attributeClass = attribute.AttributeType.Resolve();
-            CustomAttribute? flagsMap = FindAttribute(attributeClass.CustomAttributes, flagsAttributeName);
+            CustomAttribute? flagsMap = WeaverHelper.FindAttribute(attributeClass.CustomAttributes, flagsAttributeName);
 
             if (flagsMap == null)
             {
@@ -145,7 +143,7 @@ public class BaseMetaData
                     MetaData.Add((string)attrib.ConstructorArguments[0].Value, "");
                     break;
                 default:
-                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
+                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string) attrib.ConstructorArguments[1].Value);
                     break;
             }
         }
@@ -176,10 +174,5 @@ public class BaseMetaData
         }
         
         return 0 == StringComparer.OrdinalIgnoreCase.Compare(val, "true");
-    }
-    
-    public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
-    {
-        return WeaverHelper.FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", attributeName);
     }
 }

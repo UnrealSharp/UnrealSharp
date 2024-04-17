@@ -4,7 +4,7 @@ using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.NativeTypes;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class FunctionRewriterHelpers
 {
@@ -188,7 +188,6 @@ public static class FunctionRewriterHelpers
                 type, 
                 loadBufferPtr, 
                 processor.Create(OpCodes.Ldc_I4_0), 
-                processor.Create(OpCodes.Ldnull), 
                 loadLocalVariable);
         }
 
@@ -202,7 +201,7 @@ public static class FunctionRewriterHelpers
             nativeReturnType.PrepareForRewrite(type, func, func.ReturnValue);
             
             nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
-                processor.Create(OpCodes.Ldc_I4_0), processor.Create(OpCodes.Ldnull), loadReturnProperty);
+                processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);
         }
 
         processor.Emit(OpCodes.Ret);
@@ -320,7 +319,7 @@ public static class FunctionRewriterHelpers
                 processor.Emit(OpCodes.Ldarg, i + 1);
 
                 Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramOffsetFields[i].Item1);
-                param.PropertyDataType.WriteMarshalFromNative(processor, type, load, processor.Create(OpCodes.Ldc_I4_0), loadObjectInstance);
+                param.PropertyDataType.WriteMarshalFromNative(processor, type, load, processor.Create(OpCodes.Ldc_I4_0));
             
                 Instruction setInstructionOutParam = WeaverHelper.CreateSetInstructionOutParam(methodDef.Parameters[i], param.PropertyDataType.PropertyType);
                 processor.Append(setInstructionOutParam);
@@ -332,7 +331,7 @@ public static class FunctionRewriterHelpers
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramOffsetFields[^1].Item1);
-            metadata.ReturnValue.PropertyDataType.WriteMarshalFromNative(processor, type, load, Instruction.Create(OpCodes.Ldc_I4_0), loadObjectInstance);
+            metadata.ReturnValue.PropertyDataType.WriteMarshalFromNative(processor, type, load, Instruction.Create(OpCodes.Ldc_I4_0));
         }
 
         processor.Emit(OpCodes.Ret);

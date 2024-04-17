@@ -59,11 +59,6 @@ void FCSReinstancer::Reinstance()
 	NotifyChanges(ClassesToReinstance);
 
 	Reload->StartReinstancing(*this);
-
-	ClassesToReinstance.Reset();
-	StructsToReinstance.Reset();
-	EnumsToReinstance.Reset();
-	InterfacesToReinstance.Reset();
 	
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 }

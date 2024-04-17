@@ -10,8 +10,7 @@ public class InterfaceMetaData : TypeReferenceMetadata
     {
         AddMetadataAttributes(typeDefinition.CustomAttributes);
         
-        CustomAttribute? interfaceAttributes = 
-            FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute");
+        CustomAttribute? interfaceAttributes = WeaverHelper.FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute");
         
         CustomAttributeArgument? cannotImplementInterfaceInBlueprintField = 
             WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
@@ -36,10 +35,5 @@ public class InterfaceMetaData : TypeReferenceMetadata
                 Functions.Add(new FunctionMetaData(method, bOnlyCollectMetaData: true));
             }
         }
-    }
-
-    public static bool IsUInterface(TypeDefinition typeDefinition)
-    {
-        return FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute") != null;
     }
 }

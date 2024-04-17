@@ -1,7 +1,7 @@
 ﻿using Mono.Cecil;
 using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class UnrealEnumProcessor
 { 

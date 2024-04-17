@@ -1,9 +1,7 @@
-﻿using System.Reflection.Emit;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
-using OpCode = Mono.Cecil.Cil.OpCode;
+using UnrealSharpWeaver.TypeProcessors;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 namespace UnrealSharpWeaver.NativeTypes;
@@ -75,9 +73,8 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
-        Instruction loadOwner = processor.Create(OpCodes.Ldarg_0);
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
-        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadOwner);
+        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
         EndSimpleGetter(processor, getter);
     }
 
@@ -85,16 +82,15 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     {
         ILProcessor processor = BeginSimpleSetter(setter);
         Instruction loadValue = processor.Create(IsReference ? OpCodes.Ldarga : OpCodes.Ldarg, 1);
-        Instruction loadOwner = processor.Create(OpCodes.Ldarg_0);
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
-        WriteMarshalToNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadOwner, loadValue);
+        WriteMarshalToNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadValue);
         EndSimpleSetter(processor, setter);
     }
 
     public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, VariableDefinition localVar)
     {
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
-        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), processor.Create(OpCodes.Ldnull));
+        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
         processor.Emit(OpCodes.Stloc, localVar);
     }
 
@@ -102,7 +98,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     {
         processor.Emit(OpCodes.Ldarg_0);
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
-        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), processor.Create(OpCodes.Ldnull));
+        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
         processor.Emit(OpCodes.Stfld, destField);
     }
 
@@ -119,16 +115,11 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
         
-        // Simple types are always marshalled by value, so we can pass null as the owner.
-        Instruction loadOwner = processor.Create(OpCodes.Ldnull);
-        
-        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadOwner, source.ToArray());
+        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), source.ToArray());
     }
 
     public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, FieldDefinition srcField)
     {
-        Instruction loadOwner = processor.Create(OpCodes.Ldnull);
-        
         Instruction[] loadField =
         [
             processor.Create(OpCodes.Ldarg_0),
@@ -136,12 +127,10 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         ];
         
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
-        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadOwner, loadField);
+        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadField);
     }
     
-    public override void WriteMarshalToNative(ILProcessor processor, 
-        TypeDefinition type, Instruction[] loadBufferPtr, 
-        Instruction loadArrayIndex, Instruction loadOwner, Instruction[] loadSource)
+    public override void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction[] loadSource)
     {
         foreach (var i in loadBufferPtr)
         {
@@ -149,7 +138,6 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         }
         
         processor.Append(loadArrayIndex);
-        processor.Append(loadOwner);
         
         foreach (Instruction i in loadSource)
         {
@@ -159,16 +147,15 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         processor.Emit(OpCodes.Call, ToNative);
     }
 
-    public override void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner)
+    public override void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr,
+        Instruction loadArrayIndex)
     {
         foreach (var i in loadBufferPtr)
         {
             processor.Append(i);
         }
-
+        
         processor.Append(loadArrayIndex);
-        processor.Append(loadOwner);
-
         processor.Emit(OpCodes.Call, FromNative);
     }
 

@@ -3,7 +3,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
+using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -148,8 +149,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         return processor;
     }
 
-    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
-        Instruction loadNativePointer, Instruction setNativePointer)
+    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
         
     }
@@ -321,17 +321,17 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         ParameterDefinition paramDefinition);
     public abstract IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction, FieldDefinition offsetField, FieldDefinition srcField);
 
-    public abstract void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner);
-    public abstract void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction[] loadSource);
+    public abstract void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex);
+    public abstract void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction[] loadSource);
         
-    public void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction loadSource)
+    public void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadSource)
     {
-        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadOwner, [loadSource]);
+        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, [loadSource]);
     }
 
-    public virtual IList<Instruction>? WriteMarshalToNativeWithCleanup(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction[] loadSource)
+    public virtual IList<Instruction>? WriteMarshalToNativeWithCleanup(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction[] loadSource)
     {
-        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadOwner, loadSource);
+        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
         return null;
     }
 }

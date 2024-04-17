@@ -2,7 +2,7 @@
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class UnrealClassProcessor
 { 
@@ -41,7 +41,7 @@ public static class UnrealClassProcessor
         // Rewrite all the properties of the class to make getters/setters that call Native code.
         var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
-        PropertyRewriterHelpers.ProcessProperties(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
+        PropertyRewriterHelpers.ProcessClassMembers(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
         
         List<FunctionMetaData> functionsToRewrite = metadata.Functions.ToList();
         functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction));
@@ -54,10 +54,20 @@ public static class UnrealClassProcessor
         
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
             [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)]);
+
+        foreach (var field in classTypeDefinition.Fields)
+        {
+            if (WeaverHelper.IsUProperty(field))
+            {
+                throw new InvalidPropertyException(field, "Fields cannot be UProperty");
+            }
+        }
         
         MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(classTypeDefinition);
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
+        
+        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
         
         foreach (var function in metadata.Functions)
         {
@@ -79,27 +89,6 @@ public static class UnrealClassProcessor
             {
                 param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
             }
-        }
-        
-        foreach (var property in metadata.Properties)
-        {
-            Instruction loadNativeProperty;
-            Instruction setNativeProperty;
-            if (property.NativePropertyField == null)
-            {
-                VariableDefinition nativePropertyVar = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
-                loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
-                setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
-            }
-            else
-            {
-                loadNativeProperty = Instruction.Create(OpCodes.Ldsfld, property.NativePropertyField);
-                setNativeProperty = Instruction.Create(OpCodes.Stsfld, property.NativePropertyField);
-            }
-            
-            property.InitializePropertyPointers(processor, loadNativeClassField, setNativeProperty);
-            property.InitializePropertyOffsets(processor, loadNativeProperty);
-            property.PropertyDataType.WritePostInitialization(processor, property, loadNativeProperty, setNativeProperty);
         }
         
         processor.Emit(OpCodes.Ret);
@@ -133,7 +122,6 @@ public static class UnrealClassProcessor
                 }
 
                 // TODO: We should probably check that the target of the call is actually the base class, otherwise we might end up changing calls to unrelated methods on other objects with the same name
-
                 MethodReference implementationMethod = WeaverHelper.FindMethod(classDefinition, implementationMethodName)!;
                 inst.Operand = WeaverHelper.ImportMethod(implementationMethod);
                 break;

@@ -22,7 +22,7 @@ public:
 	virtual FString GetNullReturnCSharpValue(const FProperty* ReturnProperty) const override;
 	virtual FString ConvertCppDefaultParameterToCSharp(const FString& CppDefaultValue, UFunction* Function, FProperty* ParamProperty) const override;
 	
-	virtual void ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Owner,
+	virtual void ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property,
 	                                         const FString& PropertyName, const FString& DestinationBuffer,
 	                                         const FString& Offset, const FString& Source) const override;
 	
@@ -30,7 +30,7 @@ public:
 	                                            const FString& ParamName) const override final;
 	
 	virtual void ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property,
-	                                           const FString& Owner, const FString& PropertyName,
+	                                           const FString& PropertyName,
 	                                           const FString& AssignmentOrReturn, const FString& SourceBuffer,
 	                                           const FString& Offset, bool bCleanupSourceBuffer,
 	                                           bool reuseRefMarshallers) const override;

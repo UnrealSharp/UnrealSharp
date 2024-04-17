@@ -97,6 +97,8 @@ protected:
 
 	FString GeneratedScriptsDirectory;
 
+	bool bInitialized = false;
+
 	TUniquePtr<FCSPropertyTranslatorManager> PropertyTranslatorManager;
 	FCSNameMapper NameMapper;
 	FCSGlueGeneratorFileManager GeneratedFileManager;

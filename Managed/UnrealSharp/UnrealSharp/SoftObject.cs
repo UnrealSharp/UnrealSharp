@@ -39,14 +39,14 @@ public struct SoftObject<T> where T : Object
 
 public static class SoftObjectMarshaller<T> where T : Object
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SoftObject<T> obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, SoftObject<T> obj)
     {
-        BlittableMarshaller<PersistentObjectPtrData>.ToNative(nativeBuffer, arrayIndex, owner, obj._softObjectPtr.PersistentObjectPtrData);
+        BlittableMarshaller<PersistentObjectPtrData>.ToNative(nativeBuffer, arrayIndex, obj._softObjectPtr.PersistentObjectPtrData);
     }
     
     public static SoftObject<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {
-        return new SoftObject<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex, owner));
+        return new SoftObject<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex));
     }
 }
 

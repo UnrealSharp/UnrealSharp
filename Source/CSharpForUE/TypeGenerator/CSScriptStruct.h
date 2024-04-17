@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Engine/UserDefinedStruct.h"
-#include "UObject/ObjectSaveContext.h"
 #include "CSScriptStruct.generated.h"
 
 UCLASS()
@@ -15,40 +14,6 @@ public:
 	{
 		DefaultStructInstance.Recreate(this);
 	}
-
-	//UScriptStruct interface implementation
-	virtual void PrepareCppStructOps() override;
-	//End of implementation
-
-#if WITH_EDITOR
-	// UObject interface.
-	virtual void PostDuplicate(bool bDuplicateForPIE) override { UScriptStruct::PostDuplicate(bDuplicateForPIE); };
-	virtual void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override { UScriptStruct::GetAssetRegistryTags(OutTags); };
-	virtual void PostLoad() override { UScriptStruct::PostLoad(); };
-	virtual void PreSaveRoot(FObjectPreSaveRootContext ObjectSaveContext) override { UScriptStruct::PreSaveRoot(ObjectSaveContext); };
-	virtual void PostSaveRoot(FObjectPostSaveRootContext ObjectSaveContext) override { UScriptStruct::PostSaveRoot(ObjectSaveContext); };
-	// End of UObject interface.
-	
-#endif	// WITH_EDITOR
-
-	// UObject interface.
-	virtual void SerializeTaggedProperties(FStructuredArchive::FSlot Slot, uint8* Data, UStruct* DefaultsStruct, uint8* Defaults, const UObject* BreakRecursionIfFullyLoad = nullptr) const override
-	{
-		UScriptStruct::SerializeTaggedProperties(Slot, Data, DefaultsStruct, Defaults, BreakRecursionIfFullyLoad);
-	};
-	
-	virtual FString GetAuthoredNameForField(const FField* Field) const override { return UScriptStruct::GetAuthoredNameForField(Field); };
-	// End of UObject interface.
-
-	// UScriptStruct interface.
-	virtual void InitializeStruct(void* Dest, int32 ArrayDim) const override { return UScriptStruct::InitializeStruct(Dest, ArrayDim); }
-	virtual uint32 GetStructTypeHash(const void* Src) const override { return UScriptStruct::GetStructTypeHash(Src); }
-	virtual void RecursivelyPreload() override { return UScriptStruct::RecursivelyPreload(); }
-	virtual FGuid GetCustomGuid() const override { return UScriptStruct::GetCustomGuid(); }
-	virtual FString GetStructCPPName(uint32 CPPExportFlags) const override { return UScriptStruct::GetStructCPPName(CPPExportFlags); }
-	virtual FProperty* CustomFindProperty(const FName Name) const override { return UScriptStruct::CustomFindProperty(Name); }
-	// End of  UScriptStruct interface.
-
 };
 
 struct FUSCppStructOps : UScriptStruct::ICppStructOps

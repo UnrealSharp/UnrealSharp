@@ -50,14 +50,14 @@ public struct Key
 
 public static class KeyMarshaller
 {
-	public static Key FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+	public static Key FromNative(IntPtr nativeBuffer, int arrayIndex)
 	{
-		return BlittableMarshaller<Key>.FromNative(nativeBuffer, arrayIndex, owner, Key.NativeDataSize);
+		return BlittableMarshaller<Key>.FromNative(nativeBuffer, arrayIndex, Key.NativeDataSize);
 	}
 
 	public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Key obj)
 	{
-		BlittableMarshaller<Key>.ToNative(nativeBuffer, arrayIndex, owner, obj, Key.NativeDataSize);
+		BlittableMarshaller<Key>.ToNative(nativeBuffer, arrayIndex, obj, Key.NativeDataSize);
 	}
 }
 

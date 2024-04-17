@@ -1,8 +1,7 @@
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public struct FunctionRewriteInfo
 {

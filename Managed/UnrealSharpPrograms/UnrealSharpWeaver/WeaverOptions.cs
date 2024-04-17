@@ -29,17 +29,17 @@ public class WeaverOptions
         }
     }
 
-    public static WeaverOptions? ParseArguments(string[] args)
+    public static WeaverOptions ParseArguments(IEnumerable<string> args)
     {
         Parser parser = new Parser(with => with.HelpWriter = null);
         ParserResult<WeaverOptions> result = parser.ParseArguments<WeaverOptions>(args);
 
-        if (result.Tag == ParserResultType.NotParsed)
+        if (result.Tag != ParserResultType.NotParsed)
         {
-            PrintHelp(result);
-            return null;
+            return result.Value;
         }
         
-        return result.Value;
+        PrintHelp(result);
+        throw new InvalidOperationException("Invalid arguments.");
     }
 }

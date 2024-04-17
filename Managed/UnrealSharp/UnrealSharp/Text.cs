@@ -92,13 +92,13 @@ public class Text
 
 public static class TextMarshaller
 { 
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Text obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, Text obj)
     {
-        BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, owner, obj.Data);
+        BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
     }
-    public static Text FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static Text FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex, owner));
+        Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex));
         return data;
     }
 }

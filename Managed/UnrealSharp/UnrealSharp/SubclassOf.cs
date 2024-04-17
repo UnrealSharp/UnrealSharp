@@ -97,14 +97,14 @@ public readonly struct SubclassOf<T>
 
 public static class SubclassOfMarshaller<T>
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, SubclassOf<T> obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, SubclassOf<T> obj)
     {
-        BlittableMarshaller<IntPtr>.ToNative(nativeBuffer, arrayIndex, owner, obj.NativeClass);
+        BlittableMarshaller<IntPtr>.ToNative(nativeBuffer, arrayIndex, obj.NativeClass);
     }
 
-    public static SubclassOf<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static SubclassOf<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        IntPtr nativeClassPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex, owner);
+        IntPtr nativeClassPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
         return new SubclassOf<T>(nativeClassPointer);
     }
 }

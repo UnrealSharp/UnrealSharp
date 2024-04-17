@@ -3,11 +3,11 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 
-namespace UnrealSharpWeaver.Rewriters;
+namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class PropertyRewriterHelpers
 {
-    public static void ProcessProperties(
+    public static void ProcessClassMembers(
         ref List<Tuple<FieldDefinition, PropertyMetaData>> propertyOffsetsToInitialize,
         ref List<Tuple<FieldDefinition, PropertyMetaData>> propertyPointersToInitialize,
         TypeDefinition type,
@@ -17,7 +17,6 @@ public static class PropertyRewriterHelpers
 
         foreach (var prop in properties)
         {
-            // Add offset field
             FieldDefinition offsetField = AddOffsetField(type, prop, WeaverHelper.Int32TypeRef);
             FieldDefinition? nativePropertyField = AddNativePropertyField(type, prop, WeaverHelper.IntPtrType);
             
@@ -28,15 +27,16 @@ public static class PropertyRewriterHelpers
                 prop.NativePropertyField = nativePropertyField;
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
             }
-
-            PropertyDefinition propertyRef = (PropertyDefinition) prop.MemberRef.Resolve();
             
-            prop.PropertyDataType.PrepareForRewrite(type, null, prop);
-            prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, offsetField, nativePropertyField);
-            prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, offsetField, nativePropertyField);
+            if (prop.MemberRef.Resolve() is PropertyDefinition propertyRef)
+            {
+                prop.PropertyDataType.PrepareForRewrite(type, null, prop);
+                prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, offsetField, nativePropertyField);
+                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, offsetField, nativePropertyField);
 
-            string backingFieldName = RemovePropertyBackingField(type, prop);
-            removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
+                string backingFieldName = RemovePropertyBackingField(type, prop);
+                removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
+            }
             
             prop.PropertyOffsetField = offsetField;
             

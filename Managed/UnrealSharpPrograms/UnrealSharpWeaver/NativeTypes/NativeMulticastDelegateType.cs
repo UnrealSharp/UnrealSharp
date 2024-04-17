@@ -1,7 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -36,14 +36,6 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
-        Instruction loadOwner = processor.Create(OpCodes.Ldarg_0);
-        
-        //processor.Emit(OpCodes.Ldarg_0);
-        //processor.Emit(OpCodes.Ldfld, BackingField);
-        //var ifEnd = Instruction.Create(OpCodes.Nop);
-        //processor.Emit(OpCodes.Brtrue, ifEnd);
-        
-        // Push the native property field onto the stack
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
         
         foreach (var i in loadBufferInstructions)
@@ -51,14 +43,8 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
             processor.Append(i);
         }
         
-        // Push the native property field onto the stack
         processor.Emit(OpCodes.Ldsfld, nativePropertyField);
-        
-        // Push 0 onto the stack
         processor.Emit(OpCodes.Ldc_I4_0);
-        
-        // Push this onto the stack
-        processor.Append(loadOwner);
 
         processor.Emit(OpCodes.Call, FromNative);
         EndSimpleGetter(processor, getter);

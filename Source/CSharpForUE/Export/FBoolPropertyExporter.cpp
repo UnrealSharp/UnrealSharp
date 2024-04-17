@@ -19,8 +19,7 @@ bool UFBoolPropertyExporter::GetBitfieldValueFromProperty(uint8* NativeBuffer, F
 	return BoolProperty->GetPropertyValue(OffsetPointer);
 }
 
-void UFBoolPropertyExporter::SetBitfieldValueForProperty(uint8* NativeObject, FProperty* Property, int32 Offset,
-	bool Value)
+void UFBoolPropertyExporter::SetBitfieldValueForProperty(uint8* NativeObject, FProperty* Property, int32 Offset, bool Value)
 {
 	// NativeBuffer won't necessarily correspond to a UObject.  It might be the beginning of a native struct, for example.
 	check(NativeObject);

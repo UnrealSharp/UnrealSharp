@@ -6,22 +6,22 @@ namespace UnrealSharp;
 
 public static class MarshalingDelegates<T>
 {
-    public delegate void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, T obj);
-    public delegate T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner);
+    public delegate void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj);
+    public delegate T FromNative(IntPtr nativeBuffer, int arrayIndex);
     public delegate void DestructInstance(IntPtr nativeBuffer, int arrayIndex);
 }
 
 public static class BlittableMarshaller<T>
 { 
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, T obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         unsafe
         {
-            ToNative(nativeBuffer, arrayIndex, owner, obj, sizeof(T));
+            ToNative(nativeBuffer, arrayIndex, obj, sizeof(T));
         }
     }
     
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, T obj, int size)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, int size)
     {
         unsafe
         {
@@ -29,28 +29,28 @@ public static class BlittableMarshaller<T>
         }
     }
 
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
-            return FromNative(nativeBuffer, arrayIndex, owner, sizeof(T));
+            return FromNative(nativeBuffer, arrayIndex, sizeof(T));
         }
     }
     
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, int size)
+    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, int size)
     {
         unsafe
         {
-            return *FromNativePtr(nativeBuffer, arrayIndex, owner, size);
+            return *FromNativePtr(nativeBuffer, arrayIndex, size);
         }
     }
     
-    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, int size)
+    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex, int size)
     {
         return (T*)(nativeBuffer + arrayIndex * size);
     }
     
-    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex)
     {
         return (T*)(nativeBuffer + arrayIndex * sizeof(T));
     }
@@ -58,20 +58,20 @@ public static class BlittableMarshaller<T>
 
 public static class BoolMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, bool obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, bool obj)
     {
-        BlittableMarshaller<NativeBool>.ToNative(nativeBuffer, arrayIndex, owner, obj.ToNativeBool());
+        BlittableMarshaller<NativeBool>.ToNative(nativeBuffer, arrayIndex, obj.ToNativeBool());
     }
 
-    public static bool FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static bool FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return BlittableMarshaller<NativeBool>.FromNative(nativeBuffer, arrayIndex, owner).ToManagedBool();
+        return BlittableMarshaller<NativeBool>.FromNative(nativeBuffer, arrayIndex).ToManagedBool();
     }
 }
 
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
 { 
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, T obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;
 
@@ -80,9 +80,9 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
             *(IntPtr*) uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
         }
     }
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        IntPtr uObjectPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex, owner);
+        IntPtr uObjectPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
         IntPtr handle = FCSManagerExporter.CallFindManagedObject(uObjectPointer);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
@@ -90,7 +90,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
 
 public static class StringMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject? owner, string obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string obj)
     {
         unsafe
         {
@@ -101,27 +101,18 @@ public static class StringMarshaller
         }
     }
 
-    public static string FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static string FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
-            UnmanagedArray* nativeString = BlittableMarshaller<UnmanagedArray>.FromNativePtr(nativeBuffer, arrayIndex, owner);
+            UnmanagedArray* nativeString = BlittableMarshaller<UnmanagedArray>.FromNativePtr(nativeBuffer, arrayIndex);
             return nativeString == null ? string.Empty : new string((char*) nativeString->Data);
         }
     }
     
     public static void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        // unsafe
-        // {
-        //     UnmanagedArray* nativeString = 
-        //         BlittableMarshaller<UnmanagedArray>
-        //             .FromNativePtr(nativeBuffer, arrayIndex, null, sizeof(UnmanagedArray));
-        //     
-        //     Marshal.FreeCoTaskMem(nativeString->Data);
-        //     nativeString->Data = IntPtr.Zero;
-        //     nativeString->ArrayNum = 0;
-        //     nativeString->ArrayMax = 0;
-        // }
+        UnmanagedArray nativeString = BlittableMarshaller<UnmanagedArray>.FromNative(nativeBuffer, arrayIndex);
+        FStringExporter.CallDisposeString(ref nativeString);
     }
 }

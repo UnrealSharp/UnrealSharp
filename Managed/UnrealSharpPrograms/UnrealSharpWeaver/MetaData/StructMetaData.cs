@@ -4,7 +4,7 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class StructMetaData : BaseMetaData
 {
-    public PropertyMetaData[] Fields { get; set; }
+    public List<PropertyMetaData> Fields { get; set; }
     public StructFlags StructFlags { get; set; }
     public bool IsBlittableStruct { get; set; }
     public bool IsDataTableStruct { get; set; }
@@ -20,14 +20,18 @@ public class StructMetaData : BaseMetaData
             throw new InvalidUnrealStructException(structDefinition, "UProperties in a UStruct must be fields, not property accessors.");
         }
         
-        Fields = new PropertyMetaData[structDefinition.Fields.Count];
-        for (var i = 0; i < Fields.Length; i++)
+        Fields = new List<PropertyMetaData>();
+        foreach (var field in structDefinition.Fields)
         {
-            Fields[i] = new PropertyMetaData(structDefinition.Fields[i]);
+            if (field.IsStatic || !WeaverHelper.IsUProperty(field))
+            {
+                continue;
+            }
+            
+            Fields.Add(new PropertyMetaData(field));
         }
         
         AddMetadataAttributes(structDefinition.CustomAttributes);
-        CheckIfDataTableStruct(structDefinition);
         
         IsBlittableStruct = true;
         bool isPlainOldData = true;
@@ -56,7 +60,7 @@ public class StructMetaData : BaseMetaData
 
         if (IsBlittableStruct)
         {
-            CustomAttribute? structAttribute = FindAttribute(structDefinition.CustomAttributes, "UStructAttribute");
+            CustomAttribute? structAttribute = WeaverHelper.GetUStruct(structDefinition);
 
             if (structAttribute == null)
             {
@@ -64,17 +68,6 @@ public class StructMetaData : BaseMetaData
             }
 
             structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittableStruct", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
-        }
-    }
-
-    void CheckIfDataTableStruct(TypeDefinition structDefinition)
-    {
-        foreach (var structInterface in structDefinition.Interfaces)
-        {
-            if (structInterface.InterfaceType.Name == "ITableRowBase")
-            {
-                IsDataTableStruct = true;
-            }
         }
     }
 }

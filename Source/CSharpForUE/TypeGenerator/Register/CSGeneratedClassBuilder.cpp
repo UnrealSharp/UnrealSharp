@@ -8,10 +8,6 @@
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
 
-#if WITH_EDITOR
-#include "Kismet2/KismetEditorUtilities.h"
-#endif
-
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	//Set the super class for this UClass.
@@ -19,10 +15,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 #if WITH_EDITOR
 	// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-	UBlueprint* DummyBlueprint = FKismetEditorUtilities::CreateBlueprint(SuperClass, Field, Field->GetFName(), BPTYPE_Normal, UCSBlueprint::StaticClass(), UBlueprintGeneratedClass::StaticClass());
+	UBlueprint* DummyBlueprint = NewObject<UCSBlueprint>(Field, Field->GetFName(), RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
 	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
 	DummyBlueprint->ParentClass = SuperClass;
+	DummyBlueprint->BlueprintDisplayName = Field->GetName();
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
 

@@ -1,17 +1,12 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-public class NativeDataDelegateType : NativeDataBaseDelegateType
+public class NativeDataDelegateType(TypeReference typeRef, string marshallerName) : NativeDataBaseDelegateType(typeRef, marshallerName, PropertyType.Delegate)
 {
-    public NativeDataDelegateType(TypeReference typeRef, string marshallerName) : base(typeRef, marshallerName, PropertyType.Delegate)
-    {
-        
-    }
-    
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
         if (Signature.Parameters.Length == 0)
