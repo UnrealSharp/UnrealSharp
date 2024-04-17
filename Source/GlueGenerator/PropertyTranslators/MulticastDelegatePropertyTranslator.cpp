@@ -52,7 +52,14 @@ void FMulticastDelegatePropertyTranslator::ExportPropertyVariables(FCSScriptBuil
 
 void FMulticastDelegatePropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
 {
+	FString BackingFieldName = GetBackingFieldName(Property);
 	FString DelegateName = GetDelegateName(CastFieldChecked<FMulticastDelegateProperty>(Property));
+
+	Builder.AppendLine(FString::Printf(TEXT("if (value == %s)"), *BackingFieldName));
+	Builder.OpenBrace();
+	Builder.AppendLine("return;");
+	Builder.CloseBrace();
+	Builder.AppendLine(FString::Printf(TEXT("%s = value;"), *BackingFieldName));
 	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,this,value);"), *DelegateName, *PropertyName));
 }
 

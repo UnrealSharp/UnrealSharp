@@ -10,7 +10,7 @@ public interface IDelegateBase
     void ToNative(IntPtr address);
 }
 
-public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : class
+public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();
 

@@ -3,7 +3,7 @@ using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
-public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : class
+public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     protected IntPtr NativeProperty;
     protected IntPtr NativeDelegate;
@@ -34,6 +34,33 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
     public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
     {
         BindUFunction(targetObject.Object, functionName);
+    }
+
+    public void Add(TDelegate handler)
+    {
+        if (handler.Target is not Object targetObject)
+        {
+            throw new ArgumentException("The callback for a multicast delegate must be a valid UFunction defined on a UClass", nameof(handler));
+        }
+        FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
+    }
+
+    public void Remove(TDelegate handler)
+    {
+        if (handler.Target is not Object targetObject)
+        {
+            return;
+        }
+        FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
+    }
+
+    public bool Contains(TDelegate handler)
+    {
+        if (handler.Target is not Object targetObject)
+        {
+            return false;
+        }
+        return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
     }
 
     public void Clear()

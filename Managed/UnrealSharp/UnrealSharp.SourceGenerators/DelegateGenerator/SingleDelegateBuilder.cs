@@ -8,8 +8,13 @@ public class SingleDelegateBuilder : DelegateBuilder
 {
     public override void StartBuilding(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, INamedTypeSymbol classSymbol)
     {
+        GenerateAddOperator(stringBuilder, delegateSymbol, classSymbol.Name);
+
         GenerateGetInvoker(stringBuilder, delegateSymbol);
-        GenerateConstructor(stringBuilder, classSymbol);
+
+        GenerateRemoveOperator(stringBuilder, delegateSymbol, classSymbol.Name);
+
+        GenerateConstructors(stringBuilder, classSymbol);
 
         //Check if the class has an Invoker method already
         if (!classSymbol.GetMembers("Invoker").Any())
@@ -18,7 +23,7 @@ public class SingleDelegateBuilder : DelegateBuilder
         }
     }
     
-    void GenerateConstructor(StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
+    void GenerateConstructors(StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
     {
         stringBuilder.AppendLine($"    public {classSymbol.Name}() : base()");
         stringBuilder.AppendLine("    {");
@@ -35,5 +40,25 @@ public class SingleDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();
     }
-    
+
+    void GenerateAddOperator(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string className)
+    {
+        stringBuilder.AppendLine($"    public static {className} operator +({className} thisDelegate, {delegateSymbol.Name} handler)");
+        stringBuilder.AppendLine("    {");
+        stringBuilder.AppendLine("        thisDelegate.Add(handler);");
+        stringBuilder.AppendLine("        return thisDelegate;");
+        stringBuilder.AppendLine("    }");
+        stringBuilder.AppendLine();
+    }
+
+    void GenerateRemoveOperator(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string className)
+    {
+        stringBuilder.AppendLine($"    public static {className} operator -({className} thisDelegate, {delegateSymbol.Name} handler)");
+        stringBuilder.AppendLine("    {");
+        stringBuilder.AppendLine("        thisDelegate.Remove(handler);");
+        stringBuilder.AppendLine("        return thisDelegate;");
+        stringBuilder.AppendLine("    }");
+        stringBuilder.AppendLine();
+    }
+
 }
