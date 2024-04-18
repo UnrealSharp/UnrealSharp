@@ -19,8 +19,8 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         string marshallerNamespace = Program.UnrealSharpNamespace;
         AssemblyDefinition marshallerAssembly = WeaverHelper.BindingsAssembly;
 
-        TypeDefinition marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, "StringMarshaller").Resolve();
-        TypeDefinition marshallerTypeWithCleanup = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, "StringMarshaller").Resolve();
+        TypeDefinition marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, "StringMarshaller")!.Resolve();
+        TypeDefinition marshallerTypeWithCleanup = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, "StringMarshaller")!.Resolve();
 
         ToNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshallerType.GetMethods() where method.IsStatic && method.Name == "ToNative" select method).ToArray()[0]);
         FromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in marshallerType.GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0]);

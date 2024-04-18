@@ -89,7 +89,7 @@ public static class Program
                 throw new FileNotFoundException($"Could not find UserAssembly at: {userAssemblyPath}");
             }
 
-            var weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
+            string weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
             
             var readerParams = new ReaderParameters
             {

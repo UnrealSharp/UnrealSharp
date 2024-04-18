@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -28,7 +26,7 @@ public static class BlittableMarshaller<T>
             *(T*)(nativeBuffer + arrayIndex * size) = obj;
         }
     }
-
+    
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
@@ -41,18 +39,8 @@ public static class BlittableMarshaller<T>
     {
         unsafe
         {
-            return *FromNativePtr(nativeBuffer, arrayIndex, size);
+            return *(T*)(nativeBuffer + arrayIndex * size);
         }
-    }
-    
-    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex, int size)
-    {
-        return (T*)(nativeBuffer + arrayIndex * size);
-    }
-    
-    public static unsafe T* FromNativePtr(IntPtr nativeBuffer, int arrayIndex)
-    {
-        return (T*)(nativeBuffer + arrayIndex * sizeof(T));
     }
 }
 
@@ -62,7 +50,7 @@ public static class BoolMarshaller
     {
         BlittableMarshaller<NativeBool>.ToNative(nativeBuffer, arrayIndex, obj.ToNativeBool());
     }
-
+    
     public static bool FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         return BlittableMarshaller<NativeBool>.FromNative(nativeBuffer, arrayIndex).ToManagedBool();
@@ -80,6 +68,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
             *(IntPtr*) uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
         }
     }
+    
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         IntPtr uObjectPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
@@ -100,13 +89,13 @@ public static class StringMarshaller
             }
         }
     }
-
+    
     public static string FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
-            UnmanagedArray* nativeString = BlittableMarshaller<UnmanagedArray>.FromNativePtr(nativeBuffer, arrayIndex);
-            return nativeString == null ? string.Empty : new string((char*) nativeString->Data);
+            UnmanagedArray nativeString = BlittableMarshaller<UnmanagedArray>.FromNative(nativeBuffer, arrayIndex);
+            return nativeString.Data == IntPtr.Zero ? string.Empty : new string((char*) nativeString.Data);
         }
     }
     

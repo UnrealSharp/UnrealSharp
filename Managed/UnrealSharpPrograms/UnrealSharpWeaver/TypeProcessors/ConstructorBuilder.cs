@@ -9,24 +9,37 @@ public static class ConstructorBuilder
 {
     public static MethodDefinition MakeStaticConstructor(TypeDefinition type)
     {
-        return CreateConstructor(type, MethodAttributes.Static);
+        return CreateStaticConstructor(type, MethodAttributes.Static);
     }
 
-    public static MethodDefinition CreateConstructor(TypeDefinition type, MethodAttributes attributes, params TypeReference[] parameterTypes)
+    public static MethodDefinition CreateStaticConstructor(TypeDefinition type, MethodAttributes attributes, params TypeReference[] parameterTypes)
     {
         MethodDefinition staticConstructor = type.GetStaticConstructor();
 
-        if (staticConstructor != null)
+        if (staticConstructor == null)
         {
-            return staticConstructor;
+            staticConstructor = WeaverHelper.AddMethodToType(type, ".cctor", 
+                WeaverHelper.VoidTypeRef,
+                attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
+                parameterTypes);
         }
         
-        staticConstructor = WeaverHelper.AddMethodToType(type, ".cctor", 
-            WeaverHelper.VoidTypeRef,
-            attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
-            parameterTypes);
-
         return staticConstructor;
+    }
+    
+    public static MethodDefinition CreateConstructor(TypeDefinition typeDefinition, MethodAttributes attributes, params TypeReference[] parameterTypes)
+    {
+        MethodDefinition? constructor = typeDefinition.GetConstructors().FirstOrDefault(ctor => ctor.Parameters.Count == parameterTypes.Length);
+        
+        if (constructor == null)
+        {
+            constructor = WeaverHelper.AddMethodToType(typeDefinition, ".ctor", 
+                WeaverHelper.VoidTypeRef,
+                attributes | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
+                parameterTypes);
+        }
+        
+        return constructor;
     }
     
     public static void CreateTypeInitializer(TypeDefinition typeDefinition, Instruction field, Instruction[] initializeInstructions)

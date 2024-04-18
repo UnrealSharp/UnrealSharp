@@ -367,7 +367,7 @@ public static class FunctionRewriterHelpers
         methodDefinition.Name = $"{methodDefinition.Name}_Implementation";
     }
 
-    public static MethodDefinition CreateFunction(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
+    public static MethodDefinition CreateMethod(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
         if (declaringType == null)
         {

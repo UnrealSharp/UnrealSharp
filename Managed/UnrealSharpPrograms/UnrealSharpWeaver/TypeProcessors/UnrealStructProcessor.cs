@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 using AssemblyDefinition = Mono.Cecil.AssemblyDefinition;
@@ -56,30 +55,26 @@ public static class UnrealStructProcessor
         }
     }
     
-    private static void ProcessStruct(TypeDefinition type, StructMetaData metadata)
+    private static void ProcessStruct(TypeDefinition structTypeDefinition, StructMetaData metadata)
     {
-        MethodReference? foundConstructor = WeaverHelper.FindMethod(type, ".ctor", false, WeaverHelper.IntPtrType);
+        MethodReference? foundConstructor = WeaverHelper.FindMethod(structTypeDefinition, ".ctor", false, WeaverHelper.IntPtrType);
+        
         if (foundConstructor != null)
         {
-            throw new RewriteException(type, "Structs cannot have a constructor that takes an IntPtr");
+            throw new RewriteException(structTypeDefinition, "Structs cannot have a constructor that takes an IntPtr");
         }
 
         foreach (var prop in metadata.Fields)
         {
-            prop.PropertyDataType.PrepareForRewrite(type, null, prop);
+            prop.PropertyDataType.PrepareForRewrite(structTypeDefinition, null, prop);
         }
-
-        AddMarshallingToStruct(type, type, metadata);
-    }
-
-    private static void AddMarshallingToStruct(TypeDefinition type, TypeDefinition structTypeDefinition, StructMetaData metadata)
-    {
+        
         var propertyOffsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var propertyPointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         PropertyRewriterHelpers.ProcessClassMembers(ref propertyOffsetsToInitialize, ref propertyPointersToInitialize, structTypeDefinition, metadata.Fields);
 
-        MethodDefinition structConstructor = ConstructorBuilder.CreateConstructor(structTypeDefinition, MethodAttributes.Public, [WeaverHelper.IntPtrType]);
-        var toNativeMethod = FunctionRewriterHelpers.CreateFunction(structTypeDefinition, "ToNative", MethodAttributes.Public, null, [WeaverHelper.IntPtrType]);
+        MethodDefinition structConstructor = ConstructorBuilder.CreateConstructor(structTypeDefinition, MethodAttributes.Public, WeaverHelper.IntPtrType);
+        var toNativeMethod = FunctionRewriterHelpers.CreateMethod(structTypeDefinition, "ToNative", MethodAttributes.Public, null, [WeaverHelper.IntPtrType]);
         
         ILProcessor constructorBody = structConstructor.Body.GetILProcessor();
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();
@@ -88,33 +83,49 @@ public static class UnrealStructProcessor
         foreach (var prop in metadata.Fields)
         {
             FieldDefinition fieldDefinition = (FieldDefinition) prop.MemberRef.Resolve();
-            prop.PropertyDataType.WriteLoad(constructorBody, type, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
-            prop.PropertyDataType.WriteStore(toNativeBody, type, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
+            prop.PropertyDataType.WriteLoad(constructorBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
+            prop.PropertyDataType.WriteStore(toNativeBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
         }
-
-        constructorBody.Emit(OpCodes.Ret);
-        WeaverHelper.OptimizeMethod(structConstructor);
-
-        toNativeBody.Emit(OpCodes.Ret);
-        WeaverHelper.OptimizeMethod(toNativeMethod);
         
+        WeaverHelper.FinalizeMethod(structConstructor);
+        WeaverHelper.FinalizeMethod(toNativeMethod);
+        
+        // Field to cache the native size of the struct.
+        FieldDefinition nativeStructSizeField = WeaverHelper.AddFieldToType(structTypeDefinition, "NativeDataSize", WeaverHelper.Int32TypeRef, FieldAttributes.Public | FieldAttributes.Static);
+        Instruction callGetNativeStructFromNameMethod = Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod);
+        Instruction callGetNativeStructSizeMethod = Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructSizeMethod);
+        Instruction setNativeStructSizeField = Instruction.Create(OpCodes.Stsfld, nativeStructSizeField);
+        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, setNativeStructSizeField, [callGetNativeStructFromNameMethod, callGetNativeStructSizeMethod]);
+        
+        CreateStructMarshaller(structTypeDefinition, nativeStructSizeField, toNativeMethod, structConstructor);
+        CreateStructStaticConstructor(metadata, structTypeDefinition);
+    }
+
+    private static void CreateStructStaticConstructor(StructMetaData metadata, TypeDefinition structTypeDefinition)
+    {
+        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(structTypeDefinition);
+        ILProcessor staticConstructorBody = staticConstructor.Body.GetILProcessor();
+        
+        // Create a field to cache the native struct class.
+        // nint a = UCoreUObjectExporter.CallGetNativeStructFromName("MyStruct");
+        VariableDefinition nativeStructClass = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
+        staticConstructorBody.Emit(OpCodes.Ldstr, structTypeDefinition.Name);
+        staticConstructorBody.Emit(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod);
+        staticConstructorBody.Emit(OpCodes.Stloc, nativeStructClass);
+        
+        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Fields.ToList(), Instruction.Create(OpCodes.Ldloc, nativeStructClass));
+        WeaverHelper.FinalizeMethod(staticConstructor);
+    }
+
+    private static void CreateStructMarshaller(TypeDefinition structTypeDefinition, FieldDefinition nativeStructSizeField, MethodDefinition toNativeMethod, MethodDefinition structConstructor)
+    {
         // Create a marshaller class for the struct.
         TypeDefinition structMarshallerClass = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, 
             structTypeDefinition.Namespace, WeaverHelper.GetMarshallerClassName(structTypeDefinition), 
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
-        
-        // Field to cache the native size of the struct.
-        FieldDefinition nativeStructSizeField = WeaverHelper.AddFieldToType(structTypeDefinition, "NativeDataSize", WeaverHelper.Int32TypeRef);
             
         AddFromNativeMarshallingMethod(structMarshallerClass, structTypeDefinition, nativeStructSizeField, toNativeMethod);
         AddToNativeMarshallingMethod(structMarshallerClass, structTypeDefinition, structConstructor, nativeStructSizeField);
-        
-        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeStructSizeField), 
-            [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod), Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeStructSizeMethod)]);
-        
-        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(type);
-        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Fields.ToList(), Instruction.Create(OpCodes.Ldsfld, nativeStructSizeField));
-        WeaverHelper.FinalizeMethod(staticConstructor);
     }
     
     private static void AddFromNativeMarshallingMethod(TypeDefinition marshaller, TypeDefinition structTypeDefinition, FieldDefinition nativeDataSizeField, MethodDefinition toNativeMethod)
@@ -129,11 +140,11 @@ public static class UnrealStructProcessor
 
         toNativeMarshallerBody.Emit(OpCodes.Ldarg_0);
 
-        toNativeMarshallerBody.Emit(OpCodes.Ldarg_1); //arrIndex
+        toNativeMarshallerBody.Emit(OpCodes.Ldarg_1);
         toNativeMarshallerBody.Emit(OpCodes.Ldsfld, nativeDataSizeField);
-        toNativeMarshallerBody.Emit(OpCodes.Mul); //*
+        toNativeMarshallerBody.Emit(OpCodes.Mul);
 
-        toNativeMarshallerBody.Emit(OpCodes.Call, WeaverHelper.IntPtrAdd); //+
+        toNativeMarshallerBody.Emit(OpCodes.Call, WeaverHelper.IntPtrAdd);
 
         toNativeMarshallerBody.Emit(OpCodes.Call, toNativeMethod);
         toNativeMarshallerBody.Emit(OpCodes.Ret);
@@ -141,7 +152,7 @@ public static class UnrealStructProcessor
         WeaverHelper.OptimizeMethod(toNativeMarshallerMethod);
     }
 
-    //Create a marshaller mathod to Native code with signature:
+    //Create a marshaller method to Native code with signature:
     //public static <StructureType> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealObject owner)
     private static void AddToNativeMarshallingMethod(TypeDefinition marshaller, TypeDefinition structTypeDefinition, MethodDefinition ctor, FieldDefinition nativeDataSizeField)
     {

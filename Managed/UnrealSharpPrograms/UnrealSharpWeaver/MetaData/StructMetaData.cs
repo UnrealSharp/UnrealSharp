@@ -7,7 +7,6 @@ public class StructMetaData : BaseMetaData
     public List<PropertyMetaData> Fields { get; set; }
     public StructFlags StructFlags { get; set; }
     public bool IsBlittableStruct { get; set; }
-    public bool IsDataTableStruct { get; set; }
     
     public StructMetaData(TypeDefinition structDefinition)
     {
@@ -67,7 +66,7 @@ public class StructMetaData : BaseMetaData
                 return;
             }
 
-            structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittableStruct", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
+            structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittable", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
         }
     }
 }

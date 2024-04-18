@@ -26,6 +26,8 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	bInitialized = true;
 	GeneratedScriptsDirectory = OutputDirectory;
 
+	CheckGlueGeneratorVersion();
+
 	//TODO: SUPPORT THESE BUT CURRENTLY TOO LAZY TO FIX
 	{
 		DenyList.AddClass("AnimationBlueprintLibrary");
@@ -582,6 +584,24 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 	}
 
 	return *BindingsModule;
+}
+
+void FCSGenerator::CheckGlueGeneratorVersion() const
+{
+	if (IFileManager::Get().DirectoryExists(*GeneratedScriptsDirectory))
+	{
+		int GlueGeneratorVersion = 0;
+		GConfig->GetInt(GLUE_GENERATOR_CONFIG, GLUE_GENERATOR_VERSION_KEY, GlueGeneratorVersion, GEditorPerProjectIni);
+		
+		if (GlueGeneratorVersion < GLUE_GENERATOR_VERSION)
+		{
+			// Remove the whole generated folder if the version is different.
+			// This is a bit of a sledgehammer, but it's the easiest way to ensure that we don't have any old files lying around.
+			IFileManager::Get().DeleteDirectory(*GeneratedScriptsDirectory, false, true);
+		}
+	}
+	
+	GConfig->SetInt(GLUE_GENERATOR_CONFIG, GLUE_GENERATOR_VERSION_KEY, GLUE_GENERATOR_VERSION, GEditorPerProjectIni);
 }
 
 void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
