@@ -93,6 +93,10 @@ public:
 
 	const FString& GetNamespace(const UObject* Object);
 
+	void GatherModuleDependencies(const FProperty* Property, TSet<const FCSModule*>& DependencySet);
+
+	void GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet);
+
 	FCSModule& FindOrRegisterModule(const UObject* Object);
 
 protected:

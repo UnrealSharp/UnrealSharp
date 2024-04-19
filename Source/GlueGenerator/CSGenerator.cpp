@@ -727,49 +727,19 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	GetExportedFunctions(ExportedFunctions, ExportedOverridableFunctions, Class);
 
 	TArray<FString> Interfaces;
+	for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
 	{
-		TSet<FString> DeclaredDirectives;
-		
-		// Add using directives for interfaces
-		for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
-		{
-			UClass* InterfaceClass = ImplementedInterface.Class;
-			Interfaces.Add(InterfaceClass->GetName());
-				
-			const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
+		UClass* InterfaceClass = ImplementedInterface.Class;
+		Interfaces.Add(InterfaceClass->GetName());
+	}
 
-			const FString& InterfaceNamespace = InterfaceModule.GetNamespace();
-				
-			if (DeclaredDirectives.Contains(InterfaceNamespace))
-			{
-				continue;
-			}
-					
-			Builder.DeclareDirective(InterfaceNamespace);
-			DeclaredDirectives.Add(InterfaceNamespace);
-		}
+	TSet<const FCSModule*> Dependencies;
+	GatherModuleDependencies(Class, Dependencies);
 
-		// Add using directives for delegates
-		for (const FProperty* Property : ExportedProperties)
-		{
-			TSet<UFunction*> DelegateSignatures;
-			PropertyTranslatorManager->Find(Property).AddDelegateReferences(Property, DelegateSignatures);
-
-			for (UFunction* DelegateSignature : DelegateSignatures)
-			{
-				FCSModule& DelegateModule = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
-
-				const FString& DelegateNamespace = DelegateModule.GetNamespace();
-
-				if (DeclaredDirectives.Contains(DelegateNamespace))
-				{
-					continue;
-				}
-
-				Builder.DeclareDirective(DelegateNamespace);
-				DeclaredDirectives.Add(DelegateNamespace);
-			}
-		}
+	for (const FCSModule* DependencyModule : Dependencies)
+	{
+		const FString& DelegateNamespace = DependencyModule->GetNamespace();
+		Builder.DeclareDirective(DelegateNamespace);
 	}
 
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
@@ -1300,3 +1270,72 @@ bool FCSGenerator::CanExportReturnValue(const FProperty* Property) const
 	return bCanExport;
 }
 
+void FCSGenerator::GatherModuleDependencies(const FProperty* Property, TSet<const FCSModule*>& DependencySet)
+{
+	TSet<UFunction*> DelegateSignatures;
+	PropertyTranslatorManager->Find(Property).AddDelegateReferences(Property, DelegateSignatures);
+
+	for (UFunction* DelegateSignature : DelegateSignatures)
+	{
+		const FCSModule& DelegateModule = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+
+		DependencySet.Add(&DelegateModule);
+	}
+}
+
+void FCSGenerator::GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet)
+{
+	// Gather the modules for all interfaces that the class implements
+	for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
+	{
+		UClass* InterfaceClass = ImplementedInterface.Class;
+		const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
+
+		DependencySet.Add(&InterfaceModule);
+	}
+
+	// Gather the module for the base class of the class
+	const UClass* SuperClass = Class->GetSuperClass();
+	if (SuperClass)
+	{
+		const FCSModule& SuperClassModule = FindOrRegisterModule(SuperClass);
+
+		DependencySet.Add(&SuperClassModule);
+	}
+
+	// Gather the modules for the types of all properties that the class contains
+	for (TFieldIterator<FProperty> PropertyIt(Class, EFieldIteratorFlags::ExcludeSuper); PropertyIt; ++PropertyIt)
+	{
+		FProperty* Property = *PropertyIt;
+
+		if (!CanExportProperty(Class, Property))
+		{
+			continue;
+		}
+
+		GatherModuleDependencies(Property, DependencySet);
+	}
+
+	// Gather the modules for the return and parameter types of all functions that the class contains
+	for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper); FunctionIt; ++FunctionIt)
+	{
+		UFunction* Function = *FunctionIt;
+
+		if (!CanExportFunction(Class, Function))
+		{
+			continue;
+		}
+
+		FProperty* ReturnProperty = Function->GetReturnProperty();
+		if (ReturnProperty)
+		{
+			GatherModuleDependencies(ReturnProperty, DependencySet);
+		}
+
+		for (TFieldIterator<FProperty> ParamIt(Function); ParamIt; ++ParamIt)
+		{
+			FProperty* Parameter = *ParamIt;
+			GatherModuleDependencies(Parameter, DependencySet);
+		}
+	}
+}

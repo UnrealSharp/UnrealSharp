@@ -10,6 +10,6 @@ void FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(FCSScript
 FString FDelegateBasePropertyTranslator::GetDelegateName(const UFunction* SignatureFunction)
 {
 	FString DelegateSignatureName = SignatureFunction->GetName();
-	int32 DelegateSignatureIndex = DelegateSignatureName.Find("DelegateSignature");
-	return DelegateSignatureName.Left(DelegateSignatureIndex - 2);
+	int32 DelegateSignatureIndex = DelegateSignatureName.Find("__DelegateSignature");
+	return DelegateSignatureName.Left(DelegateSignatureIndex);
 }
