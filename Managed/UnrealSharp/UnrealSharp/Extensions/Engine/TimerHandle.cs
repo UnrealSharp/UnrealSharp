@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 
-namespace UnrealSharp;
+namespace UnrealSharp.Engine;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct TimerHandle
+public partial struct TimerHandle
 {
     private const uint IndexBits = 24;
     private const uint SerialNumberBits = 40;

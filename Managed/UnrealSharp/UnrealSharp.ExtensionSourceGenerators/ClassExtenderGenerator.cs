@@ -72,6 +72,7 @@ public class ClassExtenderGenerator : ISourceGenerator
                 
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("using UnrealSharp.Engine;");
+            stringBuilder.AppendLine("using UnrealSharp.CoreUObject;");
             stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine();
         

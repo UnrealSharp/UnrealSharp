@@ -97,7 +97,8 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                         sourceBuilder.Append("ref ");
                     }
                     
-                    sourceBuilder.Append($"{parameter.type.ToString()} {paramName}");
+                    string typeFullName = model.GetTypeInfo(parameter.type).Type.ToDisplayString();
+                    sourceBuilder.Append($"{typeFullName} {paramName}");
                     paramName++;
                 }
 

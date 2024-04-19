@@ -38,12 +38,8 @@ public class Text
     {
         Data = nativeInstance;
     }
-    
-    protected bool Equals(Text other)
-    {
-        return Data.Equals(other.Data);
-    }
 
+    /// <inheritdoc />
     public override bool Equals(object obj)
     {
         if (ReferenceEquals(null, obj)) return false;
@@ -51,11 +47,13 @@ public class Text
         return obj.GetType() == this.GetType() && Equals((Text)obj);
     }
 
+    /// <inheritdoc />
     public override int GetHashCode()
     {
         return Data.GetHashCode();
     }
-    
+
+    /// <inheritdoc />
     public override string ToString()
     {
         unsafe

@@ -1,37 +1,31 @@
-using System.DoubleNumerics;
 using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
-namespace UnrealSharp;
+namespace UnrealSharp.CoreUObject;
 
-[UStruct(IsBlittable = true), StructLayout(LayoutKind.Sequential)]
-public struct RandomStream : IEquatable<RandomStream>
+[StructLayout(LayoutKind.Sequential)]
+public partial struct RandomStream
 {
-	private int _initialSeed;
-	private int _seed;
-	public int CurrentSeed => _seed;
-	
 	public RandomStream(int initialSeed)
 	{
-		_initialSeed = initialSeed;
-		_seed = initialSeed;
+		InitialSeed = initialSeed;
+		Seed = initialSeed;
 	}
 	
 	public void Initialize(int initialSeed)
 	{
-		_initialSeed = initialSeed;
-		_seed = initialSeed;
+		InitialSeed = initialSeed;
+		Seed = initialSeed;
 	}
 	
 	public void Reset()
 	{
-		_seed = _initialSeed;
+		Seed = InitialSeed;
 	}
 	
 	public static bool operator ==(RandomStream a, RandomStream b)
 	{
-		return a._seed == b._seed;
+		return a.Seed == b.Seed;
 	}
 
 	public static bool operator !=(RandomStream a, RandomStream b)
@@ -41,7 +35,7 @@ public struct RandomStream : IEquatable<RandomStream>
 	
 	public bool Equals(RandomStream other)
 	{
-		return _initialSeed == other._initialSeed && _seed == other._seed;
+		return InitialSeed == other.InitialSeed && Seed == other.Seed;
 	}
 
 	public override bool Equals(object obj)
@@ -51,12 +45,12 @@ public struct RandomStream : IEquatable<RandomStream>
 
 	public override int GetHashCode()
 	{
-		return HashCode.Combine(_initialSeed, _seed);
+		return HashCode.Combine(InitialSeed, Seed);
 	}
 
 	public override string ToString()
 	{
-		return CurrentSeed.ToString();
+		return Seed.ToString();
 	}
 
 	public void GenerateNewSeed()
@@ -74,7 +68,7 @@ public struct RandomStream : IEquatable<RandomStream>
 		return FRandomStreamExporter.CallGetUnsignedInt(ref this);
 	}
 	
-	public Vector3 GetUnitVector( )
+	public Vector GetUnitVector( )
 	{
 		return FRandomStreamExporter.CallGetUnitVector(ref this);
 	}
@@ -84,12 +78,12 @@ public struct RandomStream : IEquatable<RandomStream>
 		return FRandomStreamExporter.CallRandRange(ref this, min, max);
 	}
 	
-	public Vector3 GetUnitVectorInCone(Vector3 dir, float coneHalfAngleRad)
+	public Vector GetUnitVectorInCone(Vector dir, float coneHalfAngleRad)
 	{
 		return FRandomStreamExporter.CallVRandCone(ref this, dir, coneHalfAngleRad);
 	}
 
-	public Vector3 GetUnitVectorInCone(Vector3 dir, float horizontalConeHalfAngleRad, float verticalConeHalfAngleRad)
+	public Vector GetUnitVectorInCone(Vector dir, float horizontalConeHalfAngleRad, float verticalConeHalfAngleRad)
 	{
 		return FRandomStreamExporter.CallVRandCone2(ref this, dir, horizontalConeHalfAngleRad, verticalConeHalfAngleRad);
 	}

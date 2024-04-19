@@ -31,6 +31,7 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         Number = number;
     }
 
+    /// <inheritdoc />
     public override string ToString()
     {
         unsafe
@@ -48,11 +49,19 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         }
     }
     
+    /// <summary>
+    /// Check if the name is valid.
+    /// </summary>
+    /// <returns>True if the name is valid, false otherwise.</returns>
     public bool IsValid()
     {
         return FNameExporter.CallIsValid(this);
     }
     
+    /// <summary>
+    /// Check if the name is None.
+    /// </summary>
+    /// <returns>True if the name is None, false otherwise.</returns>
     public bool IsNone()
     {
         return this == None;
@@ -103,6 +112,11 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         return ComparisonIndex;
     }
     
+    /// <summary>
+    /// Compare two names.
+    /// </summary>
+    /// <param name="other">The name to compare against.</param>
+    /// <returns>0 if the names are equal, a negative value if this name is less than the other name, and a positive value if this name is greater than the other name.</returns>
     public int CompareTo(Name other)
     {
         int diff = ComparisonIndex - other.ComparisonIndex;

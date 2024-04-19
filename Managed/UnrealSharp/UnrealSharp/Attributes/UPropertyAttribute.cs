@@ -1,5 +1,3 @@
-using UnrealSharp.CoreUObject;
-
 namespace UnrealSharp.Attributes;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
@@ -51,7 +49,16 @@ public enum PropertyFlags : ulong
     BlueprintAssignable = NativePropertyFlags.BlueprintAssignable | BlueprintReadOnly,
     
     [PropertyFlagsMap(NativePropertyFlags.BlueprintCallable)]
-    BlueprintCallable = NativePropertyFlags.BlueprintCallable
+    BlueprintCallable = NativePropertyFlags.BlueprintCallable,
+    
+    [PropertyFlagsMap(NativePropertyFlags.VisibleAnywhere)]
+    VisibleAnywhere = NativePropertyFlags.VisibleAnywhere,
+    
+    [PropertyFlagsMap(NativePropertyFlags.VisibleDefaultsOnly)]
+    VisibleDefaultsOnly = NativePropertyFlags.VisibleDefaultsOnly,
+    
+    [PropertyFlagsMap(NativePropertyFlags.VisibleInstanceOnly)]
+    VisibleInstanceOnly = NativePropertyFlags.VisibleInstanceOnly,
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]

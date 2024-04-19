@@ -1041,6 +1041,10 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 	const FCSModule& BindingsModule = FindOrRegisterModule(Struct);
 
 	TSet<FProperty*> ExportedProperties;
+	if (UStruct* ParentStruct = Struct->GetSuperStruct())
+	{
+		GetExportedProperties(ExportedProperties, ParentStruct);
+	}
 	GetExportedProperties(ExportedProperties, Struct);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());

@@ -1,12 +1,8 @@
-﻿using System.DoubleNumerics;
-using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
-using UnrealSharp.Interop;
+﻿using UnrealSharp.Interop;
 
-namespace UnrealSharp;
+namespace UnrealSharp.CoreUObject;
 
-[UStruct(IsBlittable = true), StructLayout(LayoutKind.Sequential)] 
-public struct Rotator
+public partial struct Rotator
 {
     public bool Equals(Rotator other)
     {
@@ -22,10 +18,6 @@ public struct Rotator
     {
         return HashCode.Combine(Pitch, Yaw, Roll);
     }
-    
-    public double Pitch;
-    public double Yaw;
-    public double Roll;
 
     public static readonly Rotator ZeroRotator = new(0, 0, 0);
 
@@ -36,37 +28,37 @@ public struct Rotator
         Roll = roll;
     }
 
-    public Rotator(Quaternion quat)
+    public Rotator(Quat quat)
     {
         FRotatorExporter.CallFromQuat(out this, ref quat);
     }
     
-    public Rotator(Matrix4x4 rotationMatrix)
+    public Rotator(Matrix rotationMatrix)
     {
         FRotatorExporter.CallFromMatrix(out this, ref rotationMatrix);
     }
 
-    public Rotator(Vector3 vec)
+    public Rotator(Vector vec)
     {
         Yaw = Math.Atan2(vec.Y, vec.X) * 180.0 / Math.PI;
         Pitch = Math.Atan2(vec.Z, Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y)) * 180.0 / Math.PI;
         Roll = 0.0f;
     }
     
-    public Quaternion ToQuaternion()
+    public Quat ToQuaternion()
     {
         FQuatExporter.CallToQuaternion(out var quat, ref this);
         return quat;
     }
 
-    public Matrix4x4 ToMatrix()
+    public Matrix ToMatrix()
     {
         FMatrixExporter.CallFromRotator(out var rotationMatrix, ref this);
         return rotationMatrix;
     }
 
     // Convert the rotator into a vector facing in its direction.
-    public Vector3 ToVector()
+    public Vector ToVector()
     {
         return FVectorExporter.CallFromRotator(out this);
     }
@@ -127,21 +119,6 @@ public struct Rotator
     public static bool operator !=(Rotator left, Rotator right)
     {
         return !(left == right);
-    }
-
-    public Vector3 GetForwardVector()
-    {
-        return Vector3.UnitX;
-    }
-
-    public Vector3 GetRightVector()
-    {
-        return Vector3.UnitY;
-    }
-
-    public Vector3 GetUpVector()
-    {
-        return Vector3.UnitZ;
     }
     
     public bool IsZero()

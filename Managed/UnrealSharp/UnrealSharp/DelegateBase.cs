@@ -1,3 +1,4 @@
+using System.Numerics;
 using UnrealSharp.Interop;
 using Object = UnrealSharp.CoreUObject.Object;
 

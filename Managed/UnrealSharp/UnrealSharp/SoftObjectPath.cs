@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 

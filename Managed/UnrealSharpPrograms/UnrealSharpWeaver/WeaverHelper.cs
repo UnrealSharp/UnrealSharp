@@ -388,7 +388,7 @@ public static class WeaverHelper
 
         if (customAttributes != null)
         {
-            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", "UPropertyAttribute");
+            CustomAttribute? propertyAttribute = GetUProperty(typeDef);
             
             if (propertyAttribute != null)
             {
@@ -542,11 +542,6 @@ public static class WeaverHelper
             if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
             {
                 throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
-            }
-                
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Name")
-            {
-                return new NativeDataNameType(typeDef, arrayDim);
             }
 
             if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Rotator"))

@@ -42,6 +42,7 @@ public class CSharpForUE : ModuleRules
 				"UnrealSharpProcHelper", 
 				"EnhancedInput", 
 				"UnrealSharpUtilities",
+				"GameplayTags"
 			}
 			);
 

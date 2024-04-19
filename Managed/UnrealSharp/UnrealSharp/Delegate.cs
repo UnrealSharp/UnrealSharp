@@ -50,7 +50,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 
     public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
     {
-        _data.Object = targetObject._data;
+        _data.Object = targetObject.Data;
         _data.FunctionName = functionName;
     }
 

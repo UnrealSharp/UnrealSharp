@@ -1,5 +1,5 @@
-﻿using UnrealSharp.EnhancedInput;
-using UnrealSharp.Interop;
+﻿using UnrealSharp.CoreUObject;
+using UnrealSharp.EnhancedInput;
 
 namespace UnrealSharp.Engine;
 
