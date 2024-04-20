@@ -32,7 +32,7 @@ public class InterfaceMetaData : TypeReferenceMetadata
         {
             if (method.IsAbstract && FunctionMetaData.IsUFunction(method))
             {
-                Functions.Add(new FunctionMetaData(method, bOnlyCollectMetaData: true));
+                Functions.Add(new FunctionMetaData(method));
             }
         }
     }

@@ -43,9 +43,6 @@ public static class UnrealClassProcessor
         var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         PropertyRewriterHelpers.ProcessClassMembers(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
         
-        List<FunctionMetaData> functionsToRewrite = metadata.Functions.ToList();
-        functionsToRewrite.AddRange(metadata.VirtualFunctions.Select(virtualFunction => virtualFunction));
-        
         ProcessBlueprintOverrides(classTypeDefinition, metadata);
         
         // Add a field to cache the native UClass pointer.

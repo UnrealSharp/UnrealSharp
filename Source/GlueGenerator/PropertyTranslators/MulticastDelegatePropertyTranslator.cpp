@@ -60,7 +60,7 @@ void FMulticastDelegatePropertyTranslator::ExportPropertySetter(FCSScriptBuilder
 	Builder.AppendLine("return;");
 	Builder.CloseBrace();
 	Builder.AppendLine(FString::Printf(TEXT("%s = value;"), *BackingFieldName));
-	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,this,value);"), *DelegateName, *PropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,value);"), *DelegateName, *PropertyName));
 }
 
 void FMulticastDelegatePropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const
@@ -71,7 +71,7 @@ void FMulticastDelegatePropertyTranslator::ExportPropertyGetter(FCSScriptBuilder
 	
 	Builder.AppendLine(FString::Printf(TEXT("if (%s == null)"), *BackingFieldName));
 	Builder.OpenBrace();
-	Builder.AppendLine(FString::Printf(TEXT("%s = DelegateMarshaller<%s>.FromNative(IntPtr.Add(NativeObject, %s_Offset), %s, 0, this);"),
+	Builder.AppendLine(FString::Printf(TEXT("%s = DelegateMarshaller<%s>.FromNative(IntPtr.Add(NativeObject, %s_Offset), %s, 0);"),
 		*BackingFieldName, GetData(DelegateName), GetData(PropertyName), *NativePropertyFieldName));
 	Builder.CloseBrace();
 	Builder.AppendLine(FString::Printf(TEXT("return %s;"), *BackingFieldName));

@@ -8,20 +8,12 @@ void UFStringExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 
 void UFStringExporter::MarshalToNativeString(FString* String, TCHAR* ManagedString)
 {
-	if (String == nullptr)
-	{
-		return;
-	}
-
+	check(String)
 	*String = FString(ManagedString);
 }
 
 void UFStringExporter::DisposeString(FString* String)
 {
-	if (String == nullptr)
-	{
-		return;
-	}
-
-	String->~FString();
+	check(String)
+	String->Empty();
 }

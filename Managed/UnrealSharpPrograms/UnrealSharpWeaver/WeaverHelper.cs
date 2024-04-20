@@ -210,6 +210,11 @@ public static class WeaverHelper
         return newMethod;
     }
     
+    public static string GetInvokeName(string methodName)
+    {
+        return "Invoke_" + methodName;
+    }
+    
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
     {
         returnType ??= UserAssembly.MainModule.TypeSystem.Void;
@@ -292,6 +297,11 @@ public static class WeaverHelper
         }
 
         return default;
+    }
+
+    public static bool HasMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
+    {
+        return FindMethod(typeDef, methodName, throwIfNotFound, parameterTypes) != null;
     }
 
     public static MethodReference? FindMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)

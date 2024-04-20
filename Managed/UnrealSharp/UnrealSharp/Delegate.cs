@@ -87,7 +87,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         {
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
-        _data.Object = new WeakObject<Object>(targetObject)._data;
+        _data.Object = new WeakObject<Object>(targetObject).Data;
         _data.FunctionName = new Name(handler.Method.Name);
     }
 

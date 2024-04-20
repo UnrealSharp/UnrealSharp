@@ -19,7 +19,7 @@ public class FunctionMetaData : BaseMetaData
     public FunctionRewriteInfo RewriteInfo;
     // End non-serialized
     
-    public FunctionMetaData(MethodDefinition method, bool bOnlyCollectMetaData = false)
+    public FunctionMetaData(MethodDefinition method)
     {
         MethodDefinition = method;
         Name = method.Name;
@@ -145,15 +145,13 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         
-        FunctionFlags = flags;
-
-        if (bOnlyCollectMetaData)
+        if (!WeaverHelper.HasMethod(method.DeclaringType.BaseType.Resolve(), method.Name, false))
         {
-            return;
+            RewriteInfo = new FunctionRewriteInfo(this);
+            FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
         }
         
-        RewriteInfo = new FunctionRewriteInfo(this);
-        FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
+        FunctionFlags = flags;
     }
 
     public static bool IsAsyncUFunction(MethodDefinition method)
