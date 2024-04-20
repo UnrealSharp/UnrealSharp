@@ -5,6 +5,7 @@
 #include "CSScriptBuilder.h"
 #include "CSPropertyTranslatorManager.h"
 #include "PropertyTranslators/PropertyTranslator.h"
+#include "PropertyTranslators/DelegateBasePropertyTranslator.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interfaces/IPluginManager.h"
@@ -180,6 +181,35 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 	}
 	
 	SaveTypeGlue(Object, Builder);
+}
+
+void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport)
+{
+	// We don't want stuff in the transient package - that stuff is just temporary
+	if (DelegateSignature->GetOutermost() == GetTransientPackage())
+	{
+		return;
+	}
+
+	if (ExportedDelegates.Contains(DelegateSignature))
+	{
+		return;
+	}
+
+	FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
+
+	ExportDelegate(DelegateSignature, Builder);
+
+	if (Builder.IsEmpty())
+	{
+		return;
+	}
+
+	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(DelegateSignature);
+
+	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
+	FCSGenerator::Get().SaveGlue(&Module, FileName, Builder.ToString());
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -654,6 +684,47 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	Builder.CloseBrace();
 }
 
+void FCSGenerator::ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder& Builder)
+{
+	if (!ensure(!ExportedDelegates.Contains(SignatureFunction)))
+	{
+		return;
+	}
+
+	ensure(SignatureFunction->HasAnyFunctionFlags(FUNC_Delegate));
+
+	ExportedDelegates.Add(SignatureFunction);
+
+	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(SignatureFunction->GetOutermost());
+	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(SignatureFunction);
+
+	Builder.GenerateScriptSkeleton(Module.GetNamespace());
+	Builder.AppendLine();
+
+	FString SignatureName = FString::Printf(TEXT("%s.Signature"), *DelegateName);
+	FString SuperClass;
+	if (SignatureFunction->HasAnyFunctionFlags(FUNC_MulticastDelegate))
+	{
+		SuperClass = FString::Printf(TEXT("MulticastDelegate<%s>"), *SignatureName);
+	}
+	else
+	{
+		SuperClass = FString::Printf(TEXT("Delegate<%s>"), *SignatureName);
+	}
+
+	Builder.DeclareType("class", DelegateName, SuperClass, true);
+
+	PropertyTranslatorManager->Find(SignatureFunction).ExportDelegateFunction(Builder, SignatureFunction);
+
+	// Write delegate initializer
+	Builder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
+	Builder.OpenBrace();
+	FCSGenerator::Get().ExportDelegateFunctionStaticConstruction(Builder, SignatureFunction);
+	Builder.CloseBrace();
+
+	Builder.CloseBrace();
+}
+
 void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 {
 	if (!ensure(!ExportedTypes.Contains(Class)))
@@ -682,26 +753,19 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	GetExportedFunctions(ExportedFunctions, ExportedOverridableFunctions, Class);
 
 	TArray<FString> Interfaces;
+	for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
 	{
-		TSet<FString> DeclaredDirectives;
-		
-		for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
-		{
-			UClass* InterfaceClass = ImplementedInterface.Class;
-			Interfaces.Add(InterfaceClass->GetName());
-				
-			const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
+		UClass* InterfaceClass = ImplementedInterface.Class;
+		Interfaces.Add(InterfaceClass->GetName());
+	}
 
-			const FString& InterfaceNamespace = InterfaceModule.GetNamespace();
-				
-			if (DeclaredDirectives.Contains(InterfaceNamespace))
-			{
-				continue;
-			}
-					
-			Builder.DeclareDirective(InterfaceNamespace);
-			DeclaredDirectives.Add(InterfaceNamespace);
-		}
+	TSet<const FCSModule*> Dependencies;
+	GatherModuleDependencies(Class, Dependencies);
+
+	for (const FCSModule* DependencyModule : Dependencies)
+	{
+		const FString& DelegateNamespace = DependencyModule->GetNamespace();
+		Builder.DeclareDirective(DelegateNamespace);
 	}
 
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
@@ -1234,3 +1298,72 @@ bool FCSGenerator::CanExportReturnValue(const FProperty* Property) const
 	return bCanExport;
 }
 
+void FCSGenerator::GatherModuleDependencies(const FProperty* Property, TSet<const FCSModule*>& DependencySet)
+{
+	TSet<UFunction*> DelegateSignatures;
+	PropertyTranslatorManager->Find(Property).AddDelegateReferences(Property, DelegateSignatures);
+
+	for (UFunction* DelegateSignature : DelegateSignatures)
+	{
+		const FCSModule& DelegateModule = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+
+		DependencySet.Add(&DelegateModule);
+	}
+}
+
+void FCSGenerator::GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet)
+{
+	// Gather the modules for all interfaces that the class implements
+	for (const FImplementedInterface& ImplementedInterface : Class->Interfaces)
+	{
+		UClass* InterfaceClass = ImplementedInterface.Class;
+		const FCSModule& InterfaceModule = FindOrRegisterModule(InterfaceClass);
+
+		DependencySet.Add(&InterfaceModule);
+	}
+
+	// Gather the module for the base class of the class
+	const UClass* SuperClass = Class->GetSuperClass();
+	if (SuperClass)
+	{
+		const FCSModule& SuperClassModule = FindOrRegisterModule(SuperClass);
+
+		DependencySet.Add(&SuperClassModule);
+	}
+
+	// Gather the modules for the types of all properties that the class contains
+	for (TFieldIterator<FProperty> PropertyIt(Class, EFieldIteratorFlags::ExcludeSuper); PropertyIt; ++PropertyIt)
+	{
+		FProperty* Property = *PropertyIt;
+
+		if (!CanExportProperty(Class, Property))
+		{
+			continue;
+		}
+
+		GatherModuleDependencies(Property, DependencySet);
+	}
+
+	// Gather the modules for the return and parameter types of all functions that the class contains
+	for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper); FunctionIt; ++FunctionIt)
+	{
+		UFunction* Function = *FunctionIt;
+
+		if (!CanExportFunction(Class, Function))
+		{
+			continue;
+		}
+
+		FProperty* ReturnProperty = Function->GetReturnProperty();
+		if (ReturnProperty)
+		{
+			GatherModuleDependencies(ReturnProperty, DependencySet);
+		}
+
+		for (TFieldIterator<FProperty> ParamIt(Function); ParamIt; ++ParamIt)
+		{
+			FProperty* Parameter = *ParamIt;
+			GatherModuleDependencies(Parameter, DependencySet);
+		}
+	}
+}

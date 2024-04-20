@@ -5,20 +5,11 @@ void FDelegateBasePropertyTranslator::ExportPropertyStaticConstruction(FCSScript
 {
 	Builder.AppendLine(FString::Printf(TEXT("%s_NativeProperty = %s.CallGetNativePropertyFromName(NativeClassPtr, \"%s\");"), *NativePropertyName, FPropertyCallbacks, *NativePropertyName));
 	FPropertyTranslator::ExportPropertyStaticConstruction(Builder, Property, NativePropertyName);
-
-	const FMulticastDelegateProperty* DelegateProperty = CastFieldChecked<FMulticastDelegateProperty>(Property);
-	
-	if (DelegateProperty->SignatureFunction->NumParms > 0)
-	{
-		FString DelegateName = GetDelegateName(DelegateProperty);
-		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *DelegateName, *NativePropertyName));
-	}
 }
 
-FString FDelegateBasePropertyTranslator::GetDelegateName(const FMulticastDelegateProperty* Property)
+FString FDelegateBasePropertyTranslator::GetDelegateName(const UFunction* SignatureFunction)
 {
-	UFunction* Function = Property->SignatureFunction;
-	FString DelegateSignatureName = Function->GetName();
-	int32 DelegateSignatureIndex = DelegateSignatureName.Find("DelegateSignature");
-	return DelegateSignatureName.Left(DelegateSignatureIndex - 2);
+	FString DelegateSignatureName = SignatureFunction->GetName();
+	int32 DelegateSignatureIndex = DelegateSignatureName.Find("__DelegateSignature");
+	return DelegateSignatureName.Left(DelegateSignatureIndex);
 }

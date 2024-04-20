@@ -38,6 +38,7 @@ public:
 	
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);
 	void GenerateGlueForType(UObject* Object, bool bForceExport = false);
+	void GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport = false);
 	
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	
@@ -51,6 +52,7 @@ public:
 	void ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder);
 	void ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder);
 	void ExportInterface(UClass* Interface, FCSScriptBuilder& Builder);
+	void ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder& Builder);
 	
 	bool CanExportClass(UClass* Class) const;
 	bool CanDeriveFromNativeClass(UClass* Class);
@@ -93,6 +95,10 @@ public:
 
 	const FString& GetNamespace(const UObject* Object);
 
+	void GatherModuleDependencies(const FProperty* Property, TSet<const FCSModule*>& DependencySet);
+
+	void GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet);
+
 	FCSModule& FindOrRegisterModule(const UObject* Object);
 
 protected:
@@ -118,5 +124,5 @@ protected:
 private:
 
 	void CheckGlueGeneratorVersion() const;
-	
+	TSet<UFunction*> ExportedDelegates;
 };

@@ -36,6 +36,23 @@ void FPropertyTranslator::AddReferences(const FProperty* Property, TSet<UField*>
 
 }
 
+void FPropertyTranslator::ExportDelegateReferences(const FProperty* Property) const
+{
+	TSet<UFunction*> DelegateSignatures;
+	AddDelegateReferences(Property, DelegateSignatures);
+
+	FCSGenerator& Generator = FCSGenerator::Get();
+	for (UFunction* DelegateSignature : DelegateSignatures)
+	{
+		Generator.GenerateGlueForDelegate(DelegateSignature, true);
+	}
+}
+
+void FPropertyTranslator::AddDelegateReferences(const FProperty* Property, TSet<UFunction*>& DelegateSignatures) const
+{
+
+}
+
 FString FPropertyTranslator::GetCSharpFixedSizeArrayType(const FProperty *Property) const
 {
 	FString ArrayType;
@@ -101,6 +118,7 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 	}
 
 	ExportReferences(Property);
+	ExportDelegateReferences(Property);
 	OnPropertyExported(Builder, Property, NativePropertyName);
 	Builder.AppendLine();
 
@@ -162,6 +180,7 @@ void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const 
 	}
 
 	ExportReferences(Property);
+	ExportDelegateReferences(Property);
 	Builder.AppendLine();
 }
 
@@ -417,6 +436,7 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 		}
 
 		ParamHandler.ExportReferences(Parameter);
+		ParamHandler.ExportDelegateReferences(Parameter);
 		ParamsProcessed++;
 	}
 
@@ -853,6 +873,30 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 	}
 
 	Builder.AppendLine();
+}
+
+void FPropertyTranslator::ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const
+{
+	FPropertyTranslator::FunctionExporter Exporter(*this, *SignatureFunction, FPropertyTranslator::ProtectionMode::OverrideWithProtected, FPropertyTranslator::OverloadMode::SuppressOverloads, FPropertyTranslator::BlueprintVisibility::Call);
+
+	FProperty* ReturnProperty = SignatureFunction->GetReturnProperty();
+	const FString ReturnType = *GetManagedType(ReturnProperty);
+
+	// Write signature delegate
+	Builder.AppendLine(FString::Printf(TEXT("public delegate %s Signature(%s);"), *ReturnType, *Exporter.ParamsStringAPIWithDefaults));
+	Builder.AppendLine();
+
+	// Write fields needed for native invoker
+	Exporter.ExportFunctionVariables(Builder);
+	Builder.AppendLine();
+
+	// Write native invoker
+	Builder.AppendLine(FString::Printf(TEXT("protected %s Invoker(%s)"), *ReturnType, *Exporter.ParamsStringAPIWithDefaults));
+	Builder.OpenBrace();
+	Builder.BeginUnsafeBlock();
+	Exporter.ExportInvoke(Builder, FPropertyTranslator::FunctionExporter::InvokeMode::Normal);
+	Builder.EndUnsafeBlock();
+	Builder.CloseBrace();
 }
 
 void FPropertyTranslator::AddNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName)
