@@ -52,6 +52,7 @@ public static class UnrealDelegateProcessor
             
             // Create a delegate from the marshaller
             MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
+            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
             ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
             
             MethodReference? constructor = WeaverHelper.FindMethod(type, ".ctor", true, delegateDataStruct);

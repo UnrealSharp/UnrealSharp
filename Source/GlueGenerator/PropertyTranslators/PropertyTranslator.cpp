@@ -582,7 +582,7 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	{
 		Builder.AppendLine(FString::Printf(TEXT("byte* ParamsBufferAllocation = stackalloc byte[%s_ParamsSize];"), *NativeMethodName));
 		Builder.AppendLine(TEXT("nint ParamsBuffer = (IntPtr) ParamsBufferAllocation;"));
-		Builder.AppendLine(FString::Printf(TEXT("%s.%s(ParamsBuffer, %s);"), UStructCallbacks, TEXT("CallInitializeStruct"), *NativeFunctionVariableName));
+		Builder.AppendLine(FString::Printf(TEXT("%s.%s(%s, ParamsBuffer);"), UStructCallbacks, TEXT("CallInitializeStruct"), *NativeFunctionVariableName));
 		
 		for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
 		{

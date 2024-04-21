@@ -390,7 +390,7 @@ public static class WeaverHelper
     {
         if (parameters == null)
         {
-            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType, valueType];
+            parameters = [IntPtrType, Int32TypeRef, valueType];
         }
         
         MethodDefinition toNativeMethod = AddMethodToType(type, "ToNative", VoidTypeRef, MethodAttributes, parameters);
@@ -401,7 +401,7 @@ public static class WeaverHelper
     {
         if (parameters == null)
         {
-            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType];
+            parameters = [IntPtrType, Int32TypeRef];
         }
         
         MethodDefinition fromNative = AddMethodToType(type, "FromNative", returnType, MethodAttributes, parameters);
