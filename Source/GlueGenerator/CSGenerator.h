@@ -18,7 +18,7 @@ struct ExtensionMethod
 static const FName MD_WorldContext = "WorldContext";
 static const FName MD_WorldContextObject = "WorldContextObject";
 
-#define GLUE_GENERATOR_VERSION 1
+#define GLUE_GENERATOR_VERSION 2
 
 class GLUEGENERATOR_API FCSGenerator
 {
