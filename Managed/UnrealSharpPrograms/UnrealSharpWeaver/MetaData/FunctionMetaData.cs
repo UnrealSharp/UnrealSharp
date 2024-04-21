@@ -146,7 +146,8 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         
-        if (!WeaverHelper.HasMethod(method.DeclaringType.BaseType.Resolve(), method.Name, false))
+        TypeReference baseType = method.DeclaringType.BaseType;
+        if (baseType != null && !WeaverHelper.HasMethod(baseType.Resolve(), method.Name, false))
         {
             RewriteInfo = new FunctionRewriteInfo(this);
             FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
