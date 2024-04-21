@@ -1,4 +1,7 @@
 #include "CSPropertyTranslatorManager.h"
+
+#include "CSGenerator.h"
+#include "GameplayTagContainer.h"
 #include "GlueGenerator/CSInclusionLists.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/TextProperty.h"
@@ -71,6 +74,12 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 	AddBlittableCustomStructPropertyTranslator("Vector4f", "System.Numerics.Vector4", DenyList);
 	AddBlittableCustomStructPropertyTranslator("Quat4f", "System.Numerics.Quaternion", DenyList);
 	AddBlittableCustomStructPropertyTranslator("Matrix44f", "System.Numerics.Matrix4x4", DenyList);
+
+	AddBlittableCustomStructPropertyTranslator(FTimerHandle::StaticStruct(), "UnrealSharp.Engine.TimerHandle", DenyList);
+
+	// In-progress support for GameplayTags
+	//AddBlittableCustomStructPropertyTranslator(FGameplayTagContainer::StaticStruct(), "UnrealSharp.GameplayTags.GameplayTagContainer", DenyList);
+	//AddBlittableCustomStructPropertyTranslator(FGameplayTag::StaticStruct(), "UnrealSharp.GameplayTags.GameplayTagContainer", DenyList);
 	
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableStructPropertyTranslator(*this));
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FStructPropertyTranslator(*this));
@@ -131,15 +140,21 @@ void FCSPropertyTranslatorManager::AddBlittablePropertyTranslator(FFieldClass* P
 	AddPropertyTranslator(PropertyClass, new FBlittableTypePropertyTranslator(*this, PropertyClass, CSharpType));
 }
 
-void FCSPropertyTranslatorManager::AddBlittableCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
+void FCSPropertyTranslatorManager::AddBlittableCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& DenyList)
 {
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FBlittableCustomStructTypePropertyTranslator(*this, UnrealName, CSharpName));
-	Blacklist.AddStruct(FName(UnrealName));
+	DenyList.AddStruct(FName(UnrealName));
 }
 
-void FCSPropertyTranslatorManager::AddCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist)
+void FCSPropertyTranslatorManager::AddBlittableCustomStructPropertyTranslator(UStruct* Struct, const FString& CSharpName, FCSInclusionLists& Blacklist)
+{
+	FCSGenerator::Get().AddExportedType(Struct);
+	AddBlittableCustomStructPropertyTranslator(Struct->GetName(), CSharpName, Blacklist);
+}
+
+void FCSPropertyTranslatorManager::AddCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& DenyList)
 {
 	AddPropertyTranslator(FStructProperty::StaticClass(), new FCustomStructTypePropertyTranslator(*this, UnrealName, CSharpName));
-	Blacklist.AddStruct(FName(UnrealName));
+	DenyList.AddStruct(FName(UnrealName));
 }
 

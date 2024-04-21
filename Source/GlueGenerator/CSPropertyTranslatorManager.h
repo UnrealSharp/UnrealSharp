@@ -45,6 +45,7 @@ private:
 	void AddPropertyTranslator(FFieldClass* PropertyClass, FPropertyTranslator* Handler);
 	void AddBlittablePropertyTranslator(FFieldClass* PropertyClass, const FString& CSharpType);
 	void AddBlittableCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist);
+	void AddBlittableCustomStructPropertyTranslator(UStruct* Struct, const FString& CSharpName, FCSInclusionLists& Blacklist); 
 	void AddCustomStructPropertyTranslator(const FString& UnrealName, const FString& CSharpName, FCSInclusionLists& Blacklist);
 
 };

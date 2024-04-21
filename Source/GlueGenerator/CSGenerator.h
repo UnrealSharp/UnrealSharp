@@ -99,6 +99,8 @@ public:
 
 	void GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet);
 
+	void AddExportedType(UObject* Object);
+
 	FCSModule& FindOrRegisterModule(const UObject* Object);
 
 protected:

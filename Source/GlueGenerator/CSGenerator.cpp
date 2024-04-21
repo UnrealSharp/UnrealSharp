@@ -32,7 +32,6 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	//TODO: SUPPORT THESE BUT CURRENTLY TOO LAZY TO FIX
 	{
 		DenyList.AddClass("AnimationBlueprintLibrary");
-		DenyList.AddStruct(FSolverIterations::StaticStruct()->GetFName());
 		DenyList.AddFunctionCategory(UKismetMathLibrary::StaticClass()->GetFName(), "Math|Vector4");
 	}
 
@@ -262,70 +261,67 @@ FString FCSGenerator::GetCSharpEnumType(const EPropertyType PropertyType) const
 
 void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 {
-	if (AllowList.HasEnum(Enum) || !DenyList.HasEnum(Enum))
+	const FCSModule& Module = FindOrRegisterModule(Enum);
+
+	Builder.GenerateScriptSkeleton(Module.GetNamespace());
+		
+	AppendTooltip(Enum, Builder);
+	Builder.AppendLine(TEXT("[UEnum]"));
+	Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
+		
+	FString CommonPrefix;
+	int32 SkippedValueCount = 0;
+		
+	TArray<FString> EnumValues;
+
+	const int32 ValueCount = Enum->NumEnums();
+	EnumValues.Reserve(ValueCount);
+		
+	for (int32 i = 0; i < ValueCount; ++i)
 	{
-		const FCSModule& Module = FindOrRegisterModule(Enum);
+		FString& RawName = *new(EnumValues) FString();
 
-		Builder.GenerateScriptSkeleton(Module.GetNamespace());
-		
-		AppendTooltip(Enum, Builder);
-		Builder.AppendLine(TEXT("[UEnum]"));
-		Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
-		
-		FString CommonPrefix;
-		int32 SkippedValueCount = 0;
-		
-		TArray<FString> EnumValues;
-
-		const int32 ValueCount = Enum->NumEnums();
-		EnumValues.Reserve(ValueCount);
-		
-		for (int32 i = 0; i < ValueCount; ++i)
+		if (!ShouldExportEnumEntry(Enum, i))
 		{
-			FString& RawName = *new(EnumValues) FString();
-
-			if (!ShouldExportEnumEntry(Enum, i))
-			{
-				RawName = FString();
-				SkippedValueCount++;
-				continue;
-			}
-
-			FName ValueName = Enum->GetNameByIndex(i);
-			FString QualifiedValueName = ValueName.ToString();
-			const int32 ColonPosition = QualifiedValueName.Find("::");
-
-			if (ColonPosition != INDEX_NONE)
-			{
-				RawName = QualifiedValueName.Mid(ColonPosition + 2);
-			}
-			else
-			{
-				RawName = QualifiedValueName;
-			}
-
-			if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
-			{
-				++SkippedValueCount;
-				EnumValues.Pop(false);
-			}
+			RawName = FString();
+			SkippedValueCount++;
+			continue;
 		}
 
-		for (int32 i = 0; i < EnumValues.Num(); ++i)
+		FName ValueName = Enum->GetNameByIndex(i);
+		FString QualifiedValueName = ValueName.ToString();
+		const int32 ColonPosition = QualifiedValueName.Find("::");
+
+		if (ColonPosition != INDEX_NONE)
 		{
-			FString& EnumValue = EnumValues[i];
-			
-			if (EnumValue.IsEmpty())
-			{
-				continue;
-			}
-			
-			AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
-			Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
+			RawName = QualifiedValueName.Mid(ColonPosition + 2);
+		}
+		else
+		{
+			RawName = QualifiedValueName;
 		}
 
-		Builder.CloseBrace();
+		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
+		{
+			++SkippedValueCount;
+			EnumValues.Pop(false);
+		}
 	}
+
+	for (int32 i = 0; i < EnumValues.Num(); ++i)
+	{
+		FString& EnumValue = EnumValues[i];
+			
+		if (EnumValue.IsEmpty())
+		{
+			continue;
+		}
+			
+		AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
+		Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
+	}
+
+	Builder.CloseBrace();
 }
 
 bool FCSGenerator::CanExportFunction(const UStruct* Struct, const UFunction* Function) const
@@ -1366,4 +1362,9 @@ void FCSGenerator::GatherModuleDependencies(const UClass* Class, TSet<const FCSM
 			GatherModuleDependencies(Parameter, DependencySet);
 		}
 	}
+}
+
+void FCSGenerator::AddExportedType(UObject* Object)
+{
+	ExportedTypes.Add(Object);
 }
