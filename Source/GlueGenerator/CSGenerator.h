@@ -18,6 +18,8 @@ struct ExtensionMethod
 static const FName MD_WorldContext = "WorldContext";
 static const FName MD_WorldContextObject = "WorldContextObject";
 
+#define GLUE_GENERATOR_VERSION 1
+
 class GLUEGENERATOR_API FCSGenerator
 {
 public:
@@ -97,11 +99,15 @@ public:
 
 	void GatherModuleDependencies(const UClass* Class, TSet<const FCSModule*>& DependencySet);
 
+	void AddExportedType(UObject* Object);
+
 	FCSModule& FindOrRegisterModule(const UObject* Object);
 
 protected:
 
 	FString GeneratedScriptsDirectory;
+
+	bool bInitialized = false;
 
 	TUniquePtr<FCSPropertyTranslatorManager> PropertyTranslatorManager;
 	FCSNameMapper NameMapper;
@@ -116,5 +122,9 @@ protected:
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;
 	TMap<FName, FCSModule> CSharpBindingsModules;
 	TSet<UObject*> ExportedTypes;
+
+private:
+
+	void CheckGlueGeneratorVersion() const;
 	TSet<UFunction*> ExportedDelegates;
 };

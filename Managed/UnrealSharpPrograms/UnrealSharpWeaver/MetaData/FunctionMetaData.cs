@@ -1,8 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -18,25 +17,14 @@ public class FunctionMetaData : BaseMetaData
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
     public FunctionRewriteInfo RewriteInfo;
+    public FieldDefinition FunctionPointerField;
     // End non-serialized
     
-    public FunctionMetaData(MethodDefinition method, bool bOnlyCollectMetaData = false)
+    public FunctionMetaData(MethodDefinition method)
     {
         MethodDefinition = method;
         Name = method.Name;
-
-        if (method.IsPublic)
-        {
-            AccessProtection = AccessProtection.Public;
-        }
-        else if (method.IsPrivate)
-        {
-            AccessProtection = AccessProtection.Private;
-        }
-        else
-        {
-            AccessProtection = AccessProtection.Protected;
-        }
+        AccessProtection = WeaverHelper.GetAccessProtection(method);
 
         bool hasOutParams = false;
         
@@ -133,7 +121,7 @@ public class FunctionMetaData : BaseMetaData
                 throw new InvalidUnrealFunctionException(method, "Unknown access level");
         }
 
-        CustomAttribute? ufunctionAttribute = FindAttribute(method.CustomAttributes, "UFunctionAttribute");
+        CustomAttribute? ufunctionAttribute = WeaverHelper.GetUFunction(method);
 
         if (ufunctionAttribute != null)
         {
@@ -158,15 +146,13 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         
-        FunctionFlags = flags;
-
-        if (bOnlyCollectMetaData)
+        if (!WeaverHelper.HasMethod(method.DeclaringType.BaseType.Resolve(), method.Name, false))
         {
-            return;
+            RewriteInfo = new FunctionRewriteInfo(this);
+            FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
         }
         
-        RewriteInfo = new FunctionRewriteInfo(this);
-        FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
+        FunctionFlags = flags;
     }
 
     public static bool IsAsyncUFunction(MethodDefinition method)
@@ -176,7 +162,7 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
 
-        CustomAttribute? functionAttribute = FindAttribute(method.CustomAttributes, "UFunctionAttribute");
+        CustomAttribute? functionAttribute = WeaverHelper.GetUFunction(method);
         if (functionAttribute == null)
         {
             return false;
@@ -203,7 +189,7 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
         
-        CustomAttribute? functionAttribute = FindAttribute(method.CustomAttributes, "UFunctionAttribute");
+        CustomAttribute? functionAttribute = WeaverHelper.GetUFunction(method);
         return functionAttribute != null;
     }
 
@@ -212,7 +198,7 @@ public class FunctionMetaData : BaseMetaData
         MethodDefinition basemostMethod = method.GetOriginalBaseMethod();
         if (basemostMethod != method && basemostMethod.HasCustomAttributes)
         {
-            CustomAttribute? isUnrealFunction = FindAttribute(basemostMethod.CustomAttributes, "UFunctionAttribute");
+            CustomAttribute? isUnrealFunction = WeaverHelper.GetUFunction(basemostMethod);
             if (isUnrealFunction != null)
             {
                 return true;
@@ -227,7 +213,11 @@ public class FunctionMetaData : BaseMetaData
         foreach (var typeInterface in type.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
-            if (!InterfaceMetaData.IsUInterface(interfaceType)) { continue; }
+            
+            if (!WeaverHelper.IsUInterface(interfaceType))
+            {
+                continue; 
+            }
 
             foreach (var interfaceMethod in interfaceType.Methods)
             {

@@ -1,62 +1,37 @@
-﻿using System.Collections;
-using System.Diagnostics;
-using System.Text.Json;
-using CommandLine;
+﻿using System.Text.Json;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver;
 
 public static class Program
 {
-    public static readonly string UnrealSharpNamespace = "UnrealSharp";
-    public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
-    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
-    public static readonly string UnrealSharpObjectName = "UnrealSharpObject";
-    public static readonly string FPropertyCallbacks = "FPropertyExporter";
-    public static readonly string UClassCallbacks = "UClassExporter";
-    public static readonly string CoreUObjectCallbacks = "UCoreUObjectExporter";
-    public static readonly string FBoolPropertyCallbacks = "FBoolPropertyExporter";
-    public static readonly string FStringCallbacks = "FStringExporter";
-    public static readonly string UObjectCallbacks = "UObjectExporter";
-    public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
-    public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
-    public static readonly string UFunctionCallbacks = "UFunctionExporter";
-    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
-    
-    public static readonly string MarshallerSuffix = "Marshaller";
+    public static WeaverOptions WeaverOptions { get; private set; }
     
     public static int Main(string[] args)
     {
-        WeaverOptions? weaverOptions = WeaverOptions.ParseArguments(args);
+        WeaverOptions = WeaverOptions.ParseArguments(args);
 
-        if (weaverOptions == null)
-        {
-            Console.Error.WriteLine("Invalid arguments.");
-            return 1;
-        }
-
-        DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
-
-        if (!LoadBindingsAssembly(weaverOptions, resolver))
+        if (!LoadBindingsAssembly())
         {
             return 1;
         }
         
-        if (!LoadUserAssembly(weaverOptions))
+        if (!StartProcessingUserAssembly())
         {
             return 2;
         }
 
         return 0;
     }
-    
-    static bool LoadBindingsAssembly(WeaverOptions weaverOptions, DefaultAssemblyResolver resolver)
+
+    private static bool LoadBindingsAssembly()
     {
-        foreach (var assemblyPath in weaverOptions.AssemblyPaths)
+        DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
+        
+        foreach (var assemblyPath in WeaverOptions.AssemblyPaths)
         {
             if (Directory.Exists(assemblyPath))
             {
@@ -66,7 +41,7 @@ public static class Program
 
         try
         {
-            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(UnrealSharpNamespace, new Version(0, 0, 0, 0)));
+            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(WeaverHelper.UnrealSharpNamespace, new Version(0, 0, 0, 0)));
             WeaverHelper.Initialize(unrealSharpLibraryAssembly);
             return true;
         }
@@ -77,10 +52,10 @@ public static class Program
         
         return false;
     }
-    
-    static bool LoadUserAssembly(WeaverOptions weaverOptions)
+
+    private static bool StartProcessingUserAssembly()
     {
-        string outputDirectory = StripQuotes(weaverOptions.OutputDirectory);
+        string outputDirectory = StripQuotes(WeaverOptions.OutputDirectory);
         DirectoryInfo outputDirInfo = new DirectoryInfo(outputDirectory);
         
         if (!outputDirInfo.Exists)
@@ -88,16 +63,16 @@ public static class Program
             outputDirInfo.Create();
         }
 
-        foreach (var quotedAssemblyPath in weaverOptions.AssemblyPaths)
+        foreach (var quotedAssemblyPath in WeaverOptions.AssemblyPaths)
         {
-            var userAssemblyPath = Path.Combine(StripQuotes(quotedAssemblyPath), $"{weaverOptions.ProjectName}.dll");
+            var userAssemblyPath = Path.Combine(StripQuotes(quotedAssemblyPath), $"{WeaverOptions.ProjectName}.dll");
 
             if (!File.Exists(userAssemblyPath))
             {
-                Console.Error.WriteLine($"Could not find UserAssembly at: {userAssemblyPath}");
+                throw new FileNotFoundException($"Could not find UserAssembly at: {userAssemblyPath}");
             }
 
-            var weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
+            string weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
             
             var readerParams = new ReaderParameters
             {
@@ -114,7 +89,7 @@ public static class Program
             }
             catch (WeaverProcessError error)
             {
-                ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, "UNCAUGHT NON-FATAL ERROR: " + error.Message);
+                ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, "Caught fatal error: " + error.Message);
             }
             catch (Exception ex)
             {
@@ -134,11 +109,8 @@ public static class Program
         };
         
         WeaverHelper.ImportCommonTypes(assembly);
-
-        StartProcessingAssembly(assembly, assemblyMetaData);
-
-        string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName);
-        CopyAssemblies(assemblyOutputPath, sourcePath);
+        StartProcessingAssembly(assembly, ref assemblyMetaData);
+        CopyAssemblyDependencies(assemblyOutputPath, Path.GetDirectoryName(assembly.MainModule.FileName)!);
 
         try
         {
@@ -150,20 +122,14 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error writing assembly to disk: {ex.Message}");
+            ErrorEmitter.Error("WeaverError", assembly.MainModule.FileName, 0, "Failed to write assembly: " + ex.Message);
             throw;
         }
-
-        var metadataJsonString = JsonSerializer.Serialize(assemblyMetaData, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-
-        string metadataFilePath = Path.ChangeExtension(assemblyOutputPath, "json");
-        File.WriteAllText(metadataFilePath, metadataJsonString);
+        
+        WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
     }
 
-    static void StartProcessingAssembly(AssemblyDefinition userAssembly, ApiMetaData metadata)
+    static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
     {
         try
         {
@@ -180,19 +146,19 @@ public static class Program
                 {
                     foreach (var type in module.Types)
                     {
-                        if (WeaverHelper.IsUnrealSharpClass(type))
+                        if (WeaverHelper.IsUClass(type))
                         {
                             classes.Add(type);
                         }
-                        else if (WeaverHelper.IsUnrealSharpEnum(type))
+                        else if (WeaverHelper.IsUEnum(type))
                         {
                             enums.Add(type);
                         }
-                        else if (WeaverHelper.IsUnrealSharpStruct(type))
+                        else if (WeaverHelper.IsUStruct(type))
                         {
                             structs.Add(type);
                         }
-                        else if (WeaverHelper.IsUnrealSharpInterface(type))
+                        else if (WeaverHelper.IsUInterface(type))
                         {
                             interfaces.Add(type);
                         }
@@ -227,7 +193,7 @@ public static class Program
         }
     }
 
-    private static void CopyAssemblies(string destinationPath, string sourcePath)
+    private static void CopyAssemblyDependencies(string destinationPath, string sourcePath)
     {
         var directoryName = Path.GetDirectoryName(destinationPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
 
@@ -250,13 +216,24 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to copy dependencies from {sourcePath}: {ex.Message}");
+            ErrorEmitter.Error("WeaverError", sourcePath, 0, "Failed to copy dependencies: " + ex.Message);
         }
     }
-    
-    static string StripQuotes (string s)
+
+    private static string StripQuotes(string s)
     {
         string strippedPath = s.Replace("\"", "");
         return strippedPath;
+    }
+    
+    private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
+    {
+        string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        string metadataFilePath = Path.ChangeExtension(outputPath, "json");
+        File.WriteAllText(metadataFilePath, metaDataContent);
     }
 }

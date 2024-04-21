@@ -19,12 +19,19 @@
 
 void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 {
+	if (bInitialized)
+	{
+		return;
+	}
+
+	bInitialized = true;
 	GeneratedScriptsDirectory = OutputDirectory;
+
+	CheckGlueGeneratorVersion();
 
 	//TODO: SUPPORT THESE BUT CURRENTLY TOO LAZY TO FIX
 	{
 		DenyList.AddClass("AnimationBlueprintLibrary");
-		DenyList.AddStruct(FSolverIterations::StaticStruct()->GetFName());
 		DenyList.AddFunctionCategory(UKismetMathLibrary::StaticClass()->GetFName(), "Math|Vector4");
 	}
 
@@ -254,70 +261,67 @@ FString FCSGenerator::GetCSharpEnumType(const EPropertyType PropertyType) const
 
 void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 {
-	if (AllowList.HasEnum(Enum) || !DenyList.HasEnum(Enum))
+	const FCSModule& Module = FindOrRegisterModule(Enum);
+
+	Builder.GenerateScriptSkeleton(Module.GetNamespace());
+		
+	AppendTooltip(Enum, Builder);
+	Builder.AppendLine(TEXT("[UEnum]"));
+	Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
+		
+	FString CommonPrefix;
+	int32 SkippedValueCount = 0;
+		
+	TArray<FString> EnumValues;
+
+	const int32 ValueCount = Enum->NumEnums();
+	EnumValues.Reserve(ValueCount);
+		
+	for (int32 i = 0; i < ValueCount; ++i)
 	{
-		const FCSModule& Module = FindOrRegisterModule(Enum);
+		FString& RawName = *new(EnumValues) FString();
 
-		Builder.GenerateScriptSkeleton(Module.GetNamespace());
-		
-		AppendTooltip(Enum, Builder);
-		Builder.AppendLine(TEXT("[UEnum]"));
-		Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
-		
-		FString CommonPrefix;
-		int32 SkippedValueCount = 0;
-		
-		TArray<FString> EnumValues;
-
-		const int32 ValueCount = Enum->NumEnums();
-		EnumValues.Reserve(ValueCount);
-		
-		for (int32 i = 0; i < ValueCount; ++i)
+		if (!ShouldExportEnumEntry(Enum, i))
 		{
-			FString& RawName = *new(EnumValues) FString();
-
-			if (!ShouldExportEnumEntry(Enum, i))
-			{
-				RawName = FString();
-				SkippedValueCount++;
-				continue;
-			}
-
-			FName ValueName = Enum->GetNameByIndex(i);
-			FString QualifiedValueName = ValueName.ToString();
-			const int32 ColonPosition = QualifiedValueName.Find("::");
-
-			if (ColonPosition != INDEX_NONE)
-			{
-				RawName = QualifiedValueName.Mid(ColonPosition + 2);
-			}
-			else
-			{
-				RawName = QualifiedValueName;
-			}
-
-			if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
-			{
-				++SkippedValueCount;
-				EnumValues.Pop(false);
-			}
+			RawName = FString();
+			SkippedValueCount++;
+			continue;
 		}
 
-		for (int32 i = 0; i < EnumValues.Num(); ++i)
+		FName ValueName = Enum->GetNameByIndex(i);
+		FString QualifiedValueName = ValueName.ToString();
+		const int32 ColonPosition = QualifiedValueName.Find("::");
+
+		if (ColonPosition != INDEX_NONE)
 		{
-			FString& EnumValue = EnumValues[i];
-			
-			if (EnumValue.IsEmpty())
-			{
-				continue;
-			}
-			
-			AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
-			Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
+			RawName = QualifiedValueName.Mid(ColonPosition + 2);
+		}
+		else
+		{
+			RawName = QualifiedValueName;
 		}
 
-		Builder.CloseBrace();
+		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
+		{
+			++SkippedValueCount;
+			EnumValues.Pop(false);
+		}
 	}
+
+	for (int32 i = 0; i < EnumValues.Num(); ++i)
+	{
+		FString& EnumValue = EnumValues[i];
+			
+		if (EnumValue.IsEmpty())
+		{
+			continue;
+		}
+			
+		AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
+		Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
+	}
+
+	Builder.CloseBrace();
 }
 
 bool FCSGenerator::CanExportFunction(const UStruct* Struct, const UFunction* Function) const
@@ -608,6 +612,24 @@ FCSModule& FCSGenerator::FindOrRegisterModule(const UObject* Struct)
 	return *BindingsModule;
 }
 
+void FCSGenerator::CheckGlueGeneratorVersion() const
+{
+	if (IFileManager::Get().DirectoryExists(*GeneratedScriptsDirectory))
+	{
+		int GlueGeneratorVersion = 0;
+		GConfig->GetInt(GLUE_GENERATOR_CONFIG, GLUE_GENERATOR_VERSION_KEY, GlueGeneratorVersion, GEditorPerProjectIni);
+		
+		if (GlueGeneratorVersion < GLUE_GENERATOR_VERSION)
+		{
+			// Remove the whole generated folder if the version is different.
+			// This is a bit of a sledgehammer, but it's the easiest way to ensure that we don't have any old files lying around.
+			IFileManager::Get().DeleteDirectory(*GeneratedScriptsDirectory, false, true);
+		}
+	}
+	
+	GConfig->SetInt(GLUE_GENERATOR_CONFIG, GLUE_GENERATOR_VERSION_KEY, GLUE_GENERATOR_VERSION, GEditorPerProjectIni);
+}
+
 void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 {
 	if (!ensure(!ExportedTypes.Contains(Interface)))
@@ -637,22 +659,22 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	Builder.AppendLine();
 	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *InterfaceName));
 	Builder.OpenBrace();
-	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, %s obj)"), *InterfaceName));
+	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, %s obj)"), *InterfaceName));
 	Builder.OpenBrace();
 	Builder.AppendLine("	if (obj is CoreUObject.Object objectPointer)");
 	Builder.AppendLine("	{");
 	Builder.AppendLine("		InterfaceData data = new InterfaceData();");
 	Builder.AppendLine("		data.ObjectPointer = objectPointer.NativeObject;");
 	Builder.AppendLine(FString::Printf(TEXT("		data.InterfacePointer = %s.NativeInterfaceClassPtr;"), *InterfaceName));
-	Builder.AppendLine("		BlittableMarshaller<InterfaceData>.ToNative(nativeBuffer, arrayIndex, owner, data);");
+	Builder.AppendLine("		BlittableMarshaller<InterfaceData>.ToNative(nativeBuffer, arrayIndex, data);");
 	Builder.AppendLine("	}");
 	Builder.CloseBrace();
 	Builder.AppendLine();
 
-	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)"), *InterfaceName));
+	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex)"), *InterfaceName));
 	Builder.OpenBrace();
-	Builder.AppendLine("	InterfaceData interfaceData = BlittableMarshaller<InterfaceData>.FromNative(nativeBuffer, arrayIndex, owner);");
-	Builder.AppendLine("	CoreUObject.Object unrealObject = ObjectMarshaller<CoreUObject.Object>.FromNative(interfaceData.ObjectPointer, 0, owner);");
+	Builder.AppendLine("	InterfaceData interfaceData = BlittableMarshaller<InterfaceData>.FromNative(nativeBuffer, arrayIndex);");
+	Builder.AppendLine("	CoreUObject.Object unrealObject = ObjectMarshaller<CoreUObject.Object>.FromNative(interfaceData.ObjectPointer, 0);");
 	Builder.AppendLine(FString::Printf(TEXT("	return unrealObject as %s;"), *InterfaceName));
 	Builder.CloseBrace();
 	Builder.CloseBrace();
@@ -1079,6 +1101,10 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 	const FCSModule& BindingsModule = FindOrRegisterModule(Struct);
 
 	TSet<FProperty*> ExportedProperties;
+	if (UStruct* ParentStruct = Struct->GetSuperStruct())
+	{
+		GetExportedProperties(ExportedProperties, ParentStruct);
+	}
 	GetExportedProperties(ExportedProperties, Struct);
 	
 	Builder.GenerateScriptSkeleton(BindingsModule.GetNamespace());
@@ -1147,13 +1173,13 @@ void FCSGenerator::ExportStructMarshaller(FCSScriptBuilder& Builder, const UScri
 	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *StructName));
 	Builder.OpenBrace();
 
-	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)"), *StructName));
+	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex)"), *StructName));
 	Builder.OpenBrace();
 	Builder.AppendLine(FString::Printf(TEXT("return new %s(nativeBuffer + arrayIndex * GetNativeDataSize());"), *StructName));
 	Builder.CloseBrace(); // MarshalNativeToManaged
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, %s owner, %s obj)"), UNREAL_SHARP_OBJECT, *StructName));
+	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, %s obj)"), *StructName));
 	Builder.OpenBrace();
 	Builder.AppendLine("obj.ToNative(nativeBuffer + arrayIndex * GetNativeDataSize());");
 	Builder.CloseBrace(); // MarshalManagedToNative
@@ -1182,11 +1208,10 @@ void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, cons
 		PropertyHandler.ExportMarshalFromNativeBuffer(
 			Builder, 
 			Property, 
-			"null",
 			NativePropertyName,
 			FString::Printf(TEXT("%s ="), *CSharpPropertyName),
-			"InNativeStruct", 
-			FString::Printf(TEXT("%s_Offset"),*NativePropertyName),
+			"InNativeStruct",
+			FString::Printf(TEXT("%s_Offset"),*NativePropertyName), 
 			false,
 			false);
 	}
@@ -1196,7 +1221,7 @@ void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, cons
 	
 	Builder.AppendLine();
 	Builder.AppendLine("// Marshal into a preallocated native buffer.");
-	Builder.AppendLine("public void ToNative(IntPtr Buffer)");
+	Builder.AppendLine("public void ToNative(IntPtr buffer)");
 	Builder.OpenBrace();
 	Builder.BeginUnsafeBlock();
 
@@ -1208,9 +1233,8 @@ void FCSGenerator::ExportMirrorStructMarshalling(FCSScriptBuilder& Builder, cons
 		PropertyHandler.ExportMarshalToNativeBuffer(
 			Builder, 
 			Property, 
-			"null",
 			NativePropertyName,
-			"Buffer", 
+			"buffer",
 			FString::Printf(TEXT("%s_Offset"), *NativePropertyName),
 			CSharpPropertyName);
 	}
@@ -1338,4 +1362,9 @@ void FCSGenerator::GatherModuleDependencies(const UClass* Class, TSet<const FCSM
 			GatherModuleDependencies(Parameter, DependencySet);
 		}
 	}
+}
+
+void FCSGenerator::AddExportedType(UObject* Object)
+{
+	ExportedTypes.Add(Object);
 }

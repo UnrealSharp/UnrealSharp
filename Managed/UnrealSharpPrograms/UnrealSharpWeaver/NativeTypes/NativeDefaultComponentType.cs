@@ -9,25 +9,24 @@ class NativeDataDefaultComponent : NativeDataSimpleType
     public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, int arrayDim) 
         : base(typeRef, marshallerName, arrayDim, PropertyType.DefaultComponent)
     {
-        var upropertyAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");
+        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
         
         CustomAttributeArgument? isRootComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "RootComponent");
-        CustomAttributeArgument? AttachmentComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentComponent");
-        CustomAttributeArgument? AttachmentSocketValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentSocket");
-
         if (isRootComponentValue != null)
         {
             IsRootComponent = (bool) isRootComponentValue.Value.Value;
         }
 
-        if (AttachmentComponentValue != null)
+        CustomAttributeArgument? attachmentComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentComponent");
+        if (attachmentComponentValue != null)
         {
-            AttachmentComponent = (string) AttachmentComponentValue.Value.Value;
+            AttachmentComponent = (string) attachmentComponentValue.Value.Value;
         }
         
-        if (AttachmentSocketValue != null)
+        CustomAttributeArgument? attachmentSocketValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentSocket");
+        if (attachmentSocketValue != null)
         {
-            AttachmentSocket = (string) AttachmentSocketValue.Value.Value;
+            AttachmentSocket = (string) attachmentSocketValue.Value.Value;
         }
 
         InnerType = new TypeReferenceMetadata(typeRef.Resolve());
@@ -45,7 +44,7 @@ class NativeDataDefaultComponent : NativeDataSimpleType
             return false;
         }
         
-        var upropertyAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");
+        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
 
         if (upropertyAttribute == null)
         {

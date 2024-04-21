@@ -3,7 +3,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
+using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -148,8 +149,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         return processor;
     }
 
-    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
-        Instruction loadNativePointer, Instruction setNativePointer)
+    public virtual void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
         
     }
@@ -173,11 +173,11 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
             propertyDef.SetMethod = null;
 
             // Add an instance backing field to hold the fixed-size array wrapper.
-            FixedSizeArrayWrapperType = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "FixedSizeArrayReadWrite`1", [CSharpType]);
+            FixedSizeArrayWrapperType = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "FixedSizeArrayReadWrite`1", [CSharpType]);
             FixedSizeArrayWrapperField = WeaverHelper.AddFieldToType(typeDefinition, propertyDef.Name + "_Marshaller", FixedSizeArrayWrapperType);
         }
         
-        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
+        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
         TypeDefinition marshalingDelegatesDef = marshalingDelegates.Resolve();
         
         ToNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "ToNative");
@@ -205,7 +205,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
         {
             marshallerAssembly = WeaverHelper.BindingsAssembly;
-            marshallerNamespace = Program.UnrealSharpNamespace;
+            marshallerNamespace = WeaverHelper.UnrealSharpNamespace;
         }
         else
         {
@@ -321,17 +321,17 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         ParameterDefinition paramDefinition);
     public abstract IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction, FieldDefinition offsetField, FieldDefinition srcField);
 
-    public abstract void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner);
-    public abstract void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction[] loadSource);
+    public abstract void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex);
+    public abstract void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction[] loadSource);
         
-    public void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction loadSource)
+    public void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadSource)
     {
-        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadOwner, [loadSource]);
+        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, [loadSource]);
     }
 
-    public virtual IList<Instruction>? WriteMarshalToNativeWithCleanup(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction loadOwner, Instruction[] loadSource)
+    public virtual IList<Instruction>? WriteMarshalToNativeWithCleanup(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr, Instruction loadArrayIndex, Instruction[] loadSource)
     {
-        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadOwner, loadSource);
+        WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
         return null;
     }
 }

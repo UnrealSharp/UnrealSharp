@@ -23,7 +23,6 @@ void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace)
 	DeclareDirective(UNREAL_SHARP_ENGINE_NAMESPACE);
 	DeclareDirective(UNREAL_SHARP_ATTRIBUTES_NAMESPACE);
 	DeclareDirective(TEXT("UnrealSharp.Interop"));
-	DeclareDirective(TEXT("System.DoubleNumerics"));
 	DeclareDirective(TEXT("System.Runtime"));
 	DeclareDirective(TEXT("System.Runtime.InteropServices"));
 

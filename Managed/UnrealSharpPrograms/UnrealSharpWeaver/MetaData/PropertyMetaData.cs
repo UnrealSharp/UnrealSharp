@@ -1,7 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
-using UnrealSharpWeaver.Rewriters;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -39,17 +38,17 @@ public class PropertyMetaData : BaseMetaData
             flags |= PropertyFlags.Parm;
         }
         
-        if (modifier == ParameterType.Out)
+        switch (modifier)
         {
-            flags |= PropertyFlags.OutParm;
-        }
-        else if (modifier == ParameterType.Ref)
-        {
-            flags |= PropertyFlags.OutParm | PropertyFlags.ReferenceParm;
-        }
-        else if (modifier == ParameterType.ReturnValue)
-        {
-            flags |= PropertyFlags.ReturnParm;
+            case ParameterType.Out:
+                flags |= PropertyFlags.OutParm;
+                break;
+            case ParameterType.Ref:
+                flags |= PropertyFlags.OutParm | PropertyFlags.ReferenceParm;
+                break;
+            case ParameterType.ReturnValue:
+                flags |= PropertyFlags.ReturnParm;
+                break;
         }
 
         PropertyFlags = flags;
@@ -126,7 +125,7 @@ public class PropertyMetaData : BaseMetaData
         
         AddMetadataAttributes(property.CustomAttributes);
 
-        // do some extra verification, matches verification in UE4 header parser
+        // do some extra verification, matches verification in UE5 header parser
         if (AccessProtection == AccessProtection.Private && (flags & PropertyFlags.BlueprintVisible) != 0)
         {
             if(!GetBoolMetadata(MetaData, "AllowPrivateAccess"))
@@ -135,33 +134,33 @@ public class PropertyMetaData : BaseMetaData
             }                
         }
         
-        CustomAttribute? upropertyAttribute = FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+        CustomAttribute? upropertyAttribute = WeaverHelper.FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+        if (upropertyAttribute == null)
+        {
+            return;
+        }
 
         AddBaseAttributes(upropertyAttribute);
 
         CustomAttributeArgument? blueprintSetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintSetter");
-        
         if (blueprintSetterArgument.HasValue)
         {
             BlueprintSetter = (string) blueprintSetterArgument.Value.Value;
         }
         
         CustomAttributeArgument? blueprintGetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintGetter");
-
         if (blueprintGetterArgument.HasValue)
         {
             BlueprintGetter = (string) blueprintGetterArgument.Value.Value;
         }
         
         CustomAttributeArgument? lifetimeConditionField = WeaverHelper.FindAttributeField(upropertyAttribute, "LifetimeCondition");
-
         if (lifetimeConditionField.HasValue)
         {
             LifetimeCondition = (LifetimeCondition) lifetimeConditionField.Value.Value;
         }
         
         CustomAttributeArgument? notifyMethodArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "ReplicatedUsing");
-        
         if (notifyMethodArgument.HasValue)
         {
             string notifyMethodName = (string) notifyMethodArgument.Value.Value;
@@ -170,6 +169,11 @@ public class PropertyMetaData : BaseMetaData
             if (notifyMethod == null)
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' not found on {property.DeclaringType.Name}");
+            }
+            
+            if (!FunctionMetaData.IsUFunction(notifyMethod.Resolve()))
+            {
+                throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
 
             if (notifyMethod.ReturnType != WeaverHelper.VoidTypeRef)
@@ -190,14 +194,8 @@ public class PropertyMetaData : BaseMetaData
                 }
             }
 
-            if (!FunctionMetaData.IsUFunction(notifyMethod.Resolve()))
-            {
-                throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
-            }
-
             // Just a quality of life, if the property is set to ReplicatedUsing, it should be replicating
             flags |= PropertyFlags.Net;
-            
             RepNotifyFunctionName = notifyMethodName;
         }
         
@@ -220,7 +218,7 @@ public class PropertyMetaData : BaseMetaData
 
     public static CustomAttribute? GetUPropertyAttribute(PropertyDefinition property)
     {
-        return FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+        return WeaverHelper.FindAttribute(property.CustomAttributes, "UPropertyAttribute");
     }
 
     public static bool IsOutParameter(PropertyFlags propertyFlags)

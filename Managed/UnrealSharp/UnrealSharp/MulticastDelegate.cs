@@ -17,8 +17,8 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
 
     public override void ToNative(IntPtr address)
     {
-        // This should never be called as unreal does not support passing a multicast delegate as a UFunction parameter
-        throw new NotImplementedException();
+        // This should never be called as unreal does not support passing a multicast delegate as a UFunction parameter.
+        // But we have this here as a dummy for UProperties getter/setters
     }
 
     protected override void ProcessDelegate(IntPtr parameters)

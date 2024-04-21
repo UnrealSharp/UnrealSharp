@@ -1,3 +1,4 @@
+using System.Numerics;
 using UnrealSharp.Interop;
 using Object = UnrealSharp.CoreUObject.Object;
 
@@ -31,14 +32,14 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
 
 public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new()
 {
-    public static TDelegate FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex, UnrealSharpObject owner)
+    public static TDelegate FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
     {
         TDelegate managedDelegate = new TDelegate();
         managedDelegate.FromNative(nativeBuffer, nativeProperty);
         return managedDelegate;
     }
 
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, object obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, object obj)
     {
         if (obj is not IDelegateBase @delegate)
         {

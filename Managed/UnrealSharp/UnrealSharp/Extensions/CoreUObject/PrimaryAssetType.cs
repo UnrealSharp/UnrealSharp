@@ -1,9 +1,3 @@
 namespace UnrealSharp.CoreUObject;
 
-public partial struct PrimaryAssetType
-{
-    public PrimaryAssetType(Name name)
-    {
-        Name = name;
-    }
-}
+public partial struct PrimaryAssetType(Name name);

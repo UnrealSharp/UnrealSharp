@@ -9,93 +9,91 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
 
 	// Skip allocating memory for the argument data if there are no parameters that need to be passed
-	if (Function->NumParms == 0)
+	if (!Function->NumParms)
 	{
-		InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, TArrayView<const uint8>(), RESULT_PARAM);
+		InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, nullptr, RESULT_PARAM);
 		return;
 	}
-	
-	int LocalStructSize = Function->GetStructureSize();
-	void* LocalStruct = FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize));
-	Function->InitializeStruct(LocalStruct);
 	
 	FOutParmRec* OutParameters = nullptr;
 	FOutParmRec** LastOut = &OutParameters;
-
-	TArrayView<uint8> ArgumentData((uint8*)FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize)), LocalStructSize);
+	uint8* ArgumentBuffer = Stack.Locals;
 	
-	for (TFieldIterator<FProperty> ParamIt(Function, EFieldIteratorFlags::ExcludeSuper); ParamIt; ++ParamIt)
+	if (Stack.Code)
 	{
-		FProperty* FunctionParameter = *ParamIt;
-
-		if (FunctionParameter->HasAnyPropertyFlags(CPF_ReturnParm))
+		int LocalStructSize = Function->GetStructureSize();
+		TArrayView<uint8> ArgumentData((uint8*)FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize)), LocalStructSize);
+		ArgumentBuffer = ArgumentData.GetData();
+		Function->InitializeStruct(ArgumentBuffer);
+	
+		for (TFieldIterator<FProperty> ParamIt(Function, EFieldIteratorFlags::ExcludeSuper); ParamIt; ++ParamIt)
 		{
-			continue;
-		}
+			FProperty* FunctionParameter = *ParamIt;
 
-		Stack.MostRecentPropertyAddress = nullptr;
-		Stack.MostRecentPropertyContainer = nullptr;
-		uint8* LocalValue = FunctionParameter->ContainerPtrToValuePtr<uint8>(LocalStruct);
-		Stack.StepCompiledIn(LocalValue, FunctionParameter->GetClass());
-		
-		uint8* ValueAddress;
-		
-		if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyAddress)
-		{
-			ValueAddress = Stack.MostRecentPropertyAddress;
-		}
-		else
-		{
-			ValueAddress = LocalValue;
-		}
-
-		// Add any output parameters to the output params chain
-		if (FCSPropertyFactory::IsOutParameter(FunctionParameter))
-		{
-			FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
-			Out->Property = FunctionParameter;
-			Out->PropAddr = ValueAddress;
-			Out->NextOutParm = nullptr;
-
-			// Link it to the end of the list
-			if (*LastOut)
+			if (FunctionParameter->HasAnyPropertyFlags(CPF_ReturnParm))
 			{
-				(*LastOut)->NextOutParm = Out;
-				LastOut = &(*LastOut)->NextOutParm;
+				continue;
 			}
-			else
-			{
-				*LastOut = Out;
-			}
-		}
 
-		int InternalOffset = FunctionParameter->GetOffset_ForInternal();
-		int InternalSize = FunctionParameter->GetSize();
-		check(InternalOffset + InternalSize <= ArgumentData.Num());
-		FMemory::Memcpy(ArgumentData.GetData() + InternalOffset, ValueAddress, InternalSize);
+			Stack.MostRecentPropertyAddress = nullptr;
+			Stack.MostRecentPropertyContainer = nullptr;
+			uint8* LocalValue = FunctionParameter->ContainerPtrToValuePtr<uint8>(ArgumentData.GetData());
+			Stack.StepCompiledIn(LocalValue, FunctionParameter->GetClass());
+		
+			uint8* ValueAddress = LocalValue;
+			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyAddress)
+			{
+				ValueAddress = Stack.MostRecentPropertyAddress;
+			}
+
+			// Add any output parameters to the output params chain
+			if (FCSPropertyFactory::IsOutParameter(FunctionParameter))
+			{
+				FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
+				Out->Property = FunctionParameter;
+				Out->PropAddr = ValueAddress;
+				Out->NextOutParm = nullptr;
+
+				// Link it to the end of the list
+				if (*LastOut)
+				{
+					(*LastOut)->NextOutParm = Out;
+					LastOut = &(*LastOut)->NextOutParm;
+				}
+				else
+				{
+					*LastOut = Out;
+				}
+			}
+			
+			FunctionParameter->CopyCompleteValue(ArgumentData.GetData() + FunctionParameter->GetOffset_ForInternal(), ValueAddress);
+		}
 	}
 	
-	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentData, RESULT_PARAM))
+	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentBuffer, RESULT_PARAM))
 	{
 		return;
 	}
 	
-	ProcessOutParameters(OutParameters, ArgumentData);
-	
-	// Free up memory
-	Function->DestroyStruct(LocalStruct);
+	ProcessOutParameters(OutParameters, ArgumentBuffer);
+
+	// Don't free up memory if we're calling this from C++/C#, only Blueprints.
+	if (Stack.Code)
+	{
+		Function->DestroyStruct(ArgumentBuffer);
+	}
 }
 
-void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, TArrayView<const uint8> ArgumentData)
+void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentBuffer)
 {
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
-		const uint8* ValueAddress = ArgumentData.GetData() + OutParameter->Property->GetOffset_ForUFunction();
+		const uint8* ValueAddress = ArgumentBuffer + OutParameter->Property->GetOffset_ForUFunction();
 		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
 	}
 }
 
-bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunction* Function, TArrayView<const uint8> ArgumentData, RESULT_DECL)
+bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunction* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
 	if (Stack.Code)
 	{
@@ -107,7 +105,7 @@ bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, cons
 	
 	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
 		Function->GetManagedMethod(),
-		(void*)ArgumentData.GetData(),
+		ArgumentBuffer,
 		RESULT_PARAM,
 		&ExceptionMessage) == 0;
 	

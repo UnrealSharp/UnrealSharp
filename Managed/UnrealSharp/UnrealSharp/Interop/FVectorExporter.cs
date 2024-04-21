@@ -1,9 +1,9 @@
-using System.DoubleNumerics;
+using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
 public unsafe partial class FVectorExporter
 {
-    public static delegate* unmanaged<out Rotator, System.DoubleNumerics.Vector3> FromRotator;
+    public static delegate* unmanaged<out Rotator, Vector> FromRotator;
 }

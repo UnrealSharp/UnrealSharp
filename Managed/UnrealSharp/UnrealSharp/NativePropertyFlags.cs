@@ -78,7 +78,11 @@ public enum NativePropertyFlags : ulong
     EditInstanceOnly = Edit | DisableEditOnTemplate,
     EditAnywhere = Edit,
     
-    BlueprintReadWrite = BlueprintVisible,
+    VisibleAnywhere = BlueprintVisible | BlueprintReadOnly,
+    VisibleDefaultsOnly = BlueprintVisible | BlueprintReadOnly | DisableEditOnInstance,
+    VisibleInstanceOnly = BlueprintVisible | BlueprintReadOnly | DisableEditOnTemplate,
+    
+    BlueprintReadWrite = BlueprintVisible | Edit,
 
     AllFlags = 0xFFFFFFFFFFFFFFFF
 }

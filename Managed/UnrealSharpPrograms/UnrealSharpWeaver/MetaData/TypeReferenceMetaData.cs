@@ -4,7 +4,7 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class TypeReferenceMetadata : BaseMetaData
 {
-    public TypeReference TypeDef;
+    public readonly TypeReference TypeDef;
     
     public TypeReferenceMetadata(TypeDefinition typeDef, string attributeName = "")
     {
@@ -20,22 +20,19 @@ public class TypeReferenceMetadata : BaseMetaData
             return;
         }
         
-        CustomAttribute? baseAttribute = FindAttribute(typeDef.CustomAttributes, attributeName);
-        
+        CustomAttribute? baseAttribute = WeaverHelper.FindAttribute(typeDef.CustomAttributes, attributeName);
         if (baseAttribute == null)
         {
             return;
         }
         
         var categoryField = WeaverHelper.FindAttributeField(baseAttribute, "Category");
-        
         if (categoryField != null)
         {
             MetaData.Add("Category", (string) categoryField.Value.Value);
         }
         
         var displayNameField = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
-        
         if (displayNameField != null)
         {
             MetaData.Add("DisplayName", (string) displayNameField.Value.Value);

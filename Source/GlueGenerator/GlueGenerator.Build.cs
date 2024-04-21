@@ -26,7 +26,8 @@ public class GlueGenerator : ModuleRules
                 "UnrealSharpProcHelper", 
                 "XmlParser",
                 "UnrealEd",
-                "UnrealSharpUtilities"
+                "UnrealSharpUtilities",
+                "GameplayTags"
             }
         );
     }

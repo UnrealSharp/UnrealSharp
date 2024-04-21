@@ -1,12 +1,12 @@
-﻿using System.DoubleNumerics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.EnhancedInput;
 
 [StructLayout(LayoutKind.Sequential)]
 public partial struct InputActionValue
 {
-    private Vector3 AxisValue;
+    private Vector AxisValue;
     private EInputActionValueType ValueType;
     
     public float GetAxis1D()
@@ -14,12 +14,12 @@ public partial struct InputActionValue
         return (float) AxisValue.X;
     }
     
-    public Vector2 GetAxis2D()
+    public Vector2D GetAxis2D()
     {
-        return new Vector2(AxisValue.X, AxisValue.Y);
+        return new Vector2D(AxisValue.X, AxisValue.Y);
     }
     
-    public Vector3 GetAxis3D()
+    public Vector GetAxis3D()
     {
         return AxisValue;
     }

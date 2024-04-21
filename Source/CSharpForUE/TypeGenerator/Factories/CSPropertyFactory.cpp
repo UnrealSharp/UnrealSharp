@@ -26,7 +26,7 @@ void FCSPropertyFactory ::InitializePropertyFactory()
 	AddSimpleProperty<FBoolProperty>(ECSPropertyType::Bool);
 	
 	AddSimpleProperty<FNameProperty>(ECSPropertyType::Name);
-	AddSimpleProperty<FStrProperty>(ECSPropertyType::Str);
+	AddSimpleProperty<FStrProperty>(ECSPropertyType::String);
 	AddSimpleProperty<FTextProperty>(ECSPropertyType::Text);
 
 	AddProperty(ECSPropertyType::DefaultComponent, &CreateObjectPtrProperty);

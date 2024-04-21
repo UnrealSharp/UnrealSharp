@@ -5,6 +5,10 @@
 
 class FCSGenerator;
 
+#define GLUE_GENERATOR_VERSION 1
+#define GLUE_GENERATOR_CONFIG TEXT("GlueGeneratorSettings")
+#define GLUE_GENERATOR_VERSION_KEY TEXT("GlueGeneratorVersion")
+
 DECLARE_LOG_CATEGORY_EXTERN(LogGlueGenerator, Log, All);
 
 class FGlueGeneratorModule : public IModuleInterface

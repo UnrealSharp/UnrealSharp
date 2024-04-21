@@ -138,7 +138,7 @@ public static class UnmanagedCallbacks
         }
         catch (Exception ex)
         {
-            StringMarshaller.ToNative(exceptionTextBuffer, 0, null, ex.ToString());
+            StringMarshaller.ToNative(exceptionTextBuffer, 0, ex.ToString());
             Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
             return 1;
         }

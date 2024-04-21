@@ -556,13 +556,14 @@ void FPropertyTranslator::FunctionExporter::ExportSetter(FCSScriptBuilder& Build
 void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Builder, InvokeMode Mode) const
 {
 	const FString NativeMethodName = Function.GetName();
+	const FString NativeFunctionVariableName = FString::Printf(TEXT("%s_NativeFunction"), *NativeMethodName);
 
 	if (bBlueprintEvent)
 	{
 		// Lazy-init the instance function pointer.
-		Builder.AppendLine(FString::Printf(TEXT("if (%s_NativeFunction == IntPtr.Zero)"), *NativeMethodName));
+		Builder.AppendLine(FString::Printf(TEXT("if (%s == IntPtr.Zero)"), *NativeFunctionVariableName));
 		Builder.OpenBrace();
-		Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = UClassExporter.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"%s\");"), *NativeMethodName, *NativeMethodName));
+		Builder.AppendLine(FString::Printf(TEXT("%s = UClassExporter.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"%s\");"), *NativeFunctionVariableName, *NativeMethodName));
 		Builder.CloseBrace();
 	}
 	
@@ -570,7 +571,7 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	{
 		if (CustomInvoke.IsEmpty())
 		{
-			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
+			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeFunctionVariableName));
 		}
 		else
 		{
@@ -581,7 +582,8 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	{
 		Builder.AppendLine(FString::Printf(TEXT("byte* ParamsBufferAllocation = stackalloc byte[%s_ParamsSize];"), *NativeMethodName));
 		Builder.AppendLine(TEXT("nint ParamsBuffer = (IntPtr) ParamsBufferAllocation;"));
-
+		Builder.AppendLine(FString::Printf(TEXT("%s.%s(%s, ParamsBuffer);"), UStructCallbacks, TEXT("CallInitializeStruct"), *NativeFunctionVariableName));
+		
 		for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
 		{
 			FProperty* ParamProperty = *ParamIt;
@@ -591,7 +593,7 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 			{
 				const FPropertyTranslator& ParamHandler = Handler.PropertyHandlers.Find(ParamProperty);
 				FString SourceName = Mode == InvokeMode::Setter ? "value" : GetScriptNameMapper().MapParameterName(ParamProperty);
-				ParamHandler.ExportMarshalToNativeBuffer(Builder, ParamProperty, "null", NativePropertyName, "ParamsBuffer", FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativePropertyName), SourceName);
+				ParamHandler.ExportMarshalToNativeBuffer(Builder, ParamProperty, NativePropertyName, "ParamsBuffer", FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativePropertyName), SourceName);
 			}
 			
 		}
@@ -633,7 +635,6 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 					ParamHandler.ExportMarshalFromNativeBuffer(
 						Builder,
 						ParamProperty, 
-						"null",
 						NativeParamName,
 						FString::Printf(TEXT("%s ="), *MarshalDestination),
 						"ParamsBuffer",
@@ -822,10 +823,9 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 			ParamHandler.ExportMarshalFromNativeBuffer(
 				Builder,
 				ParamProperty, 
-				TEXT("null"),
 				NativeParamName,
 				FString::Printf(TEXT("%s %s ="), *ParamType, *CSharpParamName),
-				TEXT("buffer"),
+				"buffer",
 				FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativeParamName),
 				false,
 				false);
@@ -840,11 +840,11 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 		ReturnValueHandler.ExportMarshalToNativeBuffer(
 			Builder,
 			ReturnProperty, 
-			TEXT("null"),
 			GetScriptNameMapper().MapPropertyName(ReturnProperty, {}),
-			TEXT("returnBuffer"),
+			"returnBuffer",
 			TEXT("0"),
-			TEXT("returnValue"));
+			TEXT("returnValue")
+		);
 	}
 	
 	for (TFieldIterator<FProperty> ParamIt(Function); ParamIt; ++ParamIt)
@@ -859,9 +859,8 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 			ParamHandler.ExportMarshalToNativeBuffer(
 				Builder,
 				ParamProperty, 
-				TEXT("null"),
 				NativePropertyName,
-				TEXT("buffer"),
+				"buffer",
 				FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativePropertyName),
 				CSharpParamName);
 		}
@@ -936,7 +935,6 @@ void FPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const 
 	ExportMarshalFromNativeBuffer(
 		Builder,
 		Property, 
-		"this",
 		NativePropertyName,
 		"return",
 		"NativeObject",
@@ -956,11 +954,9 @@ void FPropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, const 
 	ExportMarshalToNativeBuffer(
 		Builder, 
 		Property, 
-		"this", 
-		NativePropertyName,
-		"NativeObject", 
-		FString::Printf(TEXT("%s_Offset"), *NativePropertyName),
-		TEXT("value"));
+		NativePropertyName, 
+		"NativeObject",
+		FString::Printf(TEXT("%s_Offset"), *NativePropertyName), "value");
 }
 
 void FPropertyTranslator::ExportFunctionReturnStatement(FCSScriptBuilder& Builder, const UFunction* Function, const FProperty* ReturnProperty, const FString& NativeFunctionName, const FString& ParamsCallString) const
@@ -969,7 +965,7 @@ void FPropertyTranslator::ExportFunctionReturnStatement(FCSScriptBuilder& Builde
 	Builder.AppendLine(FString::Printf(TEXT("%sInvoke_%s(NativeObject, %s_NativeFunction%s);"), GetData(ReturnStatement), *NativeFunctionName, *NativeFunctionName, *ParamsCallString));
 }
 
-void FPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
+void FPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
 {
 	checkNoEntry();
 }
@@ -979,7 +975,7 @@ void FPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Build
 	checkNoEntry();
 }
 
-void FPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
+void FPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
 {
 	checkNoEntry();
 }

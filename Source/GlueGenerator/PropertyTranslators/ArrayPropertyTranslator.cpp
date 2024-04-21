@@ -72,10 +72,11 @@ void FArrayPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, c
 	Builder.CloseBrace();
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("return %s_Wrapper.FromNative(IntPtr.Add(NativeObject,%s_Offset),0,this);"), *NativePropertyName, *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("return %s_Wrapper.FromNative(IntPtr.Add(NativeObject,%s_Offset),0);"), *NativePropertyName, *NativePropertyName));
 }
 
-void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
+void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const
+                                                           FString& Source) const
 {
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
@@ -92,7 +93,7 @@ void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Bui
 	//Native buffer variable used in cleanup
 	Builder.AppendLine(FString::Printf(TEXT("IntPtr %s_NativeBuffer = IntPtr.Add(%s, %s);"), *NativePropertyName, *DestinationBuffer, *Offset));
 	Builder.AppendLine(FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s> %s_Marshaller = new UnrealArrayCopyMarshaller<%s>(1, %s, %s);"), *InnerType, *NativePropertyName, *InnerType, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName),*ElementSize));
-	Builder.AppendLine(FString::Printf(TEXT("%s_Marshaller.ToNative(%s_NativeBuffer, 0, null, %s);"), *NativePropertyName, *NativePropertyName, *Source));
+	Builder.AppendLine(FString::Printf(TEXT("%s_Marshaller.ToNative(%s_NativeBuffer, 0, %s);"), *NativePropertyName, *NativePropertyName, *Source));
 }
 
 void FArrayPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Builder, const FProperty* ParamProperty, const FString& ParamName) const
@@ -105,7 +106,7 @@ void FArrayPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& 
 	Builder.AppendLine(FString::Printf(TEXT("%s.DestructInstance(%s_NativeBuffer, 0);"), *Marshaller, *ParamName));
 }
 
-void FArrayPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
+void FArrayPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
 {
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;

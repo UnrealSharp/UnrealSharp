@@ -1,6 +1,5 @@
 ﻿using Mono.Cecil;
-
-using UnrealSharpWeaver.Rewriters;
+using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -28,7 +27,7 @@ public class ClassMetaData : TypeReferenceMetadata
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
         ClassFlags = (ClassFlags) ExtractFlagsFromClass(type, "UClassAttribute");
 
-        CustomAttribute? uClassAttribute = FindAttribute(type.CustomAttributes, "UClassAttribute");
+        CustomAttribute? uClassAttribute = WeaverHelper.GetUClass(type);
         CustomAttributeNamedArgument configCategoryProperty = uClassAttribute.Properties.FirstOrDefault(prop => prop.Name == nameof(ConfigCategory));
         ConfigCategory = (string) configCategoryProperty.Argument.Value;
     }
@@ -86,12 +85,12 @@ public class ClassMetaData : TypeReferenceMetadata
             return;
         }
         
-        Interfaces = new List<string>();
+        Interfaces = [];
         
         foreach (var typeInterface in MyTypeDefinition.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
-            if (WeaverHelper.IsUnrealSharpInterface(interfaceType))
+            if (WeaverHelper.IsUInterface(interfaceType))
             {
                 Interfaces.Add(interfaceType.Name);
             }

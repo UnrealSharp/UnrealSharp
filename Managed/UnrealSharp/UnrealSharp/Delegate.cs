@@ -73,7 +73,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 
     public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
     {
-        _data.Object = targetObject._data;
+        _data.Object = targetObject.Data;
         _data.FunctionName = functionName;
     }
 
@@ -87,7 +87,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         {
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
-        _data.Object = new WeakObject<Object>(targetObject)._data;
+        _data.Object = new WeakObject<Object>(targetObject).Data;
         _data.FunctionName = new Name(handler.Method.Name);
     }
 

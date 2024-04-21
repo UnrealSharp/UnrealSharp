@@ -8,6 +8,23 @@ namespace UnrealSharpWeaver;
 
 public static class WeaverHelper
 {
+    public static readonly string UnrealSharpNamespace = "UnrealSharp";
+    public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
+    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
+    public static readonly string UnrealSharpObject = "UnrealSharpObject";
+    public static readonly string FPropertyCallbacks = "FPropertyExporter";
+    public static readonly string UClassCallbacks = "UClassExporter";
+    public static readonly string CoreUObjectCallbacks = "UCoreUObjectExporter";
+    public static readonly string FBoolPropertyCallbacks = "FBoolPropertyExporter";
+    public static readonly string FStringCallbacks = "FStringExporter";
+    public static readonly string UObjectCallbacks = "UObjectExporter";
+    public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
+    public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
+    public static readonly string UFunctionCallbacks = "UFunctionExporter";
+    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
+    public static readonly string UStructCallbacks = "UStructExporter";
+    public static readonly string MarshallerSuffix = "Marshaller";
+    
     public static AssemblyDefinition UserAssembly;
     public static AssemblyDefinition BindingsAssembly;
     public static MethodReference NativeObjectGetter;
@@ -33,6 +50,9 @@ public static class WeaverHelper
     public static MethodReference GetNativeStructSizeMethod;
     public static MethodReference InvokeNativeFunctionMethod;
     public static MethodReference GetSignatureFunction;
+    public static MethodReference InitializeStructMethod;
+    
+    private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
     
     public static void Initialize(AssemblyDefinition bindingsAssembly)
     {
@@ -54,25 +74,25 @@ public static class WeaverHelper
         IntPtrZero = FindFieldInType(IntPtrType, "Zero");
         IntPtrEqualsOperator = FindMethod(IntPtrType, "op_Equality")!;
 
-        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, Program.UnrealSharpNamespace, Program.UnrealSharpObjectName);
+        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpNamespace, UnrealSharpObject);
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = FindMethod(unrealSharpObjectType, "get_NativeObject")!;
         CheckObjectForValidity = FindMethod(unrealSharpObjectType, "CheckObjectForValidity")!;
 
-        GetNativeFunctionFromInstanceAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromInstanceAndName");
-        GetNativeStructFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeStructFromName");
-        GetNativeClassFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeClassFromName");
-        GetPropertyOffsetFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffsetFromName");
-        GetPropertyOffset = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffset");
-        GetArrayElementSizeMethod = FindExporterMethod(Program.FArrayPropertyCallbacks, "CallGetArrayElementSize");
-        GetNativePropertyFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetNativePropertyFromName");
-        GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
-        GetNativeFunctionParamsSizeMethod = FindExporterMethod(Program.UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
-        GetNativeStructSizeMethod = FindExporterMethod(Program.UScriptStructCallbacks, "CallGetNativeStructSize");
-        InvokeNativeFunctionMethod = FindExporterMethod(Program.UObjectCallbacks, "CallInvokeNativeFunction");
-        GetSignatureFunction = FindExporterMethod(Program.MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
-        
+        GetNativeFunctionFromInstanceAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromInstanceAndName");
+        GetNativeStructFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeStructFromName");
+        GetNativeClassFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeClassFromName");
+        GetPropertyOffsetFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffsetFromName");
+        GetPropertyOffset = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffset");
+        GetArrayElementSizeMethod = FindExporterMethod(FArrayPropertyCallbacks, "CallGetArrayElementSize");
+        GetNativePropertyFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetNativePropertyFromName");
+        GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
+        GetNativeFunctionParamsSizeMethod = FindExporterMethod(UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
+        GetNativeStructSizeMethod = FindExporterMethod(UScriptStructCallbacks, "CallGetNativeStructSize");
+        InvokeNativeFunctionMethod = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunction");
+        GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
+        InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
     }
     
     public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
@@ -145,7 +165,7 @@ public static class WeaverHelper
 
     public static MethodReference FindExporterMethod(string exporterName, string functionName)
     {
-        return FindBindingsStaticMethod(Program.InteropNameSpace, exporterName, functionName);
+        return FindBindingsStaticMethod(InteropNameSpace, exporterName, functionName);
     }
 
     public static FieldDefinition AddOffsetFieldToType(TypeDefinition type, string name, TypeReference int32TypeRef)
@@ -206,6 +226,11 @@ public static class WeaverHelper
         }
 
         return newMethod;
+    }
+    
+    public static string GetInvokeName(string methodName)
+    {
+        return "Invoke_" + methodName;
     }
     
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
@@ -292,6 +317,11 @@ public static class WeaverHelper
         return default;
     }
 
+    public static bool HasMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
+    {
+        return FindMethod(typeDef, methodName, throwIfNotFound, parameterTypes) != null;
+    }
+
     public static MethodReference? FindMethod(TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
     {
         TypeDefinition? currentClass = typeDef;
@@ -326,6 +356,12 @@ public static class WeaverHelper
         return newType;
     }
     
+    public static void FinalizeMethod(MethodDefinition method)
+    {
+        method.Body.GetILProcessor().Emit(OpCodes.Ret);
+        OptimizeMethod(method);
+    }
+    
     public static void OptimizeMethod(MethodDefinition method)
     {
         if (method.Body.CodeSize == 0)
@@ -354,13 +390,10 @@ public static class WeaverHelper
     {
         if (parameters == null)
         {
-            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType, valueType];
+            parameters = [IntPtrType, Int32TypeRef, valueType];
         }
         
-        MethodDefinition toNativeMethod = AddMethodToType(type, "ToNative", 
-            VoidTypeRef,
-            MethodAttributes.Public | MethodAttributes.Static, parameters);
-
+        MethodDefinition toNativeMethod = AddMethodToType(type, "ToNative", VoidTypeRef, MethodAttributes, parameters);
         return toNativeMethod;
     }
     
@@ -368,13 +401,10 @@ public static class WeaverHelper
     {
         if (parameters == null)
         {
-            parameters = [IntPtrType, Int32TypeRef, UnrealSharpObjectType];
+            parameters = [IntPtrType, Int32TypeRef];
         }
         
-        MethodDefinition fromNative = AddMethodToType(type, "FromNative", 
-            returnType,
-            MethodAttributes.Public | MethodAttributes.Static, parameters);
-
+        MethodDefinition fromNative = AddMethodToType(type, "FromNative", returnType, MethodAttributes, parameters);
         return fromNative;
     }
     
@@ -386,7 +416,7 @@ public static class WeaverHelper
 
         if (customAttributes != null)
         {
-            CustomAttribute? propertyAttribute = FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", "UPropertyAttribute");
+            CustomAttribute? propertyAttribute = GetUProperty(typeDef);
             
             if (propertyAttribute != null)
             {
@@ -417,30 +447,30 @@ public static class WeaverHelper
         switch (typeRef.FullName)
         {
             case "System.Double":
-                return new NativeDataBuiltinType(typeRef, "DoubleProperty", arrayDim, PropertyType.Double);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Double);
             case "System.Single":
-                return new NativeDataBuiltinType(typeRef, "FloatProperty", arrayDim, PropertyType.Float);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Float);
 
             case "System.SByte":
-                return new NativeDataBuiltinType(typeRef, "Int8Property", arrayDim, PropertyType.Int8);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Int8);
             case "System.Int16":
-                return new NativeDataBuiltinType(typeRef, "Int16Property", arrayDim, PropertyType.Int16);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Int16);
             case "System.Int32":
-                return new NativeDataBuiltinType(typeRef, "IntProperty", arrayDim, PropertyType.Int);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Int);
             case "System.Int64":
-                return new NativeDataBuiltinType(typeRef, "Int64Property", arrayDim, PropertyType.Int64);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Int64);
 
             case "System.Byte":
-                return new NativeDataBuiltinType(typeRef, "ByteProperty", arrayDim, PropertyType.Byte);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Byte);
             case "System.UInt16":
-                return new NativeDataBuiltinType(typeRef, "UInt16Property", arrayDim, PropertyType.UInt16);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.UInt16);
             case "System.UInt32":
-                return new NativeDataBuiltinType(typeRef,"UInt32Property", arrayDim, PropertyType.UInt32);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.UInt32);
             case "System.UInt64":
-                return new NativeDataBuiltinType(typeRef, "UInt64Property", arrayDim, PropertyType.UInt64);
+                return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.UInt64);
 
             case "System.Boolean":
-                return new NativeDataBooleanType(typeRef, "BoolProperty", arrayDim);
+                return new NativeDataBooleanType(typeRef, arrayDim);
 
             case "System.String":
                 return new NativeDataStringType(typeRef, arrayDim);
@@ -481,7 +511,7 @@ public static class WeaverHelper
 
             if (typeDef.IsEnum)
             {
-                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
+                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
                 
                 if (enumAttribute == null)
                 {
@@ -502,9 +532,9 @@ public static class WeaverHelper
             }
 
             // see if its a UObject
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Text")
+            if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
             {
-                return new NativeDataTextType(typeRef);
+                return new NativeDataTextType(typeDef);
             }
             
             if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
@@ -535,19 +565,14 @@ public static class WeaverHelper
             }
 
             // See if this is a struct
-            CustomAttribute? structAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UStructAttribute");
+            CustomAttribute? structAttribute = GetUStruct(typeDef);
                 
             if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
             {
                 throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
             }
-                
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Name")
-            {
-                return new NativeDataNameType(typeDef, arrayDim);
-            }
 
-            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Rotator"))
+            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Rotator"))
             {
                 return new NativeDataCoreStructType(typeDef, arrayDim);
             }
@@ -571,39 +596,12 @@ public static class WeaverHelper
     
     public static CustomAttribute?[] FindMetaDataAttributes(IEnumerable<CustomAttribute> customAttributes)
     {
-        return FindAttributesByType(customAttributes, Program.UnrealSharpNamespace, "UMetaDataAttribute");
+        return FindAttributesByType(customAttributes, UnrealSharpNamespace, "UMetaDataAttribute");
     }
 
     static bool HasAttribute(TypeDefinition type, string attributeName)
     {
         return type.CustomAttributes.Any(attr => attr.AttributeType.Name == attributeName);
-    }
-
-    public static bool IsUnrealSharpEnum(TypeDefinition type)
-    {
-        return IsUnrealType(type, "UEnumAttribute");
-    }
-
-    public static bool IsUnrealSharpClass(TypeDefinition type)
-    {
-        return IsUnrealType(type, "UClassAttribute");
-    }
-
-    public static bool IsUnrealSharpStruct(TypeDefinition type)
-    {
-        return IsUnrealType(type, "UStructAttribute");
-    }
-    
-    public static bool IsUnrealSharpInterface(TypeDefinition type)
-    {
-        return IsUnrealType(type, "UInterfaceAttribute");
-    }
-
-    static bool IsUnrealType(TypeDefinition type, string attribute)
-    {
-        bool bHasAttribute = HasAttribute(type, attribute);
-        bool bIsUserCreated = !type.Namespace.StartsWith("UnrealSharp");
-        return bHasAttribute && bIsUserCreated;
     }
 
     public static CustomAttributeArgument? FindAttributeField(CustomAttribute? attribute, string fieldName)
@@ -714,7 +712,7 @@ public static class WeaverHelper
                 case PropertyType.Interface:
                 case PropertyType.Object:
                 case PropertyType.ObjectPtr:
-                case PropertyType.Str:
+                case PropertyType.String:
                 case PropertyType.Name:
                 case PropertyType.Text:
                 case PropertyType.DefaultComponent:
@@ -791,7 +789,7 @@ public static class WeaverHelper
                 case PropertyType.Interface:
                 case PropertyType.Object:
                 case PropertyType.ObjectPtr:
-                case PropertyType.Str:
+                case PropertyType.String:
                 case PropertyType.DefaultComponent:
                 default:
                     return Instruction.Create(OpCodes.Stind_Ref);
@@ -817,9 +815,94 @@ public static class WeaverHelper
             _ => throw new NotImplementedException()
         };
     }
+
+    public static AccessProtection GetAccessProtection(FieldDefinition memberDefinition)
+    {
+        if (memberDefinition.IsPublic)
+        {
+            return AccessProtection.Public;
+        }
+
+        return memberDefinition.IsPrivate ? AccessProtection.Private : AccessProtection.Protected;
+    }
+    
+    public static AccessProtection GetAccessProtection(MethodDefinition memberDefinition)
+    {
+        if (memberDefinition.IsPublic)
+        {
+            return AccessProtection.Public;
+        }
+
+        return memberDefinition.IsPrivate ? AccessProtection.Private : AccessProtection.Protected;
+    }
     
     public static bool HasAnyFlags(Enum flags, Enum testFlags)
     {
         return (Convert.ToUInt64(flags) & Convert.ToUInt64(testFlags)) != 0;
+    }
+    
+    public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
+    {
+        return FindAttributeByType(customAttributes, UnrealSharpNamespace + ".Attributes", attributeName);
+    }
+    
+    public static CustomAttribute? GetUProperty(Collection<CustomAttribute> attributes)
+    {
+        return FindAttribute(attributes, "UPropertyAttribute");
+    }
+    
+    public static CustomAttribute? GetUProperty(IMemberDefinition property)
+    {
+        return FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+    }
+    
+    public static CustomAttribute? GetUFunction(MethodDefinition function)
+    {
+        return FindAttribute(function.CustomAttributes, "UFunctionAttribute");
+    }
+    
+    public static CustomAttribute? GetUClass(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, "UClassAttribute");
+    }
+    
+    public static CustomAttribute? GetUEnum(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, "UEnumAttribute");
+    }
+    
+    public static CustomAttribute? GetUStruct(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, "UStructAttribute");
+    }
+        
+    public static bool IsUProperty(IMemberDefinition property)
+    {
+        return GetUProperty(property) != null;
+    }
+    
+    public static bool IsUInterface(TypeDefinition typeDefinition)
+    {
+        return FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute") != null;
+    }
+    
+    public static bool IsUClass(TypeDefinition typeDefinition)
+    {
+        return GetUClass(typeDefinition) != null;
+    }
+    
+    public static bool IsUEnum(TypeDefinition typeDefinition)
+    {
+        return GetUEnum(typeDefinition) != null;
+    }
+    
+    public static bool IsUStruct(TypeDefinition typeDefinition)
+    {
+        return GetUStruct(typeDefinition) != null;
+    }
+    
+    public static bool IsUFunction(MethodDefinition method)
+    {
+        return GetUFunction(method) != null;
     }
 }

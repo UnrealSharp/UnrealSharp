@@ -1,9 +1,6 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "UWorldExporter.h"
-
+﻿#include "UWorldExporter.h"
 #include "CSharpForUE/CSManager.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void UUWorldExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -37,17 +34,11 @@ void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform* SpawnT
 	return FCSManager::Get().FindManagedObject(NewActor).GetIntPtr();
 }
 
-void UUWorldExporter::SetTimer(UObject* Object, char* FunctionName, float Rate, bool Loop, FTimerHandle* TimerHandle)
+void UUWorldExporter::SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle)
 {
-	if (!IsValid(Object))
-	{
-		return;
-	}
-
-	FTimerDelegate TimerDelegate;
-	TimerDelegate.BindUFunction(Object, FunctionName);
-	
-	Object->GetWorld()->GetTimerManager().SetTimer(*TimerHandle, TimerDelegate, Rate, Loop);
+	FTimerDynamicDelegate Delegate;
+	Delegate.BindUFunction(Object, FunctionName);
+	*TimerHandle = UKismetSystemLibrary::K2_SetTimerDelegate(Delegate, Rate, Loop, InitialDelay);
 }
 
 void UUWorldExporter::InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle)

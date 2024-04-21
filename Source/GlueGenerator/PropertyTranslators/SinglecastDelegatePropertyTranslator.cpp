@@ -39,10 +39,10 @@ void FSinglecastDelegatePropertyTranslator::ExportPropertyStaticConstruction(FCS
 	}
 }
 
-void FSinglecastDelegatePropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Owner, const FString& PropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
+void FSinglecastDelegatePropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
 {
 	FString DelegateName = GetDelegateName(CastFieldChecked<FDelegateProperty>(Property));
-	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(%s, %s), 0, %s, %s);"), *DelegateName, *DestinationBuffer, *Offset, *Owner, *Source));
+	Builder.AppendLine(FString::Printf(TEXT("DelegateMarshaller<%s>.ToNative(IntPtr.Add(%s, %s), 0, %s);"), *DelegateName, *DestinationBuffer, *Offset, *Source, *Source));
 }
 
 void FSinglecastDelegatePropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Builder, const FProperty* ParamProperty, const FString& NativeParamName) const
@@ -50,10 +50,10 @@ void FSinglecastDelegatePropertyTranslator::ExportCleanupMarshallingBuffer(FCSSc
 	
 }
 
-void FSinglecastDelegatePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Owner, const FString& PropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
+void FSinglecastDelegatePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
 {
 	FString DelegateName = GetDelegateName(CastFieldChecked<FDelegateProperty>(Property));
-	Builder.AppendLine(FString::Printf(TEXT("%s DelegateMarshaller<%s>.FromNative(IntPtr.Add(%s, %s), IntPtr.Zero, 0, %s);"), *AssignmentOrReturn, *DelegateName, *SourceBuffer, *Offset, *Owner));
+	Builder.AppendLine(FString::Printf(TEXT("%s DelegateMarshaller<%s>.FromNative(IntPtr.Add(%s, %s), IntPtr.Zero, 0);"), *AssignmentOrReturn, *DelegateName, *SourceBuffer, *Offset));
 }
 
 FString FSinglecastDelegatePropertyTranslator::GetNullReturnCSharpValue(const FProperty* ReturnProperty) const

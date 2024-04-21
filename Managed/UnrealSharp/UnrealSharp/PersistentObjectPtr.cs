@@ -73,7 +73,7 @@ public struct PersistentObjectPtr
         return PersistentObjectPtrData._objectId;
     }
     
-    public CoreUObject.Object Get()
+    public CoreUObject.Object? Get()
     {
         IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref PersistentObjectPtrData);
         return GcHandleUtilities.GetObjectFromHandlePtr<CoreUObject.Object>(handle);

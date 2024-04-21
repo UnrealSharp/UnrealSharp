@@ -1,5 +1,4 @@
 #include "PrimitiveTypePropertyTranslator.h"
-#include "GlueGenerator/GlueGeneratorModule.h"
 #include "GlueGenerator/CSScriptBuilder.h"
 
 FSimpleTypePropertyTranslator::FSimpleTypePropertyTranslator
@@ -33,9 +32,9 @@ FString FSimpleTypePropertyTranslator::ConvertCppDefaultParameterToCSharp(const 
 	return CppDefaultValue;
 }
 
-void FSimpleTypePropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
+void FSimpleTypePropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const FString& Source) const
 {
-	Builder.AppendLine(FString::Printf(TEXT("%s.ToNative(IntPtr.Add(%s, %s), 0, %s, %s);"), *GetMarshaller(Property), *DestinationBuffer, *Offset, *Owner, *Source));
+	Builder.AppendLine(FString::Printf(TEXT("%s.ToNative(IntPtr.Add(%s, %s), 0, %s);"), *GetMarshaller(Property), *DestinationBuffer, *Offset, *Source));
 }
 
 void FSimpleTypePropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Builder, const FProperty* ParamProperty, const FString& ParamName) const
@@ -56,10 +55,10 @@ FString FSimpleTypePropertyTranslator::GetMarshaller(const FProperty *Property) 
 	return MarshallerType;
 }
 
-void FSimpleTypePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString &Owner, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
+void FSimpleTypePropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& AssignmentOrReturn, const FString& SourceBuffer, const FString& Offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers) const
 {
 	// The returned handle is just a pointer to the return value memory in the parameter buffer.
-	Builder.AppendLine(FString::Printf(TEXT("%s %s.FromNative(IntPtr.Add(%s, %s), 0, %s);"), *AssignmentOrReturn, *GetMarshaller(Property), *SourceBuffer, *Offset, *Owner));
+	Builder.AppendLine(FString::Printf(TEXT("%s %s.FromNative(IntPtr.Add(%s, %s), 0);"), *AssignmentOrReturn, *GetMarshaller(Property), *SourceBuffer, *Offset));
 }
 
 void FSimpleTypePropertyTranslator::ExportDefaultStructParameter(FCSScriptBuilder& Builder, const FString& VariableName, const FString& CppDefaultValue, FProperty* ParamProperty, const FPropertyTranslator& Handler) const

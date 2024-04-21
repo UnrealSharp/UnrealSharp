@@ -1,11 +1,10 @@
-using System.DoubleNumerics;
 using System.Runtime.InteropServices;
-using UnrealSharp.Engine;
+using UnrealSharp.CoreUObject;
 
-namespace UnrealSharp;
+namespace UnrealSharp.Engine;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ActorInstanceHandle
+public partial struct ActorInstanceHandle
 {
     private WeakObject<Actor> _actor;
     private WeakObject<LightWeightInstanceManager> Manager;
@@ -26,7 +25,7 @@ public struct ActorInstanceHandle
         return Actor.RootComponent;
     }
     
-    Vector3 GetActorLocation()
+    Vector GetActorLocation()
     {
         return Actor.GetActorLocation();
     }
@@ -36,7 +35,7 @@ public struct ActorInstanceHandle
         return Actor.GetActorRotation();
     }
     
-    Vector3 GetActorScale()
+    Vector GetActorScale()
     {
         return Actor.GetActorScale3D();
     }

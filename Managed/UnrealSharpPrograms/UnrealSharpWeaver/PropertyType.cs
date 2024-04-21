@@ -42,7 +42,7 @@ public enum PropertyType
     Map,
     Set,
         
-    Str,
+    String,
     Name,
     Text,
 
