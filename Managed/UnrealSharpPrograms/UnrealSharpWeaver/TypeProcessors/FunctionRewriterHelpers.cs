@@ -12,7 +12,7 @@ public static class FunctionRewriterHelpers
     {
         FieldDefinition? paramsSizeField = null;
 
-        if (func.Parameters.Length > 0)
+        if (func.Parameters.Length > 0 || func.ReturnValue != null)
         {
             for (int i = 0; i < func.Parameters.Length; i++)
             {
