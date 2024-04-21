@@ -18,6 +18,5 @@ public:
 private:
 
 	static void MarshalToNativeString(FString* String, TCHAR* ManagedString);
-	static void DisposeString(FString* String);
 	
 };

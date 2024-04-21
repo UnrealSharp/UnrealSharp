@@ -190,7 +190,7 @@ public partial struct GameplayTagContainer
             }
             finally
             {
-                FStringExporter.CallDisposeString(ref buffer);
+                buffer.Destroy();
             }
         }
     }

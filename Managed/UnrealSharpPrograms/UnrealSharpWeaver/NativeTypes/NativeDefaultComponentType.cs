@@ -9,7 +9,7 @@ class NativeDataDefaultComponent : NativeDataSimpleType
     public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, int arrayDim) 
         : base(typeRef, marshallerName, arrayDim, PropertyType.DefaultComponent)
     {
-        var upropertyAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");
+        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
         
         CustomAttributeArgument? isRootComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "RootComponent");
         if (isRootComponentValue != null)
@@ -44,7 +44,7 @@ class NativeDataDefaultComponent : NativeDataSimpleType
             return false;
         }
         
-        var upropertyAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.AttributeNamespace, "UPropertyAttribute");
+        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
 
         if (upropertyAttribute == null)
         {

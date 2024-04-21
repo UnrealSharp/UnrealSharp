@@ -3,7 +3,7 @@ using UnrealSharp.GameplayTags;
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
-public unsafe partial class FGameplayTagContainerExporter
+public static unsafe partial class FGameplayTagContainerExporter
 {
     public static delegate* unmanaged<ref GameplayTagContainer, ref GameplayTag, bool> HasTag;
     public static delegate* unmanaged<ref GameplayTagContainer, ref GameplayTag, bool> HasTagExact;

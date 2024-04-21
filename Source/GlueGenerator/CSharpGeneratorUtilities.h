@@ -36,9 +36,12 @@ extern inline const TCHAR* CoreUObjectCallbacks = TEXT("UCoreUObjectExporter");
 extern inline const TCHAR* FBoolPropertyCallbacks = TEXT("FBoolPropertyExporter");
 extern inline const TCHAR* FStringCallbacks = TEXT("FStringExporter");
 extern inline const TCHAR* UObjectCallbacks = TEXT("UObjectExporter");
+extern inline const TCHAR* UStructCallbacks = TEXT("UStructExporter");
 extern inline const TCHAR* FArrayPropertyCallbacks = TEXT("FArrayPropertyExporter");
 extern inline const TCHAR* UScriptStructCallbacks = TEXT("UScriptStructExporter");
 extern inline const TCHAR* UFunctionCallbacks = TEXT("UFunctionExporter");
+
+extern inline const TCHAR* CallInvokeNativeFunction = *FString::Printf(TEXT("%s.%s"), *FString(UObjectCallbacks), TEXT("InvokeNativeFunction"));
 
 namespace ScriptGeneratorUtilities
 {

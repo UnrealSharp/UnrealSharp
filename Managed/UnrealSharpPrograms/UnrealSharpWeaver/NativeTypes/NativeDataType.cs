@@ -173,11 +173,11 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
             propertyDef.SetMethod = null;
 
             // Add an instance backing field to hold the fixed-size array wrapper.
-            FixedSizeArrayWrapperType = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "FixedSizeArrayReadWrite`1", [CSharpType]);
+            FixedSizeArrayWrapperType = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "FixedSizeArrayReadWrite`1", [CSharpType]);
             FixedSizeArrayWrapperField = WeaverHelper.AddFieldToType(typeDefinition, propertyDef.Name + "_Marshaller", FixedSizeArrayWrapperType);
         }
         
-        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
+        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
         TypeDefinition marshalingDelegatesDef = marshalingDelegates.Resolve();
         
         ToNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "ToNative");
@@ -205,7 +205,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
         {
             marshallerAssembly = WeaverHelper.BindingsAssembly;
-            marshallerNamespace = Program.UnrealSharpNamespace;
+            marshallerNamespace = WeaverHelper.UnrealSharpNamespace;
         }
         else
         {

@@ -3,7 +3,7 @@ using UnrealSharp.CoreUObject;
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
-public unsafe partial class FRandomStreamExporter
+public static unsafe partial class FRandomStreamExporter
 {
     public static delegate* unmanaged<ref RandomStream, void> GenerateNewSeed;
     public static delegate* unmanaged<ref RandomStream, float> GetFraction;

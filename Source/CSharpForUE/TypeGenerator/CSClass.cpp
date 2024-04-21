@@ -68,8 +68,6 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 			
 			FunctionParameter->CopyCompleteValue(ArgumentData.GetData() + FunctionParameter->GetOffset_ForInternal(), ValueAddress);
 		}
-
-		++Stack.Code;
 	}
 	
 	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentBuffer, RESULT_PARAM))
@@ -78,7 +76,12 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	}
 	
 	ProcessOutParameters(OutParameters, ArgumentBuffer);
-	Function->DestroyStruct(ArgumentBuffer);
+
+	// Don't free up memory if we're calling this from C++/C#, only Blueprints.
+	if (Stack.Code)
+	{
+		Function->DestroyStruct(ArgumentBuffer);
+	}
 }
 
 void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentBuffer)
@@ -92,6 +95,11 @@ void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentB
 
 bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunction* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
+	if (Stack.Code)
+	{
+		++Stack.Code;
+	}
+	
 	const FGCHandle ManagedObjectHandle = FCSManager::Get().FindManagedObject(ObjectToInvokeOn);
 	FString ExceptionMessage;
 	

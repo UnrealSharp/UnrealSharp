@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -101,7 +102,10 @@ public static class StringMarshaller
     
     public static void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        UnmanagedArray nativeString = BlittableMarshaller<UnmanagedArray>.FromNative(nativeBuffer, arrayIndex);
-        FStringExporter.CallDisposeString(ref nativeString);
+        unsafe
+        {
+            UnmanagedArray* ustring = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
+            ustring->Destroy();
+        }
     }
 }

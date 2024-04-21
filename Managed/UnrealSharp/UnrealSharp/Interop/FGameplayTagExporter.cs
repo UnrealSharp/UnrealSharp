@@ -3,7 +3,7 @@ using UnrealSharp.GameplayTags;
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
-public unsafe partial class FGameplayTagExporter
+public static unsafe partial class FGameplayTagExporter
 {
     public static delegate* unmanaged<ref Name, ref Name, NativeBool> MatchesTag;
     public static delegate* unmanaged<ref Name, ref Name, NativeBool> MatchesTagDepth;

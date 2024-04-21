@@ -17,6 +17,7 @@ public class FunctionMetaData : BaseMetaData
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
     public FunctionRewriteInfo RewriteInfo;
+    public FieldDefinition FunctionPointerField;
     // End non-serialized
     
     public FunctionMetaData(MethodDefinition method)

@@ -13,7 +13,7 @@ public class BaseMetaData
 
     public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
     {
-        CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
+        CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, WeaverHelper.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
 
         if (flagsAttribute == null)
         {

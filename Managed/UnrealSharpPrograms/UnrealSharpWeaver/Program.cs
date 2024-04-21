@@ -8,23 +8,6 @@ namespace UnrealSharpWeaver;
 
 public static class Program
 {
-    public static readonly string UnrealSharpNamespace = "UnrealSharp";
-    public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
-    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
-    public static readonly string UnrealSharpObjectName = "UnrealSharpObject";
-    public static readonly string FPropertyCallbacks = "FPropertyExporter";
-    public static readonly string UClassCallbacks = "UClassExporter";
-    public static readonly string CoreUObjectCallbacks = "UCoreUObjectExporter";
-    public static readonly string FBoolPropertyCallbacks = "FBoolPropertyExporter";
-    public static readonly string FStringCallbacks = "FStringExporter";
-    public static readonly string UObjectCallbacks = "UObjectExporter";
-    public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
-    public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
-    public static readonly string UFunctionCallbacks = "UFunctionExporter";
-    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
-    
-    public static readonly string MarshallerSuffix = "Marshaller";
-    
     public static WeaverOptions WeaverOptions { get; private set; }
     
     public static int Main(string[] args)
@@ -58,7 +41,7 @@ public static class Program
 
         try
         {
-            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(UnrealSharpNamespace, new Version(0, 0, 0, 0)));
+            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(WeaverHelper.UnrealSharpNamespace, new Version(0, 0, 0, 0)));
             WeaverHelper.Initialize(unrealSharpLibraryAssembly);
             return true;
         }

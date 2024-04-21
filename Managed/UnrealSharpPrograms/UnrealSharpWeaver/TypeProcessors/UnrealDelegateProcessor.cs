@@ -35,10 +35,10 @@ public static class UnrealDelegateProcessor
     public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
-            WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "DelegateData");
+            WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "DelegateData");
         
         TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
-                WeaverHelper.BindingsAssembly, Program.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
+                WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
         
         MethodReference? blittabletoNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "ToNative");
         MethodReference? blittablefromNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "FromNative");
@@ -97,6 +97,8 @@ public static class UnrealDelegateProcessor
 
         if (functionMetaData.Parameters.Length > 0)
         {
+            functionMetaData.FunctionPointerField = WeaverHelper.AddFieldToType(invokerMethodDefinition.DeclaringType, "SignatureFunction", WeaverHelper.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
+            
             List<Instruction> allCleanupInstructions = [];
 
             FunctionRewriterHelpers.WriteParametersToNative(invokerMethodProcessor,
@@ -131,13 +133,11 @@ public static class UnrealDelegateProcessor
 
         var processor = initializeDelegate.Body.GetILProcessor();
         
-        VariableDefinition signatureFunctionPointer = WeaverHelper.AddVariableToMethod(initializeDelegate, WeaverHelper.IntPtrType);
-        
         processor.Emit(OpCodes.Ldarg_0);
         processor.Emit(OpCodes.Call, WeaverHelper.GetSignatureFunction);
-        processor.Emit(OpCodes.Stloc, signatureFunctionPointer);
+        processor.Emit(OpCodes.Stsfld, functionMetaData.FunctionPointerField);
         
-        Instruction loadFunctionPointer = processor.Create(OpCodes.Ldloc, signatureFunctionPointer);
+        Instruction loadFunctionPointer = processor.Create(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
         functionMetaData.EmitFunctionParamOffsets(processor, loadFunctionPointer);
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
         functionMetaData.EmitParamElementSize(processor, loadFunctionPointer);

@@ -8,6 +8,23 @@ namespace UnrealSharpWeaver;
 
 public static class WeaverHelper
 {
+    public static readonly string UnrealSharpNamespace = "UnrealSharp";
+    public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
+    public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
+    public static readonly string UnrealSharpObject = "UnrealSharpObject";
+    public static readonly string FPropertyCallbacks = "FPropertyExporter";
+    public static readonly string UClassCallbacks = "UClassExporter";
+    public static readonly string CoreUObjectCallbacks = "UCoreUObjectExporter";
+    public static readonly string FBoolPropertyCallbacks = "FBoolPropertyExporter";
+    public static readonly string FStringCallbacks = "FStringExporter";
+    public static readonly string UObjectCallbacks = "UObjectExporter";
+    public static readonly string FArrayPropertyCallbacks = "FArrayPropertyExporter";
+    public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
+    public static readonly string UFunctionCallbacks = "UFunctionExporter";
+    public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
+    public static readonly string UStructCallbacks = "UStructExporter";
+    public static readonly string MarshallerSuffix = "Marshaller";
+    
     public static AssemblyDefinition UserAssembly;
     public static AssemblyDefinition BindingsAssembly;
     public static MethodReference NativeObjectGetter;
@@ -33,6 +50,7 @@ public static class WeaverHelper
     public static MethodReference GetNativeStructSizeMethod;
     public static MethodReference InvokeNativeFunctionMethod;
     public static MethodReference GetSignatureFunction;
+    public static MethodReference InitializeStructMethod;
     
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
     
@@ -56,25 +74,25 @@ public static class WeaverHelper
         IntPtrZero = FindFieldInType(IntPtrType, "Zero");
         IntPtrEqualsOperator = FindMethod(IntPtrType, "op_Equality")!;
 
-        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, Program.UnrealSharpNamespace, Program.UnrealSharpObjectName);
+        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpNamespace, UnrealSharpObject);
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = FindMethod(unrealSharpObjectType, "get_NativeObject")!;
         CheckObjectForValidity = FindMethod(unrealSharpObjectType, "CheckObjectForValidity")!;
 
-        GetNativeFunctionFromInstanceAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromInstanceAndName");
-        GetNativeStructFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeStructFromName");
-        GetNativeClassFromNameMethod = FindExporterMethod(Program.CoreUObjectCallbacks, "CallGetNativeClassFromName");
-        GetPropertyOffsetFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffsetFromName");
-        GetPropertyOffset = FindExporterMethod(Program.FPropertyCallbacks, "CallGetPropertyOffset");
-        GetArrayElementSizeMethod = FindExporterMethod(Program.FArrayPropertyCallbacks, "CallGetArrayElementSize");
-        GetNativePropertyFromNameMethod = FindExporterMethod(Program.FPropertyCallbacks, "CallGetNativePropertyFromName");
-        GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(Program.UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
-        GetNativeFunctionParamsSizeMethod = FindExporterMethod(Program.UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
-        GetNativeStructSizeMethod = FindExporterMethod(Program.UScriptStructCallbacks, "CallGetNativeStructSize");
-        InvokeNativeFunctionMethod = FindExporterMethod(Program.UObjectCallbacks, "CallInvokeNativeFunction");
-        GetSignatureFunction = FindExporterMethod(Program.MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
-        
+        GetNativeFunctionFromInstanceAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromInstanceAndName");
+        GetNativeStructFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeStructFromName");
+        GetNativeClassFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeClassFromName");
+        GetPropertyOffsetFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffsetFromName");
+        GetPropertyOffset = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffset");
+        GetArrayElementSizeMethod = FindExporterMethod(FArrayPropertyCallbacks, "CallGetArrayElementSize");
+        GetNativePropertyFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetNativePropertyFromName");
+        GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
+        GetNativeFunctionParamsSizeMethod = FindExporterMethod(UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
+        GetNativeStructSizeMethod = FindExporterMethod(UScriptStructCallbacks, "CallGetNativeStructSize");
+        InvokeNativeFunctionMethod = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunction");
+        GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
+        InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
     }
     
     public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
@@ -147,7 +165,7 @@ public static class WeaverHelper
 
     public static MethodReference FindExporterMethod(string exporterName, string functionName)
     {
-        return FindBindingsStaticMethod(Program.InteropNameSpace, exporterName, functionName);
+        return FindBindingsStaticMethod(InteropNameSpace, exporterName, functionName);
     }
 
     public static FieldDefinition AddOffsetFieldToType(TypeDefinition type, string name, TypeReference int32TypeRef)
@@ -493,7 +511,7 @@ public static class WeaverHelper
 
             if (typeDef.IsEnum)
             {
-                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, Program.UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
+                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
                 
                 if (enumAttribute == null)
                 {
@@ -514,7 +532,7 @@ public static class WeaverHelper
             }
 
             // see if its a UObject
-            if (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Text")
+            if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
             {
                 return new NativeDataTextType(typeDef);
             }
@@ -554,7 +572,7 @@ public static class WeaverHelper
                 throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
             }
 
-            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == Program.UnrealSharpNamespace && typeDef.Name == "Rotator"))
+            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Rotator"))
             {
                 return new NativeDataCoreStructType(typeDef, arrayDim);
             }
@@ -578,7 +596,7 @@ public static class WeaverHelper
     
     public static CustomAttribute?[] FindMetaDataAttributes(IEnumerable<CustomAttribute> customAttributes)
     {
-        return FindAttributesByType(customAttributes, Program.UnrealSharpNamespace, "UMetaDataAttribute");
+        return FindAttributesByType(customAttributes, UnrealSharpNamespace, "UMetaDataAttribute");
     }
 
     static bool HasAttribute(TypeDefinition type, string attributeName)
@@ -825,7 +843,12 @@ public static class WeaverHelper
     
     public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
     {
-        return FindAttributeByType(customAttributes, Program.UnrealSharpNamespace + ".Attributes", attributeName);
+        return FindAttributeByType(customAttributes, UnrealSharpNamespace + ".Attributes", attributeName);
+    }
+    
+    public static CustomAttribute? GetUProperty(Collection<CustomAttribute> attributes)
+    {
+        return FindAttribute(attributes, "UPropertyAttribute");
     }
     
     public static CustomAttribute? GetUProperty(IMemberDefinition property)
@@ -882,5 +905,4 @@ public static class WeaverHelper
     {
         return GetUFunction(method) != null;
     }
-    
 }

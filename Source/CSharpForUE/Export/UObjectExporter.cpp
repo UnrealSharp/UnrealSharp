@@ -46,7 +46,7 @@ FName UUObjectExporter::NativeGetName(UObject* Object)
 
 void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params)
 {
-	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
+	FFrame NewStack(NativeObject, NativeFunction, Params);
 	NewStack.CurrentNativeFunction = NativeFunction;
 	
 	if (NativeFunction->HasAnyFunctionFlags(FUNC_HasOutParms))

@@ -556,13 +556,14 @@ void FPropertyTranslator::FunctionExporter::ExportSetter(FCSScriptBuilder& Build
 void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Builder, InvokeMode Mode) const
 {
 	const FString NativeMethodName = Function.GetName();
+	const FString NativeFunctionVariableName = FString::Printf(TEXT("%s_NativeFunction"), *NativeMethodName);
 
 	if (bBlueprintEvent)
 	{
 		// Lazy-init the instance function pointer.
-		Builder.AppendLine(FString::Printf(TEXT("if (%s_NativeFunction == IntPtr.Zero)"), *NativeMethodName));
+		Builder.AppendLine(FString::Printf(TEXT("if (%s == IntPtr.Zero)"), *NativeFunctionVariableName));
 		Builder.OpenBrace();
-		Builder.AppendLine(FString::Printf(TEXT("%s_NativeFunction = UClassExporter.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"%s\");"), *NativeMethodName, *NativeMethodName));
+		Builder.AppendLine(FString::Printf(TEXT("%s = UClassExporter.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"%s\");"), *NativeFunctionVariableName, *NativeMethodName));
 		Builder.CloseBrace();
 	}
 	
@@ -570,7 +571,7 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	{
 		if (CustomInvoke.IsEmpty())
 		{
-			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s_NativeFunction, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeMethodName));
+			Builder.AppendLine(FString::Printf(TEXT("%s(%s, %s, IntPtr.Zero);"), *PinvokeFunction, *PinvokeFirstArg, *NativeFunctionVariableName));
 		}
 		else
 		{
@@ -581,7 +582,8 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 	{
 		Builder.AppendLine(FString::Printf(TEXT("byte* ParamsBufferAllocation = stackalloc byte[%s_ParamsSize];"), *NativeMethodName));
 		Builder.AppendLine(TEXT("nint ParamsBuffer = (IntPtr) ParamsBufferAllocation;"));
-
+		Builder.AppendLine(FString::Printf(TEXT("%s.%s(ParamsBuffer, %s);"), UStructCallbacks, TEXT("CallInitializeStruct"), *NativeFunctionVariableName));
+		
 		for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
 		{
 			FProperty* ParamProperty = *ParamIt;

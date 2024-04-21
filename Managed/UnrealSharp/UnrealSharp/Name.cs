@@ -44,7 +44,7 @@ public struct Name : IEquatable<Name>, IComparable<Name>
             }
             finally
             {
-                FStringExporter.CallDisposeString(ref buffer);
+                buffer.Destroy();
             }
         }
     }
