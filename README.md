@@ -21,7 +21,7 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 ## Get Started
 
-Visit [Get Started](https://github.com/UnrealSharp/UnrealSharp/wiki/2.-Get-Started).
+Visit [Get Started](https://unrealsharp.github.io/get-started.html).
 
 ## Code Example
 
