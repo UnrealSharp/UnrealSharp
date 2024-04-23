@@ -2,40 +2,12 @@
 
 namespace UnrealSharpWeaver.MetaData;
 
-public class TypeReferenceMetadata : BaseMetaData
+public class TypeReferenceMetadata(TypeReference member, string attributeName = "") : BaseMetaData(member, attributeName)
 {
-    public readonly TypeReference TypeDef;
-    
-    public TypeReferenceMetadata(TypeDefinition typeDef, string attributeName = "")
-    {
-        AssemblyName = typeDef.Module.Assembly.Name.Name;
-        Namespace = typeDef.Namespace;
-        Name = typeDef.Name;
-        TypeDef = typeDef;
-        
-        AddMetadataAttributes(typeDef.CustomAttributes);
-        
-        if (attributeName == "")
-        {
-            return;
-        }
-        
-        CustomAttribute? baseAttribute = WeaverHelper.FindAttribute(typeDef.CustomAttributes, attributeName);
-        if (baseAttribute == null)
-        {
-            return;
-        }
-        
-        var categoryField = WeaverHelper.FindAttributeField(baseAttribute, "Category");
-        if (categoryField != null)
-        {
-            MetaData.Add("Category", (string) categoryField.Value.Value);
-        }
-        
-        var displayNameField = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
-        if (displayNameField != null)
-        {
-            MetaData.Add("DisplayName", (string) displayNameField.Value.Value);
-        }
-    }
+    public string AssemblyName { get; set; } = member.Module.Assembly.Name.Name;
+    public string Namespace { get; set; } = member.Namespace;
+
+    // Non-serialized for JSON
+    public readonly TypeReference TypeDef = member;
+    // End non-serialized
 }

@@ -12,7 +12,6 @@ public class FunctionMetaData : BaseMetaData
     public FunctionFlags FunctionFlags { get; set; }
     public bool IsBlueprintEvent { get; set; }
     public bool IsRpc { get; set; }
-    public AccessProtection AccessProtection { get; set; }
     
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
@@ -20,12 +19,9 @@ public class FunctionMetaData : BaseMetaData
     public FieldDefinition FunctionPointerField;
     // End non-serialized
     
-    public FunctionMetaData(MethodDefinition method)
+    public FunctionMetaData(MethodDefinition method) : base(method, "UFunctionAttribute")
     {
         MethodDefinition = method;
-        Name = method.Name;
-        AccessProtection = WeaverHelper.GetAccessProtection(method);
-
         bool hasOutParams = false;
         
         if (method.ReturnType.Name != WeaverHelper.VoidTypeRef.Name)
@@ -89,8 +85,6 @@ public class FunctionMetaData : BaseMetaData
             flags |= FunctionFlags.HasOutParms;
         }
         
-        AddMetadataAttributes(method.CustomAttributes);
-        
         if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
         {
             IsBlueprintEvent = true;
@@ -106,26 +100,17 @@ public class FunctionMetaData : BaseMetaData
             }
         }
 
-        switch (AccessProtection)
+        if (method.IsPublic)
         {
-            case AccessProtection.Public:
-                flags |= FunctionFlags.Public;
-                break;
-            case AccessProtection.Protected:
-                flags |= FunctionFlags.Protected;
-                break;
-            case AccessProtection.Private:
-                flags |= FunctionFlags.Private;
-                break;
-            default:
-                throw new InvalidUnrealFunctionException(method, "Unknown access level");
+            flags |= FunctionFlags.Public;
         }
-
-        CustomAttribute? ufunctionAttribute = WeaverHelper.GetUFunction(method);
-
-        if (ufunctionAttribute != null)
+        else if (method.IsFamily)
         {
-            AddBaseAttributes(ufunctionAttribute);
+            flags |= FunctionFlags.Protected;
+        }
+        else
+        {
+            flags |= FunctionFlags.Private;
         }
 
         if (method.IsStatic)
@@ -183,35 +168,21 @@ public class FunctionMetaData : BaseMetaData
         return method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
     }
 
-    public static bool IsUFunction(MethodDefinition method)
-    {
-        if (!method.HasCustomAttributes)
-        {
-            return false;
-        }
-        
-        CustomAttribute? functionAttribute = WeaverHelper.GetUFunction(method);
-        return functionAttribute != null;
-    }
-
     public static bool IsBlueprintEventOverride(MethodDefinition method)
     {
-        MethodDefinition basemostMethod = method.GetOriginalBaseMethod();
-        if (basemostMethod != method && basemostMethod.HasCustomAttributes)
+        MethodDefinition baseMethod = method.GetOriginalBaseMethod();
+        
+        if (baseMethod != method && baseMethod.HasCustomAttributes)
         {
-            CustomAttribute? isUnrealFunction = WeaverHelper.GetUFunction(basemostMethod);
-            if (isUnrealFunction != null)
-            {
-                return true;
-            }
+            return WeaverHelper.IsUFunction(method);
         }
 
         return false;
     }
 
-    public static bool IsInterfaceFunction(TypeDefinition type, string methodName)
+    public static bool IsInterfaceFunction(MethodDefinition method)
     {
-        foreach (var typeInterface in type.Interfaces)
+        foreach (var typeInterface in method.DeclaringType.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
             
@@ -222,7 +193,7 @@ public class FunctionMetaData : BaseMetaData
 
             foreach (var interfaceMethod in interfaceType.Methods)
             {
-                if (interfaceMethod.Name == methodName)
+                if (interfaceMethod.Name == method.Name)
                 {
                     return true;
                 }
@@ -270,5 +241,15 @@ public class FunctionMetaData : BaseMetaData
             processor.Emit(OpCodes.Call, WeaverHelper.GetArrayElementSizeMethod);
             processor.Emit(OpCodes.Stsfld, elementSizeField);
         }
+    }
+    
+    public bool HasParameters()
+    {
+        return Parameters.Length > 0 || HasReturnValue();
+    }
+    
+    public bool HasReturnValue()
+    {
+        return ReturnValue != null;
     }
 }

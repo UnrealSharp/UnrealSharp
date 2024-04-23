@@ -5,20 +5,20 @@ namespace UnrealSharpWeaver.TypeProcessors;
 
 public struct FunctionRewriteInfo
 {
-    public FunctionRewriteInfo(FunctionMetaData functionMetadata)
-    {
-        int paramSize = functionMetadata.Parameters.Length;
-
-        if (functionMetadata.ReturnValue != null)
-        {
-            paramSize++;
-        }
-        
-        FunctionParams = new Tuple<FieldDefinition, PropertyMetaData>[paramSize];
-        FunctionParamsElements = new List<Tuple<FieldDefinition, PropertyMetaData>>(paramSize);
-    }
-    
-    public FieldDefinition FunctionParamSizeField;
+    public FieldDefinition? FunctionParamSizeField;
     public Tuple<FieldDefinition, PropertyMetaData>[] FunctionParams;
     public List<Tuple<FieldDefinition, PropertyMetaData>> FunctionParamsElements;
+    
+    public FunctionRewriteInfo(FunctionMetaData functionMetadata)
+    {
+        var paramAmount = functionMetadata.Parameters.Length;
+
+        if (functionMetadata.HasReturnValue())
+        {
+            paramAmount++;
+        }
+        
+        FunctionParams = new Tuple<FieldDefinition, PropertyMetaData>[paramAmount];
+        FunctionParamsElements = new List<Tuple<FieldDefinition, PropertyMetaData>>(paramAmount);
+    }
 }

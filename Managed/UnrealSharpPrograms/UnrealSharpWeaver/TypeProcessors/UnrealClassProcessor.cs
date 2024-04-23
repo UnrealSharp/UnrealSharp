@@ -68,7 +68,7 @@ public static class UnrealClassProcessor
         
         foreach (var function in metadata.Functions)
         {
-            if (function.Parameters.Length == 0)
+            if (!function.HasParameters())
             {
                 continue;
             }
@@ -93,8 +93,9 @@ public static class UnrealClassProcessor
 
     private static void ProcessBlueprintOverrides(TypeDefinition classDefinition, ClassMetaData classMetaData)
     {
-        foreach (MethodDefinition method in classMetaData.BlueprintEventOverrides)
+        foreach (FunctionMetaData functionMetaData in classMetaData.Functions)
         {
+            MethodDefinition method = functionMetaData.MethodDefinition;
             var implementationMethodName = method.Name + "_Implementation";
             MethodReference? ownImplementationMethod = WeaverHelper.FindOwnMethod(classDefinition, implementationMethodName, throwIfNotFound: false);
             if (ownImplementationMethod != null)

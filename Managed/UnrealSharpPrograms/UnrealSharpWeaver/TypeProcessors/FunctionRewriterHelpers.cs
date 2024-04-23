@@ -12,7 +12,7 @@ public static class FunctionRewriterHelpers
     {
         FieldDefinition? paramsSizeField = null;
 
-        if (func.Parameters.Length > 0 || func.ReturnValue != null)
+        if (func.HasParameters())
         {
             for (int i = 0; i < func.Parameters.Length; i++)
             {
@@ -22,15 +22,15 @@ public static class FunctionRewriterHelpers
 
             paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{func.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
             func.RewriteInfo.FunctionParamSizeField = paramsSizeField;
-        }
-
-        if (func.ReturnValue != null)
-        {
-            int index = func.Parameters.Length > 0 ? func.Parameters.Length : 0;
-            AddOffsetField(classDefinition, func.ReturnValue, func, index, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
+            
+            if (func.HasReturnValue())
+            {
+                int index = func.Parameters.Length > 0 ? func.Parameters.Length : 0;
+                AddOffsetField(classDefinition, func.ReturnValue, func, index, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
+            }
         }
         
-        if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
+        if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(func.MethodDefinition))
         {
             FieldAttributes baseMethodAttributes = FieldAttributes.Private;
             FieldAttributes rpcAttributes = baseMethodAttributes | FieldAttributes.InitOnly | FieldAttributes.Static;
@@ -159,15 +159,13 @@ public static class FunctionRewriterHelpers
 
         for (var i = 0; i < paramVariables.Length; ++i)
         {
-            VariableDefinition local = paramVariables[i];
-            PropertyMetaData param = func.Parameters[i];
-            OpCode loadCode = PropertyMetaData.IsOutParameter(param.PropertyFlags) ? OpCodes.Ldloca : OpCodes.Ldloc;
-            processor.Emit(loadCode, local);
+            OpCode loadCode = func.Parameters[i].IsOutParameter() ? OpCodes.Ldloca : OpCodes.Ldloc;
+            processor.Emit(loadCode, paramVariables[i]);
         }
 
         var returnIndex = 0;
 
-        if (func.ReturnValue != null)
+        if (func.HasReturnValue())
         {
             TypeReference returnType = WeaverHelper.ImportType(func.ReturnValue.PropertyDataType.CSharpType);
             WeaverHelper.AddVariableToMethod(invokerFunction, returnType);
@@ -181,7 +179,7 @@ public static class FunctionRewriterHelpers
         {
             PropertyMetaData param = func.Parameters[i];
             
-            if (!PropertyMetaData.IsOutParameter(param.PropertyFlags))
+            if (!param.IsOutParameter())
             {
                 continue;
             }
@@ -202,17 +200,19 @@ public static class FunctionRewriterHelpers
                 loadLocalVariable);
         }
 
-        if (func.ReturnValue != null)
+        if (func.HasReturnValue())
         {
             NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
+            Instruction loadReturnProperty = processor.Create(OpCodes.Ldloc, returnIndex);
+            
             processor.Emit(OpCodes.Stloc, returnIndex);
 
-            Instruction loadReturnProperty = processor.Create(OpCodes.Ldloc, returnIndex);
-
             nativeReturnType.PrepareForRewrite(type, func, func.ReturnValue);
-            
-            nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
-                processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);
+            nativeReturnType.WriteMarshalToNative(processor, 
+                type, 
+                [processor.Create(OpCodes.Ldarg_2)],
+                processor.Create(OpCodes.Ldc_I4_0), 
+                loadReturnProperty);
         }
 
         processor.Emit(OpCodes.Ret);
@@ -340,7 +340,7 @@ public static class FunctionRewriterHelpers
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.ReturnValue != null)
+        if (metadata.HasReturnValue())
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramOffsetFields[^1].Item1);

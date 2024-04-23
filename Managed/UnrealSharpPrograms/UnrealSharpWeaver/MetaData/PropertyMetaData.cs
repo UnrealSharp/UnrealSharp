@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System.Runtime.CompilerServices;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
 
@@ -8,7 +9,6 @@ public class PropertyMetaData : BaseMetaData
 {
     public PropertyFlags PropertyFlags { get; set; }
     public NativeDataType PropertyDataType { get; set; }
-    public AccessProtection AccessProtection { get; set; }
     public string RepNotifyFunctionName { get; set; }
     public LifetimeCondition LifetimeCondition { get; set; }
     public string BlueprintSetter { get; set; }
@@ -20,12 +20,12 @@ public class PropertyMetaData : BaseMetaData
     public readonly MemberReference MemberRef;
     // End non-serialized
     
-    static bool MethodIsCompilerGenerated(MethodDefinition method)
+    private PropertyMetaData(MemberReference memberRef) : base(memberRef, WeaverHelper.UPropertyAttribute)
     {
-        return WeaverHelper.FindAttributeByType(method.CustomAttributes, "System.Runtime.CompilerServices", "CompilerGeneratedAttribute") != null;
+        
     }
 
-    private PropertyMetaData(TypeReference typeRef, string paramName, ParameterType modifier)
+    private PropertyMetaData(TypeReference typeRef, string paramName, ParameterType modifier) : this(typeRef)
     {
         MemberRef = typeRef;
         Name = paramName;
@@ -53,13 +53,8 @@ public class PropertyMetaData : BaseMetaData
 
         PropertyFlags = flags;
     }
-    
-    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
-    {
-        return new PropertyMetaData(typeRef, paramName, modifier);
-    }
 
-    public PropertyMetaData(PropertyDefinition property)
+    public PropertyMetaData(PropertyDefinition property) : this((MemberReference) property)
     {
         MemberRef = property;
         
@@ -70,50 +65,31 @@ public class PropertyMetaData : BaseMetaData
         {
             throw new InvalidPropertyException(property, "Unreal properties must have a default get method");
         }
-
-        if (!MethodIsCompilerGenerated(getter))
+        
+        if (!WeaverHelper.MethodIsCompilerGenerated(getter))
         {
             throw new InvalidPropertyException(property, "Getter can not have a body for Unreal properties");
         }
 
-        if (setter != null && ! MethodIsCompilerGenerated(setter))
+        if (setter != null && !WeaverHelper.MethodIsCompilerGenerated(getter))
         {
             throw new InvalidPropertyException(property, "Setter can not have a body for Unreal properties");
         }
-
-        if (getter.IsPrivate)
+        
+        if (getter.IsPrivate && PropertyFlags.HasFlag(PropertyFlags.BlueprintVisible))
         {
-            AccessProtection = AccessProtection.Private;
+            if(!GetBoolMetadata("AllowPrivateAccess"))
+            {
+                throw new InvalidPropertyException(property, "Blueprint visible properties can not be set to private.");
+            } 
         }
-        else if (getter.IsPublic)
-        {
-            AccessProtection = AccessProtection.Public;
-        }
-        else
-        {
-            // if not private or public, assume protected?
-            AccessProtection = AccessProtection.Protected;
-        }
+        
         Initialize(property, property.PropertyType);
     }
 
-    public PropertyMetaData(FieldDefinition property)
+    public PropertyMetaData(FieldDefinition property) : this((MemberReference) property)
     {
         MemberRef = property;
-        
-        if (property.IsPrivate)
-        {
-            AccessProtection = AccessProtection.Private;
-        }
-        else if (property.IsPublic)
-        {
-            AccessProtection = AccessProtection.Public;
-        }
-        else
-        {
-            AccessProtection = AccessProtection.Protected;
-        }
-        
         Initialize(property, property.FieldType);
     }
     
@@ -123,24 +99,11 @@ public class PropertyMetaData : BaseMetaData
         PropertyDataType = WeaverHelper.GetDataType(propertyType, property.FullName, property.CustomAttributes);
         PropertyFlags flags = (PropertyFlags) GetFlags(property, "PropertyFlagsMapAttribute");
         
-        AddMetadataAttributes(property.CustomAttributes);
-
-        // do some extra verification, matches verification in UE5 header parser
-        if (AccessProtection == AccessProtection.Private && (flags & PropertyFlags.BlueprintVisible) != 0)
-        {
-            if(!GetBoolMetadata(MetaData, "AllowPrivateAccess"))
-            {
-                throw new InvalidPropertyException(property, "Blueprint visible properties can not be private");
-            }                
-        }
-        
         CustomAttribute? upropertyAttribute = WeaverHelper.FindAttribute(property.CustomAttributes, "UPropertyAttribute");
         if (upropertyAttribute == null)
         {
             return;
         }
-
-        AddBaseAttributes(upropertyAttribute);
 
         CustomAttributeArgument? blueprintSetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintSetter");
         if (blueprintSetterArgument.HasValue)
@@ -171,7 +134,7 @@ public class PropertyMetaData : BaseMetaData
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' not found on {property.DeclaringType.Name}");
             }
             
-            if (!FunctionMetaData.IsUFunction(notifyMethod.Resolve()))
+            if (!WeaverHelper.IsUFunction(notifyMethod.Resolve()))
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
@@ -207,23 +170,9 @@ public class PropertyMetaData : BaseMetaData
         PropertyFlags = flags;
     }
     
-    public PropertyDefinition FindPropertyDefinition(TypeDefinition type)
+    public bool IsOutParameter()
     {
-        PropertyDefinition[] definitions = (from propDef in type.Properties
-            where propDef.Name == Name
-            select propDef).ToArray();
-
-        return definitions.Length > 0 ? definitions[0] : null;
-    }
-
-    public static CustomAttribute? GetUPropertyAttribute(PropertyDefinition property)
-    {
-        return WeaverHelper.FindAttribute(property.CustomAttributes, "UPropertyAttribute");
-    }
-
-    public static bool IsOutParameter(PropertyFlags propertyFlags)
-    {
-        return (propertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
+        return (PropertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
     }
     
     public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, Instruction setPropertyPointer)
@@ -239,5 +188,19 @@ public class PropertyMetaData : BaseMetaData
         processor.Append(loadNativeType);
         processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffset);
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
+    }
+    
+    public PropertyDefinition FindPropertyDefinition(TypeDefinition type)
+    {
+        PropertyDefinition[] definitions = (from propDef in type.Properties
+            where propDef.Name == Name
+            select propDef).ToArray();
+
+        return definitions.Length > 0 ? definitions[0] : null;
+    }
+    
+    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
+    {
+        return new PropertyMetaData(typeRef, paramName, modifier);
     }
 }

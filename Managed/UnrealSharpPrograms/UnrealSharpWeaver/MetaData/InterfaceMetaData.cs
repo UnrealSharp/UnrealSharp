@@ -6,18 +6,14 @@ public class InterfaceMetaData : TypeReferenceMetadata
 { 
     public List<FunctionMetaData> Functions { get; set; }
     
-    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, "UInterfaceAttribute")
+    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
     {
-        AddMetadataAttributes(typeDefinition.CustomAttributes);
+        CustomAttribute? interfaceAttributes = WeaverHelper.GetUInterface(typeDefinition);
+        CustomAttributeArgument? nonBpInterface = WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
         
-        CustomAttribute? interfaceAttributes = WeaverHelper.FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute");
-        
-        CustomAttributeArgument? cannotImplementInterfaceInBlueprintField = 
-            WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
-        
-        if (cannotImplementInterfaceInBlueprintField != null)
+        if (nonBpInterface != null)
         {
-            var cannotImplementInterfaceInBlueprint = (bool) cannotImplementInterfaceInBlueprintField.Value.Value;
+            var cannotImplementInterfaceInBlueprint = (bool) nonBpInterface.Value.Value;
             
             // Only add the metadata if it's true, since it's false by default
             if (cannotImplementInterfaceInBlueprint)
@@ -26,11 +22,10 @@ public class InterfaceMetaData : TypeReferenceMetadata
             }
         }
         
-        Functions = new List<FunctionMetaData>();
-        
+        Functions = [];
         foreach (var method in typeDefinition.Methods)
         {
-            if (method.IsAbstract && FunctionMetaData.IsUFunction(method))
+            if (method.IsAbstract && WeaverHelper.IsUFunction(method))
             {
                 Functions.Add(new FunctionMetaData(method));
             }

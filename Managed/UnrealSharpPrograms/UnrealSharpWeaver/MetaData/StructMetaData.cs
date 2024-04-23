@@ -8,12 +8,8 @@ public class StructMetaData : BaseMetaData
     public StructFlags StructFlags { get; set; }
     public bool IsBlittableStruct { get; set; }
     
-    public StructMetaData(TypeDefinition structDefinition)
+    public StructMetaData(TypeDefinition structDefinition) : base(structDefinition, WeaverHelper.UStructAttribute)
     {
-        Name = structDefinition.Name;
-        Namespace = structDefinition.Namespace;
-        AssemblyName = structDefinition.Module.Assembly.Name.Name;
-
         if (structDefinition.Properties.Count > 0)
         {
             throw new InvalidUnrealStructException(structDefinition, "UProperties in a UStruct must be fields, not property accessors.");
@@ -29,8 +25,6 @@ public class StructMetaData : BaseMetaData
             
             Fields.Add(new PropertyMetaData(field));
         }
-        
-        AddMetadataAttributes(structDefinition.CustomAttributes);
         
         IsBlittableStruct = true;
         bool isPlainOldData = true;

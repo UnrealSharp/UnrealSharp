@@ -6,21 +6,29 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class BaseMetaData
 {
-    public string Namespace { get; set; } 
     public string Name { get; set; }
-    public string AssemblyName { get; set; } 
-    public Dictionary<string, string>? MetaData { get; set; }
+    public Dictionary<string, string> MetaData { get; set; }
+    
+    // Non-serialized for JSON
+    public readonly string AttributeName;
+    public readonly IMemberDefinition MemberDefinition;
+    // End non-serialized
+    
+    public BaseMetaData(MemberReference member, string attributeName)
+    {
+        Name = member.Name;
+        AttributeName = attributeName;
+        MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        MemberDefinition = member.Resolve();
+        
+        AddMetaData();
+        AddBaseAttributes();
+    }
 
     public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
     {
         CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, WeaverHelper.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
-
-        if (flagsAttribute == null)
-        {
-            return 0;
-        }
-
-        return GetFlags(flagsAttribute);
+        return flagsAttribute == null ? 0 : GetFlags(flagsAttribute);
     }
 
     public static ulong GetFlags(CustomAttribute flagsAttribute)
@@ -63,12 +71,6 @@ public class BaseMetaData
         TypeProcessors.ConstructorBuilder.VerifySingleResult([foundProperty], attributeType, "attribute property " + namedArg.Name);
         return GetFlags(foundProperty.CustomAttributes, flagsAttributeName);
 
-    }
-
-    public static ulong ExtractFlagsFromClass(TypeReference classReference, string flagsAttributeName)
-    {
-        TypeDefinition classTypeDefinition = classReference.Resolve();
-        return !classTypeDefinition.HasCustomAttributes ? 0 : GetFlags(classTypeDefinition.Resolve().CustomAttributes, flagsAttributeName);
     }
 
     public static ulong GetFlags(IMemberDefinition member, string flagsAttributeName)
@@ -124,14 +126,9 @@ public class BaseMetaData
         return flags;
     }
     
-    public void AddMetadataAttributes(Collection<CustomAttribute> customAttributes)
+    private void AddMetaData()
     {
-        if (MetaData == null)
-        {
-            MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        }
-        
-        var metaDataAttributes = WeaverHelper.FindMetaDataAttributes(customAttributes);
+        var metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
 
         foreach (var attrib in metaDataAttributes)
         {
@@ -149,8 +146,20 @@ public class BaseMetaData
         }
     }
 
-    public void AddBaseAttributes(CustomAttribute? baseAttribute)
+    private void AddBaseAttributes()
     {
+        if (MemberDefinition.CustomAttributes == null || string.IsNullOrEmpty(AttributeName))
+        {
+            return;
+        }
+        
+        CustomAttribute? baseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
+        
+        if (baseAttribute == null)
+        {
+            return;
+        }
+        
         CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
 
         if (displayNameArgument.HasValue)
@@ -166,9 +175,9 @@ public class BaseMetaData
         }
     }
     
-    protected static bool GetBoolMetadata(Dictionary<string, string> dictionary, string key)
+    protected bool GetBoolMetadata(string key)
     {
-        if (!dictionary.TryGetValue(key, out var val))
+        if (!MetaData.TryGetValue(key, out var val))
         {
             return false;
         }
