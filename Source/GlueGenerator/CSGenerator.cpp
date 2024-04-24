@@ -264,31 +264,26 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 	const FCSModule& Module = FindOrRegisterModule(Enum);
 
 	Builder.GenerateScriptSkeleton(Module.GetNamespace());
-		
+
 	AppendTooltip(Enum, Builder);
 	Builder.AppendLine(TEXT("[UEnum]"));
-	Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
+	Builder.DeclareType("enum", *Enum->GetName(), "long", false);
 		
 	FString CommonPrefix;
-	int32 SkippedValueCount = 0;
-		
-	TArray<FString> EnumValues;
 
 	const int32 ValueCount = Enum->NumEnums();
-	EnumValues.Reserve(ValueCount);
 		
 	for (int32 i = 0; i < ValueCount; ++i)
 	{
-		FString& RawName = *new(EnumValues) FString();
-
 		if (!ShouldExportEnumEntry(Enum, i))
 		{
-			RawName = FString();
-			SkippedValueCount++;
 			continue;
 		}
 
+		FString RawName;
+
 		FName ValueName = Enum->GetNameByIndex(i);
+		int64 Value = Enum->GetValueByIndex(i);
 		FString QualifiedValueName = ValueName.ToString();
 		const int32 ColonPosition = QualifiedValueName.Find("::");
 
@@ -303,22 +298,17 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 
 		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
 		{
-			++SkippedValueCount;
-			EnumValues.Pop(false);
+			continue;
 		}
-	}
 
-	for (int32 i = 0; i < EnumValues.Num(); ++i)
-	{
-		FString& EnumValue = EnumValues[i];
-			
-		if (EnumValue.IsEmpty())
+		if (RawName.IsEmpty())
 		{
 			continue;
 		}
-			
+
+
 		AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
-		Builder.AppendLine(FString::Printf(TEXT("%s=%d,"), *EnumValues[i], i));
+		Builder.AppendLine(FString::Printf(TEXT("%s=%lld,"), *RawName, Value));
 	}
 
 	Builder.CloseBrace();
