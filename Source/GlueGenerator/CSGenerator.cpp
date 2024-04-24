@@ -267,7 +267,18 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 
 	AppendTooltip(Enum, Builder);
 	Builder.AppendLine(TEXT("[UEnum]"));
-	Builder.DeclareType("enum", *Enum->GetName(), "long", false);
+
+	int64 MaxValue = Enum->GetMaxEnumValue();
+
+	FString TypeDerived;
+	if (MaxValue <= (UINT8_MAX + 1)) {
+		TypeDerived = "byte";
+	}
+	else {
+		TypeDerived = "int";
+	}
+
+	Builder.DeclareType("enum", *Enum->GetName(), *TypeDerived, false);
 		
 	FString CommonPrefix;
 
@@ -296,12 +307,12 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 			RawName = QualifiedValueName;
 		}
 
-		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
+		if (RawName.IsEmpty())
 		{
 			continue;
 		}
 
-		if (RawName.IsEmpty())
+		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
 		{
 			continue;
 		}
