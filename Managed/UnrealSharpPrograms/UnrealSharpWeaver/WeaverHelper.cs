@@ -490,7 +490,22 @@ public static class WeaverHelper
                 {
                     return new NativeDataArrayType(typeRef, arrayDim, innerType);
                 }
-            }
+
+                if (GenericTypeName.Contains("WeakObject`1"))
+                {
+                    return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
+                }
+
+                if (GenericTypeName.Contains("SoftObject`1"))
+                {
+                    return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
+                }
+
+                if (GenericTypeName.Contains("SoftClass`1"))
+                {
+                    return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
+                }
+                }
 
             if (typeDef.IsEnum)
             {
