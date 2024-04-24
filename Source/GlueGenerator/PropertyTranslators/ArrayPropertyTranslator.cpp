@@ -4,9 +4,9 @@
 
 FArrayPropertyTranslator::FArrayPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers) :
 	FPropertyTranslator(InPropertyHandlers,
-	                    static_cast<EPropertyUsage>(EPU_Property | EPU_Parameter | EPU_ReturnValue |
-		                    EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue |
-		                    EPU_StaticArrayProperty))
+						static_cast<EPropertyUsage>(EPU_Property | EPU_StructProperty | EPU_Parameter | EPU_ReturnValue |
+							EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue |
+							EPU_StaticArrayProperty))
 {
 
 }
@@ -42,58 +42,77 @@ void FArrayPropertyTranslator::ExportParameterStaticConstruction(FCSScriptBuilde
 {
 	FPropertyTranslator::ExportParameterStaticConstruction(Builder, NativeMethodName, Parameter);
 	const FString ParamName = Parameter->GetName();
-	Builder.AppendLine(FString::Printf(TEXT("%s_%s_ElementSize = %s.CallGetArrayElementSize(%s_NativeFunction, \"%s\");"), *NativeMethodName, *ParamName, FArrayPropertyCallbacks, *NativeMethodName, *ParamName));
+	Builder.AppendLine(FString::Printf(TEXT("%s_%s_NativeProperty = %s.CallGetNativePropertyFromName(%s_NativeFunction, \"%s\");"), *NativeMethodName, *ParamName, FPropertyCallbacks, *NativeMethodName, *ParamName));
 }
 
 void FArrayPropertyTranslator::ExportPropertyVariables(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
 	FPropertyTranslator::ExportPropertyVariables(Builder, Property, NativePropertyName);
 	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s_NativeProperty;"), *NativePropertyName));
-	Builder.AppendLine(FString::Printf(TEXT("%s %s_Wrapper = null;"), *GetWrapperType(Property), *NativePropertyName));
+
+	bool IsStructProperty = Property->GetOwnerStruct()->IsA<UScriptStruct>();
+	if (IsStructProperty)
+	{
+		Builder.AppendLine(FString::Printf(TEXT("static %s %s_Marshaller = null;"), *GetWrapperType(Property), *NativePropertyName));
+	}
+	else
+	{
+		Builder.AppendLine(FString::Printf(TEXT("%s %s_Marshaller = null;"), *GetWrapperType(Property), *NativePropertyName));
+	}
 }
 
 void FArrayPropertyTranslator::ExportParameterVariables(FCSScriptBuilder& Builder, UFunction* Function, const FString& NativeMethodName, FProperty* ParamProperty, const FString& NativePropertyName) const
 {
 	FPropertyTranslator::ExportParameterVariables(Builder, Function, NativeMethodName, ParamProperty, NativePropertyName);
-	Builder.AppendLine(FString::Printf(TEXT("static int %s_%s_ElementSize;"), *NativeMethodName, *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s_%s_NativeProperty;"), *NativeMethodName, *NativePropertyName));
+	if (Function->HasAnyFunctionFlags(FUNC_Static))
+	{
+		Builder.AppendLine(FString::Printf(TEXT("static %s %s_%s_Marshaller = null;"), *GetWrapperType(ParamProperty), *NativeMethodName, *NativePropertyName));
+	}
+	else
+	{
+		Builder.AppendLine(FString::Printf(TEXT("%s %s_%s_Marshaller = null;"), *GetWrapperType(ParamProperty), *NativeMethodName, *NativePropertyName));
+	}
 }
 
 void FArrayPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
-	Builder.AppendLine(FString::Printf(TEXT("if(%s_Wrapper == null)"), *NativePropertyName));
-	Builder.OpenBrace();
-
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
 
-	Builder.AppendLine(FString::Printf(TEXT("%s_Wrapper = new %s(1, %s_NativeProperty, %s);"), *NativePropertyName, *GetWrapperType(Property), *NativePropertyName, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName)));
-
-	Builder.CloseBrace();
+	Builder.AppendLine(FString::Printf(TEXT("%s_Marshaller ??= new %s(1, %s_NativeProperty, %s);"), *NativePropertyName, *GetWrapperType(Property), *NativePropertyName, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName)));
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("return %s_Wrapper.FromNative(IntPtr.Add(NativeObject,%s_Offset),0);"), *NativePropertyName, *NativePropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("return %s_Marshaller.FromNative(IntPtr.Add(NativeObject,%s_Offset),0);"), *NativePropertyName, *NativePropertyName));
 }
 
 void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName, const FString& DestinationBuffer, const FString& Offset, const
-                                                           FString& Source) const
+														   FString& Source) const
 {
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
 
-	FString ElementSize = NativePropertyName + "_ElementSize";
+	FString NativeProperty = NativePropertyName + "_NativeProperty";
+	FString Marshaller = NativePropertyName + "_Marshaller";
 	if (UFunction* Function = Property->GetOwner<UFunction>())
 	{
 		FString NativeFunctionName = Function->GetName();
-		ElementSize = NativeFunctionName + "_" + ElementSize;
+		NativeProperty = NativeFunctionName + "_" + NativeProperty;
+		Marshaller = NativeFunctionName + "_" + Marshaller;
 	}
 
-	FString InnerType = Handler.GetManagedType(InnerProperty);
+	const FString InnerType = Handler.GetManagedType(InnerProperty);
+	const FString MarshallerType = FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s>"), *InnerType);
+
+	Builder.AppendLine(FString::Printf(TEXT("%s ??= new %s(%s, %s);"), *Marshaller, *MarshallerType, *NativeProperty, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName)));
+
 	//Native buffer variable used in cleanup
 	Builder.AppendLine(FString::Printf(TEXT("IntPtr %s_NativeBuffer = IntPtr.Add(%s, %s);"), *NativePropertyName, *DestinationBuffer, *Offset));
-	Builder.AppendLine(FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s> %s_Marshaller = new UnrealArrayCopyMarshaller<%s>(1, %s, %s);"), *InnerType, *NativePropertyName, *InnerType, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName),*ElementSize));
-	Builder.AppendLine(FString::Printf(TEXT("%s_Marshaller.ToNative(%s_NativeBuffer, 0, %s);"), *NativePropertyName, *NativePropertyName, *Source));
+
+	
+	Builder.AppendLine(FString::Printf(TEXT("%s.ToNative(%s_NativeBuffer, 0, %s);"), *Marshaller, *NativePropertyName, *Source));
 }
 
 void FArrayPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Builder, const FProperty* ParamProperty, const FString& ParamName) const
@@ -101,8 +120,9 @@ void FArrayPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& 
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(ParamProperty);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	const FString InnerType = Handler.GetManagedType(InnerProperty);
-	const FString Marshaller = FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s>"), *InnerType);
+
+	const FString Marshaller = ParamProperty->GetOwnerChecked<UFunction>()->GetName() + "_" + ParamName + "_Marshaller";
+
 	Builder.AppendLine(FString::Printf(TEXT("%s.DestructInstance(%s_NativeBuffer, 0);"), *Marshaller, *ParamName));
 }
 
@@ -112,31 +132,33 @@ void FArrayPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& B
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
 
+	FString NativeProperty = NativePropertyName + "_NativeProperty";
+	FString Marshaller = NativePropertyName + "_Marshaller";
+	if (UFunction* Function = Property->GetOwner<UFunction>())
+	{
+		FString NativeFunctionName = Function->GetName();
+		NativeProperty = NativeFunctionName + "_" + NativeProperty;
+		Marshaller = NativeFunctionName + "_" + Marshaller;
+	}
+
 	const FString InnerType = Handler.GetManagedType(InnerProperty);
 	const FString MarshallerType = FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s>"), *InnerType);
 
-	//if it was a "ref" parameter, we set the marshaler up before calling the function. if not, create one.
 	if (!reuseRefMarshallers)
 	{
-		FString ElementSize = NativePropertyName + "_ElementSize";
-		if (UFunction* Function = Property->GetOwner<UFunction>())
-		{
-			FString NativeFunctionName = Function->GetName();
-			ElementSize = NativeFunctionName + "_" + ElementSize;
-		}
+		Builder.AppendLine(FString::Printf(TEXT("%s ??= new %s(%s, %s);"), *Marshaller, *MarshallerType, *NativeProperty, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName)));
 
 		//Native buffer variable used in cleanup
 		Builder.AppendLine(FString::Printf(TEXT("IntPtr %s_NativeBuffer = IntPtr.Add(%s, %s);"), *NativePropertyName, *SourceBuffer, *Offset));
-		Builder.AppendLine(FString::Printf(TEXT("%s %s_Marshaller = new %s (1, %s, %s);"), *MarshallerType, *NativePropertyName, *MarshallerType, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName), *ElementSize));
 	}
-	Builder.AppendLine(FString::Printf(TEXT("%s %s_Marshaller.FromNative(%s_NativeBuffer, 0, null);"), *AssignmentOrReturn, *NativePropertyName, *NativePropertyName));
+
+	Builder.AppendLine(FString::Printf(TEXT("%s %s.FromNative(%s_NativeBuffer, 0);"), *AssignmentOrReturn, *Marshaller, *NativePropertyName));
 
 	if (bCleanupSourceBuffer)
 	{
-		Builder.AppendLine(FString::Printf(TEXT("%s.DestructInstance(%s_NativeBuffer, 0);"), *MarshallerType, *NativePropertyName));
+		Builder.AppendLine(FString::Printf(TEXT("%s.DestructInstance(%s_NativeBuffer, 0);"), *Marshaller, *NativePropertyName));
 	}
 }
-
 
 FString FArrayPropertyTranslator::GetWrapperInterface(const FProperty* Property) const
 {
@@ -152,10 +174,12 @@ FString FArrayPropertyTranslator::GetWrapperInterface(const FProperty* Property)
 
 FString FArrayPropertyTranslator::GetWrapperType(const FProperty* Property) const
 {
+	bool IsStructProperty = Property->GetOwnerStruct()->IsA<UScriptStruct>();
+	bool IsParamProperty = Property->HasAnyPropertyFlags(CPF_Parm);
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	FString UnrealArrayType = Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly) ? "UnrealArrayReadOnlyMarshaller" : "UnrealArrayReadWriteMarshaller";
+	FString UnrealArrayType = (IsStructProperty || IsParamProperty) ? "UnrealArrayCopyMarshaller" : Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly) ? "UnrealArrayReadOnlyMarshaller" : "UnrealArrayReadWriteMarshaller";
 
 	return FString::Printf(TEXT("%s<%s>"), *UnrealArrayType, *Handler.GetManagedType(InnerProperty));
 }
@@ -167,12 +191,7 @@ FString FArrayPropertyTranslator::GetNullReturnCSharpValue(const FProperty* Retu
 
 FString FArrayPropertyTranslator::ExportInstanceMarshallerVariables(const FProperty *Property, const FString &NativePropertyName) const
 {
-	FString MarshalerType = Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly) ? "UnrealArrayReadOnlyMarshaller" : "UnrealArrayReadWriteMarshaller";
-	const FArrayProperty& ArrayProperty = *CastChecked<FArrayProperty>(Property);
-	const FProperty* InnerProperty = ArrayProperty.Inner;
-	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	FString InnerType = Handler.GetManagedType(InnerProperty);
-	return FString::Printf(TEXT("%s %s_Marshaller = %s(%s_Length, %s_NativeProperty, %s);"),*GetWrapperType(Property), *NativePropertyName, *GetWrapperType(Property), *NativePropertyName, *NativePropertyName, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName));
+	return "";
 }
 
 FString FArrayPropertyTranslator::ExportMarshallerDelegates(const FProperty *Property, const FString &NativePropertyName) const

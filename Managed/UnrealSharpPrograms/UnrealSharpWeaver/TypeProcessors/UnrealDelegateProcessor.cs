@@ -141,7 +141,7 @@ public static class UnrealDelegateProcessor
         Instruction loadFunctionPointer = processor.Create(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
         functionMetaData.EmitFunctionParamOffsets(processor, loadFunctionPointer);
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
-        functionMetaData.EmitParamElementSize(processor, loadFunctionPointer);
+        functionMetaData.EmitParamNativeProperty(processor, loadFunctionPointer);
         
         processor.Emit(OpCodes.Ret);
     }

@@ -64,11 +64,11 @@ public static class UnrealClassProcessor
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
         
-        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
+        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, metadata.Functions, loadNativeClassField);
         
         foreach (var function in metadata.Functions)
         {
-            if (function.Parameters.Length == 0)
+            if (function.Parameters.Length == 0 && function.ReturnValue == null)
             {
                 continue;
             }
@@ -80,7 +80,7 @@ public static class UnrealClassProcessor
             function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
             function.EmitFunctionParamOffsets(processor, loadNativePointer);
             function.EmitFunctionParamSize(processor, loadNativePointer);
-            function.EmitParamElementSize(processor, loadNativePointer);
+            function.EmitParamNativeProperty(processor, loadNativePointer);
             
             foreach (var param in function.Parameters)
             {

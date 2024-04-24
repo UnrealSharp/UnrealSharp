@@ -251,8 +251,12 @@ namespace ScriptGeneratorUtilities
 
 	bool ShouldExportProperty(const FProperty* InProp)
 	{
-		const bool bCanScriptExport = !InProp->HasMetaData(ScriptNoExportMetaDataKey);
-		return bCanScriptExport && (IsBlueprintExposedProperty(InProp) || IsDeprecatedProperty(InProp) || InProp->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic));
+		if (InProp->HasMetaData(ScriptNoExportMetaDataKey))
+		{
+			return false;
+		}
+		bool IsStructProperty = InProp->GetOwnerStruct()->IsA(UScriptStruct::StaticClass());
+		return IsBlueprintExposedProperty(InProp) || IsDeprecatedProperty(InProp) || InProp->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic) || (IsStructProperty && InProp->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPrivate));
 	}
 
 	bool ShouldExportEditorOnlyProperty(const FProperty* InProp)

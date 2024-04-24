@@ -2,11 +2,17 @@
 
 void UFArrayPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
+	EXPORT_FUNCTION(InitializeArray)
 	EXPORT_FUNCTION(EmptyArray)
 	EXPORT_FUNCTION(AddToArray)
 	EXPORT_FUNCTION(InsertInArray)
 	EXPORT_FUNCTION(RemoveFromArray)
-	EXPORT_FUNCTION(GetArrayElementSize)
+}
+
+void UFArrayPropertyExporter::InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
+{
+	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+	Helper.EmptyAndAddValues(Length);
 }
 
 void UFArrayPropertyExporter::EmptyArray(FArrayProperty* ArrayProperty, const void* ScriptArray)
@@ -31,13 +37,4 @@ void UFArrayPropertyExporter::RemoveFromArray(FArrayProperty* ArrayProperty, con
 {
 	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
 	Helper.RemoveValues(index);
-}
-
-int32 UFArrayPropertyExporter::GetArrayElementSize(UStruct* Struct, const char* PropertyName)
-{
-	check(Struct);
-	const FArrayProperty* ArrayProperty = FindFProperty<FArrayProperty>(Struct, *FString(PropertyName));
-	const FProperty* InnerProperty = ArrayProperty->Inner;
-	check(InnerProperty);
-	return InnerProperty->GetSize();
 }

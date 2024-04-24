@@ -1100,6 +1100,11 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 {
 	const FCSModule& BindingsModule = FindOrRegisterModule(Struct);
 
+	if (Struct->GetName() == TEXT("TestStructWithString"))
+	{
+		Struct = Struct;
+	}
+
 	TSet<FProperty*> ExportedProperties;
 	if (UStruct* ParentStruct = Struct->GetSuperStruct())
 	{
