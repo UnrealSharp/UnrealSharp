@@ -93,6 +93,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 {
+	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
+	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
+	// May be a better way? It works so far.
+	OldField->ClassGeneratedBy = nullptr;
+	OldField->bCooked = true;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
 

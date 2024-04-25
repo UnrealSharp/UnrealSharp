@@ -112,7 +112,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 	// Reinstance all blueprints.
 	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
-	FCSReinstancer::Get().Reinstance();
+	FCSReinstancer::Get().StartReinstancing();
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
