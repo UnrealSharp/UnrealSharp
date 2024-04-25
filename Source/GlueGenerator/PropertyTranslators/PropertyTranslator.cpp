@@ -4,18 +4,25 @@
 
 void FPropertyTranslator::GetPropertyProtection(const FProperty* Property, FString& OutProtection)
 {
-	//properties can be RF_Public and CPF_Protected, the first takes precedence
-	if (Property->HasAnyFlags(RF_Public))
+	if (Property->HasAnyPropertyFlags(CPF_Protected) || Property->HasMetaData(MD_BlueprintProtected))
+	{
+		//properties can be RF_Public and CPF_Protected, the first takes precedence
+		if (Property->HasAnyFlags(RF_Public))
+		{
+			OutProtection = "public ";
+		}
+		else
+		{
+			OutProtection = "protected ";
+		}
+	}
+	else if (Property->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic))
 	{
 		OutProtection = "public ";
-	}
-	else if (Property->HasAnyPropertyFlags(CPF_Protected) || Property->HasMetaData(MD_BlueprintProtected))
-	{
-		OutProtection = "protected ";
 	}
 	else //it must be MD_AllowPrivateAccess
 	{
-		OutProtection = "public ";
+		OutProtection = "private ";
 	}
 }
 
@@ -169,14 +176,7 @@ void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const 
 		GetPropertyProtection(Property, Protection);
 
 		AppendTooltip(Property, Builder);
-		if (IsSetterRequired())
-		{
-			Builder.AppendLine(FString::Printf(TEXT("%s%s %s;"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
-		}
-		else
-		{
-			Builder.AppendLine(FString::Printf(TEXT("%s%s %s { get; private set; }"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
-		}
+		Builder.AppendLine(FString::Printf(TEXT("%s%s %s;"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
 	}
 
 	ExportReferences(Property);

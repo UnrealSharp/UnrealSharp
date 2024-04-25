@@ -19,10 +19,10 @@ public:
 
 private:
 	
+	static void InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length);
 	static void EmptyArray(FArrayProperty* ArrayProperty, const void* ScriptArray);
 	static void AddToArray(FArrayProperty* ArrayProperty, const void* ScriptArray);
 	static void InsertInArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index);
 	static void RemoveFromArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index);
-	static int32 GetArrayElementSize(UStruct* Struct, const char* PropertyName);
 	
 };
