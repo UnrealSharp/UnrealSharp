@@ -3,22 +3,37 @@ using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
+public struct FunctionParamRewriteInfo(PropertyMetaData propertyMetadata)
+{
+    public readonly PropertyMetaData PropertyMetaData = propertyMetadata;
+    public FieldDefinition? OffsetField;
+    public FieldDefinition? NativePropertyField;
+}
+
 public struct FunctionRewriteInfo
 {
-    public FieldDefinition? FunctionParamSizeField;
-    public Tuple<FieldDefinition, PropertyMetaData>[] FunctionParams;
-    public List<Tuple<FieldDefinition, PropertyMetaData>> FunctionParamsElements;
-    
     public FunctionRewriteInfo(FunctionMetaData functionMetadata)
     {
-        var paramAmount = functionMetadata.Parameters.Length;
+        int paramSize = functionMetadata.Parameters.Length;
 
-        if (functionMetadata.HasReturnValue())
+        if (functionMetadata.ReturnValue != null)
         {
-            paramAmount++;
+            paramSize++;
         }
         
-        FunctionParams = new Tuple<FieldDefinition, PropertyMetaData>[paramAmount];
-        FunctionParamsElements = new List<Tuple<FieldDefinition, PropertyMetaData>>(paramAmount);
+        FunctionParams = new FunctionParamRewriteInfo[paramSize];
+
+        for (int i = 0; i < functionMetadata.Parameters.Length; i++)
+        {
+            FunctionParams[i] = new(functionMetadata.Parameters[i]);
+        }
+
+        if (functionMetadata.ReturnValue != null)
+        {
+            FunctionParams[^1] = new(functionMetadata.ReturnValue);
+        }
     }
+    
+    public FieldDefinition? FunctionParamSizeField;
+    public readonly FunctionParamRewriteInfo[] FunctionParams;
 }

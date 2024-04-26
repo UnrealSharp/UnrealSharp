@@ -235,10 +235,15 @@ public class FunctionMetaData : BaseMetaData
     
     public void EmitFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)
     {
-        foreach (var paramPair in RewriteInfo.FunctionParams)
+        foreach (var paramRewriteInfo in RewriteInfo.FunctionParams)
         {
-            FieldDefinition offsetField = paramPair.Item1;
-            PropertyMetaData param = paramPair.Item2;
+            FieldDefinition? offsetField = paramRewriteInfo.OffsetField;
+            if (offsetField == null)
+            {
+                continue;
+            }
+
+            PropertyMetaData param = paramRewriteInfo.PropertyMetaData;
                 
             processor.Append(loadFunctionPointer);
             processor.Emit(OpCodes.Ldstr, param.Name);
@@ -249,20 +254,30 @@ public class FunctionMetaData : BaseMetaData
     
     public void EmitFunctionParamSize(ILProcessor processor, Instruction loadFunctionPointer)
     {
+        if (RewriteInfo.FunctionParamSizeField == null)
+        {
+            return;
+        }
+
         processor.Append(loadFunctionPointer);
         processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionParamsSizeMethod);
         processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
     }
     
-    public void EmitParamElementSize(ILProcessor processor, Instruction? loadFunctionPointer)
+    public void EmitParamNativeProperty(ILProcessor processor, Instruction? loadFunctionPointer)
     {
-        foreach (var pair in RewriteInfo.FunctionParamsElements)
+        foreach (var paramRewriteInfo in RewriteInfo.FunctionParams)
         {
-            FieldDefinition elementSizeField = pair.Item1;
+            FieldDefinition? nativePropertyField = paramRewriteInfo.NativePropertyField;
+            if (nativePropertyField == null)
+            {
+                continue;
+            }
+
             processor.Append(loadFunctionPointer);
-            processor.Emit(OpCodes.Ldstr, Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetArrayElementSizeMethod);
-            processor.Emit(OpCodes.Stsfld, elementSizeField);
+            processor.Emit(OpCodes.Ldstr, paramRewriteInfo.PropertyMetaData.Name);
+            processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
+            processor.Emit(OpCodes.Stsfld, nativePropertyField);
         }
     }
     

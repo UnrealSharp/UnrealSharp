@@ -52,7 +52,7 @@ public static class UnrealDelegateProcessor
             
             // Create a delegate from the marshaller
             MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
-            WeaverHelper.AddToNativeMethod(marshaller, type);
+            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
             ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
             
             MethodReference? constructor = WeaverHelper.FindMethod(type, ".ctor", true, delegateDataStruct);
@@ -93,7 +93,7 @@ public static class UnrealDelegateProcessor
     {
         MethodDefinition invokerMethodDefinition = invokerMethod.Resolve();
         ILProcessor invokerMethodProcessor = invokerMethodDefinition.Body.GetILProcessor();
-        Instruction CallBase = invokerMethodProcessor.Body.Instructions[3];
+        Instruction test = invokerMethodProcessor.Body.Instructions[3];
         invokerMethodProcessor.Body.Instructions.Clear();
 
         if (functionMetaData.Parameters.Length > 0)
@@ -119,8 +119,10 @@ public static class UnrealDelegateProcessor
             invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverHelper.IntPtrZero);
         }
         
-        invokerMethodProcessor.Append(CallBase);
-        WeaverHelper.FinalizeMethod(invokerMethodDefinition);
+        invokerMethodProcessor.Append(test);
+        invokerMethodProcessor.Emit(OpCodes.Ret);
+        
+        WeaverHelper.OptimizeMethod(invokerMethodDefinition);
     }
     
     static void ProcessInitialize(TypeDefinition type, FunctionMetaData functionMetaData)
@@ -139,7 +141,8 @@ public static class UnrealDelegateProcessor
         Instruction loadFunctionPointer = processor.Create(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
         functionMetaData.EmitFunctionParamOffsets(processor, loadFunctionPointer);
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
-        functionMetaData.EmitParamElementSize(processor, loadFunctionPointer);
-        WeaverHelper.FinalizeMethod(initializeDelegate);
+        functionMetaData.EmitParamNativeProperty(processor, loadFunctionPointer);
+        
+        processor.Emit(OpCodes.Ret);
     }
 }

@@ -52,7 +52,6 @@ public static class WeaverHelper
     public static MethodReference GetNativeStructFromNameMethod;
     public static MethodReference GetPropertyOffsetFromNameMethod;
     public static MethodReference GetPropertyOffset;
-    public static MethodReference GetArrayElementSizeMethod;
     public static MethodReference GetNativePropertyFromNameMethod;
     public static MethodReference GetNativeFunctionFromClassAndNameMethod;
     public static MethodReference GetNativeFunctionParamsSizeMethod;
@@ -94,7 +93,6 @@ public static class WeaverHelper
         GetNativeClassFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeClassFromName");
         GetPropertyOffsetFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffsetFromName");
         GetPropertyOffset = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffset");
-        GetArrayElementSizeMethod = FindExporterMethod(FArrayPropertyCallbacks, "CallGetArrayElementSize");
         GetNativePropertyFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetNativePropertyFromName");
         GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
         GetNativeFunctionParamsSizeMethod = FindExporterMethod(UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
@@ -496,7 +494,7 @@ public static class WeaverHelper
                     return new NativeDataClassType(typeRef, innerType, arrayDim);
                 }
                 
-                if (GenericTypeName.Contains("UnrealArrayReadWrite`1"))
+                if (GenericTypeName.Contains("UnrealArrayReadWrite`1") || GenericTypeName.Contains("List`1"))
                 {
                     return new NativeDataArrayType(typeRef, arrayDim, innerType);
                 }
@@ -505,17 +503,17 @@ public static class WeaverHelper
                 {
                     return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
                 }
-                
+
                 if (GenericTypeName.Contains("SoftObject`1"))
                 {
                     return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
                 }
-                
+
                 if (GenericTypeName.Contains("SoftClass`1"))
                 {
                     return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
                 }
-            }
+                }
 
             if (typeDef.IsEnum)
             {
