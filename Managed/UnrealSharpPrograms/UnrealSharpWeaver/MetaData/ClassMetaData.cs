@@ -77,6 +77,11 @@ public class ClassMetaData : TypeReferenceMetadata
                 FunctionRewriterHelpers.RewriteMethodAsAsyncUFunctionImplementation(method);
                 return;
             }
+
+            if (method.Name.Contains("BeginPlay"))
+            {
+                Console.WriteLine("Found BeginPlay");
+            }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
@@ -99,7 +104,7 @@ public class ClassMetaData : TypeReferenceMetadata
             }
             else if (isBlueprintOverride || isInterfaceFunction)
             {
-                VirtualFunctions.Add(new FunctionMetaData(method));
+                VirtualFunctions.Add(new FunctionMetaData(method, true));
             }
         }
     }

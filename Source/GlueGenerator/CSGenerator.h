@@ -73,7 +73,7 @@ public:
 	
 	FString GetSuperClassName(const UClass* Class) const;
 	void SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder);
-	void SaveGlue(const FCSModule* Bindings, const FString& Filename, const FString& GeneratedGlue);
+	void SaveGlue(const FCSModule& Bindings, const FString& Filename, const FString& GeneratedGlue);
 	void SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue);
 	
 	void ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames);
@@ -102,6 +102,11 @@ public:
 	void AddExportedType(UObject* Object);
 
 	FCSModule& FindOrRegisterModule(const UObject* Object);
+
+	FCSNameMapper& GetNameMapper()
+	{
+		return NameMapper;
+	}
 
 protected:
 

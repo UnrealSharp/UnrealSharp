@@ -228,39 +228,32 @@ public static class FunctionRewriterHelpers
         FunctionMetaData func, FieldDefinition? paramsSizeField,
         Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields)
     {
-        MethodDefinition? originalMethodDef = null;
-        foreach (var method in type.Methods)
+        if (func.MethodDefinition.Body != null)
         {
-            if (method.Name != func.Name)
-            {
-                continue;
+            MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramOffsetFields);
+        }
+        
+        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDefinition, paramsSizeField, paramOffsetFields);
+    }
+    
+    public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
+    {
+        MethodDefinition methodDefinition = WeaverHelper.CopyMethod(func.MethodDefinition.Name + "_Implementation", func.MethodDefinition);
 
-            }
-
-            originalMethodDef = method;
-            break;
-        }
-        
-        if (originalMethodDef == null)
+        if (methodDefinition.IsVirtual)
         {
-            throw new Exception($"Could not find method {func.Name} in class {type.Name}");
-        }
-        
-        if (originalMethodDef.Body.CodeSize > 0)
-        {
-            string implementationMethodName = originalMethodDef.Name + "_Implementation";
-            MethodDefinition implementationMethod = WeaverHelper.AddMethodToType(type, implementationMethodName, originalMethodDef.ReturnType, originalMethodDef.Attributes);
-            implementationMethod.Body = originalMethodDef.Body;
-            
-            foreach (ParameterDefinition param in originalMethodDef.Parameters)
+            foreach (var instruction in methodDefinition.Body.Instructions)
             {
-                implementationMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, WeaverHelper.ImportType(param.ParameterType)));
+                if (instruction.Operand is not MethodReference methodReference || methodReference.DeclaringType != func.MethodDefinition.DeclaringType)
+                {
+                    continue;
+                }
+                
+                methodReference.Name = methodDefinition.Name;
             }
-            
-            MakeManagedMethodInvoker(type, func, implementationMethod, paramOffsetFields);
         }
-        
-        RewriteOriginalFunctionToInvokeNative(type, func, originalMethodDef, paramsSizeField, paramOffsetFields);
+
+        return methodDefinition;
     }
 
     public static void RewriteOriginalFunctionToInvokeNative(TypeDefinition type, 

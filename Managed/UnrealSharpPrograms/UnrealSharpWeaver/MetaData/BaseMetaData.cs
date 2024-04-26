@@ -12,6 +12,7 @@ public class BaseMetaData
     // Non-serialized for JSON
     public readonly string AttributeName;
     public readonly IMemberDefinition MemberDefinition;
+    public readonly CustomAttribute? BaseAttribute;
     // End non-serialized
     
     public BaseMetaData(MemberReference member, string attributeName)
@@ -20,9 +21,45 @@ public class BaseMetaData
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         MemberDefinition = member.Resolve();
+        BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
         
         AddMetaData();
         AddBaseAttributes();
+    }
+    
+    public void TryAddMetaData(string key, string value = "")
+    {
+        if (MetaData.TryAdd(key, value))
+        {
+            return;
+        }
+        
+        MetaData[key] = value;
+    }
+    
+    public void TryAddMetaData(string key, bool value)
+    {
+        TryAddMetaData(key, value ? "true" : "false");
+    }
+    
+    public void TryAddMetaData(string key, int value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, ulong value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, float value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, double value)
+    {
+        TryAddMetaData(key, value.ToString());
     }
 
     public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
@@ -128,8 +165,7 @@ public class BaseMetaData
     
     private void AddMetaData()
     {
-        var metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
-
+        CustomAttribute?[] metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
         foreach (var attrib in metaDataAttributes)
         {
             switch (attrib.ConstructorArguments.Count)
@@ -137,10 +173,10 @@ public class BaseMetaData
                 case < 1:
                     continue;
                 case 1:
-                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, "");
+                    TryAddMetaData((string)attrib.ConstructorArguments[0].Value);
                     break;
                 default:
-                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string) attrib.ConstructorArguments[1].Value);
+                    TryAddMetaData((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
                     break;
             }
         }
@@ -148,30 +184,21 @@ public class BaseMetaData
 
     private void AddBaseAttributes()
     {
-        if (MemberDefinition.CustomAttributes == null || string.IsNullOrEmpty(AttributeName))
+        if (BaseAttribute == null)
         {
             return;
         }
         
-        CustomAttribute? baseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
-        
-        if (baseAttribute == null)
-        {
-            return;
-        }
-        
-        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
-
+        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(BaseAttribute, "DisplayName");
         if (displayNameArgument.HasValue)
         {
-            MetaData.Add("DisplayName", (string) displayNameArgument.Value.Value);
+            TryAddMetaData("DisplayName", (string) displayNameArgument.Value.Value);
         }
 
-        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(baseAttribute, "Category");
-
+        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(BaseAttribute, "Category");
         if (categoryArgument.HasValue)
         {
-            MetaData.Add("Category", (string) categoryArgument.Value.Value);
+            TryAddMetaData("Category", (string) categoryArgument.Value.Value);
         }
     }
     

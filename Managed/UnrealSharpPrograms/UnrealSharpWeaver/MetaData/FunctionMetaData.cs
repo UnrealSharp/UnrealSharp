@@ -18,9 +18,12 @@ public class FunctionMetaData : BaseMetaData
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
     // End non-serialized
-    
-    public FunctionMetaData(MethodDefinition method) : base(method, "UFunctionAttribute")
+
+    private const string CallInEditorName = "CallInEditor";
+
+    public FunctionMetaData(MethodDefinition method, bool blueprintEvent = false, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
     {
+        IsBlueprintEvent = blueprintEvent; 
         MethodDefinition = method;
         bool hasOutParams = false;
         
@@ -37,6 +40,15 @@ public class FunctionMetaData : BaseMetaData
             }
         }
 
+        if (BaseAttribute != null)
+        {
+            CustomAttributeArgument? callInEditor = WeaverHelper.FindAttributeField(BaseAttribute, CallInEditorName);
+            if (callInEditor.HasValue)
+            {
+                TryAddMetaData(CallInEditorName, (bool) callInEditor.Value.Value);
+            }
+        }
+        
         Parameters = new PropertyMetaData[method.Parameters.Count];
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
@@ -131,14 +143,21 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         
-        TypeReference baseType = method.DeclaringType.BaseType;
-        if (baseType != null && !WeaverHelper.HasMethod(baseType.Resolve(), method.Name, false))
-        {
-            RewriteInfo = new FunctionRewriteInfo(this);
-            FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
-        }
-        
         FunctionFlags = flags;
+        
+        if (!onlyCollectMetaData)
+        {
+            TypeDefinition baseType = method.GetOriginalBaseMethod().DeclaringType;
+            if (baseType == method.DeclaringType)
+            {
+                RewriteInfo = new FunctionRewriteInfo(this);
+                FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
+            }
+            else
+            {
+                FunctionRewriterHelpers.MakeImplementationMethod(this);
+            }
+        }
     }
 
     public static bool IsAsyncUFunction(MethodDefinition method)
@@ -170,11 +189,15 @@ public class FunctionMetaData : BaseMetaData
 
     public static bool IsBlueprintEventOverride(MethodDefinition method)
     {
-        MethodDefinition baseMethod = method.GetOriginalBaseMethod();
+        if (!method.IsVirtual)
+        {
+            return false;
+        }
         
+        MethodDefinition baseMethod = method.GetOriginalBaseMethod();
         if (baseMethod != method && baseMethod.HasCustomAttributes)
         {
-            return WeaverHelper.IsUFunction(method);
+            return WeaverHelper.IsUFunction(baseMethod);
         }
 
         return false;

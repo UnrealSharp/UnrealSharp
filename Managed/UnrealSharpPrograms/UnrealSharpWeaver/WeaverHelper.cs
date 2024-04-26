@@ -207,31 +207,30 @@ public static class WeaverHelper
         method.Parameters.Add(parameter);
         return parameter;
     }
-    
-    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod)
-    {
-        return CopyMethod(method, overrideMethod, method.ReturnType);
-    }
 
-    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod, TypeReference returnType)
+    public static MethodDefinition CopyMethod(string name, MethodDefinition method, bool addMethod = true)
     {
-        MethodDefinition newMethod = new MethodDefinition(method.Name, method.Attributes, returnType);
-
-        if (overrideMethod)
+        MethodDefinition newMethod = new MethodDefinition(name, method.Attributes, method.ReturnType)
         {
-            newMethod.Attributes &= ~MethodAttributes.VtableLayoutMask;
-            newMethod.Attributes &= ~MethodAttributes.NewSlot;
-            newMethod.Attributes |= MethodAttributes.ReuseSlot;
-        }
+            HasThis = true,
+            ExplicitThis = method.ExplicitThis,
+            CallingConvention = method.CallingConvention
+        };
 
-        newMethod.HasThis = true;
-        newMethod.ExplicitThis = method.ExplicitThis;
-        newMethod.CallingConvention = method.CallingConvention;
+        if (method.Body != null)
+        {
+            newMethod.Body = method.Body;
+        }
 
         foreach (ParameterDefinition parameter in method.Parameters)
         {
             TypeReference importedType = ImportType(parameter.ParameterType);
             newMethod.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, importedType));
+        }
+        
+        if (addMethod)
+        {
+            method.DeclaringType.Methods.Add(newMethod);
         }
 
         return newMethod;
@@ -608,7 +607,7 @@ public static class WeaverHelper
         return FindAttributesByType(customAttributes, UnrealSharpNamespace, "UMetaDataAttribute");
     }
 
-    public static CustomAttributeArgument? FindAttributeField(CustomAttribute? attribute, string fieldName)
+    public static CustomAttributeArgument? FindAttributeField(CustomAttribute attribute, string fieldName)
     {
         foreach (var field in attribute.Fields) 
         {
@@ -827,7 +826,7 @@ public static class WeaverHelper
     
     public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
     {
-        return FindAttributeByType(customAttributes, UnrealSharpNamespace + ".Attributes", attributeName);
+        return FindAttributeByType(customAttributes, AttributeNamespace, attributeName);
     }
     
     public static CustomAttribute? GetUProperty(Collection<CustomAttribute> attributes)

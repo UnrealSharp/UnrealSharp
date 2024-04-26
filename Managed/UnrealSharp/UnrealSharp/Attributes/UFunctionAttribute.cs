@@ -7,42 +7,53 @@ class FunctionFlagsMapAttribute(NativeFunctionFlags flags = NativeFunctionFlags.
 }
 
 [Flags]
-public enum FunctionFlags
+public enum FunctionFlags : ulong
 {
     [FunctionFlagsMap]
     None = 0x00000000,
 
     [FunctionFlagsMap(NativeFunctionFlags.BlueprintCallable)]
-    BlueprintCallable = 0x04000000,
+    BlueprintCallable = NativeFunctionFlags.BlueprintCallable,
 
     [FunctionFlagsMap(NativeFunctionFlags.BlueprintAuthorityOnly)]
-    BlueprintAuthorityOnly = 0x00000004,
+    BlueprintAuthorityOnly = NativeFunctionFlags.BlueprintAuthorityOnly,
 
     [FunctionFlagsMap(NativeFunctionFlags.BlueprintCosmetic)]
-    BlueprintCosmetic = 0x00000008,
+    BlueprintCosmetic = NativeFunctionFlags.BlueprintCosmetic,
 
     [FunctionFlagsMap(NativeFunctionFlags.BlueprintPure)]
-    BlueprintPure = 0x10000000,
+    BlueprintPure = NativeFunctionFlags.BlueprintPure,
 
     [FunctionFlagsMap(NativeFunctionFlags.BlueprintNativeEvent)]
-    BlueprintEvent = 0x08000000,
+    BlueprintEvent = NativeFunctionFlags.BlueprintNativeEvent,
 
     [FunctionFlagsMap(NativeFunctionFlags.NetMulticast)]
-    Multicast = 0x00004000,
+    Multicast = NativeFunctionFlags.NetMulticast,
 
     [FunctionFlagsMap(NativeFunctionFlags.NetServer)]
-    RunOnServer = 0x00200000,
+    RunOnServer = NativeFunctionFlags.NetServer,
 
     [FunctionFlagsMap(NativeFunctionFlags.NetClient)]
-    RunOnClient = 0x01000000,
+    RunOnClient = NativeFunctionFlags.NetClient,
     
     [FunctionFlagsMap(NativeFunctionFlags.NetReliable)]
-    Reliable = 0x00000080,
+    Reliable = NativeFunctionFlags.NetReliable,
+    
+    [FunctionFlagsMap(NativeFunctionFlags.Exec)]
+    Exec = NativeFunctionFlags.Exec,
 }
 
 [AttributeUsage(AttributeTargets.Method)]
 [FunctionFlagsMap(NativeFunctionFlags.Native)] 
 public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None) : BaseUAttribute
 {
-    public FunctionFlags Flags { get; private set; } = flags;
+    /// <summary>
+    /// The flags of the function.
+    /// </summary>
+    public FunctionFlags Flags = flags;
+
+    /// <summary>
+    /// If true, the function can be called from an instance of the class in the editor.
+    /// </summary>
+    public bool CallInEditor = false;
 }

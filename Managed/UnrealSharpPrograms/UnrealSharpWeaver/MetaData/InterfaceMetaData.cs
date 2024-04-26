@@ -27,7 +27,7 @@ public class InterfaceMetaData : TypeReferenceMetadata
         {
             if (method.IsAbstract && WeaverHelper.IsUFunction(method))
             {
-                Functions.Add(new FunctionMetaData(method));
+                Functions.Add(new FunctionMetaData(method, onlyCollectMetaData: true));
             }
         }
     }
