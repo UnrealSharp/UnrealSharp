@@ -147,7 +147,7 @@ namespace ScriptGeneratorUtilities
 
 	bool IsBlueprintExposedField(const FField* InField)
 	{
-		if (const FProperty* Prop = Cast<const FProperty>(InField))
+		if (const FProperty* Prop = CastField<const FProperty>(InField))
 		{
 			return IsBlueprintExposedProperty(Prop);
 		}

@@ -3,6 +3,7 @@
 #include "CSharpForUE/CSDeveloperSettings.h"
 #include "CSharpForUE/CSManager.h"
 #include "Factories/CSPropertyFactory.h"
+#include "Blueprint/BlueprintExceptionInfo.h"
 
 void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {

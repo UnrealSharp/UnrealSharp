@@ -14,6 +14,7 @@
 #include "Misc/MessageDialog.h"
 #include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+#include <vector>
 
 #if WITH_EDITOR
 #include "GlueGenerator/CSGenerator.h"

@@ -135,7 +135,7 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 
 	if (HighestVersion < DOTNET_MAJOR_VERSION)
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Hostfxr version %s is less than the required version %s"), *HighestVersion, DOTNET_MAJOR_VERSION);
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Hostfxr version %s is less than the required version %s"), *HighestVersion, TEXT(DOTNET_MAJOR_VERSION));
 		return "";
 	}
 	
