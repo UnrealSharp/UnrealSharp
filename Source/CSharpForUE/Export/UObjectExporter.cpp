@@ -82,7 +82,9 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 		}
 	}
 	
-	NativeFunction->GetNativeFunc()(NativeObject, NewStack, Params);
+	const bool bHasReturnParam = NativeFunction->ReturnValueOffset != MAX_uint16;
+	uint8* ReturnValueAddress = bHasReturnParam ? Params + NativeFunction->ReturnValueOffset : nullptr;
+	NativeFunction->GetNativeFunc()(NativeObject, NewStack, ReturnValueAddress);
 }
 
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)
