@@ -113,7 +113,7 @@ public static class UnrealStructProcessor
         staticConstructorBody.Emit(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod);
         staticConstructorBody.Emit(OpCodes.Stloc, nativeStructClass);
         
-        ConstructorBuilder.InitializeFields(staticConstructor, [.. metadata.Fields], [], Instruction.Create(OpCodes.Ldloc, nativeStructClass));
+        ConstructorBuilder.InitializeFields(staticConstructor, [.. metadata.Fields], Instruction.Create(OpCodes.Ldloc, nativeStructClass));
         WeaverHelper.FinalizeMethod(staticConstructor);
     }
 

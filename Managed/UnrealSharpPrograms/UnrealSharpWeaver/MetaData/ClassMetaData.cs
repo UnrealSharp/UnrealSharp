@@ -6,14 +6,18 @@ namespace UnrealSharpWeaver.MetaData;
 public class ClassMetaData : TypeReferenceMetadata
 {
     public TypeReferenceMetadata ParentClass { get; set; }
-    public List<PropertyMetaData> Properties { get; set; }
+    public List<PropertyMetaData>? Properties { get; set; }
     public List<FunctionMetaData> Functions { get; set; }
     public List<FunctionMetaData> VirtualFunctions { get; set; }
     public List<string> Interfaces { get; set; }
     public string ConfigCategory { get; set; } 
     public ClassFlags ClassFlags { get; set; }
-
+    
+    // Non-serialized for JSON
+    public bool HasProperties => Properties != null && Properties.Count > 0;
     private readonly TypeDefinition ClassDefinition;
+    // End non-serialized
+    
 
     public ClassMetaData(TypeDefinition type) : base(type, WeaverHelper.UClassAttribute)
     {

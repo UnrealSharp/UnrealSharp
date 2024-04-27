@@ -39,9 +39,12 @@ public static class UnrealClassProcessor
     private static void ProcessClass(TypeDefinition classTypeDefinition, ClassMetaData metadata)
     {
         // Rewrite all the properties of the class to make getters/setters that call Native code.
-        var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
-        var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
-        PropertyProcessor.ProcessClassMembers(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
+        if (metadata.HasProperties)
+        {
+            var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
+            var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
+            PropertyProcessor.ProcessClassMembers(ref offsetsToInitialize, ref pointersToInitialize, classTypeDefinition, metadata.Properties);
+        }
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
@@ -61,7 +64,11 @@ public static class UnrealClassProcessor
         MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(classTypeDefinition);
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
-        ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, metadata.Functions, loadNativeClassField);
+        
+        if (metadata.HasProperties)
+        {
+            ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
+        }
         
         foreach (var function in metadata.Functions)
         {

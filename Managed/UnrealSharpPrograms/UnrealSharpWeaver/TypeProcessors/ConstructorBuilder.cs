@@ -68,7 +68,7 @@ public static class ConstructorBuilder
         }
     }
 
-    public static void InitializeFields(MethodDefinition staticConstructor, List<PropertyMetaData> fields, List<FunctionMetaData> functions, Instruction loadNativeClassField)
+    public static void InitializeFields(MethodDefinition staticConstructor, List<PropertyMetaData> fields, Instruction loadNativeClassField)
     {
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         foreach (var property in fields)
