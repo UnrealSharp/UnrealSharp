@@ -37,11 +37,10 @@ class NativeDataArrayType : NativeDataType
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-        
         PropertyDefinition propertyDef = propertyMetadata.FindPropertyDefinition(typeDefinition);
 
         // Ensure that IList<T> itself is imported.
-        WeaverHelper.UserAssembly.MainModule.ImportReference(CSharpType);
+        WeaverHelper.ImportType(CSharpType);
 
         if (InnerProperty.PropertyDataType is not NativeDataSimpleType)
         {
@@ -54,8 +53,7 @@ class NativeDataArrayType : NativeDataType
         string marshallerTypeName = "UnrealArrayReadWriteMarshaller`1";
         string copyMarshallerTypeName = "UnrealArrayCopyMarshaller`1";
 
-        ArrayMarshallerTypeParameters = [WeaverHelper.UserAssembly.MainModule.ImportReference(InnerProperty.PropertyDataType.CSharpType)
-        ];
+        ArrayMarshallerTypeParameters = [WeaverHelper.UserAssembly.MainModule.ImportReference(InnerProperty.PropertyDataType.CSharpType)];
 
         var genericMarshallerTypeRef = (from type in WeaverHelper.BindingsAssembly.MainModule.Types
                                         where type.Namespace == WeaverHelper.UnrealSharpNamespace
@@ -71,24 +69,25 @@ class NativeDataArrayType : NativeDataType
 
         TypeDefinition arrTypeDef = ArrayMarshallerType.Resolve();
         FromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in arrTypeDef.GetMethods() where method.Name == "FromNative" select method).Single());
-        FromNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(FromNative, ArrayMarshallerTypeParameters);
+        FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, ArrayMarshallerTypeParameters);
 
         // TODO: Figure out if this should be a IReadOnlyList or a ReadOnlySpan
         string arrayWrapperType = "System.Collections.Generic.IList`1";
 
         TypeDefinition copyArrTypeDef = CopyArrayMarshallerType.Resolve();
         CopyArrayMarshallerCtor = (from method in copyArrTypeDef.GetConstructors()
-                                   where (!method.IsStatic
-                                          && method.HasParameters
-                                          && method.Parameters.Count == 3
-                                          && method.Parameters[0].ParameterType.FullName == "System.IntPtr"
-                                          && ((GenericInstanceType)method.Parameters[1].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/ToNative"
-                                          && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/FromNative")
-                                   select method).Single();
+            where (!method.IsStatic
+                   && method.HasParameters
+                   && method.Parameters.Count == 3
+                   && method.Parameters[0].ParameterType.FullName == "System.IntPtr"
+                   && ((GenericInstanceType)method.Parameters[1].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/ToNative"
+                   && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/FromNative")
+            select method).Single();
+        
         CopyArrayMarshallerCtor = WeaverHelper.UserAssembly.MainModule.ImportReference(CopyArrayMarshallerCtor);
-        CopyArrayMarshallerCtor = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(CopyArrayMarshallerCtor, ArrayMarshallerTypeParameters);
+        CopyArrayMarshallerCtor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyArrayMarshallerCtor, ArrayMarshallerTypeParameters);
         CopyFromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in copyArrTypeDef.GetMethods() where method.Name == "FromNative" select method).Single());
-        CopyFromNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(CopyFromNative, ArrayMarshallerTypeParameters);
+        CopyFromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyFromNative, ArrayMarshallerTypeParameters);
         CopyToNative = WeaverHelper.UserAssembly.MainModule.ImportReference((
             from method in copyArrTypeDef.GetMethods()
             where method.Name == "ToNative"
@@ -96,9 +95,9 @@ class NativeDataArrayType : NativeDataType
                 && genericInstanceType.ElementType.FullName == arrayWrapperType
             select method
         ).Single());
-        CopyToNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(CopyToNative, ArrayMarshallerTypeParameters);
+        CopyToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyToNative, ArrayMarshallerTypeParameters);
         CopyDestructInstance = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in copyArrTypeDef.GetMethods() where method.Name == "DestructInstance" select method).Single());
-        CopyDestructInstance = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(CopyDestructInstance, ArrayMarshallerTypeParameters);
+        CopyDestructInstance = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyDestructInstance, ArrayMarshallerTypeParameters);
 
         // If this is a rewritten autoproperty, we need an additional backing field for the array marshaller.
         // Otherwise, we're copying data for a struct UProp, parameter, or return value.
@@ -152,7 +151,7 @@ class NativeDataArrayType : NativeDataType
                    && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/ToNative"
                    && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/FromNative")
             select method).First();
-        processor.Emit(OpCodes.Newobj, FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(WeaverHelper.UserAssembly.MainModule.ImportReference(constructor), ArrayMarshallerTypeParameters));
+        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverHelper.UserAssembly.MainModule.ImportReference(constructor), ArrayMarshallerTypeParameters));
         processor.Emit(OpCodes.Stfld, ArrayMarshallerField);
 
         // Store the branch destination

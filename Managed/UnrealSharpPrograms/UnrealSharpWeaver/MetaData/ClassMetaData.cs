@@ -13,15 +13,16 @@ public class ClassMetaData : TypeReferenceMetadata
     public string ConfigCategory { get; set; } 
     public ClassFlags ClassFlags { get; set; }
 
-    private readonly TypeDefinition MyTypeDefinition;
+    private readonly TypeDefinition ClassDefinition;
 
     public ClassMetaData(TypeDefinition type) : base(type, WeaverHelper.UClassAttribute)
     {
-        MyTypeDefinition = type;
+        ClassDefinition = type;
         
         PopulateInterfaces();
         PopulateProperties();
         PopulateFunctions();
+        
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
@@ -30,7 +31,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void AddConfigCategory()
     {
-        CustomAttribute? uClassAttribute = WeaverHelper.GetUClass(MyTypeDefinition);
+        CustomAttribute? uClassAttribute = WeaverHelper.GetUClass(ClassDefinition);
         CustomAttributeArgument? configCategoryProperty = WeaverHelper.FindAttributeField(uClassAttribute, nameof(ConfigCategory));
         if (configCategoryProperty != null)
         {
@@ -40,14 +41,14 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void PopulateProperties()
     {
-        if (MyTypeDefinition.Properties.Count == 0)
+        if (ClassDefinition.Properties.Count == 0)
         {
             return;
         }
         
         Properties = [];
         
-        foreach (PropertyDefinition property in MyTypeDefinition.Properties)
+        foreach (PropertyDefinition property in ClassDefinition.Properties)
         {
             CustomAttribute? uPropertyAttribute = WeaverHelper.GetUProperty(property);
         
@@ -60,7 +61,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     void PopulateFunctions()
     {
-        if (MyTypeDefinition.Methods.Count == 0)
+        if (ClassDefinition.Methods.Count == 0)
         {
             return;
         }
@@ -68,13 +69,13 @@ public class ClassMetaData : TypeReferenceMetadata
         Functions = [];
         VirtualFunctions = [];
         
-        for (var i = MyTypeDefinition.Methods.Count - 1; i >= 0; i--)
+        for (var i = ClassDefinition.Methods.Count - 1; i >= 0; i--)
         {
-            MethodDefinition method = MyTypeDefinition.Methods[i];
+            MethodDefinition method = ClassDefinition.Methods[i];
 
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
-                FunctionRewriterHelpers.RewriteMethodAsAsyncUFunctionImplementation(method);
+                FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
                 return;
             }
 
@@ -104,7 +105,7 @@ public class ClassMetaData : TypeReferenceMetadata
             }
             else if (isBlueprintOverride || isInterfaceFunction)
             {
-                VirtualFunctions.Add(new FunctionMetaData(method, true));
+                VirtualFunctions.Add(new FunctionMetaData(method));
             }
         }
     }
@@ -116,14 +117,14 @@ public class ClassMetaData : TypeReferenceMetadata
     
     void PopulateInterfaces()
     {
-        if (MyTypeDefinition.Interfaces.Count == 0)
+        if (ClassDefinition.Interfaces.Count == 0)
         {
             return;
         }
         
         Interfaces = [];
         
-        foreach (var typeInterface in MyTypeDefinition.Interfaces)
+        foreach (var typeInterface in ClassDefinition.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
             if (WeaverHelper.IsUInterface(interfaceType))

@@ -1,6 +1,6 @@
-﻿using Mono.Cecil;
+﻿using System.Globalization;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -18,9 +18,9 @@ public class BaseMetaData
     public BaseMetaData(MemberReference member, string attributeName)
     {
         Name = member.Name;
+        MemberDefinition = member.Resolve();
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        MemberDefinition = member.Resolve();
         BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
         
         AddMetaData();
@@ -62,7 +62,7 @@ public class BaseMetaData
         TryAddMetaData(key, value.ToString());
     }
 
-    public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
+    public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)
     {
         CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, WeaverHelper.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
         return flagsAttribute == null ? 0 : GetFlags(flagsAttribute);

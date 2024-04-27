@@ -6,22 +6,12 @@ public class InterfaceMetaData : TypeReferenceMetadata
 { 
     public List<FunctionMetaData> Functions { get; set; }
     
+    // Non-serialized for JSON
+    const string CannotImplementInterfaceInBlueprint = "CannotImplementInterfaceInBlueprint";
+    // End non-serialized
+    
     public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
     {
-        CustomAttribute? interfaceAttributes = WeaverHelper.GetUInterface(typeDefinition);
-        CustomAttributeArgument? nonBpInterface = WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
-        
-        if (nonBpInterface != null)
-        {
-            var cannotImplementInterfaceInBlueprint = (bool) nonBpInterface.Value.Value;
-            
-            // Only add the metadata if it's true, since it's false by default
-            if (cannotImplementInterfaceInBlueprint)
-            {
-                MetaData.Add("CannotImplementInterfaceInBlueprint", cannotImplementInterfaceInBlueprint.ToString());
-            }
-        }
-        
         Functions = [];
         foreach (var method in typeDefinition.Methods)
         {
@@ -29,6 +19,12 @@ public class InterfaceMetaData : TypeReferenceMetadata
             {
                 Functions.Add(new FunctionMetaData(method, onlyCollectMetaData: true));
             }
+        }
+        
+        CustomAttributeArgument? nonBpInterface = WeaverHelper.FindAttributeField(BaseAttribute, CannotImplementInterfaceInBlueprint);
+        if (nonBpInterface != null)
+        {
+            TryAddMetaData(CannotImplementInterfaceInBlueprint, (bool) nonBpInterface.Value.Value);
         }
     }
 }

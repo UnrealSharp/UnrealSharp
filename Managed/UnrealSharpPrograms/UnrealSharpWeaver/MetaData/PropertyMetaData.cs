@@ -18,6 +18,9 @@ public class PropertyMetaData : BaseMetaData
     public FieldDefinition PropertyOffsetField;
     public FieldDefinition? NativePropertyField;
     public readonly MemberReference MemberRef;
+    public bool IsOutParameter => (PropertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
+    public bool IsReferenceParameter => (PropertyFlags & PropertyFlags.ReferenceParm) == PropertyFlags.ReferenceParm;
+    public bool IsReturnParameter => (PropertyFlags & PropertyFlags.ReturnParm) == PropertyFlags.ReturnParm;
     // End non-serialized
     
     private PropertyMetaData(MemberReference memberRef) : base(memberRef, WeaverHelper.UPropertyAttribute)
@@ -168,11 +171,6 @@ public class PropertyMetaData : BaseMetaData
         }
         
         PropertyFlags = flags;
-    }
-    
-    public bool IsOutParameter()
-    {
-        return (PropertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
     }
     
     public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, Instruction setPropertyPointer)

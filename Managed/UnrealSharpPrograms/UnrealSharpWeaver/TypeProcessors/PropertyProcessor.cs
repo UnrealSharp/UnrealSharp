@@ -5,7 +5,7 @@ using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
-public static class PropertyRewriterHelpers
+public static class PropertyProcessor
 {
     public static void ProcessClassMembers(
         ref List<Tuple<FieldDefinition, PropertyMetaData>> propertyOffsetsToInitialize,

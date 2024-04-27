@@ -71,10 +71,10 @@ public static class UnrealStructProcessor
         
         var propertyOffsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var propertyPointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
-        PropertyRewriterHelpers.ProcessClassMembers(ref propertyOffsetsToInitialize, ref propertyPointersToInitialize, structTypeDefinition, metadata.Fields);
+        PropertyProcessor.ProcessClassMembers(ref propertyOffsetsToInitialize, ref propertyPointersToInitialize, structTypeDefinition, metadata.Fields);
 
         MethodDefinition structConstructor = ConstructorBuilder.CreateConstructor(structTypeDefinition, MethodAttributes.Public, WeaverHelper.IntPtrType);
-        var toNativeMethod = FunctionRewriterHelpers.CreateMethod(structTypeDefinition, "ToNative", MethodAttributes.Public, null, [WeaverHelper.IntPtrType]);
+        var toNativeMethod = FunctionProcessor.CreateMethod(structTypeDefinition, "ToNative", MethodAttributes.Public, null, [WeaverHelper.IntPtrType]);
         
         ILProcessor constructorBody = structConstructor.Body.GetILProcessor();
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();

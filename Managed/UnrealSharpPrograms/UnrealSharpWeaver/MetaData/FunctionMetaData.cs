@@ -10,20 +10,20 @@ public class FunctionMetaData : BaseMetaData
     public PropertyMetaData[] Parameters { get; set; }
     public PropertyMetaData? ReturnValue { get; set; }
     public FunctionFlags FunctionFlags { get; set; }
-    public bool IsBlueprintEvent { get; set; }
-    public bool IsRpc { get; set; }
     
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
+    public bool IsBlueprintEvent => FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent);
+    public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
+    public bool HasReturnValue => ReturnValue != null;
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
 
-    public FunctionMetaData(MethodDefinition method, bool blueprintEvent = false, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
+    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
     {
-        IsBlueprintEvent = blueprintEvent; 
         MethodDefinition = method;
         bool hasOutParams = false;
         
@@ -99,16 +99,9 @@ public class FunctionMetaData : BaseMetaData
         
         if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
         {
-            IsBlueprintEvent = true;
-            
-            if (!method.IsVirtual && method.Body.Instructions.Count == 1 && method.Body.Instructions[0].OpCode == OpCodes.Ret)
-            {
-                flags ^= FunctionFlags.Native;
-            }
-
             if (flags.HasFlag(FunctionFlags.Net))
             {
-                throw new InvalidUnrealFunctionException(method, "BlueprintImplementable methods cannot be replicated!");
+                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
             }
         }
 
@@ -145,18 +138,25 @@ public class FunctionMetaData : BaseMetaData
         
         FunctionFlags = flags;
         
-        if (!onlyCollectMetaData)
+        if (onlyCollectMetaData)
         {
-            TypeDefinition baseType = method.GetOriginalBaseMethod().DeclaringType;
-            if (baseType == method.DeclaringType)
-            {
-                RewriteInfo = new FunctionRewriteInfo(this);
-                FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
-            }
-            else
-            {
-                FunctionRewriterHelpers.MakeImplementationMethod(this);
-            }
+            return;
+        }
+        
+        RewriteFunction();
+    }
+    
+    public void RewriteFunction()
+    {
+        TypeDefinition baseType = MethodDefinition.GetOriginalBaseMethod().DeclaringType;
+        if (baseType == MethodDefinition.DeclaringType)
+        {
+            RewriteInfo = new FunctionRewriteInfo(this);
+            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDefinition.DeclaringType);
+        }
+        else
+        {
+            FunctionProcessor.MakeImplementationMethod(this);
         }
     }
 
@@ -178,13 +178,8 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
 
-        var flags = (FunctionFlags)(int)functionAttribute.ConstructorArguments[0].Value;
-        if (flags != FunctionFlags.BlueprintCallable)
-        {
-            return false;
-        }
-
-        return method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
+        var flags = (FunctionFlags) (ulong) functionAttribute.ConstructorArguments[0].Value;
+        return flags == FunctionFlags.BlueprintCallable && method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
     }
 
     public static bool IsBlueprintEventOverride(MethodDefinition method)
@@ -279,15 +274,5 @@ public class FunctionMetaData : BaseMetaData
             processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stsfld, nativePropertyField);
         }
-    }
-    
-    public bool HasParameters()
-    {
-        return Parameters.Length > 0 || HasReturnValue();
-    }
-    
-    public bool HasReturnValue()
-    {
-        return ReturnValue != null;
     }
 }

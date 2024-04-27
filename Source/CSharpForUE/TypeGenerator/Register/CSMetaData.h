@@ -146,7 +146,6 @@ struct FClassPropertyMetaData : FUnrealType
 struct FStructMetaData : FTypeReferenceMetaData
 {
 	TArray<FPropertyMetaData> Properties;
-	bool bIsDataTableStruct = false;
 
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;

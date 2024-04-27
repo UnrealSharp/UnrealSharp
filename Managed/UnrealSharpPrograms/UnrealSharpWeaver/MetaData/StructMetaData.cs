@@ -6,7 +6,10 @@ public class StructMetaData : BaseMetaData
 {
     public List<PropertyMetaData> Fields { get; set; }
     public StructFlags StructFlags { get; set; }
-    public bool IsBlittableStruct { get; set; }
+    
+    // Non-serialized for JSON
+    public readonly bool IsBlittableStruct;
+    // End non-serialized
     
     public StructMetaData(TypeDefinition structDefinition) : base(structDefinition, WeaverHelper.UStructAttribute)
     {

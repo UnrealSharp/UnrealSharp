@@ -24,8 +24,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-
-        IsReference = propertyMetadata.PropertyFlags.HasFlag(PropertyFlags.OutParm);
+        IsReference = propertyMetadata.IsOutParameter;
 
         TypeReference[] typeParams = GetTypeParams();
         
@@ -62,8 +61,8 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         
         if (marshallerName.EndsWith("`1"))
         {
-            ToNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(ToNative, typeParams);
-            FromNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(FromNative, typeParams);
+            ToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ToNative, typeParams);
+            FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, typeParams);
         }
         
         ToNative = WeaverHelper.ImportMethod(ToNative);
