@@ -28,7 +28,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataDelegateType))]
 public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
-    internal TypeReference CSharpType { get; set; } = typeRef;
+    internal TypeReference CSharpType { get; set; } = WeaverHelper.ImportType(typeRef);
     public int ArrayDim { get; set; } = arrayDim;
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }

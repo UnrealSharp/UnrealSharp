@@ -325,7 +325,7 @@ public static class FunctionProcessor
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.ReturnValue != null)
+        if (metadata.HasReturnValue)
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);

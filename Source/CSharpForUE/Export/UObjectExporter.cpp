@@ -54,11 +54,6 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
 		{
 			FProperty* Property = *PropIt;
-
-			if (Property->HasAnyPropertyFlags(CPF_ReturnParm))
-			{
-				continue;
-			}
 			
 			if (!Property->HasAnyPropertyFlags(CPF_OutParm))
 			{

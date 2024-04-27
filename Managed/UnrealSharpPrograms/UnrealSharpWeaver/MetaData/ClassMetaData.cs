@@ -78,11 +78,6 @@ public class ClassMetaData : TypeReferenceMetadata
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
                 return;
             }
-
-            if (method.Name.Contains("BeginPlay"))
-            {
-                Console.WriteLine("Found BeginPlay");
-            }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);

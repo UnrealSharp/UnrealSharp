@@ -50,7 +50,7 @@ public class PropertyMetaData : BaseMetaData
                 flags |= PropertyFlags.OutParm | PropertyFlags.ReferenceParm;
                 break;
             case ParameterType.ReturnValue:
-                flags |= PropertyFlags.ReturnParm;
+                flags |= PropertyFlags.ReturnParm | PropertyFlags.OutParm;
                 break;
         }
 

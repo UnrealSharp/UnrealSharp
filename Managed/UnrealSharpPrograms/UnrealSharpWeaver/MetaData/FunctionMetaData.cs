@@ -18,6 +18,7 @@ public class FunctionMetaData : BaseMetaData
     public bool IsBlueprintEvent => FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
+    public bool IsRpc => FunctionFlags.HasFlag(FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient);
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
@@ -27,7 +28,7 @@ public class FunctionMetaData : BaseMetaData
         MethodDefinition = method;
         bool hasOutParams = false;
         
-        if (method.ReturnType.Name != WeaverHelper.VoidTypeRef.Name)
+        if (method.ReturnType != WeaverHelper.VoidTypeRef)
         {
             hasOutParams = true;
             try
@@ -53,36 +54,23 @@ public class FunctionMetaData : BaseMetaData
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
             ParameterDefinition param = method.Parameters[i];
+            ParameterType modifier = ParameterType.Value;
+            TypeReference paramType = param.ParameterType;
             
             if (param.IsOut)
             {
                 hasOutParams = true;
+                modifier = ParameterType.Out;
             }
-
+            else if (paramType.IsByReference)
+            {
+                hasOutParams = true;
+                modifier = ParameterType.Ref;
+            }
+            
             try
             {
-                bool byReference = false;
-                TypeReference paramType = param.ParameterType;
-                
-                if (paramType.IsByReference)
-                {
-                    byReference = true;
-                    paramType = ((ByReferenceType)paramType).ElementType;
-                }
-
-                ParameterType modifier = ParameterType.Value;
-                
-                if (param.IsOut)
-                {
-                    modifier = ParameterType.Out;
-                }
-                else if (byReference)
-                {
-                    modifier = ParameterType.Ref;
-                }
-                
                 Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
-                
             }
             catch (InvalidPropertyException e)
             {
@@ -95,14 +83,6 @@ public class FunctionMetaData : BaseMetaData
         if (hasOutParams)
         {
             flags |= FunctionFlags.HasOutParms;
-        }
-        
-        if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
-        {
-            if (flags.HasFlag(FunctionFlags.Net))
-            {
-                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
-            }
         }
 
         if (method.IsPublic)
@@ -123,10 +103,7 @@ public class FunctionMetaData : BaseMetaData
             flags |= FunctionFlags.Static;
         }
         
-        const FunctionFlags netFlags = FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient;
-        bool isRpc = (flags & netFlags) != 0;
-        
-        if (isRpc)
+        if (IsRpc)
         {
             flags |= FunctionFlags.Net;
             
@@ -134,9 +111,21 @@ public class FunctionMetaData : BaseMetaData
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }
+            
+            if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+            {
+                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
+            }
         }
         
-        FunctionFlags = flags;
+        // This represents both BlueprintNativeEvent and BlueprintImplementableEvent
+        if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+        {
+            flags |= FunctionFlags.Event;
+        }
+        
+        // Native is needed to bind the function pointer of the UFunction to our own invoke in UE.
+        FunctionFlags = flags | FunctionFlags.Native;
         
         if (onlyCollectMetaData)
         {
