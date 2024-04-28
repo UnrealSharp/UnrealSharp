@@ -35,7 +35,8 @@ void FMulticastDelegatePropertyTranslator::ExportPropertyStaticConstruction(FCSS
 	if (DelegateProperty->SignatureFunction->NumParms > 0)
 	{
 		FString DelegateName = GetDelegateName(DelegateProperty);
-		Builder.AppendLine(FString::Printf(TEXT("%s.InitializeUnrealDelegate(%s_NativeProperty);"), *DelegateName, *NativePropertyName));
+		FString Namespace = FCSGenerator::Get().GetNamespace(DelegateProperty->SignatureFunction);
+		Builder.AppendLine(FString::Printf(TEXT("%s.%s.InitializeUnrealDelegate(%s_NativeProperty);"), *Namespace, *DelegateName, *NativePropertyName));
 	}
 }
 

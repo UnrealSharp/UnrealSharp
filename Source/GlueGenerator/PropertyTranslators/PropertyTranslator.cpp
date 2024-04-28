@@ -588,14 +588,18 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 		{
 			FProperty* ParamProperty = *ParamIt;
 			const FString NativePropertyName = ParamProperty->GetName();
+
+			if (ParamProperty->HasAnyPropertyFlags(CPF_ReturnParm))
+			{
+				continue;
+			}
 			
-			if (!ParamProperty->HasAnyPropertyFlags(CPF_ReturnParm) && (ParamProperty->HasAnyPropertyFlags(CPF_ReferenceParm) || !ParamProperty->HasAnyPropertyFlags(CPF_OutParm)))
+			if (ParamProperty->HasAnyPropertyFlags(CPF_ReferenceParm) || !ParamProperty->HasAnyPropertyFlags(CPF_OutParm))
 			{
 				const FPropertyTranslator& ParamHandler = Handler.PropertyHandlers.Find(ParamProperty);
 				FString SourceName = Mode == InvokeMode::Setter ? "value" : GetScriptNameMapper().MapParameterName(ParamProperty);
 				ParamHandler.ExportMarshalToNativeBuffer(Builder, ParamProperty, NativePropertyName, "ParamsBuffer", FString::Printf(TEXT("%s_%s_Offset"), *NativeMethodName, *NativePropertyName), SourceName);
 			}
-			
 		}
 
 		Builder.AppendLine();
@@ -609,7 +613,7 @@ void FPropertyTranslator::FunctionExporter::ExportInvoke(FCSScriptBuilder& Build
 			Builder.AppendLine(CustomInvoke);
 		}
 		
-		if (ReturnProperty || Function.HasAnyFunctionFlags(FUNC_HasOutParms))
+		if (ReturnProperty || HasOutParams(&Function))
 		{
 			Builder.AppendLine();
 			for (TFieldIterator<FProperty> ParamIt(&Function); ParamIt; ++ParamIt)
@@ -879,7 +883,7 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 
 void FPropertyTranslator::ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const
 {
-	FPropertyTranslator::FunctionExporter Exporter(*this, *SignatureFunction, FPropertyTranslator::ProtectionMode::OverrideWithProtected, FPropertyTranslator::OverloadMode::SuppressOverloads, FPropertyTranslator::BlueprintVisibility::Call);
+	FunctionExporter Exporter(*this, *SignatureFunction, ProtectionMode::OverrideWithProtected, OverloadMode::SuppressOverloads, BlueprintVisibility::Call);
 
 	FProperty* ReturnProperty = SignatureFunction->GetReturnProperty();
 	const FString ReturnType = *GetManagedType(ReturnProperty);
@@ -896,7 +900,7 @@ void FPropertyTranslator::ExportDelegateFunction(FCSScriptBuilder& Builder, UFun
 	Builder.AppendLine(FString::Printf(TEXT("protected %s Invoker(%s)"), *ReturnType, *Exporter.ParamsStringAPIWithDefaults));
 	Builder.OpenBrace();
 	Builder.BeginUnsafeBlock();
-	Exporter.ExportInvoke(Builder, FPropertyTranslator::FunctionExporter::InvokeMode::Normal);
+	Exporter.ExportInvoke(Builder, FunctionExporter::InvokeMode::Normal);
 	Builder.EndUnsafeBlock();
 	Builder.CloseBrace();
 }
