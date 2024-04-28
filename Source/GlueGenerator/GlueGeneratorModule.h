@@ -5,7 +5,7 @@
 
 class FCSGenerator;
 
-#define GLUE_GENERATOR_VERSION 1
+#define GLUE_GENERATOR_VERSION 2
 #define GLUE_GENERATOR_CONFIG TEXT("GlueGeneratorSettings")
 #define GLUE_GENERATOR_VERSION_KEY TEXT("GlueGeneratorVersion")
 
