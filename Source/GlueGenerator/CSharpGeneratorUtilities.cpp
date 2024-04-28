@@ -92,6 +92,26 @@ namespace ScriptGeneratorUtilities
 		Builder.AppendLine(TEXT("CheckObjectForValidity();"));
 	}
 
+	bool HasOutParams(const UFunction* Function)
+	{
+		if (!Function->HasAllFunctionFlags(FUNC_MulticastDelegate))
+		{
+			return Function->HasAllFunctionFlags(FUNC_HasOutParms);
+		}
+
+		// Multicast delegates can have out params, but the UFunction flag isn't set.
+		for (TFieldIterator<FProperty> ParamIt(Function); ParamIt; ++ParamIt)
+		{
+			FProperty* Param = *ParamIt;
+			if (Param->HasAnyPropertyFlags(CPF_OutParm))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool IsBlueprintExposedStruct(const UScriptStruct* InStruct)
 	{
 		for (const UScriptStruct* ParentStruct = InStruct; ParentStruct; ParentStruct = Cast<UScriptStruct>(ParentStruct->GetSuperStruct()))
