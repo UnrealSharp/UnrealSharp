@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CSharpForUE/TypeGenerator/CSFunction.h"
+#include "TypeGenerator/Register/CSMetaData.h"
 
 struct FPropertyMetaData;
 struct FClassMetaData;
@@ -23,12 +24,11 @@ public:
 		const FName& Name,
 		const FFunctionMetaData& FunctionMetaData,
 		EFunctionFlags FunctionFlags = FUNC_None,
-		UStruct* ParentFunction = nullptr,
-		void* ManagedMethod = nullptr);
+		UStruct* ParentFunction = nullptr);
 
 private:
 
-
+	static FProperty* CreateProperty(UCSFunction* Function, const FPropertyMetaData& PropertyMetaData);
 	static void FinalizeFunctionSetup(UClass* Outer, UCSFunction* Function);
 	
 };

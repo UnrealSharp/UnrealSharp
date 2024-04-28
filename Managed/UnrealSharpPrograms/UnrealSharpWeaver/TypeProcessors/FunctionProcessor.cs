@@ -6,47 +6,42 @@ using UnrealSharpWeaver.NativeTypes;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
-public static class FunctionRewriterHelpers
+public static class FunctionProcessor
 {
-    public static void PrepareFunctionForRewrite(FunctionMetaData func, TypeDefinition classDefinition)
+    public static void PrepareFunctionForRewrite(FunctionMetaData function, TypeDefinition classDefinition)
     {
         FieldDefinition? paramsSizeField = null;
 
-        if (func.Parameters.Length > 0 || func.ReturnValue != null)
+        if (function.HasParameters)
         {
-            for (int i = 0; i < func.Parameters.Length; i++)
+            for (int i = 0; i < function.Parameters.Length; i++)
             {
-                PropertyMetaData param = func.Parameters[i];
-                AddOffsetField(classDefinition, param, func, i, func.RewriteInfo.FunctionParams);
-                AddNativePropertyField(classDefinition, param, func, i, func.RewriteInfo.FunctionParams);
+                PropertyMetaData param = function.Parameters[i];
+                AddOffsetField(classDefinition, param, function, i, function.RewriteInfo.FunctionParams);
+                AddNativePropertyField(classDefinition, param, function, i, function.RewriteInfo.FunctionParams);
             }
 
-            paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{func.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
-            func.RewriteInfo.FunctionParamSizeField = paramsSizeField;
+            paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
+            function.RewriteInfo.FunctionParamSizeField = paramsSizeField;
         }
 
-        if (func.ReturnValue != null)
+        if (function.HasReturnValue)
         {
-            int index = func.Parameters.Length > 0 ? func.Parameters.Length : 0;
-            AddOffsetField(classDefinition, func.ReturnValue, func, index, func.RewriteInfo.FunctionParams);
-            AddNativePropertyField(classDefinition, func.ReturnValue, func, index, func.RewriteInfo.FunctionParams);
+            int index = function.Parameters.Length > 0 ? function.Parameters.Length : 0;
+            AddOffsetField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
+            AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
+        if (function.IsBlueprintEvent || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
         {
-            FieldAttributes baseMethodAttributes = FieldAttributes.Private;
-            FieldAttributes rpcAttributes = baseMethodAttributes | FieldAttributes.InitOnly | FieldAttributes.Static;
-            FieldAttributes nativeFuncAttributes = func.IsRpc ? rpcAttributes : baseMethodAttributes;
-
-            string nativeFuncFieldName = $"{func.Name}_NativeFunction";
-            func.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, nativeFuncFieldName, WeaverHelper.IntPtrType, nativeFuncAttributes);
-            RewriteMethodAsUFunctionInvoke(classDefinition, func, paramsSizeField, func.RewriteInfo.FunctionParams);
+            function.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_NativeFunction", WeaverHelper.IntPtrType, FieldAttributes.Private);
+            RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
         }
-        else if (WeaverHelper.HasAnyFlags(func.FunctionFlags, FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintNativeEvent))
+        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, FunctionFlags.BlueprintCallable))
         {
             foreach (var virtualFunction in classDefinition.Methods)
             {
-                if (virtualFunction.Name != func.Name)
+                if (virtualFunction.Name != function.Name)
                 {
                     continue;
                 }
@@ -56,13 +51,13 @@ public static class FunctionRewriterHelpers
                     continue;
                 }
 
-                MakeManagedMethodInvoker(classDefinition, func, virtualFunction, func.RewriteInfo.FunctionParams);
+                MakeManagedMethodInvoker(classDefinition, function, virtualFunction, function.RewriteInfo.FunctionParams);
                 break;
             }
         }
         else
         {
-            MakeManagedMethodInvoker(classDefinition, func, func.MethodDefinition, func.RewriteInfo.FunctionParams);
+            MakeManagedMethodInvoker(classDefinition, function, function.MethodDefinition, function.RewriteInfo.FunctionParams);
         }
     }
     
@@ -77,6 +72,32 @@ public static class FunctionRewriterHelpers
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Ldfld, functionMetaData.FunctionPointerField);
         }
+    }
+    
+    public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
+    {
+        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDefinition.Name + "_Implementation", func.MethodDefinition);
+        if (copiedMethod.IsVirtual)
+        {
+            // Find the call to the original function and replace it with a call to the implementation.
+            foreach (var instruction in copiedMethod.Body.Instructions)
+            {
+                if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+                {
+                    continue;
+                }
+                
+                MethodReference calledMethod = (MethodReference) instruction.Operand;
+                if (calledMethod.Name != func.Name)
+                {
+                    continue;
+                }
+
+                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name)!;
+                instruction.Operand = WeaverHelper.ImportMethod(implementationMethod);
+            }
+        }
+        return copiedMethod;
     }
 
     public static MethodReference MakeMethodDeclaringTypeGeneric(MethodReference method, params TypeReference[] args)
@@ -115,13 +136,10 @@ public static class FunctionRewriterHelpers
 
     private static void MakeManagedMethodInvoker(TypeDefinition type, FunctionMetaData func, MethodDefinition methodToCall, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        MethodDefinition invokerFunction = WeaverHelper.AddMethodToType(type, "Invoke_" + func.Name, WeaverHelper.VoidTypeRef);
-        
-        // Arguments Buffer from C++
-        WeaverHelper.AddParameterToMethod(invokerFunction, WeaverHelper.IntPtrType);
-        
-        // Return Buffer to C++
-        WeaverHelper.AddParameterToMethod(invokerFunction, WeaverHelper.IntPtrType);
+        MethodDefinition invokerFunction = WeaverHelper.AddMethodToType(type, "Invoke_" + func.Name, 
+            WeaverHelper.VoidTypeRef, 
+            MethodAttributes.Private, 
+            [WeaverHelper.IntPtrType, WeaverHelper.IntPtrType]);
 
         ILProcessor processor = invokerFunction.Body.GetILProcessor();
         Instruction loadBuffer = processor.Create(OpCodes.Ldarg_1);
@@ -163,7 +181,7 @@ public static class FunctionRewriterHelpers
         {
             VariableDefinition local = paramVariables[i];
             PropertyMetaData param = func.Parameters[i];
-            OpCode loadCode = PropertyMetaData.IsOutParameter(param.PropertyFlags) ? OpCodes.Ldloca : OpCodes.Ldloc;
+            OpCode loadCode = param.IsOutParameter ? OpCodes.Ldloca : OpCodes.Ldloc;
             processor.Emit(loadCode, local);
         }
 
@@ -183,7 +201,7 @@ public static class FunctionRewriterHelpers
         {
             PropertyMetaData param = func.Parameters[i];
             
-            if (!PropertyMetaData.IsOutParameter(param.PropertyFlags))
+            if (!param.IsOutParameter)
             {
                 continue;
             }
@@ -204,7 +222,7 @@ public static class FunctionRewriterHelpers
                 loadLocalVariable);
         }
 
-        if (func.ReturnValue != null)
+        if (func.HasReturnValue)
         {
             NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
             processor.Emit(OpCodes.Stloc, returnIndex);
@@ -216,53 +234,18 @@ public static class FunctionRewriterHelpers
             nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
                 processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);
         }
-
-        processor.Emit(OpCodes.Ret);
-        WeaverHelper.OptimizeMethod(invokerFunction);
+        
+        WeaverHelper.FinalizeMethod(invokerFunction);
     }
 
-    private static FieldDefinition AddElementSizeField(TypeDefinition type, FunctionMetaData func, PropertyMetaData prop, TypeReference int32TypeRef)
+    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        return WeaverHelper.AddFieldToType(type, func.Name + "_" + prop.Name + "_ElementSize", int32TypeRef);
-    }
-    
-    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, 
-        FunctionMetaData func, FieldDefinition? paramsSizeField,
-        FunctionParamRewriteInfo[] paramRewriteInfos)
-    {
-        MethodDefinition? originalMethodDef = null;
-        foreach (var method in type.Methods)
+        if (func.MethodDefinition.Body != null)
         {
-            if (method.Name != func.Name)
-            {
-                continue;
-
-            }
-
-            originalMethodDef = method;
-            break;
+            MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramRewriteInfos);
         }
         
-        if (originalMethodDef == null)
-        {
-            throw new Exception($"Could not find method {func.Name} in class {type.Name}");
-        }
-        
-        if (originalMethodDef.Body.CodeSize > 0)
-        {
-            string implementationMethodName = originalMethodDef.Name + "_Implementation";
-            MethodDefinition implementationMethod = WeaverHelper.AddMethodToType(type, implementationMethodName, originalMethodDef.ReturnType, originalMethodDef.Attributes);
-            implementationMethod.Body = originalMethodDef.Body;
-            
-            foreach (ParameterDefinition param in originalMethodDef.Parameters)
-            {
-                implementationMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, WeaverHelper.ImportType(param.ParameterType)));
-            }
-            
-            MakeManagedMethodInvoker(type, func, implementationMethod, paramRewriteInfos);
-        }
-        
-        RewriteOriginalFunctionToInvokeNative(type, func, originalMethodDef, paramsSizeField, paramRewriteInfos);
+        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDefinition, paramsSizeField, paramRewriteInfos);
     }
 
     public static void RewriteOriginalFunctionToInvokeNative(TypeDefinition type, 
@@ -342,7 +325,7 @@ public static class FunctionRewriterHelpers
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.ReturnValue != null)
+        if (metadata.HasReturnValue)
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);
@@ -384,17 +367,7 @@ public static class FunctionRewriterHelpers
 
     public static MethodDefinition CreateMethod(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
-        if (declaringType == null)
-        {
-            throw new ArgumentNullException(nameof(declaringType), "Declaring type cannot be null.");
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Method name cannot be null or whitespace.", nameof(name));
-        }
-        
-        var def = new MethodDefinition(name, attributes, returnType ?? WeaverHelper.VoidTypeRef);
+        MethodDefinition def = new MethodDefinition(name, attributes, returnType ?? WeaverHelper.VoidTypeRef);
 
         if (parameters != null)
         {
@@ -410,7 +383,6 @@ public static class FunctionRewriterHelpers
         }
 
         declaringType.Methods.Add(def);
-
         return def;
     }
     
@@ -475,12 +447,12 @@ public static class FunctionRewriterHelpers
         {
             PropertyMetaData paramType = paramRewriteInfos[i].PropertyMetaData;
             
-            if (paramType.PropertyFlags.HasFlag(PropertyFlags.ReturnParm))
+            if (paramType.IsReturnParameter)
             {
                 continue;
             }
 
-            if (paramType.PropertyFlags.HasFlag(PropertyFlags.OutParm) && !paramType.PropertyFlags.HasFlag(PropertyFlags.ReferenceParm))
+            if (paramType is { IsOutParameter: true, IsReferenceParameter: false })
             {
                 continue;
             }

@@ -50,42 +50,42 @@ void FCSPropertyFactory::AddProperty(ECSPropertyType PropertyType, FMakeNewPrope
 	MakeNewPropertyFunctionMap.Add(PropertyType, Function);
 }
 
-FProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
-	return CreateObjectProperty<FObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
+	return CreateObjectProperty<FObjectProperty>(Outer, PropertyMetaData);
 }
 
-FProperty* FCSPropertyFactory::CreateWeakObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateWeakObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
-	return CreateObjectProperty<FWeakObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
+	return CreateObjectProperty<FWeakObjectProperty>(Outer, PropertyMetaData);
 }
 
-FProperty* FCSPropertyFactory::CreateSoftObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateSoftObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
-	return CreateObjectProperty<FSoftObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
+	return CreateObjectProperty<FSoftObjectProperty>(Outer, PropertyMetaData);
 }
 
-FProperty* FCSPropertyFactory::CreateObjectPtrProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateObjectPtrProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
-	return CreateObjectProperty<FObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
+	return CreateObjectProperty<FObjectPtrProperty>(Outer, PropertyMetaData);
 }
 
-FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	TSharedPtr<FObjectMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
 	UClass* Class = FCSTypeRegistry::GetClassFromName(*ObjectMetaData->InnerType.Name);
 
-	FSoftClassProperty* SoftObjectProperty = CreateObjectProperty<FSoftClassProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FSoftClassProperty* SoftObjectProperty = CreateObjectProperty<FSoftClassProperty>(Outer, PropertyMetaData);
 	SoftObjectProperty->SetMetaClass(Class);
 	return SoftObjectProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto ClassMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
 	UClass* Class = FCSTypeRegistry::GetClassFromName(*ClassMetaData->InnerType.Name);
 	
-	FClassProperty* NewClassProperty = CreateSimpleProperty<FClassProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FClassProperty* NewClassProperty = CreateSimpleProperty<FClassProperty>(Outer, PropertyMetaData);
 	NewClassProperty->SetPropertyClass(UClass::StaticClass());
 	NewClassProperty->SetMetaClass(Class);
 	
@@ -93,40 +93,40 @@ FProperty* FCSPropertyFactory::CreateClassProperty(UField* Outer, const FPropert
 }
 
 template <typename ObjectProperty>
-ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto ObjectMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
 	UClass* Class = FCSTypeRegistry::GetClassFromName(*ObjectMetaData->InnerType.Name);
-	ObjectProperty* NewObjectProperty = CreateSimpleProperty<ObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
+	ObjectProperty* NewObjectProperty = CreateSimpleProperty<ObjectProperty>(Outer, PropertyMetaData);
 	NewObjectProperty->SetPropertyClass(Class);
 	return NewObjectProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateStructProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateStructProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FStructPropertyMetaData>();
 	UScriptStruct* Struct = FCSTypeRegistry::GetStructFromName(*StructPropertyMetaData->TypeRef.Name);
 	
-	FStructProperty* StructProperty = CreateSimpleProperty<FStructProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FStructProperty* StructProperty = CreateSimpleProperty<FStructProperty>(Outer, PropertyMetaData);
 	StructProperty->Struct = Struct;
 	
 	return StructProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateArrayProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateArrayProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FArrayPropertyMetaData>();
-	FArrayProperty* ArrayProperty = CreateSimpleProperty<FArrayProperty>(Outer, PropertyMetaData, PropertyFlags);
-	ArrayProperty->Inner = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty, PropertyFlags);
+	FArrayProperty* ArrayProperty = CreateSimpleProperty<FArrayProperty>(Outer, PropertyMetaData);
+	ArrayProperty->Inner = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
 	return ArrayProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	const auto EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FEnumPropertyMetaData>();
 	
 	UEnum* Enum = FCSTypeRegistry::GetEnumFromName(*EnumPropertyMetaData->InnerProperty.Name);
-	FEnumProperty* EnumProperty = CreateSimpleProperty<FEnumProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FEnumProperty* EnumProperty = CreateSimpleProperty<FEnumProperty>(Outer, PropertyMetaData);
 	FByteProperty* UnderlyingProp = new FByteProperty(EnumProperty, "UnderlyingType", RF_Public);
 	
 	EnumProperty->SetEnum(Enum);
@@ -135,22 +135,22 @@ FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FProperty
 	return EnumProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	TSharedPtr<FDelegateMetaData> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
-	FDelegateProperty* DelegateProperty = CreateSimpleProperty<FDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FDelegateProperty* DelegateProperty = CreateSimpleProperty<FDelegateProperty>(Outer, PropertyMetaData);
 	DelegateProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Outer->GetOwnerClass(), DelegateMetaData->SignatureFunction);
 	return DelegateProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateMulticastDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateMulticastDelegateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	TSharedPtr<FDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FDelegateMetaData>();
 
 	UClass* Class = CastChecked<UClass>(Outer);
 	UFunction* SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
 
-	FMulticastDelegateProperty* MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData, PropertyFlags);
+	FMulticastDelegateProperty* MulticastDelegateProperty = CreateSimpleProperty<FMulticastInlineDelegateProperty>(Outer, PropertyMetaData);
 	MulticastDelegateProperty->SignatureFunction = SignatureFunction;
 	return MulticastDelegateProperty;
 }
@@ -160,9 +160,9 @@ class FPrimitivePropertyWrapper
 {
 public:
 	
-	static FProperty* CallCreateSimpleProperty(UField* Object, const FPropertyMetaData& MetaData, const EPropertyFlags PropertyFlags)
+	static FProperty* CallCreateSimpleProperty(UField* Object, const FPropertyMetaData& MetaData)
 	{
-		FProperty* NewProperty = FCSPropertyFactory::CreateSimpleProperty<PrimitiveProperty>(Object, MetaData, PropertyFlags);
+		FProperty* NewProperty = FCSPropertyFactory::CreateSimpleProperty<PrimitiveProperty>(Object, MetaData);
 		NewProperty->SetPropertyFlags(CPF_HasGetValueTypeHash);
 		return NewProperty;
 	}
@@ -176,9 +176,9 @@ void FCSPropertyFactory::AddSimpleProperty(ECSPropertyType PropertyType)
 	MakeNewPropertyFunctionMap.Add(PropertyType, Delegate);
 }
 
-FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
-	FProperty* Property = CreateProperty(Outer, PropertyMetaData, PropertyFlags);
+	FProperty* Property = CreateProperty(Outer, PropertyMetaData);
 
 	if (!Property)
 	{
@@ -192,14 +192,14 @@ FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FPro
 	return Property;
 }
 
-FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	if (const FMakeNewPropertyDelegate* DelegatePtr = MakeNewPropertyFunctionMap.Find(PropertyMetaData.Type->PropertyType))
 	{
 		const FMakeNewPropertyDelegate MakeNewProperty = *DelegatePtr;
-		FProperty* NewProperty = MakeNewProperty(Outer, PropertyMetaData, PropertyFlags);
+		FProperty* NewProperty = MakeNewProperty(Outer, PropertyMetaData);
 		
-		NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags | PropertyFlags);
+		NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags);
 		NewProperty->SetBlueprintReplicationCondition(PropertyMetaData.LifetimeCondition);
 
 #if WITH_EDITOR
@@ -246,27 +246,26 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMeta
 	return nullptr;
 }
 
-void FCSPropertyFactory::GeneratePropertiesForType(UField* Outer, const TArray<FPropertyMetaData>& PropertiesMetaData, const EPropertyFlags PropertyFlags)
+void FCSPropertyFactory::GeneratePropertiesForType(UField* Outer, const TArray<FPropertyMetaData>& PropertiesMetaData)
 {
 	for (int32 Index = PropertiesMetaData.Num() - 1; Index >= 0; --Index)
 	{
-		const FPropertyMetaData& PropertyMetaData = PropertiesMetaData[Index];
-		CreateAndAssignProperty(Outer, PropertyMetaData, PropertyFlags);
+		CreateAndAssignProperty(Outer, PropertiesMetaData[Index]);
 	}
 }
 
 template <class FieldClass>
-FieldClass* FCSPropertyFactory::CreateSimpleProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
+FieldClass* FCSPropertyFactory::CreateSimpleProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	FName PropertyName = PropertyMetaData.Name;
 	
-	if (EnumHasAnyFlags(PropertyFlags, CPF_ReturnParm))
+	if (EnumHasAnyFlags(PropertyMetaData.PropertyFlags, CPF_ReturnParm))
 	{
 		PropertyName = "ReturnValue";
 	}
 
 	FieldClass* NewProperty = new FieldClass(Outer, PropertyName, RF_Public);
-	NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags | PropertyFlags;
+	NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
 	
 	return NewProperty;
 }
@@ -278,10 +277,3 @@ bool FCSPropertyFactory::IsOutParameter(const FProperty* InParam)
 	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
 	return bIsParam && !bIsReturnParam && bIsOutParam;
 }
-
-void FCSPropertyFactory::InitializeVariable(UFunction* Getter, UObject* Outer, FProperty* Property)
-{
-	void* ValuePtr = Property->ContainerPtrToValuePtr<int32>(Outer);
-	Outer->ProcessEvent(Getter, ValuePtr);
-}
-

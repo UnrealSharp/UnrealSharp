@@ -499,8 +499,8 @@ void FPropertyTranslator::FunctionExporter::ExportOverloads(FCSScriptBuilder& Bu
 void FPropertyTranslator::FunctionExporter::ExportFunction(FCSScriptBuilder& Builder) const
 {
 	Builder.AppendLine();
-	ExportDeprecation(Builder);
 	AppendTooltip(&Function, Builder);
+	ExportDeprecation(Builder);
 	
 	if (bBlueprintEvent)
 	{

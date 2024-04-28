@@ -25,22 +25,28 @@ public:
 	void AddPendingInterface(UClass* OldInterface, UClass* NewInterface);
 
 	// Process any pending re-instance requests
-	void Reinstance();
+	void StartReinstancing();
+
+	void GetDependentBlueprints(TArray<UBlueprint*>& DependentBlueprints);
+
+	void PostReinstance();
+
+	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
 	friend FCSReload;
 
 private:
 	
 	// Pending classes/interfaces to reinstance
-	TArray<TPair<TObjectPtr<UClass>, TObjectPtr<UClass>>> ClassesToReinstance;
+	TMap<UClass*, UClass*> ClassesToReinstance;
 
 	// Pending structs to reinstance
-	TArray<TPair<TObjectPtr<UScriptStruct>, TObjectPtr<UScriptStruct>>> StructsToReinstance;
+	TMap<UScriptStruct*, UScriptStruct*> StructsToReinstance;
 
 	// Pending enums to reinstance
-	TArray<TPair<TObjectPtr<UEnum>, TObjectPtr<UEnum>>> EnumsToReinstance;
+	TMap<UEnum*, UEnum*> EnumsToReinstance;
 
 	// Pending interfaces to reinstance
-	TArray<TPair<TObjectPtr<UClass>, TObjectPtr<UClass>>> InterfacesToReinstance;
+	TMap<UClass*, UClass*> InterfacesToReinstance;
 	
 };

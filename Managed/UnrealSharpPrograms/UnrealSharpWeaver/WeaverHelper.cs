@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System.Runtime.CompilerServices;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Mono.Collections.Generic;
@@ -24,6 +25,14 @@ public static class WeaverHelper
     public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
     public static readonly string UStructCallbacks = "UStructExporter";
     public static readonly string MarshallerSuffix = "Marshaller";
+    
+    public static readonly string UPropertyAttribute = "UPropertyAttribute";
+    public static readonly string UMetaDataAttribute = "UMetaDataAttribute";
+    public static readonly string UEnumAttribute = "UEnumAttribute";
+    public static readonly string UStructAttribute = "UStructAttribute";
+    public static readonly string UFunctionAttribute = "UFunctionAttribute";
+    public static readonly string UClassAttribute = "UClassAttribute";
+    public static readonly string UInterfaceAttribute = "UInterfaceAttribute";
     
     public static AssemblyDefinition UserAssembly;
     public static AssemblyDefinition BindingsAssembly;
@@ -196,31 +205,30 @@ public static class WeaverHelper
         method.Parameters.Add(parameter);
         return parameter;
     }
-    
-    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod)
-    {
-        return CopyMethod(method, overrideMethod, method.ReturnType);
-    }
 
-    public static MethodDefinition CopyMethod(MethodDefinition method, bool overrideMethod, TypeReference returnType)
+    public static MethodDefinition CopyMethod(string name, MethodDefinition method, bool addMethod = true)
     {
-        MethodDefinition newMethod = new MethodDefinition(method.Name, method.Attributes, returnType);
-
-        if (overrideMethod)
+        MethodDefinition newMethod = new MethodDefinition(name, method.Attributes, method.ReturnType)
         {
-            newMethod.Attributes &= ~MethodAttributes.VtableLayoutMask;
-            newMethod.Attributes &= ~MethodAttributes.NewSlot;
-            newMethod.Attributes |= MethodAttributes.ReuseSlot;
-        }
+            HasThis = true,
+            ExplicitThis = method.ExplicitThis,
+            CallingConvention = method.CallingConvention
+        };
 
-        newMethod.HasThis = true;
-        newMethod.ExplicitThis = method.ExplicitThis;
-        newMethod.CallingConvention = method.CallingConvention;
+        if (method.Body != null)
+        {
+            newMethod.Body = method.Body;
+        }
 
         foreach (ParameterDefinition parameter in method.Parameters)
         {
             TypeReference importedType = ImportType(parameter.ParameterType);
             newMethod.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, importedType));
+        }
+        
+        if (addMethod)
+        {
+            method.DeclaringType.Methods.Add(newMethod);
         }
 
         return newMethod;
@@ -597,12 +605,7 @@ public static class WeaverHelper
         return FindAttributesByType(customAttributes, UnrealSharpNamespace, "UMetaDataAttribute");
     }
 
-    static bool HasAttribute(TypeDefinition type, string attributeName)
-    {
-        return type.CustomAttributes.Any(attr => attr.AttributeType.Name == attributeName);
-    }
-
-    public static CustomAttributeArgument? FindAttributeField(CustomAttribute? attribute, string fieldName)
+    public static CustomAttributeArgument? FindAttributeField(CustomAttribute attribute, string fieldName)
     {
         foreach (var field in attribute.Fields) 
         {
@@ -614,15 +617,15 @@ public static class WeaverHelper
         return null;
     }
     
+    public static bool MethodIsCompilerGenerated(ICustomAttributeProvider method)
+    {
+        return FindAttributeByType(method.CustomAttributes, "System.Runtime.CompilerServices", "CompilerGeneratedAttribute") != null;
+    }
+    
     public static CustomAttribute? FindAttributeByType(IEnumerable<CustomAttribute> customAttributes, string typeNamespace, string typeName)
     {
-        CustomAttribute?[] attribs = FindAttributesByType (customAttributes, typeNamespace, typeName);
-
-        if (attribs.Length == 0) 
-        {
-            return null;
-        }
-        return attribs [0];
+        CustomAttribute?[] attribs = FindAttributesByType(customAttributes, typeNamespace, typeName);
+        return attribs.Length == 0 ? null : attribs[0];
     }
 
     public static CustomAttribute?[] FindAttributesByType(IEnumerable<CustomAttribute> customAttributes, string typeNamespace, string typeName)
@@ -813,26 +816,6 @@ public static class WeaverHelper
             _ => throw new NotImplementedException()
         };
     }
-
-    public static AccessProtection GetAccessProtection(FieldDefinition memberDefinition)
-    {
-        if (memberDefinition.IsPublic)
-        {
-            return AccessProtection.Public;
-        }
-
-        return memberDefinition.IsPrivate ? AccessProtection.Private : AccessProtection.Protected;
-    }
-    
-    public static AccessProtection GetAccessProtection(MethodDefinition memberDefinition)
-    {
-        if (memberDefinition.IsPublic)
-        {
-            return AccessProtection.Public;
-        }
-
-        return memberDefinition.IsPrivate ? AccessProtection.Private : AccessProtection.Protected;
-    }
     
     public static bool HasAnyFlags(Enum flags, Enum testFlags)
     {
@@ -841,37 +824,42 @@ public static class WeaverHelper
     
     public static CustomAttribute? FindAttribute(Collection<CustomAttribute> customAttributes, string attributeName)
     {
-        return FindAttributeByType(customAttributes, UnrealSharpNamespace + ".Attributes", attributeName);
+        return FindAttributeByType(customAttributes, AttributeNamespace, attributeName);
     }
     
     public static CustomAttribute? GetUProperty(Collection<CustomAttribute> attributes)
     {
-        return FindAttribute(attributes, "UPropertyAttribute");
+        return FindAttribute(attributes, UPropertyAttribute);
     }
     
     public static CustomAttribute? GetUProperty(IMemberDefinition property)
     {
-        return FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+        return FindAttribute(property.CustomAttributes, UPropertyAttribute);
     }
     
     public static CustomAttribute? GetUFunction(MethodDefinition function)
     {
-        return FindAttribute(function.CustomAttributes, "UFunctionAttribute");
+        return FindAttribute(function.CustomAttributes, UFunctionAttribute);
     }
     
     public static CustomAttribute? GetUClass(TypeDefinition type)
     {
-        return FindAttribute(type.CustomAttributes, "UClassAttribute");
+        return FindAttribute(type.CustomAttributes, UClassAttribute);
     }
     
     public static CustomAttribute? GetUEnum(TypeDefinition type)
     {
-        return FindAttribute(type.CustomAttributes, "UEnumAttribute");
+        return FindAttribute(type.CustomAttributes, UEnumAttribute);
     }
     
     public static CustomAttribute? GetUStruct(TypeDefinition type)
     {
-        return FindAttribute(type.CustomAttributes, "UStructAttribute");
+        return FindAttribute(type.CustomAttributes, UStructAttribute);
+    }
+    
+    public static CustomAttribute? GetUInterface(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, UInterfaceAttribute);
     }
         
     public static bool IsUProperty(IMemberDefinition property)
@@ -881,7 +869,7 @@ public static class WeaverHelper
     
     public static bool IsUInterface(TypeDefinition typeDefinition)
     {
-        return FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute") != null;
+        return GetUInterface(typeDefinition) != null;
     }
     
     public static bool IsUClass(TypeDefinition typeDefinition)

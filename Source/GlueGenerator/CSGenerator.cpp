@@ -204,11 +204,11 @@ void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bF
 		return;
 	}
 
-	FCSModule& Module = FCSGenerator::Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
+	FCSModule& Module = Get().FindOrRegisterModule(DelegateSignature->GetOutermost());
 	FString DelegateName = FDelegateBasePropertyTranslator::GetDelegateName(DelegateSignature);
 
 	FString FileName = FString::Printf(TEXT("%s.generated.cs"), *DelegateName);
-	FCSGenerator::Get().SaveGlue(&Module, FileName, Builder.ToString());
+	Get().SaveGlue(Module, FileName, Builder.ToString());
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -237,9 +237,8 @@ static FString GetModuleExportFilename(FName ModuleFName)
 void FCSGenerator::SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue)
 {
 	const FCSModule& BindingsPtr = FindOrRegisterModule(Package);
-
 	FString Filename = GetModuleExportFilename(BindingsPtr.GetModuleName());
-	SaveGlue(&BindingsPtr, Filename, GeneratedGlue);
+	SaveGlue(BindingsPtr, Filename, GeneratedGlue);
 }
 
 FString FCSGenerator::GetCSharpEnumType(const EPropertyType PropertyType) const
@@ -267,7 +266,7 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 		
 	AppendTooltip(Enum, Builder);
 	Builder.AppendLine(TEXT("[UEnum]"));
-	Builder.DeclareType("enum", *Enum->GetName(), "byte", false);
+	Builder.DeclareType(TEXT("enum"), *Enum->GetName(), TEXT("byte"), false);
 		
 	FString CommonPrefix;
 	int32 SkippedValueCount = 0;
@@ -1257,15 +1256,13 @@ FString FCSGenerator::GetSuperClassName(const UClass* Class) const
 
 void FCSGenerator::SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder)
 {
-	const FCSModule& BindingsPtr = FindOrRegisterModule(Object);
-
 	const FString FileName = FString::Printf(TEXT("%s.generated.cs"), *Object->GetName());
-	SaveGlue(&BindingsPtr, FileName, ScriptBuilder.ToString());
+	SaveGlue(FindOrRegisterModule(Object), FileName, ScriptBuilder.ToString());
 }
 
-void FCSGenerator::SaveGlue(const FCSModule* Bindings, const FString& Filename, const FString& GeneratedGlue)
+void FCSGenerator::SaveGlue(const FCSModule& Bindings, const FString& Filename, const FString& GeneratedGlue)
 {
-	const FString& BindingsSourceDirectory = Bindings->GetGeneratedSourceDirectory();
+	const FString& BindingsSourceDirectory = Bindings.GetGeneratedSourceDirectory();
 
 	IPlatformFile& File = FPlatformFileManager::Get().GetPlatformFile();
 	if (!File.CreateDirectoryTree(*BindingsSourceDirectory))

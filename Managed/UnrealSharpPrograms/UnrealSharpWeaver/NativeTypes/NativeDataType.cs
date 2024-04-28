@@ -28,7 +28,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataDelegateType))]
 public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
-    internal TypeReference CSharpType { get; set; } = typeRef;
+    internal TypeReference CSharpType { get; set; } = WeaverHelper.ImportType(typeRef);
     public int ArrayDim { get; set; } = arrayDim;
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }
@@ -190,7 +190,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         method = WeaverHelper.UserAssembly.MainModule.ImportReference(method);
         processor.Emit(OpCodes.Ldftn, method);
         MethodReference ctor = (from constructor in delegateType.Resolve().GetConstructors() where constructor.Parameters.Count == 2 select constructor).First().Resolve();
-        ctor = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(ctor, CSharpType);
+        ctor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ctor, CSharpType);
         ctor = WeaverHelper.UserAssembly.MainModule.ImportReference(ctor);
         processor.Emit(OpCodes.Newobj, ctor);
     }
@@ -229,8 +229,8 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
 
         if (typeParams != null)
         {
-            fromNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(fromNative, typeParams);
-            toNative = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(toNative, typeParams);
+            fromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(fromNative, typeParams);
+            toNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(toNative, typeParams);
         }
 
         EmitDelegate(processor, ToNativeDelegateType, toNative);
@@ -279,7 +279,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
                        && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/FromNative")
                 select method).ToArray();
             ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
-            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));
+            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionProcessor.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));
             processor.Emit(OpCodes.Stfld, FixedSizeArrayWrapperField);
 
             // Store branch target

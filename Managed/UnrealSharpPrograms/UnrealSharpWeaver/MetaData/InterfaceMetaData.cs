@@ -6,34 +6,25 @@ public class InterfaceMetaData : TypeReferenceMetadata
 { 
     public List<FunctionMetaData> Functions { get; set; }
     
-    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, "UInterfaceAttribute")
+    // Non-serialized for JSON
+    const string CannotImplementInterfaceInBlueprint = "CannotImplementInterfaceInBlueprint";
+    // End non-serialized
+    
+    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
     {
-        AddMetadataAttributes(typeDefinition.CustomAttributes);
-        
-        CustomAttribute? interfaceAttributes = WeaverHelper.FindAttribute(typeDefinition.CustomAttributes, "UInterfaceAttribute");
-        
-        CustomAttributeArgument? cannotImplementInterfaceInBlueprintField = 
-            WeaverHelper.FindAttributeField(interfaceAttributes, "CannotImplementInterfaceInBlueprint");
-        
-        if (cannotImplementInterfaceInBlueprintField != null)
+        Functions = [];
+        foreach (var method in typeDefinition.Methods)
         {
-            var cannotImplementInterfaceInBlueprint = (bool) cannotImplementInterfaceInBlueprintField.Value.Value;
-            
-            // Only add the metadata if it's true, since it's false by default
-            if (cannotImplementInterfaceInBlueprint)
+            if (method.IsAbstract && WeaverHelper.IsUFunction(method))
             {
-                MetaData.Add("CannotImplementInterfaceInBlueprint", cannotImplementInterfaceInBlueprint.ToString());
+                Functions.Add(new FunctionMetaData(method, onlyCollectMetaData: true));
             }
         }
         
-        Functions = new List<FunctionMetaData>();
-        
-        foreach (var method in typeDefinition.Methods)
+        CustomAttributeArgument? nonBpInterface = WeaverHelper.FindAttributeField(BaseAttribute, CannotImplementInterfaceInBlueprint);
+        if (nonBpInterface != null)
         {
-            if (method.IsAbstract && FunctionMetaData.IsUFunction(method))
-            {
-                Functions.Add(new FunctionMetaData(method));
-            }
+            TryAddMetaData(CannotImplementInterfaceInBlueprint, (bool) nonBpInterface.Value.Value);
         }
     }
 }

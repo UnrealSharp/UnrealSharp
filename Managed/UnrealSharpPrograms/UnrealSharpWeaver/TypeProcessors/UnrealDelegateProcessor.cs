@@ -43,8 +43,8 @@ public static class UnrealDelegateProcessor
         MethodReference? blittabletoNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "ToNative");
         MethodReference? blittablefromNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "FromNative");
         
-        blittabletoNativeMethod = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
-        blittablefromNativeMethod = FunctionRewriterHelpers.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
+        blittabletoNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
+        blittablefromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
         
         foreach (TypeDefinition type in delegateExtensions)
         {
@@ -93,7 +93,7 @@ public static class UnrealDelegateProcessor
     {
         MethodDefinition invokerMethodDefinition = invokerMethod.Resolve();
         ILProcessor invokerMethodProcessor = invokerMethodDefinition.Body.GetILProcessor();
-        Instruction test = invokerMethodProcessor.Body.Instructions[3];
+        Instruction CallBase = invokerMethodProcessor.Body.Instructions[3];
         invokerMethodProcessor.Body.Instructions.Clear();
 
         if (functionMetaData.Parameters.Length > 0)
@@ -102,7 +102,7 @@ public static class UnrealDelegateProcessor
             
             List<Instruction> allCleanupInstructions = [];
 
-            FunctionRewriterHelpers.WriteParametersToNative(invokerMethodProcessor,
+            FunctionProcessor.WriteParametersToNative(invokerMethodProcessor,
                 invokerMethodDefinition,
                 functionMetaData,
                 functionMetaData.RewriteInfo.FunctionParamSizeField,
@@ -119,7 +119,7 @@ public static class UnrealDelegateProcessor
             invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverHelper.IntPtrZero);
         }
         
-        invokerMethodProcessor.Append(test);
+        invokerMethodProcessor.Append(CallBase);
         invokerMethodProcessor.Emit(OpCodes.Ret);
         
         WeaverHelper.OptimizeMethod(invokerMethodDefinition);
@@ -143,6 +143,6 @@ public static class UnrealDelegateProcessor
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
         functionMetaData.EmitParamNativeProperty(processor, loadFunctionPointer);
         
-        processor.Emit(OpCodes.Ret);
+        WeaverHelper.FinalizeMethod(initializeDelegate);
     }
 }

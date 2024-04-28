@@ -10,25 +10,25 @@ public class FunctionMetaData : BaseMetaData
     public PropertyMetaData[] Parameters { get; set; }
     public PropertyMetaData? ReturnValue { get; set; }
     public FunctionFlags FunctionFlags { get; set; }
-    public bool IsBlueprintEvent { get; set; }
-    public bool IsRpc { get; set; }
-    public AccessProtection AccessProtection { get; set; }
     
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
+    public bool IsBlueprintEvent => FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent);
+    public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
+    public bool HasReturnValue => ReturnValue != null;
+    public bool IsRpc => FunctionFlags.HasFlag(FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient);
     // End non-serialized
-    
-    public FunctionMetaData(MethodDefinition method)
+
+    private const string CallInEditorName = "CallInEditor";
+
+    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
     {
         MethodDefinition = method;
-        Name = method.Name;
-        AccessProtection = WeaverHelper.GetAccessProtection(method);
-
         bool hasOutParams = false;
         
-        if (method.ReturnType.Name != WeaverHelper.VoidTypeRef.Name)
+        if (method.ReturnType != WeaverHelper.VoidTypeRef)
         {
             hasOutParams = true;
             try
@@ -41,40 +41,36 @@ public class FunctionMetaData : BaseMetaData
             }
         }
 
+        if (BaseAttribute != null)
+        {
+            CustomAttributeArgument? callInEditor = WeaverHelper.FindAttributeField(BaseAttribute, CallInEditorName);
+            if (callInEditor.HasValue)
+            {
+                TryAddMetaData(CallInEditorName, (bool) callInEditor.Value.Value);
+            }
+        }
+        
         Parameters = new PropertyMetaData[method.Parameters.Count];
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
             ParameterDefinition param = method.Parameters[i];
+            ParameterType modifier = ParameterType.Value;
+            TypeReference paramType = param.ParameterType;
             
             if (param.IsOut)
             {
                 hasOutParams = true;
+                modifier = ParameterType.Out;
             }
-
+            else if (paramType.IsByReference)
+            {
+                hasOutParams = true;
+                modifier = ParameterType.Ref;
+            }
+            
             try
             {
-                bool byReference = false;
-                TypeReference paramType = param.ParameterType;
-                
-                if (paramType.IsByReference)
-                {
-                    byReference = true;
-                    paramType = ((ByReferenceType)paramType).ElementType;
-                }
-
-                ParameterType modifier = ParameterType.Value;
-                
-                if (param.IsOut)
-                {
-                    modifier = ParameterType.Out;
-                }
-                else if (byReference)
-                {
-                    modifier = ParameterType.Ref;
-                }
-                
                 Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
-                
             }
             catch (InvalidPropertyException e)
             {
@@ -88,44 +84,18 @@ public class FunctionMetaData : BaseMetaData
         {
             flags |= FunctionFlags.HasOutParms;
         }
-        
-        AddMetadataAttributes(method.CustomAttributes);
-        
-        if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
-        {
-            IsBlueprintEvent = true;
-            
-            if (!method.IsVirtual && method.Body.Instructions.Count == 1 && method.Body.Instructions[0].OpCode == OpCodes.Ret)
-            {
-                flags ^= FunctionFlags.Native;
-            }
 
-            if (flags.HasFlag(FunctionFlags.Net))
-            {
-                throw new InvalidUnrealFunctionException(method, "BlueprintImplementable methods cannot be replicated!");
-            }
+        if (method.IsPublic)
+        {
+            flags |= FunctionFlags.Public;
         }
-
-        switch (AccessProtection)
+        else if (method.IsFamily)
         {
-            case AccessProtection.Public:
-                flags |= FunctionFlags.Public;
-                break;
-            case AccessProtection.Protected:
-                flags |= FunctionFlags.Protected;
-                break;
-            case AccessProtection.Private:
-                flags |= FunctionFlags.Private;
-                break;
-            default:
-                throw new InvalidUnrealFunctionException(method, "Unknown access level");
+            flags |= FunctionFlags.Protected;
         }
-
-        CustomAttribute? ufunctionAttribute = WeaverHelper.GetUFunction(method);
-
-        if (ufunctionAttribute != null)
+        else
         {
-            AddBaseAttributes(ufunctionAttribute);
+            flags |= FunctionFlags.Private;
         }
 
         if (method.IsStatic)
@@ -133,10 +103,7 @@ public class FunctionMetaData : BaseMetaData
             flags |= FunctionFlags.Static;
         }
         
-        const FunctionFlags netFlags = FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient;
-        bool isRpc = (flags & netFlags) != 0;
-        
-        if (isRpc)
+        if (IsRpc)
         {
             flags |= FunctionFlags.Net;
             
@@ -144,16 +111,42 @@ public class FunctionMetaData : BaseMetaData
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }
+            
+            if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+            {
+                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
+            }
         }
         
-        TypeReference baseType = method.DeclaringType.BaseType;
-        if (baseType != null && !WeaverHelper.HasMethod(baseType.Resolve(), method.Name, false))
+        // This represents both BlueprintNativeEvent and BlueprintImplementableEvent
+        if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+        {
+            flags |= FunctionFlags.Event;
+        }
+        
+        // Native is needed to bind the function pointer of the UFunction to our own invoke in UE.
+        FunctionFlags = flags | FunctionFlags.Native;
+        
+        if (onlyCollectMetaData)
+        {
+            return;
+        }
+        
+        RewriteFunction();
+    }
+    
+    public void RewriteFunction()
+    {
+        TypeDefinition baseType = MethodDefinition.GetOriginalBaseMethod().DeclaringType;
+        if (baseType == MethodDefinition.DeclaringType)
         {
             RewriteInfo = new FunctionRewriteInfo(this);
-            FunctionRewriterHelpers.PrepareFunctionForRewrite(this, method.DeclaringType);
+            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDefinition.DeclaringType);
         }
-        
-        FunctionFlags = flags;
+        else
+        {
+            FunctionProcessor.MakeImplementationMethod(this);
+        }
     }
 
     public static bool IsAsyncUFunction(MethodDefinition method)
@@ -174,44 +167,29 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
 
-        var flags = (FunctionFlags)(int)functionAttribute.ConstructorArguments[0].Value;
-        if (flags != FunctionFlags.BlueprintCallable)
-        {
-            return false;
-        }
-
-        return method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
-    }
-
-    public static bool IsUFunction(MethodDefinition method)
-    {
-        if (!method.HasCustomAttributes)
-        {
-            return false;
-        }
-        
-        CustomAttribute? functionAttribute = WeaverHelper.GetUFunction(method);
-        return functionAttribute != null;
+        var flags = (FunctionFlags) (ulong) functionAttribute.ConstructorArguments[0].Value;
+        return flags == FunctionFlags.BlueprintCallable && method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
     }
 
     public static bool IsBlueprintEventOverride(MethodDefinition method)
     {
-        MethodDefinition basemostMethod = method.GetOriginalBaseMethod();
-        if (basemostMethod != method && basemostMethod.HasCustomAttributes)
+        if (!method.IsVirtual)
         {
-            CustomAttribute? isUnrealFunction = WeaverHelper.GetUFunction(basemostMethod);
-            if (isUnrealFunction != null)
-            {
-                return true;
-            }
+            return false;
+        }
+        
+        MethodDefinition baseMethod = method.GetOriginalBaseMethod();
+        if (baseMethod != method && baseMethod.HasCustomAttributes)
+        {
+            return WeaverHelper.IsUFunction(baseMethod);
         }
 
         return false;
     }
 
-    public static bool IsInterfaceFunction(TypeDefinition type, string methodName)
+    public static bool IsInterfaceFunction(MethodDefinition method)
     {
-        foreach (var typeInterface in type.Interfaces)
+        foreach (var typeInterface in method.DeclaringType.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
             
@@ -222,7 +200,7 @@ public class FunctionMetaData : BaseMetaData
 
             foreach (var interfaceMethod in interfaceType.Methods)
             {
-                if (interfaceMethod.Name == methodName)
+                if (interfaceMethod.Name == method.Name)
                 {
                     return true;
                 }

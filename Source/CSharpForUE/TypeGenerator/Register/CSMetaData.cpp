@@ -93,9 +93,8 @@ void CSharpMetaDataUtils::SerializeProperty(const TSharedPtr<FJsonObject>& Prope
 void FTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	Name = JsonObject->GetStringField(TEXT("Name"));
-	Namespace = JsonObject->GetStringField(TEXT("Namespace"));
-	AssemblyName = JsonObject->GetStringField(TEXT("AssemblyName"));
-
+	JsonObject->TryGetStringField(TEXT("Namespace"), Namespace);
+	JsonObject->TryGetStringField(TEXT("AssemblyName"), AssemblyName);
 	FMetaDataHelper::SerializeFromJson(JsonObject, MetaData);
 }
 
@@ -201,8 +200,11 @@ void FObjectMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObjec
 void FStructMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FTypeReferenceMetaData::SerializeFromJson(JsonObject);
-	CSharpMetaDataUtils::SerializeProperties(JsonObject->GetArrayField(TEXT("Fields")), Properties);
-	bIsDataTableStruct = JsonObject->GetBoolField(TEXT("IsDataTableStruct"));
+	const TArray<TSharedPtr<FJsonValue>>* FoundProperties;
+	if (JsonObject->TryGetArrayField(TEXT("Fields"), FoundProperties))
+	{
+		CSharpMetaDataUtils::SerializeProperties(*FoundProperties, Properties);
+	}
 }
 
 //END ----------------------FStructMetaData----------------------------------------

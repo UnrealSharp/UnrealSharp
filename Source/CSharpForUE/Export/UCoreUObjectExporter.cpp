@@ -1,5 +1,4 @@
 ﻿#include "UCoreUObjectExporter.h"
-#include "CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedStructBuilder.h"
 
 void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
