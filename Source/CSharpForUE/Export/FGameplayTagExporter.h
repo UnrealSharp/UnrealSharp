@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "FunctionsExporter.h"
+#include "GameplayTagContainer.h"
 #include "FGameplayTagExporter.generated.h"
 
 UCLASS()

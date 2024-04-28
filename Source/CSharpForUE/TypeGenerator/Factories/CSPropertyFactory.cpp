@@ -67,7 +67,7 @@ FProperty* FCSPropertyFactory::CreateSoftObjectProperty(UField* Outer, const FPr
 
 FProperty* FCSPropertyFactory::CreateObjectPtrProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)
 {
-	return CreateObjectProperty<FObjectPtrProperty>(Outer, PropertyMetaData, PropertyFlags);
+	return CreateObjectProperty<FObjectProperty>(Outer, PropertyMetaData, PropertyFlags);
 }
 
 FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData, const EPropertyFlags PropertyFlags)

@@ -48,10 +48,10 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 		return false;
 	}
 
-	DeserializeMetaDataObjects(JsonObject->GetArrayField("ClassMetaData"), ManagedClasses);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField("StructMetaData"), ManagedStructs);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField("EnumMetaData"), ManagedEnums);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField("InterfacesMetaData"), ManagedInterfaces);
+	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("ClassMetaData")), ManagedClasses);
+	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("StructMetaData")), ManagedStructs);
+	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("EnumMetaData")), ManagedEnums);
+	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("InterfacesMetaData")), ManagedInterfaces);
 
 	InitializeBuilders(ManagedClasses);
 	InitializeBuilders(ManagedStructs);
@@ -90,7 +90,7 @@ UClass* FCSTypeRegistry::GetClassFromName(FName Name)
 	}
 	else
 	{
-		FoundType = FindObject<UClass>(ANY_PACKAGE, *Name.ToString());
+		FoundType = FindFirstObjectSafe<UClass>(*Name.ToString());
 	}
 	
 	return FoundType;
@@ -105,7 +105,7 @@ UScriptStruct* FCSTypeRegistry::GetStructFromName(FName Name)
 	}
 	else
 	{
-		FoundType = FindObject<UScriptStruct>(ANY_PACKAGE, *Name.ToString());
+		FoundType = FindFirstObjectSafe<UScriptStruct>(*Name.ToString());
 	}
 	
 	return FoundType;
@@ -120,7 +120,7 @@ UEnum* FCSTypeRegistry::GetEnumFromName(FName Name)
 	}
 	else
 	{
-		FoundType = FindObject<UEnum>(ANY_PACKAGE, *Name.ToString());
+		FoundType = FindFirstObjectSafe<UEnum>(*Name.ToString());
 	}
 	
 	return FoundType;
@@ -135,7 +135,7 @@ UClass* FCSTypeRegistry::GetInterfaceFromName(FName Name)
 	}
 	else
 	{
-		FoundType = FindObject<UClass>(ANY_PACKAGE, *Name.ToString());
+		FoundType = FindFirstObjectSafe<UClass>(*Name.ToString());
 	}
 	
 	return FoundType;
