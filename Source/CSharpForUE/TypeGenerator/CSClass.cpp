@@ -10,7 +10,7 @@
 
 void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
-	UCSFunction* Function = CastChecked<UCSFunction>(Stack.Node);
+	UCSFunction* Function = CastChecked<UCSFunction>(Stack.CurrentNativeFunction);
 
 	// Skip allocating memory for the argument data if there are no parameters that need to be passed
 	if (!Function->NumParms)
