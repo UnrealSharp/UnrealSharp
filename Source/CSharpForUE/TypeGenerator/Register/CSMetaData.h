@@ -82,19 +82,21 @@ struct FMetaDataHelper
 
 struct FTypeReferenceMetaData
 {
+	virtual ~FTypeReferenceMetaData() = default;
+
 	FString Name;
 	FString Namespace;
 	FString AssemblyName;
 
 	TMap<FString, FString> MetaData;
 	
-	virtual ~FTypeReferenceMetaData() = default;
-	
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject);
 };
 
 struct FMemberMetaData
 {
+	virtual ~FMemberMetaData() = default;
+
 	FName Name;
 	TMap<FString, FString> MetaData;
 	
@@ -103,6 +105,8 @@ struct FMemberMetaData
 
 struct FUnrealType
 {
+	virtual ~FUnrealType() = default;
+
 	FName UnrealPropertyClass;
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
 	int32 ArrayDim;
@@ -113,6 +117,8 @@ struct FUnrealType
 
 struct FClassMetaData : FTypeReferenceMetaData
 {
+	virtual ~FClassMetaData() = default;
+
 	FTypeReferenceMetaData ParentClass;
 	
 	TArray<FPropertyMetaData> Properties;
@@ -136,6 +142,8 @@ struct FClassMetaData : FTypeReferenceMetaData
 
 struct FClassPropertyMetaData : FUnrealType
 {
+	virtual ~FClassPropertyMetaData() = default;
+
 	FTypeReferenceMetaData TypeRef;
 
 	//FTypeMetaData interface implementation
@@ -145,8 +153,9 @@ struct FClassPropertyMetaData : FUnrealType
 
 struct FStructMetaData : FTypeReferenceMetaData
 {
+	virtual ~FStructMetaData() = default;
+
 	TArray<FPropertyMetaData> Properties;
-	bool bIsDataTableStruct = false;
 
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
@@ -155,6 +164,8 @@ struct FStructMetaData : FTypeReferenceMetaData
 
 struct FStructPropertyMetaData : FUnrealType
 {
+	virtual ~FStructPropertyMetaData() = default;
+
 	FTypeReferenceMetaData TypeRef;
 
 	// FUnrealType interface implementation
@@ -164,6 +175,8 @@ struct FStructPropertyMetaData : FUnrealType
 
 struct FEnumPropertyMetaData : FUnrealType
 {
+	virtual ~FEnumPropertyMetaData() = default;
+
 	FTypeReferenceMetaData InnerProperty;
 
 	// FUnrealType interface implementation
@@ -173,6 +186,8 @@ struct FEnumPropertyMetaData : FUnrealType
 
 struct FEnumMetaData : FTypeReferenceMetaData
 {
+	virtual ~FEnumMetaData() = default;
+
 	TArray<FString> Items;
 
 	//FTypeMetaData interface implementation
@@ -182,6 +197,8 @@ struct FEnumMetaData : FTypeReferenceMetaData
 
 struct FPropertyMetaData : FMemberMetaData
 {
+	virtual ~FPropertyMetaData() = default;
+
 	TSharedPtr<FUnrealType> Type;
 	FString RepNotifyFunctionName;
 	int32 ArrayDim = 0;
@@ -204,6 +221,8 @@ struct FPropertyMetaData : FMemberMetaData
 
 struct FArrayPropertyMetaData : FUnrealType
 {
+	virtual ~FArrayPropertyMetaData() = default;
+
 	FPropertyMetaData InnerProperty;
 
 	//FTypeMetaData interface implementation
@@ -213,6 +232,8 @@ struct FArrayPropertyMetaData : FUnrealType
 
 struct FObjectMetaData : FUnrealType
 {
+	virtual ~FObjectMetaData() = default;
+
 	FTypeReferenceMetaData InnerType;
 
 	//FTypeMetaData interface implementation
@@ -222,6 +243,8 @@ struct FObjectMetaData : FUnrealType
 
 struct FDefaultComponentMetaData : FObjectMetaData
 {
+	virtual ~FDefaultComponentMetaData() = default;
+
 	bool IsRootComponent = false;
 	FString AttachmentComponent;
 	FString AttachmentSocket;
@@ -234,6 +257,8 @@ struct FDefaultComponentMetaData : FObjectMetaData
 
 struct FFunctionMetaData : FMemberMetaData
 {
+	virtual ~FFunctionMetaData() = default;
+
 	TArray<FPropertyMetaData> Parameters;
 	FPropertyMetaData ReturnValue;
 	bool IsVirtual = false;
@@ -246,6 +271,8 @@ struct FFunctionMetaData : FMemberMetaData
 
 struct FDelegateMetaData : FUnrealType
 {
+	virtual ~FDelegateMetaData() = default;
+
 	FFunctionMetaData SignatureFunction;
 
 	//FTypeMetaData interface implementation
@@ -255,6 +282,8 @@ struct FDelegateMetaData : FUnrealType
 
 struct FInterfaceMetaData : FTypeReferenceMetaData
 {
+	virtual ~FInterfaceMetaData() = default;
+
 	TArray<FFunctionMetaData> Functions;
 	
 	//FTypeMetaData interface implementation

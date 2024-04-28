@@ -114,6 +114,13 @@ public enum ClassFlags : ulong
 [ClassFlagsMap]
 public sealed class UClassAttribute(ClassFlags flags = ClassFlags.None) : Attribute
 {
-    public ClassFlags Flags { get; private set; } = flags;
-    public string ConfigCategory { get; set; }
+    /// <summary>
+    /// The flags of the class.
+    /// </summary>
+    public ClassFlags Flags = flags;
+
+    /// <summary>
+    /// The category of the config file to use for this class.
+    /// </summary>
+    public string ConfigCategory;
 }

@@ -75,6 +75,8 @@ namespace ScriptGeneratorUtilities
 	/** Should the given function be exported to scripts? */
 	bool ShouldExportFunction(const UFunction* InFunc);
 
+	bool HasOutParams(const UFunction* Function);
+
 	bool IsInterfaceFunction(UFunction* Function);
 
 	enum EScriptNameKind : uint8

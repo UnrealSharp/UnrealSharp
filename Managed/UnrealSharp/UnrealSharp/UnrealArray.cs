@@ -285,13 +285,13 @@ public class UnrealArrayReadOnlyMarshaller<T>
 
 public class UnrealArrayCopyMarshaller<T>
 {
-    int ElementSize;
+    IntPtr NativeProperty;
     MarshalingDelegates<T>.ToNative InnerTypeToNative;
     MarshalingDelegates<T>.FromNative InnerTypeFromNative;
 
-    public UnrealArrayCopyMarshaller(int length, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative, int elementSize)
+    public UnrealArrayCopyMarshaller(IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
     {
-        ElementSize = elementSize;
+        NativeProperty = nativeProperty;
         InnerTypeFromNative = fromNative;
         InnerTypeToNative = toNative;
     }
@@ -301,10 +301,12 @@ public class UnrealArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            mirror->ArrayNum = obj.Count;
-            mirror->ArrayMax = obj.Count;
-            mirror->Data = Marshal.AllocCoTaskMem(obj.Count * ElementSize);
-
+            if (obj == null)
+            {
+                FArrayPropertyExporter.CallEmptyArray(NativeProperty, (IntPtr)mirror);
+                return;
+            }
+            FArrayPropertyExporter.CallInitializeArray(NativeProperty, (IntPtr)mirror, obj.Count);
             for (int i = 0; i < obj.Count; ++i)
             {
                 InnerTypeToNative(mirror->Data, i, obj[i]);
@@ -317,10 +319,12 @@ public class UnrealArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            mirror->ArrayNum = obj.Count;
-            mirror->ArrayMax = obj.Count;
-            mirror->Data = Marshal.AllocCoTaskMem(obj.Count * ElementSize);
-
+            if (obj == null)
+            {
+                FArrayPropertyExporter.CallEmptyArray(NativeProperty, (IntPtr)mirror);
+                return;
+            }
+            FArrayPropertyExporter.CallInitializeArray(NativeProperty, (IntPtr)mirror, obj.Count);
             for (int i = 0; i < obj.Count; ++i)
             {
                 InnerTypeToNative(mirror->Data, i, obj[i]);
@@ -328,7 +332,20 @@ public class UnrealArrayCopyMarshaller<T>
         }
     }
 
-    public IList<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, ReadOnlySpan<T> obj)
+    {
+        unsafe
+        {
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            FArrayPropertyExporter.CallInitializeArray(NativeProperty, (IntPtr)mirror, obj.Length);
+            for (int i = 0; i < obj.Length; ++i)
+            {
+                InnerTypeToNative(mirror->Data, i, obj[i]);
+            }
+        }
+    }
+
+    public List<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
@@ -342,16 +359,12 @@ public class UnrealArrayCopyMarshaller<T>
         }
     }
 
-    public static void DestructInstance (IntPtr nativeBuffer, int arrayIndex)
+    public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        // Not currently used
-        // unsafe
-        // {
-        //     UnmanagedArray* mirror = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
-        //     Marshal.FreeCoTaskMem(mirror->Data);
-        //     mirror->Data = IntPtr.Zero;
-        //     mirror->ArrayMax = 0;
-        //     mirror->ArrayNum = 0;
-        // }
+        unsafe
+        {
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            FArrayPropertyExporter.CallEmptyArray(NativeProperty, (IntPtr)mirror);
+        }
     }
 }

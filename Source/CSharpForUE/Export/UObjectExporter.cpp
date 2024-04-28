@@ -55,22 +55,25 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
 		{
 			FProperty* Property = *PropIt;
-			if (Property->HasAnyPropertyFlags(CPF_OutParm))
+			
+			if (!Property->HasAnyPropertyFlags(CPF_OutParm))
 			{
-				FOutParmRec* Out = (FOutParmRec*) UE_VSTACK_ALLOC(VirtualStackAllocator, sizeof(FOutParmRec));
+				continue;
+			}
+
+			FOutParmRec* Out = static_cast<FOutParmRec*>(UE_VSTACK_ALLOC(VirtualStackAllocator, sizeof(FOutParmRec)));
 				
-				Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Params);
-				Out->Property = Property;
+			Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Params);
+			Out->Property = Property;
 				
-				if (*LastOut)
-				{
-					(*LastOut)->NextOutParm = Out;
-					LastOut = &(*LastOut)->NextOutParm;
-				}
-				else
-				{
-					*LastOut = Out;
-				}
+			if (*LastOut)
+			{
+				(*LastOut)->NextOutParm = Out;
+				LastOut = &(*LastOut)->NextOutParm;
+			}
+			else
+			{
+				*LastOut = Out;
 			}
 		}
 		
@@ -79,13 +82,9 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 			(*LastOut)->NextOutParm = nullptr;
 		}
 	}
-
-	uint8* ReturnValueAddress = nullptr;
-	if (NativeFunction->ReturnValueOffset != MAX_uint16)
-	{
-		ReturnValueAddress = Params + NativeFunction->ReturnValueOffset;
-	}
 	
+	const bool bHasReturnParam = NativeFunction->ReturnValueOffset != MAX_uint16;
+	uint8* ReturnValueAddress = bHasReturnParam ? Params + NativeFunction->ReturnValueOffset : nullptr;
 	NativeFunction->GetNativeFunc()(NativeObject, NewStack, ReturnValueAddress);
 }
 

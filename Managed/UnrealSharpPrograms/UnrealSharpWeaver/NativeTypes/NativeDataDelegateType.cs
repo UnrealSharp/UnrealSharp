@@ -9,7 +9,7 @@ public class NativeDataDelegateType(TypeReference typeRef, string marshallerName
 {
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
-        if (Signature.Parameters.Length == 0)
+        if (!Signature.HasParameters)
         {
             return;
         }

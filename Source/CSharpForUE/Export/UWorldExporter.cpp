@@ -38,7 +38,7 @@ void UUWorldExporter::SetTimer(UObject* Object, FName FunctionName, float Rate, 
 {
 	FTimerDynamicDelegate Delegate;
 	Delegate.BindUFunction(Object, FunctionName);
-	*TimerHandle = UKismetSystemLibrary::K2_SetTimerDelegate(Delegate, Rate, Loop, InitialDelay);
+	*TimerHandle = UKismetSystemLibrary::K2_SetTimerDelegate(Delegate, Rate, Loop, false, InitialDelay);
 }
 
 void UUWorldExporter::InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle)

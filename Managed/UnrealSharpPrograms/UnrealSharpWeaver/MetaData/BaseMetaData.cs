@@ -1,26 +1,71 @@
-﻿using Mono.Cecil;
+﻿using System.Globalization;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Collections.Generic;
 
 namespace UnrealSharpWeaver.MetaData;
 
 public class BaseMetaData
 {
-    public string Namespace { get; set; } 
     public string Name { get; set; }
-    public string AssemblyName { get; set; } 
-    public Dictionary<string, string>? MetaData { get; set; }
+    public Dictionary<string, string> MetaData { get; set; }
+    
+    // Non-serialized for JSON
+    public readonly string AttributeName;
+    public readonly IMemberDefinition MemberDefinition;
+    public readonly CustomAttribute? BaseAttribute;
+    // End non-serialized
+    
+    public BaseMetaData(MemberReference member, string attributeName)
+    {
+        Name = member.Name;
+        MemberDefinition = member.Resolve();
+        AttributeName = attributeName;
+        MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
+        
+        AddMetaData();
+        AddBaseAttributes();
+    }
+    
+    public void TryAddMetaData(string key, string value = "")
+    {
+        if (MetaData.TryAdd(key, value))
+        {
+            return;
+        }
+        
+        MetaData[key] = value;
+    }
+    
+    public void TryAddMetaData(string key, bool value)
+    {
+        TryAddMetaData(key, value ? "true" : "false");
+    }
+    
+    public void TryAddMetaData(string key, int value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, ulong value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, float value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
+    
+    public void TryAddMetaData(string key, double value)
+    {
+        TryAddMetaData(key, value.ToString());
+    }
 
-    public static ulong GetFlags(Collection<CustomAttribute> customAttributes, string flagsAttributeName)
+    public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)
     {
         CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, WeaverHelper.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
-
-        if (flagsAttribute == null)
-        {
-            return 0;
-        }
-
-        return GetFlags(flagsAttribute);
+        return flagsAttribute == null ? 0 : GetFlags(flagsAttribute);
     }
 
     public static ulong GetFlags(CustomAttribute flagsAttribute)
@@ -63,12 +108,6 @@ public class BaseMetaData
         TypeProcessors.ConstructorBuilder.VerifySingleResult([foundProperty], attributeType, "attribute property " + namedArg.Name);
         return GetFlags(foundProperty.CustomAttributes, flagsAttributeName);
 
-    }
-
-    public static ulong ExtractFlagsFromClass(TypeReference classReference, string flagsAttributeName)
-    {
-        TypeDefinition classTypeDefinition = classReference.Resolve();
-        return !classTypeDefinition.HasCustomAttributes ? 0 : GetFlags(classTypeDefinition.Resolve().CustomAttributes, flagsAttributeName);
     }
 
     public static ulong GetFlags(IMemberDefinition member, string flagsAttributeName)
@@ -124,15 +163,9 @@ public class BaseMetaData
         return flags;
     }
     
-    public void AddMetadataAttributes(Collection<CustomAttribute> customAttributes)
+    private void AddMetaData()
     {
-        if (MetaData == null)
-        {
-            MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        }
-        
-        var metaDataAttributes = WeaverHelper.FindMetaDataAttributes(customAttributes);
-
+        CustomAttribute?[] metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
         foreach (var attrib in metaDataAttributes)
         {
             switch (attrib.ConstructorArguments.Count)
@@ -140,35 +173,38 @@ public class BaseMetaData
                 case < 1:
                     continue;
                 case 1:
-                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, "");
+                    TryAddMetaData((string)attrib.ConstructorArguments[0].Value);
                     break;
                 default:
-                    MetaData.Add((string)attrib.ConstructorArguments[0].Value, (string) attrib.ConstructorArguments[1].Value);
+                    TryAddMetaData((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
                     break;
             }
         }
     }
 
-    public void AddBaseAttributes(CustomAttribute? baseAttribute)
+    private void AddBaseAttributes()
     {
-        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(baseAttribute, "DisplayName");
-
+        if (BaseAttribute == null)
+        {
+            return;
+        }
+        
+        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(BaseAttribute, "DisplayName");
         if (displayNameArgument.HasValue)
         {
-            MetaData.Add("DisplayName", (string) displayNameArgument.Value.Value);
+            TryAddMetaData("DisplayName", (string) displayNameArgument.Value.Value);
         }
 
-        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(baseAttribute, "Category");
-
+        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(BaseAttribute, "Category");
         if (categoryArgument.HasValue)
         {
-            MetaData.Add("Category", (string) categoryArgument.Value.Value);
+            TryAddMetaData("Category", (string) categoryArgument.Value.Value);
         }
     }
     
-    protected static bool GetBoolMetadata(Dictionary<string, string> dictionary, string key)
+    protected bool GetBoolMetadata(string key)
     {
-        if (!dictionary.TryGetValue(key, out var val))
+        if (!MetaData.TryGetValue(key, out var val))
         {
             return false;
         }

@@ -34,8 +34,8 @@ TSharedPtr<FUnrealType> CSMetaDataFactory::Create(const TSharedPtr<FJsonObject>&
 {
 	Initialize();
 	
-	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField("PropertyDataType");
-	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField("PropertyType"));
+	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField(TEXT("PropertyDataType"));
+	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField(TEXT("PropertyType")));
 	
 	TSharedPtr<FUnrealType> MetaData;
 	if (TFunction<TSharedPtr<FUnrealType>()>* FactoryMethod = MetaDataFactoryMap.Find(PropertyType))

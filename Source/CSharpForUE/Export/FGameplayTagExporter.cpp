@@ -1,5 +1,4 @@
 ﻿#include "FGameplayTagExporter.h"
-#include "GameplayTagContainer.h"
 
 void UFGameplayTagExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {

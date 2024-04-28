@@ -6,45 +6,42 @@ using UnrealSharpWeaver.NativeTypes;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
-public static class FunctionRewriterHelpers
+public static class FunctionProcessor
 {
-    public static void PrepareFunctionForRewrite(FunctionMetaData func, TypeDefinition classDefinition)
+    public static void PrepareFunctionForRewrite(FunctionMetaData function, TypeDefinition classDefinition)
     {
         FieldDefinition? paramsSizeField = null;
 
-        if (func.Parameters.Length > 0 || func.ReturnValue != null)
+        if (function.HasParameters)
         {
-            for (int i = 0; i < func.Parameters.Length; i++)
+            for (int i = 0; i < function.Parameters.Length; i++)
             {
-                PropertyMetaData param = func.Parameters[i];
-                AddOffsetField(classDefinition, param, func, i, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
+                PropertyMetaData param = function.Parameters[i];
+                AddOffsetField(classDefinition, param, function, i, function.RewriteInfo.FunctionParams);
+                AddNativePropertyField(classDefinition, param, function, i, function.RewriteInfo.FunctionParams);
             }
 
-            paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{func.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
-            func.RewriteInfo.FunctionParamSizeField = paramsSizeField;
+            paramsSizeField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_ParamsSize", WeaverHelper.Int32TypeRef);
+            function.RewriteInfo.FunctionParamSizeField = paramsSizeField;
         }
 
-        if (func.ReturnValue != null)
+        if (function.HasReturnValue)
         {
-            int index = func.Parameters.Length > 0 ? func.Parameters.Length : 0;
-            AddOffsetField(classDefinition, func.ReturnValue, func, index, ref func.RewriteInfo.FunctionParams, ref func.RewriteInfo.FunctionParamsElements);
+            int index = function.Parameters.Length > 0 ? function.Parameters.Length : 0;
+            AddOffsetField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
+            AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (func.IsBlueprintEvent || func.IsRpc || FunctionMetaData.IsInterfaceFunction(classDefinition, func.Name))
+        if (function.IsBlueprintEvent || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
         {
-            FieldAttributes baseMethodAttributes = FieldAttributes.Private;
-            FieldAttributes rpcAttributes = baseMethodAttributes | FieldAttributes.InitOnly | FieldAttributes.Static;
-            FieldAttributes nativeFuncAttributes = func.IsRpc ? rpcAttributes : baseMethodAttributes;
-
-            string nativeFuncFieldName = $"{func.Name}_NativeFunction";
-            func.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, nativeFuncFieldName, WeaverHelper.IntPtrType, nativeFuncAttributes);
-            RewriteMethodAsUFunctionInvoke(classDefinition, func, paramsSizeField, func.RewriteInfo.FunctionParams);
+            function.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_NativeFunction", WeaverHelper.IntPtrType, FieldAttributes.Private);
+            RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
         }
-        else if (WeaverHelper.HasAnyFlags(func.FunctionFlags, FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintNativeEvent))
+        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, FunctionFlags.BlueprintCallable))
         {
             foreach (var virtualFunction in classDefinition.Methods)
             {
-                if (virtualFunction.Name != func.Name)
+                if (virtualFunction.Name != function.Name)
                 {
                     continue;
                 }
@@ -54,13 +51,13 @@ public static class FunctionRewriterHelpers
                     continue;
                 }
 
-                MakeManagedMethodInvoker(classDefinition, func, virtualFunction, func.RewriteInfo.FunctionParams);
+                MakeManagedMethodInvoker(classDefinition, function, virtualFunction, function.RewriteInfo.FunctionParams);
                 break;
             }
         }
         else
         {
-            MakeManagedMethodInvoker(classDefinition, func, func.MethodDefinition, func.RewriteInfo.FunctionParams);
+            MakeManagedMethodInvoker(classDefinition, function, function.MethodDefinition, function.RewriteInfo.FunctionParams);
         }
     }
     
@@ -75,6 +72,32 @@ public static class FunctionRewriterHelpers
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Ldfld, functionMetaData.FunctionPointerField);
         }
+    }
+    
+    public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
+    {
+        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDefinition.Name + "_Implementation", func.MethodDefinition);
+        if (copiedMethod.IsVirtual)
+        {
+            // Find the call to the original function and replace it with a call to the implementation.
+            foreach (var instruction in copiedMethod.Body.Instructions)
+            {
+                if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+                {
+                    continue;
+                }
+                
+                MethodReference calledMethod = (MethodReference) instruction.Operand;
+                if (calledMethod.Name != func.Name)
+                {
+                    continue;
+                }
+
+                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name)!;
+                instruction.Operand = WeaverHelper.ImportMethod(implementationMethod);
+            }
+        }
+        return copiedMethod;
     }
 
     public static MethodReference MakeMethodDeclaringTypeGeneric(MethodReference method, params TypeReference[] args)
@@ -111,15 +134,12 @@ public static class FunctionRewriterHelpers
         return newMethodRef;
     }
 
-    private static void MakeManagedMethodInvoker(TypeDefinition type, FunctionMetaData func, MethodDefinition methodToCall, Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields)
+    private static void MakeManagedMethodInvoker(TypeDefinition type, FunctionMetaData func, MethodDefinition methodToCall, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        MethodDefinition invokerFunction = WeaverHelper.AddMethodToType(type, "Invoke_" + func.Name, WeaverHelper.VoidTypeRef);
-        
-        // Arguments Buffer from C++
-        WeaverHelper.AddParameterToMethod(invokerFunction, WeaverHelper.IntPtrType);
-        
-        // Return Buffer to C++
-        WeaverHelper.AddParameterToMethod(invokerFunction, WeaverHelper.IntPtrType);
+        MethodDefinition invokerFunction = WeaverHelper.AddMethodToType(type, "Invoke_" + func.Name, 
+            WeaverHelper.VoidTypeRef, 
+            MethodAttributes.Private, 
+            [WeaverHelper.IntPtrType, WeaverHelper.IntPtrType]);
 
         ILProcessor processor = invokerFunction.Body.GetILProcessor();
         Instruction loadBuffer = processor.Create(OpCodes.Ldarg_1);
@@ -139,7 +159,7 @@ public static class FunctionRewriterHelpers
                 continue;
             }
 
-            param.PropertyDataType.WriteLoad(processor, type, loadBuffer, paramOffsetFields[i].Item1, paramVariables[i]);
+            param.PropertyDataType.WriteLoad(processor, type, loadBuffer, paramRewriteInfos[i].OffsetField!, paramVariables[i]);
         }
 
         OpCode callOp = OpCodes.Callvirt;
@@ -161,7 +181,7 @@ public static class FunctionRewriterHelpers
         {
             VariableDefinition local = paramVariables[i];
             PropertyMetaData param = func.Parameters[i];
-            OpCode loadCode = PropertyMetaData.IsOutParameter(param.PropertyFlags) ? OpCodes.Ldloca : OpCodes.Ldloc;
+            OpCode loadCode = param.IsOutParameter ? OpCodes.Ldloca : OpCodes.Ldloc;
             processor.Emit(loadCode, local);
         }
 
@@ -181,13 +201,13 @@ public static class FunctionRewriterHelpers
         {
             PropertyMetaData param = func.Parameters[i];
             
-            if (!PropertyMetaData.IsOutParameter(param.PropertyFlags))
+            if (!param.IsOutParameter)
             {
                 continue;
             }
             
             VariableDefinition localVariable = paramVariables[i];
-            FieldDefinition offsetField = paramOffsetFields[i].Item1;
+            FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataParamType = param.PropertyDataType;
 
             Instruction loadLocalVariable = processor.Create(OpCodes.Ldloc, localVariable);
@@ -202,7 +222,7 @@ public static class FunctionRewriterHelpers
                 loadLocalVariable);
         }
 
-        if (func.ReturnValue != null)
+        if (func.HasReturnValue)
         {
             NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
             processor.Emit(OpCodes.Stloc, returnIndex);
@@ -214,60 +234,25 @@ public static class FunctionRewriterHelpers
             nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
                 processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);
         }
-
-        processor.Emit(OpCodes.Ret);
-        WeaverHelper.OptimizeMethod(invokerFunction);
+        
+        WeaverHelper.FinalizeMethod(invokerFunction);
     }
 
-    private static FieldDefinition AddElementSizeField(TypeDefinition type, FunctionMetaData func, PropertyMetaData prop, TypeReference int32TypeRef)
+    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        return WeaverHelper.AddFieldToType(type, func.Name + "_" + prop.Name + "_ElementSize", int32TypeRef);
-    }
-    
-    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, 
-        FunctionMetaData func, FieldDefinition? paramsSizeField,
-        Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields)
-    {
-        MethodDefinition? originalMethodDef = null;
-        foreach (var method in type.Methods)
+        if (func.MethodDefinition.Body != null)
         {
-            if (method.Name != func.Name)
-            {
-                continue;
-
-            }
-
-            originalMethodDef = method;
-            break;
+            MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramRewriteInfos);
         }
         
-        if (originalMethodDef == null)
-        {
-            throw new Exception($"Could not find method {func.Name} in class {type.Name}");
-        }
-        
-        if (originalMethodDef.Body.CodeSize > 0)
-        {
-            string implementationMethodName = originalMethodDef.Name + "_Implementation";
-            MethodDefinition implementationMethod = WeaverHelper.AddMethodToType(type, implementationMethodName, originalMethodDef.ReturnType, originalMethodDef.Attributes);
-            implementationMethod.Body = originalMethodDef.Body;
-            
-            foreach (ParameterDefinition param in originalMethodDef.Parameters)
-            {
-                implementationMethod.Parameters.Add(new ParameterDefinition(param.Name, param.Attributes, WeaverHelper.ImportType(param.ParameterType)));
-            }
-            
-            MakeManagedMethodInvoker(type, func, implementationMethod, paramOffsetFields);
-        }
-        
-        RewriteOriginalFunctionToInvokeNative(type, func, originalMethodDef, paramsSizeField, paramOffsetFields);
+        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDefinition, paramsSizeField, paramRewriteInfos);
     }
 
     public static void RewriteOriginalFunctionToInvokeNative(TypeDefinition type, 
         FunctionMetaData metadata,
         MethodDefinition methodDef, 
         FieldDefinition? paramsSizeField,
-        Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields)
+        FunctionParamRewriteInfo[] paramRewriteInfos)
     {
         // Remove the original method body. We'll replace it with a call to the native function.
         methodDef.Body = new MethodBody(methodDef);
@@ -285,7 +270,7 @@ public static class FunctionRewriterHelpers
         
         if (hasParams)
         {
-            WriteParametersToNative(processor, methodDef, metadata, paramsSizeField, paramOffsetFields, out argumentsBufferPtr, out loadArgumentBuffer, allCleanupInstructions);
+            WriteParametersToNative(processor, methodDef, metadata, paramsSizeField, paramRewriteInfos, out argumentsBufferPtr, out loadArgumentBuffer, allCleanupInstructions);
         }
         
         processor.Emit(OpCodes.Ldarg_0);
@@ -331,7 +316,7 @@ public static class FunctionRewriterHelpers
 
                 processor.Emit(OpCodes.Ldarg, i + 1);
 
-                Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramOffsetFields[i].Item1);
+                Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[i].OffsetField!);
                 param.PropertyDataType.WriteMarshalFromNative(processor, type, load, processor.Create(OpCodes.Ldc_I4_0));
             
                 Instruction setInstructionOutParam = WeaverHelper.CreateSetInstructionOutParam(methodDef.Parameters[i], param.PropertyDataType.PropertyType);
@@ -340,10 +325,10 @@ public static class FunctionRewriterHelpers
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.ReturnValue != null)
+        if (metadata.HasReturnValue)
         {
             // Return value is always the last parameter.
-            Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramOffsetFields[^1].Item1);
+            Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);
             metadata.ReturnValue.PropertyDataType.WriteMarshalFromNative(processor, type, load, Instruction.Create(OpCodes.Ldc_I4_0));
         }
 
@@ -382,17 +367,7 @@ public static class FunctionRewriterHelpers
 
     public static MethodDefinition CreateMethod(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
-        if (declaringType == null)
-        {
-            throw new ArgumentNullException(nameof(declaringType), "Declaring type cannot be null.");
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Method name cannot be null or whitespace.", nameof(name));
-        }
-        
-        var def = new MethodDefinition(name, attributes, returnType ?? WeaverHelper.VoidTypeRef);
+        MethodDefinition def = new MethodDefinition(name, attributes, returnType ?? WeaverHelper.VoidTypeRef);
 
         if (parameters != null)
         {
@@ -408,30 +383,34 @@ public static class FunctionRewriterHelpers
         }
 
         declaringType.Methods.Add(def);
-
         return def;
     }
     
-    public static void AddOffsetField(TypeDefinition classDefinition, PropertyMetaData propertyMetaData, FunctionMetaData func, int Index,
-        ref Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields, ref List<Tuple<FieldDefinition?, PropertyMetaData>> paramElementSizeFields)
+    public static void AddOffsetField(TypeDefinition classDefinition, PropertyMetaData propertyMetaData, FunctionMetaData func, int index, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
         FieldDefinition newField = WeaverHelper.AddFieldToType(classDefinition, func.Name + "_" + propertyMetaData.Name + "_Offset", WeaverHelper.Int32TypeRef);
-        paramOffsetFields[Index] = Tuple.Create(newField, propertyMetaData);
+        paramRewriteInfos[index].OffsetField = newField;
+        propertyMetaData.PropertyOffsetField = newField;
+    }
 
-        if (!propertyMetaData.PropertyDataType.NeedsElementSizeField)
+    public static void AddNativePropertyField(TypeDefinition classDefinition, PropertyMetaData propertyMetaData, FunctionMetaData func, int index, FunctionParamRewriteInfo[] paramRewriteInfos)
+    {
+        if (!propertyMetaData.PropertyDataType.NeedsNativePropertyField)
         {
             return;
         }
-                
-        FieldDefinition elementSizeField = AddElementSizeField(classDefinition, func, propertyMetaData, WeaverHelper.Int32TypeRef);
-        paramElementSizeFields[Index] = Tuple.Create(elementSizeField, propertyMetaData);
+
+        var newField = WeaverHelper.AddFieldToType(classDefinition, func.Name + "_" + propertyMetaData.Name + "_NativeProperty", WeaverHelper.IntPtrType,
+            FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private);
+        paramRewriteInfos[index].NativePropertyField = newField;
+        propertyMetaData.NativePropertyField = newField;
     }
 
     public static void WriteParametersToNative(ILProcessor processor, 
         MethodDefinition methodDef,
         FunctionMetaData metadata,
         FieldDefinition? paramsSizeField,
-        Tuple<FieldDefinition, PropertyMetaData>[] paramOffsetFields, 
+        FunctionParamRewriteInfo[] paramRewriteInfos, 
         out VariableDefinition argumentsBufferPtr, 
         out Instruction loadArgumentBuffer, 
         List<Instruction> allCleanupInstructions)
@@ -464,24 +443,24 @@ public static class FunctionRewriterHelpers
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
         Instruction loadParamBufferInstruction = Instruction.Create(OpCodes.Nop);
     
-        for (byte i = 0; i < paramOffsetFields.Length; ++i)
+        for (byte i = 0; i < paramRewriteInfos.Length; ++i)
         {
-            PropertyMetaData paramType = paramOffsetFields[i].Item2;
+            PropertyMetaData paramType = paramRewriteInfos[i].PropertyMetaData;
             
-            if (paramType.PropertyFlags.HasFlag(PropertyFlags.ReturnParm))
+            if (paramType.IsReturnParameter)
             {
                 continue;
             }
 
-            if (paramType.PropertyFlags.HasFlag(PropertyFlags.OutParm) && !paramType.PropertyFlags.HasFlag(PropertyFlags.ReferenceParm))
+            if (paramType is { IsOutParameter: true, IsReferenceParameter: false })
             {
                 continue;
             }
         
-            FieldDefinition offsetField = paramOffsetFields[i].Item1;
+            FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataType = paramType.PropertyDataType;
         
-            nativeDataType.PrepareForRewrite(methodDef.DeclaringType, metadata, paramOffsetFields[i].Item2);
+            nativeDataType.PrepareForRewrite(methodDef.DeclaringType, metadata, paramRewriteInfos[i].PropertyMetaData);
 
             processor.Append(loadArgumentBuffer);
             IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadParamBufferInstruction, offsetField, i + 1, methodDef.Parameters[i]);

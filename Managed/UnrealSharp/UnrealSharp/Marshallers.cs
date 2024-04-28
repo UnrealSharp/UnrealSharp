@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
@@ -84,9 +85,10 @@ public static class StringMarshaller
     {
         unsafe
         {
+            IntPtr ustring = nativeBuffer + arrayIndex * sizeof(UnmanagedArray);
             fixed (char* stringPtr = obj)
             {
-                FStringExporter.CallMarshalToNativeString(nativeBuffer, stringPtr);
+                FStringExporter.CallMarshalToNativeString(ustring, stringPtr);
             }
         }
     }

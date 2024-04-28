@@ -4,41 +4,45 @@
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
 
-UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction, void* ManagedMethod)
+UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunction* NewFunction = NewObject<UCSFunction>(Outer, UCSFunction::StaticClass(), Name, RF_Public);
-	NewFunction->FunctionFlags = FunctionFlags;
+	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-
-	if (ManagedMethod == nullptr)
-	{
-		ManagedMethod = FCSGeneratedClassBuilder::TryGetManagedFunction(Outer, Name);
-	}
+	NewFunction->SetManagedMethod(FCSGeneratedClassBuilder::TryGetManagedFunction(Outer, Name));
 	
-	NewFunction->SetManagedMethod(ManagedMethod);
-	FinalizeFunctionSetup(Outer, NewFunction);
-
 	FMetaDataHelper::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
-	
+	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
+}
+
+FProperty* FCSFunctionFactory::CreateProperty(UCSFunction* Function, const FPropertyMetaData& PropertyMetaData)
+{
+	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyMetaData);
+
+	if (!NewParam->HasAnyPropertyFlags(CPF_ZeroConstructor))
+	{
+		Function->FunctionFlags |= FUNC_HasDefaults;
+	}
+
+	return NewParam;
 }
 
 UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FFunctionMetaData& FunctionMetaData)
 {
-	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData, FunctionMetaData.FunctionFlags);
+	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
 
 	// Check if this function has a return value or is just void, otherwise skip.
 	if (FunctionMetaData.ReturnValue.Type != nullptr)
 	{
-		FCSPropertyFactory::CreateAndAssignProperty(NewFunction, FunctionMetaData.ReturnValue, CPF_Parm | CPF_ReturnParm | CPF_OutParm);
-		NewFunction->FunctionFlags |= FUNC_HasOutParms;
+		CreateProperty(NewFunction, FunctionMetaData.ReturnValue);
 	}
 
 	// Create the function's parameters and assign them.
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
 	for (int32 i = FunctionMetaData.Parameters.Num(); i-- > 0; )
 	{
-		FCSPropertyFactory::CreateAndAssignProperty(NewFunction, FunctionMetaData.Parameters[i], CPF_Parm);
+		CreateProperty(NewFunction, FunctionMetaData.Parameters[i]);
 	}
 
 	NewFunction->StaticLink(true);
@@ -47,13 +51,19 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 
 UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction)
 {
+	#if ENGINE_MINOR_VERSION >= 4
+	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags_AllFlags
+	#else
+	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags::AllFlags
+	#endif
+	
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure);
 	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FFunctionMetaData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
 	{
-		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName(), RF_AllFlags, EInternalObjectFlags::AllFlags & ~(EInternalObjectFlags::Native)));
+		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName(), RF_AllFlags, CS_EInternalObjectFlags_AllFlags & ~(EInternalObjectFlags::Native)));
 		ClonedParam->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
 		ClonedParam->Next = nullptr;
 		FunctionProperties.Add(ClonedParam);
@@ -64,23 +74,16 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 	for (int32 i = FunctionProperties.Num(); i-- > 0;)
 	{
 		NewFunction->AddCppProperty(FunctionProperties[i]);
-
-		if (FunctionProperties[i]->HasAnyPropertyFlags(CPF_OutParm))
-		{
-			NewFunction->FunctionFlags |= FUNC_HasOutParms;
-		}
 	}
 
 #if WITH_EDITOR
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
-#endif
 
 	// Override the Blueprint function. But don't let Blueprint display this overridden function.
-#if WITH_EDITOR
 	NewFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
 #endif
+
 	NewFunction->StaticLink(true);
-	
 	return NewFunction;
 }
 
