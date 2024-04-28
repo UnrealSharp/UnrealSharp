@@ -47,13 +47,19 @@ UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const
 
 UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction)
 {
+	#if ENGINE_MINOR_VERSION >= 4
+	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags_AllFlags
+	#else
+	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags::AllFlags
+	#endif
+	
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure);
 	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FFunctionMetaData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
 	{
-		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~(EInternalObjectFlags::Native)));
+		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName(), RF_AllFlags, CS_EInternalObjectFlags_AllFlags & ~(EInternalObjectFlags::Native)));
 		ClonedParam->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
 		ClonedParam->Next = nullptr;
 		FunctionProperties.Add(ClonedParam);
@@ -73,14 +79,12 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 
 #if WITH_EDITOR
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
-#endif
 
 	// Override the Blueprint function. But don't let Blueprint display this overridden function.
-#if WITH_EDITOR
 	NewFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
 #endif
+
 	NewFunction->StaticLink(true);
-	
 	return NewFunction;
 }
 
