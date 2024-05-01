@@ -124,3 +124,8 @@ bool UCSClass::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, cons
 	
 	return bSuccess;
 }
+
+TSharedRef<FCSharpClassInfo> UCSClass::GetClassInfo() const
+{
+	return ClassMetaData.ToSharedRef();
+}

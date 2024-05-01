@@ -16,7 +16,7 @@ public:
 	virtual void NewField(UCSClass* OldField, UCSClass* NewField) override;
 	// End of implementation
 	
-	static void* TryGetManagedFunction(const UClass* Outer, const FName& MethodName);
+	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
 
 	static UCSClass* GetFirstManagedClass(UClass* Class);
 	static UClass* GetFirstNativeClass(UClass* Class);
@@ -29,6 +29,10 @@ private:
 	static void ObjectConstructor(const FObjectInitializer& ObjectInitializer);
 	static void ActorConstructor(const FObjectInitializer& ObjectInitializer);
 	
-	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer, AActor* Actor, const UClass* ActorClass, const TSharedPtr<FClassMetaData>& ClassMetaData);
-	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FString>& Interfaces);
+	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
+		AActor* Actor,
+		const UClass* ActorClass,
+		const TSharedRef<FCSharpClassInfo>& ClassInfo);
+	
+	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 };

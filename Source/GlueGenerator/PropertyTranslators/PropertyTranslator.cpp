@@ -16,14 +16,8 @@ void FPropertyTranslator::GetPropertyProtection(const FProperty* Property, FStri
 			OutProtection = "protected ";
 		}
 	}
-	else if (Property->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic))
-	{
-		OutProtection = "public ";
-	}
-	else //it must be MD_AllowPrivateAccess
-	{
-		OutProtection = "private ";
-	}
+	
+	OutProtection = "public ";
 }
 
 void FPropertyTranslator::ExportReferences(const FProperty* Property) const

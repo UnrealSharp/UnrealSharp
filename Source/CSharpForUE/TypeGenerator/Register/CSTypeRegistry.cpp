@@ -8,21 +8,11 @@
 #include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 template<typename T>
-void DeserializeMetaDataObjects(const TArray<TSharedPtr<FJsonValue>>& MetaDataArray, TMap<FName, T>& Map)
-{
-	for (const auto& MetaData : MetaDataArray)
-	{
-		T Info(MetaData);
-		Map.Add(*Info.TypeMetaData->Name, Info);
-	}
-}
-
-template<typename T>
 void InitializeBuilders(TMap<FName, T>& Map)
 {
 	for (auto It = Map.CreateIterator(); It; ++It)
 	{
-		It->Value.InitializeBuilder();
+		It->Value->InitializeBuilder();
 	}
 }
 
@@ -47,32 +37,56 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to parse JSON at: %s"), *FilePath);
 		return false;
 	}
+	
+	for (const auto& MetaData : JsonObject->GetArrayField(TEXT("ClassMetaData")))
+	{
+		TSharedPtr<FCSharpClassInfo> ClassInfo = MakeShared<FCSharpClassInfo>(MetaData);
+		ManagedClasses.Add(ClassInfo->TypeMetaData->Name, ClassInfo);
+	}
 
-	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("ClassMetaData")), ManagedClasses);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("StructMetaData")), ManagedStructs);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("EnumMetaData")), ManagedEnums);
-	DeserializeMetaDataObjects(JsonObject->GetArrayField(TEXT("InterfacesMetaData")), ManagedInterfaces);
+	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
+	for (const auto& MetaData : StructMetaData)
+	{
+		TSharedPtr<FCSharpStructInfo> StructInfo = MakeShared<FCSharpStructInfo>(MetaData);
+		ManagedStructs.Add(StructInfo->TypeMetaData->Name, StructInfo);
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
+	for (const auto& MetaData : EnumMetaData)
+	{
+		TSharedPtr<FCSharpEnumInfo> EnumInfo = MakeShared<FCSharpEnumInfo>(MetaData);
+		ManagedEnums.Add(EnumInfo->TypeMetaData->Name, EnumInfo);
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
+	for (const auto& MetaData : InterfacesMetaData)
+	{
+		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = MakeShared<FCSharpInterfaceInfo>(MetaData);
+		ManagedInterfaces.Add(InterfaceInfo->TypeMetaData->Name, InterfaceInfo);
+	}
 
 	InitializeBuilders(ManagedClasses);
 	InitializeBuilders(ManagedStructs);
 	InitializeBuilders(ManagedEnums);
 	InitializeBuilders(ManagedInterfaces);
-
 	return true;
 }
 
-FCSharpClassInfo* FCSTypeRegistry::FindManagedType(UClass* Class)
+TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 {
-	FCSharpClassInfo& ClassInfo = ManagedClasses.FindOrAdd(Class->GetFName());
+	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(Class->GetFName());
 
-	if (ClassInfo.Field == nullptr || ClassInfo.TypeHandle == nullptr)
+	// Native classes are populated on the go as they are needed for managed code.
+	if (!FoundClassInfo.IsValid())
 	{
-		const FString Namespace = UUnrealSharpStatics::GetNamespace(Class);
-		ClassInfo.TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::GetUserManagedProjectName(), Namespace, Class->GetName());
-		ClassInfo.Field = Class;
+		FoundClassInfo = MakeShared<FCSharpClassInfo>();
+		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
+		
+		FoundClassInfo->TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::GetUserManagedProjectName(), UUnrealSharpStatics::GetNamespace(Class), Class->GetName());
+		FoundClassInfo->Field = Class;
 	}
-
-	return &ClassInfo;
+	
+	return FoundClassInfo.ToSharedRef();
 }
 
 void FCSTypeRegistry::AddPendingClass(FName ParentClass, FCSharpClassInfo* NewClass)
@@ -84,7 +98,8 @@ void FCSTypeRegistry::AddPendingClass(FName ParentClass, FCSharpClassInfo* NewCl
 UClass* FCSTypeRegistry::GetClassFromName(FName Name)
 {
 	UClass* FoundType;
-	if (auto* TypeInfo = Get().ManagedClasses.Find(Name))
+	TSharedPtr<FCSharpClassInfo> TypeInfo = Get().ManagedClasses.FindRef(Name);
+	if (TypeInfo.IsValid())
 	{
 		FoundType = TypeInfo->InitializeBuilder();
 	}
@@ -99,7 +114,8 @@ UClass* FCSTypeRegistry::GetClassFromName(FName Name)
 UScriptStruct* FCSTypeRegistry::GetStructFromName(FName Name)
 {
 	UScriptStruct* FoundType;
-	if (auto* TypeInfo = Get().ManagedStructs.Find(Name))
+	TSharedPtr<FCSharpStructInfo> TypeInfo = Get().ManagedStructs.FindRef(Name);
+	if (TypeInfo.IsValid())
 	{
 		FoundType = TypeInfo->InitializeBuilder();
 	}
@@ -114,7 +130,8 @@ UScriptStruct* FCSTypeRegistry::GetStructFromName(FName Name)
 UEnum* FCSTypeRegistry::GetEnumFromName(FName Name)
 {
 	UEnum* FoundType;
-	if (auto* TypeInfo = Get().ManagedEnums.Find(Name))
+	TSharedPtr<FCSharpEnumInfo> TypeInfo = Get().ManagedEnums.FindRef(Name);
+	if (TypeInfo.IsValid())
 	{
 		FoundType = TypeInfo->InitializeBuilder();
 	}
@@ -129,7 +146,8 @@ UEnum* FCSTypeRegistry::GetEnumFromName(FName Name)
 UClass* FCSTypeRegistry::GetInterfaceFromName(FName Name)
 {
 	UClass* FoundType;
-	if (auto* TypeInfo = Get().ManagedInterfaces.Find(Name))
+	TSharedPtr<FCSharpInterfaceInfo> TypeInfo = Get().ManagedInterfaces.FindRef(Name);
+	if (TypeInfo.IsValid())
 	{
 		FoundType = TypeInfo->InitializeBuilder();
 	}
@@ -139,26 +157,6 @@ UClass* FCSTypeRegistry::GetInterfaceFromName(FName Name)
 	}
 	
 	return FoundType;
-}
-
-FCSharpClassInfo* FCSTypeRegistry::GetClassInfoFromName(FName Name)
-{
-	return Get().ManagedClasses.Find(Name);
-}
-
-FCSharpStructInfo* FCSTypeRegistry::GetStructInfoFromName(FName Name)
-{
-	return Get().ManagedStructs.Find(Name);
-}
-
-FCSharpEnumInfo* FCSTypeRegistry::GetEnumInfoFromName(FName Name)
-{
-	return Get().ManagedEnums.Find(Name);
-}
-
-FCSharpInterfaceInfo* FCSTypeRegistry::GetInterfaceInfoFromName(FName Name)
-{
-	return Get().ManagedInterfaces.Find(Name);
 }
 
 void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
