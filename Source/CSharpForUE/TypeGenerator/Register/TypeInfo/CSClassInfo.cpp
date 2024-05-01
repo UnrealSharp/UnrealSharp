@@ -8,7 +8,7 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 		return Field;
 	}
 	
-	FName ParentClassName = *TypeMetaData->ParentClass.Name;
+	FName ParentClassName = TypeMetaData->ParentClass.Name;
 	UClass* ParentClass = FCSTypeRegistry::GetClassFromName(ParentClassName);
 
 	if (!ParentClass)

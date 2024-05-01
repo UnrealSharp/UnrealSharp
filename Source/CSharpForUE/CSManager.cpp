@@ -321,7 +321,7 @@ FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, UClass* Class)
 		ObjectClass = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
 	}
 	
-	const auto* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ObjectClass);
+	TSharedRef<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::Get().FindManagedType(ObjectClass);
 	return CreateNewManagedObject(Object, ClassInfo->TypeHandle);
 }
 
@@ -389,7 +389,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 
 uint8* FCSManager::GetTypeHandle(const FTypeReferenceMetaData& TypeMetaData)
 {
-	return GetTypeHandle(TypeMetaData.AssemblyName, TypeMetaData.Namespace, TypeMetaData.Name);
+	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }
 
 void FCSManager::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)

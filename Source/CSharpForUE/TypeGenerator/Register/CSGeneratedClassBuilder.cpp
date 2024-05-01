@@ -11,7 +11,8 @@
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	//Set the super class for this UClass.
-	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(*TypeMetaData->ParentClass.Name);
+	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
+	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
 
 #if WITH_EDITOR
 	// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
@@ -39,13 +40,13 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->PropertyLink = SuperClass->PropertyLink;
 	Field->ClassWithin = SuperClass->ClassWithin;
 
-	if (TypeMetaData->ClassConfigName.IsEmpty())
+	if (TypeMetaData->ClassConfigName.IsNone())
 	{
 		Field->ClassConfigName = SuperClass->ClassConfigName;
 	}
 	else
 	{
-		Field->ClassConfigName = *TypeMetaData->ClassConfigName;
+		Field->ClassConfigName = TypeMetaData->ClassConfigName;
 	}
 
 	//Implement all Blueprint interfaces declared
@@ -82,8 +83,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 	//Create the default object for this class
 	Field->GetDefaultObject();
-
-	// Setup replication properties
+	
 	Field->SetUpRuntimeReplicationData();
 
 	Field->UpdateCustomPropertyListForPostConstruction();
@@ -107,7 +107,7 @@ void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& Objec
 {
 	UClass* Class = ObjectInitializer.GetClass();
 	UCSClass* ManagedClass = GetFirstManagedClass(Class);
-	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ManagedClass);
+	TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
 	
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(Class);
@@ -121,7 +121,7 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 {
 	UClass* Class = ObjectInitializer.GetClass();
 	UCSClass* ManagedClass = GetFirstManagedClass(Class);
-	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::Get().FindManagedType(ManagedClass);
+	TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
 	
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(Class);
@@ -130,17 +130,21 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	AActor* Actor = CastChecked<AActor>(ObjectInitializer.GetObj());
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-	SetupDefaultSubobjects(ObjectInitializer, Actor, Class, ClassInfo->TypeMetaData);
+	SetupDefaultSubobjects(ObjectInitializer, Actor, Class, ClassInfo);
 	
 	// Make the actual object in C#
 	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
-void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer, AActor* Actor, const UClass* ActorClass, const TSharedPtr<FClassMetaData>& ClassMetaData)
+void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
+	AActor* Actor,
+	const UClass* ActorClass,
+	const TSharedRef<FCSharpClassInfo>& ClassInfo)
 {
 	TMap<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponents;
+	TArray<FPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 	
-	for (const FPropertyMetaData& PropertyMetaData : ClassMetaData->Properties)
+	for (const FPropertyMetaData& PropertyMetaData : Properties)
 	{
 		if (PropertyMetaData.Type->PropertyType != ECSPropertyType::DefaultComponent)
 		{
@@ -173,14 +177,13 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 			continue;
 		}
 
-		FString AttachmentComponentName = DefaultComponentMetaData->AttachmentComponent;
-		FString AttachmentSocketName = DefaultComponentMetaData->AttachmentSocket;
-    	
-		USceneComponent* AttachmentComponent = !AttachmentComponentName.IsEmpty() ? FindObject<USceneComponent>(Actor, *AttachmentComponentName) : Actor->GetRootComponent();
+		FName AttachmentComponentName = DefaultComponentMetaData->AttachmentComponent;
+		FName AttachmentSocketName = DefaultComponentMetaData->AttachmentSocket;
 
-		if (AttachmentComponent)
+		if (USceneComponent* AttachmentComponent = !AttachmentComponentName.IsNone()
+			? FindObject<USceneComponent>(Actor, *AttachmentComponentName.ToString()) : Actor->GetRootComponent())
 		{
-			SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsEmpty() ? NAME_None : FName(*AttachmentSocketName));
+			SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName);
 		}
 		else
 		{
@@ -189,15 +192,15 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 	}
 }
 
-void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FString>& Interfaces)
+void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces)
 {
-	for (const FString& InterfaceName : Interfaces)
+	for (const FName& InterfaceName : Interfaces)
 	{
-		UClass* InterfaceClass = FCSTypeRegistry::GetInterfaceFromName(*InterfaceName);
+		UClass* InterfaceClass = FCSTypeRegistry::GetInterfaceFromName(InterfaceName);
 
 		if (!InterfaceClass)
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceName);
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceName.ToString());
 			continue;
 		}
 
@@ -210,17 +213,14 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 	}
 }
 
-void* FCSGeneratedClassBuilder::TryGetManagedFunction(const UClass* Outer, const FName& MethodName)
+void* FCSGeneratedClassBuilder::TryGetManagedFunction(UClass* Outer, const FName& MethodName)
 {
-	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::GetClassInfoFromName(Outer->GetFName());
-	
-	if (!ClassInfo)
+	if (UCSClass* ManagedClass = GetFirstManagedClass(Outer))
 	{
-		return nullptr;
+		const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
+		return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ManagedClass->GetClassInfo()->TypeHandle, *InvokeMethodName);
 	}
-	
-	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
-	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ClassInfo->TypeHandle, *InvokeMethodName);
+	return nullptr;
 }
 
 UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)

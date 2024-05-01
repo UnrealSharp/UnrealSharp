@@ -33,7 +33,7 @@ public:
 
 	bool ProcessMetaData(const FString& FilePath);
 
-	FCSharpClassInfo* FindManagedType(UClass* Class);
+	TSharedRef<FCSharpClassInfo> FindManagedType(UClass* Class);
 	void AddPendingClass(FName ParentClass, FCSharpClassInfo* NewClass);
 
 	FOnNewClass& GetOnNewClassEvent() { return OnNewClass; }
@@ -45,15 +45,30 @@ public:
 	static UEnum* GetEnumFromName(FName Name);
 	static UClass* GetInterfaceFromName(FName Name);
 
-	static FCSharpClassInfo* GetClassInfoFromName(FName Name);
-	static FCSharpStructInfo* GetStructInfoFromName(FName Name);
-	static FCSharpEnumInfo* GetEnumInfoFromName(FName Name);
-	static FCSharpInterfaceInfo* GetInterfaceInfoFromName(FName Name);
+	static TSharedPtr<FCSharpClassInfo> GetClassInfoFromName(FName Name)
+	{
+		return Get().ManagedClasses.FindRef(Name);
+	};
+	
+	static TSharedPtr<FCSharpStructInfo> GetStructInfoFromName(FName Name)
+	{
+		return Get().ManagedStructs.FindRef(Name);
+	};
+	
+	static TSharedPtr<FCSharpEnumInfo> GetEnumInfoFromName(FName Name)
+	{
+		return Get().ManagedEnums.FindRef(Name);
+	};
+	
+	static TSharedPtr<FCSharpInterfaceInfo> GetInterfaceInfoFromName(FName Name)
+	{
+		return Get().ManagedInterfaces.FindRef(Name);
+	};
 
-	TMap<FName, FCSharpClassInfo> ManagedClasses;
-	TMap<FName, FCSharpStructInfo> ManagedStructs;
-	TMap<FName, FCSharpEnumInfo> ManagedEnums;
-	TMap<FName, FCSharpInterfaceInfo> ManagedInterfaces;
+	TMap<FName, TSharedPtr<FCSharpClassInfo>> ManagedClasses;
+	TMap<FName, TSharedPtr<FCSharpStructInfo>> ManagedStructs;
+	TMap<FName, TSharedPtr<FCSharpEnumInfo>> ManagedEnums;
+	TMap<FName, TSharedPtr<FCSharpInterfaceInfo>> ManagedInterfaces;
 
 private:
 	

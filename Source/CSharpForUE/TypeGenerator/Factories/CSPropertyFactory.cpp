@@ -73,7 +73,7 @@ FProperty* FCSPropertyFactory::CreateObjectPtrProperty(UField* Outer, const FPro
 FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	TSharedPtr<FObjectMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
-	UClass* Class = FCSTypeRegistry::GetClassFromName(*ObjectMetaData->InnerType.Name);
+	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 
 	FSoftClassProperty* SoftObjectProperty = CreateObjectProperty<FSoftClassProperty>(Outer, PropertyMetaData);
 	SoftObjectProperty->SetMetaClass(Class);
@@ -83,7 +83,7 @@ FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FPro
 FProperty* FCSPropertyFactory::CreateClassProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto ClassMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
-	UClass* Class = FCSTypeRegistry::GetClassFromName(*ClassMetaData->InnerType.Name);
+	UClass* Class = FCSTypeRegistry::GetClassFromName(ClassMetaData->InnerType.Name);
 	
 	FClassProperty* NewClassProperty = CreateSimpleProperty<FClassProperty>(Outer, PropertyMetaData);
 	NewClassProperty->SetPropertyClass(UClass::StaticClass());
@@ -96,7 +96,7 @@ template <typename ObjectProperty>
 ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto ObjectMetaData = PropertyMetaData.GetTypeMetaData<FObjectMetaData>();
-	UClass* Class = FCSTypeRegistry::GetClassFromName(*ObjectMetaData->InnerType.Name);
+	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 	ObjectProperty* NewObjectProperty = CreateSimpleProperty<ObjectProperty>(Outer, PropertyMetaData);
 	NewObjectProperty->SetPropertyClass(Class);
 	return NewObjectProperty;
@@ -105,7 +105,7 @@ ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FP
 FProperty* FCSPropertyFactory::CreateStructProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	auto StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FStructPropertyMetaData>();
-	UScriptStruct* Struct = FCSTypeRegistry::GetStructFromName(*StructPropertyMetaData->TypeRef.Name);
+	UScriptStruct* Struct = FCSTypeRegistry::GetStructFromName(StructPropertyMetaData->TypeRef.Name);
 	
 	FStructProperty* StructProperty = CreateSimpleProperty<FStructProperty>(Outer, PropertyMetaData);
 	StructProperty->Struct = Struct;
@@ -125,7 +125,7 @@ FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FProperty
 {
 	const auto EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FEnumPropertyMetaData>();
 	
-	UEnum* Enum = FCSTypeRegistry::GetEnumFromName(*EnumPropertyMetaData->InnerProperty.Name);
+	UEnum* Enum = FCSTypeRegistry::GetEnumFromName(EnumPropertyMetaData->InnerProperty.Name);
 	FEnumProperty* EnumProperty = CreateSimpleProperty<FEnumProperty>(Outer, PropertyMetaData);
 	FByteProperty* UnderlyingProp = new FByteProperty(EnumProperty, "UnderlyingType", RF_Public);
 	
@@ -229,9 +229,9 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FPropertyMeta
 			UBlueprintGeneratedClass* OwnerClass = CastChecked<UBlueprintGeneratedClass>(Outer);
 			++OwnerClass->NumReplicatedProperties;
 			
-			if (!PropertyMetaData.RepNotifyFunctionName.IsEmpty())
+			if (!PropertyMetaData.RepNotifyFunctionName.IsNone())
 			{
-				NewProperty->RepNotifyFunc = *PropertyMetaData.RepNotifyFunctionName;
+				NewProperty->RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
 				NewProperty->SetPropertyFlags(CPF_Net | CPF_RepNotify);
 			}
 		}

@@ -127,15 +127,13 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 		}
 	}
 	
-	for (const FString& VirtualFunction : ClassMetaData->VirtualFunctions)
+	for (const FName& VirtualFunction : ClassMetaData->VirtualFunctions)
 	{
- 		FName FunctionName = *VirtualFunction;
-    
-		if (UFunction* Function = NameToFunctionMap.FindRef(FunctionName))
+		if (UFunction* Function = NameToFunctionMap.FindRef(VirtualFunction))
 		{
 			VirtualFunctions.Add(Function);
 		}
-		else if (UFunction* InterfaceFunction = InterfaceFunctionMap.FindRef(FunctionName))
+		else if (UFunction* InterfaceFunction = InterfaceFunctionMap.FindRef(VirtualFunction))
 		{
 			VirtualFunctions.Add(InterfaceFunction);
 		}

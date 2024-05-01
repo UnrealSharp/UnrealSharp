@@ -42,9 +42,8 @@ void* UUClassExporter::GetDefaultFromString(const char* ClassName)
 		return nullptr;
 	}
 	
-	const FCSharpClassInfo* ClassInfo = FCSTypeRegistry::GetClassInfoFromName(ClassName);
-
-	if (!ClassInfo)
+	const TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(ClassName);
+	if (!ClassInfo.IsValid())
 	{
 		return nullptr;
 	}

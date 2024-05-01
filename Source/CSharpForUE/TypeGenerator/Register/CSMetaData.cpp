@@ -92,9 +92,20 @@ void CSharpMetaDataUtils::SerializeProperty(const TSharedPtr<FJsonObject>& Prope
 
 void FTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
-	Name = JsonObject->GetStringField(TEXT("Name"));
-	JsonObject->TryGetStringField(TEXT("Namespace"), Namespace);
-	JsonObject->TryGetStringField(TEXT("AssemblyName"), AssemblyName);
+	Name = *JsonObject->GetStringField(TEXT("Name"));
+
+	FString NamespaceStr;
+	if (JsonObject->TryGetStringField(TEXT("Namespace"), NamespaceStr))
+	{
+		Namespace = *NamespaceStr;
+	}
+
+	FString AssemblyNameStr;
+	if (JsonObject->TryGetStringField(TEXT("AssemblyName"), AssemblyNameStr))
+	{
+		AssemblyName = *AssemblyNameStr;
+	}
+	
 	FMetaDataHelper::SerializeFromJson(JsonObject, MetaData);
 }
 
@@ -110,7 +121,6 @@ void FMetaDataHelper::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObjec
 	if (JsonObject->TryGetObjectField(TEXT("MetaData"), MetaDataObjectPtr))
 	{
 		TSharedPtr<FJsonObject> MetaDataObject = *MetaDataObjectPtr;
-		
 		for (const auto& Pair : MetaDataObject->Values)
 		{
 			FString Key = Pair.Key;
@@ -143,8 +153,20 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	
 	ParentClass.SerializeFromJson(JsonObject->GetObjectField(TEXT("ParentClass")));
 
-	JsonObject->TryGetStringField(TEXT("ConfigCategory"), ClassConfigName);
-	JsonObject->TryGetStringArrayField(TEXT("Interfaces"), Interfaces);
+	FString ClassConfigNameStr;
+	if (JsonObject->TryGetStringField(TEXT("ConfigCategory"), ClassConfigNameStr))
+	{
+		ClassConfigName = *ClassConfigNameStr;
+	}
+
+	TArray<FString> InterfacesStr;
+	if (JsonObject->TryGetStringArrayField(TEXT("Interfaces"), InterfacesStr))
+	{
+		for (const FString& Interface : InterfacesStr)
+		{
+			Interfaces.Add(*Interface);
+		}
+	}
 
 	const TArray<TSharedPtr<FJsonValue>>* FoundFunctions;
 	if (JsonObject->TryGetArrayField(TEXT("Functions"), FoundFunctions))
@@ -157,7 +179,7 @@ void FClassMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject
 	{
 		for (const TSharedPtr<FJsonValue>& VirtualFunction : *FoundVirtualFunctions)
 		{
-			VirtualFunctions.Add(VirtualFunction->AsObject()->GetStringField(TEXT("Name")));
+			VirtualFunctions.Add(*VirtualFunction->AsObject()->GetStringField(TEXT("Name")));
 		}
 	}
 
@@ -227,12 +249,13 @@ void FEnumMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FTypeReferenceMetaData::SerializeFromJson(JsonObject);
 
-	const TArray<TSharedPtr<FJsonValue>>* OutArray;
-	JsonObject->TryGetArrayField(TEXT("Items"), OutArray);
-	
-	for (const TSharedPtr<FJsonValue>& Item : *OutArray)
+	const TArray<TSharedPtr<FJsonValue>>* EnumValues;
+	if (JsonObject->TryGetArrayField(TEXT("Items"), EnumValues))
 	{
-		Items.Add(Item->AsString());
+		for (const TSharedPtr<FJsonValue>& Item : *EnumValues)
+		{
+			Items.Add(*Item->AsString());
+		}
 	}
 }
 
@@ -282,10 +305,15 @@ void FPropertyMetaData:: SerializeFromJson(const TSharedPtr<FJsonObject>& JsonOb
 	
 	PropertyFlags = CSharpMetaDataUtils::GetFlags<EPropertyFlags>(JsonObject,"PropertyFlags");
 	LifetimeCondition = CSharpMetaDataUtils::GetFlags<ELifetimeCondition>(JsonObject,"LifetimeCondition");
-
+	
 	JsonObject->TryGetStringField(TEXT("BlueprintGetter"), BlueprintGetter);
 	JsonObject->TryGetStringField(TEXT("BlueprintSetter"), BlueprintSetter);
-	JsonObject->TryGetStringField(TEXT("RepNotifyFunctionName"), RepNotifyFunctionName);
+
+	FString RepNotifyFunctionNameStr;
+	if (JsonObject->TryGetStringField(TEXT("RepNotifyFunctionName"), RepNotifyFunctionNameStr))
+	{
+		RepNotifyFunctionName = *RepNotifyFunctionNameStr;
+	}
 }
 
 //END ----------------------FPropertyMetaData----------------------------------------
@@ -315,8 +343,18 @@ void FDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>&
 {
 	FObjectMetaData::SerializeFromJson(JsonObject);
 	JsonObject->TryGetBoolField(TEXT("IsRootComponent"), IsRootComponent);
-	JsonObject->TryGetStringField(TEXT("AttachmentComponent"), AttachmentComponent);
-	JsonObject->TryGetStringField(TEXT("AttachmentSocket"), AttachmentSocket);
+
+	FString AttachmentComponentStr;
+	if (JsonObject->TryGetStringField(TEXT("AttachmentComponent"), AttachmentComponentStr))
+	{
+		AttachmentComponent = *AttachmentComponentStr;
+	}
+
+	FString AttachmentSocketStr;
+	if (JsonObject->TryGetStringField(TEXT("AttachmentSocket"), AttachmentSocketStr))
+	{
+		AttachmentSocket = *AttachmentSocketStr;
+	}
 }
 
 void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)

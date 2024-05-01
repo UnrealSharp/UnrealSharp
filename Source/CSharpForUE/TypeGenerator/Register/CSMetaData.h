@@ -84,9 +84,9 @@ struct FTypeReferenceMetaData
 {
 	virtual ~FTypeReferenceMetaData() = default;
 
-	FString Name;
-	FString Namespace;
-	FString AssemblyName;
+	FName Name;
+	FName Namespace;
+	FName AssemblyName;
 
 	TMap<FString, FString> MetaData;
 	
@@ -124,16 +124,16 @@ struct FClassMetaData : FTypeReferenceMetaData
 	TArray<FPropertyMetaData> Properties;
 	
 	TArray<FFunctionMetaData> Functions;
-	TArray<FString> VirtualFunctions;
+	TArray<FName> VirtualFunctions;
 	
-	TArray<FString> Interfaces;
+	TArray<FName> Interfaces;
 
 	bool bCanTick = false;
 	bool bOverrideInput = false;
 
 	EClassFlags ClassFlags;
 
-	FString ClassConfigName;
+	FName ClassConfigName;
 
 	// FTypeReferenceMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
@@ -188,7 +188,7 @@ struct FEnumMetaData : FTypeReferenceMetaData
 {
 	virtual ~FEnumMetaData() = default;
 
-	TArray<FString> Items;
+	TArray<FName> Items;
 
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
@@ -200,7 +200,7 @@ struct FPropertyMetaData : FMemberMetaData
 	virtual ~FPropertyMetaData() = default;
 
 	TSharedPtr<FUnrealType> Type;
-	FString RepNotifyFunctionName;
+	FName RepNotifyFunctionName;
 	int32 ArrayDim = 0;
 	EPropertyFlags PropertyFlags;
 	ELifetimeCondition LifetimeCondition;
@@ -246,8 +246,8 @@ struct FDefaultComponentMetaData : FObjectMetaData
 	virtual ~FDefaultComponentMetaData() = default;
 
 	bool IsRootComponent = false;
-	FString AttachmentComponent;
-	FString AttachmentSocket;
+	FName AttachmentComponent;
+	FName AttachmentSocket;
 
 	//FUnrealType interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
