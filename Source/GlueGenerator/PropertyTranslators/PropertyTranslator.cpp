@@ -4,20 +4,23 @@
 
 void FPropertyTranslator::GetPropertyProtection(const FProperty* Property, FString& OutProtection)
 {
-	if (Property->HasAnyPropertyFlags(CPF_Protected) || Property->HasMetaData(MD_BlueprintProtected))
-	{
-		//properties can be RF_Public and CPF_Protected, the first takes precedence
-		if (Property->HasAnyFlags(RF_Public))
-		{
-			OutProtection = "public ";
-		}
-		else
-		{
-			OutProtection = "protected ";
-		}
-	}
+	// If this is false, the property is a member of a struct.
+	const bool IsClassOwner = Property->GetOwnerClass() != nullptr;
 	
-	OutProtection = "public ";
+	if (Property->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic) ||
+		(Property->HasAllPropertyFlags(CPF_NativeAccessSpecifierPrivate) && Property->HasMetaData("AllowPrivateAccess") ||
+		(!IsClassOwner && Property->HasAnyPropertyFlags(CPF_Protected))))
+	{
+		OutProtection = "public ";
+	}
+	else if (IsClassOwner && Property->HasAnyPropertyFlags(CPF_Protected))
+	{
+		OutProtection = "protected ";
+	}
+	else
+	{
+		OutProtection = "private ";
+	}
 }
 
 void FPropertyTranslator::ExportReferences(const FProperty* Property) const

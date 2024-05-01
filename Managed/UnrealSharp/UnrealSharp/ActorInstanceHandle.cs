@@ -22,7 +22,7 @@ public partial struct ActorInstanceHandle
     
     public SceneComponent GetRootComponent()
     {
-        return Actor.RootComponent;
+        return Actor.GetRootComponent();
     }
     
     Vector GetActorLocation()
