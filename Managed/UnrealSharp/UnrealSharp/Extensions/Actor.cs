@@ -95,7 +95,7 @@ public partial class Actor
     /// <typeparam name="T">The type of the component to get</typeparam>
     /// <param name="class">The class of the component to get. Can be left null.</param>
     /// <returns>The component if found, otherwise null</returns>
-    public T? GetComponentByClass<T>(SubclassOf<ActorComponent>? @class) where T : ActorComponent
+    public T? GetComponentByClass<T>(SubclassOf<ActorComponent>? @class = null) where T : ActorComponent
     {
         if (@class == null)
         {
