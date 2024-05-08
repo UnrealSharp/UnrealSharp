@@ -847,7 +847,7 @@ void FCSGenerator::ExportClassProperties(FCSScriptBuilder& Builder, const UClass
 	for (FProperty* Property : ExportedProperties)
 	{
 		const FPropertyTranslator& PropertyTranslator = PropertyTranslatorManager->Find(Property);
-		PropertyTranslator.ExportWrapperProperty(Builder, Property, Greylist.HasProperty(Class, Property), AllowList.HasProperty(Class, Property), ReservedNames);
+		PropertyTranslator.ExportWrapperProperty(Builder, Property, AllowList.HasProperty(Class, Property), ReservedNames);
 	}
 }
 
@@ -1134,7 +1134,7 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 		ReservedNames.Add(Property->GetName());
 	}
 	
-	ExportStructProperties(Builder, Struct, ExportedProperties, bIsBlittable, ReservedNames);
+	ExportStructProperties(Builder, ExportedProperties, bIsBlittable, ReservedNames);
 
 	if (!bIsBlittable)
 	{
@@ -1158,12 +1158,12 @@ void FCSGenerator::ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder
 }
 
 
-void FCSGenerator::ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
+void FCSGenerator::ExportStructProperties(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
 {
 	for (FProperty* Property : ExportedProperties)
 	{
 		const FPropertyTranslator& PropertyTranslator = PropertyTranslatorManager->Find(Property);
-		PropertyTranslator.ExportMirrorProperty(Builder, Property, Greylist.HasProperty(Struct, Property), bSuppressOffsets, ReservedNames);
+		PropertyTranslator.ExportMirrorProperty(Builder, Property, bSuppressOffsets, ReservedNames);
 	}
 }
 

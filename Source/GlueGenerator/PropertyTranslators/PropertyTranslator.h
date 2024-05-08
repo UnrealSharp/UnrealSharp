@@ -20,6 +20,7 @@ public:
 	}
 
 	static void GetPropertyProtection(const FProperty* Property, FString& OutProtection);
+	static void GetClassPropertyProtection(const FProperty* Property, FString& OutProtection);
 
 	virtual bool CanHandleProperty(const FProperty* Property) const = 0;
 
@@ -44,17 +45,17 @@ public:
 	virtual bool IsBlittable() const { return false; }
 
 	// Exports a C# property which wraps a native FProperty, suitable for use in a reference type backed by a UObject.
-	void ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted, const TSet<FString>& ReservedNames) const;
+	void ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsWhitelisted, const TSet<FString>& ReservedNames) const;
 	virtual FString GetPropertyName(const FProperty* Property) const;
 	virtual void ExportPropertyStaticConstruction(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const;
 	virtual void ExportParameterStaticConstruction(FCSScriptBuilder& Builder, const FString& NativeMethodName, const FProperty* Parameter) const;
 	
 	// helpers for collapsed getter/setters
-	void BeginWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder, const FProperty* Property, const FString& PropertyName) const;
+	void BeginWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Protection, const FString& PropertyName) const;
 	void EndWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder) const;
 
 	// Exports a C# property which mirrors a FProperty, suitable for use in a value type.
-	void ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
+	void ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
 
 	enum class FunctionType : uint8
 	{

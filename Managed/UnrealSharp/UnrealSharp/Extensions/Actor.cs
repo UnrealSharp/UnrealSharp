@@ -105,14 +105,4 @@ public partial class Actor
         
         return GetComponentByClass(@class.Value) as T;
     }
-    
-    /// <summary>
-    /// Gets the root component for this Actor
-    /// </summary>
-    /// <returns>The root component</returns>
-    public SceneComponent GetRootComponent()
-    {
-        IntPtr handle = AActorExporter.CallGetRootComponent(NativeObject);
-        return GcHandleUtilities.GetObjectFromHandlePtr<SceneComponent>(handle)!;
-    }
 }

@@ -2,6 +2,7 @@
 
 #include "CSGenerator.h"
 #include "GameplayTagContainer.h"
+#include "InputActionValue.h"
 #include "GlueGenerator/CSInclusionLists.h"
 #include "UObject/UObjectIterator.h"
 #include "UObject/TextProperty.h"
@@ -77,6 +78,7 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 
 	AddBlittableCustomStructPropertyTranslator(FTimerHandle::StaticStruct(), "UnrealSharp.Engine.TimerHandle", DenyList);
 	AddBlittableCustomStructPropertyTranslator(FActorInstanceHandle::StaticStruct(), "UnrealSharp.Engine.ActorInstanceHandle", DenyList);
+	AddBlittableCustomStructPropertyTranslator(FInputActionValue::StaticStruct(), "UnrealSharp.EnhancedInput.InputActionValue", DenyList);
 	
 	// In-progress support for GameplayTags
 	//AddBlittableCustomStructPropertyTranslator(FGameplayTagContainer::StaticStruct(), "UnrealSharp.GameplayTags.GameplayTagContainer", DenyList);

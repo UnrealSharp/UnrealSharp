@@ -1,9 +1,11 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.EnhancedInput;
 
 [StructLayout(LayoutKind.Sequential)]
+[UStruct(IsBlittable = true)]
 public partial struct InputActionValue
 {
     private Vector AxisValue;

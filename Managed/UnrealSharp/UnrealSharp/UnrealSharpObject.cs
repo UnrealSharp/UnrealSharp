@@ -287,7 +287,7 @@ public class UnrealSharpObject : IDisposable
     /// <param name="playerController"> The player controller to get the subsystem from. </param>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The local player subsystem of the specified type. </returns>
-    public T GetLocalPlayerSubsystem<T>(PlayerController playerController) where T : CSLocalPlayerSubsystem
+    public T GetLocalPlayerSubsystem<T>(PlayerController playerController) where T : LocalPlayerSubsystem
     {
         var subsystemClass = new SubclassOf<T>(typeof(T));
         IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);

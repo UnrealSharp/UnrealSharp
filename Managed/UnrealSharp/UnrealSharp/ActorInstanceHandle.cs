@@ -1,9 +1,11 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Engine;
 
 [StructLayout(LayoutKind.Sequential)]
+[UStruct(IsBlittable = true)]
 public partial struct ActorInstanceHandle
 {
     private WeakObject<Actor> _actor;
@@ -22,7 +24,7 @@ public partial struct ActorInstanceHandle
     
     public SceneComponent GetRootComponent()
     {
-        return Actor.GetRootComponent();
+        return Actor.RootComponent;
     }
     
     Vector GetActorLocation()

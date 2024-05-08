@@ -43,11 +43,11 @@ public readonly struct SubclassOf<T>
         }
     }
     
-    public SubclassOf(IntPtr nativeClass)
+    internal SubclassOf(IntPtr nativeClass)
     {
         if (nativeClass == IntPtr.Zero)
         {
-            throw new ArgumentNullException(nameof(nativeClass));
+            return;
         }
         
         NativeClass = nativeClass;
@@ -130,7 +130,7 @@ public readonly struct SubclassOf<T>
     
     public override string ToString()
     {
-        return Valid ? ManagedType.Name : "null";
+        return Valid ? UObjectExporter.CallNativeGetName(NativeClass).ToString() : "null";
     }
 }
 

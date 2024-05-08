@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 
 namespace UnrealSharp.Engine;
 
 [StructLayout(LayoutKind.Sequential)]
+[UStruct(IsBlittable = true)]
 public partial struct TimerHandle
 {
     private const uint IndexBits = 24;

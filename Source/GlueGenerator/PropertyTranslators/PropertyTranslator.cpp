@@ -23,6 +23,32 @@ void FPropertyTranslator::GetPropertyProtection(const FProperty* Property, FStri
 	}
 }
 
+void FPropertyTranslator::GetClassPropertyProtection(const FProperty* Property, FString& OutProtection)
+{
+	const FString& BlueprintGetterName = Property->GetMetaData(TEXT("BlueprintGetter"));
+	const FString& BlueprintSetterName = Property->GetMetaData(TEXT("BlueprintSetter"));
+
+	if (!BlueprintGetterName.IsEmpty() || !BlueprintSetterName.IsEmpty())
+	{
+		UFunction* Getter = Property->GetOwnerClass()->FindFunctionByName(*BlueprintGetterName);
+		UFunction* Setter = Property->GetOwnerClass()->FindFunctionByName(*BlueprintSetterName);
+
+		if ((Getter && Getter->HasAnyFunctionFlags(FUNC_Public)) || (Setter && Setter->HasAnyFunctionFlags(FUNC_Public)))
+		{
+			OutProtection = "public ";
+			return;
+		}
+		
+		if ((Getter && Getter->HasAnyFunctionFlags(FUNC_Protected)) || (Setter && Setter->HasAnyFunctionFlags(FUNC_Protected)))
+		{
+			OutProtection = "protected ";
+			return;
+		}
+	}
+	
+	GetPropertyProtection(Property, OutProtection);
+}
+
 void FPropertyTranslator::ExportReferences(const FProperty* Property) const
 {
 	TSet<UField*> References;
@@ -71,7 +97,7 @@ FString FPropertyTranslator::GetCSharpFixedSizeArrayType(const FProperty *Proper
 	return FString::Printf(TEXT("%s<%s>"), *ArrayType, *GetManagedType(Property));
 }
 
-void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool IsWhitelisted, const TSet<FString>& ReservedNames) const
+void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsWhitelisted, const TSet<FString>& ReservedNames) const
 {
 	if (Property->HasAnyPropertyFlags(CPF_EditorOnly))
 	{
@@ -84,42 +110,41 @@ void FPropertyTranslator::ExportWrapperProperty(FCSScriptBuilder& Builder, const
 	Builder.AppendLine(FString::Printf(TEXT("// %s"), *Property->GetFullName()));
 	ExportPropertyVariables(Builder, Property, NativePropertyName);
 	
-	if (!IsGreylisted)
+	FString Protection;
+	GetClassPropertyProtection(Property, Protection);
+	BeginWrapperPropertyAccessorBlock(Builder, Property, Protection, CSharpPropertyName);
+	
+	if (Property->ArrayDim == 1)
 	{
-		BeginWrapperPropertyAccessorBlock(Builder, Property, CSharpPropertyName);
-		if (Property->ArrayDim == 1)
-		{
-            Builder.AppendLine(TEXT("get"));
-			
-            Builder.OpenBrace();
-            ExportPropertyGetter(Builder, Property, NativePropertyName);
-            Builder.CloseBrace(); // get
+		Builder.AppendLine(TEXT("get"));
+		Builder.OpenBrace();
+		ExportPropertyGetter(Builder, Property, NativePropertyName);
+		Builder.CloseBrace(); // get
 
-            if (IsSetterRequired() && (IsWhitelisted || !Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly)))
-            {
-                Builder.AppendLine(TEXT("set"));
-                Builder.OpenBrace();
-                ExportPropertySetter(Builder, Property, NativePropertyName);
-                Builder.CloseBrace();
-            }
-		}
-		else
+		if (IsSetterRequired() && (IsWhitelisted || !Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly)))
 		{
-			Builder.AppendLine(TEXT("get"));
+			Builder.AppendLine(TEXT("set"));
 			Builder.OpenBrace();
-			Builder.BeginUnsafeBlock();
-			Builder.AppendLine(FString::Printf(TEXT("if (%s_Wrapper == null)"), *NativePropertyName));
-			Builder.OpenBrace();
-			Builder.AppendLine(ExportInstanceMarshallerVariables(Property, NativePropertyName));
-			Builder.AppendLine(FString::Printf(TEXT("%s_Wrapper = new %s (this, %s_Offset, %s_Length, %s);"), *NativePropertyName, *GetCSharpFixedSizeArrayType(Property), *NativePropertyName, *NativePropertyName, *ExportMarshallerDelegates(Property, NativePropertyName)));
-			Builder.CloseBrace();
-			Builder.AppendLine(FString::Printf(TEXT("return %s_Wrapper;"), *NativePropertyName));
-			Builder.EndUnsafeBlock();
+			ExportPropertySetter(Builder, Property, NativePropertyName);
 			Builder.CloseBrace();
 		}
-		
-		EndWrapperPropertyAccessorBlock(Builder);
 	}
+	else
+	{
+		Builder.AppendLine(TEXT("get"));
+		Builder.OpenBrace();
+		Builder.BeginUnsafeBlock();
+		Builder.AppendLine(FString::Printf(TEXT("if (%s_Wrapper == null)"), *NativePropertyName));
+		Builder.OpenBrace();
+		Builder.AppendLine(ExportInstanceMarshallerVariables(Property, NativePropertyName));
+		Builder.AppendLine(FString::Printf(TEXT("%s_Wrapper = new %s (this, %s_Offset, %s_Length, %s);"), *NativePropertyName, *GetCSharpFixedSizeArrayType(Property), *NativePropertyName, *NativePropertyName, *ExportMarshallerDelegates(Property, NativePropertyName)));
+		Builder.CloseBrace();
+		Builder.AppendLine(FString::Printf(TEXT("return %s_Wrapper;"), *NativePropertyName));
+		Builder.EndUnsafeBlock();
+		Builder.CloseBrace();
+	}
+		
+	EndWrapperPropertyAccessorBlock(Builder);
 
 	ExportReferences(Property);
 	ExportDelegateReferences(Property);
@@ -137,15 +162,12 @@ FString FPropertyTranslator::GetPropertyName(const FProperty* Property) const
 	return Property->GetName();
 }
 
-void FPropertyTranslator::BeginWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder, const FProperty* Property, const FString& CSharpPropertyName) const
+void FPropertyTranslator::BeginWrapperPropertyAccessorBlock(FCSScriptBuilder& Builder, const FProperty* Property, const FString& Protection, const FString& PropertyName) const
 {
-	FString Protection;
-	GetPropertyProtection(Property, Protection);
-	
 	Builder.AppendLine();
 	AppendTooltip(Property, Builder);
 	const FString PropertyType = Property->ArrayDim == 1 ? GetManagedType(Property) : GetCSharpFixedSizeArrayType(Property);
-	Builder.AppendLine(FString::Printf(TEXT("%s%s %s"), GetData(Protection), *PropertyType, *CSharpPropertyName));
+	Builder.AppendLine(FString::Printf(TEXT("%s%s %s"), GetData(Protection), *PropertyType, *PropertyName));
 	Builder.OpenBrace();
 }
 
@@ -154,7 +176,7 @@ void FPropertyTranslator::EndWrapperPropertyAccessorBlock(FCSScriptBuilder& Buil
 	Builder.CloseBrace();
 }
 
-void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool IsGreylisted, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
+void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const FProperty* Property, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const
 {
 	FString CSharpPropertyName = GetScriptNameMapper().MapPropertyName(Property, ReservedNames);
 	FString NativePropertyName = Property->GetName();
@@ -167,14 +189,11 @@ void FPropertyTranslator::ExportMirrorProperty(FCSScriptBuilder& Builder, const 
 		ExportPropertyVariables(Builder, Property, NativePropertyName);
 	}
 
-	if (!IsGreylisted)
-	{
-		FString Protection;
-		GetPropertyProtection(Property, Protection);
+	FString Protection;
+	GetPropertyProtection(Property, Protection);
 
-		AppendTooltip(Property, Builder);
-		Builder.AppendLine(FString::Printf(TEXT("%s%s %s;"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
-	}
+	AppendTooltip(Property, Builder);
+	Builder.AppendLine(FString::Printf(TEXT("%s%s %s;"), GetData(Protection), *GetManagedType(Property), *CSharpPropertyName));
 
 	ExportReferences(Property);
 	ExportDelegateReferences(Property);

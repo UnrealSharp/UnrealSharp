@@ -87,7 +87,8 @@ public:
 	
 	static bool GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function);
 
-	void ExportStructProperties(FCSScriptBuilder& Builder, const UStruct* Struct, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>& ReservedNames) const;
+	void ExportStructProperties(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>&
+	                            ReservedNames) const;
 
 	void RegisterClassToModule(const UObject* Struct);
 
@@ -120,7 +121,6 @@ protected:
 	FCSInclusionLists DenyList;
 	FCSInclusionLists BlueprintInternalAllowList;
 	FCSInclusionLists OverrideInternalList;
-	FCSInclusionLists Greylist;
 
 	TMap<FName, TArray<ExtensionMethod>> ExtensionMethods;
 	TMap<FName, FCSModule> CSharpBindingsModules;
