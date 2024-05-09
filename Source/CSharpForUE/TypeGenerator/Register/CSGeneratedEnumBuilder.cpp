@@ -12,6 +12,8 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 	{
 		Entries.Emplace(TypeMetaData->Items[i], i);
 	}
+	
+	Entries.Emplace(TEXT("MAX"), Entries.Num());
 
 	Field->SetEnums(Entries, UEnum::ECppForm::Regular);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);

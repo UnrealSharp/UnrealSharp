@@ -27,11 +27,9 @@ public:
 	// Process any pending re-instance requests
 	void StartReinstancing();
 
-	void GetDependentBlueprints(TArray<UBlueprint*>& DependentBlueprints);
-
 	void PostReinstance();
-
-	void UpdatePins(UStruct* Struct);
+	
+	void UpdatePin(FEdGraphPinType& PinType);
 
 	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
