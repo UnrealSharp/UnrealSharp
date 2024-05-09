@@ -21,6 +21,7 @@ public class PropertyMetaData : BaseMetaData
     public bool IsOutParameter => (PropertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
     public bool IsReferenceParameter => (PropertyFlags & PropertyFlags.ReferenceParm) == PropertyFlags.ReferenceParm;
     public bool IsReturnParameter => (PropertyFlags & PropertyFlags.ReturnParm) == PropertyFlags.ReturnParm;
+    public bool IsInstancedReference => (PropertyFlags & PropertyFlags.InstancedReference) == PropertyFlags.InstancedReference;
     // End non-serialized
     
     private PropertyMetaData(MemberReference memberRef) : base(memberRef, WeaverHelper.UPropertyAttribute)
@@ -165,9 +166,19 @@ public class PropertyMetaData : BaseMetaData
             RepNotifyFunctionName = notifyMethodName;
         }
         
-        if (NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes))
+        bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
+        
+        if (flags.HasFlag(PropertyFlags.InstancedReference) || isDefaultComponent)
         {
-            flags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.Edit | PropertyFlags.EditConst | PropertyFlags.BlueprintReadOnly | PropertyFlags.BlueprintVisible;
+            PropertyFlags |= PropertyFlags.ContainsInstancedReference | PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;
+        }
+        
+        if (isDefaultComponent)
+        {
+            flags = PropertyFlags.BlueprintVisible 
+                    | PropertyFlags.BlueprintReadOnly 
+                    | PropertyFlags.Edit 
+                    | PropertyFlags.UObjectWrapper;
         }
         
         PropertyFlags = flags;

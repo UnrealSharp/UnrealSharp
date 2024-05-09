@@ -26,6 +26,28 @@ public partial class InputComponent
                 executeWhenPaused.ToNativeBool());
         }
     }
+    
+    /// <summary>
+    /// Bind an action to an input event.
+    /// </summary>
+    /// <param name="actionName"> The name of the action. </param>
+    /// <param name="inputEvent"> The input event to bind the action to. </param>
+    /// <param name="action"> The action to bind with key signature. </param>
+    /// <param name="consumeInput"> Whether the input should be consumed. </param>
+    /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
+    public void BindAction(string actionName, EInputEvent inputEvent, Action<InputCore.Key> action, bool consumeInput = false, bool executeWhenPaused = false)
+    {
+        if (action.Target is Object unrealObject)
+        {
+            UInputComponentExporter.CallBindActionKeySignature(NativeObject, 
+                actionName, 
+                inputEvent, 
+                unrealObject.NativeObject, 
+                action.Method.Name,
+                consumeInput.ToNativeBool(),
+                executeWhenPaused.ToNativeBool());
+        }
+    }
 
     /// <summary>
     /// Bind an axis to an input event.

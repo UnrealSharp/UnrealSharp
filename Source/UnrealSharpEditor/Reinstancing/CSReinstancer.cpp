@@ -40,6 +40,43 @@ void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterf
 	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
 }
 
+void FCSReinstancer::UpdatePins(UStruct* Struct)
+{
+	for (TFieldIterator<FProperty> PropIt(Struct, EFieldIterationFlags::None); PropIt; ++PropIt)
+	{
+		FProperty* Prop = *PropIt;
+
+		if (FEnumProperty* EnumProperty = CastField<FEnumProperty>(Prop))
+		{
+			if (UEnum** Enum = EnumsToReinstance.Find(EnumProperty->GetEnum()))
+			{
+				EnumProperty->SetEnum(*Enum);
+			}
+		}
+		if (FByteProperty* ByteProperty = CastField<FByteProperty>(Prop))
+		{
+			if (UEnum** Enum = EnumsToReinstance.Find(ByteProperty->Enum))
+			{
+				ByteProperty->Enum = *Enum;
+			}
+		}
+		else if (FStructProperty* StructProperty = CastField<FStructProperty>(Prop))
+		{
+			if (UScriptStruct** Struct = StructsToReinstance.Find(StructProperty->Struct))
+			{
+				StructProperty->Struct = *Struct;
+			}
+		}
+		else if (FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Prop))
+		{
+			if (UClass** Interface = ClassesToReinstance.Find(ObjectProperty->PropertyClass))
+			{
+				ObjectProperty->PropertyClass = *Interface;
+			}
+		}
+	}
+}
+
 void FCSReinstancer::StartReinstancing()
 {
 	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
@@ -62,11 +99,32 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(EnumsToReinstance);
 	NotifyChanges(ClassesToReinstance);
 	
+	FBlueprintEditorUtils::FOnNodeFoundOrUpdated DummyDelegate = [](UBlueprint* BP, UK2Node* Node)
+	{
+		
+	};
+
+	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
+	{
+		UBlueprint* BP = *BlueprintIt;
+		UClass* OldClass = Cast<UClass>(BP->GeneratedClass);
+		
+		if (!OldClass)
+		{
+			continue;
+		}
+
+		UpdatePins(OldClass);
+
+		TArray<UK2Node*> AllNodes;
+		FBlueprintEditorUtils::GetAllNodesOfClass(BP, AllNodes);
+	}
+	
 	Reload->Reinstance();
 	Reload->Finalize(true);
 	
 	PostReinstance();
-
+	
 	auto CleanOldTypes = [](const auto& Container)
 	{
 		for (const auto& [Old, New] : Container)

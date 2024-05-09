@@ -251,7 +251,6 @@ struct FDefaultComponentMetaData : FObjectMetaData
 
 	//FUnrealType interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
-	virtual void OnPropertyCreated(FProperty* Property) override;
 	//End of implementation
 };
 

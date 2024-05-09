@@ -31,6 +31,8 @@ public:
 
 	void PostReinstance();
 
+	void UpdatePins(UStruct* Struct);
+
 	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
 	friend FCSReload;

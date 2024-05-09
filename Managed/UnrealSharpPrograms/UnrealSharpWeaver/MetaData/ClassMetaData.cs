@@ -30,7 +30,7 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags = GetClassFlags(type, AttributeName);
+        ClassFlags |= GetClassFlags(type, AttributeName);
     }
 
     private void AddConfigCategory()
@@ -55,10 +55,18 @@ public class ClassMetaData : TypeReferenceMetadata
         foreach (PropertyDefinition property in ClassDefinition.Properties)
         {
             CustomAttribute? uPropertyAttribute = WeaverHelper.GetUProperty(property);
-        
-            if (uPropertyAttribute != null)
+
+            if (uPropertyAttribute == null)
             {
-                Properties.Add(new PropertyMetaData(property));
+                continue;
+            }
+            
+            PropertyMetaData propertyMetaData = new PropertyMetaData(property);
+            Properties.Add(propertyMetaData);
+                
+            if (propertyMetaData.IsInstancedReference)
+            {
+                ClassFlags |= ClassFlags.HasInstancedReference;
             }
         }
     }
