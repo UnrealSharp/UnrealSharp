@@ -28,7 +28,8 @@ public class GlueGenerator : ModuleRules
                 "UnrealEd",
                 "UnrealSharpUtilities",
                 "GameplayTags", 
-                "EnhancedInput"
+                "EnhancedInput",
+                "AssetRegistry"
             }
         );
     }

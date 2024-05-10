@@ -28,5 +28,6 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 
 void FCSGeneratedStructBuilder::NewField(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
 {
+	OldField->StructFlags = static_cast<EStructFlags>(OldField->StructFlags | STRUCT_NewerVersionExists);
 	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(OldField, NewField);
 }

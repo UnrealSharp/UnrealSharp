@@ -1,11 +1,9 @@
 ﻿#include "CSReinstancer.h"
-
 #include "BlueprintActionDatabase.h"
-#include "K2Node_MacroInstance.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
-#include "Serialization/ArchiveReplaceObjectRef.h"
 
 FCSReinstancer& FCSReinstancer::Get()
 {
@@ -40,6 +38,40 @@ void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterf
 	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
 }
 
+
+void FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
+{
+	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
+	
+	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct)
+	{
+		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
+		if (UScriptStruct** FoundStruct = StructsToReinstance.Find(Struct))
+		{
+			PinType.PinSubCategoryObject = *FoundStruct;
+		}
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
+	{
+		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
+		if (UEnum** FoundEnum = EnumsToReinstance.Find(Enum))
+		{
+			PinType.PinSubCategoryObject = *FoundEnum;
+		}
+	}
+	else if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Class
+		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_Object
+		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftObject
+		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftClass)
+	{
+		UClass* Interface = Cast<UClass>(PinSubCategoryObject);
+		if (UClass** FoundInterface = InterfacesToReinstance.Find(Interface))
+		{
+			PinType.PinSubCategoryObject = *FoundInterface;
+		}
+	}
+}
+
 void FCSReinstancer::StartReinstancing()
 {
 	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
@@ -61,13 +93,16 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(StructsToReinstance);
 	NotifyChanges(EnumsToReinstance);
 	NotifyChanges(ClassesToReinstance);
+
+	// Before we reinstance, we want the BP to know about the new types
+	UpdateBlueprints();
 	
 	Reload->Reinstance();
-	Reload->Finalize(true);
-	
 	PostReinstance();
 
-	auto CleanOldTypes = [](const auto& Container)
+	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+	
+	auto CleanOldTypes = [](const auto& Container, IAssetRegistry& AssetRegistry)
 	{
 		for (const auto& [Old, New] : Container)
 		{
@@ -76,127 +111,24 @@ void FCSReinstancer::StartReinstancing()
 				continue;
 			}
 
+			AssetRegistry.AssetDeleted(Old);
 			Old->SetFlags(RF_NewerVersionExists);
 			Old->RemoveFromRoot();
 		}
 	};
 
-	CleanOldTypes(InterfacesToReinstance);
-	CleanOldTypes(StructsToReinstance);
-	CleanOldTypes(EnumsToReinstance);
-	CleanOldTypes(ClassesToReinstance);
+	CleanOldTypes(InterfacesToReinstance, AssetRegistry);
+	CleanOldTypes(StructsToReinstance, AssetRegistry);
+	CleanOldTypes(EnumsToReinstance, AssetRegistry);
+	CleanOldTypes(ClassesToReinstance, AssetRegistry);
 
 	InterfacesToReinstance.Empty();
 	StructsToReinstance.Empty();
 	EnumsToReinstance.Empty();
 	ClassesToReinstance.Empty();
-	
+
+	Reload->Finalize(true);
 	EndReload();
-}
-
-void FCSReinstancer::GetDependentBlueprints(TArray<UBlueprint*>& DependentBlueprints)
-{
-	TArray<UK2Node*> AllNodes;
-	TMap<UObject*, UObject*> ClassReplaceList;
-	
-	for (auto& Elem : ClassesToReinstance)
-	{
-		ClassReplaceList.Add(Elem.Key, Elem.Value);
-	}
-
-	for (auto& Elem : StructsToReinstance)
-	{
-		ClassReplaceList.Add(Elem.Key, Elem.Value);
-	}
-	
-	auto ReplacePinType = [&](FEdGraphPinType& PinType) -> bool
-	{
-		if (PinType.PinCategory != UEdGraphSchema_K2::PC_Struct)
-		{
-			return false;
-		}
-		
-		UScriptStruct* Struct = Cast<UScriptStruct>(PinType.PinSubCategoryObject.Get());
-		if (Struct == nullptr)
-		{
-			return false;
-		}
-		
-		UScriptStruct** NewStruct = StructsToReinstance.Find(Struct);
-		if (NewStruct == nullptr)
-		{
-			return false;
-		}
-		
-		PinType.PinSubCategoryObject = *NewStruct;
-		return true;
-	};
-
-	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
-	{
-		UBlueprint* BP = *BlueprintIt;
-
-		AllNodes.Reset();
-		FBlueprintEditorUtils::GetAllNodesOfClass(BP, AllNodes);
-
-		bool bHasDependency = false;
-		for (UK2Node* Node : AllNodes)
-		{
-			TArray<UStruct*> Dependencies;
-			if (Node->HasExternalDependencies(&Dependencies))
-			{
-				for (UStruct* Struct : Dependencies)
-				{
-					if (ClassesToReinstance.Contains(static_cast<UClass*>(Struct)))
-					{
-						bHasDependency = true;
-						break;
-					}
-					
-					if (StructsToReinstance.Contains(static_cast<UScriptStruct*>(Struct)))
-					{
-						bHasDependency = true;
-						break;
-					}
-				}
-			}
-
-			for (auto* Pin : Node->Pins)
-			{
-				bHasDependency |= ReplacePinType(Pin->PinType);
-			}
-
-			if (auto* EditableBase = Cast<UK2Node_EditablePinBase>(Node))
-			{
-				for (auto Desc : EditableBase->UserDefinedPins)
-				{
-					bHasDependency |= ReplacePinType(Desc->PinType);
-				}
-			}
-
-			if (auto* MacroInst = Cast<UK2Node_MacroInstance>(Node))
-			{
-				bHasDependency |= ReplacePinType(MacroInst->ResolvedWildcardType);
-			}
-		}
-
-		for (auto& Variable : BP->NewVariables)
-		{
-			bHasDependency |= ReplacePinType(Variable.VarType);
-		}
-
-		// Check if the blueprint references any of our replacing classes at all
-		FArchiveReplaceObjectRef ReplaceObjectArch(BP, ClassReplaceList, EArchiveReplaceObjectFlags::IgnoreOuterRef | EArchiveReplaceObjectFlags::IgnoreArchetypeRef);
-		if (ReplaceObjectArch.GetCount())
-		{
-			bHasDependency = true;
-		}
-
-		if (bHasDependency)
-		{
-			DependentBlueprints.Add(BP);
-		}
-	}
 }
 
 void FCSReinstancer::PostReinstance()
@@ -243,6 +175,29 @@ void FCSReinstancer::PostReinstance()
 
 	auto* World = GEditor->GetEditorWorldContext().World();
 	GEngine->Exec( World, TEXT("MAP REBUILD ALLVISIBLE") );
+}
+
+void FCSReinstancer::UpdateBlueprints()
+{
+	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
+	{
+		UBlueprint* Blueprint = *BlueprintIt;
+		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
+		{
+			TryUpdatePin(NewVariable.VarType);
+		}
+
+		TArray<UK2Node_EditablePinBase*> AllNodes;
+		FBlueprintEditorUtils::GetAllNodesOfClass(Blueprint, AllNodes);
+
+		for (UK2Node_EditablePinBase* Node : AllNodes)
+		{
+			for (const TSharedPtr<FUserPinInfo>& Pin : Node->UserDefinedPins)
+			{
+				TryUpdatePin(Pin->PinType);
+			}
+		}
+	}
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

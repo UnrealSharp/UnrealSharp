@@ -27,12 +27,15 @@ public:
 private:
 	
 	static void ObjectConstructor(const FObjectInitializer& ObjectInitializer);
+	static void ActorComponentConstructor(const FObjectInitializer& ObjectInitializer);
 	static void ActorConstructor(const FObjectInitializer& ObjectInitializer);
+
+	static void InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass);
 	
 	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
 		AActor* Actor,
 		const UClass* ActorClass,
-		const TSharedRef<FCSharpClassInfo>& ClassInfo);
+		const TSharedPtr<FCSharpClassInfo>& ClassInfo);
 	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 };

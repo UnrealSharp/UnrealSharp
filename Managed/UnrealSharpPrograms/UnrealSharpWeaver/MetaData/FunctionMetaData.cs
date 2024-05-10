@@ -68,14 +68,7 @@ public class FunctionMetaData : BaseMetaData
                 modifier = ParameterType.Ref;
             }
             
-            try
-            {
-                Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
-            }
-            catch (InvalidPropertyException e)
-            {
-                throw new InvalidUnrealFunctionException(method, $"'{param.ParameterType.FullName}' is invalid for unreal function parameter '{param.Name}'.", e);
-            }
+            Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
         }
 
         FunctionFlags flags = (FunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");

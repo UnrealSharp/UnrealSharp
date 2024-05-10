@@ -65,15 +65,16 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	{
 		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
 	}
+	else if (Field->IsChildOf<UActorComponent>()) 
+	{
+		// Make all C# ActorComponents BlueprintSpawnableComponent
+		#if WITH_EDITOR
+		Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
+		#endif
+		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorComponentConstructor;
+	}
 	else
 	{
-		#if WITH_EDITOR
-		// Make all C# ActorComponents BlueprintSpawnableComponent
-		if (Field->IsChildOf<UActorComponent>())
-		{
-			Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
-		}
-		#endif	
 		Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
 	}
 		
@@ -100,18 +101,29 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
 #endif
+	OldField->ClassFlags |= CLASS_NewerVersionExists;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
 
 void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	UClass* Class = ObjectInitializer.GetClass();
-	UCSClass* ManagedClass = GetFirstManagedClass(Class);
-	TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
+	TSharedPtr<FCSharpClassInfo> ClassInfo;
+	UCSClass* ManagedClass;
+	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
 	
-	//Execute the native class' constructor first.
-	UClass* NativeClass = GetFirstNativeClass(Class);
-	NativeClass->ClassConstructor(ObjectInitializer);
+	// Make the actual object in C#
+	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+}
+
+void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitializer& ObjectInitializer)
+{
+	TSharedPtr<FCSharpClassInfo> ClassInfo;
+	UCSClass* ManagedClass;
+	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
+	
+	UActorComponent* ActorComponent = static_cast<UActorComponent*>(ObjectInitializer.GetObj());
+	ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
+	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
 	// Make the actual object in C#
 	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
@@ -119,27 +131,34 @@ void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& Objec
 
 void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	UClass* Class = ObjectInitializer.GetClass();
-	UCSClass* ManagedClass = GetFirstManagedClass(Class);
-	TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
+	TSharedPtr<FCSharpClassInfo> ClassInfo;
+	UCSClass* ManagedClass;
+	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
 	
-	//Execute the native class' constructor first.
-	UClass* NativeClass = GetFirstNativeClass(Class);
-	NativeClass->ClassConstructor(ObjectInitializer);
-	
-	AActor* Actor = CastChecked<AActor>(ObjectInitializer.GetObj());
+	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-	SetupDefaultSubobjects(ObjectInitializer, Actor, Class, ClassInfo);
+	
+	SetupDefaultSubobjects(ObjectInitializer, Actor, ObjectInitializer.GetClass(), ClassInfo);
 	
 	// Make the actual object in C#
 	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
+void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass)
+{
+	ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
+	ClassInfo = ManagedClass->GetClassInfo().ToSharedPtr();
+	
+	//Execute the native class' constructor first.
+	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
+	NativeClass->ClassConstructor(ObjectInitializer);
+}
+
 void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
-	AActor* Actor,
-	const UClass* ActorClass,
-	const TSharedRef<FCSharpClassInfo>& ClassInfo)
+                                                      AActor* Actor,
+                                                      const UClass* ActorClass,
+                                                      const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 {
 	TMap<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponents;
 	TArray<FPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;

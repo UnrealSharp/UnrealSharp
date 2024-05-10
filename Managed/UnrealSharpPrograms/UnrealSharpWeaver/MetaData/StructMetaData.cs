@@ -26,7 +26,13 @@ public class StructMetaData : BaseMetaData
                 continue;
             }
             
-            Fields.Add(new PropertyMetaData(field));
+            PropertyMetaData property = new PropertyMetaData(field);
+            Fields.Add(property);
+
+            if (property.IsInstancedReference)
+            {
+                StructFlags |= StructFlags.HasInstancedReference;
+            }
         }
         
         IsBlittableStruct = true;
@@ -45,7 +51,7 @@ public class StructMetaData : BaseMetaData
             }
         }
         
-        StructFlags = (StructFlags) GetFlags(structDefinition, "StructFlagsMapAttribute");
+        StructFlags |= (StructFlags) GetFlags(structDefinition, "StructFlagsMapAttribute");
 
         if (isPlainOldData)
         {

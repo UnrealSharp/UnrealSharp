@@ -356,13 +356,6 @@ void FDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>&
 		AttachmentSocket = *AttachmentSocketStr;
 	}
 }
-
-void FDefaultComponentMetaData::OnPropertyCreated(FProperty* Property)
-{
-	UClass* Class = Property->Owner.GetOwnerClass();
-	Class->ClassFlags |= CLASS_HasInstancedReference;
-}
-
 //END ----------------------FDefaultComponentMetaData----------------------------------------
 
 

@@ -81,15 +81,10 @@ static class ErrorEmitter
         }
         else
         {
-            Console.Error.Write("MonoAssemblyProcess : ");
+            Console.Error.Write("UnrealSharpWeaver: ");
         }
 
         Console.Error.WriteLine("error {0}: {1}",code,message);
-    }
-
-    public static void Error(string code, string message)
-    {
-        Console.Error.WriteLine("MonoAssemblyProcess : error {0}: {1}", code, message);
     }
 
     public static Dictionary<TKey,TValue> ToDictionaryErrorEmit<TType,TKey, TValue> (this IEnumerable<TType> values, Func<TType,TKey> keyfunc, Func<TType,TValue> valuefunc, out bool hadError)
