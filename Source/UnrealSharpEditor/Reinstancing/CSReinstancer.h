@@ -31,7 +31,7 @@ public:
 
 	void UpdateBlueprints();
 	
-	void UpdatePin(FEdGraphPinType& PinType);
+	void TryUpdatePin(FEdGraphPinType& PinType);
 
 	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 

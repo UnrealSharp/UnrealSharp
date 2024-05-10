@@ -2,8 +2,9 @@
 
 #include "CSGeneratedTypeBuilder.h"
 #include "CSTypeRegistry.h"
+#include "TypeGenerator/CSEnum.h"
 
-class CSHARPFORUE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuilder<FEnumMetaData, UEnum>
+class CSHARPFORUE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuilder<FEnumMetaData, UCSEnum>
 {
 	
 public:
@@ -12,6 +13,6 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual void NewField(UEnum* OldField, UEnum* NewField) override;
+	virtual void NewField(UCSEnum* OldField, UCSEnum* NewField) override;
 	// End of implementation
 };

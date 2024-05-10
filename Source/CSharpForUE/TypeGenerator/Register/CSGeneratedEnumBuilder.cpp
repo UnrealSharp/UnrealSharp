@@ -10,16 +10,17 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 
 	for (int32 i = 0; i < NumItems; i++)
 	{
-		Entries.Emplace(TypeMetaData->Items[i], i);
+		FString ItemName = FString::Printf(TEXT("%s::%s"), *Field->GetName(), *TypeMetaData->Items[i].ToString());
+		Entries.Emplace(ItemName, i);
+		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}
 	
-	Entries.Emplace(TEXT("MAX"), Entries.Num());
-
-	Field->SetEnums(Entries, UEnum::ECppForm::Regular);
+	Field->SetEnums(Entries, UEnum::ECppForm::EnumClass);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
 }
 
-void FCSGeneratedEnumBuilder::NewField(UEnum* OldField, UEnum* NewField)
+void FCSGeneratedEnumBuilder::NewField(UCSEnum* OldField, UCSEnum* NewField)
 {
+	OldField->SetEnumFlags(EEnumFlags::NewerVersionExists);
 	FCSTypeRegistry::Get().GetOnNewEnumEvent().Broadcast(OldField, NewField);
 }

@@ -1,5 +1,6 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
@@ -38,7 +39,7 @@ void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterf
 }
 
 
-void FCSReinstancer::UpdatePin(FEdGraphPinType& PinType)
+void FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
 	
@@ -99,7 +100,9 @@ void FCSReinstancer::StartReinstancing()
 	Reload->Reinstance();
 	PostReinstance();
 
-	auto CleanOldTypes = [](const auto& Container)
+	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+	
+	auto CleanOldTypes = [](const auto& Container, IAssetRegistry& AssetRegistry)
 	{
 		for (const auto& [Old, New] : Container)
 		{
@@ -108,23 +111,23 @@ void FCSReinstancer::StartReinstancing()
 				continue;
 			}
 
+			AssetRegistry.AssetDeleted(Old);
 			Old->SetFlags(RF_NewerVersionExists);
 			Old->RemoveFromRoot();
 		}
 	};
 
-	CleanOldTypes(InterfacesToReinstance);
-	CleanOldTypes(StructsToReinstance);
-	CleanOldTypes(EnumsToReinstance);
-	CleanOldTypes(ClassesToReinstance);
-
-	Reload->Finalize(true);
+	CleanOldTypes(InterfacesToReinstance, AssetRegistry);
+	CleanOldTypes(StructsToReinstance, AssetRegistry);
+	CleanOldTypes(EnumsToReinstance, AssetRegistry);
+	CleanOldTypes(ClassesToReinstance, AssetRegistry);
 
 	InterfacesToReinstance.Empty();
 	StructsToReinstance.Empty();
 	EnumsToReinstance.Empty();
 	ClassesToReinstance.Empty();
-	
+
+	Reload->Finalize(true);
 	EndReload();
 }
 
@@ -181,7 +184,18 @@ void FCSReinstancer::UpdateBlueprints()
 		UBlueprint* Blueprint = *BlueprintIt;
 		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
 		{
-			UpdatePin(NewVariable.VarType);
+			TryUpdatePin(NewVariable.VarType);
+		}
+
+		TArray<UK2Node_EditablePinBase*> AllNodes;
+		FBlueprintEditorUtils::GetAllNodesOfClass(Blueprint, AllNodes);
+
+		for (UK2Node_EditablePinBase* Node : AllNodes)
+		{
+			for (const TSharedPtr<FUserPinInfo>& Pin : Node->UserDefinedPins)
+			{
+				TryUpdatePin(Pin->PinType);
+			}
 		}
 	}
 }

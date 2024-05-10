@@ -101,6 +101,7 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
 #endif
+	OldField->ClassFlags |= CLASS_NewerVersionExists;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
 
