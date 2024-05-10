@@ -28,6 +28,8 @@ public:
 	void StartReinstancing();
 
 	void PostReinstance();
+
+	void UpdateBlueprints();
 	
 	void UpdatePin(FEdGraphPinType& PinType);
 

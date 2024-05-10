@@ -1,6 +1,7 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
 #include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -92,14 +93,8 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(EnumsToReinstance);
 	NotifyChanges(ClassesToReinstance);
 
-	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
-	{
-		UBlueprint* Blueprint = *BlueprintIt;
-		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
-		{
-			UpdatePin(NewVariable.VarType);
-		}
-	}
+	// Before we reinstance, we want the BP to know about the new types
+	UpdateBlueprints();
 	
 	Reload->Reinstance();
 	PostReinstance();
@@ -177,6 +172,18 @@ void FCSReinstancer::PostReinstance()
 
 	auto* World = GEditor->GetEditorWorldContext().World();
 	GEngine->Exec( World, TEXT("MAP REBUILD ALLVISIBLE") );
+}
+
+void FCSReinstancer::UpdateBlueprints()
+{
+	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
+	{
+		UBlueprint* Blueprint = *BlueprintIt;
+		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
+		{
+			UpdatePin(NewVariable.VarType);
+		}
+	}
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)
