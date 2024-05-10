@@ -124,9 +124,14 @@ FProperty* FCSPropertyFactory::CreateArrayProperty(UField* Outer, const FPropert
 FProperty* FCSPropertyFactory::CreateEnumProperty(UField* Outer, const FPropertyMetaData& PropertyMetaData)
 {
 	const auto EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FEnumPropertyMetaData>();
+	
 	UEnum* Enum = FCSTypeRegistry::GetEnumFromName(EnumPropertyMetaData->InnerProperty.Name);
-	FByteProperty* EnumProperty = CreateSimpleProperty<FByteProperty>(Outer, PropertyMetaData);
-	EnumProperty->Enum = Enum;
+	FEnumProperty* EnumProperty = CreateSimpleProperty<FEnumProperty>(Outer, PropertyMetaData);
+	FByteProperty* UnderlyingProp = new FByteProperty(EnumProperty, "UnderlyingType", RF_Public);
+	
+	EnumProperty->SetEnum(Enum);
+	EnumProperty->AddCppProperty(UnderlyingProp);
+	
 	return EnumProperty;
 }
 
