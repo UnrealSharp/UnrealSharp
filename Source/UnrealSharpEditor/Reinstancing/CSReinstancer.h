@@ -19,9 +19,6 @@ public:
 	void AddPendingStruct(UScriptStruct* OldStruct, UScriptStruct* NewStruct);
 
 	// Add a pending pair of structs to be re-instanced
-	void AddPendingEnum(UEnum* OldEnum, UEnum* NewEnum);
-
-	// Add a pending pair of structs to be re-instanced
 	void AddPendingInterface(UClass* OldInterface, UClass* NewInterface);
 
 	// Process any pending re-instance requests
@@ -31,7 +28,7 @@ public:
 
 	void UpdateBlueprints();
 	
-	void TryUpdatePin(FEdGraphPinType& PinType);
+	bool TryUpdatePin(FEdGraphPinType& PinType);
 
 	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
@@ -44,9 +41,6 @@ private:
 
 	// Pending structs to reinstance
 	TMap<UScriptStruct*, UScriptStruct*> StructsToReinstance;
-
-	// Pending enums to reinstance
-	TMap<UEnum*, UEnum*> EnumsToReinstance;
 
 	// Pending interfaces to reinstance
 	TMap<UClass*, UClass*> InterfacesToReinstance;

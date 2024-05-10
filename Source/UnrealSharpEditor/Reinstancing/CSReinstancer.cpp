@@ -15,7 +15,6 @@ void FCSReinstancer::Initialize()
 {
 	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
 	FCSTypeRegistry::Get().GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
-	FCSTypeRegistry::Get().GetOnNewEnumEvent().AddRaw(this, &FCSReinstancer::AddPendingEnum);
 }
 
 void FCSReinstancer::AddPendingClass(UClass* OldClass, UClass* NewClass)
@@ -28,18 +27,13 @@ void FCSReinstancer::AddPendingStruct(UScriptStruct* OldStruct, UScriptStruct* N
 	StructsToReinstance.Add(MakeTuple(OldStruct, NewStruct));
 }
 
-void FCSReinstancer::AddPendingEnum(UEnum* OldEnum, UEnum* NewEnum)
-{
-	EnumsToReinstance.Add(MakeTuple(OldEnum, NewEnum));
-}
-
 void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterface)
 {
 	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
 }
 
 
-void FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
+bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
 	
@@ -49,14 +43,16 @@ void FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 		if (UScriptStruct** FoundStruct = StructsToReinstance.Find(Struct))
 		{
 			PinType.PinSubCategoryObject = *FoundStruct;
+			return true;
 		}
 	}
 	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
-		if (UEnum** FoundEnum = EnumsToReinstance.Find(Enum))
+		if (UEnum* FoundEnum = FCSTypeRegistry::Get().GetEnumFromName(Enum->GetFName()))
 		{
-			PinType.PinSubCategoryObject = *FoundEnum;
+			PinType.PinSubCategoryObject = FoundEnum;
+			return true;
 		}
 	}
 	else if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Class
@@ -68,8 +64,10 @@ void FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 		if (UClass** FoundInterface = InterfacesToReinstance.Find(Interface))
 		{
 			PinType.PinSubCategoryObject = *FoundInterface;
+			return true;
 		}
 	}
+	return false;
 }
 
 void FCSReinstancer::StartReinstancing()
@@ -91,7 +89,6 @@ void FCSReinstancer::StartReinstancing()
 
 	NotifyChanges(InterfacesToReinstance);
 	NotifyChanges(StructsToReinstance);
-	NotifyChanges(EnumsToReinstance);
 	NotifyChanges(ClassesToReinstance);
 
 	// Before we reinstance, we want the BP to know about the new types
@@ -119,12 +116,10 @@ void FCSReinstancer::StartReinstancing()
 
 	CleanOldTypes(InterfacesToReinstance, AssetRegistry);
 	CleanOldTypes(StructsToReinstance, AssetRegistry);
-	CleanOldTypes(EnumsToReinstance, AssetRegistry);
 	CleanOldTypes(ClassesToReinstance, AssetRegistry);
 
 	InterfacesToReinstance.Empty();
 	StructsToReinstance.Empty();
-	EnumsToReinstance.Empty();
 	ClassesToReinstance.Empty();
 
 	Reload->Finalize(true);
@@ -187,14 +182,36 @@ void FCSReinstancer::UpdateBlueprints()
 			TryUpdatePin(NewVariable.VarType);
 		}
 
-		TArray<UK2Node_EditablePinBase*> AllNodes;
+		TArray<UK2Node*> AllNodes;
 		FBlueprintEditorUtils::GetAllNodesOfClass(Blueprint, AllNodes);
-
-		for (UK2Node_EditablePinBase* Node : AllNodes)
+		
+		for (UK2Node* Node : AllNodes)
 		{
-			for (const TSharedPtr<FUserPinInfo>& Pin : Node->UserDefinedPins)
+			bool bNeedsReconstruction = false;
+			if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
 			{
-				TryUpdatePin(Pin->PinType);
+				for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
+				{
+					if (TryUpdatePin(Pin->PinType))
+					{
+						bNeedsReconstruction = true;
+					}
+				}
+			}
+			else
+			{
+				for (UEdGraphPin* Pin : Node->Pins)
+				{
+					if (TryUpdatePin(Pin->PinType))
+					{
+						bNeedsReconstruction = true;
+					}
+				}
+			}
+
+			if (bNeedsReconstruction)
+			{
+				Node->ReconstructNode();
 			}
 		}
 	}
