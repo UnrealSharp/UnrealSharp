@@ -49,9 +49,16 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
-		if (UEnum* FoundEnum = FCSTypeRegistry::Get().GetEnumFromName(Enum->GetFName()))
+		
+		if (!Enum)
 		{
-			PinType.PinSubCategoryObject = FoundEnum;
+			return false;
+		}
+
+		// Enums are not reinstanced, so we need to check if the enum is still valid
+		if (FCSTypeRegistry::Get().GetEnumFromName(Enum->GetFName()))
+		{
+			PinType.PinSubCategoryObject = Enum;
 			return true;
 		}
 	}
