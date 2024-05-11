@@ -4,7 +4,7 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Engine;
 
-[StructLayout(LayoutKind.Sequential)]
+/*[StructLayout(LayoutKind.Sequential)]
 [UStruct(IsBlittable = true)]
 public partial struct ActorInstanceHandle
 {
@@ -46,4 +46,4 @@ public partial struct ActorInstanceHandle
     {
         return Actor.ObjectName;
     }
-}
+}*/

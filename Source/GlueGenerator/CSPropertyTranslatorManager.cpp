@@ -77,7 +77,7 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 	AddBlittableCustomStructPropertyTranslator("Matrix44f", "System.Numerics.Matrix4x4", DenyList);
 
 	AddBlittableCustomStructPropertyTranslator(FTimerHandle::StaticStruct(), "UnrealSharp.Engine.TimerHandle", DenyList);
-	AddBlittableCustomStructPropertyTranslator(FActorInstanceHandle::StaticStruct(), "UnrealSharp.Engine.ActorInstanceHandle", DenyList);
+	//AddBlittableCustomStructPropertyTranslator(FActorInstanceHandle::StaticStruct(), "UnrealSharp.Engine.ActorInstanceHandle", DenyList);
 	AddBlittableCustomStructPropertyTranslator(FInputActionValue::StaticStruct(), "UnrealSharp.EnhancedInput.InputActionValue", DenyList);
 	
 	// In-progress support for GameplayTags
