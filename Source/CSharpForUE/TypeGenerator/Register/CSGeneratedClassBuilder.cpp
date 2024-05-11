@@ -199,15 +199,17 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		FName AttachmentComponentName = DefaultComponentMetaData->AttachmentComponent;
 		FName AttachmentSocketName = DefaultComponentMetaData->AttachmentSocket;
 
-		if (USceneComponent* AttachmentComponent = !AttachmentComponentName.IsNone()
-			? FindObject<USceneComponent>(Actor, *AttachmentComponentName.ToString()) : Actor->GetRootComponent())
+		if (FObjectProperty* ObjectProperty = FindFProperty<FObjectProperty>(Actor->GetClass(), *AttachmentComponentName.ToString(), EFieldIterationFlags::IncludeSuper))
 		{
-			SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName);
+			USceneComponent* AttachmentComponent = Cast<USceneComponent>(ObjectProperty->GetObjectPropertyValue_InContainer(Actor));
+			if (IsValid(AttachmentComponent))
+			{
+				SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName);
+				continue;
+			}
 		}
-		else
-		{
-			SceneComponent->SetupAttachment(Actor->GetRootComponent());
-		}
+		
+		SceneComponent->SetupAttachment(Actor->GetRootComponent());
 	}
 }
 
