@@ -29,7 +29,7 @@ void FCSPropertyFactory ::InitializePropertyFactory()
 	AddSimpleProperty<FStrProperty>(ECSPropertyType::String);
 	AddSimpleProperty<FTextProperty>(ECSPropertyType::Text);
 
-	AddProperty(ECSPropertyType::DefaultComponent, &CreateObjectPtrProperty);
+	AddProperty(ECSPropertyType::DefaultComponent, &CreateObjectProperty);
 
 	AddProperty(ECSPropertyType::Object, &CreateObjectProperty);
 	AddProperty(ECSPropertyType::WeakObject, &CreateWeakObjectProperty);
@@ -99,6 +99,12 @@ ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FP
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 	ObjectProperty* NewObjectProperty = CreateSimpleProperty<ObjectProperty>(Outer, PropertyMetaData);
 	NewObjectProperty->SetPropertyClass(Class);
+	
+	if (FLinkerLoad::IsImportLazyLoadEnabled())
+	{
+		NewObjectProperty->SetPropertyFlags(CPF_TObjectPtrWrapper);
+	}
+	
 	return NewObjectProperty;
 }
 

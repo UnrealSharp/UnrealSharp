@@ -167,18 +167,21 @@ public class PropertyMetaData : BaseMetaData
         }
         
         bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
+
+        const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;
         
-        if (flags.HasFlag(PropertyFlags.InstancedReference) || isDefaultComponent)
+        if (flags.HasFlag(PropertyFlags.InstancedReference))
         {
-            PropertyFlags |= PropertyFlags.ContainsInstancedReference | PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;
+            flags |= instancedFlags;
         }
         
         if (isDefaultComponent)
         {
             flags = PropertyFlags.BlueprintVisible 
-                    | PropertyFlags.BlueprintReadOnly 
+                    | PropertyFlags.BlueprintReadOnly
+                    | PropertyFlags.DisableEditOnInstance
                     | PropertyFlags.Edit 
-                    | PropertyFlags.UObjectWrapper;
+                    | instancedFlags;
         }
         
         PropertyFlags = flags;
