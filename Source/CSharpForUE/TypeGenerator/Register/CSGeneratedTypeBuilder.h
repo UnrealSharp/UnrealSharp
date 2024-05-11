@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CSMetaData.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "CSharpForUE/CSManager.h"
@@ -24,8 +25,18 @@ public:
 		
 		if (ReplacedType)
 		{
+			if (!ReplaceTypeOnReload())
+			{
+				Field = ReplacedType;
+				return Field;
+			}
+			
+			const FString OldPath = ReplacedType->GetPathName();
 			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ReplacedType->GetName(), ReplacedType->GetUniqueID());
 			ReplacedType->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
+
+			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+			AssetRegistry.AssetRenamed(ReplacedType, OldPath);
 		}
 		
 		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_Standalone | RF_MarkAsRootSet);
@@ -43,7 +54,8 @@ public:
 
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
-	virtual void NewField(TField* OldField, TField* NewField) = 0;
+	virtual void NewField(TField* OldField, TField* NewField) {};
+	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)

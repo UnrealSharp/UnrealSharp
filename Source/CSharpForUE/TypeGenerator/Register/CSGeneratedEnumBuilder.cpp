@@ -18,9 +18,3 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 	Field->SetEnums(Entries, UEnum::ECppForm::EnumClass);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
 }
-
-void FCSGeneratedEnumBuilder::NewField(UCSEnum* OldField, UCSEnum* NewField)
-{
-	OldField->SetEnumFlags(EEnumFlags::NewerVersionExists);
-	FCSTypeRegistry::Get().GetOnNewEnumEvent().Broadcast(OldField, NewField);
-}

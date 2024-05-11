@@ -38,7 +38,6 @@ public:
 
 	FOnNewClass& GetOnNewClassEvent() { return OnNewClass; }
 	FOnNewStruct& GetOnNewStructEvent() { return OnNewStruct; }
-	FOnNewEnum& GetOnNewEnumEvent() { return OnNewEnum; }
 
 	static UClass* GetClassFromName(FName Name);
 	static UScriptStruct* GetStructFromName(FName Name);
@@ -78,6 +77,5 @@ private:
 	
 	FOnNewClass OnNewClass;
 	FOnNewStruct OnNewStruct;
-	FOnNewEnum OnNewEnum;
 	
 };

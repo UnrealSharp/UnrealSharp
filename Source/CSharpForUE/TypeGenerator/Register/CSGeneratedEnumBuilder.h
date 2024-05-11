@@ -13,6 +13,6 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual void NewField(UCSEnum* OldField, UCSEnum* NewField) override;
+	virtual bool ReplaceTypeOnReload() const override { return false; }
 	// End of implementation
 };
