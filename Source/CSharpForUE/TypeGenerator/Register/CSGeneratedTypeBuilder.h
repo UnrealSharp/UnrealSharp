@@ -39,7 +39,7 @@ public:
 			AssetRegistry.AssetRenamed(ReplacedType, OldPath);
 		}
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_Standalone | RF_Transactional);
+		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_MarkAsRootSet | RF_Transactional);
 		
 		ApplyBlueprintAccess(Field);
 		FMetaDataHelper::ApplyMetaData(TypeMetaData->MetaData, Field);
