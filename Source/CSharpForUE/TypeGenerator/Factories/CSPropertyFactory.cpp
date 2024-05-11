@@ -102,7 +102,11 @@ ObjectProperty* FCSPropertyFactory::CreateObjectProperty(UField* Outer, const FP
 	
 	if (FLinkerLoad::IsImportLazyLoadEnabled())
 	{
+#if ENGINE_MINOR_VERSION >= 4
 		NewObjectProperty->SetPropertyFlags(CPF_TObjectPtrWrapper);
+#else
+		NewObjectProperty->SetPropertyFlags(CPF_UObjectWrapper);
+#endif
 	}
 	
 	return NewObjectProperty;
