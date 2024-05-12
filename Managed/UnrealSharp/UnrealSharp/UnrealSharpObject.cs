@@ -59,6 +59,10 @@ public class UnrealSharpObject : IDisposable
     /// </summary>
     public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
     
+    /// <summary>
+    /// Whether the object is valid. UObjects can be valid but pending kill.
+    /// </summary>
+    public bool IsValid => !IsDestroyed;
     
     /// <summary>
     /// Whether the object has been destroyed.
