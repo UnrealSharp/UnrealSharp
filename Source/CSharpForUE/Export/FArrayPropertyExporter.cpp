@@ -7,6 +7,8 @@ void UFArrayPropertyExporter::ExportFunctions(FRegisterExportedFunction Register
 	EXPORT_FUNCTION(AddToArray)
 	EXPORT_FUNCTION(InsertInArray)
 	EXPORT_FUNCTION(RemoveFromArray)
+	EXPORT_FUNCTION(ResizeArray)
+	EXPORT_FUNCTION(SwapValues)
 }
 
 void UFArrayPropertyExporter::InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
@@ -37,4 +39,16 @@ void UFArrayPropertyExporter::RemoveFromArray(FArrayProperty* ArrayProperty, con
 {
 	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
 	Helper.RemoveValues(index);
+}
+
+void UFArrayPropertyExporter::ResizeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
+{
+	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+	Helper.Resize(Length);
+}
+
+void UFArrayPropertyExporter::SwapValues(FArrayProperty* ArrayProperty, const void* ScriptArray, int indexA, int indexB)
+{
+	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+	Helper.SwapValues(indexA, indexB);
 }

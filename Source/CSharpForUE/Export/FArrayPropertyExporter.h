@@ -24,5 +24,7 @@ private:
 	static void AddToArray(FArrayProperty* ArrayProperty, const void* ScriptArray);
 	static void InsertInArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index);
 	static void RemoveFromArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index);
+	static void ResizeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length);
+	static void SwapValues(FArrayProperty* ArrayProperty, const void* ScriptArray, int indexA, int indexB);
 	
 };
