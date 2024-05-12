@@ -118,6 +118,7 @@ FProperty* FCSPropertyFactory::CreateArrayProperty(UField* Outer, const FPropert
 	auto ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FArrayPropertyMetaData>();
 	FArrayProperty* ArrayProperty = CreateSimpleProperty<FArrayProperty>(Outer, PropertyMetaData);
 	ArrayProperty->Inner = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
+	ArrayProperty->Inner->Owner = ArrayProperty;
 	return ArrayProperty;
 }
 

@@ -139,10 +139,10 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
     }
 }
 
-public class UnrealArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
+public class ArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
 {
     [CLSCompliant(false)]
-    public UnrealArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -150,10 +150,10 @@ public class UnrealArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
     public T this[int index] => Get(index);
 }
 
-public class UnrealArrayReadWrite<T> : UnrealArrayBase<T>, IList<T>
+public class Array<T> : UnrealArrayBase<T>, IList<T>
 {
     [CLSCompliant(false)]
-    public UnrealArrayReadWrite(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public Array(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -236,60 +236,60 @@ public class UnrealArrayReadWrite<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-public class UnrealArrayReadWriteMarshaller<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
 {
-    readonly UnrealArrayReadWrite<T>[] _wrappers = new UnrealArrayReadWrite<T> [length];
+    readonly Array<T>[] _wrappers = new Array<T> [length];
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, UnrealArrayReadWrite<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Array<T> obj)
     {
         throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
     }
 
-    public UnrealArrayReadWrite<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public Array<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_wrappers[arrayIndex] == null)
         {
-            _wrappers[arrayIndex] = new UnrealArrayReadWrite<T>(nativeProperty, nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)), toNative, fromNative);
+            _wrappers[arrayIndex] = new Array<T>(nativeProperty, nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)), toNative, fromNative);
         }
         return _wrappers[arrayIndex];
     }
 }
 
-public class UnrealArrayReadOnlyMarshaller<T>
+public class ArrayReadOnlyMarshaller<T>
 {
     IntPtr NativeProperty;
-    UnrealArrayReadOnly<T>[] Wrappers;
+    ArrayReadOnly<T>[] Wrappers;
     MarshalingDelegates<T>.FromNative InnerTypeFromNative;
 
-    public UnrealArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
     {
         NativeProperty = nativeProperty;
-        Wrappers = new UnrealArrayReadOnly<T>[length];
+        Wrappers = new ArrayReadOnly<T>[length];
         InnerTypeFromNative = fromNative;
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, UnrealArrayReadOnly<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, ArrayReadOnly<T> obj)
     {
         throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
     }
 
-    public UnrealArrayReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public ArrayReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (Wrappers[arrayIndex] == null)
         {
-            Wrappers[arrayIndex] = new UnrealArrayReadOnly<T>(NativeProperty, nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)), null, InnerTypeFromNative);
+            Wrappers[arrayIndex] = new ArrayReadOnly<T>(NativeProperty, nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)), null, InnerTypeFromNative);
         }
         return Wrappers[arrayIndex];
     }
 }
 
-public class UnrealArrayCopyMarshaller<T>
+public class ArrayCopyMarshaller<T>
 {
     IntPtr NativeProperty;
     MarshalingDelegates<T>.ToNative InnerTypeToNative;
     MarshalingDelegates<T>.FromNative InnerTypeFromNative;
 
-    public UnrealArrayCopyMarshaller(IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayCopyMarshaller(IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
     {
         NativeProperty = nativeProperty;
         InnerTypeFromNative = fromNative;

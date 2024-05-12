@@ -50,8 +50,8 @@ class NativeDataArrayType : NativeDataType
         InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, InnerProperty);
 
         // Instantiate generics for the direct access and copying marshallers.
-        string marshallerTypeName = "UnrealArrayReadWriteMarshaller`1";
-        string copyMarshallerTypeName = "UnrealArrayCopyMarshaller`1";
+        string marshallerTypeName = "ArrayMarshaller`1";
+        string copyMarshallerTypeName = "ArrayCopyMarshaller`1";
 
         ArrayMarshallerTypeParameters = [WeaverHelper.UserAssembly.MainModule.ImportReference(InnerProperty.PropertyDataType.CSharpType)];
 

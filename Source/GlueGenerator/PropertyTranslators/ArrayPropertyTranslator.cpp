@@ -104,7 +104,7 @@ void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Bui
 	}
 
 	const FString InnerType = Handler.GetManagedType(InnerProperty);
-	const FString MarshallerType = FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s>"), *InnerType);
+	const FString MarshallerType = FString::Printf(TEXT("ArrayCopyMarshaller<%s>"), *InnerType);
 
 	Builder.AppendLine(FString::Printf(TEXT("%s ??= new %s(%s, %s);"), *Marshaller, *MarshallerType, *NativeProperty, *Handler.ExportMarshallerDelegates(InnerProperty, NativePropertyName)));
 
@@ -142,7 +142,7 @@ void FArrayPropertyTranslator::ExportMarshalFromNativeBuffer(FCSScriptBuilder& B
 	}
 
 	const FString InnerType = Handler.GetManagedType(InnerProperty);
-	const FString MarshallerType = FString::Printf(TEXT("UnrealArrayCopyMarshaller<%s>"), *InnerType);
+	const FString MarshallerType = FString::Printf(TEXT("ArrayCopyMarshaller<%s>"), *InnerType);
 
 	if (!reuseRefMarshallers)
 	{
@@ -179,7 +179,9 @@ FString FArrayPropertyTranslator::GetWrapperType(const FProperty* Property) cons
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	FString UnrealArrayType = (IsStructProperty || IsParamProperty) ? "UnrealArrayCopyMarshaller" : Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly) ? "UnrealArrayReadOnlyMarshaller" : "UnrealArrayReadWriteMarshaller";
+	
+	FString UnrealArrayType = IsStructProperty || IsParamProperty
+	? TEXT("ArrayCopyMarshaller") : Property->HasAnyPropertyFlags(CPF_BlueprintReadOnly) ? TEXT("ArrayReadOnlyMarshaller") : TEXT("ArrayMarshaller");
 
 	return FString::Printf(TEXT("%s<%s>"), *UnrealArrayType, *Handler.GetManagedType(InnerProperty));
 }

@@ -494,7 +494,7 @@ public static class WeaverHelper
                     return new NativeDataClassType(typeRef, innerType, arrayDim);
                 }
                 
-                if (GenericTypeName.Contains("UnrealArrayReadWrite`1") || GenericTypeName.Contains("List`1"))
+                if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
                 {
                     return new NativeDataArrayType(typeRef, arrayDim, innerType);
                 }
