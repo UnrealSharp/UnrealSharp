@@ -12,6 +12,10 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 - **Automatic Bindings:** Automatically generates C# API based on what is exposed to reflection.
 - **.NET Ecosystem:** Use any NuGet package to extend functionality.
 
+## Sample Project
+
+Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropout/tree/main), an ongoing effort to convert [Cropout](https://www.unrealengine.com/en-US/blog/cropout-casual-rts-game-sample-project), originally created in Blueprints, into C# using UnrealSharp. 
+
 ## Prerequisites
 - Unreal Engine 5.3+ (Will support earlier versions in the future)
 - .NET 8.0+
