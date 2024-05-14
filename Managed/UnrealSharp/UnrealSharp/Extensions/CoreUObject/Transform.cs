@@ -10,6 +10,7 @@ public partial struct Transform
     }
     
     public static readonly Transform ZeroTransform = new(Quat.Identity, Vector.Zero, Vector.Zero);
+    public static readonly Transform Identity = new(Quat.Identity, Vector.Zero, Vector.One);
     
     public bool Equals(Transform other)
     {
