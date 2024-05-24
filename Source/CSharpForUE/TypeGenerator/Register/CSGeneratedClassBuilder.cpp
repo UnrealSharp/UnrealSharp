@@ -24,7 +24,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
 
-	Field->ClassFlags = TypeMetaData->ClassFlags | CLASS_Native;
+	Field->ClassFlags = TypeMetaData->ClassFlags;
 	
 	if (SuperClass->HasAnyClassFlags(CLASS_Config))
 	{

@@ -11,14 +11,16 @@ public class FunctionMetaData : BaseMetaData
     public PropertyMetaData? ReturnValue { get; set; }
     public FunctionFlags FunctionFlags { get; set; }
     
+    const FunctionFlags RpcFlags = FunctionFlags.NetServer | FunctionFlags.NetClient | FunctionFlags.NetMulticast;
+    
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDefinition;
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
-    public bool IsBlueprintEvent => FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent);
+    public bool IsBlueprintEvent => WeaverHelper.HasAnyFlags(FunctionFlags, FunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
-    public bool IsRpc => FunctionFlags.HasFlag(FunctionFlags.NetServer | FunctionFlags.NetMulticast | FunctionFlags.NetClient);
+    public bool IsRpc => WeaverHelper.HasAnyFlags(FunctionFlags, RpcFlags);
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
@@ -96,7 +98,7 @@ public class FunctionMetaData : BaseMetaData
             flags |= FunctionFlags.Static;
         }
         
-        if (IsRpc)
+        if (WeaverHelper.HasAnyFlags(flags, RpcFlags))
         {
             flags |= FunctionFlags.Net;
             

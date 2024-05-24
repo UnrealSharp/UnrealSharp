@@ -32,7 +32,7 @@ public static class FunctionProcessor
             AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (function.IsBlueprintEvent || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
+        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
         {
             function.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_NativeFunction", WeaverHelper.IntPtrType, FieldAttributes.Private);
             RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);

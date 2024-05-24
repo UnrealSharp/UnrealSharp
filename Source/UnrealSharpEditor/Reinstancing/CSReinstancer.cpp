@@ -174,9 +174,6 @@ void FCSReinstancer::PostReinstance()
 	}
 	
 	GEditor->BroadcastBlueprintCompiled();	
-
-	auto* World = GEditor->GetEditorWorldContext().World();
-	GEngine->Exec( World, TEXT("MAP REBUILD ALLVISIBLE") );
 }
 
 void FCSReinstancer::UpdateBlueprints()

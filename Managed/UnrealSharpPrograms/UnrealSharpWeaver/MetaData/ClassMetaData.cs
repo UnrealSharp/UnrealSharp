@@ -18,7 +18,6 @@ public class ClassMetaData : TypeReferenceMetadata
     private readonly TypeDefinition ClassDefinition;
     // End non-serialized
     
-
     public ClassMetaData(TypeDefinition type) : base(type, WeaverHelper.UClassAttribute)
     {
         ClassDefinition = type;
@@ -30,7 +29,7 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint | ClassFlags.Native;
     }
 
     private void AddConfigCategory()
