@@ -30,7 +30,7 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native;
     }
 
     private void AddConfigCategory()

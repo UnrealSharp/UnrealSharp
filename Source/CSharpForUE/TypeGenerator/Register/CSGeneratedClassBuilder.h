@@ -34,7 +34,8 @@ private:
 	
 	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
 		AActor* Actor,
-		const UClass* ActorClass,
+		UClass* ActorClass,
+		UCSClass* FirstManagedClass,
 		const TSharedPtr<FCSharpClassInfo>& ClassInfo);
 	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);

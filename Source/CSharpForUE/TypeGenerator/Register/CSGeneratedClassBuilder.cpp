@@ -24,7 +24,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
 
-	Field->ClassFlags = TypeMetaData->ClassFlags;
+	Field->ClassFlags = TypeMetaData->ClassFlags | CLASS_Native;
 	
 	if (SuperClass->HasAnyClassFlags(CLASS_Config))
 	{
@@ -39,6 +39,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
 	Field->ClassWithin = SuperClass->ClassWithin;
+	Field->ClassCastFlags = SuperClass->ClassCastFlags;
 
 	if (TypeMetaData->ClassConfigName.IsNone())
 	{
@@ -139,7 +140,7 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
-	SetupDefaultSubobjects(ObjectInitializer, Actor, ObjectInitializer.GetClass(), ClassInfo);
+	SetupDefaultSubobjects(ObjectInitializer, Actor, ObjectInitializer.GetClass(), ManagedClass, ClassInfo);
 	
 	// Make the actual object in C#
 	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
@@ -157,9 +158,15 @@ void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInit
 
 void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
                                                       AActor* Actor,
-                                                      const UClass* ActorClass,
+                                                      UClass* ActorClass,
+                                                      UCSClass* FirstManagedClass,
                                                       const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 {
+	if (UCSClass* ManagedClass = Cast<UCSClass>(FirstManagedClass->GetSuperClass()))
+	{
+		SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass, ManagedClass->GetClassInfo());
+	}
+	
 	TMap<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponents;
 	TArray<FPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 	
