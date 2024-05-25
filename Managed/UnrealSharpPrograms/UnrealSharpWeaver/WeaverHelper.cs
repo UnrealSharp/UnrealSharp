@@ -212,13 +212,9 @@ public static class WeaverHelper
         {
             HasThis = true,
             ExplicitThis = method.ExplicitThis,
-            CallingConvention = method.CallingConvention
+            CallingConvention = method.CallingConvention,
+            Body = method.Body
         };
-
-        if (method.Body != null)
-        {
-            newMethod.Body = method.Body;
-        }
 
         foreach (ParameterDefinition parameter in method.Parameters)
         {
