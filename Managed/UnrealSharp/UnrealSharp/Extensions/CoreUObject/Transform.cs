@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace UnrealSharp.CoreUObject;
 
 public partial struct Transform
@@ -8,7 +10,31 @@ public partial struct Transform
         Translation = location;
         Scale3D = scale;
     }
-    
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector TransformPosition(Vector v)
+    {
+        return Rotation.RotateVector(Scale3D * v) + Translation;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector TransformPositionNoScale(Vector v)
+    {
+        return Rotation.RotateVector(v) + Translation;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector TransformVector(Vector v)
+    {
+        return Rotation.RotateVector(Scale3D * v);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector TransformVectorNoScale(Vector v)
+    {
+        return Rotation.RotateVector(v);
+    }
+
     public static readonly Transform ZeroTransform = new(Quat.Identity, Vector.Zero, Vector.Zero);
     public static readonly Transform Identity = new(Quat.Identity, Vector.Zero, Vector.One);
     
@@ -31,7 +57,7 @@ public partial struct Transform
     {
         return $"Location: {Translation}, Rotation: {Rotation}, Scale: {Scale3D}";
     }
-    
-    public static bool operator == (Transform left, Transform right) => left.Rotation == right.Rotation && left.Translation == right.Translation && left.Scale3D == right.Scale3D; 
-    public static bool operator != (Transform left, Transform right) => !(left == right);
+
+    public static bool operator ==(Transform left, Transform right) => left.Rotation == right.Rotation && left.Translation == right.Translation && left.Scale3D == right.Scale3D;
+    public static bool operator !=(Transform left, Transform right) => !(left == right);
 }

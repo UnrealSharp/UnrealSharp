@@ -63,6 +63,26 @@ public partial struct Quat
     }
 
     /// <summary>
+    /// Rotates a vector by the Quat.
+    /// </summary>
+    /// <param name="v">The vector to rotate</param>
+    /// <returns>The rotated vector resulting from applying the Quaterinion</returns>
+    public Vector RotateVector(Vector v)
+    {
+        // http://people.csail.mit.edu/bkph/articles/Quaternions.pdf
+        // V' = V + 2w(Q x V) + (2Q x (Q x V))
+        // refactor:
+        // V' = V + w(2(Q x V)) + (Q x (2(Q x V)))
+        // T = 2(Q x V);
+        // V' = V + w*(T) + (Q x T)
+
+        Vector q = new Vector(X, Y, Z);
+        Vector tt = 2f * Vector.Cross(q, v);
+        Vector result = v + W * tt + Vector.Cross(q, tt);
+        return result;
+    }
+
+    /// <summary>
     /// Divides each component of the Quat by the length of the Quat.
     /// </summary>
     /// <param name="value">The source Quat.</param>
