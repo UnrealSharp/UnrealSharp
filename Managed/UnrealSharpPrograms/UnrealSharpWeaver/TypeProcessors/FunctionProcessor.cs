@@ -441,8 +441,7 @@ public static class FunctionProcessor
         processor.Emit(OpCodes.Call, WeaverHelper.InitializeStructMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
-        Instruction loadParamBufferInstruction = Instruction.Create(OpCodes.Nop);
-    
+
         for (byte i = 0; i < paramRewriteInfos.Length; ++i)
         {
             PropertyMetaData paramType = paramRewriteInfos[i].PropertyMetaData;
@@ -459,11 +458,8 @@ public static class FunctionProcessor
         
             FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataType = paramType.PropertyDataType;
-        
 
-
-            processor.Append(loadArgumentBuffer);
-            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadParamBufferInstruction, offsetField, i + 1, methodDef.Parameters[i]);
+            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadArgumentBuffer, offsetField, i + 1, methodDef.Parameters[i]);
 
             if (cleanupInstructions != null)
             {
