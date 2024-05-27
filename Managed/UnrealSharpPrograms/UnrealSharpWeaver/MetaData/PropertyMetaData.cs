@@ -13,7 +13,9 @@ public class PropertyMetaData : BaseMetaData
     public LifetimeCondition LifetimeCondition { get; set; }
     public string BlueprintSetter { get; set; }
     public string BlueprintGetter { get; set; }
-    
+
+    public bool IsArray => PropertyDataType is NativeDataArrayType;
+
     // Non-serialized for JSON
     public FieldDefinition PropertyOffsetField;
     public FieldDefinition? NativePropertyField;
