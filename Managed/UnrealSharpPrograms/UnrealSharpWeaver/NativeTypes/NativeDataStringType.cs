@@ -114,7 +114,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
             1 => [processor.Create(OpCodes.Ldarg_1)],
             2 => [processor.Create(OpCodes.Ldarg_2)],
             3 => [processor.Create(OpCodes.Ldarg_3)],
-            _ => [processor.Create(OpCodes.Ldarg_S, argIndex)],
+            _ => [processor.Create(OpCodes.Ldarg_S, (byte)argIndex)],
         };
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
