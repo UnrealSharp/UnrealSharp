@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
@@ -460,7 +460,7 @@ public static class FunctionProcessor
             FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataType = paramType.PropertyDataType;
         
-            nativeDataType.PrepareForRewrite(methodDef.DeclaringType, metadata, paramRewriteInfos[i].PropertyMetaData);
+
 
             processor.Append(loadArgumentBuffer);
             IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadParamBufferInstruction, offsetField, i + 1, methodDef.Parameters[i]);
