@@ -254,8 +254,8 @@ class NativeDataArrayType : NativeDataType
         WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
 
         return
-        
-            [processor.Create(OpCodes.Ldsfld, ArrayMarshallerField),
+        [
+            processor.Create(OpCodes.Ldsfld, ArrayMarshallerField),
             .. loadBufferPtr,
             processor.Create(OpCodes.Ldc_I4_0),
             processor.Create(OpCodes.Call, CopyDestructInstance),
