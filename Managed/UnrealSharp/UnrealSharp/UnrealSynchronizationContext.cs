@@ -59,7 +59,87 @@ namespace UnrealSharp
         AnyBackgroundHiPriTask = AnyThread | BackgroundThreadPriority | HighTaskPriority,
     };
 
-    public class UnrealSynchronizationContext : SynchronizationContext
+    public static class UnrealContextTaskExtension
+    {
+        public static Task ConfigureWithUnrealContext(this Task task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
+        {
+            var previousContext = SynchronizationContext.Current;
+            var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+
+            SynchronizationContext.SetSynchronizationContext(unrealContext);
+
+            return task.ContinueWith((t) =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (thrownOnCancel && t.IsCanceled)
+                {
+                    throw new TaskCanceledException();
+                }
+            });
+        }
+
+        public static Task ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
+        {
+            var previousContext = SynchronizationContext.Current;
+            var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+
+            SynchronizationContext.SetSynchronizationContext(unrealContext);
+
+            return task.AsTask().ContinueWith((t) =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (thrownOnCancel && t.IsCanceled)
+                {
+                    throw new TaskCanceledException();
+                }
+            });
+        }
+
+
+        public static Task<T> ConfigureWithUnrealContext<T>(this Task<T> task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
+        {
+            var previousContext = SynchronizationContext.Current;
+            var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+
+            SynchronizationContext.SetSynchronizationContext(unrealContext);
+
+            return task.ContinueWith((t) =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (thrownOnCancel && t.IsCanceled)
+                {
+                    throw new TaskCanceledException();
+                }
+
+                return t.Result;
+            });
+        }
+
+        public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
+        {
+            var previousContext = SynchronizationContext.Current;
+            var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+
+            SynchronizationContext.SetSynchronizationContext(unrealContext);
+
+            return task.AsTask().ContinueWith((t) =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (thrownOnCancel && t.IsCanceled)
+                {
+                    throw new TaskCanceledException();
+                }
+
+                return t.Result;
+            });
+        }
+    }
+
+    public class UnrealSynchronizationContext(NamedThread thread) : SynchronizationContext
     {
         private static readonly ConcurrentDictionary<NamedThread, UnrealSynchronizationContext> syncContextCache = new();
 
@@ -68,12 +148,7 @@ namespace UnrealSharp
         public static UnrealSynchronizationContext GetContext(NamedThread thread)
             => syncContextCache.GetOrAdd(thread, static thread => new(thread));
 
-        public NamedThread Thread { get; }
-
-        private UnrealSynchronizationContext(NamedThread thread)
-        {
-            Thread = thread;
-        }
+        public NamedThread Thread = thread;
 
         public override void Post(SendOrPostCallback d, object? state)
         {
@@ -104,6 +179,5 @@ namespace UnrealSharp
                 AsyncExporter.CallRunOnThread((int)thread, GCHandle.ToIntPtr(gcHandle));
             }
         }
-
     }
 }
