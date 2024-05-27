@@ -70,17 +70,6 @@ public class FunctionMetaData : BaseMetaData
                 hasOutParams = true;
                 modifier = ParameterType.Ref;
             }
-            else if (paramType.IsGenericInstance)
-            {
-                GenericInstanceType GenericType = (GenericInstanceType)paramType;
-                var GenericTypeName = GenericType.Name;
-
-                if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
-                {
-                    hasOutParams = true;
-                    modifier = ParameterType.Ref;
-                }
-            }
 
             Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
         }
