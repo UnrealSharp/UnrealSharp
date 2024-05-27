@@ -253,13 +253,10 @@ class NativeDataArrayType : NativeDataType
     {
         WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
 
-        string arrayMarshallerFieldName = processor.Body.Method.Name + "_" + "argname" + "_Marshaller";
-        var arrayMarshallerField = processor.Body.Method.DeclaringType.Fields.Single(x => x.Name == arrayMarshallerFieldName);
-
         return
-        [
+        
+            [processor.Create(OpCodes.Ldsfld, ArrayMarshallerField),
             .. loadBufferPtr,
-            processor.Create(OpCodes.Ldsfld, arrayMarshallerField),
             processor.Create(OpCodes.Ldc_I4_0),
             processor.Create(OpCodes.Call, CopyDestructInstance),
         ];
