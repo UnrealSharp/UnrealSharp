@@ -53,7 +53,7 @@ public struct SoftObject<T> where T : Object
     }
 };
 
-public static class SoftObjectMarshaller<T> where T : Object
+internal static class SoftObjectMarshaller<T> where T : Object
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, SoftObject<T> obj)
     {

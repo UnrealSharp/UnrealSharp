@@ -659,7 +659,7 @@ void FCSGenerator::ExportInterface(UClass* Interface, FCSScriptBuilder& Builder)
 	Builder.CloseBrace();
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *InterfaceName));
+	Builder.AppendLine(FString::Printf(TEXT("internal static class %sMarshaller"), *InterfaceName));
 	Builder.OpenBrace();
 	Builder.AppendLine(FString::Printf(TEXT("public static void ToNative(IntPtr nativeBuffer, int arrayIndex, %s obj)"), *InterfaceName));
 	Builder.OpenBrace();
@@ -1172,7 +1172,7 @@ void FCSGenerator::ExportStructMarshaller(FCSScriptBuilder& Builder, const UScri
 	FString StructName = NameMapper.GetStructScriptName(Struct);
 
 	Builder.AppendLine();
-	Builder.AppendLine(FString::Printf(TEXT("public static class %sMarshaller"), *StructName));
+	Builder.AppendLine(FString::Printf(TEXT("internal static class %sMarshaller"), *StructName));
 	Builder.OpenBrace();
 
 	Builder.AppendLine(FString::Printf(TEXT("public static %s FromNative(IntPtr nativeBuffer, int arrayIndex)"), *StructName));

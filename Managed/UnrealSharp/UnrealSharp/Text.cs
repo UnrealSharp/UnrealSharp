@@ -88,7 +88,7 @@ public class Text
     }
 }
 
-public static class TextMarshaller
+internal static class TextMarshaller
 { 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, Text obj)
     {
