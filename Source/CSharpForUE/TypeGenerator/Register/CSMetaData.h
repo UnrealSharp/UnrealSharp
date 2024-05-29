@@ -208,6 +208,8 @@ struct FPropertyMetaData : FMemberMetaData
 	FString BlueprintSetter;
 	FString BlueprintGetter;
 
+	bool IsArray;
+
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	//End of implementation

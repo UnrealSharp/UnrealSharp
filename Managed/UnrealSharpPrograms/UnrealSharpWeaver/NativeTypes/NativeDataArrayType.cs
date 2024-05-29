@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
@@ -196,8 +196,17 @@ class NativeDataArrayType : NativeDataType
         Instruction loadBufferInstruction, FieldDefinition offsetField, int argIndex,
         ParameterDefinition paramDefinition)
     {
+        Instruction[] loadSource = argIndex switch
+        {
+            0 => [processor.Create(OpCodes.Ldarg_0)],
+            1 => [processor.Create(OpCodes.Ldarg_1)],
+            2 => [processor.Create(OpCodes.Ldarg_2)],
+            3 => [processor.Create(OpCodes.Ldarg_3)],
+            _ => [processor.Create(OpCodes.Ldarg_S, (byte)argIndex)],
+        };
+
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBufferInstruction, offsetField);
-        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), [processor.Create(OpCodes.Ldarg_S, argIndex)]);
+        return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
     }
     
     public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type,
@@ -244,13 +253,10 @@ class NativeDataArrayType : NativeDataType
     {
         WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
 
-        string arrayMarshallerFieldName = processor.Body.Method.Name + "_" + "argname" + "_Marshaller";
-        var arrayMarshallerField = processor.Body.Method.DeclaringType.Fields.Single(x => x.Name == arrayMarshallerFieldName);
-
         return
         [
+            processor.Create(OpCodes.Ldsfld, ArrayMarshallerField),
             .. loadBufferPtr,
-            processor.Create(OpCodes.Ldsfld, arrayMarshallerField),
             processor.Create(OpCodes.Ldc_I4_0),
             processor.Create(OpCodes.Call, CopyDestructInstance),
         ];

@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.NativeTypes;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -101,6 +102,14 @@ public static class UnrealDelegateProcessor
             functionMetaData.FunctionPointerField = WeaverHelper.AddFieldToType(invokerMethodDefinition.DeclaringType, "SignatureFunction", WeaverHelper.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
             
             List<Instruction> allCleanupInstructions = [];
+
+            for (int i = 0; i < functionMetaData.Parameters.Length; ++i)
+            {
+                PropertyMetaData param = functionMetaData.Parameters[i];
+                NativeDataType nativeDataType = param.PropertyDataType;
+
+                nativeDataType.PrepareForRewrite(invokerMethodDefinition.DeclaringType, functionMetaData, param);
+            }
 
             FunctionProcessor.WriteParametersToNative(invokerMethodProcessor,
                 invokerMethodDefinition,

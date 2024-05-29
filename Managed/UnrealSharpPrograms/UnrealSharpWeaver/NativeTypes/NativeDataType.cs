@@ -215,7 +215,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
 
         TypeReference marshallerType;
         
-        if (typeParams != null)
+        if (typeParams != null && typeParams.Length > 0)
         {
             marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName, typeParams);
         }
