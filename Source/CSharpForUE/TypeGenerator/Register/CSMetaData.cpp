@@ -308,6 +308,7 @@ void FPropertyMetaData:: SerializeFromJson(const TSharedPtr<FJsonObject>& JsonOb
 	
 	JsonObject->TryGetStringField(TEXT("BlueprintGetter"), BlueprintGetter);
 	JsonObject->TryGetStringField(TEXT("BlueprintSetter"), BlueprintSetter);
+	JsonObject->TryGetBoolField(TEXT("IsArray"), IsArray);
 
 	FString RepNotifyFunctionNameStr;
 	if (JsonObject->TryGetStringField(TEXT("RepNotifyFunctionName"), RepNotifyFunctionNameStr))
