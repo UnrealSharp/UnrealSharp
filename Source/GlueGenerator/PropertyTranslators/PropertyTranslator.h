@@ -36,11 +36,17 @@ public:
 	bool IsSupportedAsProperty() const { return !!(SupportedPropertyUsage & EPU_Property); }
 	bool IsSupportedAsParameter() const { return !!(SupportedPropertyUsage & EPU_Parameter); }
 	bool IsSupportedAsReturnValue() const { return !!(SupportedPropertyUsage & EPU_ReturnValue); }
-	bool IsSupportedAsArrayInner() const { return !!(SupportedPropertyUsage & EPU_ArrayInner); }
+	bool IsSupportedAsInner() const { return !!(SupportedPropertyUsage & EPU_Inner); }
 	bool IsSupportedAsStructProperty() const { return !!(SupportedPropertyUsage & EPU_StructProperty); }
 	bool IsSupportedAsOverridableFunctionParameter() const { return !!(SupportedPropertyUsage & EPU_OverridableFunctionParameter); }
 	bool IsSupportedAsOverridableFunctionReturnValue() const { return !!(SupportedPropertyUsage & EPU_OverridableFunctionReturnValue); }
 	bool IsSupportedInStaticArray() const { return !!(SupportedPropertyUsage & EPU_StaticArrayProperty); }
+
+	template<typename T>
+	static bool IsOwnedBy(const FProperty* Property)
+	{
+		return Property->GetOwnerStruct()->IsA<T>();
+	};
 
 	virtual bool IsBlittable() const { return false; }
 
@@ -70,6 +76,9 @@ public:
 	void ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const;
+
+	void MakeNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName) const;
+	void MakeGetNativePropertyFromName(FCSScriptBuilder& Builder, const FString& PropertyName) const;
 
 	static void AddNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName);
 	static FString GetNativePropertyField(const FString& PropertyName);

@@ -80,8 +80,8 @@ class NativeDataArrayType : NativeDataType
                    && method.HasParameters
                    && method.Parameters.Count == 3
                    && method.Parameters[0].ParameterType.FullName == "System.IntPtr"
-                   && ((GenericInstanceType)method.Parameters[1].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/ToNative"
-                   && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/FromNative")
+                   && ((GenericInstanceType)method.Parameters[1].ParameterType).GetElementType().FullName == "UnrealSharp.MarshallingDelegates`1/ToNative"
+                   && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshallingDelegates`1/FromNative")
             select method).Single();
         
         CopyArrayMarshallerCtor = WeaverHelper.UserAssembly.MainModule.ImportReference(CopyArrayMarshallerCtor);
@@ -148,8 +148,8 @@ class NativeDataArrayType : NativeDataType
                    && method.Parameters.Count == 4
                    && method.Parameters[0].ParameterType.FullName == "System.Int32"
                    && method.Parameters[1].ParameterType.FullName == "System.IntPtr"
-                   && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/ToNative"
-                   && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealSharp.MarshalingDelegates`1/FromNative")
+                   && ((GenericInstanceType)method.Parameters[2].ParameterType).GetElementType().FullName == "UnrealSharp.MarshallingDelegates`1/ToNative"
+                   && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealSharp.MarshallingDelegates`1/FromNative")
             select method).First();
         processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverHelper.UserAssembly.MainModule.ImportReference(constructor), ArrayMarshallerTypeParameters));
         processor.Emit(OpCodes.Stfld, ArrayMarshallerField);

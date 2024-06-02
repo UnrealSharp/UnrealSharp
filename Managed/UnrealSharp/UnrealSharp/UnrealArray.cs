@@ -30,13 +30,13 @@ public class UnrealArrayEnumerator<T>(UnrealArrayBase<T> array) : IEnumerator<T>
 public abstract class UnrealArrayBase<T> : IEnumerable<T>
 {
     protected readonly IntPtr NativeUnrealProperty;
-    protected MarshalingDelegates<T>.FromNative FromNative;
-    protected MarshalingDelegates<T>.ToNative ToNative;
+    protected MarshallingDelegates<T>.FromNative FromNative;
+    protected MarshallingDelegates<T>.ToNative ToNative;
     
     protected IntPtr NativeBuffer { get; }
 
     [CLSCompliant(false)]
-    protected UnrealArrayBase(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    protected UnrealArrayBase(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         NativeUnrealProperty = nativeUnrealProperty;
         NativeBuffer = nativeBuffer;
@@ -159,10 +159,10 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
 public class ArrayCopyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
-    private readonly MarshalingDelegates<T>.ToNative _innerTypeToNative;
-    private readonly MarshalingDelegates<T>.FromNative _innerTypeFromNative;
+    private readonly MarshallingDelegates<T>.ToNative _innerTypeToNative;
+    private readonly MarshallingDelegates<T>.FromNative _innerTypeFromNative;
 
-    public ArrayCopyMarshaller(IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayCopyMarshaller(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _nativeProperty = nativeProperty;
         _innerTypeFromNative = fromNative;

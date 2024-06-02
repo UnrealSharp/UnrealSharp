@@ -177,11 +177,11 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
             FixedSizeArrayWrapperField = WeaverHelper.AddFieldToType(typeDefinition, propertyDef.Name + "_Marshaller", FixedSizeArrayWrapperType);
         }
         
-        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
-        TypeDefinition marshalingDelegatesDef = marshalingDelegates.Resolve();
+        var marshallingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshallingDelegates`1", [CSharpType]);
+        TypeDefinition marshallingDelegatesDef = marshallingDelegates.Resolve();
         
-        ToNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "ToNative");
-        FromNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "FromNative");
+        ToNativeDelegateType = WeaverHelper.FindNestedType(marshallingDelegatesDef, "ToNative");
+        FromNativeDelegateType = WeaverHelper.FindNestedType(marshallingDelegatesDef, "FromNative");
     }
 
     protected void EmitDelegate(ILProcessor processor, TypeReference delegateType, MethodReference method)
@@ -195,7 +195,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         processor.Emit(OpCodes.Newobj, ctor);
     }
 
-    // Emits IL for a default constructible and possibly generic fixed array marshaling helper object.
+    // Emits IL for a default constructible and possibly generic fixed array marshalling helper object.
     // If typeParams is null, a non-generic type is assumed.
     protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
     {
@@ -275,8 +275,8 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
                        && method.Parameters[1].ParameterType.FullName == "System.Int32"
                        && method.Parameters[2].ParameterType.FullName == "System.Int32"
                        && method.Parameters[3].ParameterType.IsGenericInstance
-                       && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/ToNative"
-                       && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/FromNative")
+                       && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/ToNative"
+                       && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/FromNative")
                 select method).ToArray();
             ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
             processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionProcessor.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));

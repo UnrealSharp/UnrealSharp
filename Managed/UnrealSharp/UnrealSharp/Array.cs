@@ -12,7 +12,7 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
     public bool IsReadOnly => false;
     
     [CLSCompliant(false)]
-    public Array(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public Array(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -146,7 +146,7 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
     private readonly Array<T>[] _wrappers = new Array<T> [length];
 
