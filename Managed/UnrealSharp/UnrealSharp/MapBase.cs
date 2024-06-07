@@ -98,7 +98,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
             throw new IndexOutOfRangeException($"Index {index} is invalid.");
         }
 
-        if (GetPairPtr(index, out var keyPtr, out var valuePtr))
+        if (!GetPairPtr(index, out var keyPtr, out var valuePtr))
         {
             return default;
         }

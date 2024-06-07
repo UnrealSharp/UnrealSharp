@@ -19,6 +19,9 @@ public:
 	UFUNCTION(meta = (ScriptNoExport), BlueprintCallable, Category = "Test C#")
 	bool MyNonScriptMethod(int32 MyInteger);
 
+	UFUNCTION(BlueprintCallable, Category = "Test C#")
+	void MyTestFunction(TMap<FName, int> TestMap);
+
 	// MyTestInteger is a test integer
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Test C#")
 	int32 MyTestInteger;
