@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
+#include "CSVTableHacks.h"
 #include "CSharpForUE/CSharpForUE.h"
 #include "CSharpForUE/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
@@ -121,8 +122,18 @@ void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitialize
 	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
+
 	UActorComponent* ActorComponent = static_cast<UActorComponent*>(ObjectInitializer.GetObj());
+
+	// Nasty hack to make sure the tick function is called in pure C# classes.
+	// Since it otherwise need CLASS_CompiledFromBlueprint to be true, we need to swap out the VTable for the tick function.
+	// Currently CLASS_CompiledFromBlueprint causes BP to not find their C# parent classes.
+	if (!ObjectInitializer.GetClass()->HasAllClassFlags(CLASS_CompiledFromBlueprint))
+	{
+		FCSActorComponentTickFunction DummyTickFunction;
+		FMemory::Memcpy(&ActorComponent->PrimaryComponentTick, &DummyTickFunction, sizeof(FCSActorComponentTickFunction));
+	}
+	
 	ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
 	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
@@ -135,8 +146,18 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
+
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
+	
+	// Nasty hack to make sure the tick function is called in pure C# classes.
+	// Since it otherwise need CLASS_CompiledFromBlueprint to be true, we need to swap out the VTable for the tick function.
+	// Currently CLASS_CompiledFromBlueprint causes BP to not find their C# parent classes.
+	if (!ObjectInitializer.GetClass()->HasAllClassFlags(CLASS_CompiledFromBlueprint))
+	{
+		FCSActorTickFunction DummyTickFunction;
+		FMemory::Memcpy(&Actor->PrimaryActorTick, &DummyTickFunction, sizeof(FCSActorTickFunction));
+	}
+	
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	

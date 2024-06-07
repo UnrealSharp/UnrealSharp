@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -29,7 +30,7 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint | ClassFlags.Native;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native;
     }
 
     private void AddConfigCategory()
@@ -93,7 +94,7 @@ public class ClassMetaData : TypeReferenceMetadata
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method))
+            if (WeaverHelper.IsUFunction(method) || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
                 if (isBlueprintOverride)
                 {
@@ -108,8 +109,10 @@ public class ClassMetaData : TypeReferenceMetadata
                 }
                 
                 Functions.Add(functionMetaData);
+                continue;
             }
-            else if (isBlueprintOverride || isInterfaceFunction)
+            
+            if (isBlueprintOverride || isInterfaceFunction)
             {
                 VirtualFunctions.Add(new FunctionMetaData(method));
             }
