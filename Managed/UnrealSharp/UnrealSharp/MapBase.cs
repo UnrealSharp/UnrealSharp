@@ -421,15 +421,11 @@ public class MapMarshaller<TKey, TValue>
 
     public Map<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return FromNative(nativeBuffer, 0, IntPtr.Zero);
-    }
-
-    public Map<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
-    {
         if (wrappers[arrayIndex] == null)
         {
-            wrappers[arrayIndex] = new Map<TKey, TValue>(nativeProperty, nativeBuffer +
-                arrayIndex * Marshal.SizeOf(typeof(FScriptMap)), keyFromNative, keyToNative, valueFromNative, valueToNative);
+            wrappers[arrayIndex] = new Map<TKey, TValue>(nativeProperty, 
+                nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(FScriptMap)),
+                keyFromNative, keyToNative, valueFromNative, valueToNative);
         }
         return wrappers[arrayIndex];
     }
@@ -502,17 +498,11 @@ public class MapCopyMarshaller<TKey, TValue>
 
     public Dictionary<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return FromNative(nativeBuffer, 0, IntPtr.Zero);
-    }
-
-    public Dictionary<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
-    {
-        IntPtr scriptMapAddress = nativeBuffer + (arrayIndex * Marshal.SizeOf(typeof(FScriptMap)));
-        helper.Map = scriptMapAddress;
+        helper.Map = nativeBuffer;
 
         unsafe
         {
-            FScriptMap* map = (FScriptMap*)scriptMapAddress;
+            FScriptMap* map = (FScriptMap*)nativeBuffer;
             Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
             int maxIndex = map->GetMaxIndex();
             for (int i = 0; i < maxIndex; ++i)
@@ -537,11 +527,6 @@ public class MapCopyMarshaller<TKey, TValue>
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyDictionary<TKey, TValue> value)
     {
         ToNativeInternal(nativeBuffer, 0, value.ToDictionary(), ref helper, keyToNative, valueToNative);
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IDictionary<TKey, TValue> value)
-    {
-        ToNativeInternal(nativeBuffer, arrayIndex, value, ref helper, keyToNative, valueToNative);
     }
 
     private void ToNativeInternal(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value,

@@ -478,116 +478,121 @@ public static class WeaverHelper
                 return new NativeDataStringType(typeRef, arrayDim);
 
             default:
+
+                if (typeRef.IsGenericInstance)
+                {
+                    GenericInstanceType GenericType = (GenericInstanceType)typeRef;
+                    var GenericTypeName = GenericType.Name;
+                    TypeReference innerType = GenericType.GenericArguments[0];
+
+                    if (GenericTypeName.Contains("SubclassOf`1"))
+                    {
+                        return new NativeDataClassType(typeRef, innerType, arrayDim);
+                    }
+
+                    if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
+                    {
+                        return new NativeDataArrayType(typeRef, arrayDim, innerType);
+                    }
+
+                    if (GenericTypeName.Contains("WeakObject`1"))
+                    {
+                        return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
+                    }
+
+                    if (GenericTypeName.Contains("SoftObject`1"))
+                    {
+                        return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
+                    }
+
+                    if (GenericTypeName.Contains("SoftClass`1"))
+                    {
+                        return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
+                    }
+                    
+                    if (GenericTypeName.Contains("Map`2"))
+                    {
+                        return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
+                    }
+                }
+
+                if (typeDef.IsEnum)
+                {
+                    CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
                 
-            if (typeRef.IsGenericInstance)
-            {
-                GenericInstanceType GenericType = (GenericInstanceType) typeRef;
-                var GenericTypeName = GenericType.Name;
-                TypeReference innerType = GenericType.GenericArguments[0];
+                    if (enumAttribute == null)
+                    {
+                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must use an unreal enum: " + typeRef.FullName);
+                    }
                 
-                if (GenericTypeName.Contains("SubclassOf`1"))
-                {
-                    return new NativeDataClassType(typeRef, innerType, arrayDim);
-                }
-                
-                if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
-                {
-                    return new NativeDataArrayType(typeRef, arrayDim, innerType);
+                    if (typeDef.GetEnumUnderlyingType().FullName != "System.Byte")
+                    {
+                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must have an underlying type of System.Byte: " + typeRef.FullName);
+                    }
+
+                    return new NativeDataEnumType(typeDef, arrayDim);
                 }
 
-                if (GenericTypeName.Contains("WeakObject`1"))
+                if (!typeDef.IsClass)
                 {
-                    return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
+                    throw new InvalidPropertyException(propertyName, sequencePoint, "No Unreal type for " + typeRef.FullName);
                 }
 
-                if (GenericTypeName.Contains("SoftObject`1"))
+                // see if its a UObject
+                if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
                 {
-                    return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
+                    return new NativeDataTextType(typeDef);
                 }
-
-                if (GenericTypeName.Contains("SoftClass`1"))
-                {
-                    return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
-                }
-                }
-
-            if (typeDef.IsEnum)
-            {
-                CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
-                
-                if (enumAttribute == null)
-                {
-                    throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must use an unreal enum: " + typeRef.FullName);
-                }
-                
-                if (typeDef.GetEnumUnderlyingType().FullName != "System.Byte")
-                {
-                    throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must have an underlying type of System.Byte: " + typeRef.FullName);
-                }
-
-                return new NativeDataEnumType(typeDef, arrayDim);
-            }
-
-            if (!typeDef.IsClass)
-            {
-                throw new InvalidPropertyException(propertyName, sequencePoint, "No Unreal type for " + typeRef.FullName);
-            }
-
-            // see if its a UObject
-            if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
-            {
-                return new NativeDataTextType(typeDef);
-            }
             
-            if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
-            {
-                return new NativeDataMulticastDelegate(typeDef);
-            }
+                if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
+                {
+                    return new NativeDataMulticastDelegate(typeDef);
+                }
             
-            if (typeDef.BaseType.Name.Contains("Delegate"))
-            {
-                return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
-            }
+                if (typeDef.BaseType.Name.Contains("Delegate"))
+                {
+                    return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
+                }
             
-            if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
-            {
-                return new NativeDataDefaultComponent(customAttributes, typeDef, "ObjectMarshaller`1", arrayDim);
-            }
+                if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
+                {
+                    return new NativeDataDefaultComponent(customAttributes, typeDef, "ObjectMarshaller`1", arrayDim);
+                }
             
-            TypeDefinition superType = typeDef;
-            while (superType != null && superType.FullName != "UnrealSharp.UnrealSharpObject")
-            {
-                TypeReference superTypeRef = superType.BaseType;
-                superType = superTypeRef != null ? superTypeRef.Resolve() : null;
-            }
+                TypeDefinition superType = typeDef;
+                while (superType != null && superType.FullName != "UnrealSharp.UnrealSharpObject")
+                {
+                    TypeReference superTypeRef = superType.BaseType;
+                    superType = superTypeRef != null ? superTypeRef.Resolve() : null;
+                }
 
-            if (superType != null)
-            {
-                return new NativeDataObjectType(typeRef, typeDef, arrayDim);
-            }
+                if (superType != null)
+                {
+                    return new NativeDataObjectType(typeRef, typeDef, arrayDim);
+                }
 
-            // See if this is a struct
-            CustomAttribute? structAttribute = GetUStruct(typeDef);
+                // See if this is a struct
+                CustomAttribute? structAttribute = GetUStruct(typeDef);
                 
-            if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
-            {
-                throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
-            }
+                if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
+                {
+                    throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
+                }
 
-            if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Rotator"))
-            {
-                return new NativeDataCoreStructType(typeDef, arrayDim);
-            }
+                if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Rotator"))
+                {
+                    return new NativeDataCoreStructType(typeDef, arrayDim);
+                }
                 
-            bool isBlittable = false;
-            var blittableAttrib = FindAttributeField(structAttribute, "IsBlittable");
+                bool isBlittable = false;
+                var blittableAttrib = FindAttributeField(structAttribute, "IsBlittable");
                         
-            if (blittableAttrib.HasValue)
-            {
-                isBlittable = (bool) blittableAttrib.Value.Value;
-            }
+                if (blittableAttrib.HasValue)
+                {
+                    isBlittable = (bool) blittableAttrib.Value.Value;
+                }
                         
-            return isBlittable ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, GetMarshallerClassName(typeDef), arrayDim);
+                return isBlittable ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, GetMarshallerClassName(typeDef), arrayDim);
         }
     }
     

@@ -168,6 +168,11 @@ public class PropertyMetaData : BaseMetaData
             RepNotifyFunctionName = notifyMethodName;
         }
         
+        if (flags.HasFlag(PropertyFlags.Net) && !PropertyDataType.IsNetworkSupported)
+        {
+            throw new InvalidPropertyException(property, $"{Name} is marked as replicated but the {PropertyDataType.CSharpType} is not supported for replication");
+        }
+        
         bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
 
         const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;

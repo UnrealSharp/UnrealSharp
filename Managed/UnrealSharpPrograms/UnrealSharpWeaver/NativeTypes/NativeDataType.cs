@@ -26,6 +26,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataSoftObjectType))]
 [JsonDerivedType(typeof(NativeDataSoftClassType))]
 [JsonDerivedType(typeof(NativeDataDelegateType))]
+[JsonDerivedType(typeof(NativeDataMapType))]
 public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
     internal TypeReference CSharpType { get; set; } = WeaverHelper.ImportType(typeRef);
@@ -35,6 +36,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
     public PropertyType PropertyType { get; set; } = propertyType;
     public virtual bool IsBlittable { get { return false; } }
     public virtual bool IsPlainOldData { get { return false; } }
+    public bool IsNetworkSupported = true;
     
     // Non-json properties
     // Generic instance type for fixed-size array wrapper. Populated only when ArrayDim > 1.

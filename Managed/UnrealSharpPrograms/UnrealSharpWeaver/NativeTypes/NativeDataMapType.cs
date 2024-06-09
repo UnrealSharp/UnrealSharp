@@ -4,62 +4,49 @@ using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-public class NativeDataMapType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Map) : NativeDataType(typeRef, arrayDim, propertyType)
+public class NativeDataMapType : NativeDataContainerType
 {
-    public PropertyMetaData KeyProperty { get; set; }
     public PropertyMetaData ValueProperty { get; set; }
     
-    
-    public override void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
+    public NativeDataMapType(TypeReference typeRef, int arrayDim, TypeReference key, TypeReference value) : base(typeRef, arrayDim, PropertyType.Map, key)
     {
-        throw new NotImplementedException();
+        ValueProperty = PropertyMetaData.FromTypeReference(value, "Value");
+        IsNetworkSupported = false;
     }
 
-    protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField,
-        FieldDefinition nativePropertyField)
+    public override string GetContainerMarshallerName()
     {
-        throw new NotImplementedException();
+        return "MapMarshaller`2";
     }
 
-    protected override void CreateSetter(TypeDefinition type, MethodDefinition setter, FieldDefinition offsetField,
-        FieldDefinition nativePropertyField)
+    public override string GetCopyContainerMarshallerName()
     {
-        throw new NotImplementedException();
+        return "MapCopyMarshaller`2";
     }
 
-    public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction,
-        FieldDefinition offsetField, VariableDefinition localVar)
+    public override void EmitDynamicArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
     {
-        throw new NotImplementedException();
+        base.EmitDynamicArrayMarshallerDelegates(processor, type);
+        ValueProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
     }
 
-    public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction,
-        FieldDefinition offsetField, FieldDefinition destField)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
-        throw new NotImplementedException();
+        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        ValueProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
     }
 
-    public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction,
-        FieldDefinition offsetField, int argIndex, ParameterDefinition paramDefinition)
+    public override void InitializeMarshallerParameters()
     {
-        throw new NotImplementedException();
+        ContainerMarshallerTypeParameters =
+        [
+            WeaverHelper.ImportType(InnerProperty.PropertyDataType.CSharpType),
+            WeaverHelper.ImportType(ValueProperty.PropertyDataType.CSharpType)
+        ];
     }
 
-    public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction,
-        FieldDefinition offsetField, FieldDefinition srcField)
+    public override string GetContainerWrapperType()
     {
-        throw new NotImplementedException();
-    }
-
-    public override void WriteMarshalFromNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr,
-        Instruction loadArrayIndex)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr,
-        Instruction loadArrayIndex, Instruction[] loadSource)
-    {
-        throw new NotImplementedException();
+        return "System.Collections.Generic.IDictionary`2";
     }
 }
