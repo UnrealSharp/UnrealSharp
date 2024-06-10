@@ -43,7 +43,7 @@ void FCSManager::InitializeUnrealSharp()
 	{
 		if (!FCSProcHelper::BuildBindings())
 		{
-			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
+			UE_LOG(LogUnrealSharp, Fatal, TEXT("C# binding failed"));
 			return;
 		}
 	

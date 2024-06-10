@@ -18,6 +18,8 @@ public:
 
     bool IsReloading() const { return bIsReloading; }
 
+    void OnAutoGenClicked();
+
 private:
     
     bool Tick(float DeltaTime);
@@ -25,5 +27,9 @@ private:
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     bool bIsReloading = false;
-    
+
+    void RegisterMenus();
+
+    bool bAutoReloading = false;
+    FToolMenuEntry AutoCompileEntry;
 };

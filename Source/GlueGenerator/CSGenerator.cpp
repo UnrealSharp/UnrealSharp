@@ -268,15 +268,17 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 	Builder.AppendLine(TEXT("[UEnum]"));
 
 	int64 MaxValue = Enum->GetMaxEnumValue();
-
+	
 	FString TypeDerived;
-	if (MaxValue <= UINT8_MAX + 1) 
-	{
+	if (MaxValue <= UINT8_MAX + 1) {
 		TypeDerived = TEXT("byte");
-	}
-	else 
-	{
+	} if(MaxValue <= (size_t)INT32_MAX + 1) {
 		TypeDerived = TEXT("int");
+	} if (MaxValue <= (size_t)UINT32_MAX + 1) {
+		TypeDerived = TEXT("uint");
+	} else {
+		//64 bit
+		TypeDerived = TEXT("long");
 	}
 
 	Builder.DeclareType("enum", *Enum->GetName(), *TypeDerived, false);

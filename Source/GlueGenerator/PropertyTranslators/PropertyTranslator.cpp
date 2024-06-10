@@ -378,7 +378,7 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 				if (CppDefaultValue == "()" && Parameter->IsA(FStructProperty::StaticClass()))
 				{
 					FStructProperty* StructProperty = CastFieldChecked<FStructProperty>(Parameter);
-					ParamsStringCall += FString::Printf(TEXT("new %s()"), *Mapper.GetStructScriptName(StructProperty->Struct.Get()));
+					ParamsStringCall += FString::Printf(TEXT("new %s()"), *Mapper.GetQualifiedName(StructProperty->Struct.Get()));
 				}
 				else
 				{
