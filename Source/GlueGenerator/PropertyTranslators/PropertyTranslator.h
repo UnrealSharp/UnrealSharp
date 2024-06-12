@@ -67,6 +67,7 @@ public:
 	};
 	
 	void ExportFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType) const;
+	void ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType,FString helperClassName, FString targetClassName) const;
 	void ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const;
@@ -124,6 +125,8 @@ public:
 		void ExportFunction(FCSScriptBuilder& Builder) const;
 
 		void ExportSignature(FCSScriptBuilder& Builder, const FString& Protection) const;
+		FString GetSignature(const FString& Protection) const;
+		FString GetHelperFunctionSignatureOrCallee(bool isSig) const;
 
 		void ExportGetter(FCSScriptBuilder& Builder) const;
 		void ExportSetter(FCSScriptBuilder& Builder) const;

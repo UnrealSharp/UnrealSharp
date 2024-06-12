@@ -213,7 +213,7 @@ public:
 		return Report.Len() == 0;
 	}
 
-	void GenerateScriptSkeleton(const FString& Namespace);
+	void GenerateScriptSkeleton(const FString& Namespace, bool brace = false);
 	void DeclareDirective(const FString& ModuleName);
 	
 	void DeclareType(const FString& TypeName,

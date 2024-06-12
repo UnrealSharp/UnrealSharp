@@ -1,6 +1,6 @@
-﻿#include "Widgets/Notifications/SNotificationList.h"
+﻿#include "UnrealSharpEditor.h"
+#include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "UnrealSharpEditor.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
 #include "CSharpForUE/CSManager.h"
