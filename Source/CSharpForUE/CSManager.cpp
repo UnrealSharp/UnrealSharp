@@ -37,25 +37,25 @@ void FCSManager::InitializeUnrealSharp()
 
 #if WITH_EDITOR
 
-	//auto res = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Generate c++ binding to c#?")));
-	//if (res == EAppReturnType::Yes) {
-		if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) {
+	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) {
+		/*auto res = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Generate c++ binding to c#?")));
+		if (res == EAppReturnType::Yes) {*/
 			FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-				if (!FApp::IsUnattended()) {
-					if (!FCSProcHelper::BuildBindings())
-					{
-						UE_LOG(LogUnrealSharp, Fatal, TEXT("C# binding failed"));
-						return;
-					}
-
-					if (!FCSProcHelper::GenerateProject())
-					{
-						InitializeUnrealSharp();
-						return;
-					}
+			if (!FApp::IsUnattended()) {
+				if (!FCSProcHelper::BuildBindings())
+				{
+					UE_LOG(LogUnrealSharp, Fatal, TEXT("C# binding failed"));
+					return;
 				}
-		}
-	//}
+
+				if (!FCSProcHelper::GenerateProject())
+				{
+					InitializeUnrealSharp();
+					return;
+				}
+			}
+		//}
+	}
 	
 #endif
 
