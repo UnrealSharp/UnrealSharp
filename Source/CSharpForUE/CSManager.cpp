@@ -39,11 +39,8 @@ void FCSManager::InitializeUnrealSharp()
 
 	//auto res = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Generate c++ binding to c#?")));
 	//if (res == EAppReturnType::Yes) {
-
 		if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) {
-			auto res = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Generate c++ binding to c#?")));
 			FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-			if (res == EAppReturnType::Yes) {
 				if (!FApp::IsUnattended()) {
 					if (!FCSProcHelper::BuildBindings())
 					{
@@ -57,7 +54,6 @@ void FCSManager::InitializeUnrealSharp()
 						return;
 					}
 				}
-			}
 		}
 	//}
 	
