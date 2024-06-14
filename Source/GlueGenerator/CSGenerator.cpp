@@ -779,8 +779,10 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 
 	Builder.AppendLine(FString::Printf(TEXT("[UClass(%s)]"), *Abstract));
 
-	if (ScriptClassName.StartsWith("Helper_")){
+	FString HelperClassPath = "";
+	if(Class->FindMetaData("CSHelper")) {
 		IsHelperClass = true;
+		HelperClassPath = Class->GetMetaData("CSHelper");
 	}
 
 	Builder.DeclareType("class", ScriptClassName, GetSuperClassName(Class), true, Interfaces);
@@ -810,20 +812,23 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	Builder.CloseBrace();
 	Builder.CloseBrace();
 
-	if(IsHelperClass && !ExportedFunctions.IsEmpty())
-	{
-		
-		FString extensionClassName = ScriptClassName.Replace(TEXT("Helper_"), TEXT(""));
+	if(!ExportedFunctions.IsEmpty() && IsHelperClass) {
 
-		FString nameInCSharp = "UnrealSharp." + extensionClassName.Replace(TEXT("_"), TEXT("."));
-		int namespacePos = extensionClassName.Find(TEXT("_"), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		int ClassNamePointPos = HelperClassPath.Find(TEXT("."), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
-		FString nameSpace = "UnrealSharp." + extensionClassName.Left(namespacePos);
-		FString className = extensionClassName.Right(extensionClassName.Len() - namespacePos - 1);
+		if(ClassNamePointPos == INDEX_NONE) {
+			// a global class ??? what
+			FString err = FString::Printf(TEXT("Helper Class's meta path is invalid: %s\nClass: %s"), *HelperClassPath, *ScriptClassName);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(err));
+			throw err;
+		}
 
-		Builder.AppendLine(FString::Printf(TEXT("namespace %s {"), *nameSpace));
-		Builder.AppendLine(FString::Printf(TEXT("/// extension for %s"), *className));
-		Builder.AppendLine(FString::Printf(TEXT("public partial class %s"), *className));
+		FString HelperClassNameSpace = "UnrealSharp." + HelperClassPath.Left(ClassNamePointPos);
+		FString HelperClassName = HelperClassPath.Right(HelperClassPath.Len() - ClassNamePointPos - 1);
+
+		Builder.AppendLine(FString::Printf(TEXT("namespace %s {"), *HelperClassNameSpace));
+		Builder.AppendLine(FString::Printf(TEXT("/// extension for %s"), *HelperClassName));
+		Builder.AppendLine(FString::Printf(TEXT("public partial class %s"), *HelperClassName));
 		Builder.OpenBrace();
 
 		for (UFunction* Function : ExportedFunctions)
@@ -841,14 +846,14 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 				if (GetExtensionMethodInfo(Method, *Function))
 				{
 					FuncType = FPropertyTranslator::FunctionType::ExtensionOnAnotherClass;
-
+					/*
 					const FCSModule& BindingsModule2 = FindOrRegisterModule(Class);
 					TArray<ExtensionMethod>& ModuleExtensionMethods = ExtensionMethods.FindOrAdd(BindingsModule2.GetModuleName());
-					ModuleExtensionMethods.Add(Method);
+					ModuleExtensionMethods.Add(Method);*/
 				}
 			}
 			//FString temp = extensionClassName.Replace(TEXT("_"), TEXT("."));
-			PropertyTranslatorManager->Find(Function).ExportHelperFunction(Builder, Function, FuncType, *ScriptClassName, *className);
+			PropertyTranslatorManager->Find(Function).ExportHelperFunction(Builder, Function, FuncType, *ScriptClassName, *HelperClassName);
 		}
 
 		Builder.AppendLine();

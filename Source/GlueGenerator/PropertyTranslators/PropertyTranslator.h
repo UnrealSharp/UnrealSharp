@@ -67,7 +67,7 @@ public:
 	};
 	
 	void ExportFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType) const;
-	void ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType,FString preClass, FString selfType) const;
+	void ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType,FString helperClassName, FString targetClassName) const;
 	void ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const;

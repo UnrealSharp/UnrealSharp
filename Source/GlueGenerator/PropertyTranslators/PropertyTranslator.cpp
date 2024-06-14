@@ -747,7 +747,7 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	}
 }
 
-void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType, FString preClass, FString selfType) const
+void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType, FString helperClassName, FString targetClassName) const
 {
 	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
 	ProtectionMode ProtectionBehavior = ProtectionMode::UseUFunctionProtection;
@@ -777,8 +777,8 @@ void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunct
 	FString func = Exporter.GetHelperFunctionSignatureOrCallee(true);
 	int selfStart = func.Find("(");
 
-	auto text1 = FString::Printf(TEXT("%s myself,"), *selfType);
-	auto text2 = FString::Printf(TEXT("%s myself"), *selfType);
+	auto text1 = FString::Printf(TEXT("%s myself,"), *targetClassName);
+	auto text2 = FString::Printf(TEXT("%s myself"), *targetClassName);
 	int end1 = func.Find(text1);
 	int end2 = func.Find(text2);
 
@@ -789,7 +789,7 @@ void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunct
 	}
 
 	if(end1 == -1 && end2 == -1){
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s\n%s"), *func, TEXT("must have \"myself\", helper class gen failed!"), *selfType)));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s\n%s"), *func, TEXT("must have \"myself\", helper class gen failed!"), *targetClassName)));
 		throw FString::Printf(TEXT("Helper function %s must have \"myself\" argument, helper class gen failed!"), *func);
 	}
 
@@ -808,9 +808,9 @@ void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunct
 	callStr = callStr.Replace(TEXT("myself"), TEXT("this"));
 
 	if(findVoid == -1) {
-		Builder.AppendLine("return " + preClass + "." + callStr + ";");
+		Builder.AppendLine("return " + helperClassName + "." + callStr + ";");
 	}else {
-		Builder.AppendLine(preClass + "." + callStr + ";");
+		Builder.AppendLine(helperClassName + "." + callStr + ";");
 	}
 
 	Builder.CloseBrace();
