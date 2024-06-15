@@ -47,6 +47,8 @@ public:
 	
 	static bool IsOutParameter(const FProperty* InParam);
 
+	static bool CanBeHashed(const FProperty* InParam);
+
 private:
 
 	template<typename ObjectProperty>

@@ -82,7 +82,7 @@ public static class WeaverHelper
         IntPtrZero = FindFieldInType(IntPtrType, "Zero");
         IntPtrEqualsOperator = FindMethod(IntPtrType, "op_Equality")!;
 
-        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpNamespace, UnrealSharpObject);
+        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpObject, UnrealSharpNamespace);
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = FindMethod(unrealSharpObjectType, "get_NativeObject")!;
@@ -104,17 +104,17 @@ public static class WeaverHelper
     
     public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
     {
-        TypeReference? typeRef = FindTypeInAssembly(assembly, typeNamespace, typeName);
+        TypeReference? typeRef = FindTypeInAssembly(assembly, typeName, typeNamespace);
         return UserAssembly.MainModule.ImportReference(typeRef.Resolve().MakeGenericInstanceType(typeParameters));
     }
 
-    public static TypeReference? FindTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, bool throwOnException = true)
+    public static TypeReference? FindTypeInAssembly(AssemblyDefinition assembly, string typeName, string typeNamespace = "", bool throwOnException = true)
     {
         foreach (var module in assembly.Modules)
         {
             foreach (var type in module.GetAllTypes())
             {
-                if (type.Namespace != typeNamespace || type.Name != typeName)
+                if ((typeNamespace.Length > 0 && type.Namespace != typeNamespace) || type.Name != typeName)
                 {
                     continue;
                 }
@@ -484,15 +484,20 @@ public static class WeaverHelper
                     GenericInstanceType GenericType = (GenericInstanceType)typeRef;
                     var GenericTypeName = GenericType.Name;
                     TypeReference innerType = GenericType.GenericArguments[0];
+                    
+                    if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
+                    {
+                        return new NativeDataArrayType(typeRef, arrayDim, innerType);
+                    }
+                    
+                    if (GenericTypeName.Contains("Map`2") || GenericTypeName.Contains("Dictionary`2"))
+                    {
+                        return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
+                    }
 
                     if (GenericTypeName.Contains("SubclassOf`1"))
                     {
                         return new NativeDataClassType(typeRef, innerType, arrayDim);
-                    }
-
-                    if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
-                    {
-                        return new NativeDataArrayType(typeRef, arrayDim, innerType);
                     }
 
                     if (GenericTypeName.Contains("WeakObject`1"))
@@ -508,11 +513,6 @@ public static class WeaverHelper
                     if (GenericTypeName.Contains("SoftClass`1"))
                     {
                         return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
-                    }
-                    
-                    if (GenericTypeName.Contains("Map`2"))
-                    {
-                        return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
                     }
                 }
 

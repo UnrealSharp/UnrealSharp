@@ -199,31 +199,33 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
 
     // Emits IL for a default constructible and possibly generic fixed array marshalling helper object.
     // If typeParams is null, a non-generic type is assumed.
-    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
+    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[]? typeParams)
     {
         AssemblyDefinition marshallerAssembly;
-        string marshallerNamespace;
+        TypeDefinition CSharpTypeDefinition = CSharpType.Resolve();
         
-        if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
+        if (CSharpTypeDefinition.Namespace == "System")
         {
             marshallerAssembly = WeaverHelper.BindingsAssembly;
-            marshallerNamespace = WeaverHelper.UnrealSharpNamespace;
+        }
+        else if (CSharpTypeDefinition.Module.Assembly != WeaverHelper.UserAssembly)
+        {
+            marshallerAssembly = CSharpTypeDefinition.Module.Assembly;
         }
         else
         {
             marshallerAssembly = CSharpType.Module.Assembly;
-            marshallerNamespace = CSharpType.Namespace;
         }
 
         TypeReference marshallerType;
         
-        if (typeParams != null && typeParams.Length > 0)
+        if (typeParams is { Length: > 0 })
         {
-            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName, typeParams);
+            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, string.Empty, marshallerTypeName, typeParams);
         }
         else
         {
-            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName);
+            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerTypeName);
         }
 
         MethodReference fromNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];

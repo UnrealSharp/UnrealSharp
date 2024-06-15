@@ -5,6 +5,7 @@
 #include "UObject/Class.h"
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedEnumBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaDataUtils.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSArrayPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
@@ -180,6 +181,14 @@ FProperty* FCSPropertyFactory::CreateMapProperty(UField* Outer, const FCSPropert
 	TSharedPtr<FCSMapPropertyMetaData> MapPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSMapPropertyMetaData>();
 	FMapProperty* MapProperty = CreateSimpleProperty<FMapProperty>(Outer, PropertyMetaData);
 	MapProperty->KeyProp = CreateProperty(Outer, MapPropertyMetaData->KeyType);
+
+	if (!CanBeHashed(MapProperty->KeyProp))
+	{
+		FText DialogText = FText::FromString(FString::Printf(TEXT("Data type cannot be used as a Key in %s.%s. Unsafe to use until fixed. Needs to be able to handle GetTypeHash."),
+			*Outer->GetName(), *PropertyMetaData.Name.ToString()));
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	}
+	
 	MapProperty->KeyProp->Owner = MapProperty;
 	MapProperty->ValueProp = CreateProperty(Outer, MapPropertyMetaData->ValueType);
 	MapProperty->ValueProp->Owner = MapProperty;
@@ -229,6 +238,11 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 	{
 		const FMakeNewPropertyDelegate MakeNewProperty = *DelegatePtr;
 		FProperty* NewProperty = MakeNewProperty(Outer, PropertyMetaData);
+
+		if (!NewProperty)
+		{
+			return nullptr;
+		}
 		
 		NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags);
 		NewProperty->SetBlueprintReplicationCondition(PropertyMetaData.LifetimeCondition);
@@ -313,3 +327,26 @@ bool FCSPropertyFactory::IsOutParameter(const FProperty* InParam)
 	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
 	return bIsParam && !bIsReturnParam && bIsOutParam;
 }
+
+bool FCSPropertyFactory::CanBeHashed(const FProperty* InParam)
+{
+	if(InParam->IsA<FBoolProperty>())
+	{
+		return false;
+	}
+
+	if (InParam->IsA<FTextProperty>())
+	{
+		return false;
+	}
+
+	if (const FStructProperty* StructProperty = CastField<FStructProperty>(InParam))
+	{
+		return FBlueprintEditorUtils::StructHasGetTypeHash(StructProperty->Struct);
+	}
+	
+	return true;
+}
+
+
+
