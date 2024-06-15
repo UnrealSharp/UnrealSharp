@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
@@ -73,11 +73,22 @@ public static class Program
             }
 
             string weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
-            
+
+            DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
+
+            foreach (var assemblyPath in WeaverOptions.AssemblyPaths)
+            {
+                if (Directory.Exists(assemblyPath))
+                {
+                    resolver.AddSearchDirectory(assemblyPath);
+                }
+            }
+
             var readerParams = new ReaderParameters
             {
                 ReadSymbols = true,
                 SymbolReaderProvider = new PdbReaderProvider(),
+                AssemblyResolver = resolver
             };
 
             AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
