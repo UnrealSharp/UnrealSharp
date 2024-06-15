@@ -4,7 +4,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-public static class MarshalingDelegates<T>
+public static class MarshallingDelegates<T>
 {
     public delegate void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj);
     public delegate T FromNative(IntPtr nativeBuffer, int arrayIndex);

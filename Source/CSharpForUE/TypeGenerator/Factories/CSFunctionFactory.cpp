@@ -2,21 +2,21 @@
 #include "CSPropertyFactory.h"
 #include "CSharpForUE/TypeGenerator/CSClass.h"
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
+#include "CSharpForUE/TypeGenerator/Register/CSMetaDataUtils.h"
 
-UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
+UCSFunction* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunction* NewFunction = NewObject<UCSFunction>(Outer, UCSFunction::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
 	NewFunction->SetManagedMethod(FCSGeneratedClassBuilder::TryGetManagedFunction(Outer, Name));
 	
-	FMetaDataHelper::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
+	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
 }
 
-FProperty* FCSFunctionFactory::CreateProperty(UCSFunction* Function, const FPropertyMetaData& PropertyMetaData)
+FProperty* FCSFunctionFactory::CreateProperty(UCSFunction* Function, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyMetaData);
 
@@ -28,7 +28,7 @@ FProperty* FCSFunctionFactory::CreateProperty(UCSFunction* Function, const FProp
 	return NewParam;
 }
 
-UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FFunctionMetaData& FunctionMetaData)
+UCSFunction* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
 {
 	UCSFunction* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
 
@@ -58,7 +58,7 @@ UCSFunction* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFuncti
 	#endif
 	
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure);
-	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FFunctionMetaData(), FunctionFlags, ParentFunction);
+	UCSFunction* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionMetaData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
@@ -104,7 +104,7 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunction* NewFu
 	Outer->AddFunctionToFunctionMap(NewFunction, NewFunction->GetFName());
 }
 
-void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedRef<FClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
+void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
 {
 	TMap<FName, UFunction*> NameToFunctionMap;
 	TMap<FName, UFunction*> InterfaceFunctionMap;
@@ -140,7 +140,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FClassMetaData>& ClassMetaData)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData)
 {
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
@@ -151,9 +151,9 @@ void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRe
 	}
 }
 
-void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FFunctionMetaData>& Functions)
+void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& Functions)
 {
-	for (const FFunctionMetaData& FunctionMetaData : Functions)
+	for (const FCSFunctionMetaData& FunctionMetaData : Functions)
 	{
 		CreateFunctionFromMetaData(Outer, FunctionMetaData);
 	}

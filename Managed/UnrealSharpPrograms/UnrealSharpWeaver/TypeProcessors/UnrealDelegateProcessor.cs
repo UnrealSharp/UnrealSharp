@@ -36,7 +36,7 @@ public static class UnrealDelegateProcessor
     public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
-            WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "DelegateData");
+            WeaverHelper.BindingsAssembly, "DelegateData", WeaverHelper.UnrealSharpNamespace);
         
         TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
                 WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);

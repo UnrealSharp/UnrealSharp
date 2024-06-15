@@ -16,7 +16,7 @@ bool FArrayPropertyTranslator::CanHandleProperty(const FProperty* Property) cons
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	return Handler.IsSupportedAsArrayInner();
+	return Handler.IsSupportedAsInner();
 }
 
 void FArrayPropertyTranslator::AddReferences(const FProperty* Property, TSet<UField*>& References) const
@@ -117,12 +117,7 @@ void FArrayPropertyTranslator::ExportMarshalToNativeBuffer(FCSScriptBuilder& Bui
 
 void FArrayPropertyTranslator::ExportCleanupMarshallingBuffer(FCSScriptBuilder& Builder, const FProperty* ParamProperty, const FString& ParamName) const
 {
-	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(ParamProperty);
-	const FProperty* InnerProperty = ArrayProperty.Inner;
-	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-
 	const FString Marshaller = ParamProperty->GetOwnerChecked<UFunction>()->GetName() + "_" + ParamName + "_Marshaller";
-
 	Builder.AppendLine(FString::Printf(TEXT("%s.DestructInstance(%s_NativeBuffer, 0);"), *Marshaller, *ParamName));
 }
 
@@ -165,7 +160,7 @@ FString FArrayPropertyTranslator::GetWrapperInterface(const FProperty* Property)
 	const FArrayProperty& ArrayProperty = *CastFieldChecked<FArrayProperty>(Property);
 	const FProperty* InnerProperty = ArrayProperty.Inner;
 	const FPropertyTranslator& Handler = PropertyHandlers.Find(InnerProperty);
-	check(Handler.IsSupportedAsArrayInner());
+	check(Handler.IsSupportedAsInner());
 
 	FString InnerCSharpType = Handler.GetManagedType(InnerProperty);
 

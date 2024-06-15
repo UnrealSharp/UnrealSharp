@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "CSMetaData.h"
+#include "CSMetaDataUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
@@ -42,7 +42,7 @@ public:
 		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_MarkAsRootSet | RF_Transactional);
 		
 		ApplyBlueprintAccess(Field);
-		FMetaDataHelper::ApplyMetaData(TypeMetaData->MetaData, Field);
+		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 
 		if (ReplacedType)
 		{

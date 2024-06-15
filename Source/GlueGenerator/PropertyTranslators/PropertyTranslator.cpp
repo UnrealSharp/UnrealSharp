@@ -921,6 +921,16 @@ void FPropertyTranslator::ExportDelegateFunction(FCSScriptBuilder& Builder, UFun
 	Builder.CloseBrace();
 }
 
+void FPropertyTranslator::MakeNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName) const
+{
+	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s_NativeProperty;"), *PropertyName));
+}
+
+void FPropertyTranslator::MakeGetNativePropertyFromName(FCSScriptBuilder& Builder, const FString& PropertyName) const
+{
+	Builder.AppendLine(FString::Printf(TEXT("%s_NativeProperty = %s.CallGetNativePropertyFromName(NativeClassPtr, \"%s\");"), *PropertyName, FPropertyCallbacks,  *PropertyName));
+}
+
 void FPropertyTranslator::AddNativePropertyField(FCSScriptBuilder& Builder, const FString& PropertyName)
 {
 	Builder.AppendLine(FString::Printf(TEXT("static IntPtr %s;"), *GetNativePropertyField(PropertyName)));

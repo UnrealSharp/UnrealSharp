@@ -1,5 +1,5 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
-#include "CSMetaData.h"
+#include "CSMetaDataUtils.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 
 void FCSGeneratedInterfaceBuilder::StartBuildingType()

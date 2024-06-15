@@ -2,14 +2,14 @@
 
 #include "CSGeneratedTypeBuilder.h"
 #include "CSharpForUE/TypeGenerator/CSClass.h"
-#include "CSMetaData.h"
+#include "MetaData/CSClassMetaData.h"
 
-class CSHARPFORUE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FClassMetaData, UCSClass>
+class CSHARPFORUE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>
 {
 	
 public:
 
-	FCSGeneratedClassBuilder(const TSharedPtr<FClassMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) {}
+	FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) {}
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
