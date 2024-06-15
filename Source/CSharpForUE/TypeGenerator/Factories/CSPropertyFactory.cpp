@@ -5,7 +5,6 @@
 #include "UObject/Class.h"
 #include "CSharpForUE/TypeGenerator/Register/CSGeneratedEnumBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaDataUtils.h"
-#include "Kismet2/BlueprintEditorUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSArrayPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
@@ -13,6 +12,10 @@
 #include "TypeGenerator/Register/MetaData/CSMapPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSStructPropertyMetaData.h"
+
+#if WITH_EDITOR
+#include "Kismet2/BlueprintEditorUtils.h"
+#endif
 
 static TMap<ECSPropertyType, FMakeNewPropertyDelegate> MakeNewPropertyFunctionMap;
 
@@ -330,6 +333,7 @@ bool FCSPropertyFactory::IsOutParameter(const FProperty* InParam)
 
 bool FCSPropertyFactory::CanBeHashed(const FProperty* InParam)
 {
+#if WITH_EDITOR
 	if(InParam->IsA<FBoolProperty>())
 	{
 		return false;
@@ -339,12 +343,12 @@ bool FCSPropertyFactory::CanBeHashed(const FProperty* InParam)
 	{
 		return false;
 	}
-
+	
 	if (const FStructProperty* StructProperty = CastField<FStructProperty>(InParam))
 	{
 		return FBlueprintEditorUtils::StructHasGetTypeHash(StructProperty->Struct);
 	}
-	
+#endif
 	return true;
 }
 
