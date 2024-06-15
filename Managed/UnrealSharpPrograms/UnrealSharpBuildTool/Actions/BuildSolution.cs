@@ -29,7 +29,7 @@ public class BuildSolution() : BuildToolAction
             buildSolutionProcess.StartInfo.ArgumentList.Add("build");
         }
         
-        buildSolutionProcess.StartInfo.ArgumentList.Add($"\"{slnPath}\"");
+        buildSolutionProcess.StartInfo.ArgumentList.Add($"{slnPath}");
         
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
         buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(buildConfig));
