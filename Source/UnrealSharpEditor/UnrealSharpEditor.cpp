@@ -53,7 +53,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-	if (!bAutoReloading) return;
+	if (!bEnableAutoCompiling) return;
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
@@ -123,32 +123,9 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FCSReinstancer::Get().StartReinstancing();
 }
 
-void FUnrealSharpEditorModule::OnAutoGenClicked() {
-	bAutoReloading = !bAutoReloading;
-	AutoCompileEntry.Icon.Set(FSlateIcon(FAppStyle::GetAppStyleSetName(), bAutoReloading ? "Symbols.Check" : "Symbols.X"));
-	
-	if (bAutoReloading) {
-		FNotificationInfo Info(LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Enable!"));
-		Info.ExpireDuration = 3.0f;
-		FSlateNotificationManager::Get().AddNotification(Info);
-	}
-	else {
-		FNotificationInfo Info(LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Disable!"));
-		Info.ExpireDuration = 3.0f;
-		FSlateNotificationManager::Get().AddNotification(Info);
-	}
-
-	if(GEngine) {
-		if (bAutoReloading)
-			GEngine->AddOnScreenDebugMessage(0, 1.0f, FColor::Green, "Now c# Auto Reload is Enable!");
-		else
-			GEngine->AddOnScreenDebugMessage(0, 1.0f, FColor::Green, "Now c# Auto Reload is Disable!");
-	}
-}
-
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
-	if (!bAutoReloading) return true;
+	if (!bEnableAutoCompiling) return true;
 
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
@@ -186,14 +163,18 @@ void FUnrealSharpEditorModule::RegisterMenus()
 
 			FToolMenuSection& EnableAutoCompileSection = ToolbarMenu->FindOrAddSection("EnableOrDisableAutoCompile");
 			{
-				AutoCompileEntry = EnableAutoCompileSection.AddEntry(FToolMenuEntry::InitToolBarButton(
-					"Auto Reloading c#",
+				EnableAutoCompileSection.AddEntry(FToolMenuEntry::InitToolBarButton(
+					"Toggle Auto Compiling c# Mode",
 					FExecuteAction::CreateLambda([this]()
 						{
-							this->OnAutoGenClicked();
+							this->bEnableAutoCompiling = !bEnableAutoCompiling;
+
+							FNotificationInfo Info(bEnableAutoCompiling ? LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Enable!") : LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Disable!"));
+							Info.ExpireDuration = 3.0f;
+							FSlateNotificationManager::Get().AddNotification(Info);
 						}),
-					INVTEXT("Auto Reloading c#"),
-					INVTEXT("Auto Reloading c#"),
+					INVTEXT("Toggle Auto Compiling c# Mode"),
+					INVTEXT("Toggle Auto Compiling c# Mode"),
 					FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.SelectInViewport")
 				));
 			}

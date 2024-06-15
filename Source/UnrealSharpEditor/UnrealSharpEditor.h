@@ -18,8 +18,6 @@ public:
 
     bool IsReloading() const { return bIsReloading; }
 
-    void OnAutoGenClicked();
-
 private:
     
     bool Tick(float DeltaTime);
@@ -30,6 +28,5 @@ private:
 
     void RegisterMenus();
 
-    bool bAutoReloading = false;
-    FToolMenuEntry AutoCompileEntry;
+    bool bEnableAutoCompiling = true;
 };

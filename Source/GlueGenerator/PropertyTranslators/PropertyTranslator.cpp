@@ -534,11 +534,16 @@ void FPropertyTranslator::FunctionExporter::ExportFunction(FCSScriptBuilder& Bui
 	Builder.AppendLine();
 }
 
-FString FPropertyTranslator::FunctionExporter::GetHelperFunctionSignatureOrCallee(bool isSig) const {
-    if(isSig) {
-	    return GetSignature(Modifiers);
-    } 
-	return FString::Printf(TEXT("%s(%s)"), *CSharpMethodName, *ParamsStringCall);
+FString FPropertyTranslator::FunctionExporter::GetHelperFunctionSignatureOrCallee(bool IsSignature) const
+{
+	if (IsSignature)
+	{
+		return GetSignature(Modifiers);
+	}
+	else
+	{
+		return FString::Printf(TEXT("%s(%s)"), *CSharpMethodName, *ParamsStringCall);
+	}
 }
 
 void FPropertyTranslator::FunctionExporter::ExportSignature(FCSScriptBuilder& Builder, const FString& Protection) const
@@ -747,7 +752,7 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	}
 }
 
-void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType, FString helperClassName, FString targetClassName) const
+void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType, FString HelperClassName, FString TargetClassName) const
 {
 	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
 	ProtectionMode ProtectionBehavior = ProtectionMode::UseUFunctionProtection;
@@ -769,53 +774,63 @@ void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunct
 		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
 	}
 
-	if (bIsEditorOnly){
+	if (bIsEditorOnly)
+	{
 		Builder.BeginWithEditorOnlyBlock();
 	}
 
 	FunctionExporter Exporter(*this, *Function, ProtectionBehavior, OverloadBehavior, CallBehavior);
-	FString func = Exporter.GetHelperFunctionSignatureOrCallee(true);
-	int selfStart = func.Find("(");
+	FString HelperFunctionSignatureOrCallee = Exporter.GetHelperFunctionSignatureOrCallee(true);
 
-	auto text1 = FString::Printf(TEXT("%s myself,"), *targetClassName);
-	auto text2 = FString::Printf(TEXT("%s myself"), *targetClassName);
-	int end1 = func.Find(text1);
-	int end2 = func.Find(text2);
+	int ArgumentStartBrace = HelperFunctionSignatureOrCallee.Find("(");
 
+	auto PossiableMySelfArgument1 = FString::Printf(TEXT("%s myself,"), *TargetClassName);
+	auto PossiableMySelfArgument2 = FString::Printf(TEXT("%s myself"), *TargetClassName);
 
-	if(selfStart == -1){
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s"), *func, TEXT("must have \"(\", helper class gen failed!"))));
-		throw FString::Printf(TEXT("Helper function %s must have \"(\", helper class gen failed!"), *func);
+	int EndPossiableMySelfArgument1 = HelperFunctionSignatureOrCallee.Find(PossiableMySelfArgument1);
+	int EndPossiableMySelfArgument2 = HelperFunctionSignatureOrCallee.Find(PossiableMySelfArgument2);
+
+	if(ArgumentStartBrace == -1)
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s"), *HelperFunctionSignatureOrCallee, TEXT("must have \"(\", helper class gen failed!"))));
+		throw FString::Printf(TEXT("Helper function %s must have \"(\", helper class gen failed!"), *HelperFunctionSignatureOrCallee);
 	}
 
-	if(end1 == -1 && end2 == -1){
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s\n%s"), *func, TEXT("must have \"myself\", helper class gen failed!"), *targetClassName)));
-		throw FString::Printf(TEXT("Helper function %s must have \"myself\" argument, helper class gen failed!"), *func);
+	if(EndPossiableMySelfArgument1 == -1 && EndPossiableMySelfArgument2 == -1)
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s\n%s"), *HelperFunctionSignatureOrCallee, TEXT("must have \"myself\", helper class gen failed!"), *TargetClassName)));
+		throw FString::Printf(TEXT("Helper function %s must have \"myself\" argument, helper class gen failed!"), *HelperFunctionSignatureOrCallee);
 	}
 
-	int selfEnd = end1 == -1 ? end2 : end1;
-	int len = end1 == -1 ? text2.Len() : text1.Len();
+	int EndMySelfArgument = EndPossiableMySelfArgument1 == -1 ? EndPossiableMySelfArgument2 : EndPossiableMySelfArgument1;
+	int LenEndMySelfArgument = EndPossiableMySelfArgument1 == -1 ? PossiableMySelfArgument2.Len() : PossiableMySelfArgument1.Len();
 
-	//remove from selfStart to selfEnd
+	FString BridgeFunctionnameInTargetClass = HelperFunctionSignatureOrCallee;
+	BridgeFunctionnameInTargetClass.RemoveAt(ArgumentStartBrace + 1, EndMySelfArgument - ArgumentStartBrace + LenEndMySelfArgument - 1);
+	BridgeFunctionnameInTargetClass = BridgeFunctionnameInTargetClass.Replace(TEXT(" static "), TEXT(" "));
 
-	FString newSig = func;
-	newSig.RemoveAt(selfStart + 1, selfEnd - selfStart + len - 1);
-	newSig = newSig.Replace(TEXT(" static "), TEXT(" "));
-	Builder.AppendLine(newSig);
+	Builder.AppendLine(BridgeFunctionnameInTargetClass);
 	Builder.OpenBrace();
-	int findVoid = func.Find("void ");
-	FString callStr = Exporter.GetHelperFunctionSignatureOrCallee(false);
-	callStr = callStr.Replace(TEXT("myself"), TEXT("this"));
 
-	if(findVoid == -1) {
-		Builder.AppendLine("return " + helperClassName + "." + callStr + ";");
-	}else {
-		Builder.AppendLine(helperClassName + "." + callStr + ";");
+	//Is return value void ?
+
+	int VoidPosition = HelperFunctionSignatureOrCallee.Find("void ");
+	FString StrCallHelperFunction = Exporter.GetHelperFunctionSignatureOrCallee(false);
+	StrCallHelperFunction = StrCallHelperFunction.Replace(TEXT("myself"), TEXT("this"));
+
+	if(VoidPosition == -1) 
+	{
+		Builder.AppendLine("return " + HelperClassName + "." + StrCallHelperFunction + ";");
+	}
+	else 
+	{
+		Builder.AppendLine(HelperClassName + "." + StrCallHelperFunction + ";");
 	}
 
 	Builder.CloseBrace();
 
-	if (bIsEditorOnly) {
+	if (bIsEditorOnly) 
+	{
 		Builder.EndPreprocessorBlock();
 	}
 }

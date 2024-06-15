@@ -270,14 +270,20 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 	int64 MaxValue = Enum->GetMaxEnumValue();
 	
 	FString TypeDerived;
-	if (MaxValue <= UINT8_MAX + 1) {
+	if (MaxValue <= UINT8_MAX + 1) 
+	{
 		TypeDerived = TEXT("byte");
-	} if(MaxValue <= (size_t)INT32_MAX + 1) {
+	}
+	else if(MaxValue <= (size_t)INT32_MAX + 1)
+	{
 		TypeDerived = TEXT("int");
-	} if (MaxValue <= (size_t)UINT32_MAX + 1) {
+	}
+	else if (MaxValue <= (size_t)UINT32_MAX + 1)
+	{
 		TypeDerived = TEXT("uint");
-	} else {
-		//64 bit
+	}
+	else 
+	{
 		TypeDerived = TEXT("long");
 	}
 
@@ -780,7 +786,8 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	Builder.AppendLine(FString::Printf(TEXT("[UClass(%s)]"), *Abstract));
 
 	FString HelperClassPath = "";
-	if(Class->FindMetaData("CSHelper")) {
+	if(Class->FindMetaData("CSHelper")) 
+	{
 		IsHelperClass = true;
 		HelperClassPath = Class->GetMetaData("CSHelper");
 	}
@@ -812,15 +819,16 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 	Builder.CloseBrace();
 	Builder.CloseBrace();
 
-	if(!ExportedFunctions.IsEmpty() && IsHelperClass) {
-
+	if(!ExportedFunctions.IsEmpty() && IsHelperClass) 
+	{
 		int ClassNamePointPos = HelperClassPath.Find(TEXT("."), ESearchCase::IgnoreCase, ESearchDir::FromEnd);
 
-		if(ClassNamePointPos == INDEX_NONE) {
+		if(ClassNamePointPos == INDEX_NONE) 
+		{
 			// a global class ??? what
-			FString err = FString::Printf(TEXT("Helper Class's meta path is invalid: %s\nClass: %s"), *HelperClassPath, *ScriptClassName);
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(err));
-			throw err;
+			FString ErrMessage = FString::Printf(TEXT("Helper Class's meta path is invalid: %s\nClass: %s"), *HelperClassPath, *ScriptClassName);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrMessage));
+			throw ErrMessage;
 		}
 
 		FString HelperClassNameSpace = "UnrealSharp." + HelperClassPath.Left(ClassNamePointPos);
@@ -846,13 +854,9 @@ void FCSGenerator::ExportClass(UClass* Class, FCSScriptBuilder& Builder)
 				if (GetExtensionMethodInfo(Method, *Function))
 				{
 					FuncType = FPropertyTranslator::FunctionType::ExtensionOnAnotherClass;
-					/*
-					const FCSModule& BindingsModule2 = FindOrRegisterModule(Class);
-					TArray<ExtensionMethod>& ModuleExtensionMethods = ExtensionMethods.FindOrAdd(BindingsModule2.GetModuleName());
-					ModuleExtensionMethods.Add(Method);*/
 				}
 			}
-			//FString temp = extensionClassName.Replace(TEXT("_"), TEXT("."));
+
 			PropertyTranslatorManager->Find(Function).ExportHelperFunction(Builder, Function, FuncType, *ScriptClassName, *HelperClassName);
 		}
 

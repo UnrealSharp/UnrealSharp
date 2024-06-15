@@ -18,7 +18,7 @@ const FName MD_DefaultToSelf(TEXT("DefaultToSelf"));
 const FName MD_Latent(TEXT("Latent"));
 const FName NAME_ToolTip(TEXT("ToolTip"));
 
-void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace, bool brace)
+void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace, bool UseBrace)
 {
 	DeclareDirective(UNREAL_SHARP_ENGINE_NAMESPACE);
 	DeclareDirective(UNREAL_SHARP_ATTRIBUTES_NAMESPACE);
@@ -27,13 +27,17 @@ void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace, bool bra
 	DeclareDirective(TEXT("System.Runtime.InteropServices"));
 
 	AppendLine();
-	if(brace){
+
+	if(UseBrace) 
+	{
 		AppendLine(FString::Printf(TEXT("namespace %s"), *Namespace));
 		OpenBrace();
-
-	}else{
+	}
+	else
+	{
 		AppendLine(FString::Printf(TEXT("namespace %s;"), *Namespace));
 	}
+
 	AppendLine();
 }
 
