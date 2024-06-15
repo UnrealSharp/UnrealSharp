@@ -24,7 +24,7 @@ void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform* SpawnT
 	SpawnParameters.bDeferConstruction = ManagedSpawnedParameters->DeferConstruction;
 	SpawnParameters.SpawnCollisionHandlingOverride = ManagedSpawnedParameters->SpawnMethod;
 	
-	AActor* NewActor = Outer->GetWorld()->SpawnActor(Class, SpawnTransform, SpawnParameters);
+	AActor* NewActor = Outer->GetWorld()->SpawnActor(Class, nullptr, SpawnParameters);
 
 	if (!IsValid(NewActor))
 	{
