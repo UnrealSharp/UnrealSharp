@@ -24,25 +24,15 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
 		DummyBlueprint = NewObject<UCSBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
 	}
-	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
 	DummyBlueprint->Status = BS_UpToDate;
 	DummyBlueprint->bHasBeenRegenerated = true;
 	DummyBlueprint->ParentClass = SuperClass;
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
-
-	Field->ClassFlags = TypeMetaData->ClassFlags;
 	
-	if (SuperClass->HasAnyClassFlags(CLASS_Config))
-	{
-		Field->ClassFlags |= CLASS_Config;
-	}
-
-	if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
-	{
-		Field->ClassFlags |= CLASS_HasInstancedReference;
-	}
+	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
+	Field->ClassCastFlags |= SuperClass->ClassCastFlags;
 
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
@@ -95,7 +85,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->GetDefaultObject();
 	
 	Field->SetUpRuntimeReplicationData();
-
 	Field->UpdateCustomPropertyListForPostConstruction();
 		
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
@@ -104,11 +93,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 {
 #if WITH_EDITOR
-	// We reuse the old Blueprint for the new class, so we need to remove the old class from the old Blueprint.
-	UBlueprint* OldBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
-	OldBlueprint->SkeletonGeneratedClass = nullptr;
-	OldBlueprint->GeneratedClass = nullptr;
-	OldBlueprint->ParentClass = nullptr;
+	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
+	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
+	DummyBlueprint->SkeletonGeneratedClass = nullptr;
+	DummyBlueprint->GeneratedClass = nullptr;
+	DummyBlueprint->ParentClass = nullptr;
 
 	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
 	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166

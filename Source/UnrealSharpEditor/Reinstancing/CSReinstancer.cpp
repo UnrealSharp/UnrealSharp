@@ -80,6 +80,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 void FCSReinstancer::StartReinstancing()
 {
 	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
+	Reload->SetSendReloadCompleteNotification(false);
 
 	auto NotifyChanges = [&Reload](const auto& Container)
 	{
@@ -128,9 +129,9 @@ void FCSReinstancer::StartReinstancing()
 	InterfacesToReinstance.Empty();
 	StructsToReinstance.Empty();
 	ClassesToReinstance.Empty();
-
+	
+	FCoreUObjectDelegates::ReloadCompleteDelegate.Broadcast(EReloadCompleteReason::None);
 	Reload->Finalize(true);
-	EndReload();
 }
 
 void FCSReinstancer::PostReinstance()
