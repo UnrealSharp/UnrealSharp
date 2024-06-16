@@ -32,7 +32,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 #endif
 	
 	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
-	Field->ClassCastFlags |= SuperClass->ClassCastFlags;
 
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
