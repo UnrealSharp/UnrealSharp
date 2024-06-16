@@ -3,7 +3,7 @@ namespace UnrealSharp;
 public class ArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
 {
     [CLSCompliant(false)]
-    public ArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -16,9 +16,9 @@ internal class ArrayReadOnlyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
     private readonly ArrayReadOnly<T>[] _wrappers;
-    private readonly MarshalingDelegates<T>.FromNative _innerTypeFromNative;
+    private readonly MarshallingDelegates<T>.FromNative _innerTypeFromNative;
 
-    public ArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public ArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _nativeProperty = nativeProperty;
         _wrappers = new ArrayReadOnly<T>[length];

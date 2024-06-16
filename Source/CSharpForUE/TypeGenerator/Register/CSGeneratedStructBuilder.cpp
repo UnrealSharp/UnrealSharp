@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-#include "CSMetaData.h"
+#include "CSMetaDataUtils.h"
+#include "CSTypeRegistry.h"
 #include "CSharpForUE/TypeGenerator/CSScriptStruct.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
 

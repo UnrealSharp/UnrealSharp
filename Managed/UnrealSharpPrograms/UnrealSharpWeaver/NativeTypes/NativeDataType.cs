@@ -26,6 +26,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataSoftObjectType))]
 [JsonDerivedType(typeof(NativeDataSoftClassType))]
 [JsonDerivedType(typeof(NativeDataDelegateType))]
+[JsonDerivedType(typeof(NativeDataMapType))]
 public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
 {
     internal TypeReference CSharpType { get; set; } = WeaverHelper.ImportType(typeRef);
@@ -35,6 +36,7 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
     public PropertyType PropertyType { get; set; } = propertyType;
     public virtual bool IsBlittable { get { return false; } }
     public virtual bool IsPlainOldData { get { return false; } }
+    public bool IsNetworkSupported = true;
     
     // Non-json properties
     // Generic instance type for fixed-size array wrapper. Populated only when ArrayDim > 1.
@@ -177,11 +179,11 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
             FixedSizeArrayWrapperField = WeaverHelper.AddFieldToType(typeDefinition, propertyDef.Name + "_Marshaller", FixedSizeArrayWrapperType);
         }
         
-        var marshalingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshalingDelegates`1", new[] { CSharpType });
-        TypeDefinition marshalingDelegatesDef = marshalingDelegates.Resolve();
+        var marshallingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshallingDelegates`1", [CSharpType]);
+        TypeDefinition marshallingDelegatesDef = marshallingDelegates.Resolve();
         
-        ToNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "ToNative");
-        FromNativeDelegateType = WeaverHelper.FindNestedType(marshalingDelegatesDef, "FromNative");
+        ToNativeDelegateType = WeaverHelper.FindNestedType(marshallingDelegatesDef, "ToNative");
+        FromNativeDelegateType = WeaverHelper.FindNestedType(marshallingDelegatesDef, "FromNative");
     }
 
     protected void EmitDelegate(ILProcessor processor, TypeReference delegateType, MethodReference method)
@@ -195,33 +197,35 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         processor.Emit(OpCodes.Newobj, ctor);
     }
 
-    // Emits IL for a default constructible and possibly generic fixed array marshaling helper object.
+    // Emits IL for a default constructible and possibly generic fixed array marshalling helper object.
     // If typeParams is null, a non-generic type is assumed.
-    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[] typeParams)
+    protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[]? typeParams)
     {
         AssemblyDefinition marshallerAssembly;
-        string marshallerNamespace;
+        TypeDefinition CSharpTypeDefinition = CSharpType.Resolve();
         
-        if (CSharpType.Namespace == "System" || marshallerTypeName == "BlittableMarshaller`1" || marshallerTypeName == "ObjectMarshaller`1")
+        if (CSharpTypeDefinition.Namespace == "System")
         {
             marshallerAssembly = WeaverHelper.BindingsAssembly;
-            marshallerNamespace = WeaverHelper.UnrealSharpNamespace;
+        }
+        else if (CSharpTypeDefinition.Module.Assembly != WeaverHelper.UserAssembly)
+        {
+            marshallerAssembly = CSharpTypeDefinition.Module.Assembly;
         }
         else
         {
             marshallerAssembly = CSharpType.Module.Assembly;
-            marshallerNamespace = CSharpType.Namespace;
         }
 
         TypeReference marshallerType;
         
-        if (typeParams != null && typeParams.Length > 0)
+        if (typeParams is { Length: > 0 })
         {
-            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName, typeParams);
+            marshallerType = WeaverHelper.FindGenericTypeInAssembly(marshallerAssembly, string.Empty, marshallerTypeName, typeParams);
         }
         else
         {
-            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerNamespace, marshallerTypeName);
+            marshallerType = WeaverHelper.FindTypeInAssembly(marshallerAssembly, marshallerTypeName);
         }
 
         MethodReference fromNative = (from method in marshallerType.Resolve().GetMethods() where method.IsStatic && method.Name == "FromNative" select method).ToArray()[0];
@@ -275,8 +279,8 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
                        && method.Parameters[1].ParameterType.FullName == "System.Int32"
                        && method.Parameters[2].ParameterType.FullName == "System.Int32"
                        && method.Parameters[3].ParameterType.IsGenericInstance
-                       && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/ToNative"
-                       && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshalingDelegates`1/FromNative")
+                       && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/ToNative"
+                       && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/FromNative")
                 select method).ToArray();
             ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
             processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionProcessor.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));

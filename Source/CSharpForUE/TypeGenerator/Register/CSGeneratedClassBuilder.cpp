@@ -8,6 +8,7 @@
 #include "CSharpForUE/TypeGenerator/CSClass.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
+#include "MetaData/CSDefaultComponentMetaData.h"
 
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
@@ -55,7 +56,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	ImplementInterfaces(Field, TypeMetaData->Interfaces);
 	
 	//This will only generate functions flagged with BlueprintCallable, BlueprintEvent or virtual functions
-	const TSharedRef<FClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
+	const TSharedRef<FCSClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassMetaDataRef);
 	FCSFunctionFactory::GenerateFunctions(Field, ClassMetaDataRef->Functions);
 	
@@ -188,17 +189,17 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass, ManagedClass->GetClassInfo());
 	}
 	
-	TMap<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponents;
-	TArray<FPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
+	TMap<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponents;
+	TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 	
-	for (const FPropertyMetaData& PropertyMetaData : Properties)
+	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
 	{
 		if (PropertyMetaData.Type->PropertyType != ECSPropertyType::DefaultComponent)
 		{
 			continue;
 		}
 
-		TSharedPtr<FDefaultComponentMetaData> DefaultComponent = StaticCastSharedPtr<FDefaultComponentMetaData>(PropertyMetaData.Type);
+		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponent = StaticCastSharedPtr<FCSDefaultComponentMetaData>(PropertyMetaData.Type);
 		FObjectProperty* ObjectProperty = CastField<FObjectProperty>(ActorClass->FindPropertyByName(PropertyMetaData.Name));
 		
 		UObject* NewSubObject = ObjectInitializer.CreateDefaultSubobject(Actor, ObjectProperty->GetFName(), ObjectProperty->PropertyClass, ObjectProperty->PropertyClass, true, false);
@@ -206,10 +207,10 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		DefaultComponents.Add(ObjectProperty, DefaultComponent);
 	}
 
-	for (const TTuple<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponent : DefaultComponents)
+	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponent : DefaultComponents)
 	{
 		FObjectProperty* Property = DefaultComponent.Key;
-		TSharedPtr<FDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
+		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
 		
 		USceneComponent* SceneComponent = Cast<USceneComponent>(Property->GetObjectPropertyValue_InContainer(Actor));
 		

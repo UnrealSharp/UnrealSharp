@@ -3,7 +3,7 @@
 #include "GlueGenerator/CSPropertyTranslatorManager.h"
 
 FStringPropertyTranslator::FStringPropertyTranslator(FCSPropertyTranslatorManager& InPropertyHandlers)
-: FPropertyTranslator(InPropertyHandlers, static_cast<EPropertyUsage>(EPU_Property | EPU_StructProperty | EPU_Parameter | EPU_ReturnValue | EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue | EPU_StaticArrayProperty | EPU_ArrayInner))
+: FPropertyTranslator(InPropertyHandlers, static_cast<EPropertyUsage>(EPU_Property | EPU_StructProperty | EPU_Parameter | EPU_ReturnValue | EPU_OverridableFunctionParameter | EPU_OverridableFunctionReturnValue | EPU_StaticArrayProperty | EPU_Inner))
 {
 
 }

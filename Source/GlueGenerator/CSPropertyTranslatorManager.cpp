@@ -18,6 +18,7 @@
 #include "PropertyTranslators/EnumPropertyTranslator.h"
 #include "PropertyTranslators/FloatPropertyTranslator.h"
 #include "PropertyTranslators/InterfacePropertyTranslator.h"
+#include "PropertyTranslators/MapPropertyTranslator.h"
 #include "PropertyTranslators/MulticastDelegatePropertyTranslator.h"
 #include "PropertyTranslators/NamePropertyTranslator.h"
 #include "PropertyTranslators/NullPropertyTranslator.h"
@@ -65,6 +66,8 @@ FCSPropertyTranslatorManager::FCSPropertyTranslatorManager(const FCSNameMapper& 
 	AddPropertyTranslator(FSoftClassProperty::StaticClass(), new FSoftClassPropertyTranslator(*this));
 
 	AddPropertyTranslator(FArrayProperty::StaticClass(), new FArrayPropertyTranslator(*this));
+
+	AddPropertyTranslator(FMapProperty::StaticClass(), new FMapPropertyTranslator(*this));
 	
 	AddBlittableCustomStructPropertyTranslator("Vector2f", "System.Numerics.Vector2", DenyList);
 	AddBlittableCustomStructPropertyTranslator("Vector3f", "System.Numerics.Vector3", DenyList);

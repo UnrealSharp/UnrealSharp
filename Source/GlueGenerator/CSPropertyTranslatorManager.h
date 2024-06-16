@@ -14,7 +14,7 @@ enum EPropertyUsage : uint8
 	EPU_Property = 0x01,
 	EPU_Parameter = 0x02,
 	EPU_ReturnValue = 0x04,
-	EPU_ArrayInner = 0x08,
+	EPU_Inner = 0x08,
 	EPU_StructProperty = 0x10,
 	EPU_OverridableFunctionParameter = 0x20,
 	EPU_OverridableFunctionReturnValue = 0x40,

@@ -6,7 +6,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSMetaData.h"
+#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
@@ -390,7 +390,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 	return TypeHandle;
 }
 
-uint8* FCSManager::GetTypeHandle(const FTypeReferenceMetaData& TypeMetaData)
+uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData)
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }

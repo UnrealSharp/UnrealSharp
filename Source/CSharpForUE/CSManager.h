@@ -5,12 +5,12 @@
 #include "CSAssembly.h"
 #include "CSManagedCallbacksCache.h"
 
+struct FCSTypeReferenceMetaData;
 class FUSScriptEngine;
 class FUSTypeFactory;
 class UObject;
 class FUSManagedObject;
 
-struct FTypeReferenceMetaData;
 struct FGCHandle;
 struct FCSAssembly;
 
@@ -41,7 +41,7 @@ public:
 	void RemoveManagedObject(UObject* Object);
 
 	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName);
-	uint8* GetTypeHandle(const FTypeReferenceMetaData& TypeMetaData);
+	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData);
 
 	bool LoadUserAssembly();
 
