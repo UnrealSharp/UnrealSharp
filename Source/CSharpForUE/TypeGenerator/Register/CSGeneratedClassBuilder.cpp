@@ -1,6 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
-#include "CSVTableHacks.h"
+#include "CSTypeRegistry.h"
 #include "CSharpForUE/CSharpForUE.h"
 #include "CSharpForUE/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
@@ -17,26 +17,22 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
 
 #if WITH_EDITOR
-	// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-	UBlueprint* DummyBlueprint = NewObject<UCSBlueprint>(Field, Field->GetFName(), RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
-	DummyBlueprint->SkeletonGeneratedClass = Field;
+	FString BlueprintName = TypeMetaData->Name.ToString();
+	UBlueprint* DummyBlueprint = FindObject<UBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName);
+	if (!IsValid(DummyBlueprint))
+	{
+		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
+		DummyBlueprint = NewObject<UCSBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
+	}
 	DummyBlueprint->GeneratedClass = Field;
+	DummyBlueprint->Status = BS_UpToDate;
+	DummyBlueprint->bHasBeenRegenerated = true;
 	DummyBlueprint->ParentClass = SuperClass;
-	DummyBlueprint->BlueprintDisplayName = Field->GetName();
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
-
-	Field->ClassFlags = TypeMetaData->ClassFlags;
 	
-	if (SuperClass->HasAnyClassFlags(CLASS_Config))
-	{
-		Field->ClassFlags |= CLASS_Config;
-	}
-
-	if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
-	{
-		Field->ClassFlags |= CLASS_HasInstancedReference;
-	}
+	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
+	Field->ClassCastFlags |= SuperClass->ClassCastFlags;
 
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
@@ -89,7 +85,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->GetDefaultObject();
 	
 	Field->SetUpRuntimeReplicationData();
-
 	Field->UpdateCustomPropertyListForPostConstruction();
 		
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
@@ -97,10 +92,16 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 {
+#if WITH_EDITOR
+	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
+	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
+	DummyBlueprint->SkeletonGeneratedClass = nullptr;
+	DummyBlueprint->GeneratedClass = nullptr;
+	DummyBlueprint->ParentClass = nullptr;
+
 	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
 	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
 	// May be a better way? It works so far.
-#if WITH_EDITOR
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
 #endif
@@ -125,16 +126,6 @@ void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitialize
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
 
 	UActorComponent* ActorComponent = static_cast<UActorComponent*>(ObjectInitializer.GetObj());
-
-	// Nasty hack to make sure the tick function is called in pure C# classes.
-	// Since it otherwise need CLASS_CompiledFromBlueprint to be true, we need to swap out the VTable for the tick function.
-	// Currently CLASS_CompiledFromBlueprint causes BP to not find their C# parent classes.
-	if (!ObjectInitializer.GetClass()->HasAllClassFlags(CLASS_CompiledFromBlueprint))
-	{
-		FCSActorComponentTickFunction DummyTickFunction;
-		FMemory::Memcpy(&ActorComponent->PrimaryComponentTick, &DummyTickFunction, sizeof(FCSActorComponentTickFunction));
-	}
-	
 	ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
 	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
@@ -149,16 +140,6 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
 
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
-	
-	// Nasty hack to make sure the tick function is called in pure C# classes.
-	// Since it otherwise need CLASS_CompiledFromBlueprint to be true, we need to swap out the VTable for the tick function.
-	// Currently CLASS_CompiledFromBlueprint causes BP to not find their C# parent classes.
-	if (!ObjectInitializer.GetClass()->HasAllClassFlags(CLASS_CompiledFromBlueprint))
-	{
-		FCSActorTickFunction DummyTickFunction;
-		FMemory::Memcpy(&Actor->PrimaryActorTick, &DummyTickFunction, sizeof(FCSActorTickFunction));
-	}
-	
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
