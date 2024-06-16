@@ -38,7 +38,11 @@ int UFScriptMapHelperExporter::Num(FMapProperty* MapProperty, const void* Addres
 int UFScriptMapHelperExporter::FindMapPairIndexFromHash(FMapProperty* MapProperty, const void* Address, const void* Key)
 {
 	FScriptMapHelper Helper(MapProperty, Address);
+#if ENGINE_MINOR_VERSION >= 4
 	return Helper.FindMapPairIndexFromHash(Key);
+#else
+	return Helper.FindMapIndexWithKey(Key);
+#endif
 }
 
 void UFScriptMapHelperExporter::RemoveIndex(FMapProperty* MapProperty, const void* Address, int Index)
