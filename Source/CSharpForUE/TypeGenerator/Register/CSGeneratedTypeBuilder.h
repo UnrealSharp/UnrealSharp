@@ -21,32 +21,37 @@ public:
 	TField* CreateType()
 	{
 		UPackage* Package = FCSManager::GetUnrealSharpPackage();
-		TField* ReplacedType = FindObject<TField>(Package, *TypeMetaData->Name.ToString());
+		FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+		TField* ExistingField = FindObject<TField>(Package, *FieldName);
 		
-		if (ReplacedType)
+		if (ExistingField)
 		{
 			if (!ReplaceTypeOnReload())
 			{
-				Field = ReplacedType;
+				Field = ExistingField;
 				return Field;
 			}
 			
-			const FString OldPath = ReplacedType->GetPathName();
-			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ReplacedType->GetName(), ReplacedType->GetUniqueID());
-			ReplacedType->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
+			const FString OldPath = ExistingField->GetPathName();
+			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
+			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
 
 			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
-			AssetRegistry.AssetRenamed(ReplacedType, OldPath);
+			AssetRegistry.AssetRenamed(ExistingField, OldPath);
 		}
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_MarkAsRootSet | RF_Transactional);
+		Field = NewObject<TField>(Package, TField::StaticClass(), *FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
 		
 		ApplyBlueprintAccess(Field);
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 
-		if (ReplacedType)
+#if WITH_EDITOR
+		Field->SetMetaData(TEXT("DisplayName"), *TypeMetaData->Name.ToString());
+#endif
+
+		if (ExistingField)
 		{
-			NewField(ReplacedType, Field);
+			NewField(ExistingField, Field);
 		}
 		
 		return Field;
