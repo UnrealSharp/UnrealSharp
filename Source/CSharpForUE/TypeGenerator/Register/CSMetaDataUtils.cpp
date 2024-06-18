@@ -5,22 +5,6 @@
 
 //START ----------------------CSharpMetaDataUtils----------------------------------------
 
-template<typename FlagType>
-FlagType FCSMetaDataUtils::GetFlags(const TSharedPtr<FJsonObject>& PropertyInfo, const FString& StringField)
-{
-	uint64 FunctionFlagsInt;
-	FString FoundStringField;
-	PropertyInfo->TryGetStringField(StringField, FoundStringField);
-
-	if (FoundStringField.IsEmpty())
-	{
-		return static_cast<FlagType>(0);
-	}
-	
-	TTypeFromString<uint64>::FromString(FunctionFlagsInt, *FoundStringField);
-	return static_cast<FlagType>(FunctionFlagsInt);
-}
-
 void FCSMetaDataUtils::SerializeFunctions(const TArray<TSharedPtr<FJsonValue>>& FunctionsInfo, TArray<FCSFunctionMetaData>& FunctionMetaData)
 {
 	FunctionMetaData.Reserve(FunctionsInfo.Num());
