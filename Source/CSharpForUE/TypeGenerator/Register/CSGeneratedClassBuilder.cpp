@@ -24,6 +24,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
 		DummyBlueprint = NewObject<UCSBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
 	}
+	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
 	DummyBlueprint->Status = BS_UpToDate;
 	DummyBlueprint->bHasBeenRegenerated = true;
