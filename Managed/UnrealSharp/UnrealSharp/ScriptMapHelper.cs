@@ -11,12 +11,12 @@ namespace UnrealSharp;
 /// </summary>
 public unsafe struct ScriptMapHelper
 {                
-    private readonly IntPtr _mapProperty;
+    private readonly NativeProperty _mapProperty;
     private FScriptMap* _map;
     private FScriptMapLayout _mapLayout;
 
-    private readonly NativeProperty keyProp;
-    private readonly NativeProperty valueProp;
+    private readonly NativeProperty KeyProp;
+    private readonly NativeProperty ValueProp;
 
     public IntPtr Map
     {
@@ -26,11 +26,12 @@ public unsafe struct ScriptMapHelper
 
     public ScriptMapHelper(IntPtr mapProperty, IntPtr map = default)
     {                        
-        this._mapProperty = mapProperty;
-        this._map = (FScriptMap*) map;
+        _mapProperty = new NativeProperty(mapProperty);
+        List<NativeProperty> innerProperties = _mapProperty.GetInnerFields();
+        KeyProp = innerProperties[0];
+        ValueProp = innerProperties[1];
+        _map = (FScriptMap*) map;
         _mapLayout = FMapPropertyExporter.CallGetScriptLayout(mapProperty);
-        keyProp = new NativeProperty(FMapPropertyExporter.CallGetKeyProperty(mapProperty));
-        valueProp = new NativeProperty(FMapPropertyExporter.CallGetValueProperty(mapProperty));
     }
 
     /// <summary>
@@ -83,7 +84,7 @@ public unsafe struct ScriptMapHelper
 
     public bool GetPairPtr(int index, out IntPtr keyPtr, out IntPtr valuePtr)
     {
-        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty, Map, index);
+        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, Map, index);
         
         if (pairPtr == IntPtr.Zero)
         {
@@ -92,8 +93,8 @@ public unsafe struct ScriptMapHelper
             return false;
         }
         
-        keyPtr = new IntPtr(pairPtr + keyProp.Offset);
-        valuePtr = new IntPtr(pairPtr + valueProp.Offset);
+        keyPtr = new IntPtr(pairPtr + KeyProp.Offset);
+        valuePtr = new IntPtr(pairPtr + ValueProp.Offset);
         return true;
     }
 
@@ -169,16 +170,16 @@ public unsafe struct ScriptMapHelper
     public void AddPair<TKey, TValue>(TKey key, TValue value, MarshallingDelegates<TKey>.ToNative keyToNative,
         MarshallingDelegates<TValue>.ToNative valueToNative)
     {
-        byte* keyBuffer = stackalloc byte[keyProp.Size];
+        byte* keyBuffer = stackalloc byte[KeyProp.Size];
         IntPtr keyPtr = new IntPtr(keyBuffer);
-        keyProp.InitializeValue(keyPtr);
+        KeyProp.InitializeValue(keyPtr);
         keyToNative(keyPtr, 0, key);
         
-        byte* valueBuffer = stackalloc byte[keyProp.Size];
+        byte* valueBuffer = stackalloc byte[KeyProp.Size];
         IntPtr valuePtr = new IntPtr(valueBuffer);
-        keyProp.InitializeValue(valuePtr);
+        KeyProp.InitializeValue(valuePtr);
         valueToNative(valuePtr, 0, value);
         
-        FScriptMapHelperExporter.CallAddPair(_mapProperty, new IntPtr(_map), keyPtr, valuePtr);
+        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, new IntPtr(_map), keyPtr, valuePtr);
     }
 }

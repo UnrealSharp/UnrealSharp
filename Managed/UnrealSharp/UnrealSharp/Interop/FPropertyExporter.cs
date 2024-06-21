@@ -11,4 +11,5 @@ public static unsafe partial class FPropertyExporter
     public static delegate* unmanaged<IntPtr, IntPtr, void> InitializeValue;
     public static delegate* unmanaged<IntPtr, string, int> GetPropertyOffsetFromName;
     public static delegate* unmanaged<IntPtr, string, int> GetPropertyArrayDimFromName;
+    public static delegate* unmanaged<IntPtr, ref UnmanagedArray, void> GetInnerFields;
 }

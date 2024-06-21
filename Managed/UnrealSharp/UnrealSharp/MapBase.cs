@@ -12,33 +12,31 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     private readonly MarshallingDelegates<TKey>.ToNative? KeyToNative;
     private readonly MarshallingDelegates<TValue>.FromNative ValueFromNative;
     private readonly MarshallingDelegates<TValue>.ToNative? ValueToNative;
-    
-    internal IntPtr NativeProperty;
-    internal IntPtr Address => (IntPtr)Map;
-    internal FScriptMap* Map;
-    
-    internal ScriptMapHelper Helper;
 
-    internal readonly NativeProperty KeyProperty;
-    internal readonly NativeProperty ValueProperty;
+    private NativeProperty NativeProperty;
+    private IntPtr Address => (IntPtr)Map;
+    private FScriptMap* Map;
+    
+    private ScriptMapHelper Helper;
+
+    private readonly NativeProperty KeyProperty;
+    private readonly NativeProperty ValueProperty;
 
     public MapBase(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative? keyToNative,
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative? valueToNative)
     {
         Helper = new ScriptMapHelper(mapProperty, address);
-        NativeProperty = mapProperty;
-        Map = (FScriptMap*)address;
+        NativeProperty = new NativeProperty(mapProperty, address);
+        Map = (FScriptMap*) address;
         KeyFromNative = keyFromNative;
         KeyToNative = keyToNative;
         ValueFromNative = valueFromNative;
         ValueToNative = valueToNative;
         
-        IntPtr keyPropertyAddress = FMapPropertyExporter.CallGetKeyProperty(NativeProperty);
-        KeyProperty = new NativeProperty(keyPropertyAddress);
-        
-        IntPtr valuePropertyAddress = FMapPropertyExporter.CallGetValueProperty(NativeProperty);
-        ValueProperty = new NativeProperty(valuePropertyAddress);
+        List<NativeProperty> innerFields = NativeProperty.GetInnerFields();
+        KeyProperty = innerFields[0];
+        ValueProperty = innerFields[1];
     }
     
     internal int GetMaxIndex()
@@ -157,7 +155,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         IntPtr keyPtr = new IntPtr(keyBuffer);
         KeyProperty.InitializeValue(keyPtr);
         KeyToNative(keyPtr, 0, key);
-        return FScriptMapHelperExporter.CallFindMapPairIndexFromHash(NativeProperty, Address, keyPtr);
+        return FScriptMapHelperExporter.CallFindMapPairIndexFromHash(NativeProperty.Property, Address, keyPtr);
     }
     
     public Enumerator GetEnumerator()

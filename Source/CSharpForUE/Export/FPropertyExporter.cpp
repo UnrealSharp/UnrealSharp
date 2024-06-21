@@ -10,6 +10,7 @@ void UFPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 	EXPORT_FUNCTION(GetArrayDim)
 	EXPORT_FUNCTION(DestroyValue)
 	EXPORT_FUNCTION(InitializeValue)
+	EXPORT_FUNCTION(GetInnerFields)
 }
 
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
@@ -41,6 +42,11 @@ void UFPropertyExporter::DestroyValue(FProperty* Property, void* Value)
 void UFPropertyExporter::InitializeValue(FProperty* Property, void* Value)
 {
 	Property->InitializeValue(Value);
+}
+
+void UFPropertyExporter::GetInnerFields(FProperty* SetProperty, TArray<FField*>* OutFields)
+{
+	SetProperty->GetInnerFields(*OutFields);
 }
 
 int32 UFPropertyExporter::GetPropertyOffsetFromName(UStruct* InStruct, const char* InPropertyName)

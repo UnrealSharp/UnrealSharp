@@ -3,8 +3,8 @@ namespace UnrealSharp;
 public class ArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
 {
     [CLSCompliant(false)]
-    public ArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
-        : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
+    public ArrayReadOnly(IntPtr nativeProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+        : base(nativeProperty, nativeBuffer, toNative, fromNative)
     {
     }
 

@@ -4,21 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "FunctionsExporter.h"
-#include "FMapPropertyExporter.generated.h"
+#include "FSetPropertyExporter.generated.h"
 
+/**
+ * 
+ */
 UCLASS()
-class CSHARPFORUE_API UFMapPropertyExporter : public UFunctionsExporter
+class CSHARPFORUE_API UFSetPropertyExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
 
 public:
-	
-	// UFunctionsExporter interface implementation
+
+	// UFunctionsExporter interface
 	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End of implementation
+	// End of UFunctionsExporter interface
 
 private:
-	
-	static FScriptMapLayout GetScriptLayout(FMapProperty* MapProperty);
+
+	static void GetScriptSetLayout(FSetProperty* SetProperty, FScriptSetLayout* OutLayout);
 	
 };

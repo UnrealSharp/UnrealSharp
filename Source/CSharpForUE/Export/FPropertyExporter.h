@@ -30,6 +30,8 @@ private:
 	
 	static void DestroyValue(FProperty* Property, void* Value);
 	static void InitializeValue(FProperty* Property, void* Value);
+
+	static void GetInnerFields(FProperty* SetProperty, TArray<FField*>* OutFields);
 	
 	
 };
