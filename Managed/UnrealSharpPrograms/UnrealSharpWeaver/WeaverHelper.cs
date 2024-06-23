@@ -518,16 +518,16 @@ public static class WeaverHelper
 
                 if (typeDef.IsEnum)
                 {
-                    CustomAttribute? enumAttribute = FindAttributeByType(typeDef.CustomAttributes, UnrealSharpNamespace + ".Attributes", "UEnumAttribute");
+                    CustomAttribute? enumAttribute = GetUEnum(typeDef);
                 
                     if (enumAttribute == null)
                     {
-                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must use an unreal enum: " + typeRef.FullName);
+                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must use an UEnum enum: " + typeRef.FullName);
                     }
                 
-                    if (typeDef.GetEnumUnderlyingType().FullName != "System.Byte")
+                    if (typeDef.GetEnumUnderlyingType().Resolve() != ByteTypeRef.Resolve())
                     {
-                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must have an underlying type of System.Byte: " + typeRef.FullName);
+                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum's exposed to Blueprints must have an underlying type of System.Byte: " + typeRef.FullName);
                     }
 
                     return new NativeDataEnumType(typeDef, arrayDim);

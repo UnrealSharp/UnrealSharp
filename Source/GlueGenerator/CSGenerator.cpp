@@ -241,23 +241,6 @@ void FCSGenerator::SaveModuleGlue(UPackage* Package, const FString& GeneratedGlu
 	SaveGlue(BindingsPtr, Filename, GeneratedGlue);
 }
 
-FString FCSGenerator::GetCSharpEnumType(const EPropertyType PropertyType) const
-{
-	switch (PropertyType)
-	{
-	case CPT_Int8:   return "sbyte";
-	case CPT_Int16:  return "short";
-	case CPT_Int:    return "int";
-	case CPT_Int64:  return "long";
-	case CPT_Byte:   return "byte";
-	case CPT_UInt16: return "ushort";
-	case CPT_UInt32: return "uint";
-	case CPT_UInt64: return "ulong";
-	default:
-		return "";
-	}
-}
-
 void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 {
 	const FCSModule& Module = FindOrRegisterModule(Enum);
@@ -270,13 +253,21 @@ void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
 	int64 MaxValue = Enum->GetMaxEnumValue();
 
 	FString TypeDerived;
-	if (MaxValue <= UINT8_MAX + 1) 
+	if (MaxValue <= static_cast<int64>(UINT8_MAX))
 	{
 		TypeDerived = TEXT("byte");
 	}
-	else 
+	else if (MaxValue <= static_cast<int64>(INT32_MAX))
 	{
 		TypeDerived = TEXT("int");
+	}
+	else if (MaxValue <= static_cast<int64>(UINT32_MAX))
+	{
+		TypeDerived = TEXT("uint");
+	}
+	else
+	{
+		TypeDerived = TEXT("long");
 	}
 
 	Builder.DeclareType("enum", *Enum->GetName(), *TypeDerived, false);
