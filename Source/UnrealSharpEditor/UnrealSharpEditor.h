@@ -27,6 +27,4 @@ private:
     bool bIsReloading = false;
 
     void RegisterMenus();
-
-    bool bEnableAutoCompiling = true;
 };
