@@ -53,7 +53,6 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-	if (!bEnableAutoCompiling) return;
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
@@ -125,7 +124,6 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
-	if (!bEnableAutoCompiling) return true;
 
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
