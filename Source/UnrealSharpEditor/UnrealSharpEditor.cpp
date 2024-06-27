@@ -160,24 +160,6 @@ void FUnrealSharpEditorModule::RegisterMenus()
 				  FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Package")
 			    ));
 			}
-
-			FToolMenuSection& EnableAutoCompileSection = ToolbarMenu->FindOrAddSection("EnableOrDisableAutoCompile");
-			{
-				EnableAutoCompileSection.AddEntry(FToolMenuEntry::InitToolBarButton(
-					"Toggle Auto Compiling c# Mode",
-					FExecuteAction::CreateLambda([this]()
-						{
-							this->bEnableAutoCompiling = !bEnableAutoCompiling;
-
-							FNotificationInfo Info(bEnableAutoCompiling ? LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Enable!") : LOCTEXT("SpawnNotification_Notification", "Now c# Auto Reload is Disable!"));
-							Info.ExpireDuration = 3.0f;
-							FSlateNotificationManager::Get().AddNotification(Info);
-						}),
-					INVTEXT("Toggle Auto Compiling c# Mode"),
-					INVTEXT("Toggle Auto Compiling c# Mode"),
-					FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.SelectInViewport")
-				));
-			}
 		}
 	}
 }
