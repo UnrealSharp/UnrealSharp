@@ -1,4 +1,6 @@
 ﻿#include "UnrealSharpEditor.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
 #include "CSharpForUE/CSManager.h"
@@ -7,10 +9,13 @@
 #include "Reinstancing/CSReinstancer.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
+
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
 void FUnrealSharpEditorModule::StartupModule()
 {
+	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::RegisterMenus));
+
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
 	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
 	FDelegateHandle Handle;
@@ -37,7 +42,10 @@ void FUnrealSharpEditorModule::StartupModule()
 void FUnrealSharpEditorModule::ShutdownModule()
 {
 	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
+	UToolMenus::UnRegisterStartupCallback(this);
+	UToolMenus::UnregisterOwner(this);
 }
+
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
 {
@@ -45,7 +53,6 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
@@ -117,8 +124,8 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
+
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
-	
 	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
 	{
 		return true;
@@ -127,6 +134,29 @@ bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 	StartHotReload();
 	bIsReloading = false;
 	return true;
+}
+
+void FUnrealSharpEditorModule::RegisterMenus()
+{
+	FToolMenuOwnerScoped OwnerScoped(this);
+	{
+		UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.ModesToolBar");
+		{
+			FToolMenuSection& ToolbarSection = ToolbarMenu->FindOrAddSection("CompileCSharp");
+			{
+				ToolbarSection.AddEntry(FToolMenuEntry::InitToolBarButton(
+				  "Compile c#",
+				  FExecuteAction::CreateLambda([this]
+				  {
+				  		StartHotReload();
+				  }),
+				  INVTEXT("Compile C#"),
+				  INVTEXT("Force recompile and reload of C# code"),
+				  FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Recompile")
+			    ));
+			}
+		}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

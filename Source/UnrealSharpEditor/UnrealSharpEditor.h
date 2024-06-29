@@ -25,5 +25,6 @@ private:
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     bool bIsReloading = false;
-    
+
+    void RegisterMenus();
 };

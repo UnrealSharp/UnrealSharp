@@ -36,23 +36,26 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-	
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-	
-	if (!FApp::IsUnattended())
+
+	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
 	{
-		if (!FCSProcHelper::BuildBindings())
+		FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
+		if (!FApp::IsUnattended()) 
 		{
-			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-			return;
-		}
-	
-		if (!FCSProcHelper::GenerateProject())
-		{
-			InitializeUnrealSharp();
-			return;
+			if (!FCSProcHelper::BuildBindings())
+			{
+				UE_LOG(LogUnrealSharp, Fatal, TEXT("C# binding failed"));
+				return;
+			}
+
+			if (!FCSProcHelper::GenerateProject())
+			{
+				InitializeUnrealSharp();
+				return;
+			}
 		}
 	}
+	
 #endif
 
 	//Create the package where we will store our generated types.

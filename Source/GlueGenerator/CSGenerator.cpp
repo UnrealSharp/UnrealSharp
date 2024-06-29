@@ -50,15 +50,31 @@ void FCSGenerator::StartGenerator(const FString& OutputDirectory)
 	FModuleManager::Get().OnModulesChanged().AddRaw(this, &FCSGenerator::OnModulesChanged);
 
 	// Get all currently loaded types that are in the engine
-	TArray<UObject*> ObjectsToProcess;
-	GetObjectsOfClass(UField::StaticClass(), ObjectsToProcess);
-	GenerateGlueForTypes(ObjectsToProcess);
+	TArray<UObject*> PackagesToProcess;
+	GetObjectsOfClass(UPackage::StaticClass(), PackagesToProcess);
+	for (UObject* ObjectToProcess : PackagesToProcess)
+	{
+		GenerateGlueForPackage(static_cast<UPackage*>(ObjectToProcess));
+	}
 
 	// Generate glue for some common types that don't get picked up.
 	GenerateGlueForType(UInterface::StaticClass(), true);
 	GenerateGlueForType(UObject::StaticClass(), true);
 	GenerateGlueForType(USpringArmComponent::StaticClass(), true);
 	GenerateGlueForType(UFloatingPawnMovement::StaticClass(), true);
+}
+
+void FCSGenerator::GenerateGlueForPackage(const UPackage* Package)
+{
+	TArray<UObject*> ObjectsToProcess;
+	GetObjectsWithPackage(Package, ObjectsToProcess, false, RF_ClassDefaultObject);
+
+	for (UObject* ObjectToProcess : ObjectsToProcess)
+	{
+		GenerateGlueForType(ObjectToProcess);
+	}
+
+	GenerateExtensionMethodsForPackage(Package);
 }
 
 void FCSGenerator::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
@@ -74,10 +90,8 @@ void FCSGenerator::OnModulesChanged(FName InModuleName, EModuleChangeReason InMo
 	{
 		return;
 	}
-	
-	TArray<UObject*> ObjectsToProcess;
-	GetObjectsWithOuter(ModulePackage, ObjectsToProcess, false, RF_ClassDefaultObject);
-	GenerateGlueForTypes(ObjectsToProcess);
+
+	GenerateGlueForPackage(ModulePackage);
 }
 
 #define LOCTEXT_NAMESPACE "FScriptGenerator"
@@ -179,7 +193,7 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 		return;
 	}
 	
-	SaveTypeGlue(Object, Builder);
+	SaveTypeGlue(Object->GetOutermost(), Object->GetName(), Builder);
 }
 
 void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport)
@@ -211,6 +225,26 @@ void FCSGenerator::GenerateGlueForDelegate(UFunction* DelegateSignature, bool bF
 	Get().SaveGlue(Module, FileName, Builder.ToString());
 }
 
+void FCSGenerator::GenerateExtensionMethodsForPackage(const UPackage* Package)
+{
+	FCSModule& Module = FindOrRegisterModule(Package);
+	if (TArray<ExtensionMethod>* FoundExtensionMethods = ExtensionMethods.Find(Module.GetModuleName()))
+	{
+		FCSScriptBuilder Builder(FCSScriptBuilder::IndentType::Spaces);
+		FString ClassName = FString::Printf(TEXT("%sExtensions"), *Module.GetModuleName().ToString());
+		Builder.GenerateScriptSkeleton(Module.GetNamespace());
+		Builder.DeclareType("static class", ClassName, "", false);
+		
+		for (const ExtensionMethod& Method : *FoundExtensionMethods)
+		{
+			PropertyTranslatorManager->Find(Method.Function).ExportExtensionMethod(Builder, Method);
+		}
+
+		Builder.CloseBrace();
+		SaveTypeGlue(Package, ClassName, Builder);
+	}
+}
+
 #undef LOCTEXT_NAMESPACE
 
 bool FCSGenerator::CanExportClass(UClass* Class) const
@@ -227,18 +261,6 @@ bool FCSGenerator::CanDeriveFromNativeClass(UClass* Class)
 	const bool bIsValidClass = bIsBlueprintBase || AllowList.HasClass(Class) || Class->IsChildOf(UBlueprintFunctionLibrary::StaticClass());
 
 	return Class->IsChildOf(USubsystem::StaticClass()) || (bCanCreate && bIsValidClass);
-}
-
-static FString GetModuleExportFilename(FName ModuleFName)
-{
-	return ModuleFName.ToString() + TEXT("Module.cs");
-}
-
-void FCSGenerator::SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue)
-{
-	const FCSModule& BindingsPtr = FindOrRegisterModule(Package);
-	FString Filename = GetModuleExportFilename(BindingsPtr.GetModuleName());
-	SaveGlue(BindingsPtr, Filename, GeneratedGlue);
 }
 
 void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
@@ -808,19 +830,17 @@ void FCSGenerator::ExportClassFunctions(FCSScriptBuilder& Builder, const UClass*
 			FuncType = FPropertyTranslator::FunctionType::InternalWhitelisted;
 		}
 		
-		if (Function->HasAnyFunctionFlags(FUNC_Static) && IsBlueprintFunctionLibrary(Class))
+		if (Function->HasAnyFunctionFlags(FUNC_Static) && Class->IsChildOf(UBlueprintFunctionLibrary::StaticClass()))
 		{
 			ExtensionMethod Method;
-			if (GetExtensionMethodInfo(Method, *Function))
+			if (GetExtensionMethodInfo(Method, Function))
 			{
-				FuncType = FPropertyTranslator::FunctionType::ExtensionOnAnotherClass;
-
 				const FCSModule& BindingsModule = FindOrRegisterModule(Class);
 				TArray<ExtensionMethod>& ModuleExtensionMethods = ExtensionMethods.FindOrAdd(BindingsModule.GetModuleName());
 				ModuleExtensionMethods.Add(Method);
 			}
 		}
-
+		
 		PropertyTranslatorManager->Find(Function).ExportFunction(Builder, Function, FuncType);
 	}
 }
@@ -1028,64 +1048,24 @@ void FCSGenerator::ExportPropertiesStaticConstruction(FCSScriptBuilder& Builder,
 	}
 }
 
-bool FCSGenerator::GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function)
+bool FCSGenerator::GetExtensionMethodInfo(ExtensionMethod& Info, UFunction* Function)
 {
-	FProperty* SelfParameter = nullptr;
-	bool IsWorldContextParameter = false;
-
 	// ScriptMethod is the canonical metadata for extension methods
-	if (Function.HasMetaData(ScriptMethodMetaDataKey))
+	if (!Function->HasMetaData("ExtensionMethod") || Function->NumParms == 0)
 	{
-		SelfParameter = CastField<FProperty>(Function.ChildProperties);
+		return false;
 	}
 
-	// however, we can also convert DefaultToSelf parameters to extension methods
-	if (!SelfParameter && Function.HasMetaData(MD_DefaultToSelf))
-	{
-		SelfParameter = Function.FindPropertyByName(*Function.GetMetaData(MD_DefaultToSelf));
-	}
-
-	// if a world context is specified, we can use that to determine whether the parameter is a world context
-	// we can also convert WorldContext methods into extension methods, if we didn't match on some other parameter already
-	if (Function.HasMetaData(MD_WorldContext))
-	{
-		FString WorldContextName = Function.GetMetaData(MD_WorldContext);
-		if (SelfParameter)
-		{
-			if (SelfParameter->GetName() == WorldContextName)
-			{
-				IsWorldContextParameter = true;
-			}
-		}
-		else
-		{
-			SelfParameter = Function.FindPropertyByName(*WorldContextName);
-			IsWorldContextParameter = true;
-		}
-	}
+	FObjectProperty* SelfParameter = CastField<FObjectProperty>(Function->ChildProperties);
 
 	if (!SelfParameter)
 	{
 		return false;
 	}
-
-	// some world context parameters might not be annotated, so check the name
-	if (!IsWorldContextParameter)
-	{
-		FName ParamName = SelfParameter->GetFName();
-		IsWorldContextParameter |= ParamName == MD_WorldContext || ParamName == MD_WorldContextObject;
-	}
-
-	Info.Function = &Function;
+	
+	Info.Function = Function;
 	Info.SelfParameter = SelfParameter;
-	Info.OverrideClassBeingExtended = nullptr;
-
-	// if it's a world context, type it more strongly
-	if (IsWorldContextParameter)
-	{
-		Info.OverrideClassBeingExtended = UWorld::StaticClass();
-	}
-
+	Info.OverrideClassBeingExtended = SelfParameter->PropertyClass;
 	return true;
 }
 
@@ -1248,10 +1228,10 @@ FString FCSGenerator::GetSuperClassName(const UClass* Class) const
 	return NameMapper.GetQualifiedName(SuperClass);
 }
 
-void FCSGenerator::SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder)
+void FCSGenerator::SaveTypeGlue(const UPackage* Package, const FString& TypeName, const FCSScriptBuilder& ScriptBuilder)
 {
-	const FString FileName = FString::Printf(TEXT("%s.generated.cs"), *Object->GetName());
-	SaveGlue(FindOrRegisterModule(Object), FileName, ScriptBuilder.ToString());
+	const FString FileName = FString::Printf(TEXT("%s.generated.cs"), *TypeName);
+	SaveGlue(FindOrRegisterModule(Package), FileName, ScriptBuilder.ToString());
 }
 
 void FCSGenerator::SaveGlue(const FCSModule& Bindings, const FString& Filename, const FString& GeneratedGlue)

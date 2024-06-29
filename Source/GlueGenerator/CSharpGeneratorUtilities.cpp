@@ -34,6 +34,7 @@ const FName HasNativeMakeMetaDataKey = TEXT("HasNativeMake");
 const FName HasNativeBreakMetaDataKey = TEXT("HasNativeBreak");
 const FName NativeBreakFuncMetaDataKey = TEXT("NativeBreakFunc");
 const FName NativeMakeFuncMetaDataKey = TEXT("NativeMakeFunc");
+const FName ExtensionMethodMetaDataKey = TEXT("ExtensionMethod");
 const FName ReturnValueKey = TEXT("ReturnValue");
 const TCHAR* HiddenMetaDataKey = TEXT("Hidden");
 

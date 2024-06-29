@@ -231,11 +231,11 @@ FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslato
 	Initialize(InProtectionMode, InOverloadMode, InBlueprintVisibility);
 }
 
-FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslator& InHandler, UFunction& InFunction, const FProperty* InSelfParameter, const UClass* InOverrideClassBeingExtended)
+FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslator& InHandler, const ExtensionMethod& ExtensionMethod)
 	: Handler(InHandler)
-	, Function(InFunction)
-	, OverrideClassBeingExtended(InOverrideClassBeingExtended)
-	, SelfParameter(InSelfParameter)
+	, Function(*ExtensionMethod.Function)
+	, OverrideClassBeingExtended(ExtensionMethod.OverrideClassBeingExtended)
+	, SelfParameter(ExtensionMethod.SelfParameter)
 {
 	Initialize(ProtectionMode::UseUFunctionProtection, OverloadMode::AllowOverloads, BlueprintVisibility::Call);
 }
@@ -378,7 +378,7 @@ void FPropertyTranslator::FunctionExporter::Initialize(ProtectionMode InProtecti
 				if (CppDefaultValue == "()" && Parameter->IsA(FStructProperty::StaticClass()))
 				{
 					FStructProperty* StructProperty = CastFieldChecked<FStructProperty>(Parameter);
-					ParamsStringCall += FString::Printf(TEXT("new %s()"), *Mapper.GetStructScriptName(StructProperty->Struct.Get()));
+					ParamsStringCall += FString::Printf(TEXT("new %s()"), *Mapper.GetQualifiedName(StructProperty->Struct.Get()));
 				}
 				else
 				{
@@ -532,6 +532,19 @@ void FPropertyTranslator::FunctionExporter::ExportFunction(FCSScriptBuilder& Bui
 	Builder.CloseBrace();
 	Builder.EndUnsafeBlock();
 	Builder.AppendLine();
+}
+
+void FPropertyTranslator::FunctionExporter::ExportExtensionMethod(FCSScriptBuilder& Builder) const
+{
+	Builder.AppendLine();
+	AppendTooltip(&Function, Builder);
+	ExportDeprecation(Builder);
+	Builder.AppendLine(FString::Printf(TEXT("%s%s %s(%s)"), *Modifiers, *Handler.GetManagedType(ReturnProperty), *CSharpMethodName, *ParamsStringAPIWithDefaults));
+	Builder.OpenBrace();
+	FString ReturnStatement = ReturnProperty ? TEXT("return ") : TEXT("");
+	UClass* OriginalClass = Function.GetOuterUClass();
+	Builder.AppendLine(FString::Printf(TEXT("%s%s.%s(%s);"), *ReturnStatement, *GetScriptNameMapper().GetQualifiedName(OriginalClass), *CSharpMethodName, *ParamsStringCall));
+	Builder.CloseBrace();
 }
 
 void FPropertyTranslator::FunctionExporter::ExportSignature(FCSScriptBuilder& Builder, const FString& Protection) const
@@ -735,6 +748,24 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	}
 }
 
+void FPropertyTranslator::ExportExtensionMethod(FCSScriptBuilder& Builder, const ExtensionMethod& ExtensionMethod) const
+{
+	bool bIsEditorOnly = ExtensionMethod.Function->HasAnyFunctionFlags(FUNC_EditorOnly);
+	if (bIsEditorOnly)
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
+	
+	FunctionExporter Exporter(*this, ExtensionMethod);
+	Exporter.ExportOverloads(Builder);
+	Exporter.ExportExtensionMethod(Builder);
+
+	if (bIsEditorOnly)
+	{
+		Builder.EndPreprocessorBlock();
+	}
+}
+
 void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const
 {
 	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
@@ -766,11 +797,11 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 			{
 				if (ParamProperty->HasAnyPropertyFlags(CPF_ReferenceParm))
 				{
-					RefQualifier = "ref ";
+					RefQualifier = TEXT("ref ");
 				}
 				else if (ParamProperty->HasAnyPropertyFlags(CPF_OutParm))
 				{
-					RefQualifier = "out ";
+					RefQualifier = TEXT("out ");
 				}
 			}
 
@@ -792,8 +823,8 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 
 	ExportFunction(Builder, Function, FunctionType::BlueprintEvent);
 
-	Builder.AppendLine("//Hide implementation function from Intellisense/ReSharper");
-	Builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
+	Builder.AppendLine(TEXT("//Hide implementation function from Intellisense/ReSharper"));
+	Builder.AppendLine(TEXT("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]"));
 	Builder.AppendLine(FString::Printf(TEXT("protected virtual %s %s_Implementation(%s)"), *GetManagedType(ReturnProperty), *NativeMethodName, *ParamsStringAPI));
 	Builder.OpenBrace();
 

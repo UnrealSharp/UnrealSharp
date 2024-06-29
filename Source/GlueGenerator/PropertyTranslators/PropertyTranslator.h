@@ -3,6 +3,7 @@
 #include "GlueGenerator/CSNameMapper.h"
 #include "GlueGenerator/CSPropertyTranslatorManager.h"
 
+struct ExtensionMethod;
 static const FName MD_DeprecatedFunction(TEXT("DeprecatedFunction"));
 static const FName MD_DeprecationMessage(TEXT("DeprecationMessage"));
 static const FName MD_BlueprintProtected(TEXT("BlueprintProtected"));
@@ -73,6 +74,7 @@ public:
 	};
 	
 	void ExportFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType) const;
+	void ExportExtensionMethod(FCSScriptBuilder& Builder, const ExtensionMethod& ExtensionMethod) const;
 	void ExportInterfaceFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const;
 	void ExportDelegateFunction(FCSScriptBuilder& Builder, UFunction* SignatureFunction) const;
@@ -124,13 +126,15 @@ public:
 	{
 	public:
 		FunctionExporter(const FPropertyTranslator& InHandler, UFunction& InFunction, ProtectionMode InProtectionMode = ProtectionMode::UseUFunctionProtection, OverloadMode InOverloadMode = OverloadMode::AllowOverloads, BlueprintVisibility InBlueprintVisibility = BlueprintVisibility::Call);
-		FunctionExporter(const FPropertyTranslator& InHandler, UFunction& InFunction, const FProperty* InSelfParameter, const UClass* InOverrideClassBeingExtended);
+		FunctionExporter(const FPropertyTranslator& InHandler, const ExtensionMethod& ExtensionMethod);
 
 		void ExportFunctionVariables(FCSScriptBuilder& Builder) const;
 
 		void ExportOverloads(FCSScriptBuilder& Builder) const;
 
 		void ExportFunction(FCSScriptBuilder& Builder) const;
+
+		void ExportExtensionMethod(FCSScriptBuilder& Builder) const;
 
 		void ExportSignature(FCSScriptBuilder& Builder, const FString& Protection) const;
 

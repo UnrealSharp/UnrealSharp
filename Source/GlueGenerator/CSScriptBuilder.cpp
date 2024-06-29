@@ -25,9 +25,10 @@ void FCSScriptBuilder::GenerateScriptSkeleton(const FString& Namespace)
 	DeclareDirective(TEXT("UnrealSharp.Interop"));
 	DeclareDirective(TEXT("System.Runtime"));
 	DeclareDirective(TEXT("System.Runtime.InteropServices"));
-
+	
 	AppendLine();
 	AppendLine(FString::Printf(TEXT("namespace %s;"), *Namespace));
+
 	AppendLine();
 }
 
@@ -51,7 +52,6 @@ void FCSScriptBuilder::DeclareType(
 	const TArray<FString>& Interfaces)
 {
 	FString PartialSpecifier = IsPartial ? "partial " : "";
-		
 	FString SuperTypeDeclaration;
 	if (!SuperTypeName.IsEmpty())
 	{
