@@ -139,23 +139,20 @@ bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 void FUnrealSharpEditorModule::RegisterMenus()
 {
 	FToolMenuOwnerScoped OwnerScoped(this);
-
 	{
 		UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.ModesToolBar");
 		{
-			
 			FToolMenuSection& ToolbarSection = ToolbarMenu->FindOrAddSection("CompileCSharp");
-			
 			{
 				ToolbarSection.AddEntry(FToolMenuEntry::InitToolBarButton(
 				  "Compile c#",
-				  FExecuteAction::CreateLambda([this]()
-					{
-						this->StartHotReload();
-					}),
-				  INVTEXT("Compile c#"),
-				  INVTEXT("Compile c# codes"),
-				  FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Package")
+				  FExecuteAction::CreateLambda([this]
+				  {
+				  		StartHotReload();
+				  }),
+				  INVTEXT("Compile C#"),
+				  INVTEXT("Force recompile and reload of C# code"),
+				  FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Recompile")
 			    ));
 			}
 		}

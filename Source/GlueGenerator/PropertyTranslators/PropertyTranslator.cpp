@@ -231,11 +231,11 @@ FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslato
 	Initialize(InProtectionMode, InOverloadMode, InBlueprintVisibility);
 }
 
-FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslator& InHandler, UFunction& InFunction, const FProperty* InSelfParameter, const UClass* InOverrideClassBeingExtended)
+FPropertyTranslator::FunctionExporter::FunctionExporter(const FPropertyTranslator& InHandler, const ExtensionMethod& ExtensionMethod)
 	: Handler(InHandler)
-	, Function(InFunction)
-	, OverrideClassBeingExtended(InOverrideClassBeingExtended)
-	, SelfParameter(InSelfParameter)
+	, Function(*ExtensionMethod.Function)
+	, OverrideClassBeingExtended(ExtensionMethod.OverrideClassBeingExtended)
+	, SelfParameter(ExtensionMethod.SelfParameter)
 {
 	Initialize(ProtectionMode::UseUFunctionProtection, OverloadMode::AllowOverloads, BlueprintVisibility::Call);
 }
@@ -534,26 +534,22 @@ void FPropertyTranslator::FunctionExporter::ExportFunction(FCSScriptBuilder& Bui
 	Builder.AppendLine();
 }
 
-FString FPropertyTranslator::FunctionExporter::GetHelperFunctionSignatureOrCallee(bool IsSignature) const
+void FPropertyTranslator::FunctionExporter::ExportExtensionMethod(FCSScriptBuilder& Builder) const
 {
-	if (IsSignature)
-	{
-		return GetSignature(Modifiers);
-	}
-	else
-	{
-		return FString::Printf(TEXT("%s(%s)"), *CSharpMethodName, *ParamsStringCall);
-	}
+	Builder.AppendLine();
+	AppendTooltip(&Function, Builder);
+	ExportDeprecation(Builder);
+	Builder.AppendLine(FString::Printf(TEXT("%s%s %s(%s)"), *Modifiers, *Handler.GetManagedType(ReturnProperty), *CSharpMethodName, *ParamsStringAPIWithDefaults));
+	Builder.OpenBrace();
+	FString ReturnStatement = ReturnProperty ? TEXT("return ") : TEXT("");
+	UClass* OriginalClass = Function.GetOuterUClass();
+	Builder.AppendLine(FString::Printf(TEXT("%s%s.%s(%s);"), *ReturnStatement, *GetScriptNameMapper().GetQualifiedName(OriginalClass), *CSharpMethodName, *ParamsStringCall));
+	Builder.CloseBrace();
 }
 
 void FPropertyTranslator::FunctionExporter::ExportSignature(FCSScriptBuilder& Builder, const FString& Protection) const
 {
 	Builder.AppendLine(FString::Printf(TEXT("%s%s %s(%s)"), *Protection, ReturnProperty ? *Handler.GetManagedType(ReturnProperty) : TEXT("void"), *CSharpMethodName, *ParamsStringAPIWithDefaults));
-}
-
-FString FPropertyTranslator::FunctionExporter::GetSignature(const FString& Protection) const
-{
-	return FString::Printf(TEXT("%s%s %s(%s)"), *Protection, ReturnProperty ? *Handler.GetManagedType(ReturnProperty) : TEXT("void"), *CSharpMethodName, *ParamsStringAPIWithDefaults);
 }
 
 void FPropertyTranslator::FunctionExporter::ExportGetter(FCSScriptBuilder& Builder) const
@@ -752,87 +748,11 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 	}
 }
 
-void FPropertyTranslator::ExportHelperFunction(FCSScriptBuilder& Builder, UFunction* Function, FunctionType FuncType, FString HelperClassName, FString TargetClassName) const
+void FPropertyTranslator::ExportExtensionMethod(FCSScriptBuilder& Builder, const ExtensionMethod& ExtensionMethod) const
 {
-	bool bIsEditorOnly = Function->HasAnyFunctionFlags(FUNC_EditorOnly);
-	ProtectionMode ProtectionBehavior = ProtectionMode::UseUFunctionProtection;
-	OverloadMode OverloadBehavior = OverloadMode::AllowOverloads;
-	BlueprintVisibility CallBehavior = BlueprintVisibility::Call;
-
-	if (FuncType == FunctionType::ExtensionOnAnotherClass)
-	{
-		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
-		OverloadBehavior = OverloadMode::SuppressOverloads;
-	}
-	else if (FuncType == FunctionType::BlueprintEvent)
-	{
-		OverloadBehavior = OverloadMode::SuppressOverloads;
-		CallBehavior = BlueprintVisibility::Event;
-	}
-	else if (FuncType == FunctionType::InternalWhitelisted)
-	{
-		ProtectionBehavior = ProtectionMode::OverrideWithInternal;
-	}
-
-	if (bIsEditorOnly)
-	{
-		Builder.BeginWithEditorOnlyBlock();
-	}
-
-	FunctionExporter Exporter(*this, *Function, ProtectionBehavior, OverloadBehavior, CallBehavior);
-	FString HelperFunctionSignatureOrCallee = Exporter.GetHelperFunctionSignatureOrCallee(true);
-
-	int ArgumentStartBrace = HelperFunctionSignatureOrCallee.Find("(");
-
-	auto PossiableMySelfArgument1 = FString::Printf(TEXT("%s myself,"), *TargetClassName);
-	auto PossiableMySelfArgument2 = FString::Printf(TEXT("%s myself"), *TargetClassName);
-
-	int EndPossiableMySelfArgument1 = HelperFunctionSignatureOrCallee.Find(PossiableMySelfArgument1);
-	int EndPossiableMySelfArgument2 = HelperFunctionSignatureOrCallee.Find(PossiableMySelfArgument2);
-
-	if(ArgumentStartBrace == -1)
-	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s"), *HelperFunctionSignatureOrCallee, TEXT("must have \"(\", helper class gen failed!"))));
-		throw FString::Printf(TEXT("Helper function %s must have \"(\", helper class gen failed!"), *HelperFunctionSignatureOrCallee);
-	}
-
-	if(EndPossiableMySelfArgument1 == -1 && EndPossiableMySelfArgument2 == -1)
-	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("%s\n%s\n%s"), *HelperFunctionSignatureOrCallee, TEXT("must have \"myself\", helper class gen failed!"), *TargetClassName)));
-		throw FString::Printf(TEXT("Helper function %s must have \"myself\" argument, helper class gen failed!"), *HelperFunctionSignatureOrCallee);
-	}
-
-	int EndMySelfArgument = EndPossiableMySelfArgument1 == -1 ? EndPossiableMySelfArgument2 : EndPossiableMySelfArgument1;
-	int LenEndMySelfArgument = EndPossiableMySelfArgument1 == -1 ? PossiableMySelfArgument2.Len() : PossiableMySelfArgument1.Len();
-
-	FString BridgeFunctionnameInTargetClass = HelperFunctionSignatureOrCallee;
-	BridgeFunctionnameInTargetClass.RemoveAt(ArgumentStartBrace + 1, EndMySelfArgument - ArgumentStartBrace + LenEndMySelfArgument - 1);
-	BridgeFunctionnameInTargetClass = BridgeFunctionnameInTargetClass.Replace(TEXT(" static "), TEXT(" "));
-
-	Builder.AppendLine(BridgeFunctionnameInTargetClass);
-	Builder.OpenBrace();
-
-	//Is return value void ?
-
-	int VoidPosition = HelperFunctionSignatureOrCallee.Find("void ");
-	FString StrCallHelperFunction = Exporter.GetHelperFunctionSignatureOrCallee(false);
-	StrCallHelperFunction = StrCallHelperFunction.Replace(TEXT("myself"), TEXT("this"));
-
-	if(VoidPosition == -1) 
-	{
-		Builder.AppendLine("return " + HelperClassName + "." + StrCallHelperFunction + ";");
-	}
-	else 
-	{
-		Builder.AppendLine(HelperClassName + "." + StrCallHelperFunction + ";");
-	}
-
-	Builder.CloseBrace();
-
-	if (bIsEditorOnly) 
-	{
-		Builder.EndPreprocessorBlock();
-	}
+	FunctionExporter Exporter(*this, ExtensionMethod);
+	Exporter.ExportOverloads(Builder);
+	Exporter.ExportExtensionMethod(Builder);
 }
 
 void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const
@@ -866,11 +786,11 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 			{
 				if (ParamProperty->HasAnyPropertyFlags(CPF_ReferenceParm))
 				{
-					RefQualifier = "ref ";
+					RefQualifier = TEXT("ref ");
 				}
 				else if (ParamProperty->HasAnyPropertyFlags(CPF_OutParm))
 				{
-					RefQualifier = "out ";
+					RefQualifier = TEXT("out ");
 				}
 			}
 
@@ -892,8 +812,8 @@ void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, U
 
 	ExportFunction(Builder, Function, FunctionType::BlueprintEvent);
 
-	Builder.AppendLine("//Hide implementation function from Intellisense/ReSharper");
-	Builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
+	Builder.AppendLine(TEXT("//Hide implementation function from Intellisense/ReSharper"));
+	Builder.AppendLine(TEXT("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]"));
 	Builder.AppendLine(FString::Printf(TEXT("protected virtual %s %s_Implementation(%s)"), *GetManagedType(ReturnProperty), *NativeMethodName, *ParamsStringAPI));
 	Builder.OpenBrace();
 

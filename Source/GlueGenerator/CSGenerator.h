@@ -33,10 +33,13 @@ public:
 	}
 	
 	void StartGenerator(const FString& OutputDirectory);
-	
+
+	void GenerateGlueForPackage(const UPackage* Package);
 	void GenerateGlueForTypes(TArray<UObject*>& ObjectsToProcess);
 	void GenerateGlueForType(UObject* Object, bool bForceExport = false);
 	void GenerateGlueForDelegate(UFunction* DelegateSignature, bool bForceExport = false);
+
+	void GenerateExtensionMethodsForPackage(const UPackage* Package);
 	
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	
@@ -54,8 +57,6 @@ public:
 	
 	bool CanExportClass(UClass* Class) const;
 	bool CanDeriveFromNativeClass(UClass* Class);
-
-	FString GetCSharpEnumType(EPropertyType PropertyType) const;
 	
 	bool CanExportFunction(const UStruct* Struct, const UFunction* Function) const;
 	bool CanExportFunctionParameters(const UFunction* Function) const;
@@ -70,9 +71,8 @@ public:
 	void ExportStructMarshaller(FCSScriptBuilder& Builder, const UScriptStruct* Struct);
 	
 	FString GetSuperClassName(const UClass* Class) const;
-	void SaveTypeGlue(const UObject* Object, const FCSScriptBuilder& ScriptBuilder);
+	void SaveTypeGlue(const UPackage* Package, const FString& TypeName, const FCSScriptBuilder& ScriptBuilder);
 	void SaveGlue(const FCSModule& Bindings, const FString& Filename, const FString& GeneratedGlue);
-	void SaveModuleGlue(UPackage* Package, const FString& GeneratedGlue);
 	
 	void ExportClassProperties(FCSScriptBuilder& Builder, const UClass* Class, TSet<FProperty*>& ExportedProperties, const TSet<FString>& ReservedNames);
 	void ExportStaticConstructor(FCSScriptBuilder& Builder,  const UStruct* Struct,const TSet<FProperty*>& ExportedProperties,  const TSet<UFunction*>& ExportedFunctions, const TSet<UFunction*>& ExportedOverrideableFunctions, const TSet<FString>& ReservedNames);
@@ -85,7 +85,7 @@ public:
 	void ExportDelegateFunctionStaticConstruction(FCSScriptBuilder& Builder, const UFunction *Function);
 	void ExportClassOverridableFunctions(FCSScriptBuilder& Builder, const TSet<UFunction*>& ExportedOverridableFunctions);
 	
-	static bool GetExtensionMethodInfo(ExtensionMethod& Info, UFunction& Function);
+	static bool GetExtensionMethodInfo(ExtensionMethod& Info, UFunction* Function);
 
 	void ExportStructProperties(FCSScriptBuilder& Builder, const TSet<FProperty*>& ExportedProperties, bool bSuppressOffsets, const TSet<FString>&
 	                            ReservedNames) const;
