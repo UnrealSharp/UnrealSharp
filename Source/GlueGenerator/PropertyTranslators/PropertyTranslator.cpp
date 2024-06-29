@@ -750,9 +750,20 @@ void FPropertyTranslator::ExportFunction(FCSScriptBuilder& Builder, UFunction* F
 
 void FPropertyTranslator::ExportExtensionMethod(FCSScriptBuilder& Builder, const ExtensionMethod& ExtensionMethod) const
 {
+	bool bIsEditorOnly = ExtensionMethod.Function->HasAnyFunctionFlags(FUNC_EditorOnly);
+	if (bIsEditorOnly)
+	{
+		Builder.BeginWithEditorOnlyBlock();
+	}
+	
 	FunctionExporter Exporter(*this, ExtensionMethod);
 	Exporter.ExportOverloads(Builder);
 	Exporter.ExportExtensionMethod(Builder);
+
+	if (bIsEditorOnly)
+	{
+		Builder.EndPreprocessorBlock();
+	}
 }
 
 void FPropertyTranslator::ExportOverridableFunction(FCSScriptBuilder& Builder, UFunction* Function) const
