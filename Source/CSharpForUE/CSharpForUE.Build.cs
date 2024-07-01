@@ -58,6 +58,9 @@ public class CSharpForUE : ModuleRules
 				"GlueGenerator",
 				"EditorSubsystem", 
 			});
+			
+			string GeneratedGluePath = Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp", "Generated");
+			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + GeneratedGluePath);
 		}
 		
 		IncludeDotNetHeaders();

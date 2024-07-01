@@ -51,7 +51,6 @@ public:
 
 	void ExportClass(UClass* Class, FCSScriptBuilder& Builder);
 	void ExportStruct(UScriptStruct* Struct, FCSScriptBuilder& Builder);
-	void ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder);
 	void ExportInterface(UClass* Interface, FCSScriptBuilder& Builder);
 	void ExportDelegate(UFunction* SignatureFunction, FCSScriptBuilder& Builder);
 	

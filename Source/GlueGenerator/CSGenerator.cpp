@@ -180,13 +180,6 @@ void FCSGenerator::GenerateGlueForType(UObject* Object, bool bForceExport)
 			ExportStruct(Struct, Builder);
 		}
 	}
-	else if (UEnum* Enum = Cast<UEnum>(Object))
-	{
-		if (bForceExport || ShouldExportEnum(Enum))
-		{
-			ExportEnum(Enum, Builder);
-		}
-	}
 
 	if (Builder.IsEmpty())
 	{
@@ -261,82 +254,6 @@ bool FCSGenerator::CanDeriveFromNativeClass(UClass* Class)
 	const bool bIsValidClass = bIsBlueprintBase || AllowList.HasClass(Class) || Class->IsChildOf(UBlueprintFunctionLibrary::StaticClass());
 
 	return Class->IsChildOf(USubsystem::StaticClass()) || (bCanCreate && bIsValidClass);
-}
-
-void FCSGenerator::ExportEnum(UEnum* Enum, FCSScriptBuilder& Builder)
-{
-	const FCSModule& Module = FindOrRegisterModule(Enum);
-
-	Builder.GenerateScriptSkeleton(Module.GetNamespace());
-
-	AppendTooltip(Enum, Builder);
-	Builder.AppendLine(TEXT("[UEnum]"));
-
-	int64 MaxValue = Enum->GetMaxEnumValue();
-
-	FString TypeDerived;
-	if (MaxValue <= static_cast<int64>(UINT8_MAX))
-	{
-		TypeDerived = TEXT("byte");
-	}
-	else if (MaxValue <= static_cast<int64>(INT32_MAX))
-	{
-		TypeDerived = TEXT("int");
-	}
-	else if (MaxValue <= static_cast<int64>(UINT32_MAX))
-	{
-		TypeDerived = TEXT("uint");
-	}
-	else
-	{
-		TypeDerived = TEXT("long");
-	}
-
-	Builder.DeclareType("enum", *Enum->GetName(), *TypeDerived, false);
-		
-	FString CommonPrefix;
-
-	const int32 ValueCount = Enum->NumEnums();
-		
-	for (int32 i = 0; i < ValueCount; ++i)
-	{
-		if (!ShouldExportEnumEntry(Enum, i))
-		{
-			continue;
-		}
-
-		FString RawName;
-
-		FName ValueName = Enum->GetNameByIndex(i);
-		int64 Value = Enum->GetValueByIndex(i);
-		FString QualifiedValueName = ValueName.ToString();
-		const int32 ColonPosition = QualifiedValueName.Find("::");
-
-		if (ColonPosition != INDEX_NONE)
-		{
-			RawName = QualifiedValueName.Mid(ColonPosition + 2);
-		}
-		else
-		{
-			RawName = QualifiedValueName;
-		}
-
-		if (RawName.IsEmpty())
-		{
-			continue;
-		}
-
-		if (i == ValueCount - 1 && RawName.EndsWith("MAX"))
-		{
-			continue;
-		}
-
-
-		AppendTooltip(Enum->GetToolTipTextByIndex(i), Builder);
-		Builder.AppendLine(FString::Printf(TEXT("%s=%lld,"), *RawName, Value));
-	}
-
-	Builder.CloseBrace();
 }
 
 bool FCSGenerator::CanExportFunction(const UStruct* Struct, const UFunction* Function) const
