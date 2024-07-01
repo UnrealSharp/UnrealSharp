@@ -95,6 +95,17 @@ public static class ScriptGeneratorUtilities
         return property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable);
     }
     
+    public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
+    {
+        if (enumObj.CppForm == UhtEnumCppForm.Regular)
+        {
+            return enumValue.Name;
+        }
+        
+        int delimiterIndex = enumValue.Name.IndexOf("::", StringComparison.Ordinal);
+        return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
+    }
+    
     public static bool IsChildOf(this UhtClass? type, string parentClassName)
     {
         UhtClass? currentType = type;
@@ -109,6 +120,11 @@ public static class ScriptGeneratorUtilities
         }
         
         return false;
+    }
+    
+    public static string GetFullManagedName(UhtType type)
+    {
+        return $"{GetModuleName(type)}.{type.SourceName}";
     }
     
     public static string GetCleanTypeName(UhtType type)

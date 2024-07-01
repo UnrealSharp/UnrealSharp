@@ -17,9 +17,24 @@ public static class StringBuilderUtilities
         sb.AppendLine("}");
     }
     
+    public static void CloseBraceWithSemicolon(this StringBuilder sb)
+    {
+        sb.AppendLine("};");
+    }
+    
     public static void DeclareDirective(this StringBuilder sb, string directive)
     {
         sb.AppendLine($"using {directive};");
+    }
+    
+    public static void Indent(this StringBuilder sb, int indentLevel = 1)
+    {
+        sb.Append(new string(' ', indentLevel * 4));
+    }
+    
+    public static void UnIndent(this StringBuilder sb, int indentLevel = 1)
+    {
+        sb.Remove(sb.Length - indentLevel * 4, indentLevel * 4);
     }
     
     public static void GenerateTypeSkeleton(this StringBuilder sb, string typeNameSpace)

@@ -36,7 +36,6 @@ void FStringPropertyTranslator::ExportPropertySetter(FCSScriptBuilder& Builder, 
 	Builder.AppendLine(FString::Printf(TEXT("StringMarshaller.ToNative(IntPtr.Add(NativeObject,%s_Offset),0,value);"),*NativePropertyName));
 }
 
-
 void FStringPropertyTranslator::ExportPropertyGetter(FCSScriptBuilder& Builder, const FProperty* Property, const FString& NativePropertyName) const
 {
 	AddCheckObjectForValidity(Builder);

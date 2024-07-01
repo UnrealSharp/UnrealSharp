@@ -21,23 +21,15 @@ public static class EnumExporter
         string underlyingType = enumObj.UnderlyingType.ToString().ToLower();
         stringBuilder.DeclareType("enum", enumObj.EngineName, underlyingType, isPartial: false);
         
+        stringBuilder.Indent();
         foreach (UhtEnumValue enumValue in enumObj.EnumValues)
         {
-            stringBuilder.AppendLine($"     {GetCleanEnumValueName(enumObj, enumValue)} = {enumValue.Value},");
+            stringBuilder.AppendLine($"{ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue)} = {enumValue.Value},");
         }
+        stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
         ScriptGeneratorUtilities.SaveExportedType(enumObj, borrower);
     }
     
-    private static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
-    {
-        if (enumObj.CppForm == UhtEnumCppForm.Regular)
-        {
-            return enumValue.Name;
-        }
-        
-        int delimiterIndex = enumValue.Name.IndexOf("::", StringComparison.Ordinal);
-        return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
-    }
 }
