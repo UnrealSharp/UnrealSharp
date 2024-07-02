@@ -69,10 +69,6 @@ public static class PropertyTranslatorManager
     
     public static PropertyTranslator? GetTranslator(UhtProperty property)
     {
-        if (property.EngineName == "Codecs")
-        {
-            Console.WriteLine("ObjectProperty");
-        }
         if (!RegisteredTranslators.TryGetValue(property.GetType(), out var translator))
         {
             return null;
