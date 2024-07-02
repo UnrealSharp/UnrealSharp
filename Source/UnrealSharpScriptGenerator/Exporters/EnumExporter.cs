@@ -11,26 +11,43 @@ public static class EnumExporter
 {
     public static void ExportEnum(UhtEnum enumObj)
     {
-        using BorrowStringBuilder borrower = new(StringBuilderCache.Big);
-        StringBuilder stringBuilder = borrower.StringBuilder;
+        GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
         
-        string moduleName = ScriptGeneratorUtilities.GetModuleName(enumObj);
+        string moduleName = ScriptGeneratorUtilities.GetNamespace(enumObj);
         
         stringBuilder.GenerateTypeSkeleton(moduleName);
-        borrower.StringBuilder.AppendLine("[UEnum]");
+        stringBuilder.AppendLine("[UEnum]");
         
-        string underlyingType = enumObj.UnderlyingType.ToString().ToLower();
+        string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
         stringBuilder.DeclareType("enum", enumObj.EngineName, underlyingType, isPartial: false);
         
         stringBuilder.Indent();
         foreach (UhtEnumValue enumValue in enumObj.EnumValues)
         {
-            stringBuilder.AppendLine($"{ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue)} = {enumValue.Value},");
+            string cleanValueName = ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue);
+            stringBuilder.AppendLine($"{cleanValueName} = {enumValue.Value},");
         }
         stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
-        ScriptGeneratorUtilities.SaveExportedType(enumObj, borrower);
+        ScriptGeneratorUtilities.SaveExportedType(enumObj, stringBuilder);
     }
     
+    public static string UnderlyingTypeToString(UhtEnumUnderlyingType underlyingType)
+    {
+        return underlyingType switch
+        {
+            UhtEnumUnderlyingType.Uint8 => "byte",
+            UhtEnumUnderlyingType.Int8 => "sbyte",
+            UhtEnumUnderlyingType.Int16 => "short",
+            UhtEnumUnderlyingType.Int => "int",
+            UhtEnumUnderlyingType.Int32 => "int",
+            UhtEnumUnderlyingType.Int64 => "long",
+            UhtEnumUnderlyingType.Uint16 => "ushort",
+            UhtEnumUnderlyingType.Uint32 => "uint",
+            UhtEnumUnderlyingType.Uint64 => "ulong",
+            _ => throw new ArgumentOutOfRangeException(nameof(underlyingType), underlyingType, null)
+        };
+        
+    }
 }

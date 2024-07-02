@@ -55,43 +55,43 @@ public abstract class PropertyTranslator
     public abstract string GetNullValue(UhtProperty property);
     
     // Export the static constructor for this property
-    public virtual void ExportPropertyStaticConstructor(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
        builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
     
-    public virtual void ExportParameterStaticConstructor(StringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
+    public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
     {
         builder.AppendLine($"{function.SourceName}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
 
-    public virtual void ExportPropertyVariables(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         builder.AppendLine($"static int {nativePropertyName}_Offset;");
     }
     
-    public virtual void ExportParameterVariables(StringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string nativePropertyName)
+    public virtual void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string nativePropertyName)
     {
         builder.AppendLine($"static int {nativeMethodName}_{nativePropertyName}_Offset;");
     }
 
-    public virtual void ExportPropertyGetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         ExportFromNative(builder, property, nativePropertyName, "return", "NativeObject", $"{nativePropertyName}_Offset", false, false);
     }
 
-    public virtual void ExportPropertySetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         ExportToNative(builder, property, nativePropertyName, "NativeObject", $"{nativePropertyName}_Offset", "value");
     }
 
-    public virtual void ExportCppDefaultParameterAsLocalVariable(StringBuilder builder, string variableName,
+    public virtual void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName,
         string defaultValue, UhtFunction function, UhtProperty paramProperty)
     {
         throw new NotImplementedException();
     }
 
-    public virtual void ExportFunctionReturnStatement(StringBuilder builder,
+    public virtual void ExportFunctionReturnStatement(GeneratorStringBuilder builder,
         UhtProperty property,
         string nativePropertyName, 
         string functionName, 
@@ -101,38 +101,40 @@ public abstract class PropertyTranslator
     }
     
     // Cleanup the marshalling buffer
-    public virtual void ExportCleanupMarshallingBuffer(StringBuilder builder, UhtProperty property, string paramName)
+    public virtual void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
         throw new NotImplementedException();
     }
     
     // Build the C# code to marshal this property from C++ to C#
-    public abstract void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName,
+    public abstract void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
         bool reuseRefMarshallers);
     
     // Build the C# code to marshal this property from C# to C++
-    public abstract void ExportToNative(StringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source);
+    public abstract void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source);
     
     // Convert a C++ default value to a C# default value
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    public void BeginPropertyAccessorBlock(StringBuilder builder, UhtProperty property, string protection)
+    public void BeginPropertyAccessorBlock(GeneratorStringBuilder builder, UhtProperty property, string protection)
     {
         string managedType = GetManagedType(property);
         builder.AppendLine($"{protection}{managedType} {property.SourceName}");
         builder.OpenBrace();
     }
 
-    public void ExportProperty(StringBuilder builder, UhtProperty property)
+    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property)
     {
+        builder.AppendLine();
         builder.TryAddWithEditor(property);
-        
         string nativePropertyName = property.SourceName;
         builder.AppendLine("// Property: " + nativePropertyName);
         
         ExportPropertyVariables(builder, property, nativePropertyName);
+        builder.AppendLine();
+        
         string protection = property.GetProtection();
         BeginPropertyAccessorBlock(builder, property, protection);
 
@@ -150,6 +152,7 @@ public abstract class PropertyTranslator
         }
         
         builder.CloseBrace();
-        builder.TryAddWithEditor(property);
+        builder.TryEndWithEditor(property);
+        builder.AppendLine();
     }
 }

@@ -21,7 +21,7 @@ public class StructPropertyTranslator : SimpleTypePropertyTranslator
         return $"{GetManagedType(property)}Marshaller";
     }
 
-    public override void ExportCppDefaultParameterAsLocalVariable(StringBuilder builder, string variableName, string defaultValue,
+    public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
         ExportDefaultStructParameter(builder, variableName, defaultValue, paramProperty, this);

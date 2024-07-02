@@ -35,17 +35,17 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
         return $"default({managedType})";
     }
 
-    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName,
+    public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
         bool reuseRefMarshallers)
     {
         builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative(IntPtr.Add({sourceBuffer}, {offset}), 0);");
     }
 
-    public override void ExportToNative(StringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
 	    string offset, string source)
     {
-	    builder.AppendLine($"{GetMarshaller(property)}.ToNative({propertyName}, IntPtr.Add({source}, {offset}), 0);");
+	    builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
     }
 
     public override string GetMarshaller(UhtProperty property)
@@ -74,7 +74,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
         return _managedType;
     }
 
-    protected void ExportDefaultStructParameter(StringBuilder builder, string variableName, string cppDefaultValue,
+    protected void ExportDefaultStructParameter(GeneratorStringBuilder builder, string variableName, string cppDefaultValue,
         UhtProperty paramProperty, PropertyTranslator translator)
     {
 	    UhtStructProperty structProperty = (UhtStructProperty)paramProperty;

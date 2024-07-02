@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.Core;
-using EpicGames.UHT.Parsers;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
@@ -29,7 +27,22 @@ public static class ScriptGeneratorUtilities
     
     public static bool CanExportClass(UhtClass classObj)
     {
+        if (classObj.EngineName == "Object")
+        {
+            return true;
+        }
+        
         return classObj.ClassFlags.HasAnyFlags(EClassFlags.RequiredAPI | EClassFlags.MinimalAPI);
+    }
+    
+    public static string GetNamespace(UhtType typeObj)
+    {
+        if (typeObj.Outer is UhtHeaderFile header)
+        {
+            return "UnrealSharp." + header.Package.ShortName;
+        }
+
+        return string.Empty;
     }
     
     public static string GetModuleName(UhtType typeObj)
@@ -152,7 +165,7 @@ public static class ScriptGeneratorUtilities
     
     public static string GetFullManagedName(UhtType type)
     {
-        return $"{GetModuleName(type)}.{type.SourceName}";
+        return $"{GetNamespace(type)}.{type.EngineName}";
     }
     
     public static string GetCleanTypeName(UhtType type)
@@ -162,11 +175,11 @@ public static class ScriptGeneratorUtilities
         return typeName.Remove(0, 1);
     }
     
-    public static void SaveExportedType(UhtType type, BorrowStringBuilder stringBuilder)
+    public static void SaveExportedType(UhtType type, GeneratorStringBuilder generatorStringBuilder)
     {
         string directory = Path.Combine(Program.GeneratedGluePath, GetModuleName(type));
-        string absoluteFilePath = Path.Combine(directory, GetCleanTypeName(type) + ".cs");
-        string builtString = stringBuilder.StringBuilder.ToString();
+        string absoluteFilePath = Path.Combine(directory, type.EngineName + ".cs");
+        string builtString = generatorStringBuilder.ToString();
         
         if (File.Exists(absoluteFilePath) && File.ReadAllText(absoluteFilePath) == builtString)
         {
@@ -179,7 +192,9 @@ public static class ScriptGeneratorUtilities
             Directory.CreateDirectory(directory);
         }
         
-        File.WriteAllText(absoluteFilePath, builtString);
+        using StreamWriter sw = new StreamWriter(absoluteFilePath);
+        sw.Write(builtString);
+        sw.Close();
     }
     
     public static bool IsBlueprintExposedType(UhtType classObj)
@@ -306,12 +321,12 @@ public static class ScriptGeneratorUtilities
     {
         foreach (UhtType @interface in interfaces)
         {
-            dependencies.Add(GetModuleName(@interface));
+            dependencies.Add(GetNamespace(@interface));
         }
 
         if (typeObj.Super != null)
         {
-            dependencies.Add(GetModuleName(typeObj.Super));
+            dependencies.Add(GetNamespace(typeObj.Super));
         }
 
         foreach (UhtFunction function in functions)
@@ -354,7 +369,7 @@ public static class ScriptGeneratorUtilities
         
         foreach (UhtType reference in references)
         {
-            dependencies.Add(GetModuleName(reference));
+            dependencies.Add(GetNamespace(reference));
         }
     }
 }

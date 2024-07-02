@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -12,11 +10,9 @@ public static class ClassExporter
 {
     public static void ExportClass(UhtClass classObj)
     {
-        using BorrowStringBuilder borrower = new(StringBuilderCache.Big);
-        StringBuilder stringBuilder = borrower.StringBuilder;
-
-        string className = ScriptGeneratorUtilities.GetCleanTypeName(classObj);
-        string moduleName = ScriptGeneratorUtilities.GetModuleName(classObj);
+        GeneratorStringBuilder stringBuilder = new();
+        
+        string typeNameSpace = ScriptGeneratorUtilities.GetNamespace(classObj);
 
         List<UhtProperty> exportedProperties = new();
         ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
@@ -32,28 +28,37 @@ public static class ClassExporter
         ScriptGeneratorUtilities.GatherDependencies(classObj, exportedFunctions, exportedOverrides, exportedProperties, interfaces, classDependencies);
         
         stringBuilder.DeclareDirectives(classDependencies);
-        stringBuilder.GenerateTypeSkeleton(moduleName);
+        stringBuilder.GenerateTypeSkeleton(typeNameSpace);
         
         string abstractModifier = classObj.ClassFlags.HasAnyFlags(EClassFlags.Abstract) ? "ClassFlags.Abstract" : "";
         stringBuilder.AppendLine($"[UClass({abstractModifier})]");
+
+        string superClassName;
+        if (classObj.SuperClass != null)
+        {
+            superClassName = ScriptGeneratorUtilities.GetFullManagedName(classObj.SuperClass);
+        }
+        else
+        {
+            superClassName = "UnrealSharpObject";
+        }
         
-        string cleanSuperClass = ScriptGeneratorUtilities.GetCleanTypeName(classObj.SuperClass);
-        stringBuilder.DeclareType("class", className, cleanSuperClass, true, interfaces);
+        stringBuilder.DeclareType("class", classObj.EngineName, superClassName, true, interfaces);
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         ExportClassProperties(stringBuilder, exportedProperties);
         
         stringBuilder.CloseBrace();
         
-        ScriptGeneratorUtilities.SaveExportedType(classObj, borrower);
+        ScriptGeneratorUtilities.SaveExportedType(classObj, stringBuilder);
     }
 
-    static void ExportClassProperties(StringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-            translator.ExportProperty(stringBuilder, property);
+            translator.ExportProperty(generatorStringBuilder, property);
         }
     }
 }

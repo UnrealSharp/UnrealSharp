@@ -15,7 +15,7 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
         return $"BlittableMarshaller<{GetManagedType(property)}>";
     }
 
-    public override void ExportCppDefaultParameterAsLocalVariable(StringBuilder builder, string variableName, string defaultValue,
+    public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
         if (defaultValue == "None")

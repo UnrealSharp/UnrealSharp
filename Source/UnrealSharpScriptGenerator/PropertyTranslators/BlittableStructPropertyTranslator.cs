@@ -42,7 +42,7 @@ public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
         return ScriptGeneratorUtilities.GetFullManagedName(structProperty.ScriptStruct);
     }
 
-    public override void ExportCppDefaultParameterAsLocalVariable(StringBuilder builder, string variableName, string defaultValue,
+    public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
         ExportDefaultStructParameter(builder, variableName, defaultValue, paramProperty, this);

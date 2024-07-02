@@ -55,13 +55,13 @@ public class MapPropertyTranslator : PropertyTranslator
         return $"System.Collections.Generic.{interfaceType}<{keyManagedType}, {valueManagedType}>";
     }
 
-    public override void ExportPropertyStaticConstructor(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
         builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
 
-    public override void ExportParameterStaticConstructor(StringBuilder builder, UhtProperty property, UhtFunction function,
+    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function,
         string nativePropertyName)
     {
         base.ExportParameterStaticConstructor(builder, property, function, nativePropertyName);
@@ -69,7 +69,7 @@ public class MapPropertyTranslator : PropertyTranslator
         builder.AppendLine($"{nativeMethodName}_{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({nativeMethodName}_NativeFunction, \"{nativePropertyName}\");");
     }
 
-    public override void ExportParameterVariables(StringBuilder builder, UhtFunction function, string nativeMethodName,
+    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName,
         UhtProperty property, string nativePropertyName)
     {
         base.ExportParameterVariables(builder, function, nativeMethodName, property, nativePropertyName);
@@ -87,7 +87,7 @@ public class MapPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportPropertyVariables(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         base.ExportPropertyVariables(builder, property, nativePropertyName);
         builder.AppendLine($"static IntPtr {nativePropertyName}_NativeProperty;");
@@ -104,7 +104,7 @@ public class MapPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportPropertyGetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
         PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty);
@@ -119,7 +119,7 @@ public class MapPropertyTranslator : PropertyTranslator
         builder.AppendLine($"return {nativePropertyName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {nativePropertyName}_Offset), 0);");
     }
 
-    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
+    public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
         string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
@@ -157,7 +157,7 @@ public class MapPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportToNative(StringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
        UhtMapProperty mapProperty = (UhtMapProperty) property;

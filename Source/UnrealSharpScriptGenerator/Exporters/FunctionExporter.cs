@@ -67,8 +67,7 @@ public class FunctionExporter
 
         if (function.EngineType != UhtEngineType.Delegate)
         {
-            string outerClassName = ScriptGeneratorUtilities.GetCleanTypeName(function.Outer!);
-            if (function.SourceName == outerClassName)
+            if (function.SourceName == function.Outer!.EngineName)
             {
                 FunctionName = "Call" + FunctionName;
             }

@@ -7,6 +7,6 @@ public static class InterfaceExporter
 {
     public static void ExportInterface(UhtClass interfaceObj)
     {
-        using BorrowStringBuilder borrower = new(StringBuilderCache.Big);
+
     }
 }

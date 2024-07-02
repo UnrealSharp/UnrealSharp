@@ -1,5 +1,4 @@
-﻿using System.Text;
-using EpicGames.Core;
+﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -18,7 +17,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
     public override bool CanExport(UhtProperty property)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
+        PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
         return translator != null && translator.CanExport(arrayProperty.ValueProperty);
     }
 
@@ -37,10 +36,10 @@ public class ArrayPropertyTranslator : PropertyTranslator
         throw new System.NotImplementedException();
     }
 
-    public override void ExportPropertyGetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty)!;
         
         string wrapperType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(arrayProperty.ValueProperty);
@@ -49,7 +48,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         builder.AppendLine($"return {nativePropertyName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {nativePropertyName}_Offset), 0);");
     }
 
-    public override void ExportPropertyVariables(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         base.ExportPropertyVariables(builder, property, nativePropertyName);
         builder.AppendLine($"static IntPtr {nativePropertyName}_NativeProperty;");
@@ -65,7 +64,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportParameterVariables(StringBuilder builder, UhtFunction function, string nativeMethodName,
+    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName,
         UhtProperty property, string nativePropertyName)
     {
         base.ExportParameterVariables(builder, function, nativeMethodName, property, nativePropertyName);
@@ -82,14 +81,14 @@ public class ArrayPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportParameterStaticConstructor(StringBuilder builder, UhtProperty property, UhtFunction function,
+    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function,
         string nativePropertyName)
     {
         base.ExportParameterStaticConstructor(builder, property, function, nativePropertyName);
         builder.AppendLine($"{nativePropertyName}_{property.SourceName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyFromName({function.SourceName}_NativeFunction, \"{nativePropertyName}\");");
     }
 
-    public override void ExportPropertyStaticConstructor(StringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
         builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{nativePropertyName}\");");
@@ -105,12 +104,12 @@ public class ArrayPropertyTranslator : PropertyTranslator
         throw new System.NotImplementedException();
     }
     
-    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
+    public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
         string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
         UhtProperty valueProperty = arrayProperty.ValueProperty;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(valueProperty);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(valueProperty)!;
         
         string nativeProperty = $"{propertyName}_NativeProperty";
         string marshaller = $"{propertyName}_Marshaller";
@@ -140,12 +139,12 @@ public class ArrayPropertyTranslator : PropertyTranslator
         }
     }
     
-    public override void ExportToNative(StringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
         UhtProperty valueProperty = arrayProperty.ValueProperty;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(valueProperty);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(valueProperty)!;
         
         string nativeProperty = $"{propertyName}_NativeProperty";
         string marshaller = $"{propertyName}_Marshaller";
@@ -166,9 +165,9 @@ public class ArrayPropertyTranslator : PropertyTranslator
         builder.AppendLine($"{marshaller}.ToNative({nativeProperty}_NativeBuffer, 0, {source});");
     }
 
-    public override void ExportCleanupMarshallingBuffer(StringBuilder builder, UhtProperty property, string paramName)
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
-        UhtFunction function = (UhtFunction) property.Outer;
+        UhtFunction function = (UhtFunction) property.Outer!;
         string marshaller = $"{function.SourceName}_{paramName}_Marshaller";
         builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
     }
@@ -178,19 +177,19 @@ public class ArrayPropertyTranslator : PropertyTranslator
         bool isStructProperty = property.IsOuter<UhtStruct>();
         bool isParameter = property.IsOuter<UhtFunction>();
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
-        string ArrayType = isStructProperty || isParameter ? "ArrayCopyMarshaller" 
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty)!;
+        string arrayType = isStructProperty || isParameter ? "ArrayCopyMarshaller" 
             : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? "ArrayReadOnlyMarshaller" : "ArrayMarshaller";
 
-        return $"{ArrayType}<{translator.GetManagedType(arrayProperty.ValueProperty)}>";
+        return $"{arrayType}<{translator.GetManagedType(arrayProperty.ValueProperty)}>";
     }
 
     private string GetWrapperInterface(UhtProperty property)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty)!;
         string innerManagedType = translator.GetManagedType(arrayProperty.ValueProperty);
         string interfaceType = property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? "IReadOnlyList" : "IList";
-        return $"System.Collection.Generic.{interfaceType}<{innerManagedType}>";
+        return $"System.Collections.Generic.{interfaceType}<{innerManagedType}>";
     }
 }
