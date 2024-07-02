@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -67,14 +68,14 @@ public class StringPropertyTranslator : PropertyTranslator
         builder.AppendLine($"StringMarshaller.DestructInstance({paramName}_NativePtr, 0);\"");
     }
 
-    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string nativePropertyName, string assignmentOrReturn,
+    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
         string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
         if (!reuseRefMarshallers)
         {
-            builder.AppendLine($"IntPtr {nativePropertyName}_NativePtr = IntPtr.Add({sourceBuffer},{offset});");
+            builder.AppendLine($"IntPtr {propertyName}_NativePtr = IntPtr.Add({sourceBuffer},{offset});");
         }
-        builder.AppendLine($"{assignmentOrReturn} StringMarshaller.FromNative({nativePropertyName}_NativePtr,0);");
+        builder.AppendLine($"{assignmentOrReturn} StringMarshaller.FromNative({propertyName}_NativePtr,0);");
     }
 
     public override void ExportToNative(StringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source)

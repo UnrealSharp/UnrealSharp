@@ -19,6 +19,7 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong");
         AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double");
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
+        AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
         
         EnumPropertyHandler enumPropertyHandler = new();
@@ -28,13 +29,19 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         
         AddPropertyTranslator(typeof(UhtBoolProperty), new BoolPropertyTranslator());
-        AddPropertyTranslator(typeof(StringPropertyTranslator), new StringPropertyTranslator());
-        AddPropertyTranslator(typeof(NamePropertyTranslator), new NamePropertyTranslator());
-        AddPropertyTranslator(typeof(TextPropertyTranslator), new TextPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtStrProperty), new StringPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtNameProperty), new NamePropertyTranslator());
+        AddPropertyTranslator(typeof(UhtTextProperty), new TextPropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtWeakObjectPtrProperty), new WeakObjectPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtObjectPropertyBase), new ObjectPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtObjectPtrProperty), new ObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtObjectProperty), new ObjectPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), new ObjectPropertyTranslator());
+        
+        
         AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
@@ -52,6 +59,9 @@ public static class PropertyTranslatorManager
         AddBlittableCustomStructPropertyTranslator("TimerHandle", "UnrealSharp.Engine.TimerHandle");
         AddBlittableCustomStructPropertyTranslator("InputActionValue", "UnrealSharp.EnhancedInput.InputActionValue");
         
+        AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());
+        
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
@@ -59,6 +69,10 @@ public static class PropertyTranslatorManager
     
     public static PropertyTranslator? GetTranslator(UhtProperty property)
     {
+        if (property.EngineName == "Codecs")
+        {
+            Console.WriteLine("ObjectProperty");
+        }
         if (!RegisteredTranslators.TryGetValue(property.GetType(), out var translator))
         {
             return null;

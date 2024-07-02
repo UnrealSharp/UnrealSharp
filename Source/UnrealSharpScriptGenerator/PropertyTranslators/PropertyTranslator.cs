@@ -1,13 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public abstract class PropertyTranslator
 {
     EPropertyUsageFlags SupportedPropertyUsage;
+    
+    protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property | EPropertyUsageFlags.Parameter 
+        | EPropertyUsageFlags.ReturnValue 
+        | EPropertyUsageFlags.OverridableFunctionParameter 
+        | EPropertyUsageFlags.OverridableFunctionReturnValue 
+        | EPropertyUsageFlags.StaticArrayProperty;
     
     public bool IsSupportedAsProperty() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
     public bool IsSupportedAsParameter() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
@@ -17,6 +25,10 @@ public abstract class PropertyTranslator
     public bool IsSupportedAsOverridableFunctionParameter() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.OverridableFunctionParameter);
     public bool IsSupportedAsOverridableFunctionReturnValue() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.OverridableFunctionReturnValue);
     public bool IsSupportedInStaticArray() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.StaticArrayProperty);
+    
+    // Is this property the same memory layout as the C++ type?
+    public virtual bool IsBlittable => false;
+    public virtual bool NeedSetter => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
@@ -32,6 +44,9 @@ public abstract class PropertyTranslator
     
     // Get the marshaller for this property to marshal back and forth between C++ and C#
     public abstract string GetMarshaller(UhtProperty property);
+    
+    // Get the references this property need to work.
+    public virtual void GetReferences(UhtProperty property, List<UhtType> references) { }
     
     // Get the marshaller delegates for this property
     public abstract string ExportMarshallerDelegates(UhtProperty property);
@@ -54,15 +69,20 @@ public abstract class PropertyTranslator
     {
         builder.AppendLine($"static int {nativePropertyName}_Offset;");
     }
+    
+    public virtual void ExportParameterVariables(StringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string nativePropertyName)
+    {
+        builder.AppendLine($"static int {nativeMethodName}_{nativePropertyName}_Offset;");
+    }
 
     public virtual void ExportPropertyGetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-        throw new NotImplementedException();
+        ExportFromNative(builder, property, nativePropertyName, "return", "NativeObject", $"{nativePropertyName}_Offset", false, false);
     }
 
     public virtual void ExportPropertySetter(StringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-        throw new NotImplementedException();
+        ExportToNative(builder, property, nativePropertyName, "NativeObject", $"{nativePropertyName}_Offset", "value");
     }
 
     public virtual void ExportCppDefaultParameterAsLocalVariable(StringBuilder builder, string variableName,
@@ -87,7 +107,7 @@ public abstract class PropertyTranslator
     }
     
     // Build the C# code to marshal this property from C++ to C#
-    public abstract void ExportFromNative(StringBuilder builder, UhtProperty property, string nativePropertyName,
+    public abstract void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
         bool reuseRefMarshallers);
     
@@ -98,7 +118,38 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    // Is this property the same memory layout as the C++ type?
-    public virtual bool IsBlittable => false;
+    public void BeginPropertyAccessorBlock(StringBuilder builder, UhtProperty property, string protection)
+    {
+        string managedType = GetManagedType(property);
+        builder.AppendLine($"{protection}{managedType} {property.SourceName}");
+        builder.OpenBrace();
+    }
 
+    public void ExportProperty(StringBuilder builder, UhtProperty property)
+    {
+        builder.TryAddWithEditor(property);
+        
+        string nativePropertyName = property.SourceName;
+        builder.AppendLine("// Property: " + nativePropertyName);
+        
+        ExportPropertyVariables(builder, property, nativePropertyName);
+        string protection = property.GetProtection();
+        BeginPropertyAccessorBlock(builder, property, protection);
+
+        builder.AppendLine("get");
+        builder.OpenBrace();
+        ExportPropertyGetter(builder, property, nativePropertyName);
+        builder.CloseBrace();
+
+        if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
+        {
+            builder.AppendLine("set");
+            builder.OpenBrace();
+            ExportPropertySetter(builder, property, nativePropertyName);
+            builder.CloseBrace();
+        }
+        
+        builder.CloseBrace();
+        builder.TryAddWithEditor(property);
+    }
 }

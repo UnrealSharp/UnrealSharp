@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -34,7 +35,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
         return $"default({managedType})";
     }
 
-    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string nativePropertyName,
+    public override void ExportFromNative(StringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
         bool reuseRefMarshallers)
     {
@@ -65,7 +66,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 
     public override bool CanExport(UhtProperty property)
     {
-        return property.GetType() == _propertyType;
+        return property.GetType() == _propertyType || property.GetType().IsSubclassOf(_propertyType);
     }
 
     public override string GetManagedType(UhtProperty property)

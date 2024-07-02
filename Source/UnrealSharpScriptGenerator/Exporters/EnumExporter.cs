@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
 

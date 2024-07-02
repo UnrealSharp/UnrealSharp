@@ -1,5 +1,8 @@
-﻿namespace UnrealSharpScriptGenerator;
+﻿using System;
 
+namespace UnrealSharpScriptGenerator;
+
+[Flags]
 public enum EPropertyUsageFlags : byte
 {
     None = 0x00,

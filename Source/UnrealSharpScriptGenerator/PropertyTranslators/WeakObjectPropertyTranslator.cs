@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -14,6 +16,13 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
         UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
         string fullName = ScriptGeneratorUtilities.GetFullManagedName(weakObjectProperty.Class);
         return $"WeakObject<{fullName}>";
+    }
+
+    public override void GetReferences(UhtProperty property, List<UhtType> references)
+    {
+        base.GetReferences(property, references);
+        UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
+        references.Add(weakObjectProperty.Class);
     }
 
     public override bool CanExport(UhtProperty property)

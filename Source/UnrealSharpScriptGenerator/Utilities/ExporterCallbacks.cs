@@ -1,4 +1,4 @@
-﻿namespace UnrealSharpScriptGenerator;
+﻿namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ExporterCallbacks
 {

@@ -1,4 +1,6 @@
-﻿using EpicGames.UHT.Types;
+﻿using System.Collections.Generic;
+using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -14,5 +16,12 @@ public class SoftObjectPropertyTranslator : BlittableStructPropertyTranslator
         UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
         string fullName = ScriptGeneratorUtilities.GetFullManagedName(softObjectProperty.Class);
         return $"SoftObject<{fullName}>";
+    }
+
+    public override void GetReferences(UhtProperty property, List<UhtType> references)
+    {
+        base.GetReferences(property, references);
+        UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
+        references.Add(softObjectProperty.Class);
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 

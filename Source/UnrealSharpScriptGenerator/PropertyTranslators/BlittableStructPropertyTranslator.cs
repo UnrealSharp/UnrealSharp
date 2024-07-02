@@ -2,6 +2,7 @@
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -17,8 +18,8 @@ public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
         {
             UhtProperty property = (UhtProperty) child;
 
-            PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(property);
-            if (property.PropertyFlags.HasFlag(EPropertyFlags.BlueprintVisible) && propertyTranslator.IsBlittable)
+            PropertyTranslator? propertyTranslator = PropertyTranslatorManager.GetTranslator(property);
+            if (propertyTranslator != null && property.PropertyFlags.HasFlag(EPropertyFlags.BlueprintVisible) && propertyTranslator.IsBlittable)
             {
                 continue;
             }

@@ -16,6 +16,7 @@
         <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
         <RootNamespace>UnrealSharpScriptGenerator</RootNamespace>
         <AssemblyName>UnrealSharpScriptGenerator</AssemblyName>
+        <Configurations>Debug;Release;Development</Configurations>
         <DebugType>pdbonly</DebugType>
         <Nullable>enable</Nullable>
     </PropertyGroup>
