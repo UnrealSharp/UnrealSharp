@@ -66,6 +66,18 @@ public static class WeaverHelper
     {
         BindingsAssembly = bindingsAssembly;
     }
+    
+    public static void ForEachAssembly(Func<AssemblyDefinition, bool> action)
+    {
+        List<AssemblyDefinition> assemblies = [BindingsAssembly, UserAssembly];
+        foreach (var assembly in assemblies)
+        {
+            if (!action(assembly))
+            {
+                return;
+            }
+        }
+    }
 
     public static void ImportCommonTypes(AssemblyDefinition userAssembly)
     {
@@ -102,10 +114,10 @@ public static class WeaverHelper
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
     }
     
-    public static TypeReference FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters)
+    public static TypeReference? FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters, bool bThrowOnException = true)
     {
-        TypeReference? typeRef = FindTypeInAssembly(assembly, typeName, typeNamespace);
-        return UserAssembly.MainModule.ImportReference(typeRef.Resolve().MakeGenericInstanceType(typeParameters));
+        TypeReference? typeRef = FindTypeInAssembly(assembly, typeName, typeNamespace, bThrowOnException);
+        return typeRef == null ? null : UserAssembly.MainModule.ImportReference(typeRef.Resolve().MakeGenericInstanceType(typeParameters));
     }
 
     public static TypeReference? FindTypeInAssembly(AssemblyDefinition assembly, string typeName, string typeNamespace = "", bool throwOnException = true)
