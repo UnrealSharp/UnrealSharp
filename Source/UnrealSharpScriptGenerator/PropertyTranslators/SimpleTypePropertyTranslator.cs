@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
@@ -97,11 +98,6 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 	    {
 		    fieldInitializers.Add(part.Trim());
 	    }
-		
-		if (fieldInitializerList.Length > 0)
-		{
-			fieldInitializers.Add(fieldInitializerList);
-		}
 
 		string foundCSharpType = translator.GetManagedType(paramProperty);
 		builder.AppendLine($"{foundCSharpType} {variableName} = new {foundCSharpType}");
@@ -115,23 +111,29 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 			(fieldInitializers[0], fieldInitializers[2]) = (fieldInitializers[2], fieldInitializers[0]);
 		}
 		
-		for (int i = 0; i < structProperty.ScriptStruct.Children.Count; i++)
+		int fieldCount = fieldInitializers.Count;
+		for (int i = 0; i < fieldCount; i++)
 		{
-			UhtType Prop = structProperty.ScriptStruct.Children[i];
-			string FieldInitializer = fieldInitializers[i];
+			UhtType prop = structProperty.ScriptStruct.Children[i];
+			string fieldInitializer = fieldInitializers[i];
 
-			int pos = FieldInitializer.IndexOf("=", StringComparison.Ordinal);
+			int pos = fieldInitializer.IndexOf("=", StringComparison.Ordinal);
 			if (pos < 0)
 			{
-				builder.AppendLine(isFloat ? $"{Prop.SourceName}={Prop.SourceName}f," : $"{Prop.SourceName}={FieldInitializer},");
+				builder.AppendLine(isFloat ? $"{prop.SourceName}={prop.SourceName}f," : $"{prop.SourceName}={fieldInitializer},");
 			}
 			else
 			{
-				builder.AppendLine(isFloat ? $"{FieldInitializer}f," : $"{FieldInitializer},");
+				builder.AppendLine(isFloat ? $"{fieldInitializer}f," : $"{fieldInitializer},");
 			}
 		}
 		
 		builder.UnIndent();
 		builder.CloseBraceWithSemicolon();
+    }
+
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
+    {
+	    // No cleanup needed
     }
 }

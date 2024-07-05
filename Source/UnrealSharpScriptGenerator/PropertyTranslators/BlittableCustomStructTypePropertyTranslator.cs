@@ -6,6 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public class BlittableCustomStructTypePropertyTranslator : BlittableTypePropertyTranslator
 {
     private readonly string _nativeName;
+    public override bool ExportDefaultParameter => false;
     
     public BlittableCustomStructTypePropertyTranslator(string nativeName, string managedType) : base(typeof(UhtStructProperty), managedType)
     {

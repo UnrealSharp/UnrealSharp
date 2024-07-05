@@ -56,7 +56,24 @@ public static class FunctionUtilities
                 }
             }
         }
-
+        return false;
+    }
+    
+    public static bool HasOutParams(this UhtFunction function)
+    {
+        if (!function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        {
+            return function.HasAnyFlags(EFunctionFlags.HasOutParms);
+        }
+        
+        // Multicast delegates can have out params, but the UFunction flag isn't set.
+        foreach (UhtProperty param in function.Properties)
+        {
+            if (param.HasAnyFlags(EPropertyFlags.OutParm))
+            {
+                return true;
+            }
+        }
         return false;
     }
 }

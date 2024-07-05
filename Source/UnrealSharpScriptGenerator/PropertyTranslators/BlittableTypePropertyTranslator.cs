@@ -10,6 +10,8 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
     {
     }
 
+    public override bool ExportDefaultParameter => false;
+
     public override string GetMarshaller(UhtProperty property)
     {
         return $"BlittableMarshaller<{GetManagedType(property)}>";

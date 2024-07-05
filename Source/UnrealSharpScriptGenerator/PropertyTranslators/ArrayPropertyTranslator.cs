@@ -44,7 +44,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         string wrapperType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(arrayProperty.ValueProperty);
 
-        builder.AppendLine($"{nativePropertyName}_Marshaller ??= new {wrapperType}(1, {nativePropertyName}_NativeProperty, {marshallingDelegates});");
+        builder.AppendLine($"{nativePropertyName}_Marshaller ??= new {wrapperType}({nativePropertyName}_NativeProperty, {marshallingDelegates});");
         builder.AppendLine($"return {nativePropertyName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {nativePropertyName}_Offset), 0);");
     }
 

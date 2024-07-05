@@ -85,11 +85,6 @@ public static class ScriptGeneratorUtilities
 
         if (function.Outer is UhtClass classObj && classObj.SourceName == "UBlueprintAsyncActionBase")
         {
-            if (function.ReturnProperty == null)
-            {
-                return false;
-            }
-
             if (function.ReturnProperty is not UhtObjectProperty objectPropertyBase)
             {
                 return false;
@@ -98,15 +93,15 @@ public static class ScriptGeneratorUtilities
             return objectPropertyBase.Class.SourceName == "UBlueprintAsyncActionBase";
         }
         
-        foreach (UhtType child in function.Children)
+        foreach (UhtProperty child in function.Properties)
         {
-            if (child is UhtProperty property && CanExportProperty(property))
+            if (!CanExportProperty(child))
             {
-                return true;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
     
     public static bool HasBlueprintExposedProperties(UhtStruct classObj)
@@ -133,7 +128,7 @@ public static class ScriptGeneratorUtilities
             return false;
         }
 
-        return property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable) && translator.IsSupportedAsProperty();
+        return property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable) || translator.IsSupportedAsProperty();
     }
     
     public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
@@ -168,13 +163,6 @@ public static class ScriptGeneratorUtilities
         return $"{GetNamespace(type)}.{type.EngineName}";
     }
     
-    public static string GetCleanTypeName(UhtType type)
-    {
-        // Remove prefix such as A in AActor
-        string typeName = type.SourceName;
-        return typeName.Remove(0, 1);
-    }
-    
     public static void SaveExportedType(UhtType type, GeneratorStringBuilder generatorStringBuilder)
     {
         string directory = Path.Combine(Program.GeneratedGluePath, GetModuleName(type));
@@ -195,34 +183,6 @@ public static class ScriptGeneratorUtilities
         using StreamWriter sw = new StreamWriter(absoluteFilePath);
         sw.Write(builtString);
         sw.Close();
-    }
-    
-    public static bool IsBlueprintExposedType(UhtType classObj)
-    {
-        UhtType? currentType = classObj;
-        while (currentType != null)
-        {
-            if (currentType.MetaData.GetBoolean(BlueprintType) || currentType.MetaData.GetBoolean(BlueprintSpawnableComponent))
-            {
-                return true;
-            }
-            
-            if (currentType.MetaData.GetBoolean(NotBlueprintType))
-            {
-                return false;
-            }
-            
-            if (currentType is UhtClass classType)
-            {
-                currentType = classType.SuperClass;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        return false;
     }
     
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)

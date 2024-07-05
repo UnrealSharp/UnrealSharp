@@ -8,6 +8,8 @@ public class NamePropertyTranslator : BlittableTypePropertyTranslator
     public NamePropertyTranslator() : base(typeof(UhtNameProperty), "Name")
     {
     }
+    
+    public override bool ExportDefaultParameter => false;
 
     public override string GetNullValue(UhtProperty property)
     {

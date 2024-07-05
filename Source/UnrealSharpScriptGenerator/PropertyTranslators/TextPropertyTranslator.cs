@@ -9,7 +9,9 @@ public class TextPropertyTranslator : BlittableTypePropertyTranslator
     public TextPropertyTranslator() : base(typeof(UhtTextProperty), "Text")
     {
     }
-
+    
+    public override bool ExportDefaultParameter => false;
+    
     public override string GetNullValue(UhtProperty property)
     {
         return "Text.None";

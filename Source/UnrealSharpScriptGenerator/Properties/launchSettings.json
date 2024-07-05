@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TestProjectSharpEditor": {
+      "commandName": "Executable",
+      "executablePath": "dotnet",
+      "commandLineArgs": "\"C:\\Program Files\\Epic Games\\UE_5.4\\Engine\\Binaries\\DotNET\\UnrealBuildTool\\UnrealBuildTool.dll\" TestProjectSharpEditor Win64 DebugGame -Project=\"C:\\Users\\oscar\\Documents\\Unreal Projects\\TestProjectSharp\\TestProjectSharp.uproject\" -WaitMutex",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

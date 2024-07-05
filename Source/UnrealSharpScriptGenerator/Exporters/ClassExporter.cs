@@ -6,8 +6,10 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
 
-public static class ClassExporter 
+public static class ClassExporter
 {
+    private static Dictionary<string, ExtensionMethod> _overloads = new();
+    
     public static void ExportClass(UhtClass classObj)
     {
         GeneratorStringBuilder stringBuilder = new();
@@ -47,7 +49,10 @@ public static class ClassExporter
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         ExportClassProperties(stringBuilder, exportedProperties);
+        ExportClassFunctions(stringBuilder, exportedFunctions);
+        ExportOverrides(stringBuilder, exportedOverrides);
         
+        stringBuilder.AppendLine();
         stringBuilder.CloseBrace();
         
         ScriptGeneratorUtilities.SaveExportedType(classObj, stringBuilder);
@@ -60,5 +65,55 @@ public static class ClassExporter
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
             translator.ExportProperty(generatorStringBuilder, property);
         }
+    }
+    
+    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides)
+    {
+        foreach (UhtFunction function in exportedOverrides)
+        {
+            FunctionExporter.ExportOverridableFunction(builder, function);
+        }
+    }
+    
+    static void ExportClassFunctions(GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
+    {
+        foreach (UhtFunction function in exportedFunctions)
+        {
+            FunctionType functionType = FunctionType.Normal;
+
+            if (function.HasAllFlags(EFunctionFlags.Static) && function.Outer.EngineClassName == "UBlueprintFunctionLibrary")
+            {
+                ExtensionMethod? extensionMethod = GetExtensionMethodInfo(function);
+                if (extensionMethod == null)
+                {
+                    continue;
+                }
+                
+                string moduleName = ScriptGeneratorUtilities.GetModuleName(function.Outer);
+                _overloads.Add(moduleName, extensionMethod.Value);
+            }
+            
+            FunctionExporter.ExportFunction(builder, function, functionType);
+        }
+    }
+
+    static ExtensionMethod? GetExtensionMethodInfo(UhtFunction function)
+    {
+        if (!function.HasMetaData("ExtensionMethod") || function.Children.Count == 0)
+        {
+            return null;
+        }
+        
+        if (function.Children[0] is not UhtObjectPropertyBase selfProperty)
+        {
+            return null;
+        }
+        
+        return new ExtensionMethod
+        {
+            Class = selfProperty.Class,
+            Function = function,
+            SelfParameter = selfProperty,
+        };
     }
 }

@@ -125,7 +125,7 @@ public class GeneratorStringBuilder : IDisposable
     {
         if (function.FunctionFlags.HasAllFlags(EFunctionFlags.EditorOnly))
         {
-            BeginWithEditorPreproccesorBlock();
+            EndPreproccesorBlock();
         }
     }
     

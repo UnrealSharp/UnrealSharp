@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -11,7 +12,7 @@ public static class StaticConstructorUtilities
     public static void ExportStaticConstructor(GeneratorStringBuilder GeneratorStringBuilder, UhtStruct structObj, List<UhtProperty> exportedProperties, List<UhtFunction> exportedFunctions, List<UhtFunction> overrides)
     {
         UhtClass? classObj = structObj as UhtClass;
-        UhtScriptStruct? ScriptStructObj = structObj as UhtScriptStruct;
+        UhtScriptStruct? scriptStructObj = structObj as UhtScriptStruct;
 
         if (classObj != null && exportedProperties.Count == 0 && exportedFunctions.Count == 0 && overrides.Count == 0)
         {
@@ -38,7 +39,7 @@ public static class StaticConstructorUtilities
             nativeClassPtrDeclaration = "IntPtr ";
         }
 
-        if (ScriptStructObj != null)
+        if (scriptStructObj != null)
         {
             GeneratorStringBuilder.AppendLine("public static readonly int NativeDataSize;");
         }
@@ -84,10 +85,9 @@ public static class StaticConstructorUtilities
                     }
                 
                     PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, functionName);
+                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
                 }
             }
-            
             GeneratorStringBuilder.TryEndWithEditor(function);
         }
     }

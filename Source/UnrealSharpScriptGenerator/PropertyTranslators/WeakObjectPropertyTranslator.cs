@@ -10,6 +10,8 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
     public WeakObjectPropertyTranslator() : base(typeof(UhtWeakObjectPtrProperty), "WeakObject")
     {
     }
+    
+    public override bool ExportDefaultParameter => false;
 
     public override string GetManagedType(UhtProperty property)
     {

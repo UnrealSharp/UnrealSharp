@@ -29,6 +29,7 @@ public abstract class PropertyTranslator
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
     public virtual bool NeedSetter => true;
+    public virtual bool ExportDefaultParameter => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
@@ -88,7 +89,7 @@ public abstract class PropertyTranslator
     public virtual void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName,
         string defaultValue, UhtFunction function, UhtProperty paramProperty)
     {
-        throw new NotImplementedException();
+        
     }
 
     public virtual void ExportFunctionReturnStatement(GeneratorStringBuilder builder,
@@ -103,7 +104,7 @@ public abstract class PropertyTranslator
     // Cleanup the marshalling buffer
     public virtual void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
-        throw new NotImplementedException();
+
     }
     
     // Build the C# code to marshal this property from C++ to C#
@@ -130,7 +131,6 @@ public abstract class PropertyTranslator
         builder.AppendLine();
         builder.TryAddWithEditor(property);
         string nativePropertyName = property.SourceName;
-        builder.AppendLine("// Property: " + nativePropertyName);
         
         ExportPropertyVariables(builder, property, nativePropertyName);
         builder.AppendLine();
@@ -154,5 +154,11 @@ public abstract class PropertyTranslator
         builder.CloseBrace();
         builder.TryEndWithEditor(property);
         builder.AppendLine();
+    }
+    
+    public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
+    {
+        string metaDataKey = $"CPP_Default_{parameter.SourceName}";
+        return function.GetMetaData(metaDataKey);
     }
 }

@@ -11,6 +11,8 @@ public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
     public BlittableStructPropertyTranslator() : base(typeof(UhtStructProperty), "")
     {
     }
+    
+    public override bool ExportDefaultParameter => false;
 
     bool IsStructBlittable(UhtStruct structObj)
     {

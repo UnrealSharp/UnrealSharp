@@ -9,6 +9,8 @@ public class StructPropertyTranslator : SimpleTypePropertyTranslator
     public StructPropertyTranslator() : base(typeof(UhtStructProperty))
     {
     }
+    
+    public override bool ExportDefaultParameter => false;
 
     public override string GetManagedType(UhtProperty property)
     {
