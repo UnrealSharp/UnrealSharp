@@ -58,12 +58,12 @@ public abstract class PropertyTranslator
     // Export the static constructor for this property
     public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-       builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
+       builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{property.EngineName}\");");
     }
     
     public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
     {
-        builder.AppendLine($"{function.SourceName}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
+        builder.AppendLine($"{function.GetScriptName()}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
 
     public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -119,10 +119,10 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    public void BeginPropertyAccessorBlock(GeneratorStringBuilder builder, UhtProperty property, string protection)
+    public void BeginPropertyAccessorBlock(GeneratorStringBuilder builder, UhtProperty property, string protection, string propertyName)
     {
         string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {property.SourceName}");
+        builder.AppendLine($"{protection}{managedType} {propertyName}");
         builder.OpenBrace();
     }
 
@@ -130,24 +130,24 @@ public abstract class PropertyTranslator
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
-        string nativePropertyName = property.SourceName;
+        string scriptName = property.GetScriptName();
         
-        ExportPropertyVariables(builder, property, nativePropertyName);
+        ExportPropertyVariables(builder, property, scriptName);
         builder.AppendLine();
         
         string protection = property.GetProtection();
-        BeginPropertyAccessorBlock(builder, property, protection);
+        BeginPropertyAccessorBlock(builder, property, protection, scriptName);
 
         builder.AppendLine("get");
         builder.OpenBrace();
-        ExportPropertyGetter(builder, property, nativePropertyName);
+        ExportPropertyGetter(builder, property, scriptName);
         builder.CloseBrace();
 
         if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
         {
             builder.AppendLine("set");
             builder.OpenBrace();
-            ExportPropertySetter(builder, property, nativePropertyName);
+            ExportPropertySetter(builder, property, scriptName);
             builder.CloseBrace();
         }
         
@@ -158,17 +158,19 @@ public abstract class PropertyTranslator
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets)
     {
-        builder.AppendLine($"// {property.SourceName}");
+        string propertyScriptName = property.GetScriptName();
+        
+        builder.AppendLine($"// {propertyScriptName}");
         builder.AppendLine();
         
         if (!suppressOffsets)
         {
-            ExportPropertyVariables(builder, property, property.SourceName);
+            ExportPropertyVariables(builder, property, propertyScriptName);
         }
         
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {property.SourceName};");
+        builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
         builder.AppendLine();
     }
     

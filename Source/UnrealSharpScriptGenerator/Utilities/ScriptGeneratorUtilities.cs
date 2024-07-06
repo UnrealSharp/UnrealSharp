@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -162,13 +163,6 @@ public static class ScriptGeneratorUtilities
     public static string GetFullManagedName(UhtType type)
     {
         return $"{GetNamespace(type)}.{type.EngineName}";
-    }
-    
-    public static void SaveExportedType(UhtType type, GeneratorStringBuilder generatorStringBuilder)
-    {
-        string directory = Path.Combine(Program.GeneratedGluePath, GetModuleName(type));
-        string absoluteFilePath = Path.Combine(directory, type.EngineName + ".cs");
-        Program.Factory.CommitOutput(absoluteFilePath, generatorStringBuilder.StringBuilder);
     }
     
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)

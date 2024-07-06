@@ -69,7 +69,7 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            string functionName = function.SourceName;
+            string functionName = function.GetScriptName();
             GeneratorStringBuilder.TryAddWithEditor(function);
             GeneratorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{functionName}\");");
             
@@ -83,9 +83,9 @@ public static class StaticConstructorUtilities
                     {
                         continue;
                     }
-                
+
                     PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
+                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.GetScriptName());
                 }
             }
             GeneratorStringBuilder.TryEndWithEditor(function);
@@ -115,7 +115,7 @@ public static class StaticConstructorUtilities
                 }
                 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
+                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.GetScriptName());
             }
             
             GeneratorStringBuilder.TryEndWithEditor(function);
@@ -128,7 +128,7 @@ public static class StaticConstructorUtilities
         {
             GeneratorStringBuilder.TryAddWithEditor(property);
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-            translator.ExportPropertyStaticConstructor(GeneratorStringBuilder, property, property.SourceName);
+            translator.ExportPropertyStaticConstructor(GeneratorStringBuilder, property, property.GetScriptName());
             GeneratorStringBuilder.TryEndWithEditor(property);
         }
     }

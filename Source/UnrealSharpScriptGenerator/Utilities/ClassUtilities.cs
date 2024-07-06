@@ -5,7 +5,7 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName)
+    public static UhtFunction? FindFunctionByName(this UhtClass? classObj, string? functionName)
     {
         foreach (UhtFunction function in classObj.Functions)
         {

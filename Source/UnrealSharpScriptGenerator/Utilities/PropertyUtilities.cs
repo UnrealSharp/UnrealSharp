@@ -23,7 +23,7 @@ public static class PropertyUtilities
     
     public static string GetMetaData(this UhtProperty property, string key)
     {
-        return property.MetaData.TryGetValue(key, out string value) ? value : string.Empty;
+        return property.MetaData.TryGetValue(key, out var value) ? value : string.Empty;
     }
     
     public static bool HasMetaData(this UhtProperty property, string key)
@@ -35,7 +35,7 @@ public static class PropertyUtilities
     {
         string blueprintGetter = property.GetMetaData("BlueprintGetter");
         string blueprintSetter = property.GetMetaData("BlueprintSetter");
-        UhtClass classObj = property.Outer as UhtClass;
+        UhtClass? classObj = property.Outer as UhtClass;
         bool isClassOwner = classObj != null;
         
         if (isClassOwner && blueprintGetter != string.Empty || blueprintSetter != string.Empty)

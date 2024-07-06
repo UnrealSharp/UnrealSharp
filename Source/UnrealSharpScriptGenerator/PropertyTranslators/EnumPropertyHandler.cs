@@ -22,10 +22,24 @@ public class EnumPropertyHandler : BlittableTypePropertyTranslator
         string valueName = ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumObj.EnumValues[index]);
         return $"{GetManagedType(parameter)}.{valueName}";
     }
-
+    
     public override string GetManagedType(UhtProperty property)
     {
         return ScriptGeneratorUtilities.GetFullManagedName(GetEnum(property)!);
+    }
+    
+    public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
+        UhtFunction function, UhtProperty paramProperty)
+    {
+        UhtEnum enumObj = GetEnum(paramProperty)!;
+        
+        if (defaultValue.Contains("::"))
+        {
+            defaultValue = defaultValue.Substring(defaultValue.LastIndexOf("::") + 2);
+        }
+        
+        string fullEnumName = ScriptGeneratorUtilities.GetFullManagedName(enumObj);
+        builder.AppendLine($"{fullEnumName} {variableName} = {fullEnumName}.{defaultValue};");
     }
 
     private static UhtEnum? GetEnum(UhtProperty property)

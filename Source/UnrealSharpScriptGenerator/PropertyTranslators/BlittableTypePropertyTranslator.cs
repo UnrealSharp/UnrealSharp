@@ -16,17 +16,11 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
     {
         return $"BlittableMarshaller<{GetManagedType(property)}>";
     }
-
+    
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
-        if (defaultValue == "None")
-        {
-            builder.AppendLine($"Name {variableName} = Name.None;");
-        }
-        else
-        {
-            builder.AppendLine($"Name {variableName} = Name(\"{defaultValue}\");");
-        }
+        string defaultValueString = ConvertCPPDefaultValue(defaultValue, function, paramProperty);
+        builder.AppendLine($"{_managedType} {variableName} = {defaultValueString};");
     }
 }

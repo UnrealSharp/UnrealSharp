@@ -25,18 +25,20 @@ public static class EnumExporter
         foreach (UhtEnumValue enumValue in enumObj.EnumValues)
         {
             string cleanValueName = ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue);
-            stringBuilder.AppendLine($"{cleanValueName} = {enumValue.Value},");
+            string value = enumValue.Value == -1 ? "," : $" = {enumValue.Value},";
+            stringBuilder.AppendLine($"{cleanValueName}{value}");
         }
         stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
-        ScriptGeneratorUtilities.SaveExportedType(enumObj, stringBuilder);
+        FileExporter.SaveTypeToDisk(enumObj, stringBuilder);
     }
     
     public static string UnderlyingTypeToString(UhtEnumUnderlyingType underlyingType)
     {
         return underlyingType switch
         {
+            UhtEnumUnderlyingType.Unspecified => "int",
             UhtEnumUnderlyingType.Uint8 => "byte",
             UhtEnumUnderlyingType.Int8 => "sbyte",
             UhtEnumUnderlyingType.Int16 => "short",

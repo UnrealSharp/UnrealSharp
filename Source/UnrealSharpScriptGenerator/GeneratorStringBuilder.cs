@@ -46,6 +46,11 @@ public class GeneratorStringBuilder : IDisposable
     {
         --_indent;
     }
+    
+    public void Append(string text)
+    {
+        StringBuilder.Append(text);
+    }
 
     public void AppendLine()
     {
@@ -73,7 +78,7 @@ public class GeneratorStringBuilder : IDisposable
     
     public void DeclareDirective(string directive)
     {
-        if (_directives.Contains(directive))
+        if (_directives.Contains(directive) || string.IsNullOrEmpty(directive))
         {
             return;
         }

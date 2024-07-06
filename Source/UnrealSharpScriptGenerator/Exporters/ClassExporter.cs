@@ -55,7 +55,7 @@ public static class ClassExporter
         stringBuilder.AppendLine();
         stringBuilder.CloseBrace();
         
-        ScriptGeneratorUtilities.SaveExportedType(classObj, stringBuilder);
+        FileExporter.SaveTypeToDisk(classObj, stringBuilder);
     }
 
     static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)

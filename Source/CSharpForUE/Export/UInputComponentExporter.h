@@ -7,7 +7,7 @@
 
 class UInputAction;
 
-UCLASS()
+UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UUInputComponentExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

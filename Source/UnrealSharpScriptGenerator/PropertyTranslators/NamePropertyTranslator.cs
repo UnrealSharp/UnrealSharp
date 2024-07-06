@@ -13,11 +13,19 @@ public class NamePropertyTranslator : BlittableTypePropertyTranslator
 
     public override string GetNullValue(UhtProperty property)
     {
-        return "Name.None";
+        return "default(Name)";
     }
 
-    public override string ExportMarshallerDelegates(UhtProperty property)
+    public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
+        UhtFunction function, UhtProperty paramProperty)
     {
-        return base.ExportMarshallerDelegates(property);
+        if (defaultValue == "None")
+        {
+            builder.AppendLine($"Name {variableName} = Name.None;");
+        }
+        else
+        {
+            builder.AppendLine($"Name {variableName} = Name(\"{defaultValue}\");");
+        }
     }
 }

@@ -115,6 +115,7 @@ public class FunctionExporter
         {
             _modifiers += "static ";
             _invokeFunction = $"{ExporterCallbacks.UObjectCallbacks}.CallInvokeNativeStaticFunction";
+            _invokeFirstArgument = "NativeClassPtr";
         }
         else if (function.HasAllFlags(EFunctionFlags.Delegate))
         {
@@ -194,7 +195,7 @@ public class FunctionExporter
             else
             {
                 string cppDefaultValue = translator.GetCppDefaultValue(function, parameter);
-
+                
                 if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
                 {
                     _paramsStringCall += $"new {structProperty.ScriptStruct.EngineName}()";
@@ -212,7 +213,7 @@ public class FunctionExporter
                     hasDefaultParameters = true;
                     string csharpDefaultValue = "";
                     
-                    if (cppDefaultValue.Length > 0)
+                    if (cppDefaultValue.Length == 0 || cppDefaultValue == "None")
                     {
                         csharpDefaultValue = translator.GetNullValue(parameter);
                     }
@@ -220,8 +221,8 @@ public class FunctionExporter
                     {
                         csharpDefaultValue = translator.ConvertCPPDefaultValue(cppDefaultValue, function, parameter);
                     }
-
-                    if (string.IsNullOrEmpty(csharpDefaultValue))
+                    
+                    if (!string.IsNullOrEmpty(csharpDefaultValue))
                     {
                         string defaultValue = $" = {csharpDefaultValue}";
                         _paramStringApiWithDefaults += $"{refQualifier}{translator.GetManagedType(parameter)} {parameter.SourceName}{defaultValue}";
@@ -244,7 +245,6 @@ public class FunctionExporter
                         };
                         
                         _overloads.Add(overload);
-                        
                         _paramStringApiWithDefaults = paramString;
                     }
                 }
@@ -573,7 +573,7 @@ public class FunctionExporter
                     continue;
                 }
                 
-                string propertyName = parameter.SourceName;
+                string propertyName = parameter.GetScriptName();
                 
                 if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm) || !parameter.HasAllFlags(EPropertyFlags.OutParm))
                 {
@@ -600,10 +600,11 @@ public class FunctionExporter
 
                 foreach (UhtProperty parameter in _function.Properties)
                 {
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
                     if (parameter.HasAllFlags(EPropertyFlags.ReturnParm) || 
                         (!parameter.HasAllFlags(EPropertyFlags.ConstParm) && parameter.HasAllFlags(EPropertyFlags.OutParm)))
                     {
+                        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
+                        
                         string marshalDestination;
                         if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
                         {
@@ -617,7 +618,7 @@ public class FunctionExporter
                         
                         translator.ExportFromNative(builder, 
                             parameter, 
-                            parameter.SourceName, 
+                            parameter.EngineName, 
                             $"{marshalDestination} =", 
                             "ParamsBuffer", 
                             $"{_functionName}_{parameter.SourceName}_Offset", 
@@ -661,6 +662,11 @@ public class FunctionExporter
             if (deprecationMessage.Length == 0)
             {
                 deprecationMessage = "This function is deprecated.";
+            }
+            else
+            {
+                // Remove nested quotes
+                deprecationMessage = deprecationMessage.Replace("\"", "");
             }
             builder.AppendLine($"[Obsolete(\"{_function.SourceName} is deprecated: {deprecationMessage}\")]");
         }

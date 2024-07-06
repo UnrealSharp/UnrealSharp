@@ -4,58 +4,62 @@ using System.Linq;
 using System.Threading.Tasks;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 
 public class CSharpExporter
 {
+    private readonly List<Task?> _tasks = new();
+    
     public void StartExport()
     {
-        List<Task?> tasks = new();
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
-            ProcessPackage(package, tasks);
+            ProcessPackage(package);
         }
         
-        Task[] waitTasks = tasks.Where(x => x != null).Cast<Task>().ToArray();
+        Task[] waitTasks = _tasks.Where(x => x != null).Cast<Task>().ToArray();
         if (waitTasks.Length > 0)
         {
             Task.WaitAll(waitTasks);
         }
     }
     
-    private void ProcessPackage(UhtType package, List<Task?> tasks)
+    private void ProcessPackage(UhtType package)
     {
-        foreach (UhtType foundHeader in package.Children)
+        foreach (UhtType packageChild in package.Children)
         {
-            if (foundHeader is not UhtHeaderFile header)
-            {
-                continue;
-            }
+            ExportType(packageChild, _tasks);
             
-            foreach (UhtType type in header.Children)
+            foreach (UhtType type in packageChild.Children)
             {
-                if (type is UhtClass classObj)
-                {
-                    if (classObj.ClassType == UhtClassType.Interface)
-                    {
-                        tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
-                    }
-                    tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
-                }
-                else if (type is UhtEnum enumObj)
-                {
-                    if (enumObj.UnderlyingType == UhtEnumUnderlyingType.Unspecified)
-                    {
-                        continue;
-                    }
-                    tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
-                }
-                else if (type is UhtScriptStruct structObj)
-                {
-                    tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
-                }
+                ExportType(type, _tasks);
             }
+        }
+    }
+
+    private void ExportType(UhtType type, List<Task?> tasks)
+    {
+        if (type.HasMetadata("NotGeneratorValid"))
+        {
+            return;
+        }
+        if (type is UhtClass classObj)
+        {
+            if (classObj.ClassType == UhtClassType.Interface)
+            {
+                tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
+            }
+            tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
+        }
+        else if (type is UhtEnum enumObj)
+        {
+            tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
+        }
+        else if (type is UhtScriptStruct structObj)
+        {
+            tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
         }
     }
 }

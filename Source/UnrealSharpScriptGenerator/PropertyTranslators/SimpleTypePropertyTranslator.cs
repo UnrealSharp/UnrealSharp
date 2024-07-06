@@ -12,7 +12,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
     public override bool IsBlittable => true;
     
     private readonly Type _propertyType;
-    private readonly string? _managedType;
+    protected readonly string? _managedType;
 
     public SimpleTypePropertyTranslator(Type propertyType, string? managedType = "") : base(EPropertyUsageFlags.Any)
     {
@@ -56,7 +56,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
     
     public virtual string GetPropertyName(UhtProperty property)
 	{
-		return property.SourceName;
+		return property.GetScriptName();
 	}
 
     public override string ExportMarshallerDelegates(UhtProperty property)
@@ -102,7 +102,6 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 		string foundCSharpType = translator.GetManagedType(paramProperty);
 		builder.AppendLine($"{foundCSharpType} {variableName} = new {foundCSharpType}");
 		builder.OpenBrace();
-		builder.Indent();
 
 		bool isFloat = true;
 		if (structName == "Color")
@@ -115,12 +114,13 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 		for (int i = 0; i < fieldCount; i++)
 		{
 			UhtType prop = structProperty.ScriptStruct.Children[i];
+			string scriptName = prop.GetScriptName();
 			string fieldInitializer = fieldInitializers[i];
 
 			int pos = fieldInitializer.IndexOf("=", StringComparison.Ordinal);
 			if (pos < 0)
 			{
-				builder.AppendLine(isFloat ? $"{prop.SourceName}={prop.SourceName}f," : $"{prop.SourceName}={fieldInitializer},");
+				builder.AppendLine(isFloat ? $"{scriptName}={fieldInitializer}f," : $"{scriptName}={fieldInitializer},");
 			}
 			else
 			{
@@ -128,8 +128,8 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 			}
 		}
 		
-		builder.UnIndent();
-		builder.CloseBraceWithSemicolon();
+		builder.CloseBrace();
+		builder.Append(";");
     }
 
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
