@@ -81,11 +81,10 @@ public class ArrayPropertyTranslator : PropertyTranslator
         }
     }
 
-    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function,
-        string nativePropertyName)
+    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
     {
         base.ExportParameterStaticConstructor(builder, property, function, nativePropertyName);
-        builder.AppendLine($"{nativePropertyName}_{property.SourceName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyFromName({function.SourceName}_NativeFunction, \"{nativePropertyName}\");");
+        builder.AppendLine($"{function.SourceName}_{property.SourceName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({function.SourceName}_NativeFunction, \"{nativePropertyName}\");");
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)

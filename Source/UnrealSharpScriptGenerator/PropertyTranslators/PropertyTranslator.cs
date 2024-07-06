@@ -155,6 +155,22 @@ public abstract class PropertyTranslator
         builder.TryEndWithEditor(property);
         builder.AppendLine();
     }
+
+    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets)
+    {
+        builder.AppendLine($"// {property.SourceName}");
+        builder.AppendLine();
+        
+        if (!suppressOffsets)
+        {
+            ExportPropertyVariables(builder, property, property.SourceName);
+        }
+        
+        string protection = property.GetProtection();
+        string managedType = GetManagedType(property);
+        builder.AppendLine($"{protection}{managedType} {property.SourceName};");
+        builder.AppendLine();
+    }
     
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {

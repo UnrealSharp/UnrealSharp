@@ -19,6 +19,8 @@ public class ClassPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetMarshaller(UhtProperty property)
     {
-        return $"SubclassOfMarshaller<{GetManagedType(property)}>";
+        UhtClassProperty classProperty = (UhtClassProperty)property;
+        string fullName = ScriptGeneratorUtilities.GetFullManagedName(classProperty.Class);
+        return $"SubclassOfMarshaller<{fullName}>";
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -167,22 +168,7 @@ public static class ScriptGeneratorUtilities
     {
         string directory = Path.Combine(Program.GeneratedGluePath, GetModuleName(type));
         string absoluteFilePath = Path.Combine(directory, type.EngineName + ".cs");
-        string builtString = generatorStringBuilder.ToString();
-        
-        if (File.Exists(absoluteFilePath) && File.ReadAllText(absoluteFilePath) == builtString)
-        {
-            // No changes, return
-            return;
-        }
-        
-        if (!Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-        
-        using StreamWriter sw = new StreamWriter(absoluteFilePath);
-        sw.Write(builtString);
-        sw.Close();
+        Program.Factory.CommitOutput(absoluteFilePath, generatorStringBuilder.StringBuilder);
     }
     
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)

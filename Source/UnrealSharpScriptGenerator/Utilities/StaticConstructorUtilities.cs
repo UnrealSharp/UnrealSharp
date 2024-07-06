@@ -73,7 +73,7 @@ public static class StaticConstructorUtilities
             GeneratorStringBuilder.TryAddWithEditor(function);
             GeneratorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{functionName}\");");
             
-            if (function.HasParameters)
+            if (function.HasParametersOrReturnValue())
             {
                 GeneratorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
                 
@@ -96,7 +96,7 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in overrides)
         {
-            if (!function.HasParameters)
+            if (!function.HasParametersOrReturnValue())
             {
                 continue;
             }
@@ -115,7 +115,7 @@ public static class StaticConstructorUtilities
                 }
                 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, functionName);
+                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
             }
             
             GeneratorStringBuilder.TryEndWithEditor(function);

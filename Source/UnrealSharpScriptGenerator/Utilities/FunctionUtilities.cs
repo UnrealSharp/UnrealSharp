@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
@@ -75,5 +76,10 @@ public static class FunctionUtilities
             }
         }
         return false;
+    }
+    
+    public static bool HasParametersOrReturnValue(this UhtFunction function)
+    {
+        return function.HasParameters || function.ReturnProperty != null;
     }
 }

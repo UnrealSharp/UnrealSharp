@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 
@@ -42,10 +41,7 @@ public class CSharpExporter
                     {
                         tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
                     }
-                    else if (ScriptGeneratorUtilities.CanExportClass(classObj))
-                    {
-                        tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
-                    }
+                    tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
                 }
                 else if (type is UhtEnum enumObj)
                 {
@@ -55,7 +51,7 @@ public class CSharpExporter
                     }
                     tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
                 }
-                else if (type is UhtStruct structObj)
+                else if (type is UhtScriptStruct structObj)
                 {
                     tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
                 }

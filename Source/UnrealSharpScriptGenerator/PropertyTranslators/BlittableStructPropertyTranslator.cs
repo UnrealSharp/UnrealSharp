@@ -14,28 +14,10 @@ public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
     
     public override bool ExportDefaultParameter => false;
 
-    bool IsStructBlittable(UhtStruct structObj)
-    {
-        foreach (UhtType child in structObj.Children)
-        {
-            UhtProperty property = (UhtProperty) child;
-
-            PropertyTranslator? propertyTranslator = PropertyTranslatorManager.GetTranslator(property);
-            if (propertyTranslator != null && property.PropertyFlags.HasFlag(EPropertyFlags.BlueprintVisible) && propertyTranslator.IsBlittable)
-            {
-                continue;
-            }
-            
-            return false;
-        }
-
-        return true;
-    }
-
     public override bool CanExport(UhtProperty property)
     {
         UhtStructProperty structProperty = (UhtStructProperty) property;
-        return IsStructBlittable(structProperty.ScriptStruct);
+        return structProperty.ScriptStruct.IsStructBlittable();
     }
 
     public override string GetManagedType(UhtProperty property)

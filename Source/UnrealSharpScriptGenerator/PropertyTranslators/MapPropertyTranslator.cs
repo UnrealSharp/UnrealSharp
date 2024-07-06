@@ -198,7 +198,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
     public override string GetNullValue(UhtProperty property)
     {
-        throw new System.NotImplementedException();
+        return "null";
     }
 
     public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)

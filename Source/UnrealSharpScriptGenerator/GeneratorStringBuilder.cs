@@ -13,7 +13,7 @@ public class GeneratorStringBuilder : IDisposable
     private int _indent;
     private List<string> _directives = new();
     private readonly BorrowStringBuilder _borrower = new(StringBuilderCache.Big);
-    private StringBuilder StringBuilder => _borrower.StringBuilder;
+    public StringBuilder StringBuilder => _borrower.StringBuilder;
 
     public override string ToString()
     {

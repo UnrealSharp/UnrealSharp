@@ -58,7 +58,7 @@ public class FunctionExporter
     private readonly UhtFunction _function;
     private readonly string _functionName;
     private readonly List<PropertyTranslator> _parameterTranslators;
-    private PropertyTranslator _returnValueTranslator;
+    private PropertyTranslator? ReturnValueTranslator => _function.ReturnProperty != null ? _parameterTranslators.Last() : null;
     private readonly EOverloadMode _overloadMode;
     private readonly EFunctionProtectionMode _protectionMode;
     private readonly EBlueprintVisibility _blueprintVisibility;
@@ -92,16 +92,11 @@ public class FunctionExporter
         _overloadMode = overloadMode;
         _protectionMode = protectionMode;
         _blueprintVisibility = blueprintVisibility;
-
-        if (function.ReturnProperty != null)
-        {
-            _returnValueTranslator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty);
-        }
         
         _parameterTranslators = new List<PropertyTranslator>();
         foreach (UhtProperty parameter in function.Properties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter);
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
             _parameterTranslators.Add(translator);
         }
 
@@ -123,7 +118,7 @@ public class FunctionExporter
         }
         else if (function.HasAllFlags(EFunctionFlags.Delegate))
         {
-            if (function.HasParameters)
+            if (function.HasParametersOrReturnValue())
             {
                 _customInvoke = "ProcessDelegate(IntPtr.Zero);";
             }
@@ -321,8 +316,6 @@ public class FunctionExporter
         string ParamsStringAPI = "";
         string ParamsCallString = "";
         string methodName = function.SourceName;
-        
-        builder.TryAddWithEditor(function);
 
         foreach (UhtProperty parameter in function.Properties)
         {
@@ -348,7 +341,6 @@ public class FunctionExporter
             }
             
             ParamsStringAPI += $"{refQualifier}{paramType} {paramName}, ";
-            ParamsStringAPI += ", ";
             ParamsCallString += $"{refQualifier}{paramName}, ";
         }
         
@@ -392,7 +384,11 @@ public class FunctionExporter
         }
         
         builder.CloseBrace();
-
+        
+        builder.AppendLine($"void Invoke_{methodName}(IntPtr buffer, IntPtr returnBuffer)");
+        builder.OpenBrace();
+        builder.BeginUnsafeBlock();
+        
         string returnAssignment = "";
         foreach (UhtProperty parameter in function.Properties)
         {
@@ -409,9 +405,9 @@ public class FunctionExporter
             }
             else
             {
-                returnAssignment = $"{paramType} {parameter.SourceName} = ";
+                string assignmentOrReturn = $"{paramType} {parameter.SourceName} = ";
                 string offsetName = $"{methodName}_{parameter.SourceName}_Offset";
-                translator.ExportFromNative(builder, parameter, parameter.SourceName, returnAssignment, "buffer", offsetName, false, false);
+                translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer", offsetName, false, false);
             }
         }
         
@@ -485,7 +481,7 @@ public class FunctionExporter
         string staticDeclaration = BlueprintEvent ? "" : "static ";
         builder.AppendLine($"{staticDeclaration}IntPtr {_function.SourceName}_NativeFunction;");
         
-        if (_function.HasParameters)
+        if (_function.HasParametersOrReturnValue())
         {
             builder.AppendLine($"static int {_function.SourceName}_ParamsSize;");
         }
@@ -508,7 +504,7 @@ public class FunctionExporter
             string returnStatement = "";
             if (_function.ReturnProperty != null)
             {
-                returnType = _returnValueTranslator.GetManagedType(_function.ReturnProperty);
+                returnType = ReturnValueTranslator.GetManagedType(_function.ReturnProperty);
                 returnStatement = "return ";
             }
             
@@ -519,7 +515,7 @@ public class FunctionExporter
             builder.CloseBrace();
         }
     }
-
+    
     void ExportFunction(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
@@ -549,11 +545,11 @@ public class FunctionExporter
         {
             builder.AppendLine($"if ({nativeFunctionvarName} == IntPtr.Zero)");
             builder.OpenBrace();
-            builder.AppendLine($"{nativeFunctionvarName} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromInstanceAndName(NativeClassPtr, \"{_function.SourceName}\");");
+            builder.AppendLine($"{nativeFunctionvarName} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{_function.SourceName}\");");
             builder.CloseBrace();
         }
-
-        if (!_function.HasParameters)
+        
+        if (!_function.HasParametersOrReturnValue())
         {
             if (string.IsNullOrEmpty(_customInvoke))
             {
@@ -611,7 +607,7 @@ public class FunctionExporter
                         string marshalDestination;
                         if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
                         {
-                            builder.AppendLine($"{_returnValueTranslator.GetManagedType(parameter)} returnValue;");
+                            builder.AppendLine($"{ReturnValueTranslator.GetManagedType(parameter)} returnValue;");
                             marshalDestination = "returnValue";
                         }
                         else
@@ -652,7 +648,7 @@ public class FunctionExporter
     void ExportSignature(GeneratorStringBuilder builder, string protection)
     {
         string returnType = _function.ReturnProperty != null
-            ? _returnValueTranslator.GetManagedType(_function.ReturnProperty)
+            ? ReturnValueTranslator.GetManagedType(_function.ReturnProperty)
             : "void";
         builder.AppendLine($"{protection}{returnType} {_functionName}({_paramStringApiWithDefaults})");
     }
