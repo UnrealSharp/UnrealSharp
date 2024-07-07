@@ -48,10 +48,6 @@ public static class NameMapper
         }
         
         UhtClass? classObj = function.Outer as UhtClass;
-        if (classObj.EngineName.Contains("TextRenderComponent"))
-        {
-            Console.WriteLine(functionName);
-        }
         foreach (UhtFunction exportedFunction in classObj!.Functions)
         {
             if (exportedFunction != function && functionName == exportedFunction.EngineName)

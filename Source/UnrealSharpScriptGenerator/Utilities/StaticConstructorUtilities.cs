@@ -103,11 +103,6 @@ public static class StaticConstructorUtilities
             
             GeneratorStringBuilder.TryAddWithEditor(function);
             string functionName = function.SourceName;
-
-            if (function.SourceName.Contains("OnChangeName"))
-            {
-                Console.WriteLine(functionName);
-            }
             
             GeneratorStringBuilder.AppendLine($"IntPtr {functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{functionName}\");");
             GeneratorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
