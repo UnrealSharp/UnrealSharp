@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -171,7 +172,7 @@ public class MapPropertyTranslator : PropertyTranslator
        if (property.Outer is UhtFunction function)
        {
            string nativeMethodName = function.SourceName;
-           nativePropertyName = $"{nativeMethodName}_{propertyName}";
+           nativePropertyName = $"{nativeMethodName}_{nativePropertyName}";
            marshaller = $"{nativeMethodName}_{marshaller}";
        }
        

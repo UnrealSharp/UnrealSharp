@@ -99,7 +99,7 @@ public static class ClassExporter
 
     static ExtensionMethod? GetExtensionMethodInfo(UhtFunction function)
     {
-        if (!function.HasMetaData("ExtensionMethod") || function.Children.Count == 0)
+        if (!function.HasMetadata("ExtensionMethod") || function.Children.Count == 0)
         {
             return null;
         }

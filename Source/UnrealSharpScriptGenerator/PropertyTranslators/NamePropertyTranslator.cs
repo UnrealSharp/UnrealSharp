@@ -25,7 +25,7 @@ public class NamePropertyTranslator : BlittableTypePropertyTranslator
         }
         else
         {
-            builder.AppendLine($"Name {variableName} = Name(\"{defaultValue}\");");
+            builder.AppendLine($"Name {variableName} = new Name(\"{defaultValue}\");");
         }
     }
 }

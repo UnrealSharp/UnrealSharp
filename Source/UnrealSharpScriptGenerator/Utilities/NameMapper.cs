@@ -37,4 +37,29 @@ public static class NameMapper
         // Just return the engine name, no conflicts
         return type.EngineName;
     }
+    
+    public static string GetScriptName(this UhtFunction function)
+    {
+        string functionName = GetScriptName((UhtType) function);
+        
+        if (functionName.Contains("K2_"))
+        {
+            functionName = functionName.Replace("K2_", "");
+        }
+        
+        UhtClass? classObj = function.Outer as UhtClass;
+        if (classObj.EngineName.Contains("TextRenderComponent"))
+        {
+            Console.WriteLine(functionName);
+        }
+        foreach (UhtFunction exportedFunction in classObj!.Functions)
+        {
+            if (exportedFunction != function && functionName == exportedFunction.EngineName)
+            {
+                return function.SourceName;
+            }
+        }
+
+        return functionName;
+    }
 }

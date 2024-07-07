@@ -63,7 +63,7 @@ public abstract class PropertyTranslator
     
     public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
     {
-        builder.AppendLine($"{function.GetScriptName()}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
+        builder.AppendLine($"{function.SourceName}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
 
     public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -177,6 +177,6 @@ public abstract class PropertyTranslator
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {
         string metaDataKey = $"CPP_Default_{parameter.SourceName}";
-        return function.GetMetaData(metaDataKey);
+        return function.GetMetadata(metaDataKey);
     }
 }

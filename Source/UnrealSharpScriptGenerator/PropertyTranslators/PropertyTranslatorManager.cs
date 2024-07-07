@@ -7,9 +7,14 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>> RegisteredTranslators = new();
+    public static HashSet<string> ManuallyExportedTypes = new();
     
     static PropertyTranslatorManager()
     {
+        EnumPropertyHandler enumPropertyHandler = new();
+        AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyHandler);
+        AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyHandler);
+        
         AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte");
         AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short");
         AddBlittablePropertyTranslator(typeof(UhtIntProperty), "int");
@@ -21,10 +26,6 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
-        
-        EnumPropertyHandler enumPropertyHandler = new();
-        AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyHandler);
-        AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyHandler);
         
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         
@@ -111,6 +112,7 @@ public static class PropertyTranslatorManager
     private static void AddBlittableCustomStructPropertyTranslator(string nativeName, string managedType)
     {
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
+        ManuallyExportedTypes.Add(nativeName);
     }
     
 }

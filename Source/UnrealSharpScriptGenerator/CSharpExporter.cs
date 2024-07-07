@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
@@ -41,10 +42,11 @@ public class CSharpExporter
 
     private void ExportType(UhtType type, List<Task?> tasks)
     {
-        if (type.HasMetadata("NotGeneratorValid"))
+        if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.EngineName))
         {
             return;
         }
+        
         if (type is UhtClass classObj)
         {
             if (classObj.ClassType == UhtClassType.Interface)

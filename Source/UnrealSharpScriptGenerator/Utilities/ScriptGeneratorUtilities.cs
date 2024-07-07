@@ -84,16 +84,14 @@ public static class ScriptGeneratorUtilities
         {
             return false;
         }
-
-        if (function.Outer is UhtClass classObj && classObj.SourceName == "UBlueprintAsyncActionBase")
-        {
-            if (function.ReturnProperty is not UhtObjectProperty objectPropertyBase)
-            {
-                return false;
-            };
-            
-            return objectPropertyBase.Class.SourceName == "UBlueprintAsyncActionBase";
-        }
+        
+        // if (function.HasMetadata("BlueprintInternalUseOnly"))
+        // {
+        //     if (!(function.Outer is UhtClass uhtClass && uhtClass.IsChildOf("BlueprintAsyncActionBase")))
+        //     {
+        //         return false;
+        //     }
+        // }
         
         foreach (UhtProperty child in function.Properties)
         {
@@ -149,12 +147,12 @@ public static class ScriptGeneratorUtilities
         UhtClass? currentType = type;
         while (currentType != null)
         {
-            if (currentType.EngineClassName == parentClassName)
+            if (currentType.EngineName == parentClassName)
             {
                 return true;
             }
             
-            currentType = type!.SuperClass;
+            currentType = currentType.SuperClass;
         }
         
         return false;

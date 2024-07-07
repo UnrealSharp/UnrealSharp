@@ -69,7 +69,7 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            string functionName = function.GetScriptName();
+            string functionName = function.SourceName;
             GeneratorStringBuilder.TryAddWithEditor(function);
             GeneratorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{functionName}\");");
             
@@ -85,7 +85,7 @@ public static class StaticConstructorUtilities
                     }
 
                     PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.GetScriptName());
+                    translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
                 }
             }
             GeneratorStringBuilder.TryEndWithEditor(function);
@@ -103,6 +103,11 @@ public static class StaticConstructorUtilities
             
             GeneratorStringBuilder.TryAddWithEditor(function);
             string functionName = function.SourceName;
+
+            if (function.SourceName.Contains("OnChangeName"))
+            {
+                Console.WriteLine(functionName);
+            }
             
             GeneratorStringBuilder.AppendLine($"IntPtr {functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{functionName}\");");
             GeneratorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
@@ -115,7 +120,7 @@ public static class StaticConstructorUtilities
                 }
                 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.GetScriptName());
+                translator.ExportParameterStaticConstructor(GeneratorStringBuilder, property, function, property.SourceName);
             }
             
             GeneratorStringBuilder.TryEndWithEditor(function);

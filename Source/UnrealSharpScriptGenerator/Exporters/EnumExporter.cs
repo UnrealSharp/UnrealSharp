@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
@@ -22,12 +19,15 @@ public static class EnumExporter
         stringBuilder.DeclareType("enum", enumObj.EngineName, underlyingType, isPartial: false);
         
         stringBuilder.Indent();
-        foreach (UhtEnumValue enumValue in enumObj.EnumValues)
+        int enumValuesCount = enumObj.EnumValues.Count;
+        for (int i = 0; i < enumValuesCount; i++)
         {
+            UhtEnumValue enumValue = enumObj.EnumValues[i];
             string cleanValueName = ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue);
             string value = enumValue.Value == -1 ? "," : $" = {enumValue.Value},";
             stringBuilder.AppendLine($"{cleanValueName}{value}");
         }
+        
         stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
@@ -38,7 +38,7 @@ public static class EnumExporter
     {
         return underlyingType switch
         {
-            UhtEnumUnderlyingType.Unspecified => "int",
+            UhtEnumUnderlyingType.Unspecified => "",
             UhtEnumUnderlyingType.Uint8 => "byte",
             UhtEnumUnderlyingType.Int8 => "sbyte",
             UhtEnumUnderlyingType.Int16 => "short",

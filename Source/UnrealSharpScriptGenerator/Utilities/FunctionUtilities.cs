@@ -16,16 +16,6 @@ public static class FunctionUtilities
     {
         return (function.FunctionFlags & flags) == flags;
     }
-    
-    public static bool HasMetaData(this UhtFunction function, string key)
-    {
-        return function.MetaData.ContainsKey(key);
-    }
-    
-    public static string GetMetaData(this UhtFunction function, string key)
-    {
-        return function.MetaData.GetValueOrDefault(key);
-    }
 
     public static bool IsInterfaceFunction(this UhtFunction function)
     {

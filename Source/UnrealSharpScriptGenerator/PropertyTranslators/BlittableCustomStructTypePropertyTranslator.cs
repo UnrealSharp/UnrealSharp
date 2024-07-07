@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
@@ -16,7 +17,7 @@ public class BlittableCustomStructTypePropertyTranslator : BlittableTypeProperty
     public override bool CanExport(UhtProperty property)
     {
         UhtStructProperty structProperty = (UhtStructProperty) property;
-        return structProperty.ScriptStruct.SourceName == _nativeName;
+        return structProperty.ScriptStruct.EngineName == _nativeName;
     }
 
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,

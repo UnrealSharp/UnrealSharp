@@ -12,7 +12,7 @@ public class EnumPropertyHandler : BlittableTypePropertyTranslator
 
     public override bool CanExport(UhtProperty property)
     {
-        return property is UhtEnumProperty or UhtByteProperty;
+        return property is UhtEnumProperty or UhtByteProperty && GetEnum(property) != null;
     }
 
     public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)

@@ -20,6 +20,11 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
+        if (function.SourceName.Contains("K2_PerformAction"))
+        {
+            Console.WriteLine("K2_PerformAction");
+        }
+        
         string defaultValueString = ConvertCPPDefaultValue(defaultValue, function, paramProperty);
         builder.AppendLine($"{_managedType} {variableName} = {defaultValueString};");
     }

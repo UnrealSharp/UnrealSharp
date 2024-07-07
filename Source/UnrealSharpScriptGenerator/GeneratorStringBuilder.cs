@@ -169,7 +169,7 @@ public class GeneratorStringBuilder : IDisposable
     public void DeclareType(string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtType>? interfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
-        string baseSpecifier = baseType != null ? $" : {baseType}" : string.Empty;
+        string baseSpecifier = !string.IsNullOrEmpty(baseType) ? $" : {baseType}" : string.Empty;
         string interfacesDeclaration = string.Empty;
 
         if (interfaces != null)

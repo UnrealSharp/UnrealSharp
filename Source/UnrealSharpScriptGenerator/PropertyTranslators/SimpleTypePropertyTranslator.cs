@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
-public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslator
+public class SimpleTypePropertyTranslator : PropertyTranslator
 {
     public override bool IsBlittable => true;
     
@@ -90,7 +88,12 @@ public class SimpleTypePropertyTranslator : PropertyTranslators.PropertyTranslat
 	    {
 		    fieldInitializerList = cppDefaultValue;
 	    }
-
+	    
+	    if (fieldInitializerList.Length == 0)
+	    {
+		    return;
+	    }
+	    
 	    List<string> fieldInitializers = new List<string>();
 	    string[] parts = fieldInitializerList.Split(',');
 
