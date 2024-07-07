@@ -7,10 +7,13 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>> RegisteredTranslators = new();
-    public static HashSet<string> ManuallyExportedTypes = new();
+    public static readonly HashSet<string> ManuallyExportedTypes = new();
     
     static PropertyTranslatorManager()
     {
+        ManuallyExportedTypes.Add("EStreamingSourcePriority");
+        ManuallyExportedTypes.Add("StreamingSourcePriority");
+        
         EnumPropertyHandler enumPropertyHandler = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyHandler);
         AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyHandler);
@@ -26,6 +29,9 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
+        
+        AddPropertyTranslator(typeof(UhtMulticastDelegateProperty), new MulticastDelegatePropertyTranslator());
+        AddPropertyTranslator(typeof(UhtDelegateProperty), new SinglecastDelegatePropertyTranslator());
         
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         

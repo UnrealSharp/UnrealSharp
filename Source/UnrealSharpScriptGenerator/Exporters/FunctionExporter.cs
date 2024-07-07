@@ -442,14 +442,11 @@ public class FunctionExporter
         FunctionExporter exporter = new FunctionExporter(function, EOverloadMode.SuppressOverloads,
             EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call);
         
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!;
-        string returnType = translator.GetManagedType(function.ReturnProperty);
-        
-        builder.AppendLine($"public delegate {returnType} Signature({exporter._paramStringApiWithDefaults});");
+        builder.AppendLine($"public delegate void Signature({exporter._paramStringApiWithDefaults});");
         builder.AppendLine();
         exporter.ExportFunctionVariables(builder);
         builder.AppendLine();
-        builder.AppendLine($"protected {returnType} Invoker({exporter._paramStringApiWithDefaults})");
+        builder.AppendLine($"protected void Invoker({exporter._paramStringApiWithDefaults})");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         exporter.ExportInvoke(builder);

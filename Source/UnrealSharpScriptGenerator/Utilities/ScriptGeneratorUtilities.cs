@@ -39,9 +39,15 @@ public static class ScriptGeneratorUtilities
     
     public static string GetNamespace(UhtType typeObj)
     {
-        if (typeObj.Outer is UhtHeaderFile header)
+        UhtType outer = typeObj;
+        while (outer.Outer != null)
         {
-            return "UnrealSharp." + header.Package.ShortName;
+            outer = outer.Outer;
+            
+            if (outer is UhtHeaderFile header)
+            {
+                return "UnrealSharp." + header.Package.ShortName;
+            }
         }
 
         return string.Empty;
@@ -80,11 +86,6 @@ public static class ScriptGeneratorUtilities
     
     public static bool CanExportFunction(UhtFunction function)
     {
-        if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Delegate))
-        {
-            return false;
-        }
-        
         // if (function.HasMetadata("BlueprintInternalUseOnly"))
         // {
         //     if (!(function.Outer is UhtClass uhtClass && uhtClass.IsChildOf("BlueprintAsyncActionBase")))
@@ -128,7 +129,9 @@ public static class ScriptGeneratorUtilities
             return false;
         }
 
-        return property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable) || translator.IsSupportedAsProperty();
+        bool isClassProperty = property.Outer is UhtClass;
+
+        return (isClassProperty && !translator.IsSupportedAsProperty()) || (!isClassProperty && !translator.IsSupportedAsStructProperty()) || !translator.CanExport(property);
     }
     
     public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)

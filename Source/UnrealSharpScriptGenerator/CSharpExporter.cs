@@ -15,6 +15,8 @@ public class CSharpExporter
     
     public void StartExport()
     {
+        ExportType(Program.Factory.Session.UObject);
+        
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             ProcessPackage(package);
@@ -31,16 +33,16 @@ public class CSharpExporter
     {
         foreach (UhtType packageChild in package.Children)
         {
-            ExportType(packageChild, _tasks);
+            ExportType(packageChild);
             
             foreach (UhtType type in packageChild.Children)
             {
-                ExportType(type, _tasks);
+                ExportType(type);
             }
         }
     }
 
-    private void ExportType(UhtType type, List<Task?> tasks)
+    private void ExportType(UhtType type)
     {
         if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.EngineName))
         {
@@ -51,17 +53,17 @@ public class CSharpExporter
         {
             if (classObj.ClassType == UhtClassType.Interface)
             {
-                tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
+                _tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
             }
-            tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
+            _tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
         }
         else if (type is UhtEnum enumObj)
         {
-            tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
+            _tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
         }
         else if (type is UhtScriptStruct structObj)
         {
-            tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
+            _tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
         }
     }
 }

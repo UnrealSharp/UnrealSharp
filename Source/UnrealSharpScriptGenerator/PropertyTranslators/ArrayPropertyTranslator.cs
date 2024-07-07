@@ -19,7 +19,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
         PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty);
-        return translator != null && translator.CanExport(arrayProperty.ValueProperty);
+        return translator != null && translator.CanExport(arrayProperty.ValueProperty) && translator.IsSupportedAsInner();
     }
 
     public override string GetManagedType(UhtProperty property)

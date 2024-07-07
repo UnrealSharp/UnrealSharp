@@ -119,6 +119,8 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
+    public virtual void OnPropertyExported(GeneratorStringBuilder builder, UhtProperty property) {}
+    
     public void BeginPropertyAccessorBlock(GeneratorStringBuilder builder, UhtProperty property, string protection, string propertyName)
     {
         string managedType = GetManagedType(property);
@@ -154,6 +156,8 @@ public abstract class PropertyTranslator
         builder.CloseBrace();
         builder.TryEndWithEditor(property);
         builder.AppendLine();
+        
+        OnPropertyExported(builder, property);
     }
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets)
@@ -172,11 +176,22 @@ public abstract class PropertyTranslator
         string managedType = GetManagedType(property);
         builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
         builder.AppendLine();
+        OnPropertyExported(builder, property);
     }
     
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {
         string metaDataKey = $"CPP_Default_{parameter.SourceName}";
         return function.GetMetadata(metaDataKey);
+    }
+    
+    protected void AddNativePropertyField(GeneratorStringBuilder builder, string propertyName)
+    {
+        builder.AppendLine($"static IntPtr {GetNativePropertyField(propertyName)};");
+    }
+
+    protected string GetNativePropertyField(string propertyName)
+    {
+        return $"{propertyName}_NativeProperty";
     }
 }

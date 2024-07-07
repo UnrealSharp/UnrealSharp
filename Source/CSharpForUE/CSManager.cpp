@@ -39,7 +39,6 @@ void FCSManager::InitializeUnrealSharp()
 
 	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
 	{
-		FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
 		if (!FApp::IsUnattended()) 
 		{
 			if (!FCSProcHelper::BuildBindings())
