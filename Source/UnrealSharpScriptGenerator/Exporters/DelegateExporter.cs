@@ -18,13 +18,7 @@ public static class DelegateExporter
         }
         
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
-        if (delegateName.Contains("GetMeterChannelInfo"))
-        {
-            Console.WriteLine("Exporting delegate: " + delegateName);
-        }
-
         string delegateNamespace = ScriptGeneratorUtilities.GetNamespace(function);
-
         
         builder.GenerateTypeSkeleton(delegateNamespace);
         builder.AppendLine();
