@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public static class PropertyTranslatorManager
 {
-    private static readonly Dictionary<Type, List<PropertyTranslator>> RegisteredTranslators = new();
+    private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
     public static readonly HashSet<string> ManuallyExportedTypes = new();
     
     static PropertyTranslatorManager()
@@ -71,7 +71,6 @@ public static class PropertyTranslatorManager
         
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
-        
     }
     
     public static PropertyTranslator? GetTranslator(UhtProperty property)
@@ -81,7 +80,7 @@ public static class PropertyTranslatorManager
             return null;
         }
         
-        foreach (PropertyTranslator propertyTranslator in translator)
+        foreach (PropertyTranslator propertyTranslator in translator!)
         {
             if (propertyTranslator.CanExport(property))
             {
@@ -94,21 +93,20 @@ public static class PropertyTranslatorManager
     
     public static void AddBlittablePropertyTranslator(Type propertyType, string managedType)
     {
-        List<PropertyTranslator> translators;
-        if (RegisteredTranslators.TryGetValue(propertyType, out translators))
+        if (RegisteredTranslators.TryGetValue(propertyType, out var translators))
         {
-            translators.Add(new BlittableTypePropertyTranslator(propertyType, managedType));
+            translators!.Add(new BlittableTypePropertyTranslator(propertyType, managedType));
             return;
         }
         
         RegisteredTranslators.Add(propertyType, new List<PropertyTranslator> {new BlittableTypePropertyTranslator(propertyType, managedType)});
     }
 
-    private static void AddPropertyTranslator(Type propertyClass, PropertyTranslator? translator)
+    private static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
     {
-        if (RegisteredTranslators.TryGetValue(propertyClass, out List<PropertyTranslator> translators))
+        if (RegisteredTranslators.TryGetValue(propertyClass, out var translators))
         {
-            translators.Add(translator);
+            translators!.Add(translator);
             return;
         }
         

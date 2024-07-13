@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
@@ -30,6 +31,7 @@ public abstract class PropertyTranslator
     public virtual bool IsBlittable => false;
     public virtual bool NeedSetter => true;
     public virtual bool ExportDefaultParameter => true;
+    public virtual bool NeedProperty => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
@@ -58,32 +60,32 @@ public abstract class PropertyTranslator
     // Export the static constructor for this property
     public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-       builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{property.EngineName}\");");
+       builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
     }
     
-    public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
+    public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
     {
-        builder.AppendLine($"{function.SourceName}_{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
-    }
-
-    public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        builder.AppendLine($"static int {nativePropertyName}_Offset;");
+        builder.AppendLine($"{functionName}_{propertyEngineName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
     }
     
-    public virtual void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
-        builder.AppendLine($"static int {nativeMethodName}_{nativePropertyName}_Offset;");
+        builder.AppendLine($"static int {propertyEngineName}_Offset;");
+    }
+    
+    public virtual void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string propertyEngineName)
+    {
+        builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_Offset;");
     }
 
-    public virtual void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        ExportFromNative(builder, property, nativePropertyName, "return", "NativeObject", $"{nativePropertyName}_Offset", false, false);
+        ExportFromNative(builder, property, propertyManagedName, "return", "NativeObject", $"{propertyManagedName}_Offset", false, false);
     }
 
-    public virtual void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public virtual void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        ExportToNative(builder, property, nativePropertyName, "NativeObject", $"{nativePropertyName}_Offset", "value");
+        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value");
     }
 
     public virtual void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName,
@@ -102,7 +104,8 @@ public abstract class PropertyTranslator
     }
     
     // Cleanup the marshalling buffer
-    public virtual void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
+    public virtual void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+        string paramName)
     {
 
     }
@@ -132,24 +135,26 @@ public abstract class PropertyTranslator
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
-        string scriptName = property.GetScriptName();
         
-        ExportPropertyVariables(builder, property, scriptName);
+        string propertyName = property.GetPropertyName();
+        
+        ExportPropertyVariables(builder, property, propertyName);
         builder.AppendLine();
         
         string protection = property.GetProtection();
-        BeginPropertyAccessorBlock(builder, property, protection, scriptName);
+        builder.AppendTooltip(property);
+        BeginPropertyAccessorBlock(builder, property, protection, property.GetPropertyName());
 
         builder.AppendLine("get");
         builder.OpenBrace();
-        ExportPropertyGetter(builder, property, scriptName);
+        ExportPropertyGetter(builder, property, propertyName);
         builder.CloseBrace();
 
         if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
         {
             builder.AppendLine("set");
             builder.OpenBrace();
-            ExportPropertySetter(builder, property, scriptName);
+            ExportPropertySetter(builder, property, propertyName);
             builder.CloseBrace();
         }
         
@@ -162,7 +167,7 @@ public abstract class PropertyTranslator
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets)
     {
-        string propertyScriptName = property.GetScriptName();
+        string propertyScriptName = property.GetPropertyName();
         
         builder.AppendLine($"// {propertyScriptName}");
         builder.AppendLine();
@@ -174,6 +179,7 @@ public abstract class PropertyTranslator
         
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
+        builder.AppendTooltip(property);
         builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
         builder.AppendLine();
         OnPropertyExported(builder, property);

@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Tooltip;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -40,8 +43,8 @@ public static class PropertyUtilities
         
         if (isClassOwner && blueprintGetter != string.Empty || blueprintSetter != string.Empty)
         {
-            UhtFunction? getter = classObj.FindFunctionByName(blueprintGetter);
-            UhtFunction? setter = classObj.FindFunctionByName(blueprintSetter);
+            UhtFunction? getter = classObj!.FindFunctionByName(blueprintGetter);
+            UhtFunction? setter = classObj!.FindFunctionByName(blueprintSetter);
             
             if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public))))
             {

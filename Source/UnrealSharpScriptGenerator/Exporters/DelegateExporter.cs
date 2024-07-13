@@ -10,19 +10,18 @@ public static class DelegateExporter
 {
     public static void ExportDelegate(UhtFunction function)
     {
-        GeneratorStringBuilder builder = new();
-        
         if (!function.HasAllFlags(EFunctionFlags.Delegate))
         {
             throw new Exception("Function is not a delegate");
         }
+        
+        GeneratorStringBuilder builder = new();
         
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
         string delegateNamespace = ScriptGeneratorUtilities.GetNamespace(function);
         
         builder.GenerateTypeSkeleton(delegateNamespace);
         builder.AppendLine();
-        
         
         string signatureName = $"{delegateName}.Signature";
         string superClass;
@@ -49,7 +48,7 @@ public static class DelegateExporter
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
     {
-        string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
+        string delegateName = function.GetFunctionName();
         builder.AppendLine($"{delegateName}_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);");
         if (function.HasParameters)
         {
@@ -59,7 +58,7 @@ public static class DelegateExporter
         foreach (UhtProperty parameter in function.Properties)
         {
             PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(parameter)!;
-            propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, delegateName);
+            propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, parameter.EngineName, delegateName);
         }
     }
 }

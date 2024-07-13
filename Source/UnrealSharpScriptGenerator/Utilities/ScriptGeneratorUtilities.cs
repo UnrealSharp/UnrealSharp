@@ -86,14 +86,21 @@ public static class ScriptGeneratorUtilities
     
     public static bool CanExportFunction(UhtFunction function)
     {
-        // if (function.HasMetadata("BlueprintInternalUseOnly"))
-        // {
-        //     if (!(function.Outer is UhtClass uhtClass && uhtClass.IsChildOf("BlueprintAsyncActionBase")))
-        //     {
-        //         return false;
-        //     }
-        // }
-        
+        if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
+        {
+            return false;
+        }
+
+        if (!CanExportParameters(function))
+        {
+            return false;
+        }
+
+        return true;
+    }
+    
+    public static bool CanExportParameters(UhtFunction function)
+    {
         foreach (UhtProperty child in function.Properties)
         {
             if (!CanExportProperty(child))
@@ -122,7 +129,7 @@ public static class ScriptGeneratorUtilities
             return false;
         }
         
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+        PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(property);
         
         if (translator == null)
         {
@@ -130,8 +137,11 @@ public static class ScriptGeneratorUtilities
         }
 
         bool isClassProperty = property.Outer is UhtClass;
+        bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty();
+        bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty();
+        bool canExport = translator.CanExport(property);
 
-        return (isClassProperty && !translator.IsSupportedAsProperty()) || (!isClassProperty && !translator.IsSupportedAsStructProperty()) || !translator.CanExport(property);
+        return canBeClassProperty || canBeStructProperty || canExport;
     }
     
     public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
@@ -145,9 +155,9 @@ public static class ScriptGeneratorUtilities
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
     
-    public static bool IsChildOf(this UhtClass? type, string parentClassName)
+    public static bool IsChildOf(this UhtStruct? type, string parentClassName)
     {
-        UhtClass? currentType = type;
+        UhtStruct? currentType = type;
         while (currentType != null)
         {
             if (currentType.EngineName == parentClassName)
@@ -155,7 +165,7 @@ public static class ScriptGeneratorUtilities
                 return true;
             }
             
-            currentType = currentType.SuperClass;
+            currentType = currentType.SuperStruct;
         }
         
         return false;
@@ -163,7 +173,7 @@ public static class ScriptGeneratorUtilities
     
     public static string GetFullManagedName(UhtType type)
     {
-        return $"{GetNamespace(type)}.{type.EngineName}";
+        return $"{GetNamespace(type)}.{type.GetStructName()}";
     }
     
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)
@@ -184,11 +194,6 @@ public static class ScriptGeneratorUtilities
     
     public static void GetExportedFunctions(UhtClass classObj, ref List<UhtFunction> functions, ref List<UhtFunction> overridableFunctions)
     {
-        if (!classObj.Functions.Any())
-        {
-            return;
-        }
-
         foreach (UhtFunction function in classObj.Functions)
         {
             if (!CanExportFunction(function))
@@ -206,19 +211,16 @@ public static class ScriptGeneratorUtilities
             }
         }
         
-        if (classObj.Declarations == null)
-        {
-            return;
-        }
-        
         foreach (UhtStruct declaration in classObj.Bases)
         {
-            if (declaration.EngineType is not UhtEngineType.Interface)
+            if (declaration.EngineType is not (UhtEngineType.Interface or UhtEngineType.NativeInterface))
             {
                 continue;
             }
+
+            UhtClass interfaceClass = (UhtClass) declaration.AlternateObject!;
             
-            foreach (UhtFunction function in declaration.Functions)
+            foreach (UhtFunction function in interfaceClass.Functions)
             {
                 if (!CanExportFunction(function))
                 {
@@ -249,12 +251,11 @@ public static class ScriptGeneratorUtilities
     {
         foreach (UhtStruct interfaceClass in classObj.Bases)
         {
-            if (interfaceClass.EngineType != UhtEngineType.Interface)
+            UhtEngineType engineType = interfaceClass.EngineType;
+            if (engineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
             {
-                continue;
+                interfaces.Add(interfaceClass);
             }
-            
-            interfaces.Add(interfaceClass);
         }
     }
     
@@ -304,7 +305,7 @@ public static class ScriptGeneratorUtilities
 
     public static void GatherDependencies(UhtProperty property, List<string> dependencies)
     {
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
         List<UhtType> references = new List<UhtType>();
         translator.GetReferences(property, references);
         

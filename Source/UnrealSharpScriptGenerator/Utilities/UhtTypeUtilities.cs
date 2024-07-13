@@ -9,8 +9,8 @@ public static class UhtTypeUtilities
         return type.MetaData.ContainsKey(metadataName);
     }
     
-    public static string GetMetadata(this UhtType type, string metadataName)
+    public static string GetMetadata(this UhtType type, string metadataName, int nameIndex = 0)
     {
-        return type.MetaData.GetValueOrDefault(metadataName);
+        return type.MetaData.GetValueOrDefault(metadataName, nameIndex);
     }
 }

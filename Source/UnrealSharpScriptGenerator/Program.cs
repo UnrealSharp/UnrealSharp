@@ -17,21 +17,27 @@ public static class Program
 	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default, ModuleName = "CSharpForUE")]
 	private static void Main(IUhtExportFactory factory)
 	{
-		Console.WriteLine("Starting export of C++ to C#...");
+		Console.WriteLine("Initializing C# exporter...");
 		Factory = factory;
+		
 		try
 		{
 			Stopwatch stopwatch = new Stopwatch();
 			stopwatch.Start();
-			CSharpExporter exporter = new CSharpExporter();
-			exporter.StartExport();
+			
+			CSharpExporter.StartExport();
+        
 			stopwatch.Stop();
-			Console.WriteLine($"Exported C++ to C# in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
+			Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"An error occurred during the export: {ex.Message}");
-			Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+			Console.ForegroundColor = ConsoleColor.Red;
+			Console.WriteLine("An error occurred during the export process:");
+			Console.WriteLine($"Error Message: {ex.Message}");
+			Console.WriteLine("Stack Trace:");
+			Console.WriteLine(ex.StackTrace);
+			Console.ResetColor();
 		}
 	}
 }

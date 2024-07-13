@@ -36,14 +36,14 @@ public class StringPropertyTranslator : PropertyTranslator
         return "\"\"";
     }
 
-    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        builder.AppendLine($"return StringMarshaller.FromNative(IntPtr.Add(NativeObject,{nativePropertyName}_Offset),0);");
+        builder.AppendLine($"return StringMarshaller.FromNative(IntPtr.Add(NativeObject,{propertyManagedName}_Offset),0);");
     }
 
-    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        builder.AppendLine($"StringMarshaller.ToNative(IntPtr.Add(NativeObject,{nativePropertyName}_Offset),0,value);");
+        builder.AppendLine($"StringMarshaller.ToNative(IntPtr.Add(NativeObject,{propertyManagedName}_Offset),0,value);");
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -57,13 +57,15 @@ public class StringPropertyTranslator : PropertyTranslator
         builder.AppendLine($"return {ExporterCallbacks.FStringCallbacks}.CallConvertTCHARToUTF8(Invoke_{functionName}(NativeObject, {functionName}_NativeFunction{paramsCallString}));");
     }
 
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property,
+        string PropertyEngineName)
     {
-        base.ExportPropertyVariables(builder, property, nativePropertyName);
-        builder.AppendLine($"static readonly IntPtr {nativePropertyName}_NativeProperty;");
+        base.ExportPropertyVariables(builder, property, PropertyEngineName);
+        builder.AppendLine($"static readonly IntPtr {PropertyEngineName}_NativeProperty;");
     }
 
-    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+        string paramName)
     {
         builder.AppendLine($"StringMarshaller.DestructInstance({paramName}_NativePtr, 0);");
     }

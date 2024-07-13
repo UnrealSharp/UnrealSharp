@@ -37,7 +37,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         throw new System.NotImplementedException();
     }
 
-    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty)!;
@@ -45,47 +45,51 @@ public class ArrayPropertyTranslator : PropertyTranslator
         string wrapperType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(arrayProperty.ValueProperty);
 
-        builder.AppendLine($"{nativePropertyName}_Marshaller ??= new {wrapperType}({nativePropertyName}_NativeProperty, {marshallingDelegates});");
-        builder.AppendLine($"return {nativePropertyName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {nativePropertyName}_Offset), 0);");
+        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}({propertyManagedName}_NativeProperty, {marshallingDelegates});");
+        builder.AppendLine($"return {propertyManagedName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0);");
     }
 
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property,
+        string PropertyEngineName)
     {
-        base.ExportPropertyVariables(builder, property, nativePropertyName);
-        builder.AppendLine($"static IntPtr {nativePropertyName}_NativeProperty;");
+        base.ExportPropertyVariables(builder, property, PropertyEngineName);
+        builder.AppendLine($"static IntPtr {PropertyEngineName}_NativeProperty;");
 
         string wrapperType = GetWrapperType(property);
         if (property.IsOuter<UhtScriptStruct>())
         {
-            builder.AppendLine($"static {wrapperType} {nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"static {wrapperType} {PropertyEngineName}_Marshaller = null;");
+            
         }
         else
         {
-            builder.AppendLine($"{wrapperType} {nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"{wrapperType} {PropertyEngineName}_Marshaller = null;");
         }
     }
 
-    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName,
-        UhtProperty property, string nativePropertyName)
+    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function,
+        string nativeMethodName,
+        UhtProperty property, string propertyEngineName)
     {
-        base.ExportParameterVariables(builder, function, nativeMethodName, property, nativePropertyName);
-        builder.AppendLine($"static IntPtr {nativeMethodName}_{nativePropertyName}_NativeProperty;");
+        base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
+        builder.AppendLine($"static IntPtr {nativeMethodName}_{propertyEngineName}_NativeProperty;");
         
         string wrapperType = GetWrapperType(property);
         if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
         {
-            builder.AppendLine($"static {wrapperType} {nativeMethodName}_{nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"static {wrapperType} {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
         }
         else
         {
-            builder.AppendLine($"{wrapperType} {nativeMethodName}_{nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"{wrapperType} {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
         }
     }
 
-    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string nativePropertyName)
+    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property,
+        UhtFunction function, string propertyEngineName, string functionName)
     {
-        base.ExportParameterStaticConstructor(builder, property, function, nativePropertyName);
-        builder.AppendLine($"{function.SourceName}_{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({function.SourceName}_NativeFunction, \"{nativePropertyName}\");");
+        base.ExportParameterStaticConstructor(builder, property, function, propertyEngineName, functionName);
+        builder.AppendLine($"{functionName}_{propertyEngineName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -108,6 +112,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
+        
         UhtProperty valueProperty = arrayProperty.ValueProperty;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(valueProperty)!;
         
@@ -116,7 +121,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.SourceName;
+            string nativeMethodName = function.GetFunctionName();
             nativeProperty = $"{nativeMethodName}_{nativeProperty}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -128,6 +133,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         if (!reuseRefMarshallers)
         {
             builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+            
             builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = IntPtr.Add({sourceBuffer}, {offset});");
         }
         builder.AppendLine($"{assignmentOrReturn} {marshaller}.FromNative({propertyName}_NativeBuffer, 0);");
@@ -150,7 +156,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.SourceName;
+            string nativeMethodName = function.GetFunctionName();
             nativeProperty = $"{nativeMethodName}_{nativeProperty}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -167,9 +173,10 @@ public class ArrayPropertyTranslator : PropertyTranslator
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
         UhtFunction function = (UhtFunction) property.Outer!;
-        string marshaller = $"{function.SourceName}_{paramName}_Marshaller";
+        string marshaller = $"{function.GetFunctionName()}_{paramName}_Marshaller";
         builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
     }
+    
     private string GetWrapperType(UhtProperty property)
     {
         bool isStructProperty = property.IsOuter<UhtStruct>();

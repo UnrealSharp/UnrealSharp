@@ -1,5 +1,6 @@
 ﻿using System;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
@@ -13,18 +14,24 @@ public static class EnumExporter
         string moduleName = ScriptGeneratorUtilities.GetNamespace(enumObj);
         
         stringBuilder.GenerateTypeSkeleton(moduleName);
+        stringBuilder.AppendTooltip(enumObj);
         stringBuilder.AppendLine("[UEnum]");
         
         string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
-        stringBuilder.DeclareType("enum", enumObj.EngineName, underlyingType, isPartial: false);
+        stringBuilder.DeclareType("enum", enumObj.GetStructName(), underlyingType, isPartial: false);
         
         stringBuilder.Indent();
         int enumValuesCount = enumObj.EnumValues.Count;
         for (int i = 0; i < enumValuesCount; i++)
         {
             UhtEnumValue enumValue = enumObj.EnumValues[i];
+
+            string toolTip = enumObj.GetMetadata("Tooltip", i);
+            stringBuilder.AppendTooltip(toolTip);
+            
             string cleanValueName = ScriptGeneratorUtilities.GetCleanEnumValueName(enumObj, enumValue);
             string value = enumValue.Value == -1 ? "," : $" = {enumValue.Value},";
+            
             stringBuilder.AppendLine($"{cleanValueName}{value}");
         }
         

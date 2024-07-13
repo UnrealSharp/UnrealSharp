@@ -16,15 +16,33 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     {
         string delegateName = function.EngineName;
         int delegateSignatureIndex = delegateName.IndexOf("__DelegateSignature", StringComparison.Ordinal);
-        return delegateName.Substring(0, delegateSignatureIndex);
+        string strippedDelegateName = delegateName.Substring(0, delegateSignatureIndex);
+        return strippedDelegateName;
+    }
+    
+    public static string GetFullDelegateName(UhtFunction function)
+    {
+        return $"{ScriptGeneratorUtilities.GetNamespace(function)}.{GetDelegateName(function)}";
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-        builder.Append($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
+        builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
         base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
     }
 
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
+    {
+        builder.AppendLine($"static readonly IntPtr {propertyEngineName}_NativeProperty;");
+        base.ExportPropertyVariables(builder, property, propertyEngineName);
+    }
+
+    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function,
+        string nativeMethodName, UhtProperty property, string propertyEngineName)
+    {
+        base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
+    }
+    
     public override bool CanExport(UhtProperty property)
     {
         throw new System.NotImplementedException();

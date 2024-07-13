@@ -10,12 +10,12 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
     public override bool IsBlittable => true;
     
     private readonly Type _propertyType;
-    protected readonly string? _managedType;
+    protected readonly string ManagedType;
 
-    public SimpleTypePropertyTranslator(Type propertyType, string? managedType = "") : base(EPropertyUsageFlags.Any)
+    protected SimpleTypePropertyTranslator(Type propertyType, string managedType = "") : base(EPropertyUsageFlags.Any)
     {
         _propertyType = propertyType;
-        _managedType = managedType;
+        ManagedType = managedType;
     }
 
     public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
@@ -54,7 +54,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
     
     public virtual string GetPropertyName(UhtProperty property)
 	{
-		return property.GetScriptName();
+		return property.GetParameterName();
 	}
 
     public override string ExportMarshallerDelegates(UhtProperty property)
@@ -70,14 +70,14 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        return _managedType;
+        return ManagedType;
     }
 
     protected void ExportDefaultStructParameter(GeneratorStringBuilder builder, string variableName, string cppDefaultValue,
         UhtProperty paramProperty, PropertyTranslator translator)
     {
 	    UhtStructProperty structProperty = (UhtStructProperty)paramProperty;
-	    string structName = structProperty.ScriptStruct.SourceName;
+	    string structName = structProperty.ScriptStruct.GetStructName();
 
 	    string fieldInitializerList;
 	    if (cppDefaultValue.StartsWith("(") && cppDefaultValue.EndsWith(")"))
@@ -116,8 +116,8 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		int fieldCount = fieldInitializers.Count;
 		for (int i = 0; i < fieldCount; i++)
 		{
-			UhtType prop = structProperty.ScriptStruct.Children[i];
-			string scriptName = prop.GetScriptName();
+			UhtProperty property = (UhtProperty) structProperty.ScriptStruct.Children[i];
+			string scriptName = property.GetPropertyName();
 			string fieldInitializer = fieldInitializers[i];
 
 			int pos = fieldInitializer.IndexOf("=", StringComparison.Ordinal);
@@ -135,7 +135,8 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		builder.Append(";");
     }
 
-    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+	    string paramName)
     {
 	    // No cleanup needed
     }

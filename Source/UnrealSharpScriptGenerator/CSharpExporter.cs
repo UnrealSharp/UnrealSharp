@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EpicGames.UHT.Types;
@@ -9,27 +8,40 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 
-public class CSharpExporter
+public static class CSharpExporter
 {
-    private readonly List<Task?> _tasks = new();
+    private static readonly List<Task> Tasks = new();
     
-    public void StartExport()
+    public static void StartExport()
     {
-        ExportType(Program.Factory.Session.UObject);
+        Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(Program.Factory.Session.UObject); })!);
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             ProcessPackage(package);
         }
         
-        Task[] waitTasks = _tasks.Where(x => x != null).Cast<Task>().ToArray();
+        WaitForTasks();
+        
+        // These are only populated once all classes have been exported
+        foreach (UhtPackage package in Program.Factory.Session.Packages)
+        {
+            FunctionExporter.StartExportingExtensionMethods(package, Tasks);
+        }
+        
+        WaitForTasks();
+    }
+    
+    private static void WaitForTasks()
+    {
+        Task[] waitTasks = Tasks.ToArray();
         if (waitTasks.Length > 0)
         {
             Task.WaitAll(waitTasks);
         }
     }
-    
-    private void ProcessPackage(UhtType package)
+
+    private static void ProcessPackage(UhtPackage package)
     {
         foreach (UhtType packageChild in package.Children)
         {
@@ -42,7 +54,7 @@ public class CSharpExporter
         }
     }
 
-    private void ExportType(UhtType type)
+    private static void ExportType(UhtType type)
     {
         if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.EngineName))
         {
@@ -51,19 +63,27 @@ public class CSharpExporter
         
         if (type is UhtClass classObj)
         {
-            if (classObj.ClassType == UhtClassType.Interface)
+            if (classObj.ClassType is UhtClassType.Interface or UhtClassType.NativeInterface)
             {
-                _tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); }));
+                if (classObj.AlternateObject is not UhtClass alternateClass)
+                {
+                    return;
+                }
+                
+                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(alternateClass); }));
             }
-            _tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
+            else
+            {
+                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
+            }
         }
         else if (type is UhtEnum enumObj)
         {
-            _tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
+            Tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
         }
         else if (type is UhtScriptStruct structObj)
         {
-            _tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
+            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
         }
     }
 }

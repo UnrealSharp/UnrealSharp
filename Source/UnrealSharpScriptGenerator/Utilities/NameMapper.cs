@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -16,31 +18,48 @@ public static class NameMapper
         "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual",
         "void", "volatile", "while", "System"
     };
-    
-    public static string GetScriptName(this UhtType type)
-    {
-        if (ReservedKeywords.Contains(type.EngineName))
-        {
-            return $"K2_{type.EngineName}";
-        }
-        
-        if (type.Outer != null && type.Outer.GetScriptName() == type.EngineName)
-        {
-            return $"K2_{type.EngineName}";
-        }
-        
-        if (type is UhtClass { ClassType: UhtClassType.Interface } classobj)
-        {
-            return $"I{classobj.EngineName}";
-        }
 
-        // Just return the engine name, no conflicts
-        return type.EngineName;
+    public static string GetParameterName(this UhtProperty property)
+    {
+        string camelCaseName = PascalToCamelCase(property.EngineName);
+        return IsReservedKeyword(camelCaseName) ? $"@{camelCaseName}" : camelCaseName;
     }
     
-    public static string GetScriptName(this UhtFunction function)
+    public static string GetStructName(this UhtType type)
     {
-        string functionName = GetScriptName((UhtType) function);
+        string scriptName = type.GetMetadata("ScriptName");
+        
+        if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
+        {
+            scriptName = type.EngineName;
+        }
+
+        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
+        {
+            scriptName = $"I{scriptName}";
+        }
+        
+        return scriptName;
+    }
+    
+    public static string GetPropertyName(this UhtProperty property)
+    {
+        string propertyName = property.EngineName;
+        if (property.Outer!.EngineName == propertyName || IsReservedKeyword(propertyName))
+        {
+            propertyName = $"K2_{propertyName}";
+        }
+        return propertyName;
+    }
+    
+    public static string GetFunctionName(this UhtFunction function)
+    {
+        string functionName = function.EngineName;
+
+        if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
+        {
+            functionName = DelegateBasePropertyTranslator.GetDelegateName(function);
+        }
         
         if (functionName.Contains("K2_"))
         {
@@ -53,11 +72,21 @@ public static class NameMapper
             {
                 if (exportedFunction != function && functionName == exportedFunction.EngineName)
                 {
-                    return function.SourceName;
+                    return function.EngineName;
                 }
             }  
         }
         
         return functionName;
+    }
+    
+    private static bool IsReservedKeyword(string name)
+    {
+        return ReservedKeywords.Contains(name);
+    }
+    
+    private static string PascalToCamelCase(string name)
+    {
+        return char.ToLowerInvariant(name[0]) + name.Substring(1);
     }
 }

@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
@@ -10,7 +12,6 @@ public static class StructExporter
     public static void ExportStruct(UhtScriptStruct structObj)
     {
         GeneratorStringBuilder stringBuilder = new();
-        
         List<UhtProperty> exportedProperties = new();
         if (structObj.SuperStruct != null)
         {
@@ -23,14 +24,15 @@ public static class StructExporter
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            if (propertyNames.Contains(property.GetScriptName()))
+            string scriptName = property.GetParameterName();
+            if (propertyNames.Contains(scriptName))
             {
                 exportedProperties.RemoveAt(i);
                 i--;
             }
             else
             {
-                propertyNames.Add(property.GetScriptName());
+                propertyNames.Add(scriptName);
             }
         }
         
@@ -39,8 +41,9 @@ public static class StructExporter
         
         bool isBlittable = structObj.IsStructBlittable();
         
+        stringBuilder.AppendTooltip(structObj);
         stringBuilder.AppendLine($"[UStruct({(isBlittable ? "IsBlittable = true" : "")})]");
-        stringBuilder.DeclareType("struct", structObj.EngineName);
+        stringBuilder.DeclareType("struct", structObj.GetStructName());
         
         ExportStructProperties(stringBuilder, exportedProperties, isBlittable);
 
@@ -66,7 +69,7 @@ public static class StructExporter
     {
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             translator.ExportMirrorProperty(stringBuilder, property, suppressOffsets);
         }
     }
@@ -107,8 +110,8 @@ public static class StructExporter
         
         foreach (UhtProperty property in properties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
-            string scriptName = property.GetScriptName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            string scriptName = property.GetPropertyName();
             string assignmentOrReturn = $"{scriptName} =";
             string offsetName = $"{scriptName}_Offset";
             translator.ExportFromNative(builder, property, scriptName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
@@ -125,7 +128,7 @@ public static class StructExporter
         foreach (UhtProperty property in properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            string scriptName = property.GetScriptName();
+            string scriptName = property.GetPropertyName();
             string offsetName = $"{scriptName}_Offset";
             translator.ExportToNative(builder, property, scriptName, "buffer", offsetName, scriptName);
         }

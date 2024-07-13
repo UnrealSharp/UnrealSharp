@@ -54,7 +54,7 @@ public static class FunctionUtilities
     {
         if (!function.HasAllFlags(EFunctionFlags.MulticastDelegate))
         {
-            return function.HasAnyFlags(EFunctionFlags.HasOutParms);
+            //return function.HasAnyFlags(EFunctionFlags.HasOutParms);
         }
         
         // Multicast delegates can have out params, but the UFunction flag isn't set.

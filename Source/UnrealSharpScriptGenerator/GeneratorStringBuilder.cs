@@ -176,7 +176,8 @@ public class GeneratorStringBuilder : IDisposable
         {
             foreach (UhtType @interface in interfaces)
             {
-                interfacesDeclaration += $", I{@interface.EngineName}";
+                string fullInterfaceName = ScriptGeneratorUtilities.GetFullManagedName(@interface);
+                interfacesDeclaration += $", {fullInterfaceName}";
             }
         }
 

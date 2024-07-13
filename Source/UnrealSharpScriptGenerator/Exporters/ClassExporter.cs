@@ -2,14 +2,13 @@
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class ClassExporter
 {
-    private static Dictionary<string, ExtensionMethod> _overloads = new();
-    
     public static void ExportClass(UhtClass classObj)
     {
         GeneratorStringBuilder stringBuilder = new();
@@ -32,6 +31,8 @@ public static class ClassExporter
         stringBuilder.DeclareDirectives(classDependencies);
         stringBuilder.GenerateTypeSkeleton(typeNameSpace);
         
+        stringBuilder.AppendTooltip(classObj);
+        
         string abstractModifier = classObj.ClassFlags.HasAnyFlags(EClassFlags.Abstract) ? "ClassFlags.Abstract" : "";
         stringBuilder.AppendLine($"[UClass({abstractModifier})]");
 
@@ -45,11 +46,11 @@ public static class ClassExporter
             superClassName = "UnrealSharpObject";
         }
         
-        stringBuilder.DeclareType("class", classObj.EngineName, superClassName, true, interfaces);
+        stringBuilder.DeclareType("class", classObj.GetStructName(), superClassName, true, interfaces);
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         ExportClassProperties(stringBuilder, exportedProperties);
-        ExportClassFunctions(stringBuilder, exportedFunctions);
+        ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
         ExportOverrides(stringBuilder, exportedOverrides);
         
         stringBuilder.AppendLine();
@@ -62,7 +63,7 @@ public static class ClassExporter
     {
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             translator.ExportProperty(generatorStringBuilder, property);
         }
     }
@@ -75,45 +76,17 @@ public static class ClassExporter
         }
     }
     
-    static void ExportClassFunctions(GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
     {
+        bool isBlueprintFunctionLibrary = owner.IsChildOf("BlueprintFunctionLibrary");
         foreach (UhtFunction function in exportedFunctions)
         {
-            FunctionType functionType = FunctionType.Normal;
-
-            if (function.HasAllFlags(EFunctionFlags.Static) && function.Outer.EngineClassName == "UBlueprintFunctionLibrary")
+            if (function.HasAllFlags(EFunctionFlags.Static) && isBlueprintFunctionLibrary)
             {
-                ExtensionMethod? extensionMethod = GetExtensionMethodInfo(function);
-                if (extensionMethod == null)
-                {
-                    continue;
-                }
-                
-                string moduleName = ScriptGeneratorUtilities.GetModuleName(function.Outer);
-                _overloads.Add(moduleName, extensionMethod.Value);
+                FunctionExporter.TryAddExtensionMethod(function);
             }
             
-            FunctionExporter.ExportFunction(builder, function, functionType);
+            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
         }
-    }
-
-    static ExtensionMethod? GetExtensionMethodInfo(UhtFunction function)
-    {
-        if (!function.HasMetadata("ExtensionMethod") || function.Children.Count == 0)
-        {
-            return null;
-        }
-        
-        if (function.Children[0] is not UhtObjectPropertyBase selfProperty)
-        {
-            return null;
-        }
-        
-        return new ExtensionMethod
-        {
-            Class = selfProperty.Class,
-            Function = function,
-            SelfParameter = selfProperty,
-        };
     }
 }

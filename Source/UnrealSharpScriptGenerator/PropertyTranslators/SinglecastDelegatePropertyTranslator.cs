@@ -19,12 +19,13 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     public override bool CanExport(UhtProperty property)
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
-        return ScriptGeneratorUtilities.CanExportFunction(delegateProperty.Function);
+        bool hasReturnValue = delegateProperty.Function.ReturnProperty != null;
+        return ScriptGeneratorUtilities.CanExportParameters(delegateProperty.Function) && !hasReturnValue;
     }
-
+    
     public override string GetManagedType(UhtProperty property)
     {
-        return GetDelegateName(((UhtDelegateProperty) property).Function);
+        return GetFullDelegateName(((UhtDelegateProperty) property).Function);
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -34,24 +35,23 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         if (delegateProperty.Function.HasParameters)
         {
-            string delegateName = GetDelegateName(delegateProperty.Function);
-            string delegateNamespace = ScriptGeneratorUtilities.GetNamespace(delegateProperty.Function);
-            builder.AppendLine($"{delegateNamespace}.{delegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
+            string fullDelegateName = GetManagedType(property);
+            builder.AppendLine($"{fullDelegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
         }
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
-        string delegateName = GetDelegateName(((UhtDelegateProperty) property).Function);
-        builder.AppendLine($"DelegateMarshaller<{delegateName}>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
+        string fullDelegateName = GetManagedType(property);
+        builder.AppendLine($"DelegateMarshaller<{fullDelegateName}>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
-        string delegateName = GetDelegateName(((UhtDelegateProperty) property).Function);
-        builder.AppendLine($"{assignmentOrReturn} DelegateMarshaller<{delegateName}>.FromNative(IntPtr.Add({sourceBuffer}, {offset}), IntPtr.Zero, 0);");
+        string fullDelegateName = GetManagedType(property);
+        builder.AppendLine($"{assignmentOrReturn} DelegateMarshaller<{fullDelegateName}>.FromNative(IntPtr.Add({sourceBuffer}, {offset}), IntPtr.Zero, 0);");
     }
 
     public override string GetNullValue(UhtProperty property)
@@ -59,7 +59,8 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
         return "null";
     }
 
-    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+        string paramName)
     {
         
     }

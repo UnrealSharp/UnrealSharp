@@ -47,8 +47,8 @@ public class MapPropertyTranslator : PropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
-        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty);
-        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty);
+        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty)!;
+        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty)!;
         
         string keyManagedType = keyTranslator.GetManagedType(mapProperty.KeyProperty);
         string valueManagedType = valueTranslator.GetManagedType(mapProperty.ValueProperty);
@@ -63,50 +63,50 @@ public class MapPropertyTranslator : PropertyTranslator
         builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
     }
 
-    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function,
-        string nativePropertyName)
+    public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
     {
-        base.ExportParameterStaticConstructor(builder, property, function, nativePropertyName);
-        string nativeMethodName = function.SourceName;
-        builder.AppendLine($"{nativeMethodName}_{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({nativeMethodName}_NativeFunction, \"{property.EngineName}\");");
+        base.ExportParameterStaticConstructor(builder, property, function, propertyEngineName, functionName);
+        builder.AppendLine($"{functionName}_{propertyEngineName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({functionName}_NativeFunction, \"{property.EngineName}\");");
     }
 
-    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName,
-        UhtProperty property, string nativePropertyName)
+    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function,
+        string nativeMethodName,
+        UhtProperty property, string propertyEngineName)
     {
-        base.ExportParameterVariables(builder, function, nativeMethodName, property, nativePropertyName);
+        base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
 
         string marshaller = GetMarshaller((UhtMapProperty) property);
         
-        builder.AppendLine($"static IntPtr {nativeMethodName}_{nativePropertyName}_NativeProperty;");
+        builder.AppendLine($"static IntPtr {nativeMethodName}_{propertyEngineName}_NativeProperty;");
         if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
         {
-            builder.AppendLine($"static {marshaller} {nativeMethodName}_{nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"static {marshaller} {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
         }
         else
         {
-            builder.AppendLine($"{marshaller} {nativeMethodName}_{nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"{marshaller} {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
         }
     }
 
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
-        base.ExportPropertyVariables(builder, property, nativePropertyName);
-        builder.AppendLine($"static IntPtr {nativePropertyName}_NativeProperty;");
+        base.ExportPropertyVariables(builder, property, propertyEngineName);
+        builder.AppendLine($"static IntPtr {propertyEngineName}_NativeProperty;");
         
         string marshaller = GetMarshaller((UhtMapProperty) property);
         
         if (property.IsOuter<UhtScriptStruct>())
         {
-            builder.AppendLine($"static {marshaller} {nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"static {marshaller} {propertyEngineName}_Marshaller = null;");
         }
         else
         {
-            builder.AppendLine($"{marshaller} {nativePropertyName}_Marshaller = null;");
+            builder.AppendLine($"{marshaller} {propertyEngineName}_Marshaller = null;");
         }
     }
 
-    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
+    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property,
+        string propertyManagedName)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
         PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty)!;
@@ -117,16 +117,16 @@ public class MapPropertyTranslator : PropertyTranslator
 
         string marshaller = GetMarshaller(mapProperty);
 
-        builder.AppendLine($"{nativePropertyName}_Marshaller ??= new {marshaller}({nativePropertyName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
-        builder.AppendLine($"return {nativePropertyName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {nativePropertyName}_Offset), 0);");
+        builder.AppendLine($"{property.EngineName}_Marshaller ??= new {marshaller}({property.EngineName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"return {property.EngineName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.EngineName}_Offset), 0);");
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
         string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
-        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty);
-        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty);
+        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty)!;
+        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty)!;
        
         string nativePropertyName = $"{propertyName}_NativeProperty";
         string marshaller = $"{propertyName}_Marshaller";
@@ -140,14 +140,14 @@ public class MapPropertyTranslator : PropertyTranslator
        
         string keyType = keyTranslator.GetManagedType(mapProperty.KeyProperty);
         string valueType = valueTranslator.GetManagedType(mapProperty.ValueProperty);
-        string MarshallerType = $"MapCopyMarshaller<{keyType}, {valueType}>";
+        string marshallerType = $"MapCopyMarshaller<{keyType}, {valueType}>";
 
         if (!reuseRefMarshallers)
         {
-            string KeyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
-            string ValueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
+            string keyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
+            string valueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
        
-            builder.AppendLine($"{marshaller} ??= new {MarshallerType}({nativePropertyName}, {KeyMarshallingDelegates}, {ValueMarshallingDelegates});");
+            builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativePropertyName}, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
             builder.AppendLine($"IntPtr {nativePropertyName}_ParamsBuffer = IntPtr.Add({sourceBuffer}, {offset});");
         }
 
@@ -163,8 +163,8 @@ public class MapPropertyTranslator : PropertyTranslator
         string offset, string source)
     {
        UhtMapProperty mapProperty = (UhtMapProperty) property;
-       PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty);
-       PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty);
+       PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty)!;
+       PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty)!;
        
        string nativePropertyName = $"{propertyName}_NativeProperty";
        string marshaller = $"{propertyName}_Marshaller";
@@ -179,11 +179,11 @@ public class MapPropertyTranslator : PropertyTranslator
        string keyType = keyTranslator.GetManagedType(mapProperty.KeyProperty);
        string valueType = valueTranslator.GetManagedType(mapProperty.ValueProperty);
        
-       string MarshallerType = $"MapCopyMarshaller<{keyType}, {valueType}>";
-       string KeyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
-       string ValueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
+       string marshallerType = $"MapCopyMarshaller<{keyType}, {valueType}>";
+       string keyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
+       string valueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
        
-       builder.AppendLine($"{marshaller} ??= new {MarshallerType}({nativePropertyName}, {KeyMarshallingDelegates}, {ValueMarshallingDelegates});");
+       builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativePropertyName}, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
        builder.AppendLine($"IntPtr {nativePropertyName}_NativeBuffer = IntPtr.Add({destinationBuffer}, {offset});");
        builder.AppendLine($"{marshaller}.ToNative({nativePropertyName}_NativeBuffer, 0, {source});");
     }
@@ -213,8 +213,8 @@ public class MapPropertyTranslator : PropertyTranslator
         bool isStructProperty = property.IsOuter<UhtStruct>();
         bool isParameter = property.IsOuter<UhtFunction>();
         
-        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(property.KeyProperty);
-        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(property.ValueProperty);
+        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(property.KeyProperty)!;
+        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(property.ValueProperty)!;
         
         string marshallerType = isStructProperty || isParameter ? "MapCopyMarshaller" 
             : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? "MapReadOnlyMarshaller" : "MapMarshaller";

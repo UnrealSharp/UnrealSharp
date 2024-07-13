@@ -25,7 +25,8 @@ public class EnumPropertyHandler : BlittableTypePropertyTranslator
     
     public override string GetManagedType(UhtProperty property)
     {
-        return ScriptGeneratorUtilities.GetFullManagedName(GetEnum(property)!);
+        UhtEnum enumObj = GetEnum(property)!;
+        return ScriptGeneratorUtilities.GetFullManagedName(enumObj);
     }
     
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,

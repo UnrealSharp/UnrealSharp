@@ -11,6 +11,12 @@ public static class FileExporter
     public static void SaveTypeToDisk(UhtType type, GeneratorStringBuilder generatorStringBuilder)
     {
         string moduleName = ScriptGeneratorUtilities.GetModuleName(type);
+        string typeName = type.EngineName;
+        SaveTypeToDisk(moduleName, typeName, generatorStringBuilder.ToString());
+    }
+    
+    public static void SaveTypeToDisk(string moduleName, string typeName, string text)
+    {
         string directory = Path.Combine(Program.GeneratedGluePath, moduleName);
 
         if (!Directory.Exists(directory))
@@ -18,8 +24,7 @@ public static class FileExporter
             Directory.CreateDirectory(directory);
         }
 
-        string absoluteFilePath = Path.Combine(directory, $"{type.EngineName}.cs");
-        string newText = generatorStringBuilder.ToString();
+        string absoluteFilePath = Path.Combine(directory, $"{typeName}.generated.cs");
 
         ReadWriteLock.EnterWriteLock();
         try
@@ -27,13 +32,13 @@ public static class FileExporter
             if (File.Exists(absoluteFilePath))
             {
                 string existingText = File.ReadAllText(absoluteFilePath);
-                if (existingText == newText)
+                if (existingText == text)
                 {
                     return;
                 }
             }
             
-            File.WriteAllText(absoluteFilePath, newText);
+            File.WriteAllText(absoluteFilePath, text);
         }
         finally
         {

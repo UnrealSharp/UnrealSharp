@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
@@ -21,6 +20,6 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
         UhtFunction function, UhtProperty paramProperty)
     {
         string defaultValueString = ConvertCPPDefaultValue(defaultValue, function, paramProperty);
-        builder.AppendLine($"{_managedType} {variableName} = {defaultValueString};");
+        builder.AppendLine($"{ManagedType} {variableName} = {defaultValueString};");
     }
 }
