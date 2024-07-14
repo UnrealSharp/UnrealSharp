@@ -29,7 +29,6 @@ public enum FunctionType
     Normal,
     BlueprintEvent,
     ExtensionOnAnotherClass,
-    InterfaceFunction,
     InternalWhitelisted
 };
 
@@ -47,7 +46,7 @@ public enum EBlueprintVisibility
 
 public struct FunctionOverload
 {
-    public string ParamStringAPIWithDefaults;
+    public string ParamStringApiWithDefaults;
     public string ParamsStringCall;
     public string CSharpParamName;
     public string CppDefaultValue;
@@ -60,12 +59,12 @@ public class FunctionExporter
     private static readonly Dictionary<string, List<ExtensionMethod>> ExtensionMethods = new();
     
     private readonly UhtFunction _function;
-    private string _functionName;
-    private List<PropertyTranslator> _parameterTranslators;
+    private string _functionName = null!;
+    private List<PropertyTranslator> _parameterTranslators = null!;
     private PropertyTranslator? ReturnValueTranslator => _function.ReturnProperty != null ? _parameterTranslators.Last() : null;
-    private OverloadMode _overloadMode;
-    private EFunctionProtectionMode _protectionMode;
-    private EBlueprintVisibility _blueprintVisibility;
+    private OverloadMode _overloadMode = OverloadMode.AllowOverloads;
+    private EFunctionProtectionMode _protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
+    private EBlueprintVisibility _blueprintVisibility = EBlueprintVisibility.Call;
     
     private bool BlueprintEvent => _blueprintVisibility == EBlueprintVisibility.Event;
     private string _modifiers = "";
@@ -87,6 +86,7 @@ public class FunctionExporter
         _selfParameter = extensionMethod.SelfParameter;
         _function = extensionMethod.Function;
         _classBeingExtended = extensionMethod.Class;
+        
         Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
     }
 
@@ -96,14 +96,14 @@ public class FunctionExporter
         Initialize(overloadMode, protectionMode, blueprintVisibility);
     }
 
-    public void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility)
+    private void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility)
     {
         _functionName = _function.GetFunctionName();
         _overloadMode = overloadMode;
         _protectionMode = protectionMode;
         _blueprintVisibility = blueprintVisibility;
         
-        _parameterTranslators = new List<PropertyTranslator>();
+        _parameterTranslators = new List<PropertyTranslator>(_function.Children.Count);
         foreach (UhtProperty parameter in _function.Properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
@@ -160,14 +160,16 @@ public class FunctionExporter
         }
         
         string paramsStringCallNative = "";
-        foreach (UhtProperty parameter in _function.Properties)
+        for (int i = 0; i < _function.Children.Count; i++)
         {
+            UhtProperty parameter = (UhtProperty) _function.Children[i];
+            PropertyTranslator translator = _parameterTranslators[i];
+            
             if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
             {
                 continue;
             }
             
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
             string refQualifier = "";
             if (!parameter.HasAllFlags(EPropertyFlags.ConstParm))
             {
@@ -239,7 +241,7 @@ public class FunctionExporter
                         
                         FunctionOverload overload = new FunctionOverload
                         {
-                            ParamStringAPIWithDefaults = _paramStringApiWithDefaults,
+                            ParamStringApiWithDefaults = _paramStringApiWithDefaults,
                             ParamsStringCall = _paramsStringCall,
                             CSharpParamName = parameterName,
                             CppDefaultValue = cppDefaultValue,
@@ -505,6 +507,16 @@ public class FunctionExporter
         builder.Append(";");
     }
     
+    public void ForEachParameter(Action<PropertyTranslator, UhtProperty> action)
+    {
+        for (int i = 0; i < _function.Children.Count; i++)
+        {
+            UhtProperty parameter = (UhtProperty) _function.Children[i];
+            PropertyTranslator translator = _parameterTranslators[i];
+            action(translator, parameter);
+        }
+    }
+    
     public void ExportExtensionMethod(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
@@ -514,15 +526,15 @@ public class FunctionExporter
         string returnManagedType = "void";
         if (ReturnValueTranslator != null)
         {
-            returnManagedType = ReturnValueTranslator.GetManagedType(_function.ReturnProperty);
+            returnManagedType = ReturnValueTranslator.GetManagedType(_function.ReturnProperty!);
         }
         
         builder.AppendLine($"{_modifiers}{returnManagedType} {_functionName}({_paramStringApiWithDefaults})");
         builder.OpenBrace();
         string returnStatement = _function.ReturnProperty != null ? "return " : "";
         UhtClass functionOwner = (UhtClass) _function.Outer!;
-        
-        string fullClassName = ScriptGeneratorUtilities.GetFullManagedName(functionOwner);
+
+        string fullClassName = functionOwner.GetFullManagedName();
         builder.AppendLine($"{returnStatement}{fullClassName}.{_functionName}({_paramsStringCall});");
         builder.CloseBrace();
     }
@@ -539,12 +551,11 @@ public class FunctionExporter
             builder.AppendLine($"static int {_functionName}_ParamsSize;");
         }
         
-        foreach (UhtProperty parameter in _function.Properties)
+        ForEachParameter((translator, parameter) =>
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
             translator.ExportParameterVariables(builder, _function, _functionName, parameter, parameter.EngineName);
             translator.OnPropertyExported(builder, parameter);
-        }
+        });
     }
 
     void ExportOverloads(GeneratorStringBuilder builder)
@@ -562,7 +573,7 @@ public class FunctionExporter
                 returnStatement = "return ";
             }
             
-            builder.AppendLine($"{_modifiers}{returnType} {_functionName}({overload.ParamStringAPIWithDefaults})");
+            builder.AppendLine($"{_modifiers}{returnType} {_functionName}({overload.ParamStringApiWithDefaults})");
             builder.OpenBrace();
             overload.Translator.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, _function, overload.Parameter);
             builder.AppendLine($"{returnStatement}{_functionName}({overload.ParamsStringCall});");
@@ -615,22 +626,21 @@ public class FunctionExporter
             builder.AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
             builder.AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({nativeFunctionIntPtr}, ParamsBuffer);");
             
-            foreach (UhtProperty parameter in _function.Properties)
+            ForEachParameter((translator, parameter) =>
             {
                 if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
                 {
-                    continue;
+                    return;
                 }
                 
                 string propertyName = parameter.GetParameterName();
                 
                 if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm) || !parameter.HasAllFlags(EPropertyFlags.OutParm))
                 {
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
                     string offsetName = $"{_functionName}_{parameter.EngineName}_Offset";
                     translator.ExportToNative(builder, parameter, parameter.EngineName, "ParamsBuffer", offsetName, propertyName);
                 }
-            }
+            });
             
             builder.AppendLine();
 
@@ -647,46 +657,47 @@ public class FunctionExporter
             {
                 builder.AppendLine();
 
-                foreach (UhtProperty parameter in _function.Properties)
+                ForEachParameter((translator, parameter) =>
                 {
-                    if (parameter.HasAllFlags(EPropertyFlags.ReturnParm) || 
-                        (!parameter.HasAllFlags(EPropertyFlags.ConstParm) && parameter.HasAllFlags(EPropertyFlags.OutParm)))
+                    if (!parameter.HasAllFlags(EPropertyFlags.ReturnParm) &&
+                        (parameter.HasAllFlags(EPropertyFlags.ConstParm) ||
+                         !parameter.HasAllFlags(EPropertyFlags.OutParm)))
                     {
-                        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
-                        
-                        string marshalDestination;
-                        if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
-                        {
-                            builder.AppendLine($"{ReturnValueTranslator!.GetManagedType(parameter)} returnValue;");
-                            marshalDestination = "returnValue";
-                        }
-                        else
-                        {
-                            marshalDestination = parameter.GetParameterName();
-                        }
-                        
-                        translator.ExportFromNative(builder, 
-                            parameter, 
-                            parameter.EngineName, 
-                            $"{marshalDestination} =", 
-                            "ParamsBuffer", 
-                            $"{_functionName}_{parameter.EngineName}_Offset", 
-                            true, 
-                            parameter.HasAllFlags(EPropertyFlags.ReferenceParm) && !parameter.HasAllFlags(EPropertyFlags.ReturnParm));
+                        return;
                     }
-                }
+
+                    string marshalDestination;
+                    if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
+                    {
+                        builder.AppendLine($"{ReturnValueTranslator!.GetManagedType(parameter)} returnValue;");
+                        marshalDestination = "returnValue";
+                    }
+                    else
+                    {
+                        marshalDestination = parameter.GetParameterName();
+                    }
+
+                    translator.ExportFromNative(builder,
+                        parameter,
+                        parameter.EngineName,
+                        $"{marshalDestination} =",
+                        "ParamsBuffer",
+                        $"{_functionName}_{parameter.EngineName}_Offset",
+                        true,
+                        parameter.HasAllFlags(EPropertyFlags.ReferenceParm) &&
+                        !parameter.HasAllFlags(EPropertyFlags.ReturnParm));
+                });
             }
             
             builder.AppendLine();
             
-            foreach (UhtProperty parameter in _function.Properties)
+            ForEachParameter((translator, parameter) =>
             {
                 if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.OutParm))
                 {
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
                     translator.ExportCleanupMarshallingBuffer(builder, parameter, parameter.EngineName);
                 }
-            }
+            });
             
             if (_function.ReturnProperty != null)
             {

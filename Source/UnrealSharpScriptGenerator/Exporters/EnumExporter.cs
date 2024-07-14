@@ -11,7 +11,7 @@ public static class EnumExporter
     {
         GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
         
-        string moduleName = ScriptGeneratorUtilities.GetNamespace(enumObj);
+        string moduleName = enumObj.GetNamespace();
         
         stringBuilder.GenerateTypeSkeleton(moduleName);
         stringBuilder.AppendTooltip(enumObj);
@@ -38,7 +38,7 @@ public static class EnumExporter
         stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
-        FileExporter.SaveTypeToDisk(enumObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(enumObj, stringBuilder);
     }
     
     public static string UnderlyingTypeToString(UhtEnumUnderlyingType underlyingType)

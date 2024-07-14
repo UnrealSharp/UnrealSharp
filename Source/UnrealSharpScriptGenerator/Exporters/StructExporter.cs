@@ -36,7 +36,7 @@ public static class StructExporter
             }
         }
         
-        string typeNameSpace = ScriptGeneratorUtilities.GetNamespace(structObj);
+        string typeNameSpace = structObj.GetNamespace();
         stringBuilder.GenerateTypeSkeleton(typeNameSpace);
         
         bool isBlittable = structObj.IsStructBlittable();
@@ -62,7 +62,7 @@ public static class StructExporter
             ExportStructMarshaller(stringBuilder, structObj);
         }
         
-        FileExporter.SaveTypeToDisk(structObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
     
     public static void ExportStructProperties(GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets)

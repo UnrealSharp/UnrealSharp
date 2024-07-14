@@ -23,13 +23,14 @@ public static class CSharpExporter
         
         WaitForTasks();
         
-        // These are only populated once all classes have been exported
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             FunctionExporter.StartExportingExtensionMethods(package, Tasks);
         }
         
         WaitForTasks();
+        
+        FileExporter.CleanOldExportedFiles();
     }
     
     private static void WaitForTasks()
@@ -70,20 +71,20 @@ public static class CSharpExporter
                     return;
                 }
                 
-                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(alternateClass); }));
+                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(alternateClass); })!);
             }
             else
             {
-                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); }));
+                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); })!);
             }
         }
         else if (type is UhtEnum enumObj)
         {
-            Tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); }));
+            Tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); })!);
         }
         else if (type is UhtScriptStruct structObj)
         {
-            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); }));
+            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); })!);
         }
     }
 }

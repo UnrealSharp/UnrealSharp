@@ -16,6 +16,8 @@
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
 
+#include "Logging/StructuredLog.h"
+
 #if WITH_EDITOR
 #include "GlueGenerator/CSGenerator.h"
 #include "AssetToolsModule.h"
@@ -127,7 +129,7 @@ bool FCSManager::InitializeBindings()
 	
 	if (ErrorCode != 0)
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Tried to initialize UnrealSharp with error code: %d"), ErrorCode);
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", ErrorCode);
 		return false;
 	}
 

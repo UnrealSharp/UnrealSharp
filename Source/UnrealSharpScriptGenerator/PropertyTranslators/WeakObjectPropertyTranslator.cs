@@ -16,7 +16,7 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
-        string fullName = ScriptGeneratorUtilities.GetFullManagedName(weakObjectProperty.Class);
+        string fullName = weakObjectProperty.Class.GetFullManagedName();
         return $"WeakObject<{fullName}>";
     }
 

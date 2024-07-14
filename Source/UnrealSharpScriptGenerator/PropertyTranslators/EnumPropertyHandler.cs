@@ -26,7 +26,7 @@ public class EnumPropertyHandler : BlittableTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtEnum enumObj = GetEnum(property)!;
-        return ScriptGeneratorUtilities.GetFullManagedName(enumObj);
+        return enumObj.GetFullManagedName();
     }
     
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
@@ -39,7 +39,7 @@ public class EnumPropertyHandler : BlittableTypePropertyTranslator
             defaultValue = defaultValue.Substring(defaultValue.LastIndexOf("::") + 2);
         }
         
-        string fullEnumName = ScriptGeneratorUtilities.GetFullManagedName(enumObj);
+        string fullEnumName = GetManagedType(paramProperty);
         builder.AppendLine($"{fullEnumName} {variableName} = {fullEnumName}.{defaultValue};");
     }
 

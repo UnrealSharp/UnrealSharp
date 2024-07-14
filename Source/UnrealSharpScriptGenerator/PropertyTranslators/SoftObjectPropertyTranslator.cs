@@ -14,7 +14,7 @@ public class SoftObjectPropertyTranslator : BlittableStructPropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
-        string fullName = ScriptGeneratorUtilities.GetFullManagedName(softObjectProperty.Class);
+        string fullName = softObjectProperty.Class.GetFullManagedName();
         return $"SoftObject<{fullName}>";
     }
 

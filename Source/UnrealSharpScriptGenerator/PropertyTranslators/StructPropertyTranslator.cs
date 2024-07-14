@@ -15,7 +15,7 @@ public class StructPropertyTranslator : SimpleTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
        UhtStructProperty structProperty = (UhtStructProperty)property; 
-       return ScriptGeneratorUtilities.GetFullManagedName(structProperty.ScriptStruct);
+       return structProperty.ScriptStruct.GetFullManagedName();
     }
 
     public override string GetMarshaller(UhtProperty property)

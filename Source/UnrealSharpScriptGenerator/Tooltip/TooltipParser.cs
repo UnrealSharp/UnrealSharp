@@ -42,18 +42,19 @@ public static class TooltipParser
                 {
                     if (startIndex != -1)
                     {
-                        outToken.ComplexValue =
-                            sourceTooltip.Substring(startIndex, sourceTooltipParseIndex - startIndex);
+                        outToken.ComplexValue = sourceTooltip.Substring(startIndex, sourceTooltipParseIndex - startIndex);
                         startIndex = -1;
                     }
 
-                    while (sourceTooltipParseIndex < sourceTooltip.Length &&
-                           char.IsWhiteSpace(sourceTooltip[sourceTooltipParseIndex]))
+                    while (sourceTooltipParseIndex < sourceTooltip.Length && char.IsWhiteSpace(sourceTooltip[sourceTooltipParseIndex]))
+                    {
                         ++sourceTooltipParseIndex;
-
-                    while (sourceTooltipParseIndex < sourceTooltip.Length &&
-                           char.IsWhiteSpace(sourceTooltip[sourceTooltipParseIndex]))
+                    }
+                    
+                    while (sourceTooltipParseIndex < sourceTooltip.Length && char.IsWhiteSpace(sourceTooltip[sourceTooltipParseIndex]))
+                    {
                         ++sourceTooltipParseIndex;
+                    }
 
                     outToken.ComplexValue += ' ';
                 }
@@ -146,10 +147,13 @@ public static class TooltipParser
 
         if (!string.IsNullOrEmpty(parsedTooltip.BasicTooltipText))
         {
-            var lines = parsedTooltip.BasicTooltipText.Split(new[] { '\n' }, StringSplitOptions.None);
-
+            string[] lines = parsedTooltip.BasicTooltipText.Split(new[] { '\n' }, StringSplitOptions.None);
+            
             builder.AppendLine("/// <summary>");
-            foreach (var line in lines) builder.AppendLine($"/// {line}");
+            foreach (var line in lines)
+            {
+                builder.AppendLine($"/// {line}");
+            }
             builder.AppendLine("/// </summary>");
         }
 
@@ -160,7 +164,6 @@ public static class TooltipParser
                 builder.AppendLine($"/// <param name=\"{miscToken.ParamName.Value}\">{miscToken.ParamComment.Value}</param>");
             }
         }
-
 
         var returnToolTip = parsedTooltip.ReturnToken.ParamComment.Value;
         if (string.IsNullOrEmpty(returnToolTip))

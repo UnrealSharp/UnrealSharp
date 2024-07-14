@@ -11,9 +11,9 @@ namespace UnrealSharpScriptGenerator;
 public class GeneratorStringBuilder : IDisposable
 {
     private int _indent;
-    private List<string> _directives = new();
-    private readonly BorrowStringBuilder _borrower = new(StringBuilderCache.Big);
-    public StringBuilder StringBuilder => _borrower.StringBuilder;
+    private readonly List<string> _directives = new();
+    private BorrowStringBuilder _borrower = new(StringBuilderCache.Big);
+    private StringBuilder StringBuilder => _borrower.StringBuilder;
 
     public override string ToString()
     {
@@ -176,7 +176,7 @@ public class GeneratorStringBuilder : IDisposable
         {
             foreach (UhtType @interface in interfaces)
             {
-                string fullInterfaceName = ScriptGeneratorUtilities.GetFullManagedName(@interface);
+                string fullInterfaceName = @interface.GetFullManagedName();
                 interfacesDeclaration += $", {fullInterfaceName}";
             }
         }

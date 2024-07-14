@@ -18,7 +18,7 @@ public static class DelegateExporter
         GeneratorStringBuilder builder = new();
         
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
-        string delegateNamespace = ScriptGeneratorUtilities.GetNamespace(function);
+        string delegateNamespace = function.GetNamespace();
         
         builder.GenerateTypeSkeleton(delegateNamespace);
         builder.AppendLine();
@@ -43,7 +43,7 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        FileExporter.SaveTypeToDisk(function, builder);
+        FileExporter.SaveGlueToDisk(function, builder);
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)

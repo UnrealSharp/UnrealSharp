@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using EpicGames.Core;
 using EpicGames.UHT.Tables;
+using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -13,12 +14,24 @@ public static class Program
 	public static IUhtExportFactory Factory { get; private set; } = null!;
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
 	public static string GeneratedGluePath => ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
+	
+	public static UhtClass BlueprintFunctionLibrary = null!;
 
-	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default, ModuleName = "CSharpForUE")]
+	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
+		ModuleName = "CSharpForUE",
+		CppFilters = new[] { "*.generated.cs" }, HeaderFilters = new[] { "*.generated.cs" },
+		OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
 		Console.WriteLine("Initializing C# exporter...");
 		Factory = factory;
+		
+		UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
+		if (foundType is not UhtClass blueprintFunctionLibrary)
+		{
+			throw new Exception("Failed to find UBlueprintFunctionLibrary class.");
+		}
+		BlueprintFunctionLibrary = blueprintFunctionLibrary;
 		
 		try
 		{

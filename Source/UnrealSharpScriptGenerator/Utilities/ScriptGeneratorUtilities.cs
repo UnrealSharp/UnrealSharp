@@ -13,45 +13,9 @@ namespace UnrealSharpScriptGenerator.Utilities;
 public static class ScriptGeneratorUtilities
 {
     public const string BlueprintType = "BlueprintType";
-    public const string BlueprintSpawnableComponent = "BlueprintSpawnableComponent";
-    public const string NotBlueprintType = "NotBlueprintType";
-    
-    public const string UnrealSharpNamespace = "UnrealSharp";
     public const string EngineNamespace = "UnrealSharp.Engine";
     public const string InteropNamespace = "UnrealSharp.Interop";
     public const string AttributeNamespace = "UnrealSharp.Attributes";
-
-    private static readonly HashSet<string> ForceExportClasses = new()
-    {
-        "BlueprintFunctionLibrary",
-        "DeveloperSettings",
-    };
-    
-    public static bool CanExportClass(UhtClass classObj)
-    {
-        if (classObj.EngineName == "Object")
-        {
-            return true;
-        }
-        
-        return classObj.ClassFlags.HasAnyFlags(EClassFlags.RequiredAPI | EClassFlags.MinimalAPI);
-    }
-    
-    public static string GetNamespace(UhtType typeObj)
-    {
-        UhtType outer = typeObj;
-        while (outer.Outer != null)
-        {
-            outer = outer.Outer;
-            
-            if (outer is UhtHeaderFile header)
-            {
-                return "UnrealSharp." + header.Package.ShortName;
-            }
-        }
-
-        return string.Empty;
-    }
     
     public static string GetModuleName(UhtType typeObj)
     {
@@ -91,12 +55,7 @@ public static class ScriptGeneratorUtilities
             return false;
         }
 
-        if (!CanExportParameters(function))
-        {
-            return false;
-        }
-
-        return true;
+        return CanExportParameters(function);
     }
     
     public static bool CanExportParameters(UhtFunction function)
@@ -169,11 +128,6 @@ public static class ScriptGeneratorUtilities
         }
         
         return false;
-    }
-    
-    public static string GetFullManagedName(UhtType type)
-    {
-        return $"{GetNamespace(type)}.{type.GetStructName()}";
     }
     
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)
@@ -263,12 +217,12 @@ public static class ScriptGeneratorUtilities
     {
         foreach (UhtType @interface in interfaces)
         {
-            dependencies.Add(GetNamespace(@interface));
+            dependencies.Add(@interface.GetNamespace());
         }
 
         if (typeObj.Super != null)
         {
-            dependencies.Add(GetNamespace(typeObj.Super));
+            dependencies.Add(typeObj.Super.GetNamespace());
         }
 
         foreach (UhtFunction function in functions)
@@ -311,7 +265,7 @@ public static class ScriptGeneratorUtilities
         
         foreach (UhtType reference in references)
         {
-            dependencies.Add(GetNamespace(reference));
+            dependencies.Add(reference.GetNamespace());
         }
     }
 }

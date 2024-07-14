@@ -12,9 +12,9 @@ public static class InterfaceExporter
         GeneratorStringBuilder stringBuilder = new();
         
         string interfaceName = interfaceObj.GetStructName();
-        string namespaceName = ScriptGeneratorUtilities.GetNamespace(interfaceObj);
+        string typeNamespace = interfaceObj.GetNamespace();
         
-        stringBuilder.GenerateTypeSkeleton(namespaceName);
+        stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.AppendTooltip(interfaceObj);
         stringBuilder.AppendLine("[UInterface]");
         stringBuilder.DeclareType("interface", interfaceName);
@@ -52,7 +52,7 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         stringBuilder.CloseBrace();
         
-        FileExporter.SaveTypeToDisk(interfaceObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
     }
     
     static void ExportIntefaceFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)

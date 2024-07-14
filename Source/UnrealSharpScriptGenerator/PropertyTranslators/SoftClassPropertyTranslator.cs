@@ -8,7 +8,7 @@ public class SoftClassPropertyTranslator : SoftObjectPropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty)property;
-        string fullName = ScriptGeneratorUtilities.GetFullManagedName(softClassProperty.Class);
+        string fullName = softClassProperty.Class.GetFullManagedName();
         return $"SoftClass<{fullName}>";
     }
     

@@ -12,8 +12,8 @@ public static class ClassExporter
     public static void ExportClass(UhtClass classObj)
     {
         GeneratorStringBuilder stringBuilder = new();
-        
-        string typeNameSpace = ScriptGeneratorUtilities.GetNamespace(classObj);
+
+        string typeNameSpace = classObj.GetNamespace();
 
         List<UhtProperty> exportedProperties = new();
         ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
@@ -39,7 +39,7 @@ public static class ClassExporter
         string superClassName;
         if (classObj.SuperClass != null)
         {
-            superClassName = ScriptGeneratorUtilities.GetFullManagedName(classObj.SuperClass);
+            superClassName = classObj.SuperClass.GetFullManagedName();
         }
         else
         {
@@ -56,7 +56,7 @@ public static class ClassExporter
         stringBuilder.AppendLine();
         stringBuilder.CloseBrace();
         
-        FileExporter.SaveTypeToDisk(classObj, stringBuilder);
+        FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
 
     static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
@@ -78,7 +78,7 @@ public static class ClassExporter
     
     static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
     {
-        bool isBlueprintFunctionLibrary = owner.IsChildOf("BlueprintFunctionLibrary");
+        bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
         {
             if (function.HasAllFlags(EFunctionFlags.Static) && isBlueprintFunctionLibrary)

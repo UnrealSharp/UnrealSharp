@@ -21,6 +21,6 @@ public static class ExtensionsClassExporter
         }
         
         stringBuilder.CloseBrace();
-        FileExporter.SaveTypeToDisk(package.ShortName, className, stringBuilder.ToString());
+        FileExporter.SaveGlueToDisk(package.ShortName, className, stringBuilder.ToString());
     }
 }

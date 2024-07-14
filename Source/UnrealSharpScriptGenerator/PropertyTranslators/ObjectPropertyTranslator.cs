@@ -21,8 +21,8 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        UhtObjectProperty objectProperty = (UhtObjectProperty)property; 
-        return ScriptGeneratorUtilities.GetFullManagedName(objectProperty.Class);
+        UhtObjectProperty objectProperty = (UhtObjectProperty)property;
+        return objectProperty.Class.GetFullManagedName();
     }
 
     public override string GetMarshaller(UhtProperty property)

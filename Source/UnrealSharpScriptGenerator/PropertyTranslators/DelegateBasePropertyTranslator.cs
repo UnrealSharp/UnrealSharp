@@ -22,7 +22,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     
     public static string GetFullDelegateName(UhtFunction function)
     {
-        return $"{ScriptGeneratorUtilities.GetNamespace(function)}.{GetDelegateName(function)}";
+        return $"{function.GetNamespace()}.{GetDelegateName(function)}";
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)

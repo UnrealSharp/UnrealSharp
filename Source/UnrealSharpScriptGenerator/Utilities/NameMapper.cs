@@ -42,6 +42,27 @@ public static class NameMapper
         return scriptName;
     }
     
+    public static string GetFullManagedName(this UhtType type)
+    {
+        return $"{type.GetNamespace()}.{type.GetStructName()}";
+    }
+    
+    public static string GetNamespace(this UhtType typeObj)
+    {
+        UhtType outer = typeObj;
+        while (outer.Outer != null)
+        {
+            outer = outer.Outer;
+            
+            if (outer is UhtHeaderFile header)
+            {
+                return "UnrealSharp." + header.Package.ShortName;
+            }
+        }
+
+        return string.Empty;
+    }
+    
     public static string GetPropertyName(this UhtProperty property)
     {
         string propertyName = property.EngineName;
