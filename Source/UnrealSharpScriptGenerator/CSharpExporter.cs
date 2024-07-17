@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -15,6 +16,7 @@ public static class CSharpExporter
     public static void StartExport()
     {
         Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(Program.Factory.Session.UObject); })!);
+        Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(Program.Factory.Session.UInterface); })!);
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
@@ -64,14 +66,12 @@ public static class CSharpExporter
         
         if (type is UhtClass classObj)
         {
-            if (classObj.ClassType is UhtClassType.Interface or UhtClassType.NativeInterface)
+            if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.AlternateObject is not UhtClass alternateClass)
+                if (classObj.ClassType is UhtClassType.Interface)
                 {
-                    return;
+                    Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); })!);
                 }
-                
-                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(alternateClass); })!);
             }
             else
             {

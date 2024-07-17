@@ -19,6 +19,11 @@ public static class ScriptGeneratorUtilities
     
     public static string GetModuleName(UhtType typeObj)
     {
+        if (typeObj.Outer is UhtPackage package)
+        {
+            return package.ShortName;
+        }
+        
         if (typeObj.Outer is UhtHeaderFile header)
         {
             return header.Package.ShortName;
@@ -26,22 +31,6 @@ public static class ScriptGeneratorUtilities
 
         return string.Empty;
     }
-    
-    public static bool IsConsideredForExporting(UhtType type)
-    {
-        return !type.MetaData.GetBoolean("NotGeneratorValid");
-    }
-    
-    public static bool CanExportEnum(UhtEnum enumObj)
-    {
-        return enumObj.MetaData.GetBoolean(BlueprintType);
-    }
-    
-    public static bool CanExportStruct(UhtStruct structObj)
-    {
-        return structObj.MetaData.GetBoolean(BlueprintType) || HasBlueprintExposedProperties(structObj);
-    }
-
     public static string TryGetPluginDefine(string key)
     {
         Program.PluginModule.TryGetDefine(key, out string? generatedCodePath);
@@ -70,17 +59,6 @@ public static class ScriptGeneratorUtilities
 
         return true;
     }
-    
-    public static bool HasBlueprintExposedProperties(UhtStruct classObj)
-    {
-        return classObj.Properties.Any(CanExportProperty);
-    }
-    
-    public static bool HasBlueprintExposedFunctions(UhtStruct classObj)
-    {
-        return classObj.Functions.Any(CanExportFunction);
-    }
-    
     public static bool CanExportProperty(UhtProperty property)
     {
         if (property.MetaData.GetBoolean("ScriptNoExport"))
@@ -171,8 +149,11 @@ public static class ScriptGeneratorUtilities
             {
                 continue;
             }
-
-            UhtClass interfaceClass = (UhtClass) declaration.AlternateObject!;
+            
+            if (declaration.AlternateObject is not UhtClass interfaceClass)
+            {
+                continue;
+            }
             
             foreach (UhtFunction function in interfaceClass.Functions)
             {
@@ -256,7 +237,6 @@ public static class ScriptGeneratorUtilities
             GatherDependencies(property, dependencies);
         }
     }
-
     public static void GatherDependencies(UhtProperty property, List<string> dependencies)
     {
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
@@ -267,5 +247,21 @@ public static class ScriptGeneratorUtilities
         {
             dependencies.Add(reference.GetNamespace());
         }
+    }
+    
+    public static UhtPackage GetPackage(UhtType typeObj)
+    {
+        if (typeObj is UhtPackage package)
+        {
+            return package;
+        }
+        
+        UhtType currentType = typeObj;
+        while (currentType.Outer != null)
+        {
+            currentType = currentType.Outer;
+        }
+
+        return (currentType as UhtPackage)!;
     }
 }

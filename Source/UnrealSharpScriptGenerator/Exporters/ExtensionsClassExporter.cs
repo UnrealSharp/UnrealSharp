@@ -8,10 +8,11 @@ public static class ExtensionsClassExporter
 {
     public static void ExportExtensionsClass(UhtPackage package, List<ExtensionMethod> extensionMethods)
     {
+        string typeNamespace = package.GetNamespace();
         string className = $"{package.ShortName}Extensions";
         
         GeneratorStringBuilder stringBuilder = new();
-        stringBuilder.GenerateTypeSkeleton(className);
+        stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.DeclareType("static class", className, null, false);
         
         foreach (ExtensionMethod extensionMethod in extensionMethods)
@@ -21,6 +22,8 @@ public static class ExtensionsClassExporter
         }
         
         stringBuilder.CloseBrace();
-        FileExporter.SaveGlueToDisk(package.ShortName, className, stringBuilder.ToString());
+        
+        string directory = FileExporter.GetDirectoryPath(package);
+        FileExporter.SaveGlueToDisk(directory, className, stringBuilder.ToString(), package);
     }
 }

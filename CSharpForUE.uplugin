@@ -25,11 +25,6 @@
 			"LoadingPhase": "PreDefault"
 		},
 		{
-			"Name": "GlueGenerator",
-			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
-		},
-		{
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PreDefault"

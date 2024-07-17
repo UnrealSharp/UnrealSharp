@@ -50,17 +50,31 @@ public static class NameMapper
     public static string GetNamespace(this UhtType typeObj)
     {
         UhtType outer = typeObj;
-        while (outer.Outer != null)
+
+        string packageShortName = "";
+        if (outer is UhtPackage package)
         {
-            outer = outer.Outer;
-            
-            if (outer is UhtHeaderFile header)
+            packageShortName = package.ShortName;
+        }
+        else
+        {
+            while (outer.Outer != null)
             {
-                return "UnrealSharp." + header.Package.ShortName;
+                outer = outer.Outer;
+            
+                if (outer is UhtHeaderFile header)
+                {
+                    packageShortName = header.Package.ShortName;
+                }
             }
         }
-
-        return string.Empty;
+        
+        if (string.IsNullOrEmpty(packageShortName))
+        {
+            throw new Exception($"Failed to find package name for {typeObj}");
+        }
+        
+        return $"UnrealSharp.{packageShortName}";
     }
     
     public static string GetPropertyName(this UhtProperty property)

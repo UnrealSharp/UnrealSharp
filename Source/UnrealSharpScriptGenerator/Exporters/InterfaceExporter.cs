@@ -23,7 +23,10 @@ public static class InterfaceExporter
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
-        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, ref exportedFunctions, ref exportedOverrides);
+        if (interfaceObj.AlternateObject is UhtClass alternateObject)
+        {
+            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, ref exportedFunctions, ref exportedOverrides);
+        }
         
         ExportIntefaceFunctions(stringBuilder, exportedFunctions);
         

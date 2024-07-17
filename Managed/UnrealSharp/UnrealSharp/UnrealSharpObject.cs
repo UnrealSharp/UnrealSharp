@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.CoreUObject;
-using UnrealSharp.CSharpForUE;
 using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;

@@ -19,7 +19,6 @@
 #include "Logging/StructuredLog.h"
 
 #if WITH_EDITOR
-#include "GlueGenerator/CSGenerator.h"
 #include "AssetToolsModule.h"
 #endif
 
@@ -32,7 +31,19 @@ void FCSManager::InitializeUnrealSharp()
 	
 	if (DotNetInstallationPath.IsEmpty())
 	{
-		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET SDK can't be found"));
+		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET8 SDK can't be found on your system."));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpLibraryPath();
+	if (!FPaths::FileExists(UnrealSharpLibraryPath))
+	{
+		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
+		FString DialogText = FString::Printf(TEXT(
+			"The bindings library could not be found at the following location:\n%s\n\n"
+			"Right-click on the .uproject file and select \"Generate Visual Studio project files\" to compile.\n"
+		), *FullPath);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
@@ -41,14 +52,8 @@ void FCSManager::InitializeUnrealSharp()
 
 	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
 	{
-		if (!FApp::IsUnattended()) 
+		if (!FApp::IsUnattended())
 		{
-			if (!FCSProcHelper::BuildBindings())
-			{
-				UE_LOG(LogUnrealSharp, Fatal, TEXT("C# binding failed"));
-				return;
-			}
-
 			if (!FCSProcHelper::GenerateProject())
 			{
 				InitializeUnrealSharp();

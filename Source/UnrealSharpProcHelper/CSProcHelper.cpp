@@ -249,19 +249,3 @@ FString FCSProcHelper::GetUserManagedProjectName()
 {
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }
-
-bool FCSProcHelper::BuildBindings(FString* OutputPath)
-{
-	int32 ReturnCode = 0;
-	
-	FString Arguments;
-	Arguments += TEXT("publish");
-	
-	FString FullOutputPath = OutputPath ? *OutputPath : FPaths::ConvertRelativePathToFull(GetAssembliesPath());
-	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
-	
-	Arguments += FString::Printf(TEXT(" -p:PublishDir=\"%s\""), *FullOutputPath);
-
-	FString Output;
-	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
-}

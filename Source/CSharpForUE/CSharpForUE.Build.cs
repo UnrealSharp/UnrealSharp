@@ -3,21 +3,16 @@ using System.Diagnostics;
 using System.IO;
 using UnrealBuildTool;
 
-enum BuildConfiguration
-{
-	Debug,
-	Release
-}
-
 public class CSharpForUE : ModuleRules
 {
-	
 	private string ManagedPath;
+	private string ManagedBinariesPath;
 	
 	public CSharpForUE(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
+		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
@@ -55,19 +50,14 @@ public class CSharpForUE : ModuleRules
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"UnrealEd", 
-				"GlueGenerator",
 				"EditorSubsystem", 
 			});
 			
-			string GeneratedGluePath = Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp", "Generated");
-			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + GeneratedGluePath);
-		}
-		
-		IncludeDotNetHeaders();
-
-		if (Target.Type == TargetRules.TargetType.Editor)
-		{
-			BuildPrograms();
+			string generatedGluePath = Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp", "Generated");
+			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + generatedGluePath);
+			PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory);
+			
+			PublishSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms"));
 		}
 	}
 	
@@ -107,18 +97,11 @@ public class CSharpForUE : ModuleRules
 		throw new Exception("Couldn't find dotnet.exe!");
 	}
 
-	void BuildPrograms()
+	void PublishSolution(string projectRootDirectory)
 	{
-		string outputDirectory = Path.Combine(PluginDirectory, "Binaries", "Managed");
-		BuildSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms", "UnrealSharpPrograms.sln"), BuildConfiguration.Release, outputDirectory);
-		Console.WriteLine("UnrealSharpPrograms built successfully!");
-	}
-
-	void BuildSolution(string solutionPath, BuildConfiguration buildConfiguration = BuildConfiguration.Debug, string outputDirectory = null)
-	{
-		if (!File.Exists(solutionPath))
+		if (!Directory.Exists(projectRootDirectory))
 		{
-			throw new Exception($"Couldn't find the solution file at \"{solutionPath}\"");
+			throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
 		}
 		
 		string dotnetPath = FindDotNetExecutable();
@@ -126,20 +109,18 @@ public class CSharpForUE : ModuleRules
 		Process process = new Process();
 		process.StartInfo.FileName = dotnetPath;
 		
-		process.StartInfo.ArgumentList.Add("build");
-		process.StartInfo.ArgumentList.Add($"\"{solutionPath}\"");
+		process.StartInfo.ArgumentList.Add("publish");
+		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
-		process.StartInfo.ArgumentList.Add("-c");
-		process.StartInfo.ArgumentList.Add(buildConfiguration.ToString());
-		
-		if (outputDirectory != null)
-		{
-			process.StartInfo.ArgumentList.Add("-o");
-			process.StartInfo.ArgumentList.Add(outputDirectory);
-		}
+		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{ManagedBinariesPath}\"");
 		
 		process.Start();
 		process.WaitForExit();
+		
+		if (process.ExitCode != 0)
+		{
+			throw new Exception($"Failed to publish solution: {projectRootDirectory}");
+		}
 	}
 	
 }

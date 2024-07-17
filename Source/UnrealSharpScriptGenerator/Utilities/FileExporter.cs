@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using EpicGames.UHT.Types;
@@ -9,19 +10,18 @@ public static class FileExporter
 {
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
     private static readonly List<string> ExportedFiles = new();
-    
-    public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder generatorStringBuilder)
+    public static bool HasModifiedEngineGlue { get; private set; }
+    public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
-        string moduleName = ScriptGeneratorUtilities.GetModuleName(type);
-        string typeName = type.EngineName;
-        SaveGlueToDisk(moduleName, typeName, generatorStringBuilder.ToString());
+        UhtPackage package = ScriptGeneratorUtilities.GetPackage(type);
+        string directory = GetDirectoryPath(package);
+        string text = stringBuilder.ToString();
+        SaveGlueToDisk(directory, type.EngineName, text, package);
     }
-    
-    public static void SaveGlueToDisk(string moduleName, string typeName, string text)
+    public static void SaveGlueToDisk(string directory, string typeName, string text, UhtPackage package)
     {
-        string directory = Path.Combine(Program.GeneratedGluePath, moduleName);
         string absoluteFilePath = Path.Combine(directory, $"{typeName}.generated.cs");
-
+        
         ReadWriteLock.EnterWriteLock();
         try
         {
@@ -40,6 +40,16 @@ public static class FileExporter
             }
             
             File.WriteAllText(absoluteFilePath, text);
+            
+            if (!package.IsPartOfEngine)
+            {
+                return;
+            }
+            
+            lock (typeof(Program))
+            {
+                HasModifiedEngineGlue = true;
+            }
         }
         finally
         {
@@ -47,11 +57,26 @@ public static class FileExporter
             ReadWriteLock.ExitWriteLock();
         }
     }
+    public static string GetDirectoryPath(UhtPackage package)
+    {
+        if (package == null)
+        {
+            throw new Exception("Package is null");
+        }
+
+        string rootPath = package.IsPartOfEngine ? Program.EngineGluePath : Program.ProjectGluePath;
+        return Path.Combine(rootPath, package.ShortName);
+    }
     
     public static void CleanOldExportedFiles()
     {
-        string generatedPath = Program.GeneratedGluePath;
-        string[] directories = Directory.GetDirectories(generatedPath);
+        CleanFilesInDirectories(Program.EngineGluePath);
+        CleanFilesInDirectories(Program.ProjectGluePath);
+    }
+    private static void CleanFilesInDirectories(string path)
+    {
+        string[] directories = Directory.GetDirectories(path);
+        
         foreach (var directory in directories)
         {
             string[] files = Directory.GetFiles(directory);
