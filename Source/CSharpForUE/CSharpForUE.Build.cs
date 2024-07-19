@@ -62,7 +62,8 @@ public class CSharpForUE : ModuleRules
 		
 		if (Target.bGenerateProjectFiles)
 		{
-			PublishSolution(Path.Combine(ManagedPath, "UnrealSharp"));
+			// Don't throw on failure. If this gets run when the glue hasn't been generated yet, it will fail.
+			PublishSolution(Path.Combine(ManagedPath, "UnrealSharp"), false);
 		}
 	}
 	
@@ -102,7 +103,7 @@ public class CSharpForUE : ModuleRules
 		throw new Exception("Couldn't find dotnet.exe!");
 	}
 
-	void PublishSolution(string projectRootDirectory)
+	void PublishSolution(string projectRootDirectory, bool bThrowOnFailure = true)
 	{
 		if (!Directory.Exists(projectRootDirectory))
 		{
@@ -122,7 +123,7 @@ public class CSharpForUE : ModuleRules
 		process.Start();
 		process.WaitForExit();
 		
-		if (process.ExitCode != 0)
+		if (process.ExitCode != 0 && bThrowOnFailure)
 		{
 			throw new Exception($"Failed to publish solution: {projectRootDirectory}");
 		}
