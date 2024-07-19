@@ -1,9 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <!-- Only for testing purposes -->
-        <EngineDir>C:\Program Files\Epic Games\UE_5.4\Engine</EngineDir>
-    </PropertyGroup>
     
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
 
