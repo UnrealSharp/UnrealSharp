@@ -45,7 +45,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
         string wrapperType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(arrayProperty.ValueProperty);
 
-        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}({propertyManagedName}_NativeProperty, {marshallingDelegates});");
+        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}(1, {propertyManagedName}_NativeProperty, {marshallingDelegates});");
         builder.AppendLine($"return {propertyManagedName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0);");
     }
 
@@ -179,7 +179,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
     
     private string GetWrapperType(UhtProperty property)
     {
-        bool isStructProperty = property.IsOuter<UhtStruct>();
+        bool isStructProperty = property.IsOuter<UhtScriptStruct>();
         bool isParameter = property.IsOuter<UhtFunction>();
         UhtArrayProperty arrayProperty = (UhtArrayProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(arrayProperty.ValueProperty)!;

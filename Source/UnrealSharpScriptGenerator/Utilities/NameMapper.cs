@@ -6,6 +6,14 @@ using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
+public enum ENameType
+{
+    Parameter,
+    Property,
+    Struct,
+    Function
+}
+
 public static class NameMapper
 {
     private static readonly List<string> ReservedKeywords = new()
@@ -21,12 +29,26 @@ public static class NameMapper
 
     public static string GetParameterName(this UhtProperty property)
     {
-        string camelCaseName = PascalToCamelCase(property.EngineName);
-        return IsReservedKeyword(camelCaseName) ? $"@{camelCaseName}" : camelCaseName;
+        return ScriptifyName(property.EngineName, ENameType.Parameter);
+    }
+    
+    public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
+    {
+        string propertyName = ScriptifyName(property.EngineName, ENameType.Property, reservedNames);
+        if (property.Outer!.EngineName == propertyName || IsAKeyword(propertyName))
+        {
+            propertyName = $"K2_{propertyName}";
+        }
+        return propertyName;
     }
     
     public static string GetStructName(this UhtType type)
     {
+        if (type is UhtEnum)
+        {
+            return type.SourceName;
+        }
+        
         string scriptName = type.GetMetadata("ScriptName");
         
         if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
@@ -34,7 +56,7 @@ public static class NameMapper
             scriptName = type.EngineName;
         }
 
-        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
+        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == Program.Factory.Session.UInterface)
         {
             scriptName = $"I{scriptName}";
         }
@@ -77,19 +99,9 @@ public static class NameMapper
         return $"UnrealSharp.{packageShortName}";
     }
     
-    public static string GetPropertyName(this UhtProperty property)
-    {
-        string propertyName = property.EngineName;
-        if (property.Outer!.EngineName == propertyName || IsReservedKeyword(propertyName))
-        {
-            propertyName = $"K2_{propertyName}";
-        }
-        return propertyName;
-    }
-    
     public static string GetFunctionName(this UhtFunction function)
     {
-        string functionName = function.EngineName;
+        string functionName = ScriptifyName(function.EngineName, ENameType.Function);
 
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {
@@ -114,8 +126,78 @@ public static class NameMapper
         
         return functionName;
     }
+
+    public static string ScriptifyName(string engineName, ENameType nameType)
+    {
+        string strippedName = engineName;
+        switch (nameType)
+        {
+            case ENameType.Parameter:
+                strippedName = StripPropertyPrefix(strippedName);
+                strippedName = PascalToCamelCase(strippedName);
+                break;
+            case ENameType.Property:
+                strippedName = StripPropertyPrefix(strippedName);
+                break;
+            case ENameType.Struct:
+                break;
+            case ENameType.Function:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(nameType), nameType, null);
+        }
+        
+        return EscapeKeywords(strippedName);
+    }
+
+    public static string ScriptifyName(string engineName, ENameType nameType, List<string> reservedNames)
+    {
+        string strippedName = ScriptifyName(engineName, nameType);
+        
+        if (nameType is not (ENameType.Parameter or ENameType.Property))
+        {
+            return strippedName;
+        }
+        
+        if (reservedNames.Contains(strippedName))
+        {
+            strippedName = engineName;
+        }
+        
+        return strippedName;
+    }
     
-    private static bool IsReservedKeyword(string name)
+    public static string StripPropertyPrefix(string inName)
+    {
+        int nameOffset = 0;
+
+        while (true)
+        {
+            // Strip the "b" prefix from bool names
+            if (inName.Length - nameOffset >= 2 && inName[nameOffset] == 'b' && char.IsUpper(inName[nameOffset + 1]))
+            {
+                nameOffset += 1;
+                continue;
+            }
+
+            // Strip the "In" prefix from names
+            if (inName.Length - nameOffset >= 3 && inName[nameOffset] == 'I' && inName[nameOffset + 1] == 'n' && char.IsUpper(inName[nameOffset + 2]))
+            {
+                nameOffset += 2;
+                continue;
+            }
+            break;
+        }
+
+        return nameOffset != 0 ? inName.Substring(nameOffset) : inName;
+    }
+    
+    public static string EscapeKeywords(string name)
+    {
+        return IsAKeyword(name) ? $"@{name}" : name;
+    }
+    
+    private static bool IsAKeyword(string name)
     {
         return ReservedKeywords.Contains(name);
     }

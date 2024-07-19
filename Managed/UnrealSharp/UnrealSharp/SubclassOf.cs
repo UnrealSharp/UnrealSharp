@@ -18,11 +18,8 @@ public readonly struct SubclassOf<T>
     /// </summary>
     public bool Valid => IsChildOf(typeof(T));
     
-    public SubclassOf()
+    public SubclassOf() : this(typeof(T))
     {
-        Type type = typeof(T);
-        NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(type.Name);
-        ManagedType = type;
     }
     
     public SubclassOf(Type classType)
@@ -32,10 +29,28 @@ public readonly struct SubclassOf<T>
             throw new ArgumentNullException(nameof(classType));
         }
         
-        if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)))
+        if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
         {
-            NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.Name);
+            string typeName = classType.Name;
+            if (classType.IsInterface)
+            {
+                // Remove "I" prefix if it's an interface, since the "I" gets stripped in engine.
+                typeName = typeName.Substring(1);
+            }
+            
+            NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(typeName);
+            
+            if (classType.IsInterface && NativeClass == IntPtr.Zero)
+            {
+                // The interface might not have a prefix for some reason, so try again with just the name.
+                NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.Name);
+            }
+            
             ManagedType = classType;
+            if (NativeClass == IntPtr.Zero)
+            {
+                throw new ArgumentException($"Class {classType.Name} not found.");
+            }
         }
         else
         {

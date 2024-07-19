@@ -1,5 +1,4 @@
 ﻿#include "UCoreUObjectExporter.h"
-#include "CSharpForUE/TypeGenerator/Register/CSGeneratedStructBuilder.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 
 void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
@@ -16,5 +15,6 @@ UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InClassName)
 
 UStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InStructName)
 {
-	return FCSTypeRegistry::GetStructFromName(InStructName);
+	UStruct* Struct = FCSTypeRegistry::GetStructFromName(InStructName);
+	return Struct;
 }

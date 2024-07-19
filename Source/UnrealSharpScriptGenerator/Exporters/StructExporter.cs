@@ -42,17 +42,28 @@ public static class StructExporter
         bool isBlittable = structObj.IsStructBlittable();
         
         stringBuilder.AppendTooltip(structObj);
-        stringBuilder.AppendLine($"[UStruct({(isBlittable ? "IsBlittable = true" : "")})]");
+        
+        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(structObj);
+        if (isBlittable)
+        {
+            attributeBuilder.AddIsBlittableAttribute();
+        }
+        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.Finish();
+        stringBuilder.AppendLine(attributeBuilder.ToString());
+        
         stringBuilder.DeclareType("struct", structObj.GetStructName());
         
-        ExportStructProperties(stringBuilder, exportedProperties, isBlittable);
+        List<string> reservedNames = GetReservedNames(exportedProperties);
+        
+        ExportStructProperties(stringBuilder, exportedProperties, isBlittable, reservedNames);
 
         if (!isBlittable)
         {
             stringBuilder.AppendLine();
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, new List<UhtFunction>(), new List<UhtFunction>());
             stringBuilder.AppendLine();
-            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
+            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties, reservedNames);
         }
         
         stringBuilder.CloseBrace();
@@ -65,13 +76,27 @@ public static class StructExporter
         FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
     
-    public static void ExportStructProperties(GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets)
+    public static void ExportStructProperties(GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets, List<string> reservedNames)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportMirrorProperty(stringBuilder, property, suppressOffsets);
+            translator.ExportMirrorProperty(stringBuilder, property, suppressOffsets, reservedNames);
         }
+    }
+    
+    public static List<string> GetReservedNames(List<UhtProperty> properties)
+    {
+        List<string> reservedNames = new();
+        foreach (UhtProperty property in properties)
+        {
+            if (reservedNames.Contains(property.EngineName))
+            {
+                continue;
+            }
+            reservedNames.Add(property.EngineName);
+        }
+        return reservedNames;
     }
 
     public static void ExportStructMarshaller(GeneratorStringBuilder builder, UhtScriptStruct structObj)
@@ -101,7 +126,7 @@ public static class StructExporter
         builder.CloseBrace();
     }
 
-    public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties)
+    public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties, List<string> reservedNames)
     {
         builder.AppendLine();
         builder.AppendLine($"public {structObj.EngineName}(IntPtr InNativeStruct)");
@@ -111,10 +136,10 @@ public static class StructExporter
         foreach (UhtProperty property in properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            string scriptName = property.GetPropertyName();
+            string scriptName = property.GetPropertyName(reservedNames);
             string assignmentOrReturn = $"{scriptName} =";
-            string offsetName = $"{scriptName}_Offset";
-            translator.ExportFromNative(builder, property, scriptName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
+            string offsetName = $"{property.EngineName}_Offset";
+            translator.ExportFromNative(builder, property, property.EngineName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
         }
         
         builder.EndUnsafeBlock();
@@ -128,9 +153,9 @@ public static class StructExporter
         foreach (UhtProperty property in properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            string scriptName = property.GetPropertyName();
-            string offsetName = $"{scriptName}_Offset";
-            translator.ExportToNative(builder, property, scriptName, "buffer", offsetName, scriptName);
+            string scriptName = property.GetPropertyName(reservedNames);
+            string offsetName = $"{property.EngineName}_Offset";
+            translator.ExportToNative(builder, property, property.EngineName, "buffer", offsetName, scriptName);
         }
         
         builder.EndUnsafeBlock();

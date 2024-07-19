@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "FunctionsExporter.h"
-#include "InputAction.h"
 #include "UInputComponentExporter.generated.h"
 
 class UInputAction;

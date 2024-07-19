@@ -13,9 +13,7 @@ UCLASS()
 class CSHARPFORUE_API UCSClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
-
 public:
-
 	friend FCSGeneratedClassBuilder;
 
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);

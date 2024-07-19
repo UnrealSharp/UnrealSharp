@@ -33,8 +33,14 @@ public static class ClassExporter
         
         stringBuilder.AppendTooltip(classObj);
         
-        string abstractModifier = classObj.ClassFlags.HasAnyFlags(EClassFlags.Abstract) ? "ClassFlags.Abstract" : "";
-        stringBuilder.AppendLine($"[UClass({abstractModifier})]");
+        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(classObj);
+        if (classObj.ClassFlags.HasAnyFlags(EClassFlags.Abstract))
+        {
+            attributeBuilder.AddArgument("ClassFlags.Abstract");
+        }
+        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.Finish();
+        stringBuilder.AppendLine(attributeBuilder.ToString());
 
         string superClassName;
         if (classObj.SuperClass != null)
@@ -49,7 +55,10 @@ public static class ClassExporter
         stringBuilder.DeclareType("class", classObj.GetStructName(), superClassName, true, interfaces);
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
-        ExportClassProperties(stringBuilder, exportedProperties);
+        
+        List<string> reservedNames = GetReservedNames(exportedProperties, exportedOverrides, exportedFunctions);
+        ExportClassProperties(stringBuilder, exportedProperties, reservedNames);
+        
         ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
         ExportOverrides(stringBuilder, exportedOverrides);
         
@@ -58,13 +67,41 @@ public static class ClassExporter
         
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
+    
+    public static List<string> GetReservedNames(List<UhtProperty> properties, List<UhtFunction> overrideFunctions, List<UhtFunction> functions)
+    {
+        List<string> reservedNames = new();
+        
+        void AddReservedName(string name)
+        {
+            if (!reservedNames.Contains(name))
+            {
+                reservedNames.Add(name);
+            }
+        }
+        
+        foreach (UhtProperty property in properties)
+        {
+            AddReservedName(NameMapper.ScriptifyName(property.EngineName, ENameType.Property));
+        }
+        foreach (UhtFunction function in overrideFunctions)
+        {
+            AddReservedName(function.GetFunctionName());
+        }
+        foreach (UhtFunction function in functions)
+        {
+            AddReservedName(function.GetFunctionName());
+        }
+        
+        return reservedNames;
+    }
 
-    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
+    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties, List<string> reservedNames)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportProperty(generatorStringBuilder, property);
+            translator.ExportProperty(generatorStringBuilder, property, reservedNames);
         }
     }
     

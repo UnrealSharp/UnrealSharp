@@ -37,8 +37,8 @@ public class InclusionList
     
     public void AddFunctionCategory(UhtStruct structType, string category) => _functionCategories[structType].Add(category);
 
-    public void AddOverridableFunction(UhtStruct StructName, string OverridableFunctionName) => _overridableFunctions[StructName].Add(OverridableFunctionName);
-    public bool HasOverridableFunction(UhtStruct StructName, string OverridableFunctionName) => _overridableFunctions[StructName].Contains(OverridableFunctionName);
+    public void AddOverridableFunction(UhtStruct structName, string overridableFunctionName) => _overridableFunctions[structName].Add(overridableFunctionName);
+    public bool HasOverridableFunction(UhtStruct structName, string overridableFunctionName) => _overridableFunctions[structName].Contains(overridableFunctionName);
         
     public void AddProperty(UhtStruct structName, UhtProperty property) => _properties[structName].Add(property);
     public bool HasProperty(UhtStruct structName, UhtProperty property) => _properties[structName].Contains(property);

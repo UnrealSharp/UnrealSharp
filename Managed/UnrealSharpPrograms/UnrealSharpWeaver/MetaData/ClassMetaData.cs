@@ -138,7 +138,8 @@ public class ClassMetaData : TypeReferenceMetadata
             var interfaceType = typeInterface.InterfaceType.Resolve();
             if (WeaverHelper.IsUInterface(interfaceType))
             {
-                Interfaces.Add(interfaceType.Name);
+                string interfaceNoPrefix = interfaceType.Name.Substring(1);
+                Interfaces.Add(interfaceNoPrefix);
             }
         }
     }

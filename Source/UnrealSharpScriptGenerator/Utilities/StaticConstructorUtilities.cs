@@ -87,7 +87,7 @@ public static class StaticConstructorUtilities
                     }
 
                     PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.GetPropertyName(), functionName);
+                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.EngineName, functionName);
                 }
             }
             generatorStringBuilder.TryEndWithEditor(function);
@@ -117,7 +117,7 @@ public static class StaticConstructorUtilities
                 }
                 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.GetPropertyName(), functionName);
+                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.EngineName, functionName);
             }
             
             generatorStringBuilder.TryEndWithEditor(function);
@@ -130,7 +130,7 @@ public static class StaticConstructorUtilities
         {
             generatorStringBuilder.TryAddWithEditor(property);
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.GetPropertyName());
+            translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.EngineName);
             generatorStringBuilder.TryEndWithEditor(property);
         }
     }

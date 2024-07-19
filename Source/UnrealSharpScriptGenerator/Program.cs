@@ -22,13 +22,12 @@ public static class Program
 	{
 		get
 		{
-			DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory).Parent;
+			DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
 			string scriptFolderPath = Path.Combine(unrealSharpDirectory.FullName, "Script");
 			return scriptFolderPath;
 		}
 	} 
 	public static string ProjectGluePath => Path.Combine(ScriptFolder, "obj", "generated");
-	
 	public static UhtClass BlueprintFunctionLibrary = null!;
 
 	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
@@ -54,11 +53,14 @@ public static class Program
 			
 			CSharpExporter.StartExport();
 			
+			// Clean up generated c# glue from .h/.cpp files that have been removed.
+			FileExporter.CleanOldExportedFiles();
+			
+			// Everything is exported. Now we need to compile the generated C# code, if necessary.
 			if (FileExporter.HasModifiedEngineGlue)
 			{
-				Console.WriteLine("Compiling C# bindings...");
-				string bindingsPath = Path.Combine(ManagedPath, "UnrealSharp");
-				PublishSolution(bindingsPath);
+				Console.WriteLine("Compiling generated engine C# glue...");
+				PublishSolution(Path.Combine(ManagedPath, "UnrealSharp"));
 			}
         
 			stopwatch.Stop();
@@ -80,7 +82,7 @@ public static class Program
     
 		if (pathVariable == null)
 		{
-			return null;
+			throw new Exception("Couldn't find dotnet.exe!");
 		}
     
 		var paths = pathVariable.Split(Path.PathSeparator);
@@ -104,6 +106,7 @@ public static class Program
 
 		throw new Exception("Couldn't find dotnet.exe!");
 	}
+	
 	static void PublishSolution(string projectRootDirectory)
 	{
 		if (!Directory.Exists(projectRootDirectory))
@@ -119,6 +122,7 @@ public static class Program
 		process.StartInfo.ArgumentList.Add("publish");
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
+		process.StartInfo.ArgumentList.Add("-warn:1");
 		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{ManagedBinariesPath}\"");
 		
 		process.Start();

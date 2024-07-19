@@ -19,6 +19,8 @@ public:
     bool IsReloading() const { return bIsReloading; }
 
 private:
+
+    void OnUnrealSharpInitialized();
     
     bool Tick(float DeltaTime);
     

@@ -1,6 +1,4 @@
-﻿using System.Text;
-using EpicGames.Core;
-using EpicGames.UHT.Types;
+﻿using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
@@ -36,18 +34,9 @@ public class StringPropertyTranslator : PropertyTranslator
         return "\"\"";
     }
 
-    public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
-    {
-        builder.AppendLine($"return StringMarshaller.FromNative(IntPtr.Add(NativeObject,{propertyManagedName}_Offset),0);");
-    }
-
-    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
-    {
-        builder.AppendLine($"StringMarshaller.ToNative(IntPtr.Add(NativeObject,{propertyManagedName}_Offset),0,value);");
-    }
-
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
+        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
         builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
     }
 

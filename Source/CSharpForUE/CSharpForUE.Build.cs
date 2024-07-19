@@ -59,6 +59,11 @@ public class CSharpForUE : ModuleRules
 			
 			PublishSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms"));
 		}
+		
+		if (Target.bGenerateProjectFiles)
+		{
+			PublishSolution(Path.Combine(ManagedPath, "UnrealSharp"));
+		}
 	}
 	
 	private void IncludeDotNetHeaders()

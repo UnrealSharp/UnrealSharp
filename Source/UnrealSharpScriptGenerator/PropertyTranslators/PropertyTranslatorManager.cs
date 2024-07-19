@@ -12,7 +12,6 @@ public static class PropertyTranslatorManager
     static PropertyTranslatorManager()
     {
         ManuallyExportedTypes.Add("EStreamingSourcePriority");
-        ManuallyExportedTypes.Add("StreamingSourcePriority");
         
         EnumPropertyHandler enumPropertyHandler = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyHandler);

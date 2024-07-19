@@ -5,17 +5,17 @@ namespace UnrealSharp.Plugins
 {
     public class PluginLoadContext : AssemblyLoadContext
     {
-        private readonly AssemblyDependencyResolver Resolver;
-        private readonly ICollection<string> SharedAssemblies;
-        private readonly AssemblyLoadContext MainLoadContext;
+        private readonly AssemblyDependencyResolver _resolver;
+        private readonly ICollection<string> _sharedAssemblies;
+        private readonly AssemblyLoadContext _mainLoadContext;
 
         public string? AssemblyLoadedPath { get; private set; }
 
         public PluginLoadContext(string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible) : base(isCollectible)
         {
-            Resolver = new AssemblyDependencyResolver(pluginPath);
-            SharedAssemblies = sharedAssemblies;
-            MainLoadContext = mainLoadContext;
+            _resolver = new AssemblyDependencyResolver(pluginPath);
+            _sharedAssemblies = sharedAssemblies;
+            _mainLoadContext = mainLoadContext;
 
             if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
@@ -46,12 +46,12 @@ namespace UnrealSharp.Plugins
                 return null; 
             }
             
-            if (SharedAssemblies.Contains(assemblyName.Name))
+            if (_sharedAssemblies.Contains(assemblyName.Name))
             {
-                return MainLoadContext.LoadFromAssemblyName(assemblyName);
+                return _mainLoadContext.LoadFromAssemblyName(assemblyName);
             }
 
-            string assemblyPath = Resolver.ResolveAssemblyToPath(assemblyName);
+            string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
 
             if (assemblyPath == null)
             {
@@ -74,7 +74,7 @@ namespace UnrealSharp.Plugins
 
         protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
         {
-            string? libraryPath = Resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+            string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
             
             if (libraryPath != null)
             {

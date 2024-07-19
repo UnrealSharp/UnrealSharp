@@ -16,10 +16,26 @@ public static class InterfaceExporter
         
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.AppendTooltip(interfaceObj);
-        stringBuilder.AppendLine("[UInterface]");
-        stringBuilder.DeclareType("interface", interfaceName);
+        
+        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(interfaceObj);
+        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.Finish();
 
-        stringBuilder.AppendLine($"public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceName}\");");
+        string baseInterface = "";
+        string typeName;
+        if (interfaceObj != Program.Factory.Session.UInterface)
+        {
+            baseInterface = "CoreUObject.IInterface";
+            typeName = interfaceName;
+        }
+        else
+        {
+            typeName = "IInterface";
+        }
+        stringBuilder.AppendLine(attributeBuilder.ToString());
+        stringBuilder.DeclareType("interface", typeName, baseInterface);
+
+        stringBuilder.AppendLine($"public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();

@@ -59,6 +59,7 @@ public static class ScriptGeneratorUtilities
 
         return true;
     }
+    
     public static bool CanExportProperty(UhtProperty property)
     {
         if (property.MetaData.GetBoolean("ScriptNoExport"))

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -20,7 +19,7 @@ public static class CSharpExporter
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
-            ProcessPackage(package);
+            ExportPackage(package);
         }
         
         WaitForTasks();
@@ -31,8 +30,6 @@ public static class CSharpExporter
         }
         
         WaitForTasks();
-        
-        FileExporter.CleanOldExportedFiles();
     }
     
     private static void WaitForTasks()
@@ -44,13 +41,13 @@ public static class CSharpExporter
         }
     }
 
-    private static void ProcessPackage(UhtPackage package)
+    private static void ExportPackage(UhtPackage package)
     {
-        foreach (UhtType packageChild in package.Children)
+        foreach (UhtType child in package.Children)
         {
-            ExportType(packageChild);
+            ExportType(child);
             
-            foreach (UhtType type in packageChild.Children)
+            foreach (UhtType type in child.Children)
             {
                 ExportType(type);
             }
@@ -68,10 +65,12 @@ public static class CSharpExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is UhtClassType.Interface)
+                if (classObj.ClassType is not UhtClassType.Interface)
                 {
-                    Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); })!);
+                    return;
                 }
+                
+                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); })!);
             }
             else
             {

@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpEditor.h"
-#include "Widgets/Notifications/SNotificationList.h"
-#include "Framework/Notifications/NotificationManager.h"
+
+#include "AssetToolsModule.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
 #include "CSharpForUE/CSManager.h"
@@ -9,34 +9,19 @@
 #include "Reinstancing/CSReinstancer.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
-
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
 void FUnrealSharpEditorModule::StartupModule()
 {
-	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::RegisterMenus));
-
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	FDelegateHandle Handle;
-
-	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
-
-	if (!FPaths::DirectoryExists(FullScriptPath))
+	FCSManager& Manager = FCSManager::Get();
+	if (!Manager.IsInitialized())
 	{
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
+		Manager.OnUnrealSharpInitializedEvent().AddRaw(this, &FUnrealSharpEditorModule::OnUnrealSharpInitialized);
 	}
-	
-	//Bind to directory watcher to look for changes in C# code.
-	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
-		FullScriptPath,
-		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
-		Handle);
-
-	FCSReinstancer::Get().Initialize();
-
-	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
-	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+	else
+	{
+		OnUnrealSharpInitialized();
+	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -45,7 +30,6 @@ void FUnrealSharpEditorModule::ShutdownModule()
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
 }
-
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
 {
@@ -122,9 +106,43 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FCSReinstancer::Get().StartReinstancing();
 }
 
+void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
+{
+	FCSManager& Manager = FCSManager::Get();
+	
+	// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
+	// Workaround for a hardcoded feature in the engine for Blueprints.
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	FName UnrealSharpPackageName = Manager.GetUnrealSharpPackage()->GetFName();
+	AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackageName, UnrealSharpPackageName);
+	
+	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::RegisterMenus));
+
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDelegateHandle Handle;
+
+	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
+
+	if (!FPaths::DirectoryExists(FullScriptPath))
+	{
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
+	}
+	
+	//Bind to directory watcher to look for changes in C# code.
+	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+		FullScriptPath,
+		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
+		Handle);
+
+	FCSReinstancer::Get().Initialize();
+
+	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
+	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+}
+
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
-
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
 	{

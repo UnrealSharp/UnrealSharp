@@ -6,7 +6,6 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
@@ -18,15 +17,15 @@
 
 #include "Logging/StructuredLog.h"
 
-#if WITH_EDITOR
-#include "AssetToolsModule.h"
-#endif
-
-FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
 UPackage* FCSManager::UnrealSharpPackage = nullptr;
 
 void FCSManager::InitializeUnrealSharp()
 {
+	if (bIsInitialized)
+	{
+		return;
+	}
+	
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
@@ -49,7 +48,6 @@ void FCSManager::InitializeUnrealSharp()
 	}
 
 #if WITH_EDITOR
-
 	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
 	{
 		if (!FApp::IsUnattended())
@@ -61,26 +59,14 @@ void FCSManager::InitializeUnrealSharp()
 			}
 		}
 	}
-	
 #endif
 
 	//Create the package where we will store our generated types.
-	{
-		UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
-		UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
-
-#if WITH_EDITOR
-		// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
-		// Workaround for a hardcoded feature in the engine for Blueprints.
-		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
-		AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackage->GetFName(), UnrealSharpPackage->GetFName());
-#endif
-	}
+	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
+	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
 
 	// Listen to GC callbacks.
-	{
-		GUObjectArray.AddUObjectDeleteListener(this);
-	}
+	GUObjectArray.AddUObjectDeleteListener(this);
 
 	// Initialize the C# runtime.
 	if (!InitializeBindings())
@@ -93,6 +79,9 @@ void FCSManager::InitializeUnrealSharp()
 
 	// Try to load the user assembly, can be null when the project is first created.
 	LoadUserAssembly();
+	
+	bIsInitialized = true;
+	OnUnrealSharpInitialized.Broadcast();
 }
 
 bool FCSManager::InitializeBindings()
@@ -166,9 +155,7 @@ bool FCSManager::LoadRuntimeHost()
 		return false;
 	}
 
-	void* DLLHandle;
-
-	DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_dotnet_command_line"));
+	void* DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_dotnet_command_line"));
 	Hostfxr_Initialize_For_Dotnet_Command_Line = static_cast<hostfxr_initialize_for_dotnet_command_line_fn>(DLLHandle);
 
 	DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_runtime_config"));
@@ -185,7 +172,7 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath =  FCSProcHelper::GetUserAssemblyPath();
+	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
 
 	if (!FPaths::FileExists(UserAssemblyPath))
 	{
@@ -374,7 +361,7 @@ void FCSManager::RemoveManagedObject(UObject* Object)
 	}
 }
 
-uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName)
+uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
 {
 	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
 
@@ -396,7 +383,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 	return TypeHandle;
 }
 
-uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData)
+uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }
@@ -412,8 +399,3 @@ void FCSManager::OnUObjectArrayShutdown()
 {
 	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
-
-#define LOCTEXT_NAMESPACE "CSManager"
-
-
-#undef LOCTEXT_NAMESPACE

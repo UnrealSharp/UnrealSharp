@@ -124,37 +124,33 @@ public abstract class PropertyTranslator
     
     public virtual void OnPropertyExported(GeneratorStringBuilder builder, UhtProperty property) {}
     
-    public void BeginPropertyAccessorBlock(GeneratorStringBuilder builder, UhtProperty property, string protection, string propertyName)
-    {
-        string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {propertyName}");
-        builder.OpenBrace();
-    }
-
-    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property)
+    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property, List<string> reservedNames)
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
         
-        string propertyName = property.GetPropertyName();
+        string propertyName = property.GetPropertyName(reservedNames);
         
-        ExportPropertyVariables(builder, property, propertyName);
+        ExportPropertyVariables(builder, property, property.EngineName);
         builder.AppendLine();
         
         string protection = property.GetProtection();
         builder.AppendTooltip(property);
-        BeginPropertyAccessorBlock(builder, property, protection, property.GetPropertyName());
+        
+        string managedType = GetManagedType(property);
+        builder.AppendLine($"{protection}{managedType} {propertyName}");
+        builder.OpenBrace();
 
         builder.AppendLine("get");
         builder.OpenBrace();
-        ExportPropertyGetter(builder, property, propertyName);
+        ExportPropertyGetter(builder, property, property.EngineName);
         builder.CloseBrace();
 
         if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
         {
             builder.AppendLine("set");
             builder.OpenBrace();
-            ExportPropertySetter(builder, property, propertyName);
+            ExportPropertySetter(builder, property, property.EngineName);
             builder.CloseBrace();
         }
         
@@ -165,16 +161,16 @@ public abstract class PropertyTranslator
         OnPropertyExported(builder, property);
     }
 
-    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets)
+    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
     {
-        string propertyScriptName = property.GetPropertyName();
+        string propertyScriptName = property.GetPropertyName(reservedNames);
         
         builder.AppendLine($"// {propertyScriptName}");
         builder.AppendLine();
         
         if (!suppressOffsets)
         {
-            ExportPropertyVariables(builder, property, propertyScriptName);
+            ExportPropertyVariables(builder, property, property.EngineName);
         }
         
         string protection = property.GetProtection();

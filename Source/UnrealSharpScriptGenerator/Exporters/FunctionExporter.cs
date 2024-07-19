@@ -357,8 +357,8 @@ public class FunctionExporter
     {
         builder.TryAddWithEditor(function);
         
-        string ParamsStringAPI = "";
-        string ParamsCallString = "";
+        string paramsStringApi = "";
+        string paramsCallString = "";
         string methodName = function.GetFunctionName();
 
         foreach (UhtProperty parameter in function.Properties)
@@ -384,17 +384,17 @@ public class FunctionExporter
                 }
             }
             
-            ParamsStringAPI += $"{refQualifier}{paramType} {paramName}, ";
-            ParamsCallString += $"{refQualifier}{paramName}, ";
+            paramsStringApi += $"{refQualifier}{paramType} {paramName}, ";
+            paramsCallString += $"{refQualifier}{paramName}, ";
         }
         
-        if (ParamsStringAPI.Length > 0)
+        if (paramsStringApi.Length > 0)
         {
-            ParamsStringAPI = ParamsStringAPI.Substring(0, ParamsStringAPI.Length - 2);
+            paramsStringApi = paramsStringApi.Substring(0, paramsStringApi.Length - 2);
         }
-        if (ParamsCallString.Length > 0)
+        if (paramsCallString.Length > 0)
         {
-            ParamsCallString = ParamsCallString.Substring(0, ParamsCallString.Length - 2);
+            paramsCallString = paramsCallString.Substring(0, paramsCallString.Length - 2);
         }
         
         ExportFunction(builder, function, FunctionType.BlueprintEvent);
@@ -405,7 +405,7 @@ public class FunctionExporter
         
         builder.AppendLine("// Hide implementation function from Intellisense");
         builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({ParamsStringAPI})");
+        builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         builder.OpenBrace();
         
         foreach (UhtProperty parameter in function.Properties)
@@ -455,7 +455,7 @@ public class FunctionExporter
             }
         }
         
-        builder.AppendLine($"{returnAssignment}{methodName}_Implementation({ParamsCallString});");
+        builder.AppendLine($"{returnAssignment}{methodName}_Implementation({paramsCallString});");
 
         if (function.ReturnProperty != null)
         {

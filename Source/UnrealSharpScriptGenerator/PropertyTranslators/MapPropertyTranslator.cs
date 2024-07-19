@@ -117,7 +117,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
         string marshaller = GetMarshaller(mapProperty);
 
-        builder.AppendLine($"{property.EngineName}_Marshaller ??= new {marshaller}({property.EngineName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"{property.EngineName}_Marshaller ??= new {marshaller}(1, {property.EngineName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
         builder.AppendLine($"return {property.EngineName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.EngineName}_Offset), 0);");
     }
 
@@ -210,7 +210,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
     private string GetMarshaller(UhtMapProperty property)
     {
-        bool isStructProperty = property.IsOuter<UhtStruct>();
+        bool isStructProperty = property.IsOuter<UhtScriptStruct>();
         bool isParameter = property.IsOuter<UhtFunction>();
         
         PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(property.KeyProperty)!;

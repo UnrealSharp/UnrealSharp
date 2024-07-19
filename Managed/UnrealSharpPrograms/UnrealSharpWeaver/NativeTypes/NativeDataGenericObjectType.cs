@@ -13,7 +13,7 @@ abstract class NativeDataGenericObjectType(TypeReference typeRef, TypeReference 
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
         
-        if (!WeaverHelper.IsUClass(InnerType.TypeRef.Resolve()))
+        if (!WeaverHelper.IsValidBaseForUObject(InnerType.TypeRef.Resolve()))
         {
             throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UClass if exposed through UProperty!");
         }

@@ -45,12 +45,11 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         }
     }
     
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property,
-        string PropertyEngineName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
-        base.ExportPropertyVariables(builder, property, PropertyEngineName);
+        base.ExportPropertyVariables(builder, property, propertyEngineName);
         
-        AddNativePropertyField(builder, PropertyEngineName);
+        AddNativePropertyField(builder, propertyEngineName);
         string backingField = GetBackingField(property);
         string fullDelegateName = GetManagedType(property);
         builder.AppendLine($"private {fullDelegateName} {backingField}");

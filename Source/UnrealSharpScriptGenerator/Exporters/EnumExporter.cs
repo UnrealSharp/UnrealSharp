@@ -15,7 +15,12 @@ public static class EnumExporter
         
         stringBuilder.GenerateTypeSkeleton(moduleName);
         stringBuilder.AppendTooltip(enumObj);
-        stringBuilder.AppendLine("[UEnum]");
+        
+        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(enumObj);
+        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.Finish();
+        
+        stringBuilder.AppendLine(attributeBuilder.ToString());
         
         string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
         stringBuilder.DeclareType("enum", enumObj.GetStructName(), underlyingType, isPartial: false);
