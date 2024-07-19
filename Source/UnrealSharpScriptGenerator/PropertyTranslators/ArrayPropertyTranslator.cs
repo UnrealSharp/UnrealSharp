@@ -1,5 +1,4 @@
-﻿using System;
-using EpicGames.Core;
+﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -49,21 +48,20 @@ public class ArrayPropertyTranslator : PropertyTranslator
         builder.AppendLine($"return {propertyManagedName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0);");
     }
 
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property,
-        string PropertyEngineName)
+    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
-        base.ExportPropertyVariables(builder, property, PropertyEngineName);
-        builder.AppendLine($"static IntPtr {PropertyEngineName}_NativeProperty;");
+        base.ExportPropertyVariables(builder, property, propertyEngineName);
+        builder.AppendLine($"static IntPtr {propertyEngineName}_NativeProperty;");
 
         string wrapperType = GetWrapperType(property);
         if (property.IsOuter<UhtScriptStruct>())
         {
-            builder.AppendLine($"static {wrapperType} {PropertyEngineName}_Marshaller = null;");
+            builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
             
         }
         else
         {
-            builder.AppendLine($"{wrapperType} {PropertyEngineName}_Marshaller = null;");
+            builder.AppendLine($"{wrapperType} {propertyEngineName}_Marshaller = null;");
         }
     }
 

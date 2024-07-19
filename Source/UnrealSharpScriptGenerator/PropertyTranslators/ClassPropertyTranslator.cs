@@ -15,7 +15,6 @@ public class ClassPropertyTranslator : SimpleTypePropertyTranslator
         UhtClassProperty classProperty = (UhtClassProperty) property;
         string fullName = classProperty.MetaClass!.GetFullManagedName();
         return $"SubclassOf<{fullName}>";
-        
     }
 
     public override string GetMarshaller(UhtProperty property)

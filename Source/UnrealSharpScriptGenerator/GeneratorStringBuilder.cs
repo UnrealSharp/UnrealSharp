@@ -71,11 +71,6 @@ public class GeneratorStringBuilder : IDisposable
         StringBuilder.Append(line);
     }
     
-    public void CloseBraceWithSemicolon()
-    {
-        AppendLine("};");
-    }
-    
     public void DeclareDirective(string directive)
     {
         if (_directives.Contains(directive) || string.IsNullOrEmpty(directive))

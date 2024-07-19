@@ -37,31 +37,25 @@ public class AttributeBuilder
     {
         if (type is UhtClass uhtClass)
         {
-            if (uhtClass.HasAllFlags(EClassFlags.Interface))
-            {
-                return "UInterface";
-            }
-            else
-            {
-                return "UClass";
-            }
+            return uhtClass.HasAllFlags(EClassFlags.Interface) ? "UInterface" : "UClass";
         }
-        else if (type is UhtStruct)
+
+        if (type is UhtStruct)
         {
             return "UStruct";
         }
-        else if (type is UhtEnum)
+
+        if (type is UhtEnum)
         {
             return "UEnum";
         }
-        else if (type is UhtFunction)
+
+        if (type is UhtFunction)
         {
             return "UFunction";
         }
-        else
-        {
-            throw new InvalidOperationException("Invalid type");
-        }
+
+        throw new InvalidOperationException("Invalid type");
     }
 
     public void AddAttribute(string attributeName)

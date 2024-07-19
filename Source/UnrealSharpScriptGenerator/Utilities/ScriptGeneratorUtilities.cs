@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -12,7 +9,6 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ScriptGeneratorUtilities
 {
-    public const string BlueprintType = "BlueprintType";
     public const string EngineNamespace = "UnrealSharp.Engine";
     public const string InteropNamespace = "UnrealSharp.Interop";
     public const string AttributeNamespace = "UnrealSharp.Attributes";
@@ -238,6 +234,7 @@ public static class ScriptGeneratorUtilities
             GatherDependencies(property, dependencies);
         }
     }
+    
     public static void GatherDependencies(UhtProperty property, List<string> dependencies)
     {
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;

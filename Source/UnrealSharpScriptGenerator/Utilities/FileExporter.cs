@@ -11,6 +11,7 @@ public static class FileExporter
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
     private static readonly List<string> ExportedFiles = new();
     public static bool HasModifiedEngineGlue { get; private set; }
+    
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
         UhtPackage package = ScriptGeneratorUtilities.GetPackage(type);
@@ -18,6 +19,7 @@ public static class FileExporter
         string text = stringBuilder.ToString();
         SaveGlueToDisk(directory, type.EngineName, text, package);
     }
+    
     public static void SaveGlueToDisk(string directory, string typeName, string text, UhtPackage package)
     {
         string absoluteFilePath = Path.Combine(directory, $"{typeName}.generated.cs");
@@ -57,6 +59,7 @@ public static class FileExporter
             ReadWriteLock.ExitWriteLock();
         }
     }
+    
     public static string GetDirectoryPath(UhtPackage package)
     {
         if (package == null)
@@ -73,6 +76,7 @@ public static class FileExporter
         CleanFilesInDirectories(Program.EngineGluePath);
         CleanFilesInDirectories(Program.ProjectGluePath);
     }
+    
     private static void CleanFilesInDirectories(string path)
     {
         string[] directories = Directory.GetDirectories(path);
