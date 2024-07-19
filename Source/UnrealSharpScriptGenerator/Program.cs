@@ -17,6 +17,7 @@ public static class Program
 	public static string EngineGluePath => ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
 	public static string PluginDirectory => ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
 	public static string ManagedBinariesPath => Path.Combine(PluginDirectory, "Binaries", "Managed");
+	public static string ManagedPath => Path.Combine(PluginDirectory, "Managed");
 	public static string ScriptFolder
 	{
 		get
@@ -58,7 +59,7 @@ public static class Program
 			// Everything is exported. Now we need to compile the generated C# code, if necessary.
 			if (FileExporter.HasModifiedEngineGlue)
 			{
-				string engineGluePath = Path.Combine(EngineGluePath, "UnrealSharp");
+				string engineGluePath = Path.Combine(ManagedPath, "UnrealSharp");
 				DotNetUtilities.BuildSolution(engineGluePath);
 			}
         
