@@ -7,6 +7,6 @@ class NativeDataClassType(TypeReference typeRef, TypeReference innerTypeReferenc
 {
     protected override TypeReference[] GetTypeParams()
     {
-        return [WeaverHelper.ImportType(InnerType.TypeDef)];
+        return [WeaverHelper.ImportType(InnerType.TypeRef)];
     }
 };

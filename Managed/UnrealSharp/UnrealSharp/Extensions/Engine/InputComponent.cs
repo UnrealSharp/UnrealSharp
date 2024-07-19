@@ -1,4 +1,5 @@
 ﻿using UnrealSharp.Interop;
+using UnrealSharp.SlateCore;
 using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp.Engine;
@@ -13,7 +14,7 @@ public partial class InputComponent
     /// <param name="action"> The action to bind. </param>
     /// <param name="consumeInput"> Whether the input should be consumed. </param>
     /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
-    public void BindAction(string actionName, EInputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
+    public void BindAction(string actionName, InputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
     {
         if (action.Target is Object unrealObject)
         {
@@ -35,7 +36,7 @@ public partial class InputComponent
     /// <param name="action"> The action to bind with key signature. </param>
     /// <param name="consumeInput"> Whether the input should be consumed. </param>
     /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
-    public void BindAction(string actionName, EInputEvent inputEvent, Action<InputCore.Key> action, bool consumeInput = false, bool executeWhenPaused = false)
+    public void BindAction(string actionName, InputEvent inputEvent, Action<InputCore.Key> action, bool consumeInput = false, bool executeWhenPaused = false)
     {
         if (action.Target is Object unrealObject)
         {

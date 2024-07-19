@@ -90,13 +90,6 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
         return instructionBuffer.ToArray();
     }
 
-    private static void WriteObjectDestroyedCheck(ILProcessor processor)
-    {
-        // emit check that object is not destroyed
-        processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Call, WeaverHelper.CheckObjectForValidity);
-    }
-
     protected static ILProcessor BeginSimpleGetter(MethodDefinition getter)
     {
         ILProcessor processor = InitPropertyAccessor(getter);
@@ -117,7 +110,6 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
           IL_0018:  ret
         } // end of method MonoTestsObject::get_TestReadableInt32
          */
-        WriteObjectDestroyedCheck(processor);
         return processor;
     }
 
@@ -147,7 +139,6 @@ public abstract class NativeDataType(TypeReference typeRef, int arrayDim, Proper
           IL_0017:  ret
         } // end of method MonoTestsObject::set_TestReadWriteFloat
          */
-        WriteObjectDestroyedCheck(processor);
         return processor;
     }
 

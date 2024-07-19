@@ -5,7 +5,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-[UStruct(IsBlittable=true), StructLayout(LayoutKind.Sequential)]
+[UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
 public struct Name : IEquatable<Name>, IComparable<Name>
 {
     private int ComparisonIndex;

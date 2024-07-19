@@ -3,8 +3,7 @@ using UnrealSharp.Attributes;
 
 namespace UnrealSharp.Engine;
 
-[StructLayout(LayoutKind.Sequential)]
-[UStruct(IsBlittable = true)]
+[UStruct, BlittableType, StructLayout(LayoutKind.Sequential)]
 public partial struct TimerHandle
 {
     private const uint IndexBits = 24;
@@ -25,7 +24,7 @@ public partial struct TimerHandle
         return Handle != 0;
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is TimerHandle other)
         {

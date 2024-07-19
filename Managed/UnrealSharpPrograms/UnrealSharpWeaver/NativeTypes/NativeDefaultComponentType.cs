@@ -9,7 +9,16 @@ class NativeDataDefaultComponent : NativeDataSimpleType
     public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, int arrayDim) 
         : base(typeRef, marshallerName, arrayDim, PropertyType.DefaultComponent)
     {
-        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
+        var defaultComponentType = typeRef.Resolve();
+        
+        if (!WeaverHelper.IsValidBaseForUObject(defaultComponentType))
+        {
+            throw new Exception($"{defaultComponentType.FullName} needs to be a UClass if exposed through UProperty!");
+        }
+        
+        InnerType = new TypeReferenceMetadata(defaultComponentType);
+        
+        CustomAttribute upropertyAttribute = WeaverHelper.GetUProperty(customAttributes)!;
         
         CustomAttributeArgument? isRootComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "RootComponent");
         if (isRootComponentValue != null)
@@ -28,8 +37,6 @@ class NativeDataDefaultComponent : NativeDataSimpleType
         {
             AttachmentSocket = (string) attachmentSocketValue.Value.Value;
         }
-
-        InnerType = new TypeReferenceMetadata(typeRef.Resolve());
     }
     
     public bool IsRootComponent { get; set; }

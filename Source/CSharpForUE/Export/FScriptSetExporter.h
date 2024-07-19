@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FScriptSetExporter.generated.h"
 
-UCLASS()
+UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UFScriptSetExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

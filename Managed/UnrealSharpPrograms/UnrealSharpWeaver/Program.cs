@@ -157,6 +157,11 @@ public static class Program
                 {
                     foreach (var type in module.Types)
                     {
+                        if (WeaverHelper.IsGenerated(type))
+                        {
+                            continue;
+                        }
+                        
                         if (WeaverHelper.IsUClass(type))
                         {
                             classes.Add(type);

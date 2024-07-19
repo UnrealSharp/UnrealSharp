@@ -62,14 +62,8 @@ public class StructMetaData : BaseMetaData
 
         if (IsBlittableStruct)
         {
-            CustomAttribute? structAttribute = WeaverHelper.GetUStruct(structDefinition);
-
-            if (structAttribute == null)
-            {
-                return;
-            }
-
-            structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittable", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
+            CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverHelper.BlittableTypeConstructor);
+            structDefinition.CustomAttributes.Add(structFlagsAttribute);
         }
     }
 }

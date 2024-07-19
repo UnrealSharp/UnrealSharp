@@ -12,7 +12,7 @@ public class ArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
     public T this[int index] => Get(index);
 }
 
-internal class ArrayReadOnlyMarshaller<T>
+public class ArrayReadOnlyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
     private readonly ArrayReadOnly<T>[] _wrappers;

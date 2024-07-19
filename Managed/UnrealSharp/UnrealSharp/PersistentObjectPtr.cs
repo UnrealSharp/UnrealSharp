@@ -22,11 +22,13 @@ public struct PersistentObjectPtr
     {
         return PersistentObjectPtrData.Equals(other.PersistentObjectPtrData);
     }
-    public override bool Equals(object obj)
+    
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
         return obj.GetType() == GetType() && Equals((PersistentObjectPtr)obj);
     }
+    
     public override int GetHashCode()
     {
         return PersistentObjectPtrData.GetHashCode();

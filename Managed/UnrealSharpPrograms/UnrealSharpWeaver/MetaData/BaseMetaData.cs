@@ -118,7 +118,13 @@ public class BaseMetaData
 
         foreach (CustomAttribute attribute in customAttributes)
         {
-            TypeDefinition attributeClass = attribute.AttributeType.Resolve();
+            TypeDefinition? attributeClass = attribute.AttributeType.Resolve();
+            
+            if (attributeClass == null)
+            {
+                continue;
+            }
+            
             CustomAttribute? flagsMap = WeaverHelper.FindAttribute(attributeClass.CustomAttributes, flagsAttributeName);
 
             if (flagsMap == null)
