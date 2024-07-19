@@ -51,8 +51,7 @@ public static class DotNetUtilities
     	
     	process.StartInfo.ArgumentList.Add("publish");
     	process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
-    	
-    	process.StartInfo.ArgumentList.Add("-warn:1");
+	    
     	process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{Program.ManagedBinariesPath}\"");
     	
 	    Console.WriteLine("Compiling generated C# code...");
