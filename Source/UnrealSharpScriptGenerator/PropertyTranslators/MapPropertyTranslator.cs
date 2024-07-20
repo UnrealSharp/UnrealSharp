@@ -133,7 +133,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.SourceName;
+            string nativeMethodName = function.EngineName;
             nativePropertyName = $"{nativeMethodName}_{nativePropertyName}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -171,7 +171,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
        if (property.Outer is UhtFunction function)
        {
-           string nativeMethodName = function.SourceName;
+           string nativeMethodName = function.EngineName;
            nativePropertyName = $"{nativeMethodName}_{nativePropertyName}";
            marshaller = $"{nativeMethodName}_{marshaller}";
        }

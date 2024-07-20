@@ -450,7 +450,7 @@ public class FunctionExporter
             else
             {
                 string assignmentOrReturn = $"{paramType} {parameter.EngineName} = ";
-                string offsetName = $"{methodName}_{parameter.EngineName}_Offset";
+                string offsetName = $"{function.EngineName}_{parameter.EngineName}_Offset";
                 translator.ExportFromNative(builder, parameter, parameter.EngineName, assignmentOrReturn, "buffer", offsetName, false, false);
             }
         }
@@ -468,7 +468,7 @@ public class FunctionExporter
             if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm) && parameter.HasAnyFlags(EPropertyFlags.OutParm))
             {
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
-                string offsetName = $"{methodName}_{parameter.EngineName}_Offset";
+                string offsetName = $"{function.EngineName}_{parameter.EngineName}_Offset";
                 translator.ExportToNative(builder, parameter, parameter.EngineName, "buffer", offsetName, parameter.EngineName);
             }
         }
@@ -541,19 +541,19 @@ public class FunctionExporter
 
     void ExportFunctionVariables(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"// {_functionName}");
+        builder.AppendLine($"// {_function.EngineName}");
         
         string staticDeclaration = BlueprintEvent ? "" : "static ";
-        builder.AppendLine($"{staticDeclaration}IntPtr {_functionName}_NativeFunction;");
+        builder.AppendLine($"{staticDeclaration}IntPtr {_function.EngineName}_NativeFunction;");
         
         if (_function.HasParametersOrReturnValue())
         {
-            builder.AppendLine($"static int {_functionName}_ParamsSize;");
+            builder.AppendLine($"static int {_function.EngineName}_ParamsSize;");
         }
         
         ForEachParameter((translator, parameter) =>
         {
-            translator.ExportParameterVariables(builder, _function, _functionName, parameter, parameter.EngineName);
+            translator.ExportParameterVariables(builder, _function, _function.EngineName, parameter, parameter.EngineName);
             translator.OnPropertyExported(builder, parameter);
         });
     }
@@ -599,7 +599,7 @@ public class FunctionExporter
 
     void ExportInvoke(GeneratorStringBuilder builder)
     {
-        string nativeFunctionIntPtr = $"{_functionName}_NativeFunction";
+        string nativeFunctionIntPtr = $"{_function.EngineName}_NativeFunction";
 
         if (BlueprintEvent)
         {
@@ -622,7 +622,7 @@ public class FunctionExporter
         }
         else
         {
-            builder.AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{_functionName}_ParamsSize];");
+            builder.AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{_function.EngineName}_ParamsSize];");
             builder.AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
             builder.AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({nativeFunctionIntPtr}, ParamsBuffer);");
             
@@ -637,7 +637,7 @@ public class FunctionExporter
                 
                 if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm) || !parameter.HasAllFlags(EPropertyFlags.OutParm))
                 {
-                    string offsetName = $"{_functionName}_{parameter.EngineName}_Offset";
+                    string offsetName = $"{_function.EngineName}_{parameter.EngineName}_Offset";
                     translator.ExportToNative(builder, parameter, parameter.EngineName, "ParamsBuffer", offsetName, propertyName);
                 }
             });
@@ -682,7 +682,7 @@ public class FunctionExporter
                         parameter.EngineName,
                         $"{marshalDestination} =",
                         "ParamsBuffer",
-                        $"{_functionName}_{parameter.EngineName}_Offset",
+                        $"{_function.EngineName}_{parameter.EngineName}_Offset",
                         true,
                         parameter.HasAllFlags(EPropertyFlags.ReferenceParm) &&
                         !parameter.HasAllFlags(EPropertyFlags.ReturnParm));

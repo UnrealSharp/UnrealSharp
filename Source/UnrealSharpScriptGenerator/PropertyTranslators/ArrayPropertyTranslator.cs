@@ -119,7 +119,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.GetFunctionName();
+            string nativeMethodName = function.EngineName;
             nativeProperty = $"{nativeMethodName}_{nativeProperty}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -154,7 +154,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.GetFunctionName();
+            string nativeMethodName = function.EngineName;
             nativeProperty = $"{nativeMethodName}_{nativeProperty}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -171,7 +171,7 @@ public class ArrayPropertyTranslator : PropertyTranslator
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
         UhtFunction function = (UhtFunction) property.Outer!;
-        string marshaller = $"{function.GetFunctionName()}_{paramName}_Marshaller";
+        string marshaller = $"{function.EngineName}_{paramName}_Marshaller";
         builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
     }
     

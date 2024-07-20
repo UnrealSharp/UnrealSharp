@@ -553,10 +553,11 @@ public static class WeaverHelper
                         throw new InvalidPropertyException(propertyName, sequencePoint, "Enum properties must use an UEnum enum: " + typeRef.FullName);
                     }
                 
-                    if (typeDef.GetEnumUnderlyingType().Resolve() != ByteTypeRef.Resolve())
-                    {
-                        throw new InvalidPropertyException(propertyName, sequencePoint, "Enum's exposed to Blueprints must have an underlying type of System.Byte: " + typeRef.FullName);
-                    }
+                    // TODO: This is just true for properties, not for function parameters they can be int. Need a good way to differentiate.
+                    // if (typeDef.GetEnumUnderlyingType().Resolve() != ByteTypeRef.Resolve())
+                    // {
+                    //     throw new InvalidPropertyException(propertyName, sequencePoint, "Enum's exposed to Blueprints must have an underlying type of System.Byte: " + typeRef.FullName);
+                    // }
 
                     return new NativeDataEnumType(typeDef, arrayDim);
                 }

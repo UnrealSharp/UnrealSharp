@@ -88,6 +88,21 @@ public static class NameMapper
         }
         return scriptName;
     }
+
+    private static string GetScriptName(this UhtFunction function)
+    {
+        if (function.HasMetadata("ScriptName"))
+        {
+            return function.GetMetadata("ScriptName");
+        }
+        
+        string scriptMethod = function.GetMetadata("ScriptMethod");
+        if (string.IsNullOrEmpty(scriptMethod) || scriptMethod.Contains(' ') || scriptMethod.Contains(';'))
+        {
+            scriptMethod = function.EngineName;
+        }
+        return scriptMethod;
+    }
     
     public static string GetNamespace(this UhtType typeObj)
     {

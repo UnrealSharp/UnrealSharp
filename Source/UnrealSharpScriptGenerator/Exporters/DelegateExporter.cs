@@ -48,7 +48,7 @@ public static class DelegateExporter
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
     {
-        string delegateName = function.GetFunctionName();
+        string delegateName = function.EngineName;
         builder.AppendLine($"{delegateName}_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);");
         if (function.HasParameters)
         {

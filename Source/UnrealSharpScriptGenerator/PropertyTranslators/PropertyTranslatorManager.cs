@@ -28,8 +28,11 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
-        
-        AddPropertyTranslator(typeof(UhtMulticastDelegateProperty), new MulticastDelegatePropertyTranslator());
+
+        MulticastDelegatePropertyTranslator multicastDelegatePropertyTranslator = new();
+        AddPropertyTranslator(typeof(UhtMulticastSparseDelegateProperty), multicastDelegatePropertyTranslator);
+        AddPropertyTranslator(typeof(UhtMulticastDelegateProperty), multicastDelegatePropertyTranslator);
+        AddPropertyTranslator(typeof(UhtMulticastInlineDelegateProperty), multicastDelegatePropertyTranslator);
         AddPropertyTranslator(typeof(UhtDelegateProperty), new SinglecastDelegatePropertyTranslator());
         
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");

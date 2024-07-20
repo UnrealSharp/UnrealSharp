@@ -70,7 +70,7 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            string functionName = function.GetFunctionName();
+            string functionName = function.EngineName;
             
             generatorStringBuilder.TryAddWithEditor(function);
             generatorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
@@ -104,7 +104,7 @@ public static class StaticConstructorUtilities
             }
             
             generatorStringBuilder.TryAddWithEditor(function);
-            string functionName = function.GetFunctionName();
+            string functionName = function.EngineName;
             
             generatorStringBuilder.AppendLine($"IntPtr {functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
