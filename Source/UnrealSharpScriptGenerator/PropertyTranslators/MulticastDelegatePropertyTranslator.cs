@@ -1,4 +1,5 @@
-﻿using EpicGames.UHT.Types;
+﻿using System;
+using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -64,7 +65,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         builder.AppendLine("return;");
         builder.CloseBrace();
         builder.AppendLine($"{backingField} = value;");
-        builder.AppendLine($"DelegateMarshaller<{fullDelegateName}>.ToNative(IntPtr.Add(NativeObject, {property}_Offset), 0, value);");
+        builder.AppendLine($"DelegateMarshaller<{fullDelegateName}>.ToNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0, value);");
     }
 
     public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
