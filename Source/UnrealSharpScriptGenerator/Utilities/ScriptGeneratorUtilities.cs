@@ -144,7 +144,7 @@ public static class ScriptGeneratorUtilities
         {
             foreach (UhtFunction function in functions)
             {
-                if (function.SourceName == functionToTest.SourceName)
+                if (function.SourceName == functionToTest.SourceName || function.CppImplName == functionToTest.CppImplName)
                 {
                     return true;
                 }
@@ -176,7 +176,14 @@ public static class ScriptGeneratorUtilities
                     continue;
                 }
                 
-                overridableFunctions.Add(function);
+                if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
+                {
+                    overridableFunctions.Add(function);
+                }
+                else
+                {
+                    functions.Add(function);
+                }
             }
         }
     }

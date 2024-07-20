@@ -203,7 +203,7 @@ public class FunctionExporter
                 
                 if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
                 {
-                    _paramsStringCall += $"new {structProperty.ScriptStruct.EngineName}()";
+                    _paramsStringCall += $"new {structProperty.ScriptStruct.GetStructName()}()";
                 }
                 else
                 {

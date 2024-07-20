@@ -119,17 +119,24 @@ public static class NameMapper
             functionName = functionName.Replace("K2_", "");
         }
 
-        if (function.Outer is UhtClass classObj)
+        if (function.Outer is not UhtClass classObj)
         {
-            foreach (UhtFunction exportedFunction in classObj!.Functions)
-            {
-                if (exportedFunction != function && functionName == exportedFunction.EngineName)
-                {
-                    return function.EngineName;
-                }
-            }  
+            return functionName;
         }
         
+        foreach (UhtFunction exportedFunction in classObj.Functions)
+        {
+            if (exportedFunction != function && functionName == exportedFunction.EngineName)
+            {
+                return function.EngineName;
+            }
+        } 
+            
+        if (classObj.EngineName == functionName)
+        {
+            return "K2_" + functionName;
+        }
+
         return functionName;
     }
 
