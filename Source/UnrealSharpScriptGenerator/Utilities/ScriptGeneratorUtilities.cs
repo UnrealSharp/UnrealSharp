@@ -139,6 +139,18 @@ public static class ScriptGeneratorUtilities
                 functions.Add(function);
             }
         }
+
+        bool HasFunction(List<UhtFunction> functions, UhtFunction functionToTest)
+        {
+            foreach (UhtFunction function in functions)
+            {
+                if (function.SourceName == functionToTest.SourceName || function.CppImplName == functionToTest.CppImplName)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         
         foreach (UhtStruct declaration in classObj.Bases)
         {
@@ -154,27 +166,24 @@ public static class ScriptGeneratorUtilities
             
             foreach (UhtFunction function in interfaceClass.Functions)
             {
+                if (HasFunction(functions, function) || HasFunction(overridableFunctions, function))
+                {
+                    continue;
+                }
+                
                 if (!CanExportFunction(function))
                 {
                     continue;
                 }
                 
-                bool isOveridden = false;
-                foreach (UhtFunction overridableFunction in overridableFunctions)
+                if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
                 {
-                    if (function.SourceName == overridableFunction.SourceName)
-                    {
-                        isOveridden = true;
-                        break;
-                    }
+                    overridableFunctions.Add(function);
                 }
-                
-                if (isOveridden)
+                else
                 {
-                    continue;
+                    functions.Add(function);
                 }
-                
-                overridableFunctions.Add(function);
             }
         }
     }

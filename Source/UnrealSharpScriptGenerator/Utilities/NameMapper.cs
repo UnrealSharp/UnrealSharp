@@ -29,7 +29,22 @@ public static class NameMapper
 
     public static string GetParameterName(this UhtProperty property)
     {
-        return ScriptifyName(property.GetScriptName(), ENameType.Parameter);
+        string scriptName = ScriptifyName(property.GetScriptName(), ENameType.Parameter);
+
+        if (property.Outer is not UhtFunction function)
+        {
+            return scriptName;
+        }
+        
+        foreach (UhtProperty exportedProperty in function.Properties)
+        {
+            if (exportedProperty != property && scriptName == ScriptifyName(exportedProperty.GetScriptName(), ENameType.Parameter))
+            {
+                return PascalToCamelCase(exportedProperty.EngineName);
+            }
+        }
+        
+        return scriptName;
     }
     
     public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
@@ -119,17 +134,24 @@ public static class NameMapper
             functionName = functionName.Replace("K2_", "");
         }
 
-        if (function.Outer is UhtClass classObj)
+        if (function.Outer is not UhtClass classObj)
         {
-            foreach (UhtFunction exportedFunction in classObj!.Functions)
-            {
-                if (exportedFunction != function && functionName == exportedFunction.EngineName)
-                {
-                    return function.EngineName;
-                }
-            }  
+            return functionName;
         }
         
+        foreach (UhtFunction exportedFunction in classObj.Functions)
+        {
+            if (exportedFunction != function && functionName == exportedFunction.EngineName)
+            {
+                return function.EngineName;
+            }
+        } 
+            
+        if (classObj.EngineName == functionName)
+        {
+            return "K2_" + functionName;
+        }
+
         return functionName;
     }
 
