@@ -12,12 +12,13 @@ public static class FileExporter
     private static readonly List<string> ExportedFiles = new();
     public static bool HasModifiedEngineGlue { get; private set; }
     
-    public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
+    public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder, string fileName = "")
     {
         UhtPackage package = ScriptGeneratorUtilities.GetPackage(type);
         string directory = GetDirectoryPath(package);
         string text = stringBuilder.ToString();
-        SaveGlueToDisk(directory, type.EngineName, text, package);
+        fileName = string.IsNullOrEmpty(fileName) ? type.EngineName : fileName;
+        SaveGlueToDisk(directory, fileName, text, package);
     }
     
     public static void SaveGlueToDisk(string directory, string typeName, string text, UhtPackage package)

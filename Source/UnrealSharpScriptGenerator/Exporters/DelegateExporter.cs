@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -8,6 +9,8 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class DelegateExporter
 {
+    private static List<string> ExportedDelegates = new();
+    
     public static void ExportDelegate(UhtFunction function)
     {
         if (!function.HasAllFlags(EFunctionFlags.Delegate))
@@ -15,10 +18,17 @@ public static class DelegateExporter
             throw new Exception("Function is not a delegate");
         }
         
-        GeneratorStringBuilder builder = new();
+        string fullDelegateName = DelegateBasePropertyTranslator.GetFullDelegateName(function);
+        
+        if (ExportedDelegates.Contains(fullDelegateName))
+        {
+            return;
+        }
         
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
         string delegateNamespace = function.GetNamespace();
+        
+        GeneratorStringBuilder builder = new();
         
         builder.GenerateTypeSkeleton(delegateNamespace);
         builder.AppendLine();
@@ -43,7 +53,8 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        FileExporter.SaveGlueToDisk(function, builder);
+        ExportedDelegates.Add(fullDelegateName);
+        FileExporter.SaveGlueToDisk(function, builder, delegateName);
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
