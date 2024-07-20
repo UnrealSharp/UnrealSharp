@@ -93,7 +93,7 @@ public static class NameMapper
     {
         if (function.HasMetadata("ScriptName"))
         {
-            return function.GetMetadata("ScriptName");
+            return GetScriptName((UhtType)function);
         }
         
         string scriptMethod = function.GetMetadata("ScriptMethod");
