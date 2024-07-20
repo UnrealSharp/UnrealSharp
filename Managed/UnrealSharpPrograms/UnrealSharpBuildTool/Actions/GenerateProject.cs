@@ -158,7 +158,7 @@ public class GenerateProject : BuildToolAction
         }
         
         AddProperty("CopyLocalLockFileAssembliesName", "true", doc, propertyGroup);
-        AddProperty("AllowUnsafeBlocksName", "true", doc, propertyGroup);
+        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
         AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
     }
 

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
+    <Import Project="UnrealSharpScriptGenerator.ubtplugin.csproj.props" Condition="Exists('UnrealSharpScriptGenerator.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
 
     <PropertyGroup>
