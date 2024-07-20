@@ -5,14 +5,16 @@ using UnrealBuildTool;
 
 public class CSharpForUE : ModuleRules
 {
-	private string ManagedPath;
-	private string ManagedBinariesPath;
+	private readonly string _managedPath;
+	private readonly string _managedBinariesPath;
+	private readonly string _engineGluePath;
 	
 	public CSharpForUE(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		ManagedPath = Path.Combine(PluginDirectory, "Managed");
-		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		_managedPath = Path.Combine(PluginDirectory, "Managed");
+		_managedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		_engineGluePath = Path.Combine(_managedPath, "UnrealSharp", "UnrealSharp", "Generated");
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
@@ -53,23 +55,20 @@ public class CSharpForUE : ModuleRules
 				"EditorSubsystem", 
 			});
 			
-			string generatedGluePath = Path.Combine(ManagedPath, "UnrealSharp", "UnrealSharp", "Generated");
-			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + generatedGluePath);
+			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + _engineGluePath);
 			PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory);
-			
-			PublishSolution(Path.Combine(ManagedPath, "UnrealSharpPrograms"));
+			PublishSolution(Path.Combine(_managedPath, "UnrealSharpPrograms"));
 		}
 		
-		if (Target.bGenerateProjectFiles)
+		if (Target.bGenerateProjectFiles && Directory.Exists(_engineGluePath))
 		{
-			// Don't throw on failure. If this gets run when the glue hasn't been generated yet, it will fail.
-			PublishSolution(Path.Combine(ManagedPath, "UnrealSharp"), false);
+			PublishSolution(Path.Combine(_managedPath, "UnrealSharp"));
 		}
 	}
 	
 	private void IncludeDotNetHeaders()
 	{
-		PublicSystemIncludePaths.Add(Path.Combine(ManagedPath, "DotNetRuntime", "inc"));
+		PublicSystemIncludePaths.Add(Path.Combine(_managedPath, "DotNetRuntime", "inc"));
 	}
 	
 	public static string FindDotNetExecutable()
@@ -103,7 +102,7 @@ public class CSharpForUE : ModuleRules
 		throw new Exception("Couldn't find dotnet.exe!");
 	}
 
-	void PublishSolution(string projectRootDirectory, bool bThrowOnFailure = true)
+	void PublishSolution(string projectRootDirectory)
 	{
 		if (!Directory.Exists(projectRootDirectory))
 		{
@@ -118,17 +117,16 @@ public class CSharpForUE : ModuleRules
 		process.StartInfo.ArgumentList.Add("publish");
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
-		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{ManagedBinariesPath}\"");
+		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{_managedBinariesPath}\"");
 		
 		process.Start();
 		process.WaitForExit();
 		
-		if (process.ExitCode != 0 && bThrowOnFailure)
+		if (process.ExitCode != 0)
 		{
 			throw new Exception($"Failed to publish solution: {projectRootDirectory}");
 		}
 	}
-	
 }
 
 

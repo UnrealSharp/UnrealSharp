@@ -29,12 +29,12 @@ public static class NameMapper
 
     public static string GetParameterName(this UhtProperty property)
     {
-        return ScriptifyName(property.EngineName, ENameType.Parameter);
+        return ScriptifyName(property.GetScriptName(), ENameType.Parameter);
     }
     
     public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
     {
-        string propertyName = ScriptifyName(property.EngineName, ENameType.Property, reservedNames);
+        string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property, reservedNames);
         if (property.Outer!.EngineName == propertyName || IsAKeyword(propertyName))
         {
             propertyName = $"K2_{propertyName}";
@@ -48,13 +48,8 @@ public static class NameMapper
         {
             return type.SourceName;
         }
-        
-        string scriptName = type.GetMetadata("ScriptName");
-        
-        if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
-        {
-            scriptName = type.EngineName;
-        }
+
+        string scriptName = type.GetScriptName();
 
         if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == Program.Factory.Session.UInterface)
         {
@@ -67,6 +62,16 @@ public static class NameMapper
     public static string GetFullManagedName(this UhtType type)
     {
         return $"{type.GetNamespace()}.{type.GetStructName()}";
+    }
+    
+    private static string GetScriptName(this UhtType type)
+    {
+        string scriptName = type.GetMetadata("ScriptName");
+        if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
+        {
+            scriptName = type.EngineName;
+        }
+        return scriptName;
     }
     
     public static string GetNamespace(this UhtType typeObj)
@@ -101,7 +106,8 @@ public static class NameMapper
     
     public static string GetFunctionName(this UhtFunction function)
     {
-        string functionName = ScriptifyName(function.EngineName, ENameType.Function);
+        string scriptName = function.GetScriptName();
+        string functionName = ScriptifyName(scriptName, ENameType.Function);
 
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {

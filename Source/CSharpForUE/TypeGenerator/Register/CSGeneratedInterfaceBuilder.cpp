@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
-#include "CSMetaDataUtils.h"
 #include "CSTypeRegistry.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 

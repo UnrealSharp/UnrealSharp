@@ -107,6 +107,11 @@ UClass* FCSTypeRegistry::GetClassFromName(FName Name)
 	{
 		FoundType = FindFirstObjectSafe<UClass>(*Name.ToString());
 	}
+
+	if (!IsValid(FoundType))
+	{
+		FoundType = GetInterfaceFromName(Name);
+	}
 	
 	return FoundType;
 }

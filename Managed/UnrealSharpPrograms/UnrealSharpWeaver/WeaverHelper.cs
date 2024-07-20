@@ -11,6 +11,8 @@ public static class WeaverHelper
     public static readonly string UnrealSharpNamespace = "UnrealSharp";
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
     public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
+    public static readonly string CoreUObjectNamespace = UnrealSharpNamespace + ".CoreUObject";
+    
     public static readonly string UnrealSharpObject = "UnrealSharpObject";
     public static readonly string FPropertyCallbacks = "FPropertyExporter";
     public static readonly string UClassCallbacks = "UClassExporter";
@@ -44,6 +46,7 @@ public static class WeaverHelper
     public static FieldReference IntPtrZero;
     public static MethodReference IntPtrEqualsOperator;
     public static TypeReference UnrealSharpObjectType;
+    public static TypeDefinition IInterfaceType;
     public static MethodReference CheckObjectForValidity;
     public static MethodReference GetNativeFunctionFromInstanceAndNameMethod;
     public static TypeReference Uint16TypeRef;
@@ -98,7 +101,8 @@ public static class WeaverHelper
         IntPtrZero = FindFieldInType(IntPtrType, "Zero");
         IntPtrEqualsOperator = FindMethod(IntPtrType, "op_Equality")!;
 
-        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpObject, UnrealSharpNamespace);
+        UnrealSharpObjectType = FindTypeInAssembly(BindingsAssembly, UnrealSharpObject, UnrealSharpNamespace)!;
+        IInterfaceType = FindTypeInAssembly(BindingsAssembly, "IInterface", CoreUObjectNamespace)!.Resolve();
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = FindMethod(unrealSharpObjectType, "get_NativeObject")!;
