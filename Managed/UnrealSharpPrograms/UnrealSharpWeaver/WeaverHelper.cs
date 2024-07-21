@@ -577,6 +577,11 @@ public static class WeaverHelper
                 {
                     return new NativeDataMulticastDelegate(typeDef);
                 }
+
+                if (typeDef.FullName == "UnrealSharp.Name")
+                {
+                    return new NativeDataNameType(typeDef, arrayDim);
+                }
             
                 if (typeDef.BaseType.Name.Contains("Delegate"))
                 {

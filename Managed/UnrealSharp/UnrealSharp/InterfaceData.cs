@@ -3,7 +3,7 @@
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-struct InterfaceData
+public struct InterfaceData
 {
     public IntPtr ObjectPointer;
     public IntPtr InterfacePointer;

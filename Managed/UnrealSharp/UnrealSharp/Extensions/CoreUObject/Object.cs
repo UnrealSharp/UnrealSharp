@@ -237,7 +237,8 @@ public partial class Object
         IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
-    
+
+#if WITH_EDITOR
     /// <summary>
     /// Gets the editor subsystem of the specified type.
     /// </summary>
@@ -249,6 +250,7 @@ public partial class Object
         IntPtr handle = GEditorExporter.CallGetEditorSubsystem(subsystemClass.NativeClass);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
+#endif
     
     /// <summary>
     /// Gets the engine subsystem of the specified type.

@@ -14,21 +14,18 @@ public static class Program
 { 
 	public static IUhtExportFactory Factory { get; private set; } = null!;
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
-	public static string EngineGluePath => ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
-	public static string PluginDirectory => ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
-	public static string ManagedBinariesPath => Path.Combine(PluginDirectory, "Binaries", "Managed");
-	public static string ManagedPath => Path.Combine(PluginDirectory, "Managed");
-	public static string ScriptFolder
-	{
-		get
-		{
-			DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
-			string scriptFolderPath = Path.Combine(unrealSharpDirectory.FullName, "Script");
-			return scriptFolderPath;
-		}
-	} 
-	public static string ProjectGluePath => Path.Combine(ScriptFolder, "obj", "generated");
+	
+	public static string EngineGluePath = "";
+	public static string ProjectGluePath = "";
+
+	public static bool BuildingEditor;
 	public static UhtClass BlueprintFunctionLibrary = null!;
+	
+	public static string PluginDirectory = "";
+	public static string ManagedBinariesPath = "";
+	public static string ManagedPath = "";
+	public static string ScriptFolder = "";
+	
 
 	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
 		ModuleName = "CSharpForUE",
@@ -38,6 +35,8 @@ public static class Program
 	{
 		Console.WriteLine("Initializing C# exporter...");
 		Factory = factory;
+		
+		InitializeStatics();
 		
 		UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
 		if (foundType is not UhtClass blueprintFunctionLibrary)
@@ -57,7 +56,7 @@ public static class Program
 			FileExporter.CleanOldExportedFiles();
 			
 			// Everything is exported. Now we need to compile the generated C# code, if necessary.
-			if (FileExporter.HasModifiedEngineGlue)
+			if (FileExporter.HasModifiedEngineGlue && BuildingEditor)
 			{
 				string engineGluePath = Path.Combine(ManagedPath, "UnrealSharp");
 				DotNetUtilities.BuildSolution(engineGluePath);
@@ -75,5 +74,22 @@ public static class Program
 			Console.WriteLine(ex.StackTrace);
 			Console.ResetColor();
 		}
+	}
+	
+	static void InitializeStatics()
+	{
+		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
+		
+		DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
+		ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
+		
+		EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
+		ProjectGluePath = Path.Combine(ScriptFolder, "obj", "generated");
+		
+		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
+		
+		ManagedPath = Path.Combine(PluginDirectory, "Managed");
+		
+		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
 	}
 }

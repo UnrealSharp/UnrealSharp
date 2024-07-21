@@ -16,6 +16,10 @@ public class CSharpForUE : ModuleRules
 		_managedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		_engineGluePath = Path.Combine(_managedPath, "UnrealSharp", "UnrealSharp", "Generated");
 		
+		PublicDefinitions.Add("GENERATED_GLUE_PATH=" + _engineGluePath);
+		PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory);
+		PublicDefinitions.Add("BUILDING_EDITOR=" + (Target.bBuildEditor ? "1" : "0"));
+		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -55,8 +59,6 @@ public class CSharpForUE : ModuleRules
 				"EditorSubsystem", 
 			});
 			
-			PublicDefinitions.Add("GENERATED_GLUE_PATH=" + _engineGluePath);
-			PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory);
 			PublishSolution(Path.Combine(_managedPath, "UnrealSharpPrograms"));
 		}
 		
