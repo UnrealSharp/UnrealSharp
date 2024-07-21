@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -43,6 +44,11 @@ public static class CSharpExporter
 
     private static void ExportPackage(UhtPackage package)
     {
+        if (!Program.BuildingEditor && package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly))
+        {
+            return;
+        }
+        
         foreach (UhtType child in package.Children)
         {
             ExportType(child);

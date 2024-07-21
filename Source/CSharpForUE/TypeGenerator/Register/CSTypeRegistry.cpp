@@ -128,7 +128,6 @@ UScriptStruct* FCSTypeRegistry::GetStructFromName(FName Name)
 	{
 		FoundType = FindFirstObjectSafe<UScriptStruct>(*Name.ToString());
 	}
-	
 	return FoundType;
 }
 

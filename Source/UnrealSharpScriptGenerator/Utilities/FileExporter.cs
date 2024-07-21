@@ -85,6 +85,7 @@ public static class FileExporter
         foreach (var directory in directories)
         {
             string[] files = Directory.GetFiles(directory);
+            
             foreach (var file in files)
             {
                 if (ExportedFiles.Contains(file))
