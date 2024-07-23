@@ -10,12 +10,6 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     {
     }
     
-    public override void OnPropertyExported(GeneratorStringBuilder builder, UhtProperty property)
-    {
-        UhtDelegateProperty multicastDelegateProperty = (UhtDelegateProperty) property;
-        DelegateExporter.ExportDelegate(multicastDelegateProperty.Function);
-    }
-    
     public override bool CanExport(UhtProperty property)
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;

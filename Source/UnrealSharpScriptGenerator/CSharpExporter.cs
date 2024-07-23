@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -12,29 +11,20 @@ namespace UnrealSharpScriptGenerator;
 public static class CSharpExporter
 {
     private static readonly List<Task> Tasks = new();
+    static List<string> TotalDelegates = new();
     
     public static void StartExport()
     {
-        Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(Program.Factory.Session.UObject); })!);
-        Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(Program.Factory.Session.UInterface); })!);
+        ExportType(Program.Factory.Session.UObject);
+        ExportType(Program.Factory.Session.UInterface);
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             ExportPackage(package);
         }
         
-        WaitForTasks();
+        FunctionExporter.StartExportingExtensionMethods(Tasks);
         
-        foreach (UhtPackage package in Program.Factory.Session.Packages)
-        {
-            FunctionExporter.StartExportingExtensionMethods(package, Tasks);
-        }
-        
-        WaitForTasks();
-    }
-    
-    private static void WaitForTasks()
-    {
         Task[] waitTasks = Tasks.ToArray();
         if (waitTasks.Length > 0)
         {
@@ -51,11 +41,16 @@ public static class CSharpExporter
         
         foreach (UhtType child in package.Children)
         {
-            ExportType(child);
-            
             foreach (UhtType type in child.Children)
             {
+                // Finds classes, enums, structs, and delegates in the header file
                 ExportType(type);
+                
+                foreach (UhtType innerType in type.Children)
+                {
+                    // Finds nested classes, enums, structs, and delegates
+                    ExportType(innerType);
+                }
             }
         }
     }
@@ -71,7 +66,7 @@ public static class CSharpExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is not UhtClassType.Interface)
+                if (classObj.ClassType is not UhtClassType.Interface && classObj != Program.Factory.Session.UInterface)
                 {
                     return;
                 }
@@ -90,6 +85,24 @@ public static class CSharpExporter
         else if (type is UhtScriptStruct structObj)
         {
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); })!);
+        }
+        else if (type.EngineType == UhtEngineType.Delegate)
+        {
+            UhtFunction delegateFunction = (UhtFunction) type;
+            if (!ScriptGeneratorUtilities.CanExportParameters(delegateFunction) || delegateFunction.ReturnProperty != null)
+            {
+                return;
+            }
+            
+            // There are some duplicate delegates in the engine 
+            string delegateName = DelegateBasePropertyTranslator.GetFullDelegateName(delegateFunction);
+            if (TotalDelegates.Contains(delegateName))
+            {
+                return;
+            }
+            
+            TotalDelegates.Add(delegateName);
+            Tasks.Add(Program.Factory.CreateTask(_ => { DelegateExporter.ExportDelegate(delegateFunction); })!);
         }
     }
 }

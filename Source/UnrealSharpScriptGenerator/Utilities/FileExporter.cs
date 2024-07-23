@@ -14,7 +14,7 @@ public static class FileExporter
     
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder, string fileName = "")
     {
-        UhtPackage package = ScriptGeneratorUtilities.GetPackage(type);
+        UhtPackage package = type.Package;
         string directory = GetDirectoryPath(package);
         string text = stringBuilder.ToString();
         fileName = string.IsNullOrEmpty(fileName) ? type.EngineName : fileName;
@@ -25,33 +25,32 @@ public static class FileExporter
     {
         string absoluteFilePath = Path.Combine(directory, $"{typeName}.generated.cs");
         
+        bool directoryExists = Directory.Exists(directory);
+        bool glueExists = File.Exists(absoluteFilePath);
+        
         ReadWriteLock.EnterWriteLock();
         try
         {
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-            
-            if (File.Exists(absoluteFilePath))
-            {
-                string existingText = File.ReadAllText(absoluteFilePath);
-                if (existingText == text)
-                {
-                    return;
-                }
-            }
-            
-            File.WriteAllText(absoluteFilePath, text);
-            
-            if (!package.IsPartOfEngine)
+            bool matchingGlue = glueExists && File.ReadAllText(absoluteFilePath) == text;
+            // If the directory exists and the file exists with the same text, we can return early
+            if (directoryExists && matchingGlue)
             {
                 return;
             }
             
-            lock (typeof(Program))
+            if (!directoryExists)
             {
-                HasModifiedEngineGlue = true;
+                Directory.CreateDirectory(directory);
+            }
+            
+            File.WriteAllText(absoluteFilePath, text);
+            
+            if (package.IsPartOfEngine)
+            {
+                lock (typeof(Program))
+                {
+                    HasModifiedEngineGlue = true;
+                }
             }
         }
         finally

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Tooltip;
@@ -10,32 +9,26 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public abstract class PropertyTranslator
 {
-    EPropertyUsageFlags SupportedPropertyUsage;
+    private readonly EPropertyUsageFlags _supportedPropertyUsage;
+    protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property
+                                                                   | EPropertyUsageFlags.StructProperty
+                                                                   | EPropertyUsageFlags.Parameter
+                                                                   | EPropertyUsageFlags.ReturnValue;
     
-    protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property | EPropertyUsageFlags.Parameter 
-        | EPropertyUsageFlags.ReturnValue 
-        | EPropertyUsageFlags.OverridableFunctionParameter 
-        | EPropertyUsageFlags.OverridableFunctionReturnValue 
-        | EPropertyUsageFlags.StaticArrayProperty;
-    
-    public bool IsSupportedAsProperty() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
-    public bool IsSupportedAsParameter() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
-    public bool IsSupportedAsReturnValue() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
-    public bool IsSupportedAsInner() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
-    public bool IsSupportedAsStructProperty() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
-    public bool IsSupportedAsOverridableFunctionParameter() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.OverridableFunctionParameter);
-    public bool IsSupportedAsOverridableFunctionReturnValue() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.OverridableFunctionReturnValue);
-    public bool IsSupportedInStaticArray() => SupportedPropertyUsage.HasFlag(EPropertyUsageFlags.StaticArrayProperty);
+    public bool IsSupportedAsProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
+    public bool IsSupportedAsParameter() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
+    public bool IsSupportedAsReturnValue() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
+    public bool IsSupportedAsInner() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
+    public bool IsSupportedAsStructProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
     
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
     public virtual bool NeedSetter => true;
     public virtual bool ExportDefaultParameter => true;
-    public virtual bool NeedProperty => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
-        SupportedPropertyUsage = supportedPropertyUsage;
+        _supportedPropertyUsage = supportedPropertyUsage;
     }
     
     // Can we export this property?
@@ -122,8 +115,6 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    public virtual void OnPropertyExported(GeneratorStringBuilder builder, UhtProperty property) {}
-    
     public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property, List<string> reservedNames)
     {
         builder.AppendLine();
@@ -157,8 +148,6 @@ public abstract class PropertyTranslator
         builder.CloseBrace();
         builder.TryEndWithEditor(property);
         builder.AppendLine();
-        
-        OnPropertyExported(builder, property);
     }
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
@@ -177,8 +166,7 @@ public abstract class PropertyTranslator
         string managedType = GetManagedType(property);
         builder.AppendTooltip(property);
         builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
-        builder.AppendLine();
-        OnPropertyExported(builder, property);
+        builder.AppendLine(); ;
     }
     
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)

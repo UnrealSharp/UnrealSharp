@@ -9,20 +9,11 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class DelegateExporter
 {
-    private static List<string> ExportedDelegates = new();
-    
     public static void ExportDelegate(UhtFunction function)
     {
         if (!function.HasAllFlags(EFunctionFlags.Delegate))
         {
             throw new Exception("Function is not a delegate");
-        }
-        
-        string fullDelegateName = DelegateBasePropertyTranslator.GetFullDelegateName(function);
-        
-        if (ExportedDelegates.Contains(fullDelegateName))
-        {
-            return;
         }
         
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
@@ -53,7 +44,6 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        ExportedDelegates.Add(fullDelegateName);
         FileExporter.SaveGlueToDisk(function, builder, delegateName);
     }
 

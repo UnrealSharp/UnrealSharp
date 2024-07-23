@@ -7,12 +7,10 @@ namespace UnrealSharp;
 public struct TextData
 {
     public IntPtr ObjectPointer;
-    public int SharedReferenceCount;
-    public int WeakReferenceCount;
     public uint Flags;
 }
 
-public class Text
+public struct Text
 {
     internal TextData Data;
     
@@ -74,11 +72,6 @@ public class Text
     
     public static bool operator ==(Text a, Text b)
     {
-        if (a is null || b is null)
-        {
-            return false;
-        }
-        
         return a.Data.ObjectPointer == b.Data.ObjectPointer;
     }
 
@@ -92,10 +85,12 @@ public static class TextMarshaller
 { 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, Text obj)
     {
+        Console.WriteLine("ToNative in TextMarshaller");
         BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
     }
     public static Text FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
+        Console.WriteLine("FromNative in TextMarshaller");
         Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex));
         return data;
     }

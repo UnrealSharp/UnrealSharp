@@ -56,7 +56,7 @@ public struct FunctionOverload
 
 public class FunctionExporter
 {
-    private static readonly Dictionary<string, List<ExtensionMethod>> ExtensionMethods = new();
+    private static readonly Dictionary<UhtPackage, List<ExtensionMethod>> ExtensionMethods = new();
     
     private readonly UhtFunction _function;
     private string _functionName = null!;
@@ -289,12 +289,12 @@ public class FunctionExporter
         {
             return;
         }
-        
-        string moduleName = ScriptGeneratorUtilities.GetModuleName(function.Outer!);
-        if (!ExtensionMethods.TryGetValue(moduleName, out var extensionMethods))
+
+        UhtPackage package = function.Outer!.Package;
+        if (!ExtensionMethods.TryGetValue(package, out var extensionMethods))
         {
             extensionMethods = new List<ExtensionMethod>();
-            ExtensionMethods.Add(moduleName, extensionMethods);
+            ExtensionMethods.Add(package, extensionMethods);
         }
         
         UhtProperty firstParameter = (function.Children[0] as UhtProperty)!;
@@ -312,16 +312,16 @@ public class FunctionExporter
         extensionMethods.Add(newExtensionMethod);
     }
     
-    public static void StartExportingExtensionMethods(UhtPackage package, List<Task> tasks)
+    public static void StartExportingExtensionMethods(List<Task> tasks)
     {
-        if (!ExtensionMethods.TryGetValue(package.ShortName, out var extensionMethods) || extensionMethods.Count == 0)
+        foreach (KeyValuePair<UhtPackage, List<ExtensionMethod>> extensionInfo in ExtensionMethods)
         {
-            return;
+            tasks.Add(Program.Factory.CreateTask(_ =>
+            {
+                ExtensionsClassExporter.ExportExtensionsClass(extensionInfo.Key, extensionInfo.Value); 
+            })!);
         }
-        
-        tasks.Add(Program.Factory.CreateTask(_ => { ExtensionsClassExporter.ExportExtensionsClass(package, extensionMethods); })!);
     }
-
     public static void ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType)
     {
         EFunctionProtectionMode protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
@@ -554,7 +554,6 @@ public class FunctionExporter
         ForEachParameter((translator, parameter) =>
         {
             translator.ExportParameterVariables(builder, _function, _function.EngineName, parameter, parameter.EngineName);
-            translator.OnPropertyExported(builder, parameter);
         });
     }
 

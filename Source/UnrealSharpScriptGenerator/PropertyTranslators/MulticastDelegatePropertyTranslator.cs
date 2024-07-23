@@ -11,12 +11,6 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
     {
     }
 
-    public override void OnPropertyExported(GeneratorStringBuilder builder, UhtProperty property)
-    {
-        UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
-        DelegateExporter.ExportDelegate(multicastDelegateProperty.Function);
-    }
-
     private string GetBackingField(UhtProperty property)
     {
         return $"{property.SourceName}_BackingField";

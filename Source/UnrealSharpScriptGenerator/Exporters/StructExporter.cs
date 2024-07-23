@@ -101,7 +101,7 @@ public static class StructExporter
 
     public static void ExportStructMarshaller(GeneratorStringBuilder builder, UhtScriptStruct structObj)
     {
-        string structName = structObj.EngineName;
+        string structName = structObj.GetStructName();
         
         builder.AppendLine();
         builder.AppendLine($"public static class {structName}Marshaller");
@@ -129,7 +129,7 @@ public static class StructExporter
     public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties, List<string> reservedNames)
     {
         builder.AppendLine();
-        builder.AppendLine($"public {structObj.EngineName}(IntPtr InNativeStruct)");
+        builder.AppendLine($"public {structObj.GetStructName()}(IntPtr InNativeStruct)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         
