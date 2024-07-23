@@ -85,12 +85,10 @@ public static class TextMarshaller
 { 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, Text obj)
     {
-        Console.WriteLine("ToNative in TextMarshaller");
         BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
     }
     public static Text FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        Console.WriteLine("FromNative in TextMarshaller");
         Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex));
         return data;
     }
