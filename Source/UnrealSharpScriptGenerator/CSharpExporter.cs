@@ -11,25 +11,33 @@ namespace UnrealSharpScriptGenerator;
 public static class CSharpExporter
 {
     private static readonly List<Task> Tasks = new();
-    static List<string> TotalDelegates = new();
+    private static readonly List<string> ExportedDelegates = new();
     
     public static void StartExport()
     {
-        ExportType(Program.Factory.Session.UObject);
-        ExportType(Program.Factory.Session.UInterface);
+        Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(Program.Factory.Session.UObject); })!);
+        Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(Program.Factory.Session.UInterface); })!);
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             ExportPackage(package);
         }
         
+        WaitForTasks();
+        
         FunctionExporter.StartExportingExtensionMethods(Tasks);
         
+        WaitForTasks();
+    }
+
+    private static void WaitForTasks()
+    {
         Task[] waitTasks = Tasks.ToArray();
         if (waitTasks.Length > 0)
         {
             Task.WaitAll(waitTasks);
         }
+        Tasks.Clear();
     }
 
     private static void ExportPackage(UhtPackage package)
@@ -66,7 +74,7 @@ public static class CSharpExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is not UhtClassType.Interface && classObj != Program.Factory.Session.UInterface)
+                if (classObj.ClassType is not UhtClassType.Interface)
                 {
                     return;
                 }
@@ -94,14 +102,14 @@ public static class CSharpExporter
                 return;
             }
             
-            // There are some duplicate delegates in the engine 
+            // There are some duplicate delegates in the same modules, so we need to check if we already exported it
             string delegateName = DelegateBasePropertyTranslator.GetFullDelegateName(delegateFunction);
-            if (TotalDelegates.Contains(delegateName))
+            if (ExportedDelegates.Contains(delegateName))
             {
                 return;
             }
             
-            TotalDelegates.Add(delegateName);
+            ExportedDelegates.Add(delegateName);
             Tasks.Add(Program.Factory.CreateTask(_ => { DelegateExporter.ExportDelegate(delegateFunction); })!);
         }
     }
