@@ -8,19 +8,21 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
+        int blittableCount = 0;
         foreach (UhtType child in structObj.Children)
         {
             UhtProperty property = (UhtProperty) child;
 
             PropertyTranslator? propertyTranslator = PropertyTranslatorManager.GetTranslator(property);
-            if (propertyTranslator != null && property.PropertyFlags.HasFlag(EPropertyFlags.BlueprintVisible) && propertyTranslator.IsBlittable)
+            
+            if (propertyTranslator is not { IsBlittable: true })
             {
-                continue;
+                return false;
             }
             
-            return false;
+            blittableCount++;
         }
 
-        return true;
+        return blittableCount == structObj.Children.Count && blittableCount > 0;
     }
 }

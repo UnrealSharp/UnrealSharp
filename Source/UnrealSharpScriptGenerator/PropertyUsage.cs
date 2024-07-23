@@ -11,8 +11,5 @@ public enum EPropertyUsageFlags : byte
     ReturnValue = 0x04,
     Inner = 0x08,
     StructProperty = 0x10,
-    OverridableFunctionParameter = 0x20,
-    OverridableFunctionReturnValue = 0x40,
-    StaticArrayProperty = 0x80,
     Any = 0xFF,
 };

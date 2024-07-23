@@ -27,6 +27,7 @@ public static class ScriptGeneratorUtilities
 
         return string.Empty;
     }
+    
     public static string TryGetPluginDefine(string key)
     {
         Program.PluginModule.TryGetDefine(key, out string? generatedCodePath);
@@ -45,9 +46,20 @@ public static class ScriptGeneratorUtilities
     
     public static bool CanExportParameters(UhtFunction function)
     {
-        foreach (UhtProperty child in function.Properties)
+        bool CanExportParameter(UhtProperty property, Func<PropertyTranslator, bool> isSupported)
         {
-            if (!CanExportProperty(child))
+            PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(property);
+            return translator != null && isSupported(translator) && translator.CanExport(property);
+        }
+
+        if (function.ReturnProperty != null && !CanExportParameter(function.ReturnProperty, translator => translator.IsSupportedAsReturnValue()))
+        {
+            return false;
+        }
+
+        foreach (UhtProperty parameter in function.Properties)
+        {
+            if (!CanExportParameter(parameter, translator => translator.IsSupportedAsParameter()))
             {
                 return false;
             }
@@ -58,24 +70,16 @@ public static class ScriptGeneratorUtilities
     
     public static bool CanExportProperty(UhtProperty property)
     {
-        if (property.MetaData.GetBoolean("ScriptNoExport"))
-        {
-            return false;
-        }
-        
         PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(property);
-        
-        if (translator == null)
+        if (translator == null || !translator.CanExport(property))
         {
             return false;
         }
 
-        bool isClassProperty = property.Outer is UhtClass;
+        bool isClassProperty = property.Outer!.EngineType == UhtEngineType.Class;
         bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty();
         bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty();
-        bool canExport = translator.CanExport(property);
-
-        return canBeClassProperty || canBeStructProperty || canExport;
+        return canBeClassProperty || canBeStructProperty;
     }
     
     public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
@@ -254,21 +258,5 @@ public static class ScriptGeneratorUtilities
         {
             dependencies.Add(reference.GetNamespace());
         }
-    }
-    
-    public static UhtPackage GetPackage(UhtType typeObj)
-    {
-        if (typeObj is UhtPackage package)
-        {
-            return package;
-        }
-        
-        UhtType currentType = typeObj;
-        while (currentType.Outer != null)
-        {
-            currentType = currentType.Outer;
-        }
-
-        return (currentType as UhtPackage)!;
     }
 }
