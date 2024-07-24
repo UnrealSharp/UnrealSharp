@@ -8,11 +8,16 @@ public static class DotNetUtilities
 {
     public static string FindDotNetExecutable()
     {
+		const string DOTNET_WIN = "dotnet.exe";
+		const string DOTNET_UNIX = "dotnet";
+
+		var dotnetExe = OperatingSystem.IsWindows() ? DOTNET_WIN : DOTNET_UNIX;
+
     	var pathVariable = Environment.GetEnvironmentVariable("PATH");
     
     	if (pathVariable == null)
     	{
-    		throw new Exception("Couldn't find dotnet.exe!");
+    		throw new Exception($"Couldn't find {dotnetExe}!");
     	}
     
     	var paths = pathVariable.Split(Path.PathSeparator);
@@ -26,7 +31,7 @@ public static class DotNetUtilities
     			continue;
     		}
     		
-    		var dotnetExePath = Path.Combine(path, "dotnet.exe");
+    		var dotnetExePath = Path.Combine(path, dotnetExe);
     		
     		if (File.Exists(dotnetExePath))
     		{
@@ -34,7 +39,16 @@ public static class DotNetUtilities
     		}
     	}
 
-    	throw new Exception("Couldn't find dotnet.exe!");
+    	if ( OperatingSystem.IsMacOS() ) {
+			if ( File.Exists( "/usr/local/share/dotnet/dotnet" ) ) {
+				return "/usr/local/share/dotnet/dotnet";
+			}
+			if ( File.Exists( "/opt/homebrew/bin/dotnet" ) ) {
+				return "/opt/homebrew/bin/dotnet";
+			}
+		}
+
+		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
     }
     
     public static void BuildSolution(string projectRootDirectory)

@@ -1,4 +1,11 @@
-﻿#pragma once
+﻿#if defined(__APPLE__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
+#endif
+#pragma once
+#if defined(__APPLE__)
+#pragma clang diagnostic pop
+#endif
 
 #include "CSharpForUE.h"
 #include "CoreMinimal.h"

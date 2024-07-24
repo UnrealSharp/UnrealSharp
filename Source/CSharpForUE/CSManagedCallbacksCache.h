@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#if !defined(_WIN32)
+#define __stdcall
+#endif
+
 struct FInvokeManagedMethodData;
 struct GCHandleIntPtr;
 struct FGCHandle;

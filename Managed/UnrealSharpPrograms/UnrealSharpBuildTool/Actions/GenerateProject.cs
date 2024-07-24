@@ -232,12 +232,12 @@ public class GenerateProject : BuildToolAction
         string basePath = Program.buildToolOptions.ProjectDirectory;
         string targetPath = Path.Combine(basePath, Program.buildToolOptions.PluginDirectory);
         
-        Uri baseUri = new Uri(basePath + @"\");
+        Uri baseUri = new Uri(basePath + (OperatingSystem.IsWindows() ? @"\" : "/"));
         Uri targetUri = new Uri(targetPath);
         
         Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
         
-        string relativePath = Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\');
+        string relativePath = OperatingSystem.IsWindows() ? Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\') : Uri.UnescapeDataString(relativeUri.ToString());
 
         return relativePath;
     }
@@ -264,7 +264,15 @@ public class GenerateProject : BuildToolAction
     {
         Root root = new Root();
 
-        string executablePath = Path.Combine(Program.buildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+        string executablePath = string.Empty;
+        if (OperatingSystem.IsWindows())
+        {
+            executablePath = Path.Combine(Program.buildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            executablePath = Path.Combine(Program.buildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+        }
         string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
         
         // Create a new profile if it doesn't exist
