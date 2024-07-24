@@ -139,7 +139,9 @@ public static class StructExporter
             string scriptName = property.GetPropertyName(reservedNames);
             string assignmentOrReturn = $"{scriptName} =";
             string offsetName = $"{property.EngineName}_Offset";
+            builder.TryAddWithEditor(property);
             translator.ExportFromNative(builder, property, property.EngineName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
+            builder.TryEndWithEditor(property);
         }
         
         builder.EndUnsafeBlock();
@@ -155,7 +157,9 @@ public static class StructExporter
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             string scriptName = property.GetPropertyName(reservedNames);
             string offsetName = $"{property.EngineName}_Offset";
+            builder.TryAddWithEditor(property);
             translator.ExportToNative(builder, property, property.EngineName, "buffer", offsetName, scriptName);
+            builder.TryEndWithEditor(property);
         }
         
         builder.EndUnsafeBlock();

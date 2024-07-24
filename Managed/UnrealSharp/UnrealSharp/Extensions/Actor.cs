@@ -15,7 +15,7 @@ public partial class Actor
     /// <param name="action"> The action to execute when the action is triggered </param>
     /// <param name="consumeInput"> Whether to consume the input </param>
     /// <param name="executeWhenPaused"> Whether to execute the action when paused </param>
-    public void BindAction(string actionName, InputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
+    public void BindAction(string actionName, EInputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
     {
         InputComponent? inputComponent = InputComponent;
         if (inputComponent != null)
