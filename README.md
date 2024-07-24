@@ -21,7 +21,7 @@ Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropo
 - .NET 8.0+
 
 ## UnrealSharp 0.2 Issues
-- Linux/Mac support is not yet implemented.
+- Linux support is not yet implemented.
 
 ## Get Started
 
