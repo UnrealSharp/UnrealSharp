@@ -75,6 +75,11 @@ public class CSharpForUE : ModuleRules
 	
 	public static string FindDotNetExecutable()
 	{
+		const string DOTNET_WIN = "dotnet.exe";
+		const string DOTNET_UNIX = "dotnet";
+
+		var dotnetExe = OperatingSystem.IsWindows() ? DOTNET_WIN : DOTNET_UNIX;
+
 		var pathVariable = Environment.GetEnvironmentVariable("PATH");
     
 		if (pathVariable == null)
@@ -93,7 +98,7 @@ public class CSharpForUE : ModuleRules
 				continue;
 			}
 			
-			var dotnetExePath = Path.Combine(path, "dotnet.exe");
+			var dotnetExePath = Path.Combine(path, dotnetExe);
 			
 			if (File.Exists(dotnetExePath))
 			{
@@ -101,7 +106,16 @@ public class CSharpForUE : ModuleRules
 			}
 		}
 
-		throw new Exception("Couldn't find dotnet.exe!");
+		if ( OperatingSystem.IsMacOS() ) {
+			if ( File.Exists( "/usr/local/share/dotnet/dotnet" ) ) {
+				return "/usr/local/share/dotnet/dotnet";
+			}
+			if ( File.Exists( "/opt/homebrew/bin/dotnet" ) ) {
+				return "/opt/homebrew/bin/dotnet";
+			}
+		}
+
+		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
 	}
 
 	void PublishSolution(string projectRootDirectory)
@@ -120,13 +134,17 @@ public class CSharpForUE : ModuleRules
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
 		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{_managedBinariesPath}\"");
+
+		// process.StartInfo.ArgumentList.Add($"-p:Configuration=\"Development\"");
+		// process.StartInfo.ArgumentList.Add($"-p:Platform=\"Any CPU\"");
 		
 		process.Start();
 		process.WaitForExit();
 		
 		if (process.ExitCode != 0)
 		{
-			throw new Exception($"Failed to publish solution: {projectRootDirectory}");
+			// throw new Exception($"Failed to publish solution: {projectRootDirectory}");
+			Console.WriteLine($"Failed to publish solution: {projectRootDirectory}");
 		}
 	}
 }

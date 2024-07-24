@@ -78,7 +78,12 @@ public static class Program
     
     public static string FixPath(string path)
     {
-        return path.Replace('/', '\\');
+        if (OperatingSystem.IsWindows())
+        {
+            return path.Replace('/', '\\');
+        }
+        
+        return path;
     }
 
     public static string GetProjectNameAsManaged()

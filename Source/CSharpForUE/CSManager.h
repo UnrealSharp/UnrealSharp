@@ -21,11 +21,7 @@ class CSHARPFORUE_API FCSManager : public FUObjectArray::FUObjectDeleteListener
 {
 public:
 
-	static FCSManager& Get()
-	{
-		static FCSManager Instance;
-		return Instance;
-	}
+	static FCSManager& Get();
 
 	void InitializeUnrealSharp();
 
