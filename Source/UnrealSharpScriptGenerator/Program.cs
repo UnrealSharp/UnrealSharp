@@ -63,6 +63,31 @@ public static class Program
 	            Console.WriteLine("Detected modified engine glue. Starting the build process...");
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
 	        }
+
+			string? projectName = Path.GetFileNameWithoutExtension(factory.Session.ProjectFile);
+	        if (projectName != null && !File.Exists($"{factory.Session.ProjectDirectory}/Script/Managed{projectName}.csproj"))
+	        {
+		        string dotNetExe = DotNetUtilities.FindDotNetExecutable();
+
+		        string args = string.Empty;
+		        args += $"\"{PluginDirectory}/Binaries/Managed/UnrealSharpBuildTool.dll\"";
+		        args += " --Action GenerateProject";
+		        args += $" --EngineDirectory \"{factory.Session.EngineDirectory}/\"";
+		        args += $" --ProjectDirectory \"{factory.Session.ProjectDirectory}/\"";
+		        args += $" --ProjectName {projectName}";
+		        args += $" --PluginDirectory \"{PluginDirectory}\"";
+		        args += $" --DotNetPath \"{dotNetExe}\"";
+
+		        Process process = new Process();
+		        ProcessStartInfo startInfo = new ProcessStartInfo
+		        {
+			        WindowStyle = ProcessWindowStyle.Hidden,
+			        FileName = DotNetUtilities.FindDotNetExecutable(),
+			        Arguments = args
+		        };
+		        process.StartInfo = startInfo;
+		        process.Start();
+	        }
 	    }
 	    catch (Exception ex)
 	    {
