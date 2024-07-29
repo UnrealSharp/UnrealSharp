@@ -7,7 +7,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    public static readonly HashSet<string> ManuallyExportedTypes = new();
+    public static readonly List<string> ManuallyExportedTypes = new();
     
     static PropertyTranslatorManager()
     {

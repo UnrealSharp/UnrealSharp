@@ -8,21 +8,16 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
-        int blittableCount = 0;
-        foreach (UhtType child in structObj.Children)
+        if (PropertyTranslatorManager.ManuallyExportedTypes.Contains(structObj.EngineName))
         {
-            UhtProperty property = (UhtProperty) child;
-
-            PropertyTranslator? propertyTranslator = PropertyTranslatorManager.GetTranslator(property);
-            
-            if (propertyTranslator is not { IsBlittable: true })
-            {
-                return false;
-            }
-            
-            blittableCount++;
+            return true;
         }
-
-        return blittableCount == structObj.Children.Count && blittableCount > 0;
+        
+        // Any struct we haven't manually exported is not blittable, yet.
+        // The fix for this is to add a header parser to check for non-UPROPERTY properties in the struct.
+        // Because a struct can be recognized as blittable by the reflection data,
+        // but have a non-UPROPERTY property that is not picked up by UHT, that makes it not blittable causing a mismatch in memory layout.
+        // This is a temporary solution until we can get that working.
+        return false;
     }
 }
