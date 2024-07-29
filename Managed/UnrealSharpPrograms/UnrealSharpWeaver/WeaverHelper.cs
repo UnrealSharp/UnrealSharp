@@ -474,7 +474,7 @@ public static class WeaverHelper
             }
         }
 
-        switch (typeRef.FullName)
+        switch (typeDef.FullName)
         {
             case "System.Double":
                 return new NativeDataBuiltinType(typeRef, arrayDim, PropertyType.Double);
@@ -608,14 +608,9 @@ public static class WeaverHelper
                 // See if this is a struct
                 CustomAttribute? structAttribute = GetUStruct(typeDef);
                 
-                if (structAttribute == null && typeDef.Namespace != "System.DoubleNumerics")
+                if (structAttribute == null)
                 {
-                    throw new InvalidPropertyException(propertyName, sequencePoint, "Class properties must use an unreal class: " + typeRef.FullName);
-                }
-
-                if (typeDef.Namespace == "System.DoubleNumerics" || (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Rotator"))
-                {
-                    return new NativeDataCoreStructType(typeDef, arrayDim);
+                    throw new Exception("Structs must have a UStruct attribute if exposed to Unreal Engine: " + typeDef.FullName);
                 }
                 
                 return GetBlittableType(typeDef) != null ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, GetMarshallerClassName(typeDef), arrayDim);
