@@ -53,7 +53,7 @@ public static class InterfaceExporter
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine("	if (obj is CoreUObject.Object objectPointer)");
+        stringBuilder.AppendLine("	if (obj is CoreUObject.UObject objectPointer)");
         stringBuilder.AppendLine("	{");
         stringBuilder.AppendLine("		InterfaceData data = new InterfaceData();");
         stringBuilder.AppendLine("		data.ObjectPointer = objectPointer.NativeObject;");
@@ -66,7 +66,7 @@ public static class InterfaceExporter
         stringBuilder.AppendLine($"public static {interfaceName} FromNative(IntPtr nativeBuffer, int arrayIndex)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine("	InterfaceData interfaceData = BlittableMarshaller<InterfaceData>.FromNative(nativeBuffer, arrayIndex);");
-        stringBuilder.AppendLine("	CoreUObject.Object unrealObject = ObjectMarshaller<CoreUObject.Object>.FromNative(interfaceData.ObjectPointer, 0);");
+        stringBuilder.AppendLine("	CoreUObject.UObject unrealObject = ObjectMarshaller<CoreUObject.UObject>.FromNative(interfaceData.ObjectPointer, 0);");
         stringBuilder.AppendLine($"	return unrealObject as {interfaceName};");
         stringBuilder.CloseBrace();
         stringBuilder.CloseBrace();

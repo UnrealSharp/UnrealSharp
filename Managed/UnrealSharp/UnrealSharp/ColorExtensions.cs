@@ -7,9 +7,9 @@ namespace UnrealSharp;
 
 public static class ColorExtensions
 {
-    public static LinearColor ToLinearColor(this Color a)
+    public static FLinearColor ToLinearColor(this Color a)
     {
-        var result = new LinearColor
+        var result = new FLinearColor
         {
             R = a.R,
             G = a.G,
@@ -19,9 +19,9 @@ public static class ColorExtensions
         return result;
     }
     
-    public static SlateColor ToSlateColor(this LinearColor a)
+    public static FSlateColor ToSlateColor(this FLinearColor a)
     {
-        var result = new SlateColor();
+        var result = new FSlateColor();
         result.SpecifiedColor.R = a.R;
         result.SpecifiedColor.G = a.G;
         result.SpecifiedColor.B = a.B;

@@ -1,3 +1,4 @@
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -6,7 +7,7 @@ namespace UnrealSharp;
 /// Holds a soft reference to a class. Useful for holding a reference to a class that may be unloaded.
 /// </summary>
 /// <typeparam name="T"> The type of the object. </typeparam>
-public struct SoftClass<T> where T : CoreUObject.Object
+public struct TSoftClassPtr<T> where T : UObject
 {
     private PersistentObjectPtr _softObjectPtr;
     
@@ -18,18 +19,18 @@ public struct SoftClass<T> where T : CoreUObject.Object
     /// <summary>
     /// The class of the object.
     /// </summary>
-    public SubclassOf<T> Class => Get();
+    public TSubclassOf<T> Class => Get();
     
-    public SoftClass(Type obj) : this(new SubclassOf<T>(obj)) {}
+    public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj)) {}
     
-    public SoftClass(SubclassOf<T> obj)
+    public TSoftClassPtr(TSubclassOf<T> obj)
     {
         TPersistentObjectPtrExporter.CallFromObject(ref _softObjectPtr.PersistentObjectPtrData, obj.NativeClass);
     }
     
-    private SubclassOf<T> Get()
+    private TSubclassOf<T> Get()
     {
         IntPtr nativeClass = TPersistentObjectPtrExporter.CallGetNativePointer(ref _softObjectPtr.PersistentObjectPtrData);
-        return new SubclassOf<T>(nativeClass);
+        return new TSubclassOf<T>(nativeClass);
     }
 }

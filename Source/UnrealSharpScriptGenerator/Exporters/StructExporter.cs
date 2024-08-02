@@ -90,11 +90,11 @@ public static class StructExporter
         List<string> reservedNames = new();
         foreach (UhtProperty property in properties)
         {
-            if (reservedNames.Contains(property.EngineName))
+            if (reservedNames.Contains(property.SourceName))
             {
                 continue;
             }
-            reservedNames.Add(property.EngineName);
+            reservedNames.Add(property.SourceName);
         }
         return reservedNames;
     }
@@ -138,9 +138,9 @@ public static class StructExporter
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             string scriptName = property.GetPropertyName(reservedNames);
             string assignmentOrReturn = $"{scriptName} =";
-            string offsetName = $"{property.EngineName}_Offset";
+            string offsetName = $"{property.SourceName}_Offset";
             builder.TryAddWithEditor(property);
-            translator.ExportFromNative(builder, property, property.EngineName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
+            translator.ExportFromNative(builder, property, property.SourceName, assignmentOrReturn, "InNativeStruct", offsetName, false, false);
             builder.TryEndWithEditor(property);
         }
         
@@ -156,9 +156,9 @@ public static class StructExporter
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             string scriptName = property.GetPropertyName(reservedNames);
-            string offsetName = $"{property.EngineName}_Offset";
+            string offsetName = $"{property.SourceName}_Offset";
             builder.TryAddWithEditor(property);
-            translator.ExportToNative(builder, property, property.EngineName, "buffer", offsetName, scriptName);
+            translator.ExportToNative(builder, property, property.SourceName, "buffer", offsetName, scriptName);
             builder.TryEndWithEditor(property);
         }
         

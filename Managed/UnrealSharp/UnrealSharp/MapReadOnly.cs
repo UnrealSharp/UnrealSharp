@@ -1,9 +1,9 @@
 ﻿namespace UnrealSharp;
 
-public class MapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
+public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
 {
     /// <inheritdoc />
-    public MapReadOnly(IntPtr mapProperty, IntPtr address,
+    public TMapReadOnly(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
         : base(mapProperty, address, keyFromNative, null, valueFromNative, null)
     {

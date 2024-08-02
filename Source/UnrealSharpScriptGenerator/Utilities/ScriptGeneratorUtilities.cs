@@ -93,22 +93,6 @@ public static class ScriptGeneratorUtilities
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
     
-    public static bool IsChildOf(this UhtStruct? type, string parentClassName)
-    {
-        UhtStruct? currentType = type;
-        while (currentType != null)
-        {
-            if (currentType.EngineName == parentClassName)
-            {
-                return true;
-            }
-            
-            currentType = currentType.SuperStruct;
-        }
-        
-        return false;
-    }
-    
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)
     {
         if (!structObj.Properties.Any())

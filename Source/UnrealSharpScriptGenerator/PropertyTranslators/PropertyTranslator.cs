@@ -122,7 +122,7 @@ public abstract class PropertyTranslator
         
         string propertyName = property.GetPropertyName(reservedNames);
         
-        ExportPropertyVariables(builder, property, property.EngineName);
+        ExportPropertyVariables(builder, property, property.SourceName);
         builder.AppendLine();
         
         string protection = property.GetProtection();
@@ -134,14 +134,14 @@ public abstract class PropertyTranslator
 
         builder.AppendLine("get");
         builder.OpenBrace();
-        ExportPropertyGetter(builder, property, property.EngineName);
+        ExportPropertyGetter(builder, property, property.SourceName);
         builder.CloseBrace();
 
         if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
         {
             builder.AppendLine("set");
             builder.OpenBrace();
-            ExportPropertySetter(builder, property, property.EngineName);
+            ExportPropertySetter(builder, property, property.SourceName);
             builder.CloseBrace();
         }
         
@@ -159,7 +159,7 @@ public abstract class PropertyTranslator
         
         if (!suppressOffsets)
         {
-            ExportPropertyVariables(builder, property, property.EngineName);
+            ExportPropertyVariables(builder, property, property.SourceName);
         }
         
         string protection = property.GetProtection();

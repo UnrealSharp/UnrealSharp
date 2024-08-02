@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -14,7 +15,7 @@ public struct WeakObjectData
 /// A weak reference to an Unreal Engine UObject.
 /// </summary>
 /// <typeparam name="T">The type of object that this weak object points to.</typeparam>
-public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObject
+public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
 {
     internal readonly WeakObjectData Data;
     
@@ -23,24 +24,24 @@ public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObj
     /// </summary>
     public T? Object => Get();
     
-    public WeakObject(T obj)
+    public TWeakObject(T obj)
     { 
         FWeakObjectPtrExporter.CallSetObject(ref Data, obj?.NativeObject ?? IntPtr.Zero);
     }
     
-    internal WeakObject(WeakObjectData data)
+    internal TWeakObject(WeakObjectData data)
     {
         Data = data;
     }
     
-    internal WeakObject(CoreUObject.Object targetObject)
+    internal TWeakObject(UObject targetObject)
     {
         FWeakObjectPtrExporter.CallSetObject(ref Data, targetObject.NativeObject);
     }
     
-    public static implicit operator WeakObject<T>(T obj)
+    public static implicit operator TWeakObject<T>(T obj)
     {
-        return new WeakObject<T>(obj);
+        return new TWeakObject<T>(obj);
     }
     
     private T? Get()
@@ -82,7 +83,7 @@ public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObj
     /// <inheritdoc />
     public override bool Equals(object obj)
     {
-        if (obj is WeakObject<T> other)
+        if (obj is TWeakObject<T> other)
         {
             return Equals(other);
         }
@@ -91,7 +92,7 @@ public struct WeakObject<T> : IEquatable<WeakObject<T>> where T : UnrealSharpObj
     }
 
     /// <inheritdoc />
-    public bool Equals(WeakObject<T> other)
+    public bool Equals(TWeakObject<T> other)
     {
         return FWeakObjectPtrExporter.CallNativeEquals(Data, other.Data).ToManagedBool();
     }

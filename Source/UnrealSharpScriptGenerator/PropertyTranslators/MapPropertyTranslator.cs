@@ -117,8 +117,8 @@ public class MapPropertyTranslator : PropertyTranslator
 
         string marshaller = GetMarshaller(mapProperty);
 
-        builder.AppendLine($"{property.EngineName}_Marshaller ??= new {marshaller}(1, {property.EngineName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
-        builder.AppendLine($"return {property.EngineName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.EngineName}_Offset), 0);");
+        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}(1, {property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"return {property.SourceName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.SourceName}_Offset), 0);");
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,
@@ -133,7 +133,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
         if (property.Outer is UhtFunction function)
         {
-            string nativeMethodName = function.EngineName;
+            string nativeMethodName = function.SourceName;
             nativePropertyName = $"{nativeMethodName}_{nativePropertyName}";
             marshaller = $"{nativeMethodName}_{marshaller}";
         }
@@ -171,7 +171,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
        if (property.Outer is UhtFunction function)
        {
-           string nativeMethodName = function.EngineName;
+           string nativeMethodName = function.SourceName;
            nativePropertyName = $"{nativeMethodName}_{nativePropertyName}";
            marshaller = $"{nativeMethodName}_{marshaller}";
        }

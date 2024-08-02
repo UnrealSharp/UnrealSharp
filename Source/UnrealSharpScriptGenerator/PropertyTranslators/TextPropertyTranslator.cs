@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class TextPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public TextPropertyTranslator() : base(typeof(UhtTextProperty), "Text")
+    public TextPropertyTranslator() : base(typeof(UhtTextProperty), "FText")
     {
     }
     
@@ -14,13 +14,13 @@ public class TextPropertyTranslator : BlittableTypePropertyTranslator
     
     public override string GetNullValue(UhtProperty property)
     {
-        return "Text.None";
+        return "FText.None";
     }
 
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
-        builder.AppendLine($"Text {variableName} = Text.None;");
+        builder.AppendLine($"FText {variableName} = FText.None;");
     }
 
     public override string GetMarshaller(UhtProperty property)

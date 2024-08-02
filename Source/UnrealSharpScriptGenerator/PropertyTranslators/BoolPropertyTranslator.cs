@@ -1,5 +1,4 @@
-﻿using System;
-using EpicGames.UHT.Types;
+﻿using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 

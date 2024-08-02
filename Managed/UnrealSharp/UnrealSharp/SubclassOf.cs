@@ -8,7 +8,7 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T">The base class that the subclass must inherit from.</typeparam>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct SubclassOf<T> 
+public readonly struct TSubclassOf<T> 
 {
     internal IntPtr NativeClass { get; }
     private Type ManagedType { get; }
@@ -18,11 +18,11 @@ public readonly struct SubclassOf<T>
     /// </summary>
     public bool Valid => IsChildOf(typeof(T));
     
-    public SubclassOf() : this(typeof(T))
+    public TSubclassOf() : this(typeof(T))
     {
     }
     
-    public SubclassOf(Type classType)
+    public TSubclassOf(Type classType)
     {
         if (classType == null)
         {
@@ -58,7 +58,7 @@ public readonly struct SubclassOf<T>
         }
     }
     
-    internal SubclassOf(IntPtr nativeClass)
+    internal TSubclassOf(IntPtr nativeClass)
     {
         if (nativeClass == IntPtr.Zero)
         {
@@ -86,14 +86,14 @@ public readonly struct SubclassOf<T>
     /// <typeparam name="TChildClass">The type to cast the class to.</typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown if the class is not a subclass of the specified type.</exception>
-    public SubclassOf<TChildClass> As<TChildClass>()
+    public TSubclassOf<TChildClass> As<TChildClass>()
     {
         if (!IsChildOf(typeof(TChildClass)))
         {
             throw new InvalidOperationException();
         }
 
-        return new SubclassOf<TChildClass>(NativeClass);
+        return new TSubclassOf<TChildClass>(NativeClass);
     }
 
     /// <summary>
@@ -116,15 +116,15 @@ public readonly struct SubclassOf<T>
         return ManagedType != null && ManagedType.IsAssignableFrom(type);
     }
     
-    public static implicit operator SubclassOf<T>(Type inClass)
+    public static implicit operator TSubclassOf<T>(Type inClass)
     {
-        return new SubclassOf<T>(inClass);
+        return new TSubclassOf<T>(inClass);
     }
 
     /// <inheritdoc />
     public override bool Equals(object obj)
     {
-        return obj is SubclassOf<T> other && NativeClass == other.NativeClass;
+        return obj is TSubclassOf<T> other && NativeClass == other.NativeClass;
     }
 
     /// <inheritdoc />
@@ -133,12 +133,12 @@ public readonly struct SubclassOf<T>
         return NativeClass.GetHashCode();
     }
 
-    public static bool operator ==(SubclassOf<T> left, SubclassOf<T> right)
+    public static bool operator ==(TSubclassOf<T> left, TSubclassOf<T> right)
     {
         return left.Equals(right);
     }
 
-    public static bool operator !=(SubclassOf<T> left, SubclassOf<T> right)
+    public static bool operator !=(TSubclassOf<T> left, TSubclassOf<T> right)
     {
         return !(left == right);
     }
@@ -151,14 +151,14 @@ public readonly struct SubclassOf<T>
 
 public static class SubclassOfMarshaller<T>
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, SubclassOf<T> obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSubclassOf<T> obj)
     {
         BlittableMarshaller<IntPtr>.ToNative(nativeBuffer, arrayIndex, obj.NativeClass);
     }
 
-    public static SubclassOf<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public static TSubclassOf<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         IntPtr nativeClassPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
-        return new SubclassOf<T>(nativeClassPointer);
+        return new TSubclassOf<T>(nativeClassPointer);
     }
 }

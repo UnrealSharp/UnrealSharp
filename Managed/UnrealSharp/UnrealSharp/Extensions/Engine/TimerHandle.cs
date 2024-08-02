@@ -4,7 +4,7 @@ using UnrealSharp.Attributes;
 namespace UnrealSharp.Engine;
 
 [UStruct, BlittableType, StructLayout(LayoutKind.Sequential)]
-public partial struct TimerHandle
+public partial struct FTimerHandle
 {
     private const uint IndexBits = 24;
     private const uint SerialNumberBits = 40;
@@ -14,7 +14,7 @@ public partial struct TimerHandle
     
     private ulong Handle;
 
-    public TimerHandle()
+    public FTimerHandle()
     {
         Handle = 0;
     }
@@ -26,7 +26,7 @@ public partial struct TimerHandle
 
     public override bool Equals(object? obj)
     {
-        if (obj is TimerHandle other)
+        if (obj is FTimerHandle other)
         {
             return Handle == other.Handle;
         }
@@ -38,12 +38,12 @@ public partial struct TimerHandle
         return Handle.GetHashCode();
     }
 
-    public static bool operator ==(TimerHandle left, TimerHandle right)
+    public static bool operator ==(FTimerHandle left, FTimerHandle right)
     {
         return left.Handle == right.Handle;
     }
 
-    public static bool operator !=(TimerHandle left, TimerHandle right)
+    public static bool operator !=(FTimerHandle left, FTimerHandle right)
     {
         return left.Handle != right.Handle;
     }

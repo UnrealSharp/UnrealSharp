@@ -70,7 +70,7 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            string functionName = function.EngineName;
+            string functionName = function.SourceName;
             
             generatorStringBuilder.TryAddWithEditor(function);
             generatorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
@@ -87,7 +87,7 @@ public static class StaticConstructorUtilities
                     }
 
                     PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.EngineName, functionName);
+                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
                 }
             }
             generatorStringBuilder.TryEndWithEditor(function);
@@ -104,7 +104,7 @@ public static class StaticConstructorUtilities
             }
             
             generatorStringBuilder.TryAddWithEditor(function);
-            string functionName = function.EngineName;
+            string functionName = function.SourceName;
             
             generatorStringBuilder.AppendLine($"IntPtr {functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
@@ -117,7 +117,7 @@ public static class StaticConstructorUtilities
                 }
                 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.EngineName, functionName);
+                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
             }
             
             generatorStringBuilder.TryEndWithEditor(function);
@@ -130,7 +130,7 @@ public static class StaticConstructorUtilities
         {
             generatorStringBuilder.TryAddWithEditor(property);
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.EngineName);
+            translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.SourceName);
             generatorStringBuilder.TryEndWithEditor(property);
         }
     }

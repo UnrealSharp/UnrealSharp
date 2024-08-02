@@ -41,8 +41,8 @@ public class ClassExtenderGenerator : ISourceGenerator
             return;
         }
         
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.Actor")!, new ActorExtensionGenerator());
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.ActorComponent")!, new ActorComponentExtensionGenerator());
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.AActor")!, new ActorExtensionGenerator());
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.UActorComponent")!, new ActorComponentExtensionGenerator());
     }
 
     public void Execute(GeneratorExecutionContext context)

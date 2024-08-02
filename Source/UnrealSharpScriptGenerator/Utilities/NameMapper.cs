@@ -40,7 +40,7 @@ public static class NameMapper
         {
             if (exportedProperty != property && scriptName == ScriptifyName(exportedProperty.GetScriptName(), ENameType.Parameter))
             {
-                return PascalToCamelCase(exportedProperty.EngineName);
+                return PascalToCamelCase(exportedProperty.SourceName);
             }
         }
         
@@ -50,7 +50,7 @@ public static class NameMapper
     public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
     {
         string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property, reservedNames);
-        if (property.Outer!.EngineName == propertyName || IsAKeyword(propertyName))
+        if (property.Outer!.SourceName == propertyName || IsAKeyword(propertyName))
         {
             propertyName = $"K2_{propertyName}";
         }
@@ -59,19 +59,12 @@ public static class NameMapper
     
     public static string GetStructName(this UhtType type)
     {
-        if (type is UhtEnum)
-        {
-            return type.SourceName;
-        }
-
-        string scriptName = type.GetScriptName();
-
         if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == Program.Factory.Session.UInterface)
         {
-            scriptName = $"I{scriptName}";
+            return "I" + type.EngineName;
         }
         
-        return scriptName;
+        return type.GetScriptName();
     }
     
     public static string GetFullManagedName(this UhtType type)
@@ -81,12 +74,16 @@ public static class NameMapper
     
     private static string GetScriptName(this UhtType type)
     {
-        string scriptName = type.GetMetadata("ScriptName");
-        if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
+        if (type is UhtClass uhtClass && uhtClass.IsChildOf(Program.BlueprintFunctionLibrary))
         {
-            scriptName = type.EngineName;
+            string scriptName = type.GetMetadata("ScriptName");
+            if (!string.IsNullOrEmpty(scriptName) && !scriptName.Contains(' '))
+            {
+                return scriptName;
+            }  
         }
-        return scriptName;
+
+        return type.SourceName;
     }
 
     private static string GetScriptName(this UhtFunction function)
@@ -99,7 +96,7 @@ public static class NameMapper
         string scriptMethod = function.GetMetadata("ScriptMethod");
         if (string.IsNullOrEmpty(scriptMethod) || scriptMethod.Contains(' ') || scriptMethod.Contains(';'))
         {
-            scriptMethod = function.EngineName;
+            scriptMethod = function.SourceName;
         }
         return scriptMethod;
     }
@@ -156,13 +153,13 @@ public static class NameMapper
         
         foreach (UhtFunction exportedFunction in classObj.Functions)
         {
-            if (exportedFunction != function && functionName == exportedFunction.EngineName)
+            if (exportedFunction != function && functionName == exportedFunction.SourceName)
             {
-                return function.EngineName;
+                return function.SourceName;
             }
         } 
             
-        if (classObj.EngineName == functionName)
+        if (classObj.SourceName == functionName)
         {
             return "K2_" + functionName;
         }

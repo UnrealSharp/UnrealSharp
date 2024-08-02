@@ -9,7 +9,7 @@ public class SoftClassPropertyTranslator : SoftObjectPropertyTranslator
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty)property;
         string fullName = softClassProperty.Class.GetFullManagedName();
-        return $"SoftClass<{fullName}>";
+        return $"TSoftClassPtr<{fullName}>";
     }
     
     public override bool CanExport(UhtProperty property)

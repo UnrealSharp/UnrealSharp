@@ -1,5 +1,5 @@
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
-using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
@@ -7,7 +7,7 @@ namespace UnrealSharp;
 /// Holds a soft reference to an object. Useful for holding a reference to an object that may be unloaded.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public struct SoftObject<T> where T : Object
+public struct TSoftObjectPtr<T> where T : UObject
 {
     internal PersistentObjectPtr SoftObjectPtr; 
     
@@ -21,17 +21,17 @@ public struct SoftObject<T> where T : Object
     /// </summary>
     public T? Object => Get();
     
-    public SoftObject(Object obj)
+    public TSoftObjectPtr(UObject obj)
     {
         SoftObjectPtr = new PersistentObjectPtr(obj);
     }
     
-    public SoftObject()
+    public TSoftObjectPtr()
     {
         
     }
     
-    internal SoftObject(PersistentObjectPtrData data)
+    internal TSoftObjectPtr(PersistentObjectPtrData data)
     {
         SoftObjectPtr = new PersistentObjectPtr(data);
     }
@@ -53,16 +53,16 @@ public struct SoftObject<T> where T : Object
     }
 };
 
-public static class SoftObjectMarshaller<T> where T : Object
+public static class SoftObjectMarshaller<T> where T : UObject
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, SoftObject<T> obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {
         BlittableMarshaller<PersistentObjectPtrData>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.PersistentObjectPtrData);
     }
     
-    public static SoftObject<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
     {
-        return new SoftObject<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex));
+        return new TSoftObjectPtr<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex));
     }
 }
 

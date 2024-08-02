@@ -17,7 +17,7 @@ public static class FileExporter
         UhtPackage package = type.Package;
         string directory = GetDirectoryPath(package);
         string text = stringBuilder.ToString();
-        fileName = string.IsNullOrEmpty(fileName) ? type.EngineName : fileName;
+        fileName = string.IsNullOrEmpty(fileName) ? type.SourceName : fileName;
         SaveGlueToDisk(directory, fileName, text, package);
     }
     

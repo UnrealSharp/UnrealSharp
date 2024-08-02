@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
-using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
@@ -9,15 +9,15 @@ public struct DelegateData
 {
     public ulong Storage;
     public WeakObjectData Object;
-    public Name FunctionName;
+    public FName FunctionName;
 }
 
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     private DelegateData _data;
     
-    public WeakObject<CoreUObject.Object> TargetObject => new(_data.Object);
-    public Name FunctionName => _data.FunctionName;
+    public TWeakObject<UObject> TargetObject => new(_data.Object);
+    public FName FunctionName => _data.FunctionName;
     
     public Delegate()
     {
@@ -28,7 +28,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         _data = data;
     }
     
-    public Delegate(CoreUObject.Object targetObject, Name functionName)
+    public Delegate(UObject targetObject, FName functionName)
     {
         _data = new DelegateData
         {
@@ -61,17 +61,17 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         return targetObject.Equals(TargetObject.Object);
     }
 
-    public bool IsBoundTo(Object targetObject, Name functionName)
+    public bool IsBoundTo(UObject targetObject, FName functionName)
     {
         return targetObject.Equals(TargetObject.Object) && FunctionName == functionName;
     }
 
-    public override void BindUFunction(Object targetObject, Name functionName)
+    public override void BindUFunction(UObject targetObject, FName functionName)
     {
-        BindUFunction(new WeakObject<Object>(targetObject), functionName);
+        BindUFunction(new TWeakObject<UObject>(targetObject), functionName);
     }
 
-    public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
+    public override void BindUFunction(TWeakObject<UObject> targetObject, FName functionName)
     {
         _data.Object = targetObject.Data;
         _data.FunctionName = functionName;
@@ -83,20 +83,23 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         {
             throw new InvalidOperationException($"A singlecast delegate can only be bound to one handler at a time. Unbind it first before binding a new handler.");
         }
-        if (handler.Target is not Object targetObject)
+        
+        if (handler.Target is not UObject targetObject)
         {
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
-        _data.Object = new WeakObject<Object>(targetObject).Data;
-        _data.FunctionName = new Name(handler.Method.Name);
+        
+        _data.Object = new TWeakObject<UObject>(targetObject).Data;
+        _data.FunctionName = new FName(handler.Method.Name);
     }
 
     public void Remove(TDelegate handler)
     {
-        if (handler.Target is not Object targetObject)
+        if (handler.Target is not UObject targetObject)
         {
             return;
         }
+        
         if (!IsBoundTo(targetObject, handler.Method.Name))
         {
             return;

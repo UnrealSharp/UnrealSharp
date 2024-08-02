@@ -368,7 +368,7 @@ public class FunctionExporter
                 continue;
             }
             
-            string paramName = parameter.EngineName;
+            string paramName = parameter.SourceName;
             string paramType = PropertyTranslatorManager.GetTranslator(parameter)!.GetManagedType(parameter);
             
             string refQualifier = "";
@@ -405,7 +405,7 @@ public class FunctionExporter
         
         builder.AppendLine("// Hide implementation function from Intellisense");
         builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
+        builder.AppendLine($"internal virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         builder.OpenBrace();
         
         foreach (UhtProperty parameter in function.Properties)
@@ -414,7 +414,7 @@ public class FunctionExporter
                 && !parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm | EPropertyFlags.ReferenceParm))
             {
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
-                string paramName = parameter.EngineName;
+                string paramName = parameter.SourceName;
                 string nullValue = translator.GetNullValue(parameter);
                 builder.AppendLine($"{paramName} = {nullValue};");
             }
@@ -445,13 +445,13 @@ public class FunctionExporter
             }
             else if (!parameter.HasAnyFlags(EPropertyFlags.ConstParm) && parameter.HasAnyFlags(EPropertyFlags.OutParm))
             {
-                builder.AppendLine($"{paramType} {parameter.EngineName} = default;");
+                builder.AppendLine($"{paramType} {parameter.SourceName} = default;");
             }
             else
             {
-                string assignmentOrReturn = $"{paramType} {parameter.EngineName} = ";
-                string offsetName = $"{function.EngineName}_{parameter.EngineName}_Offset";
-                translator.ExportFromNative(builder, parameter, parameter.EngineName, assignmentOrReturn, "buffer", offsetName, false, false);
+                string assignmentOrReturn = $"{paramType} {parameter.SourceName} = ";
+                string offsetName = $"{function.SourceName}_{parameter.SourceName}_Offset";
+                translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer", offsetName, false, false);
             }
         }
         
@@ -460,7 +460,7 @@ public class FunctionExporter
         if (function.ReturnProperty != null)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!;
-            translator.ExportToNative(builder, function.ReturnProperty, function.ReturnProperty.EngineName, "returnBuffer", "0", "returnValue");
+            translator.ExportToNative(builder, function.ReturnProperty, function.ReturnProperty.SourceName, "returnBuffer", "0", "returnValue");
         }
         
         foreach (UhtProperty parameter in function.Properties)
@@ -468,8 +468,8 @@ public class FunctionExporter
             if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm) && parameter.HasAnyFlags(EPropertyFlags.OutParm))
             {
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
-                string offsetName = $"{function.EngineName}_{parameter.EngineName}_Offset";
-                translator.ExportToNative(builder, parameter, parameter.EngineName, "buffer", offsetName, parameter.EngineName);
+                string offsetName = $"{function.SourceName}_{parameter.SourceName}_Offset";
+                translator.ExportToNative(builder, parameter, parameter.SourceName, "buffer", offsetName, parameter.SourceName);
             }
         }
         
@@ -541,19 +541,19 @@ public class FunctionExporter
 
     void ExportFunctionVariables(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"// {_function.EngineName}");
+        builder.AppendLine($"// {_function.SourceName}");
         
         string staticDeclaration = BlueprintEvent ? "" : "static ";
-        builder.AppendLine($"{staticDeclaration}IntPtr {_function.EngineName}_NativeFunction;");
+        builder.AppendLine($"{staticDeclaration}IntPtr {_function.SourceName}_NativeFunction;");
         
         if (_function.HasParametersOrReturnValue())
         {
-            builder.AppendLine($"static int {_function.EngineName}_ParamsSize;");
+            builder.AppendLine($"static int {_function.SourceName}_ParamsSize;");
         }
         
         ForEachParameter((translator, parameter) =>
         {
-            translator.ExportParameterVariables(builder, _function, _function.EngineName, parameter, parameter.EngineName);
+            translator.ExportParameterVariables(builder, _function, _function.SourceName, parameter, parameter.SourceName);
         });
     }
 
@@ -598,7 +598,7 @@ public class FunctionExporter
 
     void ExportInvoke(GeneratorStringBuilder builder)
     {
-        string nativeFunctionIntPtr = $"{_function.EngineName}_NativeFunction";
+        string nativeFunctionIntPtr = $"{_function.SourceName}_NativeFunction";
 
         if (BlueprintEvent)
         {
@@ -621,7 +621,7 @@ public class FunctionExporter
         }
         else
         {
-            builder.AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{_function.EngineName}_ParamsSize];");
+            builder.AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{_function.SourceName}_ParamsSize];");
             builder.AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
             builder.AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({nativeFunctionIntPtr}, ParamsBuffer);");
             
@@ -636,8 +636,8 @@ public class FunctionExporter
                 
                 if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm) || !parameter.HasAllFlags(EPropertyFlags.OutParm))
                 {
-                    string offsetName = $"{_function.EngineName}_{parameter.EngineName}_Offset";
-                    translator.ExportToNative(builder, parameter, parameter.EngineName, "ParamsBuffer", offsetName, propertyName);
+                    string offsetName = $"{_function.SourceName}_{parameter.SourceName}_Offset";
+                    translator.ExportToNative(builder, parameter, parameter.SourceName, "ParamsBuffer", offsetName, propertyName);
                 }
             });
             
@@ -678,10 +678,10 @@ public class FunctionExporter
 
                     translator.ExportFromNative(builder,
                         parameter,
-                        parameter.EngineName,
+                        parameter.SourceName,
                         $"{marshalDestination} =",
                         "ParamsBuffer",
-                        $"{_function.EngineName}_{parameter.EngineName}_Offset",
+                        $"{_function.SourceName}_{parameter.SourceName}_Offset",
                         true,
                         parameter.HasAllFlags(EPropertyFlags.ReferenceParm) &&
                         !parameter.HasAllFlags(EPropertyFlags.ReturnParm));
@@ -694,7 +694,7 @@ public class FunctionExporter
             {
                 if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.OutParm))
                 {
-                    translator.ExportCleanupMarshallingBuffer(builder, parameter, parameter.EngineName);
+                    translator.ExportCleanupMarshallingBuffer(builder, parameter, parameter.SourceName);
                 }
             });
             
@@ -735,7 +735,7 @@ public class FunctionExporter
                 // Remove nested quotes
                 deprecationMessage = deprecationMessage.Replace("\"", "");
             }
-            builder.AppendLine($"[Obsolete(\"{_function.EngineName} is deprecated: {deprecationMessage}\")]");
+            builder.AppendLine($"[Obsolete(\"{_function.SourceName} is deprecated: {deprecationMessage}\")]");
         }
     }
 

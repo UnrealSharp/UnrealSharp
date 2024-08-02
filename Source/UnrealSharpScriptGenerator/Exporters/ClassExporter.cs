@@ -82,7 +82,7 @@ public static class ClassExporter
         
         foreach (UhtProperty property in properties)
         {
-            AddReservedName(NameMapper.ScriptifyName(property.EngineName, ENameType.Property));
+            AddReservedName(NameMapper.ScriptifyName(property.SourceName, ENameType.Property));
         }
         foreach (UhtFunction function in overrideFunctions)
         {

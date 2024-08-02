@@ -49,7 +49,7 @@ public static class DelegateExporter
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
     {
-        string delegateName = function.EngineName;
+        string delegateName = function.SourceName;
         builder.AppendLine($"{delegateName}_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);");
         if (function.HasParameters)
         {
@@ -59,7 +59,7 @@ public static class DelegateExporter
         foreach (UhtProperty parameter in function.Properties)
         {
             PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(parameter)!;
-            propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, parameter.EngineName, delegateName);
+            propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, parameter.SourceName, delegateName);
         }
     }
 }

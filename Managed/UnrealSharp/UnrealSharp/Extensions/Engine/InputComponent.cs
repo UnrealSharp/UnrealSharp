@@ -1,10 +1,9 @@
-﻿using UnrealSharp.Interop;
-using UnrealSharp.SlateCore;
-using Object = UnrealSharp.CoreUObject.Object;
+﻿using UnrealSharp.CoreUObject;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp.Engine;
 
-public partial class InputComponent
+public partial class UInputComponent
 {
     /// <summary>
     /// Bind an action to an input event.
@@ -16,7 +15,7 @@ public partial class InputComponent
     /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
     public void BindAction(string actionName, EInputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
     {
-        if (action.Target is Object unrealObject)
+        if (action.Target is UObject unrealObject)
         {
             UInputComponentExporter.CallBindAction(NativeObject, 
                 actionName, 
@@ -36,9 +35,9 @@ public partial class InputComponent
     /// <param name="action"> The action to bind with key signature. </param>
     /// <param name="consumeInput"> Whether the input should be consumed. </param>
     /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
-    public void BindAction(string actionName, EInputEvent inputEvent, Action<InputCore.Key> action, bool consumeInput = false, bool executeWhenPaused = false)
+    public void BindAction(string actionName, EInputEvent inputEvent, Action<InputCore.FKey> action, bool consumeInput = false, bool executeWhenPaused = false)
     {
-        if (action.Target is Object unrealObject)
+        if (action.Target is UObject unrealObject)
         {
             UInputComponentExporter.CallBindActionKeySignature(NativeObject, 
                 actionName, 
@@ -59,7 +58,7 @@ public partial class InputComponent
     /// <param name="executeWhenPaused"> Whether the action should execute when the game is paused. </param>
     public void BindAxis(string axisName, Action<float> action, bool consumeInput = false, bool executeWhenPaused = false)
     {
-        if (action.Target is Object unrealObject)
+        if (action.Target is UObject unrealObject)
         {
             UInputComponentExporter.CallBindAxis(NativeObject,
                 axisName, 

@@ -65,6 +65,8 @@ public static class WeaverHelper
     public static MethodReference GetSignatureFunction;
     public static MethodReference InitializeStructMethod;
     
+    public static TypeDefinition UObjectDefinition;
+    
     public static MethodReference BlittableTypeConstructor;
     
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
@@ -119,6 +121,8 @@ public static class WeaverHelper
         InvokeNativeFunctionMethod = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunction");
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
+        
+        UObjectDefinition = FindTypeInAssembly(BindingsAssembly, "UObject", CoreUObjectNamespace)!.Resolve();
         
         TypeReference? blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace);
         
@@ -923,7 +927,7 @@ public static class WeaverHelper
                 return false;
             }
             
-            if (typeDefinition.FullName == "UnrealSharp.CoreUObject.Object")
+            if (typeDefinition == UObjectDefinition)
             {
                 return true;
             }

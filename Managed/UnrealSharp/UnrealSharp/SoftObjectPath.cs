@@ -6,7 +6,7 @@ namespace UnrealSharp;
 [StructLayout(LayoutKind.Sequential)]
 public class SoftObjectPath
 {
-    private TopLevelAssetPath AssetPath;
+    private FTopLevelAssetPath AssetPath;
     private UnmanagedArray SubPathString;
     
     public override bool Equals(object? obj)

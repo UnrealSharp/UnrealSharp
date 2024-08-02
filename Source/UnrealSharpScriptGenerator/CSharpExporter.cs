@@ -65,7 +65,7 @@ public static class CSharpExporter
 
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.EngineName))
+        if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.SourceName))
         {
             return;
         }

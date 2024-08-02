@@ -1,8 +1,8 @@
 ﻿namespace UnrealSharp;
 
-public class Map<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>
+public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>
 {
-    public Map(IntPtr mapProperty, IntPtr address,
+    public TMap(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative keyToNative,
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative valueToNative)
         : base(mapProperty, address, keyFromNative, keyToNative, valueFromNative, valueToNative)
