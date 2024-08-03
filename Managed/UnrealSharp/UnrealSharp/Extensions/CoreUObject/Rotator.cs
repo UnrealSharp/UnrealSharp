@@ -4,6 +4,21 @@ namespace UnrealSharp.CoreUObject;
 
 public partial struct FRotator
 {
+    /// <summary>
+    /// Pitch (degrees) around Y axis
+    /// </summary>
+    public double Pitch;
+    
+    /// <summary>
+    /// Yaw (degrees) around Z axis
+    /// </summary>
+    public double Yaw;
+    
+    /// <summary>
+    /// Roll (degrees) around X axis
+    /// </summary>
+    public double Roll;
+    
     public bool Equals(FRotator other)
     {
         return Pitch.Equals(other.Pitch) && Yaw.Equals(other.Yaw) && Roll.Equals(other.Roll);
@@ -98,7 +113,7 @@ public partial struct FRotator
         return new FRotator
         {
             Pitch = rotator.Pitch * scale,
-            Yaw = rotator.Yaw * scale,
+             Yaw = rotator.Yaw * scale,
             Roll = rotator.Roll * scale
         };
     }

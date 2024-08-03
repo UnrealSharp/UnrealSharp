@@ -64,6 +64,7 @@ public static class PropertyTranslatorManager
         AddBlittableCustomStructPropertyTranslator("FVector4f", "System.Numerics.Vector4");
         AddBlittableCustomStructPropertyTranslator("FQuatf4", "System.Numerics.Quaternion");
         AddBlittableCustomStructPropertyTranslator("FMatrix44f", "System.Numerics.Matrix4x4");
+        AddBlittableCustomStructPropertyTranslator("FRotator", "UnrealSharp.CoreUObject.FRotator");
         
         AddBlittableCustomStructPropertyTranslator("FTimerHandle", "UnrealSharp.Engine.FTimerHandle");
         AddBlittableCustomStructPropertyTranslator("FInputActionValue", "UnrealSharp.EnhancedInput.FInputActionValue");

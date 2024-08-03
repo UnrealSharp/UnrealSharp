@@ -59,8 +59,8 @@ public static class ClassExporter
         List<string> reservedNames = GetReservedNames(exportedProperties, exportedOverrides, exportedFunctions);
         ExportClassProperties(stringBuilder, exportedProperties, reservedNames);
         
-        ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
-        ExportOverrides(stringBuilder, exportedOverrides);
+        ExportClassFunctions(classObj, stringBuilder, exportedFunctions, reservedNames);
+        ExportOverrides(stringBuilder, exportedOverrides, reservedNames);
         
         stringBuilder.AppendLine();
         stringBuilder.CloseBrace();
@@ -82,15 +82,15 @@ public static class ClassExporter
         
         foreach (UhtProperty property in properties)
         {
-            AddReservedName(NameMapper.ScriptifyName(property.SourceName, ENameType.Property));
+            AddReservedName(NameMapper.ScriptifyName(property.GetScriptName(), ENameType.Property));
         }
         foreach (UhtFunction function in overrideFunctions)
         {
-            AddReservedName(function.GetFunctionName());
+            AddReservedName(function.GetFunctionName(reservedNames));
         }
         foreach (UhtFunction function in functions)
         {
-            AddReservedName(function.GetFunctionName());
+            AddReservedName(function.GetFunctionName(reservedNames));
         }
         
         return reservedNames;
@@ -105,15 +105,15 @@ public static class ClassExporter
         }
     }
     
-    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides)
+    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides, List<string> reservedNames)
     {
         foreach (UhtFunction function in exportedOverrides)
         {
-            FunctionExporter.ExportOverridableFunction(builder, function);
+            FunctionExporter.ExportOverridableFunction(builder, function, reservedNames);
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions, List<string> reservedNames)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
@@ -123,7 +123,7 @@ public static class ClassExporter
                 FunctionExporter.TryAddExtensionMethod(function);
             }
             
-            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
+            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal, reservedNames);
         }
     }
 }

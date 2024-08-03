@@ -54,7 +54,7 @@ public static class NameMapper
         {
             propertyName = $"K2_{propertyName}";
         }
-        return propertyName;
+        return CheckIfConflictingNames(property, propertyName);
     }
     
     public static string GetStructName(this UhtType type)
@@ -64,7 +64,12 @@ public static class NameMapper
             return "I" + type.EngineName;
         }
         
-        return type.GetScriptName();
+        if (type is UhtClass uhtClass && uhtClass.IsChildOf(Program.BlueprintFunctionLibrary))
+        {
+            return type.GetScriptName();
+        }
+
+        return type.SourceName;
     }
     
     public static string GetFullManagedName(this UhtType type)
@@ -72,33 +77,36 @@ public static class NameMapper
         return $"{type.GetNamespace()}.{type.GetStructName()}";
     }
     
-    private static string GetScriptName(this UhtType type)
+    static readonly string[] MetadataKeys = { "ScriptName", "ScriptMethod", "DisplayName" };
+    public static string GetScriptName(this UhtType type)
     {
-        if (type is UhtClass uhtClass && uhtClass.IsChildOf(Program.BlueprintFunctionLibrary))
+        bool OnlyContainsLetters(string str)
         {
-            string scriptName = type.GetMetadata("ScriptName");
-            if (!string.IsNullOrEmpty(scriptName) && !scriptName.Contains(' '))
+            foreach (char c in str)
             {
-                return scriptName;
-            }  
-        }
-
-        return type.SourceName;
-    }
-
-    private static string GetScriptName(this UhtFunction function)
-    {
-        if (function.HasMetadata("ScriptName"))
-        {
-            return GetScriptName((UhtType)function);
+                if (!char.IsLetter(c) && !char.IsWhiteSpace(c))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         
-        string scriptMethod = function.GetMetadata("ScriptMethod");
-        if (string.IsNullOrEmpty(scriptMethod) || scriptMethod.Contains(' ') || scriptMethod.Contains(';'))
+        foreach (var key in MetadataKeys)
         {
-            scriptMethod = function.SourceName;
+            string value = type.GetMetadata(key);
+            
+            if (string.IsNullOrEmpty(value) || !OnlyContainsLetters(value))
+            {
+                continue;
+            }
+            
+            // Try remove whitespace from the value
+            value = value.Replace(" ", "");
+            return value;
         }
-        return scriptMethod;
+        
+        return type.SourceName;
     }
     
     public static string GetNamespace(this UhtType typeObj)
@@ -131,10 +139,9 @@ public static class NameMapper
         return $"UnrealSharp.{packageShortName}";
     }
     
-    public static string GetFunctionName(this UhtFunction function)
+    public static string GetFunctionName(this UhtFunction function, List<string> reservedNames)
     {
-        string scriptName = function.GetScriptName();
-        string functionName = ScriptifyName(scriptName, ENameType.Function);
+        string functionName = function.GetScriptName();
 
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {
@@ -151,20 +158,42 @@ public static class NameMapper
             return functionName;
         }
         
-        foreach (UhtFunction exportedFunction in classObj.Functions)
-        {
-            if (exportedFunction != function && functionName == exportedFunction.SourceName)
-            {
-                return function.SourceName;
-            }
-        } 
-            
-        if (classObj.SourceName == functionName)
-        {
-            return "K2_" + functionName;
-        }
+        functionName = CheckIfConflictingNames(function, functionName);
 
         return functionName;
+    }
+    
+    public static string CheckIfConflictingNames(UhtType type, string scriptName)
+    {
+        UhtType outer = type.Outer;
+        bool isConflicting = false;
+        foreach (UhtType child in outer.Children)
+        {
+            if (child == type)
+            {
+                continue;
+            }
+            
+            if (child is UhtProperty property)
+            {
+                if (scriptName == ScriptifyName(property.GetScriptName(), ENameType.Property))
+                {
+                    isConflicting = true;
+                    break;
+                }
+            }
+            
+            if (child is UhtFunction function)
+            {
+                if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function))
+                {
+                    isConflicting = true;
+                    break;
+                }
+            }
+        }
+        
+        return isConflicting ? type.EngineName : scriptName;
     }
 
     public static string ScriptifyName(string engineName, ENameType nameType)
@@ -217,6 +246,7 @@ public static class NameMapper
             if (inName.Length - nameOffset >= 2 && inName[nameOffset] == 'b' && char.IsUpper(inName[nameOffset + 1]))
             {
                 nameOffset += 1;
+                
                 continue;
             }
 

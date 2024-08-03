@@ -81,24 +81,24 @@ public class FunctionExporter
 
     private readonly List<FunctionOverload> _overloads = new();
 
-    public FunctionExporter(ExtensionMethod extensionMethod)
+    public FunctionExporter(ExtensionMethod extensionMethod, List<string> reservedNames)
     {
         _selfParameter = extensionMethod.SelfParameter;
         _function = extensionMethod.Function;
         _classBeingExtended = extensionMethod.Class;
         
-        Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+        Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call, reservedNames);
     }
 
-    private FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility) 
+    private FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility, List<string> reservedNames) 
     {
         _function = function;
-        Initialize(overloadMode, protectionMode, blueprintVisibility);
+        Initialize(overloadMode, protectionMode, blueprintVisibility, reservedNames);
     }
 
-    private void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility)
+    private void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility, List<string> reservedNames)
     {
-        _functionName = _function.GetFunctionName();
+        _functionName = _function.GetFunctionName(reservedNames);
         _overloadMode = overloadMode;
         _protectionMode = protectionMode;
         _blueprintVisibility = blueprintVisibility;
@@ -322,7 +322,7 @@ public class FunctionExporter
             })!);
         }
     }
-    public static void ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType)
+    public static void ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType, List<string> reservedNames)
     {
         EFunctionProtectionMode protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
         OverloadMode overloadMode = OverloadMode.AllowOverloads;
@@ -345,7 +345,7 @@ public class FunctionExporter
         
         builder.TryAddWithEditor(function);
         
-        FunctionExporter exporter = new FunctionExporter(function, overloadMode, protectionMode, blueprintVisibility);
+        FunctionExporter exporter = new FunctionExporter(function, overloadMode, protectionMode, blueprintVisibility, reservedNames);
         exporter.ExportFunctionVariables(builder);
         exporter.ExportOverloads(builder);
         exporter.ExportFunction(builder);
@@ -353,13 +353,13 @@ public class FunctionExporter
         builder.TryEndWithEditor(function);
     }
     
-    public static void ExportOverridableFunction(GeneratorStringBuilder builder, UhtFunction function)
+    public static void ExportOverridableFunction(GeneratorStringBuilder builder, UhtFunction function, List<string> reservedNames)
     {
         builder.TryAddWithEditor(function);
         
         string paramsStringApi = "";
         string paramsCallString = "";
-        string methodName = function.GetFunctionName();
+        string methodName = function.GetFunctionName(reservedNames);
 
         foreach (UhtProperty parameter in function.Properties)
         {
@@ -397,7 +397,7 @@ public class FunctionExporter
             paramsCallString = paramsCallString.Substring(0, paramsCallString.Length - 2);
         }
         
-        ExportFunction(builder, function, FunctionType.BlueprintEvent);
+        ExportFunction(builder, function, FunctionType.BlueprintEvent, reservedNames);
         
         string returnType = function.ReturnProperty != null
             ? PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!.GetManagedType(function.ReturnProperty)
@@ -483,8 +483,9 @@ public class FunctionExporter
 
     public static void ExportDelegateFunction(GeneratorStringBuilder builder, UhtFunction function)
     {
+        List<string> reservedNames = new();
         FunctionExporter exporter = new FunctionExporter(function, OverloadMode.SuppressOverloads,
-            EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call);
+            EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call, reservedNames);
         
         builder.AppendLine($"public delegate void Signature({exporter._paramStringApiWithDefaults});");
         builder.AppendLine();
@@ -501,8 +502,9 @@ public class FunctionExporter
     public static void ExportInterfaceFunction(GeneratorStringBuilder builder, UhtFunction function)
     {
         builder.TryAddWithEditor(function);
-        
-        FunctionExporter exporter = new FunctionExporter(function, OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+
+        List<string> reservedNames = new();
+        FunctionExporter exporter = new FunctionExporter(function, OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call, reservedNames);
         exporter.ExportSignature(builder, "public ");
         builder.Append(";");
     }
