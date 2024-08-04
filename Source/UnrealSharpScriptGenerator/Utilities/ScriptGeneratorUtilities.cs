@@ -176,8 +176,9 @@ public static class ScriptGeneratorUtilities
         }
     }
     
-    public static void GetInterfaces(UhtClass classObj, ref List<UhtType> interfaces)
+    public static List<UhtType> GetInterfaces(UhtClass classObj)
     {
+        List<UhtType> interfaces = new();
         foreach (UhtStruct interfaceClass in classObj.Bases)
         {
             UhtEngineType engineType = interfaceClass.EngineType;
@@ -186,6 +187,8 @@ public static class ScriptGeneratorUtilities
                 interfaces.Add(interfaceClass);
             }
         }
+        
+        return interfaces;
     }
     
     public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtType> interfaces, List<string> dependencies)

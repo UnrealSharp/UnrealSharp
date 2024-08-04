@@ -18,7 +18,7 @@ public static class ExtensionsClassExporter
         List<string> reservedNames = new();
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
-            FunctionExporter exporter = new FunctionExporter(extensionMethod, reservedNames);
+            FunctionExporter exporter = new FunctionExporter(extensionMethod);
             exporter.ExportExtensionMethod(stringBuilder);
         }
         

@@ -115,12 +115,12 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property, List<string> reservedNames)
+    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property)
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
         
-        string propertyName = property.GetPropertyName(reservedNames);
+        string propertyName = property.GetPropertyName();
         
         ExportPropertyVariables(builder, property, property.SourceName);
         builder.AppendLine();
@@ -152,7 +152,7 @@ public abstract class PropertyTranslator
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
     {
-        string propertyScriptName = property.GetPropertyName(reservedNames);
+        string propertyScriptName = property.GetPropertyName();
         
         builder.AppendLine($"// {propertyScriptName}");
         builder.AppendLine();
@@ -166,7 +166,7 @@ public abstract class PropertyTranslator
         string managedType = GetManagedType(property);
         builder.AppendTooltip(property);
         builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
-        builder.AppendLine(); ;
+        builder.AppendLine();
     }
     
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)

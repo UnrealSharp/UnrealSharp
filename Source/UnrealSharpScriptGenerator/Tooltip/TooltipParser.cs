@@ -176,9 +176,16 @@ public static class TooltipParser
         builder.Append("</returns>");
     }
 
-    public static void AppendTooltip(this GeneratorStringBuilder builder, UhtType property)
+    public static void AppendTooltip(this GeneratorStringBuilder builder, UhtType type)
     {
-        var toolTip = property.GetToolTipText();
+        string toolTip = type.GetToolTipText();
+        
+        // Skip if the tooltip is just the same as the source name. UHT automatically generates these.
+        if (toolTip == type.SourceName)
+        {
+            return;
+        }
+        
         AppendTooltip(builder, toolTip);
     }
 }

@@ -150,11 +150,8 @@ public class GeneratorStringBuilder : IDisposable
     
     public void GenerateTypeSkeleton(string typeNameSpace)
     {
-        DeclareDirective(ScriptGeneratorUtilities.EngineNamespace);
         DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
-        DeclareDirective("System.Runtime");
-        DeclareDirective("System.Runtime.InteropServices");
 
         AppendLine();
         AppendLine($"namespace {typeNameSpace};");
@@ -176,7 +173,7 @@ public class GeneratorStringBuilder : IDisposable
             }
         }
 
-        AppendLine($"public {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier} {interfacesDeclaration}");
+        AppendLine($"public {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier}{interfacesDeclaration}");
         OpenBrace();
     }
 }

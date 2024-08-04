@@ -33,9 +33,7 @@ public static class FunctionUtilities
         {
             classOwner = (UhtClass) classOwner.Super;
             
-            List<UhtType> interfaces = new();
-            ScriptGeneratorUtilities.GetInterfaces(classOwner, ref interfaces);
-            
+            List<UhtType> interfaces = ScriptGeneratorUtilities.GetInterfaces(classOwner);
             foreach (UhtType interfaceType in interfaces)
             {
                 if (interfaceType is UhtClass interfaceClass)

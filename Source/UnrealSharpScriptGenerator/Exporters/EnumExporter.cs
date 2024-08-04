@@ -25,7 +25,6 @@ public static class EnumExporter
         string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
         stringBuilder.DeclareType("enum", enumObj.GetStructName(), underlyingType, isPartial: false);
         
-        stringBuilder.Indent();
         int enumValuesCount = enumObj.EnumValues.Count;
         for (int i = 0; i < enumValuesCount; i++)
         {
@@ -39,8 +38,6 @@ public static class EnumExporter
             
             stringBuilder.AppendLine($"{cleanValueName}{value}");
         }
-        
-        stringBuilder.UnIndent();
         
         stringBuilder.CloseBrace();
         FileExporter.SaveGlueToDisk(enumObj, stringBuilder);

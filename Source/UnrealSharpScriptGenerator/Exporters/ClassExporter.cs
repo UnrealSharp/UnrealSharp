@@ -15,15 +15,14 @@ public static class ClassExporter
 
         string typeNameSpace = classObj.GetNamespace();
 
-        List<UhtProperty> exportedProperties = new();
+        List<UhtProperty> exportedProperties = new List<UhtProperty>();
         ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
+        
+        List<UhtType> interfaces = ScriptGeneratorUtilities.GetInterfaces(classObj);
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         ScriptGeneratorUtilities.GetExportedFunctions(classObj, ref exportedFunctions, ref exportedOverrides);
-
-        List<UhtType> interfaces = new();
-        ScriptGeneratorUtilities.GetInterfaces(classObj, ref interfaces);
 
         List<string> classDependencies = new();
         ScriptGeneratorUtilities.GatherDependencies(classObj, exportedFunctions, exportedOverrides, exportedProperties, interfaces, classDependencies);
@@ -56,64 +55,35 @@ public static class ClassExporter
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         
-        List<string> reservedNames = GetReservedNames(exportedProperties, exportedOverrides, exportedFunctions);
-        ExportClassProperties(stringBuilder, exportedProperties, reservedNames);
+        ExportClassProperties(stringBuilder, exportedProperties);
         
-        ExportClassFunctions(classObj, stringBuilder, exportedFunctions, reservedNames);
-        ExportOverrides(stringBuilder, exportedOverrides, reservedNames);
+        ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
+        ExportOverrides(stringBuilder, exportedOverrides);
         
         stringBuilder.AppendLine();
         stringBuilder.CloseBrace();
         
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
-    
-    public static List<string> GetReservedNames(List<UhtProperty> properties, List<UhtFunction> overrideFunctions, List<UhtFunction> functions)
-    {
-        List<string> reservedNames = new();
-        
-        void AddReservedName(string name)
-        {
-            if (!reservedNames.Contains(name))
-            {
-                reservedNames.Add(name);
-            }
-        }
-        
-        foreach (UhtProperty property in properties)
-        {
-            AddReservedName(NameMapper.ScriptifyName(property.GetScriptName(), ENameType.Property));
-        }
-        foreach (UhtFunction function in overrideFunctions)
-        {
-            AddReservedName(function.GetFunctionName(reservedNames));
-        }
-        foreach (UhtFunction function in functions)
-        {
-            AddReservedName(function.GetFunctionName(reservedNames));
-        }
-        
-        return reservedNames;
-    }
 
-    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties, List<string> reservedNames)
+    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportProperty(generatorStringBuilder, property, reservedNames);
+            translator.ExportProperty(generatorStringBuilder, property);
         }
     }
     
-    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides, List<string> reservedNames)
+    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides)
     {
         foreach (UhtFunction function in exportedOverrides)
         {
-            FunctionExporter.ExportOverridableFunction(builder, function, reservedNames);
+            FunctionExporter.ExportOverridableFunction(builder, function);
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions, List<string> reservedNames)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
@@ -123,7 +93,7 @@ public static class ClassExporter
                 FunctionExporter.TryAddExtensionMethod(function);
             }
             
-            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal, reservedNames);
+            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
         }
     }
 }

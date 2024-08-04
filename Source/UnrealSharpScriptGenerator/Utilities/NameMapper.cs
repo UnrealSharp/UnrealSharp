@@ -47,14 +47,14 @@ public static class NameMapper
         return scriptName;
     }
     
-    public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
+    public static string GetPropertyName(this UhtProperty property)
     {
-        string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property, reservedNames);
+        string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property);
         if (property.Outer!.SourceName == propertyName || IsAKeyword(propertyName))
         {
             propertyName = $"K2_{propertyName}";
         }
-        return CheckIfConflictingNames(property, propertyName);
+        return TryResolveConflictingName(property, propertyName);
     }
     
     public static string GetStructName(this UhtType type)
@@ -139,7 +139,7 @@ public static class NameMapper
         return $"UnrealSharp.{packageShortName}";
     }
     
-    public static string GetFunctionName(this UhtFunction function, List<string> reservedNames)
+    public static string GetFunctionName(this UhtFunction function)
     {
         string functionName = function.GetScriptName();
 
@@ -153,19 +153,19 @@ public static class NameMapper
             functionName = functionName.Replace("K2_", "");
         }
 
-        if (function.Outer is not UhtClass classObj)
+        if (function.Outer is not UhtClass)
         {
             return functionName;
         }
         
-        functionName = CheckIfConflictingNames(function, functionName);
+        functionName = TryResolveConflictingName(function, functionName);
 
         return functionName;
     }
     
-    public static string CheckIfConflictingNames(UhtType type, string scriptName)
+    public static string TryResolveConflictingName(UhtType type, string scriptName)
     {
-        UhtType outer = type.Outer;
+        UhtType outer = type.Outer!;
         bool isConflicting = false;
         foreach (UhtType child in outer.Children)
         {
@@ -218,23 +218,6 @@ public static class NameMapper
         
         return EscapeKeywords(strippedName);
     }
-
-    public static string ScriptifyName(string engineName, ENameType nameType, List<string> reservedNames)
-    {
-        string strippedName = ScriptifyName(engineName, nameType);
-        
-        if (nameType is not (ENameType.Parameter or ENameType.Property))
-        {
-            return strippedName;
-        }
-        
-        if (reservedNames.Contains(strippedName))
-        {
-            strippedName = engineName;
-        }
-        
-        return strippedName;
-    }
     
     public static string StripPropertyPrefix(string inName)
     {
@@ -264,7 +247,7 @@ public static class NameMapper
     
     public static string EscapeKeywords(string name)
     {
-        return IsAKeyword(name) ? $"@{name}" : name;
+        return IsAKeyword(name) ? $"_{name}" : name;
     }
     
     private static bool IsAKeyword(string name)

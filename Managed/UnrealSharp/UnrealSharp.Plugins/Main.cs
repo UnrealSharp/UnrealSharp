@@ -117,7 +117,6 @@ public static class Main
             if (sharedAssemblyName != null)
             {
                 sharedAssemblies.Add(sharedAssemblyName);
-
             }
         }
         

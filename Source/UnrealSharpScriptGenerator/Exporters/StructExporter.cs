@@ -63,7 +63,7 @@ public static class StructExporter
             stringBuilder.AppendLine();
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, new List<UhtFunction>(), new List<UhtFunction>());
             stringBuilder.AppendLine();
-            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties, reservedNames);
+            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
         }
         
         stringBuilder.CloseBrace();
@@ -126,7 +126,7 @@ public static class StructExporter
         builder.CloseBrace();
     }
 
-    public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties, List<string> reservedNames)
+    public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties)
     {
         builder.AppendLine();
         builder.AppendLine($"public {structObj.GetStructName()}(IntPtr InNativeStruct)");
@@ -136,7 +136,7 @@ public static class StructExporter
         foreach (UhtProperty property in properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            string scriptName = property.GetPropertyName(reservedNames);
+            string scriptName = property.GetPropertyName();
             string assignmentOrReturn = $"{scriptName} =";
             string offsetName = $"{property.SourceName}_Offset";
             builder.TryAddWithEditor(property);
@@ -155,7 +155,7 @@ public static class StructExporter
         foreach (UhtProperty property in properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            string scriptName = property.GetPropertyName(reservedNames);
+            string scriptName = property.GetPropertyName();
             string offsetName = $"{property.SourceName}_Offset";
             builder.TryAddWithEditor(property);
             translator.ExportToNative(builder, property, property.SourceName, "buffer", offsetName, scriptName);
