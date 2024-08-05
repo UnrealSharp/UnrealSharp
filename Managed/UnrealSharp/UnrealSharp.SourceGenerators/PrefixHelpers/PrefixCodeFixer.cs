@@ -51,7 +51,6 @@ public class PrefixAnalyzerCodeFixProvider : CodeFixProvider
         var typeSymbol = ModelExtensions.GetDeclaredSymbol(semanticModel, typeDecl, cancellationToken) as INamedTypeSymbol;
         
         string prefix = "";
-        Console.WriteLine(typeSymbol.TypeKind);
         if (typeSymbol.TypeKind == TypeKind.Struct)
         {
             prefix = "F";
@@ -70,6 +69,10 @@ public class PrefixAnalyzerCodeFixProvider : CodeFixProvider
             {
                 prefix = "U";
             }
+        }
+        else if (typeSymbol.TypeKind == TypeKind.Interface)
+        {
+            prefix = "I";
         }
         
         if (string.IsNullOrEmpty(prefix))
