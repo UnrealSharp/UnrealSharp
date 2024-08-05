@@ -64,6 +64,8 @@ public static class WeaverHelper
     public static MethodReference InvokeNativeFunctionMethod;
     public static MethodReference GetSignatureFunction;
     public static MethodReference InitializeStructMethod;
+
+    public static MethodReference GeneratedTypeCtor;
     
     public static TypeDefinition UObjectDefinition;
     
@@ -124,14 +126,11 @@ public static class WeaverHelper
         
         UObjectDefinition = FindTypeInAssembly(BindingsAssembly, "UObject", CoreUObjectNamespace)!.Resolve();
         
-        TypeReference? blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace);
-        
-        if (blittableType == null)
-        {
-            throw new Exception("BlittableTypeAttribute not found in " + BindingsAssembly.Name);
-        }
-        
-        BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor");
+        TypeReference blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace)!;
+        BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor")!;
+
+        TypeReference generatedType = FindTypeInAssembly(BindingsAssembly, GeneratedTypeAttribute, AttributeNamespace)!;
+        GeneratedTypeCtor = FindMethod(generatedType.Resolve(), ".ctor")!;
     }
     
     public static TypeReference? FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters, bool bThrowOnException = true)
@@ -388,6 +387,46 @@ public static class WeaverHelper
         TypeDefinition newType = new TypeDefinition(classNamespace, className, attributes, parentClass);
         assembly.MainModule.Types.Add(newType);
         return newType;
+    }
+    
+    public static void AddGeneratedTypeAttribute(TypeDefinition type)
+    {
+        CustomAttribute attribute = new CustomAttribute(GeneratedTypeCtor);
+        string typeName = type.Name.Substring(1);
+        string fullTypeName = type.Namespace + "." + typeName;
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(UserAssembly.MainModule.TypeSystem.String, typeName));
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(UserAssembly.MainModule.TypeSystem.String, fullTypeName));
+        
+        type.CustomAttributes.Add(attribute);
+    }
+
+    public static string GetEngineName(IMemberDefinition memberDefinition)
+    {
+        IMemberDefinition currentMemberIteration = memberDefinition;
+        while (currentMemberIteration != null)
+        {
+            foreach (var customAttribute in currentMemberIteration.CustomAttributes)
+            {
+                if (customAttribute.AttributeType.Name != GeneratedTypeAttribute)
+                {
+                    continue;
+                }
+                
+                return (string) customAttribute.ConstructorArguments[0].Value;
+            }
+            
+            if (currentMemberIteration is MethodDefinition methodDefinition && methodDefinition.IsVirtual)
+            {
+                currentMemberIteration = methodDefinition.GetBaseMethod();
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        // Same name in engine as in managed code
+        return memberDefinition.Name;
     }
     
     public static void FinalizeMethod(MethodDefinition method)

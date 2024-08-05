@@ -48,7 +48,7 @@ public static class StructExporter
         {
             attributeBuilder.AddIsBlittableAttribute();
         }
-        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
         

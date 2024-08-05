@@ -31,22 +31,10 @@ public readonly struct TSubclassOf<T>
         
         if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
         {
-            string typeName = classType.Name;
-            if (classType.IsInterface)
-            {
-                // Remove "I" prefix if it's an interface, since the "I" gets stripped in engine.
-                typeName = typeName.Substring(1);
-            }
-            
+            string typeName = classType.GetEngineName();
             NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(typeName);
-            
-            if (classType.IsInterface && NativeClass == IntPtr.Zero)
-            {
-                // The interface might not have a prefix for some reason, so try again with just the name.
-                NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.Name);
-            }
-            
             ManagedType = classType;
+            
             if (NativeClass == IntPtr.Zero)
             {
                 throw new ArgumentException($"Class {classType.Name} not found.");

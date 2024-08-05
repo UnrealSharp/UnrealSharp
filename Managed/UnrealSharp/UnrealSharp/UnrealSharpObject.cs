@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 
 namespace UnrealSharp;
 
@@ -32,5 +33,30 @@ public class UnrealSharpObject : IDisposable
     {
         NativeObject = IntPtr.Zero;
         GC.SuppressFinalize(this);
+    }
+}
+
+internal static class ReflectionHelper
+{
+    // Get the name without the U/A/F/E prefix.
+    internal static string GetEngineName(this Type type)
+    {
+        foreach (Attribute attribute in type.GetCustomAttributes())
+        {
+            if (!attribute.GetType().IsSubclassOf(typeof(GeneratedTypeAttribute)))
+            {
+                continue;
+            }
+            
+            FieldInfo? field = attribute.GetType().GetField("EngineName");
+            if (field == null)
+            {
+                continue;
+            }
+            
+            return (string) field.GetValue(attribute)!;
+        }
+        
+        return type.Name;
     }
 }

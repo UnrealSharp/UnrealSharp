@@ -429,7 +429,7 @@ public class FunctionExporter
         
         builder.CloseBrace();
         
-        builder.AppendLine($"void Invoke_{methodName}(IntPtr buffer, IntPtr returnBuffer)");
+        builder.AppendLine($"void Invoke_{function.EngineName}(IntPtr buffer, IntPtr returnBuffer)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         
@@ -708,11 +708,17 @@ public class FunctionExporter
     void ExportSignature(GeneratorStringBuilder builder, string protection)
     {
         builder.AppendTooltip(_function);
+
+        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(_function);
         
         if (BlueprintEvent)
         {
-            builder.AppendLine("[UFunction(FunctionFlags.BlueprintEvent)]");
+            attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
+        
+        attributeBuilder.AddGeneratedTypeAttribute(_function);
+        attributeBuilder.Finish();
+        builder.AppendLine(attributeBuilder.ToString());
         
         string returnType = _function.ReturnProperty != null
             ? ReturnValueTranslator!.GetManagedType(_function.ReturnProperty)

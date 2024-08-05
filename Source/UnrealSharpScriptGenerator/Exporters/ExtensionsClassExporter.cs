@@ -14,8 +14,7 @@ public static class ExtensionsClassExporter
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.DeclareType("static class", className, null, false);
-        
-        List<string> reservedNames = new();
+
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);

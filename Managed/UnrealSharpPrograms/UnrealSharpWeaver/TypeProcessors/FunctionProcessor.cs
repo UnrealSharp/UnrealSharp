@@ -88,7 +88,9 @@ public static class FunctionProcessor
                 }
                 
                 MethodReference calledMethod = (MethodReference) instruction.Operand;
-                if (calledMethod.Name != func.Name)
+                string engineName = WeaverHelper.GetEngineName(calledMethod.Resolve());
+                
+                if (engineName != func.Name)
                 {
                     continue;
                 }

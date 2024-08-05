@@ -81,8 +81,12 @@ TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 	{
 		FoundClassInfo = MakeShared<FCSharpClassInfo>();
 		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
+
+		FString AssemblyName = FCSProcHelper::GetUserManagedProjectName();
+		FString Namespace = UUnrealSharpStatics::GetNamespace(Class);
+		FString Name = Class->GetName();
 		
-		FoundClassInfo->TypeHandle = FCSManager::Get().GetTypeHandle(FCSProcHelper::GetUserManagedProjectName(), UUnrealSharpStatics::GetNamespace(Class), Class->GetName());
+		FoundClassInfo->TypeHandle = FCSManager::Get().GetTypeHandle(AssemblyName, Namespace, Name);
 		FoundClassInfo->Field = Class;
 	}
 	

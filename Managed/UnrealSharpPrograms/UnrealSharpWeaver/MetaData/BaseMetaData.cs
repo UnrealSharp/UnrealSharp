@@ -17,8 +17,9 @@ public class BaseMetaData
     
     public BaseMetaData(MemberReference member, string attributeName)
     {
-        Name = member.Name;
         MemberDefinition = member.Resolve();
+        Name = WeaverHelper.GetEngineName(MemberDefinition);
+        
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);

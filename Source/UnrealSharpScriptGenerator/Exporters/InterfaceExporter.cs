@@ -18,7 +18,7 @@ public static class InterfaceExporter
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(interfaceObj);
-        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.AddGeneratedTypeAttribute(interfaceObj);
         attributeBuilder.Finish();
 
         string baseInterface = "";
