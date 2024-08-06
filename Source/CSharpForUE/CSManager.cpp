@@ -66,7 +66,7 @@ void FCSManager::InitializeUnrealSharp()
 	{
 		if (!FApp::IsUnattended())
 		{
-			if (!FCSProcHelper::GenerateProject())
+			if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build) || !FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
 			{
 				InitializeUnrealSharp();
 				return;
