@@ -195,11 +195,11 @@ public static class Program
                 throw;
             }
             
-            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)
