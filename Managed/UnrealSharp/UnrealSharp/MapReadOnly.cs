@@ -1,5 +1,8 @@
-﻿namespace UnrealSharp;
+﻿using UnrealSharp.Attributes;
 
+namespace UnrealSharp;
+
+[UClass]
 public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
 {
     /// <inheritdoc />

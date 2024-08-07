@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -10,6 +11,7 @@ public struct FTextData
     public uint Flags;
 }
 
+[Binding]
 public struct FText
 {
     internal FTextData Data;

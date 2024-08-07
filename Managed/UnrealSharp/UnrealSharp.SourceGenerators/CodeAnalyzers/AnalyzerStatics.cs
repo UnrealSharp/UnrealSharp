@@ -1,8 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace UnrealSharp.SourceGenerators.PrefixHelpers;
+namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
 
-public static class PrefixStatics
+public static class AnalyzerStatics
 {
     public const string UStructAttribute = "UStructAttribute";
     public const string UEnumAttribute = "UEnumAttribute";
@@ -12,6 +12,8 @@ public static class PrefixStatics
     public const string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
     public const string UPropertyAttribute = "UPropertyAttribute";
+    
+    public const string BindingAttribute = "BindingAttribute";
     
     public const string UObject = "UObject";
     public const string AActor = "AActor";

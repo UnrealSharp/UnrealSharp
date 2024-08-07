@@ -1,5 +1,8 @@
-﻿namespace UnrealSharp;
+﻿using UnrealSharp.Attributes;
 
+namespace UnrealSharp;
+
+[Binding]
 public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>
 {
     public TMap(IntPtr mapProperty, IntPtr address,

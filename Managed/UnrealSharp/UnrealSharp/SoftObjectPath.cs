@@ -1,9 +1,10 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential), Binding]
 public class SoftObjectPath
 {
     private FTopLevelAssetPath AssetPath;

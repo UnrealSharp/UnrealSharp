@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -15,6 +16,7 @@ public struct WeakObjectData
 /// A weak reference to an Unreal Engine UObject.
 /// </summary>
 /// <typeparam name="T">The type of object that this weak object points to.</typeparam>
+[Binding]
 public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
 {
     internal readonly WeakObjectData Data;
