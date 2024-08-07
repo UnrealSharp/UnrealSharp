@@ -556,32 +556,32 @@ public static class WeaverHelper
                     var GenericTypeName = GenericType.Name;
                     TypeReference innerType = GenericType.GenericArguments[0];
                     
-                    if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
+                    if (GenericTypeName.Contains("TArray`1") || GenericTypeName.Contains("List`1"))
                     {
                         return new NativeDataArrayType(typeRef, arrayDim, innerType);
                     }
                     
-                    if (GenericTypeName.Contains("Map`2") || GenericTypeName.Contains("Dictionary`2"))
+                    if (GenericTypeName.Contains("TMap`2") || GenericTypeName.Contains("Dictionary`2"))
                     {
                         return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
                     }
 
-                    if (GenericTypeName.Contains("SubclassOf`1"))
+                    if (GenericTypeName.Contains("TSubclassOf`1"))
                     {
                         return new NativeDataClassType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("WeakObject`1"))
+                    if (GenericTypeName.Contains("TWeakObjectPtr`1"))
                     {
                         return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("SoftObject`1"))
+                    if (GenericTypeName.Contains("TSoftObjectPtr`1"))
                     {
                         return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("SoftClass`1"))
+                    if (GenericTypeName.Contains("TSoftClassPtr`1"))
                     {
                         return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
                     }
@@ -609,21 +609,20 @@ public static class WeaverHelper
                 {
                     throw new InvalidPropertyException(propertyName, sequencePoint, "No Unreal type for " + typeRef.FullName);
                 }
-
-                // see if its a UObject
-                if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
+                
+                if (typeDef.FullName == "UnrealSharp.FText")
                 {
                     return new NativeDataTextType(typeDef);
+                }
+                
+                if (typeDef.FullName == "UnrealSharp.FName")
+                {
+                    return new NativeDataNameType(typeDef, arrayDim);
                 }
             
                 if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
                 {
                     return new NativeDataMulticastDelegate(typeDef);
-                }
-
-                if (typeDef.FullName == "UnrealSharp.Name")
-                {
-                    return new NativeDataNameType(typeDef, arrayDim);
                 }
             
                 if (typeDef.BaseType.Name.Contains("Delegate"))

@@ -16,7 +16,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 {
     private DelegateData _data;
     
-    public TWeakObject<UObject> TargetObject => new(_data.Object);
+    public TWeakObjectPtr<UObject> TargetObjectPtr => new(_data.Object);
     public FName FunctionName => _data.FunctionName;
     
     public Delegate()
@@ -58,22 +58,22 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 
     public bool IsBoundToObject(Object targetObject)
     {
-        return targetObject.Equals(TargetObject.Object);
+        return targetObject.Equals(TargetObjectPtr.Object);
     }
 
     public bool IsBoundTo(UObject targetObject, FName functionName)
     {
-        return targetObject.Equals(TargetObject.Object) && FunctionName == functionName;
+        return targetObject.Equals(TargetObjectPtr.Object) && FunctionName == functionName;
     }
 
     public override void BindUFunction(UObject targetObject, FName functionName)
     {
-        BindUFunction(new TWeakObject<UObject>(targetObject), functionName);
+        BindUFunction(new TWeakObjectPtr<UObject>(targetObject), functionName);
     }
 
-    public override void BindUFunction(TWeakObject<UObject> targetObject, FName functionName)
+    public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        _data.Object = targetObject.Data;
+        _data.Object = targetObjectPtr.Data;
         _data.FunctionName = functionName;
     }
 
@@ -89,7 +89,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
         
-        _data.Object = new TWeakObject<UObject>(targetObject).Data;
+        _data.Object = new TWeakObjectPtr<UObject>(targetObject).Data;
         _data.FunctionName = new FName(handler.Method.Name);
     }
 
@@ -118,7 +118,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     
     public override string ToString()
     {
-        return $"{TargetObject.Object}::{FunctionName}";
+        return $"{TargetObjectPtr.Object}::{FunctionName}";
     }
 
     protected override void ProcessDelegate(IntPtr parameters)

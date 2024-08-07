@@ -163,12 +163,12 @@ public class FunctionExporter
         for (int i = 0; i < _function.Children.Count; i++)
         {
             UhtProperty parameter = (UhtProperty) _function.Children[i];
-            PropertyTranslator translator = _parameterTranslators[i];
-            
             if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
             {
                 continue;
             }
+            
+            PropertyTranslator translator = _parameterTranslators[i];
             
             string refQualifier = "";
             if (!parameter.HasAllFlags(EPropertyFlags.ConstParm))

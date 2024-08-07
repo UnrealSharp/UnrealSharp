@@ -158,7 +158,7 @@ public class GeneratorStringBuilder : IDisposable
         AppendLine();
     }
     
-    public void DeclareType(string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtType>? interfaces = default)
+    public void DeclareType(string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? interfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
         string baseSpecifier = !string.IsNullOrEmpty(baseType) ? $" : {baseType}" : string.Empty;

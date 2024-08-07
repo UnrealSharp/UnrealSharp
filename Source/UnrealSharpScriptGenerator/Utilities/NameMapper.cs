@@ -38,6 +38,11 @@ public static class NameMapper
         
         foreach (UhtProperty exportedProperty in function.Properties)
         {
+            if (exportedProperty.HasAllFlags(EPropertyFlags.ReturnParm))
+            {
+                continue;
+            }
+            
             if (exportedProperty != property && scriptName == ScriptifyName(exportedProperty.GetScriptName(), ENameType.Parameter))
             {
                 return PascalToCamelCase(exportedProperty.SourceName);
@@ -166,26 +171,49 @@ public static class NameMapper
     public static string TryResolveConflictingName(UhtType type, string scriptName)
     {
         UhtType outer = type.Outer!;
-        bool isConflicting = false;
-        foreach (UhtType child in outer.Children)
+
+        bool IsConflictingWithChild(List<UhtType> children)
         {
-            if (child == type)
+            foreach (UhtType child in children)
             {
-                continue;
-            }
-            
-            if (child is UhtProperty property)
-            {
-                if (scriptName == ScriptifyName(property.GetScriptName(), ENameType.Property))
+                if (child == type)
                 {
-                    isConflicting = true;
-                    break;
+                    continue;
+                }
+            
+                if (child is UhtProperty property)
+                {
+                    if (scriptName == ScriptifyName(property.GetScriptName(), ENameType.Property))
+                    {
+                        return true;
+                    }
+                }
+            
+                if (child is UhtFunction function)
+                {
+                    if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function))
+                    {
+                        return true;
+                    }
                 }
             }
-            
-            if (child is UhtFunction function)
+
+            return false;
+        }
+        
+        bool isConflicting = IsConflictingWithChild(outer.Children);
+        
+        if (!isConflicting && outer is UhtClass outerClass)
+        {
+            List<UhtClass> classInterfaces = outerClass.GetInterfaces();
+            foreach (UhtClass classInterface in classInterfaces)
             {
-                if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function))
+                if (classInterface.AlternateObject is not UhtClass interfaceClass)
+                {
+                    continue;
+                }
+                
+                if (IsConflictingWithChild(interfaceClass.Children))
                 {
                     isConflicting = true;
                     break;

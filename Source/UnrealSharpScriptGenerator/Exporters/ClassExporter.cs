@@ -18,7 +18,7 @@ public static class ClassExporter
         List<UhtProperty> exportedProperties = new List<UhtProperty>();
         ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
         
-        List<UhtType> interfaces = ScriptGeneratorUtilities.GetInterfaces(classObj);
+        List<UhtClass> interfaces = classObj.GetInterfaces();
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();

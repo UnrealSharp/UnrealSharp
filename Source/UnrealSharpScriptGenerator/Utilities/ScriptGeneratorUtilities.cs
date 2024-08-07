@@ -176,22 +176,22 @@ public static class ScriptGeneratorUtilities
         }
     }
     
-    public static List<UhtType> GetInterfaces(UhtClass classObj)
+    public static List<UhtClass> GetInterfaces(this UhtClass classObj)
     {
-        List<UhtType> interfaces = new();
+        List<UhtClass> interfaces = new();
         foreach (UhtStruct interfaceClass in classObj.Bases)
         {
             UhtEngineType engineType = interfaceClass.EngineType;
             if (engineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
             {
-                interfaces.Add(interfaceClass);
+                interfaces.Add((UhtClass) interfaceClass);
             }
         }
         
         return interfaces;
     }
     
-    public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtType> interfaces, List<string> dependencies)
+    public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtClass> interfaces, List<string> dependencies)
     {
         foreach (UhtType @interface in interfaces)
         {

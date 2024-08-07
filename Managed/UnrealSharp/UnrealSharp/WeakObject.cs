@@ -17,7 +17,7 @@ public struct WeakObjectData
 /// </summary>
 /// <typeparam name="T">The type of object that this weak object points to.</typeparam>
 [Binding]
-public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
+public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObject
 {
     internal readonly WeakObjectData Data;
     
@@ -26,24 +26,24 @@ public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
     /// </summary>
     public T? Object => Get();
     
-    public TWeakObject(T obj)
+    public TWeakObjectPtr(T obj)
     { 
         FWeakObjectPtrExporter.CallSetObject(ref Data, obj?.NativeObject ?? IntPtr.Zero);
     }
     
-    internal TWeakObject(WeakObjectData data)
+    internal TWeakObjectPtr(WeakObjectData data)
     {
         Data = data;
     }
     
-    internal TWeakObject(UObject targetObject)
+    internal TWeakObjectPtr(UObject targetObject)
     {
         FWeakObjectPtrExporter.CallSetObject(ref Data, targetObject.NativeObject);
     }
     
-    public static implicit operator TWeakObject<T>(T obj)
+    public static implicit operator TWeakObjectPtr<T>(T obj)
     {
-        return new TWeakObject<T>(obj);
+        return new TWeakObjectPtr<T>(obj);
     }
     
     private T? Get()
@@ -85,7 +85,7 @@ public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
     /// <inheritdoc />
     public override bool Equals(object obj)
     {
-        if (obj is TWeakObject<T> other)
+        if (obj is TWeakObjectPtr<T> other)
         {
             return Equals(other);
         }
@@ -94,7 +94,7 @@ public struct TWeakObject<T> : IEquatable<TWeakObject<T>> where T : UObject
     }
 
     /// <inheritdoc />
-    public bool Equals(TWeakObject<T> other)
+    public bool Equals(TWeakObjectPtr<T> other)
     {
         return FWeakObjectPtrExporter.CallNativeEquals(Data, other.Data).ToManagedBool();
     }

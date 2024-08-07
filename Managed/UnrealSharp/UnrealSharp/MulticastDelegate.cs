@@ -31,9 +31,9 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, functionName.ToString());
     }
 
-    public override void BindUFunction(TWeakObject<UObject> targetObject, FName functionName)
+    public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        BindUFunction(targetObject.Object, functionName);
+        BindUFunction(targetObjectPtr.Object, functionName);
     }
 
     public void Add(TDelegate handler)
