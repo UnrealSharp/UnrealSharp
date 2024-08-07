@@ -44,6 +44,7 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
                                 createChangedDocument: c => ConvertPropertyToFieldAsync(context.Document, propertyNode, c),
                                 equivalenceKey: "ConvertToField"),
                             diagnostic);
+                    }
                     break;
 
                 case UnrealTypeAnalyzer.ClassAnalyzerId:
