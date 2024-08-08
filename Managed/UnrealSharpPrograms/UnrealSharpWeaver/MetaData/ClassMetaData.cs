@@ -141,8 +141,8 @@ public class ClassMetaData : TypeReferenceMetadata
             {
                 continue;
             }
-            
-            string interfaceNoPrefix = interfaceType.Name.Substring(1);
+
+            string interfaceNoPrefix = WeaverHelper.GetEngineName(interfaceType);
             Interfaces.Add(interfaceNoPrefix);
         }
     }
