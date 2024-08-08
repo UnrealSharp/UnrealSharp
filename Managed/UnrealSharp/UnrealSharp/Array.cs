@@ -8,13 +8,13 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
 [Binding]
-public class Array<T> : UnrealArrayBase<T>, IList<T>
+public class TArray<T> : UnrealArrayBase<T>, IList<T>
 {
     /// <inheritdoc />
     public bool IsReadOnly => false;
     
     [CLSCompliant(false)]
-    public Array(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    public TArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -150,20 +150,20 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
 
 public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
-    private readonly Array<T>[] _wrappers = new Array<T> [length];
+    private readonly TArray<T>[] _wrappers = new TArray<T> [length];
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Array<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, TArray<T> obj)
     {
         throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
     }
 
-    public Array<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_wrappers[arrayIndex] == null)
         {
             unsafe
             {
-                _wrappers[arrayIndex] = new Array<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
+                _wrappers[arrayIndex] = new TArray<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
             }
         }
         return _wrappers[arrayIndex];

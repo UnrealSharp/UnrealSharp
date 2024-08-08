@@ -26,6 +26,7 @@ public class BaseMetaData
         
         AddMetaData();
         AddBaseAttributes();
+        AddDefaultCategory();
     }
     
     public void TryAddMetaData(string key, string value = "")
@@ -61,6 +62,14 @@ public class BaseMetaData
     public void TryAddMetaData(string key, double value)
     {
         TryAddMetaData(key, value.ToString());
+    }
+    
+    public void AddDefaultCategory()
+    {
+        if (!MetaData.ContainsKey("Category"))
+        {
+            TryAddMetaData("Category", "Default");
+        }
     }
 
     public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)

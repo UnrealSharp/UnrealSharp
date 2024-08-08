@@ -417,6 +417,11 @@ public static class WeaverHelper
             
             if (currentMemberIteration is MethodDefinition methodDefinition && methodDefinition.IsVirtual)
             {
+                if (currentMemberIteration == methodDefinition.GetBaseMethod())
+                {
+                    break;
+                }
+                
                 currentMemberIteration = methodDefinition.GetBaseMethod();
             }
             else
