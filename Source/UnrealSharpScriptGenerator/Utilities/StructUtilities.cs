@@ -8,7 +8,7 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
-        if (PropertyTranslatorManager.ManuallyExportedTypes.Contains(structObj.EngineName))
+        if (PropertyTranslatorManager.ManuallyExportedTypes.Contains(structObj.SourceName))
         {
             return true;
         }

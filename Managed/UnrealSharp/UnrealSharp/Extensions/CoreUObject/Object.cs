@@ -4,12 +4,12 @@ using UnrealSharp.UMG;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial class Object
+public partial class UObject
 {
     /// <summary>
     /// The name of the object in Unreal Engine.
     /// </summary>
-    public Name ObjectName => IsDestroyed ? Name.None : UObjectExporter.CallNativeGetName(NativeObject);
+    public FName ObjectName => IsDestroyed ? FName.None : UObjectExporter.CallNativeGetName(NativeObject);
     
     /// <summary>
     /// Whether the object is valid. UObjects can be valid but pending kill.
@@ -24,7 +24,7 @@ public partial class Object
     /// <summary>
     /// The world that the object belongs to.
     /// </summary>
-    public World World
+    public UWorld World
     {
         get
         {
@@ -34,7 +34,7 @@ public partial class Object
             }
             
             IntPtr worldPtr = UObjectExporter.CallGetWorld(NativeObject);
-            World? foundWorld = GcHandleUtilities.GetObjectFromHandlePtr<World>(worldPtr);
+            UWorld? foundWorld = GcHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
             
             if (foundWorld == null)
             {
@@ -71,7 +71,7 @@ public partial class Object
     /// <param name="color"> The color of the message. </param>
     /// <param name="printToScreen"> Whether to print the message to the screen. </param>
     /// <param name="printToConsole"> Whether to print the message to the console. </param>
-    public void PrintString(string message = "Hello", float duration = 2.0f, LinearColor color = default, bool printToScreen = true, bool printToConsole = true)
+    public void PrintString(string message = "Hello", float duration = 2.0f, FLinearColor color = default, bool printToScreen = true, bool printToConsole = true)
     {
         unsafe
         {
@@ -80,7 +80,7 @@ public partial class Object
                 // Use the default color if none is provided
                 if (color.IsZero())
                 {
-                    color = new LinearColor
+                    color = new FLinearColor
                     {
                         R = 0.0f,
                         G = 0.66f,
@@ -118,11 +118,11 @@ public partial class Object
     /// <typeparam name="T"> The type of the object to create. </typeparam>
     /// <returns> The newly created object. </returns>
     /// <exception cref="ArgumentException"> Thrown if the outer object is not valid. </exception>
-    public static T NewObject<T>(CoreUObject.Object outer, SubclassOf<T> classType = default, CoreUObject.Object? template = null) where T : UnrealSharpObject
+    public static T NewObject<T>(UObject outer, TSubclassOf<T> classType = default, UObject? template = null) where T : UnrealSharpObject
     {
         if (classType.NativeClass == IntPtr.Zero)
         {
-            classType = new SubclassOf<T>();
+            classType = new TSubclassOf<T>();
         }
         
         IntPtr nativeOuter = outer?.NativeObject ?? IntPtr.Zero;
@@ -141,10 +141,10 @@ public partial class Object
     /// Gets the transient package.
     /// </summary>
     /// <returns> The transient package. </returns>
-    public static Package? GetTransientPackage()
+    public static UPackage? GetTransientPackage()
     {
         IntPtr handle = UObjectExporter.CallGetTransientPackage();
-        return GcHandleUtilities.GetObjectFromHandlePtr<Package>(handle);
+        return GcHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle);
     }
     
     /// <summary>
@@ -152,7 +152,7 @@ public partial class Object
     /// </summary>
     /// <typeparam name="T"> The type of the object to get. </typeparam>
     /// <returns> The default object of the specified type. </returns>
-    public static T GetDefault<T>() where T : CoreUObject.Object
+    public static T GetDefault<T>() where T : UObject
     {
         IntPtr handle = UClassExporter.CallGetDefaultFromString(typeof(T).Name);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
@@ -164,7 +164,7 @@ public partial class Object
     /// <param name="obj"> The object to get the default object from. </param>
     /// <typeparam name="T"> The type of the object to get. </typeparam>
     /// <returns> The default object of the specified type. </returns>
-    public static T GetDefault<T>(CoreUObject.Object obj) where T : UnrealSharpObject
+    public static T GetDefault<T>(UObject obj) where T : UnrealSharpObject
     {
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(obj.NativeObject);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
@@ -180,13 +180,13 @@ public partial class Object
     /// <param name="owner"> The owner of the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActor<T>(SubclassOf<T> actorType = default, 
-        Transform spawnTransform = default,
+    public T SpawnActor<T>(TSubclassOf<T> actorType = default, 
+        FTransform spawnTransform = default,
         ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined, 
-        Pawn? instigator = null, 
-        Actor? owner = null) where T : Actor
+        APawn? instigator = null, 
+        AActor? owner = null) where T : AActor
     {
-        ActorSpawnParameters actorSpawnParameters = new ActorSpawnParameters
+        FActorSpawnParameters actorSpawnParameters = new FActorSpawnParameters
         {
             Instigator = instigator,
             DeferConstruction = false,
@@ -205,7 +205,7 @@ public partial class Object
     /// <param name="spawnParameters"> The parameters to use when spawning the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActor<T>(Transform spawnTransform, SubclassOf<T> actorType, ActorSpawnParameters spawnParameters) where T : Actor
+    public T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FActorSpawnParameters spawnParameters) where T : AActor
     {
         unsafe
         {
@@ -219,9 +219,9 @@ public partial class Object
     /// </summary>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The world subsystem of the specified type. </returns>
-    public T GetWorldSubsystem<T>() where T : WorldSubsystem
+    public T GetWorldSubsystem<T>() where T : UWorldSubsystem
     {
-        var subsystemClass = new SubclassOf<T>(typeof(T));
+        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = UWorldExporter.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
@@ -231,9 +231,9 @@ public partial class Object
     /// </summary>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The game instance subsystem of the specified type. </returns>
-    public T GetGameInstanceSubsystem<T>() where T : GameInstanceSubsystem
+    public T GetGameInstanceSubsystem<T>() where T : UGameInstanceSubsystem
     {
-        var subsystemClass = new SubclassOf<T>(typeof(T));
+        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
@@ -257,9 +257,9 @@ public partial class Object
     /// </summary>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The engine subsystem of the specified type. </returns>
-    public T GetEngineSubsystem<T>() where T : EngineSubsystem
+    public T GetEngineSubsystem<T>() where T : UEngineSubsystem
     {
-        var subsystemClass = new SubclassOf<T>(typeof(T));
+        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
@@ -270,9 +270,9 @@ public partial class Object
     /// <param name="playerController"> The player controller to get the subsystem from. </param>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The local player subsystem of the specified type. </returns>
-    public T GetLocalPlayerSubsystem<T>(PlayerController playerController) where T : LocalPlayerSubsystem
+    public T GetLocalPlayerSubsystem<T>(APlayerController playerController) where T : ULocalPlayerSubsystem
     {
-        var subsystemClass = new SubclassOf<T>(typeof(T));
+        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
@@ -284,7 +284,7 @@ public partial class Object
     /// <param name="owningController"> The owning player controller. </param>
     /// <typeparam name="T"> The type of the widget to create. </typeparam>
     /// <returns></returns>
-    public T CreateWidget<T>(SubclassOf<T> widgetClass, PlayerController? owningController = null) where T : UserWidget
+    public T CreateWidget<T>(TSubclassOf<T> widgetClass, APlayerController? owningController = null) where T : UUserWidget
     {
         unsafe
         {

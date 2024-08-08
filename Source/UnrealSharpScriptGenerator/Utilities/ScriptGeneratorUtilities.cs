@@ -93,22 +93,6 @@ public static class ScriptGeneratorUtilities
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
     
-    public static bool IsChildOf(this UhtStruct? type, string parentClassName)
-    {
-        UhtStruct? currentType = type;
-        while (currentType != null)
-        {
-            if (currentType.EngineName == parentClassName)
-            {
-                return true;
-            }
-            
-            currentType = currentType.SuperStruct;
-        }
-        
-        return false;
-    }
-    
     public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)
     {
         if (!structObj.Properties.Any())
@@ -192,19 +176,22 @@ public static class ScriptGeneratorUtilities
         }
     }
     
-    public static void GetInterfaces(UhtClass classObj, ref List<UhtType> interfaces)
+    public static List<UhtClass> GetInterfaces(this UhtClass classObj)
     {
+        List<UhtClass> interfaces = new();
         foreach (UhtStruct interfaceClass in classObj.Bases)
         {
             UhtEngineType engineType = interfaceClass.EngineType;
             if (engineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
             {
-                interfaces.Add(interfaceClass);
+                interfaces.Add((UhtClass) interfaceClass);
             }
         }
+        
+        return interfaces;
     }
     
-    public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtType> interfaces, List<string> dependencies)
+    public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtClass> interfaces, List<string> dependencies)
     {
         foreach (UhtType @interface in interfaces)
         {

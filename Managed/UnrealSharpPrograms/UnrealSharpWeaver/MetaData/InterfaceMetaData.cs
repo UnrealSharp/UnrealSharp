@@ -12,8 +12,6 @@ public class InterfaceMetaData : TypeReferenceMetadata
     
     public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
     {
-        // Strip I from the interface name
-        Name = Name.Substring(1);
         Functions = [];
         
         foreach (var method in typeDefinition.Methods)

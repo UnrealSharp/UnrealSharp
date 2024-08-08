@@ -33,17 +33,12 @@ public static class FunctionUtilities
         {
             classOwner = (UhtClass) classOwner.Super;
             
-            List<UhtType> interfaces = new();
-            ScriptGeneratorUtilities.GetInterfaces(classOwner, ref interfaces);
-            
-            foreach (UhtType interfaceType in interfaces)
+            List<UhtClass> interfaces = classOwner.GetInterfaces();
+            foreach (UhtClass interfaceClass in interfaces)
             {
-                if (interfaceType is UhtClass interfaceClass)
+                if (interfaceClass.FindFunctionByName(function.SourceName) != null)
                 {
-                    if (interfaceClass.FindFunctionByName(function.SourceName) != null)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }

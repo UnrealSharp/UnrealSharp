@@ -5,9 +5,9 @@ using UnrealSharp.CoreUObject;
 namespace UnrealSharp.EnhancedInput;
 
 [UStruct, BlittableType, StructLayout(LayoutKind.Sequential)]
-public partial struct InputActionValue
+public partial struct FInputActionValue
 {
-    private Vector AxisValue;
+    private FVector AxisValue;
     private EInputActionValueType ValueType;
     
     public float GetAxis1D()
@@ -15,12 +15,12 @@ public partial struct InputActionValue
         return (float) AxisValue.X;
     }
     
-    public Vector2D GetAxis2D()
+    public FVector2D GetAxis2D()
     {
-        return new Vector2D(AxisValue.X, AxisValue.Y);
+        return new FVector2D(AxisValue.X, AxisValue.Y);
     }
     
-    public Vector GetAxis3D()
+    public FVector GetAxis3D()
     {
         return AxisValue;
     }

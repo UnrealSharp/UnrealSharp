@@ -108,9 +108,9 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                 string delegateName = $"{classInfo.Name}.{delegateInfo.Name}";
                 
                 sourceBuilder.AppendLine($"             if ({delegateName} == null)");
-                sourceBuilder.AppendLine("              {");
+                sourceBuilder.AppendLine("             {");
                 sourceBuilder.AppendLine($"                 throw new System.InvalidOperationException(\"{delegateName} is null\");");
-                sourceBuilder.AppendLine("              }");
+                sourceBuilder.AppendLine("             }");
                 sourceBuilder.AppendLine();
 
                 // Method body

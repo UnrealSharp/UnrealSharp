@@ -23,9 +23,16 @@ public class AttributeBuilder
         return builder;
     }
 
-    public void AddGeneratedTypeAttribute()
+    public void AddGeneratedTypeAttribute(UhtType type)
     {
         AddAttribute("GeneratedType");
+        AddArgument($"\"{type.EngineName}\"");
+        
+        if (type.EngineType is UhtEngineType.Enum or UhtEngineType.ScriptStruct or UhtEngineType.Class)
+        {
+            string fullName = type.GetNamespace() + "." + type.EngineName;
+            AddArgument($"\"{fullName}\"");
+        }
     }
     
     public void AddIsBlittableAttribute()
@@ -40,7 +47,7 @@ public class AttributeBuilder
             return uhtClass.HasAllFlags(EClassFlags.Interface) ? "UInterface" : "UClass";
         }
 
-        if (type is UhtStruct)
+        if (type is UhtScriptStruct)
         {
             return "UStruct";
         }

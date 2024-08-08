@@ -38,40 +38,43 @@ public static class NameMapper
         
         foreach (UhtProperty exportedProperty in function.Properties)
         {
+            if (exportedProperty.HasAllFlags(EPropertyFlags.ReturnParm))
+            {
+                continue;
+            }
+            
             if (exportedProperty != property && scriptName == ScriptifyName(exportedProperty.GetScriptName(), ENameType.Parameter))
             {
-                return PascalToCamelCase(exportedProperty.EngineName);
+                return PascalToCamelCase(exportedProperty.SourceName);
             }
         }
         
         return scriptName;
     }
     
-    public static string GetPropertyName(this UhtProperty property, List<string> reservedNames)
+    public static string GetPropertyName(this UhtProperty property)
     {
-        string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property, reservedNames);
-        if (property.Outer!.EngineName == propertyName || IsAKeyword(propertyName))
+        string propertyName = ScriptifyName(property.GetScriptName(), ENameType.Property);
+        if (property.Outer!.SourceName == propertyName || IsAKeyword(propertyName))
         {
             propertyName = $"K2_{propertyName}";
         }
-        return propertyName;
+        return TryResolveConflictingName(property, propertyName);
     }
     
     public static string GetStructName(this UhtType type)
     {
-        if (type is UhtEnum)
-        {
-            return type.SourceName;
-        }
-
-        string scriptName = type.GetScriptName();
-
         if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == Program.Factory.Session.UInterface)
         {
-            scriptName = $"I{scriptName}";
+            return "I" + type.EngineName;
         }
         
-        return scriptName;
+        if (type is UhtClass uhtClass && uhtClass.IsChildOf(Program.BlueprintFunctionLibrary))
+        {
+            return type.GetScriptName();
+        }
+
+        return type.SourceName;
     }
     
     public static string GetFullManagedName(this UhtType type)
@@ -79,29 +82,36 @@ public static class NameMapper
         return $"{type.GetNamespace()}.{type.GetStructName()}";
     }
     
-    private static string GetScriptName(this UhtType type)
+    static readonly string[] MetadataKeys = { "ScriptName", "ScriptMethod", "DisplayName" };
+    public static string GetScriptName(this UhtType type)
     {
-        string scriptName = type.GetMetadata("ScriptName");
-        if (string.IsNullOrEmpty(scriptName) || scriptName.Contains(' '))
+        bool OnlyContainsLetters(string str)
         {
-            scriptName = type.EngineName;
-        }
-        return scriptName;
-    }
-
-    private static string GetScriptName(this UhtFunction function)
-    {
-        if (function.HasMetadata("ScriptName"))
-        {
-            return GetScriptName((UhtType)function);
+            foreach (char c in str)
+            {
+                if (!char.IsLetter(c) && !char.IsWhiteSpace(c))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         
-        string scriptMethod = function.GetMetadata("ScriptMethod");
-        if (string.IsNullOrEmpty(scriptMethod) || scriptMethod.Contains(' ') || scriptMethod.Contains(';'))
+        foreach (var key in MetadataKeys)
         {
-            scriptMethod = function.EngineName;
+            string value = type.GetMetadata(key);
+            
+            if (string.IsNullOrEmpty(value) || !OnlyContainsLetters(value))
+            {
+                continue;
+            }
+            
+            // Try remove whitespace from the value
+            value = value.Replace(" ", "");
+            return value;
         }
-        return scriptMethod;
+        
+        return type.SourceName;
     }
     
     public static string GetNamespace(this UhtType typeObj)
@@ -136,8 +146,7 @@ public static class NameMapper
     
     public static string GetFunctionName(this UhtFunction function)
     {
-        string scriptName = function.GetScriptName();
-        string functionName = ScriptifyName(scriptName, ENameType.Function);
+        string functionName = function.GetScriptName();
 
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {
@@ -149,25 +158,70 @@ public static class NameMapper
             functionName = functionName.Replace("K2_", "");
         }
 
-        if (function.Outer is not UhtClass classObj)
+        if (function.Outer is not UhtClass)
         {
             return functionName;
         }
         
-        foreach (UhtFunction exportedFunction in classObj.Functions)
-        {
-            if (exportedFunction != function && functionName == exportedFunction.EngineName)
-            {
-                return function.EngineName;
-            }
-        } 
-            
-        if (classObj.EngineName == functionName)
-        {
-            return "K2_" + functionName;
-        }
+        functionName = TryResolveConflictingName(function, functionName);
 
         return functionName;
+    }
+    
+    public static string TryResolveConflictingName(UhtType type, string scriptName)
+    {
+        UhtType outer = type.Outer!;
+
+        bool IsConflictingWithChild(List<UhtType> children)
+        {
+            foreach (UhtType child in children)
+            {
+                if (child == type)
+                {
+                    continue;
+                }
+            
+                if (child is UhtProperty property)
+                {
+                    if (scriptName == ScriptifyName(property.GetScriptName(), ENameType.Property))
+                    {
+                        return true;
+                    }
+                }
+            
+                if (child is UhtFunction function)
+                {
+                    if (scriptName == ScriptifyName(function.GetScriptName(), ENameType.Function))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        
+        bool isConflicting = IsConflictingWithChild(outer.Children);
+        
+        if (!isConflicting && outer is UhtClass outerClass)
+        {
+            List<UhtClass> classInterfaces = outerClass.GetInterfaces();
+            foreach (UhtClass classInterface in classInterfaces)
+            {
+                if (classInterface.AlternateObject is not UhtClass interfaceClass)
+                {
+                    continue;
+                }
+                
+                if (IsConflictingWithChild(interfaceClass.Children))
+                {
+                    isConflicting = true;
+                    break;
+                }
+            }
+        }
+        
+        return isConflicting ? type.EngineName : scriptName;
     }
 
     public static string ScriptifyName(string engineName, ENameType nameType)
@@ -192,23 +246,6 @@ public static class NameMapper
         
         return EscapeKeywords(strippedName);
     }
-
-    public static string ScriptifyName(string engineName, ENameType nameType, List<string> reservedNames)
-    {
-        string strippedName = ScriptifyName(engineName, nameType);
-        
-        if (nameType is not (ENameType.Parameter or ENameType.Property))
-        {
-            return strippedName;
-        }
-        
-        if (reservedNames.Contains(strippedName))
-        {
-            strippedName = engineName;
-        }
-        
-        return strippedName;
-    }
     
     public static string StripPropertyPrefix(string inName)
     {
@@ -220,6 +257,7 @@ public static class NameMapper
             if (inName.Length - nameOffset >= 2 && inName[nameOffset] == 'b' && char.IsUpper(inName[nameOffset + 1]))
             {
                 nameOffset += 1;
+                
                 continue;
             }
 
@@ -237,7 +275,7 @@ public static class NameMapper
     
     public static string EscapeKeywords(string name)
     {
-        return IsAKeyword(name) ? $"@{name}" : name;
+        return IsAKeyword(name) ? $"_{name}" : name;
     }
     
     private static bool IsAKeyword(string name)

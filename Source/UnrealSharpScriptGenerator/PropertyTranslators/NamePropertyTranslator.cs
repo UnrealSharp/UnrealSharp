@@ -5,7 +5,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class NamePropertyTranslator : BlittableTypePropertyTranslator
 {
-    public NamePropertyTranslator() : base(typeof(UhtNameProperty), "Name")
+    public NamePropertyTranslator() : base(typeof(UhtNameProperty), "FName")
     {
     }
     
@@ -13,7 +13,7 @@ public class NamePropertyTranslator : BlittableTypePropertyTranslator
 
     public override string GetNullValue(UhtProperty property)
     {
-        return "default(Name)";
+        return "default(FName)";
     }
 
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
@@ -21,11 +21,11 @@ public class NamePropertyTranslator : BlittableTypePropertyTranslator
     {
         if (defaultValue == "None")
         {
-            builder.AppendLine($"Name {variableName} = Name.None;");
+            builder.AppendLine($"FName {variableName} = FName.None;");
         }
         else
         {
-            builder.AppendLine($"Name {variableName} = new Name(\"{defaultValue}\");");
+            builder.AppendLine($"FName {variableName} = new FName(\"{defaultValue}\");");
         }
     }
 }

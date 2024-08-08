@@ -117,7 +117,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		for (int i = 0; i < fieldCount; i++)
 		{
 			UhtProperty property = (UhtProperty) structProperty.ScriptStruct.Children[i];
-			string scriptName = property.EngineName;
+			string scriptName = property.SourceName;
 			string fieldInitializer = fieldInitializers[i];
 
 			int pos = fieldInitializer.IndexOf("=", StringComparison.Ordinal);

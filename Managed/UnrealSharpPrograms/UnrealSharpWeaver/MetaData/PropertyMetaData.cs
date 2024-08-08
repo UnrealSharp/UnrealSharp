@@ -174,10 +174,11 @@ public class PropertyMetaData : BaseMetaData
         }
         
         bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
+        bool isPersistentInstance = (flags & PropertyFlags.PersistentInstance) != 0;
 
-        const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;
+        const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject;
         
-        if (flags.HasFlag(PropertyFlags.InstancedReference))
+        if ((flags & PropertyFlags.InstancedReference) != 0 || isPersistentInstance)
         {
             flags |= instancedFlags;
         }
@@ -188,7 +189,13 @@ public class PropertyMetaData : BaseMetaData
                     | PropertyFlags.BlueprintReadOnly
                     | PropertyFlags.DisableEditOnInstance
                     | PropertyFlags.Edit 
+                    | PropertyFlags.EditConst
                     | instancedFlags;
+        }
+
+        if (isPersistentInstance)
+        {
+            TryAddMetaData("EditInline", "true");
         }
         
         PropertyFlags = flags;

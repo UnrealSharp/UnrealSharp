@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 
 namespace UnrealSharp.Interop;
 
@@ -79,7 +80,7 @@ public static class UnmanagedCallbacks
     }
 
     [UnmanagedCallersOnly]
-    public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* typeNamespace, char* typeName)
+    public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* typeNamespace, char* typeEngineName)
     {
         try
         {
@@ -91,25 +92,53 @@ public static class UnmanagedCallbacks
             }
 
             string typeNamespaceString = new string(typeNamespace);
-            string typeNameString = new string(typeName);
+            string typeEngineNameString = new string(typeEngineName);
 
-            string fullTypeName = $"{typeNamespaceString}.{typeNameString}";
+            string fullTypeName = $"{typeNamespaceString}.{typeEngineNameString}";
 
-            Type? foundType = loadedAssembly.GetType(fullTypeName, false);
-
-            if (foundType != null)
+            IntPtr FindType(Assembly assembly)
             {
-                return foundType.TypeHandle.Value;
+                Type[] types = assembly.GetTypes();
+                foreach (Type type in types)
+                {
+                    foreach (CustomAttributeData attributeData in type.CustomAttributes)
+                    {
+                        if (attributeData.AttributeType.FullName != typeof(GeneratedTypeAttribute).FullName)
+                        {
+                            continue;
+                        }
+
+                        if (attributeData.ConstructorArguments.Count != 2)
+                        {
+                            continue;
+                        }
+                        
+                        string fullName = (string)attributeData.ConstructorArguments[1].Value!;
+                        if (fullName == fullTypeName)
+                        {
+                            return type.TypeHandle.Value;
+                        }
+                    }
+                }
+                
+                return IntPtr.Zero;
             }
 
-            foundType = typeof(UnrealSharpObject).Assembly.GetType(fullTypeName, true);
+            IntPtr foundType = FindType(loadedAssembly);
 
-            if (foundType == null)
+            if (foundType != IntPtr.Zero)
+            {
+                return foundType;
+            }
+
+            foundType = FindType(typeof(UnrealSharpObject).Assembly);
+
+            if (foundType == IntPtr.Zero)
             {
                 throw new Exception($"The type '{fullTypeName}' was not found in {loadedAssembly}.");
             }
 
-            return foundType.TypeHandle.Value;
+            return foundType;
         }
         catch (TypeLoadException ex)
         {

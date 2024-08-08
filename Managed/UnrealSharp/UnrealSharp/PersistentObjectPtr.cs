@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -34,7 +35,7 @@ public struct PersistentObjectPtr
         return PersistentObjectPtrData.GetHashCode();
     }
 
-    public PersistentObjectPtr(CoreUObject.Object obj)
+    public PersistentObjectPtr(UObject obj)
     {
         if (obj == null)
         {
@@ -75,10 +76,10 @@ public struct PersistentObjectPtr
         return PersistentObjectPtrData._objectId;
     }
     
-    public CoreUObject.Object? Get()
+    public UObject? Get()
     {
         IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref PersistentObjectPtrData);
-        return GcHandleUtilities.GetObjectFromHandlePtr<CoreUObject.Object>(handle);
+        return GcHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
 
     internal PersistentObjectPtrData PersistentObjectPtrData;

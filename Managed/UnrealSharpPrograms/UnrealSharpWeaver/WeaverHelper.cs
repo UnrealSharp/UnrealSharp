@@ -64,6 +64,10 @@ public static class WeaverHelper
     public static MethodReference InvokeNativeFunctionMethod;
     public static MethodReference GetSignatureFunction;
     public static MethodReference InitializeStructMethod;
+
+    public static MethodReference GeneratedTypeCtor;
+    
+    public static TypeDefinition UObjectDefinition;
     
     public static MethodReference BlittableTypeConstructor;
     
@@ -120,14 +124,13 @@ public static class WeaverHelper
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
         
-        TypeReference? blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace);
+        UObjectDefinition = FindTypeInAssembly(BindingsAssembly, "UObject", CoreUObjectNamespace)!.Resolve();
         
-        if (blittableType == null)
-        {
-            throw new Exception("BlittableTypeAttribute not found in " + BindingsAssembly.Name);
-        }
-        
-        BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor");
+        TypeReference blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace)!;
+        BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor")!;
+
+        TypeReference generatedType = FindTypeInAssembly(BindingsAssembly, GeneratedTypeAttribute, AttributeNamespace)!;
+        GeneratedTypeCtor = FindMethod(generatedType.Resolve(), ".ctor")!;
     }
     
     public static TypeReference? FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters, bool bThrowOnException = true)
@@ -386,6 +389,51 @@ public static class WeaverHelper
         return newType;
     }
     
+    public static void AddGeneratedTypeAttribute(TypeDefinition type)
+    {
+        CustomAttribute attribute = new CustomAttribute(GeneratedTypeCtor);
+        string typeName = type.Name.Substring(1);
+        string fullTypeName = type.Namespace + "." + typeName;
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(UserAssembly.MainModule.TypeSystem.String, typeName));
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(UserAssembly.MainModule.TypeSystem.String, fullTypeName));
+        
+        type.CustomAttributes.Add(attribute);
+    }
+
+    public static string GetEngineName(IMemberDefinition memberDefinition)
+    {
+        IMemberDefinition currentMemberIteration = memberDefinition;
+        while (currentMemberIteration != null)
+        {
+            foreach (var customAttribute in currentMemberIteration.CustomAttributes)
+            {
+                if (customAttribute.AttributeType.Name != GeneratedTypeAttribute)
+                {
+                    continue;
+                }
+                
+                return (string) customAttribute.ConstructorArguments[0].Value;
+            }
+            
+            if (currentMemberIteration is MethodDefinition methodDefinition && methodDefinition.IsVirtual)
+            {
+                if (currentMemberIteration == methodDefinition.GetBaseMethod())
+                {
+                    break;
+                }
+                
+                currentMemberIteration = methodDefinition.GetBaseMethod();
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        // Same name in engine as in managed code
+        return memberDefinition.Name;
+    }
+    
     public static void FinalizeMethod(MethodDefinition method)
     {
         method.Body.GetILProcessor().Emit(OpCodes.Ret);
@@ -513,32 +561,32 @@ public static class WeaverHelper
                     var GenericTypeName = GenericType.Name;
                     TypeReference innerType = GenericType.GenericArguments[0];
                     
-                    if (GenericTypeName.Contains("Array`1") || GenericTypeName.Contains("List`1"))
+                    if (GenericTypeName.Contains("TArray`1") || GenericTypeName.Contains("List`1"))
                     {
                         return new NativeDataArrayType(typeRef, arrayDim, innerType);
                     }
                     
-                    if (GenericTypeName.Contains("Map`2") || GenericTypeName.Contains("Dictionary`2"))
+                    if (GenericTypeName.Contains("TMap`2") || GenericTypeName.Contains("Dictionary`2"))
                     {
                         return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
                     }
 
-                    if (GenericTypeName.Contains("SubclassOf`1"))
+                    if (GenericTypeName.Contains("TSubclassOf`1"))
                     {
                         return new NativeDataClassType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("WeakObject`1"))
+                    if (GenericTypeName.Contains("TWeakObjectPtr`1"))
                     {
                         return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("SoftObject`1"))
+                    if (GenericTypeName.Contains("TSoftObjectPtr`1"))
                     {
                         return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
                     }
 
-                    if (GenericTypeName.Contains("SoftClass`1"))
+                    if (GenericTypeName.Contains("TSoftClassPtr`1"))
                     {
                         return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
                     }
@@ -566,21 +614,20 @@ public static class WeaverHelper
                 {
                     throw new InvalidPropertyException(propertyName, sequencePoint, "No Unreal type for " + typeRef.FullName);
                 }
-
-                // see if its a UObject
-                if (typeDef.Namespace == UnrealSharpNamespace && typeDef.Name == "Text")
+                
+                if (typeDef.FullName == "UnrealSharp.FText")
                 {
                     return new NativeDataTextType(typeDef);
+                }
+                
+                if (typeDef.FullName == "UnrealSharp.FName")
+                {
+                    return new NativeDataNameType(typeDef, arrayDim);
                 }
             
                 if (typeDef.BaseType.Name.Contains("MulticastDelegate"))
                 {
                     return new NativeDataMulticastDelegate(typeDef);
-                }
-
-                if (typeDef.FullName == "UnrealSharp.Name")
-                {
-                    return new NativeDataNameType(typeDef, arrayDim);
                 }
             
                 if (typeDef.BaseType.Name.Contains("Delegate"))
@@ -923,7 +970,7 @@ public static class WeaverHelper
                 return false;
             }
             
-            if (typeDefinition.FullName == "UnrealSharp.CoreUObject.Object")
+            if (typeDefinition == UObjectDefinition)
             {
                 return true;
             }

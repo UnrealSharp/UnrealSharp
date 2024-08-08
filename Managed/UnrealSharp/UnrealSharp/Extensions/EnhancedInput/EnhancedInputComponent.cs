@@ -1,14 +1,13 @@
-﻿using System.Runtime.InteropServices;
-using UnrealSharp.Engine;
+﻿using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.EnhancedInput;
 
-public partial class EnhancedInputComponent
+public partial class UEnhancedInputComponent
 {
-    public void BindAction(InputAction action, ETriggerEvent triggerEvent, Action<InputActionValue> callback)
+    public void BindAction(UInputAction action, ETriggerEvent triggerEvent, Action<FInputActionValue> callback)
     {
-        if (callback.Target is CoreUObject.Object unrealObject)
+        if (callback.Target is UObject unrealObject)
         {
             UEnhancedInputComponentExporter.CallBindAction(NativeObject, action.NativeObject, triggerEvent, unrealObject.NativeObject, callback.Method.Name);
         }

@@ -17,7 +17,7 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
     {
         UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
         string fullName = weakObjectProperty.Class.GetFullManagedName();
-        return $"WeakObject<{fullName}>";
+        return $"TWeakObjectPtr<{fullName}>";
     }
 
     public override void GetReferences(UhtProperty property, List<UhtType> references)

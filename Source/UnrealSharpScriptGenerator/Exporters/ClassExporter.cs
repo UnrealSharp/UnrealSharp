@@ -15,15 +15,14 @@ public static class ClassExporter
 
         string typeNameSpace = classObj.GetNamespace();
 
-        List<UhtProperty> exportedProperties = new();
+        List<UhtProperty> exportedProperties = new List<UhtProperty>();
         ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
+        
+        List<UhtClass> interfaces = classObj.GetInterfaces();
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         ScriptGeneratorUtilities.GetExportedFunctions(classObj, ref exportedFunctions, ref exportedOverrides);
-
-        List<UhtType> interfaces = new();
-        ScriptGeneratorUtilities.GetInterfaces(classObj, ref interfaces);
 
         List<string> classDependencies = new();
         ScriptGeneratorUtilities.GatherDependencies(classObj, exportedFunctions, exportedOverrides, exportedProperties, interfaces, classDependencies);
@@ -38,7 +37,7 @@ public static class ClassExporter
         {
             attributeBuilder.AddArgument("ClassFlags.Abstract");
         }
-        attributeBuilder.AddGeneratedTypeAttribute();
+        attributeBuilder.AddGeneratedTypeAttribute(classObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
 
@@ -56,8 +55,7 @@ public static class ClassExporter
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         
-        List<string> reservedNames = GetReservedNames(exportedProperties, exportedOverrides, exportedFunctions);
-        ExportClassProperties(stringBuilder, exportedProperties, reservedNames);
+        ExportClassProperties(stringBuilder, exportedProperties);
         
         ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
         ExportOverrides(stringBuilder, exportedOverrides);
@@ -67,41 +65,13 @@ public static class ClassExporter
         
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
-    
-    public static List<string> GetReservedNames(List<UhtProperty> properties, List<UhtFunction> overrideFunctions, List<UhtFunction> functions)
-    {
-        List<string> reservedNames = new();
-        
-        void AddReservedName(string name)
-        {
-            if (!reservedNames.Contains(name))
-            {
-                reservedNames.Add(name);
-            }
-        }
-        
-        foreach (UhtProperty property in properties)
-        {
-            AddReservedName(NameMapper.ScriptifyName(property.EngineName, ENameType.Property));
-        }
-        foreach (UhtFunction function in overrideFunctions)
-        {
-            AddReservedName(function.GetFunctionName());
-        }
-        foreach (UhtFunction function in functions)
-        {
-            AddReservedName(function.GetFunctionName());
-        }
-        
-        return reservedNames;
-    }
 
-    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties, List<string> reservedNames)
+    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportProperty(generatorStringBuilder, property, reservedNames);
+            translator.ExportProperty(generatorStringBuilder, property);
         }
     }
     

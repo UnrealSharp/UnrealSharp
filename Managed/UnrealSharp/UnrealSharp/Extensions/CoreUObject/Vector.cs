@@ -4,24 +4,24 @@ using System.Text;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct Vector
+public partial struct FVector
 {
-    public Vector(double x, double y, double z)
+    public FVector(double x, double y, double z)
     {
         X = x;
         Y = y;
         Z = z;
     }
     
-    public static Vector One => new(1, 1, 1);
-    public static Vector Zero => new(0, 0, 0);
+    public static FVector One => new(1, 1, 1);
+    public static FVector Zero => new(0, 0, 0);
     
-    public static Vector Forward => new(1, 0, 0);
-    public static Vector Right => new(0, 1, 0);
-    public static Vector Up => new(0, 0, 1);
+    public static FVector Forward => new(1, 0, 0);
+    public static FVector Right => new(0, 1, 0);
+    public static FVector Up => new(0, 0, 1);
     
-    public static implicit operator System.Numerics.Vector3(Vector v) => new((float)v.X, (float)v.Y, (float)v.Z);
-    public static implicit operator Vector(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
+    public static implicit operator System.Numerics.Vector3(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z);
+    public static implicit operator FVector(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
 
     /// <summary>
     /// Returns the hash code for this instance.
@@ -40,7 +40,7 @@ public partial struct Vector
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override bool Equals(object obj)
     {
-        if (!(obj is Vector vector))
+        if (!(obj is FVector vector))
         {
             return false;  
         }
@@ -118,7 +118,7 @@ public partial struct Vector
     /// <param name="value2">The second point.</param>
     /// <returns>The distance.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double Distance(Vector value1, Vector value2)
+    public static double Distance(FVector value1, FVector value2)
     {
         double dx = value1.X - value2.X;
         double dy = value1.Y - value2.Y;
@@ -134,7 +134,7 @@ public partial struct Vector
     /// <param name="value2">The second point.</param>
     /// <returns>The distance squared.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double DistanceSquared(Vector value1, Vector value2)
+    public static double DistanceSquared(FVector value1, FVector value2)
     {
         double dx = value1.X - value2.X;
         double dy = value1.Y - value2.Y;
@@ -148,11 +148,11 @@ public partial struct Vector
     /// <param name="value">The vector to normalize.</param>
     /// <returns>The normalized vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Normalize(Vector value)
+    public static FVector Normalize(FVector value)
     {
         double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z;
         double length = Math.Sqrt(ls);
-        return new Vector(value.X / length, value.Y / length, value.Z / length);
+        return new FVector(value.X / length, value.Y / length, value.Z / length);
     }
 
     /// <summary>
@@ -162,9 +162,9 @@ public partial struct Vector
     /// <param name="vector2">The second vector.</param>
     /// <returns>The cross product.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Cross(Vector vector1, Vector vector2)
+    public static FVector Cross(FVector vector1, FVector vector2)
     {
-        return new Vector(
+        return new FVector(
             vector1.Y * vector2.Z - vector1.Z * vector2.Y,
             vector1.Z * vector2.X - vector1.X * vector2.Z,
             vector1.X * vector2.Y - vector1.Y * vector2.X);
@@ -177,13 +177,13 @@ public partial struct Vector
     /// <param name="normal">The normal of the surface being reflected off.</param>
     /// <returns>The reflected vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Reflect(Vector vector, Vector normal)
+    public static FVector Reflect(FVector vector, FVector normal)
     {
         double dot = vector.X * normal.X + vector.Y * normal.Y + vector.Z * normal.Z;
             double tempX = normal.X * dot * 2;
             double tempY = normal.Y * dot * 2;
             double tempZ = normal.Z * dot * 2;
-            return new Vector(vector.X - tempX, vector.Y - tempY, vector.Z - tempZ);
+            return new FVector(vector.X - tempX, vector.Y - tempY, vector.Z - tempZ);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public partial struct Vector
     /// <param name="max">The maximum value.</param>
     /// <returns>The restricted vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Clamp(Vector value1, Vector min, Vector max)
+    public static FVector Clamp(FVector value1, FVector min, FVector max)
     {
         // This compare order is very important!!!
         // We must follow HLSL behavior in the case user specified min value is bigger than max value.
@@ -211,7 +211,7 @@ public partial struct Vector
         z = (z > max.Z) ? max.Z : z;
         z = (z < min.Z) ? min.Z : z;
 
-        return new Vector(x, y, z);
+        return new FVector(x, y, z);
     }
 
     /// <summary>
@@ -222,9 +222,9 @@ public partial struct Vector
     /// <param name="amount">Value between 0 and 1 indicating the weight of the second source vector.</param>
     /// <returns>The interpolated vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Lerp(Vector value1, Vector value2, double amount)
+    public static FVector Lerp(FVector value1, FVector value2, double amount)
     {
-        return new Vector(
+        return new FVector(
                 value1.X + (value2.X - value1.X) * amount,
                 value1.Y + (value2.Y - value1.Y) * amount,
                 value1.Z + (value2.Z - value1.Z) * amount);
@@ -237,9 +237,9 @@ public partial struct Vector
     /// <param name="matrix">The transformation matrix.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Transform(Vector position, Matrix matrix)
+    public static FVector Transform(FVector position, FMatrix matrix)
     {
-        return new Vector(
+        return new FVector(
             position.X * matrix.XPlane.X + position.Y * matrix.YPlane.X + position.Z * matrix.ZPlane.X + matrix.WPlane.X,
             position.X * matrix.XPlane.Y + position.Y * matrix.YPlane.Y + position.Z * matrix.ZPlane.Y + matrix.WPlane.Y,
             position.X * matrix.XPlane.Z + position.Y * matrix.YPlane.Z + position.Z * matrix.ZPlane.Z + matrix.WPlane.Z);
@@ -253,9 +253,9 @@ public partial struct Vector
     /// <param name="matrix">The transformation matrix.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector TransformNormal(Vector normal, Matrix matrix)
+    public static FVector TransformNormal(FVector normal, FMatrix matrix)
     {
-        return new Vector(
+        return new FVector(
             normal.X * matrix.XPlane.X + normal.Y * matrix.YPlane.X + normal.Z * matrix.ZPlane.X,
             normal.X * matrix.XPlane.Y + normal.Y * matrix.YPlane.Y + normal.Z * matrix.ZPlane.Y,
             normal.X * matrix.XPlane.Z + normal.Y * matrix.YPlane.Z + normal.Z * matrix.ZPlane.Z);
@@ -269,7 +269,7 @@ public partial struct Vector
     /// <param name="rotation">The rotation to apply.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Transform(Vector value, Quat rotation)
+    public static FVector Transform(FVector value, FQuat rotation)
     {
         double x2 = rotation.X + rotation.X;
         double y2 = rotation.Y + rotation.Y;
@@ -285,7 +285,7 @@ public partial struct Vector
         double yz2 = rotation.Y * z2;
         double zz2 = rotation.Z * z2;
 
-        return new Vector(
+        return new FVector(
             value.X * (1.0 - yy2 - zz2) + value.Y * (xy2 - wz2) + value.Z * (xz2 + wy2),
             value.X * (xy2 + wz2) + value.Y * (1.0 - xx2 - zz2) + value.Z * (yz2 - wx2),
             value.X * (xz2 - wy2) + value.Y * (yz2 + wx2) + value.Z * (1.0 - xx2 - yy2));
@@ -301,7 +301,7 @@ public partial struct Vector
     /// <param name="right">The second source vector.</param>
     /// <returns>The summed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Add(Vector left, Vector right)
+    public static FVector Add(FVector left, FVector right)
     {
         return left + right;
     }
@@ -313,7 +313,7 @@ public partial struct Vector
     /// <param name="right">The second source vector.</param>
     /// <returns>The difference vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Subtract(Vector left, Vector right)
+    public static FVector Subtract(FVector left, FVector right)
     {
         return left - right;
     }
@@ -325,7 +325,7 @@ public partial struct Vector
     /// <param name="right">The second source vector.</param>
     /// <returns>The product vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Multiply(Vector left, Vector right)
+    public static FVector Multiply(FVector left, FVector right)
     {
         return left * right;
     }
@@ -337,7 +337,7 @@ public partial struct Vector
     /// <param name="right">The scalar value.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Multiply(Vector left, double right)
+    public static FVector Multiply(FVector left, double right)
     {
         return left * right;
     }
@@ -349,7 +349,7 @@ public partial struct Vector
     /// <param name="right">The source vector.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Multiply(double left, Vector right)
+    public static FVector Multiply(double left, FVector right)
     {
         return left * right;
     }
@@ -361,7 +361,7 @@ public partial struct Vector
     /// <param name="right">The second source vector.</param>
     /// <returns>The vector resulting from the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Divide(Vector left, Vector right)
+    public static FVector Divide(FVector left, FVector right)
     {
         return left / right;
     }
@@ -373,7 +373,7 @@ public partial struct Vector
     /// <param name="divisor">The scalar value.</param>
     /// <returns>The result of the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Divide(Vector left, double divisor)
+    public static FVector Divide(FVector left, double divisor)
     {
         return left / divisor;
     }
@@ -384,79 +384,79 @@ public partial struct Vector
     /// <param name="value">The source vector.</param>
     /// <returns>The negated vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Negate(Vector value)
+    public static FVector Negate(FVector value)
     {
         return -value;
     }
     
-    public static bool operator == (Vector left, Vector right)
+    public static bool operator == (FVector left, FVector right)
     {
         return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
     }
 
-    public static bool operator !=(Vector left, Vector right)
+    public static bool operator !=(FVector left, FVector right)
     {
         return !(left == right);
     }
     
-    public static Vector operator +(Vector left, Vector right)
+    public static FVector operator +(FVector left, FVector right)
     {
-        return new Vector(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        return new FVector(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
     }
     
-    public static Vector operator -(Vector left, Vector right)
+    public static FVector operator -(FVector left, FVector right)
     {
-        return new Vector(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+        return new FVector(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
     }
     
-    public static Vector operator -(Vector value)
+    public static FVector operator -(FVector value)
     {
-        return new Vector(-value.X, -value.Y, -value.Z);
+        return new FVector(-value.X, -value.Y, -value.Z);
     }
     
-    public static Vector operator *(Vector left, Vector right)
+    public static FVector operator *(FVector left, FVector right)
     {
-        return new Vector(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
+        return new FVector(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
     }
     
-    public static Vector operator *(Vector left, double right)
+    public static FVector operator *(FVector left, double right)
     {
-        return new Vector(left.X * right, left.Y * right, left.Z * right);
+        return new FVector(left.X * right, left.Y * right, left.Z * right);
     }
     
-    public static Vector operator *(double left, Vector right)
+    public static FVector operator *(double left, FVector right)
     {
         return right * left;
     }
     
-    public static Vector operator /(Vector left, Vector right)
+    public static FVector operator /(FVector left, FVector right)
     {
-        return new Vector(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
+        return new FVector(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
     }
     
-    public static Vector operator /(Vector left, double right)
+    public static FVector operator /(FVector left, double right)
     {
         double invDiv = 1.0 / right;
-        return new Vector(left.X * invDiv, left.Y * invDiv, left.Z * invDiv);
+        return new FVector(left.X * invDiv, left.Y * invDiv, left.Z * invDiv);
     }
     
-    public static Vector operator /(double left, Vector right)
+    public static FVector operator /(double left, FVector right)
     {
-        return new Vector(left / right.X, left / right.Y, left / right.Z);
+        return new FVector(left / right.X, left / right.Y, left / right.Z);
     }
     
-    public static Vector operator %(Vector left, Vector right)
+    public static FVector operator %(FVector left, FVector right)
     {
-        return new Vector(left.X % right.X, left.Y % right.Y, left.Z % right.Z);
+        return new FVector(left.X % right.X, left.Y % right.Y, left.Z % right.Z);
     }
     
-    public static Vector operator %(Vector left, double right)
+    public static FVector operator %(FVector left, double right)
     {
-        return new Vector(left.X % right, left.Y % right, left.Z % right);
+        return new FVector(left.X % right, left.Y % right, left.Z % right);
     }
     
-    public static Vector operator %(double left, Vector right)
+    public static FVector operator %(double left, FVector right)
     {
-        return new Vector(left % right.X, left % right.Y, left % right.Z);
+        return new FVector(left % right.X, left % right.Y, left % right.Z);
     }
 }

@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
-using UnrealSharp.Engine;
+using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Engine;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ActorSpawnParameters()
+public struct FActorSpawnParameters()
 {
     private IntPtr ownerNativePtr = 0;
     private IntPtr instigatorNativePtr = 0;
@@ -12,9 +12,9 @@ public struct ActorSpawnParameters()
     private NativeBool nativeDeferConstruction = NativeBool.False;
     public ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod.Undefined;
 
-    private UnrealSharpObject? _owner = null; 
+    private AActor? _owner = null; 
     
-    public UnrealSharpObject? Owner
+    public AActor? Owner
     { 
         get => _owner;
         set
@@ -24,9 +24,9 @@ public struct ActorSpawnParameters()
         }
     }
 
-    private UnrealSharpObject? _instigator = null;
+    private APawn? _instigator = null;
 
-    public UnrealSharpObject? Instigator
+    public APawn? Instigator
     { 
         get => _instigator;
         set
@@ -36,9 +36,9 @@ public struct ActorSpawnParameters()
         }
     }
     
-    private UnrealSharpObject? _template = null;
+    private UObject? _template = null;
     
-    public UnrealSharpObject? Template
+    public UObject? Template
     { 
         get => _template;
         set

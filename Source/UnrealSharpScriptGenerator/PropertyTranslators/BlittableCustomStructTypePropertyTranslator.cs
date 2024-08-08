@@ -17,7 +17,7 @@ public class BlittableCustomStructTypePropertyTranslator : BlittableTypeProperty
     public override bool CanExport(UhtProperty property)
     {
         UhtStructProperty structProperty = (UhtStructProperty) property;
-        return structProperty.ScriptStruct.EngineName == _nativeName;
+        return structProperty.ScriptStruct.SourceName == _nativeName;
     }
 
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,

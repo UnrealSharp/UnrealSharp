@@ -17,14 +17,16 @@ public class BaseMetaData
     
     public BaseMetaData(MemberReference member, string attributeName)
     {
-        Name = member.Name;
         MemberDefinition = member.Resolve();
+        Name = WeaverHelper.GetEngineName(MemberDefinition);
+        
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
         
         AddMetaData();
         AddBaseAttributes();
+        AddDefaultCategory();
     }
     
     public void TryAddMetaData(string key, string value = "")
@@ -60,6 +62,14 @@ public class BaseMetaData
     public void TryAddMetaData(string key, double value)
     {
         TryAddMetaData(key, value.ToString());
+    }
+    
+    public void AddDefaultCategory()
+    {
+        if (!MetaData.ContainsKey("Category"))
+        {
+            TryAddMetaData("Category", "Default");
+        }
     }
 
     public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)

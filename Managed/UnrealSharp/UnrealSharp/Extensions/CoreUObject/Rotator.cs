@@ -2,16 +2,31 @@
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct Rotator
+public partial struct FRotator
 {
-    public bool Equals(Rotator other)
+    /// <summary>
+    /// Pitch (degrees) around Y axis
+    /// </summary>
+    public double Pitch;
+    
+    /// <summary>
+    /// Yaw (degrees) around Z axis
+    /// </summary>
+    public double Yaw;
+    
+    /// <summary>
+    /// Roll (degrees) around X axis
+    /// </summary>
+    public double Roll;
+    
+    public bool Equals(FRotator other)
     {
         return Pitch.Equals(other.Pitch) && Yaw.Equals(other.Yaw) && Roll.Equals(other.Roll);
     }
 
     public override bool Equals(object? obj)
     {
-        return obj is Rotator other && Equals(other);
+        return obj is FRotator other && Equals(other);
     }
 
     public override int GetHashCode()
@@ -19,53 +34,53 @@ public partial struct Rotator
         return HashCode.Combine(Pitch, Yaw, Roll);
     }
 
-    public static readonly Rotator ZeroRotator = new(0, 0, 0);
+    public static readonly FRotator ZeroRotator = new(0, 0, 0);
 
-    public Rotator(double pitch, double yaw, double roll)
+    public FRotator(double pitch, double yaw, double roll)
     {
         Pitch = pitch;
         Yaw = yaw;
         Roll = roll;
     }
 
-    public Rotator(Quat quat)
+    public FRotator(FQuat quat)
     {
         FRotatorExporter.CallFromQuat(out this, ref quat);
     }
     
-    public Rotator(Matrix rotationMatrix)
+    public FRotator(FMatrix rotationMatrix)
     {
         FRotatorExporter.CallFromMatrix(out this, ref rotationMatrix);
     }
 
-    public Rotator(Vector vec)
+    public FRotator(FVector vec)
     {
         Yaw = Math.Atan2(vec.Y, vec.X) * 180.0 / Math.PI;
         Pitch = Math.Atan2(vec.Z, Math.Sqrt(vec.X * vec.X + vec.Y * vec.Y)) * 180.0 / Math.PI;
         Roll = 0.0f;
     }
     
-    public Quat ToQuaternion()
+    public FQuat ToQuaternion()
     {
         FQuatExporter.CallToQuaternion(out var quat, ref this);
         return quat;
     }
 
-    public Matrix ToMatrix()
+    public FMatrix ToMatrix()
     {
         FMatrixExporter.CallFromRotator(out var rotationMatrix, ref this);
         return rotationMatrix;
     }
 
     // Convert the rotator into a vector facing in its direction.
-    public Vector ToVector()
+    public FVector ToVector()
     {
         return FVectorExporter.CallFromRotator(out this);
     }
 
-    public static Rotator operator + (Rotator lhs, Rotator rhs)
+    public static FRotator operator + (FRotator lhs, FRotator rhs)
     {
-        return new Rotator
+        return new FRotator
         {
             Pitch = lhs.Pitch + rhs.Pitch,
             Yaw = lhs.Yaw + rhs.Yaw,
@@ -73,9 +88,9 @@ public partial struct Rotator
         };
     }
 
-    public static Rotator operator - (Rotator lhs, Rotator rhs)
+    public static FRotator operator - (FRotator lhs, FRotator rhs)
     {
-        return new Rotator
+        return new FRotator
         {
             Pitch = lhs.Pitch - rhs.Pitch,
             Yaw = lhs.Yaw - rhs.Yaw,
@@ -83,9 +98,9 @@ public partial struct Rotator
         };
     }
 
-    public static Rotator operator -(Rotator rotator)
+    public static FRotator operator -(FRotator rotator)
     {
-        return new Rotator
+        return new FRotator
         {
             Pitch = -rotator.Pitch,
             Yaw = -rotator.Yaw,
@@ -93,22 +108,22 @@ public partial struct Rotator
         };
     }
 
-    public static Rotator operator *(Rotator rotator, double scale)
+    public static FRotator operator *(FRotator rotator, double scale)
     {
-        return new Rotator
+        return new FRotator
         {
             Pitch = rotator.Pitch * scale,
-            Yaw = rotator.Yaw * scale,
+             Yaw = rotator.Yaw * scale,
             Roll = rotator.Roll * scale
         };
     }
 
-    public static Rotator operator *(double scale, Rotator rotator)
+    public static FRotator operator *(double scale, FRotator rotator)
     {
         return rotator * scale;
     }
     
-    public static bool operator == (Rotator left, Rotator right)
+    public static bool operator == (FRotator left, FRotator right)
     {
         float tolerance = 0.0001f;
 
@@ -116,7 +131,7 @@ public partial struct Rotator
                Math.Abs(left.Roll - right.Roll) < tolerance &&
                Math.Abs(left.Yaw - right.Yaw) < tolerance;
     }
-    public static bool operator !=(Rotator left, Rotator right)
+    public static bool operator !=(FRotator left, FRotator right)
     {
         return !(left == right);
     }

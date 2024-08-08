@@ -15,7 +15,7 @@ public class SoftObjectPropertyTranslator : BlittableStructPropertyTranslator
     {
         UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
         string fullName = softObjectProperty.Class.GetFullManagedName();
-        return $"SoftObject<{fullName}>";
+        return $"TSoftObjectPtr<{fullName}>";
     }
 
     public override void GetReferences(UhtProperty property, List<UhtType> references)

@@ -161,30 +161,36 @@ public static class Program
                         {
                             continue;
                         }
+
+                        void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
+                        {
+                            typeDefinitions.Add(typeDefinition);
+                            WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
+                        }
                         
                         if (WeaverHelper.IsUClass(type))
                         {
-                            classes.Add(type);
+                            RegisterType(classes, type);
                         }
                         else if (WeaverHelper.IsUEnum(type))
                         {
-                            enums.Add(type);
+                            RegisterType(enums, type);
                         }
                         else if (WeaverHelper.IsUStruct(type))
                         {
-                            structs.Add(type);
+                            RegisterType(structs, type);
                         }
                         else if (WeaverHelper.IsUInterface(type))
                         {
-                            interfaces.Add(type);
+                            RegisterType(interfaces, type);
                         }
                         else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
                         {
-                            multicastDelegates.Add(type);
+                            RegisterType(multicastDelegates, type);
                         }
                         else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
                         {
-                            delegates.Add(type);
+                            RegisterType(delegates, type);
                         }
                     }
                 }

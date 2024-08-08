@@ -109,6 +109,11 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
 
+FString FCSGeneratedClassBuilder::GetFieldName() const
+{
+	return FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+}
+
 void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	TSharedPtr<FCSharpClassInfo> ClassInfo;

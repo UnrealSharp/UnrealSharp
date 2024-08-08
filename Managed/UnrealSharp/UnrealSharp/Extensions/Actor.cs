@@ -1,11 +1,9 @@
 ﻿using UnrealSharp.CoreUObject;
 using UnrealSharp.EnhancedInput;
-using UnrealSharp.Interop;
-using UnrealSharp.SlateCore;
 
 namespace UnrealSharp.Engine;
 
-public partial class Actor
+public partial class AActor
 {
     /// <summary>
     /// Bind an action to a callback.
@@ -17,7 +15,7 @@ public partial class Actor
     /// <param name="executeWhenPaused"> Whether to execute the action when paused </param>
     public void BindAction(string actionName, EInputEvent inputEvent, Action action, bool consumeInput = false, bool executeWhenPaused = false)
     {
-        InputComponent? inputComponent = InputComponent;
+        UInputComponent? inputComponent = InputComponent;
         if (inputComponent != null)
         {
             inputComponent.BindAction(actionName, inputEvent, action, consumeInput, executeWhenPaused);
@@ -30,9 +28,9 @@ public partial class Actor
     /// <param name="action"> The action to bind </param>
     /// <param name="triggerEvent"> The trigger event to bind the action to </param>
     /// <param name="callback"> The callback to execute when the action is triggered </param>
-    public void BindAction(InputAction action, ETriggerEvent triggerEvent, Action<InputActionValue> callback)
+    public void BindAction(UInputAction action, ETriggerEvent triggerEvent, Action<FInputActionValue> callback)
     {
-        if (InputComponent is EnhancedInputComponent enhancedInputComponent)
+        if (InputComponent is UEnhancedInputComponent enhancedInputComponent)
         {
             enhancedInputComponent.BindAction(action, triggerEvent, callback);
         }
@@ -47,7 +45,7 @@ public partial class Actor
     /// <param name="executeWhenPaused"> Whether to execute the action when paused </param>
     public void BindAxis(string axisName, Action<float> action, bool consumeInput = false, bool executeWhenPaused = false)
     {
-        InputComponent? inputComponent = InputComponent;
+        UInputComponent? inputComponent = InputComponent;
         
         if (inputComponent != null)
         {
@@ -62,8 +60,8 @@ public partial class Actor
     /// <param name="relativeTransform">Set the relative transform of the component</param>
     /// <typeparam name="T">Class of the component to add</typeparam>
     /// <returns>The component</returns>
-    public T AddComponentByClass<T>(bool bManualAttachment, Transform relativeTransform) where T : ActorComponent
-        => (AddComponentByClass(new SubclassOf<ActorComponent>(typeof(T)), bManualAttachment, relativeTransform, deferredFinish: false) as T)!;
+    public T AddComponentByClass<T>(bool bManualAttachment, FTransform relativeTransform) where T : UActorComponent
+        => (AddComponentByClass(new TSubclassOf<UActorComponent>(typeof(T)), bManualAttachment, relativeTransform, deferredFinish: false) as T)!;
 
     /// <summary>
     /// Adds a component to the actor by class.
@@ -73,9 +71,9 @@ public partial class Actor
     /// <param name="initializerFunc"> The function to initialize the component </param>
     /// <typeparam name="T">Class of the component to add</typeparam>
     /// <returns>The component</returns>
-    public T AddComponentByClass<T>(bool bManualAttachment, Transform relativeTransform, Action<T> initializerFunc) where T : ActorComponent
+    public T AddComponentByClass<T>(bool bManualAttachment, FTransform relativeTransform, Action<T> initializerFunc) where T : UActorComponent
     {
-        T component = (AddComponentByClass(new SubclassOf<ActorComponent>(typeof(T)), bManualAttachment, relativeTransform, deferredFinish: true) as T)!;
+        T component = (AddComponentByClass(new TSubclassOf<UActorComponent>(typeof(T)), bManualAttachment, relativeTransform, deferredFinish: true) as T)!;
         initializerFunc(component);
         FinishAddComponent(component, bManualAttachment, relativeTransform);
         return component;
@@ -88,7 +86,7 @@ public partial class Actor
     /// <param name="bManualAttachment">Whether to manually attach the component</param>
     /// <param name="relativeTransform">Set the relative transform of the component</param>
     /// <returns>The component if added, otherwise null</returns>
-    public ActorComponent AddComponentByClass(SubclassOf<ActorComponent> @class, bool bManualAttachment, Transform relativeTransform) 
+    public UActorComponent AddComponentByClass(TSubclassOf<UActorComponent> @class, bool bManualAttachment, FTransform relativeTransform) 
         => AddComponentByClass(@class, bManualAttachment, relativeTransform, deferredFinish: false);
  
     /// <summary>
@@ -97,11 +95,11 @@ public partial class Actor
     /// <typeparam name="T">The type of the component to get</typeparam>
     /// <param name="class">The class of the component to get. Can be left null.</param>
     /// <returns>The component if found, otherwise null</returns>
-    public T? GetComponentByClass<T>(SubclassOf<ActorComponent>? @class = null) where T : ActorComponent
+    public T? GetComponentByClass<T>(TSubclassOf<UActorComponent>? @class = null) where T : UActorComponent
     {
         if (@class == null)
         {
-            @class = new SubclassOf<ActorComponent>(typeof(T));
+            @class = new TSubclassOf<UActorComponent>(typeof(T));
         }
         
         return GetComponentByClass(@class.Value) as T;
