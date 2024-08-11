@@ -11,7 +11,7 @@ public class GeneratedTypeAttribute : Attribute
         EngineName = engineName;
         FullName = fullName;
     }
-    
-    public string EngineName { get; set; }
-    public string FullName { get; set; }
+
+    public string EngineName;
+    public string FullName;
 }
