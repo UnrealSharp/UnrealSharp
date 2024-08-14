@@ -49,6 +49,10 @@ public static class Program
         return Path.Combine(buildToolOptions.ProjectDirectory, buildToolOptions.ProjectName + ".uproject");
     }
     
+    public static string GetBuildConfiguration()
+    {
+        return GetBuildConfiguration(buildToolOptions.BuildConfig);
+    }
     public static string GetScriptFolderBinaries()
     {
         string currentBuildConfig = GetBuildConfiguration(buildToolOptions.BuildConfig);
