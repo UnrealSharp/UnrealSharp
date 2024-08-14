@@ -12,9 +12,10 @@ public static class Program
     {
         try
         {
+            Console.WriteLine(">>> UnrealSharpBuildTool");
             Parser parser = new Parser(with => with.HelpWriter = null);
             ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
-        
+            Console.WriteLine(" loaded options");
             if (result.Tag == ParserResultType.NotParsed)
             {
                 BuildToolOptions.PrintHelp(result);

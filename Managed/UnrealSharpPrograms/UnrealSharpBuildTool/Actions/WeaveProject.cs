@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
+﻿using System.Diagnostics;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -22,6 +23,7 @@ public class WeaveProject : BuildToolAction
         }
 
         var projFiles = currentDir.GetFiles("*.csproj");
+        //Console.WriteLine(projFiles.Length);
         if (projFiles.Length > 0)
         {
             var projectName = projFiles[0].Name.Replace(".csproj", "");
@@ -51,34 +53,19 @@ public class WeaveProject : BuildToolAction
     }
     public override bool RunAction()
     {
-        var weaverPath = Program.GetWeaver();
-        
-        if (!File.Exists(weaverPath))
+        //Console.WriteLine(" >>> weave");
+        try
         {
-            throw new Exception("Couldn't find the weaver");
+            var scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
+            var outputPath = Program.GetOutputPath();
+           // Console.WriteLine("<<< weave");
+            return recursiveWeave(scriptRootDirInfo, outputPath);
+  
+        } catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Console.WriteLine(e.StackTrace);
+            return false;
         }
-
-        var scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
-        var scriptFolderBinaries = Program.GetScriptFolderBinaries();
-        var outputPath = Program.GetOutputPath();
-        var projectName = scriptRootDirInfo.GetFiles("*.csproj")[0].Name.Replace(".csproj", "");
-
-        BuildToolProcess weaveProcess = new BuildToolProcess();
-        
-        // Add path to the compiled binaries.
-        weaveProcess.StartInfo.ArgumentList.Add(weaverPath);
-        
-        weaveProcess.StartInfo.ArgumentList.Add("-p");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(scriptFolderBinaries)}");
-
-        // Add path to the output folder for the weaver.
-        weaveProcess.StartInfo.ArgumentList.Add("-o");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
-
-        // Add the project name.
-        weaveProcess.StartInfo.ArgumentList.Add("-n");
-        weaveProcess.StartInfo.ArgumentList.Add(projectName);
-        
-        return recursiveWeave(scriptRootDirInfo, outputPath);
     }
 }
