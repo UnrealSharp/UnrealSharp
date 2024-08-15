@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.VisualBasic.CompilerServices;
+﻿using Microsoft.VisualBasic.CompilerServices;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -7,25 +6,27 @@ public class WeaveProject : BuildToolAction
 {
     private bool recursiveWeave(DirectoryInfo currentDir, string outputPath)
     {
+        Console.WriteLine("Weave dir: "+currentDir.FullName);
         var weaverPath = Program.GetWeaver();
         
         if (!File.Exists(weaverPath))
         {
             throw new Exception("Couldn't find the weaver");
         }
-        
+
+        bool retval = true;
         foreach (var dir in currentDir.GetDirectories())
         {
             if (!recursiveWeave(dir, outputPath))
             {
-                return false;
+                retval = false;
             }
         }
 
         var projFiles = currentDir.GetFiles("*.csproj");
-        //Console.WriteLine(projFiles.Length);
         if (projFiles.Length > 0)
         {
+            Console.WriteLine("Weaving "+projFiles[0].FullName);
             var projectName = projFiles[0].Name.Replace(".csproj", "");
             BuildToolProcess weaveProcess = new BuildToolProcess();
         
@@ -46,26 +47,24 @@ public class WeaveProject : BuildToolAction
             weaveProcess.StartInfo.ArgumentList.Add("-n");
             weaveProcess.StartInfo.ArgumentList.Add(projectName);
         
-            return weaveProcess.StartBuildToolProcess();
+            retval = weaveProcess.StartBuildToolProcess();
         }
 
-        return true;
+        return retval;
     }
     public override bool RunAction()
     {
-        //Console.WriteLine(" >>> weave");
-        try
+        var weaverPath = Program.GetWeaver();
+        
+        if (!File.Exists(weaverPath))
         {
-            var scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
-            var outputPath = Program.GetOutputPath();
-           // Console.WriteLine("<<< weave");
-            return recursiveWeave(scriptRootDirInfo, outputPath);
-  
-        } catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-            Console.WriteLine(e.StackTrace);
-            return false;
+            throw new Exception("Couldn't find the weaver");
         }
+
+        var scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
+        var outputPath = Program.GetOutputPath();
+        
+        
+        return recursiveWeave(scriptRootDirInfo, outputPath);
     }
 }
