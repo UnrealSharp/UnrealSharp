@@ -59,25 +59,8 @@ public class WeaveProject : BuildToolAction
         }
 
         var scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
-        var scriptFolderBinaries = Program.GetScriptFolderBinaries();
         var outputPath = Program.GetOutputPath();
-        var projectName = scriptRootDirInfo.GetFiles("*.csproj")[0].Name.Replace(".csproj", "");
-
-        BuildToolProcess weaveProcess = new BuildToolProcess();
         
-        // Add path to the compiled binaries.
-        weaveProcess.StartInfo.ArgumentList.Add(weaverPath);
-        
-        weaveProcess.StartInfo.ArgumentList.Add("-p");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(scriptFolderBinaries)}");
-
-        // Add path to the output folder for the weaver.
-        weaveProcess.StartInfo.ArgumentList.Add("-o");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
-
-        // Add the project name.
-        weaveProcess.StartInfo.ArgumentList.Add("-n");
-        weaveProcess.StartInfo.ArgumentList.Add(projectName);
         
         return recursiveWeave(scriptRootDirInfo, outputPath);
     }
