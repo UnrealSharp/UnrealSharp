@@ -18,6 +18,13 @@ public class BuildToolProcess : Process
         StartInfo.CreateNoWindow = true;
     }
 
+    private void WriteOutProcess()
+    {
+        string command = StartInfo.FileName;
+        string arguments = string.Join(" ", StartInfo.ArgumentList);
+        Console.WriteLine($"Command: {command} {arguments}");
+    }
+    
     public bool StartBuildToolProcess()
     {
         try
@@ -26,6 +33,7 @@ public class BuildToolProcess : Process
             {
                 throw new Exception("Failed to start process");
             }
+            WriteOutProcess();
             
             string output = StandardOutput.ReadToEnd();
             string error = StandardError.ReadToEnd();

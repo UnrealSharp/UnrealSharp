@@ -6,24 +6,27 @@ public class WeaveProject : BuildToolAction
 {
     private bool recursiveWeave(DirectoryInfo currentDir, string outputPath)
     {
+        Console.WriteLine("Weave dir: "+currentDir.FullName);
         var weaverPath = Program.GetWeaver();
         
         if (!File.Exists(weaverPath))
         {
             throw new Exception("Couldn't find the weaver");
         }
-        
+
+        bool retval = true;
         foreach (var dir in currentDir.GetDirectories())
         {
             if (!recursiveWeave(dir, outputPath))
             {
-                return false;
+                retval = false;
             }
         }
 
         var projFiles = currentDir.GetFiles("*.csproj");
         if (projFiles.Length > 0)
         {
+            Console.WriteLine("Weaving "+projFiles[0].FullName);
             var projectName = projFiles[0].Name.Replace(".csproj", "");
             BuildToolProcess weaveProcess = new BuildToolProcess();
         
@@ -44,10 +47,10 @@ public class WeaveProject : BuildToolAction
             weaveProcess.StartInfo.ArgumentList.Add("-n");
             weaveProcess.StartInfo.ArgumentList.Add(projectName);
         
-            return weaveProcess.StartBuildToolProcess();
+            retval = weaveProcess.StartBuildToolProcess();
         }
 
-        return true;
+        return retval;
     }
     public override bool RunAction()
     {
