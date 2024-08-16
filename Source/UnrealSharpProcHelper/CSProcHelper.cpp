@@ -195,17 +195,17 @@ FString FCSProcHelper::GetUserAssemblyPath()
 TArray<FString> FCSProcHelper::GetAllUserAssemblyPaths()
 {
 	FString AbsoluteFolderPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
-	TArray<FString> dllFiles
+	TArray<FString> dllFiles;
 		// Use the FileManager to find files matching the pattern
-		IFileManager &FileManager = IFileManager::Get();
-	FileManager.FindFiles(&dllFiles, AbsoluteFolderPath, TEXT(".dll"));
+	IFileManager &FileManager = IFileManager::Get();
+	FileManager.FindFiles(dllFiles, *AbsoluteFolderPath, TEXT(".dll"));
 	TArray<FString> dllPaths;
 	for (const FString &filename : dllFiles)
 	{
 		if (filename != TEXT("UnrealSharp.dll"))
 		{
 			dllPaths.Add(
-				FPaths::Combine(GetUserAssemblyDirectory(), filename))
+				FPaths::Combine(GetUserAssemblyDirectory(), filename));
 		}
 	}
 	return dllPaths;

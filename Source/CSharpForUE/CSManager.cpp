@@ -197,6 +197,11 @@ bool FCSManager::LoadRuntimeHost()
 bool FCSManager::LoadUserAssembly()
 {
 	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
+	TArray<FString> UserAssemblies = FCSProcHelper::GetAllUserAssemblyPaths();
+	for(FString UserAssembly : UserAssemblies)
+	{
+		UE_LOG(LogUnrealSharp, Log, TEXT("User Assembly: %s"), *UserAssembly);
+	}
 
 	if (!FPaths::FileExists(UserAssemblyPath))
 	{
