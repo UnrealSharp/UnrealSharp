@@ -196,24 +196,37 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
+	//const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
 	TArray<FString> UserAssemblies = FCSProcHelper::GetAllUserAssemblyPaths();
 	for(FString UserAssembly : UserAssemblies)
 	{
 		UE_LOG(LogUnrealSharp, Log, TEXT("User Assembly: %s"), *UserAssembly);
 	}
 
-	if (!FPaths::FileExists(UserAssemblyPath))
+	if (UserAssemblies.Num() == 0)
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find user assembly at %s"), *UserAssemblyPath);
+		UE_LOG(LogUnrealSharp, Log, TEXT("No user assemblies found."));
 		return false;
 	}
-	
-	if (!LoadAssembly(UserAssemblyPath))
+	//if (!FPaths::FileExists(UserAssemblyPath))
+	//{
+	//	UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find user assembly at %s"), *UserAssemblyPath);
+	//	return false;
+	//}
+	for(FString UserAssembly : UserAssemblies)
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
-		return false;
+		if (!LoadAssembly(UserAssembly))
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssembly);
+			return false;
+		}
 	}
+
+	//if (!LoadAssembly(UserAssemblyPath))
+	//{
+	//	UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
+	//	return false;
+	//}
 
 	return true;
 }
