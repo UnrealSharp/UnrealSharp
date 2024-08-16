@@ -23,11 +23,13 @@ public class WeaveProject : BuildToolAction
             }
         }
 
-        var projFiles = currentDir.GetFiles("*.csproj");
+        var csprojFiles = currentDir.GetFiles("*.csproj");
+        var fsprojFiles = currentDir.GetFiles("*.fsproj");
+        var projFiles = csprojFiles.Concat(fsprojFiles).ToArray();
         if (projFiles.Length > 0)
         {
             Console.WriteLine("Weaving "+projFiles[0].FullName);
-            var projectName = projFiles[0].Name.Replace(".csproj", "");
+            var projectName = projFiles[0].Name.Replace(".csproj", "").Replace(".fsproj", "");
             BuildToolProcess weaveProcess = new BuildToolProcess();
         
             // Add path to the compiled binaries.
