@@ -237,7 +237,12 @@ public static class WeaverHelper
         return parameter;
     }
 
-    public static MethodDefinition CopyMethod(string name, MethodDefinition method, bool addMethod = true)
+    /// <param name="name">name the method copy will have</param>
+    /// <param name="method">original method</param>
+    /// <param name="addMethod">Add the method copy to the declaring type. this allows to use the original sources to be matched to the copy.</param>
+    /// <param name="copyMetadataToken"></param>
+    /// <returns>new instance of as copy of the original</returns>
+    public static MethodDefinition CopyMethod(string name, MethodDefinition method, bool addMethod = true, bool copyMetadataToken = true)
     {
         MethodDefinition newMethod = new MethodDefinition(name, method.Attributes, method.ReturnType)
         {
@@ -246,6 +251,11 @@ public static class WeaverHelper
             CallingConvention = method.CallingConvention,
             Body = method.Body
         };
+
+        if (copyMetadataToken)
+        {
+            newMethod.MetadataToken = method.MetadataToken;
+        }
 
         foreach (ParameterDefinition parameter in method.Parameters)
         {

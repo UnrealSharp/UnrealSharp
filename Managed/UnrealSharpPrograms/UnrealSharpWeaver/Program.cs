@@ -127,7 +127,7 @@ public static class Program
         {
             assembly.Write(assemblyOutputPath, new WriterParameters
             {
-                WriteSymbols = true,
+                WriteSymbols = false,
                 SymbolWriterProvider = new PdbWriterProvider(),
             });
         }
