@@ -46,7 +46,7 @@ public static class FunctionProcessor
                     continue;
                 }
 
-                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != null)
+                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != virtualFunction)
                 {
                     continue;
                 }
