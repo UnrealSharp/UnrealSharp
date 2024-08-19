@@ -109,7 +109,7 @@ public static class UnrealStructProcessor
         // Create a field to cache the native struct class.
         // nint a = UCoreUObjectExporter.CallGetNativeStructFromName("MyStruct");
         VariableDefinition nativeStructClass = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
-        staticConstructorBody.Emit(OpCodes.Ldstr, structTypeDefinition.Name);
+        staticConstructorBody.Emit(OpCodes.Ldstr, metadata.Name);
         staticConstructorBody.Emit(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod);
         staticConstructorBody.Emit(OpCodes.Stloc, nativeStructClass);
         
