@@ -209,7 +209,10 @@ public partial class UObject
     {
         unsafe
         {
-            IntPtr handle = UWorldExporter.CallSpawnActor(NativeObject, &spawnTransform, actorType.NativeClass, ref spawnParameters);
+            byte* transformBuffer = stackalloc byte[FTransformMarshaller.GetNativeDataSize()];
+            FTransformMarshaller.ToNative((IntPtr)transformBuffer, 0, spawnTransform);
+
+            IntPtr handle = UWorldExporter.CallSpawnActor(NativeObject, (IntPtr)transformBuffer, actorType.NativeClass, ref spawnParameters);
             return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
         }
     }
