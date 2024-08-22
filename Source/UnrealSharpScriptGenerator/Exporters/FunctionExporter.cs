@@ -485,16 +485,31 @@ public class FunctionExporter
     {
         FunctionExporter exporter = new FunctionExporter(function, OverloadMode.SuppressOverloads,
             EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call);
+
+        AttributeBuilder attributeBuilder = new AttributeBuilder();
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+
+        if (!function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        {
+            attributeBuilder.AddAttribute("USingleDelegate");
+        }
+        
+        attributeBuilder.Finish();
+        builder.AppendLine(attributeBuilder.ToString());
         
         builder.AppendLine($"public delegate void Signature({exporter._paramStringApiWithDefaults});");
         builder.AppendLine();
+        
         exporter.ExportFunctionVariables(builder);
         builder.AppendLine();
+        
         builder.AppendLine($"protected void Invoker({exporter._paramStringApiWithDefaults})");
         builder.OpenBrace();
+        
         builder.BeginUnsafeBlock();
         exporter.ExportInvoke(builder);
         builder.EndUnsafeBlock();
+        
         builder.CloseBrace();
     }
     
@@ -709,7 +724,7 @@ public class FunctionExporter
     {
         builder.AppendTooltip(_function);
 
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(_function);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(_function);
         
         if (BlueprintEvent)
         {

@@ -11,11 +11,6 @@ public static class DelegateExporter
 {
     public static void ExportDelegate(UhtFunction function)
     {
-        if (!function.HasAllFlags(EFunctionFlags.Delegate))
-        {
-            throw new Exception("Function is not a delegate");
-        }
-        
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
         string delegateNamespace = function.GetNamespace();
         

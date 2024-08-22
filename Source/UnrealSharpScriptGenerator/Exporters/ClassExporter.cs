@@ -32,7 +32,7 @@ public static class ClassExporter
         
         stringBuilder.AppendTooltip(classObj);
         
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(classObj);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(classObj);
         if (classObj.ClassFlags.HasAnyFlags(EClassFlags.Abstract))
         {
             attributeBuilder.AddArgument("ClassFlags.Abstract");

@@ -6,6 +6,7 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
         <NoWarn>$(NoWarn);1570;0649;0169;0108;0109</NoWarn>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
     
     <ItemGroup>

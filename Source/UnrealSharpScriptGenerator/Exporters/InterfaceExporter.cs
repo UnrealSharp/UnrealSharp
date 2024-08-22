@@ -17,7 +17,7 @@ public static class InterfaceExporter
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.AppendTooltip(interfaceObj);
         
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(interfaceObj);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
         attributeBuilder.AddGeneratedTypeAttribute(interfaceObj);
         attributeBuilder.Finish();
 

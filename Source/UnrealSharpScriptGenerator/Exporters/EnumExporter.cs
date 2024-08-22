@@ -16,7 +16,7 @@ public static class EnumExporter
         stringBuilder.GenerateTypeSkeleton(moduleName);
         stringBuilder.AppendTooltip(enumObj);
         
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(enumObj);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(enumObj);
         attributeBuilder.AddGeneratedTypeAttribute(enumObj);
         attributeBuilder.Finish();
         

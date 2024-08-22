@@ -223,11 +223,11 @@ public static class Program
                         {
                             RegisterType(interfaces, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("UnrealSharp.MulticastDelegate"))
                         {
                             RegisterType(multicastDelegates, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
+                        else if (type.BaseType != null && type.BaseType.Name.Contains("UnrealSharp.Delegate"))
                         {
                             RegisterType(delegates, type);
                         }

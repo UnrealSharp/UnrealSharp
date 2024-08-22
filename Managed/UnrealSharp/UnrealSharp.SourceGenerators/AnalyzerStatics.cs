@@ -1,6 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.SourceGenerators;
 
 public static class AnalyzerStatics
 {
@@ -29,6 +31,13 @@ public static class AnalyzerStatics
         }
 
         return false;
+    }
+    
+    internal static bool HasAttribute(MemberDeclarationSyntax memberDecl, string attributeName)
+    {
+        return memberDecl.AttributeLists
+            .SelectMany(attrList => attrList.Attributes)
+            .Any(attr => attr.Name.ToString().Contains(attributeName));
     }
 
     internal static bool InheritsFrom(INamedTypeSymbol symbol, string baseTypeName)

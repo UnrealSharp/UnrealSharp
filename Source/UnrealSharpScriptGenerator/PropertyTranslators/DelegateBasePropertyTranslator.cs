@@ -17,7 +17,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
         string delegateName = function.EngineName;
         int delegateSignatureIndex = delegateName.IndexOf("__DelegateSignature", StringComparison.Ordinal);
         string strippedDelegateName = delegateName.Substring(0, delegateSignatureIndex);
-        return strippedDelegateName;
+        return "U" + strippedDelegateName;
     }
     
     public static string GetFullDelegateName(UhtFunction function)

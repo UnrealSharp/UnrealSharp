@@ -2,11 +2,11 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
 
-namespace UnrealSharp.SourceGenerators;
+namespace UnrealSharp.SourceGenerators.DelegateGenerator;
 
 public abstract class DelegateBuilder
 {
-    public abstract void StartBuilding(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, INamedTypeSymbol classSymbol);
+    public abstract void StartBuilding(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string className, bool generateInvoker);
     
     protected void GenerateGetInvoker(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol)
     {
