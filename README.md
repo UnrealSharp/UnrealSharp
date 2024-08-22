@@ -21,7 +21,7 @@ Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropo
 - .NET 8.0+
 
 ## UnrealSharp 0.2 Issues
-- Linux/Mac support is not yet implemented.
+- Linux support is not yet implemented.
 
 ## Get Started
 
@@ -47,9 +47,9 @@ public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelega
 [UClass]
 // Partial classes are only a requirement if you want UnrealSharp to generate helper methods.
 // Such as: MyCustomComponent foundComponent = MyCustomComponent.Get(actorReference);
-public partial class ResourceBase : Actor, IInteractable
+public partial class AResourceBase : AActor, IInteractable
 {
-    public ResourceBase()
+    public AResourceBase()
     {
         SetReplicates(true);
         RespawnTime = 500.0f;
@@ -57,11 +57,11 @@ public partial class ResourceBase : Actor, IInteractable
     
     // The mesh of the resource
     [UProperty(DefaultComponent = true, RootComponent = true)]
-    public StaticMeshComponent Mesh { get; set; }
+    public UStaticMeshComponent Mesh { get; set; }
     
     // The health component of the resource, if it has one
     [UProperty(DefaultComponent = true)]
-    public HealthComponent HealthComponent { get; set; }
+    public UHealthComponent HealthComponent { get; set; }
     
     [UProperty(PropertyFlags.EditDefaultsOnly)]
     public int PickUpAmount { get; set; }
@@ -76,7 +76,7 @@ public partial class ResourceBase : Actor, IInteractable
     
     // The effect to play when the resource is picked up
     [UProperty(PropertyFlags.EditDefaultsOnly)]
-    public NiagaraSystem? PickUpEffect { get; set; }
+    public TSoftObjectPtr<UNiagaraSystem>? PickUpEffect { get; set; }
     
     // The delegate to call when the resource is picked up, broadcasts on clients too.
     [UProperty(PropertyFlags.BlueprintAssignable)]
@@ -89,16 +89,16 @@ public partial class ResourceBase : Actor, IInteractable
     }
 
     [UFunction]
-    protected virtual void OnDeath(Player player) {}
+    protected virtual void OnDeath(APlayer player) {}
 
     // Interface method implementation
-    public void OnInteract(Player player)
+    public void OnInteract(APlayer player)
     {
         GatherResource(player);
     }
     
     [UFunction(FunctionFlags.BlueprintCallable)]
-    protected void GatherResource(Player player)
+    protected void GatherResource(APlayer player)
     {
         if (bIsPickedUp)
         {
@@ -111,7 +111,7 @@ public partial class ResourceBase : Actor, IInteractable
         }
 
         // Get the ExperienceComponent from the PlayerState using the generated helper methods.
-        ExperienceComponent experienceComponent = ExperienceComponent.Get(player.PlayerState);
+        UExperienceComponent experienceComponent = UExperienceComponent.Get(player.PlayerState);
         experienceComponent.AddExperience(PickUpAmount);
         
         // Respawn the resource after a certain amount of time
@@ -134,7 +134,7 @@ public partial class ResourceBase : Actor, IInteractable
     {
         if (PickUpEffect is not null)
         {
-            NiagaraFunctionLibrary.SpawnSystemAtLocation(this, PickUpEffect, GetActorLocation(), GetActorRotation());
+            UNiagaraFunctionLibrary.SpawnSystemAtLocation(this, PickUpEffect, GetActorLocation(), GetActorRotation());
         }
         
         OnIsPickedUpChanged(bIsPickedUp);

@@ -1,8 +1,14 @@
 ﻿#include "CSMetaDataFactory.h"
 #include "Dom/JsonObject.h"
-#include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSArrayPropertyMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSClassPropertyMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSEnumPropertyMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSMapPropertyMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSStructPropertyMetaData.h"
 
-static TMap<ECSPropertyType, TFunction<TSharedPtr<FUnrealType>()>> MetaDataFactoryMap;
+static TMap<ECSPropertyType, TFunction<TSharedPtr<FCSUnrealType>()>> MetaDataFactoryMap;
 
 void CSMetaDataFactory::Initialize()
 {
@@ -11,40 +17,42 @@ void CSMetaDataFactory::Initialize()
 		return;
 	}
 	
-	REGISTER_METADATA(ECSPropertyType::Enum, FEnumPropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::Enum, FCSEnumPropertyMetaData)
 	
-	REGISTER_METADATA(ECSPropertyType::Delegate, FDelegateMetaData)
-	REGISTER_METADATA(ECSPropertyType::MulticastInlineDelegate, FDelegateMetaData)
-	REGISTER_METADATA(ECSPropertyType::MulticastSparseDelegate, FDelegateMetaData)
+	REGISTER_METADATA(ECSPropertyType::Delegate, FCSDelegateMetaData)
+	REGISTER_METADATA(ECSPropertyType::MulticastInlineDelegate, FCSDelegateMetaData)
+	REGISTER_METADATA(ECSPropertyType::MulticastSparseDelegate, FCSDelegateMetaData)
 
-	REGISTER_METADATA(ECSPropertyType::Struct, FStructPropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::Struct, FCSStructPropertyMetaData)
 	
-	REGISTER_METADATA(ECSPropertyType::Object, FObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::WeakObject, FObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::SoftObject, FObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::Object, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::WeakObject, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSObjectMetaData)
 	
-	REGISTER_METADATA(ECSPropertyType::SoftClass, FObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::Class, FClassPropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::SoftClass, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::Class, FCSClassPropertyMetaData)
 	
-	REGISTER_METADATA(ECSPropertyType::Array, FArrayPropertyMetaData)
-	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FDefaultComponentMetaData)
+	REGISTER_METADATA(ECSPropertyType::Array, FCSArrayPropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
+
+	REGISTER_METADATA(ECSPropertyType::Map, FCSMapPropertyMetaData)
 }
 
-TSharedPtr<FUnrealType> CSMetaDataFactory::Create(const TSharedPtr<FJsonObject>& PropertyMetaData)
+TSharedPtr<FCSUnrealType> CSMetaDataFactory::Create(const TSharedPtr<FJsonObject>& PropertyMetaData)
 {
 	Initialize();
 	
 	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField(TEXT("PropertyDataType"));
 	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField(TEXT("PropertyType")));
 	
-	TSharedPtr<FUnrealType> MetaData;
-	if (TFunction<TSharedPtr<FUnrealType>()>* FactoryMethod = MetaDataFactoryMap.Find(PropertyType))
+	TSharedPtr<FCSUnrealType> MetaData;
+	if (TFunction<TSharedPtr<FCSUnrealType>()>* FactoryMethod = MetaDataFactoryMap.Find(PropertyType))
 	{
 		MetaData = (*FactoryMethod)();
 	}
 	else
 	{
-		MetaData = MakeShared<FUnrealType>();
+		MetaData = MakeShared<FCSUnrealType>();
 	}
 
 	MetaData->SerializeFromJson(PropertyTypeObject);

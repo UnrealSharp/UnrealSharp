@@ -25,11 +25,6 @@
 			"LoadingPhase": "PreDefault"
 		},
 		{
-			"Name": "GlueGenerator",
-			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
-		},
-		{
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PreDefault"
@@ -42,7 +37,8 @@
 	],
 	"SupportedTargetPlatforms": 
 	[
-		"Win64"
+		"Win64",
+		"Mac"
 	],
 	"Plugins": 
 	[

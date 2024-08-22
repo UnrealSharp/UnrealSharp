@@ -20,7 +20,12 @@ public static class UnrealClassProcessor
     
     private static void ProcessParentClass(TypeDefinition type, IReadOnlyDictionary<TypeDefinition, ClassMetaData> classDictionary, ref HashSet<TypeDefinition> rewrittenClasses)
     {
-        var baseType = type.BaseType.Resolve();
+        TypeDefinition baseType = type.BaseType.Resolve();
+        
+        if (!WeaverHelper.IsValidBaseForUObject(baseType))
+        {
+            throw new Exception($"{type.FullName} is marked with UClass but doesn't inherit from CoreUObject.Object.");
+        }
         
         if (baseType != null && classDictionary.ContainsKey(baseType) && !rewrittenClasses.Contains(baseType))
         {

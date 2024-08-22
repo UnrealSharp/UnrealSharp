@@ -1,15 +1,15 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "CSTypeRegistry.h"
+#include "MetaData/CSEnumMetaData.h"
 #include "TypeGenerator/CSEnum.h"
 
-class CSHARPFORUE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuilder<FEnumMetaData, UCSEnum>
+class CSHARPFORUE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuilder<FCSEnumMetaData, UCSEnum>
 {
 	
 public:
 	
-	FCSGeneratedEnumBuilder(const TSharedPtr<FEnumMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) { }
+	FCSGeneratedEnumBuilder(const TSharedPtr<FCSEnumMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) { }
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;

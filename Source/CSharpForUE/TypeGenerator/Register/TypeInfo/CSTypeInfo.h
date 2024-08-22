@@ -1,11 +1,8 @@
 ﻿#pragma once
 
-#include "CSharpForUE/CSManager.h"
-
 template<typename TMetaData, typename TField, typename TTypeBuilder>
 struct CSHARPFORUE_API TCSharpTypeInfo
 {
-public:
 	virtual ~TCSharpTypeInfo() = default;
 
 	TCSharpTypeInfo(const TSharedPtr<FJsonValue>& MetaData) : TypeMetaData(nullptr), Field(nullptr)

@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -69,7 +70,7 @@ public class FunctionMetaData : BaseMetaData
                 hasOutParams = true;
                 modifier = ParameterType.Ref;
             }
-            
+
             Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
         }
 

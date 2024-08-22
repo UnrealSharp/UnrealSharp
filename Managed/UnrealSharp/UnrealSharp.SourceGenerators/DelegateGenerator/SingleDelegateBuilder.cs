@@ -35,7 +35,7 @@ public class SingleDelegateBuilder : DelegateBuilder
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();
         
-        stringBuilder.AppendLine($"    public {classSymbol.Name}(UnrealSharp.CoreUObject.Object targetObject, Name functionName) : base(targetObject, functionName)");
+        stringBuilder.AppendLine($"    public {classSymbol.Name}(UnrealSharp.CoreUObject.UObject targetObject, FName functionName) : base(targetObject, functionName)");
         stringBuilder.AppendLine("    {");
         stringBuilder.AppendLine("    }");
         stringBuilder.AppendLine();

@@ -30,7 +30,7 @@ public partial struct GameplayTagContainer
     /// If TagToCheck is not Valid it will always return False
     /// </summary>
     /// <returns>True if TagToCheck is in this container, false if it is not</returns>
-    public bool HasTag(GameplayTag tag)
+    public bool HasTag(FGameplayTag tag)
     {
         return FGameplayTagContainerExporter.CallHasTag(ref this, ref tag);
     }
@@ -41,7 +41,7 @@ public partial struct GameplayTagContainer
     /// If TagToCheck is not Valid it will always return False
     /// </summary>
     /// <returns>True if TagToCheck is in this container, false if it is not</returns>
-    public bool HasTagExact(GameplayTag tag)
+    public bool HasTagExact(FGameplayTag tag)
     {
         return FGameplayTagContainerExporter.CallHasTagExact(ref this, ref tag);
     }
@@ -94,7 +94,7 @@ public partial struct GameplayTagContainer
     /// Add the specified tag to the container
     /// </summary>
     /// <param name="tag">Tag to add to the container</param>
-    public void AddTag(GameplayTag tag)
+    public void AddTag(FGameplayTag tag)
     {
         FGameplayTagContainerExporter.CallAddTag(ref this, ref tag);
     }
@@ -104,7 +104,7 @@ public partial struct GameplayTagContainer
     /// Useful when building container from another data struct (TMap for example)
     /// </summary>
     /// <param name="tag">Tag to add to the container</param>
-    public void AddTagFast(GameplayTag tag)
+    public void AddTagFast(FGameplayTag tag)
     {
         FGameplayTagContainerExporter.CallAddTagFast(ref this, ref tag);
     }
@@ -113,7 +113,7 @@ public partial struct GameplayTagContainer
     /// Adds a tag to the container and removes any direct parents, wont add if child already exists
     /// </summary>
     /// <param name="tag">The tag to try and add to this container</param>
-    public bool AddLeafTag(GameplayTag tag)
+    public bool AddLeafTag(FGameplayTag tag)
     {
         return FGameplayTagContainerExporter.CallAddLeafTag(ref this, ref tag);
     }
@@ -123,7 +123,7 @@ public partial struct GameplayTagContainer
     /// </summary>
     /// <param name="tag"></param>
     /// <param name="bDeferParentTags"></param>
-    public bool RemoveTag(GameplayTag tag, bool bDeferParentTags = false)
+    public bool RemoveTag(FGameplayTag tag, bool bDeferParentTags = false)
     {
         return FGameplayTagContainerExporter.CallRemoveTag(ref this, ref tag, bDeferParentTags);
     }

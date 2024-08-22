@@ -1,6 +1,5 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "UFunctionExporter.h"
 
 void UUFunctionExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
@@ -10,5 +9,6 @@ void UUFunctionExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 
 uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 {
+	check(NativeFunction);
 	return NativeFunction->ParmsSize;
 }

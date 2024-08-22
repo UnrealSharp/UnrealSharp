@@ -2,6 +2,10 @@
 
 #include "CSManagedGCHandle.h"
 
+#if !defined(_WIN32)
+#define __stdcall
+#endif
+
 struct FCSManagedPluginCallbacks
 {
 	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*);
@@ -17,8 +21,10 @@ struct CSHARPFORUE_API FCSAssembly
 	{
 		AssemblyPath = FPaths::ConvertRelativePathToFull(InAssemblyPath);
 
+#if defined(_WIN32)
 		// Replace forward slashes with backslashes
 		AssemblyPath.ReplaceInline(TEXT("/"), TEXT("\\"));
+#endif
 		
 		AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
 	}

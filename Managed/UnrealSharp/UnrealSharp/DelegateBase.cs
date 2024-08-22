@@ -1,6 +1,4 @@
-using System.Numerics;
-using UnrealSharp.Interop;
-using Object = UnrealSharp.CoreUObject.Object;
+using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 
@@ -26,8 +24,8 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
 
     protected abstract void ProcessDelegate(IntPtr parameters);
     
-    public abstract void BindUFunction(Object targetObject, Name functionName);
-    public abstract void BindUFunction(WeakObject<Object> targetObject, Name functionName);
+    public abstract void BindUFunction(UObject targetObject, FName functionName);
+    public abstract void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName);
 }
 
 public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new()
