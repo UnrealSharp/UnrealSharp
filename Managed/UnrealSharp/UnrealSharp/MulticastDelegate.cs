@@ -65,6 +65,8 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
     }
 
+    public override bool IsBound => FMulticastDelegatePropertyExporter.CallIsBound(NativeDelegate).ToManagedBool();
+
     public override void Clear()
     {
         FMulticastDelegatePropertyExporter.CallClearDelegate(NativeDelegate, NativeProperty);

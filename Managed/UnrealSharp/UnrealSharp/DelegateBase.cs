@@ -34,42 +34,52 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
     
     public abstract bool Contains(TDelegate handler);
     public abstract void Clear();
+
+    // <summary>
+    /// Checks if the delegate is bound to any UObject.
+    /// </summary>
+    public virtual bool IsBound => throw new NotImplementedException();
 }
 
-public class DelegateMarshaller<TDelegate> where TDelegate : IDelegateBase, new()
+public class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDelegate : TDelegateBase<TDelegate>, new() where TDelegate : Delegate
 {
-    public static TDelegate FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
+    public static TWrapperDelegate FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
     {
-        TDelegate managedDelegate = new TDelegate();
-        managedDelegate.FromNative(nativeBuffer, nativeProperty);
+        TWrapperDelegate managedDelegate = new TWrapperDelegate();
+        managedDelegate.InnerDelegate.FromNative(nativeBuffer, nativeProperty);
         return managedDelegate;
     }
 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, object obj)
     {
-        if (obj is not IDelegateBase @delegate)
+        if (obj is not TWrapperDelegate @delegate)
         {
             return;
         }
-        @delegate.ToNative(nativeBuffer);
+        
+        @delegate.InnerDelegate.ToNative(nativeBuffer);
     }
 }
 
-public class UDelegate<T> where T : Delegate
+public class TDelegateBase<T> where T : Delegate
 {
-    static readonly Type Wrapper;
+    private static readonly Type Wrapper;
     public DelegateBase<T> InnerDelegate;
-    
-    internal UDelegate()
+
+    internal TDelegateBase()
     {
+        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
     }
 
-    static UDelegate()
+    static TDelegateBase()
     {
-        Wrapper = Type.GetType($"U{typeof(T).FullName}");
-        if (Wrapper is null)
+        string wrapperName = $"U{typeof(T).Name}";
+        string fullName = $"{typeof(T).Namespace}.{wrapperName}";
+        
+        Wrapper = Type.GetType(fullName);
+        if (Wrapper == null)
         {
-            throw new Exception($"Could not find wrapper for {typeof(T).FullName}");
+            throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
         }
     }
     
@@ -83,6 +93,11 @@ public class UDelegate<T> where T : Delegate
     }
     
     /// <summary>
+    /// Checks if the delegate is bound to any UObject.
+    /// </summary>
+    public bool IsBound => InnerDelegate.IsBound;
+    
+    /// <summary>
     /// Removes a function from the delegate.
     /// Recommend using - operator instead.
     /// </summary>
@@ -92,7 +107,7 @@ public class UDelegate<T> where T : Delegate
     }
     
     /// <summary>
-    /// Checks if the delegate contains a function.
+    /// Checks if the delegate contains a callback.
     /// </summary>
     public bool Contains(T handler)
     {
@@ -128,32 +143,44 @@ public class UDelegate<T> where T : Delegate
     {
         InnerDelegate.BindUFunction(targetObjectPtr, functionName);
     }
+}
+
+public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
+{
+    public TMulticastDelegate() : base()
+    {
+        
+    }
     
-    public static UDelegate<T> operator +(UDelegate<T> thisDelegate, T handler)
+    public static TMulticastDelegate<T> operator +(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
         return thisDelegate;
     }
 
-    public static UDelegate<T> operator -(UDelegate<T> thisDelegate, T handler)
+    public static TMulticastDelegate<T> operator -(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Remove(handler);
         return thisDelegate;
     }
-}
+};
 
-public class UMulticastDelegate<T> : UDelegate<T> where T : Delegate
+public class TSingleDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public UMulticastDelegate() : base()
+    public TSingleDelegate() : base()
     {
         
     }
-};
-
-public class USingleDelegate<T> : UDelegate<T> where T : Delegate
-{
-    public USingleDelegate() : base()
+    
+    public static TSingleDelegate<T> operator +(TSingleDelegate<T> thisDelegate, T handler)
     {
-        
+        thisDelegate.InnerDelegate.Add(handler);
+        return thisDelegate;
+    }
+
+    public static TSingleDelegate<T> operator -(TSingleDelegate<T> thisDelegate, T handler)
+    {
+        thisDelegate.InnerDelegate.Remove(handler);
+        return thisDelegate;
     }
 };

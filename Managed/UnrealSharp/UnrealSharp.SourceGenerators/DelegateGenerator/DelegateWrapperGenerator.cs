@@ -143,7 +143,7 @@ public class DelegateWrapperGenerator : ISourceGenerator
                 ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Name}"))
                 : string.Empty;
 
-            stringBuilder.AppendLine($" public static void Invoke(this UDelegate<{delegateSymbol}> @delegate{(args.Any() ? $", {args}" : string.Empty)})");
+            stringBuilder.AppendLine($" public static void Invoke(this TDelegateBase<{delegateSymbol}> @delegate{(args.Any() ? $", {args}" : string.Empty)})");
             stringBuilder.AppendLine("      {");
             stringBuilder.AppendLine($"         @delegate.InnerDelegate.Invoke({parameters});");
             stringBuilder.AppendLine("      }");

@@ -4,4 +4,5 @@
 public static unsafe partial class FScriptDelegateExporter
 {
     public static delegate* unmanaged<ref DelegateData, IntPtr, void> BroadcastDelegate;
+    public static delegate* unmanaged<IntPtr, NativeBool> IsBound;
 }

@@ -105,7 +105,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         Clear();
     }
 
-    public bool IsBound => _data.Object.ObjectIndex != 0;
+    public override bool IsBound => _data.Object.ObjectIndex != 0;
 
     public override void Clear()
     {

@@ -90,7 +90,7 @@ public class FunctionExporter
         Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
     }
 
-    private FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility) 
+    public FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility) 
     {
         _function = function;
         Initialize(overloadMode, protectionMode, blueprintVisibility);
@@ -481,7 +481,7 @@ public class FunctionExporter
         builder.AppendLine();
     }
 
-    public static void ExportDelegateFunction(GeneratorStringBuilder builder, UhtFunction function)
+    public static FunctionExporter ExportDelegateSignature(GeneratorStringBuilder builder, UhtFunction function, string delegateName)
     {
         FunctionExporter exporter = new FunctionExporter(function, OverloadMode.SuppressOverloads,
             EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call);
@@ -497,9 +497,14 @@ public class FunctionExporter
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
         
-        builder.AppendLine($"public delegate void Signature({exporter._paramStringApiWithDefaults});");
+        builder.AppendLine($"public delegate void {delegateName}({exporter._paramStringApiWithDefaults});");
         builder.AppendLine();
         
+        return exporter;
+    }
+
+    public static void ExportDelegateGlue(GeneratorStringBuilder builder, FunctionExporter exporter)
+    {
         exporter.ExportFunctionVariables(builder);
         builder.AppendLine();
         
