@@ -28,7 +28,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
 
         TypeReference[] typeParams = GetTypeParams();
         
-        if (marshallerName.EndsWith("`1"))
+        if (marshallerName.Contains("`"))
         {
             MarshallerClass = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, marshallerName, typeParams);
         }
@@ -59,7 +59,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         ToNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "ToNative")!;
         FromNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "FromNative")!;
         
-        if (marshallerName.EndsWith("`1"))
+        if (marshallerName.Contains("`"))
         {
             ToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ToNative, typeParams);
             FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, typeParams);

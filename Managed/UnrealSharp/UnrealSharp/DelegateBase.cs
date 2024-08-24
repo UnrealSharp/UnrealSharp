@@ -6,7 +6,6 @@ namespace UnrealSharp;
 public interface IDelegateBase
 {
     void FromNative(IntPtr address, IntPtr nativeProperty);
-
     void ToNative(IntPtr address);
 }
 
@@ -64,7 +63,7 @@ public class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDeleg
 public class TDelegateBase<T> where T : Delegate
 {
     private static readonly Type Wrapper;
-    public DelegateBase<T> InnerDelegate;
+    public readonly DelegateBase<T> InnerDelegate;
 
     internal TDelegateBase()
     {
@@ -73,10 +72,11 @@ public class TDelegateBase<T> where T : Delegate
 
     static TDelegateBase()
     {
-        string wrapperName = $"U{typeof(T).Name}";
-        string fullName = $"{typeof(T).Namespace}.{wrapperName}";
+        Type delegateType = typeof(T);
+        string wrapperName = $"U{delegateType.Name}";
+        string fullName = $"{delegateType.Namespace}.{wrapperName}";
         
-        Wrapper = Type.GetType(fullName);
+        Wrapper = delegateType.Assembly.GetType(fullName);
         if (Wrapper == null)
         {
             throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
@@ -149,9 +149,13 @@ public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
 {
     public TMulticastDelegate() : base()
     {
-        
     }
-    
+
+    public override string ToString()
+    {
+        return InnerDelegate.ToString();
+    }
+
     public static TMulticastDelegate<T> operator +(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
