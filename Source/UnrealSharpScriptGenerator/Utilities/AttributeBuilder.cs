@@ -10,17 +10,15 @@ public class AttributeBuilder
     private readonly StringBuilder _stringBuilder;
     private AttributeState _state;
     
-    private AttributeBuilder()
+    public AttributeBuilder()
     {
         _stringBuilder = new StringBuilder("[");
         _state = AttributeState.Open;
     }
-
-    public static AttributeBuilder CreateAttributeBuilder(UhtType type)
+    
+    public AttributeBuilder(UhtType type) : this()
     {
-        AttributeBuilder builder = new();
-        builder.AddAttribute(GetAttributeForType(type));
-        return builder;
+        AddAttribute(GetAttributeForType(type));
     }
 
     public void AddGeneratedTypeAttribute(UhtType type)

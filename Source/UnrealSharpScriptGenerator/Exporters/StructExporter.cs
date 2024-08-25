@@ -43,7 +43,7 @@ public static class StructExporter
         
         stringBuilder.AppendTooltip(structObj);
         
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(structObj);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(structObj);
         if (isBlittable)
         {
             attributeBuilder.AddIsBlittableAttribute();
