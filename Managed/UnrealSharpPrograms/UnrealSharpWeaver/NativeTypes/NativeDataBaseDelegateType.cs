@@ -9,10 +9,11 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
     
     public TypeReference fieldType;
     public TypeReference delegateType;
+    public TypeReference wrapperType;
 
     protected override TypeReference[] GetTypeParams()
     {
-        return [WeaverHelper.ImportType(fieldType), WeaverHelper.ImportType(delegateType)];
+        return [WeaverHelper.ImportType(delegateType)];
     }
 
     public NativeDataBaseDelegateType(TypeReference typeRef, string marshallerName, PropertyType propertyType) 
@@ -20,6 +21,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
     {
         fieldType = typeRef;
         delegateType = GetDelegateType(typeRef);
+        wrapperType = GetWrapperType(delegateType);
         
         TypeDefinition delegateTypeDefinition = delegateType.Resolve();
         foreach (MethodDefinition method in delegateTypeDefinition.Methods)

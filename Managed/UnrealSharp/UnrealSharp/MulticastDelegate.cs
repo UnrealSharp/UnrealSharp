@@ -56,23 +56,6 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
-    public override string ToString()
-    {
-        UnmanagedArray buffer = new UnmanagedArray();
-        try
-        {
-            unsafe
-            {
-                FMulticastDelegatePropertyExporter.CallToString(NativeDelegate, ref buffer);
-                return new string((char*)buffer.Data);
-            }
-        }
-        finally
-        {
-            buffer.Destroy();
-        }
-    }
-
     public override bool Contains(TDelegate handler)
     {
         if (handler.Target is not UObject targetObject)

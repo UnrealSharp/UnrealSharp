@@ -128,28 +128,35 @@ public class DelegateWrapperGenerator : ISourceGenerator
             builder.StartBuilding(stringBuilder, delegateSymbol, delegateName!, generateInvoker);
                     
             stringBuilder.AppendLine("}");
-            
             stringBuilder.AppendLine();
-            stringBuilder.AppendLine($"public static class {delegateName}Extensions");
-            stringBuilder.AppendLine("{");
             
-            var parametersList = delegateSymbol.DelegateInvokeMethod.Parameters.ToList();
-            
-            string args = parametersList.Any()
-                ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Type} {x.Name}"))
-                : string.Empty;
-            
-            string parameters = parametersList.Any()
-                ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Name}"))
-                : string.Empty;
-
-            stringBuilder.AppendLine($"     public static void Invoke(this TDelegateBase<{delegateSymbol}> @delegate{(args.Any() ? $", {args}" : string.Empty)})");
-            stringBuilder.AppendLine("     {");
-            stringBuilder.AppendLine($"         @delegate.InnerDelegate.Invoke({parameters});");
-            stringBuilder.AppendLine("     }");
-            stringBuilder.AppendLine("}");
+            GenerateDelegateExtensionsClass(stringBuilder, delegateSymbol, delegateName!, delegateType);
             
             context.AddSource($"{namespaceName}.{delegateName}.generated.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
         }
+    }
+    
+    public static void GenerateDelegateExtensionsClass(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string delegateName, DelegateType delegateType)
+    {
+        stringBuilder.AppendLine($"public static class {delegateName}Extensions");
+        stringBuilder.AppendLine("{");
+            
+        var parametersList = delegateSymbol.DelegateInvokeMethod!.Parameters.ToList();
+            
+        string args = parametersList.Any()
+            ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Type} {x.Name}"))
+            : string.Empty;
+            
+        string parameters = parametersList.Any()
+            ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Name}"))
+            : string.Empty;
+        
+        string delegateTypeString = delegateType == DelegateType.Multicast ? "TMulticastDelegate" : "TDelegate";
+
+        stringBuilder.AppendLine($"     public static void Invoke(this {delegateTypeString}<{delegateSymbol}> @delegate{(args.Any() ? $", {args}" : string.Empty)})");
+        stringBuilder.AppendLine("     {");
+        stringBuilder.AppendLine($"         @delegate.InnerDelegate.Invoke({parameters});");
+        stringBuilder.AppendLine("     }");
+        stringBuilder.AppendLine("}");
     }
 }

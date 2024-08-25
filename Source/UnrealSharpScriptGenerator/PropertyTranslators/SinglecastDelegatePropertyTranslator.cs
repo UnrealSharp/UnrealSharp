@@ -18,7 +18,7 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     
     public override string GetManagedType(UhtProperty property)
     {
-        return $"TSingleDelegate<{GetFullDelegateName(((UhtDelegateProperty) property).Function)}>";
+        return $"TDelegate<{GetFullDelegateName(((UhtDelegateProperty) property).Function)}>";
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -41,7 +41,7 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(delegateProperty.Function);
-        builder.AppendLine($"DelegateMarshaller<TSingleDelegate<{fullDelegateName}>, {fullDelegateName}>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
+        builder.AppendLine($"SingleDelegateMarshaller<{fullDelegateName}>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
@@ -49,7 +49,7 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(delegateProperty.Function);
-        builder.AppendLine($"{assignmentOrReturn} DelegateMarshaller<TSingleDelegate<{fullDelegateName}>, {fullDelegateName}>.FromNative(IntPtr.Add({sourceBuffer}, {offset}), IntPtr.Zero, 0);");
+        builder.AppendLine($"{assignmentOrReturn} SingleDelegateMarshaller<{fullDelegateName}>.FromNative(IntPtr.Add({sourceBuffer}, {offset}), 0);");
     }
 
     public override string GetNullValue(UhtProperty property)

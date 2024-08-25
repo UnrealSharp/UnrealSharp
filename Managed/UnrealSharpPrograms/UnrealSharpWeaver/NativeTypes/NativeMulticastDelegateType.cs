@@ -8,7 +8,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 class NativeDataMulticastDelegate : NativeDataBaseDelegateType
 {
     public NativeDataMulticastDelegate(TypeReference delegateType) 
-        : base(delegateType, "DelegateMarshaller`2", PropertyType.MulticastInlineDelegate)
+        : base(delegateType, "MulticastDelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
     {
         NeedsNativePropertyField = true;
     }

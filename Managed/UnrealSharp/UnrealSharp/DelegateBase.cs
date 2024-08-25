@@ -3,14 +3,8 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 
-public interface IDelegateBase
-{
-    void FromNative(IntPtr address, IntPtr nativeProperty);
-    void ToNative(IntPtr address);
-}
-
 [Binding]
-public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : Delegate
+public abstract class DelegateBase<TDelegate> where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();
 
@@ -20,7 +14,6 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
     }
 
     public abstract void FromNative(IntPtr address, IntPtr nativeProperty);
-
     public abstract void ToNative(IntPtr address);
 
     protected abstract void ProcessDelegate(IntPtr parameters);
@@ -40,7 +33,7 @@ public abstract class DelegateBase<TDelegate> : IDelegateBase where TDelegate : 
     public virtual bool IsBound => throw new NotImplementedException();
 }
 
-public class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDelegate : TDelegateBase<TDelegate>, new() where TDelegate : Delegate
+internal class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDelegate : TDelegateBase<TDelegate>, new() where TDelegate : Delegate
 {
     public static TWrapperDelegate FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
     {
@@ -60,7 +53,33 @@ public class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDeleg
     }
 }
 
-public class TDelegateBase<T> where T : Delegate
+public class MulticastDelegateMarshaller<T> where T : Delegate
+{
+    public static TMulticastDelegate<T> FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
+    {
+        return DelegateMarshaller<TMulticastDelegate<T>, T>.FromNative(nativeBuffer, nativeProperty, arrayIndex);
+    }
+    
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, object obj)
+    {
+        DelegateMarshaller<TMulticastDelegate<T>, T>.ToNative(nativeBuffer, arrayIndex, obj);
+    }
+}
+
+public class SingleDelegateMarshaller<T> where T : Delegate
+{
+    public static TDelegate<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    {
+        return DelegateMarshaller<TDelegate<T>, T>.FromNative(nativeBuffer, IntPtr.Zero, arrayIndex);
+    }
+
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, object obj)
+    {
+        DelegateMarshaller<TDelegate<T>, T>.ToNative(nativeBuffer, arrayIndex, obj);
+    }
+}
+
+public abstract class TDelegateBase<T> where T : Delegate
 {
     private static readonly Type Wrapper;
     public readonly DelegateBase<T> InnerDelegate;
@@ -151,11 +170,6 @@ public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
     {
     }
 
-    public override string ToString()
-    {
-        return InnerDelegate.ToString();
-    }
-
     public static TMulticastDelegate<T> operator +(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
@@ -169,20 +183,20 @@ public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
     }
 };
 
-public class TSingleDelegate<T> : TDelegateBase<T> where T : Delegate
+public class TDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public TSingleDelegate() : base()
+    public TDelegate() : base()
     {
         
     }
     
-    public static TSingleDelegate<T> operator +(TSingleDelegate<T> thisDelegate, T handler)
+    public static TDelegate<T> operator +(TDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
         return thisDelegate;
     }
 
-    public static TSingleDelegate<T> operator -(TSingleDelegate<T> thisDelegate, T handler)
+    public static TDelegate<T> operator -(TDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Remove(handler);
         return thisDelegate;

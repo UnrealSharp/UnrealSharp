@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.SourceGenerators.DelegateGenerator;
 
 namespace UnrealSharp.SourceGenerators;
 
@@ -78,7 +79,7 @@ public class AsyncWrapperGenerator : ISourceGenerator
 
             var returnTypeName = asyncMethodInfo.ReturnType != null ? model.GetTypeInfo(asyncMethodInfo.ReturnType).Type.Name : null;
             var actionClassName = $"{asyncMethodInfo.ParentClass.Identifier.Text}{asyncMethodInfo.Method.Identifier.Text}Action";
-            var actionBaseClassName = cancellationTokenParameter != null ? "CSCancellableAsyncAction" : "CSBlueprintAsyncActionBase";
+            var actionBaseClassName = cancellationTokenParameter != null ? "UCSCancellableAsyncAction" : "UCSBlueprintAsyncActionBase";
             var delegateName = $"{actionClassName}Delegate";
             var taskTypeName = asyncMethodInfo.ReturnType != null ? $"Task<{returnTypeName}>" : "Task";
             var paramNameList = string.Join(", ", asyncMethodInfo.Method.ParameterList.Parameters.Select(p => p == cancellationTokenParameter ? "cancellationToken" : p.Identifier.Text));
@@ -98,12 +99,24 @@ public class AsyncWrapperGenerator : ISourceGenerator
                 metadataAttributeList = $"UMetaData(\"DefaultToSelf\", \"Target\"), {metadataAttributeList}";
             }
 
-            sourceBuilder.AppendLine($"public class {delegateName} : MulticastDelegate<{delegateName}.Signature>");
-            sourceBuilder.AppendLine($"{{");
+            sourceBuilder.AppendLine();
+            
             if (asyncMethodInfo.ReturnType != null)
             {
-                sourceBuilder.AppendLine($"    public delegate void Signature({returnTypeName} Result, string Exception);");
-                sourceBuilder.AppendLine($"");
+                sourceBuilder.AppendLine($"public delegate void {delegateName}({returnTypeName} Result, string Exception);");
+            }
+            else
+            {
+                sourceBuilder.AppendLine($"public delegate void {delegateName}(string Exception);");
+            }
+
+            sourceBuilder.AppendLine();
+
+            sourceBuilder.AppendLine($"public class U{delegateName} : MulticastDelegate<{delegateName}>");
+            sourceBuilder.AppendLine($"{{");
+            
+            if (asyncMethodInfo.ReturnType != null)
+            {
                 sourceBuilder.AppendLine($"    protected void Invoker({returnTypeName} Result, string Exception)");
                 sourceBuilder.AppendLine($"    {{");
                 sourceBuilder.AppendLine($"        ProcessDelegate(IntPtr.Zero);");
@@ -111,24 +124,25 @@ public class AsyncWrapperGenerator : ISourceGenerator
             }
             else
             {
-                sourceBuilder.AppendLine($"    public delegate void Signature(string Exception);");
-                sourceBuilder.AppendLine($"");
                 sourceBuilder.AppendLine($"    protected void Invoker(string Exception)");
                 sourceBuilder.AppendLine($"    {{");
                 sourceBuilder.AppendLine($"        ProcessDelegate(IntPtr.Zero);");
                 sourceBuilder.AppendLine($"    }}");
             }
-            sourceBuilder.AppendLine($"");
-            sourceBuilder.AppendLine($"    protected override {delegateName}.Signature GetInvoker()");
+            
+            sourceBuilder.AppendLine();
+            sourceBuilder.AppendLine($"    protected override {delegateName} GetInvoker()");
             sourceBuilder.AppendLine($"    {{");
             sourceBuilder.AppendLine($"        return Invoker;");
             sourceBuilder.AppendLine($"    }}");
             sourceBuilder.AppendLine($"}}");
-            sourceBuilder.AppendLine($"");
+            sourceBuilder.AppendLine();
+            
             sourceBuilder.AppendLine($"[UClass]");
             sourceBuilder.AppendLine($"public class {actionClassName} : {actionBaseClassName}");
             sourceBuilder.AppendLine($"{{");
             sourceBuilder.AppendLine($"    private {taskTypeName}? task;");
+            
             if (cancellationTokenParameter != null)
             {
                 sourceBuilder.AppendLine($"    private readonly CancellationTokenSource cancellationTokenSource = new();");
@@ -140,10 +154,10 @@ public class AsyncWrapperGenerator : ISourceGenerator
             }
             sourceBuilder.AppendLine($"");
             sourceBuilder.AppendLine($"    [UProperty(PropertyFlags.BlueprintAssignable)]");
-            sourceBuilder.AppendLine($"    public {delegateName} Completed {{ get; set; }}");
+            sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}> Completed {{ get; set; }}");
             sourceBuilder.AppendLine($"");
             sourceBuilder.AppendLine($"    [UProperty(PropertyFlags.BlueprintAssignable)]");
-            sourceBuilder.AppendLine($"    public {delegateName} Failed {{ get; set; }}");
+            sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}> Failed {{ get; set; }}");
             sourceBuilder.AppendLine($"");
             sourceBuilder.AppendLine($"    [UFunction(FunctionFlags.BlueprintCallable), {metadataAttributeList}]");
             if (isStatic)
@@ -188,7 +202,7 @@ public class AsyncWrapperGenerator : ISourceGenerator
             
 
             sourceBuilder.AppendLine($"");
-            sourceBuilder.AppendLine($"    protected override void ReceiveActivate()");
+            sourceBuilder.AppendLine($"    protected override void Activate()");
             sourceBuilder.AppendLine($"    {{");
             sourceBuilder.AppendLine($"        if (asyncDelegate == null) {{ throw new InvalidOperationException($\"AsyncDelegate was null\"); }}");
             if (cancellationTokenParameter != null)
@@ -204,10 +218,10 @@ public class AsyncWrapperGenerator : ISourceGenerator
             if (cancellationTokenParameter != null)
             {
                 sourceBuilder.AppendLine($"");
-                sourceBuilder.AppendLine($"    protected override void ReceiveCancel()");
+                sourceBuilder.AppendLine($"    protected override void Cancel()");
                 sourceBuilder.AppendLine($"    {{");
                 sourceBuilder.AppendLine($"        cancellationTokenSource.Cancel();");
-                sourceBuilder.AppendLine($"        base.ReceiveCancel();");
+                sourceBuilder.AppendLine($"        base.Cancel();");
                 sourceBuilder.AppendLine($"    }}");
             }
             sourceBuilder.AppendLine($"");
@@ -225,28 +239,28 @@ public class AsyncWrapperGenerator : ISourceGenerator
             }
             else
             {
-                sourceBuilder.AppendLine($"        if (IsDestroyed) {{ return; }}");
+                sourceBuilder.AppendLine($"        if (IsValid) {{ return; }}");
             }
             sourceBuilder.AppendLine($"        if (t.IsFaulted)");
             sourceBuilder.AppendLine($"        {{");
             if (asyncMethodInfo.ReturnType != null)
             {
-                sourceBuilder.AppendLine($"            Failed.Invoke(default, t.Exception?.ToString() ?? \"Faulted without exception\");");
+                sourceBuilder.AppendLine($"            Failed.InnerDelegate.Invoke(default, t.Exception?.ToString() ?? \"Faulted without exception\");");
             }
             else
             {
-                sourceBuilder.AppendLine($"            Failed.Invoke(t.Exception?.ToString() ?? \"Faulted without exception\");");
+                sourceBuilder.AppendLine($"            Failed.InnerDelegate.Invoke(t.Exception?.ToString() ?? \"Faulted without exception\");");
             }
             sourceBuilder.AppendLine($"        }}");
             sourceBuilder.AppendLine($"        else");
             sourceBuilder.AppendLine($"        {{");
             if (asyncMethodInfo.ReturnType != null)
             {
-                sourceBuilder.AppendLine($"            Completed.Invoke(t.Result, null);");
+                sourceBuilder.AppendLine($"            Completed.InnerDelegate.Invoke(t.Result, null);");
             }
             else
             {
-                sourceBuilder.AppendLine($"            Completed.Invoke(null);");
+                sourceBuilder.AppendLine($"            Completed.InnerDelegate.Invoke(null);");
             }
             sourceBuilder.AppendLine($"        }}");
             sourceBuilder.AppendLine($"    }}");

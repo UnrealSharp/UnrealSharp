@@ -640,9 +640,9 @@ public static class WeaverHelper
                     return new NativeDataMulticastDelegate(typeRef);
                 }
             
-                if (typeDef.Name == "TSingleDelegate`1")
+                if (typeDef.Name == "TDelegate`1")
                 {
-                    return new NativeDataDelegateType(typeRef, typeDef.Name + "Marshaller");
+                    return new NativeDataDelegateType(typeRef);
                 }
             
                 if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
