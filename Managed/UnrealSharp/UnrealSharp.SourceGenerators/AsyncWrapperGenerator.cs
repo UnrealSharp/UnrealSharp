@@ -1,14 +1,10 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using UnrealSharp.SourceGenerators.DelegateGenerator;
 
 namespace UnrealSharp.SourceGenerators;
 
@@ -239,7 +235,7 @@ public class AsyncWrapperGenerator : ISourceGenerator
             }
             else
             {
-                sourceBuilder.AppendLine($"        if (IsValid) {{ return; }}");
+                sourceBuilder.AppendLine($"        if (IsDestroyed) {{ return; }}");
             }
             sourceBuilder.AppendLine($"        if (t.IsFaulted)");
             sourceBuilder.AppendLine($"        {{");
