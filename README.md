@@ -39,10 +39,7 @@ using UnrealSharp.Niagara;
 
 namespace ManagedSharpProject;
 
-public partial class OnIsPickedUpDelegate : MulticastDelegate<OnIsPickedUpDelegate.Signature>
-{
-    public delegate void Signature(bool bIsPickedUp);
-}
+public delegate void OnIsPickedUp(bool bIsPickedUp);
 
 [UClass]
 // Partial classes are only a requirement if you want UnrealSharp to generate helper methods.
@@ -80,7 +77,7 @@ public partial class AResourceBase : AActor, IInteractable
     
     // The delegate to call when the resource is picked up, broadcasts on clients too.
     [UProperty(PropertyFlags.BlueprintAssignable)]
-    public OnIsPickedUpDelegate OnIsPickedUp { get; set; }
+    public TMulticastDelegate<OnIsPickedUp> OnIsPickedUp { get; set; }
 
     protected override void ReceiveBeginPlay()
     {
