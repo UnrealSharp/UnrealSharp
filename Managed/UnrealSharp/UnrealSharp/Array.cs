@@ -67,7 +67,10 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     /// <param name="newSize"> The new size of the array. </param>
     public void Resize(int newSize)
     {
-        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, newSize);
+        unsafe
+        {
+            FArrayPropertyExporter.CallResizeArray(NativeProperty, NativeBuffer, newSize);
+        }
     }
     
     /// <summary>
@@ -77,7 +80,10 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     /// <param name="indexB"> The index of the second element to swap. </param>
     public void Swap(int indexA, int indexB)
     {
-        FArrayPropertyExporter.CallSwapValues(NativeUnrealProperty, NativeBuffer, indexA, indexB);
+        unsafe
+        {
+            FArrayPropertyExporter.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
+        }
     }
 
     /// <summary>

@@ -9,7 +9,7 @@ namespace UnrealSharp;
 [StructLayout(LayoutKind.Sequential)]
 public struct FScriptMap
 {
-    public ScriptSet Pairs;
+    public FScriptSet Pairs;
     public int Count => Pairs.Count;
 
     public bool IsValidIndex(int index)

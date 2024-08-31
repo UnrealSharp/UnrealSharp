@@ -22,6 +22,7 @@ public:
 
 private:
 
-	static void GetScriptSetLayout(FSetProperty* SetProperty, FScriptSetLayout* OutLayout);
+	static FScriptSetLayout GetScriptSetLayout(const FSetProperty* SetProperty);
+	static void* GetElementProp(const FSetProperty* SetProperty);
 	
 };

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
+using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
@@ -27,14 +28,14 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative? valueToNative)
     {
         Helper = new ScriptMapHelper(mapProperty, address);
-        NativeProperty = new NativeProperty(mapProperty, address);
+        NativeProperty = new NativeProperty(mapProperty);
         Map = (FScriptMap*) address;
         KeyFromNative = keyFromNative;
         KeyToNative = keyToNative;
         ValueFromNative = valueFromNative;
         ValueToNative = valueToNative;
         
-        List<NativeProperty> innerFields = NativeProperty.GetInnerFields();
+        List<NativeProperty> innerFields = NativeProperty.InnerFields;
         KeyProperty = innerFields[0];
         ValueProperty = innerFields[1];
     }

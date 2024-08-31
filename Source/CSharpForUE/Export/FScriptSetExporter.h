@@ -4,6 +4,11 @@
 #include "FunctionsExporter.h"
 #include "FScriptSetExporter.generated.h"
 
+using FGetKeyHash = uint32(*)(const void*);
+using FEqualityFn = bool(*)(const void*, const void*);
+using FConstructFn = void(*)(void*);
+using FDestructFn = void(*)(void*);
+
 UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UFScriptSetExporter : public UFunctionsExporter
 {
@@ -24,6 +29,8 @@ private:
 	static void Empty(int Slack, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
 	static void RemoveAt(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
 	static int AddUninitialized(FScriptSet* ScriptSet, FScriptSetLayout* Layout);
+	static void Add(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
+	static void Rehash(FScriptSet* ScriptSet, const FScriptSetLayout& ScriptSetLayout, FGetKeyHash GetKeyHash);
 	static FScriptSetLayout GetScriptSetLayout(int elementSize, int elementAlignment);
 	
 	

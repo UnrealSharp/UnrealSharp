@@ -1,5 +1,6 @@
 ﻿
 using UnrealSharp.Interop;
+using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 // A copy of the native FScriptMapHelper but using without using the VM functions
@@ -27,7 +28,7 @@ public unsafe struct ScriptMapHelper
     public ScriptMapHelper(IntPtr mapProperty, IntPtr map = default)
     {                        
         _mapProperty = new NativeProperty(mapProperty);
-        List<NativeProperty> innerProperties = _mapProperty.GetInnerFields();
+        List<NativeProperty> innerProperties = _mapProperty.InnerFields;
         KeyProp = innerProperties[0];
         ValueProp = innerProperties[1];
         _map = (FScriptMap*) map;

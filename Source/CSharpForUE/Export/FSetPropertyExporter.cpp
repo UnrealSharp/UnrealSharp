@@ -5,9 +5,15 @@
 void UFSetPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
 	EXPORT_FUNCTION(GetScriptSetLayout)
+	EXPORT_FUNCTION(GetElementProp)
 }
 
-void UFSetPropertyExporter::GetScriptSetLayout(FSetProperty* SetProperty, FScriptSetLayout* OutLayout)
+FScriptSetLayout UFSetPropertyExporter::GetScriptSetLayout(const FSetProperty* SetProperty)
 {
-	*OutLayout = SetProperty->SetLayout;
+	return SetProperty->SetLayout;
+}
+
+void* UFSetPropertyExporter::GetElementProp(const FSetProperty* SetProperty)
+{
+	return SetProperty->ElementProp;
 }

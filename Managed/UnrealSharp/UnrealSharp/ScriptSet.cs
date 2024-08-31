@@ -8,46 +8,56 @@ namespace UnrealSharp;
 /// Must have the same memory representation as a TSet.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct ScriptSet
+public struct FScriptSet
 {
-    public FScriptSparseArray Elements;
-    public FHashAllocator Hash;
-    public int HashSize;
-    public int Count => Num();
+    internal FScriptSparseArray Elements;
+    internal FHashAllocator Hash;
+    internal int HashSize;
+    internal int Count => Num();
 
-    public bool IsValidIndex(int index)
+    internal bool IsValidIndex(int index)
     {
         return FScriptSetExporter.CallIsValidIndex(ref this, index).ToManagedBool();
     }
 
-    public int Num()
+    internal int Num()
     {
         return FScriptSetExporter.CallNum(ref this);
     }
 
-    public int GetMaxIndex()
+    internal int GetMaxIndex()
     {
         return FScriptSetExporter.CallGetMaxIndex(ref this);
     }
 
-    public IntPtr GetData(int index, ref FScriptSetLayout layout)
+    internal IntPtr GetData(int index, ref FScriptSetLayout layout)
     {
         return FScriptSetExporter.CallGetData(index, ref this, layout.Size);
     }
 
-    public void Empty(int slack, ref FScriptSetLayout layout)
+    internal void Empty(int slack, ref FScriptSetLayout layout)
     {
         FScriptSetExporter.CallEmpty(slack, ref this, ref layout);
     }
 
-    public void RemoveAt(int index, ref FScriptSetLayout layout)
+    internal void RemoveAt(int index, ref FScriptSetLayout layout)
     {
         FScriptSetExporter.CallRemoveAt(index, ref this, ref layout);
     }
 
-    public int AddUninitialized(ref FScriptSetLayout layout)
+    internal int AddUninitialized(ref FScriptSetLayout layout)
     {
         return FScriptSetExporter.CallAddUninitialized(ref this, ref layout);
+    }
+    
+    internal void Add(IntPtr elementToAdd, ref FScriptSetLayout layout, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality, HashDelegates.Construct elementConstruct, HashDelegates.Destruct elementDestruct)
+    {
+        FScriptSetExporter.CallAdd(ref this, ref layout, elementToAdd, elementHash, elementEquality, elementConstruct, elementDestruct);
+    }
+
+    internal int FindIndex(IntPtr elementToFind, ref FScriptSetLayout setLayout, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality)
+    {
+        return FScriptSetExporter.CallFindIndex(ref this, ref setLayout, elementToFind, elementHash, elementEquality);
     }
 }
 
@@ -57,6 +67,11 @@ public struct ScriptSet
 [StructLayout(LayoutKind.Sequential)]
 public struct FSetElementId
 {
+    public FSetElementId(int index)
+    {
+        Index = index;
+    }
+    
     /// <summary>
     /// The index of the element in the set's element array.
     /// </summary>
@@ -64,15 +79,7 @@ public struct FSetElementId
 
     public bool IsValidId => Index != -1;
 
-    public static FSetElementId Default
-    {
-        get { return new FSetElementId(-1); }
-    }
-
-    public FSetElementId(int index)
-    {
-        Index = index;
-    }
+    public static FSetElementId Default => new(-1);
 
     public int AsInteger()
     {
