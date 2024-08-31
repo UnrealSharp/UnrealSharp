@@ -7,7 +7,7 @@
 #include "CSTestActor.generated.h"
 
 UCLASS(Blueprintable, BlueprintType)
-class CSHARPFORUE_API ACSTestActor : public AActor
+class ACSTestActor : public AActor
 {
 	GENERATED_BODY()
 

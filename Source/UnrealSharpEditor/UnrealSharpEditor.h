@@ -19,11 +19,14 @@ public:
     bool IsReloading() const { return bIsReloading; }
 
 private:
+
+    void OnUnrealSharpInitialized();
     
     bool Tick(float DeltaTime);
     
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     bool bIsReloading = false;
-    
+
+    void RegisterMenus();
 };

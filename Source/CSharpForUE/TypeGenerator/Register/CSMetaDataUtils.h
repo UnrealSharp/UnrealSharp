@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Misc/Guid.h"
-#include "UObject/Script.h"
 #include "Dom/JsonObject.h"
 #include "MetaData/CSFunctionMetaData.h"
 #include "UObject/ObjectMacros.h"

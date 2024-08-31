@@ -139,7 +139,13 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 		return "";
 	}
 	
+#ifdef _WIN32
 	return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_WINDOWS);
+#elif defined(__APPLE__)
+	return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_MAC);
+#else
+	return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_LINUX);
+#endif
 }
 
 FString FCSProcHelper::GetRuntimeHostPath()
@@ -147,7 +153,13 @@ FString FCSProcHelper::GetRuntimeHostPath()
 #if WITH_EDITOR
 	return GetLatestHostFxrPath();
 #else
-	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
+	#ifdef _WIN32
+		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
+	#elif defined(__APPLE__)
+		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_MAC);
+	#else
+		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_LINUX);
+	#endif
 #endif
 }
 
@@ -192,7 +204,12 @@ FString FCSProcHelper::GetDotNetDirectory()
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
 
+#if defined(_WIN32)
 	FString PathDotnet = "Program Files\\dotnet\\";
+#elif defined(__APPLE__)
+	FString PathDotnet = "/usr/local/share/dotnet/";
+	return PathDotnet;
+#endif
 	for (FString& Path : Paths)
 	{
 		if (!Path.Contains(PathDotnet))
@@ -213,7 +230,11 @@ FString FCSProcHelper::GetDotNetDirectory()
 
 FString FCSProcHelper::GetDotNetExecutablePath()
 {
+#if defined(_WIN32)
 	return GetDotNetDirectory() + "dotnet.exe";
+#else
+	return GetDotNetDirectory() + "dotnet";
+#endif
 }
 
 FString& FCSProcHelper::GetPluginDirectory()
@@ -248,20 +269,4 @@ FString FCSProcHelper::GetScriptFolderDirectory()
 FString FCSProcHelper::GetUserManagedProjectName()
 {
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-}
-
-bool FCSProcHelper::BuildBindings(FString* OutputPath)
-{
-	int32 ReturnCode = 0;
-	
-	FString Arguments;
-	Arguments += TEXT("publish");
-	
-	FString FullOutputPath = OutputPath ? *OutputPath : FPaths::ConvertRelativePathToFull(GetAssembliesPath());
-	FString UnrealSharpDirectory = GetUnrealSharpDirectory();
-	
-	Arguments += FString::Printf(TEXT(" -p:PublishDir=\"%s\""), *FullOutputPath);
-
-	FString Output;
-	return InvokeCommand(GetDotNetExecutablePath(), Arguments, ReturnCode, Output, &UnrealSharpDirectory);
 }

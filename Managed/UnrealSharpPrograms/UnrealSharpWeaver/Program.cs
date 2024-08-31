@@ -114,10 +114,48 @@ public static class Program
     
     static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
     {
-        var assemblyMetaData = new ApiMetaData
+        void CleanOldFilesAndMoveExistingFiles()
         {
-            AssemblyName = assembly.Name.Name,
-        };
+            var pdbOutputFile = new FileInfo(Path.ChangeExtension(assemblyOutputPath, ".pdb"));
+            if (pdbOutputFile.Exists)
+            {
+                var tmpDirectory = Path.Join(Path.GetTempPath(), assembly.Name.Name);
+                if (Path.GetPathRoot(tmpDirectory) != Path.GetPathRoot(pdbOutputFile.FullName)) //if the temp directory is on a different drive, move will not work as desired if file is locked since it does a copy for drive boundaries
+                {
+                    tmpDirectory = Path.Join(Path.GetDirectoryName(assemblyOutputPath), "..", "_Temporary", assembly.Name.Name);
+                }
+
+                try
+                {
+                    if (Directory.Exists(tmpDirectory))
+                    {
+                        foreach (var file in Directory.GetFiles(tmpDirectory))
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(tmpDirectory);
+                    }
+                }
+                catch
+                {
+                    //no action needed
+                }
+
+                //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy). 
+                var tmpDestFileName = Path.Join(tmpDirectory, Path.GetFileName(Path.ChangeExtension(Path.GetTempFileName(), ".pdb")));
+                File.Move(pdbOutputFile.FullName, tmpDestFileName);
+            }
+        }
+
+        var cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
+
+        var assemblyMetaData = new ApiMetaData
+                               {
+                                   AssemblyName = assembly.Name.Name,
+                               };
         
         WeaverHelper.ImportCommonTypes(assembly);
         StartProcessingAssembly(assembly, ref assemblyMetaData);
@@ -125,9 +163,10 @@ public static class Program
 
         try
         {
+            Task.WaitAll(cleanupTask);
+
             assembly.Write(assemblyOutputPath, new WriterParameters
             {
-                WriteSymbols = true,
                 SymbolWriterProvider = new PdbWriterProvider(),
             });
         }
@@ -157,29 +196,40 @@ public static class Program
                 {
                     foreach (var type in module.Types)
                     {
+                        if (WeaverHelper.IsGenerated(type))
+                        {
+                            continue;
+                        }
+
+                        void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
+                        {
+                            typeDefinitions.Add(typeDefinition);
+                            WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
+                        }
+                        
                         if (WeaverHelper.IsUClass(type))
                         {
-                            classes.Add(type);
+                            RegisterType(classes, type);
                         }
                         else if (WeaverHelper.IsUEnum(type))
                         {
-                            enums.Add(type);
+                            RegisterType(enums, type);
                         }
                         else if (WeaverHelper.IsUStruct(type))
                         {
-                            structs.Add(type);
+                            RegisterType(structs, type);
                         }
                         else if (WeaverHelper.IsUInterface(type))
                         {
-                            interfaces.Add(type);
+                            RegisterType(interfaces, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.MulticastDelegate"))
                         {
-                            multicastDelegates.Add(type);
+                            RegisterType(multicastDelegates, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.Delegate"))
                         {
-                            delegates.Add(type);
+                            RegisterType(delegates, type);
                         }
                     }
                 }
@@ -190,11 +240,11 @@ public static class Program
                 throw;
             }
             
-            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)

@@ -21,7 +21,8 @@ public:
 	TField* CreateType()
 	{
 		UPackage* Package = FCSManager::GetUnrealSharpPackage();
-		FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+		FString FieldName = GetFieldName();
+		
 		TField* ExistingField = FindObject<TField>(Package, *FieldName);
 		
 		if (ExistingField)
@@ -60,6 +61,7 @@ public:
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
 	virtual void NewField(TField* OldField, TField* NewField) {};
+	virtual FString GetFieldName() const { return *TypeMetaData->Name.ToString(); }
 	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
 

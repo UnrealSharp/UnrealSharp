@@ -6,7 +6,6 @@
 #include "CSManagedCallbacksCache.h"
 
 struct FCSTypeReferenceMetaData;
-class FUSScriptEngine;
 class FUSTypeFactory;
 class UObject;
 class FUSManagedObject;
@@ -14,17 +13,15 @@ class FUSManagedObject;
 struct FGCHandle;
 struct FCSAssembly;
 
+DECLARE_MULTICAST_DELEGATE(FOnUnrealSharpInitialized);
+
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
 class CSHARPFORUE_API FCSManager : public FUObjectArray::FUObjectDeleteListener
 {
 public:
 
-	static FCSManager& Get()
-	{
-		static FCSManager Instance;
-		return Instance;
-	}
+	static FCSManager& Get();
 
 	void InitializeUnrealSharp();
 
@@ -40,8 +37,11 @@ public:
 	
 	void RemoveManagedObject(UObject* Object);
 
-	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName);
-	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData);
+	FOnUnrealSharpInitialized& OnUnrealSharpInitializedEvent() { return OnUnrealSharpInitialized; }
+	bool IsInitialized() const { return bIsInitialized; }
+
+	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const;
+	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const;
 
 	bool LoadUserAssembly();
 
@@ -51,8 +51,10 @@ public:
 	static inline FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 
 private:
+
+	FOnUnrealSharpInitialized OnUnrealSharpInitialized;
+	bool bIsInitialized = false;
 	
-	static FUSScriptEngine* UnrealSharpScriptEngine;
 	static UPackage* UnrealSharpPackage;
 	
 	bool LoadRuntimeHost();

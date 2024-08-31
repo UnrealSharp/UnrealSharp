@@ -1,8 +1,10 @@
-﻿using UnrealSharp.Interop;
-using Object = UnrealSharp.CoreUObject.Object;
+﻿using UnrealSharp.Attributes;
+using UnrealSharp.CoreUObject;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
+[Binding]
 public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     protected IntPtr NativeProperty;
@@ -26,44 +28,46 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeProperty, NativeDelegate, parameters);
     }
 
-    public override void BindUFunction(Object targetObject, Name functionName)
+    public override void BindUFunction(UObject targetObject, FName functionName)
     {
         FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, functionName.ToString());
     }
 
-    public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
+    public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        BindUFunction(targetObject.Object, functionName);
+        BindUFunction(targetObjectPtr.Object, functionName);
     }
 
-    public void Add(TDelegate handler)
+    public override void Add(TDelegate handler)
     {
-        if (handler.Target is not Object targetObject)
+        if (handler.Target is not UObject targetObject)
         {
             throw new ArgumentException("The callback for a multicast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
         FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
-    public void Remove(TDelegate handler)
+    public override void Remove(TDelegate handler)
     {
-        if (handler.Target is not Object targetObject)
+        if (handler.Target is not UObject targetObject)
         {
             return;
         }
         FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
-    public bool Contains(TDelegate handler)
+    public override bool Contains(TDelegate handler)
     {
-        if (handler.Target is not Object targetObject)
+        if (handler.Target is not UObject targetObject)
         {
             return false;
         }
         return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
     }
 
-    public void Clear()
+    public override bool IsBound => FMulticastDelegatePropertyExporter.CallIsBound(NativeDelegate).ToManagedBool();
+
+    public override void Clear()
     {
         FMulticastDelegatePropertyExporter.CallClearDelegate(NativeDelegate, NativeProperty);
     }

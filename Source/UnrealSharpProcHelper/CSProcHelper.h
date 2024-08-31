@@ -32,8 +32,6 @@ public:
 	
 	static bool Clean();
 	static bool GenerateProject();
-
-	static bool BuildBindings(FString* OutputPath = nullptr);
 	
 	static FString GetRuntimeConfigPath();
 	

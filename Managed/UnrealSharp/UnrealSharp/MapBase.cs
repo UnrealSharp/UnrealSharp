@@ -399,7 +399,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 public class MapMarshaller<TKey, TValue>
 {
     IntPtr nativeProperty;
-    Map<TKey, TValue>[] wrappers;
+    TMap<TKey, TValue>[] wrappers;
     MarshallingDelegates<TKey>.FromNative keyFromNative;
     MarshallingDelegates<TKey>.ToNative keyToNative;
     MarshallingDelegates<TValue>.FromNative valueFromNative;
@@ -409,7 +409,7 @@ public class MapMarshaller<TKey, TValue>
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative,
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
-        wrappers = new Map<TKey, TValue>[length];
+        wrappers = new TMap<TKey, TValue>[length];
         nativeProperty = mapProperty;
         this.keyFromNative = keyFromNative;
         this.keyToNative = keyToNative;
@@ -417,11 +417,11 @@ public class MapMarshaller<TKey, TValue>
         this.valueToNative = valueToNative;
     }
 
-    public Map<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public TMap<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (wrappers[arrayIndex] == null)
         {
-            wrappers[arrayIndex] = new Map<TKey, TValue>(nativeProperty, 
+            wrappers[arrayIndex] = new TMap<TKey, TValue>(nativeProperty, 
                 nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(FScriptMap)),
                 keyFromNative, keyToNative, valueFromNative, valueToNative);
         }
@@ -433,7 +433,7 @@ public class MapMarshaller<TKey, TValue>
 public class MapReadOnlyMarshaller<TKey, TValue>
 {
     IntPtr nativeProperty;
-    MapReadOnly<TKey, TValue>[] wrappers;
+    TMapReadOnly<TKey, TValue>[] wrappers;
     MarshallingDelegates<TKey>.FromNative keyFromNative;
     MarshallingDelegates<TValue>.FromNative valueFromNative;
 
@@ -442,21 +442,21 @@ public class MapReadOnlyMarshaller<TKey, TValue>
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
         nativeProperty = mapProperty;
-        wrappers = new MapReadOnly<TKey, TValue>[length];
+        wrappers = new TMapReadOnly<TKey, TValue>[length];
         this.keyFromNative = keyFromNative;
         this.valueFromNative = valueFromNative;
     }
 
-    public MapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public TMapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         return FromNative(nativeBuffer, 0, IntPtr.Zero);
     }
 
-    public MapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
+    public TMapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
     {
         if (wrappers[arrayIndex] == null)
         {
-            wrappers[arrayIndex] = new MapReadOnly<TKey, TValue>(nativeProperty, nativeBuffer +
+            wrappers[arrayIndex] = new TMapReadOnly<TKey, TValue>(nativeProperty, nativeBuffer +
                 (arrayIndex * Marshal.SizeOf(typeof(FScriptMap))), keyFromNative, valueFromNative);
         }
         

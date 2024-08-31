@@ -5,7 +5,7 @@ using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-public class NativeDataDelegateType(TypeReference typeRef, string marshallerName) : NativeDataBaseDelegateType(typeRef, marshallerName, PropertyType.Delegate)
+public class NativeDataDelegateType(TypeReference typeRef) : NativeDataBaseDelegateType(typeRef, "SingleDelegateMarshaller`1", PropertyType.Delegate)
 {
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
@@ -14,9 +14,7 @@ public class NativeDataDelegateType(TypeReference typeRef, string marshallerName
             return;
         }
         
-        TypeDefinition propertyRef = (TypeDefinition) propertyMetadata.MemberRef.Resolve();
-        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef, UnrealDelegateProcessor.InitializeUnrealDelegate);
-        
+        MethodReference? initialize = WeaverHelper.FindMethod(wrapperType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
         if (propertyMetadata.MemberRef is not PropertyDefinition)
         {
             VariableDefinition propertyPointer = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
@@ -31,7 +29,6 @@ public class NativeDataDelegateType(TypeReference typeRef, string marshallerName
             processor.Append(loadNativePointer);
         }
         
-        processor.Emit(OpCodes.Call, Initialize);
+        processor.Emit(OpCodes.Call, initialize);
     }
-    
 }

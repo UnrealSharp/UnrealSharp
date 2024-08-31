@@ -1,4 +1,6 @@
 ﻿#include "UnrealSharpEditor.h"
+
+#include "AssetToolsModule.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
 #include "CSharpForUE/CSManager.h"
@@ -11,32 +13,22 @@
 
 void FUnrealSharpEditorModule::StartupModule()
 {
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	FDelegateHandle Handle;
-
-	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
-
-	if (!FPaths::DirectoryExists(FullScriptPath))
+	FCSManager& Manager = FCSManager::Get();
+	if (!Manager.IsInitialized())
 	{
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
+		Manager.OnUnrealSharpInitializedEvent().AddRaw(this, &FUnrealSharpEditorModule::OnUnrealSharpInitialized);
 	}
-	
-	//Bind to directory watcher to look for changes in C# code.
-	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
-		FullScriptPath,
-		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
-		Handle);
-
-	FCSReinstancer::Get().Initialize();
-
-	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
-	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+	else
+	{
+		OnUnrealSharpInitialized();
+	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
 	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
+	UToolMenus::UnRegisterStartupCallback(this);
+	UToolMenus::UnregisterOwner(this);
 }
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
@@ -45,13 +37,12 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
 		// Skip generated files in bin and obj folders
-		if (ChangedFile.Filename.Contains("Script/bin/") || ChangedFile.Filename.Contains("Script/obj/"))
+		if (ChangedFile.Filename.Contains("Script/bin") || ChangedFile.Filename.Contains("Script/obj"))
 		{
 			continue;
 		}
@@ -115,10 +106,44 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FCSReinstancer::Get().StartReinstancing();
 }
 
+void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
+{
+	FCSManager& Manager = FCSManager::Get();
+	
+	// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
+	// Workaround for a hardcoded feature in the engine for Blueprints.
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	FName UnrealSharpPackageName = Manager.GetUnrealSharpPackage()->GetFName();
+	AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackageName, UnrealSharpPackageName);
+	
+	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::RegisterMenus));
+
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDelegateHandle Handle;
+
+	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
+
+	if (!FPaths::DirectoryExists(FullScriptPath))
+	{
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
+	}
+	
+	//Bind to directory watcher to look for changes in C# code.
+	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+		FullScriptPath,
+		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
+		Handle);
+
+	FCSReinstancer::Get().Initialize();
+
+	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
+	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+}
+
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
-	
 	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
 	{
 		return true;
@@ -127,6 +152,29 @@ bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 	StartHotReload();
 	bIsReloading = false;
 	return true;
+}
+
+void FUnrealSharpEditorModule::RegisterMenus()
+{
+	FToolMenuOwnerScoped OwnerScoped(this);
+	{
+		UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.ModesToolBar");
+		{
+			FToolMenuSection& ToolbarSection = ToolbarMenu->FindOrAddSection("CompileCSharp");
+			{
+				ToolbarSection.AddEntry(FToolMenuEntry::InitToolBarButton(
+				  "Compile c#",
+				  FExecuteAction::CreateLambda([this]
+				  {
+				  		StartHotReload();
+				  }),
+				  INVTEXT("Compile C#"),
+				  INVTEXT("Force recompile and reload of C# code"),
+				  FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Recompile")
+			    ));
+			}
+		}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

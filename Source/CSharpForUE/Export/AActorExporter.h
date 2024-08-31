@@ -16,7 +16,7 @@ public:
 	// End
 
 private:
-
+	
 	static void* GetRootComponent(AActor* Actor);
 	
 };

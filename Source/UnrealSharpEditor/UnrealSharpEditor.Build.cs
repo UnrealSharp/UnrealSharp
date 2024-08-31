@@ -24,8 +24,11 @@ public class UnrealSharpEditor : ModuleRules
                 "CSharpForUE",
                 "UnrealEd", 
                 "UnrealSharpProcHelper",
-                "BlueprintGraph"
-            }
+                "BlueprintGraph",
+                "ToolMenus",
+                "EditorFramework",
+                "InputCore",
+			}
         );
     }
 }

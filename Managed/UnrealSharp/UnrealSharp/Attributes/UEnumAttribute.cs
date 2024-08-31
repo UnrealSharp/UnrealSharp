@@ -1,4 +1,4 @@
 ﻿namespace UnrealSharp.Attributes;
 
 [AttributeUsage(AttributeTargets.Enum)]
-public sealed class UEnumAttribute : Attribute;
+public sealed class UEnumAttribute : BaseUAttribute;

@@ -88,7 +88,7 @@ public class ClassMetaData : TypeReferenceMetadata
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
-                return;
+                continue;
             }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
@@ -135,11 +135,15 @@ public class ClassMetaData : TypeReferenceMetadata
         
         foreach (var typeInterface in ClassDefinition.Interfaces)
         {
-            var interfaceType = typeInterface.InterfaceType.Resolve();
-            if (WeaverHelper.IsUInterface(interfaceType))
+            TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
+
+            if (interfaceType == WeaverHelper.IInterfaceType || !WeaverHelper.IsUInterface(interfaceType))
             {
-                Interfaces.Add(interfaceType.Name);
+                continue;
             }
+
+            string interfaceNoPrefix = WeaverHelper.GetEngineName(interfaceType);
+            Interfaces.Add(interfaceNoPrefix);
         }
     }
 }

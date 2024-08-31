@@ -47,7 +47,7 @@ public static class ConstructorBuilder
         MethodDefinition staticConstructorMethod = MakeStaticConstructor(typeDefinition);
         ILProcessor processor = staticConstructorMethod.Body.GetILProcessor();
         
-        processor.Emit(OpCodes.Ldstr, typeDefinition.Name);
+        processor.Emit(OpCodes.Ldstr, WeaverHelper.GetEngineName(typeDefinition));
         
         foreach (Instruction instruction in initializeInstructions)
         {

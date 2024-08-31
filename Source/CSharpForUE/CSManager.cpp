@@ -6,7 +6,6 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
@@ -16,62 +15,72 @@
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
 
-#if WITH_EDITOR
-#include "GlueGenerator/CSGenerator.h"
-#include "AssetToolsModule.h"
+#include "Logging/StructuredLog.h"
+
+#ifdef _WIN32
+	#define PLATFORM_STRING(string) string
+#elif defined(__unix__)
+	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
+#elif defined(__APPLE__)
+	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
-FUSScriptEngine* FCSManager::UnrealSharpScriptEngine = nullptr;
 UPackage* FCSManager::UnrealSharpPackage = nullptr;
+
+FCSManager& FCSManager::Get()
+{
+	static FCSManager Instance;
+	return Instance;
+}
 
 void FCSManager::InitializeUnrealSharp()
 {
+	if (bIsInitialized)
+	{
+		return;
+	}
+	
 	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
 	
 	if (DotNetInstallationPath.IsEmpty())
 	{
-		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET SDK can't be found"));
+		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET8 SDK can't be found on your system."));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpLibraryPath();
+	if (!FPaths::FileExists(UnrealSharpLibraryPath))
+	{
+		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
+		FString DialogText = FString::Printf(TEXT(
+			"The bindings library could not be found at the following location:\n%s\n\n"
+			"Right-click on the .uproject file and select \"Generate Visual Studio project files\" to compile.\n"
+		), *FullPath);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
 
 #if WITH_EDITOR
-	
-	FCSGenerator::Get().StartGenerator(FCSProcHelper::GetGeneratedClassesDirectory());
-	
-	if (!FApp::IsUnattended())
+	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
 	{
-		if (!FCSProcHelper::BuildBindings())
+		if (!FApp::IsUnattended())
 		{
-			UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to build bindings"));
-			return;
-		}
-	
-		if (!FCSProcHelper::GenerateProject())
-		{
-			InitializeUnrealSharp();
-			return;
+			if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build) || !FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
+			{
+				InitializeUnrealSharp();
+				return;
+			}
 		}
 	}
 #endif
 
 	//Create the package where we will store our generated types.
-	{
-		UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
-		UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
-
-#if WITH_EDITOR
-		// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
-		// Workaround for a hardcoded feature in the engine for Blueprints.
-		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
-		AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackage->GetFName(), UnrealSharpPackage->GetFName());
-#endif
-	}
+	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
+	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
 
 	// Listen to GC callbacks.
-	{
-		GUObjectArray.AddUObjectDeleteListener(this);
-	}
+	GUObjectArray.AddUObjectDeleteListener(this);
 
 	// Initialize the C# runtime.
 	if (!InitializeBindings())
@@ -84,6 +93,9 @@ void FCSManager::InitializeUnrealSharp()
 
 	// Try to load the user assembly, can be null when the project is first created.
 	LoadUserAssembly();
+	
+	bIsInitialized = true;
+	OnUnrealSharpInitialized.Broadcast();
 }
 
 bool FCSManager::InitializeBindings()
@@ -111,26 +123,26 @@ bool FCSManager::InitializeBindings()
 	// Load assembly and get function pointer.
 	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
 	
-	const char_t* EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
-	const char_t* EntryPointFunctionName = TEXT("InitializeUnrealSharp");
+	const FString EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
+	const FString EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
 	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
 	
-	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(*UnrealSharpLibraryAssembly,
-		EntryPointClassName,
-		EntryPointFunctionName,
+	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
+		PLATFORM_STRING(*EntryPointClassName),
+		PLATFORM_STRING(*EntryPointFunctionName),
 		UNMANAGEDCALLERSONLY_METHOD,
 		nullptr,
 		reinterpret_cast<void**>(&InitializeUnrealSharp));
 	
 	if (ErrorCode != 0)
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Tried to initialize UnrealSharp with error code: %d"), ErrorCode);
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", ErrorCode);
 		return false;
 	}
 
 	// Entry point to C# to initialize UnrealSharp
-	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly, &ManagedPluginsCallbacks, &FCSManagedCallbacks::ManagedCallbacks, &UFunctionsExporter::StartExportingAPI))
+	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly, &ManagedPluginsCallbacks, &FCSManagedCallbacks::ManagedCallbacks, (const void*)&UFunctionsExporter::StartExportingAPI))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
@@ -157,9 +169,8 @@ bool FCSManager::LoadRuntimeHost()
 		return false;
 	}
 
-	void* DLLHandle;
-
-	DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_dotnet_command_line"));
+#if defined(_WIN32)
+	void* DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_dotnet_command_line"));
 	Hostfxr_Initialize_For_Dotnet_Command_Line = static_cast<hostfxr_initialize_for_dotnet_command_line_fn>(DLLHandle);
 
 	DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_runtime_config"));
@@ -170,13 +181,22 @@ bool FCSManager::LoadRuntimeHost()
 
 	DLLHandle = FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_close"));
 	Hostfxr_Close = static_cast<hostfxr_close_fn>(DLLHandle);
+#else
+	Hostfxr_Initialize_For_Dotnet_Command_Line = (hostfxr_initialize_for_dotnet_command_line_fn)FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_dotnet_command_line"));
+	
+	Hostfxr_Initialize_For_Runtime_Config = (hostfxr_initialize_for_runtime_config_fn)FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_initialize_for_runtime_config"));
+	
+	Hostfxr_Get_Runtime_Delegate = (hostfxr_get_runtime_delegate_fn)FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_get_runtime_delegate"));
+	
+	Hostfxr_Close = (hostfxr_close_fn)FPlatformProcess::GetDllExport(RuntimeHost, TEXT("hostfxr_close"));
+#endif
 
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath =  FCSProcHelper::GetUserAssemblyPath();
+	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
 
 	if (!FPaths::FileExists(UserAssemblyPath))
 	{
@@ -207,11 +227,18 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
 	FString DotNetPath = FCSProcHelper::GetDotNetDirectory();
 	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
 
+	UE_LOG(LogUnrealSharp, Log, TEXT("DotNetPath: %s"), *DotNetPath);
+	UE_LOG(LogUnrealSharp, Log, TEXT("RuntimeHostPath: %s"), *RuntimeHostPath);
+
+#if defined(_WIN32)
 	hostfxr_initialize_parameters InitializeParameters;
-	InitializeParameters.dotnet_root = *DotNetPath;
-	InitializeParameters.host_path = *RuntimeHostPath;
+	InitializeParameters.dotnet_root = PLATFORM_STRING(*DotNetPath);
+	InitializeParameters.host_path = PLATFORM_STRING(*RuntimeHostPath);
 	
-	int32 ErrorCode = Hostfxr_Initialize_For_Runtime_Config(*RuntimeConfigPath, &InitializeParameters, &HostFXR_Handle);
+	int32 ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), &InitializeParameters, &HostFXR_Handle);
+#else
+	int32 ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), nullptr, &HostFXR_Handle);
+#endif
 	
 	if (ErrorCode != 0)
 	{
@@ -230,23 +257,31 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
 		return nullptr;
 	}
 
+#if defined(_WIN32)
 	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
+#else
+	return (load_assembly_and_get_function_pointer_fn)LoadAssemblyAndGetFunctionPointer;
+#endif
 }
 
 load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfContained() const
 {
 	FString MainAssemblyPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
-	std::vector Args { *MainAssemblyPath };
+	std::vector Args { PLATFORM_STRING(*MainAssemblyPath) };
 	
 	hostfxr_handle HostFXR_Handle = nullptr;
 	FString DotNetPath = FCSProcHelper::GetAssembliesPath();
 	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
 
 	hostfxr_initialize_parameters InitializeParameters;
-	InitializeParameters.dotnet_root = *DotNetPath;
-	InitializeParameters.host_path = *RuntimeHostPath;
+	InitializeParameters.dotnet_root = PLATFORM_STRING(*DotNetPath);
+	InitializeParameters.host_path = PLATFORM_STRING(*RuntimeHostPath);
 	
+#if defined(_WIN32)
 	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
+#else
+	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), const_cast<const char**>(Args.data()), &InitializeParameters, &HostFXR_Handle);
+#endif
 	
 	if (ReturnCode != 0 || HostFXR_Handle == nullptr)
 	{
@@ -263,7 +298,11 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfConta
 
 	Hostfxr_Close(HostFXR_Handle);
 
+#if defined(_WIN32)
 	return static_cast<load_assembly_and_get_function_pointer_fn>(Load_Assembly_And_Get_Function_Pointer);
+#else
+	return (load_assembly_and_get_function_pointer_fn)Load_Assembly_And_Get_Function_Pointer;
+#endif
 }
 
 UPackage* FCSManager::GetUnrealSharpPackage()
@@ -365,7 +404,7 @@ void FCSManager::RemoveManagedObject(UObject* Object)
 	}
 }
 
-uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName)
+uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
 {
 	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
 
@@ -387,7 +426,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 	return TypeHandle;
 }
 
-uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData)
+uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }
@@ -403,8 +442,3 @@ void FCSManager::OnUObjectArrayShutdown()
 {
 	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
-
-#define LOCTEXT_NAMESPACE "CSManager"
-
-
-#undef LOCTEXT_NAMESPACE

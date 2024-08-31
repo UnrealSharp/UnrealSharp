@@ -14,6 +14,7 @@ public:
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
 	virtual void NewField(UCSClass* OldField, UCSClass* NewField) override;
+	virtual FString GetFieldName() const override;
 	// End of implementation
 	
 	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
