@@ -29,7 +29,9 @@ private:
 	static void Empty(int Slack, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
 	static void RemoveAt(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
 	static int AddUninitialized(FScriptSet* ScriptSet, FScriptSetLayout* Layout);
-	static void Add(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
+	static void Add(FScriptSet* ScriptSet, const FScriptSetLayout& Layout, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
+	static int32 FindOrAdd(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout, FGetKeyHash GetKeyHash, FEqualityFn
+	                       EqualityFn, FConstructFn ConstructFn);
 	static void Rehash(FScriptSet* ScriptSet, const FScriptSetLayout& ScriptSetLayout, FGetKeyHash GetKeyHash);
 	static FScriptSetLayout GetScriptSetLayout(int elementSize, int elementAlignment);
 	

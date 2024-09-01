@@ -4,9 +4,9 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
-public class EnumPropertyHandler : BlittableTypePropertyTranslator
+public class EnumPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public EnumPropertyHandler() : base(typeof(UhtByteProperty), "")
+    public EnumPropertyTranslator() : base(typeof(UhtByteProperty), "")
     {
     }
 

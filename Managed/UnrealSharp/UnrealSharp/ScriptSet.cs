@@ -54,6 +54,11 @@ public struct FScriptSet
     {
         FScriptSetExporter.CallAdd(ref this, ref layout, elementToAdd, elementHash, elementEquality, elementConstruct, elementDestruct);
     }
+    
+    internal int FindOrAdd(IntPtr elementToAdd, ref FScriptSetLayout layout, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality, HashDelegates.Construct elementConstruct)
+    {
+        return FScriptSetExporter.CallFindOrAdd(ref this, ref layout, elementToAdd, elementHash, elementEquality, elementConstruct);
+    }
 
     internal int FindIndex(IntPtr elementToFind, ref FScriptSetLayout setLayout, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality)
     {

@@ -12,4 +12,5 @@ public static unsafe partial class FScriptSetExporter
     public static delegate* unmanaged<ref FScriptSet, ref FScriptSetLayout, int> AddUninitialized;
     public static delegate* unmanaged<ref FScriptSet, ref FScriptSetLayout, IntPtr, HashDelegates.GetKeyHash, HashDelegates.Equality, int> FindIndex;
     public static delegate* unmanaged<ref FScriptSet, ref FScriptSetLayout, IntPtr, HashDelegates.GetKeyHash, HashDelegates.Equality, HashDelegates.Construct, HashDelegates.Destruct, void> Add;
+    public static delegate* unmanaged<ref FScriptSet, ref FScriptSetLayout, IntPtr, HashDelegates.GetKeyHash, HashDelegates.Equality, HashDelegates.Construct, int> FindOrAdd;
 }

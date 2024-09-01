@@ -57,7 +57,6 @@ public class ArrayPropertyTranslator : PropertyTranslator
         if (property.IsOuter<UhtScriptStruct>())
         {
             builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
-            
         }
         else
         {

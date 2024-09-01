@@ -12,6 +12,7 @@ void UFScriptSetExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 	EXPORT_FUNCTION(GetScriptSetLayout);
 	EXPORT_FUNCTION(Add);
 	EXPORT_FUNCTION(Rehash);
+	EXPORT_FUNCTION(FindOrAdd);
 }
 
 bool UFScriptSetExporter::IsValidIndex(FScriptSet* ScriptSet, int32 Index)
@@ -49,10 +50,16 @@ int UFScriptSetExporter::AddUninitialized(FScriptSet* ScriptSet, FScriptSetLayou
 	return ScriptSet->AddUninitialized(*Layout);
 }
 
-void UFScriptSetExporter::Add(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout,
+void UFScriptSetExporter::Add(FScriptSet* ScriptSet, const FScriptSetLayout& Layout, const void* Element,
 	FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn)
 {
 	ScriptSet->Add(Element, Layout, GetKeyHash, EqualityFn, ConstructFn, DestructFn);
+}
+
+int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout,
+                                     FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn)
+{
+	return ScriptSet->FindOrAdd(Element, Layout, GetKeyHash, EqualityFn, ConstructFn);
 }
 
 void UFScriptSetExporter::Rehash(FScriptSet* ScriptSet, const FScriptSetLayout& ScriptSetLayout, FGetKeyHash GetKeyHash)

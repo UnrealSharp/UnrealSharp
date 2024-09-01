@@ -31,7 +31,7 @@ internal unsafe struct FScriptSetHelper
         set => _set = (FScriptSet*)value;
     }
 
-    public FScriptSetHelper(NativeProperty setProperty, IntPtr set)
+    public FScriptSetHelper(NativeProperty setProperty, IntPtr set = default)
     {           
         _set = (FScriptSet*) set;
         _setLayout = FSetPropertyExporter.CallGetScriptSetLayout(setProperty.Property);
@@ -222,6 +222,19 @@ internal unsafe struct FScriptSetHelper
         AddElement(tempPtr);
         _elementProp.DestroyValue(tempPtr);
     }
+    
+    internal int FindOrAddElement<T>(T item, MarshallingDelegates<T>.ToNative toNative)
+    {
+        byte* temp = stackalloc byte[_elementProp.Size];
+        IntPtr tempPtr = (IntPtr)temp;
+        
+        _elementProp.InitializeValue(tempPtr);
+        toNative(tempPtr, 0, item);
+
+        int index = FindOrAddElement(tempPtr);
+        _elementProp.DestroyValue(tempPtr);
+        return index;
+    }
 
     /// <summary>
     /// Adds the element to the set, returning true if the element was added, or false if the element was already present
@@ -257,6 +270,29 @@ internal unsafe struct FScriptSetHelper
         }
 
         _set->Add(elementToAdd, ref _setLayout, ElementHash, ElementEquality, ElementConstruct, ElementDestruct);
+    }
+    
+    internal int FindOrAddElement(IntPtr elementToAdd)
+    {
+        NativeProperty property = _elementProp;
+
+        uint ElementHash(IntPtr elementKey)
+        {
+            return FPropertyExporter.CallGetValueTypeHash(property.Property, elementKey);
+        }
+
+        NativeBool ElementEquality(IntPtr a, IntPtr b)
+        {
+            return FPropertyExporter.CallIdentical(property.Property, a, b);
+        }
+
+        void ElementConstruct(IntPtr newElement)
+        {
+            property.InitializeValue(newElement);
+            FPropertyExporter.CallCopySingleValue(property.Property, newElement, elementToAdd);
+        }
+
+        return _set->FindOrAdd(elementToAdd, ref _setLayout, ElementHash, ElementEquality, ElementConstruct);
     }
 
     /// <summary>
