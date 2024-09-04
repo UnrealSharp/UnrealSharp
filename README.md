@@ -20,7 +20,7 @@ Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropo
 - Unreal Engine 5.3+ (Will support earlier versions in the future)
 - .NET 8.0+
 
-## FAQ
+## Frequently Asked Questions
 
 [FAQ](https://www.unrealsharp.com/faq.html)
 
