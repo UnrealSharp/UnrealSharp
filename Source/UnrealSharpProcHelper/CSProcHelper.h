@@ -6,6 +6,7 @@ enum EBuildAction
 	Build,
 	Clean,
 	GenerateProject,
+	GenerateSolution,
 	Rebuild,
 	Weave,
 };
@@ -27,8 +28,8 @@ class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
 public:
 	
-	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory = nullptr);
-	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration = nullptr, const FString* OutputDirectory = nullptr);
+	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
+	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration = nullptr, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
 	
 	static bool Clean();
 	static bool GenerateProject();

@@ -21,6 +21,9 @@ public:
 private:
 
     void OnUnrealSharpInitialized();
+
+    void AddToolbarMenu();
+    void OnClickNewProject();
     
     bool Tick(float DeltaTime);
     

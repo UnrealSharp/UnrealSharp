@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using EpicGames.Core;
@@ -87,26 +88,14 @@ public static class Program
 			return;
 		}
 		
-		string dotNetExe = DotNetUtilities.FindDotNetExecutable();
-
-		string args = string.Empty;
-		args += $"\"{PluginDirectory}/Binaries/Managed/UnrealSharpBuildTool.dll\"";
-		args += " --Action GenerateProject";
-		args += $" --EngineDirectory \"{Factory.Session.EngineDirectory}/\"";
-		args += $" --ProjectDirectory \"{Factory.Session.ProjectDirectory}/\"";
-		args += $" --ProjectName {projectName}";
-		args += $" --PluginDirectory \"{PluginDirectory}\"";
-		args += $" --DotNetPath \"{dotNetExe}\"";
-
-		Process process = new Process();
-		ProcessStartInfo startInfo = new ProcessStartInfo
+		Dictionary<string, string> arguments = new()
 		{
-			WindowStyle = ProcessWindowStyle.Hidden,
-			FileName = dotNetExe,
-			Arguments = args
+			{ "NewProjectName", "Managed" + projectName },
+			{ "NewProjectPath", $"\"{ScriptFolder}\"" },
+			{ "GenerateSln", "true"}
 		};
-		process.StartInfo = startInfo;
-		process.Start();
+		
+		UnrealSharpBuildTool.Invoke("GenerateProject", arguments);
 	}
 	
 	static void InitializeStatics()

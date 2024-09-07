@@ -5,7 +5,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 
-bool FCSProcHelper::InvokeCommand(const FString &ProgramPath, const FString &Arguments, int32 &OutReturnCode, FString &Output, FString *InWorkingDirectory)
+bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
@@ -19,12 +19,12 @@ bool FCSProcHelper::InvokeCommand(const FString &ProgramPath, const FString &Arg
 		return false;
 	}
 
-	const bool bLaunchDetached = false;
-	const bool bLaunchHidden = true;
-	const bool bLaunchReallyHidden = bLaunchHidden;
+	constexpr bool bLaunchDetached = false;
+	constexpr bool bLaunchHidden = true;
+	constexpr bool bLaunchReallyHidden = bLaunchHidden;
 
-	void *ReadPipe;
-	void *WritePipe;
+	void* ReadPipe;
+	void* WritePipe;
 	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
 
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
@@ -73,7 +73,7 @@ bool FCSProcHelper::InvokeCommand(const FString &ProgramPath, const FString &Arg
 	return true;
 }
 
-bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration *BuildConfiguration, const FString *InOutputDirectory)
+bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration, const TMap<FString, FString>& AdditionalArguments)
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
@@ -88,6 +88,15 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNet
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
 	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
 
+	if (AdditionalArguments.Num())
+	{
+		Args += TEXT(" --AdditionalArgs");
+		for (const TPair<FString, FString>& Argument : AdditionalArguments)
+		{
+			Args += FString::Printf(TEXT(" %s=%s"), *Argument.Key, *Argument.Value);
+		}
+	}
+	
 	if (BuildConfiguration)
 	{
 		FText BuildConfigurationString = StaticEnum<EDotNetBuildConfiguration>()->GetDisplayNameTextByValue(static_cast<int64>(*BuildConfiguration));
@@ -195,20 +204,22 @@ FString FCSProcHelper::GetUserAssemblyPath()
 TArray<FString> FCSProcHelper::GetAllUserAssemblyPaths()
 {
 	FString AbsoluteFolderPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
-	TArray<FString> dllFiles;
-		// Use the FileManager to find files matching the pattern
-	IFileManager &FileManager = IFileManager::Get();
-	FileManager.FindFiles(dllFiles, *AbsoluteFolderPath, TEXT(".dll"));
-	TArray<FString> dllPaths;
-	for (const FString &filename : dllFiles)
+	TArray<FString> DLLFiles;
+	
+	// Use the FileManager to find files matching the pattern
+	IFileManager& FileManager = IFileManager::Get();
+	FileManager.FindFiles(DLLFiles, *AbsoluteFolderPath, TEXT(".dll"));
+	
+	TArray<FString> DLLPaths;
+	for (const FString& filename : DLLFiles)
 	{
 		if (filename != TEXT("UnrealSharp.dll"))
 		{
-			dllPaths.Add(
-				FPaths::Combine(GetUserAssemblyDirectory(), filename));
+			DLLPaths.Add(FPaths::Combine(GetUserAssemblyDirectory(), filename));
 		}
 	}
-	return dllPaths;
+	
+	return DLLPaths;
 }
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
@@ -256,7 +267,7 @@ FString FCSProcHelper::GetDotNetExecutablePath()
 #endif
 }
 
-FString &FCSProcHelper::GetPluginDirectory()
+FString& FCSProcHelper::GetPluginDirectory()
 {
 	static FString PluginDirectory;
 

@@ -28,6 +28,7 @@ public class UnrealSharpEditor : ModuleRules
                 "ToolMenus",
                 "EditorFramework",
                 "InputCore",
+                "AppFramework"
 			}
         );
     }

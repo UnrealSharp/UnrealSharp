@@ -8,19 +8,27 @@ public class PublishProject : BuildToolAction
     {
         // Force the build configuration to be Publish, for now.
         // I'm gonna rewrite this later anyways.
-        Program.buildToolOptions.BuildConfig = BuildConfig.Publish;
+        Program.BuildToolOptions.BuildConfig = BuildConfig.Publish;
         
-        string bindingsPath = Path.Combine(Program.buildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
+        string archiveDirectoryPath = Program.TryGetArgument("ArchiveDirectory");
+        
+        if (string.IsNullOrEmpty(archiveDirectoryPath))
+        {
+            throw new Exception("ArchiveDirectory argument is required for the Publish action.");
+        }
+        
+        string binariesPath = Program.GetOutputPath(archiveDirectoryPath);
+        string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
         
         Collection<string> extraArguments =
         [
             "--self-contained",
             "--runtime",
             "win-x64",
-            $"-p:PublishDir=\"{Program.GetOutputPath()}\""
+            $"-p:PublishDir=\"{binariesPath}\""
         ];
 
-        BuildSolution.StartBuildingSolution(bindingsPath, Program.buildToolOptions.BuildConfig, extraArguments);
+        BuildSolution.StartBuildingSolution(bindingsPath, Program.BuildToolOptions.BuildConfig, extraArguments);
         
         BuildSolution buildSolution = new BuildSolution();
         buildSolution.RunAction();

@@ -6,7 +6,7 @@ public class BuildSolution() : BuildToolAction
 {
     public override bool RunAction()
     {
-        return StartBuildingSolution(Program.GetScriptFolder(), Program.buildToolOptions.BuildConfig);
+        return StartBuildingSolution(Program.GetScriptFolder(), Program.BuildToolOptions.BuildConfig);
     }
 
     public static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig, Collection<string>? extraArguments = null)

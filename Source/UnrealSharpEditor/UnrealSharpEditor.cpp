@@ -7,12 +7,15 @@
 #include "CSharpForUE/CSDeveloperSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
+#include "Slate/CSNewProjectWizard.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
 void FUnrealSharpEditorModule::StartupModule()
 {
+	AddToolbarMenu();
+	
 	FCSManager& Manager = FCSManager::Get();
 	if (!Manager.IsInitialized())
 	{
@@ -139,6 +142,50 @@ void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+}
+
+void FUnrealSharpEditorModule::AddToolbarMenu()
+{
+	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
+	FToolMenuSection& UnrealSharpSection = Menu->AddSection("UnrealSharp", LOCTEXT("UnrealSharp", "UnrealSharp"));
+	
+	UnrealSharpSection.AddMenuEntry(
+		"CreateNewProject",
+		LOCTEXT("CreateNewProject", "New C# Project"),
+		LOCTEXT("CreateNewProject_Tooltip", "Creates a new C# project with all required dependencies."),
+		FSlateIcon(),
+		FUIAction(FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnClickNewProject)));
+
+	UnrealSharpSection.AddMenuEntry(
+		"CompileCSharp",
+		LOCTEXT("CompileCSharp", "Compile C#"),
+		LOCTEXT("CompileCSharp_Tooltip", "Forces a recompile and reload of C# code."),
+		FSlateIcon(),
+		FUIAction(FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::StartHotReload)));
+
+	UnrealSharpSection.AddMenuEntry(
+		"RegenerateSln",
+		LOCTEXT("RegenerateSln", "Regenerate Solution File"),
+		LOCTEXT("RegenerateSln_Tooltip", "Regenerates the .sln file in the Script folder"),
+		FSlateIcon(),
+		FUIAction(FExecuteAction::CreateLambda([this]
+		{
+			FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateSolution);
+		})));
+}
+
+void FUnrealSharpEditorModule::OnClickNewProject()
+{
+	TSharedRef<SWindow> AddCodeWindow =
+	SNew(SWindow)
+	.Title(LOCTEXT("CreateNewProject", "New C# Project"))
+	.SizingRule( ESizingRule::Autosized )
+	.SupportsMinimize(false);
+
+	TSharedRef<SCSNewProjectDialog> NewProjectDialog = SNew(SCSNewProjectDialog);
+	AddCodeWindow->SetContent(NewProjectDialog);
+
+	FSlateApplication::Get().AddWindow(AddCodeWindow);
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
