@@ -61,20 +61,6 @@ void FCSManager::InitializeUnrealSharp()
 		return;
 	}
 
-#if WITH_EDITOR
-	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
-	{
-		if (!FApp::IsUnattended())
-		{
-			if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build) || !FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
-			{
-				InitializeUnrealSharp();
-				return;
-			}
-		}
-	}
-#endif
-
 	//Create the package where we will store our generated types.
 	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
 	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
@@ -196,7 +182,9 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	TArray<FString> UserAssemblies = FCSProcHelper::GetAllUserAssemblyPaths();
+	TArray<FString> UserAssemblies;
+	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
+	
 	for(FString UserAssembly : UserAssemblies)
 	{
 		UE_LOG(LogUnrealSharp, Log, TEXT("User Assembly: %s"), *UserAssembly);

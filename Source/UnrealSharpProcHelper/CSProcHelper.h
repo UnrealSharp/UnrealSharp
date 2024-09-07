@@ -47,7 +47,7 @@ public:
 	static FString GetUserAssemblyPath();
 
 	//Path to all use assemblies in the Binaries/managed directory
-	static TArray<FString> GetAllUserAssemblyPaths();
+	static void GetAllUserAssemblyPaths(TArray<FString>& DllPaths);
 
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
@@ -65,7 +65,7 @@ public:
 	static FString GetGeneratedClassesDirectory();
 
 	// Path to the current project's script directory
-	static FString GetScriptFolderDirectory();
+	static FString& GetScriptFolderDirectory();
 
 	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();
@@ -75,5 +75,7 @@ public:
 
 	// Path to the runtime host. This is different in editor/builds.
 	static FString GetRuntimeHostPath();
+
+	static FString GetPathToSolution();
 	
 };

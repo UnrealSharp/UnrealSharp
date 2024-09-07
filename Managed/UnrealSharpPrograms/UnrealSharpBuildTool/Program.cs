@@ -49,9 +49,9 @@ public static class Program
         return BuildToolOptions.HasArgument(argument);
     }
     
-    public static string GetCSProjectFile()
+    public static string GetSolutionFile()
     {
-        return BuildToolOptions.ProjectName + ".sln";
+        return Path.Combine(GetScriptFolder(), BuildToolOptions.ProjectName + ".sln");
     }
 
     public static string GetUProjectFilePath()

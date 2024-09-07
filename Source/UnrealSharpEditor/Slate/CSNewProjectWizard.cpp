@@ -1,14 +1,19 @@
 ﻿#include "CSNewProjectWizard.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
+#include "UnrealSharpEditor/UnrealSharpEditor.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
 void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
 	ScriptPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetScriptFolderDirectory());
+	SuggestedProjectName = InArgs._SuggestedProjectName.Get(FString());
+	bOpenSolution = InArgs._OpenSolution.Get(false);
 	
 	ChildSlot
 	[
@@ -43,6 +48,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 					.FillWidth(1)
 					[
 						SAssignNew(NameTextBox, SEditableTextBox)
+						.Text(FText::FromString(SuggestedProjectName))
 					]
 				]
 				+ SVerticalBox::Slot()
@@ -135,6 +141,15 @@ void SCSNewProjectDialog::OnFinish()
 	Arguments.Add("NewProjectName", NameTextBox->GetText().ToString());
 	Arguments.Add("NewProjectPath", PathTextBox->GetText().ToString());
 	FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateProject, nullptr, Arguments);
+	
+	if (bOpenSolution)
+	{
+		FUnrealSharpEditorModule::OpenSolution();
+	}
+
+	FText Message = LOCTEXT("NewProjectGenerated", "New project created successfully!");
+	FSlateNotificationManager::Get().AddNotification(FNotificationInfo(Message));
+	
 	CloseWindow();
 }
 
@@ -142,26 +157,39 @@ bool SCSNewProjectDialog::CanFinish() const
 {
 	FString Name = NameTextBox->GetText().ToString();
 	FString Path = PathTextBox->GetText().ToString();
-	FString AbsolutePath = Path / Name + ".csproj";
-	
+	FString Filename = Name + ".csproj";
+	FString AbsolutePath = Path / Filename;
+
+	// Path can't be empty, name can't be empty, and path must contain the script path
 	if (Path.IsEmpty() || Name.IsEmpty() || !Path.Contains(ScriptPath))
 	{
 		return false;
 	}
 
+	// Name can't contain spaces
 	if (Name.Contains(TEXT(" ")))
 	{
 		return false;
 	}
-	
-	if (FPaths::FileExists(AbsolutePath))
+
+	// Path must be a valid directory
+	if (FPaths::DirectoryExists(Path / Name))
 	{
 		return false;
 	}
 
-	if (FPaths::DirectoryExists(Path / Name))
+	// File must not already exist
+	IFileManager& FileManager = IFileManager::Get();
+	TArray<FString> AssemblyPaths;
+	FileManager.FindFiles(AssemblyPaths, *Path, TEXT(".csproj"));
+
+	for (const FString& AssemblyPath : AssemblyPaths)
 	{
-		return false;
+		FString ProjectName = FPaths::GetBaseFilename(AssemblyPath);
+		if (ProjectName == Name)
+		{
+			return false;
+		}
 	}
 
 	return true;

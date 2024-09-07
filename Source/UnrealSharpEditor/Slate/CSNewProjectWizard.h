@@ -5,9 +5,9 @@ class SCSNewProjectDialog : public SCompoundWidget
 	
 public:
 	
-	SLATE_BEGIN_ARGS(SCSNewProjectDialog)
-	{
-	}
+	SLATE_BEGIN_ARGS(SCSNewProjectDialog) {}
+		SLATE_ATTRIBUTE(FString, SuggestedProjectName)
+		SLATE_ATTRIBUTE(bool, OpenSolution)
 	SLATE_END_ARGS()
 	
 	void Construct(const FArguments& InArgs);
@@ -18,6 +18,9 @@ private:
 	TSharedPtr<SEditableTextBox> NameTextBox;
 	
 	FString ScriptPath;
+
+	FString SuggestedProjectName;
+	bool bOpenSolution;
 	
 	void OnPathSelected(const FString& NewPath);
 	FReply OnExplorerButtonClicked();

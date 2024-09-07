@@ -64,8 +64,6 @@ public static class Program
 	            Console.WriteLine("Detected modified engine glue. Starting the build process...");
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
 	        }
-	        
-	        TryGenerateProject();
 	    }
 	    catch (Exception ex)
 	    {
@@ -76,26 +74,6 @@ public static class Program
 	        Console.WriteLine(ex.StackTrace);
 	        Console.ResetColor();
 	    }
-	}
-
-	static void TryGenerateProject()
-	{
-		string? projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile);
-		string projectPath = $"{Factory.Session.ProjectDirectory}/Script/Managed{projectName}.csproj";
-
-		if (projectName == null || File.Exists(projectPath))
-		{
-			return;
-		}
-		
-		Dictionary<string, string> arguments = new()
-		{
-			{ "NewProjectName", "Managed" + projectName },
-			{ "NewProjectPath", $"\"{ScriptFolder}\"" },
-			{ "GenerateSln", "true"}
-		};
-		
-		UnrealSharpBuildTool.Invoke("GenerateProject", arguments);
 	}
 	
 	static void InitializeStatics()

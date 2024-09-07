@@ -66,19 +66,16 @@ public class GenerateProject : BuildToolAction
         }
         
         ModifyCSProjFile();
-        
-        if (Program.HasArgument("GenerateSln"))
+
+        string slnPath = Program.GetSolutionFile();
+        if (!File.Exists(slnPath))
         {
             GenerateSolution generateSolution = new GenerateSolution();
             generateSolution.RunAction();
         }
         
-        string slnPath = Path.Combine(folder, $"Managed{Program.BuildToolOptions.ProjectName}.sln");
-        if (File.Exists(slnPath))
-        {
-            string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
-            AddProjectToSln(relativePath);
-        }
+        string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
+        AddProjectToSln(relativePath);
         
         BuildSolution buildSolution = new BuildSolution();
         if (!buildSolution.RunAction())
@@ -97,10 +94,20 @@ public class GenerateProject : BuildToolAction
 
     public static void AddProjectToSln(string relativePath)
     {
+        AddProjectToSln([relativePath]);
+    }
+    
+    public static void AddProjectToSln(List<string> relativePaths)
+    {
         BuildToolProcess addProjectToSln = new BuildToolProcess();
         addProjectToSln.StartInfo.ArgumentList.Add("sln");
         addProjectToSln.StartInfo.ArgumentList.Add("add");
-        addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
+        
+        foreach (string relativePath in relativePaths)
+        {
+            addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
+        }
+        
         addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
         addProjectToSln.StartBuildToolProcess();
     }

@@ -10,15 +10,6 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
 
-	if (!FPaths::FileExists(ProgramPath))
-	{
-		FString DialogText = FString::Printf(TEXT("Failed to find %s at %s"), *ProgramName, *ProgramPath);
-		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
-
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return false;
-	}
-
 	constexpr bool bLaunchDetached = false;
 	constexpr bool bLaunchHidden = true;
 	constexpr bool bLaunchReallyHidden = bLaunchHidden;
@@ -28,7 +19,6 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
 
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
-
 	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath,
 														  *Arguments,
 														  bLaunchDetached,
@@ -172,6 +162,12 @@ FString FCSProcHelper::GetRuntimeHostPath()
 #endif
 }
 
+FString FCSProcHelper::GetPathToSolution()
+{
+	static FString SolutionPath = GetScriptFolderDirectory() / GetUserManagedProjectName() + ".sln";
+	return SolutionPath;
+}
+
 FString FCSProcHelper::GetAssembliesPath()
 {
 #if WITH_EDITOR
@@ -201,7 +197,7 @@ FString FCSProcHelper::GetUserAssemblyPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
 }
 
-TArray<FString> FCSProcHelper::GetAllUserAssemblyPaths()
+void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& DllPaths)
 {
 	FString AbsoluteFolderPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
 	TArray<FString> DLLFiles;
@@ -210,16 +206,13 @@ TArray<FString> FCSProcHelper::GetAllUserAssemblyPaths()
 	IFileManager& FileManager = IFileManager::Get();
 	FileManager.FindFiles(DLLFiles, *AbsoluteFolderPath, TEXT(".dll"));
 	
-	TArray<FString> DLLPaths;
 	for (const FString& filename : DLLFiles)
 	{
 		if (filename != TEXT("UnrealSharp.dll"))
 		{
-			DLLPaths.Add(FPaths::Combine(GetUserAssemblyDirectory(), filename));
+			DllPaths.Add(FPaths::Combine(GetUserAssemblyDirectory(), filename));
 		}
 	}
-	
-	return DLLPaths;
 }
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
@@ -291,9 +284,10 @@ FString FCSProcHelper::GetGeneratedClassesDirectory()
 	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
 }
 
-FString FCSProcHelper::GetScriptFolderDirectory()
+FString& FCSProcHelper::GetScriptFolderDirectory()
 {
-	return FPaths::ProjectDir() / "Script";
+	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
+	return ScriptFolderDirectory;
 }
 
 FString FCSProcHelper::GetUserManagedProjectName()

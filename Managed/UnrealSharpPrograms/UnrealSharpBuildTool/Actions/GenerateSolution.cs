@@ -20,12 +20,15 @@ public class GenerateSolution : BuildToolAction
         generateSln.StartBuildToolProcess();
         
         string[] existingProjects = Directory.GetFiles(Program.GetScriptFolder(), "*.csproj", SearchOption.AllDirectories);
+        List<string> existingProjectsList = new List<string>(existingProjects.Length);
+        
         foreach (string project in existingProjects)
         {
             string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), project);
-            GenerateProject.AddProjectToSln(relativePath);
+            existingProjectsList.Add(relativePath);
         }
         
+        GenerateProject.AddProjectToSln(existingProjectsList);
         return true;
     }
 }
