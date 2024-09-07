@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -12,6 +13,7 @@ public struct DelegateData
     public FName FunctionName;
 }
 
+[Binding]
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     private DelegateData _data;
@@ -56,16 +58,16 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         }
     }
 
-    public bool IsBoundToObject(Object targetObject)
+    public override bool Contains(TDelegate handler)
     {
-        return targetObject.Equals(TargetObjectPtr.Object);
+        if (handler.Target is not UObject targetObject)
+        {
+            return false;
+        }
+        
+        return targetObject.Equals(TargetObjectPtr.Object) && FunctionName == handler.Method.Name;
     }
-
-    public bool IsBoundTo(UObject targetObject, FName functionName)
-    {
-        return targetObject.Equals(TargetObjectPtr.Object) && FunctionName == functionName;
-    }
-
+    
     public override void BindUFunction(UObject targetObject, FName functionName)
     {
         BindUFunction(new TWeakObjectPtr<UObject>(targetObject), functionName);
@@ -77,7 +79,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         _data.FunctionName = functionName;
     }
 
-    public void Add(TDelegate handler)
+    public override void Add(TDelegate handler)
     {
         if (IsBound)
         {
@@ -93,29 +95,25 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         _data.FunctionName = new FName(handler.Method.Name);
     }
 
-    public void Remove(TDelegate handler)
+    public override void Remove(TDelegate handler)
     {
-        if (handler.Target is not UObject targetObject)
+        if (!Contains(handler))
         {
             return;
         }
         
-        if (!IsBoundTo(targetObject, handler.Method.Name))
-        {
-            return;
-        }
-        Unbind();
+        Clear();
     }
 
-    public bool IsBound => _data.Object.ObjectIndex != 0;
-    
-    public void Unbind()
+    public override bool IsBound => _data.Object.ObjectIndex != 0;
+
+    public override void Clear()
     {
         _data.Object = default;
         _data.FunctionName = default;
         _data.Storage = 0;
     }
-    
+
     public override string ToString()
     {
         return $"{TargetObjectPtr.Object}::{FunctionName}";

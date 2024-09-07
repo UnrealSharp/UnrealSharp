@@ -88,7 +88,7 @@ public class ClassMetaData : TypeReferenceMetadata
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
-                return;
+                continue;
             }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);

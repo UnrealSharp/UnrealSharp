@@ -90,7 +90,7 @@ public class FunctionExporter
         Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
     }
 
-    private FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility) 
+    public FunctionExporter(UhtFunction function, OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility) 
     {
         _function = function;
         Initialize(overloadMode, protectionMode, blueprintVisibility);
@@ -481,20 +481,40 @@ public class FunctionExporter
         builder.AppendLine();
     }
 
-    public static void ExportDelegateFunction(GeneratorStringBuilder builder, UhtFunction function)
+    public static FunctionExporter ExportDelegateSignature(GeneratorStringBuilder builder, UhtFunction function, string delegateName)
     {
         FunctionExporter exporter = new FunctionExporter(function, OverloadMode.SuppressOverloads,
             EFunctionProtectionMode.OverrideWithProtected, EBlueprintVisibility.Call);
+
+        AttributeBuilder attributeBuilder = new AttributeBuilder();
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+
+        if (!function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        {
+            attributeBuilder.AddAttribute("USingleDelegate");
+        }
         
-        builder.AppendLine($"public delegate void Signature({exporter._paramStringApiWithDefaults});");
+        attributeBuilder.Finish();
+        builder.AppendLine(attributeBuilder.ToString());
+        
+        builder.AppendLine($"public delegate void {delegateName}({exporter._paramStringApiWithDefaults});");
         builder.AppendLine();
+        
+        return exporter;
+    }
+
+    public static void ExportDelegateGlue(GeneratorStringBuilder builder, FunctionExporter exporter)
+    {
         exporter.ExportFunctionVariables(builder);
         builder.AppendLine();
+        
         builder.AppendLine($"protected void Invoker({exporter._paramStringApiWithDefaults})");
         builder.OpenBrace();
+        
         builder.BeginUnsafeBlock();
         exporter.ExportInvoke(builder);
         builder.EndUnsafeBlock();
+        
         builder.CloseBrace();
     }
     
@@ -709,7 +729,7 @@ public class FunctionExporter
     {
         builder.AppendTooltip(_function);
 
-        AttributeBuilder attributeBuilder = AttributeBuilder.CreateAttributeBuilder(_function);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(_function);
         
         if (BlueprintEvent)
         {

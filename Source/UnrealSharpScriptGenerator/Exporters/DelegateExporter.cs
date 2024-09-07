@@ -11,11 +11,6 @@ public static class DelegateExporter
 {
     public static void ExportDelegate(UhtFunction function)
     {
-        if (!function.HasAllFlags(EFunctionFlags.Delegate))
-        {
-            throw new Exception("Function is not a delegate");
-        }
-        
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
         string delegateNamespace = function.GetNamespace();
         
@@ -24,20 +19,22 @@ public static class DelegateExporter
         builder.GenerateTypeSkeleton(delegateNamespace);
         builder.AppendLine();
         
-        string signatureName = $"{delegateName}.Signature";
         string superClass;
         if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
         {
-            superClass =$"MulticastDelegate<{signatureName}>";
+            superClass = $"MulticastDelegate<{delegateName}>";
         }
         else
         {
-            superClass = $"Delegate<{signatureName}>";
+            superClass = $"Delegate<{delegateName}>";
         }
         
-        builder.DeclareType("class", delegateName, superClass);
+        FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(builder, function, delegateName);
         
-        FunctionExporter.ExportDelegateFunction(builder, function);
+        builder.DeclareType("class", $"U{delegateName}", superClass);
+        
+        FunctionExporter.ExportDelegateGlue(builder, functionExporter);
+        
         builder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
         builder.OpenBrace();
         ExportDelegateFunctionStaticConstruction(builder, function);

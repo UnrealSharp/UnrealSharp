@@ -12,17 +12,18 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     {
     }
 
-    public static string GetDelegateName(UhtFunction function)
+    public static string GetDelegateName(UhtFunction function, bool wrapperName = false)
     {
         string delegateName = function.EngineName;
         int delegateSignatureIndex = delegateName.IndexOf("__DelegateSignature", StringComparison.Ordinal);
         string strippedDelegateName = delegateName.Substring(0, delegateSignatureIndex);
-        return strippedDelegateName;
+        
+        return wrapperName ? "U" + strippedDelegateName : strippedDelegateName;
     }
     
-    public static string GetFullDelegateName(UhtFunction function)
+    public static string GetFullDelegateName(UhtFunction function, bool wrapperName = false)
     {
-        return $"{function.GetNamespace()}.{GetDelegateName(function)}";
+        return $"{function.GetNamespace()}.{GetDelegateName(function, wrapperName)}";
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
@@ -35,12 +36,6 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     {
         builder.AppendLine($"static readonly IntPtr {propertyEngineName}_NativeProperty;");
         base.ExportPropertyVariables(builder, property, propertyEngineName);
-    }
-
-    public override void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function,
-        string nativeMethodName, UhtProperty property, string propertyEngineName)
-    {
-        base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
     }
     
     public override bool CanExport(UhtProperty property)
