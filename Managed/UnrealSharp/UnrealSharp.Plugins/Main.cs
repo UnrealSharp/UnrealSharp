@@ -105,8 +105,9 @@ public static class Main
                 {
                     throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
                 }
-            
-                Console.WriteLine($"Unloading plugin (Path: {plugin.AssemblyLoadedPath}");
+                
+                string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+                Console.WriteLine($"Unloading plugin {assemblyName}...");
 
                 plugin.Unload();
 
@@ -138,7 +139,7 @@ public static class Main
                 }
 
                 LoadedPlugins.Remove(plugin);
-                Console.WriteLine("Plugin unloaded successfully!");
+                Console.WriteLine($"{assemblyName} unloaded successfully!");
                 return true;
             }
             catch (Exception e)

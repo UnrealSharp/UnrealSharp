@@ -108,13 +108,21 @@ void FUnrealSharpEditorModule::StartHotReload()
 	
 	// Unload the user's assembly, to apply the new one.
 	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
-	if (!FCSManager::Get().UnloadAssembly(FCSProcHelper::GetUserManagedProjectName()))
+
+	// TODO: Unload the assembly that was modified, not all of them, for sake of hot reload speed.
+	for (const FString& ProjectPath : ProjectPaths)
 	{
-		return;
+		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
+		if (!FCSManager::Get().UnloadAssembly(ProjectName))
+		{
+			return;
+		}
 	}
 
 	// Load the user's assembly.
 	Progress.EnterProgressFrame(1, LOCTEXT("LoadingAssembly", "Loading Assembly..."));
+
+	// TODO: Same here, only load the assembly that was modified.
 	if (!FCSManager::Get().LoadUserAssembly())
 	{
 		return;
