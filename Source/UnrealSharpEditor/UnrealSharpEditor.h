@@ -14,19 +14,32 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void StartHotReload();
+    static void StartHotReload();
 
     bool IsReloading() const { return bIsReloading; }
+    
+    static void OpenSolution();
 
 private:
 
     void OnUnrealSharpInitialized();
+
+    static void OnCreateNewProject();
+    static void OnRegenerateSolution();
+
+    TSharedRef<SWidget> GenerateUnrealSharpMenu();
+    
+    static void OpenNewProjectDialog(const FString& SuggestedProjectName = FString());
+
+    static void SuggestProjectSetup();
     
     bool Tick(float DeltaTime);
     
+    void RegisterCommands();
+    void RegisterMenu();
+
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     bool bIsReloading = false;
-
-    void RegisterMenus();
+    TSharedPtr<FUICommandList> UnrealSharpCommands;
 };

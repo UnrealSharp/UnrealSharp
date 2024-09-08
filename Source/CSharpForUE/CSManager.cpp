@@ -61,20 +61,6 @@ void FCSManager::InitializeUnrealSharp()
 		return;
 	}
 
-#if WITH_EDITOR
-	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
-	{
-		if (!FApp::IsUnattended())
-		{
-			if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build) || !FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
-			{
-				InitializeUnrealSharp();
-				return;
-			}
-		}
-	}
-#endif
-
 	//Create the package where we will store our generated types.
 	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
 	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
@@ -196,18 +182,27 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
-
-	if (!FPaths::FileExists(UserAssemblyPath))
+	TArray<FString> UserAssemblies;
+	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
+	
+	for(FString UserAssembly : UserAssemblies)
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find user assembly at %s"), *UserAssemblyPath);
+		UE_LOG(LogUnrealSharp, Log, TEXT("User Assembly: %s"), *UserAssembly);
+	}
+
+	if (UserAssemblies.Num() == 0)
+	{
+		UE_LOG(LogUnrealSharp, Log, TEXT("No user assemblies found."));
 		return false;
 	}
-	
-	if (!LoadAssembly(UserAssemblyPath))
+
+	for(const FString& UserAssembly : UserAssemblies)
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
-		return false;
+		if (!LoadAssembly(UserAssembly))
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssembly);
+			return false;
+		}
 	}
 
 	return true;

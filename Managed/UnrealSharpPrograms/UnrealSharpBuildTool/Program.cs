@@ -1,34 +1,34 @@
-﻿using System.Reflection.PortableExecutable;
-using CommandLine;
+﻿using CommandLine;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharpBuildTool;
 
 public static class Program
 {
-    public static BuildToolOptions buildToolOptions;
+    public static BuildToolOptions BuildToolOptions = null!;
 
     public static int Main(string[] args)
     {
         try
         {
+            Console.WriteLine(">>> UnrealSharpBuildTool");
             Parser parser = new Parser(with => with.HelpWriter = null);
             ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
-        
+            
             if (result.Tag == ParserResultType.NotParsed)
             {
                 BuildToolOptions.PrintHelp(result);
                 throw new Exception("Invalid arguments.");
             }
         
-            buildToolOptions = result.Value;
+            BuildToolOptions = result.Value;
             
             if (!BuildToolAction.InitializeAction())
             {
                 throw new Exception("Failed to initialize action.");
             }
             
-            Console.WriteLine($"UnrealSharpBuildTool executed {buildToolOptions.Action.ToString()} action successfully.");
+            Console.WriteLine($"UnrealSharpBuildTool executed {BuildToolOptions.Action.ToString()} action successfully.");
         }
         catch (Exception exception)
         {
@@ -38,20 +38,34 @@ public static class Program
         
         return 0;
     }
-
-    public static string GetCSProjectFile()
+    
+    public static string TryGetArgument(string argument)
     {
-        return buildToolOptions.ProjectName + ".sln";
+        return BuildToolOptions.TryGetArgument(argument);
+    }
+    
+    public static bool HasArgument(string argument)
+    {
+        return BuildToolOptions.HasArgument(argument);
+    }
+    
+    public static string GetSolutionFile()
+    {
+        return Path.Combine(GetScriptFolder(), BuildToolOptions.ProjectName + ".sln");
     }
 
     public static string GetUProjectFilePath()
     {
-        return Path.Combine(buildToolOptions.ProjectDirectory, buildToolOptions.ProjectName + ".uproject");
+        return Path.Combine(BuildToolOptions.ProjectDirectory, BuildToolOptions.ProjectName + ".uproject");
     }
     
+    public static string GetBuildConfiguration()
+    {
+        return GetBuildConfiguration(BuildToolOptions.BuildConfig);
+    }
     public static string GetScriptFolderBinaries()
     {
-        string currentBuildConfig = GetBuildConfiguration(buildToolOptions.BuildConfig);
+        string currentBuildConfig = GetBuildConfiguration(BuildToolOptions.BuildConfig);
         return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, GetVersion());
     }
     
@@ -68,12 +82,12 @@ public static class Program
     
     public static string GetScriptFolder()
     {
-        return Path.Combine(buildToolOptions.ProjectDirectory, "Script");
+        return Path.Combine(BuildToolOptions.ProjectDirectory, "Script");
     }
     
     public static string GetProjectDirectory()
     {
-        return buildToolOptions.ProjectDirectory;
+        return BuildToolOptions.ProjectDirectory;
     }
     
     public static string FixPath(string path)
@@ -88,19 +102,17 @@ public static class Program
 
     public static string GetProjectNameAsManaged()
     {
-        return "Managed" + buildToolOptions.ProjectName;
+        return "Managed" + BuildToolOptions.ProjectName;
     }
     
-    public static string GetOutputPath()
+    public static string GetOutputPath(string rootDir = "")
     {
-        string rootOutput = buildToolOptions.ArchiveDirectory ?? buildToolOptions.ProjectDirectory;
-        
-        if (buildToolOptions.BuildConfig == BuildConfig.Publish)
+        if (string.IsNullOrEmpty(rootDir))
         {
-            rootOutput = Path.Combine(rootOutput, buildToolOptions.ProjectName);
+            rootDir = BuildToolOptions.ProjectDirectory;
         }
         
-        return Path.Combine(rootOutput, "Binaries", "Managed");
+        return Path.Combine(rootDir, "Binaries", "Managed");
     }
 
     public static string GetWeaver()
@@ -110,7 +122,7 @@ public static class Program
 
     public static string GetManagedBinariesDirectory()
     {
-        return Path.Combine(buildToolOptions.PluginDirectory, "Binaries", "Managed");
+        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed");
     }
     
     public static string GetVersion()

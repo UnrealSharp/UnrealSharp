@@ -12,6 +12,7 @@ public enum BuildAction : int
     Rebuild,
     Weave,
     Publish,
+    GenerateSolution,
 }
 
 public enum BuildConfig : int
@@ -44,8 +45,35 @@ public class BuildToolOptions
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; }
     
-    [Option("ArchiveDirectory", Required = false, HelpText = "The directory where the archive should be stored.")]
-    public string? ArchiveDirectory { get; set; }
+    [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments for the build tool.")]
+    public IEnumerable<string> AdditionalArgs { get; set; }
+    
+    public string TryGetArgument(string argument)
+    {
+        foreach (var arg in AdditionalArgs)
+        {
+            if (!arg.StartsWith(argument))
+            {
+                continue;
+            }
+            
+            return arg.Substring(argument.Length + 1);
+        }
+        
+        return string.Empty;
+    }
+    
+    public bool HasArgument(string argument)
+    {
+        foreach (var arg in AdditionalArgs)
+        {
+            if (arg.StartsWith(argument))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static void PrintHelp(ParserResult<BuildToolOptions> result)
     {

@@ -5,54 +5,44 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 
-bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory)
+bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
-	
-	if (!FPaths::FileExists(ProgramPath))
-	{
-		FString DialogText = FString::Printf(TEXT("Failed to find %s at %s"), *ProgramName, *ProgramPath);
-		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
-		
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return false;
-	}
-		
-	const bool bLaunchDetached = false;
-	const bool bLaunchHidden = true;
-	const bool bLaunchReallyHidden = bLaunchHidden;
-	
+
+	constexpr bool bLaunchDetached = false;
+	constexpr bool bLaunchHidden = true;
+	constexpr bool bLaunchReallyHidden = bLaunchHidden;
+
 	void* ReadPipe;
 	void* WritePipe;
 	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
 
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
-	
 	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath,
-	                                                      *Arguments,
-	                                                      bLaunchDetached,
-	                                                      bLaunchHidden,
-	                                                      bLaunchReallyHidden,
-	                                                      NULL, 0,
-	                                                      *WorkingDirectory,
-	                                                      WritePipe,
-	                                                      ReadPipe);
+														  *Arguments,
+														  bLaunchDetached,
+														  bLaunchHidden,
+														  bLaunchReallyHidden,
+														  NULL, 0,
+														  *WorkingDirectory,
+														  WritePipe,
+														  ReadPipe);
 
 	if (!ProcHandle.IsValid())
 	{
 		FString DialogText = FString::Printf(TEXT("%s failed to launch!"), *ProgramName);
 		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
-		
+
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return false;
 	}
-	
+
 	while (FPlatformProcess::IsProcRunning(ProcHandle))
 	{
 		Output += FPlatformProcess::ReadPipe(ReadPipe);
 	}
-	
+
 	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
 	FPlatformProcess::CloseProc(ProcHandle);
 	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
@@ -60,7 +50,7 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	if (OutReturnCode != 0)
 	{
 		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s task failed (Args: %s) with return code %d. Error: %s"), *ProgramName, *Arguments, OutReturnCode, *Output)
-		
+
 		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 		return false;
@@ -69,16 +59,16 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	double EndTime = FPlatformTime::Seconds();
 	double ElapsedTime = EndTime - StartTime;
 	UE_LOG(LogUnrealSharpProcHelper, Log, TEXT("%s with args (%s) took %f seconds to execute."), *ProgramName, *Arguments, ElapsedTime);
-	
+
 	return true;
 }
 
-bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration, const FString* InOutputDirectory)
+bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration, const TMap<FString, FString>& AdditionalArguments)
 {
 	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
 	FString DotNetPath = GetDotNetExecutablePath();
-	
+
 	FString Args;
 	Args += FString::Printf(TEXT("\"%s\""), *GetUnrealSharpBuildToolPath());
 	Args += FString::Printf(TEXT(" --Action %s"), *BuildActionCommand.ToString());
@@ -88,12 +78,21 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNet
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
 	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
 
+	if (AdditionalArguments.Num())
+	{
+		Args += TEXT(" --AdditionalArgs");
+		for (const TPair<FString, FString>& Argument : AdditionalArguments)
+		{
+			Args += FString::Printf(TEXT(" %s=%s"), *Argument.Key, *Argument.Value);
+		}
+	}
+	
 	if (BuildConfiguration)
 	{
 		FText BuildConfigurationString = StaticEnum<EDotNetBuildConfiguration>()->GetDisplayNameTextByValue(static_cast<int64>(*BuildConfiguration));
 		Args += FString::Printf(TEXT(" --BuildConfig %s"), *BuildConfigurationString.ToString());
 	}
-	
+
 	int32 ReturnCode = 0;
 	FString Output;
 	FString WorkingDirectory = GetAssembliesPath();
@@ -104,7 +103,7 @@ bool FCSProcHelper::Clean()
 {
 	return InvokeUnrealSharpBuildTool(EBuildAction::Clean);
 }
- 
+
 bool FCSProcHelper::GenerateProject()
 {
 	return InvokeUnrealSharpBuildTool(EBuildAction::GenerateProject);
@@ -117,9 +116,9 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 
 	TArray<FString> Folders;
 	IFileManager::Get().FindFiles(Folders, *(HostFxrRoot / "*"), true, true);
-	
+
 	FString HighestVersion = "0.0.0";
-	for (const FString& Folder : Folders)
+	for (const FString &Folder : Folders)
 	{
 		if (Folder > HighestVersion)
 		{
@@ -138,7 +137,7 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Hostfxr version %s is less than the required version %s"), *HighestVersion, TEXT(DOTNET_MAJOR_VERSION));
 		return "";
 	}
-	
+
 #ifdef _WIN32
 	return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_WINDOWS);
 #elif defined(__APPLE__)
@@ -153,14 +152,20 @@ FString FCSProcHelper::GetRuntimeHostPath()
 #if WITH_EDITOR
 	return GetLatestHostFxrPath();
 #else
-	#ifdef _WIN32
-		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
-	#elif defined(__APPLE__)
-		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_MAC);
-	#else
-		return FPaths::Combine(GetAssembliesPath(), HOSTFXR_LINUX);
-	#endif
+#ifdef _WIN32
+	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_WINDOWS);
+#elif defined(__APPLE__)
+	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_MAC);
+#else
+	return FPaths::Combine(GetAssembliesPath(), HOSTFXR_LINUX);
 #endif
+#endif
+}
+
+FString FCSProcHelper::GetPathToSolution()
+{
+	static FString SolutionPath = GetScriptFolderDirectory() / GetUserManagedProjectName() + ".sln";
+	return SolutionPath;
 }
 
 FString FCSProcHelper::GetAssembliesPath()
@@ -192,6 +197,35 @@ FString FCSProcHelper::GetUserAssemblyPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
 }
 
+void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& DllPaths)
+{
+	FString AbsoluteFolderPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
+	TArray<FString> DLLFiles;
+	
+	// Use the FileManager to find files matching the pattern
+	IFileManager& FileManager = IFileManager::Get();
+	FileManager.FindFiles(DLLFiles, *AbsoluteFolderPath, TEXT(".dll"));
+	
+	for (const FString& filename : DLLFiles)
+	{
+		if (filename != TEXT("UnrealSharp.dll"))
+		{
+			DllPaths.Add(FPaths::Combine(GetUserAssemblyDirectory(), filename));
+		}
+	}
+}
+
+void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
+{
+	// Use the FileManager to find files matching the pattern
+	IFileManager::Get().FindFilesRecursive(ProjectPaths,
+		*GetScriptFolderDirectory(),
+		TEXT("*.csproj"),
+		true,
+		false,
+		false);
+}
+
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
 	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.dll");
@@ -200,7 +234,7 @@ FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 FString FCSProcHelper::GetDotNetDirectory()
 {
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
-		
+
 	TArray<FString> Paths;
 	PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
 
@@ -210,19 +244,19 @@ FString FCSProcHelper::GetDotNetDirectory()
 	FString PathDotnet = "/usr/local/share/dotnet/";
 	return PathDotnet;
 #endif
-	for (FString& Path : Paths)
+	for (FString &Path : Paths)
 	{
 		if (!Path.Contains(PathDotnet))
 		{
 			continue;
 		}
-		
+
 		if (!FPaths::DirectoryExists(Path))
 		{
 			UE_LOG(LogUnrealSharpProcHelper, Warning, TEXT("Found path to DotNet, but the directory doesn't exist: %s"), *Path);
 			break;
 		}
-			
+
 		return Path;
 	}
 	return "";
@@ -261,9 +295,10 @@ FString FCSProcHelper::GetGeneratedClassesDirectory()
 	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
 }
 
-FString FCSProcHelper::GetScriptFolderDirectory()
+FString& FCSProcHelper::GetScriptFolderDirectory()
 {
-	return FPaths::ProjectDir() / "Script";
+	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
+	return ScriptFolderDirectory;
 }
 
 FString FCSProcHelper::GetUserManagedProjectName()
