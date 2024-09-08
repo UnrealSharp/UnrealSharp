@@ -215,6 +215,17 @@ void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& DllPaths)
 	}
 }
 
+void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
+{
+	// Use the FileManager to find files matching the pattern
+	IFileManager::Get().FindFilesRecursive(ProjectPaths,
+		*GetScriptFolderDirectory(),
+		TEXT("*.csproj"),
+		true,
+		false,
+		false);
+}
+
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
 	return FPaths::ConvertRelativePathToFull(GetAssembliesPath() / "UnrealSharpBuildTool.dll");

@@ -1,12 +1,14 @@
 ﻿#include "CSCommands.h"
 
+#include "CSStyle.h"
+
 #define LOCTEXT_NAMESPACE "FCSCommandsModule"
 
 FCSCommands::FCSCommands() : TCommands<FCSCommands>(
 	TEXT("CSCommands"),
 	NSLOCTEXT("Contexts", "UnrealSharpCommands", "UnrealSharp"),
 	NAME_None,
-	FAppStyle::GetAppStyleSetName())
+	FCSStyle::GetStyleSetName())
 {
 	
 }

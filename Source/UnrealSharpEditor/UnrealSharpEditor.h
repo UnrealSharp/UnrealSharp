@@ -29,9 +29,9 @@ private:
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
     
-    static void OpenNewProjectDialog(const FString& SuggestedProjectName = FString(), bool bOpenSolution = false);
+    static void OpenNewProjectDialog(const FString& SuggestedProjectName = FString());
 
-    void CheckIfSetupIsNeeded();
+    static void SuggestProjectSetup();
     
     bool Tick(float DeltaTime);
     

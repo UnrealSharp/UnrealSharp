@@ -7,7 +7,6 @@ public:
 	
 	SLATE_BEGIN_ARGS(SCSNewProjectDialog) {}
 		SLATE_ATTRIBUTE(FString, SuggestedProjectName)
-		SLATE_ATTRIBUTE(bool, OpenSolution)
 	SLATE_END_ARGS()
 	
 	void Construct(const FArguments& InArgs);

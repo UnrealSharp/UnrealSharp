@@ -1,19 +1,17 @@
 ﻿#include "UnrealSharpEditor.h"
-
 #include "AssetToolsModule.h"
 #include "CSCommands.h"
 #include "DirectoryWatcherModule.h"
+#include "CSStyle.h"
 #include "IDirectoryWatcher.h"
 #include "SourceCodeNavigation.h"
 #include "CSharpForUE/CSManager.h"
 #include "CSharpForUE/CSDeveloperSettings.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
-#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -28,6 +26,8 @@ void FUnrealSharpEditorModule::StartupModule()
 	{
 		OnUnrealSharpInitialized();
 	}
+
+	FCSStyle::Initialize();
 
 	RegisterCommands();
 	RegisterMenu();
@@ -46,6 +46,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
+	
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
@@ -80,6 +81,15 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 void FUnrealSharpEditorModule::StartHotReload()
 {
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	
+	if (ProjectPaths.IsEmpty())
+	{
+		SuggestProjectSetup();
+		return;
+	}
+	
 	FScopedSlowTask Progress(4, LOCTEXT("ReloadingCSharp", "Building C# code..."));
 	Progress.MakeDialog();
 
@@ -146,11 +156,17 @@ void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-	
-	IMainFrameModule::Get().OnMainFrameCreationFinished().AddLambda([this](TSharedPtr<SWindow>, bool)
+
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+
+	if (ProjectPaths.IsEmpty())
 	{
-		CheckIfSetupIsNeeded();
-	});
+		IMainFrameModule::Get().OnMainFrameCreationFinished().AddLambda([this](TSharedPtr<SWindow>, bool)
+		{
+			SuggestProjectSetup();
+		});
+	}
 }
 
 void FUnrealSharpEditorModule::OnCreateNewProject()
@@ -165,8 +181,7 @@ void FUnrealSharpEditorModule::OnRegenerateSolution()
 		return;
 	}
 
-	FText Message = LOCTEXT("SolutionRegenerated", "C# solution regenerated successfully!");
-	FSlateNotificationManager::Get().AddNotification(FNotificationInfo(Message));
+	OpenSolution();
 }
 
 void FUnrealSharpEditorModule::OpenSolution()
@@ -185,7 +200,7 @@ void FUnrealSharpEditorModule::OpenSolution()
 TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 {
 	const FCSCommands& CSCommands = FCSCommands::Get();
-	FMenuBuilder MenuBuilder(false, UnrealSharpCommands);
+	FMenuBuilder MenuBuilder(true, UnrealSharpCommands);
 	
 	MenuBuilder.BeginSection("Build", LOCTEXT("Build", "Build"));
 	
@@ -210,7 +225,7 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	return MenuBuilder.MakeWidget();
 }
 
-void FUnrealSharpEditorModule::OpenNewProjectDialog(const FString& SuggestedProjectName, bool bOpenSolution)
+void FUnrealSharpEditorModule::OpenNewProjectDialog(const FString& SuggestedProjectName)
 {
 	TSharedRef<SWindow> AddCodeWindow = SNew(SWindow)
 	.Title(LOCTEXT("CreateNewProject", "New C# Project"))
@@ -218,24 +233,15 @@ void FUnrealSharpEditorModule::OpenNewProjectDialog(const FString& SuggestedProj
 	.SupportsMinimize(false);
 
 	TSharedRef<SCSNewProjectDialog> NewProjectDialog = SNew(SCSNewProjectDialog)
-		.SuggestedProjectName(SuggestedProjectName)
-		.OpenSolution(bOpenSolution);
+		.SuggestedProjectName(SuggestedProjectName);
 	
 	AddCodeWindow->SetContent(NewProjectDialog);
 
 	FSlateApplication::Get().AddWindow(AddCodeWindow);
 }
 
-void FUnrealSharpEditorModule::CheckIfSetupIsNeeded()
+void FUnrealSharpEditorModule::SuggestProjectSetup()
 {
-	TArray<FString> AssemblyPaths;
-	IFileManager::Get().FindFilesRecursive(AssemblyPaths, *FCSProcHelper::GetScriptFolderDirectory(), TEXT("*.csproj"), true, false, false);
-
-	if (!AssemblyPaths.IsEmpty())
-	{
-		return;
-	}
-
 	FString DialogText = TEXT("No C# projects were found. Would you like to create a new C# project?");
 	EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(DialogText));
 	
@@ -245,7 +251,7 @@ void FUnrealSharpEditorModule::CheckIfSetupIsNeeded()
 	}
 
 	FString SuggestedProjectName = FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-	OpenNewProjectDialog(SuggestedProjectName, true);
+	OpenNewProjectDialog(SuggestedProjectName);
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
@@ -282,7 +288,7 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	FOnGetContent::CreateLambda([this](){ return GenerateUnrealSharpMenu(); }),
 	LOCTEXT("UnrealSharp_Label", "UnrealSharp"),
 	LOCTEXT("UnrealSharp_Tooltip", "List of all UnrealSharp actions"),
-	FSlateIcon(FAppStyle::Get().GetStyleSetName(), "PlayWorld.RepeatLastLaunch"));
+	FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar"));
 
 	Section.AddEntry(Entry);
 }

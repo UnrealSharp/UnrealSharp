@@ -1,11 +1,9 @@
 ﻿#include "CSNewProjectWizard.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
 #include "UnrealSharpEditor/UnrealSharpEditor.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
-#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
@@ -13,7 +11,6 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
 	ScriptPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetScriptFolderDirectory());
 	SuggestedProjectName = InArgs._SuggestedProjectName.Get(FString());
-	bOpenSolution = InArgs._OpenSolution.Get(false);
 	
 	ChildSlot
 	[
@@ -141,15 +138,7 @@ void SCSNewProjectDialog::OnFinish()
 	Arguments.Add("NewProjectName", NameTextBox->GetText().ToString());
 	Arguments.Add("NewProjectPath", PathTextBox->GetText().ToString());
 	FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateProject, nullptr, Arguments);
-	
-	if (bOpenSolution)
-	{
-		FUnrealSharpEditorModule::OpenSolution();
-	}
-
-	FText Message = LOCTEXT("NewProjectGenerated", "New project created successfully!");
-	FSlateNotificationManager::Get().AddNotification(FNotificationInfo(Message));
-	
+	FUnrealSharpEditorModule::OpenSolution();
 	CloseWindow();
 }
 

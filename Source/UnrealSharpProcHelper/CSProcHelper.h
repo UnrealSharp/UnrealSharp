@@ -49,6 +49,9 @@ public:
 	//Path to all use assemblies in the Binaries/managed directory
 	static void GetAllUserAssemblyPaths(TArray<FString>& DllPaths);
 
+	// Path to all project directories in /Script
+	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);
+
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
 
@@ -76,6 +79,7 @@ public:
 	// Path to the runtime host. This is different in editor/builds.
 	static FString GetRuntimeHostPath();
 
+	// Path to the C# solution file.
 	static FString GetPathToSolution();
 	
 };
