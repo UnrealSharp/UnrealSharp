@@ -87,27 +87,6 @@ static class ErrorEmitter
         Console.Error.WriteLine("error {0}: {1}",code,message);
     }
 
-    public static Dictionary<TKey,TValue> ToDictionaryErrorEmit<TType,TKey, TValue> (this IEnumerable<TType> values, Func<TType,TKey> keyfunc, Func<TType,TValue> valuefunc, out bool hadError)
-    {
-        Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
-        hadError = false;
-
-        foreach (var item in values)
-        {
-            try
-            {
-                result.Add(keyfunc(item), valuefunc(item));
-            }
-            catch (WeaverProcessError ex)
-            {
-                hadError = true;
-                Error(ex);
-            }
-        }
-
-        return result;
-    }
-
     private static SequencePoint ExtractFirstSequencePoint (MethodDefinition method)
     {
         return method?.DebugInformation?.SequencePoints.FirstOrDefault ();

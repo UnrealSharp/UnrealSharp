@@ -32,39 +32,36 @@ public class GenerateProject : BuildToolAction
         _projectFolder = Path.Combine(folder, projectName);
         _projectPath = Path.Combine(_projectFolder, csProjFileName);
         
-        if (!File.Exists(_projectPath))
-        {
-            string version = Program.GetVersion();
-            BuildToolProcess generateProjectProcess = new BuildToolProcess();
+        string version = Program.GetVersion();
+        BuildToolProcess generateProjectProcess = new BuildToolProcess();
         
-            // Create a class library.
-            generateProjectProcess.StartInfo.ArgumentList.Add("new");
-            generateProjectProcess.StartInfo.ArgumentList.Add("classlib");
+        // Create a class library.
+        generateProjectProcess.StartInfo.ArgumentList.Add("new");
+        generateProjectProcess.StartInfo.ArgumentList.Add("classlib");
         
-            // Assign project name to the class library.
-            generateProjectProcess.StartInfo.ArgumentList.Add("-n");
-            generateProjectProcess.StartInfo.ArgumentList.Add(projectName);
+        // Assign project name to the class library.
+        generateProjectProcess.StartInfo.ArgumentList.Add("-n");
+        generateProjectProcess.StartInfo.ArgumentList.Add(projectName);
         
-            // Set the target framework to the current version.
-            generateProjectProcess.StartInfo.ArgumentList.Add("-f");
-            generateProjectProcess.StartInfo.ArgumentList.Add(version);
+        // Set the target framework to the current version.
+        generateProjectProcess.StartInfo.ArgumentList.Add("-f");
+        generateProjectProcess.StartInfo.ArgumentList.Add(version);
         
-            generateProjectProcess.StartInfo.WorkingDirectory = folder;
+        generateProjectProcess.StartInfo.WorkingDirectory = folder;
 
-            if (!generateProjectProcess.StartBuildToolProcess())
-            {
-                return false;
-            }
+        if (!generateProjectProcess.StartBuildToolProcess())
+        {
+            return false;
+        }
             
-            // dotnet new class lib generates a file named Class1, remove it.
-            string myClassFile = Path.Combine(_projectFolder, "Class1.cs");
-            if (File.Exists(myClassFile))
-            {
-                File.Delete(myClassFile);
-            }
-            AddLaunchSettings();
+        // dotnet new class lib generates a file named Class1, remove it.
+        string myClassFile = Path.Combine(_projectFolder, "Class1.cs");
+        if (File.Exists(myClassFile))
+        {
+            File.Delete(myClassFile);
         }
         
+        AddLaunchSettings();
         ModifyCSProjFile();
 
         string slnPath = Program.GetSolutionFile();
@@ -223,26 +220,34 @@ public class GenerateProject : BuildToolAction
     
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
-        string attributeValue = "obj/generated/**/*.cs";
-        if (ElementExists(doc, "Compile", "Include", attributeValue))
+        string generatedCodePath = Path.Combine(Program.GetScriptFolder(), "obj", "generated", "**", "*.cs");
+        string relativePath = GetRelativePath(_projectFolder, generatedCodePath);
+        
+        if (ElementExists(doc, "Compile", "Include", relativePath))
         {
             return;
         }
         
         XmlElement generatedCode = doc.CreateElement("Compile");
-        generatedCode.SetAttribute("Include", attributeValue);
+        generatedCode.SetAttribute("Include", relativePath);
         itemGroup.AppendChild(generatedCode);
     }
     
     private string GetRelativePathToUnrealSharp(string basePath)
     {
         string targetPath = Path.Combine(basePath, Program.BuildToolOptions.PluginDirectory);
-        
-        Uri baseUri = new Uri(basePath + (OperatingSystem.IsWindows() ? @"\" : "/"));
+        return GetRelativePath(basePath, targetPath);
+    }
+    
+    public static string GetRelativePath(string basePath, string targetPath)
+    {
+        Uri baseUri = new Uri(basePath.EndsWith(Path.DirectorySeparatorChar.ToString()) 
+            ? basePath 
+            : basePath + Path.DirectorySeparatorChar);
         Uri targetUri = new Uri(targetPath);
-        
         Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
-        
+        string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+
         return OperatingSystem.IsWindows() ? Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\') : Uri.UnescapeDataString(relativeUri.ToString());
     }
     

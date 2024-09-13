@@ -197,21 +197,25 @@ FString FCSProcHelper::GetUserAssemblyPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
 }
 
-void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& DllPaths)
+void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 {
-	FString AbsoluteFolderPath = FPaths::ConvertRelativePathToFull(GetUserAssemblyDirectory());
-	TArray<FString> DLLFiles;
-	
-	// Use the FileManager to find files matching the pattern
+	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 	IFileManager& FileManager = IFileManager::Get();
-	FileManager.FindFiles(DLLFiles, *AbsoluteFolderPath, TEXT(".dll"));
 	
-	for (const FString& filename : DLLFiles)
+	TArray<FString> ProjectPaths;
+	GetAllProjectPaths(ProjectPaths);
+	
+	for (const FString& ProjectPath : ProjectPaths)
 	{
-		if (filename != TEXT("UnrealSharp.dll"))
+		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
+		FString ProjectAssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + ".dll");
+		
+		if (!FileManager.FileExists(*ProjectAssemblyPath))
 		{
-			DllPaths.Add(FPaths::Combine(GetUserAssemblyDirectory(), filename));
+			continue;
 		}
+		
+		AssemblyPaths.Add(ProjectAssemblyPath);
 	}
 }
 
