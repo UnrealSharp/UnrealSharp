@@ -90,46 +90,36 @@ void FUnrealSharpEditorModule::StartHotReload()
 		return;
 	}
 	
-	FScopedSlowTask Progress(4, LOCTEXT("ReloadingCSharp", "Building C# code..."));
+	FScopedSlowTask Progress(2, LOCTEXT("HotReload", "Hot Reloading C#..."));
 	Progress.MakeDialog();
 
-	// Build the user's project.
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build))
-	{
-		return;
-	}
-
-	// Weave the user's project.
-	Progress.EnterProgressFrame(1, LOCTEXT("WeavingCSharp", "Weaving C# code..."));
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BuildWeave))
 	{
 		return;
 	}
 	
-	// Unload the user's assembly, to apply the new one.
-	Progress.EnterProgressFrame(1, LOCTEXT("UnloadingAssembly", "Unloading Assembly..."));
+	FCSManager& CSharpManager = FCSManager::Get();
 
+	// Unload the user's assembly, to apply the new one.
 	// TODO: Unload the assembly that was modified, not all of them, for sake of hot reload speed.
 	for (const FString& ProjectPath : ProjectPaths)
 	{
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
-		if (!FCSManager::Get().UnloadAssembly(ProjectName))
+		if (!CSharpManager.UnloadAssembly(ProjectName))
 		{
 			return;
 		}
 	}
 
-	// Load the user's assembly.
-	Progress.EnterProgressFrame(1, LOCTEXT("LoadingAssembly", "Loading Assembly..."));
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Loading C# Assembly..."));
 
 	// TODO: Same here, only load the assembly that was modified.
-	if (!FCSManager::Get().LoadUserAssembly())
+	if (!CSharpManager.LoadUserAssembly())
 	{
 		return;
 	}
 
-	// Reinstance all blueprints.
-	Progress.EnterProgressFrame(1, LOCTEXT("ReinstancingBlueprints", "Reinstancing Blueprints..."));
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));
 	FCSReinstancer::Get().StartReinstancing();
 }
 

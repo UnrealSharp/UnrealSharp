@@ -9,6 +9,7 @@ enum EBuildAction
 	GenerateSolution,
 	Rebuild,
 	Weave,
+	BuildWeave,
 };
 
 UENUM()
@@ -47,7 +48,7 @@ public:
 	static FString GetUserAssemblyPath();
 
 	//Path to all use assemblies in the Binaries/managed directory
-	static void GetAllUserAssemblyPaths(TArray<FString>& DllPaths);
+	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
 
 	// Path to all project directories in /Script
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);

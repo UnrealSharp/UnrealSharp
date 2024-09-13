@@ -184,16 +184,10 @@ bool FCSManager::LoadUserAssembly()
 {
 	TArray<FString> UserAssemblies;
 	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
-	
-	for(FString UserAssembly : UserAssemblies)
-	{
-		UE_LOG(LogUnrealSharp, Log, TEXT("User Assembly: %s"), *UserAssembly);
-	}
 
-	if (UserAssemblies.Num() == 0)
+	if (UserAssemblies.IsEmpty())
 	{
-		UE_LOG(LogUnrealSharp, Log, TEXT("No user assemblies found."));
-		return false;
+		return true;
 	}
 
 	for(const FString& UserAssembly : UserAssemblies)

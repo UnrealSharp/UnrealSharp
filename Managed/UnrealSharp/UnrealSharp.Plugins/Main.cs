@@ -60,6 +60,17 @@ public static class Main
         {
             string assemblyName = shouldRemoveExtension ? Path.GetFileNameWithoutExtension(assemblyPath) : assemblyPath;
             
+            foreach (var plugin in LoadedPlugins)
+            {
+                if (plugin.AssemblyLoadedPath != assemblyPath)
+                {
+                    continue;
+                }
+                
+                Console.WriteLine($"Plugin {assemblyName} is already loaded.");
+                return plugin.Assembly.TryGetTarget(out var assembly) ? assembly : default;
+            }
+            
             var sharedAssemblies = new List<string>();
             foreach (var sharedAssembly in SharedAssemblies)
             {

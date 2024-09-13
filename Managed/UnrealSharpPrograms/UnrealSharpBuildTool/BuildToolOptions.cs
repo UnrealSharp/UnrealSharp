@@ -13,6 +13,7 @@ public enum BuildAction : int
     Weave,
     Publish,
     GenerateSolution,
+    BuildWeave,
 }
 
 public enum BuildConfig : int
