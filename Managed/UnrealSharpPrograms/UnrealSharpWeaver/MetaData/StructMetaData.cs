@@ -23,11 +23,15 @@ public class StructMetaData : BaseMetaData
         
         foreach (var field in structDefinition.Fields)
         {
-            if (field.IsStatic || !WeaverHelper.IsUProperty(field))
+            if (field.IsStatic)
+            {
+                continue;
+            }
+            
+            if (!WeaverHelper.IsUProperty(field))
             {
                 // Struct is not blittable if it has non-UProperty fields
                 IsBlittableStruct = false;
-                continue;
             }
             
             PropertyMetaData property = new PropertyMetaData(field);
