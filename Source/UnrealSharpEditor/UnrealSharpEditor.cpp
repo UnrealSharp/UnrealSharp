@@ -15,6 +15,11 @@
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
+FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
+{
+	return FModuleManager::LoadModuleChecked<FUnrealSharpEditorModule>("UnrealSharpEditor");
+}
+
 void FUnrealSharpEditorModule::StartupModule()
 {
 	FCSManager& Manager = FCSManager::Get();
@@ -42,7 +47,7 @@ void FUnrealSharpEditorModule::ShutdownModule()
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
 {
-	if (bIsReloading)
+	if (IsHotReloading())
 	{
 		return;
 	}
@@ -65,16 +70,15 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		}
 		
 		// Return on the first .cs file we encounter so we can reload.
-		bIsReloading = true;
-
-		// Return early and let TickDelegate handle Reload
-		if (Settings->bRequireFocusForHotReload)
+		if (Settings->AutomaticHotReloading != OnScriptSave)
 		{
-			return;
+			HotReloadStatus = PendingReload;
+		}
+		else
+		{
+			StartHotReload();
 		}
 		
-		StartHotReload();
-		bIsReloading = false;
 		return;
 	}
 }
@@ -89,12 +93,15 @@ void FUnrealSharpEditorModule::StartHotReload()
 		SuggestProjectSetup();
 		return;
 	}
+
+	HotReloadStatus = Active;
 	
 	FScopedSlowTask Progress(2, LOCTEXT("HotReload", "Hot Reloading C#..."));
 	Progress.MakeDialog();
 
 	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BuildWeave))
 	{
+		HotReloadStatus = Inactive;
 		return;
 	}
 	
@@ -107,6 +114,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		if (!CSharpManager.UnloadAssembly(ProjectName))
 		{
+			HotReloadStatus = Inactive;
 			return;
 		}
 	}
@@ -116,11 +124,14 @@ void FUnrealSharpEditorModule::StartHotReload()
 	// TODO: Same here, only load the assembly that was modified.
 	if (!CSharpManager.LoadUserAssembly())
 	{
+		HotReloadStatus = Inactive;
 		return;
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));
 	FCSReinstancer::Get().StartReinstancing();
+
+	HotReloadStatus = Inactive;
 }
 
 void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
@@ -172,6 +183,11 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 	OpenNewProjectDialog();
 }
 
+void FUnrealSharpEditorModule::OnCompileManagedCode()
+{
+	Get().StartHotReload();
+}
+
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
 	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateSolution))
@@ -179,6 +195,11 @@ void FUnrealSharpEditorModule::OnRegenerateSolution()
 		return;
 	}
 
+	OpenSolution();
+}
+
+void FUnrealSharpEditorModule::OnOpenSolution()
+{
 	OpenSolution();
 }
 
@@ -255,13 +276,11 @@ void FUnrealSharpEditorModule::SuggestProjectSetup()
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
 	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
-	if (!Settings->bRequireFocusForHotReload || !bIsReloading || !FApp::HasFocus())
+	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() && FApp::HasFocus())
 	{
-		return true;
+		StartHotReload();
 	}
 
-	StartHotReload();
-	bIsReloading = false;
 	return true;
 }
 
@@ -270,9 +289,9 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	FCSCommands::Register();
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CreateNewProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::StartHotReload));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OpenSolution));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
 }
 
 void FUnrealSharpEditorModule::RegisterMenu()
