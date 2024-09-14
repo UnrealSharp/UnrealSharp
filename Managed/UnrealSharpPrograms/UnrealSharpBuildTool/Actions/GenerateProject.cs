@@ -253,7 +253,8 @@ public class GenerateProject : BuildToolAction
     
     void AddLaunchSettings()
     {
-        string propertiesDirectoryPath = Path.Combine(Program.GetScriptFolder(), "Properties");
+        string csProjectPath = Path.Combine(Program.GetScriptFolder(), _projectFolder);
+        string propertiesDirectoryPath = Path.Combine(csProjectPath, "Properties");
         string launchSettingsPath = Path.Combine(propertiesDirectoryPath, "launchSettings.json");
 
         if (!Directory.Exists(propertiesDirectoryPath))
