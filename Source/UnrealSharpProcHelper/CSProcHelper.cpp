@@ -63,15 +63,14 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	return true;
 }
 
-bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration, const TMap<FString, FString>& AdditionalArguments)
+bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments)
 {
-	FName BuildActionCommand = StaticEnum<EBuildAction>()->GetNameByValue(BuildAction);
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
 	FString DotNetPath = GetDotNetExecutablePath();
 
 	FString Args;
 	Args += FString::Printf(TEXT("\"%s\""), *GetUnrealSharpBuildToolPath());
-	Args += FString::Printf(TEXT(" --Action %s"), *BuildActionCommand.ToString());
+	Args += FString::Printf(TEXT(" --Action %s"), *BuildAction);
 	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
 	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
 	Args += FString::Printf(TEXT(" --ProjectName %s"), FApp::GetProjectName());
@@ -86,27 +85,11 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNet
 			Args += FString::Printf(TEXT(" %s=%s"), *Argument.Key, *Argument.Value);
 		}
 	}
-	
-	if (BuildConfiguration)
-	{
-		FText BuildConfigurationString = StaticEnum<EDotNetBuildConfiguration>()->GetDisplayNameTextByValue(static_cast<int64>(*BuildConfiguration));
-		Args += FString::Printf(TEXT(" --BuildConfig %s"), *BuildConfigurationString.ToString());
-	}
 
 	int32 ReturnCode = 0;
 	FString Output;
 	FString WorkingDirectory = GetAssembliesPath();
 	return InvokeCommand(DotNetPath, Args, ReturnCode, Output, &WorkingDirectory);
-}
-
-bool FCSProcHelper::Clean()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::Clean);
-}
-
-bool FCSProcHelper::GenerateProject()
-{
-	return InvokeUnrealSharpBuildTool(EBuildAction::GenerateProject);
 }
 
 FString FCSProcHelper::GetLatestHostFxrPath()
@@ -198,19 +181,19 @@ void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 	IFileManager& FileManager = IFileManager::Get();
 	
 	TArray<FString> ProjectPaths;
-	GetAllProjectPaths(ProjectPaths);
+	GetAllAssemblyPaths(ProjectPaths);
 	
 	for (const FString& ProjectPath : ProjectPaths)
 	{
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
-		FString ProjectAssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + ".dll");
+		FString MetaDataPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + ".json");
 		
-		if (!FileManager.FileExists(*ProjectAssemblyPath))
+		if (!FileManager.FileExists(*MetaDataPath))
 		{
 			continue;
 		}
 		
-		AssemblyPaths.Add(ProjectAssemblyPath);
+		AssemblyPaths.Add(FPaths::ChangeExtension(MetaDataPath, ".dll"));
 	}
 }
 
@@ -220,6 +203,17 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
 	IFileManager::Get().FindFilesRecursive(ProjectPaths,
 		*GetScriptFolderDirectory(),
 		TEXT("*.csproj"),
+		true,
+		false,
+		false);
+}
+
+void FCSProcHelper::GetAllAssemblyPaths(TArray<FString>& AssemblyPaths)
+{
+	// Use the FileManager to find files matching the pattern
+	IFileManager::Get().FindFilesRecursive(AssemblyPaths,
+		*GetUserAssemblyDirectory(),
+		TEXT("*.dll"),
 		true,
 		false,
 		false);

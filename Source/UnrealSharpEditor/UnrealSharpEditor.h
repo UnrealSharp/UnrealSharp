@@ -20,12 +20,19 @@ public:
     
     static void OpenSolution();
 
+
 private:
+    
+    static FString SelectArchiveDirectory();
+
+    static void RunGame(FString ExecutablePath);
 
     void OnUnrealSharpInitialized();
 
     static void OnCreateNewProject();
     static void OnRegenerateSolution();
+
+    static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
     

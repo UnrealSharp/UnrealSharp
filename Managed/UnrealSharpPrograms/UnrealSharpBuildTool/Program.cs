@@ -18,7 +18,17 @@ public static class Program
             if (result.Tag == ParserResultType.NotParsed)
             {
                 BuildToolOptions.PrintHelp(result);
-                throw new Exception("Invalid arguments.");
+                
+                string errors = string.Empty;
+                foreach (Error error in result.Errors)
+                {
+                    if (error is TokenError tokenError)
+                    {
+                        errors += $"{tokenError.Tag}: {tokenError.Token} \n";
+                    }
+                }
+                
+                throw new Exception($"Invalid arguments. Errors: {errors}");
             }
         
             BuildToolOptions = result.Value;
@@ -32,7 +42,7 @@ public static class Program
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.Message);
+            Console.WriteLine("An error occurred: " + exception.Message + Environment.NewLine + exception.StackTrace);
             return 1;
         }
         
@@ -61,12 +71,19 @@ public static class Program
     
     public static string GetBuildConfiguration()
     {
-        return GetBuildConfiguration(BuildToolOptions.BuildConfig);
+        string buildConfig = TryGetArgument("BuildConfig");
+        if (string.IsNullOrEmpty(buildConfig))
+        {
+            buildConfig = "Debug";
+        }
+        return buildConfig;
     }
-    public static string GetScriptFolderBinaries()
+    
+    public static BuildConfig GetBuildConfig()
     {
-        string currentBuildConfig = GetBuildConfiguration(BuildToolOptions.BuildConfig);
-        return Path.Combine(GetScriptFolder(), "bin", currentBuildConfig, GetVersion());
+        string buildConfig = GetBuildConfiguration();
+        Enum.TryParse(buildConfig, out BuildConfig config);
+        return config;
     }
     
     public static string GetBuildConfiguration(BuildConfig buildConfig)

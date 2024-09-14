@@ -11,7 +11,7 @@ public enum BuildAction : int
     GenerateProject,
     Rebuild,
     Weave,
-    Publish,
+    PackageProject,
     GenerateSolution,
     BuildWeave,
 }
@@ -29,10 +29,7 @@ public class BuildToolOptions
     public BuildAction Action { get; set; }
     
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
-    public string? DotNetExecutable { get; set; }
-    
-    [Option("BuildConfig", Required = false, HelpText = "Build with debug or release")]
-    public BuildConfig BuildConfig { get; set; }
+    public string? DotNetPath { get; set; }
     
     [Option("ProjectDirectory", Required = true, HelpText = "The directory where the .uproject file resides.")]
     public string ProjectDirectory { get; set; }

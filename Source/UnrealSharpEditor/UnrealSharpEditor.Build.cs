@@ -30,7 +30,7 @@ public class UnrealSharpEditor : ModuleRules
                 "InputCore",
                 "AppFramework", 
                 "EditorStyle", 
-                "Projects"
+                "Projects",
             }
         );
     }

@@ -2,6 +2,13 @@
 
 public class WeaveProject : BuildToolAction
 {
+    readonly string _outputDirectory;
+    
+    public WeaveProject(string outputDirectory = "")
+    {
+        _outputDirectory = string.IsNullOrEmpty(outputDirectory) ? Program.GetOutputPath() : outputDirectory;
+    }
+    
     public override bool RunAction()
     {
         string weaverPath = Program.GetWeaver();
@@ -12,10 +19,10 @@ public class WeaveProject : BuildToolAction
         }
 
         DirectoryInfo scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
-        return Weave(scriptRootDirInfo, Program.GetOutputPath(), weaverPath);
+        return Weave(scriptRootDirInfo, weaverPath);
     }
     
-    private bool Weave(DirectoryInfo scriptFolder, string outputPath, string weaverPath)
+    private bool Weave(DirectoryInfo scriptFolder, string weaverPath)
     {
         FileInfo[] csprojFiles = scriptFolder.GetFiles("*.csproj", SearchOption.AllDirectories);
         FileInfo[] fsprojFiles = scriptFolder.GetFiles("*.fsproj", SearchOption.AllDirectories);
@@ -45,9 +52,7 @@ public class WeaveProject : BuildToolAction
 
         // Add path to the output folder for the weaver.
         weaveProcess.StartInfo.ArgumentList.Add("-o");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
-        
-        string weaverArguments = string.Join(" ", weaveProcess.StartInfo.ArgumentList);
+        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(_outputDirectory)}");
         
         return weaveProcess.StartBuildToolProcess();
     }

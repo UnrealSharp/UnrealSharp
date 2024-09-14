@@ -137,7 +137,7 @@ void SCSNewProjectDialog::OnFinish()
 	TMap<FString, FString> Arguments;
 	Arguments.Add("NewProjectName", NameTextBox->GetText().ToString());
 	Arguments.Add("NewProjectPath", PathTextBox->GetText().ToString());
-	FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateProject, nullptr, Arguments);
+	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments);
 	FUnrealSharpEditorModule::OpenSolution();
 	CloseWindow();
 }

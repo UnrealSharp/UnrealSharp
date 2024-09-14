@@ -19,6 +19,7 @@ void FCSCommands::RegisterCommands()
 	UI_COMMAND(CompileManagedCode, "Compile C#", "Trigger a hot reload to recompile the project's C# code", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(RegenerateSolution, "Regenerate Solution", "Rebuild the C# solution file to reflect the latest project changes", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(OpenSolution, "Open C# Solution", "Launch the project's C# solution file in the default IDE", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(PackageProject, "Package Project", "Package the C# project to the archived directory", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

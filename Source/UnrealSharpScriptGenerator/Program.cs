@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using EpicGames.Core;
@@ -33,6 +34,7 @@ public static class Program
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
+		
 	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
 
@@ -64,6 +66,8 @@ public static class Program
 	            Console.WriteLine("Detected modified engine glue. Starting the build process...");
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
 	        }
+	        
+	        TryCreateGlueProject();
 	    }
 	    catch (Exception ex)
 	    {
@@ -84,12 +88,31 @@ public static class Program
 		ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
 		
 		EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
-		ProjectGluePath = Path.Combine(ScriptFolder, "obj", "generated");
+		ProjectGluePath = Path.Combine(ScriptFolder, "ProjectGlue");
 		
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
 		
 		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
+	}
+
+	static void TryCreateGlueProject()
+	{
+		string csprojPath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
+
+		if (File.Exists(csprojPath))
+		{
+			return;
+		}
+
+		Dictionary<string, string> arguments = new Dictionary<string, string>
+		{
+			{ "NewProjectName", "ProjectGlue" },
+			{ "NewProjectPath", $"\"{ProjectGluePath}\""},
+			{ "SkipIncludeProjectGlue", "true" }
+		};
+		
+		DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", arguments);
 	}
 }
