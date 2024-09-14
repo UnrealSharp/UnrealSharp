@@ -88,7 +88,7 @@ void UCSClass::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RES
 	}
 }
 
-void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, uint8* ArgumentBuffer)
+void UCSClass::ProcessOutParameters(FOutParmRec* OutParameters, const uint8* ArgumentBuffer)
 {
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{

@@ -9,7 +9,7 @@ void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 	EXPORT_FUNCTION(InvokeNativeStaticFunction);
 	EXPORT_FUNCTION(InvokeNativeFunction);
 	EXPORT_FUNCTION(NativeIsValid)
-	EXPORT_FUNCTION(GetWorld);
+	EXPORT_FUNCTION(GetWorld_Internal);
 }
 
 void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
@@ -110,7 +110,7 @@ bool UUObjectExporter::NativeIsValid(UObject* Object)
 	return IsValid(Object);
 }
 
-void* UUObjectExporter::GetWorld(UObject* Object)
+void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 {
 	if (!IsValid(Object))
 	{

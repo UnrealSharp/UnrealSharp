@@ -128,7 +128,11 @@ bool FCSManager::InitializeBindings()
 	}
 
 	// Entry point to C# to initialize UnrealSharp
-	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly, &ManagedPluginsCallbacks, &FCSManagedCallbacks::ManagedCallbacks, (const void*)&UFunctionsExporter::StartExportingAPI))
+	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly,
+		&ManagedPluginsCallbacks,
+		&FCSManagedCallbacks::ManagedCallbacks,
+		(const void*)&UFunctionsExporter::StartExportingAPI,
+		&CoreAPIHandle))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
@@ -393,6 +397,20 @@ void FCSManager::RemoveManagedObject(UObject* Object)
 	}
 }
 
+uint8* FCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName) const
+{
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle, *Namespace, *TypeName);
+
+	if (TypeHandle == nullptr)
+	{
+		// This should never happen. Something seriously wrong.
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find a TypeHandle for %s."), *TypeName);
+		return nullptr;
+	}
+
+	return TypeHandle;
+}
+
 uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
 {
 	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
@@ -403,16 +421,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 		return nullptr;
 	}
 
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Plugin->GetAssemblyHandle(), *Namespace, *TypeName);
-
-	if (TypeHandle == nullptr)
-	{
-		// This should never happen. Something seriously wrong.
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find a TypeHandle for %s."), *TypeName);
-		return nullptr;
-	}
-
-	return TypeHandle;
+	return GetTypeHandle(Plugin->GetAssemblyHandle().IntPtr, Namespace, TypeName);
 }
 
 uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const

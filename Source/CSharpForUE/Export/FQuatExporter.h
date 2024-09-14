@@ -18,5 +18,6 @@ public:
 private:
 
 	static void ToQuaternion(FQuat& Quaternion, const FRotator& Rotator);
+	static void ToRotator(FRotator& Rotator, const FQuat& Quaternion);
 	
 };

@@ -44,9 +44,6 @@ public:
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
 	static FString GetUserAssemblyDirectory();
 
-	// Path to the user's assembly.
-	static FString GetUserAssemblyPath();
-
 	//Path to all use assemblies in the Binaries/managed directory
 	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
 
