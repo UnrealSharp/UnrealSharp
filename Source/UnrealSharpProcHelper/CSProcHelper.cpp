@@ -192,11 +192,6 @@ FString FCSProcHelper::GetUserAssemblyDirectory()
 	return FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed");
 }
 
-FString FCSProcHelper::GetUserAssemblyPath()
-{
-	return FPaths::Combine(GetUserAssemblyDirectory(), GetUserManagedProjectName() + ".dll");
-}
-
 void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();

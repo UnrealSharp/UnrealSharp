@@ -1,4 +1,5 @@
 using System.Globalization;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -13,7 +14,15 @@ public partial struct FQuat
     /// Returns whether the Quat is the identity Quat.
     /// </summary>
     public bool IsIdentity => X == 0 && Y == 0 && Z == 0 && W == 1;
-
+    
+    /// <summary>
+    /// Constructs a Quat from the given Rotator.
+    /// </summary>
+    public FQuat(FRotator rotator)
+    {
+        FQuatExporter.CallToQuaternion(out this, ref rotator);
+    }
+    
     /// <summary>
     /// Constructs a Quat from the given components.
     /// </summary>
@@ -28,7 +37,7 @@ public partial struct FQuat
         Z = z;
         W = w;
     }
-
+    
     /// <summary>
     /// Constructs a Quat from the given vector and rotation parts.
     /// </summary>
@@ -40,6 +49,15 @@ public partial struct FQuat
         Y = vectorPart.Y;
         Z = vectorPart.Z;
         W = scalarPart;
+    }
+    
+    /// <summary>
+    /// Returns a Rotator view of this Quat.
+    /// </summary>
+    public FRotator ToRotator()
+    {
+        FQuatExporter.CallToRotator(out var rotator, ref this);
+        return rotator;
     }
 
     /// <summary>

@@ -80,7 +80,7 @@ FProperty* FCSPropertyFactory::CreateSoftObjectProperty(UField* Outer, const FCS
 
 FProperty* FCSPropertyFactory::CreateObjectPtrProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
-	return CreateObjectProperty<FObjectPtrProperty>(Outer, PropertyMetaData);
+	return CreateObjectProperty<FObjectProperty>(Outer, PropertyMetaData);
 }
 
 FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)

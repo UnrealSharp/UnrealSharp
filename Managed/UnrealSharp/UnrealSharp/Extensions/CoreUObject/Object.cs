@@ -33,7 +33,7 @@ public partial class UObject
                 throw new InvalidOperationException("Object is not valid.");
             }
             
-            IntPtr worldPtr = UObjectExporter.CallGetWorld(NativeObject);
+            IntPtr worldPtr = UObjectExporter.CallGetWorld_Internal(NativeObject);
             UWorld? foundWorld = GcHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
             
             if (foundWorld == null)
