@@ -80,7 +80,7 @@ public static class UnrealStructProcessor
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();
         Instruction loadBufferInstruction = constructorBody.Create(OpCodes.Ldarg_1);
         
-        foreach (var prop in metadata.Fields)
+        foreach (PropertyMetaData prop in metadata.Fields)
         {
             FieldDefinition fieldDefinition = (FieldDefinition) prop.MemberRef.Resolve();
             prop.PropertyDataType.WriteLoad(constructorBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
