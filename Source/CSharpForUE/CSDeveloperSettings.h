@@ -5,7 +5,7 @@
 #include "CSDeveloperSettings.generated.h"
 
 UENUM()
-enum EHotReloadMethod : uint8
+enum EAutomaticHotReloadMethod : uint8
 {
 	// Automatically Hot Reloads when script changes are saved
 	OnScriptSave,
@@ -28,5 +28,5 @@ public:
 	
 	// Whether Hot Reload should automatically start on script save, gaining Editor focus, or not at all.
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Hot Reload")
-	TEnumAsByte<EHotReloadMethod> AutomaticHotReloading = OnScriptSave;
+	TEnumAsByte<EAutomaticHotReloadMethod> AutomaticHotReloading = OnScriptSave;
 };
