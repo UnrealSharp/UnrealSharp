@@ -15,11 +15,6 @@ public class WeaveProject : BuildToolAction
         return Weave(scriptRootDirInfo, Program.GetOutputPath(), weaverPath);
     }
     
-    private string QuotePath(string path)
-    {
-        return $"\"{path}\"";
-    }
-    
     private bool Weave(DirectoryInfo scriptFolder, string outputPath, string weaverPath)
     {
         FileInfo[] csprojFiles = scriptFolder.GetFiles("*.csproj", SearchOption.AllDirectories);
@@ -45,12 +40,12 @@ public class WeaveProject : BuildToolAction
             string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin", 
                 Program.GetBuildConfiguration(), Program.GetVersion(), csProjName + ".dll");
             
-            weaveProcess.StartInfo.ArgumentList.Add(QuotePath(assemblyPath));
+            weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
         }
 
         // Add path to the output folder for the weaver.
         weaveProcess.StartInfo.ArgumentList.Add("-o");
-        weaveProcess.StartInfo.ArgumentList.Add($"{QuotePath(Program.FixPath(outputPath))}");
+        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
         
         string weaverArguments = string.Join(" ", weaveProcess.StartInfo.ArgumentList);
         
