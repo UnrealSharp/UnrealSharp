@@ -4,7 +4,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "CSDeveloperSettings.generated.h"
 
-UCLASS(config = UnrealSharp, meta = (DisplayName = "UnrealSharp Settings"))
+UCLASS(config = EditorPerProjectUserSettings, meta = (DisplayName = "UnrealSharp Settings"))
 class CSHARPFORUE_API UCSDeveloperSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
