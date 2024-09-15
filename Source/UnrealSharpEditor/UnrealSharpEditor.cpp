@@ -55,7 +55,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
 		// Skip generated files in bin and obj folders
-		if (ChangedFile.Filename.Contains("Script/bin") || ChangedFile.Filename.Contains("Script/obj"))
+		if (ChangedFile.Filename.Contains("\\bin\\") || ChangedFile.Filename.Contains("\\obj\\"))
 		{
 			continue;
 		}
