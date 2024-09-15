@@ -1,16 +1,13 @@
 ﻿#pragma once
 
-UENUM()
-enum EBuildAction
-{
-	Build,
-	Clean,
-	GenerateProject,
-	GenerateSolution,
-	Rebuild,
-	Weave,
-	BuildWeave,
-};
+const FString BUILD_ACTION_BUILD = TEXT("Build");
+const FString BUILD_ACTION_CLEAN = TEXT("Clean");
+const FString BUILD_ACTION_GENERATE_PROJECT = TEXT("GenerateProject");
+const FString BUILD_ACTION_GENERATE_SOLUTION = TEXT("GenerateSolution");
+const FString BUILD_ACTION_REBUILD = TEXT("Rebuild");
+const FString BUILD_ACTION_WEAVE = TEXT("Weave");
+const FString BUILD_ACTION_BUILD_WEAVE = TEXT("BuildWeave");
+const FString BUILD_ACTION_PACKAGE_PROJECT = TEXT("PackageProject");
 
 UENUM()
 enum class EDotNetBuildConfiguration : uint64
@@ -30,10 +27,7 @@ class UNREALSHARPPROCHELPER_API FCSProcHelper final
 public:
 	
 	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
-	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration = nullptr, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
-	
-	static bool Clean();
-	static bool GenerateProject();
+	static bool InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
 	
 	static FString GetRuntimeConfigPath();
 	
@@ -49,6 +43,9 @@ public:
 
 	// Path to all project directories in /Script
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);
+
+	// Path to all assembly directories in /Binaries/Managed
+	static void GetAllAssemblyPaths(TArray<FString>& AssemblyPaths);
 
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();

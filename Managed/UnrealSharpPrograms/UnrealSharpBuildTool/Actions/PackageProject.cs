@@ -2,22 +2,19 @@
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class PublishProject : BuildToolAction
+public class PackageProject : BuildToolAction
 {
     public override bool RunAction()
     {
-        // Force the build configuration to be Publish, for now.
-        // I'm gonna rewrite this later anyways.
-        Program.BuildToolOptions.BuildConfig = BuildConfig.Publish;
-        
         string archiveDirectoryPath = Program.TryGetArgument("ArchiveDirectory");
         
         if (string.IsNullOrEmpty(archiveDirectoryPath))
         {
             throw new Exception("ArchiveDirectory argument is required for the Publish action.");
         }
-        
-        string binariesPath = Program.GetOutputPath(archiveDirectoryPath);
+
+        string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
+        string binariesPath = Program.GetOutputPath(rootProjectPath);
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
         
         Collection<string> extraArguments =
@@ -28,12 +25,12 @@ public class PublishProject : BuildToolAction
             $"-p:PublishDir=\"{binariesPath}\""
         ];
 
-        BuildSolution.StartBuildingSolution(bindingsPath, Program.BuildToolOptions.BuildConfig, extraArguments);
+        BuildSolution.StartBuildingSolution(bindingsPath, BuildConfig.Publish, extraArguments);
         
-        BuildSolution buildSolution = new BuildSolution();
+        BuildSolution buildSolution = new BuildSolution(BuildConfig.Publish);
         buildSolution.RunAction();
         
-        WeaveProject weaveProject = new WeaveProject();
+        WeaveProject weaveProject = new WeaveProject(binariesPath);
         weaveProject.RunAction();
         
         return true;

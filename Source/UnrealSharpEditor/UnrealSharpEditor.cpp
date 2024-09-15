@@ -3,15 +3,18 @@
 #include "CSCommands.h"
 #include "DirectoryWatcherModule.h"
 #include "CSStyle.h"
+#include "DesktopPlatformModule.h"
 #include "IDirectoryWatcher.h"
 #include "SourceCodeNavigation.h"
 #include "CSharpForUE/CSManager.h"
 #include "CSharpForUE/CSDeveloperSettings.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -99,7 +102,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FScopedSlowTask Progress(2, LOCTEXT("HotReload", "Hot Reloading C#..."));
 	Progress.MakeDialog();
 
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BuildWeave))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		HotReloadStatus = Inactive;
 		return;
@@ -190,7 +193,7 @@ void FUnrealSharpEditorModule::OnCompileManagedCode()
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(GenerateSolution))
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_SOLUTION))
 	{
 		return;
 	}
@@ -201,6 +204,61 @@ void FUnrealSharpEditorModule::OnRegenerateSolution()
 void FUnrealSharpEditorModule::OnOpenSolution()
 {
 	OpenSolution();
+}
+
+void FUnrealSharpEditorModule::OnPackageProject()
+{
+	PackageProject();
+}
+
+void FUnrealSharpEditorModule::PackageProject()
+{
+	FString ArchiveDirectory = SelectArchiveDirectory();
+
+	if (ArchiveDirectory.IsEmpty())
+	{
+		return;
+	}
+
+	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + ".exe";
+	if (!FPaths::FileExists(ExecutablePath))
+	{
+		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	FScopedSlowTask Progress(1, LOCTEXT("USharpPackaging", "Packaging Project..."));
+	Progress.MakeDialog();
+	
+	TMap<FString, FString> Arguments;
+	Arguments.Add("ArchiveDirectory", QuotePath(ArchiveDirectory));
+	Arguments.Add("BuildConfig", "Release");
+	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
+
+	FNotificationInfo Info(FText::FromString(FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
+	Info.ExpireDuration = 15.0f;
+	Info.bFireAndForget = true;
+	Info.ButtonDetails.Add(FNotificationButtonInfo(
+			LOCTEXT("USharpRunPackagedGame", "Run Packaged Game"),
+			LOCTEXT("", ""),
+			FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::RunGame, ExecutablePath),
+			SNotificationItem::CS_None));
+
+	Info.ButtonDetails.Add(FNotificationButtonInfo(
+			LOCTEXT("USharpOpenPackagedGame", "Open Folder"),
+			LOCTEXT("", ""),
+			FSimpleDelegate::CreateStatic(&FPlatformProcess::ExploreFolder, *ArchiveDirectory),
+			SNotificationItem::CS_None));
+
+	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	NotificationItem->SetCompletionState(SNotificationItem::CS_None);
+}
+
+void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
+{
+	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *ExecutablePath);
+	FPlatformProcess::ExecProcess(TEXT("cmd.exe"), *OpenSolutionArgs, nullptr, nullptr, nullptr);
 }
 
 void FUnrealSharpEditorModule::OpenSolution()
@@ -214,6 +272,26 @@ void FUnrealSharpEditorModule::OpenSolution()
 	
 	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *SolutionPath);
 	FPlatformProcess::ExecProcess(TEXT("cmd.exe"), *OpenSolutionArgs, nullptr, nullptr, nullptr);
+};
+
+FString FUnrealSharpEditorModule::SelectArchiveDirectory()
+{
+	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+	if(!DesktopPlatform)
+	{
+		return FString();
+	}
+
+	FString DestinationFolder;
+	const void* ParentWindowHandle = FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr);
+	const FString Title = LOCTEXT("USharpChooseArchiveRoot", "Find Archive Root").ToString();
+
+	if(DesktopPlatform->OpenDirectoryDialog(ParentWindowHandle, Title, FString(), DestinationFolder))
+	{
+		return FPaths::ConvertRelativePathToFull(DestinationFolder);
+	}
+
+	return FString();
 }
 
 TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
@@ -239,6 +317,13 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	MenuBuilder.AddMenuEntry(CSCommands.RegenerateSolution, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 		FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
 	
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("Package", LOCTEXT("Package", "Package"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.PackageProject, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
+
 	MenuBuilder.EndSection();
 	
 	return MenuBuilder.MakeWidget();
@@ -292,6 +377,7 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
 }
 
 void FUnrealSharpEditorModule::RegisterMenu()
@@ -308,6 +394,11 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar"));
 
 	Section.AddEntry(Entry);
+}
+
+FString FUnrealSharpEditorModule::QuotePath(const FString& Path)
+{
+	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
 #undef LOCTEXT_NAMESPACE

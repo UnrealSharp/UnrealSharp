@@ -2,11 +2,18 @@
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class BuildSolution() : BuildToolAction
+public class BuildSolution : BuildToolAction
 {
+    private readonly BuildConfig _buildConfig;
+    
+    public BuildSolution(BuildConfig buildConfig = BuildConfig.Debug)
+    {
+        _buildConfig = buildConfig;
+    }
+    
     public override bool RunAction()
     {
-        return StartBuildingSolution(Program.GetScriptFolder(), Program.BuildToolOptions.BuildConfig);
+        return StartBuildingSolution(Program.GetScriptFolder(), _buildConfig);
     }
 
     public static bool StartBuildingSolution(string slnPath, BuildConfig buildConfig, Collection<string>? extraArguments = null)

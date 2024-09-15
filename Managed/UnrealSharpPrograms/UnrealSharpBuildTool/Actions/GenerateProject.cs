@@ -61,15 +61,20 @@ public class GenerateProject : BuildToolAction
             File.Delete(myClassFile);
         }
         
-        AddLaunchSettings();
-        ModifyCSProjFile();
-
         string slnPath = Program.GetSolutionFile();
         if (!File.Exists(slnPath))
         {
             GenerateSolution generateSolution = new GenerateSolution();
             generateSolution.RunAction();
         }
+        
+        if (Program.HasArgument("SkipUSharpProjSetup"))
+        {
+            return true;
+        }
+        
+        AddLaunchSettings();
+        ModifyCSProjFile();
         
         string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
         AddProjectToSln(relativePath);
@@ -123,9 +128,13 @@ public class GenerateProject : BuildToolAction
             }
             
             AppendProperties(csprojDocument);
-            AppendUnrealSharpReference(csprojDocument, newItemGroup);
+            AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
             AppendSourceGeneratorReference(csprojDocument, newItemGroup);
-            AppendGeneratedCode(csprojDocument, newItemGroup);
+
+            if (!Program.HasArgument("SkipIncludeProjectGlue"))
+            {
+                AppendGeneratedCode(csprojDocument, newItemGroup);
+            }
             
             csprojDocument.Save(_projectPath);
         }
@@ -169,50 +178,20 @@ public class GenerateProject : BuildToolAction
         return Path.Combine(unrealSharpPath, "Binaries", "Managed");
     }
     
-    private bool ElementExists(XmlDocument doc, string elementName, string attributeName, string attributeValue)
+    private void AppendReference(XmlDocument doc, XmlElement itemGroup, string referenceName, string binPath)
     {
-        XmlNodeList nodes = doc.GetElementsByTagName(elementName);
-        foreach (XmlNode node in nodes)
-        {
-            if (node.Attributes?[attributeName]?.Value == attributeValue)
-            {
-                return true;
-            }
+        XmlElement referenceElement = doc.CreateElement("Reference");
+        referenceElement.SetAttribute("Include", referenceName);
 
-            if (!string.IsNullOrEmpty(attributeValue) && node.Attributes?[attributeName]?.Value.Contains(attributeValue) == true)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void AppendUnrealSharpReference(XmlDocument doc, XmlElement itemGroup)
-    {
-        if (ElementExists(doc, "Reference", "Include", "UnrealSharp"))
-        {
-            return;
-        }
-        
-        XmlElement unrealSharpReference = doc.CreateElement("Reference");
-        unrealSharpReference.SetAttribute("Include", "UnrealSharp");
-
-        XmlElement newHintPath = doc.CreateElement("HintPath");
-        string binaryPath = GetPathToBinaries();
-        
-        newHintPath.InnerText = Path.Combine(binaryPath, Program.GetVersion(), "UnrealSharp.dll");
-        unrealSharpReference.AppendChild(newHintPath);
-        itemGroup.AppendChild(unrealSharpReference);
+        XmlElement hintPath = doc.CreateElement("HintPath");
+        hintPath.InnerText = Path.Combine(binPath, Program.GetVersion(), referenceName + ".dll");
+        referenceElement.AppendChild(hintPath);
+        itemGroup.AppendChild(referenceElement);
     }
     
     private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
     {
         string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "UnrealSharp.SourceGenerators.dll");
-        if (ElementExists(doc, "Analyzer", "Include", sourceGeneratorPath))
-        {
-            return;
-        }
-        
         XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
         sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
         itemGroup.AppendChild(sourceGeneratorReference);
@@ -220,15 +199,10 @@ public class GenerateProject : BuildToolAction
     
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
-        string generatedCodePath = Path.Combine(Program.GetScriptFolder(), "obj", "generated", "**", "*.cs");
-        string relativePath = GetRelativePath(_projectFolder, generatedCodePath);
+        string generatedGluePath = Path.Combine(Program.GetScriptFolder(), "ProjectGlue", "ProjectGlue.csproj");
+        string relativePath = GetRelativePath(_projectFolder, generatedGluePath);
         
-        if (ElementExists(doc, "Compile", "Include", relativePath))
-        {
-            return;
-        }
-        
-        XmlElement generatedCode = doc.CreateElement("Compile");
+        XmlElement generatedCode = doc.CreateElement("ProjectReference");
         generatedCode.SetAttribute("Include", relativePath);
         itemGroup.AppendChild(generatedCode);
     }
@@ -246,14 +220,13 @@ public class GenerateProject : BuildToolAction
             : basePath + Path.DirectorySeparatorChar);
         Uri targetUri = new Uri(targetPath);
         Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
-        string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
-
         return OperatingSystem.IsWindows() ? Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\') : Uri.UnescapeDataString(relativeUri.ToString());
     }
     
     void AddLaunchSettings()
     {
-        string propertiesDirectoryPath = Path.Combine(Program.GetScriptFolder(), "Properties");
+        string csProjectPath = Path.Combine(Program.GetScriptFolder(), _projectFolder);
+        string propertiesDirectoryPath = Path.Combine(csProjectPath, "Properties");
         string launchSettingsPath = Path.Combine(propertiesDirectoryPath, "launchSettings.json");
 
         if (!Directory.Exists(propertiesDirectoryPath))

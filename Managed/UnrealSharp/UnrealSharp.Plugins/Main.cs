@@ -167,8 +167,7 @@ public static class Main
     private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, 
         PluginsCallbacks* pluginCallbacks, 
         ManagedCallbacks* managedCallbacks, 
-        IntPtr exportFunctionsPtr,
-        IntPtr* assemblyHandle)
+        IntPtr exportFunctionsPtr)
     {
         try
         {
@@ -188,9 +187,6 @@ public static class Main
 
             // Initialize managed callbacks
             *managedCallbacks = ManagedCallbacks.Create();
-            
-            // Let c++ know where the core api assembly is
-            *assemblyHandle = GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(CoreApiAssembly));
 
             Console.WriteLine("UnrealSharp successfully setup!");
             return NativeBool.True;

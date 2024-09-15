@@ -8,7 +8,7 @@ public class BuildToolProcess : Process
     {
         if (fileName == null)
         {
-            fileName = Program.BuildToolOptions.DotNetExecutable ?? "dotnet";
+            fileName = Program.BuildToolOptions.DotNetPath ?? "dotnet";
         }
         
         StartInfo.FileName = fileName;

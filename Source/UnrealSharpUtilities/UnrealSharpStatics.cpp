@@ -8,7 +8,7 @@ FString UUnrealSharpStatics::GetNamespace(const UObject* Object)
 
 FString UUnrealSharpStatics::GetNamespace(const FName PackageName)
 {
-	return FString::Printf(TEXT("%s.%s"), UNREAL_SHARP_NAMESPACE, *PackageName.ToString());
+	return FString::Printf(TEXT("%s.%s"), TEXT("UnrealSharp"), *PackageName.ToString());
 }
 
 FName UUnrealSharpStatics::GetModuleName(const UObject* Object)

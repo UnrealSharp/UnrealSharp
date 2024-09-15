@@ -32,7 +32,12 @@ public:
     
     static void OpenSolution();
 
+
 private:
+    
+    static FString SelectArchiveDirectory();
+
+    static void RunGame(FString ExecutablePath);
 
     void OnUnrealSharpInitialized();
 
@@ -40,6 +45,9 @@ private:
     static void OnCompileManagedCode();
     static void OnRegenerateSolution();
     static void OnOpenSolution();
+    static void OnPackageProject();
+
+    static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
     
@@ -53,7 +61,8 @@ private:
     void RegisterMenu();
     
     HotReloadStatus HotReloadStatus = Inactive;
-    
+
+    static FString QuotePath(const FString& Path);
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     TSharedPtr<FUICommandList> UnrealSharpCommands;

@@ -15,7 +15,7 @@ struct FCSAssembly;
 
 DECLARE_MULTICAST_DELEGATE(FOnUnrealSharpInitialized);
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*, uint8**);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
 class CSHARPFORUE_API FCSManager : public FUObjectArray::FUObjectDeleteListener
 {
@@ -48,8 +48,6 @@ public:
 
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
 	TMap<UObject*, FGCHandle> UnmanagedToManagedMap;
-
-	uint8* CoreAPIHandle = nullptr;
 	
 	static inline FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 
