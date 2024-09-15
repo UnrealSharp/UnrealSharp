@@ -4,19 +4,31 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+enum HotReloadStatus
+{
+    // Not Hot Reloading
+    Inactive,
+    // When the DirectoryWatcher picks up on new code changes that haven't been Hot Reloaded yet
+    PendingReload,
+    // Actively Hot Reloading
+    Active
+};
+
 class FUnrealSharpEditorModule : public IModuleInterface
 {
 public:
-
+    static FUnrealSharpEditorModule& Get();
+    
     // IModuleInterface interface begin
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    static void StartHotReload();
+    void StartHotReload();
 
-    bool IsReloading() const { return bIsReloading; }
+    bool IsHotReloading() const { return HotReloadStatus == Active; }
+    bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
     
     static void OpenSolution();
 
@@ -30,7 +42,10 @@ private:
     void OnUnrealSharpInitialized();
 
     static void OnCreateNewProject();
+    static void OnCompileManagedCode();
     static void OnRegenerateSolution();
+    static void OnOpenSolution();
+    static void OnPackageProject();
 
     static void PackageProject();
 
@@ -44,11 +59,11 @@ private:
     
     void RegisterCommands();
     void RegisterMenu();
+    
+    HotReloadStatus HotReloadStatus = Inactive;
 
     static FString QuotePath(const FString& Path);
-
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
-    bool bIsReloading = false;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
 };
