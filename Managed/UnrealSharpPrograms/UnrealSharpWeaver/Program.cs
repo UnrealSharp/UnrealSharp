@@ -192,7 +192,7 @@ public static class Program
             WriteIndented = true
         });
 
-        string metadataFilePath = Path.ChangeExtension(outputPath, "json");
+        string metadataFilePath = Path.ChangeExtension(outputPath, "metadata.json");
         File.WriteAllText(metadataFilePath, metaDataContent);
     }
 

@@ -131,8 +131,7 @@ bool FCSManager::InitializeBindings()
 	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
 		&FCSManagedCallbacks::ManagedCallbacks,
-		(const void*)&UFunctionsExporter::StartExportingAPI,
-		&CoreAPIHandle))
+		(const void*)&UFunctionsExporter::StartExportingAPI))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
@@ -317,7 +316,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 	LoadedPlugins.Add(*NewPlugin->GetAssemblyName(), NewPlugin);
 
 	// Change from ManagedProjectName.dll > ManagedProjectName.json
-	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "json");
+	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 
 	// Process the json file and register the types.
 	if (!FCSTypeRegistry::Get().ProcessMetaData(MetadataPath))

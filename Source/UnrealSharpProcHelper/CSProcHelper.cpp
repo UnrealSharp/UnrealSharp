@@ -179,21 +179,23 @@ void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 	IFileManager& FileManager = IFileManager::Get();
-	
+
 	TArray<FString> ProjectPaths;
 	GetAllAssemblyPaths(ProjectPaths);
-	
+
 	for (const FString& ProjectPath : ProjectPaths)
 	{
-		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
-		FString MetaDataPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + ".json");
-		
+		const FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
+		const FString MetaDataPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".metadata.json"));
+    
+		// Continue if the metadata file does not exist.
 		if (!FileManager.FileExists(*MetaDataPath))
 		{
 			continue;
 		}
-		
-		AssemblyPaths.Add(FPaths::ChangeExtension(MetaDataPath, ".dll"));
+
+		const FString AssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".dll"));
+		AssemblyPaths.Add(AssemblyPath);
 	}
 }
 
