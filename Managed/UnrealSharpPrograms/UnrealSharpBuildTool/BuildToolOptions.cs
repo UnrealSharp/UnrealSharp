@@ -11,7 +11,7 @@ public enum BuildAction : int
     GenerateProject,
     Rebuild,
     Weave,
-    Publish,
+    PackageProject,
     GenerateSolution,
     BuildWeave,
 }
@@ -25,14 +25,11 @@ public enum BuildConfig : int
 
 public class BuildToolOptions
 {
-    [Option("Action", Required = true, HelpText = "The action the build tool should process. Build / Clean / GenerateProjects")]
+    [Option("Action", Required = true, HelpText = "The action the build tool should process. Possible values: Build, Clean, GenerateProject, Rebuild, Weave, PackageProject, GenerateSolution, BuildWeave.")]
     public BuildAction Action { get; set; }
     
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
-    public string? DotNetExecutable { get; set; }
-    
-    [Option("BuildConfig", Required = false, HelpText = "Build with debug or release")]
-    public BuildConfig BuildConfig { get; set; }
+    public string? DotNetPath { get; set; }
     
     [Option("ProjectDirectory", Required = true, HelpText = "The directory where the .uproject file resides.")]
     public string ProjectDirectory { get; set; }
@@ -40,7 +37,7 @@ public class BuildToolOptions
     [Option("PluginDirectory", Required = false, HelpText = "The UnrealSharp plugin directory.")]
     public string PluginDirectory { get; set; }
     
-    [Option("EngineDirectory", Required = false)]
+    [Option("EngineDirectory", Required = false, HelpText = "The Unreal Engine directory.")]
     public string EngineDirectory { get; set; }
     
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]

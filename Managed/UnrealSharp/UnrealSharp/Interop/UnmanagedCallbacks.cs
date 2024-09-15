@@ -84,6 +84,26 @@ public static class UnmanagedCallbacks
     {
         try
         {
+            string typeNamespaceString = new string(typeNamespace);
+            string typeEngineNameString = new string(typeEngineName);
+            string fullTypeName = $"{typeNamespaceString}.{typeEngineNameString}";
+            
+            if (assemblyHandle == IntPtr.Zero)
+            {
+                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                
+                foreach (Assembly assembly in assemblies)
+                {
+                    IntPtr foundType = FindTypeInAssembly(assembly, fullTypeName);
+                    if (foundType != IntPtr.Zero)
+                    {
+                        return foundType;
+                    }
+                }
+                throw new Exception($"The type '{fullTypeName}' was not found in any loaded assemblies.");
+            }
+
+            // Load the specific assembly if assemblyHandle is provided
             Assembly? loadedAssembly = GCHandle.FromIntPtr(assemblyHandle).Target as Assembly;
 
             if (loadedAssembly == null)
@@ -91,54 +111,7 @@ public static class UnmanagedCallbacks
                 throw new InvalidOperationException("The provided assembly handle does not point to a valid assembly.");
             }
 
-            string typeNamespaceString = new string(typeNamespace);
-            string typeEngineNameString = new string(typeEngineName);
-
-            string fullTypeName = $"{typeNamespaceString}.{typeEngineNameString}";
-
-            IntPtr FindType(Assembly assembly)
-            {
-                Type[] types = assembly.GetTypes();
-                foreach (Type type in types)
-                {
-                    foreach (CustomAttributeData attributeData in type.CustomAttributes)
-                    {
-                        if (attributeData.AttributeType.FullName != typeof(GeneratedTypeAttribute).FullName)
-                        {
-                            continue;
-                        }
-
-                        if (attributeData.ConstructorArguments.Count != 2)
-                        {
-                            continue;
-                        }
-                        
-                        string fullName = (string)attributeData.ConstructorArguments[1].Value!;
-                        if (fullName == fullTypeName)
-                        {
-                            return type.TypeHandle.Value;
-                        }
-                    }
-                }
-                
-                return IntPtr.Zero;
-            }
-
-            IntPtr foundType = FindType(loadedAssembly);
-
-            if (foundType != IntPtr.Zero)
-            {
-                return foundType;
-            }
-
-            foundType = FindType(typeof(UnrealSharpObject).Assembly);
-
-            if (foundType == IntPtr.Zero)
-            {
-                throw new Exception($"The type '{fullTypeName}' was not found in {loadedAssembly}.");
-            }
-
-            return foundType;
+            return FindTypeInAssembly(loadedAssembly, fullTypeName);
         }
         catch (TypeLoadException ex)
         {
@@ -146,7 +119,35 @@ public static class UnmanagedCallbacks
             return default;
         }
     }
-        
+    
+    private static IntPtr FindTypeInAssembly(Assembly assembly, string fullTypeName)
+    {
+        Type[] types = assembly.GetTypes();
+        foreach (Type type in types)
+        {
+            foreach (CustomAttributeData attributeData in type.CustomAttributes)
+            {
+                if (attributeData.AttributeType.FullName != typeof(GeneratedTypeAttribute).FullName)
+                {
+                    continue;
+                }
+
+                if (attributeData.ConstructorArguments.Count != 2)
+                {
+                    continue;
+                }
+
+                string fullName = (string)attributeData.ConstructorArguments[1].Value!;
+                if (fullName == fullTypeName)
+                {
+                    return type.TypeHandle.Value;
+                }
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+    
     [UnmanagedCallersOnly]
     public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle,
         delegate*<object, IntPtr, IntPtr, void> methodPtr, 

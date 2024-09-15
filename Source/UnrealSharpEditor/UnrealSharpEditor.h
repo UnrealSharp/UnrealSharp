@@ -20,12 +20,19 @@ public:
     
     static void OpenSolution();
 
+
 private:
+    
+    static FString SelectArchiveDirectory();
+
+    static void RunGame(FString ExecutablePath);
 
     void OnUnrealSharpInitialized();
 
     static void OnCreateNewProject();
     static void OnRegenerateSolution();
+
+    static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
     
@@ -37,6 +44,8 @@ private:
     
     void RegisterCommands();
     void RegisterMenu();
+
+    static FString QuotePath(const FString& Path);
 
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;

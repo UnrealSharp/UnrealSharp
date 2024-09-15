@@ -83,6 +83,7 @@ public static class FileExporter
         
         foreach (var directory in directories)
         {
+            int removedFiles = 0;
             string[] files = Directory.GetFiles(directory);
             
             foreach (var file in files)
@@ -93,6 +94,12 @@ public static class FileExporter
                 }
                 
                 File.Delete(file);
+                removedFiles++;
+            }
+            
+            if (removedFiles == files.Length)
+            {
+                Directory.Delete(directory);
             }
         }
     }

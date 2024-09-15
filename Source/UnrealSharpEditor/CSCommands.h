@@ -22,5 +22,6 @@ public:
 	TSharedPtr<FUICommandInfo> CompileManagedCode;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
+	TSharedPtr<FUICommandInfo> PackageProject;
 };
 
