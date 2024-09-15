@@ -208,6 +208,17 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
 		true,
 		false,
 		false);
+	
+	for (int32 i = ProjectPaths.Num() - 1; i >= 0; i--)
+	{
+		if (!ProjectPaths[i].Contains("ProjectGlue.csproj"))
+		{
+			continue;
+		}
+
+		ProjectPaths.RemoveAt(i);
+		return;
+	}
 }
 
 void FCSProcHelper::GetAllAssemblyPaths(TArray<FString>& AssemblyPaths)

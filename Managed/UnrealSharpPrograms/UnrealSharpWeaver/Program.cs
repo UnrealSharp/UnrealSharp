@@ -209,21 +209,16 @@ public static class Program
             
             try
             {
+                void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
+                {
+                    typeDefinitions.Add(typeDefinition);
+                    WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
+                }
+                
                 foreach (var module in userAssembly.Modules)
                 {
                     foreach (var type in module.Types)
                     {
-                        if (WeaverHelper.IsGenerated(type))
-                        {
-                            continue;
-                        }
-
-                        void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
-                        {
-                            typeDefinitions.Add(typeDefinition);
-                            WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
-                        }
-                        
                         if (WeaverHelper.IsUClass(type))
                         {
                             RegisterType(classes, type);

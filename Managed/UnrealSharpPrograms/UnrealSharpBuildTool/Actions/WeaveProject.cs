@@ -42,6 +42,11 @@ public class WeaveProject : BuildToolAction
         
         foreach (FileInfo projectFile in allProjectFiles)
         {
+            if (projectFile.Directory.Name == "ProjectGlue")
+            {
+                continue;
+            }
+            
             weaveProcess.StartInfo.ArgumentList.Add("-p");
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
             string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin", 
