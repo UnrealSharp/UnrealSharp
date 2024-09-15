@@ -45,6 +45,8 @@ private:
     void RegisterCommands();
     void RegisterMenu();
 
+    static FString QuotePath(const FString& Path);
+
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     bool bIsReloading = false;

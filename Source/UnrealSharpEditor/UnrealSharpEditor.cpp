@@ -206,7 +206,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	Progress.MakeDialog();
 	
 	TMap<FString, FString> Arguments;
-	Arguments.Add("ArchiveDirectory", ArchiveDirectory);
+	Arguments.Add("ArchiveDirectory", QuotePath(ArchiveDirectory));
 	Arguments.Add("BuildConfig", "Release");
 	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
 
@@ -370,6 +370,11 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar"));
 
 	Section.AddEntry(Entry);
+}
+
+FString FUnrealSharpEditorModule::QuotePath(const FString& Path)
+{
+	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
 #undef LOCTEXT_NAMESPACE
