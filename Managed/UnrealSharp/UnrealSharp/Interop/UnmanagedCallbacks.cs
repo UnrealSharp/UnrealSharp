@@ -165,6 +165,7 @@ public static class UnmanagedCallbacks
             }
             
             methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
+            return 0;
         }
         catch (Exception ex)
         {
@@ -172,7 +173,6 @@ public static class UnmanagedCallbacks
             Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
             return 1;
         }
-        return 0;
     }
 
     [UnmanagedCallersOnly]
