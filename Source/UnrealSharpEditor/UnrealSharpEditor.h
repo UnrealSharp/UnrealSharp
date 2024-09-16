@@ -29,12 +29,11 @@ public:
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
+    bool HasHotReloadFailed() const { return bHotReloadFailed; }
     
     static void OpenSolution();
 
-
 private:
-    
     static FString SelectArchiveDirectory();
 
     static void RunGame(FString ExecutablePath);
@@ -46,6 +45,9 @@ private:
     static void OnRegenerateSolution();
     static void OnOpenSolution();
     static void OnPackageProject();
+    static void OnOpenSettings();
+    static void OnOpenDocumentation();
+    static void OnReportBug();
 
     static void PackageProject();
 
@@ -59,9 +61,11 @@ private:
     
     void RegisterCommands();
     void RegisterMenu();
+    FSlateIcon GetMenuIcon() const;
     
     HotReloadStatus HotReloadStatus = Inactive;
-
+    bool bHotReloadFailed = false;
+    
     static FString QuotePath(const FString& Path);
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;

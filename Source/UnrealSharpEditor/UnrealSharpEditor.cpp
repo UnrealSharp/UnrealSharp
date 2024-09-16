@@ -5,6 +5,7 @@
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
 #include "IDirectoryWatcher.h"
+#include "ISettingsModule.h"
 #include "SourceCodeNavigation.h"
 #include "CSharpForUE/CSManager.h"
 #include "CSharpForUE/CSDeveloperSettings.h"
@@ -105,6 +106,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		HotReloadStatus = Inactive;
+		bHotReloadFailed = true;
 		return;
 	}
 	
@@ -118,6 +120,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 		if (!CSharpManager.UnloadAssembly(ProjectName))
 		{
 			HotReloadStatus = Inactive;
+			bHotReloadFailed = false;
 			return;
 		}
 	}
@@ -128,6 +131,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	if (!CSharpManager.LoadUserAssembly())
 	{
 		HotReloadStatus = Inactive;
+		bHotReloadFailed = true;
 		return;
 	}
 
@@ -135,6 +139,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	FCSReinstancer::Get().StartReinstancing();
 
 	HotReloadStatus = Inactive;
+	bHotReloadFailed = false;
 }
 
 void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
@@ -209,6 +214,21 @@ void FUnrealSharpEditorModule::OnOpenSolution()
 void FUnrealSharpEditorModule::OnPackageProject()
 {
 	PackageProject();
+}
+
+void FUnrealSharpEditorModule::OnOpenSettings()
+{
+	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Editor", "General", "CSDeveloperSettings");
+}
+
+void FUnrealSharpEditorModule::OnOpenDocumentation()
+{
+	FPlatformProcess::LaunchURL(TEXT("https://www.unrealsharp.com"), nullptr, nullptr);
+}
+
+void FUnrealSharpEditorModule::OnReportBug()
+{
+	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
 void FUnrealSharpEditorModule::PackageProject()
@@ -298,7 +318,8 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 {
 	const FCSCommands& CSCommands = FCSCommands::Get();
 	FMenuBuilder MenuBuilder(true, UnrealSharpCommands);
-	
+
+	// Build
 	MenuBuilder.BeginSection("Build", LOCTEXT("Build", "Build"));
 	
 	MenuBuilder.AddMenuEntry(CSCommands.CompileManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
@@ -306,6 +327,7 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	
 	MenuBuilder.EndSection();
 
+	// Project
 	MenuBuilder.BeginSection("Project", LOCTEXT("Project", "Project"));
 	
 	MenuBuilder.AddMenuEntry(CSCommands.CreateNewProject, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
@@ -319,10 +341,25 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	
 	MenuBuilder.EndSection();
 
+	// Package
 	MenuBuilder.BeginSection("Package", LOCTEXT("Package", "Package"));
 
 	MenuBuilder.AddMenuEntry(CSCommands.PackageProject, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
+
+	MenuBuilder.EndSection();
+
+	// Plugin
+	MenuBuilder.BeginSection("Plugin", LOCTEXT("Plugin", "Plugin"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.OpenSettings, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "EditorPreferences.TabIcon"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.OpenDocumentation, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "MainFrame.DocumentationHome"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.ReportBug, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "MainFrame.ReportABug"));
 
 	MenuBuilder.EndSection();
 	
@@ -378,6 +415,9 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSettings));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenDocumentation, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenDocumentation));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().ReportBug, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
 }
 
 void FUnrealSharpEditorModule::RegisterMenu()
@@ -391,9 +431,26 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	FOnGetContent::CreateLambda([this](){ return GenerateUnrealSharpMenu(); }),
 	LOCTEXT("UnrealSharp_Label", "UnrealSharp"),
 	LOCTEXT("UnrealSharp_Tooltip", "List of all UnrealSharp actions"),
-	FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar"));
+	TAttribute<FSlateIcon>::CreateLambda([this]()
+	{
+		return GetMenuIcon();
+	}));
 
 	Section.AddEntry(Entry);
+}
+
+FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const
+{
+	if (HasHotReloadFailed())
+	{
+		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Fail"); 
+	}
+	if (HasPendingHotReloadChanges())
+	{
+		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Modified"); 
+	}
+	
+	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
 FString FUnrealSharpEditorModule::QuotePath(const FString& Path)
