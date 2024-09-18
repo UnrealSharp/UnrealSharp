@@ -235,11 +235,11 @@ public static class Program
                         {
                             RegisterType(interfaces, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.MulticastDelegate"))
+                        else if (WeaverHelper.IsUMultiDelegate(type))
                         {
                             RegisterType(multicastDelegates, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.Delegate"))
+                        else if (WeaverHelper.IsUSingleDelegate(type))
                         {
                             RegisterType(delegates, type);
                         }
