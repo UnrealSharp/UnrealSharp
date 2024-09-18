@@ -34,8 +34,8 @@ public static class WeaverHelper
     public static readonly string UFunctionAttribute = "UFunctionAttribute";
     public static readonly string UClassAttribute = "UClassAttribute";
     public static readonly string UInterfaceAttribute = "UInterfaceAttribute";
-    public static readonly string UMultiDelegateAttribute = "UMultiDelegate";
-    public static readonly string USingleDelegateAttribute = "USingleDelegate";
+    public static readonly string UMultiDelegateAttribute = "UMultiDelegateAttribute";
+    public static readonly string USingleDelegateAttribute = "USingleDelegateAttribute";
 
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     public static readonly string BlittableTypeAttribute = "BlittableTypeAttribute";
