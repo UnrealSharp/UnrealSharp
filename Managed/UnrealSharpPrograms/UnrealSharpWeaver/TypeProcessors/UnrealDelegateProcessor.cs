@@ -11,18 +11,11 @@ public static class UnrealDelegateProcessor
 {
     public static string InitializeUnrealDelegate = nameof(InitializeUnrealDelegate);
     
-    public static void ProcessMulticastDelegates(List<TypeDefinition> delegates, AssemblyDefinition assembly)
+    public static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions)
     {
-        foreach (TypeDefinition type in delegates)
+        foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeReference? extensionTypeRef = WeaverHelper.FindTypeInAssembly(assembly, $"U{type.Name}", throwOnException: false);
-
-            if (extensionTypeRef is not TypeDefinition extensionTypeDefinition)
-            {
-                throw new Exception("Could not find extension type for delegate");
-            }
-
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(extensionTypeDefinition, "Invoker", throwIfNotFound: false);
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker", throwIfNotFound: false);
             
             if (invokerMethod == null)
             {
@@ -37,11 +30,11 @@ public static class UnrealDelegateProcessor
             FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(invokerMethod, functionMetaData);
-            ProcessInitialize(extensionTypeDefinition, functionMetaData);
+            ProcessInitialize(type, functionMetaData);
         }
     }
     
-    public static void ProcessSingleDelegates(List<TypeDefinition> delegates, AssemblyDefinition assembly)
+    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
             WeaverHelper.BindingsAssembly, "DelegateData", WeaverHelper.UnrealSharpNamespace);
@@ -55,24 +48,17 @@ public static class UnrealDelegateProcessor
         blittabletoNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
         blittablefromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
         
-        foreach (TypeDefinition type in delegates)
+        foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeReference? extensionTypeRef = WeaverHelper.FindTypeInAssembly(assembly, $"U{type.Name}", throwOnException: false);
-
-            if (extensionTypeRef is not TypeDefinition extensionTypeDefinition)
-            {
-                throw new Exception("Could not find extension type for delegate");
-            }
-
-            TypeDefinition marshaller = WeaverHelper.CreateNewClass(assembly, extensionTypeRef.Namespace, extensionTypeRef.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
+            TypeDefinition marshaller = WeaverHelper.CreateNewClass(assembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
             
             // Create a delegate from the marshaller
-            MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, extensionTypeDefinition);
-            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, extensionTypeDefinition);
+            MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
+            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
             ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
             
-            MethodReference? constructor = WeaverHelper.FindMethod(extensionTypeDefinition, ".ctor", true, delegateDataStruct);
-            constructor.DeclaringType = extensionTypeDefinition;
+            MethodReference? constructor = WeaverHelper.FindMethod(type, ".ctor", true, delegateDataStruct);
+            constructor.DeclaringType = type;
 
             VariableDefinition delegateDataVar = WeaverHelper.AddVariableToMethod(fromNativeMethod, delegateDataStruct);
             
@@ -87,11 +73,11 @@ public static class UnrealDelegateProcessor
             
             processor.Emit(OpCodes.Ldloc, delegateDataVar);
             
-            MethodReference? constructorDelegate = WeaverHelper.FindMethod(extensionTypeDefinition, ".ctor", true, [delegateDataStruct]);
+            MethodReference? constructorDelegate = WeaverHelper.FindMethod(type, ".ctor", true, [delegateDataStruct]);
             processor.Emit(OpCodes.Newobj, constructorDelegate);
             processor.Emit(OpCodes.Ret);
             
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(extensionTypeDefinition, "Invoker");
+            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
             
             if (invokerMethod.Parameters.Count == 0)
             {
@@ -101,7 +87,7 @@ public static class UnrealDelegateProcessor
             FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(invokerMethod, functionMetaData);
-            ProcessInitialize(extensionTypeDefinition, functionMetaData);
+            ProcessInitialize(type, functionMetaData);
         }
     }
 

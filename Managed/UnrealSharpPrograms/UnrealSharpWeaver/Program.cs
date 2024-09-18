@@ -235,11 +235,11 @@ public static class Program
                         {
                             RegisterType(interfaces, type);
                         }
-                        else if (WeaverHelper.IsUMultiDelegate(type))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.MulticastDelegate"))
                         {
                             RegisterType(multicastDelegates, type);
                         }
-                        else if (WeaverHelper.IsUSingleDelegate(type))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.Delegate"))
                         {
                             RegisterType(delegates, type);
                         }
@@ -255,7 +255,7 @@ public static class Program
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
-            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates, userAssembly);
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
             UnrealDelegateProcessor.ProcessSingleDelegates(delegates, userAssembly);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
