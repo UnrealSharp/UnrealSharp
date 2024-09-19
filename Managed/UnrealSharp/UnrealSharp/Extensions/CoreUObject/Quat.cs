@@ -1,19 +1,28 @@
 using System.Globalization;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct Quat
+public partial struct FQuat
 {
     /// <summary>
     /// Returns a Quat representing no rotation. 
     /// </summary>
-    public static Quat Identity => new(0, 0, 0, 1);
+    public static FQuat Identity => new(0, 0, 0, 1);
 
     /// <summary>
     /// Returns whether the Quat is the identity Quat.
     /// </summary>
     public bool IsIdentity => X == 0 && Y == 0 && Z == 0 && W == 1;
-
+    
+    /// <summary>
+    /// Constructs a Quat from the given Rotator.
+    /// </summary>
+    public FQuat(FRotator rotator)
+    {
+        FQuatExporter.CallToQuaternion(out this, ref rotator);
+    }
+    
     /// <summary>
     /// Constructs a Quat from the given components.
     /// </summary>
@@ -21,25 +30,34 @@ public partial struct Quat
     /// <param name="y">The Y component of the Quat.</param>
     /// <param name="z">The Z component of the Quat.</param>
     /// <param name="w">The W component of the Quat.</param>
-    public Quat(double x, double y, double z, double w)
+    public FQuat(double x, double y, double z, double w)
     {
         X = x;
         Y = y;
         Z = z;
         W = w;
     }
-
+    
     /// <summary>
     /// Constructs a Quat from the given vector and rotation parts.
     /// </summary>
     /// <param name="vectorPart">The vector part of the Quat.</param>
     /// <param name="scalarPart">The rotation part of the Quat.</param>
-    public Quat(Vector vectorPart, double scalarPart)
+    public FQuat(FVector vectorPart, double scalarPart)
     {
         X = vectorPart.X;
         Y = vectorPart.Y;
         Z = vectorPart.Z;
         W = scalarPart;
+    }
+    
+    /// <summary>
+    /// Returns a Rotator view of this Quat.
+    /// </summary>
+    public FRotator ToRotator()
+    {
+        FQuatExporter.CallToRotator(out var rotator, ref this);
+        return rotator;
     }
 
     /// <summary>
@@ -63,13 +81,33 @@ public partial struct Quat
     }
 
     /// <summary>
+    /// Rotates a vector by the Quat.
+    /// </summary>
+    /// <param name="v">The vector to rotate</param>
+    /// <returns>The rotated vector resulting from applying the Quaterinion</returns>
+    public FVector RotateVector(FVector v)
+    {
+        // http://people.csail.mit.edu/bkph/articles/Quaternions.pdf
+        // V' = V + 2w(Q x V) + (2Q x (Q x V))
+        // refactor:
+        // V' = V + w(2(Q x V)) + (Q x (2(Q x V)))
+        // T = 2(Q x V);
+        // V' = V + w*(T) + (Q x T)
+
+        FVector q = new FVector(X, Y, Z);
+        FVector tt = 2f * FVector.Cross(q, v);
+        FVector result = v + W * tt + FVector.Cross(q, tt);
+        return result;
+    }
+
+    /// <summary>
     /// Divides each component of the Quat by the length of the Quat.
     /// </summary>
     /// <param name="value">The source Quat.</param>
     /// <returns>The normalized Quat.</returns>
-    public static Quat Normalize(Quat value)
+    public static FQuat Normalize(FQuat value)
     {
-        Quat ans;
+        FQuat ans;
 
         double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z + value.W * value.W;
 
@@ -88,9 +126,9 @@ public partial struct Quat
     /// </summary>
     /// <param name="value">The Quat of which to return the conjugate.</param>
     /// <returns>A new Quat that is the conjugate of the specified one.</returns>
-    public static Quat Conjugate(Quat value)
+    public static FQuat Conjugate(FQuat value)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = -value.X;
         ans.Y = -value.Y;
@@ -105,13 +143,13 @@ public partial struct Quat
     /// </summary>
     /// <param name="value">The source Quat.</param>
     /// <returns>The inverted Quat.</returns>
-    public static Quat Inverse(Quat value)
+    public static FQuat Inverse(FQuat value)
     {
         //  -1   (       a              -v       )
         // q   = ( -------------   ------------- )
         //       (  a^2 + |v|^2  ,  a^2 + |v|^2  )
 
-        Quat ans;
+        FQuat ans;
 
         double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z + value.W * value.W;
         double invNorm = 1.0 / ls;
@@ -131,9 +169,9 @@ public partial struct Quat
     /// This vector must be normalized before calling this function or the resulting Quat will be incorrect.</param>
     /// <param name="angle">The angle, in radians, to rotate around the vector.</param>
     /// <returns>The created Quat.</returns>
-    public static Quat CreateFromAxisAngle(Vector axis, double angle)
+    public static FQuat CreateFromAxisAngle(FVector axis, double angle)
     {
-        Quat ans;
+        FQuat ans;
 
         double halfAngle = angle * 0.5;
         double s = Math.Sin(halfAngle);
@@ -154,7 +192,7 @@ public partial struct Quat
     /// <param name="pitch">The pitch angle, in radians, around the X-axis.</param>
     /// <param name="roll">The roll angle, in radians, around the Z-axis.</param>
     /// <returns></returns>
-    public static Quat CreateFromYawPitchRoll(double yaw, double pitch, double roll)
+    public static FQuat CreateFromYawPitchRoll(double yaw, double pitch, double roll)
     {
         //  Roll first, about axis the object is facing, then
         //  pitch upward, then yaw to face into the new heading
@@ -170,7 +208,7 @@ public partial struct Quat
         var sy = Math.Sin(halfYaw);
         var cy = Math.Cos(halfYaw);
 
-        Quat result;
+        FQuat result;
 
         result.X = cy * sp * cr + sy * cp * sr;
         result.Y = sy * cp * cr - cy * sp * sr;
@@ -186,7 +224,7 @@ public partial struct Quat
     /// <param name="Quat1">The first source Quat.</param>
     /// <param name="Quat2">The second source Quat.</param>
     /// <returns>The dot product of the Quats.</returns>
-    public static double Dot(Quat Quat1, Quat Quat2)
+    public static double Dot(FQuat Quat1, FQuat Quat2)
     {
         return Quat1.X * Quat2.X +
                Quat1.Y * Quat2.Y +
@@ -201,7 +239,7 @@ public partial struct Quat
     /// <param name="Quat2">The second source Quat.</param>
     /// <param name="amount">The relative weight of the second source Quat in the interpolation.</param>
     /// <returns>The interpolated Quat.</returns>
-    public static Quat Slerp(Quat Quat1, Quat Quat2, double amount)
+    public static FQuat Slerp(FQuat Quat1, FQuat Quat2, double amount)
     {
         const double epsilon = 1e-6;
 
@@ -237,7 +275,7 @@ public partial struct Quat
                 : Math.Sin(t * omega) * invSinOmega;
         }
 
-        Quat ans;
+        FQuat ans;
 
         ans.X = s1 * Quat1.X + s2 * Quat2.X;
         ans.Y = s1 * Quat1.Y + s2 * Quat2.Y;
@@ -254,12 +292,12 @@ public partial struct Quat
     /// <param name="Quat2">The second source Quat.</param>
     /// <param name="amount">The relative weight of the second source Quat in the interpolation.</param>
     /// <returns>The interpolated Quat.</returns>
-    public static Quat Lerp(Quat Quat1, Quat Quat2, double amount)
+    public static FQuat Lerp(FQuat Quat1, FQuat Quat2, double amount)
     {
         double t = amount;
         double t1 = 1.0 - t;
 
-        Quat r = new Quat();
+        FQuat r = new FQuat();
 
         double dot = Quat1.X * Quat2.X + Quat1.Y * Quat2.Y +
                     Quat1.Z * Quat2.Z + Quat1.W * Quat2.W;
@@ -297,9 +335,9 @@ public partial struct Quat
     /// <param name="value1">The first Quat rotation in the series.</param>
     /// <param name="value2">The second Quat rotation in the series.</param>
     /// <returns>A new Quat representing the concatenation of the value1 rotation followed by the value2 rotation.</returns>
-    public static Quat Concatenate(Quat value1, Quat value2)
+    public static FQuat Concatenate(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         // Concatenate rotation is actually q2 * q1 instead of q1 * q2.
         // So that's why value2 goes q1 and value1 goes q2.
@@ -333,9 +371,9 @@ public partial struct Quat
     /// </summary>
     /// <param name="value">The source Quat.</param>
     /// <returns>The negated Quat.</returns>
-    public static Quat Negate(Quat value)
+    public static FQuat Negate(FQuat value)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = -value.X;
         ans.Y = -value.Y;
@@ -351,9 +389,9 @@ public partial struct Quat
     /// <param name="value1">The first source Quat.</param>
     /// <param name="value2">The second source Quat.</param>
     /// <returns>The result of adding the Quats.</returns>
-    public static Quat Add(Quat value1, Quat value2)
+    public static FQuat Add(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X + value2.X;
         ans.Y = value1.Y + value2.Y;
@@ -369,9 +407,9 @@ public partial struct Quat
     /// <param name="value1">The first source Quat.</param>
     /// <param name="value2">The second Quat, to be subtracted from the first.</param>
     /// <returns>The result of the subtraction.</returns>
-    public static Quat Subtract(Quat value1, Quat value2)
+    public static FQuat Subtract(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X - value2.X;
         ans.Y = value1.Y - value2.Y;
@@ -387,9 +425,9 @@ public partial struct Quat
     /// <param name="value1">The Quat on the left side of the multiplication.</param>
     /// <param name="value2">The Quat on the right side of the multiplication.</param>
     /// <returns>The result of the multiplication.</returns>
-    public static Quat Multiply(Quat value1, Quat value2)
+    public static FQuat Multiply(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         double q1x = value1.X;
         double q1y = value1.Y;
@@ -422,9 +460,9 @@ public partial struct Quat
     /// <param name="value1">The source Quat.</param>
     /// <param name="value2">The scalar value.</param>
     /// <returns>The result of the multiplication.</returns>
-    public static Quat Multiply(Quat value1, double value2)
+    public static FQuat Multiply(FQuat value1, double value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X * value2;
         ans.Y = value1.Y * value2;
@@ -440,9 +478,9 @@ public partial struct Quat
     /// <param name="value1">The source Quat.</param>
     /// <param name="value2">The divisor.</param>
     /// <returns>The result of the division.</returns>
-    public static Quat Divide(Quat value1, Quat value2)
+    public static FQuat Divide(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         double q1x = value1.X;
         double q1y = value1.Y;
@@ -483,9 +521,9 @@ public partial struct Quat
     /// </summary>
     /// <param name="value">The source Quat.</param>
     /// <returns>The negated Quat.</returns>
-    public static Quat operator -(Quat value)
+    public static FQuat operator -(FQuat value)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = -value.X;
         ans.Y = -value.Y;
@@ -501,9 +539,9 @@ public partial struct Quat
     /// <param name="value1">The first source Quat.</param>
     /// <param name="value2">The second source Quat.</param>
     /// <returns>The result of adding the Quats.</returns>
-    public static Quat operator +(Quat value1, Quat value2)
+    public static FQuat operator +(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X + value2.X;
         ans.Y = value1.Y + value2.Y;
@@ -519,9 +557,9 @@ public partial struct Quat
     /// <param name="value1">The first source Quat.</param>
     /// <param name="value2">The second Quat, to be subtracted from the first.</param>
     /// <returns>The result of the subtraction.</returns>
-    public static Quat operator -(Quat value1, Quat value2)
+    public static FQuat operator -(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X - value2.X;
         ans.Y = value1.Y - value2.Y;
@@ -537,9 +575,9 @@ public partial struct Quat
     /// <param name="value1">The Quat on the left side of the multiplication.</param>
     /// <param name="value2">The Quat on the right side of the multiplication.</param>
     /// <returns>The result of the multiplication.</returns>
-    public static Quat operator *(Quat value1, Quat value2)
+    public static FQuat operator *(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         double q1x = value1.X;
         double q1y = value1.Y;
@@ -572,9 +610,9 @@ public partial struct Quat
     /// <param name="value1">The source Quat.</param>
     /// <param name="value2">The scalar value.</param>
     /// <returns>The result of the multiplication.</returns>
-    public static Quat operator *(Quat value1, double value2)
+    public static FQuat operator *(FQuat value1, double value2)
     {
-        Quat ans;
+        FQuat ans;
 
         ans.X = value1.X * value2;
         ans.Y = value1.Y * value2;
@@ -590,9 +628,9 @@ public partial struct Quat
     /// <param name="value1">The source Quat.</param>
     /// <param name="value2">The divisor.</param>
     /// <returns>The result of the division.</returns>
-    public static Quat operator /(Quat value1, Quat value2)
+    public static FQuat operator /(FQuat value1, FQuat value2)
     {
-        Quat ans;
+        FQuat ans;
 
         double q1x = value1.X;
         double q1y = value1.Y;
@@ -634,7 +672,7 @@ public partial struct Quat
     /// <param name="value1">The first Quat to compare.</param>
     /// <param name="value2">The second Quat to compare.</param>
     /// <returns>True if the Quats are equal; False otherwise.</returns>
-    public static bool operator ==(Quat value1, Quat value2)
+    public static bool operator ==(FQuat value1, FQuat value2)
     {
         return (value1.X == value2.X &&
                 value1.Y == value2.Y &&
@@ -648,7 +686,7 @@ public partial struct Quat
     /// <param name="value1">The first Quat to compare.</param>
     /// <param name="value2">The second Quat to compare.</param>
     /// <returns>True if the Quats are not equal; False if they are equal.</returns>
-    public static bool operator !=(Quat value1, Quat value2)
+    public static bool operator !=(FQuat value1, FQuat value2)
     {
         return (value1.X != value2.X ||
                 value1.Y != value2.Y ||
@@ -661,7 +699,7 @@ public partial struct Quat
     /// </summary>
     /// <param name="other">The Quat to compare this instance to.</param>
     /// <returns>True if the other Quat is equal to this instance; False otherwise.</returns>
-    public bool Equals(Quat other)
+    public bool Equals(FQuat other)
     {
         return (X == other.X &&
                 Y == other.Y &&
@@ -676,7 +714,7 @@ public partial struct Quat
     /// <returns>True if the Object is equal to this Quat; False otherwise.</returns>
     public override bool Equals(object obj)
     {
-        if (obj is Quat quat)
+        if (obj is FQuat quat)
         {
             return Equals(quat);
         }

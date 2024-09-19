@@ -112,7 +112,7 @@ public enum ClassFlags : ulong
 
 [AttributeUsage(AttributeTargets.Class)]
 [ClassFlagsMap]
-public sealed class UClassAttribute(ClassFlags flags = ClassFlags.None) : Attribute
+public sealed class UClassAttribute(ClassFlags flags = ClassFlags.None) : BaseUAttribute
 {
     /// <summary>
     /// The flags of the class.

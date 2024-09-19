@@ -9,6 +9,7 @@ void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 	EXPORT_FUNCTION(InvokeNativeStaticFunction);
 	EXPORT_FUNCTION(InvokeNativeFunction);
 	EXPORT_FUNCTION(NativeIsValid)
+	EXPORT_FUNCTION(GetWorld_Internal);
 }
 
 void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
@@ -102,9 +103,20 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)
 {
 	InvokeNativeFunction(NativeClass->ClassDefaultObject, NativeFunction, Params);
-} 
+}
 
 bool UUObjectExporter::NativeIsValid(UObject* Object)
 {
 	return IsValid(Object);
+}
+
+void* UUObjectExporter::GetWorld_Internal(UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		return nullptr;
+	}
+
+	UWorld* World = Object->GetWorld();
+	return FCSManager::Get().FindManagedObject(World).GetIntPtr();
 }

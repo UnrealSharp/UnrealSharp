@@ -1,12 +1,10 @@
 ﻿#pragma once
 
 #include "CSTypeInfo.h"
-#include "CSharpForUE/TypeGenerator/Register/CSGeneratedEnumBuilder.h"
-#include "CSharpForUE/TypeGenerator/Register/CSMetaData.h"
+#include "TypeGenerator/Register/CSGeneratedEnumBuilder.h"
+#include "TypeGenerator/Register/MetaData/CSEnumMetaData.h"
 
-class FCSGeneratedEnumBuilder;
-
-struct CSHARPFORUE_API FCSharpEnumInfo : TCSharpTypeInfo<FEnumMetaData, UEnum, FCSGeneratedEnumBuilder>
+struct CSHARPFORUE_API FCSharpEnumInfo : TCSharpTypeInfo<FCSEnumMetaData, UEnum, FCSGeneratedEnumBuilder>
 {
 	FCSharpEnumInfo(const TSharedPtr<FJsonValue>& MetaData) : TCSharpTypeInfo(MetaData) {}
 	FCSharpEnumInfo() {};

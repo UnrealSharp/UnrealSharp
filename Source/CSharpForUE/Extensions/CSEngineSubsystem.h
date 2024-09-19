@@ -39,7 +39,7 @@ class UCSEngineSubsystem : public UEngineSubsystem
 
 protected:
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
 	bool K2_ShouldCreateSubsystem() const;
   
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")

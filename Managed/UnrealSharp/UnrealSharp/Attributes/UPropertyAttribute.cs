@@ -15,6 +15,9 @@ public enum PropertyFlags : ulong
     [PropertyFlagsMap(NativePropertyFlags.Config)]
     Config = NativePropertyFlags.Config,
     
+    [PropertyFlagsMap(NativePropertyFlags.InstancedReference)]
+    Instanced = NativePropertyFlags.PersistentInstance,
+    
     [PropertyFlagsMap(NativePropertyFlags.ExportObject)]
     Export = NativePropertyFlags.ExportObject,
     

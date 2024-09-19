@@ -4,7 +4,7 @@
 #include "FunctionsExporter.h"
 #include "FStringExporter.generated.h"
 
-UCLASS()
+UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UFStringExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

@@ -52,9 +52,122 @@ public static class Main
             _pluginLoadContext = null;
         }
     }
+    
+    // This is for advanced use ony. Any hard references at the wrong time will break unloading.
+    public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible, bool shouldRemoveExtension = true)
+    {
+        try
+        {
+            string assemblyName = shouldRemoveExtension ? Path.GetFileNameWithoutExtension(assemblyPath) : assemblyPath;
+            
+            foreach (var plugin in LoadedPlugins)
+            {
+                if (plugin.AssemblyLoadedPath != assemblyPath)
+                {
+                    continue;
+                }
+                
+                Console.WriteLine($"Plugin {assemblyName} is already loaded.");
+                return plugin.Assembly.TryGetTarget(out var assembly) ? assembly : default;
+            }
+            
+            var sharedAssemblies = new List<string>();
+            foreach (var sharedAssembly in SharedAssemblies)
+            {
+                string? sharedAssemblyName = sharedAssembly.Name;
+                if (sharedAssemblyName != null)
+                {
+                    sharedAssemblies.Add(sharedAssemblyName);
+                }
+            }
+        
+            var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
 
+            if (!newPlugin.IsAlive)
+            {
+                throw new Exception($"Failed to load plugin from: {assemblyPath}");
+            }
+        
+            LoadedPlugins.Add(newPlugin);
+            Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
+
+            return loadedAssembly;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while loading the plugin: {ex.Message}");
+        }
+        return default;
+    }
+    
+    // This is for advanced use ony. Any hard references at the wrong time will break unloading.
+    public static bool UnloadPlugin(string assemblyPath)
+    {
+        foreach (var plugin in LoadedPlugins)
+        {
+            if (plugin.AssemblyLoadedPath != assemblyPath)
+            {
+                continue;
+            }
+            
+            try
+            {
+                if (!plugin.IsCollectible)
+                {
+                    throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
+                }
+                
+                string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+                Console.WriteLine($"Unloading plugin {assemblyName}...");
+
+                plugin.Unload();
+
+                int startTimeMs = Environment.TickCount;
+                bool takingTooLong = false;
+
+                while (plugin.IsAlive)
+                {
+                    GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+                    GC.WaitForPendingFinalizers();
+
+                    if (!plugin.IsAlive)
+                    {
+                        break;
+                    }
+                
+                    int elapsedTimeMs = Environment.TickCount - startTimeMs;
+
+                    if (!takingTooLong && elapsedTimeMs >= 200)
+                    {
+                        takingTooLong = true;
+                        Console.Error.WriteLine("Unloading assembly took longer than expected.");
+                    }
+                    else if (elapsedTimeMs >= 1000)
+                    {
+                        Console.Error.WriteLine("Failed to unload assemblies. Possible causes: Strong GC handles, running threads, etc.");
+                        return false;
+                    }
+                }
+
+                LoadedPlugins.Remove(plugin);
+                Console.WriteLine($"{assemblyName} unloaded successfully!");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
+                return false;
+            }
+        }
+
+        return false;
+    }
+    
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, PluginsCallbacks* pluginCallbacks, ManagedCallbacks* managedCallbacks, IntPtr exportFunctionsPtr)
+    private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, 
+        PluginsCallbacks* pluginCallbacks, 
+        ManagedCallbacks* managedCallbacks, 
+        IntPtr exportFunctionsPtr)
     {
         try
         {
@@ -88,15 +201,15 @@ public static class Main
     [UnmanagedCallersOnly]
     private static unsafe IntPtr LoadUserAssembly(char* assemblyPath)
     {
-        try
-        {
-            return LoadPlugin(new string(assemblyPath), true);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred while loading the plugin: {ex.Message}");
-        }
-        return default;
+        Assembly? assembly = LoadPlugin(new string(assemblyPath), true);
+        return assembly != null ? GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(assembly)) : default;
+    }
+    
+    [UnmanagedCallersOnly]
+    private static unsafe NativeBool UnloadProjectPlugin(char* assemblyPath)
+    {
+        string assemblyPathStr = new(assemblyPath);
+        return UnloadPlugin(assemblyPathStr).ToNativeBool();
     }
     
     private static void SetupDllImportResolver(IntPtr assemblyPathPtr)
@@ -104,109 +217,5 @@ public static class Main
         _dllImportResolver = new UnrealSharpDllImportResolver(assemblyPathPtr).OnResolveDllImport;
         SharedAssemblies.Add(CoreApiAssembly.GetName());
         NativeLibrary.SetDllImportResolver(CoreApiAssembly, _dllImportResolver);
-    }
-    
-    private static IntPtr LoadPlugin(string assemblyPath, bool isCollectible)
-    {
-        string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-        
-        var sharedAssemblies = new List<string>();
-        foreach (var sharedAssembly in SharedAssemblies)
-        {
-            string? sharedAssemblyName = sharedAssembly.Name;
-            if (sharedAssemblyName != null)
-            {
-                sharedAssemblies.Add(sharedAssemblyName);
-
-            }
-        }
-        
-        var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
-
-        if (!newPlugin.IsAlive)
-        {
-            throw new Exception($"Failed to load plugin from: {assemblyPath}");
-        }
-        
-        LoadedPlugins.Add(newPlugin);
-        Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(loadedAssembly));
-    }
-    
-    [UnmanagedCallersOnly]
-    private static unsafe NativeBool UnloadProjectPlugin(char* assemblyPath)
-    {
-        try
-        {
-            string assemblyPathStr = new string(assemblyPath);
-            
-            foreach (var plugin in LoadedPlugins)
-            {
-                if (plugin.AssemblyLoadedPath != assemblyPathStr)
-                {
-                    continue;
-                }
-                
-                return UnloadPlugin(plugin).ToNativeBool();
-            }
-            
-            throw new Exception($"Failed to find plugin to unload: {assemblyPathStr}");
-        }
-        catch (Exception e)
-        {
-            Console.Error.WriteLine(e);
-            return NativeBool.False;
-        }
-    }
-    
-    private static bool UnloadPlugin(PluginLoadContextWrapper pluginLoadContext)
-    {
-        try
-        {
-            if (!pluginLoadContext.IsCollectible)
-            {
-                throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
-            }
-            
-            Console.WriteLine($"Unloading plugin (Path: {pluginLoadContext.AssemblyLoadedPath}");
-
-            pluginLoadContext.Unload();
-
-            int startTimeMs = Environment.TickCount;
-            bool takingTooLong = false;
-
-            while (pluginLoadContext.IsAlive)
-            {
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
-                GC.WaitForPendingFinalizers();
-
-                if (!pluginLoadContext.IsAlive)
-                {
-                    break;
-                }
-                
-                int elapsedTimeMs = Environment.TickCount - startTimeMs;
-
-                if (!takingTooLong && elapsedTimeMs >= 200)
-                {
-                    takingTooLong = true;
-                    Console.Error.WriteLine("Unloading assembly took longer than expected.");
-                }
-                else if (elapsedTimeMs >= 1000)
-                {
-                    Console.Error.WriteLine("Failed to unload assemblies. Possible causes: Strong GC handles, running threads, etc.");
-                    return false;
-                }
-            }
-
-            LoadedPlugins.Remove(pluginLoadContext);
-            Console.WriteLine("Plugin unloaded successfully!");
-            return true;
-        }
-        catch (Exception e)
-        {
-            Console.Error.WriteLine(e);
-            return false;
-        }
     }
 }

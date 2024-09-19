@@ -1,6 +1,5 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Mono.Cecil;
-using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
 
@@ -8,8 +7,8 @@ namespace UnrealSharpWeaver;
 
 public static class Program
 {
-    public static WeaverOptions WeaverOptions { get; private set; }
-    
+    public static WeaverOptions WeaverOptions { get; private set; } = null!;
+
     public static int Main(string[] args)
     {
         WeaverOptions = WeaverOptions.ParseArguments(args);
@@ -19,7 +18,7 @@ public static class Program
             return 1;
         }
         
-        if (!StartProcessingUserAssembly())
+        if (!ProcessUserAssemblies())
         {
             return 2;
         }
@@ -33,10 +32,14 @@ public static class Program
         
         foreach (var assemblyPath in WeaverOptions.AssemblyPaths)
         {
-            if (Directory.Exists(assemblyPath))
+            string? directory = Path.GetDirectoryName(StripQuotes(assemblyPath));
+            
+            if (!Directory.Exists(directory))
             {
-                resolver.AddSearchDirectory(assemblyPath);
+                throw new InvalidOperationException("Could not determine directory for assembly path.");
             }
+            
+            resolver.AddSearchDirectory(directory);
         }
 
         try
@@ -53,10 +56,9 @@ public static class Program
         return false;
     }
 
-    private static bool StartProcessingUserAssembly()
+    private static bool ProcessUserAssemblies()
     {
-        string outputDirectory = StripQuotes(WeaverOptions.OutputDirectory);
-        DirectoryInfo outputDirInfo = new DirectoryInfo(outputDirectory);
+        DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
         
         if (!outputDirInfo.Exists)
         {
@@ -65,27 +67,32 @@ public static class Program
 
         foreach (var quotedAssemblyPath in WeaverOptions.AssemblyPaths)
         {
-            var userAssemblyPath = Path.Combine(StripQuotes(quotedAssemblyPath), $"{WeaverOptions.ProjectName}.dll");
-
+            string userAssemblyPath = StripQuotes(quotedAssemblyPath);
+            
             if (!File.Exists(userAssemblyPath))
             {
-                throw new FileNotFoundException($"Could not find UserAssembly at: {userAssemblyPath}");
+                throw new FileNotFoundException($"Could not find assembly at: {userAssemblyPath}");
+            }
+            
+            DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
+
+            foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
+            {
+                string assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
+                resolver.AddSearchDirectory(assemblyDirectory);
             }
 
-            string weaverOutputPath = Path.Combine(outputDirectory, Path.GetFileName(userAssemblyPath));
-            
-            var readerParams = new ReaderParameters
+            ReaderParameters readerParams = new ReaderParameters
             {
-                ReadSymbols = true,
-                SymbolReaderProvider = new PdbReaderProvider(),
+                AssemblyResolver = resolver
             };
 
             AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
 
             try
             {
+                string weaverOutputPath = Path.Combine(outputDirInfo.FullName, Path.GetFileName(userAssemblyPath));
                 StartWeavingAssembly(userAssembly, weaverOutputPath);
-                return true;
             }
             catch (WeaverProcessError error)
             {
@@ -98,27 +105,76 @@ public static class Program
             }
         }
 
-        return false;
+        return true;
+    }
+    
+    private static string StripQuotes(string value)
+    {
+        if (value.StartsWith("\"") && value.EndsWith("\""))
+        {
+            return value.Substring(1, value.Length - 2);
+        }
+
+        return value;
     }
     
     static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
     {
-        var assemblyMetaData = new ApiMetaData
+        void CleanOldFilesAndMoveExistingFiles()
         {
-            AssemblyName = assembly.Name.Name,
-        };
+            var pdbOutputFile = new FileInfo(Path.ChangeExtension(assemblyOutputPath, ".pdb"));
+            
+            if (!pdbOutputFile.Exists)
+            {
+                return;
+            }
+            
+            var tmpDirectory = Path.Join(Path.GetTempPath(), assembly.Name.Name);
+            if (Path.GetPathRoot(tmpDirectory) != Path.GetPathRoot(pdbOutputFile.FullName)) //if the temp directory is on a different drive, move will not work as desired if file is locked since it does a copy for drive boundaries
+            {
+                tmpDirectory = Path.Join(Path.GetDirectoryName(assemblyOutputPath), "..", "_Temporary", assembly.Name.Name);
+            }
+
+            try
+            {
+                if (Directory.Exists(tmpDirectory))
+                {
+                    foreach (var file in Directory.GetFiles(tmpDirectory))
+                    {
+                        File.Delete(file);
+                    }
+                }
+                else
+                {
+                    Directory.CreateDirectory(tmpDirectory);
+                }
+            }
+            catch
+            {
+                //no action needed
+            }
+
+            //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy). 
+            var tmpDestFileName = Path.Join(tmpDirectory, Path.GetFileName(Path.ChangeExtension(Path.GetTempFileName(), ".pdb")));
+            File.Move(pdbOutputFile.FullName, tmpDestFileName);
+        }
+
+        var cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
+        var assemblyMetaData = new ApiMetaData
+                               {
+                                   AssemblyName = assembly.Name.Name,
+                               };
         
         WeaverHelper.ImportCommonTypes(assembly);
         StartProcessingAssembly(assembly, ref assemblyMetaData);
-        CopyAssemblyDependencies(assemblyOutputPath, Path.GetDirectoryName(assembly.MainModule.FileName)!);
+        
+        string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
+        CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
 
         try
         {
-            assembly.Write(assemblyOutputPath, new WriterParameters
-            {
-                WriteSymbols = true,
-                SymbolWriterProvider = new PdbWriterProvider(),
-            });
+            Task.WaitAll(cleanupTask);
+            assembly.Write(assemblyOutputPath);
         }
         catch (Exception ex)
         {
@@ -127,6 +183,17 @@ public static class Program
         }
         
         WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
+    }
+    
+    private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
+    {
+        string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        string metadataFilePath = Path.ChangeExtension(outputPath, "metadata.json");
+        File.WriteAllText(metadataFilePath, metaDataContent);
     }
 
     static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
@@ -142,33 +209,39 @@ public static class Program
             
             try
             {
+                void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
+                {
+                    typeDefinitions.Add(typeDefinition);
+                    WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
+                }
+                
                 foreach (var module in userAssembly.Modules)
                 {
                     foreach (var type in module.Types)
                     {
                         if (WeaverHelper.IsUClass(type))
                         {
-                            classes.Add(type);
+                            RegisterType(classes, type);
                         }
                         else if (WeaverHelper.IsUEnum(type))
                         {
-                            enums.Add(type);
+                            RegisterType(enums, type);
                         }
                         else if (WeaverHelper.IsUStruct(type))
                         {
-                            structs.Add(type);
+                            RegisterType(structs, type);
                         }
                         else if (WeaverHelper.IsUInterface(type))
                         {
-                            interfaces.Add(type);
+                            RegisterType(interfaces, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("MulticastDelegate"))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.MulticastDelegate"))
                         {
-                            multicastDelegates.Add(type);
+                            RegisterType(multicastDelegates, type);
                         }
-                        else if (type.BaseType != null && type.BaseType.Name.Contains("Delegate"))
+                        else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.Delegate"))
                         {
-                            delegates.Add(type);
+                            RegisterType(delegates, type);
                         }
                     }
                 }
@@ -179,11 +252,11 @@ public static class Program
                 throw;
             }
             
-            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
+            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)
@@ -193,47 +266,53 @@ public static class Program
         }
     }
 
+    private static void RecursiveFileCopy(DirectoryInfo sourceDirectory, DirectoryInfo destinationDirectory)
+    {
+        // Early out of our search if the last updated timestamps match
+        if (sourceDirectory.LastWriteTimeUtc == destinationDirectory.LastWriteTimeUtc) return;
+
+        if (!destinationDirectory.Exists)
+        {
+            destinationDirectory.Create();
+        }
+
+        foreach (FileInfo sourceFile in sourceDirectory.GetFiles())
+        {
+            string destinationFilePath = Path.Combine(destinationDirectory.FullName, sourceFile.Name);
+            FileInfo destinationFile = new FileInfo(destinationFilePath);
+
+            if (!destinationFile.Exists || sourceFile.LastWriteTimeUtc > destinationFile.LastWriteTimeUtc)
+            {
+                sourceFile.CopyTo(destinationFilePath, true);
+            }
+        }
+
+        // Update our write time to match source for faster copying
+        destinationDirectory.LastWriteTimeUtc = sourceDirectory.LastWriteTimeUtc;
+
+        foreach (DirectoryInfo subSourceDirectory in sourceDirectory.GetDirectories())
+        {
+            string subDestinationDirectoryPath = Path.Combine(destinationDirectory.FullName, subSourceDirectory.Name);
+            DirectoryInfo subDestinationDirectory = new DirectoryInfo(subDestinationDirectoryPath);
+
+            RecursiveFileCopy(subSourceDirectory, subDestinationDirectory);
+        }
+    }
+
     private static void CopyAssemblyDependencies(string destinationPath, string sourcePath)
     {
         var directoryName = Path.GetDirectoryName(destinationPath) ?? throw new InvalidOperationException("Assembly path does not have a valid directory.");
 
-        if (!Directory.Exists(directoryName)) 
-        {
-            Directory.CreateDirectory(directoryName);
-        }
-
         try
         {
-            string[] dependencies = Directory.GetFiles(sourcePath, "*.*");
-            foreach (var dependency in dependencies) 
-            {
-                var destPath = Path.Combine(directoryName, Path.GetFileName(dependency));
-                if (!File.Exists(destPath) || new FileInfo(dependency).LastWriteTimeUtc > new FileInfo(destPath).LastWriteTimeUtc)
-                {
-                    File.Copy(dependency, destPath, true);
-                }
-            }
+            var destinationDirectory = new DirectoryInfo(directoryName);
+            var sourceDirectory = new DirectoryInfo(sourcePath);
+
+            RecursiveFileCopy(sourceDirectory, destinationDirectory);
         }
         catch (Exception ex)
         {
             ErrorEmitter.Error("WeaverError", sourcePath, 0, "Failed to copy dependencies: " + ex.Message);
         }
-    }
-
-    private static string StripQuotes(string s)
-    {
-        string strippedPath = s.Replace("\"", "");
-        return strippedPath;
-    }
-    
-    private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
-    {
-        string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-
-        string metadataFilePath = Path.ChangeExtension(outputPath, "json");
-        File.WriteAllText(metadataFilePath, metaDataContent);
     }
 }

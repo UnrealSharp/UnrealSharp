@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-struct FUnrealType;
+#include "TypeGenerator/Register/MetaData/CSUnrealType.h"
 
 #define REGISTER_METADATA_WITH_NAME(CustomName, MetaDataName) \
 	MetaDataFactoryMap.Add(CustomName, \
@@ -16,7 +16,7 @@ class CSMetaDataFactory
 {
 public:
 	
-	static TSharedPtr<FUnrealType> Create(const TSharedPtr<FJsonObject>& PropertyMetaData);
+	static TSharedPtr<FCSUnrealType> Create(const TSharedPtr<FJsonObject>& PropertyMetaData);
 	
 private:
 	static void Initialize();

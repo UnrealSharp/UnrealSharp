@@ -1,3 +1,9 @@
 namespace UnrealSharp.CoreUObject;
 
-public partial struct PrimaryAssetType(Name name);
+public partial struct FPrimaryAssetType
+{
+    public FPrimaryAssetType(string name)
+    {
+        Name = new FName(name);
+    }
+}

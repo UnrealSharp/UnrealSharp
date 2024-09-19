@@ -50,7 +50,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "PlayerControllerChanged"), Category = "Managed Subsystems")
 	bool K2_PlayerControllerChanged(APlayerController* NewPlayerController) const;
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
 	bool K2_ShouldCreateSubsystem() const;
   
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")

@@ -1,16 +1,14 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "CSTypeRegistry.h"
 #include "CSharpForUE/TypeGenerator/CSScriptStruct.h"
+#include "MetaData/CSStructMetaData.h"
 
-struct FStructMetaData;
-
-class CSHARPFORUE_API FCSGeneratedStructBuilder : public TCSGeneratedTypeBuilder<FStructMetaData, UCSScriptStruct>
+class CSHARPFORUE_API FCSGeneratedStructBuilder : public TCSGeneratedTypeBuilder<FCSStructMetaData, UCSScriptStruct>
 {
 public:
 	
-	FCSGeneratedStructBuilder(const TSharedPtr<FStructMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) {}
+	FCSGeneratedStructBuilder(const TSharedPtr<FCSStructMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) {}
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
