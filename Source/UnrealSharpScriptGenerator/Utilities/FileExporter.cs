@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -74,10 +74,10 @@ public static class FileExporter
     public static void CleanOldExportedFiles()
     {
         CleanFilesInDirectories(Program.EngineGluePath);
-        CleanFilesInDirectories(Program.ProjectGluePath);
+        CleanFilesInDirectories(Program.ProjectGluePath, true);
     }
     
-    private static void CleanFilesInDirectories(string path)
+    private static void CleanFilesInDirectories(string path, bool recursive = false)
     {
         string[] directories = Directory.GetDirectories(path);
         
@@ -99,7 +99,7 @@ public static class FileExporter
             
             if (removedFiles == files.Length)
             {
-                Directory.Delete(directory);
+                Directory.Delete(directory, recursive);
             }
         }
     }
