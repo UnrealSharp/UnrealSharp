@@ -153,6 +153,7 @@ public class FunctionMetaData : BaseMetaData
         else
         {
             FunctionProcessor.MakeImplementationMethod(this);
+            MethodDefinition.DeclaringType.Methods.Remove(MethodDefinition);
         }
     }
 

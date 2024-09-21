@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Mono.Cecil;
+using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
 
@@ -84,7 +85,9 @@ public static class Program
 
             ReaderParameters readerParams = new ReaderParameters
             {
-                AssemblyResolver = resolver
+                AssemblyResolver = resolver,
+                ReadSymbols = true,
+                SymbolReaderProvider = new PdbReaderProvider(),
             };
 
             AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
@@ -176,7 +179,10 @@ public static class Program
         try
         {
             Task.WaitAll(cleanupTask);
-            assembly.Write(assemblyOutputPath);
+            assembly.Write(assemblyOutputPath, new WriterParameters
+            {
+                SymbolWriterProvider = new PdbWriterProvider(),
+            });
         }
         catch (Exception ex)
         {
