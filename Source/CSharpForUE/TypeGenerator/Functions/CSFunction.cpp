@@ -32,7 +32,8 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		ArgumentBuffer,
 		RESULT_PARAM,
 		&ExceptionMessage) == 0;
-	
+
+#if WITH_EDITOR
 	if (!bSuccess)
 	{
 		const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
@@ -41,6 +42,7 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
+#endif
 	
 	return bSuccess;
 }

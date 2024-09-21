@@ -4,11 +4,11 @@
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
 	UCSFunctionBase* Function = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
-	
 	FOutParmRec* OutParameters = nullptr;
 	FOutParmRec** LastOut = &OutParameters;
 	uint8* ArgumentBuffer = Stack.Locals;
-	
+
+	// If we're calling this from BP, we need to copy the parameters to a new buffer
 	if (Stack.Code)
 	{
 		int LocalStructSize = Function->GetStructureSize();
@@ -71,7 +71,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
 	}
 
-	// Don't free up memory if we're calling this from C++/C#, only Blueprints.
+	// Only free up the buffer if we're calling from BP
 	if (Stack.Code)
 	{
 		Function->DestroyStruct(ArgumentBuffer);

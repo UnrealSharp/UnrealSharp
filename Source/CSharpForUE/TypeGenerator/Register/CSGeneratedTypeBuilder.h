@@ -22,7 +22,6 @@ public:
 	{
 		UPackage* Package = FCSManager::GetUnrealSharpPackage();
 		FString FieldName = GetFieldName();
-		
 		TField* ExistingField = FindObject<TField>(Package, *FieldName);
 		
 		if (ExistingField)
@@ -37,8 +36,10 @@ public:
 			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
 			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
 
+#if WITH_EDITOR
 			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
 			AssetRegistry.AssetRenamed(ExistingField, OldPath);
+#endif
 		}
 		
 		Field = NewObject<TField>(Package, TField::StaticClass(), *FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
