@@ -23,6 +23,11 @@ public static class ConstructorBuilder
                 attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
                 parameterTypes);
         }
+        else
+        {
+            // Remove the return instruction from existing static constructor
+            WeaverHelper.RemoveReturnInstruction(staticConstructor);
+        }
         
         return staticConstructor;
     }
