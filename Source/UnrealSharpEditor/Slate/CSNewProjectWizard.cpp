@@ -109,7 +109,7 @@ FReply SCSNewProjectDialog::OnExplorerButtonClicked()
 
 	FString FolderName;
 	const FString Title = TEXT("Choose a location for new project");
-	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, TEXT(""),FCSProcHelper::GetScriptFolderDirectory(), FolderName))
+	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title,FCSProcHelper::GetScriptFolderDirectory(), FolderName))
 	{
 		if (!FolderName.EndsWith(TEXT("/")) )
 		{

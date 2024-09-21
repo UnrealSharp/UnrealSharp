@@ -25,10 +25,11 @@ public class PackageProject : BuildToolAction
             $"-p:PublishDir=\"{binariesPath}\""
         ];
 
-        BuildSolution.StartBuildingSolution(bindingsPath, BuildConfig.Publish, extraArguments);
+        BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);
+        buildBindings.RunAction();
         
-        BuildSolution buildSolution = new BuildSolution(BuildConfig.Publish);
-        buildSolution.RunAction();
+        BuildUserSolution buildUserSolution = new BuildUserSolution(null, BuildConfig.Publish);
+        buildUserSolution.RunAction();
         
         WeaveProject weaveProject = new WeaveProject(binariesPath);
         weaveProject.RunAction();

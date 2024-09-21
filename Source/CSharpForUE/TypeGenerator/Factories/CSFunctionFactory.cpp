@@ -89,13 +89,13 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 
 void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function)
 {
-	Function->StaticLink(true);
-	
 	Function->Next = Outer->Children;
 	Outer->Children = Function;
 	
 	// Mark the function as Native as we want the "UClass::InvokeManagedEvent" to always be called on C# UFunctions.
 	Function->FunctionFlags |= FUNC_Native;
+
+	Function->StaticLink(true);
 	
 	if (Function->NumParms == 0)
 	{

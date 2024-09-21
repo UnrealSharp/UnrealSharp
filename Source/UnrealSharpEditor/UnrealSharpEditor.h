@@ -48,6 +48,7 @@ private:
     static void OnOpenSettings();
     static void OnOpenDocumentation();
     static void OnReportBug();
+    static void OnExploreArchiveDirectory(FString ArchiveDirectory);
 
     static void PackageProject();
 

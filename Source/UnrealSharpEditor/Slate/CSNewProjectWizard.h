@@ -12,14 +12,6 @@ public:
 	void Construct(const FArguments& InArgs);
 
 private:
-
-	TSharedPtr<SEditableTextBox> PathTextBox;
-	TSharedPtr<SEditableTextBox> NameTextBox;
-	
-	FString ScriptPath;
-
-	FString SuggestedProjectName;
-	bool bOpenSolution;
 	
 	void OnPathSelected(const FString& NewPath);
 	FReply OnExplorerButtonClicked();
@@ -30,5 +22,13 @@ private:
 	bool CanFinish() const;
 
 	void CloseWindow();
+
+private:
+
+	TSharedPtr<SEditableTextBox> PathTextBox;
+	TSharedPtr<SEditableTextBox> NameTextBox;
+	
+	FString ScriptPath;
+	FString SuggestedProjectName;
 	
 };

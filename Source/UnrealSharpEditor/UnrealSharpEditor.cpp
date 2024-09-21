@@ -231,6 +231,11 @@ void FUnrealSharpEditorModule::OnReportBug()
 	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
+void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirectory)
+{
+	FPlatformProcess::ExploreFolder(*ArchiveDirectory);
+}
+
 void FUnrealSharpEditorModule::PackageProject()
 {
 	FString ArchiveDirectory = SelectArchiveDirectory();
@@ -268,7 +273,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	Info.ButtonDetails.Add(FNotificationButtonInfo(
 			LOCTEXT("USharpOpenPackagedGame", "Open Folder"),
 			LOCTEXT("", ""),
-			FSimpleDelegate::CreateStatic(&FPlatformProcess::ExploreFolder, *ArchiveDirectory),
+			FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::OnExploreArchiveDirectory, ArchiveDirectory),
 			SNotificationItem::CS_None));
 
 	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);

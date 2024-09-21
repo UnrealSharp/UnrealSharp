@@ -6,7 +6,7 @@ public abstract class BuildToolAction
     {
         BuildToolAction buildToolAction = Program.BuildToolOptions.Action switch
         {
-            BuildAction.Build => new BuildSolution(),
+            BuildAction.Build => new BuildUserSolution(),
             BuildAction.Clean => new CleanSolution(),
             BuildAction.GenerateProject => new GenerateProject(),
             BuildAction.Rebuild => new RebuildSolution(),

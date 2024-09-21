@@ -14,7 +14,6 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	
 #if WITH_EDITOR
 	Field->EditorData = NewObject<UUserDefinedStructEditorData>(Field, NAME_None, RF_Transactional);
-	Field->SetMetaData(TEXT("BlueprintType"), TEXT("true"));
 #endif
 		
 	Field->Status = UDSS_UpToDate;

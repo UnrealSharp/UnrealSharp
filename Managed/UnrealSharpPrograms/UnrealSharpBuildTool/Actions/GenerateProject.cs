@@ -79,7 +79,7 @@ public class GenerateProject : BuildToolAction
         string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
         AddProjectToSln(relativePath);
         
-        BuildSolution buildSolution = new BuildSolution();
+        BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder());
         if (!buildSolution.RunAction())
         {
             return false;

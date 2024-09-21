@@ -8,9 +8,10 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 	TArray<TPair<FName, int64>> Entries;
 	Entries.Reserve(NumItems);
 
+	const TCHAR* EnumName = *Field->GetName();
 	for (int32 i = 0; i < NumItems; i++)
 	{
-		FString ItemName = FString::Printf(TEXT("%s::%s"), *Field->GetName(), *TypeMetaData->Items[i].ToString());
+		FString ItemName = FString::Printf(TEXT("%s::%s"), EnumName, *TypeMetaData->Items[i].ToString());
 		Entries.Emplace(ItemName, i);
 		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}
