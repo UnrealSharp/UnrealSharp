@@ -46,11 +46,12 @@ FName FCSStyle::GetStyleSetName()
 
 TSharedRef<FSlateStyleSet> FCSStyle::Create()
 {
-	const FVector2D Icon20x20(20.0f, 20.0f);
 	const FVector2D Icon40x40(40.0f, 40.0f);
 	
 	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("UnrealSharpStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir() / TEXT("Resources"));
-	Style->Set("UnrealSharp.Toolbar", new IMAGE_BRUSH(TEXT("Icon40x40"), Icon40x40));
+	Style->Set("UnrealSharp.Toolbar", new IMAGE_BRUSH(TEXT("Icon_Default_40x"), Icon40x40));
+	Style->Set("UnrealSharp.Toolbar.Modified", new IMAGE_BRUSH(TEXT("Icon_Modified_40x"), Icon40x40));
+	Style->Set("UnrealSharp.Toolbar.Fail", new IMAGE_BRUSH(TEXT("Icon_Fail_40x"), Icon40x40));
 	return Style;
 }

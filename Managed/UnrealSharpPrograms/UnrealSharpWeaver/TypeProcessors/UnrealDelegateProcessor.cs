@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using System.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.NativeTypes;
 
@@ -33,7 +34,7 @@ public static class UnrealDelegateProcessor
         }
     }
     
-    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
+    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
             WeaverHelper.BindingsAssembly, "DelegateData", WeaverHelper.UnrealSharpNamespace);
@@ -49,7 +50,7 @@ public static class UnrealDelegateProcessor
         
         foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeDefinition marshaller = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
+            TypeDefinition marshaller = WeaverHelper.CreateNewClass(assembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
             
             // Create a delegate from the marshaller
             MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);

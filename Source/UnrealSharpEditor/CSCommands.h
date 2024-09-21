@@ -23,5 +23,8 @@ public:
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
 	TSharedPtr<FUICommandInfo> PackageProject;
+	TSharedPtr<FUICommandInfo> OpenSettings;
+	TSharedPtr<FUICommandInfo> OpenDocumentation;
+	TSharedPtr<FUICommandInfo> ReportBug;
 };
 
