@@ -93,6 +93,7 @@ public static class Program
             {
                 string weaverOutputPath = Path.Combine(outputDirInfo.FullName, Path.GetFileName(userAssemblyPath));
                 StartWeavingAssembly(userAssembly, weaverOutputPath);
+                continue;
             }
             catch (WeaverProcessError error)
             {
@@ -103,8 +104,9 @@ public static class Program
                 Console.Error.WriteLine($"Exception processing {userAssemblyPath}: {ex.Message}");
                 Console.Error.WriteLine(ex.StackTrace);
             }
+            return false;
         }
-
+        
         return true;
     }
     
@@ -256,7 +258,7 @@ public static class Program
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
             UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessSingleDelegates(delegates);
+            UnrealDelegateProcessor.ProcessSingleDelegates(delegates, userAssembly);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
         }
         catch (Exception ex)

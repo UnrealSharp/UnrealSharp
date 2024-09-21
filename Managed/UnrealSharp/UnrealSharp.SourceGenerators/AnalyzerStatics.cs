@@ -10,7 +10,9 @@ public static class AnalyzerStatics
     public const string UEnumAttribute = "UEnumAttribute";
     public const string UClassAttribute = "UClassAttribute";
     public const string UInterfaceAttribute = "UInterfaceAttribute";
-    
+    public const string UMultiDelegateAttribute = "UMultiDelegateAttribute";
+    public const string USingleDelegateAttribute = "USingleDelegateAttribute";
+
     public const string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
     public const string UPropertyAttribute = "UPropertyAttribute";

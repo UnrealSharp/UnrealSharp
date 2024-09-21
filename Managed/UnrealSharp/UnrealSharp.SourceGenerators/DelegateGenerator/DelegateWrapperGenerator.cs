@@ -102,17 +102,21 @@ public class DelegateWrapperGenerator : ISourceGenerator
             
             string baseType;
             DelegateType delegateType;
-            if (AnalyzerStatics.HasAttribute(delegateSymbol, "USingleDelegateAttribute"))
+            if (AnalyzerStatics.HasAttribute(delegateSymbol, AnalyzerStatics.USingleDelegateAttribute))
             {
                 baseType = "Delegate";
                 delegateType = DelegateType.Single;
             }
-            else
+            else if (AnalyzerStatics.HasAttribute(delegateSymbol, AnalyzerStatics.UMultiDelegateAttribute))
             {
                 baseType = "MulticastDelegate";
                 delegateType = DelegateType.Multicast;
             }
-            
+            else
+            {
+                continue;
+            }
+
             stringBuilder.AppendLine($"public partial class {delegateName} : {baseType}<{delegateSymbol}>");
             stringBuilder.AppendLine("{");
             
