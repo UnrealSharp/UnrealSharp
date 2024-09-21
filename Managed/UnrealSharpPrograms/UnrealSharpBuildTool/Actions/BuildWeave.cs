@@ -4,7 +4,7 @@ public class BuildWeave : BuildToolAction
 {
     public override bool RunAction()
     {
-        BuildSolution buildSolution = new BuildSolution();
+        BuildSolution buildSolution = new BuildUserSolution();
         WeaveProject weaveProject = new WeaveProject();
         return buildSolution.RunAction() && weaveProject.RunAction();
     }

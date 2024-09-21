@@ -12,6 +12,7 @@ public static class WeaverHelper
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
     public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
     public static readonly string CoreUObjectNamespace = UnrealSharpNamespace + ".CoreUObject";
+    public static readonly string EngineNamespace = UnrealSharpNamespace + ".Engine";
     
     public static readonly string UnrealSharpObject = "UnrealSharpObject";
     public static readonly string FPropertyCallbacks = "FPropertyExporter";
@@ -70,6 +71,7 @@ public static class WeaverHelper
     public static MethodReference GeneratedTypeCtor;
     
     public static TypeDefinition UObjectDefinition;
+    public static TypeDefinition UActorComponentDefinition;
     
     public static MethodReference BlittableTypeConstructor;
     
@@ -127,6 +129,7 @@ public static class WeaverHelper
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
         
         UObjectDefinition = FindTypeInAssembly(BindingsAssembly, "UObject", CoreUObjectNamespace)!.Resolve();
+        UActorComponentDefinition = FindTypeInAssembly(BindingsAssembly, "UActorComponent", EngineNamespace)!.Resolve();
         
         TypeReference blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace)!;
         BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor")!;
@@ -276,6 +279,22 @@ public static class WeaverHelper
     public static string GetInvokeName(string methodName)
     {
         return "Invoke_" + methodName;
+    }
+    
+    public static bool IsChildOf(TypeDefinition type, TypeDefinition parentType)
+    {
+        TypeDefinition? currentType = type;
+        while (currentType != null)
+        {
+            if (currentType == parentType)
+            {
+                return true;
+            }
+
+            currentType = currentType.BaseType?.Resolve();
+        }
+
+        return false;
     }
     
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)

@@ -31,6 +31,11 @@ public class ClassMetaData : TypeReferenceMetadata
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
         ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native | ClassFlags.CompiledFromBlueprint;
+
+        if (WeaverHelper.IsChildOf(type, WeaverHelper.UActorComponentDefinition))
+        {
+            TryAddMetaData("BlueprintSpawnableComponent", true);
+        }
     }
 
     private void AddConfigCategory()

@@ -25,7 +25,7 @@
 	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
-UPackage* FCSManager::UnrealSharpPackage = nullptr;
+FCSManagedPluginCallbacks FCSManager::ManagedPluginsCallbacks;
 
 FCSManager& FCSManager::Get()
 {
@@ -39,16 +39,16 @@ void FCSManager::InitializeUnrealSharp()
 	{
 		return;
 	}
-	
-	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
-	
+
+#if WITH_EDITOR
+	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
 	if (DotNetInstallationPath.IsEmpty())
 	{
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET8 SDK can't be found on your system."));
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
+	
 	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpLibraryPath();
 	if (!FPaths::FileExists(UnrealSharpLibraryPath))
 	{
@@ -60,7 +60,8 @@ void FCSManager::InitializeUnrealSharp()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
+#endif
+	
 	//Create the package where we will store our generated types.
 	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
 	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
@@ -297,11 +298,6 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-UPackage* FCSManager::GetUnrealSharpPackage()
-{
-	return UnrealSharpPackage;
-}
-
 TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
@@ -387,7 +383,7 @@ FGCHandle FCSManager::FindManagedObject(UObject* Object)
 	return CreateNewManagedObject(Object, Object->GetClass());
 }
 
-void FCSManager::RemoveManagedObject(UObject* Object)
+void FCSManager::RemoveManagedObject(const UObjectBase* Object)
 {
 	FGCHandle Handle;
 	if (UnmanagedToManagedMap.RemoveAndCopyValue(Object, Handle))
@@ -426,16 +422,4 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
-}
-
-void FCSManager::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
-{
-	UObjectBase* NonConstObject = const_cast<UObjectBase*>(ObjectBase);
-	UObject* Object = static_cast<UObject*>(NonConstObject);
-	RemoveManagedObject(Object);
-}
-
-void FCSManager::OnUObjectArrayShutdown()
-{
-	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
