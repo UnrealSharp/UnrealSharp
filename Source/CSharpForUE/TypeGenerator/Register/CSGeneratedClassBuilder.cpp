@@ -66,10 +66,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	}
 	else if (Field->IsChildOf<UActorComponent>()) 
 	{
-		// Make all C# ActorComponents BlueprintSpawnableComponent
-		#if WITH_EDITOR
-		Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
-		#endif
 		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorComponentConstructor;
 	}
 	else
