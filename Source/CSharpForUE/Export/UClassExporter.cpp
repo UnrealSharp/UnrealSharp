@@ -5,7 +5,7 @@
 
 void UUClassExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
-	EXPORT_FUNCTION(GetDefaultFromString)
+	EXPORT_FUNCTION(GetDefaultFromName)
 	EXPORT_FUNCTION(GetDefaultFromInstance)
 	EXPORT_FUNCTION(GetNativeFunctionFromClassAndName)
 	EXPORT_FUNCTION(GetNativeFunctionFromInstanceAndName)
@@ -35,20 +35,17 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 	return NativeObject->FindFunctionChecked(FunctionName);
 }
 
-void* UUClassExporter::GetDefaultFromString(const char* ClassName)
+void* UUClassExporter::GetDefaultFromName(const char* ClassName)
 {
-	if (!ClassName)
-	{
-		return nullptr;
-	}
+	UClass* Class = FCSTypeRegistry::Get().GetClassFromName(ClassName);
 	
-	const TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(ClassName);
-	if (!ClassInfo.IsValid())
+	if (!IsValid(Class))
 	{
+		ensureAlways("Failed to get Class from name");
 		return nullptr;
 	}
 
-	UObject* CDO = ClassInfo->Field->GetDefaultObject();
+	UObject* CDO = Class->GetDefaultObject();
 	return FCSManager::Get().FindManagedObject(CDO).GetIntPtr();
 }
 

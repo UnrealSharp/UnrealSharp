@@ -19,6 +19,6 @@ private:
 
 	static UFunction* GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName);
 	static UFunction* GetNativeFunctionFromInstanceAndName(const UObject* NativeObject, const char* FunctionName);
-	static void* GetDefaultFromString(const char* ClassName);
+	static void* GetDefaultFromName(const char* ClassName);
 	static void* GetDefaultFromInstance(UObject* Object);
 };
