@@ -154,8 +154,8 @@ public partial class UObject
     /// <returns> The default object of the specified type. </returns>
     public static T GetDefault<T>() where T : UObject
     {
-        IntPtr handle = UClassExporter.CallGetDefaultFromString(typeof(T).Name);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        IntPtr nativeClass = typeof(T).TryGetNativeClassDefaults();
+        return GcHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
     }
     
     /// <summary>

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
@@ -56,5 +57,15 @@ internal static class ReflectionHelper
         }
             
         return (string) field.GetValue(generatedTypeAttribute)!;
+    }
+    
+    internal static IntPtr TryGetNativeClass(this Type type)
+    {
+        return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetEngineName());
+    }
+    
+    internal static IntPtr TryGetNativeClassDefaults(this Type type)
+    {
+        return UClassExporter.CallGetDefaultFromName(type.GetEngineName());
     }
 }
