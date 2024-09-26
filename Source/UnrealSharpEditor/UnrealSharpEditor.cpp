@@ -1,4 +1,4 @@
-﻿#include "UnrealSharpEditor.h"
+#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
 #include "CSCommands.h"
 #include "DirectoryWatcherModule.h"
@@ -26,6 +26,9 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 
 void FUnrealSharpEditorModule::StartupModule()
 {
+	// Cooking starts up a new instance of unreal causing this to run, we don't want this
+	if (IsRunningCookCommandlet()) return;
+
 	FCSManager& Manager = FCSManager::Get();
 	if (!Manager.IsInitialized())
 	{
