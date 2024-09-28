@@ -46,19 +46,14 @@ public class SetReadOnlyMarshaller<T>
     readonly MarshallingDelegates<T>.FromNative _elementFromNative;
 
     public SetReadOnlyMarshaller(int length, IntPtr setProperty,
-        MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)
+        MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
         _wrappers = new TSetReadOnly<T>[length];
         _elementFromNative = fromNative;
     }
 
-    public TSetReadOnly<T> FromNative(IntPtr nativeBuffer)
-    {
-        return FromNative(nativeBuffer, 0, IntPtr.Zero);
-    }
-
-    public TSetReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
+    public TSetReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_wrappers[arrayIndex] == null)
         {

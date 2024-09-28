@@ -1,7 +1,7 @@
 ﻿#include "CSMetaDataFactory.h"
 #include "Dom/JsonObject.h"
-#include "TypeGenerator/Register/MetaData/CSArrayPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSClassPropertyMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSContainerBaseMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSEnumPropertyMetaData.h"
@@ -32,10 +32,12 @@ void CSMetaDataFactory::Initialize()
 	REGISTER_METADATA(ECSPropertyType::SoftClass, FCSObjectMetaData)
 	REGISTER_METADATA(ECSPropertyType::Class, FCSClassPropertyMetaData)
 	
-	REGISTER_METADATA(ECSPropertyType::Array, FCSArrayPropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::Array, FCSContainerBaseMetaData)
+	REGISTER_METADATA(ECSPropertyType::Set, FCSContainerBaseMetaData)
+	REGISTER_METADATA(ECSPropertyType::Map, FCSMapPropertyMetaData)
+	
 	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
 
-	REGISTER_METADATA(ECSPropertyType::Map, FCSMapPropertyMetaData)
 }
 
 TSharedPtr<FCSUnrealType> CSMetaDataFactory::Create(const TSharedPtr<FJsonObject>& PropertyMetaData)

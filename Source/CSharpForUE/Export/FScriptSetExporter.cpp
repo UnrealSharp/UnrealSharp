@@ -9,10 +9,10 @@ void UFScriptSetExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 	EXPORT_FUNCTION(Empty);
 	EXPORT_FUNCTION(RemoveAt);
 	EXPORT_FUNCTION(AddUninitialized);
-	EXPORT_FUNCTION(GetScriptSetLayout);
 	EXPORT_FUNCTION(Add);
 	EXPORT_FUNCTION(Rehash);
 	EXPORT_FUNCTION(FindOrAdd);
+	EXPORT_FUNCTION(FindIndex);
 }
 
 bool UFScriptSetExporter::IsValidIndex(FScriptSet* ScriptSet, int32 Index)
@@ -22,7 +22,8 @@ bool UFScriptSetExporter::IsValidIndex(FScriptSet* ScriptSet, int32 Index)
 
 int UFScriptSetExporter::Num(FScriptSet* ScriptSet)
 {
-	return ScriptSet->Num();
+	int Num = ScriptSet->Num();
+	return Num;
 }
 
 int UFScriptSetExporter::GetMaxIndex(FScriptSet* ScriptSet)
@@ -30,44 +31,42 @@ int UFScriptSetExporter::GetMaxIndex(FScriptSet* ScriptSet)
 	return ScriptSet->GetMaxIndex();
 }
 
-void* UFScriptSetExporter::GetData(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout)
+void* UFScriptSetExporter::GetData(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
 {
-	return ScriptSet->GetData(Index, *Layout);
+	return ScriptSet->GetData(Index, Property->SetLayout);
 }
 
-void UFScriptSetExporter::Empty(int Slack, FScriptSet* ScriptSet, FScriptSetLayout* Layout)
+void UFScriptSetExporter::Empty(int Slack, FScriptSet* ScriptSet, FSetProperty* Property)
 {
-	return ScriptSet->Empty(Slack, *Layout);
+	return ScriptSet->Empty(Slack, Property->SetLayout);
 }
 
-void UFScriptSetExporter::RemoveAt(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout)
+void UFScriptSetExporter::RemoveAt(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
 {
-	return ScriptSet->RemoveAt(Index, *Layout);
+	return ScriptSet->RemoveAt(Index, Property->SetLayout);
 }
 
-int UFScriptSetExporter::AddUninitialized(FScriptSet* ScriptSet, FScriptSetLayout* Layout)
+int UFScriptSetExporter::AddUninitialized(FScriptSet* ScriptSet, FSetProperty* Property)
 {
-	return ScriptSet->AddUninitialized(*Layout);
+	return ScriptSet->AddUninitialized(Property->SetLayout);
 }
 
-void UFScriptSetExporter::Add(FScriptSet* ScriptSet, const FScriptSetLayout& Layout, const void* Element,
-	FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn)
+void UFScriptSetExporter::Add(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element,FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn)
 {
-	ScriptSet->Add(Element, Layout, GetKeyHash, EqualityFn, ConstructFn, DestructFn);
+	ScriptSet->Add(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn, DestructFn);
 }
 
-int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout,
-                                     FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn)
+int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn)
 {
-	return ScriptSet->FindOrAdd(Element, Layout, GetKeyHash, EqualityFn, ConstructFn);
+	return ScriptSet->FindOrAdd(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn);
 }
 
-void UFScriptSetExporter::Rehash(FScriptSet* ScriptSet, const FScriptSetLayout& ScriptSetLayout, FGetKeyHash GetKeyHash)
+int UFScriptSetExporter::FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn)
 {
-	ScriptSet->Rehash(ScriptSetLayout, GetKeyHash);
+	return ScriptSet->FindIndex(Element, Property->SetLayout, GetKeyHash, EqualityFn);
 }
 
-FScriptSetLayout UFScriptSetExporter::GetScriptSetLayout(int elementSize, int elementAlignment)
+void UFScriptSetExporter::Rehash(FScriptSet* ScriptSet, FSetProperty* Property, FGetKeyHash GetKeyHash)
 {
-	return FScriptSetLayout(elementSize, elementAlignment);
+	ScriptSet->Rehash(Property->SetLayout, GetKeyHash);
 }

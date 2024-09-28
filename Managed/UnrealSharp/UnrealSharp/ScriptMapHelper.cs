@@ -3,36 +3,24 @@ using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
-// A copy of the native FScriptMapHelper but using without using the VM functions
-// (using CopySingleValue instead of CopySingleValueToScriptVM as we aren't working with VM memory layout)
-// Engine\Source\Runtime\CoreUObject\Public\UObject\UnrealType.h
 
-/// <summary>
-/// Pseudo dynamic map. Used to work with map properties in a sensible way.
-/// </summary>
 public unsafe struct ScriptMapHelper
-{                
+{    
+    public FScriptMap Map;
+    public IntPtr MapPtr => Map.SetPointer;
+    
     private readonly NativeProperty _mapProperty;
-    private FScriptMap* _map;
-    private FScriptMapLayout _mapLayout;
-
-    private readonly NativeProperty KeyProp;
-    private readonly NativeProperty ValueProp;
-
-    public IntPtr Map
-    {
-        get => (IntPtr)_map;
-        set => _map = (FScriptMap*)value;
-    }
-
+    private readonly NativeProperty _keyProp;
+    private readonly NativeProperty _valueProp;
+    
     public ScriptMapHelper(IntPtr mapProperty, IntPtr map = default)
     {                        
         _mapProperty = new NativeProperty(mapProperty);
+        Map = new FScriptMap(map);
+        
         List<NativeProperty> innerProperties = _mapProperty.InnerFields;
-        KeyProp = innerProperties[0];
-        ValueProp = innerProperties[1];
-        _map = (FScriptMap*) map;
-        _mapLayout = FMapPropertyExporter.CallGetScriptLayout(mapProperty);
+        _keyProp = innerProperties[0];
+        _valueProp = innerProperties[1];
     }
 
     /// <summary>
@@ -42,7 +30,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>true if accessing this element is legal.</returns>
     public bool IsValidIndex(int index)
     {
-        return _map->IsValidIndex(index);
+        return Map.IsValidIndex(index);
     }
 
     /// <summary>
@@ -51,7 +39,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>The number of elements in the map.</returns>
     public int Num()
     {
-        return _map->Num();
+        return Map.Num();
     }
 
     /// <summary>
@@ -60,7 +48,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>The (non-inclusive) maximum index of elements in the map.</returns>
     public int GetMaxIndex()
     {
-        return _map->GetMaxIndex();
+        return Map.GetMaxIndex();
     }
 
     /// <summary>
@@ -80,12 +68,12 @@ public unsafe struct ScriptMapHelper
     /// <returns>Pointer to the pair, or nullptr if the array is empty.</returns>
     public IntPtr GetPairPtr(int index)
     {
-        return Num() == 0 ? IntPtr.Zero : _map->GetData(index, ref _mapLayout);
+        return Num() == 0 ? IntPtr.Zero : Map.GetData(index, _mapProperty.Property);
     }
 
     public bool GetPairPtr(int index, out IntPtr keyPtr, out IntPtr valuePtr)
     {
-        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, Map, index);
+        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, Map.SetPointer, index);
         
         if (pairPtr == IntPtr.Zero)
         {
@@ -94,8 +82,8 @@ public unsafe struct ScriptMapHelper
             return false;
         }
         
-        keyPtr = new IntPtr(pairPtr + KeyProp.Offset);
-        valuePtr = new IntPtr(pairPtr + ValueProp.Offset);
+        keyPtr = new IntPtr(pairPtr + _keyProp.Offset);
+        valuePtr = new IntPtr(pairPtr + _valueProp.Offset);
         return true;
     }
 
@@ -113,22 +101,7 @@ public unsafe struct ScriptMapHelper
             return IntPtr.Zero;
         }
 
-        return _map->GetData(index, ref _mapLayout);// + mapLayout.KeyOffset;
-    }
-
-    /// <summary>
-    /// Returns a uint8 pointer to the Value (second element) in the map.
-    /// </summary>
-    /// <param name="index">index of the item to return a pointer to.</param>
-    /// <returns>Pointer to the value, or nullptr if the map is empty.</returns>
-    public IntPtr GetValuePtr(int index)
-    {
-        if (Num() == 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        return _map->GetData(index, ref _mapLayout) + _mapLayout.ValueOffset;
+        return Map.GetData(index, _mapProperty.Property);// + mapLayout.KeyOffset;
     }
 
     /// <summary>
@@ -137,7 +110,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>The index of the added element.</returns>
     public int AddUninitializedValue()
     {
-        return _map->AddUninitialized(ref _mapLayout);
+        return Map.AddUninitialized(_mapProperty.Property);
     }
 
     /// <summary>
@@ -148,7 +121,7 @@ public unsafe struct ScriptMapHelper
     {
         if (slack != 0)
         {
-            _map->Empty(slack, ref _mapLayout);
+            Map.Empty(slack, _mapProperty.Property);
         }
     }
 
@@ -165,22 +138,22 @@ public unsafe struct ScriptMapHelper
             return;
         }
             
-        _map->RemoveAt(index, ref _mapLayout);
+        Map.RemoveAt(index, _mapProperty.Property);
     }
     
     public void AddPair<TKey, TValue>(TKey key, TValue value, MarshallingDelegates<TKey>.ToNative keyToNative,
         MarshallingDelegates<TValue>.ToNative valueToNative)
     {
-        byte* keyBuffer = stackalloc byte[KeyProp.Size];
+        byte* keyBuffer = stackalloc byte[_keyProp.Size];
         IntPtr keyPtr = new IntPtr(keyBuffer);
-        KeyProp.InitializeValue(keyPtr);
+        _keyProp.InitializeValue(keyPtr);
         keyToNative(keyPtr, 0, key);
         
-        byte* valueBuffer = stackalloc byte[KeyProp.Size];
+        byte* valueBuffer = stackalloc byte[_keyProp.Size];
         IntPtr valuePtr = new IntPtr(valueBuffer);
-        KeyProp.InitializeValue(valuePtr);
+        _keyProp.InitializeValue(valuePtr);
         valueToNative(valuePtr, 0, value);
         
-        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, new IntPtr(_map), keyPtr, valuePtr);
+        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, Map.SetPointer, keyPtr, valuePtr);
     }
 }

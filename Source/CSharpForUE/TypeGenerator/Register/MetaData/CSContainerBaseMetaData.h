@@ -1,11 +1,9 @@
 ﻿#pragma once
-
 #include "CSPropertyMetaData.h"
-#include "CSUnrealType.h"
 
-struct FCSArrayPropertyMetaData : FCSUnrealType
+struct FCSContainerBaseMetaData : FCSUnrealType
 {
-	virtual ~FCSArrayPropertyMetaData() = default;
+	virtual ~FCSContainerBaseMetaData() = default;
 
 	FCSPropertyMetaData InnerProperty;
 

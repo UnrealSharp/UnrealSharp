@@ -38,11 +38,12 @@ public:
 	
 	static FProperty* CreateClassProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateStructProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
-	static FProperty* CreateArrayProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateEnumProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateDelegateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateMulticastDelegateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 
+	static FProperty* CreateArrayProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
+	static FProperty* CreateSetProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateMapProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	
 	static bool IsOutParameter(const FProperty* InParam);

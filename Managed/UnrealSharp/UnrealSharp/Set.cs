@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Interop.Properties;
+﻿using UnrealSharp.Interop;
+using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
@@ -30,11 +31,11 @@ public class TSet<T> : TSetBase<T>, ISet<T>
 
     public void CopyTo(T[] array, int arrayIndex)
     {
-        int maxIndex = _setHelper.GetMaxIndex();
+        int maxIndex = SetHelper.GetMaxIndex();
         int index = arrayIndex;
         for (int i = 0; i < maxIndex; ++i)
         {
-            if (_setHelper.IsValidIndex(i))
+            if (SetHelper.IsValidIndex(i))
             {
                 array[index++] = Get(i);
             }
@@ -74,10 +75,10 @@ public class TSet<T> : TSetBase<T>, ISet<T>
                 return;
             }
 
-            int maxIndex = _setHelper.GetMaxIndex();
+            int maxIndex = SetHelper.GetMaxIndex();
             for (int i = maxIndex - 1; i >= 0; --i)
             {
-                if (!_setHelper.IsValidIndex(i))
+                if (!SetHelper.IsValidIndex(i))
                 {
                     continue;
                 }
@@ -99,10 +100,10 @@ public class TSet<T> : TSetBase<T>, ISet<T>
                 return;
             }
 
-            int maxIndex = _setHelper.GetMaxIndex();
+            int maxIndex = SetHelper.GetMaxIndex();
             for (int i = maxIndex - 1; i >= 0; --i)
             {
-                if (!_setHelper.IsValidIndex(i))
+                if (!SetHelper.IsValidIndex(i))
                 {
                     continue;
                 }
@@ -221,14 +222,14 @@ public class TSet<T> : TSetBase<T>, ISet<T>
 // Used for members only
 public class SetMarshaller<T>
 {
-    readonly NativeProperty _property;
-    FScriptSetHelper _helper;
-    readonly TSet<T>[] _wrappers;
-    readonly MarshallingDelegates<T>.FromNative _elementFromNative;
-    readonly MarshallingDelegates<T>.ToNative _elementToNative;
+    private readonly NativeProperty _property;
+    private readonly FScriptSetHelper _helper;
+    private readonly TSet<T>[] _wrappers;
+    private readonly MarshallingDelegates<T>.FromNative _elementFromNative;
+    private readonly MarshallingDelegates<T>.ToNative _elementToNative;
 
     public SetMarshaller(int length, IntPtr setProperty,
-        MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)
+        MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
         _helper = new FScriptSetHelper(_property);
@@ -237,16 +238,11 @@ public class SetMarshaller<T>
         _elementToNative = toNative;
     }
 
-    public TSet<T> FromNative(IntPtr nativeBuffer)
-    {
-        return FromNative(nativeBuffer, 0, IntPtr.Zero);
-    }
-
-    public TSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
+    public TSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_wrappers[arrayIndex] == null)
         {
-            _wrappers[arrayIndex] = new TSet<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative, _elementToNative);
+            _wrappers[arrayIndex] = new TSet<T>(_property.Property, nativeBuffer, _elementFromNative, _elementToNative);
         }
 
         return _wrappers[arrayIndex];
@@ -254,20 +250,20 @@ public class SetMarshaller<T>
 
     public void ToNative(IntPtr nativeBuffer, IEnumerable<T> value)
     {
-        ToNativeInternal(nativeBuffer, 0, value, ref _helper, _elementToNative);
+        ToNativeInternal(nativeBuffer, 0, value, _helper, _elementToNative);
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IEnumerable<T> value)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value)
     {
-        ToNativeInternal(nativeBuffer, arrayIndex, value, ref _helper, _elementToNative);
+        ToNativeInternal(nativeBuffer, arrayIndex, value, _helper, _elementToNative);
     }
 
     internal static void ToNativeInternal(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value,
-        ref FScriptSetHelper helper, MarshallingDelegates<T>.ToNative elementToNative)
+        FScriptSetHelper helper, MarshallingDelegates<T>.ToNative elementToNative)
     {
         unsafe
         {
-            helper.Set = nativeBuffer + arrayIndex * sizeof(FScriptSet);
+            helper.Set = new FScriptSet(nativeBuffer + arrayIndex * sizeof(FScriptSet));
             helper.EmptyValues();
 
             if (value == null)
@@ -313,15 +309,14 @@ public class SetMarshaller<T>
     }
 }
 
-public struct SetCopyMarshaller<T>
+public class SetCopyMarshaller<T>
 {
     NativeProperty property;
     FScriptSetHelper helper;
     MarshallingDelegates<T>.FromNative elementFromNative;
     MarshallingDelegates<T>.ToNative elementToNative;
 
-    public SetCopyMarshaller(int length, IntPtr setProperty,
-        MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)
+    public SetCopyMarshaller(IntPtr setProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         property = new NativeProperty(setProperty);
         helper = new FScriptSetHelper(property);
@@ -329,17 +324,12 @@ public struct SetCopyMarshaller<T>
         elementToNative = toNative;
     }
 
-    public HashSet<T> FromNative(IntPtr nativeBuffer)
-    {
-        return FromNative(nativeBuffer, 0, IntPtr.Zero);
-    }
-
-    public HashSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
+    public HashSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
             IntPtr scriptSetAddress = nativeBuffer + arrayIndex * sizeof(FScriptSet);
-            helper.Set = scriptSetAddress;
+            helper.Set = new FScriptSet(scriptSetAddress);
             
             FScriptSet* set = (FScriptSet*) scriptSetAddress;
             HashSet<T> result = new HashSet<T>();
@@ -358,14 +348,14 @@ public struct SetCopyMarshaller<T>
             return result;
         }
     }
-
-    public void ToNative(IntPtr nativeBuffer, IEnumerable<T> value)
+    
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value)
     {
-        SetMarshaller<T>.ToNativeInternal(nativeBuffer, 0, value, ref helper, elementToNative);
+        SetMarshaller<T>.ToNativeInternal(nativeBuffer, 0, value, helper, elementToNative);
     }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IEnumerable<T> value)
+    
+    public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        SetMarshaller<T>.ToNativeInternal(nativeBuffer, arrayIndex, value, ref helper, elementToNative);
+        FScriptSetExporter.CallEmpty(0, helper.Set.SetPointer, property.Property);
     }
 }

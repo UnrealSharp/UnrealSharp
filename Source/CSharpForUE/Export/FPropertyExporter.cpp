@@ -57,7 +57,8 @@ void UFPropertyExporter::InitializeValue(FProperty* Property, void* Value)
 
 bool UFPropertyExporter::Identical(const FProperty* Property, void* ValueA, void* ValueB)
 {
-	return Property->Identical(ValueA, ValueB);
+	bool bIsIdentical = Property->Identical(ValueA, ValueB);
+	return bIsIdentical;
 }
 
 void UFPropertyExporter::GetInnerFields(FProperty* SetProperty, TArray<FField*>* OutFields)

@@ -3,32 +3,32 @@ using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
-public abstract unsafe class TSetBase<T> : IEnumerable<T>
+public abstract class TSetBase<T> : IEnumerable<T>
 {
-    internal TSetBase(IntPtr nativeProperty, IntPtr address, 
-        MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)
+    internal TSetBase(IntPtr nativeProperty, IntPtr address, MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)
     {
-        Set = (FScriptSet*) address;
         FromNative = fromNative;
         ToNative = toNative;
-        
-        NativeProperty property = new NativeProperty(nativeProperty);
-        _setHelper = new FScriptSetHelper(property, address);
+        SetHelper = new FScriptSetHelper(new NativeProperty(nativeProperty), address);
     }
 
-    internal FScriptSetHelper _setHelper;
+    internal FScriptSetHelper SetHelper;
     
-    protected readonly FScriptSet* Set;
-    protected MarshallingDelegates<T>.FromNative FromNative;
-    protected MarshallingDelegates<T>.ToNative ToNative;
-    
+    protected readonly MarshallingDelegates<T>.FromNative FromNative;
+    protected readonly MarshallingDelegates<T>.ToNative ToNative;
+
     /// <summary>
     /// Amount of elements in the set.
     /// </summary>
-    public int Count => Set->Num();
+    public int Count => SetHelper.Count;
     
     public bool Contains(T item)
     {
+        if (Count == 0)
+        {
+            return false;
+        }
+        
         return IndexOf(item) >= 0;
     }
     
@@ -36,32 +36,32 @@ public abstract unsafe class TSetBase<T> : IEnumerable<T>
 
     public T Get(int index)
     {
-        if (!_setHelper.IsValidIndex(index))
+        if (!SetHelper.IsValidIndex(index))
         {
             throw new IndexOutOfRangeException($"Index {index} is invalid. Indices aren't necessarily sequential.");
         }
         
-        return FromNative(_setHelper.GetElementPtr(index), 0);
+        return FromNative(SetHelper.GetElementPtr(index), 0);
     }
 
     public int IndexOf(T item)
     {
-        return _setHelper.IndexOf(item, ToNative);
+        return SetHelper.IndexOf(item, ToNative);
     }
     
     protected void ClearInternal()
     {
-        _setHelper.EmptyValues();
+        SetHelper.EmptyValues();
     }
 
     protected void AddInternal(T item)
     {
-        _setHelper.AddElement(item, ToNative);
+        SetHelper.AddElement(item, ToNative);
     }
     
     protected int FindOrAddInternal(T item)
     {
-        return _setHelper.FindOrAddElement(item, ToNative);
+        return SetHelper.FindOrAddElement(item, ToNative);
     }
     
     
@@ -279,12 +279,12 @@ public abstract unsafe class TSetBase<T> : IEnumerable<T>
 
     protected void RemoveAtInternal(int index)
     {
-        if (!_setHelper.IsValidIndex(index))
+        if (!SetHelper.IsValidIndex(index))
         {
             return;
         }
         
-        _setHelper.RemoveAt(index);
+        SetHelper.RemoveAt(index);
     }
     
     public Enumerator GetEnumerator()
@@ -316,9 +316,9 @@ public abstract unsafe class TSetBase<T> : IEnumerable<T>
 
         public bool MoveNext()
         {
-            int maxIndex = set._setHelper.GetMaxIndex();
+            int maxIndex = set.SetHelper.GetMaxIndex();
             
-            while (++_index < maxIndex && !set._setHelper.IsValidIndex(_index))
+            while (++_index < maxIndex && !set.SetHelper.IsValidIndex(_index))
             {
                 
             }

@@ -1,41 +1,41 @@
-﻿using UnrealSharp.Attributes;
-using UnrealSharp.CoreUObject;
+﻿using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
-internal class HashDelegates
+public class HashDelegates
 {
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate uint GetKeyHash(IntPtr element);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate NativeBool Equality(IntPtr a, IntPtr b);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void Construct(IntPtr element);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void Destruct(IntPtr element);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void ConstructAndAssign(IntPtr element);
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void Assign(IntPtr element);
 }
 
 internal unsafe struct FScriptSetHelper
 {        
-    private NativeProperty _setProperty;
-    private FScriptSet* _set;
-    private FScriptSetLayout _setLayout;
-
+    private readonly NativeProperty _setProperty;
     private readonly NativeProperty _elementProp;
-
-    public int Count => _set->Num();
-
-    public IntPtr Set
-    {
-        get => (IntPtr)_set;
-        set => _set = (FScriptSet*)value;
-    }
+    
+    public FScriptSet Set;
+    public int Count => Set.Num();
 
     public FScriptSetHelper(NativeProperty setProperty, IntPtr set = default)
     {           
-        _set = (FScriptSet*) set;
-        _setLayout = FSetPropertyExporter.CallGetScriptSetLayout(setProperty.Property);
-        
+        Set = new FScriptSet(set);
         _setProperty = setProperty;
         _elementProp = setProperty.GetInnerField(0)!;
     }
@@ -47,7 +47,7 @@ internal unsafe struct FScriptSetHelper
     /// <returns>true if accessing this element is legal.</returns>
     internal bool IsValidIndex(int index)
     {
-        return _set->IsValidIndex(index);
+        return Set.IsValidIndex(index);
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ internal unsafe struct FScriptSetHelper
     /// <returns>The (non-inclusive) maximum index of elements in the set.</returns>
     internal int GetMaxIndex()
     {
-        return _set->GetMaxIndex();
+        return Set.GetMaxIndex();
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ internal unsafe struct FScriptSetHelper
     /// <returns>Pointer to the element, or nullptr if the set is empty.</returns>
     internal IntPtr GetElementPtr(int index)
     {
-        return Count == 0 ? IntPtr.Zero : _set->GetData(index, ref _setLayout);
+        return Count == 0 ? IntPtr.Zero : Set.GetData(index, _setProperty.Property);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ internal unsafe struct FScriptSetHelper
     /// <returns>The index of the added element.</returns>
     internal int AddUninitializedValue()
     {
-        return _set->AddUninitialized(ref _setLayout);
+        return Set.AddUninitialized(_setProperty.Property);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ internal unsafe struct FScriptSetHelper
         }
         if (oldNum != 0 || slack != 0)
         {
-            _set->Empty(slack, ref _setLayout);
+            Set.Empty(slack, _setProperty.Property);
         }
     }
 
@@ -120,7 +120,7 @@ internal unsafe struct FScriptSetHelper
                 continue;
             }
             
-            _set->RemoveAt(index, ref _setLayout);
+            Set.RemoveAt(index, _setProperty.Property);
             --count;
         }
     }
@@ -195,7 +195,7 @@ internal unsafe struct FScriptSetHelper
             return nativeProperty.Identical(a, b).ToNativeBool();
         }
 
-        return _set->FindIndex(elementToFind, ref _setLayout, ElementHash, ElementEquality);
+        return Set.FindIndex(elementToFind, _setProperty.Property, ElementHash, ElementEquality);
     }
 
     internal int IndexOf<T>(T item, MarshallingDelegates<T>.ToNative toNative)
@@ -269,7 +269,7 @@ internal unsafe struct FScriptSetHelper
             property.DestroyValue(element);
         }
 
-        _set->Add(elementToAdd, ref _setLayout, ElementHash, ElementEquality, ElementConstruct, ElementDestruct);
+        Set.Add(elementToAdd, _setProperty.Property, ElementHash, ElementEquality, ElementConstruct, ElementDestruct);
     }
     
     internal int FindOrAddElement(IntPtr elementToAdd)
@@ -292,7 +292,7 @@ internal unsafe struct FScriptSetHelper
             FPropertyExporter.CallCopySingleValue(property.Property, newElement, elementToAdd);
         }
 
-        return _set->FindOrAdd(elementToAdd, ref _setLayout, ElementHash, ElementEquality, ElementConstruct);
+        return Set.FindOrAdd(elementToAdd, _setProperty.Property, ElementHash, ElementEquality, ElementConstruct);
     }
 
     /// <summary>
@@ -312,7 +312,7 @@ internal unsafe struct FScriptSetHelper
             return property.Identical(a, b).ToNativeBool();
         }
 
-        int foundIndex = _set->FindIndex(elementToRemove, ref _setLayout, ElementHash, ElementEquality);
+        int foundIndex = Set.FindIndex(elementToRemove, _setProperty.Property, ElementHash, ElementEquality);
         
         if (foundIndex == -1)
         {
@@ -339,8 +339,9 @@ internal unsafe struct FScriptSetHelper
         {
             return;
         }
-        
-        int stride = _setLayout.Size;
+
+        // TODDODODO
+        int stride = 0;
         IntPtr elementPtr = GetElementPtrWithoutCheck(index);
 
         for (int i = 0; i < count; ++i)
@@ -362,6 +363,6 @@ internal unsafe struct FScriptSetHelper
     /// <returns>Pointer to the element, or nullptr if the array is empty.</returns>
     internal IntPtr GetElementPtrWithoutCheck(int index)
     {
-        return _set->GetData(index, ref _setLayout);
+        return Set.GetData(index, _setProperty.Property);
     }
 }

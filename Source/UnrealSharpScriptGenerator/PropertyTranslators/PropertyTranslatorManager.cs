@@ -71,7 +71,7 @@ public static class PropertyTranslatorManager
         
         AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
         AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());
-        //AddPropertyTranslator(typeof(UhtSetProperty), new SetPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtSetProperty), new SetPropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());

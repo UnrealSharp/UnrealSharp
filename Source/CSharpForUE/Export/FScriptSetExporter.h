@@ -25,15 +25,15 @@ private:
 	static bool IsValidIndex(FScriptSet* ScriptSet, int32 Index);
 	static int Num(FScriptSet* ScriptSet);
 	static int GetMaxIndex(FScriptSet* ScriptSet);
-	static void* GetData(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
-	static void Empty(int Slack, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
-	static void RemoveAt(int Index, FScriptSet* ScriptSet, FScriptSetLayout* Layout);
-	static int AddUninitialized(FScriptSet* ScriptSet, FScriptSetLayout* Layout);
-	static void Add(FScriptSet* ScriptSet, const FScriptSetLayout& Layout, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
-	static int32 FindOrAdd(FScriptSet* ScriptSet, const void* Element, const FScriptSetLayout& Layout, FGetKeyHash GetKeyHash, FEqualityFn
-	                       EqualityFn, FConstructFn ConstructFn);
-	static void Rehash(FScriptSet* ScriptSet, const FScriptSetLayout& ScriptSetLayout, FGetKeyHash GetKeyHash);
-	static FScriptSetLayout GetScriptSetLayout(int elementSize, int elementAlignment);
+	static void* GetData(int Index, FScriptSet* ScriptSet, FSetProperty* Property);
+	static void Empty(int Slack, FScriptSet* ScriptSet, FSetProperty* Property);
+	static void RemoveAt(int Index, FScriptSet* ScriptSet, FSetProperty* Property);
+	static int AddUninitialized(FScriptSet* ScriptSet, FSetProperty* Property);
+	
+	static void Add(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
+	static int32 FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn);
+	static int FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn);
+	static void Rehash(FScriptSet* ScriptSet, FSetProperty* Property, FGetKeyHash GetKeyHash);
 	
 	
 };

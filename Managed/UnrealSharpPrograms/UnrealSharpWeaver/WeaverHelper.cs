@@ -601,6 +601,11 @@ public static class WeaverHelper
                     {
                         return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
                     }
+                    
+                    if (GenericTypeName.Contains("TSet`1") || GenericTypeName.Contains("HashSet`1"))
+                    {
+                        return new NativeDataSetType(typeRef, arrayDim, innerType);
+                    }
 
                     if (GenericTypeName.Contains("TSubclassOf`1"))
                     {

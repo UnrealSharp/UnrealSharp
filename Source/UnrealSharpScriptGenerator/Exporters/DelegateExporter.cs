@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using EpicGames.Core;
+﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;

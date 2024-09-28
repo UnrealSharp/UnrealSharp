@@ -149,7 +149,7 @@ public class ArrayCopyMarshaller<T>
         _innerTypeToNative = toNative;
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IList<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> obj)
     {
         unsafe
         {
@@ -159,41 +159,15 @@ public class ArrayCopyMarshaller<T>
                 FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
                 return;
             }
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Count);
-            for (int i = 0; i < obj.Count; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
-            }
-        }
-    }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyList<T> obj)
-    {
-        unsafe
-        {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            if (obj == null)
+            var enumerable = obj.ToList();
+            int count = enumerable.Count;
+            
+            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, count);
+            
+            for (int i = 0; i < count; ++i)
             {
-                FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
-                return;
-            }
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Count);
-            for (int i = 0; i < obj.Count; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
-            }
-        }
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, ReadOnlySpan<T> obj)
-    {
-        unsafe
-        {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Length);
-            for (int i = 0; i < obj.Length; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
+                _innerTypeToNative(mirror->Data, i, enumerable.ElementAt(i));
             }
         }
     }
