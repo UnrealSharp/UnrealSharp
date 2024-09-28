@@ -27,19 +27,19 @@ public class UnrealArrayEnumerator<T>(UnrealArrayBase<T> array) : IEnumerator<T>
     }
 }
 
-public abstract class UnrealArrayBase<T> : IEnumerable<T>
+public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
 {
-    protected readonly IntPtr NativeUnrealProperty;
+    protected readonly IntPtr NativeProperty;
     protected MarshallingDelegates<T>.FromNative FromNative;
     protected MarshallingDelegates<T>.ToNative ToNative;
     
-    protected IntPtr NativeBuffer { get; }
+    protected UnmanagedArray* NativeBuffer { get; }
 
     [CLSCompliant(false)]
-    protected UnrealArrayBase(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    protected UnrealArrayBase(IntPtr nativeProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
-        NativeUnrealProperty = nativeUnrealProperty;
-        NativeBuffer = nativeBuffer;
+        NativeProperty = nativeProperty;
+        NativeBuffer = (UnmanagedArray*) nativeBuffer;
         FromNative = fromNative;
         ToNative = toNative;
     }
@@ -47,39 +47,19 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
     /// <summary>
     /// The number of elements in the array.
     /// </summary>
-    public int Count
-    {
-        get
-        {
-            unsafe
-            {
-                UnmanagedArray* nativeArray = (UnmanagedArray*) NativeBuffer.ToPointer();
-                return nativeArray->ArrayNum;
-            }
-        }
-    }
+    public int Count => NativeBuffer->ArrayNum;
 
     /// <summary>
     /// The native buffer that holds the array data.
     /// </summary>
-    protected IntPtr NativeArrayBuffer
-    {
-        get
-        {
-            unsafe
-            {
-                UnmanagedArray* nativeArray = (UnmanagedArray*)NativeBuffer.ToPointer();
-                return nativeArray->Data;
-            }
-        }
-    }
+    protected IntPtr NativeArrayBuffer => NativeBuffer->Data;
 
     /// <summary>
     /// Clears the array.
     /// </summary>
     protected void ClearInternal()
     {
-        FArrayPropertyExporter.CallEmptyArray(NativeUnrealProperty, NativeBuffer);
+        FArrayPropertyExporter.CallEmptyArray(NativeProperty, NativeBuffer);
     }
 
     /// <summary>
@@ -87,7 +67,7 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
     /// </summary>
     protected void AddInternal()
     {
-        FArrayPropertyExporter.CallAddToArray(NativeUnrealProperty, NativeBuffer);
+        FArrayPropertyExporter.CallAddToArray(NativeProperty, NativeBuffer);
     }
 
     /// <summary>
@@ -96,7 +76,7 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
     /// <param name="index"> The index to insert the element at. </param>
     protected void InsertInternal(int index)
     {
-        FArrayPropertyExporter.CallInsertInArray(NativeUnrealProperty, NativeBuffer, index);
+        FArrayPropertyExporter.CallInsertInArray(NativeProperty, NativeBuffer, index);
     }
 
     /// <summary>
@@ -105,7 +85,7 @@ public abstract class UnrealArrayBase<T> : IEnumerable<T>
     /// <param name="index"> The index to remove the element at. </param>
     protected void RemoveAtInternal(int index)
     {
-        FArrayPropertyExporter.CallRemoveFromArray(NativeUnrealProperty, NativeBuffer, index);
+        FArrayPropertyExporter.CallRemoveFromArray(NativeProperty, NativeBuffer, index);
     }
 
     /// <summary>
@@ -169,51 +149,25 @@ public class ArrayCopyMarshaller<T>
         _innerTypeToNative = toNative;
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IList<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> obj)
     {
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
             if (obj == null)
             {
-                FArrayPropertyExporter.CallEmptyArray(_nativeProperty, (IntPtr)mirror);
+                FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
                 return;
             }
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, (IntPtr)mirror, obj.Count);
-            for (int i = 0; i < obj.Count; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
-            }
-        }
-    }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyList<T> obj)
-    {
-        unsafe
-        {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            if (obj == null)
+            var enumerable = obj.ToList();
+            int count = enumerable.Count;
+            
+            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, count);
+            
+            for (int i = 0; i < count; ++i)
             {
-                FArrayPropertyExporter.CallEmptyArray(_nativeProperty, (IntPtr)mirror);
-                return;
-            }
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, (IntPtr)mirror, obj.Count);
-            for (int i = 0; i < obj.Count; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
-            }
-        }
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, ReadOnlySpan<T> obj)
-    {
-        unsafe
-        {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, (IntPtr)mirror, obj.Length);
-            for (int i = 0; i < obj.Length; ++i)
-            {
-                _innerTypeToNative(mirror->Data, i, obj[i]);
+                _innerTypeToNative(mirror->Data, i, enumerable.ElementAt(i));
             }
         }
     }
@@ -237,7 +191,7 @@ public class ArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, (IntPtr)mirror);
+            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
         }
     }
 }

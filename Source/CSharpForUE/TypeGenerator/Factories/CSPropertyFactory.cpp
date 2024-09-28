@@ -3,10 +3,8 @@
 #include "CSharpForUE/CSharpForUE.h"
 #include "UObject/UnrealType.h"
 #include "UObject/Class.h"
-#include "CSharpForUE/TypeGenerator/Register/CSGeneratedEnumBuilder.h"
 #include "CSharpForUE/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
-#include "TypeGenerator/Register/MetaData/CSArrayPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSEnumPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSMapPropertyMetaData.h"
@@ -50,12 +48,13 @@ void FCSPropertyFactory ::InitializePropertyFactory()
 
 	AddProperty(ECSPropertyType::Class, &CreateClassProperty);
 	AddProperty(ECSPropertyType::Struct, &CreateStructProperty);
-	AddProperty(ECSPropertyType::Array, &CreateArrayProperty);
 	AddProperty(ECSPropertyType::Enum, &CreateEnumProperty);
 	AddProperty(ECSPropertyType::MulticastInlineDelegate, &CreateMulticastDelegateProperty);
 	AddProperty(ECSPropertyType::Delegate, &CreateDelegateProperty);
 
+	AddProperty(ECSPropertyType::Array, &CreateArrayProperty);
 	AddProperty(ECSPropertyType::Map, &CreateMapProperty);
+	AddProperty(ECSPropertyType::Set, &CreateSetProperty);
 }
 
 void FCSPropertyFactory::AddProperty(ECSPropertyType PropertyType, FMakeNewPropertyDelegate Function)
@@ -138,10 +137,19 @@ FProperty* FCSPropertyFactory::CreateStructProperty(UField* Outer, const FCSProp
 
 FProperty* FCSPropertyFactory::CreateArrayProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
-	auto ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSArrayPropertyMetaData>();
+	auto ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
 	FArrayProperty* ArrayProperty = CreateSimpleProperty<FArrayProperty>(Outer, PropertyMetaData);
 	ArrayProperty->Inner = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
 	ArrayProperty->Inner->Owner = ArrayProperty;
+	return ArrayProperty;
+}
+
+FProperty* FCSPropertyFactory::CreateSetProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+{
+	auto ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
+	FSetProperty* ArrayProperty = CreateSimpleProperty<FSetProperty>(Outer, PropertyMetaData);
+	ArrayProperty->ElementProp = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
+	ArrayProperty->ElementProp->Owner = ArrayProperty;
 	return ArrayProperty;
 }
 
@@ -183,7 +191,7 @@ FProperty* FCSPropertyFactory::CreateMapProperty(UField* Outer, const FCSPropert
 {
 	TSharedPtr<FCSMapPropertyMetaData> MapPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSMapPropertyMetaData>();
 	FMapProperty* MapProperty = CreateSimpleProperty<FMapProperty>(Outer, PropertyMetaData);
-	MapProperty->KeyProp = CreateProperty(Outer, MapPropertyMetaData->KeyType);
+	MapProperty->KeyProp = CreateProperty(Outer, MapPropertyMetaData->InnerProperty);
 
 	if (!CanBeHashed(MapProperty->KeyProp))
 	{

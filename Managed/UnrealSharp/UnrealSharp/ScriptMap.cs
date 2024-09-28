@@ -9,8 +9,15 @@ namespace UnrealSharp;
 [StructLayout(LayoutKind.Sequential)]
 public struct FScriptMap
 {
-    public ScriptSet Pairs;
-    public int Count => Pairs.Count;
+    public FScriptSet Pairs;
+    
+    public IntPtr SetPointer => Pairs.SetPointer;
+    public int Count => Pairs.Num();
+    
+    public FScriptMap(IntPtr nativePointer)
+    {
+        Pairs = new FScriptSet(nativePointer);
+    }
 
     public bool IsValidIndex(int index)
     {
@@ -27,19 +34,19 @@ public struct FScriptMap
         return Pairs.GetMaxIndex();
     }
 
-    public IntPtr GetData(int index, ref FScriptMapLayout layout)
+    public IntPtr GetData(int index, IntPtr nativeProperty)
     {
-        return Pairs.GetData(index, ref layout.SetLayout);
+        return Pairs.GetData(index, nativeProperty);
     }
 
-    public void Empty(int slack, ref FScriptMapLayout layout)
+    public void Empty(int slack, IntPtr nativeProperty)
     {
-        Pairs.Empty(slack, ref layout.SetLayout);
+        Pairs.Empty(slack, nativeProperty);
     }
 
-    public void RemoveAt(int index, ref FScriptMapLayout layout)
+    public void RemoveAt(int index, IntPtr nativeProperty)
     {
-        Pairs.RemoveAt(index, ref layout.SetLayout);
+        Pairs.RemoveAt(index, nativeProperty);
     }
 
     /// <summary>
@@ -47,16 +54,8 @@ public struct FScriptMap
     /// The map will need rehashing at some point after this call to make it valid.
     /// </summary>
     /// <returns>The index of the added element.</returns>
-    public int AddUninitialized(ref FScriptMapLayout layout)
+    public int AddUninitialized(IntPtr property)
     {
-        return Pairs.AddUninitialized(ref layout.SetLayout);
+        return Pairs.AddUninitialized(property);
     }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct FScriptMapLayout
-{
-    //public int KeyOffset;// is always at zero offset from the TPair - not stored here
-    public int ValueOffset;
-    public FScriptSetLayout SetLayout;
 }

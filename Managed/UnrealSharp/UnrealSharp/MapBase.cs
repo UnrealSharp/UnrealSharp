@@ -1,69 +1,64 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
+using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
 public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
 {
-    public int Count => Map->Count;
-    
-    private readonly MarshallingDelegates<TKey>.FromNative KeyFromNative;
-    private readonly MarshallingDelegates<TKey>.ToNative? KeyToNative;
-    private readonly MarshallingDelegates<TValue>.FromNative ValueFromNative;
-    private readonly MarshallingDelegates<TValue>.ToNative? ValueToNative;
-    
-    internal IntPtr NativeProperty;
-    internal IntPtr Address => (IntPtr)Map;
-    internal FScriptMap* Map;
-    
-    internal ScriptMapHelper Helper;
+    private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
+    private readonly MarshallingDelegates<TKey>.ToNative? _keyToNative;
+    private readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
+    private readonly MarshallingDelegates<TValue>.ToNative? _valueToNative;
 
-    internal readonly NativeProperty KeyProperty;
-    internal readonly NativeProperty ValueProperty;
+    private readonly NativeProperty _nativeProperty;
+    private ScriptMapHelper _helper;
+
+    private readonly NativeProperty _keyProperty;
+    private readonly NativeProperty _valueProperty;
+    
+    public int Count => _helper.Num();
 
     public MapBase(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative? keyToNative,
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative? valueToNative)
     {
-        Helper = new ScriptMapHelper(mapProperty, address);
-        NativeProperty = mapProperty;
-        Map = (FScriptMap*)address;
-        KeyFromNative = keyFromNative;
-        KeyToNative = keyToNative;
-        ValueFromNative = valueFromNative;
-        ValueToNative = valueToNative;
+        _helper = new ScriptMapHelper(mapProperty, address);
+        _nativeProperty = new NativeProperty(mapProperty);
+        _keyFromNative = keyFromNative;
+        _keyToNative = keyToNative;
+        _valueFromNative = valueFromNative;
+        _valueToNative = valueToNative;
         
-        IntPtr keyPropertyAddress = FMapPropertyExporter.CallGetKeyProperty(NativeProperty);
-        KeyProperty = new NativeProperty(keyPropertyAddress);
-        
-        IntPtr valuePropertyAddress = FMapPropertyExporter.CallGetValueProperty(NativeProperty);
-        ValueProperty = new NativeProperty(valuePropertyAddress);
+        List<NativeProperty> innerFields = _nativeProperty.InnerFields;
+        _keyProperty = innerFields[0];
+        _valueProperty = innerFields[1];
     }
     
     internal int GetMaxIndex()
     {
-        return Helper.GetMaxIndex();
+        return _helper.GetMaxIndex();
     }
     
     internal bool IsValidIndex(int index)
     {
-        return Helper.IsValidIndex(index);
+        return _helper.IsValidIndex(index);
     }
     
     internal bool GetPairPtr(int index, out IntPtr keyPtr, out IntPtr valuePtr)
     {
-        return Helper.GetPairPtr(index, out keyPtr, out valuePtr);
+        return _helper.GetPairPtr(index, out keyPtr, out valuePtr);
     }
 
     protected void ClearInternal()
     {
-        Helper.EmptyValues();
+        _helper.EmptyValues();
     }
 
     protected void AddInternal(TKey key, TValue value)
     {
-        Helper.AddPair(key, value, KeyToNative, ValueToNative);
+        _helper.AddPair(key, value, _keyToNative, _valueToNative);
     }
 
     protected bool RemoveInternal(TKey key)
@@ -74,7 +69,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
             return false;
         }
         
-        Helper.RemoveAt(index);
+        _helper.RemoveAt(index);
         return true;
     }
 
@@ -103,7 +98,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
             return default;
         }
         
-        return new KeyValuePair<TKey, TValue>(KeyFromNative(keyPtr, 0), ValueFromNative(valuePtr, 0));
+        return new KeyValuePair<TKey, TValue>(_keyFromNative(keyPtr, 0), _valueFromNative(valuePtr, 0));
     }
 
     /// <summary>
@@ -149,15 +144,20 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     /// <summary>
     /// Get the index of the key in the map.
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="value"></param>
     /// <returns></returns>
-    protected int IndexOf(TKey key)
+    protected int IndexOf(TKey value)
     {
-        byte* keyBuffer = stackalloc byte[KeyProperty.Size];
+        byte* keyBuffer = stackalloc byte[_keyProperty.Size];
         IntPtr keyPtr = new IntPtr(keyBuffer);
-        KeyProperty.InitializeValue(keyPtr);
-        KeyToNative(keyPtr, 0, key);
-        return FScriptMapHelperExporter.CallFindMapPairIndexFromHash(NativeProperty, Address, keyPtr);
+        
+        _keyProperty.InitializeValue(keyPtr);
+        _keyToNative(keyPtr, 0, value);
+        
+        int index = FScriptMapHelperExporter.CallFindMapPairIndexFromHash(_nativeProperty.Property, _helper.MapAddress, keyPtr);
+        
+        _keyProperty.DestroyValue(keyPtr);
+        return index;
     }
     
     public Enumerator GetEnumerator()
@@ -423,8 +423,7 @@ public class MapMarshaller<TKey, TValue>
     {
         if (wrappers[arrayIndex] == null)
         {
-            wrappers[arrayIndex] = new TMap<TKey, TValue>(nativeProperty, 
-                nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(FScriptMap)),
+            wrappers[arrayIndex] = new TMap<TKey, TValue>(nativeProperty, nativeBuffer, 
                 keyFromNative, keyToNative, valueFromNative, valueToNative);
         }
         return wrappers[arrayIndex];
@@ -479,54 +478,52 @@ public class MapReadOnlyMarshaller<TKey, TValue>
 // Used for function parameters / return results to copy to/from native memory
 public class MapCopyMarshaller<TKey, TValue>
 {
-    ScriptMapHelper helper;
-    MarshallingDelegates<TKey>.FromNative keyFromNative;
-    MarshallingDelegates<TKey>.ToNative keyToNative;
-    MarshallingDelegates<TValue>.FromNative valueFromNative;
-    MarshallingDelegates<TValue>.ToNative valueToNative;
+    private ScriptMapHelper _helper;
+    private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
+    readonly MarshallingDelegates<TKey>.ToNative _keyToNative;
+    readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
+    readonly MarshallingDelegates<TValue>.ToNative _valueToNative;
 
     public MapCopyMarshaller(IntPtr mapProperty,
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative, 
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
-        helper = new ScriptMapHelper(mapProperty);
-        this.keyFromNative = keyFromNative;
-        this.keyToNative = keyToNative;
-        this.valueFromNative = valueFromNative;
-        this.valueToNative = valueToNative;
+        _helper = new ScriptMapHelper(mapProperty);
+        _keyFromNative = keyFromNative;
+        _keyToNative = keyToNative;
+        _valueFromNative = valueFromNative;
+        _valueToNative = valueToNative;
     }
 
     public Dictionary<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        helper.Map = nativeBuffer;
-
-        unsafe
+        _helper.MapAddress = nativeBuffer;
+        
+        Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
+        int maxIndex = _helper.GetMaxIndex();
+        
+        for (int i = 0; i < maxIndex; ++i)
         {
-            FScriptMap* map = (FScriptMap*)nativeBuffer;
-            Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
-            int maxIndex = map->GetMaxIndex();
-            for (int i = 0; i < maxIndex; ++i)
+            if (!_helper.IsValidIndex(i))
             {
-                if (!map->IsValidIndex(i))
-                {
-                    continue;
-                }
-                
-                helper.GetPairPtr(i, out IntPtr keyPtr, out IntPtr valuePtr);
-                result.Add(keyFromNative(keyPtr, 0), valueFromNative(valuePtr, 0));
+                continue;
             }
-            return result;
+                
+            _helper.GetPairPtr(i, out IntPtr keyPtr, out IntPtr valuePtr);
+            result.Add(_keyFromNative(keyPtr, 0), _valueFromNative(valuePtr, 0));
         }
+        
+        return result;
     }
     
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value)
     {
-        ToNativeInternal(nativeBuffer, 0, value, ref helper, keyToNative, valueToNative);
+        ToNativeInternal(nativeBuffer, 0, value, ref _helper, _keyToNative, _valueToNative);
     }
     
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyDictionary<TKey, TValue> value)
     {
-        ToNativeInternal(nativeBuffer, 0, value.ToDictionary(), ref helper, keyToNative, valueToNative);
+        ToNativeInternal(nativeBuffer, 0, value.ToDictionary(), ref _helper, _keyToNative, _valueToNative);
     }
 
     private void ToNativeInternal(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value,
@@ -534,7 +531,7 @@ public class MapCopyMarshaller<TKey, TValue>
         MarshallingDelegates<TValue>.ToNative valueToNative)
     {
         IntPtr scriptMapAddress = nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(FScriptMap));
-        helper.Map = scriptMapAddress;
+        helper.MapAddress = scriptMapAddress;
 
         // Make sure any existing elements are properly destroyed
         helper.EmptyValues();
@@ -574,6 +571,6 @@ public class MapCopyMarshaller<TKey, TValue>
     
     public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        helper.EmptyValues();
+        _helper.EmptyValues();
     }
 }

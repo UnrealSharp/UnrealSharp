@@ -3,151 +3,63 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-/// <summary>
-/// Untyped set type for accessing TSet data, like FScriptArray for TArray.
-/// Must have the same memory representation as a TSet.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public struct ScriptSet
+public struct FScriptSet
 {
-    public FScriptSparseArray Elements;
-    public FHashAllocator Hash;
-    public int HashSize;
-    public int Count => Num();
-
-    public bool IsValidIndex(int index)
+    public IntPtr SetPointer;
+    
+    internal FScriptSet(IntPtr setPointer)
     {
-        return FScriptSetExporter.CallIsValidIndex(ref this, index).ToManagedBool();
+        SetPointer = setPointer;
+    }
+    
+    internal bool IsValidIndex(int index)
+    {
+        return FScriptSetExporter.CallIsValidIndex(SetPointer, index).ToManagedBool();
     }
 
-    public int Num()
+    internal int Num()
     {
-        return FScriptSetExporter.CallNum(ref this);
+        return FScriptSetExporter.CallNum(SetPointer);
     }
 
-    public int GetMaxIndex()
+    internal int GetMaxIndex()
     {
-        return FScriptSetExporter.CallGetMaxIndex(ref this);
+        return FScriptSetExporter.CallGetMaxIndex(SetPointer);
     }
 
-    public IntPtr GetData(int index, ref FScriptSetLayout layout)
+    internal IntPtr GetData(int index, IntPtr nativeProperty)
     {
-        return FScriptSetExporter.CallGetData(index, ref this, layout.Size);
+        return FScriptSetExporter.CallGetData(index, SetPointer, nativeProperty);
     }
 
-    public void Empty(int slack, ref FScriptSetLayout layout)
+    internal void Empty(int slack, IntPtr nativeProperty)
     {
-        FScriptSetExporter.CallEmpty(slack, ref this, ref layout);
+        FScriptSetExporter.CallEmpty(slack, SetPointer, nativeProperty);
     }
 
-    public void RemoveAt(int index, ref FScriptSetLayout layout)
+    internal void RemoveAt(int index, IntPtr nativeProperty)
     {
-        FScriptSetExporter.CallRemoveAt(index, ref this, ref layout);
+        FScriptSetExporter.CallRemoveAt(index, SetPointer, nativeProperty);
     }
 
-    public int AddUninitialized(ref FScriptSetLayout layout)
+    internal int AddUninitialized(IntPtr nativeProperty)
     {
-        return FScriptSetExporter.CallAddUninitialized(ref this, ref layout);
+        return FScriptSetExporter.CallAddUninitialized(SetPointer, nativeProperty);
     }
-}
-
-/// <summary>
-/// Either NULL or an identifier for an element of a set.
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct FSetElementId
-{
-    /// <summary>
-    /// The index of the element in the set's element array.
-    /// </summary>
-    public int Index;
-
-    public bool IsValidId => Index != -1;
-
-    public static FSetElementId Default
+    
+    internal void Add(IntPtr elementToAdd, IntPtr nativeProperty, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality, HashDelegates.Construct elementConstruct, HashDelegates.Destruct elementDestruct)
     {
-        get { return new FSetElementId(-1); }
+        FScriptSetExporter.CallAdd(SetPointer, nativeProperty, elementToAdd, elementHash, elementEquality, elementConstruct, elementDestruct);
+    }
+    
+    internal int FindOrAdd(IntPtr elementToAdd, IntPtr nativeProperty, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality, HashDelegates.Construct elementConstruct)
+    {
+        return FScriptSetExporter.CallFindOrAdd(SetPointer, nativeProperty, elementToAdd, elementHash, elementEquality, elementConstruct);
     }
 
-    public FSetElementId(int index)
+    internal int FindIndex(IntPtr elementToFind, IntPtr nativeProperty, HashDelegates.GetKeyHash elementHash, HashDelegates.Equality elementEquality)
     {
-        Index = index;
+        return FScriptSetExporter.CallFindIndex(SetPointer, nativeProperty, elementToFind, elementHash, elementEquality);
     }
-
-    public int AsInteger()
-    {
-        return Index;
-    }
-
-    public static FSetElementId FromInteger(int integer)
-    {
-        return new FSetElementId(integer);
-    }
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct FHashAllocator
-{
-    public FSetElementId InlineData;
-    public IntPtr SecondaryData;
-}
-
-/// <summary>
-/// Untyped sparse array type for accessing TSparseArray data, like FScriptArray for TArray.
-/// Must have the same memory representation as a TSet.
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct FScriptSparseArray
-{
-    public UnmanagedArray Data;
-    public FScriptBitArray AllocationFlags;
-    public int FirstFreeIndex;
-    public int NumFreeIndices;
-}
-
-/// <summary>
-/// Untyped bit array type for accessing TBitArray data, like FScriptArray for TArray.
-/// Must have the same memory representation as a TBitArray.
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct FScriptBitArray
-{
-    FDefaultBitArrayAllocator AllocatorInstance;
-    public int NumBits;
-    public int MaxBits;
-}
-
-//FDefaultBitArrayAllocator = TInlineAllocator<4>
-//FDefaultBitArrayAllocator::ForElementType<uint32> = TInlineAllocator<4>::ForElementType<uint32>
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct FDefaultBitArrayAllocator
-{
-    public fixed int InlineData[4];
-    public IntPtr SecondaryData;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct FScriptSetLayout
-{
-    public int HashNextIdOffset;
-    public int HashIndexOffset;
-    public int Size;
-    public FScriptSparseArrayLayout SparseArrayLayout;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct FScriptSparseArrayLayout
-{
-    public int Alignment;
-    public int Size;
-}
-
-/// <summary>
-/// Used to read/write a bit in the array as a bool.
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct FBitReference
-{
-    public IntPtr Data;// uint32&
-    public uint Mask;
 }

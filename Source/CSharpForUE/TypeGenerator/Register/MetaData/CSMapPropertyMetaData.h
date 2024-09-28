@@ -1,11 +1,10 @@
 ﻿#pragma once
 
+#include "CSContainerBaseMetaData.h"
 #include "CSPropertyMetaData.h"
-#include "CSUnrealType.h"
 
-struct FCSMapPropertyMetaData : public FCSUnrealType
+struct FCSMapPropertyMetaData : public FCSContainerBaseMetaData
 {
-	FCSPropertyMetaData KeyType;
 	FCSPropertyMetaData ValueType;
 
 	// FTypeMetaData interface implementation

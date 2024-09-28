@@ -68,28 +68,24 @@ public class NativeDataContainerType : NativeDataType
         
         // Ensure that IList<T> itself is imported.
         WeaverHelper.ImportType(CSharpType);
-
-        InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, InnerProperty);
+        
         InitializeMarshallerParameters();
         
         // Instantiate generics for the direct access and copying marshallers.
         string marshallerTypeName = GetContainerMarshallerName();
         string copyMarshallerTypeName = GetCopyContainerMarshallerName();
         
-        var genericMarshallerTypeRef = (from type in WeaverHelper.BindingsAssembly.MainModule.Types
-            where type.Namespace == WeaverHelper.UnrealSharpNamespace
-                  && type.Name == marshallerTypeName
-            select type).Single();
-        var genericCopyMarshallerTypeRef = (from type in WeaverHelper.BindingsAssembly.MainModule.Types
-            where type.Namespace == WeaverHelper.UnrealSharpNamespace
-                  && type.Name == copyMarshallerTypeName
-            select type).Single();
+        var genericMarshallerTypeRef = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly,
+            marshallerTypeName, WeaverHelper.UnrealSharpNamespace)!;
+        
+        var genericCopyMarshallerTypeRef = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly,
+            copyMarshallerTypeName, WeaverHelper.UnrealSharpNamespace)!;
 
         ContainerMarshallerType = WeaverHelper.UserAssembly.MainModule.ImportReference(genericMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters));
         CopyContainerMarshallerType = WeaverHelper.UserAssembly.MainModule.ImportReference(genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters));
         
         TypeDefinition arrTypeDef = ContainerMarshallerType.Resolve();
-        FromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in arrTypeDef.GetMethods() where method.Name == "FromNative" select method).Single());
+        FromNative = WeaverHelper.FindMethod(arrTypeDef, "FromNative")!;
         FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, ContainerMarshallerTypeParameters);
 
         TypeDefinition copyMarshallerDef = CopyContainerMarshallerType.Resolve();
@@ -97,21 +93,14 @@ public class NativeDataContainerType : NativeDataType
         CopyContainerMarshallerCtor = WeaverHelper.UserAssembly.MainModule.ImportReference(CopyContainerMarshallerCtor);
         CopyContainerMarshallerCtor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyContainerMarshallerCtor, ContainerMarshallerTypeParameters);
         
-        CopyFromNative = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in copyMarshallerDef.GetMethods() where method.Name == "FromNative" select method).Single());
+        CopyFromNative = WeaverHelper.FindMethod(copyMarshallerDef, "FromNative")!;
         CopyFromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyFromNative, ContainerMarshallerTypeParameters);
         
-        string containerWrapperType = GetContainerWrapperType();
-        CopyToNative = WeaverHelper.UserAssembly.MainModule.ImportReference((
-            from method in copyMarshallerDef.GetMethods()
-            where method.Name == "ToNative"
-                && method.Parameters[2].ParameterType is GenericInstanceType genericInstanceType
-                && genericInstanceType.ElementType.FullName == containerWrapperType
-            select method
-        ).Single());
+        CopyToNative = WeaverHelper.FindMethod(copyMarshallerDef, "ToNative")!;
         
         CopyToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyToNative, ContainerMarshallerTypeParameters);
         
-        CopyDestructInstance = WeaverHelper.UserAssembly.MainModule.ImportReference((from method in copyMarshallerDef.GetMethods() where method.Name == "DestructInstance" select method).Single());
+        CopyDestructInstance = WeaverHelper.FindMethod(copyMarshallerDef, "DestructInstance")!;
         CopyDestructInstance = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyDestructInstance, ContainerMarshallerTypeParameters);
 
         // If this is a rewritten autoproperty, we need an additional backing field for the Container marshaller.

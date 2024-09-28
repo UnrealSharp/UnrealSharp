@@ -13,9 +13,9 @@ public static class PropertyTranslatorManager
     {
         ManuallyExportedTypes.Add("EStreamingSourcePriority");
         
-        EnumPropertyHandler enumPropertyHandler = new();
-        AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyHandler);
-        AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyHandler);
+        EnumPropertyTranslator enumPropertyTranslator = new();
+        AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyTranslator);
         
         AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte");
         AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short");
@@ -48,7 +48,6 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtObjectProperty), new ObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), new ObjectPropertyTranslator());
         
-        
         AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
@@ -72,6 +71,7 @@ public static class PropertyTranslatorManager
         
         AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
         AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtSetProperty), new SetPropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());

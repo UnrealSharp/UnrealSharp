@@ -19,8 +19,6 @@ public:
 
 private:
 	
-	static void* GetKeyProperty(FMapProperty* MapProperty);
-	static void* GetValueProperty(FMapProperty* MapProperty);
 	static FScriptMapLayout GetScriptLayout(FMapProperty* MapProperty);
 	
 };
