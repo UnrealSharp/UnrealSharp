@@ -1,8 +1,10 @@
-﻿using UnrealSharp.Interop;
+﻿using UnrealSharp.Attributes;
+using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
+[Binding]
 public class TSet<T> : TSetBase<T>, ISet<T>
 {
     public TSet(IntPtr setProperty, IntPtr address,
@@ -298,51 +300,45 @@ public class SetMarshaller<T>
 
 public class SetCopyMarshaller<T>
 {
-    NativeProperty property;
-    FScriptSetHelper helper;
-    MarshallingDelegates<T>.FromNative elementFromNative;
-    MarshallingDelegates<T>.ToNative elementToNative;
+    private readonly NativeProperty _property;
+    private FScriptSetHelper _helper;
+    readonly MarshallingDelegates<T>.FromNative _elementFromNative;
+    private readonly MarshallingDelegates<T>.ToNative _elementToNative;
 
     public SetCopyMarshaller(IntPtr setProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
-        property = new NativeProperty(setProperty);
-        helper = new FScriptSetHelper(property);
-        elementFromNative = fromNative;
-        elementToNative = toNative;
+        _property = new NativeProperty(setProperty);
+        _helper = new FScriptSetHelper(_property);
+        _elementFromNative = fromNative;
+        _elementToNative = toNative;
     }
 
     public HashSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        unsafe
+        _helper.Set = new FScriptSet(nativeBuffer);
+        HashSet<T> result = new HashSet<T>();
+            
+        int maxIndex = _helper.Set.GetMaxIndex();
+            
+        for (int i = 0; i < maxIndex; ++i)
         {
-            IntPtr scriptSetAddress = nativeBuffer + arrayIndex * sizeof(FScriptSet);
-            helper.Set = new FScriptSet(scriptSetAddress);
-            
-            FScriptSet* set = (FScriptSet*) scriptSetAddress;
-            HashSet<T> result = new HashSet<T>();
-            
-            int maxIndex = set->GetMaxIndex();
-            
-            for (int i = 0; i < maxIndex; ++i)
+            if (!_helper.Set.IsValidIndex(i))
             {
-                if (!set->IsValidIndex(i))
-                {
-                    continue;
-                }
-                
-                result.Add(elementFromNative(helper.GetElementPtr(i), 0));
+                continue;
             }
-            return result;
+                
+            result.Add(_elementFromNative(_helper.GetElementPtr(i), 0));
         }
+        return result;
     }
     
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value)
     {
-        SetMarshaller<T>.ToNativeInternal(nativeBuffer, 0, value, helper, elementToNative);
+        SetMarshaller<T>.ToNativeInternal(nativeBuffer, 0, value, _helper, _elementToNative);
     }
     
     public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        FScriptSetExporter.CallEmpty(0, helper.Set.SetPointer, property.Property);
+        FScriptSetExporter.CallEmpty(0, _helper.Set.SetPointer, _property.Property);
     }
 }

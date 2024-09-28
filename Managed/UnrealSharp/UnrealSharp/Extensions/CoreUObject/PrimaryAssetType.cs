@@ -6,4 +6,14 @@ public partial struct FPrimaryAssetType
     {
         Name = new FName(name);
     }
+    
+    public bool IsValid()
+    {
+        return !Name.IsNone();
+    }
+    
+    public override string ToString()
+    {
+        return Name.ToString();
+    }
 }

@@ -2,7 +2,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp.Engine;
 
-public partial class USystemLibrary
+public partial class SystemLibrary
 {
     /// <summary>
     /// Set a timer to call the specified action after the specified duration.
