@@ -4,10 +4,9 @@ using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
-public unsafe struct ScriptMapHelper
-{    
-    public FScriptMap Map;
-    public IntPtr MapPtr => Map.SetPointer;
+internal unsafe struct ScriptMapHelper
+{
+    public IntPtr MapAddress;
     
     private readonly NativeProperty _mapProperty;
     private readonly NativeProperty _keyProp;
@@ -16,7 +15,7 @@ public unsafe struct ScriptMapHelper
     public ScriptMapHelper(IntPtr mapProperty, IntPtr map = default)
     {                        
         _mapProperty = new NativeProperty(mapProperty);
-        Map = new FScriptMap(map);
+        MapAddress = map;
         
         List<NativeProperty> innerProperties = _mapProperty.InnerFields;
         _keyProp = innerProperties[0];
@@ -30,7 +29,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>true if accessing this element is legal.</returns>
     public bool IsValidIndex(int index)
     {
-        return Map.IsValidIndex(index);
+        return FScriptMapHelperExporter.CallIsValidIndex(_mapProperty.Property, MapAddress, index).ToManagedBool();
     }
 
     /// <summary>
@@ -39,7 +38,7 @@ public unsafe struct ScriptMapHelper
     /// <returns>The number of elements in the map.</returns>
     public int Num()
     {
-        return Map.Num();
+        return FScriptMapHelperExporter.CallNum(_mapProperty.Property, MapAddress);
     }
 
     /// <summary>
@@ -48,32 +47,12 @@ public unsafe struct ScriptMapHelper
     /// <returns>The (non-inclusive) maximum index of elements in the map.</returns>
     public int GetMaxIndex()
     {
-        return Map.GetMaxIndex();
-    }
-
-    /// <summary>
-    /// Static version of Num() used when you don't need to bother to construct a FScriptMapHelper. Returns the number of elements in the map.
-    /// </summary>
-    /// <param name="target">Pointer to the raw memory associated with a FScriptMap</param>
-    /// <returns>The number of elements in the map.</returns>
-    public static int Num(IntPtr target)
-    {
-        return target == null ? 0 : ((FScriptMap*)target)->Num();
-    }
-
-    /// <summary>
-    /// Returns a uint8 pointer to the pair in the array
-    /// </summary>
-    /// <param name="index">index of the item to return a pointer to.</param>
-    /// <returns>Pointer to the pair, or nullptr if the array is empty.</returns>
-    public IntPtr GetPairPtr(int index)
-    {
-        return Num() == 0 ? IntPtr.Zero : Map.GetData(index, _mapProperty.Property);
+        return FScriptMapHelperExporter.CallGetMaxIndex(_mapProperty.Property, MapAddress);
     }
 
     public bool GetPairPtr(int index, out IntPtr keyPtr, out IntPtr valuePtr)
     {
-        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, Map.SetPointer, index);
+        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, MapAddress, index);
         
         if (pairPtr == IntPtr.Zero)
         {
@@ -88,32 +67,6 @@ public unsafe struct ScriptMapHelper
     }
 
     /// <summary>
-    /// Returns a uint8 pointer to the Key (first element) in the map. Currently 
-    /// identical to GetPairPtr, but provides clarity of purpose and avoids exposing
-    /// implementation details of TMap.
-    /// </summary>
-    /// <param name="index">index of the item to return a pointer to.</param>
-    /// <returns>Pointer to the key, or nullptr if the map is empty.</returns>
-    public IntPtr GetKeyPtr(int index)
-    {
-        if (Num() == 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        return Map.GetData(index, _mapProperty.Property);// + mapLayout.KeyOffset;
-    }
-
-    /// <summary>
-    /// Add an uninitialized value to the end of the map.
-    /// </summary>
-    /// <returns>The index of the added element.</returns>
-    public int AddUninitializedValue()
-    {
-        return Map.AddUninitialized(_mapProperty.Property);
-    }
-
-    /// <summary>
     /// Remove all values from the map, calling destructors, etc as appropriate.
     /// </summary>
     /// <param name="slack">used to presize the array for a subsequent add, to avoid reallocation.</param>
@@ -121,7 +74,7 @@ public unsafe struct ScriptMapHelper
     {
         if (slack != 0)
         {
-            Map.Empty(slack, _mapProperty.Property);
+            FScriptMapHelperExporter.CallEmptyValues(_mapProperty.Property, MapAddress);
         }
     }
 
@@ -137,8 +90,8 @@ public unsafe struct ScriptMapHelper
         {
             return;
         }
-            
-        Map.RemoveAt(index, _mapProperty.Property);
+
+        FScriptMapHelperExporter.CallRemoveIndex(_mapProperty.Property, MapAddress, index);
     }
     
     public void AddPair<TKey, TValue>(TKey key, TValue value, MarshallingDelegates<TKey>.ToNative keyToNative,
@@ -149,11 +102,14 @@ public unsafe struct ScriptMapHelper
         _keyProp.InitializeValue(keyPtr);
         keyToNative(keyPtr, 0, key);
         
-        byte* valueBuffer = stackalloc byte[_keyProp.Size];
+        byte* valueBuffer = stackalloc byte[_valueProp.Size];
         IntPtr valuePtr = new IntPtr(valueBuffer);
-        _keyProp.InitializeValue(valuePtr);
+        _valueProp.InitializeValue(valuePtr);
         valueToNative(valuePtr, 0, value);
         
-        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, Map.SetPointer, keyPtr, valuePtr);
+        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, MapAddress, keyPtr, valuePtr);
+        
+        _keyProp.DestroyValue(keyPtr);
+        _valueProp.DestroyValue(valuePtr);
     }
 }

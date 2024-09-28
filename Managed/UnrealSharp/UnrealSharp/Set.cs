@@ -261,50 +261,37 @@ public class SetMarshaller<T>
     internal static void ToNativeInternal(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value,
         FScriptSetHelper helper, MarshallingDelegates<T>.ToNative elementToNative)
     {
-        unsafe
+        helper.Set = new FScriptSet(nativeBuffer);
+        helper.EmptyValues();
+
+        if (value == null)
         {
-            helper.Set = new FScriptSet(nativeBuffer + arrayIndex * sizeof(FScriptSet));
-            helper.EmptyValues();
+            return;
+        }
 
-            if (value == null)
-            {
-                return;
-            }
-
-            if (value is IList<T> list)
-            {
-                foreach (var t in list)
-                {
-                    helper.AddElement(t, elementToNative);
-                }
-
-                return;
-            }
-
-            if (value is HashSet<T> hashSet)
-            {
-                foreach (T item in hashSet)
-                {
-                    helper.AddElement(item, elementToNative);
-                }
-
-                return;
-            }
-
-            if (value is TSetBase<T> setBase)
-            {
-                foreach (T item in setBase)
-                {
-                    helper.AddElement(item, elementToNative);
-                }
-
-                return;
-            }
-
-            foreach (T item in value)
+        if (value is HashSet<T> hashSet)
+        {
+            foreach (T item in hashSet)
             {
                 helper.AddElement(item, elementToNative);
             }
+
+            return;
+        }
+
+        if (value is TSetBase<T> setBase)
+        {
+            foreach (T item in setBase)
+            {
+                helper.AddElement(item, elementToNative);
+            }
+
+            return;
+        }
+
+        foreach (T item in value)
+        {
+            helper.AddElement(item, elementToNative);
         }
     }
 }

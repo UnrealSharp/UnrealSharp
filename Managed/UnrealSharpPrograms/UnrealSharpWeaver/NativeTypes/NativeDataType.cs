@@ -32,7 +32,12 @@ public abstract class NativeDataType
 {
     public NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
     {
-        CSharpType = WeaverHelper.ImportType(typeRef.GetElementType());
+        if (typeRef.IsByReference)
+        {
+            typeRef = typeRef.GetElementType();
+        }
+        
+        CSharpType = WeaverHelper.ImportType(typeRef);
         ArrayDim = arrayDim;
         PropertyType = propertyType;
     }
