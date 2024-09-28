@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using EpicGames.Core;
@@ -32,6 +34,7 @@ public static class Program
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
+		
 	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
 
@@ -64,7 +67,7 @@ public static class Program
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
 	        }
 	        
-	        TryGenerateProject();
+	        TryCreateGlueProject();
 	    }
 	    catch (Exception ex)
 	    {
@@ -76,38 +79,6 @@ public static class Program
 	        Console.ResetColor();
 	    }
 	}
-
-	static void TryGenerateProject()
-	{
-		string? projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile);
-		string projectPath = $"{Factory.Session.ProjectDirectory}/Script/Managed{projectName}.csproj";
-
-		if (projectName == null || File.Exists(projectPath))
-		{
-			return;
-		}
-		
-		string dotNetExe = DotNetUtilities.FindDotNetExecutable();
-
-		string args = string.Empty;
-		args += $"\"{PluginDirectory}/Binaries/Managed/UnrealSharpBuildTool.dll\"";
-		args += " --Action GenerateProject";
-		args += $" --EngineDirectory \"{Factory.Session.EngineDirectory}/\"";
-		args += $" --ProjectDirectory \"{Factory.Session.ProjectDirectory}/\"";
-		args += $" --ProjectName {projectName}";
-		args += $" --PluginDirectory \"{PluginDirectory}\"";
-		args += $" --DotNetPath \"{dotNetExe}\"";
-
-		Process process = new Process();
-		ProcessStartInfo startInfo = new ProcessStartInfo
-		{
-			WindowStyle = ProcessWindowStyle.Hidden,
-			FileName = dotNetExe,
-			Arguments = args
-		};
-		process.StartInfo = startInfo;
-		process.Start();
-	}
 	
 	static void InitializeStatics()
 	{
@@ -117,12 +88,31 @@ public static class Program
 		ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
 		
 		EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
-		ProjectGluePath = Path.Combine(ScriptFolder, "obj", "generated");
+		ProjectGluePath = Path.Combine(ScriptFolder, "ProjectGlue");
 		
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
 		
 		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
+	}
+
+	static void TryCreateGlueProject()
+	{
+		string csprojPath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
+
+		if (File.Exists(csprojPath))
+		{
+			return;
+		}
+
+		Dictionary<string, string> arguments = new Dictionary<string, string>
+		{
+			{ "NewProjectName", "ProjectGlue" },
+			{ "NewProjectPath", $"\"{ProjectGluePath}\""},
+			{ "SkipIncludeProjectGlue", "true" }
+		};
+		
+		DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", arguments);
 	}
 }

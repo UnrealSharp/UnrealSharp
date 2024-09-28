@@ -60,6 +60,17 @@ public static class Main
         {
             string assemblyName = shouldRemoveExtension ? Path.GetFileNameWithoutExtension(assemblyPath) : assemblyPath;
             
+            foreach (var plugin in LoadedPlugins)
+            {
+                if (plugin.AssemblyLoadedPath != assemblyPath)
+                {
+                    continue;
+                }
+                
+                Console.WriteLine($"Plugin {assemblyName} is already loaded.");
+                return plugin.Assembly.TryGetTarget(out var assembly) ? assembly : default;
+            }
+            
             var sharedAssemblies = new List<string>();
             foreach (var sharedAssembly in SharedAssemblies)
             {
@@ -105,8 +116,9 @@ public static class Main
                 {
                     throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
                 }
-            
-                Console.WriteLine($"Unloading plugin (Path: {plugin.AssemblyLoadedPath}");
+                
+                string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+                Console.WriteLine($"Unloading plugin {assemblyName}...");
 
                 plugin.Unload();
 
@@ -138,7 +150,7 @@ public static class Main
                 }
 
                 LoadedPlugins.Remove(plugin);
-                Console.WriteLine("Plugin unloaded successfully!");
+                Console.WriteLine($"{assemblyName} unloaded successfully!");
                 return true;
             }
             catch (Exception e)
@@ -152,7 +164,10 @@ public static class Main
     }
     
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, PluginsCallbacks* pluginCallbacks, ManagedCallbacks* managedCallbacks, IntPtr exportFunctionsPtr)
+    private static unsafe NativeBool InitializeUnrealSharp(IntPtr assemblyPath, 
+        PluginsCallbacks* pluginCallbacks, 
+        ManagedCallbacks* managedCallbacks, 
+        IntPtr exportFunctionsPtr)
     {
         try
         {

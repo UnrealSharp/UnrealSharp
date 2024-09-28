@@ -12,6 +12,7 @@ public static class WeaverHelper
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
     public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
     public static readonly string CoreUObjectNamespace = UnrealSharpNamespace + ".CoreUObject";
+    public static readonly string EngineNamespace = UnrealSharpNamespace + ".Engine";
     
     public static readonly string UnrealSharpObject = "UnrealSharpObject";
     public static readonly string FPropertyCallbacks = "FPropertyExporter";
@@ -34,7 +35,9 @@ public static class WeaverHelper
     public static readonly string UFunctionAttribute = "UFunctionAttribute";
     public static readonly string UClassAttribute = "UClassAttribute";
     public static readonly string UInterfaceAttribute = "UInterfaceAttribute";
-    
+    public static readonly string UMultiDelegateAttribute = "UMultiDelegateAttribute";
+    public static readonly string USingleDelegateAttribute = "USingleDelegateAttribute";
+
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     public static readonly string BlittableTypeAttribute = "BlittableTypeAttribute";
     
@@ -68,6 +71,7 @@ public static class WeaverHelper
     public static MethodReference GeneratedTypeCtor;
     
     public static TypeDefinition UObjectDefinition;
+    public static TypeDefinition UActorComponentDefinition;
     
     public static MethodReference BlittableTypeConstructor;
     
@@ -125,6 +129,7 @@ public static class WeaverHelper
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
         
         UObjectDefinition = FindTypeInAssembly(BindingsAssembly, "UObject", CoreUObjectNamespace)!.Resolve();
+        UActorComponentDefinition = FindTypeInAssembly(BindingsAssembly, "UActorComponent", EngineNamespace)!.Resolve();
         
         TypeReference blittableType = FindTypeInAssembly(BindingsAssembly, BlittableTypeAttribute, AttributeNamespace)!;
         BlittableTypeConstructor = FindMethod(blittableType.Resolve(), ".ctor")!;
@@ -274,6 +279,22 @@ public static class WeaverHelper
     public static string GetInvokeName(string methodName)
     {
         return "Invoke_" + methodName;
+    }
+    
+    public static bool IsChildOf(TypeDefinition type, TypeDefinition parentType)
+    {
+        TypeDefinition? currentType = type;
+        while (currentType != null)
+        {
+            if (currentType == parentType)
+            {
+                return true;
+            }
+
+            currentType = currentType.BaseType?.Resolve();
+        }
+
+        return false;
     }
     
     public static MethodDefinition AddMethodToType(TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
@@ -945,7 +966,17 @@ public static class WeaverHelper
     {
         return FindAttribute(type.CustomAttributes, UInterfaceAttribute);
     }
-        
+
+    public static CustomAttribute? GetUMultiDelegateInterface(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, UMultiDelegateAttribute);
+    }
+
+    public static CustomAttribute? GetUSingleDelegateInterface(TypeDefinition type)
+    {
+        return FindAttribute(type.CustomAttributes, USingleDelegateAttribute);
+    }
+
     public static bool IsUProperty(IMemberDefinition property)
     {
         return GetUProperty(property) != null;
@@ -960,7 +991,17 @@ public static class WeaverHelper
     {
         return GetUClass(typeDefinition) != null;
     }
-    
+
+    public static bool IsUMultiDelegate(TypeDefinition typeDefinition)
+    {
+        return GetUMultiDelegateInterface(typeDefinition) != null;
+    }
+
+    public static bool IsUSingleDelegate(TypeDefinition typeDefinition)
+    {
+        return GetUSingleDelegateInterface(typeDefinition) != null;
+    }
+
     public static bool IsGenerated(TypeDefinition typeDefinition)
     {
         return FindAttribute(typeDefinition.CustomAttributes, GeneratedTypeAttribute) != null;

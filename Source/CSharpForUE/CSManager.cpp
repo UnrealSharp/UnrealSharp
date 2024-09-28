@@ -25,7 +25,7 @@
 	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
-UPackage* FCSManager::UnrealSharpPackage = nullptr;
+FCSManagedPluginCallbacks FCSManager::ManagedPluginsCallbacks;
 
 FCSManager& FCSManager::Get()
 {
@@ -39,16 +39,16 @@ void FCSManager::InitializeUnrealSharp()
 	{
 		return;
 	}
-	
-	FString DotNetInstallationPath =  FCSProcHelper::GetDotNetDirectory();
-	
+
+#if WITH_EDITOR
+	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
 	if (DotNetInstallationPath.IsEmpty())
 	{
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET8 SDK can't be found on your system."));
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
+	
 	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpLibraryPath();
 	if (!FPaths::FileExists(UnrealSharpLibraryPath))
 	{
@@ -60,21 +60,8 @@ void FCSManager::InitializeUnrealSharp()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
-#if WITH_EDITOR
-	if (!FParse::Param(FCommandLine::Get(), TEXT("game"))) 
-	{
-		if (!FApp::IsUnattended())
-		{
-			if (!FCSProcHelper::InvokeUnrealSharpBuildTool(Build) || !FCSProcHelper::InvokeUnrealSharpBuildTool(Weave))
-			{
-				InitializeUnrealSharp();
-				return;
-			}
-		}
-	}
 #endif
-
+	
 	//Create the package where we will store our generated types.
 	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
 	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
@@ -142,7 +129,10 @@ bool FCSManager::InitializeBindings()
 	}
 
 	// Entry point to C# to initialize UnrealSharp
-	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly, &ManagedPluginsCallbacks, &FCSManagedCallbacks::ManagedCallbacks, (const void*)&UFunctionsExporter::StartExportingAPI))
+	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly,
+		&ManagedPluginsCallbacks,
+		&FCSManagedCallbacks::ManagedCallbacks,
+		(const void*)&UFunctionsExporter::StartExportingAPI))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
@@ -196,18 +186,21 @@ bool FCSManager::LoadRuntimeHost()
 
 bool FCSManager::LoadUserAssembly()
 {
-	const FString UserAssemblyPath = FCSProcHelper::GetUserAssemblyPath();
+	TArray<FString> UserAssemblies;
+	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
 
-	if (!FPaths::FileExists(UserAssemblyPath))
+	if (UserAssemblies.IsEmpty())
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find user assembly at %s"), *UserAssemblyPath);
-		return false;
+		return true;
 	}
-	
-	if (!LoadAssembly(UserAssemblyPath))
+
+	for(const FString& UserAssembly : UserAssemblies)
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
-		return false;
+		if (!LoadAssembly(UserAssembly))
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssembly);
+			return false;
+		}
 	}
 
 	return true;
@@ -305,11 +298,6 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-UPackage* FCSManager::GetUnrealSharpPackage()
-{
-	return UnrealSharpPackage;
-}
-
 TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
@@ -324,7 +312,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 	LoadedPlugins.Add(*NewPlugin->GetAssemblyName(), NewPlugin);
 
 	// Change from ManagedProjectName.dll > ManagedProjectName.json
-	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "json");
+	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 
 	// Process the json file and register the types.
 	if (!FCSTypeRegistry::Get().ProcessMetaData(MetadataPath))
@@ -395,13 +383,27 @@ FGCHandle FCSManager::FindManagedObject(UObject* Object)
 	return CreateNewManagedObject(Object, Object->GetClass());
 }
 
-void FCSManager::RemoveManagedObject(UObject* Object)
+void FCSManager::RemoveManagedObject(const UObjectBase* Object)
 {
 	FGCHandle Handle;
 	if (UnmanagedToManagedMap.RemoveAndCopyValue(Object, Handle))
 	{
 		Handle.Dispose();
 	}
+}
+
+uint8* FCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName) const
+{
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle, *Namespace, *TypeName);
+
+	if (TypeHandle == nullptr)
+	{
+		// This should never happen. Something seriously wrong.
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find a TypeHandle for %s."), *TypeName);
+		return nullptr;
+	}
+
+	return TypeHandle;
 }
 
 uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
@@ -414,31 +416,10 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 		return nullptr;
 	}
 
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Plugin->GetAssemblyHandle(), *Namespace, *TypeName);
-
-	if (TypeHandle == nullptr)
-	{
-		// This should never happen. Something seriously wrong.
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find a TypeHandle for %s."), *TypeName);
-		return nullptr;
-	}
-
-	return TypeHandle;
+	return GetTypeHandle(Plugin->GetAssemblyHandle().IntPtr, Namespace, TypeName);
 }
 
 uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
-}
-
-void FCSManager::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
-{
-	UObjectBase* NonConstObject = const_cast<UObjectBase*>(ObjectBase);
-	UObject* Object = static_cast<UObject*>(NonConstObject);
-	RemoveManagedObject(Object);
-}
-
-void FCSManager::OnUObjectArrayShutdown()
-{
-	GUObjectArray.RemoveUObjectDeleteListener(this);
 }

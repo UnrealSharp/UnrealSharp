@@ -14,9 +14,5 @@ public:
 	// UFunctions interface implementation
 	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
 	// End
-
-private:
-	
-	static void* GetRootComponent(AActor* Actor);
 	
 };

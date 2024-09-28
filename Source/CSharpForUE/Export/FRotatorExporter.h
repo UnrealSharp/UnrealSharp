@@ -17,7 +17,6 @@ public:
 
 private:
 	
-	static void FromQuat(FRotator& Rotator, const FQuat& Quaternion);
 	static void FromMatrix(FRotator& Rotator, const FMatrix& Matrix);
 	
 };

@@ -24,6 +24,6 @@ private:
 	static void InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params);
 	static void InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params);
 	static bool NativeIsValid(UObject* Object);
-	static void* GetWorld(UObject* Object);
+	static void* GetWorld_Internal(UObject* Object);
 	
 };

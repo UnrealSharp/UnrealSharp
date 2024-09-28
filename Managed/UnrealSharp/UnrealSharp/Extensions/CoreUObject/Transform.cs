@@ -7,26 +7,39 @@ public partial struct FTransform
     public FTransform(FQuat rotation, FVector location, FVector scale) : this()
     {
         Rotation = rotation;
-        Translation = location;
-        Scale3D = scale;
+        Location = location;
+        Scale = scale;
     }
+    
+    public FTransform(FRotator rotation, FVector location, FVector scale) : this()
+    {
+        Rotation = rotation.ToQuaternion();
+        Location = location;
+        Scale = scale;
+    }
+    
+    public FQuat Rotation;
+    public FVector Location;
+    private double u0;
+    public FVector Scale;
+    private double u1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public FVector TransformPosition(FVector v)
     {
-        return Rotation.RotateVector(Scale3D * v) + Translation;
+        return Rotation.RotateVector(Scale * v) + Location;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public FVector TransformPositionNoScale(FVector v)
     {
-        return Rotation.RotateVector(v) + Translation;
+        return Rotation.RotateVector(v) + Location;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public FVector TransformVector(FVector v)
     {
-        return Rotation.RotateVector(Scale3D * v);
+        return Rotation.RotateVector(Scale * v);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -40,7 +53,7 @@ public partial struct FTransform
     
     public bool Equals(FTransform other)
     {
-        return Rotation.Equals(other.Rotation) && Translation.Equals(other.Translation) && Scale3D.Equals(other.Scale3D);
+        return Rotation.Equals(other.Rotation) && Location.Equals(other.Location) && Scale.Equals(other.Scale);
     }
 
     public override bool Equals(object obj)
@@ -50,14 +63,14 @@ public partial struct FTransform
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Rotation, Translation, Scale3D);
+        return HashCode.Combine(Rotation, Location, Scale);
     }
 
     public override string ToString()
     {
-        return $"Location: {Translation}, Rotation: {Rotation}, Scale: {Scale3D}";
+        return $"Location: {Location}, Rotation: {Rotation}, Scale: {Scale}";
     }
 
-    public static bool operator ==(FTransform left, FTransform right) => left.Rotation == right.Rotation && left.Translation == right.Translation && left.Scale3D == right.Scale3D;
+    public static bool operator ==(FTransform left, FTransform right) => left.Rotation == right.Rotation && left.Location == right.Location && left.Scale == right.Scale;
     public static bool operator !=(FTransform left, FTransform right) => !(left == right);
 }

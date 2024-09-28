@@ -27,13 +27,20 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataSoftClassType))]
 [JsonDerivedType(typeof(NativeDataDelegateType))]
 [JsonDerivedType(typeof(NativeDataMapType))]
-public abstract class NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
+public abstract class NativeDataType
 {
-    internal TypeReference CSharpType { get; set; } = WeaverHelper.ImportType(typeRef);
-    public int ArrayDim { get; set; } = arrayDim;
+    public NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
+    {
+        CSharpType = WeaverHelper.ImportType(typeRef.GetElementType());
+        ArrayDim = arrayDim;
+        PropertyType = propertyType;
+    }
+    
+    internal TypeReference CSharpType { get; set; }
+    public int ArrayDim { get; set; }
     public bool NeedsNativePropertyField { get; set; } 
     public bool NeedsElementSizeField { get; set; }
-    public PropertyType PropertyType { get; set; } = propertyType;
+    public PropertyType PropertyType { get; set; }
     public virtual bool IsBlittable { get { return false; } }
     public virtual bool IsPlainOldData { get { return false; } }
     public bool IsNetworkSupported = true;

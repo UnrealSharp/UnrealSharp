@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 
@@ -57,23 +59,76 @@ public static class DotNetUtilities
     	{
     		throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
     	}
-    	
-    	string dotnetPath = FindDotNetExecutable();
-    	
-    	Process process = new Process();
-    	process.StartInfo.FileName = dotnetPath;
-    	
-    	process.StartInfo.ArgumentList.Add("publish");
-    	process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 	    
-    	process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{Program.ManagedBinariesPath}\"");
+    	Collection<string> arguments = new Collection<string>
+	    {
+		    "publish",
+		    $"\"{projectRootDirectory}\"",
+		    $"-p:PublishDir=\"{Program.ManagedBinariesPath}\""
+	    };
 	    
-    	process.Start();
-    	process.WaitForExit();
+	    InvokeDotNet(arguments);
+    }
+
+    public static void InvokeDotNet(Collection<string> arguments)
+    {
+	    string dotnetPath = FindDotNetExecutable();
     	
-    	if (process.ExitCode != 0)
-    	{
-    		throw new Exception($"Failed to publish solution: {projectRootDirectory}");
-    	}
+	    Process process = new Process();
+	    process.StartInfo.FileName = dotnetPath;
+	    
+	    foreach (var argument in arguments)
+	    {
+		    process.StartInfo.ArgumentList.Add(argument);
+	    }
+	    
+	    process.Start();
+	    process.WaitForExit();
+    	
+	    if (process.ExitCode != 0)
+	    {
+		    throw new Exception($"Failed to invoke dotnet with arguments: {string.Join(" ", arguments)}");
+	    }
+    }
+
+    public static void InvokeUSharpBuildTool(string action, Dictionary<string, string>? additionalArguments = null)
+    {
+	    string dotNetExe = FindDotNetExecutable();
+	    string projectName = Path.GetFileNameWithoutExtension(Program.Factory.Session.ProjectFile)!;
+
+	    Collection<string> arguments = new Collection<string>
+	    {
+		    $"{Program.PluginDirectory}/Binaries/Managed/UnrealSharpBuildTool.dll",
+		    
+		    "--Action",
+		    action,
+		    
+		    "--EngineDirectory",
+		    $"{Program.Factory.Session.EngineDirectory}",
+		    
+		    "--ProjectDirectory",
+		    $"{Program.Factory.Session.ProjectDirectory}",
+		    
+		    "--ProjectName",
+		    projectName,
+		    
+		    "--PluginDirectory",
+		    $"{Program.PluginDirectory}",
+		    
+		    "--DotNetPath",
+		    $"{dotNetExe}"
+	    };
+	    
+	    if (additionalArguments != null)
+	    {
+		    arguments.Add("--AdditionalArgs");
+		    
+		    foreach (var argument in additionalArguments)
+		    {
+			    arguments.Add($"{argument.Key}={argument.Value}");
+		    }
+	    }
+	    
+	    InvokeDotNet(arguments);
     }
 }

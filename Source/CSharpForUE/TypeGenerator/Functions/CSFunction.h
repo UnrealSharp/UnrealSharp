@@ -6,17 +6,18 @@
 #include "CSFunction.generated.h"
 
 UCLASS()
-class CSHARPFORUE_API UCSFunction : public UFunction
+class CSHARPFORUE_API UCSFunctionBase : public UFunction
 {
 	GENERATED_BODY()
 
 public:
 	
 	void SetManagedMethod(void* InManagedMethod);
-	void* GetManagedMethod() const;
 
-private:
-
+protected:
+	
+	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
+	
 	void* ManagedMethod;
 	
 };

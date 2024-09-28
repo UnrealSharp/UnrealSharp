@@ -5,94 +5,81 @@ namespace UnrealSharpBuildTool.Actions;
 
 public class GenerateProject : BuildToolAction
 {
+    private string _projectPath = string.Empty;
+    private string _projectFolder = string.Empty;
+    
     public override bool RunAction()
     {
-        string projectName = Program.GetProjectNameAsManaged();
-        string folder = Program.GetScriptFolder();
-        string csProjName = $"{projectName}.csproj";
+        string folder = Program.TryGetArgument("NewProjectFolder");
+        
+        if (string.IsNullOrEmpty(folder))
+        { 
+            folder = Program.GetScriptFolder();
+        }
+        else if (!folder.Contains(Program.GetScriptFolder()))
+        {
+            throw new InvalidOperationException("The project folder must be inside the Script folder.");
+        }
+        
+        string projectName = Program.TryGetArgument("NewProjectName");
+        string csProjFileName = $"{projectName}.csproj";
 
         if (!Directory.Exists(folder))
         {
             Directory.CreateDirectory(folder);
         }
-        
-        string csProjPath = Path.Combine(folder, csProjName);
-        if (!File.Exists(csProjPath))
-        {
-            string version = Program.GetVersion();
-            BuildToolProcess generateProjectProcess = new BuildToolProcess();
-        
-            // Create a class library.
-            generateProjectProcess.StartInfo.ArgumentList.Add("new");
-            generateProjectProcess.StartInfo.ArgumentList.Add("classlib");
-        
-            // Assign project name to the class library.
-            generateProjectProcess.StartInfo.ArgumentList.Add("-n");
-            generateProjectProcess.StartInfo.ArgumentList.Add(projectName);
-        
-            // Set the output directory to the current directory.
-            generateProjectProcess.StartInfo.ArgumentList.Add("-o");
-            generateProjectProcess.StartInfo.ArgumentList.Add(".");
-        
-            // Set the target framework to the current version.
-            generateProjectProcess.StartInfo.ArgumentList.Add("-f");
-            generateProjectProcess.StartInfo.ArgumentList.Add(version);
-        
-            generateProjectProcess.StartInfo.WorkingDirectory = folder;
 
-            if (!generateProjectProcess.StartBuildToolProcess())
-            {
-                return false;
-            }
+        _projectFolder = Path.Combine(folder, projectName);
+        _projectPath = Path.Combine(_projectFolder, csProjFileName);
+        
+        string version = Program.GetVersion();
+        BuildToolProcess generateProjectProcess = new BuildToolProcess();
+        
+        // Create a class library.
+        generateProjectProcess.StartInfo.ArgumentList.Add("new");
+        generateProjectProcess.StartInfo.ArgumentList.Add("classlib");
+        
+        // Assign project name to the class library.
+        generateProjectProcess.StartInfo.ArgumentList.Add("-n");
+        generateProjectProcess.StartInfo.ArgumentList.Add(projectName);
+        
+        // Set the target framework to the current version.
+        generateProjectProcess.StartInfo.ArgumentList.Add("-f");
+        generateProjectProcess.StartInfo.ArgumentList.Add(version);
+        
+        generateProjectProcess.StartInfo.WorkingDirectory = folder;
+
+        if (!generateProjectProcess.StartBuildToolProcess())
+        {
+            return false;
+        }
             
-            // dotnet new class lib generates a file named Class1, remove it.
-            string myClassFile = Path.Combine(folder, "Class1.cs");
-            if (File.Exists(myClassFile))
-            {
-                File.Delete(myClassFile);
-            }
-            AddLaunchSettings();
-        }
-        
-        ModifyCSProjFile(folder, csProjName);
-        
-        if (!File.Exists(Path.Combine(folder, $"{projectName}.sln")))
+        // dotnet new class lib generates a file named Class1, remove it.
+        string myClassFile = Path.Combine(_projectFolder, "Class1.cs");
+        if (File.Exists(myClassFile))
         {
-            BuildToolProcess generateSln = new BuildToolProcess();
-        
-            // Create a solution.
-            generateSln.StartInfo.ArgumentList.Add("new");
-            generateSln.StartInfo.ArgumentList.Add("sln");
-        
-            // Assign project name to the solution.
-            generateSln.StartInfo.ArgumentList.Add("-n");
-            generateSln.StartInfo.ArgumentList.Add(projectName);
-            generateSln.StartInfo.WorkingDirectory = folder;
-        
-            // Force the creation of the solution.
-            generateSln.StartInfo.ArgumentList.Add("--force");
-        
-            if (!generateSln.StartBuildToolProcess())
-            {
-                return false;
-            }
-        
-            BuildToolProcess addProjectToSln = new BuildToolProcess();
-        
-            // Add the project to the solution.
-            addProjectToSln.StartInfo.ArgumentList.Add("sln");
-            addProjectToSln.StartInfo.ArgumentList.Add("add");
-            addProjectToSln.StartInfo.ArgumentList.Add(csProjName);
-        
-            addProjectToSln.StartInfo.WorkingDirectory = folder;
-
-            if (!addProjectToSln.StartBuildToolProcess())
-            {
-                return false;
-            }
+            File.Delete(myClassFile);
         }
         
-        BuildSolution buildSolution = new BuildSolution();
+        string slnPath = Program.GetSolutionFile();
+        if (!File.Exists(slnPath))
+        {
+            GenerateSolution generateSolution = new GenerateSolution();
+            generateSolution.RunAction();
+        }
+        
+        if (Program.HasArgument("SkipUSharpProjSetup"))
+        {
+            return true;
+        }
+        
+        AddLaunchSettings();
+        ModifyCSProjFile();
+        
+        string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
+        AddProjectToSln(relativePath);
+        
+        BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder());
         if (!buildSolution.RunAction())
         {
             return false;
@@ -107,14 +94,32 @@ public class GenerateProject : BuildToolAction
         return true;
     }
 
-    private void ModifyCSProjFile(string folder, string csProjName)
+    public static void AddProjectToSln(string relativePath)
     {
-        string csProjPath = Path.Combine(folder, csProjName);
+        AddProjectToSln([relativePath]);
+    }
+    
+    public static void AddProjectToSln(List<string> relativePaths)
+    {
+        BuildToolProcess addProjectToSln = new BuildToolProcess();
+        addProjectToSln.StartInfo.ArgumentList.Add("sln");
+        addProjectToSln.StartInfo.ArgumentList.Add("add");
+        
+        foreach (string relativePath in relativePaths)
+        {
+            addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
+        }
+        
+        addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+        addProjectToSln.StartBuildToolProcess();
+    }
 
+    private void ModifyCSProjFile()
+    {
         try
         {
             XmlDocument csprojDocument = new XmlDocument();
-            csprojDocument.Load(csProjPath);
+            csprojDocument.Load(_projectPath);
 
             if (csprojDocument.SelectSingleNode("//ItemGroup") is not XmlElement newItemGroup)
             {
@@ -123,11 +128,15 @@ public class GenerateProject : BuildToolAction
             }
             
             AppendProperties(csprojDocument);
-            AppendUnrealSharpReference(csprojDocument, newItemGroup);
+            AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
             AppendSourceGeneratorReference(csprojDocument, newItemGroup);
-            AppendGeneratedCode(csprojDocument, newItemGroup);
+
+            if (!Program.HasArgument("SkipIncludeProjectGlue"))
+            {
+                AppendGeneratedCode(csprojDocument, newItemGroup);
+            }
             
-            csprojDocument.Save(csProjPath);
+            csprojDocument.Save(_projectPath);
         }
         catch (Exception ex)
         {
@@ -162,53 +171,27 @@ public class GenerateProject : BuildToolAction
         AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
     }
 
-    string GetPathToBinaries()
+    private string GetPathToBinaries()
     {
-        string unrealSharpPath = GetUnrealSharpPathRelativeToPlugins();
+        string directoryPath = Path.GetDirectoryName(_projectPath)!;
+        string unrealSharpPath = GetRelativePathToUnrealSharp(directoryPath);
         return Path.Combine(unrealSharpPath, "Binaries", "Managed");
     }
     
-    private bool ElementExists(XmlDocument doc, string elementName, string attributeName, string attributeValue)
+    private void AppendReference(XmlDocument doc, XmlElement itemGroup, string referenceName, string binPath)
     {
-        XmlNodeList nodes = doc.GetElementsByTagName(elementName);
-        foreach (XmlNode node in nodes)
-        {
-            if (node.Attributes?[attributeName]?.Value == attributeValue)
-            {
-                return true;
-            }
-            else if (!string.IsNullOrEmpty(attributeValue) && node.Attributes?[attributeName]?.Value.Contains(attributeValue) == true)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+        XmlElement referenceElement = doc.CreateElement("Reference");
+        referenceElement.SetAttribute("Include", referenceName);
 
-    private void AppendUnrealSharpReference(XmlDocument doc, XmlElement itemGroup)
-    {
-        if (ElementExists(doc, "Reference", "Include", "UnrealSharp"))
-        {
-            return;
-        }
-        
-        XmlElement unrealSharpReference = doc.CreateElement("Reference");
-        unrealSharpReference.SetAttribute("Include", "UnrealSharp");
-
-        XmlElement newHintPath = doc.CreateElement("HintPath");
-        newHintPath.InnerText = Path.Combine(GetPathToBinaries(), Program.GetVersion(), "UnrealSharp.dll");
-        unrealSharpReference.AppendChild(newHintPath);
-        itemGroup.AppendChild(unrealSharpReference);
+        XmlElement hintPath = doc.CreateElement("HintPath");
+        hintPath.InnerText = Path.Combine(binPath, Program.GetVersion(), referenceName + ".dll");
+        referenceElement.AppendChild(hintPath);
+        itemGroup.AppendChild(referenceElement);
     }
     
     private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
     {
         string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "UnrealSharp.SourceGenerators.dll");
-        if (ElementExists(doc, "Analyzer", "Include", sourceGeneratorPath))
-        {
-            return;
-        }
-        
         XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
         sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
         itemGroup.AppendChild(sourceGeneratorReference);
@@ -216,35 +199,34 @@ public class GenerateProject : BuildToolAction
     
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
-        string attributeValue = "obj/generated/**/*.cs";
-        if (ElementExists(doc, "Compile", "Include", attributeValue))
-        {
-            return;
-        }
+        string generatedGluePath = Path.Combine(Program.GetScriptFolder(), "ProjectGlue", "ProjectGlue.csproj");
+        string relativePath = GetRelativePath(_projectFolder, generatedGluePath);
         
-        XmlElement generatedCode = doc.CreateElement("Compile");
-        generatedCode.SetAttribute("Include", attributeValue);
+        XmlElement generatedCode = doc.CreateElement("ProjectReference");
+        generatedCode.SetAttribute("Include", relativePath);
         itemGroup.AppendChild(generatedCode);
     }
     
-    private string GetUnrealSharpPathRelativeToPlugins()
+    private string GetRelativePathToUnrealSharp(string basePath)
     {
-        string basePath = Program.buildToolOptions.ProjectDirectory;
-        string targetPath = Path.Combine(basePath, Program.buildToolOptions.PluginDirectory);
-        
-        Uri baseUri = new Uri(basePath + (OperatingSystem.IsWindows() ? @"\" : "/"));
+        string targetPath = Path.Combine(basePath, Program.BuildToolOptions.PluginDirectory);
+        return GetRelativePath(basePath, targetPath);
+    }
+    
+    public static string GetRelativePath(string basePath, string targetPath)
+    {
+        Uri baseUri = new Uri(basePath.EndsWith(Path.DirectorySeparatorChar.ToString()) 
+            ? basePath 
+            : basePath + Path.DirectorySeparatorChar);
         Uri targetUri = new Uri(targetPath);
-        
         Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
-        
-        string relativePath = OperatingSystem.IsWindows() ? Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\') : Uri.UnescapeDataString(relativeUri.ToString());
-
-        return relativePath;
+        return OperatingSystem.IsWindows() ? Uri.UnescapeDataString(relativeUri.ToString()).Replace('/', '\\') : Uri.UnescapeDataString(relativeUri.ToString());
     }
     
     void AddLaunchSettings()
     {
-        string propertiesDirectoryPath = Path.Combine(Program.GetScriptFolder(), "Properties");
+        string csProjectPath = Path.Combine(Program.GetScriptFolder(), _projectFolder);
+        string propertiesDirectoryPath = Path.Combine(csProjectPath, "Properties");
         string launchSettingsPath = Path.Combine(propertiesDirectoryPath, "launchSettings.json");
 
         if (!Directory.Exists(propertiesDirectoryPath))
@@ -267,11 +249,11 @@ public class GenerateProject : BuildToolAction
         string executablePath = string.Empty;
         if (OperatingSystem.IsWindows())
         {
-            executablePath = Path.Combine(Program.buildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            executablePath = Path.Combine(Program.buildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
         }
         string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
         

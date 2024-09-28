@@ -1,5 +1,6 @@
 #include "CSTypeRegistry.h"
 #include "CSharpForUE/CSharpForUE.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
@@ -80,14 +81,13 @@ TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 	if (!FoundClassInfo.IsValid())
 	{
 		FoundClassInfo = MakeShared<FCSharpClassInfo>();
-		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
-
-		FString AssemblyName = FCSProcHelper::GetUserManagedProjectName();
-		FString Namespace = UUnrealSharpStatics::GetNamespace(Class);
-		FString Name = Class->GetName();
 		
-		FoundClassInfo->TypeHandle = FCSManager::Get().GetTypeHandle(AssemblyName, Namespace, Name);
+		FoundClassInfo->TypeHandle = FCSManager::Get().GetTypeHandle(nullptr,
+			UUnrealSharpStatics::GetNamespace(Class),
+			Class->GetName());
 		FoundClassInfo->Field = Class;
+
+		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
 	}
 	
 	return FoundClassInfo.ToSharedRef();

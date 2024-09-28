@@ -19,6 +19,20 @@ public partial struct FRotator
     /// </summary>
     public double Roll;
     
+    public static readonly FRotator ZeroRotator = new(0, 0, 0);
+
+    public FRotator(double pitch, double yaw, double roll)
+    {
+        Pitch = pitch;
+        Yaw = yaw;
+        Roll = roll;
+    }
+    
+    public FRotator(FQuat quat)
+    {
+        FQuatExporter.CallToRotator(out this, ref quat);
+    }
+    
     public bool Equals(FRotator other)
     {
         return Pitch.Equals(other.Pitch) && Yaw.Equals(other.Yaw) && Roll.Equals(other.Roll);
@@ -32,20 +46,6 @@ public partial struct FRotator
     public override int GetHashCode()
     {
         return HashCode.Combine(Pitch, Yaw, Roll);
-    }
-
-    public static readonly FRotator ZeroRotator = new(0, 0, 0);
-
-    public FRotator(double pitch, double yaw, double roll)
-    {
-        Pitch = pitch;
-        Yaw = yaw;
-        Roll = roll;
-    }
-
-    public FRotator(FQuat quat)
-    {
-        FRotatorExporter.CallFromQuat(out this, ref quat);
     }
     
     public FRotator(FMatrix rotationMatrix)

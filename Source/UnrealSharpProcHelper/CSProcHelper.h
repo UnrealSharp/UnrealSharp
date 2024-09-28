@@ -1,14 +1,13 @@
 ﻿#pragma once
 
-UENUM()
-enum EBuildAction
-{
-	Build,
-	Clean,
-	GenerateProject,
-	Rebuild,
-	Weave,
-};
+const FString BUILD_ACTION_BUILD = TEXT("Build");
+const FString BUILD_ACTION_CLEAN = TEXT("Clean");
+const FString BUILD_ACTION_GENERATE_PROJECT = TEXT("GenerateProject");
+const FString BUILD_ACTION_GENERATE_SOLUTION = TEXT("GenerateSolution");
+const FString BUILD_ACTION_REBUILD = TEXT("Rebuild");
+const FString BUILD_ACTION_WEAVE = TEXT("Weave");
+const FString BUILD_ACTION_BUILD_WEAVE = TEXT("BuildWeave");
+const FString BUILD_ACTION_PACKAGE_PROJECT = TEXT("PackageProject");
 
 UENUM()
 enum class EDotNetBuildConfiguration : uint64
@@ -27,11 +26,8 @@ class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
 public:
 	
-	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, FString* InWorkingDirectory = nullptr);
-	static bool InvokeUnrealSharpBuildTool(EBuildAction BuildAction, EDotNetBuildConfiguration* BuildConfiguration = nullptr, const FString* OutputDirectory = nullptr);
-	
-	static bool Clean();
-	static bool GenerateProject();
+	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
+	static bool InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
 	
 	static FString GetRuntimeConfigPath();
 	
@@ -42,8 +38,14 @@ public:
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
 	static FString GetUserAssemblyDirectory();
 
-	// Path to the user's assembly.
-	static FString GetUserAssemblyPath();
+	//Path to all use assemblies in the Binaries/managed directory
+	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
+
+	// Path to all project directories in /Script
+	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);
+
+	// Path to all assembly directories in /Binaries/Managed
+	static void GetAllAssemblyPaths(TArray<FString>& AssemblyPaths);
 
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
@@ -61,7 +63,7 @@ public:
 	static FString GetGeneratedClassesDirectory();
 
 	// Path to the current project's script directory
-	static FString GetScriptFolderDirectory();
+	static FString& GetScriptFolderDirectory();
 
 	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();
@@ -71,5 +73,8 @@ public:
 
 	// Path to the runtime host. This is different in editor/builds.
 	static FString GetRuntimeHostPath();
+
+	// Path to the C# solution file.
+	static FString GetPathToSolution();
 	
 };
