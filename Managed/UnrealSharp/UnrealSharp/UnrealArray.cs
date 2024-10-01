@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -136,7 +137,8 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     }
 }
 
-public class ArrayCopyMarshaller<T>
+[InternalsVisible(true)]
+internal class ArrayCopyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
     private readonly MarshallingDelegates<T>.ToNative _innerTypeToNative;

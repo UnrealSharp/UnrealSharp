@@ -53,7 +53,8 @@ internal class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDel
     }
 }
 
-public class MulticastDelegateMarshaller<T> where T : Delegate
+[InternalsVisible(true)]
+internal class MulticastDelegateMarshaller<T> where T : Delegate
 {
     public static TMulticastDelegate<T> FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
     {
@@ -66,7 +67,8 @@ public class MulticastDelegateMarshaller<T> where T : Delegate
     }
 }
 
-public class SingleDelegateMarshaller<T> where T : Delegate
+[InternalsVisible(true)]
+internal class SingleDelegateMarshaller<T> where T : Delegate
 {
     public static TDelegate<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {

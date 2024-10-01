@@ -83,7 +83,8 @@ public struct FText
     }
 }
 
-public static class TextMarshaller
+[InternalsVisible(true)]
+internal static class TextMarshaller
 { 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, FText obj)
     {
