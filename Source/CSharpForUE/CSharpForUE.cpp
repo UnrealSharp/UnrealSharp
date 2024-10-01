@@ -18,9 +18,6 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 
 void FCSharpForUEModule::StartupModule()
 {
-	// Cooking starts up a new instance of unreal causing this to run, we don't want this
-	if (IsRunningCookCommandlet()) return;
-
 	FCSManager::Get().InitializeUnrealSharp();
 }
 
