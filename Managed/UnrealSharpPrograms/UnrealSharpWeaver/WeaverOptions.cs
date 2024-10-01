@@ -9,6 +9,12 @@ public class WeaverOptions
     [Option('p', "path", Required = true, HelpText = "Search paths for assemblies.")]
     public required IEnumerable<string> AssemblyPaths { get; set; }
 
+    [Option('b', "bindings", Required = false, HelpText = "Bindings directory")]
+    public string BindingsDirectory { get; set; }
+
+    [Option('s', "setup", Required = false, HelpText = "Setup user directory for first time")]
+    public bool Setup { get; set; }
+
     [Option('o', "output", Required = true, HelpText = "DLL output directory.")]
     public required string OutputDirectory { get; set; }
 

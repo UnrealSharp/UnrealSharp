@@ -7,6 +7,7 @@ const FString BUILD_ACTION_GENERATE_SOLUTION = TEXT("GenerateSolution");
 const FString BUILD_ACTION_REBUILD = TEXT("Rebuild");
 const FString BUILD_ACTION_WEAVE = TEXT("Weave");
 const FString BUILD_ACTION_BUILD_WEAVE = TEXT("BuildWeave");
+const FString BUILD_ACTION_SETUP_WEAVE = TEXT("SetupWeave");
 const FString BUILD_ACTION_PACKAGE_PROJECT = TEXT("PackageProject");
 
 UENUM()

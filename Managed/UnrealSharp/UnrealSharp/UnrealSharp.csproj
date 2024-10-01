@@ -23,5 +23,9 @@
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
         </ProjectReference>
     </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProjectGlue" />
+  </ItemGroup>
     
 </Project>

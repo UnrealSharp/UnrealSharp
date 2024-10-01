@@ -31,7 +31,7 @@ public class PackageProject : BuildToolAction
         BuildUserSolution buildUserSolution = new BuildUserSolution(null, BuildConfig.Publish);
         buildUserSolution.RunAction();
         
-        WeaveProject weaveProject = new WeaveProject(binariesPath);
+        WeaveProject weaveProject = new WeaveProject(binariesPath, true, BuildConfig.Publish);
         weaveProject.RunAction();
         
         return true;
