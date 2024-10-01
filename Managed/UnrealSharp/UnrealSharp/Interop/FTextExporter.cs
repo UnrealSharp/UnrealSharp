@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FTextExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FTextExporter
 {
     public static delegate* unmanaged<ref FTextData, char*> ToString;
     public static delegate* unmanaged<ref FTextData, string, void> FromString;

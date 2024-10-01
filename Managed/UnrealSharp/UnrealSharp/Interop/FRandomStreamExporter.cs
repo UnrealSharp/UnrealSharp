@@ -1,9 +1,10 @@
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FRandomStreamExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FRandomStreamExporter
 {
     public static delegate* unmanaged<ref FRandomStream, void> GenerateNewSeed;
     public static delegate* unmanaged<ref FRandomStream, float> GetFraction;

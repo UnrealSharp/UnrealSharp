@@ -1,10 +1,11 @@
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
 
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class UWorldExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class UWorldExporter
 {
     public static delegate* unmanaged<IntPtr, FTransform*, IntPtr, ref FActorSpawnParameters, IntPtr> SpawnActor;
     public static delegate* unmanaged<IntPtr, FName, float, NativeBool, float, FTimerHandle*, void> SetTimer;

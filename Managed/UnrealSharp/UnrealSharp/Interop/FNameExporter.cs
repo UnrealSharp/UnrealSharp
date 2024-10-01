@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FNameExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FNameExporter
 {
     public static delegate* unmanaged<FName, ref UnmanagedArray, void> NameToString;
     public static delegate* unmanaged<ref FName, IntPtr, void> StringToName;

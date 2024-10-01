@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class UClassExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class UClassExporter
 {
     public static delegate* unmanaged<IntPtr, string, IntPtr> GetNativeFunctionFromClassAndName;
     public static delegate* unmanaged<IntPtr, string, IntPtr> GetNativeFunctionFromInstanceAndName;
