@@ -154,7 +154,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+[InternalsVisible(true)]
+internal class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
     private readonly TArray<T>[] _wrappers = new TArray<T> [length];
 

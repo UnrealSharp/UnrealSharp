@@ -1,7 +1,9 @@
-﻿namespace UnrealSharp.Interop;
+﻿using UnrealSharp.Attributes;
 
-[NativeCallbacks]
-public static unsafe partial class FScriptMapHelperExporter
+namespace UnrealSharp.Interop;
+
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FScriptMapHelperExporter
 {
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, void> AddPair;
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> FindOrAdd;

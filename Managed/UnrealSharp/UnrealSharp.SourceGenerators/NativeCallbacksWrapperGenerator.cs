@@ -61,7 +61,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             sourceBuilder.AppendLine();
             sourceBuilder.AppendLine($"namespace {classInfo.Namespace}");
             sourceBuilder.AppendLine("{");
-            sourceBuilder.AppendLine($"    public static unsafe partial class {classInfo.Name}");
+            sourceBuilder.AppendLine($"    internal static unsafe partial class {classInfo.Name}");
             sourceBuilder.AppendLine("    {");
 
             foreach (var delegateInfo in classInfo.Delegates)

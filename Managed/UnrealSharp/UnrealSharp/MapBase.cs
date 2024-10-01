@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 
@@ -398,7 +399,8 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 }
 
 // Used for members only
-public class MapMarshaller<TKey, TValue>
+[InternalsVisible(true)]
+internal class MapMarshaller<TKey, TValue>
 {
     IntPtr nativeProperty;
     TMap<TKey, TValue>[] wrappers;
@@ -431,7 +433,8 @@ public class MapMarshaller<TKey, TValue>
 }
 
 // Used for members only where they are exposed as readonly
-public class MapReadOnlyMarshaller<TKey, TValue>
+[InternalsVisible(true)]
+internal class MapReadOnlyMarshaller<TKey, TValue>
 {
     IntPtr nativeProperty;
     TMapReadOnly<TKey, TValue>[] wrappers;
@@ -476,7 +479,8 @@ public class MapReadOnlyMarshaller<TKey, TValue>
 }
 
 // Used for function parameters / return results to copy to/from native memory
-public class MapCopyMarshaller<TKey, TValue>
+[InternalsVisible(true)]
+internal class MapCopyMarshaller<TKey, TValue>
 {
     private ScriptMapHelper _helper;
     private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;

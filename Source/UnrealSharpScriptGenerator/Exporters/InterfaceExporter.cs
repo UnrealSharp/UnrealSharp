@@ -49,7 +49,8 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
 
         stringBuilder.AppendLine();
-        stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
+        stringBuilder.AppendLine("[InternalsVisible(true)]");
+        stringBuilder.AppendLine($"internal static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();

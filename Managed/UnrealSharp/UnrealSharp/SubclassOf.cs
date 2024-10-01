@@ -138,7 +138,8 @@ public readonly struct TSubclassOf<T>
     }
 }
 
-public static class SubclassOfMarshaller<T>
+[InternalsVisible(true)]
+internal static class SubclassOfMarshaller<T>
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSubclassOf<T> obj)
     {

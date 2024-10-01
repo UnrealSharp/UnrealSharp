@@ -55,7 +55,8 @@ public struct TSoftObjectPtr<T> where T : UObject
     }
 };
 
-public static class SoftObjectMarshaller<T> where T : UObject
+[InternalsVisible(true)]
+internal static class SoftObjectMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {

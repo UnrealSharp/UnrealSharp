@@ -1,7 +1,9 @@
-﻿namespace UnrealSharp.Interop;
+using UnrealSharp.CoreUObject;
 
-[NativeCallbacks]
-public static unsafe partial class AActorExporter
+namespace UnrealSharp.Interop;
+
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class AActorExporter
 {
     
 }

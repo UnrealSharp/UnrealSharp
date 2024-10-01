@@ -104,7 +104,8 @@ public static class StructExporter
         string structName = structObj.GetStructName();
         
         builder.AppendLine();
-        builder.AppendLine($"public static class {structName}Marshaller");
+        builder.AppendLine("[InternalsVisible(true)]");
+        builder.AppendLine($"internal static class {structName}Marshaller");
         builder.OpenBrace();
         
         builder.AppendLine($"public static {structName} FromNative(IntPtr nativeBuffer, int arrayIndex)");

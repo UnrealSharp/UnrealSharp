@@ -1,7 +1,9 @@
-﻿namespace UnrealSharp.Interop;
+﻿using UnrealSharp.Attributes;
 
-[NativeCallbacks]
-public static unsafe partial class FScriptSetExporter
+namespace UnrealSharp.Interop;
+
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FScriptSetExporter
 {
     public static delegate* unmanaged<IntPtr, int, NativeBool> IsValidIndex;
     public static delegate* unmanaged<IntPtr, int> Num;

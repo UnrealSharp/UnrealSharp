@@ -3,10 +3,14 @@
 public class WeaveProject : BuildToolAction
 {
     readonly string _outputDirectory;
+    readonly bool _setup;
+    readonly BuildConfig _buildConfig;
     
-    public WeaveProject(string outputDirectory = "")
+    public WeaveProject(string outputDirectory = "", bool setup = false, BuildConfig buildConfig = BuildConfig.Debug)
     {
         _outputDirectory = string.IsNullOrEmpty(outputDirectory) ? Program.GetOutputPath() : outputDirectory;
+        _setup = setup;
+        _buildConfig = buildConfig;
     }
     
     public override bool RunAction()
@@ -58,7 +62,25 @@ public class WeaveProject : BuildToolAction
         // Add path to the output folder for the weaver.
         weaveProcess.StartInfo.ArgumentList.Add("-o");
         weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(_outputDirectory)}");
-        
+
+        // Add path to the bindings folder for the weaver.
+        weaveProcess.StartInfo.ArgumentList.Add("-b");
+
+        if (_buildConfig == BuildConfig.Publish)
+        {
+            weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(_outputDirectory)}");
+        }
+        else
+        {
+            weaveProcess.StartInfo.ArgumentList.Add($"{Program.GetManagedBinariesDirectory()}");
+        }
+
+        // if we should do weaver setup
+        if (_setup)
+        {
+            weaveProcess.StartInfo.ArgumentList.Add("-s");
+        }
+
         return weaveProcess.StartBuildToolProcess();
     }
 }

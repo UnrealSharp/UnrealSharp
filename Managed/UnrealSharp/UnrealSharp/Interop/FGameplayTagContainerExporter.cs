@@ -1,9 +1,10 @@
+using UnrealSharp.Attributes;
 using UnrealSharp.GameplayTags;
 
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FGameplayTagContainerExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FGameplayTagContainerExporter
 {
     public static delegate* unmanaged<ref GameplayTagContainer, ref FGameplayTag, bool> HasTag;
     public static delegate* unmanaged<ref GameplayTagContainer, ref FGameplayTag, bool> HasTagExact;

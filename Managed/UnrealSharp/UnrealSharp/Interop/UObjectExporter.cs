@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class UObjectExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class UObjectExporter
 {
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CreateNewObject;
     public static delegate* unmanaged<IntPtr> GetTransientPackage;

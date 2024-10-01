@@ -1,3 +1,5 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp;
 
 public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
@@ -12,7 +14,8 @@ public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
     public T this[int index] => Get(index);
 }
 
-public class ArrayReadOnlyMarshaller<T>
+[InternalsVisible(true)]
+internal class ArrayReadOnlyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
     private readonly TArrayReadOnly<T>[] _wrappers;

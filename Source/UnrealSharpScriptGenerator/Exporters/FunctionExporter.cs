@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -402,10 +402,9 @@ public class FunctionExporter
         string returnType = function.ReturnProperty != null
             ? PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!.GetManagedType(function.ReturnProperty)
             : "void";
-        
-        builder.AppendLine("// Hide implementation function from Intellisense");
-        builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
+
+        builder.AppendLine($"[InternalsVisible(false)]");
+        builder.AppendLine($"internal virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         builder.OpenBrace();
         
         foreach (UhtProperty parameter in function.Properties)

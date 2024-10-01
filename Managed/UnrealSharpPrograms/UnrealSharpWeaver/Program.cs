@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text.Json;
 using Mono.Cecil;
 using Mono.Cecil.Pdb;
+using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
 
@@ -18,10 +20,17 @@ public static class Program
         {
             return 1;
         }
-        
         if (!ProcessUserAssemblies())
         {
             return 2;
+        }
+
+        if (WeaverOptions.Setup)
+        {
+            if (!ProcessBindingsAssemblies())
+            {
+                return 3;
+            }
         }
 
         return 0;
@@ -46,7 +55,9 @@ public static class Program
         try
         {
             var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(WeaverHelper.UnrealSharpNamespace, new Version(0, 0, 0, 0)));
-            WeaverHelper.Initialize(unrealSharpLibraryAssembly);
+            var glueAssembly = resolver.Resolve(new AssemblyNameReference(WeaverHelper.ProjectGlueName, new Version(0, 0, 0, 0)));
+
+            WeaverHelper.Initialize(unrealSharpLibraryAssembly, glueAssembly);
             return true;
         }
         catch
@@ -54,6 +65,37 @@ public static class Program
             Console.Error.WriteLine("Could not resolve the UnrealSharp library assembly.");
         }
         
+        return false;
+    }
+
+    private static bool ProcessBindingsAssemblies()
+    {
+        DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
+
+        if (!outputDirInfo.Exists)
+        {
+            outputDirInfo.Create();
+        }
+
+        try
+        {
+            WriteAssemblyInternalVisibility(WeaverHelper.BindingsAssembly, outputDirInfo.FullName);
+            WriteAssemblyInternalVisibility(WeaverHelper.GlueAssembly, outputDirInfo.FullName);
+
+            CopyBindingDependencies(WeaverOptions.BindingsDirectory, outputDirInfo.FullName);
+
+            return true;
+        }
+        catch (WeaverProcessError error)
+        {
+            ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, "Caught fatal error: " + error.Message);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Exception processing bindings: {ex.Message}");
+            Console.Error.WriteLine(ex.StackTrace);
+        }
+
         return false;
     }
 
@@ -193,6 +235,51 @@ public static class Program
         WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
     }
     
+    private static void WriteAssemblyInternalVisibility(AssemblyDefinition assembly, string outputPath)
+    {
+        foreach (var module in assembly.Modules)
+        {
+            foreach (var type in module.Types)
+            {
+                if (WeaverHelper.TryGetInternalsVisibleTypeAccessType(type, out var isTypePublic))
+                {
+                    // Change the visibility of the type from internal to public
+                    type.IsPublic = true;
+                }
+
+                foreach (var method in type.GetMethods())
+                {
+                    if (WeaverHelper.TryGetInternalsVisibleMethodAccess(method, out var isMethodPublic))
+                    {
+                        // Change the visibility of the method from internal to public or protected
+                        if (isMethodPublic)
+                        {
+                            method.IsPublic = true;
+                        }
+                        else
+                        {
+                            method.IsFamily = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            assembly.Write(Path.Combine(outputPath, assembly.MainModule.Name), new WriterParameters
+            {
+                SymbolWriterProvider = new PdbWriterProvider(),
+            });
+        }
+        catch (Exception ex)
+        {
+            ErrorEmitter.Error("WeaverError", assembly.MainModule.FileName, 0, "Failed to write assembly: " + ex.Message);
+            throw;
+        }
+
+    }
+
     private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
     {
         string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
@@ -292,6 +379,8 @@ public static class Program
             if (!destinationFile.Exists || sourceFile.LastWriteTimeUtc > destinationFile.LastWriteTimeUtc)
             {
                 sourceFile.CopyTo(destinationFilePath, true);
+
+                destinationFile.LastWriteTimeUtc = sourceFile.LastWriteTimeUtc;
             }
         }
 
@@ -321,6 +410,28 @@ public static class Program
         catch (Exception ex)
         {
             ErrorEmitter.Error("WeaverError", sourcePath, 0, "Failed to copy dependencies: " + ex.Message);
+        }
+    }
+
+    private static void CopyBindingDependencies(string bindingPath, string destinationPath)
+    {
+        var destinationDirectory = new DirectoryInfo(destinationPath);
+        var bindingDirectory = new DirectoryInfo(bindingPath);
+
+        foreach (var fileNameWithoutExt in WeaverHelper.BindingsDependencies)
+        {
+            var bindingFiles = bindingDirectory.GetFiles($"{fileNameWithoutExt}.*");
+
+            foreach(var bindingFile in bindingFiles)
+            {
+                string destinationFilePath = Path.Combine(destinationDirectory.FullName, bindingFile.Name);
+                FileInfo destinationFile = new FileInfo(destinationFilePath);
+
+                if (!destinationFile.Exists || bindingFile.LastWriteTimeUtc > destinationFile.LastWriteTimeUtc)
+                {
+                    bindingFile.CopyTo(destinationFilePath, true);
+                }
+            }
         }
     }
 }

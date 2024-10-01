@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Mono.Collections.Generic;
@@ -9,6 +9,7 @@ namespace UnrealSharpWeaver;
 public static class WeaverHelper
 {
     public static readonly string UnrealSharpNamespace = "UnrealSharp";
+    public static readonly string ProjectGlueName = "ProjectGlue";
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
     public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
     public static readonly string CoreUObjectNamespace = UnrealSharpNamespace + ".CoreUObject";
@@ -40,9 +41,14 @@ public static class WeaverHelper
 
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     public static readonly string BlittableTypeAttribute = "BlittableTypeAttribute";
+
+    public static readonly string InternalsVisibleAttribute = "InternalsVisibleAttribute";
+
+    public static readonly List<string> BindingsDependencies = [ "UnrealSharp.Plugins", "UnrealSharp.SourceGenerators", "UnrealSharp.ExtensionSourceGenerators" ];
     
     public static AssemblyDefinition UserAssembly;
     public static AssemblyDefinition BindingsAssembly;
+    public static AssemblyDefinition GlueAssembly;
     public static MethodReference NativeObjectGetter;
     public static TypeDefinition IntPtrType;
     public static MethodReference IntPtrAdd;
@@ -77,9 +83,10 @@ public static class WeaverHelper
     
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
     
-    public static void Initialize(AssemblyDefinition bindingsAssembly)
+    public static void Initialize(AssemblyDefinition bindingsAssembly, AssemblyDefinition glueAssembly)
     {
         BindingsAssembly = bindingsAssembly;
+        GlueAssembly = glueAssembly;
     }
     
     public static void ForEachAssembly(Func<AssemblyDefinition, bool> action)
@@ -980,6 +987,40 @@ public static class WeaverHelper
     public static CustomAttribute? GetUSingleDelegateInterface(TypeDefinition type)
     {
         return FindAttribute(type.CustomAttributes, USingleDelegateAttribute);
+    }
+
+    public static bool TryGetInternalsVisibleMethodAccess(MethodDefinition methodDefinition, out bool isPublic)
+    {
+        var attribute = FindAttribute(methodDefinition.CustomAttributes, InternalsVisibleAttribute);
+
+        isPublic = false;
+
+        if (attribute == null) return false;
+        if (!attribute.HasConstructorArguments) return false;
+
+        var isPublicArg = attribute.ConstructorArguments.FirstOrDefault();
+        if (isPublicArg.Value is not bool) return false;
+
+        isPublic = (bool)isPublicArg.Value;
+
+        return true;
+    }
+
+    public static bool TryGetInternalsVisibleTypeAccessType(TypeDefinition typeDefinition, out bool isPublic)
+    {
+        var attribute = FindAttribute(typeDefinition.CustomAttributes, InternalsVisibleAttribute);
+
+        isPublic = false;
+
+        if (attribute == null) return false;
+        if (!attribute.HasConstructorArguments) return false;
+
+        var isPublicArg = attribute.ConstructorArguments.FirstOrDefault();
+        if (isPublicArg.Value is not bool) return false;
+
+        isPublic = (bool)isPublicArg.Value;
+
+        return true;
     }
 
     public static bool IsUProperty(IMemberDefinition property)

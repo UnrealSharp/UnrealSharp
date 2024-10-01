@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FArrayPropertyExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FArrayPropertyExporter
 {
     public static delegate* unmanaged<IntPtr, UnmanagedArray*, int, void> InitializeArray;
     public static delegate* unmanaged<IntPtr, UnmanagedArray*, void> EmptyArray;
