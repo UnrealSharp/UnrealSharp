@@ -1,6 +1,8 @@
-﻿using Mono.Cecil;
+﻿using System.Runtime.InteropServices.JavaScript;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -69,10 +71,20 @@ public class FunctionMetaData : BaseMetaData
                 hasOutParams = true;
                 modifier = ParameterType.Ref;
             }
-            
-            Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
-        }
 
+            Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
+
+            if (param.HasConstant)
+            {
+                string? defaultValue = DefaultValueToString(param);
+                if (defaultValue != null)
+                {
+                    TryAddMetaData($"CPP_Default_{param.Name}", defaultValue);
+                    FunctionFlags |= FunctionFlags.HasDefaults;
+                }
+            }
+        }
+        
         FunctionFlags flags = (FunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");
 
         if (hasOutParams)
@@ -141,6 +153,7 @@ public class FunctionMetaData : BaseMetaData
         else
         {
             FunctionProcessor.MakeImplementationMethod(this);
+            MethodDefinition.DeclaringType.Methods.Remove(MethodDefinition);
         }
     }
 
@@ -180,6 +193,27 @@ public class FunctionMetaData : BaseMetaData
         }
 
         return false;
+    }
+    
+    public static string? DefaultValueToString(ParameterDefinition value)
+    {
+        // Can be null if the value is set to = default/null
+        if (value.Constant == null)
+        {
+            return null;
+        }
+        
+        TypeDefinition typeDefinition = value.ParameterType.Resolve();
+        if (typeDefinition.IsEnum)
+        {
+            return typeDefinition.Fields[(byte) value.Constant].Name;
+        }
+        
+        // Unreal doesn't support commas in default values
+        string defaultValue = value.Constant.ToString()!;
+        defaultValue = defaultValue.Replace(",", ".");
+        
+        return defaultValue;
     }
 
     public static bool IsInterfaceFunction(MethodDefinition method)

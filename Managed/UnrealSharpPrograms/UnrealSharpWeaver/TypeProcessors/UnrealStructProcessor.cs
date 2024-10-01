@@ -80,7 +80,7 @@ public static class UnrealStructProcessor
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();
         Instruction loadBufferInstruction = constructorBody.Create(OpCodes.Ldarg_1);
         
-        foreach (var prop in metadata.Fields)
+        foreach (PropertyMetaData prop in metadata.Fields)
         {
             FieldDefinition fieldDefinition = (FieldDefinition) prop.MemberRef.Resolve();
             prop.PropertyDataType.WriteLoad(constructorBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
@@ -109,7 +109,7 @@ public static class UnrealStructProcessor
         // Create a field to cache the native struct class.
         // nint a = UCoreUObjectExporter.CallGetNativeStructFromName("MyStruct");
         VariableDefinition nativeStructClass = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
-        staticConstructorBody.Emit(OpCodes.Ldstr, structTypeDefinition.Name);
+        staticConstructorBody.Emit(OpCodes.Ldstr, metadata.Name);
         staticConstructorBody.Emit(OpCodes.Call, WeaverHelper.GetNativeStructFromNameMethod);
         staticConstructorBody.Emit(OpCodes.Stloc, nativeStructClass);
         

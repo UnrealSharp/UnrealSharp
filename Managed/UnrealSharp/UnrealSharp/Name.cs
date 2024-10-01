@@ -5,16 +5,16 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-[UStruct(IsBlittable=true), StructLayout(LayoutKind.Sequential)]
-public struct Name : IEquatable<Name>, IComparable<Name>
+[UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
+public struct FName : IEquatable<FName>, IComparable<FName>
 {
     private int ComparisonIndex;
     private int DisplayIndex;
     private int Number;
     
-    public static readonly Name None = new(0, 0);
+    public static readonly FName None = new(0, 0);
     
-    public Name(string name)
+    public FName(string name)
     {
         unsafe
         {
@@ -25,7 +25,7 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         }
     }
 
-    private Name(int comparisonIndex, int number)
+    private FName(int comparisonIndex, int number)
     {
         ComparisonIndex = comparisonIndex;
         Number = number;
@@ -67,39 +67,39 @@ public struct Name : IEquatable<Name>, IComparable<Name>
         return this == None;
     }
     
-    public static bool operator == (Name lhs, Name rhs)
+    public static bool operator == (FName lhs, FName rhs)
     {
         return lhs.ComparisonIndex == rhs.ComparisonIndex && lhs.Number == rhs.Number;
     }
     
-    public static bool operator != (Name lhs, Name rhs)
+    public static bool operator != (FName lhs, FName rhs)
     {
         return !(lhs == rhs);
     }
     
-    public static implicit operator Name(string name)
+    public static implicit operator FName(string name)
     {
-        return name.Length != 0 ? new Name(name) : None;
+        return name.Length != 0 ? new FName(name) : None;
     }
     
-    public static implicit operator string(Name name)
+    public static implicit operator string(FName name)
     {
         return name.IsValid() ? name.ToString() : None.ToString();
     }
     
-    public static implicit operator Text(Name name)
+    public static implicit operator FText(FName name)
     {
-        return name.IsValid() ? new Text(name) : Text.None;
+        return name.IsValid() ? new FText(name) : FText.None;
     }
     
-    public bool Equals(Name other)
+    public bool Equals(FName other)
     {
         return this == other;
     }
     
     public override bool Equals(object obj)
     {
-        if (obj is Name name)
+        if (obj is FName name)
         {
             return this == name;
         }
@@ -117,7 +117,7 @@ public struct Name : IEquatable<Name>, IComparable<Name>
     /// </summary>
     /// <param name="other">The name to compare against.</param>
     /// <returns>0 if the names are equal, a negative value if this name is less than the other name, and a positive value if this name is greater than the other name.</returns>
-    public int CompareTo(Name other)
+    public int CompareTo(FName other)
     {
         int diff = ComparisonIndex - other.ComparisonIndex;
         

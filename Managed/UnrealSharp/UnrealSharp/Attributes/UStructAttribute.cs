@@ -8,7 +8,4 @@ class StructFlagsMapAttribute(StructFlags flags = StructFlags.NoFlags) : Attribu
 
 [AttributeUsage(AttributeTargets.Struct)]
 [StructFlagsMap(StructFlags.Native)]
-public sealed class UStructAttribute : Attribute
-{
-    public bool IsBlittable = false;
-}
+public sealed class UStructAttribute : BaseUAttribute;

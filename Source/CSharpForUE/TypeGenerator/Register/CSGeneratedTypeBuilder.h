@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "CSMetaData.h"
+#include "CSMetaDataUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
@@ -21,32 +21,39 @@ public:
 	TField* CreateType()
 	{
 		UPackage* Package = FCSManager::GetUnrealSharpPackage();
-		TField* ReplacedType = FindObject<TField>(Package, *TypeMetaData->Name.ToString());
+		FString FieldName = GetFieldName();
+		TField* ExistingField = FindObject<TField>(Package, *FieldName);
 		
-		if (ReplacedType)
+		if (ExistingField)
 		{
 			if (!ReplaceTypeOnReload())
 			{
-				Field = ReplacedType;
+				Field = ExistingField;
 				return Field;
 			}
 			
-			const FString OldPath = ReplacedType->GetPathName();
-			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ReplacedType->GetName(), ReplacedType->GetUniqueID());
-			ReplacedType->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
+			const FString OldPath = ExistingField->GetPathName();
+			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
+			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
 
+#if WITH_EDITOR
 			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
-			AssetRegistry.AssetRenamed(ReplacedType, OldPath);
+			AssetRegistry.AssetRenamed(ExistingField, OldPath);
+#endif
 		}
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), TypeMetaData->Name, RF_Public | RF_MarkAsRootSet | RF_Transactional);
+		Field = NewObject<TField>(Package, TField::StaticClass(), *FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
 		
 		ApplyBlueprintAccess(Field);
-		FMetaDataHelper::ApplyMetaData(TypeMetaData->MetaData, Field);
+		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 
-		if (ReplacedType)
+#if WITH_EDITOR
+		Field->SetMetaData(TEXT("DisplayName"), *TypeMetaData->Name.ToString());
+#endif
+
+		if (ExistingField)
 		{
-			NewField(ReplacedType, Field);
+			NewField(ExistingField, Field);
 		}
 		
 		return Field;
@@ -55,6 +62,7 @@ public:
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
 	virtual void NewField(TField* OldField, TField* NewField) {};
+	virtual FString GetFieldName() const { return *TypeMetaData->Name.ToString(); }
 	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
 

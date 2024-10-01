@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-#include "CSMetaData.h"
+#include "CSMetaDataUtils.h"
+#include "CSTypeRegistry.h"
 #include "CSharpForUE/TypeGenerator/CSScriptStruct.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -13,7 +14,6 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	
 #if WITH_EDITOR
 	Field->EditorData = NewObject<UUserDefinedStructEditorData>(Field, NAME_None, RF_Transactional);
-	Field->SetMetaData(TEXT("BlueprintType"), TEXT("true"));
 #endif
 		
 	Field->Status = UDSS_UpToDate;

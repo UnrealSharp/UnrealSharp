@@ -1,3 +1,4 @@
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -6,13 +7,14 @@ namespace UnrealSharp;
 /// An array that can be used to interact with Unreal Engine arrays.
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
-public class Array<T> : UnrealArrayBase<T>, IList<T>
+[Binding]
+public class TArray<T> : UnrealArrayBase<T>, IList<T>
 {
     /// <inheritdoc />
     public bool IsReadOnly => false;
     
     [CLSCompliant(false)]
-    internal Array(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+    public TArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
     }
@@ -65,7 +67,10 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
     /// <param name="newSize"> The new size of the array. </param>
     public void Resize(int newSize)
     {
-        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, newSize);
+        unsafe
+        {
+            FArrayPropertyExporter.CallResizeArray(NativeProperty, NativeBuffer, newSize);
+        }
     }
     
     /// <summary>
@@ -75,7 +80,10 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
     /// <param name="indexB"> The index of the second element to swap. </param>
     public void Swap(int indexA, int indexB)
     {
-        FArrayPropertyExporter.CallSwapValues(NativeUnrealProperty, NativeBuffer, indexA, indexB);
+        unsafe
+        {
+            FArrayPropertyExporter.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
+        }
     }
 
     /// <summary>
@@ -146,22 +154,23 @@ public class Array<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-internal class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshalingDelegates<T>.ToNative toNative, MarshalingDelegates<T>.FromNative fromNative)
+[InternalsVisible(true)]
+internal class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
-    private readonly Array<T>[] _wrappers = new Array<T> [length];
+    private readonly TArray<T>[] _wrappers = new TArray<T> [length];
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, Array<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, TArray<T> obj)
     {
         throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
     }
 
-    public Array<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_wrappers[arrayIndex] == null)
         {
             unsafe
             {
-                _wrappers[arrayIndex] = new Array<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
+                _wrappers[arrayIndex] = new TArray<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
             }
         }
         return _wrappers[arrayIndex];

@@ -8,7 +8,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 class NativeDataMulticastDelegate : NativeDataBaseDelegateType
 {
     public NativeDataMulticastDelegate(TypeReference delegateType) 
-        : base(delegateType, "DelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
+        : base(delegateType, "MulticastDelegateMarshaller`1", PropertyType.MulticastInlineDelegate)
     {
         NeedsNativePropertyField = true;
     }
@@ -22,15 +22,15 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
         Instruction loadNativePointer, Instruction setNativePointer)
     {
-        if (Signature?.Parameters.Length == 0)
+        if (Signature.Parameters.Length == 0)
         {
             return;
         }
         
-        PropertyDefinition propertyRef = (PropertyDefinition) propertyMetadata.MemberRef.Resolve();
-        MethodReference? Initialize = WeaverHelper.FindMethod(propertyRef.PropertyType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        TypeReference wrapperType = WeaverHelper.FindTypeInAssembly(delegateType.Module.Assembly, $"U{delegateType.Name}", delegateType.Namespace)!;
+        MethodReference? initializeDelegateMethod = WeaverHelper.FindMethod(wrapperType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
-        processor.Emit(OpCodes.Call, Initialize);
+        processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }
 
     protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)

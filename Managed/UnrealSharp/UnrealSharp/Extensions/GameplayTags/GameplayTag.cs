@@ -2,9 +2,9 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp.GameplayTags;
 
-public partial struct GameplayTag
+public partial struct FGameplayTag
 {
-    private Name _tagName;
+    private FName _tagName;
     
     /// <summary>
     /// Determine if this tag matches TagToCheck, expanding our parent tags
@@ -12,7 +12,7 @@ public partial struct GameplayTag
     /// If TagToCheck is not Valid it will always return False
     /// </summary>
     /// <returns>True if this tag matches TagToCheck</returns>
-    public bool MatchesTag(GameplayTag tagToCheck)
+    public bool MatchesTag(FGameplayTag tagToCheck)
     {
         return FGameplayTagExporter.CallMatchesTag(ref _tagName, ref tagToCheck._tagName).ToManagedBool();
     }
@@ -23,7 +23,7 @@ public partial struct GameplayTag
     /// If TagToCheck is not Valid it will always return False
     /// </summary>
     /// <returns>True if TagToCheck is Valid and is exactly this tag</returns>
-    public bool MatchesTagExact(GameplayTag tagToCheck)
+    public bool MatchesTagExact(FGameplayTag tagToCheck)
     {
         return _tagName == tagToCheck._tagName;
     }
@@ -32,7 +32,7 @@ public partial struct GameplayTag
     /// Check to see how closely two FGameplayTags match. Higher values indicate more matching terms in the tags.
     /// </summary>
     /// <returns>The depth of the match, higher means they are closer to an exact match</returns>
-    public bool MatchesTagDepth(GameplayTag tagToCheck)
+    public bool MatchesTagDepth(FGameplayTag tagToCheck)
     {
         return FGameplayTagExporter.CallMatchesTagDepth(ref _tagName, ref tagToCheck._tagName).ToManagedBool();
     }
@@ -59,14 +59,14 @@ public partial struct GameplayTag
         return FGameplayTagExporter.CallMatchesAnyExact(ref _tagName, ref tagContainer).ToManagedBool();
     }
     
-    public bool Equals(GameplayTag other)
+    public bool Equals(FGameplayTag other)
     {
         return _tagName.Equals(other._tagName);
     }
 
     public override bool Equals(object? obj)
     {
-        return obj is GameplayTag other && Equals(other);
+        return obj is FGameplayTag other && Equals(other);
     }
 
     public override int GetHashCode()
@@ -79,12 +79,12 @@ public partial struct GameplayTag
         return _tagName.ToString();
     }
     
-    public static bool operator == (GameplayTag lhs, GameplayTag rhs)
+    public static bool operator == (FGameplayTag lhs, FGameplayTag rhs)
     {
         return lhs._tagName == rhs._tagName;
     }
 
-    public static bool operator !=(GameplayTag lhs, GameplayTag rhs)
+    public static bool operator !=(FGameplayTag lhs, FGameplayTag rhs)
     {
         return !(lhs == rhs);
     }

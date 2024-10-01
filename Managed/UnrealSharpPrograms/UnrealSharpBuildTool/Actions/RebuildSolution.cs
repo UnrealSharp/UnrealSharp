@@ -1,6 +1,8 @@
-﻿namespace UnrealSharpBuildTool.Actions;
+﻿using System.Collections.ObjectModel;
 
-public class RebuildSolution : BuildSolution
+namespace UnrealSharpBuildTool.Actions;
+
+public class RebuildSolution : BuildToolAction
 {
     public override bool RunAction()
     {
@@ -11,7 +13,7 @@ public class RebuildSolution : BuildSolution
             return false;
         }
 
-        BuildSolution buildSolution = new BuildSolution();
+        BuildSolution buildSolution = new BuildUserSolution();
         
         if (!buildSolution.RunAction())
         {

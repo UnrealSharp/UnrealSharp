@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
+#include "CSTypeRegistry.h"
 #include "CSharpForUE/CSharpForUE.h"
 #include "CSharpForUE/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
@@ -7,6 +8,7 @@
 #include "CSharpForUE/TypeGenerator/CSClass.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "CSharpForUE/TypeGenerator/Factories/CSPropertyFactory.h"
+#include "MetaData/CSDefaultComponentMetaData.h"
 
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
@@ -15,26 +17,22 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
 
 #if WITH_EDITOR
-	// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-	UBlueprint* DummyBlueprint = NewObject<UCSBlueprint>(Field, Field->GetFName(), RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
+	FString BlueprintName = TypeMetaData->Name.ToString();
+	UBlueprint* DummyBlueprint = FindObject<UBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName);
+	if (!IsValid(DummyBlueprint))
+	{
+		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
+		DummyBlueprint = NewObject<UCSBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
+	}
 	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
+	DummyBlueprint->Status = BS_UpToDate;
+	DummyBlueprint->bHasBeenRegenerated = true;
 	DummyBlueprint->ParentClass = SuperClass;
-	DummyBlueprint->BlueprintDisplayName = Field->GetName();
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
-
-	Field->ClassFlags = TypeMetaData->ClassFlags;
 	
-	if (SuperClass->HasAnyClassFlags(CLASS_Config))
-	{
-		Field->ClassFlags |= CLASS_Config;
-	}
-
-	if (SuperClass->HasAnyClassFlags(CLASS_HasInstancedReference))
-	{
-		Field->ClassFlags |= CLASS_HasInstancedReference;
-	}
+	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
 
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
@@ -54,7 +52,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	ImplementInterfaces(Field, TypeMetaData->Interfaces);
 	
 	//This will only generate functions flagged with BlueprintCallable, BlueprintEvent or virtual functions
-	const TSharedRef<FClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
+	const TSharedRef<FCSClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassMetaDataRef);
 	FCSFunctionFactory::GenerateFunctions(Field, ClassMetaDataRef->Functions);
 	
@@ -68,10 +66,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	}
 	else if (Field->IsChildOf<UActorComponent>()) 
 	{
-		// Make all C# ActorComponents BlueprintSpawnableComponent
-		#if WITH_EDITOR
-		Field->SetMetaData(TEXT("BlueprintSpawnableComponent"), TEXT("true"));
-		#endif
 		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorComponentConstructor;
 	}
 	else
@@ -87,7 +81,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->GetDefaultObject();
 	
 	Field->SetUpRuntimeReplicationData();
-
 	Field->UpdateCustomPropertyListForPostConstruction();
 		
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
@@ -95,15 +88,26 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 {
+#if WITH_EDITOR
+	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
+	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
+	DummyBlueprint->SkeletonGeneratedClass = nullptr;
+	DummyBlueprint->GeneratedClass = nullptr;
+	DummyBlueprint->ParentClass = nullptr;
+
 	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
 	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
 	// May be a better way? It works so far.
-#if WITH_EDITOR
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
 #endif
 	OldField->ClassFlags |= CLASS_NewerVersionExists;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
+}
+
+FString FCSGeneratedClassBuilder::GetFieldName() const
+{
+	return FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
 }
 
 void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
@@ -121,7 +125,7 @@ void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitialize
 	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
+
 	UActorComponent* ActorComponent = static_cast<UActorComponent*>(ObjectInitializer.GetObj());
 	ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
 	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
@@ -135,7 +139,7 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
+
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
 	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
 	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
@@ -167,17 +171,17 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass, ManagedClass->GetClassInfo());
 	}
 	
-	TMap<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponents;
-	TArray<FPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
+	TMap<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponents;
+	TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 	
-	for (const FPropertyMetaData& PropertyMetaData : Properties)
+	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
 	{
 		if (PropertyMetaData.Type->PropertyType != ECSPropertyType::DefaultComponent)
 		{
 			continue;
 		}
 
-		TSharedPtr<FDefaultComponentMetaData> DefaultComponent = StaticCastSharedPtr<FDefaultComponentMetaData>(PropertyMetaData.Type);
+		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponent = StaticCastSharedPtr<FCSDefaultComponentMetaData>(PropertyMetaData.Type);
 		FObjectProperty* ObjectProperty = CastField<FObjectProperty>(ActorClass->FindPropertyByName(PropertyMetaData.Name));
 		
 		UObject* NewSubObject = ObjectInitializer.CreateDefaultSubobject(Actor, ObjectProperty->GetFName(), ObjectProperty->PropertyClass, ObjectProperty->PropertyClass, true, false);
@@ -185,10 +189,10 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		DefaultComponents.Add(ObjectProperty, DefaultComponent);
 	}
 
-	for (const TTuple<FObjectProperty*, TSharedPtr<FDefaultComponentMetaData>> DefaultComponent : DefaultComponents)
+	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponent : DefaultComponents)
 	{
 		FObjectProperty* Property = DefaultComponent.Key;
-		TSharedPtr<FDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
+		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
 		
 		USceneComponent* SceneComponent = Cast<USceneComponent>(Property->GetObjectPropertyValue_InContainer(Actor));
 		

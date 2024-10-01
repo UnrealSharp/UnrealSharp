@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class FScriptArrayExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class FScriptArrayExporter
 {
     public static delegate* unmanaged<ref UnmanagedArray, IntPtr> GetData;
     public static delegate* unmanaged<ref UnmanagedArray, NativeBool> IsValidIndex;

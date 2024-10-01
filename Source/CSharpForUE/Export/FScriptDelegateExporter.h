@@ -18,5 +18,6 @@ public:
 private:
 
 	static void BroadcastDelegate(FScriptDelegate* Delegate, void* Params);
+	static bool IsBound(FScriptDelegate* Delegate);
 	
 };

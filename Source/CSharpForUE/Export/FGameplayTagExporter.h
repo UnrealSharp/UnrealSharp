@@ -5,7 +5,7 @@
 #include "GameplayTagContainer.h"
 #include "FGameplayTagExporter.generated.h"
 
-UCLASS()
+UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UFGameplayTagExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()

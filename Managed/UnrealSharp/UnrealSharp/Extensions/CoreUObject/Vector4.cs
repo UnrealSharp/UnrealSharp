@@ -4,13 +4,13 @@ using System.Text;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct Vector4
+public partial struct FVector4
 {
     /// <summary>
     /// Constructs a vector whose elements are all the single specified value.
     /// </summary>
     /// <param name="value">The element to fill the vector with.</param>
-    public Vector4(double value) : this(value, value, value, value)
+    public FVector4(double value) : this(value, value, value, value)
     {
     }
     
@@ -21,7 +21,7 @@ public partial struct Vector4
     /// <param name="x">X component.</param>
     /// <param name="y">Y component.</param>
     /// <param name="z">Z component.</param>
-    public Vector4(double x, double y, double z, double w)
+    public FVector4(double x, double y, double z, double w)
     {
         W = w;
         X = x;
@@ -35,7 +35,7 @@ public partial struct Vector4
     /// <param name="value">The vector to use as the X and Y components.</param>
     /// <param name="z">The Z component.</param>
     /// <param name="w">The W component.</param>
-    public Vector4(Vector2D value, double z, double w)
+    public FVector4(FVector2D value, double z, double w)
     {
         X = value.X;
         Y = value.Y;
@@ -48,7 +48,7 @@ public partial struct Vector4
     /// </summary>
     /// <param name="value">The vector to use as the X, Y, and Z components.</param>
     /// <param name="w">The W component.</param>
-    public Vector4(Vector value, double w)
+    public FVector4(FVector value, double w)
     {
         X = value.X;
         Y = value.Y;
@@ -98,7 +98,7 @@ public partial struct Vector4
     /// </summary>
     /// <param name="other">The Vector4 to compare this instance to.</param>
     /// <returns>True if the other Vector4 is equal to this instance; False otherwise.</returns>
-    public bool Equals(Vector4 other)
+    public bool Equals(FVector4 other)
     {
         return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
     }
@@ -110,7 +110,7 @@ public partial struct Vector4
     /// <param name="Vector2D">The second vector.</param>
     /// <returns>The dot product.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double Dot(Vector4 vector1, Vector4 Vector2D)
+    public static double Dot(FVector4 vector1, FVector4 Vector2D)
     {
         return vector1.X * Vector2D.X +
                vector1.Y * Vector2D.Y +
@@ -125,9 +125,9 @@ public partial struct Vector4
     /// <param name="value2">The second source vector.</param>
     /// <returns>The minimized vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Min(Vector4 value1, Vector4 value2)
+    public static FVector4 Min(FVector4 value1, FVector4 value2)
     {
-        return new Vector4(
+        return new FVector4(
             (value1.X < value2.X) ? value1.X : value2.X,
             (value1.Y < value2.Y) ? value1.Y : value2.Y,
             (value1.Z < value2.Z) ? value1.Z : value2.Z,
@@ -141,9 +141,9 @@ public partial struct Vector4
     /// <param name="value2">The second source vector.</param>
     /// <returns>The maximized vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Max(Vector4 value1, Vector4 value2)
+    public static FVector4 Max(FVector4 value1, FVector4 value2)
     {
-        return new Vector4(
+        return new FVector4(
             (value1.X > value2.X) ? value1.X : value2.X,
             (value1.Y > value2.Y) ? value1.Y : value2.Y,
             (value1.Z > value2.Z) ? value1.Z : value2.Z,
@@ -156,9 +156,9 @@ public partial struct Vector4
     /// <param name="value">The source vector.</param>
     /// <returns>The absolute value vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Abs(Vector4 value)
+    public static FVector4 Abs(FVector4 value)
     {
-        return new Vector4(Math.Abs(value.X), Math.Abs(value.Y), Math.Abs(value.Z), Math.Abs(value.W));
+        return new FVector4(Math.Abs(value.X), Math.Abs(value.Y), Math.Abs(value.Z), Math.Abs(value.W));
     }
 
     /// <summary>
@@ -167,9 +167,9 @@ public partial struct Vector4
     /// <param name="value">The source vector.</param>
     /// <returns>The square root vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 SquareRoot(Vector4 value)
+    public static FVector4 SquareRoot(FVector4 value)
     {
-        return new Vector4(Math.Sqrt(value.X), Math.Sqrt(value.Y), Math.Sqrt(value.Z), Math.Sqrt(value.W));
+        return new FVector4(Math.Sqrt(value.X), Math.Sqrt(value.Y), Math.Sqrt(value.Z), Math.Sqrt(value.W));
     }
 
     #region Public static operators
@@ -180,9 +180,9 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The summed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator +(Vector4 left, Vector4 right)
+    public static FVector4 operator +(FVector4 left, FVector4 right)
     {
-        return new Vector4(left.X + right.X, left.Y + right.Y, left.Z + right.Z, left.W + right.W);
+        return new FVector4(left.X + right.X, left.Y + right.Y, left.Z + right.Z, left.W + right.W);
     }
 
     /// <summary>
@@ -192,9 +192,9 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The difference vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator -(Vector4 left, Vector4 right)
+    public static FVector4 operator -(FVector4 left, FVector4 right)
     {
-        return new Vector4(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
+        return new FVector4(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
     }
 
     /// <summary>
@@ -204,9 +204,9 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The product vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator *(Vector4 left, Vector4 right)
+    public static FVector4 operator *(FVector4 left, FVector4 right)
     {
-        return new Vector4(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
+        return new FVector4(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
     }
 
     /// <summary>
@@ -216,9 +216,9 @@ public partial struct Vector4
     /// <param name="right">The scalar value.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator *(Vector4 left, double right)
+    public static FVector4 operator *(FVector4 left, double right)
     {
-        return left * new Vector4(right);
+        return left * new FVector4(right);
     }
 
     /// <summary>
@@ -228,9 +228,9 @@ public partial struct Vector4
     /// <param name="right">The source vector.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator *(double left, Vector4 right)
+    public static FVector4 operator *(double left, FVector4 right)
     {
-        return new Vector4(left) * right;
+        return new FVector4(left) * right;
     }
 
     /// <summary>
@@ -240,9 +240,9 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The vector resulting from the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator /(Vector4 left, Vector4 right)
+    public static FVector4 operator /(FVector4 left, FVector4 right)
     {
-        return new Vector4(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
+        return new FVector4(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
     }
 
     /// <summary>
@@ -252,11 +252,11 @@ public partial struct Vector4
     /// <param name="value2">The scalar value.</param>
     /// <returns>The result of the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator /(Vector4 value1, double value2)
+    public static FVector4 operator /(FVector4 value1, double value2)
     {
         double invDiv = 1.0 / value2;
 
-        return new Vector4(
+        return new FVector4(
             value1.X * invDiv,
             value1.Y * invDiv,
             value1.Z * invDiv,
@@ -269,7 +269,7 @@ public partial struct Vector4
     /// <param name="value">The source vector.</param>
     /// <returns>The negated vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 operator -(Vector4 value)
+    public static FVector4 operator -(FVector4 value)
     {
         return Zero - value;
     }
@@ -281,7 +281,7 @@ public partial struct Vector4
     /// <param name="right">The second vector to compare.</param>
     /// <returns>True if the vectors are equal; False otherwise.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(Vector4 left, Vector4 right)
+    public static bool operator ==(FVector4 left, FVector4 right)
     {
         return left.Equals(right);
     }
@@ -293,7 +293,7 @@ public partial struct Vector4
     /// <param name="right">The second vector to compare.</param>
     /// <returns>True if the vectors are not equal; False if they are equal.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(Vector4 left, Vector4 right)
+    public static bool operator !=(FVector4 left, FVector4 right)
     {
         return !(left == right);
     }
@@ -301,27 +301,27 @@ public partial struct Vector4
     /// <summary>
     /// Returns the vector (0,0,0,0).
     /// </summary>
-    public static Vector4 Zero { get { return new Vector4(); } }
+    public static FVector4 Zero { get { return new FVector4(); } }
     /// <summary>
     /// Returns the vector (1,1,1,1).
     /// </summary>
-    public static Vector4 One { get { return new Vector4(1.0, 1.0, 1.0, 1.0); } }
+    public static FVector4 One { get { return new FVector4(1.0, 1.0, 1.0, 1.0); } }
     /// <summary>
     /// Returns the vector (1,0,0,0).
     /// </summary>
-    public static Vector4 UnitX { get { return new Vector4(1.0, 0.0, 0.0, 0.0); } }
+    public static FVector4 UnitX { get { return new FVector4(1.0, 0.0, 0.0, 0.0); } }
     /// <summary>
     /// Returns the vector (0,1,0,0).
     /// </summary>
-    public static Vector4 UnitY { get { return new Vector4(0.0, 1.0, 0.0, 0.0); } }
+    public static FVector4 UnitY { get { return new FVector4(0.0, 1.0, 0.0, 0.0); } }
     /// <summary>
     /// Returns the vector (0,0,1,0).
     /// </summary>
-    public static Vector4 UnitZ { get { return new Vector4(0.0, 0.0, 1.0, 0.0); } }
+    public static FVector4 UnitZ { get { return new FVector4(0.0, 0.0, 1.0, 0.0); } }
     /// <summary>
     /// Returns the vector (0,0,0,1).
     /// </summary>
-    public static Vector4 UnitW { get { return new Vector4(0.0, 0.0, 0.0, 1.0); } }
+    public static FVector4 UnitW { get { return new FVector4(0.0, 0.0, 0.0, 1.0); } }
 
     /// <summary>
     /// Returns the hash code for this instance.
@@ -340,9 +340,12 @@ public partial struct Vector4
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override bool Equals(object obj)
     {
-        if (!(obj is Vector4))
+        if (obj is not FVector4)
+        {
             return false;
-        return Equals((Vector4)obj);
+        }
+
+        return Equals((FVector4)obj);
     }
 
     /// <summary>
@@ -418,7 +421,7 @@ public partial struct Vector4
     /// <param name="value2">The second point.</param>
     /// <returns>The distance.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double Distance(Vector4 value1, Vector4 value2)
+    public static double Distance(FVector4 value1, FVector4 value2)
     {
         double dx = value1.X - value2.X;
         double dy = value1.Y - value2.Y;
@@ -435,7 +438,7 @@ public partial struct Vector4
     /// <param name="value2">The second point.</param>
     /// <returns>The distance squared.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static double DistanceSquared(Vector4 value1, Vector4 value2)
+    public static double DistanceSquared(FVector4 value1, FVector4 value2)
     {
         double dx = value1.X - value2.X;
         double dy = value1.Y - value2.Y;
@@ -450,11 +453,11 @@ public partial struct Vector4
     /// <param name="vector">The vector to normalize.</param>
     /// <returns>The normalized vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Normalize(Vector4 vector)
+    public static FVector4 Normalize(FVector4 vector)
     {
         double ls = vector.X * vector.X + vector.Y * vector.Y + vector.Z * vector.Z + vector.W * vector.W;
         double invNorm = 1.0 / Math.Sqrt(ls);
-        return new Vector4(
+        return new FVector4(
                 vector.X * invNorm,
                 vector.Y * invNorm,
                 vector.Z * invNorm,
@@ -469,7 +472,7 @@ public partial struct Vector4
     /// <param name="max">The maximum value.</param>
     /// <returns>The restricted vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Clamp(Vector4 value1, Vector4 min, Vector4 max)
+    public static FVector4 Clamp(FVector4 value1, FVector4 min, FVector4 max)
     {
         // This compare order is very important!!!
         // We must follow HLSL behavior in the case user specified min value is bigger than max value.
@@ -490,7 +493,7 @@ public partial struct Vector4
         w = (w > max.W) ? max.W : w;
         w = (w < min.W) ? min.W : w;
 
-        return new Vector4(x, y, z, w);
+        return new FVector4(x, y, z, w);
     }
 
     /// <summary>
@@ -501,9 +504,9 @@ public partial struct Vector4
     /// <param name="amount">Value between 0 and 1 indicating the weight of the second source vector.</param>
     /// <returns>The interpolated vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Lerp(Vector4 value1, Vector4 value2, double amount)
+    public static FVector4 Lerp(FVector4 value1, FVector4 value2, double amount)
     {
-        return new Vector4(
+        return new FVector4(
             value1.X + (value2.X - value1.X) * amount,
             value1.Y + (value2.Y - value1.Y) * amount,
             value1.Z + (value2.Z - value1.Z) * amount,
@@ -517,9 +520,9 @@ public partial struct Vector4
     /// <param name="matrix">The transformation matrix.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector2D position, Matrix matrix)
+    public static FVector4 Transform(FVector2D position, FMatrix matrix)
     {
-        return new Vector4(
+        return new FVector4(
             position.X * matrix.XPlane.X + position.Y * matrix.YPlane.X + matrix.WPlane.X,
             position.X * matrix.XPlane.Y + position.Y * matrix.YPlane.Y + matrix.WPlane.Y,
             position.X * matrix.XPlane.Z + position.Y * matrix.YPlane.Z + matrix.WPlane.Z,
@@ -533,9 +536,9 @@ public partial struct Vector4
     /// <param name="matrix">The transformation matrix.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector position, Matrix matrix)
+    public static FVector4 Transform(FVector position, FMatrix matrix)
     {
-        return new Vector4(
+        return new FVector4(
             position.X * matrix.XPlane.X + position.Y * matrix.YPlane.X + position.Z * matrix.ZPlane.X + matrix.WPlane.X,
             position.X * matrix.XPlane.Y + position.Y * matrix.YPlane.Y + position.Z * matrix.ZPlane.Y + matrix.WPlane.Y,
             position.X * matrix.XPlane.Z + position.Y * matrix.YPlane.Z + position.Z * matrix.ZPlane.Z + matrix.WPlane.Z,
@@ -550,9 +553,9 @@ public partial struct Vector4
     /// <param name="matrix">The transformation matrix.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector4 vector, Matrix matrix)
+    public static FVector4 Transform(FVector4 vector, FMatrix matrix)
     {
-        return new Vector4(
+        return new FVector4(
             vector.X * matrix.XPlane.X + vector.Y * matrix.YPlane.X + vector.Z * matrix.ZPlane.X + vector.W * matrix.WPlane.X,
             vector.X * matrix.XPlane.Y + vector.Y * matrix.YPlane.Y + vector.Z * matrix.ZPlane.Y + vector.W * matrix.WPlane.Y,
             vector.X * matrix.XPlane.Z + vector.Y * matrix.YPlane.Z + vector.Z * matrix.ZPlane.Z + vector.W * matrix.WPlane.Z,
@@ -567,7 +570,7 @@ public partial struct Vector4
     /// <param name="rotation">The rotation to apply.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector2D value, Quat rotation)
+    public static FVector4 Transform(FVector2D value, FQuat rotation)
     {
         double x2 = rotation.X + rotation.X;
         double y2 = rotation.Y + rotation.Y;
@@ -583,7 +586,7 @@ public partial struct Vector4
         double yz2 = rotation.Y * z2;
         double zz2 = rotation.Z * z2;
 
-        return new Vector4(
+        return new FVector4(
             value.X * (1.0 - yy2 - zz2) + value.Y * (xy2 - wz2),
             value.X * (xy2 + wz2) + value.Y * (1.0 - xx2 - zz2),
             value.X * (xz2 - wy2) + value.Y * (yz2 + wx2),
@@ -597,7 +600,7 @@ public partial struct Vector4
     /// <param name="rotation">The rotation to apply.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector value, Quat rotation)
+    public static FVector4 Transform(FVector value, FQuat rotation)
     {
         double x2 = rotation.X + rotation.X;
         double y2 = rotation.Y + rotation.Y;
@@ -613,7 +616,7 @@ public partial struct Vector4
         double yz2 = rotation.Y * z2;
         double zz2 = rotation.Z * z2;
 
-        return new Vector4(
+        return new FVector4(
             value.X * (1.0 - yy2 - zz2) + value.Y * (xy2 - wz2) + value.Z * (xz2 + wy2),
             value.X * (xy2 + wz2) + value.Y * (1.0 - xx2 - zz2) + value.Z * (yz2 - wx2),
             value.X * (xz2 - wy2) + value.Y * (yz2 + wx2) + value.Z * (1.0 - xx2 - yy2),
@@ -627,7 +630,7 @@ public partial struct Vector4
     /// <param name="rotation">The rotation to apply.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Transform(Vector4 value, Quat rotation)
+    public static FVector4 Transform(FVector4 value, FQuat rotation)
     {
         double x2 = rotation.X + rotation.X;
         double y2 = rotation.Y + rotation.Y;
@@ -643,7 +646,7 @@ public partial struct Vector4
         double yz2 = rotation.Y * z2;
         double zz2 = rotation.Z * z2;
 
-        return new Vector4(
+        return new FVector4(
             value.X * (1.0 - yy2 - zz2) + value.Y * (xy2 - wz2) + value.Z * (xz2 + wy2),
             value.X * (xy2 + wz2) + value.Y * (1.0 - xx2 - zz2) + value.Z * (yz2 - wx2),
             value.X * (xz2 - wy2) + value.Y * (yz2 + wx2) + value.Z * (1.0 - xx2 - yy2),
@@ -660,7 +663,7 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The summed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Add(Vector4 left, Vector4 right)
+    public static FVector4 Add(FVector4 left, FVector4 right)
     {
         return left + right;
     }
@@ -672,7 +675,7 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The difference vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Subtract(Vector4 left, Vector4 right)
+    public static FVector4 Subtract(FVector4 left, FVector4 right)
     {
         return left - right;
     }
@@ -684,7 +687,7 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The product vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Multiply(Vector4 left, Vector4 right)
+    public static FVector4 Multiply(FVector4 left, FVector4 right)
     {
         return left * right;
     }
@@ -696,9 +699,9 @@ public partial struct Vector4
     /// <param name="right">The scalar value.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Multiply(Vector4 left, double right)
+    public static FVector4 Multiply(FVector4 left, double right)
     {
-        return left * new Vector4(right, right, right, right);
+        return left * new FVector4(right, right, right, right);
     }
 
     /// <summary>
@@ -708,9 +711,9 @@ public partial struct Vector4
     /// <param name="right">The source vector.</param>
     /// <returns>The scaled vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Multiply(double left, Vector4 right)
+    public static FVector4 Multiply(double left, FVector4 right)
     {
-        return new Vector4(left, left, left, left) * right;
+        return new FVector4(left, left, left, left) * right;
     }
 
     /// <summary>
@@ -720,7 +723,7 @@ public partial struct Vector4
     /// <param name="right">The second source vector.</param>
     /// <returns>The vector resulting from the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Divide(Vector4 left, Vector4 right)
+    public static FVector4 Divide(FVector4 left, FVector4 right)
     {
         return left / right;
     }
@@ -732,7 +735,7 @@ public partial struct Vector4
     /// <param name="divisor">The scalar value.</param>
     /// <returns>The result of the division.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Divide(Vector4 left, double divisor)
+    public static FVector4 Divide(FVector4 left, double divisor)
     {
         return left / divisor;
     }
@@ -743,7 +746,7 @@ public partial struct Vector4
     /// <param name="value">The source vector.</param>
     /// <returns>The negated vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 Negate(Vector4 value)
+    public static FVector4 Negate(FVector4 value)
     {
         return -value;
     }

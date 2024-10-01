@@ -1,7 +1,9 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using System.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.NativeTypes;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -32,10 +34,10 @@ public static class UnrealDelegateProcessor
         }
     }
     
-    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions)
+    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
     {
         TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
-            WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "DelegateData");
+            WeaverHelper.BindingsAssembly, "DelegateData", WeaverHelper.UnrealSharpNamespace);
         
         TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
                 WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
@@ -48,7 +50,7 @@ public static class UnrealDelegateProcessor
         
         foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeDefinition marshaller = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
+            TypeDefinition marshaller = WeaverHelper.CreateNewClass(assembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
             
             // Create a delegate from the marshaller
             MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
@@ -101,6 +103,14 @@ public static class UnrealDelegateProcessor
             functionMetaData.FunctionPointerField = WeaverHelper.AddFieldToType(invokerMethodDefinition.DeclaringType, "SignatureFunction", WeaverHelper.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
             
             List<Instruction> allCleanupInstructions = [];
+
+            for (int i = 0; i < functionMetaData.Parameters.Length; ++i)
+            {
+                PropertyMetaData param = functionMetaData.Parameters[i];
+                NativeDataType nativeDataType = param.PropertyDataType;
+
+                nativeDataType.PrepareForRewrite(invokerMethodDefinition.DeclaringType, functionMetaData, param);
+            }
 
             FunctionProcessor.WriteParametersToNative(invokerMethodProcessor,
                 invokerMethodDefinition,

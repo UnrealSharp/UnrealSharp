@@ -1,7 +1,9 @@
+using UnrealSharp.Attributes;
+
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class UFunctionExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class UFunctionExporter
 {
     public static delegate* unmanaged<IntPtr, UInt16> GetNativeFunctionParamsSize;
 }

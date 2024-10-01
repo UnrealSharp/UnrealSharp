@@ -61,7 +61,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             sourceBuilder.AppendLine();
             sourceBuilder.AppendLine($"namespace {classInfo.Namespace}");
             sourceBuilder.AppendLine("{");
-            sourceBuilder.AppendLine($"    public static unsafe partial class {classInfo.Name}");
+            sourceBuilder.AppendLine($"    internal static unsafe partial class {classInfo.Name}");
             sourceBuilder.AppendLine("    {");
 
             foreach (var delegateInfo in classInfo.Delegates)
@@ -108,9 +108,9 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                 string delegateName = $"{classInfo.Name}.{delegateInfo.Name}";
                 
                 sourceBuilder.AppendLine($"             if ({delegateName} == null)");
-                sourceBuilder.AppendLine("              {");
+                sourceBuilder.AppendLine("             {");
                 sourceBuilder.AppendLine($"                 throw new System.InvalidOperationException(\"{delegateName} is null\");");
-                sourceBuilder.AppendLine("              }");
+                sourceBuilder.AppendLine("             }");
                 sourceBuilder.AppendLine();
 
                 // Method body

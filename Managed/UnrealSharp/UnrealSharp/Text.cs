@@ -1,50 +1,50 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct TextData
+public struct FTextData
 {
     public IntPtr ObjectPointer;
-    public int SharedReferenceCount;
-    public int WeakReferenceCount;
     public uint Flags;
 }
 
-public class Text
+[Binding]
+public struct FText
 {
-    internal TextData Data;
+    internal FTextData Data;
     
     public bool Empty => Data.ObjectPointer == IntPtr.Zero;
-    public static Text None = new();
+    public static FText None = new();
     
-    public Text()
+    public FText()
     {
         FTextExporter.CallCreateEmptyText(ref Data);
     }
     
-    public Text(string text)
+    public FText(string text)
     {
         FTextExporter.CallFromString(ref Data, text);
     }
     
-    public Text(Name name) : this(name.ToString())
+    public FText(FName name) : this(name.ToString())
     {
         
     }
     
-    internal Text(TextData nativeInstance)
+    internal FText(FTextData nativeInstance)
     {
         Data = nativeInstance;
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        return obj.GetType() == this.GetType() && Equals((Text)obj);
+        return obj.GetType() == this.GetType() && Equals((FText)obj);
     }
 
     /// <inheritdoc />
@@ -62,41 +62,37 @@ public class Text
         }
     }
     
-    public static implicit operator Text(string value)
+    public static implicit operator FText(string value)
     {
-        return new Text(value);
+        return new FText(value);
     }
     
-    public static implicit operator string(Text value)
+    public static implicit operator string(FText value)
     {
         return value.ToString();
     }
     
-    public static bool operator ==(Text a, Text b)
+    public static bool operator ==(FText a, FText b)
     {
-        if (a is null || b is null)
-        {
-            return false;
-        }
-        
         return a.Data.ObjectPointer == b.Data.ObjectPointer;
     }
 
-    public static bool operator !=(Text a, Text b)
+    public static bool operator !=(FText a, FText b)
     {
         return !(a == b);
     }
 }
 
+[InternalsVisible(true)]
 internal static class TextMarshaller
 { 
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, Text obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, FText obj)
     {
-        BlittableMarshaller<TextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
+        BlittableMarshaller<FTextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
     }
-    public static Text FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public static FText FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        Text data = new Text(BlittableMarshaller<TextData>.FromNative(nativeBuffer, arrayIndex));
+        FText data = new FText(BlittableMarshaller<FTextData>.FromNative(nativeBuffer, arrayIndex));
         return data;
     }
 }

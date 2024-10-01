@@ -1,9 +1,10 @@
+using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Interop;
 
-[NativeCallbacks]
-public static unsafe partial class UKismetSystemLibraryExporter
+[NativeCallbacks, InternalsVisible(true)]
+internal static unsafe partial class UKismetSystemLibraryExporter
 {
-    public static delegate* unmanaged<IntPtr, IntPtr, float, LinearColor, NativeBool, NativeBool,void> PrintString;
+    public static delegate* unmanaged<IntPtr, IntPtr, float, FLinearColor, NativeBool, NativeBool,void> PrintString;
 }

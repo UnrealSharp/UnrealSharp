@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -29,7 +30,12 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint | ClassFlags.Native;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native | ClassFlags.CompiledFromBlueprint;
+
+        if (WeaverHelper.IsChildOf(type, WeaverHelper.UActorComponentDefinition))
+        {
+            TryAddMetaData("BlueprintSpawnableComponent", true);
+        }
     }
 
     private void AddConfigCategory()
@@ -87,13 +93,13 @@ public class ClassMetaData : TypeReferenceMetadata
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
-                return;
+                continue;
             }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method))
+            if (WeaverHelper.IsUFunction(method) || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
                 if (isBlueprintOverride)
                 {
@@ -108,8 +114,10 @@ public class ClassMetaData : TypeReferenceMetadata
                 }
                 
                 Functions.Add(functionMetaData);
+                continue;
             }
-            else if (isBlueprintOverride || isInterfaceFunction)
+            
+            if (isBlueprintOverride || isInterfaceFunction)
             {
                 VirtualFunctions.Add(new FunctionMetaData(method));
             }
@@ -132,11 +140,15 @@ public class ClassMetaData : TypeReferenceMetadata
         
         foreach (var typeInterface in ClassDefinition.Interfaces)
         {
-            var interfaceType = typeInterface.InterfaceType.Resolve();
-            if (WeaverHelper.IsUInterface(interfaceType))
+            TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
+
+            if (interfaceType == WeaverHelper.IInterfaceType || !WeaverHelper.IsUInterface(interfaceType))
             {
-                Interfaces.Add(interfaceType.Name);
+                continue;
             }
+
+            string interfaceNoPrefix = WeaverHelper.GetEngineName(interfaceType);
+            Interfaces.Add(interfaceNoPrefix);
         }
     }
 }

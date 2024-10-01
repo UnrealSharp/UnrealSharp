@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
@@ -46,7 +46,7 @@ public static class FunctionProcessor
                     continue;
                 }
 
-                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != null)
+                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != virtualFunction)
                 {
                     continue;
                 }
@@ -88,12 +88,14 @@ public static class FunctionProcessor
                 }
                 
                 MethodReference calledMethod = (MethodReference) instruction.Operand;
-                if (calledMethod.Name != func.Name)
+                string engineName = WeaverHelper.GetEngineName(calledMethod.Resolve());
+                
+                if (engineName != func.Name)
                 {
                     continue;
                 }
 
-                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name)!;
+                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name, false)!;
                 instruction.Operand = WeaverHelper.ImportMethod(implementationMethod);
             }
         }
@@ -441,8 +443,7 @@ public static class FunctionProcessor
         processor.Emit(OpCodes.Call, WeaverHelper.InitializeStructMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
-        Instruction loadParamBufferInstruction = Instruction.Create(OpCodes.Nop);
-    
+
         for (byte i = 0; i < paramRewriteInfos.Length; ++i)
         {
             PropertyMetaData paramType = paramRewriteInfos[i].PropertyMetaData;
@@ -459,11 +460,8 @@ public static class FunctionProcessor
         
             FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataType = paramType.PropertyDataType;
-        
-            nativeDataType.PrepareForRewrite(methodDef.DeclaringType, metadata, paramRewriteInfos[i].PropertyMetaData);
 
-            processor.Append(loadArgumentBuffer);
-            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadParamBufferInstruction, offsetField, i + 1, methodDef.Parameters[i]);
+            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadArgumentBuffer, offsetField, i + 1, methodDef.Parameters[i]);
 
             if (cleanupInstructions != null)
             {

@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Attributes;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
-using Object = UnrealSharp.CoreUObject.Object;
 
 namespace UnrealSharp;
 
@@ -9,15 +10,16 @@ public struct DelegateData
 {
     public ulong Storage;
     public WeakObjectData Object;
-    public Name FunctionName;
+    public FName FunctionName;
 }
 
+[Binding]
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     private DelegateData _data;
     
-    public WeakObject<CoreUObject.Object> TargetObject => new(_data.Object);
-    public Name FunctionName => _data.FunctionName;
+    public TWeakObjectPtr<UObject> TargetObjectPtr => new(_data.Object);
+    public FName FunctionName => _data.FunctionName;
     
     public Delegate()
     {
@@ -28,7 +30,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         _data = data;
     }
     
-    public Delegate(CoreUObject.Object targetObject, Name functionName)
+    public Delegate(UObject targetObject, FName functionName)
     {
         _data = new DelegateData
         {
@@ -56,66 +58,65 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         }
     }
 
-    public bool IsBoundToObject(Object targetObject)
+    public override bool Contains(TDelegate handler)
     {
-        return targetObject.Equals(TargetObject.Object);
+        if (handler.Target is not UObject targetObject)
+        {
+            return false;
+        }
+        
+        return targetObject.Equals(TargetObjectPtr.Object) && FunctionName == handler.Method.Name;
+    }
+    
+    public override void BindUFunction(UObject targetObject, FName functionName)
+    {
+        BindUFunction(new TWeakObjectPtr<UObject>(targetObject), functionName);
     }
 
-    public bool IsBoundTo(Object targetObject, Name functionName)
+    public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        return targetObject.Equals(TargetObject.Object) && FunctionName == functionName;
-    }
-
-    public override void BindUFunction(Object targetObject, Name functionName)
-    {
-        BindUFunction(new WeakObject<Object>(targetObject), functionName);
-    }
-
-    public override void BindUFunction(WeakObject<Object> targetObject, Name functionName)
-    {
-        _data.Object = targetObject.Data;
+        _data.Object = targetObjectPtr.Data;
         _data.FunctionName = functionName;
     }
 
-    public void Add(TDelegate handler)
+    public override void Add(TDelegate handler)
     {
         if (IsBound)
         {
             throw new InvalidOperationException($"A singlecast delegate can only be bound to one handler at a time. Unbind it first before binding a new handler.");
         }
-        if (handler.Target is not Object targetObject)
+        
+        if (handler.Target is not UObject targetObject)
         {
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
-        _data.Object = new WeakObject<Object>(targetObject).Data;
-        _data.FunctionName = new Name(handler.Method.Name);
+        
+        _data.Object = new TWeakObjectPtr<UObject>(targetObject).Data;
+        _data.FunctionName = new FName(handler.Method.Name);
     }
 
-    public void Remove(TDelegate handler)
+    public override void Remove(TDelegate handler)
     {
-        if (handler.Target is not Object targetObject)
+        if (!Contains(handler))
         {
             return;
         }
-        if (!IsBoundTo(targetObject, handler.Method.Name))
-        {
-            return;
-        }
-        Unbind();
+        
+        Clear();
     }
 
-    public bool IsBound => _data.Object.ObjectIndex != 0;
-    
-    public void Unbind()
+    public override bool IsBound => _data.Object.ObjectIndex != 0;
+
+    public override void Clear()
     {
         _data.Object = default;
         _data.FunctionName = default;
         _data.Storage = 0;
     }
-    
+
     public override string ToString()
     {
-        return $"{TargetObject.Object}::{FunctionName}";
+        return $"{TargetObjectPtr.Object}::{FunctionName}";
     }
 
     protected override void ProcessDelegate(IntPtr parameters)

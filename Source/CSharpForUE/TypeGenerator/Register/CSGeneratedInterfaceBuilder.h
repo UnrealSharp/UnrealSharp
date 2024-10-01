@@ -1,15 +1,13 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "CSTypeRegistry.h"
+#include "MetaData/CSInterfaceMetaData.h"
 
-struct FInterfaceMetaData;
-
-class CSHARPFORUE_API FCSGeneratedInterfaceBuilder : public TCSGeneratedTypeBuilder<FInterfaceMetaData, UClass>
+class CSHARPFORUE_API FCSGeneratedInterfaceBuilder : public TCSGeneratedTypeBuilder<FCSInterfaceMetaData, UClass>
 {
 public:
 
-	FCSGeneratedInterfaceBuilder(const TSharedPtr<FInterfaceMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) { }
+	FCSGeneratedInterfaceBuilder(const TSharedPtr<FCSInterfaceMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) { }
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;

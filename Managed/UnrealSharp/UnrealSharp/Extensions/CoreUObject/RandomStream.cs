@@ -4,9 +4,9 @@ using UnrealSharp.Interop;
 namespace UnrealSharp.CoreUObject;
 
 [StructLayout(LayoutKind.Sequential)]
-public partial struct RandomStream
+public partial struct FRandomStream
 {
-	public RandomStream(int initialSeed)
+	public FRandomStream(int initialSeed)
 	{
 		InitialSeed = initialSeed;
 		Seed = initialSeed;
@@ -23,24 +23,24 @@ public partial struct RandomStream
 		Seed = InitialSeed;
 	}
 	
-	public static bool operator ==(RandomStream a, RandomStream b)
+	public static bool operator ==(FRandomStream a, FRandomStream b)
 	{
 		return a.Seed == b.Seed;
 	}
 
-	public static bool operator !=(RandomStream a, RandomStream b)
+	public static bool operator !=(FRandomStream a, FRandomStream b)
 	{
 		return !(a == b);
 	}
 	
-	public bool Equals(RandomStream other)
+	public bool Equals(FRandomStream other)
 	{
 		return InitialSeed == other.InitialSeed && Seed == other.Seed;
 	}
 
 	public override bool Equals(object obj)
 	{
-		return obj is RandomStream other && Equals(other);
+		return obj is FRandomStream other && Equals(other);
 	}
 
 	public override int GetHashCode()
@@ -68,7 +68,7 @@ public partial struct RandomStream
 		return FRandomStreamExporter.CallGetUnsignedInt(ref this);
 	}
 	
-	public Vector GetUnitVector( )
+	public FVector GetUnitVector( )
 	{
 		return FRandomStreamExporter.CallGetUnitVector(ref this);
 	}
@@ -78,12 +78,12 @@ public partial struct RandomStream
 		return FRandomStreamExporter.CallRandRange(ref this, min, max);
 	}
 	
-	public Vector GetUnitVectorInCone(Vector dir, float coneHalfAngleRad)
+	public FVector GetUnitVectorInCone(FVector dir, float coneHalfAngleRad)
 	{
 		return FRandomStreamExporter.CallVRandCone(ref this, dir, coneHalfAngleRad);
 	}
 
-	public Vector GetUnitVectorInCone(Vector dir, float horizontalConeHalfAngleRad, float verticalConeHalfAngleRad)
+	public FVector GetUnitVectorInCone(FVector dir, float horizontalConeHalfAngleRad, float verticalConeHalfAngleRad)
 	{
 		return FRandomStreamExporter.CallVRandCone2(ref this, dir, horizontalConeHalfAngleRad, verticalConeHalfAngleRad);
 	}

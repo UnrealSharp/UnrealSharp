@@ -2,12 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "FunctionsExporter.h"
-#include "InputAction.h"
 #include "UInputComponentExporter.generated.h"
 
 class UInputAction;
 
-UCLASS()
+UCLASS(meta=(NotGeneratorValid))
 class CSHARPFORUE_API UUInputComponentExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
