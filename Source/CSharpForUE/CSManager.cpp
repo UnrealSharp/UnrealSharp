@@ -25,21 +25,26 @@
 	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
-FCSManagedPluginCallbacks FCSManager::ManagedPluginsCallbacks;
+UCSManager* UCSManager::Instance = nullptr;
 
-FCSManager& FCSManager::Get()
+UCSManager& UCSManager::GetOrCreate()
 {
-	static FCSManager Instance;
-	return Instance;
-}
-
-void FCSManager::InitializeUnrealSharp()
-{
-	if (bIsInitialized)
+	if (!Instance)
 	{
-		return;
+		Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
+		Instance->Initialize();
 	}
 
+	return *Instance;
+}
+
+UCSManager& UCSManager::Get()
+{
+	return *Instance;
+}
+
+void UCSManager::Initialize()
+{
 #if WITH_EDITOR
 	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
 	if (DotNetInstallationPath.IsEmpty())
@@ -61,16 +66,20 @@ void FCSManager::InitializeUnrealSharp()
 		return;
 	}
 #endif
+
+	// Remove this listener when the engine is shutting down.
+	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
+	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 	
 	//Create the package where we will store our generated types.
-	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public | RF_Standalone);
+	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public);
 	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
 
 	// Listen to GC callbacks.
 	GUObjectArray.AddUObjectDeleteListener(this);
 
 	// Initialize the C# runtime.
-	if (!InitializeBindings())
+	if (!InitializeRuntime())
 	{
 		return;
 	}
@@ -79,13 +88,10 @@ void FCSManager::InitializeUnrealSharp()
 	FCSPropertyFactory::InitializePropertyFactory();
 
 	// Try to load the user assembly, can be null when the project is first created.
-	LoadUserAssembly();
-	
-	bIsInitialized = true;
-	OnUnrealSharpInitialized.Broadcast();
+	LoadAllUserAssemblies();
 }
 
-bool FCSManager::InitializeBindings()
+bool UCSManager::InitializeRuntime()
 {
 	if (!LoadRuntimeHost())
 	{
@@ -141,7 +147,7 @@ bool FCSManager::InitializeBindings()
 	return true;
 }
 
-bool FCSManager::LoadRuntimeHost()
+bool UCSManager::LoadRuntimeHost()
 {
 	const FString RuntimeHostPath = FCSProcHelper::GetRuntimeHostPath();
 
@@ -184,7 +190,7 @@ bool FCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
-bool FCSManager::LoadUserAssembly()
+bool UCSManager::LoadAllUserAssemblies()
 {
 	TArray<FString> UserAssemblies;
 	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
@@ -206,7 +212,7 @@ bool FCSManager::LoadUserAssembly()
 	return true;
 }
 
-load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
+load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxr() const
 {
 	hostfxr_handle HostFXR_Handle = nullptr;
 	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
@@ -257,7 +263,7 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxr() const
 #endif
 }
 
-load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfContained() const
+load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfContained() const
 {
 	FString MainAssemblyPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
 	std::vector Args { PLATFORM_STRING(*MainAssemblyPath) };
@@ -298,7 +304,7 @@ load_assembly_and_get_function_pointer_fn FCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
 	
@@ -324,7 +330,7 @@ TSharedPtr<FCSAssembly> FCSManager::LoadAssembly(const FString& AssemblyPath)
 	return NewPlugin;
 }
 
-bool FCSManager::UnloadAssembly(const FString& AssemblyName)
+bool UCSManager::UnloadAssembly(const FString& AssemblyName)
 {
 	TSharedPtr<FCSAssembly> Assembly;
 	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))
@@ -336,7 +342,7 @@ bool FCSManager::UnloadAssembly(const FString& AssemblyName)
 	return true;
 }
 
-FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, UClass* Class)
+FGCHandle UCSManager::CreateNewManagedObject(UObject* Object, UClass* Class)
 {
 	ensureAlways(!UnmanagedToManagedMap.Contains(Object));
 
@@ -352,14 +358,14 @@ FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, UClass* Class)
 	return CreateNewManagedObject(Object, ClassInfo->TypeHandle);
 }
 
-FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, uint8* TypeHandle)
+FGCHandle UCSManager::CreateNewManagedObject(UObject* Object, uint8* TypeHandle)
 {
 	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle);
 	NewManagedObject.Type = GCHandleType::StrongHandle;
 
 	if (NewManagedObject.IsNull())
 	{
-		// This should never happen.
+		// This should never happen. Potential issues: IL errors, typehandle is invalid.
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to create managed object for %s"), *Object->GetName());
 		return FGCHandle();
 	}
@@ -367,7 +373,7 @@ FGCHandle FCSManager::CreateNewManagedObject(UObject* Object, uint8* TypeHandle)
 	return UnmanagedToManagedMap.Add(Object, NewManagedObject);
 }
 
-FGCHandle FCSManager::FindManagedObject(UObject* Object)
+FGCHandle UCSManager::FindManagedObject(UObject* Object)
 {
 	if (!IsValid(Object))
 	{
@@ -383,7 +389,7 @@ FGCHandle FCSManager::FindManagedObject(UObject* Object)
 	return CreateNewManagedObject(Object, Object->GetClass());
 }
 
-void FCSManager::RemoveManagedObject(const UObjectBase* Object)
+void UCSManager::RemoveManagedObject(const UObjectBase* Object)
 {
 	FGCHandle Handle;
 	if (UnmanagedToManagedMap.RemoveAndCopyValue(Object, Handle))
@@ -392,7 +398,22 @@ void FCSManager::RemoveManagedObject(const UObjectBase* Object)
 	}
 }
 
-uint8* FCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName) const
+void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
+{
+	RemoveManagedObject(Object);
+}
+
+void UCSManager::OnUObjectArrayShutdown()
+{
+	GUObjectArray.RemoveUObjectDeleteListener(this);
+}
+
+void UCSManager::OnEnginePreExit()
+{
+	OnUObjectArrayShutdown();
+}
+
+uint8* UCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName) const
 {
 	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle, *Namespace, *TypeName);
 
@@ -406,7 +427,7 @@ uint8* FCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace
 	return TypeHandle;
 }
 
-uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
+uint8* UCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
 {
 	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
 
@@ -419,7 +440,7 @@ uint8* FCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Nam
 	return GetTypeHandle(Plugin->GetAssemblyHandle().IntPtr, Namespace, TypeName);
 }
 
-uint8* FCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
+uint8* UCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
 {
 	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }

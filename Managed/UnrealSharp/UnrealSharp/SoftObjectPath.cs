@@ -5,7 +5,7 @@ using UnrealSharp.CoreUObject;
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential), Binding]
-public class SoftObjectPath
+public class FSoftObjectPath
 {
     private FTopLevelAssetPath AssetPath;
     private UnmanagedArray SubPathString;
@@ -13,7 +13,7 @@ public class SoftObjectPath
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
-        return obj.GetType() == GetType() && Equals((SoftObjectPath)obj);
+        return obj.GetType() == GetType() && Equals((FSoftObjectPath)obj);
     }
     
     public override int GetHashCode()
@@ -21,17 +21,17 @@ public class SoftObjectPath
         return AssetPath.GetHashCode();
     }
     
-    public static bool operator == (SoftObjectPath a, SoftObjectPath b)
+    public bool IsValid()
     {
-        return a.AssetPath == b.AssetPath;
+        return AssetPath.IsValid();
     }
-
-    public static bool operator != (SoftObjectPath a, SoftObjectPath b)
+    
+    public bool IsNull()
     {
-        return !(a == b);
+        return AssetPath.IsNull();
     }
-
-    public UnrealSharpObject? ResolveObject()
+    
+    public UObject? ResolveObject()
     {
         if (AssetPath.IsNull())
         {
@@ -39,5 +39,15 @@ public class SoftObjectPath
         }
 
         return default;
+    }
+    
+    public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)
+    {
+        return a.AssetPath == b.AssetPath;
+    }
+
+    public static bool operator != (FSoftObjectPath a, FSoftObjectPath b)
+    {
+        return !(a == b);
     }
 }

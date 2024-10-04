@@ -14,5 +14,5 @@ void* UFSoftObjectPtrExporter::LoadSynchronous(const TSoftObjectPtr<UObject>& So
 	}
 	
 	UObject* Test = SoftObjectPtr.Get();
-	return FCSManager::Get().FindManagedObject(Test).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(Test).GetIntPtr();
 }

@@ -14,5 +14,5 @@ void* UUGameInstanceExporter::GetGameInstanceSubsystem(UClass* SubsystemClass, U
 	}
 	
 	UGameInstanceSubsystem* GameInstanceSubsystem = WorldContextObject->GetWorld()->GetGameInstance()->GetSubsystemBase(SubsystemClass);
-	return FCSManager::Get().FindManagedObject(GameInstanceSubsystem).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(GameInstanceSubsystem).GetIntPtr();
 }

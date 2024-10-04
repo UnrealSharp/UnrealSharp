@@ -1,5 +1,8 @@
 using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
+using UnrealSharp.CSharpForUE;
+using UnrealSharp.CSharpForUE;
+using UnrealSharp.CSharpForUE;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -16,12 +19,58 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// <summary>
     /// The path to the object.
     /// </summary>
-    public SoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
+    public FSoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
     
     /// <summary>
     /// Tries to get the object. Returns null if the object is not loaded.
     /// </summary>
     public T? Object => Get();
+    
+    /// <summary>
+    /// Is the object currently loaded?
+    /// </summary>
+    /// <returns> True if the object is loaded. </returns>
+    public bool IsValid()
+    {
+        return SoftObjectPath.IsValid();
+    }
+    
+    /// <summary>
+    /// Does this soft object point to a valid object path?
+    /// </summary>
+    /// <returns> True if the path points to a valid object</returns>
+    public bool IsNull()
+    {
+        return SoftObjectPath.IsNull();
+    }
+    
+    /// <summary>
+    /// Loads the object asynchronously.
+    /// </summary>
+    /// <returns></returns>
+    public T LoadSynchronous()
+    {
+        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.PersistentObjectPtrData);
+        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+    }
+    
+    /// <summary>
+    /// Loads the object asynchronously.
+    /// </summary>
+    /// <param name="onLoaded"> The callback to call when the object is loaded. </param>
+    public void LoadAsync(OnSoftObjectLoaded onLoaded)
+    {
+        TSoftObjectPtr<UObject> async = new TSoftObjectPtr<UObject>(SoftObjectPtr);
+        UCSAsyncLoadSoftObjectPtr asyncLoadSoftObjectPtr = UCSAsyncLoadSoftObjectPtr.AsyncLoadSoftObjectPtr(async);
+        asyncLoadSoftObjectPtr.OnSuccess += onLoaded;
+        asyncLoadSoftObjectPtr.Activate();
+    }
+    
+    private T? Get()
+    {
+        var foundObject = SoftObjectPtr.Get();
+        return foundObject as T;
+    }
     
     public TSoftObjectPtr(UObject obj)
     {
@@ -38,20 +87,9 @@ public struct TSoftObjectPtr<T> where T : UObject
         SoftObjectPtr = new PersistentObjectPtr(data);
     }
     
-    /// <summary>
-    /// Loads the object asynchronously.
-    /// </summary>
-    /// <returns></returns>
-    public T LoadSynchronous()
+    internal TSoftObjectPtr(PersistentObjectPtr persistentObjectPtr)
     {
-        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.PersistentObjectPtrData);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
-    }
-    
-    private T? Get()
-    {
-        var foundObject = SoftObjectPtr.Get();
-        return foundObject as T;
+        SoftObjectPtr = persistentObjectPtr;
     }
 };
 
@@ -59,12 +97,12 @@ public static class SoftObjectMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {
-        BlittableMarshaller<PersistentObjectPtrData>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.PersistentObjectPtrData);
+        BlittableMarshaller<PersistentObjectPtr>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr);
     }
     
-    public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner)
+    public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return new TSoftObjectPtr<T>(BlittableMarshaller<PersistentObjectPtrData>.FromNative(nativeBuffer, arrayIndex));
+        return new TSoftObjectPtr<T>(BlittableMarshaller<PersistentObjectPtr>.FromNative(nativeBuffer, arrayIndex));
     }
 }
 

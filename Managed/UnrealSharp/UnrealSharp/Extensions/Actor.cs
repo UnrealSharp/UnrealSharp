@@ -28,7 +28,7 @@ public partial class AActor
     /// <param name="action"> The action to bind </param>
     /// <param name="triggerEvent"> The trigger event to bind the action to </param>
     /// <param name="callback"> The callback to execute when the action is triggered </param>
-    public void BindAction(UInputAction action, ETriggerEvent triggerEvent, Action<FInputActionValue> callback)
+    public void BindAction(UInputAction action, ETriggerEvent triggerEvent, Action<FInputActionValue, float, float, UInputAction> callback)
     {
         if (InputComponent is UEnhancedInputComponent enhancedInputComponent)
         {

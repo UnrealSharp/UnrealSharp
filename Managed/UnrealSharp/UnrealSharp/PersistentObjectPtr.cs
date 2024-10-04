@@ -13,7 +13,7 @@ public struct PersistentObjectPtrData
     }
     
     public WeakObjectData _weakPtr;
-    public SoftObjectPath _objectId;
+    public FSoftObjectPath _objectId;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -71,7 +71,7 @@ public struct PersistentObjectPtr
     {
         return !(a == b);
     }
-    public SoftObjectPath GetUniqueId()
+    public FSoftObjectPath GetUniqueId()
     {
         return PersistentObjectPtrData._objectId;
     }

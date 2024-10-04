@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using EpicGames.Core;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Types;
@@ -34,10 +35,9 @@ public static class Program
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
-		
 	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
-
+	    
 	    InitializeStatics();
 
 	    UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
@@ -45,6 +45,7 @@ public static class Program
 	    {
 	        throw new Exception("Failed to find UBlueprintFunctionLibrary class.");
 	    }
+	    
 	    BlueprintFunctionLibrary = blueprintFunctionLibrary;
 	    
 	    try
@@ -54,14 +55,13 @@ public static class Program
 
 	        Console.WriteLine("Exporting C++ to C#...");
 	        CSharpExporter.StartExport();
-
-	        Console.WriteLine("Cleaning up old generated C# glue files...");
+	        
 	        FileExporter.CleanOldExportedFiles();
 	        
 	        Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 	        stopwatch.Stop();
-
-	        if (FileExporter.HasModifiedEngineGlue && BuildingEditor)
+	        
+	        if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
 	        {
 	            Console.WriteLine("Detected modified engine glue. Starting the build process...");
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));

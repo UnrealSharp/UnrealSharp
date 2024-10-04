@@ -37,7 +37,7 @@ internal class NativeProperty
     }
     
     internal void DestroyValue(IntPtr valueAddress) => FPropertyExporter.CallDestroyValue(Property, valueAddress);
-    internal void DestroyValue_Container(IntPtr valueAddress) => FPropertyExporter.CallDestroyValue_Container(Property, valueAddress);
+    internal void DestroyValue_Container(IntPtr valueAddress) => FPropertyExporter.CallDestroyValue_InContainer(Property, valueAddress);
     internal void InitializeValue(IntPtr valueAddress) => FPropertyExporter.CallInitializeValue(Property, valueAddress);
     internal IntPtr ValueAddress(IntPtr baseAddress) => baseAddress + Offset;
     internal bool Identical(IntPtr value1, IntPtr value2) => FPropertyExporter.CallIdentical(Property, value1, value2).ToManagedBool();

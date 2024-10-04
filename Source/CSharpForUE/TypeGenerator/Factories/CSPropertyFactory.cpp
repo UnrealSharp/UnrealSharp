@@ -17,7 +17,7 @@
 
 static TMap<ECSPropertyType, FMakeNewPropertyDelegate> MakeNewPropertyFunctionMap;
 
-void FCSPropertyFactory ::InitializePropertyFactory()
+void FCSPropertyFactory::InitializePropertyFactory()
 {
 	AddSimpleProperty<FFloatProperty>(ECSPropertyType::Float);
 	AddSimpleProperty<FDoubleProperty>(ECSPropertyType::Double);

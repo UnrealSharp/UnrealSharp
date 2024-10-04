@@ -24,6 +24,6 @@ public static class ExtensionsClassExporter
         stringBuilder.CloseBrace();
         
         string directory = FileExporter.GetDirectoryPath(package);
-        FileExporter.SaveGlueToDisk(directory, className, stringBuilder.ToString(), package);
+        FileExporter.SaveGlueToDisk(package, directory, className, stringBuilder.ToString());
     }
 }

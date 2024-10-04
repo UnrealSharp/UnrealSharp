@@ -17,12 +17,13 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
 
 #if WITH_EDITOR
+	UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
 	FString BlueprintName = TypeMetaData->Name.ToString();
-	UBlueprint* DummyBlueprint = FindObject<UBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName);
+	UBlueprint* DummyBlueprint = FindObject<UBlueprint>(Package, *BlueprintName);
 	if (!IsValid(DummyBlueprint))
 	{
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-		DummyBlueprint = NewObject<UCSBlueprint>(FCSManager::GetUnrealSharpPackage(), *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
+		DummyBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
 	}
 	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
@@ -117,7 +118,7 @@ void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& Objec
 	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
 	
 	// Make the actual object in C#
-	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
 void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitializer& ObjectInitializer)
@@ -131,7 +132,7 @@ void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitialize
 	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	
 	// Make the actual object in C#
-	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
 void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& ObjectInitializer)
@@ -147,7 +148,7 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	SetupDefaultSubobjects(ObjectInitializer, Actor, ObjectInitializer.GetClass(), ManagedClass, ClassInfo);
 	
 	// Make the actual object in C#
-	FCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
 void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass)

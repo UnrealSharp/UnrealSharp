@@ -38,8 +38,6 @@ private:
 
     static void RunGame(FString ExecutablePath);
 
-    void OnUnrealSharpInitialized();
-
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
     static void OnRegenerateSolution();

@@ -39,7 +39,7 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        FileExporter.SaveGlueToDisk(function, builder, delegateName);
+        FileExporter.SaveGlueToDisk(function, builder);
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)

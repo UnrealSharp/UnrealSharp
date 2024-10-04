@@ -1,7 +1,7 @@
 ﻿namespace UnrealSharpWeaver;
 
 [Flags]
-public enum FunctionFlags : ulong
+public enum EFunctionFlags : ulong
 {
     None = 0x00000000,
     Final = 0x00000001,

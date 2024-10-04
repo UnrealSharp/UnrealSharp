@@ -1,8 +1,7 @@
-﻿using System.Runtime.InteropServices.JavaScript;
+﻿using System.Net;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -11,15 +10,15 @@ public class FunctionMetaData : BaseMetaData
 { 
     public PropertyMetaData[] Parameters { get; set; }
     public PropertyMetaData? ReturnValue { get; set; }
-    public FunctionFlags FunctionFlags { get; set; }
+    public EFunctionFlags FunctionFlags { get; set; }
     
-    const FunctionFlags RpcFlags = FunctionFlags.NetServer | FunctionFlags.NetClient | FunctionFlags.NetMulticast;
+    const EFunctionFlags RpcFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
     
     // Non-serialized for JSON
-    public readonly MethodDefinition MethodDefinition;
+    public readonly MethodDefinition MethodDef;
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
-    public bool IsBlueprintEvent => WeaverHelper.HasAnyFlags(FunctionFlags, FunctionFlags.BlueprintNativeEvent);
+    public bool IsBlueprintEvent => WeaverHelper.HasAnyFlags(FunctionFlags, EFunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
     public bool IsRpc => WeaverHelper.HasAnyFlags(FunctionFlags, RpcFlags);
@@ -29,7 +28,7 @@ public class FunctionMetaData : BaseMetaData
 
     public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
     {
-        MethodDefinition = method;
+        MethodDef = method;
         bool hasOutParams = false;
         
         if (method.ReturnType != WeaverHelper.VoidTypeRef)
@@ -80,59 +79,59 @@ public class FunctionMetaData : BaseMetaData
                 if (defaultValue != null)
                 {
                     TryAddMetaData($"CPP_Default_{param.Name}", defaultValue);
-                    FunctionFlags |= FunctionFlags.HasDefaults;
+                    FunctionFlags |= EFunctionFlags.HasDefaults;
                 }
             }
         }
         
-        FunctionFlags flags = (FunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");
+        EFunctionFlags flags = (EFunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");
 
         if (hasOutParams)
         {
-            flags |= FunctionFlags.HasOutParms;
+            flags |= EFunctionFlags.HasOutParms;
         }
 
         if (method.IsPublic)
         {
-            flags |= FunctionFlags.Public;
+            flags |= EFunctionFlags.Public;
         }
         else if (method.IsFamily)
         {
-            flags |= FunctionFlags.Protected;
+            flags |= EFunctionFlags.Protected;
         }
         else
         {
-            flags |= FunctionFlags.Private;
+            flags |= EFunctionFlags.Private;
         }
 
         if (method.IsStatic)
         {
-            flags |= FunctionFlags.Static;
+            flags |= EFunctionFlags.Static;
         }
         
         if (WeaverHelper.HasAnyFlags(flags, RpcFlags))
         {
-            flags |= FunctionFlags.Net;
+            flags |= EFunctionFlags.Net;
             
             if (method.ReturnType != WeaverHelper.VoidTypeRef)
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }
             
-            if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+            if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
             {
                 throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
             }
         }
         
         // This represents both BlueprintNativeEvent and BlueprintImplementableEvent
-        if (flags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+        if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
         {
-            flags |= FunctionFlags.Event;
+            flags |= EFunctionFlags.Event;
         }
         
         // Native is needed to bind the function pointer of the UFunction to our own invoke in UE.
-        FunctionFlags = flags | FunctionFlags.Native;
+        FunctionFlags = flags | EFunctionFlags.Native;
         
         if (onlyCollectMetaData)
         {
@@ -144,16 +143,23 @@ public class FunctionMetaData : BaseMetaData
     
     public void RewriteFunction()
     {
-        TypeDefinition baseType = MethodDefinition.GetOriginalBaseMethod().DeclaringType;
-        if (baseType == MethodDefinition.DeclaringType)
+        TypeDefinition baseType = MethodDef.GetOriginalBaseMethod().DeclaringType;
+        if (baseType == MethodDef.DeclaringType)
         {
             RewriteInfo = new FunctionRewriteInfo(this);
-            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDefinition.DeclaringType);
+            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDef.DeclaringType);
         }
         else
         {
+            EFunctionFlags flags = GetFunctionFlags(MethodDef.GetOriginalBaseMethod());
+            if (WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintCallable) 
+                && !WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintNativeEvent))
+            {
+                return;
+            }
+            
             FunctionProcessor.MakeImplementationMethod(this);
-            MethodDefinition.DeclaringType.Methods.Remove(MethodDefinition);
+            MethodDef.DeclaringType.Methods.Remove(MethodDef);
         }
     }
 
@@ -175,8 +181,8 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
 
-        var flags = (FunctionFlags) (ulong) functionAttribute.ConstructorArguments[0].Value;
-        return flags == FunctionFlags.BlueprintCallable && method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
+        var flags = (EFunctionFlags) (ulong) functionAttribute.ConstructorArguments[0].Value;
+        return flags == EFunctionFlags.BlueprintCallable && method.ReturnType.FullName.StartsWith("System.Threading.Tasks.Task");
     }
 
     public static bool IsBlueprintEventOverride(MethodDefinition method)
@@ -216,6 +222,11 @@ public class FunctionMetaData : BaseMetaData
         return defaultValue;
     }
 
+    public static EFunctionFlags GetFunctionFlags(MethodDefinition method)
+    {
+        return (EFunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");
+    }
+
     public static bool IsInterfaceFunction(MethodDefinition method)
     {
         foreach (var typeInterface in method.DeclaringType.Interfaces)
@@ -236,6 +247,12 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         return false;
+    }
+    
+    public static bool IsBlueprintCallable(MethodDefinition method)
+    {
+        EFunctionFlags flags = GetFunctionFlags(method);
+        return WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintCallable);
     }
     
     public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, Instruction setFunctionPointer)
