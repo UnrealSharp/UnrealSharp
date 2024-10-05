@@ -84,16 +84,6 @@ public class TNativeArray<T> : IEnumerable<T>
     }
 
     /// <summary>
-    /// Resizes the array to the specified size.
-    /// If the new size is smaller than the current size, elements will be removed. If the new size is larger, elements will be added.
-    /// </summary>
-    /// <param name="newSize"> The new size of the array. </param>
-    public void Resize(int newSize)
-    {
-        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, newSize);
-    }
-
-    /// <summary>
     /// Copy the elements of the array to an array
     /// </summary>
     /// <param name="array"> The array to copy the elements to. </param>
@@ -114,7 +104,7 @@ public class TNativeArray<T> : IEnumerable<T>
     /// <param name="array"> The array to copy the elements from. </param>
     public void CopyFrom(T[] array)
     {
-        Resize(array.Length);
+        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, array.Length);
 
         unsafe
         {
@@ -132,7 +122,7 @@ public class TNativeArray<T> : IEnumerable<T>
     /// <param name="array"> The array to copy the elements from. </param>
     public void CopyFrom(ReadOnlySpan<T> span)
     {
-        Resize(span.Length);
+        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
 
         unsafe
         {
