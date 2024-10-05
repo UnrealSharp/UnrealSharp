@@ -596,7 +596,12 @@ public static class WeaverHelper
                     {
                         return new NativeDataArrayType(typeRef, arrayDim, innerType);
                     }
-                    
+
+                    if (GenericTypeName.Contains("TNativeArray`1") || GenericTypeName.Contains("ReadOnlySpan`1"))
+                    {
+                        return new NativeDataNativeArrayType(typeRef, arrayDim, innerType);
+                    }
+
                     if (GenericTypeName.Contains("TMap`2") || GenericTypeName.Contains("Dictionary`2"))
                     {
                         return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);

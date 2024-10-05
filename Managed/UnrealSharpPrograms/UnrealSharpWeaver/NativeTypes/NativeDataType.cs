@@ -12,6 +12,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataNameType))]
 [JsonDerivedType(typeof(NativeDataTextType))]
 [JsonDerivedType(typeof(NativeDataArrayType))]
+[JsonDerivedType(typeof(NativeDataNativeArrayType))]
 [JsonDerivedType(typeof(NativeDataClassType))]
 [JsonDerivedType(typeof(NativeDataObjectType))]
 [JsonDerivedType(typeof(NativeDataStringType))]
