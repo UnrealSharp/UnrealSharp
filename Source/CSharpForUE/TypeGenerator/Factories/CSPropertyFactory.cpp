@@ -88,6 +88,7 @@ FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FCSP
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 
 	FSoftClassProperty* SoftObjectProperty = CreateObjectProperty<FSoftClassProperty>(Outer, PropertyMetaData);
+	SoftObjectProperty->PropertyClass = UClass::StaticClass();
 	SoftObjectProperty->SetMetaClass(Class);
 	return SoftObjectProperty;
 }

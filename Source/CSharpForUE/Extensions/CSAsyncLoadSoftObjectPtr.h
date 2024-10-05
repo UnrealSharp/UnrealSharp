@@ -24,7 +24,7 @@ public:
 	//~UBlueprintAsyncActionBase interface
 
 protected:
-
+	
 	TArray<FSoftObjectPath> SoftObjectPtrs;
 
 	virtual void OnAsyncLoadComplete()

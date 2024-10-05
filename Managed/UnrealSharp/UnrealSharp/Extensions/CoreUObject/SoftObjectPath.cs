@@ -1,18 +1,18 @@
-using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
-using UnrealSharp.CoreUObject;
 
-namespace UnrealSharp;
 
-[StructLayout(LayoutKind.Sequential), Binding]
-public class FSoftObjectPath
+namespace UnrealSharp.CoreUObject;
+
+[Binding]
+public partial struct FSoftObjectPath
 {
-    private FTopLevelAssetPath AssetPath;
-    private UnmanagedArray SubPathString;
-    
     public override bool Equals(object? obj)
     {
-        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
+        }
+        
         return obj.GetType() == GetType() && Equals((FSoftObjectPath)obj);
     }
     

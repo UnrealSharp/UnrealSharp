@@ -22,8 +22,10 @@ public:
 
 private:
 	
-	static void FromObject(TPersistentObjectPtr<FSoftObjectPath>& Path, UObject* Object);
-	static void* Get(TPersistentObjectPtr<FSoftObjectPath>& Path);
-	static void* GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>& Path);
+	static void FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* Object);
+	static void FromSoftObjectPath(TPersistentObjectPtr<FSoftObjectPath>* Path, const FSoftObjectPath* SoftObjectPath);
+	static void* Get(TPersistentObjectPtr<FSoftObjectPath>* Path);
+	static void* GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path);
+	static void* GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path);
 	
 };

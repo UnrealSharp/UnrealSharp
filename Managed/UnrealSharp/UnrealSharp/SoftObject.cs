@@ -1,7 +1,6 @@
+using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
-using UnrealSharp.CSharpForUE;
-using UnrealSharp.CSharpForUE;
 using UnrealSharp.CSharpForUE;
 using UnrealSharp.Interop;
 
@@ -14,7 +13,7 @@ namespace UnrealSharp;
 [Binding]
 public struct TSoftObjectPtr<T> where T : UObject
 {
-    internal PersistentObjectPtr SoftObjectPtr; 
+    internal FPersistentObjectPtr SoftObjectPtr; 
     
     /// <summary>
     /// The path to the object.
@@ -26,13 +25,28 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// </summary>
     public T? Object => Get();
     
+    public TSoftObjectPtr(UObject obj)
+    {
+        SoftObjectPtr = new FPersistentObjectPtr(obj);
+    }
+    
+    internal TSoftObjectPtr(FPersistentObjectPtr persistentObjectPtr)
+    {
+        SoftObjectPtr = persistentObjectPtr;
+    }
+    
+    internal TSoftObjectPtr(IntPtr nativeBuffer)
+    {
+        SoftObjectPtr = new FPersistentObjectPtr(nativeBuffer);
+    }
+    
     /// <summary>
     /// Is the object currently loaded?
     /// </summary>
     /// <returns> True if the object is loaded. </returns>
     public bool IsValid()
     {
-        return SoftObjectPath.IsValid();
+        return SoftObjectPtr.Get() != null;
     }
     
     /// <summary>
@@ -50,7 +64,7 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// <returns></returns>
     public T LoadSynchronous()
     {
-        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.PersistentObjectPtrData);
+        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
     
@@ -71,38 +85,18 @@ public struct TSoftObjectPtr<T> where T : UObject
         var foundObject = SoftObjectPtr.Get();
         return foundObject as T;
     }
-    
-    public TSoftObjectPtr(UObject obj)
-    {
-        SoftObjectPtr = new PersistentObjectPtr(obj);
-    }
-    
-    public TSoftObjectPtr()
-    {
-        
-    }
-    
-    internal TSoftObjectPtr(PersistentObjectPtrData data)
-    {
-        SoftObjectPtr = new PersistentObjectPtr(data);
-    }
-    
-    internal TSoftObjectPtr(PersistentObjectPtr persistentObjectPtr)
-    {
-        SoftObjectPtr = persistentObjectPtr;
-    }
 };
 
 public static class SoftObjectMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {
-        BlittableMarshaller<PersistentObjectPtr>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr);
+        BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Data);
     }
     
     public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return new TSoftObjectPtr<T>(BlittableMarshaller<PersistentObjectPtr>.FromNative(nativeBuffer, arrayIndex));
+        return new TSoftObjectPtr<T>(nativeBuffer);
     }
 }
 
