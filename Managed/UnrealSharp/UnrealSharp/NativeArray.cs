@@ -75,7 +75,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T>
     /// </summary>
     /// <param name="array"> The array to copy the elements to. </param>
     public void CopyTo(Span<T> span)
-{
+    {
         Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
 
         source.CopyTo(span);
