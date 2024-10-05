@@ -149,7 +149,7 @@ public class NativeDataContainerType : NativeDataType
         processor.Emit(OpCodes.Ldc_I4_1);
         processor.Emit(OpCodes.Ldsfld, nativePropertyField);
 
-        if (IsNativeArray)
+        if (!IsNativeArray)
         {
             EmitDynamicArrayMarshallerDelegates(processor, type);
         }
@@ -275,7 +275,7 @@ public class NativeDataContainerType : NativeDataType
 
         processor.Emit(OpCodes.Ldsfld, NativePropertyField);
 
-        if (IsNativeArray)
+        if (!IsNativeArray)
         {
             EmitDynamicArrayMarshallerDelegates(processor, type);
         }
