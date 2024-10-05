@@ -11,48 +11,28 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
 [Binding]
-public class TNativeArray<T> : IEnumerable<T> 
+public unsafe class TNativeArray<T> : IEnumerable<T> 
     where T : INumber<T>
 {
     protected readonly IntPtr NativeUnrealProperty;
-    protected IntPtr NativeBuffer { get; }
+    protected UnmanagedArray* NativeBuffer { get; }
 
     [CLSCompliant(false)]
     public TNativeArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer)
     {
         NativeUnrealProperty = nativeUnrealProperty;
-        NativeBuffer = nativeBuffer;
+        NativeBuffer = (UnmanagedArray*)nativeBuffer;
     }
 
     /// <summary>
     /// The number of elements in the array.
     /// </summary>
-    public int Length
-    {
-        get
-        {
-            unsafe
-            {
-                UnmanagedArray* nativeArray = (UnmanagedArray*)NativeBuffer.ToPointer();
-                return nativeArray->ArrayNum;
-            }
-        }
-    }
+    public int Length => NativeBuffer->ArrayNum;
 
     /// <summary>
     /// The native buffer that holds the array data.
     /// </summary>
-    protected IntPtr NativeArrayBuffer
-    {
-        get
-        {
-            unsafe
-            {
-                UnmanagedArray* nativeArray = (UnmanagedArray*)NativeBuffer.ToPointer();
-                return nativeArray->Data;
-            }
-        }
-    }
+    protected IntPtr NativeArrayBuffer => NativeBuffer->Data;
 
     /// <inheritdoc />
     public T this[int index]
@@ -106,13 +86,10 @@ public class TNativeArray<T> : IEnumerable<T>
     {
         FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, array.Length);
 
-        unsafe
-        {
-            Span<T> source = new Span<T>(array);
-            Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), array.Length);
+        Span<T> source = new Span<T>(array);
+        Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), array.Length);
 
-            source.CopyTo(destination);
-        }
+        source.CopyTo(destination);
     }
 
 
@@ -124,36 +101,24 @@ public class TNativeArray<T> : IEnumerable<T>
     {
         FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
 
-        unsafe
-        {
-            Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), span.Length);
-            span.CopyTo(destination);
-        }
+        Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), span.Length);
+        span.CopyTo(destination);
     }
 
     /// <summary>
     /// Gets the NativeArrayBuffer as a span
     /// </summary>
     /// <returns></returns>
-    public ReadOnlySpan<T> AsReadOnlySpan()
-    {
-        unsafe
-        {
-            return new Span<T>(NativeArrayBuffer.ToPointer(), Length);
-        }
-    }
+    public ReadOnlySpan<T> AsReadOnlySpan() 
+        => new ReadOnlySpan<T>(NativeArrayBuffer.ToPointer(), Length);
+
 
     /// <summary>
     /// Gets the NativeArrayBuffer as a span
     /// </summary>
     /// <returns></returns>
-    public Span<T> AsSpan()
-    {
-        unsafe
-        {
-            return new Span<T>(NativeArrayBuffer.ToPointer(), Length);
-        }
-    }
+    public Span<T> AsSpan() 
+        => new Span<T>(NativeArrayBuffer.ToPointer(), Length);
 
     /// <summary>
     /// Converts TNativeArray to a normal array
@@ -216,9 +181,9 @@ public class NativeArrayMarshaller<T>(int length, IntPtr nativeProperty)
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(nativeProperty, mirror->Data, mirror->ArrayNum);
+            FArrayPropertyExporter.CallInitializeArray(nativeProperty, mirror, obj.Length);
 
-            Span<T> destination = new Span<T>(mirror->Data.ToPointer(), mirror->ArrayNum);
+            Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
 
             obj.AsReadOnlySpan().CopyTo(destination);
         }
@@ -252,7 +217,7 @@ public class NativeArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, (IntPtr)mirror, obj.Length);
+            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Length);
 
             Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
 
@@ -280,7 +245,7 @@ public class NativeArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, (IntPtr)mirror);
+            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
         }
     }
 }
