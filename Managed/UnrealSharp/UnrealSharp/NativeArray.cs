@@ -44,10 +44,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T>
                 throw new IndexOutOfRangeException($"Index {index} is out of bounds. Array size is {Length}.");
             }
 
-            unsafe
-            {
-                return *(T*)(NativeArrayBuffer + index * Unsafe.SizeOf<T>());
-            }
+            return *(T*)(NativeArrayBuffer + index * Unsafe.SizeOf<T>());
         }
         set
         {
@@ -56,10 +53,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T>
                 throw new IndexOutOfRangeException($"Index {index} is out of bounds. Array size is {Length}.");
             }
 
-            unsafe
-            {
-                *(T*)(NativeArrayBuffer + index * Unsafe.SizeOf<T>()) = value;
-            }
+            *(T*)(NativeArrayBuffer + index * Unsafe.SizeOf<T>()) = value;
         }
     }
 
@@ -69,13 +63,22 @@ public unsafe class TNativeArray<T> : IEnumerable<T>
     /// <param name="array"> The array to copy the elements to. </param>
     public void CopyTo(T[] array)
     {
-        unsafe
-        {
-            Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
-            Span<T> destination = new Span<T>(array);
+        Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
+        Span<T> destination = new Span<T>(array);
 
-            source.CopyTo(destination);
-        }
+        source.CopyTo(destination);
+    }
+
+
+    /// <summary>
+    /// Copy the elements of the span to an array
+    /// </summary>
+    /// <param name="array"> The array to copy the elements to. </param>
+    public void CopyTo(Span<T> span)
+{
+        Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
+
+        source.CopyTo(span);
     }
 
     /// <summary>
