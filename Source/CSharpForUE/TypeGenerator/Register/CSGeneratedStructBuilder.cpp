@@ -17,7 +17,10 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 #endif
 		
 	Field->Status = UDSS_UpToDate;
-	Field->Guid = FGuid::NewGuid();
+	if (!Field->Guid.IsValid())
+	{
+		Field->Guid = FGuid::NewGuid();
+	}
 	
 	Field->Bind();
 	Field->StaticLink(true);
@@ -29,5 +32,6 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 void FCSGeneratedStructBuilder::NewField(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
 {
 	OldField->StructFlags = static_cast<EStructFlags>(OldField->StructFlags | STRUCT_NewerVersionExists);
+	NewField->Guid = OldField->Guid;
 	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(OldField, NewField);
 }
