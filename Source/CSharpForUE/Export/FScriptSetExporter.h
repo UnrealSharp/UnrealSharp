@@ -33,7 +33,6 @@ private:
 	static void Add(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn);
 	static int32 FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn);
 	static int FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn);
-	static void Rehash(FScriptSet* ScriptSet, FSetProperty* Property, FGetKeyHash GetKeyHash);
 	
 	
 };

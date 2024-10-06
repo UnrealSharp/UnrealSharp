@@ -41,7 +41,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
                 // Don't give a name to the delegate function, it'll cause a name collision with other delegates in the same class.
                 // Let Unreal Engine handle the name generation.
                 Name = "",
-                FunctionFlags = FunctionFlags.Delegate | FunctionFlags.MulticastDelegate
+                FunctionFlags = EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate
             };
 
             return;

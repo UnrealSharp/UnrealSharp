@@ -10,5 +10,5 @@ void UGEngineExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 void* UGEngineExporter::GetEngineSubsystem(UClass* SubsystemClass)
 {
 	UEngineSubsystem* GameInstanceSubsystem = GEngine->GetEngineSubsystemBase(SubsystemClass);
-	return FCSManager::Get().FindManagedObject(GameInstanceSubsystem).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(GameInstanceSubsystem).GetIntPtr();
 }

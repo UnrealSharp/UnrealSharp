@@ -17,7 +17,7 @@
 
 static TMap<ECSPropertyType, FMakeNewPropertyDelegate> MakeNewPropertyFunctionMap;
 
-void FCSPropertyFactory ::InitializePropertyFactory()
+void FCSPropertyFactory::InitializePropertyFactory()
 {
 	AddSimpleProperty<FFloatProperty>(ECSPropertyType::Float);
 	AddSimpleProperty<FDoubleProperty>(ECSPropertyType::Double);
@@ -88,6 +88,7 @@ FProperty* FCSPropertyFactory::CreateSoftClassProperty(UField* Outer, const FCSP
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 
 	FSoftClassProperty* SoftObjectProperty = CreateObjectProperty<FSoftClassProperty>(Outer, PropertyMetaData);
+	SoftObjectProperty->PropertyClass = UClass::StaticClass();
 	SoftObjectProperty->SetMetaClass(Class);
 	return SoftObjectProperty;
 }

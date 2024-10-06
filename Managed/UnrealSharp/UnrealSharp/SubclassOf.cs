@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -9,9 +11,11 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T">The base class that the subclass must inherit from.</typeparam>
 [StructLayout(LayoutKind.Sequential), Binding]
-public readonly struct TSubclassOf<T> 
+public struct TSubclassOf<T>
 {
-    internal IntPtr NativeClass { get; }
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    internal IntPtr NativeClass;
+    
     private Type ManagedType { get; }
     
     /// <summary>

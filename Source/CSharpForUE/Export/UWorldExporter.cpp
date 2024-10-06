@@ -31,7 +31,7 @@ void* UUWorldExporter::SpawnActor(const UObject* Outer, const FTransform* SpawnT
 		return nullptr;
 	};
 
-	return FCSManager::Get().FindManagedObject(NewActor).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(NewActor).GetIntPtr();
 }
 
 void UUWorldExporter::SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle)
@@ -59,5 +59,5 @@ void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldC
 	}
 	
 	UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
-	return FCSManager::Get().FindManagedObject(WorldSubsystem).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(WorldSubsystem).GetIntPtr();
 }

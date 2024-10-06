@@ -127,7 +127,7 @@ public class NativeDataContainerType : NativeDataType
             prefix = functionMetadata.Name + "_" + prefix;
 
             ContainerMarshallerField = new FieldDefinition(prefix + "Marshaller", FieldAttributes.Private | FieldAttributes.Static, CopyContainerMarshallerType);
-            functionMetadata.MethodDefinition.DeclaringType.Fields.Add(ContainerMarshallerField);
+            functionMetadata.MethodDef.DeclaringType.Fields.Add(ContainerMarshallerField);
         }
 
         NativePropertyField = WeaverHelper.FindFieldInType(typeDefinition, prefix + "NativeProperty").Resolve();

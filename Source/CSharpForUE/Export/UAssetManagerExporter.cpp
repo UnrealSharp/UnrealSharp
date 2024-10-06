@@ -10,5 +10,5 @@ void UUAssetManagerExporter::ExportFunctions(FRegisterExportedFunction RegisterE
 void* UUAssetManagerExporter::GetAssetManager()
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
-	return FCSManager::Get().FindManagedObject(&AssetManager).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(&AssetManager).GetIntPtr();
 }

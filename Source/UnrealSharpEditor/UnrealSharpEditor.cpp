@@ -26,14 +26,45 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 
 void FUnrealSharpEditorModule::StartupModule()
 {
-	FCSManager& Manager = FCSManager::Get();
-	if (!Manager.IsInitialized())
+	UCSManager& Manager = UCSManager::GetOrCreate();
+	
+	// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
+	// Workaround for a hardcoded feature in the engine for Blueprints.
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	FName UnrealSharpPackageName = Manager.GetUnrealSharpPackage()->GetFName();
+	AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackageName, UnrealSharpPackageName);
+
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDelegateHandle Handle;
+
+	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
+
+	if (!FPaths::DirectoryExists(FullScriptPath))
 	{
-		Manager.OnUnrealSharpInitializedEvent().AddRaw(this, &FUnrealSharpEditorModule::OnUnrealSharpInitialized);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
 	}
-	else
+	
+	//Bind to directory watcher to look for changes in C# code.
+	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+		FullScriptPath,
+		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
+		Handle);
+
+	FCSReinstancer::Get().Initialize();
+
+	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
+	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+
+	if (ProjectPaths.IsEmpty())
 	{
-		OnUnrealSharpInitialized();
+		IMainFrameModule::Get().OnMainFrameCreationFinished().AddLambda([this](TSharedPtr<SWindow>, bool)
+		{
+			SuggestProjectSetup();
+		});
 	}
 
 	FCSStyle::Initialize();
@@ -110,7 +141,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 		return;
 	}
 	
-	FCSManager& CSharpManager = FCSManager::Get();
+	UCSManager& CSharpManager = UCSManager::Get();
 
 	// Unload the user's assembly, to apply the new one.
 	// TODO: Unload the assembly that was modified, not all of them, for sake of hot reload speed.
@@ -128,7 +159,7 @@ void FUnrealSharpEditorModule::StartHotReload()
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Loading C# Assembly..."));
 
 	// TODO: Same here, only load the assembly that was modified.
-	if (!CSharpManager.LoadUserAssembly())
+	if (!CSharpManager.LoadAllUserAssemblies())
 	{
 		HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
@@ -140,50 +171,6 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
-}
-
-void FUnrealSharpEditorModule::OnUnrealSharpInitialized()
-{
-	FCSManager& Manager = FCSManager::Get();
-	
-	// Deny any classes from being Edited in BP that's in the UnrealSharp package. Otherwise it would crash the engine.
-	// Workaround for a hardcoded feature in the engine for Blueprints.
-	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
-	FName UnrealSharpPackageName = Manager.GetUnrealSharpPackage()->GetFName();
-	AssetToolsModule.Get().GetWritableFolderPermissionList()->AddDenyListItem(UnrealSharpPackageName, UnrealSharpPackageName);
-
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	FDelegateHandle Handle;
-
-	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
-
-	if (!FPaths::DirectoryExists(FullScriptPath))
-	{
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
-	}
-	
-	//Bind to directory watcher to look for changes in C# code.
-	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
-		FullScriptPath,
-		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
-		Handle);
-
-	FCSReinstancer::Get().Initialize();
-
-	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
-	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-
-	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
-
-	if (ProjectPaths.IsEmpty())
-	{
-		IMainFrameModule::Get().OnMainFrameCreationFinished().AddLambda([this](TSharedPtr<SWindow>, bool)
-		{
-			SuggestProjectSetup();
-		});
-	}
 }
 
 void FUnrealSharpEditorModule::OnCreateNewProject()

@@ -28,12 +28,15 @@ public class EnumPropertyTranslator : BlittableTypePropertyTranslator
         UhtEnum enumObj = GetEnum(property)!;
         return enumObj.GetFullManagedName();
     }
-    
+
+    public override string GetMarshaller(UhtProperty property)
+    {
+        return $"EnumMarshaller<{GetManagedType(property)}>";
+    }
+
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
         UhtFunction function, UhtProperty paramProperty)
     {
-        UhtEnum enumObj = GetEnum(paramProperty)!;
-        
         if (defaultValue.Contains("::"))
         {
             defaultValue = defaultValue.Substring(defaultValue.LastIndexOf("::") + 2);

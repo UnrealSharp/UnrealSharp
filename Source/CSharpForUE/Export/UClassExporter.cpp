@@ -46,7 +46,7 @@ void* UUClassExporter::GetDefaultFromName(const char* ClassName)
 	}
 
 	UObject* CDO = Class->GetDefaultObject();
-	return FCSManager::Get().FindManagedObject(CDO).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(CDO).GetIntPtr();
 }
 
 void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
@@ -66,5 +66,5 @@ void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
 		CDO = Object->GetClass()->GetDefaultObject();
 	}
 	
-	return FCSManager::Get().FindManagedObject(CDO).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(CDO).GetIntPtr();
 }

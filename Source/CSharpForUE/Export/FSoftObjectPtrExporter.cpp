@@ -6,13 +6,13 @@ void UFSoftObjectPtrExporter::ExportFunctions(FRegisterExportedFunction Register
 	EXPORT_FUNCTION(LoadSynchronous)
 }
 
-void* UFSoftObjectPtrExporter::LoadSynchronous(const TSoftObjectPtr<UObject>& SoftObjectPtr)
+void* UFSoftObjectPtrExporter::LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr)
 {
-	if (SoftObjectPtr.IsNull())
+	if (SoftObjectPtr->IsNull())
 	{
 		return nullptr;
 	}
 	
-	UObject* Test = SoftObjectPtr.Get();
-	return FCSManager::Get().FindManagedObject(Test).GetIntPtr();
+	UObject* Test = SoftObjectPtr->LoadSynchronous();
+	return UCSManager::Get().FindManagedObject(Test).GetIntPtr();
 }

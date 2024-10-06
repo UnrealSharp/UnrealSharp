@@ -109,6 +109,11 @@ public static class ScriptGeneratorUtilities
         }
     }
     
+    public static bool IsPackagePartOfEngine(this UhtPackage package)
+    {
+        return package.IsPartOfEngine || package.Module == Program.Factory.PluginModule;
+    }
+    
     public static void GetExportedFunctions(UhtClass classObj, ref List<UhtFunction> functions, ref List<UhtFunction> overridableFunctions)
     {
         foreach (UhtFunction function in classObj.Functions)
