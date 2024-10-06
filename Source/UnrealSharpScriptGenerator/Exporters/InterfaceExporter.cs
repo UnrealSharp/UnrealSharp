@@ -22,7 +22,7 @@ public static class InterfaceExporter
         attributeBuilder.Finish();
         
         stringBuilder.AppendLine(attributeBuilder.ToString());
-        stringBuilder.DeclareType("interface", interfaceName);
+        stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
 
         stringBuilder.AppendLine($"public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
         

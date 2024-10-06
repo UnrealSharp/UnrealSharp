@@ -33,12 +33,9 @@ public struct FPersistentObjectPtr
         TPersistentObjectPtrExporter.CallFromObject(ref Data, obj.NativeObject);
     }
     
-    internal FPersistentObjectPtr(IntPtr nativeBuffer)
+    internal FPersistentObjectPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> nativeBuffer)
     {
-        unsafe
-        {
-            Data = *(FPersistentObjectPtrData<FSoftObjectPathUnsafe>*)nativeBuffer;
-        }
+        Data = nativeBuffer;
     }
     
     public FSoftObjectPath GetUniqueId()

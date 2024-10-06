@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.CSharpForUE;
@@ -12,40 +13,49 @@ namespace UnrealSharp;
 [Binding]
 public struct TSoftClassPtr<T> where T : UObject
 {
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     internal FPersistentObjectPtr SoftObjectPtr;
-    
+
     /// <summary>
     /// The path to the object.
     /// </summary>
     public FSoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
-    
+
     /// <summary>
     /// The class of the object.
     /// </summary>
-    public TSubclassOf<T> Class => Get();
-    
+    public TSubclassOf<T> Class => GetClass();
+
     /// <summary>
-    /// Is the class currently loaded?
+    /// Checks if the class is currently loaded.
     /// </summary>
     /// <returns> True if the class is loaded. </returns>
-    public bool IsValid()
-    {
-        return SoftObjectPtr.Get() != null;
-    }
-    
+    public bool IsValid => SoftObjectPtr.Get() != null;
+
     /// <summary>
-    /// Does this soft class point to a valid class path?
+    /// Checks if this soft class points to a valid class path.
     /// </summary>
-    /// <returns> True if the path points to a valid class</returns>
-    public bool IsNull()
+    /// <returns> True if the path points to a valid class. </returns>
+    public bool IsNull => SoftObjectPath.IsNull();
+
+    public TSoftClassPtr(UObject obj)
     {
-        return SoftObjectPath.IsNull();
+        SoftObjectPtr = new FPersistentObjectPtr(obj);
     }
-    
+
+    public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj))
+    {
+    }
+
+    public TSoftClassPtr(TSubclassOf<T> obj)
+    {
+        TPersistentObjectPtrExporter.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
+    }
+
     /// <summary>
-    /// Tries to get the object. Returns null if the object is not loaded.
+    /// Tries to load the class synchronously. Returns null if the class is not loaded.
     /// </summary>
-    /// <returns> The object. </returns>
+    /// <returns> The class. </returns>
     public TSubclassOf<T> LoadSynchronous()
     {
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
@@ -58,41 +68,42 @@ public struct TSoftClassPtr<T> where T : UObject
     /// <param name="onLoaded"> The callback to call when the class is loaded. </param>
     public void LoadAsync(OnSoftClassLoaded onLoaded)
     {
-        TSoftClassPtr<UClass> ptr = new TSoftClassPtr<UClass>(SoftObjectPtr);
-        UCSAsyncLoadSoftClassPtr asyncLoader = UCSAsyncLoadSoftClassPtr.AsyncLoadSoftClassPtr(ptr);
+        var asyncLoader = UCSAsyncLoadSoftClassPtr.AsyncLoadSoftClassPtr(SoftObjectPath);
         asyncLoader.OnSuccess += onLoaded;
         asyncLoader.Activate();
     }
-    
-    public TSoftClassPtr(UObject obj)
+
+    public override string ToString()
     {
-        SoftObjectPtr = new FPersistentObjectPtr(obj);
+        return SoftObjectPath.ToString();
     }
 
-    public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj))
+    internal TSoftClassPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> data)
     {
-        
+        SoftObjectPtr = new FPersistentObjectPtr(data);
     }
-    
-    public TSoftClassPtr(TSubclassOf<T> obj)
-    {
-        TPersistentObjectPtrExporter.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
-    }
-    
-    internal TSoftClassPtr(FPersistentObjectPtr data)
-    {
-        SoftObjectPtr = data;
-    }
-    
-    internal TSoftClassPtr(IntPtr nativeBuffer)
-    {
-        SoftObjectPtr = new FPersistentObjectPtr(nativeBuffer);
-    }
-    
-    private TSubclassOf<T> Get()
+
+    private TSubclassOf<T> GetClass()
     {
         IntPtr nativeClass = TPersistentObjectPtrExporter.CallGetNativePointer(ref SoftObjectPtr.Data);
         return new TSubclassOf<T>(nativeClass);
+    }
+}
+
+public static class SoftClassPtrExtensions
+{
+    public static void LoadAsync<T>(this IList<TSoftClassPtr<T>> softObjectPtr, OnSoftClassListLoaded onLoaded) where T : UObject
+    {
+        List<FSoftObjectPath> objectsToLoad = new List<FSoftObjectPath>(softObjectPtr.Count);
+        
+        foreach (var ptr in softObjectPtr)
+        {
+            objectsToLoad.Add(ptr.SoftObjectPath);
+        }
+        
+        UCSAsyncLoadSoftClassPtrList asyncLoader = UCSAsyncLoadSoftClassPtrList.AsyncLoadSoftClassPtrList(objectsToLoad);
+        asyncLoader.OnSuccess += onLoaded;
+        asyncLoader.Activate();
     }
 }
 
@@ -105,6 +116,7 @@ public static class SoftClassMarshaller<T> where T : UObject
     
     public static TSoftClassPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        return new TSoftClassPtr<T>(nativeBuffer);
+        FPersistentObjectPtrData<FSoftObjectPathUnsafe> softObjectPath = BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.FromNative(nativeBuffer, arrayIndex);
+        return new TSoftClassPtr<T>(softObjectPath);
     }
 }

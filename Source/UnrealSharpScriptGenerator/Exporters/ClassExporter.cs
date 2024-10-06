@@ -51,7 +51,7 @@ public static class ClassExporter
             superClassName = "UnrealSharpObject";
         }
         
-        stringBuilder.DeclareType("class", classObj.GetStructName(), superClassName, true, interfaces);
+        stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, true, interfaces);
         
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         

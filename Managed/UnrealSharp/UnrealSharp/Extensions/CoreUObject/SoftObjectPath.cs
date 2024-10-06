@@ -15,7 +15,12 @@ public partial struct FSoftObjectPath
         
         return obj.GetType() == GetType() && Equals((FSoftObjectPath)obj);
     }
-    
+
+    public override string ToString()
+    {
+        return $"{AssetPath.PackageName}.{AssetPath.AssetName}";
+    }
+
     public override int GetHashCode()
     {
         return AssetPath.GetHashCode();

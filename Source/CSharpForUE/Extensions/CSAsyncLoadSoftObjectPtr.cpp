@@ -5,18 +5,20 @@
 
 void UCSAsyncLoadSoftPtr::Activate()
 {
+	RegisterWithGameInstance(GetOuter());
+	
 	UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(SoftObjectPtrs,
 		FStreamableDelegate::CreateUObject(this, &UCSAsyncLoadSoftPtr::OnAsyncLoadComplete));
 }
 
-UCSAsyncLoadSoftObjectPtr* UCSAsyncLoadSoftObjectPtr::AsyncLoadSoftObjectPtr(const TSoftObjectPtr<UObject>& SoftObjectPtr)
+UCSAsyncLoadSoftObjectPtr* UCSAsyncLoadSoftObjectPtr::AsyncLoadSoftObjectPtr(const FSoftObjectPath& SoftObjectPtr)
 {
 	UObject* WorldContextObject = UCSManager::Get().GetCurrentWorldContext();
 	ensure(WorldContextObject);
 	
-	UCSAsyncLoadSoftObjectPtr* BlueprintNode = NewObject<UCSAsyncLoadSoftObjectPtr>(WorldContextObject);
-	BlueprintNode->SoftObjectPtrs.Add(SoftObjectPtr.ToSoftObjectPath());
-	return BlueprintNode;
+	UCSAsyncLoadSoftObjectPtr* Action = NewObject<UCSAsyncLoadSoftObjectPtr>(WorldContextObject->GetWorld());
+	Action->SoftObjectPtrs.Add(SoftObjectPtr);
+	return Action;
 }
 
 void UCSAsyncLoadSoftObjectPtr::OnAsyncLoadComplete()
@@ -26,19 +28,14 @@ void UCSAsyncLoadSoftObjectPtr::OnAsyncLoadComplete()
 	Super::OnAsyncLoadComplete();
 }
 
-UCSAsyncLoadSoftObjectPtrList* UCSAsyncLoadSoftObjectPtrList::AsyncLoadSoftObjectPtrList(const TArray<TSoftObjectPtr<UObject>>& SoftObjectPtr)
+UCSAsyncLoadSoftObjectPtrList* UCSAsyncLoadSoftObjectPtrList::AsyncLoadSoftObjectPtrList(const TArray<FSoftObjectPath>& SoftObjectPtr)
 {
 	UObject* WorldContextObject = UCSManager::Get().GetCurrentWorldContext();
 	ensure(WorldContextObject);
 	
-	UCSAsyncLoadSoftObjectPtrList* BlueprintNode = NewObject<UCSAsyncLoadSoftObjectPtrList>(WorldContextObject);
-	
-	for (const TSoftObjectPtr<UObject>& SoftObjectPtrItem : SoftObjectPtr)
-	{
-		BlueprintNode->SoftObjectPtrs.Add(SoftObjectPtrItem.ToSoftObjectPath());
-	}
-	
-	return BlueprintNode;
+	UCSAsyncLoadSoftObjectPtrList* Action = NewObject<UCSAsyncLoadSoftObjectPtrList>(WorldContextObject->GetWorld());
+	Action->SoftObjectPtrs = SoftObjectPtr;
+	return Action;
 }
 
 void UCSAsyncLoadSoftObjectPtrList::OnAsyncLoadComplete()
@@ -55,13 +52,13 @@ void UCSAsyncLoadSoftObjectPtrList::OnAsyncLoadComplete()
 	Super::OnAsyncLoadComplete();
 }
 
-UCSAsyncLoadSoftClassPtr* UCSAsyncLoadSoftClassPtr::AsyncLoadSoftClassPtr(const TSoftClassPtr<UObject>& SoftObjectPtr)
+UCSAsyncLoadSoftClassPtr* UCSAsyncLoadSoftClassPtr::AsyncLoadSoftClassPtr(const FSoftObjectPath& SoftObjectPtr)
 {
 	UObject* WorldContextObject = UCSManager::Get().GetCurrentWorldContext();
 	ensure(WorldContextObject);
 	
-	UCSAsyncLoadSoftClassPtr* BlueprintNode = NewObject<UCSAsyncLoadSoftClassPtr>(WorldContextObject);
-	BlueprintNode->SoftObjectPtrs.Add(SoftObjectPtr.ToSoftObjectPath());
+	UCSAsyncLoadSoftClassPtr* BlueprintNode = NewObject<UCSAsyncLoadSoftClassPtr>(WorldContextObject->GetWorld());
+	BlueprintNode->SoftObjectPtrs.Add(SoftObjectPtr);
 	return BlueprintNode;
 }
 
@@ -76,19 +73,14 @@ void UCSAsyncLoadSoftClassPtr::OnAsyncLoadComplete()
 	Super::OnAsyncLoadComplete();
 }
 
-UCSAsyncLoadSoftClassPtrList* UCSAsyncLoadSoftClassPtrList::AsyncLoadSoftClassPtrList(const TArray<TSoftClassPtr<UObject>>& SoftObjectPtr)
+UCSAsyncLoadSoftClassPtrList* UCSAsyncLoadSoftClassPtrList::AsyncLoadSoftClassPtrList(const TArray<FSoftObjectPath>& SoftObjectPtr)
 {
 	UObject* WorldContextObject = UCSManager::Get().GetCurrentWorldContext();
 	ensure(WorldContextObject);
 	
-	UCSAsyncLoadSoftClassPtrList* BlueprintNode = NewObject<UCSAsyncLoadSoftClassPtrList>(WorldContextObject);
-	
-	for (const TSoftClassPtr<UObject>& SoftObjectPtrItem : SoftObjectPtr)
-	{
-		BlueprintNode->SoftObjectPtrs.Add(SoftObjectPtrItem.ToSoftObjectPath());
-	}
-	
-	return BlueprintNode;
+	UCSAsyncLoadSoftClassPtrList* Action = NewObject<UCSAsyncLoadSoftClassPtrList>(WorldContextObject->GetWorld());
+	Action->SoftObjectPtrs = SoftObjectPtr;
+	return Action;
 }
 
 void UCSAsyncLoadSoftClassPtrList::OnAsyncLoadComplete()

@@ -52,7 +52,7 @@ public static class StructExporter
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
         
-        stringBuilder.DeclareType("struct", structObj.GetStructName());
+        stringBuilder.DeclareType(structObj, "struct", structObj.GetStructName());
         
         List<string> reservedNames = GetReservedNames(exportedProperties);
         

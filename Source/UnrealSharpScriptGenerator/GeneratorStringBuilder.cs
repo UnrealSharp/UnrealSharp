@@ -158,7 +158,7 @@ public class GeneratorStringBuilder : IDisposable
         AppendLine();
     }
     
-    public void DeclareType(string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? interfaces = default)
+    public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? interfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
         string baseSpecifier = !string.IsNullOrEmpty(baseType) ? $" : {baseType}" : string.Empty;
@@ -173,7 +173,13 @@ public class GeneratorStringBuilder : IDisposable
             }
         }
 
-        AppendLine($"public {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier}{interfacesDeclaration}");
+        string accessSpecifier = "public";
+        if (type != null && type.HasMetadata("Internal"))
+        {
+            accessSpecifier = "internal";
+        }
+        
+        AppendLine($"{accessSpecifier} {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier}{interfacesDeclaration}");
         OpenBrace();
     }
 }

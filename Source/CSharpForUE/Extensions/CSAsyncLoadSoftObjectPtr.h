@@ -12,7 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSoftObjectListLoaded, const TArra
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSoftClassLoaded, TSubclassOf<UObject>, Class);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSoftClassListLoaded, const TArray<TSubclassOf<UObject>>&, Classes);
 
-UCLASS()
+UCLASS(meta = (Internal))
 class UCSAsyncLoadSoftPtr : public UBlueprintAsyncActionBase
 {
 	GENERATED_BODY()
@@ -33,15 +33,15 @@ protected:
 	}
 };
 
-UCLASS()
-class CSHARPFORUE_API UCSAsyncLoadSoftObjectPtr : public UCSAsyncLoadSoftPtr
+UCLASS(meta = (Internal))
+class UCSAsyncLoadSoftObjectPtr : public UCSAsyncLoadSoftPtr
 {
 	GENERATED_BODY()
 
 public:
 
 	UFUNCTION(meta = (ScriptMethod))
-	static UCSAsyncLoadSoftObjectPtr* AsyncLoadSoftObjectPtr(const TSoftObjectPtr<UObject>& SoftObjectPtr);
+	static UCSAsyncLoadSoftObjectPtr* AsyncLoadSoftObjectPtr(const FSoftObjectPath& SoftObjectPtr);
 	
 	UPROPERTY(BlueprintAssignable)
 	FOnSoftObjectLoaded OnSuccess;
@@ -54,15 +54,15 @@ protected:
 	
 };
 
-UCLASS()
-class CSHARPFORUE_API UCSAsyncLoadSoftObjectPtrList : public UCSAsyncLoadSoftPtr
+UCLASS(meta = (Internal))
+class UCSAsyncLoadSoftObjectPtrList : public UCSAsyncLoadSoftPtr
 {
 	GENERATED_BODY()
 
 public:
 
 	UFUNCTION(meta = (ScriptMethod))
-	static UCSAsyncLoadSoftObjectPtrList* AsyncLoadSoftObjectPtrList(const TArray<TSoftObjectPtr<UObject>>& SoftObjectPtr);
+	static UCSAsyncLoadSoftObjectPtrList* AsyncLoadSoftObjectPtrList(const TArray<FSoftObjectPath>& SoftObjectPtr);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSoftObjectListLoaded OnSuccess;
@@ -74,15 +74,15 @@ protected:
 	//~UCSAsyncLoadSoftPtr interface
 };
 
-UCLASS()
-class CSHARPFORUE_API UCSAsyncLoadSoftClassPtr : public UCSAsyncLoadSoftPtr
+UCLASS(meta = (Internal))
+class UCSAsyncLoadSoftClassPtr : public UCSAsyncLoadSoftPtr
 {
 	GENERATED_BODY()
 
 public:
 
 	UFUNCTION(meta = (ScriptMethod))
-	static UCSAsyncLoadSoftClassPtr* AsyncLoadSoftClassPtr(const TSoftClassPtr<UObject>& SoftObjectPtr);
+	static UCSAsyncLoadSoftClassPtr* AsyncLoadSoftClassPtr(const FSoftObjectPath& SoftObjectPtr);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSoftClassLoaded OnSuccess;
@@ -95,15 +95,15 @@ protected:
 	
 };
 
-UCLASS()
-class CSHARPFORUE_API UCSAsyncLoadSoftClassPtrList : public UCSAsyncLoadSoftPtr
+UCLASS(meta = (Internal))
+class UCSAsyncLoadSoftClassPtrList : public UCSAsyncLoadSoftPtr
 {
 	GENERATED_BODY()
 
 public:
 
 	UFUNCTION(meta= (ScriptMethod))
-	static UCSAsyncLoadSoftClassPtrList* AsyncLoadSoftClassPtrList(const TArray<TSoftClassPtr<UObject>>& SoftObjectPtr);
+	static UCSAsyncLoadSoftClassPtrList* AsyncLoadSoftClassPtrList(const TArray<FSoftObjectPath>& SoftObjectPtr);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnSoftClassListLoaded OnSuccess;
