@@ -29,8 +29,8 @@ public static class Program
 	public static string ManagedPath = "";
 	public static string ScriptFolder = "";
 	
-	[UhtExporter(Name = "CSharpForUE", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
-	    ModuleName = "CSharpForUE",
+	[UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
+	    ModuleName = "UnrealSharpCore",
 	    CppFilters = new[] { "*.generated.cs" }, HeaderFilters = new[] { "*.generated.cs" },
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)

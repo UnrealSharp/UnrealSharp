@@ -18,7 +18,7 @@ public class UnrealSharpBlueprint : ModuleRules
             {
                 "CoreUObject",
                 "Engine",
-                "CSharpForUE",
+                "UnrealSharpCore",
                 "BlueprintGraph"
             }
         );

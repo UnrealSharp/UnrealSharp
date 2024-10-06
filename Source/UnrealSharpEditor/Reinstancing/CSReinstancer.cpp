@@ -1,7 +1,7 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "CSharpForUE/TypeGenerator/Register/CSTypeRegistry.h"
+#include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
 
