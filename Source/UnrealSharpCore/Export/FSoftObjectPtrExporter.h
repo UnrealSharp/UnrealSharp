@@ -1,11 +1,11 @@
 ﻿#pragma once
-#include "UnrealSharpCore/Export/FunctionsExporter.h"
 
 #include "CoreMinimal.h"
-#include "GEditorExporter.generated.h"
+#include "FunctionsExporter.h"
+#include "FSoftObjectPtrExporter.generated.h"
 
 UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPEDITOR_API UGEditorExporter : public UFunctionsExporter
+class UNREALSHARPCORE_API UFSoftObjectPtrExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
 
@@ -16,6 +16,7 @@ public:
 	// End
 
 private:
-
-	static void* GetEditorSubsystem(UClass* SubsystemClass);
+	
+	static void* LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr);
+	
 };
