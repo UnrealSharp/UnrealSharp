@@ -1,4 +1,4 @@
-#include "UnrealSharpEditor.h"
+﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
 #include "CSCommands.h"
 #include "DirectoryWatcherModule.h"
