@@ -17,6 +17,6 @@ public:
 
 private:
 	
-	static void* LoadSynchronous(const TSoftObjectPtr<UObject>& SoftObjectPtr);
+	static void* LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr);
 	
 };

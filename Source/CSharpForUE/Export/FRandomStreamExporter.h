@@ -16,7 +16,6 @@ public:
 	// End
 
 private:
-
 	static void GenerateNewSeed(FRandomStream* RandomStream);
 	static float GetFraction(FRandomStream* RandomStream);
 	static uint32 GetUnsignedInt(FRandomStream* RandomStream);

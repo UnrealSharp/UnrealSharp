@@ -10,7 +10,6 @@ void UFScriptSetExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 	EXPORT_FUNCTION(RemoveAt);
 	EXPORT_FUNCTION(AddUninitialized);
 	EXPORT_FUNCTION(Add);
-	EXPORT_FUNCTION(Rehash);
 	EXPORT_FUNCTION(FindOrAdd);
 	EXPORT_FUNCTION(FindIndex);
 }
@@ -64,9 +63,4 @@ int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Proper
 int UFScriptSetExporter::FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn)
 {
 	return ScriptSet->FindIndex(Element, Property->SetLayout, GetKeyHash, EqualityFn);
-}
-
-void UFScriptSetExporter::Rehash(FScriptSet* ScriptSet, FSetProperty* Property, FGetKeyHash GetKeyHash)
-{
-	ScriptSet->Rehash(Property->SetLayout, GetKeyHash);
 }

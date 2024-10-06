@@ -20,7 +20,7 @@ public:
 
 	TField* CreateType()
 	{
-		UPackage* Package = FCSManager::GetUnrealSharpPackage();
+		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
 		FString FieldName = GetFieldName();
 		TField* ExistingField = FindObject<TField>(Package, *FieldName);
 		
@@ -68,7 +68,9 @@ public:
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)
 	{
-		NotifyRegistrationEvent(*FCSManager::GetUnrealSharpPackage()->GetName(),
+		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
+		
+		NotifyRegistrationEvent(*Package->GetName(),
 		*Field->GetName(),
 		RegistrationType,
 		ENotifyRegistrationPhase::NRP_Finished,

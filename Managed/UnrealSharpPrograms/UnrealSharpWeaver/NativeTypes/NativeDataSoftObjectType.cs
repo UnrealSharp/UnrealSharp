@@ -3,4 +3,4 @@
 namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataSoftObjectType(TypeReference typeRef, TypeReference innerTypeReference, int arrayDim)
-    : NativeDataGenericObjectType(typeRef, innerTypeReference, "BlittableMarshaller`1", arrayDim, PropertyType.SoftObject);
+    : NativeDataClassBaseType(typeRef, innerTypeReference, arrayDim, "SoftObjectMarshaller`1", PropertyType.SoftObject);

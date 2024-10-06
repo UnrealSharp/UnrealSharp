@@ -23,7 +23,7 @@ public static class EnumExporter
         stringBuilder.AppendLine(attributeBuilder.ToString());
         
         string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
-        stringBuilder.DeclareType("enum", enumObj.GetStructName(), underlyingType, isPartial: false);
+        stringBuilder.DeclareType(enumObj, "enum", enumObj.GetStructName(), underlyingType, isPartial: false);
         
         int enumValuesCount = enumObj.EnumValues.Count;
         for (int i = 0; i < enumValuesCount; i++)

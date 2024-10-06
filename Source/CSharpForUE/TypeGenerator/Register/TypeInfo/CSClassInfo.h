@@ -8,7 +8,7 @@ struct CSHARPFORUE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, UCla
 {
 	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData) : TCSharpTypeInfo(MetaData)
 	{
-		TypeHandle = FCSManager::Get().GetTypeHandle(*TypeMetaData);
+		TypeHandle = UCSManager::Get().GetTypeHandle(*TypeMetaData);
 	}
 	
 	FCSharpClassInfo() {};

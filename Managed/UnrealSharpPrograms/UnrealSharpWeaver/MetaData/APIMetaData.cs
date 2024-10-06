@@ -2,7 +2,7 @@
 
 public class ApiMetaData
 {
-    public ClassMetaData[] ClassMetaData { get; set; }
+    public List<ClassMetaData> ClassMetaData { get; set; }
     public StructMetaData[] StructMetaData { get; set; }
     public EnumMetaData[] EnumMetaData { get; set; }
     public InterfaceMetaData[] InterfacesMetaData { get; set; }

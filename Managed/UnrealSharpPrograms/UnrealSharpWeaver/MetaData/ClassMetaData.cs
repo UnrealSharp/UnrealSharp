@@ -108,13 +108,12 @@ public class ClassMetaData : TypeReferenceMetadata
                 
                 FunctionMetaData functionMetaData = new FunctionMetaData(method);
                 
-                if (isInterfaceFunction && functionMetaData.FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+                if (isInterfaceFunction && functionMetaData.FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
                 {
                     throw new Exception("Interface functions cannot be marked as BlueprintEvent. Mark base declaration as BlueprintEvent instead.");
                 }
                 
                 Functions.Add(functionMetaData);
-                continue;
             }
             
             if (isBlueprintOverride || isInterfaceFunction)

@@ -13,7 +13,7 @@ public static class ExtensionsClassExporter
         
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
-        stringBuilder.DeclareType("static class", className, null, false);
+        stringBuilder.DeclareType(package, "static class", className, null, false);
 
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
@@ -24,6 +24,6 @@ public static class ExtensionsClassExporter
         stringBuilder.CloseBrace();
         
         string directory = FileExporter.GetDirectoryPath(package);
-        FileExporter.SaveGlueToDisk(directory, className, stringBuilder.ToString(), package);
+        FileExporter.SaveGlueToDisk(package, directory, className, stringBuilder.ToString());
     }
 }

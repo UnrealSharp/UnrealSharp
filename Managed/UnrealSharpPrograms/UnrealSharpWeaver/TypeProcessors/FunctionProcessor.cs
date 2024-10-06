@@ -32,12 +32,12 @@ public static class FunctionProcessor
             AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
+        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDef))
         {
             function.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_NativeFunction", WeaverHelper.IntPtrType, FieldAttributes.Private);
             RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
         }
-        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, FunctionFlags.BlueprintCallable))
+        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, EFunctionFlags.BlueprintCallable))
         {
             foreach (var virtualFunction in classDefinition.Methods)
             {
@@ -57,7 +57,7 @@ public static class FunctionProcessor
         }
         else
         {
-            MakeManagedMethodInvoker(classDefinition, function, function.MethodDefinition, function.RewriteInfo.FunctionParams);
+            MakeManagedMethodInvoker(classDefinition, function, function.MethodDef, function.RewriteInfo.FunctionParams);
         }
     }
     
@@ -76,26 +76,25 @@ public static class FunctionProcessor
     
     public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
     {
-        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDefinition.Name + "_Implementation", func.MethodDefinition);
+        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDef.Name + "_Implementation", func.MethodDef);
         if (copiedMethod.IsVirtual)
         {
             // Find the call to the original function and replace it with a call to the implementation.
             foreach (var instruction in copiedMethod.Body.Instructions)
             {
-                if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+                if (instruction.OpCode != OpCodes.Call)
                 {
                     continue;
                 }
                 
                 MethodReference calledMethod = (MethodReference) instruction.Operand;
-                string engineName = WeaverHelper.GetEngineName(calledMethod.Resolve());
                 
-                if (engineName != func.Name)
+                if (func.SourceName != calledMethod.Name)
                 {
                     continue;
                 }
 
-                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name, false)!;
+                MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name)!;
                 instruction.Operand = WeaverHelper.ImportMethod(implementationMethod);
             }
         }
@@ -164,18 +163,14 @@ public static class FunctionProcessor
             param.PropertyDataType.WriteLoad(processor, type, loadBuffer, paramRewriteInfos[i].OffsetField!, paramVariables[i]);
         }
 
-        OpCode callOp = OpCodes.Callvirt;
+        OpCode callOp = OpCodes.Call;
         
-        if (methodToCall.IsStatic)
-        {
-            callOp = OpCodes.Call;
-        }
-        else
+        if (!methodToCall.IsStatic)
         {
             processor.Emit(OpCodes.Ldarg_0);
             if (methodToCall.IsVirtual)
             {
-                callOp = OpCodes.Call;
+                callOp = OpCodes.Callvirt;
             }
         }
 
@@ -242,12 +237,12 @@ public static class FunctionProcessor
 
     public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        if (func.MethodDefinition.Body != null)
+        if (func.MethodDef.Body != null)
         {
             MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramRewriteInfos);
         }
         
-        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDefinition, paramsSizeField, paramRewriteInfos);
+        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDef, paramsSizeField, paramRewriteInfos);
     }
 
     public static void RewriteOriginalFunctionToInvokeNative(TypeDefinition type, 
@@ -305,7 +300,7 @@ public static class FunctionProcessor
         }
         
         // Marshal out params back from the native parameter buffer.
-        if (metadata.FunctionFlags.HasFlag(FunctionFlags.HasOutParms))
+        if (metadata.FunctionFlags.HasFlag(EFunctionFlags.HasOutParms))
         {
             for (var i = 0; i < metadata.Parameters.Length; ++i)
             {

@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -8,15 +11,26 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 
+class ModuleFolders
+{
+    public Dictionary<string, DateTime> DirectoryToWriteTime { get; set; } = new();
+    public bool HasBeenExported;
+}
+
 public static class CSharpExporter
 {
+    const string ModuleDataFileName = "UnrealSharpModuleData.json";
+    
+    public static bool HasModifiedEngineGlue;
+    
     private static readonly List<Task> Tasks = new();
     private static readonly List<string> ExportedDelegates = new();
+    private static readonly Dictionary<string, DateTime> CachedDirectoryTimes = new();
+    private static Dictionary<string, ModuleFolders> _modulesWriteInfo = new();
     
     public static void StartExport()
     {
-        Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(Program.Factory.Session.UObject); })!);
-        Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(Program.Factory.Session.UInterface); })!);
+        DeserializeModuleData();
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
@@ -28,6 +42,38 @@ public static class CSharpExporter
         FunctionExporter.StartExportingExtensionMethods(Tasks);
         
         WaitForTasks();
+        
+        SerializeModuleData();
+    }
+    
+    static void DeserializeModuleData()
+    {
+        if (!Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        {
+            return;
+        }
+        
+        string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
+        
+        if (!File.Exists(outputPath))
+        {
+            return;
+        }
+        
+        using FileStream fileStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        Dictionary<string, ModuleFolders>? jsonValue = JsonSerializer.Deserialize<Dictionary<string, ModuleFolders>>(fileStream);
+
+        if (jsonValue != null)
+        {
+            _modulesWriteInfo = new Dictionary<string, ModuleFolders>(jsonValue);
+        }
+    }
+	
+    static void SerializeModuleData()
+    {
+        string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
+        using FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+        JsonSerializer.Serialize(fs, _modulesWriteInfo);
     }
 
     private static void WaitForTasks()
@@ -46,23 +92,87 @@ public static class CSharpExporter
         {
             return;
         }
-        
-        foreach (UhtType child in package.Children)
+
+        string packageName = package.ShortName;
+    
+        if (!_modulesWriteInfo.TryGetValue(packageName, out ModuleFolders? lastEditTime))
         {
-            foreach (UhtType type in child.Children)
+            lastEditTime = new ModuleFolders();
+            _modulesWriteInfo.Add(packageName, lastEditTime);
+        }
+    
+        HashSet<string> processedDirectories = new();
+        
+        foreach (UhtType header in package.Children)
+        {
+            UhtHeaderFile headerFile = (UhtHeaderFile) header;
+            string directoryName = Path.GetDirectoryName(headerFile.FilePath)!;
+            
+            if (ShouldExportDirectory(directoryName, lastEditTime))
             {
-                // Finds classes, enums, structs, and delegates in the header file
-                ExportType(type);
-                
-                foreach (UhtType innerType in type.Children)
-                {
-                    // Finds nested classes, enums, structs, and delegates
-                    ExportType(innerType);
-                }
+                processedDirectories.Add(directoryName);
+                ForEachTypeInHeader(header, ExportType);
+            }
+            else
+            {
+                ForEachTypeInHeader(header, FileExporter.AddUnchangedType);
+            }
+        }
+        
+        if (processedDirectories.Count == 0)
+        {
+            // No directories in this package have been exported or modified
+            return;
+        }
+        
+        // The glue has been exported, so we need to update the last write times
+        UpdateLastWriteTimes(processedDirectories, lastEditTime);
+    }
+    
+    private static void ForEachTypeInHeader(UhtType header, Action<UhtType> action)
+    {
+        foreach (UhtType type in header.Children)
+        {
+            action(type);
+            
+            foreach (UhtType innerType in type.Children)
+            {
+                action(innerType);
             }
         }
     }
 
+    public static bool HasBeenExported(string directory)
+    {
+        return _modulesWriteInfo.TryGetValue(directory, out ModuleFolders lastEditTime) && lastEditTime.HasBeenExported;
+    }
+
+    private static bool ShouldExportDirectory(string directoryPath, ModuleFolders lastEditTime)
+    {
+        if (!CachedDirectoryTimes.TryGetValue(directoryPath, out DateTime cachedTime))
+        {
+            DateTime currentWriteTime = Directory.GetLastWriteTimeUtc(directoryPath);
+            CachedDirectoryTimes[directoryPath] = currentWriteTime;
+            cachedTime = currentWriteTime;
+        }
+        
+        return !lastEditTime.DirectoryToWriteTime.TryGetValue(directoryPath, out DateTime lastEditTimeValue) || lastEditTimeValue != cachedTime;
+    }
+
+    private static void UpdateLastWriteTimes(HashSet<string> directories, ModuleFolders lastEditTime)
+    {
+        foreach (string directory in directories)
+        {
+            if (!CachedDirectoryTimes.TryGetValue(directory, out DateTime cachedTime))
+            {
+                continue;
+            }
+            
+            lastEditTime.DirectoryToWriteTime[directory] = cachedTime;
+            lastEditTime.HasBeenExported = true;
+        }
+    }
+    
     private static void ExportType(UhtType type)
     {
         if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.SourceName))
@@ -74,7 +184,7 @@ public static class CSharpExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
-                if (classObj.ClassType is not UhtClassType.Interface)
+                if (classObj.ClassType is not UhtClassType.Interface && type != Program.Factory.Session.IInterface)
                 {
                     return;
                 }

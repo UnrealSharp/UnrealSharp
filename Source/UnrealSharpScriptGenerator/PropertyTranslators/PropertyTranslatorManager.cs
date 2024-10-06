@@ -52,7 +52,6 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         
         AddBlittableCustomStructPropertyTranslator("FVector2f", "System.Numerics.Vector2");
         AddBlittableCustomStructPropertyTranslator("FVector3f", "System.Numerics.Vector3");

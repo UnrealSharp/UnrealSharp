@@ -6,20 +6,33 @@ void UTPersistentObjectPtrExporter::ExportFunctions(FRegisterExportedFunction Re
 	EXPORT_FUNCTION(FromObject)
 	EXPORT_FUNCTION(Get)
 	EXPORT_FUNCTION(GetNativePointer)
+	EXPORT_FUNCTION(GetUniqueID)
+	EXPORT_FUNCTION(FromSoftObjectPath)
 }
 
-void UTPersistentObjectPtrExporter::FromObject(TPersistentObjectPtr<FSoftObjectPath>& Path, UObject* InObject)
+void UTPersistentObjectPtrExporter::FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* InObject)
 {
-	Path = InObject;
+	*Path = InObject;
 }
 
-void* UTPersistentObjectPtrExporter::Get(TPersistentObjectPtr<FSoftObjectPath>& Path)
+void UTPersistentObjectPtrExporter::FromSoftObjectPath(TPersistentObjectPtr<FSoftObjectPath>* Path, const FSoftObjectPath* SoftObjectPath)
 {
-	UObject* Object = Path.Get();
-	return FCSManager::Get().FindManagedObject(Object).GetIntPtr();
+	*Path = *SoftObjectPath;
 }
 
-void* UTPersistentObjectPtrExporter::GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>& Path)
+void* UTPersistentObjectPtrExporter::Get(TPersistentObjectPtr<FSoftObjectPath>* Path)
 {
-	return Path.Get();
+	UObject* Object = Path->Get();
+	return UCSManager::Get().FindManagedObject(Object).GetIntPtr();
 }
+
+void* UTPersistentObjectPtrExporter::GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path)
+{
+	return Path->Get();
+}
+
+void* UTPersistentObjectPtrExporter::GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path)
+{
+	return &Path->GetUniqueID();
+}
+

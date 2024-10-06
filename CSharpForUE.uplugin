@@ -17,22 +17,22 @@
 		{
 			"Name": "CSharpForUE",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PreDefault"
 		},
 		{
 			"Name": "UnrealSharpProcHelper",
 			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "Default"
 		},
 		{
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "Default"
 		},
 		{
 			"Name": "UnrealSharpBlueprint",
 			"Type": "UncookedOnly",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "Default"
 		}
 	],
 	"SupportedTargetPlatforms": 

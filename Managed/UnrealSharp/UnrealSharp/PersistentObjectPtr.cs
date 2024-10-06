@@ -5,82 +5,67 @@ using UnrealSharp.Interop;
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct PersistentObjectPtrData
+public struct FPersistentObjectPtrData<ObjectID> where ObjectID : struct
 { 
-    public readonly bool Equals(PersistentObjectPtrData other)
-    {
-        return Equals(_weakPtr, other._weakPtr) && Equals(_objectId, other._objectId);
-    }
-    
     public WeakObjectData _weakPtr;
-    public SoftObjectPath _objectId;
+    public ObjectID _objectId;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct PersistentObjectPtr
+public struct FSoftObjectPathUnsafe
 {
-    public bool Equals(PersistentObjectPtr other)
-    {
-        return PersistentObjectPtrData.Equals(other.PersistentObjectPtrData);
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        return obj.GetType() == GetType() && Equals((PersistentObjectPtr)obj);
-    }
-    
-    public override int GetHashCode()
-    {
-        return PersistentObjectPtrData.GetHashCode();
-    }
+    public FTopLevelAssetPath AssetPath;
+    public UnmanagedArray SubPathString;
+}
 
-    public PersistentObjectPtr(UObject obj)
+[StructLayout(LayoutKind.Sequential)]
+public struct FPersistentObjectPtr
+{
+    internal FPersistentObjectPtrData<FSoftObjectPathUnsafe> Data;
+    
+    public FPersistentObjectPtr(UObject obj)
     {
-        if (obj == null)
+        if (!obj.IsValid)
         {
             return;
         }
-        
-        TPersistentObjectPtrExporter.CallFromObject(ref PersistentObjectPtrData, obj.NativeObject);
-    }
-    
-    public PersistentObjectPtr(IntPtr native)
-    {
-        unsafe
-        {
-            PersistentObjectPtrData = *(PersistentObjectPtrData*) native.ToPointer(); 
-        }
-    }
 
-    public PersistentObjectPtr()
-    {
-        
+        TPersistentObjectPtrExporter.CallFromObject(ref Data, obj.NativeObject);
     }
     
-    internal PersistentObjectPtr(PersistentObjectPtrData data)
+    internal FPersistentObjectPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> nativeBuffer)
     {
-        PersistentObjectPtrData = data;
+        Data = nativeBuffer;
     }
     
-    public static bool operator == (PersistentObjectPtr a, PersistentObjectPtr b)
+    public FSoftObjectPath GetUniqueId()
     {
-        return a.Equals(b);
-    }
-    public static bool operator !=(PersistentObjectPtr a, PersistentObjectPtr b)
-    {
-        return !(a == b);
-    }
-    public SoftObjectPath GetUniqueId()
-    {
-        return PersistentObjectPtrData._objectId;
+        IntPtr uniqueId = TPersistentObjectPtrExporter.CallGetUniqueID(ref Data);
+        return FSoftObjectPathMarshaller.FromNative(uniqueId, 0);
     }
     
     public UObject? Get()
     {
-        IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref PersistentObjectPtrData);
+        IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref Data);
         return GcHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
-
-    internal PersistentObjectPtrData PersistentObjectPtrData;
+    
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
+        }
+        
+        return obj.GetType() == GetType() && Equals((FPersistentObjectPtr)obj);
+    }
+    
+    public static bool operator == (FPersistentObjectPtr a, FPersistentObjectPtr b)
+    {
+        return a.Equals(b);
+    }
+    public static bool operator !=(FPersistentObjectPtr a, FPersistentObjectPtr b)
+    {
+        return !(a == b);
+    }
 }

@@ -19,12 +19,16 @@ void UCSFunctionBase::SetManagedMethod(void* InManagedMethod)
 
 bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
+	UCSManager& Manager = UCSManager::Get();
+	
+	Manager.SetCurrentWorldContext(ObjectToInvokeOn);
+	
 	if (Stack.Code)
 	{
 		++Stack.Code;
 	}
 	
-	const FGCHandle ManagedObjectHandle = FCSManager::Get().FindManagedObject(ObjectToInvokeOn);
+	const FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
 	FString ExceptionMessage;
 	
 	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
@@ -43,6 +47,7 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
 #endif
-	
+
+	Manager.SetCurrentWorldContext(nullptr);
 	return bSuccess;
 }

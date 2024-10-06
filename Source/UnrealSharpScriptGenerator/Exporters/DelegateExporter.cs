@@ -29,7 +29,7 @@ public static class DelegateExporter
         
         FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(builder, function, delegateName);
         
-        builder.DeclareType("class", $"U{delegateName}", superClass);
+        builder.DeclareType(function, "class", $"U{delegateName}", superClass);
         
         FunctionExporter.ExportDelegateGlue(builder, functionExporter);
         
@@ -39,7 +39,7 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        FileExporter.SaveGlueToDisk(function, builder, delegateName);
+        FileExporter.SaveGlueToDisk(function, builder);
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)

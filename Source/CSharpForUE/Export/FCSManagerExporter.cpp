@@ -8,5 +8,5 @@ void UFCSManagerExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 
 void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 {
-	return FCSManager::Get().FindManagedObject(Object).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(Object).GetIntPtr();
 }

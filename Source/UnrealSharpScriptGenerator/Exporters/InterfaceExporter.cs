@@ -20,20 +20,9 @@ public static class InterfaceExporter
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
         attributeBuilder.AddGeneratedTypeAttribute(interfaceObj);
         attributeBuilder.Finish();
-
-        string baseInterface = "";
-        string typeName;
-        if (interfaceObj != Program.Factory.Session.UInterface)
-        {
-            baseInterface = "CoreUObject.IInterface";
-            typeName = interfaceName;
-        }
-        else
-        {
-            typeName = "IInterface";
-        }
+        
         stringBuilder.AppendLine(attributeBuilder.ToString());
-        stringBuilder.DeclareType("interface", typeName, baseInterface);
+        stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
 
         stringBuilder.AppendLine($"public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
         

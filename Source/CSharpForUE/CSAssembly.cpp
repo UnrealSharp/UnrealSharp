@@ -17,7 +17,7 @@ bool FCSAssembly::Load()
 		return false;
 	}
 	
-	Assembly.Handle = FCSManager::ManagedPluginsCallbacks.LoadPlugin(*AssemblyPath);
+	Assembly.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath);
 	Assembly.Type = GCHandleType::WeakHandle;
 
 	if (!IsAssemblyValid())
@@ -31,7 +31,7 @@ bool FCSAssembly::Load()
 
 bool FCSAssembly::Unload() const
 {
-	return FCSManager::ManagedPluginsCallbacks.UnloadPlugin(*AssemblyPath);
+	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
 }
 
 bool FCSAssembly::IsAssemblyValid() const

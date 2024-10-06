@@ -13,11 +13,13 @@ public class BaseMetaData
     public readonly string AttributeName;
     public readonly IMemberDefinition MemberDefinition;
     public readonly CustomAttribute? BaseAttribute;
+    public readonly string SourceName;
     // End non-serialized
     
     public BaseMetaData(MemberReference member, string attributeName)
     {
         MemberDefinition = member.Resolve();
+        SourceName = MemberDefinition.Name;
         Name = WeaverHelper.GetEngineName(MemberDefinition);
         
         AttributeName = attributeName;

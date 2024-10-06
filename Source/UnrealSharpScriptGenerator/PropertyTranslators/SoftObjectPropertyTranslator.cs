@@ -4,8 +4,12 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
-public class SoftObjectPropertyTranslator : BlittableStructPropertyTranslator
+public class SoftObjectPropertyTranslator : SimpleTypePropertyTranslator
 {
+    public SoftObjectPropertyTranslator() : base(typeof(UhtSoftObjectProperty))
+    {
+    }
+    
     public override bool CanExport(UhtProperty property)
     {
         return property is UhtSoftObjectProperty;
@@ -16,6 +20,13 @@ public class SoftObjectPropertyTranslator : BlittableStructPropertyTranslator
         UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
         string fullName = softObjectProperty.Class.GetFullManagedName();
         return $"TSoftObjectPtr<{fullName}>";
+    }
+
+    public override string GetMarshaller(UhtProperty property)
+    {
+        UhtSoftObjectProperty softClassProperty = (UhtSoftObjectProperty) property;
+        string fullName = softClassProperty.Class.GetFullManagedName();
+        return $"SoftObjectMarshaller<{fullName}>";
     }
 
     public override void GetReferences(UhtProperty property, List<UhtType> references)
