@@ -142,7 +142,7 @@ public struct TSubclassOf<T>
     }
 }
 
-public static class SubclassOfMarshaller<T> where T : UObject
+public static class SubclassOfMarshaller<T>
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSubclassOf<T> obj)
     {
