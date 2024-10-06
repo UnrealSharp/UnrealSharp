@@ -9,8 +9,6 @@ namespace UnrealSharpWeaver.NativeTypes;
 class NativeDataNativeArrayType(TypeReference typeRef, int containerDim, TypeReference innerType)
     : NativeDataContainerType(typeRef, containerDim, PropertyType.Array, innerType)
 {
-    protected override bool IsNativeArray => true;
-
     public override string GetContainerMarshallerName()
     {
         return "NativeArrayMarshaller`1";
@@ -25,4 +23,6 @@ class NativeDataNativeArrayType(TypeReference typeRef, int containerDim, TypeRef
     {
         return "System.ReadOnlySpan`1";
     }
+
+    public override void EmitDynamicArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type) { }
 }

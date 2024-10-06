@@ -10,7 +10,6 @@ public class NativeDataContainerType : NativeDataType
 {
     public PropertyMetaData InnerProperty { get; set; }
 
-    protected virtual bool IsNativeArray { get; }
 
     protected TypeReference ContainerMarshallerType;
     protected TypeReference CopyContainerMarshallerType;
@@ -148,11 +147,7 @@ public class NativeDataContainerType : NativeDataType
 
         processor.Emit(OpCodes.Ldc_I4_1);
         processor.Emit(OpCodes.Ldsfld, nativePropertyField);
-
-        if (IsNativeArray)
-        {
-            EmitDynamicArrayMarshallerDelegates(processor, type);
-        }
+        EmitDynamicArrayMarshallerDelegates(processor, type);
 
         var constructor = ContainerMarshallerType.Resolve().GetConstructors().Single();
         processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverHelper.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
@@ -274,11 +269,7 @@ public class NativeDataContainerType : NativeDataType
         Instruction branchPosition = processor.Body.Instructions[^1];
 
         processor.Emit(OpCodes.Ldsfld, NativePropertyField);
-
-        if (IsNativeArray)
-        {
-            EmitDynamicArrayMarshallerDelegates(processor, type);
-        }
+        EmitDynamicArrayMarshallerDelegates(processor, type);
 
         processor.Emit(OpCodes.Newobj, CopyContainerMarshallerCtor);
         processor.Emit(OpCodes.Stsfld, ContainerMarshallerField);
