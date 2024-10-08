@@ -94,6 +94,11 @@ public static class FunctionProcessor
                     continue;
                 }
 
+                if (calledMethod.DeclaringType != copiedMethod.DeclaringType.BaseType)
+                {
+                    continue;
+                }
+
                 MethodReference implementationMethod = WeaverHelper.FindMethod(copiedMethod.DeclaringType.BaseType.Resolve(), copiedMethod.Name)!;
                 instruction.Operand = WeaverHelper.ImportMethod(implementationMethod);
             }
