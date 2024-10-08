@@ -85,6 +85,7 @@ public static class StringMarshaller
     {
         unsafe
         {
+            if (obj == null) obj = string.Empty; //Guard against C# null strings (use string.Empty instead)
             IntPtr ustring = nativeBuffer + arrayIndex * sizeof(UnmanagedArray);
             fixed (char* stringPtr = obj)
             {
