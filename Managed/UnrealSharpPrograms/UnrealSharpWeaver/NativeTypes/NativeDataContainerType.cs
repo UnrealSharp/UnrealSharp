@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
@@ -9,6 +9,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 public class NativeDataContainerType : NativeDataType
 {
     public PropertyMetaData InnerProperty { get; set; }
+
 
     protected TypeReference ContainerMarshallerType;
     protected TypeReference CopyContainerMarshallerType;
@@ -269,6 +270,7 @@ public class NativeDataContainerType : NativeDataType
 
         processor.Emit(OpCodes.Ldsfld, NativePropertyField);
         EmitDynamicArrayMarshallerDelegates(processor, type);
+
         processor.Emit(OpCodes.Newobj, CopyContainerMarshallerCtor);
         processor.Emit(OpCodes.Stsfld, ContainerMarshallerField);
 
