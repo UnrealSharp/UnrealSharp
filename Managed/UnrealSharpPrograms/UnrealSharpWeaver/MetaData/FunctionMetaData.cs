@@ -58,7 +58,6 @@ public class FunctionMetaData : BaseMetaData
             {
                 TryAddMetaData(ExpandEnumAsExecsName, (string)expandEnumAsExecs.Value.Value);
             }
-
         }
 
         Parameters = new PropertyMetaData[method.Parameters.Count];
