@@ -179,11 +179,6 @@ public class FunctionExporter
             _paramStringApiWithDefaults = paramString;
         }
         
-        if (_function.SourceName == "AppendTags")
-        {
-            Console.WriteLine("");
-        }
-        
         string paramsStringCallNative = "";
         for (int i = 0; i < _function.Children.Count; i++)
         {
