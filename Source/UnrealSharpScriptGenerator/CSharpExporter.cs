@@ -175,7 +175,9 @@ public static class CSharpExporter
     
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata("NotGeneratorValid") || PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.SourceName))
+        bool isManualExport = PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.SourceName);
+
+        if (type.HasMetadata("NotGeneratorValid"))
         {
             return;
         }
@@ -184,6 +186,11 @@ public static class CSharpExporter
         {
             if (classObj.HasAllFlags(EClassFlags.Interface))
             {
+                if (isManualExport)
+                {
+                    return;
+                }
+
                 if (classObj.ClassType is not UhtClassType.Interface && type != Program.Factory.Session.IInterface)
                 {
                     return;
@@ -193,19 +200,29 @@ public static class CSharpExporter
             }
             else
             {
-                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj); })!);
+                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj, isManualExport); })!);
             }
         }
         else if (type is UhtEnum enumObj)
         {
+            if (isManualExport)
+            {
+                return;
+            }
+
             Tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); })!);
         }
         else if (type is UhtScriptStruct structObj)
         {
-            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj); })!);
+            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
         else if (type.EngineType == UhtEngineType.Delegate)
         {
+            if (isManualExport)
+            {
+                return;
+            }
+
             UhtFunction delegateFunction = (UhtFunction) type;
             if (!ScriptGeneratorUtilities.CanExportParameters(delegateFunction) || delegateFunction.ReturnProperty != null)
             {
