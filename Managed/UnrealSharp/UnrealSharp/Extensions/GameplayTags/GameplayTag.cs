@@ -1,67 +1,44 @@
-using UnrealSharp.Interop;
+using UnrealSharp.CSharpForUE;
 
 namespace UnrealSharp.GameplayTags;
 
 public partial struct FGameplayTag
 {
-    private FName _tagName;
+    public FGameplayTag(FName tagName)
+    {
+        this = UCSGameplayTagExtensions.RequestGameplayTag(tagName);
+        if (!IsValid)
+        {
+            throw new Exception($"Failed to create GameplayTag with name {tagName}");
+        }
+    }
+    
+    public FGameplayTag(string tagName) : this(new FName(tagName)) {}
     
     /// <summary>
-    /// Determine if this tag matches TagToCheck, expanding our parent tags
-    /// "A.1".MatchesTag("A") will return True, "A".MatchesTag("A.1") will return False
-    /// If TagToCheck is not Valid it will always return False
+    /// Returns empty GameplayTag
     /// </summary>
+    public static FGameplayTag None => new(FName.None);
+    
+    /// <summary>
+    /// Check if this tag is exactly the same as TagToCheck
+    /// </summary>
+    /// <param name="tagToCheck">The tag to check against</param>
     /// <returns>True if this tag matches TagToCheck</returns>
-    public bool MatchesTag(FGameplayTag tagToCheck)
+    public bool MatchesTagExact(FGameplayTag tagToCheck) 
     {
-        return FGameplayTagExporter.CallMatchesTag(ref _tagName, ref tagToCheck._tagName).ToManagedBool();
+        return TagName == tagToCheck.TagName;
     }
     
     /// <summary>
-    /// Determine if TagToCheck is valid and exactly matches this tag
-    /// "A.1".MatchesTagExact("A") will return False
-    /// If TagToCheck is not Valid it will always return False
+    /// Is tag valid?
     /// </summary>
-    /// <returns>True if TagToCheck is Valid and is exactly this tag</returns>
-    public bool MatchesTagExact(FGameplayTag tagToCheck)
-    {
-        return _tagName == tagToCheck._tagName;
-    }
-    
-    /// <summary>
-    /// Check to see how closely two FGameplayTags match. Higher values indicate more matching terms in the tags.
-    /// </summary>
-    /// <returns>The depth of the match, higher means they are closer to an exact match</returns>
-    public bool MatchesTagDepth(FGameplayTag tagToCheck)
-    {
-        return FGameplayTagExporter.CallMatchesTagDepth(ref _tagName, ref tagToCheck._tagName).ToManagedBool();
-    }
-    
-    /// <summary>
-    /// Checks if this tag matches ANY of the tags in the specified container, also checks against our parent tags
-    /// "A.1".MatchesAny({"A","B"}) will return True, "A".MatchesAny({"A.1","B"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return False
-    /// </summary>
-    /// <returns>True if this tag matches ANY of the tags of in ContainerToCheck</returns>
-    public bool MatchesAny(GameplayTagContainer tagContainer)
-    {
-        return FGameplayTagExporter.CallMatchesAny(ref _tagName, ref tagContainer).ToManagedBool();
-    }
-    
-    /// <summary>
-    /// Checks if this tag matches ANY of the tags in the specified container, only allowing exact matches
-    /// "A.1".MatchesAny({"A","B"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return False
-    /// </summary>
-    /// <returns>True if this tag matches ANY of the tags of in ContainerToCheck exactly</returns>
-    public bool MatchesAnyDepth(GameplayTagContainer tagContainer)
-    {
-        return FGameplayTagExporter.CallMatchesAnyExact(ref _tagName, ref tagContainer).ToManagedBool();
-    }
+    /// <returns>True if tag is valid</returns>
+    public bool IsValid => TagName.IsValid;
     
     public bool Equals(FGameplayTag other)
     {
-        return _tagName.Equals(other._tagName);
+        return TagName.Equals(other.TagName);
     }
 
     public override bool Equals(object? obj)
@@ -71,17 +48,17 @@ public partial struct FGameplayTag
 
     public override int GetHashCode()
     {
-        return _tagName.GetHashCode();
+        return TagName.GetHashCode();
     }
 
     public override string ToString()
     {
-        return _tagName.ToString();
+        return TagName.ToString();
     }
     
     public static bool operator == (FGameplayTag lhs, FGameplayTag rhs)
     {
-        return lhs._tagName == rhs._tagName;
+        return lhs.TagName == rhs.TagName;
     }
 
     public static bool operator !=(FGameplayTag lhs, FGameplayTag rhs)

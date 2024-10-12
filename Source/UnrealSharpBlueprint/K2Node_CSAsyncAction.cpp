@@ -16,8 +16,7 @@
 #include "UObject/ObjectPtr.h"
 #include "UObject/UnrealType.h"
 #include "UObject/WeakObjectPtrTemplates.h"
-
-#include "Extensions/CSBlueprintAsyncActionBase.h"
+#include "Extensions/BlueprintActions//CSBlueprintAsyncActionBase.h"
 
 #define LOCTEXT_NAMESPACE "K2Node"
 

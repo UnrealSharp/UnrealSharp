@@ -95,6 +95,26 @@ public class FunctionExporter
         _function = function;
         Initialize(overloadMode, protectionMode, blueprintVisibility);
     }
+    
+    string GetRefQualifier(UhtProperty parameter)
+    {
+        if (parameter.HasAllFlags(EPropertyFlags.ConstParm))
+        {
+            return "";
+        }
+        
+        if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm))
+        {
+            return "ref ";
+        }
+        
+        if (parameter.HasAllFlags(EPropertyFlags.OutParm))
+        {
+            return "out ";
+        }
+
+        return "";
+    }
 
     private void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility)
     {
@@ -170,26 +190,14 @@ public class FunctionExporter
             
             PropertyTranslator translator = _parameterTranslators[i];
             
-            string refQualifier = "";
-            if (!parameter.HasAllFlags(EPropertyFlags.ConstParm))
-            {
-                if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm))
-                {
-                    refQualifier = "ref ";
-                }
-                else if (parameter.HasAllFlags(EPropertyFlags.OutParm))
-                {
-                    refQualifier = "out ";
-                }
-            }
-
+            string refQualifier = GetRefQualifier(parameter);
             string parameterName = parameter.GetParameterName();
 
             if (_selfParameter == parameter)
             {
                 if (string.IsNullOrEmpty(_paramsStringCall))
                 {
-                    _paramsStringCall += parameterName;
+                    _paramsStringCall += refQualifier + parameterName;
                 }
                 else
                 {
@@ -266,7 +274,7 @@ public class FunctionExporter
             paramsStringCallNative += ", ";
         }
 
-        if (_selfParameter != null)
+        if (_selfParameter == null)
         {
             _paramsStringCall = paramsStringCallNative;
         }
