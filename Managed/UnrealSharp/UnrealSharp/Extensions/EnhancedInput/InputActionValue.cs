@@ -4,7 +4,7 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.EnhancedInput;
 
-[UStruct, BlittableType, StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential)]
 public partial struct FInputActionValue
 {
     private FVector AxisValue;
