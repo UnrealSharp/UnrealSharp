@@ -22,11 +22,11 @@ Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropo
 
 ## Frequently Asked Questions
 
-[FAQ](https://www.unrealsharp.com/faq.html)
+[FAQ](https://www.unrealsharp.com/faq)
 
 ## Get Started
 
-Visit the website's [Get Started](https://www.unrealsharp.com/get-started.html) page!
+Visit the website's [Get Started](https://www.unrealsharp.com/getting-started/quickstart) page!
 
 If you want to contribute with documentation, you can contribute to this [repository](https://github.com/UnrealSharp/unrealsharp.github.io)!
 
