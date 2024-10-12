@@ -9,7 +9,7 @@ public partial struct FPrimaryAssetType
     
     public bool IsValid()
     {
-        return !Name.IsNone();
+        return !Name.IsNone;
     }
     
     public override string ToString()

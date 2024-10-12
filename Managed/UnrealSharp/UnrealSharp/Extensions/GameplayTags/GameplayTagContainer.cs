@@ -1,197 +1,137 @@
 using System.Runtime.InteropServices;
-using UnrealSharp.Interop;
+using UnrealSharp.CSharpForUE;
 
 namespace UnrealSharp.GameplayTags;
 
 [StructLayout(LayoutKind.Sequential)]
-public partial struct GameplayTagContainer
+public partial struct FGameplayTagContainer
 {
-    internal UnmanagedArray _gameplayTags;
-    internal UnmanagedArray _parentTags;
+    public FGameplayTagContainer(FGameplayTag[] tags, FGameplayTag[]? parentTags = null)
+    {
+        GameplayTags = tags ?? Array.Empty<FGameplayTag>();
+        ParentTags = parentTags ?? Array.Empty<FGameplayTag>();
+    }
+
+    public FGameplayTagContainer(IList<FGameplayTag> tags, IList<FGameplayTag>? parentTags = null) 
+        : this(tags?.ToArray() ?? Array.Empty<FGameplayTag>(), parentTags?.ToArray())
+    {
+    }
+
+    public FGameplayTagContainer(params FGameplayTag[] tags) 
+        : this(tags, null)
+    {
+    }
+
+    public FGameplayTagContainer(FGameplayTag tag)
+        : this([tag])
+    {
+    }
+    
+    /// <summary>
+    /// Adds all the tags from one container to this container.
+    /// NOTE: From set theory, this effectively is the union of the container this is called on with Other.
+    /// </summary>
+    public void AppendTags(FGameplayTagContainer other) => UCSGameplayTagContainerExtensions.AppendTags(ref this, other);
+    
+    /// <summary>
+    /// Adds all the tags from a list to this container.
+    /// </summary>
+    public void AppendTags(IList<FGameplayTag> other)
+    {
+        foreach (FGameplayTag tag in other)
+        {
+            AddTag(tag);
+        }
+    }
 
     /// <summary>
-    /// Returns the number of explicitly added tags
+    /// Adds all the tags from a params array to this container.
     /// </summary>
-    public int Count => _gameplayTags.ArrayNum;
+    public void AppendTags(params FGameplayTag[] other)
+    {
+        AppendTags((IList<FGameplayTag>)other);
+    }
     
     /// <summary>
-    /// Returns true if container is empty of tags
+    /// Adds all the tags that match between the two specified containers to this container.  WARNING: This matches any
+    /// parent tag in A, not just exact matches!  So while this should be the union of the container this is called on with
+    /// the intersection of OtherA and OtherB, it's not exactly that.  Since OtherB matches against its parents, any tag
+    /// in OtherA which has a parent match with a parent of OtherB will count.  For example, if OtherA has Color.Green
+    /// and OtherB has Color.Red, that will count as a match due to the Color parent match!
+    /// If you want an exact match, you need to call A.FilterExact(B) (above) to get the intersection of A with B.
+    /// If you need the disjunctive union (the union of two sets minus their intersection), use AppendTags to create
+    /// Union, FilterExact to create Intersection, and then call Union.RemoveTags(Intersection).
     /// </summary>
-    public bool IsEmpty => Count == 0;
+    public void AppendMatchingTags(FGameplayTagContainer otherA, FGameplayTagContainer otherB) => UCSGameplayTagContainerExtensions.AppendMatchingTags(ref this, otherA, otherB);
     
     /// <summary>
-    /// Returns whether the container has any valid tags
+    /// Add the specified tag to the container
     /// </summary>
-    public bool IsValid => Count > 0;
+    public void AddTag(FGameplayTag tag) => UCSGameplayTagContainerExtensions.AddTag(ref this, tag);
+    
+    /// <summary>
+    /// Add the specified tag to the container without checking for uniqueness
+    /// </summary>
+    public void AddTagFast(FGameplayTag tag) => UCSGameplayTagContainerExtensions.AddTagFast(ref this, tag);
+    
+    /// <summary>
+    /// Adds a tag to the container and removes any direct parents, wont add if child already exists
+    /// </summary>
+    public void AddLeafTag(FGameplayTag tag) => UCSGameplayTagContainerExtensions.AddLeafTag(ref this, tag);
+    
+    /// <summary>
+    /// Tag to remove from the container
+    /// </summary>
+    public void RemoveTag(FGameplayTag tag) => UCSGameplayTagContainerExtensions.RemoveTag(ref this, tag);
+    
+    /// <summary>
+    /// Removes all tags in TagsToRemove from this container
+    /// </summary>
+    public void RemoveTags(FGameplayTagContainer tagsToRemove) => UCSGameplayTagContainerExtensions.RemoveTags(ref this, tagsToRemove);
+    
+    /// <summary>
+    /// Remove all tags from the container. Will maintain slack by default
+    /// </summary>
+    public void Reset() => UCSGameplayTagContainerExtensions.Reset(ref this);
     
     /// <summary>
     /// Determine if TagToCheck is present in this container, also checking against parent tags
     /// {"A.1"}.HasTag("A") will return True, {"A"}.HasTag("A.1") will return False
     /// If TagToCheck is not Valid it will always return False
     /// </summary>
-    /// <returns>True if TagToCheck is in this container, false if it is not</returns>
-    public bool HasTag(FGameplayTag tag)
-    {
-        return FGameplayTagContainerExporter.CallHasTag(ref this, ref tag);
-    }
+    public bool HasTag(FGameplayTag tag) => UCSGameplayTagContainerExtensions.HasTag(this, tag);
     
     /// <summary>
-    /// Determine if TagToCheck is explicitly present in this container, only allowing exact matches
-    /// {"A.1"}.HasTagExact("A") will return False
-    /// If TagToCheck is not Valid it will always return False
+    /// The count of gameplay tags in this container
     /// </summary>
-    /// <returns>True if TagToCheck is in this container, false if it is not</returns>
-    public bool HasTagExact(FGameplayTag tag)
-    {
-        return FGameplayTagContainerExporter.CallHasTagExact(ref this, ref tag);
-    }
-    
-    /// <summary>
-    /// Checks if this container contains ANY of the tags in the specified container, also checks against parent tags
-    /// {"A.1"}.HasAny({"A","B"}) will return True, {"A"}.HasAny({"A.1","B"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return False
-    /// </summary>
-    /// <returns>True if this container has ANY of the tags of in ContainerToCheck</returns>
-    public bool HasAny(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallHasAny(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Checks if this container contains ANY of the tags in the specified container, only allowing exact matches
-    /// {"A.1"}.HasAny({"A","B"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return False
-    /// </summary>
-    /// <returns>True if this container has ANY of the tags of in ContainerToCheck</returns>
-    public bool HasAnyExact(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallHasAnyExact(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Checks if this container contains ALL of the tags in the specified container, also checks against parent tags
-    /// {"A.1","B.1"}.HasAll({"A","B"}) will return True, {"A","B"}.HasAll({"A.1","B.1"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return True, because there were no failed checks
-    /// </summary>
-    /// <returns>True if this container has ALL of the tags of in ContainerToCheck, including if ContainerToCheck is empty</returns>
-    public bool HasAll(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallHasAll(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Checks if this container contains ALL of the tags in the specified container, only allowing exact matches
-    /// {"A.1","B.1"}.HasAll({"A","B"}) will return False
-    /// If ContainerToCheck is empty/invalid it will always return True, because there were no failed checks
-    /// </summary>
-    /// <returns>True if this container has ALL of the tags of in ContainerToCheck, including if ContainerToCheck is empty</returns>
-    public bool HasAllExact(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallHasAllExact(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Add the specified tag to the container
-    /// </summary>
-    /// <param name="tag">Tag to add to the container</param>
-    public void AddTag(FGameplayTag tag)
-    {
-        FGameplayTagContainerExporter.CallAddTag(ref this, ref tag);
-    }
-    
-    /// <summary>
-    /// Add the specified tag to the container without checking for uniqueness
-    /// Useful when building container from another data struct (TMap for example)
-    /// </summary>
-    /// <param name="tag">Tag to add to the container</param>
-    public void AddTagFast(FGameplayTag tag)
-    {
-        FGameplayTagContainerExporter.CallAddTagFast(ref this, ref tag);
-    }
-    
-    /// <summary>
-    /// Adds a tag to the container and removes any direct parents, wont add if child already exists
-    /// </summary>
-    /// <param name="tag">The tag to try and add to this container</param>
-    public bool AddLeafTag(FGameplayTag tag)
-    {
-        return FGameplayTagContainerExporter.CallAddLeafTag(ref this, ref tag);
-    }
+    public int Count => UCSGameplayTagContainerExtensions.Num(this);
 
     /// <summary>
-    /// Tag to remove from the container
+    /// Find the first gameplay tag in this container
     /// </summary>
-    /// <param name="tag"></param>
-    /// <param name="bDeferParentTags"></param>
-    public bool RemoveTag(FGameplayTag tag, bool bDeferParentTags = false)
-    {
-        return FGameplayTagContainerExporter.CallRemoveTag(ref this, ref tag, bDeferParentTags);
-    }
+    /// <returns>The first gameplay tag in this container</returns>
+    public FGameplayTag First => UCSGameplayTagContainerExtensions.First(this);
     
     /// <summary>
-    /// Removes all tags in TagsToRemove from this container
+    /// Find the last gameplay tag in this container
     /// </summary>
-    public void RemoveTags(GameplayTagContainer other)
-    {
-        FGameplayTagContainerExporter.CallRemoveTags(ref this, ref other);
-    }
-    
+    /// <returns>The last gameplay tag in this container</returns>
+    public FGameplayTag Last => UCSGameplayTagContainerExtensions.Last(this);
     
     /// <summary>
-    /// Remove all tags from the container. Will maintain slack by default
+    /// Check if the container is empty
     /// </summary>
-    public void Reset()
-    {
-        FGameplayTagContainerExporter.CallReset(ref this);
-    }
-    
+    /// <returns>True if the container is empty</returns>
+    public bool IsEmpty => UCSGameplayTagContainerExtensions.IsEmpty(this);
+
     /// <summary>
-    /// Adds all the tags from one container to this container
-    /// NOTE: From set theory, this effectively is the union of the container this is called on with Other.
+    /// Check if the container is valid
     /// </summary>
-    /// <param name="other">TagContainer that has the tags you want to add to this container </param>
-    public void AppendTags(GameplayTagContainer other)
-    {
-        FGameplayTagContainerExporter.CallAppendTags(ref this, ref other);
-    }
+    /// <returns>True if the container is valid</returns>
+    public bool IsValid => UCSGameplayTagContainerExtensions.IsValid(this);
     
-    /// <summary>
-    /// Returns a filtered version of this container, returns all tags that match against any of the tags in OtherContainer, expanding parents
-    /// </summary>
-    /// <param name="other">The Container to filter against</param>
-    /// <returns>A FGameplayTagContainer containing the filtered tags</returns>
-    public GameplayTagContainer Filter(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallFilter(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Returns a filtered version of this container, returns all tags that match exactly one in OtherContainer
-    /// </summary>
-    /// <param name="other">The Container to filter against</param>
-    /// <returns>A FGameplayTagContainer containing the filtered tags</returns>
-    public GameplayTagContainer FilterExact(GameplayTagContainer other)
-    {
-        return FGameplayTagContainerExporter.CallFilterExact(ref this, ref other);
-    }
-    
-    /// <summary>
-    /// Returns string version of container in ImportText format
-    /// </summary>
     public override string ToString()
     {
-        unsafe
-        {
-            UnmanagedArray buffer = new UnmanagedArray();
-            try
-            {
-                FGameplayTagContainerExporter.CallToString(ref this, ref _gameplayTags);
-                return new string((char*)buffer.Data);
-            }
-            finally
-            {
-                buffer.Destroy();
-            }
-        }
+        return UCSGameplayTagContainerExtensions.ToString(this);
     }
 }
