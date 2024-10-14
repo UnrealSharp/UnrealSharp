@@ -74,6 +74,24 @@ public static class FunctionProcessor
         }
     }
     
+    public static bool HasSameSignature(MethodReference a, MethodReference b)
+    {
+        if (a.Parameters.Count != b.Parameters.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < a.Parameters.Count; i++)
+        {
+            if (a.Parameters[i].ParameterType.FullName != b.Parameters[i].ParameterType.FullName)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
     public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
     {
         MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDef.Name + "_Implementation", func.MethodDef);
@@ -90,6 +108,12 @@ public static class FunctionProcessor
                 MethodReference calledMethod = (MethodReference) instruction.Operand;
                 
                 if (func.SourceName != calledMethod.Name)
+                {
+                    continue;
+                }
+
+                if (!WeaverHelper.IsChildOf(copiedMethod.DeclaringType.Resolve(), calledMethod.DeclaringType.Resolve()) 
+                    || !HasSameSignature(copiedMethod, calledMethod))
                 {
                     continue;
                 }
