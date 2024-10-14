@@ -56,16 +56,4 @@ public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None)
     /// If true, the function can be called from an instance of the class in the editor.
     /// </summary>
     public bool CallInEditor = false;
-
-    /// <summary>
-    /// ExpandEnumAsExecs="Parameter"
-    /// For BlueprintCallable functions, this indicates that one execution pin 
-    /// should be created for each entry in the enum used by the parameter. 
-    /// 
-    /// Must be an out parameter that has the UENUM tag e.g.
-    /// 
-    ///   [UFunction(FunctionFlags.BlueprintCallable, ExpandEnumAsExecs = "result")]
-    ///   void MultiFlow(out EnumResult result) { ... }
-    /// </summary>
-    public string? ExpandEnumAsExecs = null;
 }

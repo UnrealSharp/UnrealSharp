@@ -25,7 +25,6 @@ public class FunctionMetaData : BaseMetaData
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
-    private const string ExpandEnumAsExecsName = "ExpandEnumAsExecs";
 
     public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
     {
@@ -52,14 +51,8 @@ public class FunctionMetaData : BaseMetaData
             {
                 TryAddMetaData(CallInEditorName, (bool) callInEditor.Value.Value);
             }
-
-            CustomAttributeArgument? expandEnumAsExecs = WeaverHelper.FindAttributeField(BaseAttribute, ExpandEnumAsExecsName);
-            if (expandEnumAsExecs.HasValue)
-            {
-                TryAddMetaData(ExpandEnumAsExecsName, (string)expandEnumAsExecs.Value.Value);
-            }
         }
-
+        
         Parameters = new PropertyMetaData[method.Parameters.Count];
         for (int i = 0; i < method.Parameters.Count; ++i)
         {
