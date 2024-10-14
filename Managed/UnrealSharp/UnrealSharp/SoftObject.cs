@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.CoreUObject;
-using UnrealSharp.CSharpForUE;
+using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;

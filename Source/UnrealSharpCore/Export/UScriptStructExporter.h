@@ -1,11 +1,11 @@
 ﻿#pragma once
-#include "UnrealSharpCore/Export/FunctionsExporter.h"
 
 #include "CoreMinimal.h"
-#include "GEditorExporter.generated.h"
+#include "FunctionsExporter.h"
+#include "UScriptStructExporter.generated.h"
 
 UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPEDITOR_API UGEditorExporter : public UFunctionsExporter
+class UNREALSHARPCORE_API UUScriptStructExporter : public UFunctionsExporter
 {
 	GENERATED_BODY()
 
@@ -17,5 +17,6 @@ public:
 
 private:
 
-	static void* GetEditorSubsystem(UClass* SubsystemClass);
+	static int GetNativeStructSize(const UScriptStruct* ScriptStruct);
+	
 };

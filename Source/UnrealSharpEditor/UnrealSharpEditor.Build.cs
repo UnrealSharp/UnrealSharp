@@ -21,7 +21,7 @@ public class UnrealSharpEditor : ModuleRules
                 "Slate",
                 "SlateCore",
                 "EditorSubsystem", 
-                "CSharpForUE",
+                "UnrealSharpCore",
                 "UnrealEd", 
                 "UnrealSharpProcHelper",
                 "BlueprintGraph",
