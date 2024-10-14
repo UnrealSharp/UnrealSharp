@@ -8,64 +8,70 @@ public class BaseMetaData
 {
     public string Name { get; set; }
     public Dictionary<string, string> MetaData { get; set; }
-    
+
     // Non-serialized for JSON
     public readonly string AttributeName;
     public readonly IMemberDefinition MemberDefinition;
     public readonly CustomAttribute? BaseAttribute;
     public readonly string SourceName;
     // End non-serialized
-    
+
     public BaseMetaData(MemberReference member, string attributeName)
     {
         MemberDefinition = member.Resolve();
         SourceName = MemberDefinition.Name;
         Name = WeaverHelper.GetEngineName(MemberDefinition);
-        
+
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
-        
-        AddMetaData();
-        AddBaseAttributes();
-        AddDefaultCategory();
+
+        AddMetaData();          // Add any [UMetaData("key", "value")] attributes (general metadata attribute to allow support of any engine tag)
+        AddMetaTagsNamespace(); // Add all named attributes in the UnrealSharp.Attributes.MetaTags namespace
+        AddBaseAttributes();    // Add fields from base attribute e.g. [UClass | UFunction | UEnum | UProperty | UStruct]
+        AddDefaultCategory();   // Add Category="Default" if no category yet added
     }
-    
+
     public void TryAddMetaData(string key, string value = "")
     {
         if (MetaData.TryAdd(key, value))
         {
             return;
         }
-        
+
         MetaData[key] = value;
     }
-    
+
     public void TryAddMetaData(string key, bool value)
     {
         TryAddMetaData(key, value ? "true" : "false");
     }
-    
+
     public void TryAddMetaData(string key, int value)
     {
         TryAddMetaData(key, value.ToString());
     }
-    
+
     public void TryAddMetaData(string key, ulong value)
     {
         TryAddMetaData(key, value.ToString());
     }
-    
+
     public void TryAddMetaData(string key, float value)
     {
         TryAddMetaData(key, value.ToString());
     }
-    
+
     public void TryAddMetaData(string key, double value)
     {
         TryAddMetaData(key, value.ToString());
     }
-    
+
+    public void TryAddMetaData(string key, object value)
+    {
+        TryAddMetaData(key, value?.ToString() ?? "");
+    }
+
     public void AddDefaultCategory()
     {
         if (!MetaData.ContainsKey("Category"))
@@ -88,12 +94,12 @@ public class BaseMetaData
     public static ulong ExtractBoolAsFlags(TypeDefinition attributeType, CustomAttributeNamedArgument namedArg, string flagsAttributeName)
     {
         var arg = namedArg.Argument;
-        
+
         if (!(bool)arg.Value)
         {
             return 0;
         }
-        
+
         // Find the property definition for this argument to resolve the true value to the desired flags map.
         var properties = (from prop in attributeType.Properties where prop.Name == namedArg.Name select prop).ToArray();
         TypeProcessors.ConstructorBuilder.VerifySingleResult(properties, attributeType, "attribute property " + namedArg.Name);
@@ -104,7 +110,7 @@ public class BaseMetaData
     {
         var arg = namedArg.Argument;
         var argValue = (string) arg.Value;
-        
+
         if (argValue is not { Length: > 0 })
         {
             return 0;
@@ -116,7 +122,7 @@ public class BaseMetaData
         {
             return 0;
         }
-        
+
         TypeProcessors.ConstructorBuilder.VerifySingleResult([foundProperty], attributeType, "attribute property " + namedArg.Name);
         return GetFlags(foundProperty.CustomAttributes, flagsAttributeName);
 
@@ -131,19 +137,19 @@ public class BaseMetaData
         foreach (CustomAttribute attribute in customAttributes)
         {
             TypeDefinition? attributeClass = attribute.AttributeType.Resolve();
-            
+
             if (attributeClass == null)
             {
                 continue;
             }
-            
+
             CustomAttribute? flagsMap = WeaverHelper.FindAttribute(attributeClass.CustomAttributes, flagsAttributeName);
 
             if (flagsMap == null)
             {
                 continue;
             }
-            
+
             flags |= GetFlags(flagsMap);
 
             if (attribute.HasConstructorArguments)
@@ -158,11 +164,11 @@ public class BaseMetaData
             {
                 continue;
             }
-                
+
             foreach (CustomAttributeNamedArgument arg in attribute.Properties)
             {
                 TypeDefinition argType = arg.Argument.Type.Resolve();
-                    
+
                 if (argType.IsValueType && argType.Namespace == "System" && argType.Name == "Boolean")
                 {
                     flags |= ExtractBoolAsFlags(attributeClass, arg, flagsAttributeName);
@@ -180,9 +186,10 @@ public class BaseMetaData
 
         return flags;
     }
-    
+
     private void AddMetaData()
     {
+        //[UMetaData("key","value")]
         CustomAttribute?[] metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
         foreach (var attrib in metaDataAttributes)
         {
@@ -190,12 +197,30 @@ public class BaseMetaData
             {
                 case < 1:
                     continue;
-                case 1:
+                case 1: 
                     TryAddMetaData((string)attrib.ConstructorArguments[0].Value);
                     break;
-                default:
+                default: 
                     TryAddMetaData((string)attrib.ConstructorArguments[0].Value, (string)attrib.ConstructorArguments[1].Value);
                     break;
+            }
+        }
+    }
+
+    private void AddMetaTagsNamespace() 
+    {
+        //Specific MetaData Tags - all attributes in the UnrealSharp.Attributes.MetaTags Namespace
+        CustomAttribute[] metaDataAttributes = WeaverHelper.FindMetaDataAttributesByNamespace(MemberDefinition.CustomAttributes);
+        foreach (var attrib in metaDataAttributes)
+        {
+            var key = attrib.AttributeType.Name.Replace("Attribute", "");
+            if (attrib.HasConstructorArguments)
+            {
+                TryAddMetaData(key, attrib.ConstructorArguments[0].Value);
+            }
+            else
+            {
+                TryAddMetaData(key, "true");
             }
         }
     }
@@ -206,7 +231,7 @@ public class BaseMetaData
         {
             return;
         }
-        
+
         CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(BaseAttribute, "DisplayName");
         if (displayNameArgument.HasValue)
         {
@@ -219,7 +244,7 @@ public class BaseMetaData
             TryAddMetaData("Category", (string) categoryArgument.Value.Value);
         }
     }
-    
+
     protected bool GetBoolMetadata(string key)
     {
         if (!MetaData.TryGetValue(key, out var val))
