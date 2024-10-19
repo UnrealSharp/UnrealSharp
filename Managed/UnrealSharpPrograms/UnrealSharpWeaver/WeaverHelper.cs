@@ -11,6 +11,7 @@ public static class WeaverHelper
     public static readonly string UnrealSharpNamespace = "UnrealSharp";
     public static readonly string InteropNameSpace = UnrealSharpNamespace + ".Interop";
     public static readonly string AttributeNamespace = UnrealSharpNamespace + ".Attributes";
+    public static readonly string MetaTagsNamespace = AttributeNamespace + ".MetaTags";
     public static readonly string CoreUObjectNamespace = UnrealSharpNamespace + ".CoreUObject";
     public static readonly string EngineNamespace = UnrealSharpNamespace + ".Engine";
     
@@ -715,6 +716,11 @@ public static class WeaverHelper
         return FindAttributesByType(customAttributes, AttributeNamespace, UMetaDataAttribute);
     }
 
+    public static CustomAttribute[] FindMetaDataAttributesByNamespace(IEnumerable<CustomAttribute> customAttributes)
+    {
+        return FindAttributesByNamespace(customAttributes, MetaTagsNamespace);
+    }
+
     public static CustomAttributeArgument? FindAttributeField(CustomAttribute attribute, string fieldName)
     {
         foreach (var field in attribute.Fields) 
@@ -743,6 +749,13 @@ public static class WeaverHelper
         return (from attrib in customAttributes
             where attrib.AttributeType.Namespace == typeNamespace && attrib.AttributeType.Name == typeName
             select attrib).ToArray ();
+    }
+
+    public static CustomAttribute[] FindAttributesByNamespace(IEnumerable<CustomAttribute> customAttributes, string typeNamespace)
+    {
+        return (from attrib in customAttributes
+                where attrib.AttributeType.Namespace == typeNamespace
+                select attrib).ToArray();
     }
 
     public static PropertyDefinition? FindPropertyByName(Collection<PropertyDefinition> properties, string propertyName)
