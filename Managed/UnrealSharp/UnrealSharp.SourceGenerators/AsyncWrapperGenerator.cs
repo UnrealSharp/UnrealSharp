@@ -42,7 +42,7 @@ public class AsyncWrapperGenerator : ISourceGenerator
             var model = compilation.GetSemanticModel(asyncMethodInfo.Method.SyntaxTree);
             var sourceBuilder = new StringBuilder();
 
-            HashSet<string> namespaces = ["UnrealSharp", "UnrealSharp.Attributes", "UnrealSharp.CSharpForUE"];
+            HashSet<string> namespaces = ["UnrealSharp", "UnrealSharp.Attributes", "UnrealSharp.UnrealSharpCore"];
 
             ParameterSyntax cancellationTokenParameter = null;
             foreach (var parameter in asyncMethodInfo.Method.ParameterList.Parameters)
