@@ -5,7 +5,7 @@
 #include "BlueprintNodeSpawner.h"
 #include "Delegates/Delegate.h"
 #include "EdGraph/EdGraphNode.h"
-#include "Extensions/CSCancellableAsyncAction.h"
+#include "Extensions/BlueprintActions/CSCancellableAsyncAction.h"
 #include "HAL/Platform.h"
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
