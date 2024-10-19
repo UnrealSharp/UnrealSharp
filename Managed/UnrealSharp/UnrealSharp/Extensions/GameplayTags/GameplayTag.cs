@@ -1,4 +1,4 @@
-using UnrealSharp.CSharpForUE;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
 
