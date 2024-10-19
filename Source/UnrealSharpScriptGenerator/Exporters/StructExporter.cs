@@ -9,7 +9,7 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class StructExporter
 {
-    public static void ExportStruct(UhtScriptStruct structObj)
+    public static void ExportStruct(UhtScriptStruct structObj, bool isManualExport)
     {
         GeneratorStringBuilder stringBuilder = new();
         List<UhtProperty> exportedProperties = new();
@@ -53,12 +53,16 @@ public static class StructExporter
         stringBuilder.AppendLine(attributeBuilder.ToString());
         
         stringBuilder.DeclareType(structObj, "struct", structObj.GetStructName());
-        
-        List<string> reservedNames = GetReservedNames(exportedProperties);
-        
-        ExportStructProperties(stringBuilder, exportedProperties, isBlittable, reservedNames);
 
-        if (!isBlittable)
+        // For manual exports we just want to generate attributes
+        if (!isManualExport)
+        {
+            List<string> reservedNames = GetReservedNames(exportedProperties);
+
+            ExportStructProperties(stringBuilder, exportedProperties, isBlittable, reservedNames);
+        }
+
+        if (!isBlittable && !isManualExport)
         {
             stringBuilder.AppendLine();
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, new List<UhtFunction>(), new List<UhtFunction>());
@@ -68,7 +72,7 @@ public static class StructExporter
         
         stringBuilder.CloseBrace();
         
-        if (!isBlittable)
+        if (!isBlittable && !isManualExport)
         {
             ExportStructMarshaller(stringBuilder, structObj);
         }

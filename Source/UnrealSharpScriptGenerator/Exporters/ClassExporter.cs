@@ -9,7 +9,7 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class ClassExporter
 {
-    public static void ExportClass(UhtClass classObj)
+    public static void ExportClass(UhtClass classObj, bool isManualExport)
     {
         GeneratorStringBuilder stringBuilder = new();
 
@@ -53,14 +53,18 @@ public static class ClassExporter
         
         stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, true, interfaces);
         
-        StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
+        // For manual exports we just want to generate attributes
+        if (!isManualExport)
+        { 
+            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
         
-        ExportClassProperties(stringBuilder, exportedProperties);
+            ExportClassProperties(stringBuilder, exportedProperties);
         
-        ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
-        ExportOverrides(stringBuilder, exportedOverrides);
-        
-        stringBuilder.AppendLine();
+            ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
+            ExportOverrides(stringBuilder, exportedOverrides);
+            stringBuilder.AppendLine();
+        }
+
         stringBuilder.CloseBrace();
         
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);

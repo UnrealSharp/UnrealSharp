@@ -37,11 +37,11 @@ public partial struct FTopLevelAssetPath
     
     public bool IsValid()
     {
-        return !PackageName.IsNone();
+        return !PackageName.IsNone;
     }
     
     public bool IsNull()
     {
-        return AssetName.IsNone();
+        return AssetName.IsNone;
     }
 }

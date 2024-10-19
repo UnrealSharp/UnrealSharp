@@ -1,9 +1,12 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
 #include "CSCommands.h"
+#include "CSScriptBuilder.h"
 #include "DirectoryWatcherModule.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
+#include "GameplayTagsModule.h"
+#include "GameplayTagsSettings.h"
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
 #include "SourceCodeNavigation.h"
@@ -18,6 +21,8 @@
 #include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
+
+DEFINE_LOG_CATEGORY(LogUnrealSharpEditor);
 
 FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 {
@@ -71,6 +76,7 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	RegisterCommands();
 	RegisterMenu();
+	RegisterGameplayTags();
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -91,8 +97,14 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
+		// Skip ProjectGlue files
+		if (ChangedFile.Filename.Contains(TEXT("ProjectGlue")))
+		{
+			continue;
+		}
+		
 		// Skip generated files in bin and obj folders
-		if (ChangedFile.Filename.Contains("\\bin\\") || ChangedFile.Filename.Contains("\\obj\\"))
+		if (ChangedFile.Filename.Contains(TEXT("\\bin\\")) || ChangedFile.Filename.Contains(TEXT("\\obj\\")))
 		{
 			continue;
 		}
@@ -429,6 +441,66 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	}));
 
 	Section.AddEntry(Entry);
+}
+
+void FUnrealSharpEditorModule::RegisterGameplayTags()
+{
+	IGameplayTagsModule::OnTagSettingsChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
+	IGameplayTagsModule::OnGameplayTagTreeChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
+	ProcessGameplayTags();
+}
+
+void FUnrealSharpEditorModule::ProcessGameplayTags()
+{
+	TArray<const FGameplayTagSource*> Sources;
+	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
+
+	const int32 NumValues = StaticEnum<EGameplayTagSourceType>()->NumEnums();
+	for (int32 Index = 0; Index < NumValues; Index++)
+	{
+		EGameplayTagSourceType SourceType = static_cast<EGameplayTagSourceType>(Index);
+		Manager.FindTagSourcesWithType(SourceType, Sources);
+	}
+
+	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
+	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.GameplayTags;"));
+	ScriptBuilder.AppendLine();
+	ScriptBuilder.AppendLine(TEXT("public static class GameplayTags"));
+	ScriptBuilder.OpenBrace();
+
+	auto GenerateGameplayTag = [&ScriptBuilder](const FGameplayTagTableRow& RowTag)
+	{
+		const FString TagName = RowTag.Tag.ToString();
+		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
+		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));
+	};
+
+	for (const FGameplayTagSource* Source : Sources)
+	{
+		if (Source->SourceTagList)
+		{
+			for (const FGameplayTagTableRow& RowTag : Source->SourceTagList->GameplayTagList)
+			{
+				GenerateGameplayTag(RowTag);
+			}
+		}
+
+		if (Source->SourceRestrictedTagList)
+		{
+			for (const FGameplayTagTableRow& RowTag : Source->SourceRestrictedTagList->RestrictedGameplayTagList)
+			{
+				GenerateGameplayTag(RowTag);
+			}
+		}
+	}
+
+	ScriptBuilder.CloseBrace();
+
+	const FString Path = FPaths::Combine(FCSProcHelper::GetScriptFolderDirectory(), TEXT("ProjectGlue"), TEXT("GameplayTags.cs"));
+	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
+	{
+		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save GameplayTags.cs to %s"), *Path);
+	}
 }
 
 FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const

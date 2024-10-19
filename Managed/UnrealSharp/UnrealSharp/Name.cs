@@ -53,19 +53,13 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     /// Check if the name is valid.
     /// </summary>
     /// <returns>True if the name is valid, false otherwise.</returns>
-    public bool IsValid()
-    {
-        return FNameExporter.CallIsValid(this);
-    }
+    public bool IsValid => FNameExporter.CallIsValid(this);
     
     /// <summary>
     /// Check if the name is None.
     /// </summary>
     /// <returns>True if the name is None, false otherwise.</returns>
-    public bool IsNone()
-    {
-        return this == None;
-    }
+    public bool IsNone => this == None;
     
     public static bool operator == (FName lhs, FName rhs)
     {
@@ -84,12 +78,12 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     
     public static implicit operator string(FName name)
     {
-        return name.IsValid() ? name.ToString() : None.ToString();
+        return name.IsValid ? name.ToString() : None.ToString();
     }
     
     public static implicit operator FText(FName name)
     {
-        return name.IsValid() ? new FText(name) : FText.None;
+        return name.IsValid ? new FText(name) : FText.None;
     }
     
     public bool Equals(FName other)
