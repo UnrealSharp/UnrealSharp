@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using EpicGames.UHT.Types;
 
@@ -12,7 +12,8 @@ public static class PropertyTranslatorManager
     static PropertyTranslatorManager()
     {
         ManuallyExportedTypes.Add("EStreamingSourcePriority");
-        
+        ManuallyExportedTypes.Add("ETriggerEvent");
+
         EnumPropertyTranslator enumPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
         AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyTranslator);
@@ -121,5 +122,4 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
         ManuallyExportedTypes.Add(nativeName);
     }
-    
 }
