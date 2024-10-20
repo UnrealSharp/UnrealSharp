@@ -22,8 +22,6 @@ class ModuleFolders
 public static class CSharpExporter
 {
     const string ModuleDataFileName = "UnrealSharpModuleData.json";
-    const string TimestampFileName = "Timestamp";
-    
     public static bool HasModifiedEngineGlue;
     
     private static readonly List<Task> Tasks = new();
