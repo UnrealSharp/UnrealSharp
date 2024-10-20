@@ -150,4 +150,17 @@ public class ClassMetaData : TypeReferenceMetadata
             Interfaces.Add(interfaceNoPrefix);
         }
     }
+    
+    public void PostWeaveCleanup()
+    {
+        foreach (FunctionMetaData function in Functions)
+        {
+            function.TryRemoveMethod();
+        }
+        
+        foreach (FunctionMetaData virtualFunction in VirtualFunctions)
+        {
+            virtualFunction.TryRemoveMethod();
+        }
+    }
 }

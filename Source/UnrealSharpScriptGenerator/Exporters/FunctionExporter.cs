@@ -496,8 +496,12 @@ public class FunctionExporter
 
         AttributeBuilder attributeBuilder = new AttributeBuilder();
         attributeBuilder.AddGeneratedTypeAttribute(function);
-
-        if (!function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        
+        if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        {
+            attributeBuilder.AddAttribute("UMultiDelegate");
+        }
+        else
         {
             attributeBuilder.AddAttribute("USingleDelegate");
         }

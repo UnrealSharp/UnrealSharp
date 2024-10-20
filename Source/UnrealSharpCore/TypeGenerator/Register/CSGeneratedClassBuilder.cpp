@@ -159,6 +159,22 @@ void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInit
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
 	NativeClass->ClassConstructor(ObjectInitializer);
+
+	for (TFieldIterator<FProperty> PropertyIt(ManagedClass); PropertyIt; ++PropertyIt)
+	{
+		FProperty* Property = *PropertyIt;
+		if (!IsManagedType(Property->GetOwnerClass()))
+		{
+			break;
+		}
+
+		if (Property->HasAllPropertyFlags(CPF_ZeroConstructor))
+		{
+			continue;
+		}
+		
+		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
+	}
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,

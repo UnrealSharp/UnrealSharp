@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;
@@ -20,6 +22,7 @@ class ModuleFolders
 public static class CSharpExporter
 {
     const string ModuleDataFileName = "UnrealSharpModuleData.json";
+    const string TimestampFileName = "Timestamp";
     
     public static bool HasModifiedEngineGlue;
     
@@ -30,7 +33,11 @@ public static class CSharpExporter
     
     public static void StartExport()
     {
-        DeserializeModuleData();
+        if (!HasChangedGeneratorSourceRecently())
+        {
+            // The source for this generator hasn't changed, so we don't need to re-export the whole API.
+            DeserializeModuleData();
+        }
         
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
@@ -44,6 +51,11 @@ public static class CSharpExporter
         WaitForTasks();
         
         SerializeModuleData();
+    }
+    
+    private static DateTime LatestDateTime(DateTime Lhs, DateTime Rhs)
+    {
+        return Lhs > Rhs ? Lhs : Rhs;
     }
     
     static void DeserializeModuleData()
@@ -74,6 +86,23 @@ public static class CSharpExporter
         string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
         using FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
         JsonSerializer.Serialize(fs, _modulesWriteInfo);
+    }
+
+    static bool HasChangedGeneratorSourceRecently()
+    {
+        string executingAssemblyPath = Assembly.GetExecutingAssembly().Location;
+        DateTime executingAssemblyLastWriteTime = File.GetLastWriteTimeUtc(executingAssemblyPath);
+        
+        string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
+        string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
+        
+        if (!File.Exists(timestampFilePath))
+        {
+            return true;
+        }
+        
+        DateTime savedTimestampUtc = File.GetLastWriteTimeUtc(timestampFilePath);
+        return executingAssemblyLastWriteTime > savedTimestampUtc;
     }
 
     private static void WaitForTasks()

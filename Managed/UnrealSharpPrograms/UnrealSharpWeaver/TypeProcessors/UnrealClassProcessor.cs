@@ -15,6 +15,11 @@ public static class UnrealClassProcessor
         {
             ProcessParentClass(classDef, classes, rewrittenClasses, assemblyMetadata);
         }
+        
+        foreach (ClassMetaData classMetaData in assemblyMetadata.ClassMetaData)
+        {
+            classMetaData.PostWeaveCleanup();
+        }
     }
     
     private static void ProcessParentClass(TypeDefinition type, IList<TypeDefinition> classes, HashSet<TypeDefinition> rewrittenClasses, ApiMetaData assemblyMetadata)
