@@ -51,11 +51,6 @@ public static class CSharpExporter
         SerializeModuleData();
     }
     
-    private static DateTime LatestDateTime(DateTime Lhs, DateTime Rhs)
-    {
-        return Lhs > Rhs ? Lhs : Rhs;
-    }
-    
     static void DeserializeModuleData()
     {
         if (!Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
