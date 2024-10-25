@@ -283,7 +283,7 @@ public partial struct FVector2D
     /// <param name="rotation">The rotation to apply.</param>
     /// <returns>The transformed vector.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector2D Transform(FVector2D value, Quaternion rotation)
+    public static FVector2D Transform(FVector2D value, FQuat rotation)
     {
         double x2 = rotation.X + rotation.X;
         double y2 = rotation.Y + rotation.Y;
@@ -299,7 +299,7 @@ public partial struct FVector2D
             value.X * (1.0 - yy2 - zz2) + value.Y * (xy2 - wz2),
             value.X * (xy2 + wz2) + value.Y * (1.0 - xx2 - zz2));
     }
-    
+
     /// <summary>
     /// Copies the contents of the vector into the given array.
     /// </summary>
