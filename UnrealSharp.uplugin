@@ -27,7 +27,7 @@
 		{
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostEngineInit"
 		},
 		{
 			"Name": "UnrealSharpBlueprint",

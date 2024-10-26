@@ -10,6 +10,8 @@
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
 #include "SourceCodeNavigation.h"
+#include "Engine/AssetManager.h"
+#include "Engine/AssetManagerSettings.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "UnrealSharpCore/CSDeveloperSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -77,6 +79,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterCommands();
 	RegisterMenu();
 	RegisterGameplayTags();
+	RegisterAssetTypes();
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -450,6 +453,117 @@ void FUnrealSharpEditorModule::RegisterGameplayTags()
 	ProcessGameplayTags();
 }
 
+void FUnrealSharpEditorModule::RegisterAssetTypes()
+{
+	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
+		FSimpleMulticastDelegate::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnCompletedInitialScan));
+}
+
+void FUnrealSharpEditorModule::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName)
+{
+	const FString Path = FPaths::Combine(FCSProcHelper::GetScriptFolderDirectory(), TEXT("ProjectGlue"), FileName + TEXT(".cs"));
+	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
+	{
+		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s"), *FileName);
+	}
+}
+
+void FUnrealSharpEditorModule::OnCompletedInitialScan()
+{
+	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
+	AssetRegistry.OnAssetRemoved().AddStatic(&FUnrealSharpEditorModule::OnAssetRemoved);
+	AssetRegistry.OnAssetRenamed().AddStatic(&FUnrealSharpEditorModule::OnAssetRenamed);
+	AssetRegistry.OnInMemoryAssetCreated().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetCreated);
+	AssetRegistry.OnInMemoryAssetDeleted().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
+	
+	UAssetManager::Get().Register_OnAddedAssetSearchRoot(
+		FOnAddedAssetSearchRoot::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnAssetSearchRootAdded));
+
+	UAssetManagerSettings* Settings = UAssetManagerSettings::StaticClass()->GetDefaultObject<UAssetManagerSettings>();
+	Settings->OnSettingChanged().AddStatic(&FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
+	
+	ProcessAssetIds();
+}
+
+bool FUnrealSharpEditorModule::IsRegisteredAssetType(const FAssetData& AssetData)
+{
+	return IsRegisteredAssetType(AssetData.GetClass());
+}
+
+bool FUnrealSharpEditorModule::IsRegisteredAssetType(UClass* Class)
+{
+	if (!IsValid(Class))
+	{
+		return false;
+	}
+	
+	UAssetManager& AssetManager = UAssetManager::Get();
+	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
+	
+	bool bIsPrimaryAsset = false;
+	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
+	{
+		if (Class->IsChildOf(PrimaryAssetType.GetAssetBaseClass().Get()))
+		{
+			bIsPrimaryAsset = true;
+			break;
+		}
+	}
+	return bIsPrimaryAsset;
+}
+
+void FUnrealSharpEditorModule::OnAssetRemoved(const FAssetData& AssetData)
+{
+	if (!IsRegisteredAssetType(AssetData))
+	{
+		return;
+	}
+	WaitUpdateAssetTypes();
+}
+
+void FUnrealSharpEditorModule::OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath)
+{
+	if (!IsRegisteredAssetType(AssetData))
+	{
+		return;
+	}
+	WaitUpdateAssetTypes();
+}
+
+void FUnrealSharpEditorModule::OnInMemoryAssetCreated(UObject* Object)
+{
+	if (!IsRegisteredAssetType(Object))
+	{
+		return;
+	}
+	WaitUpdateAssetTypes();
+}
+
+void FUnrealSharpEditorModule::OnInMemoryAssetDeleted(UObject* Object)
+{
+	if (!IsRegisteredAssetType(Object))
+	{
+		return;
+	}
+	WaitUpdateAssetTypes();
+}
+
+void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent)
+{
+	WaitUpdateAssetTypes();
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetTypes));
+}
+
+void FUnrealSharpEditorModule::WaitUpdateAssetTypes()
+{
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetIds));
+}
+
+void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
+{
+	WaitUpdateAssetTypes();
+}
+
 void FUnrealSharpEditorModule::ProcessGameplayTags()
 {
 	TArray<const FGameplayTagSource*> Sources;
@@ -467,12 +581,19 @@ void FUnrealSharpEditorModule::ProcessGameplayTags()
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("public static class GameplayTags"));
 	ScriptBuilder.OpenBrace();
-
-	auto GenerateGameplayTag = [&ScriptBuilder](const FGameplayTagTableRow& RowTag)
+		
+	TArray<FName> TagNames;
+	auto GenerateGameplayTag = [&ScriptBuilder, &TagNames](const FGameplayTagTableRow& RowTag)
 	{
+		if (TagNames.Contains(RowTag.Tag))
+		{
+			return;
+		}
+		
 		const FString TagName = RowTag.Tag.ToString();
 		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));
+		TagNames.Add(RowTag.Tag);
 	};
 
 	for (const FGameplayTagSource* Source : Sources)
@@ -495,12 +616,78 @@ void FUnrealSharpEditorModule::ProcessGameplayTags()
 	}
 
 	ScriptBuilder.CloseBrace();
+	SaveRuntimeGlue(ScriptBuilder, TEXT("GameplayTags"));
+}
 
-	const FString Path = FPaths::Combine(FCSProcHelper::GetScriptFolderDirectory(), TEXT("ProjectGlue"), TEXT("GameplayTags.cs"));
-	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
+FString ReplaceSpecialCharacters(const FString& Input)
+{
+	FString ModifiedString = Input;
+	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
+	FRegexMatcher Matcher(Pattern, ModifiedString);
+	
+	while (Matcher.FindNext())
 	{
-		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save GameplayTags.cs to %s"), *Path);
+		int32 MatchStart = Matcher.GetMatchBeginning();
+		int32 MatchEnd = Matcher.GetMatchEnding();
+		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
+		Matcher = FRegexMatcher(Pattern, ModifiedString);
 	}
+
+	return ModifiedString;
+}
+
+void FUnrealSharpEditorModule::ProcessAssetIds()
+{
+	UAssetManager& AssetManager = UAssetManager::Get();
+	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
+
+	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
+	ScriptBuilder.AppendLine();
+	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.CoreUObject;"));
+	ScriptBuilder.AppendLine();
+	ScriptBuilder.AppendLine(TEXT("public static class AssetIds"));
+	ScriptBuilder.OpenBrace();
+	
+	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
+	{
+		TArray<FPrimaryAssetId> PrimaryAssetIdList;
+		AssetManager.GetPrimaryAssetIdList(PrimaryAssetType.PrimaryAssetType, PrimaryAssetIdList);
+		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
+		{
+			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.ToString();
+			AssetName = ReplaceSpecialCharacters(AssetName);
+			
+			ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetId %s = new(\"%s\", \"%s\");"),
+				*AssetName, *AssetType.PrimaryAssetType.GetName().ToString(), *AssetType.PrimaryAssetName.ToString()));
+		}
+	}
+
+	ScriptBuilder.CloseBrace();
+	SaveRuntimeGlue(ScriptBuilder, TEXT("AssetIds"));
+}
+
+void FUnrealSharpEditorModule::ProcessAssetTypes()
+{
+	UAssetManager& AssetManager = UAssetManager::Get();
+	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
+
+	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
+	ScriptBuilder.AppendLine();
+	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.CoreUObject;"));
+	ScriptBuilder.AppendLine();
+	ScriptBuilder.AppendLine(TEXT("public static class AssetTypes"));
+	ScriptBuilder.OpenBrace();
+	
+	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
+	{
+		FString AssetTypeName = ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
+
+		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetType %s = new(\"%s\");"),
+			*AssetTypeName, *PrimaryAssetType.PrimaryAssetType.ToString()));
+	}
+
+	ScriptBuilder.CloseBrace();
+	SaveRuntimeGlue(ScriptBuilder, TEXT("AssetTypes"));
 }
 
 FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const

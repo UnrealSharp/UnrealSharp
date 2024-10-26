@@ -20,4 +20,6 @@ public:
 private:
 
 	static void* FindManagedObject(UObject* Object);
+	static void* GetCurrentWorldContext();
+	
 };

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -28,6 +29,18 @@ public class UnrealSharpObject : IDisposable
     /// The pointer to the UObject that this C# object represents.
     /// </summary>
     public IntPtr NativeObject { get; private set; }
+    
+    /// <summary>
+    /// Current world context object for this frame.
+    /// </summary>
+    internal static UObject WorldContextObject
+    {
+        get
+        {
+            IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
+            return GcHandleUtilities.GetObjectFromHandlePtr<UObject>(worldContextObject)!;
+        }
+    }
     
     /// <inheritdoc />
     public virtual void Dispose()

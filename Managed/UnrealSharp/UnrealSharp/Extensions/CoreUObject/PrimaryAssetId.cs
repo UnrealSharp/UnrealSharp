@@ -1,4 +1,6 @@
-﻿namespace UnrealSharp.CoreUObject;
+﻿using UnrealSharp.Engine;
+
+namespace UnrealSharp.CoreUObject;
 
 public partial struct FPrimaryAssetId
 {
@@ -16,5 +18,16 @@ public partial struct FPrimaryAssetId
     public override string ToString()
     {
         return $"{PrimaryAssetType.Name.ToString()}:{PrimaryAssetName.ToString()}";
+    }
+
+    public void LoadAsync(List<FName> bundles, OnPrimaryAssetLoaded callback)
+    {
+        UAssetManager.Get().LoadPrimaryAsset(this, bundles, callback);
+    }
+    
+    public void LoadAsync(OnPrimaryAssetLoaded callback)
+    {
+        List<FName> bundles = [];
+        LoadAsync(bundles, callback);
     }
 }
