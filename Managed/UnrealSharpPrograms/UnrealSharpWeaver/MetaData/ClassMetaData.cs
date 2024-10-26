@@ -31,6 +31,13 @@ public class ClassMetaData : TypeReferenceMetadata
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
         ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native | ClassFlags.CompiledFromBlueprint;
+        
+        // Force DefaultConfig if Config is set and no other config flag is set
+        if (ClassFlags.HasFlag(ClassFlags.Config) &&
+            !ClassFlags.HasFlag(ClassFlags.GlobalUserConfig | ClassFlags.DefaultConfig | ClassFlags.ProjectUserConfig))
+        {
+            ClassFlags |= ClassFlags.DefaultConfig;
+        }
 
         if (WeaverHelper.IsChildOf(type, WeaverHelper.UActorComponentDefinition))
         {
