@@ -65,6 +65,13 @@ void UCSManager::Initialize()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
+
+	// Compile the C# project for any changes done outside of the editor.
+	if (!FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	{
+		Initialize();
+		return;
+	}
 #endif
 
 	// Remove this listener when the engine is shutting down.
