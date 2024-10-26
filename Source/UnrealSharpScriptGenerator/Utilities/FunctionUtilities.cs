@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
@@ -62,4 +61,20 @@ public static class FunctionUtilities
     {
         return function.HasParameters || function.ReturnProperty != null;
     }
+    
+    public static string GetNativeFunctionName(this UhtFunction function)
+    {
+        return $"{function.SourceName}_NativeFunction";
+    }
+    
+    public static bool IsBlueprintSetter(this UhtFunction function)
+    {
+        return function.HasMetadata("BlueprintSetter");
+    }
+    
+    public static bool IsBlueprintGetter(this UhtFunction function)
+    {
+        return function.HasMetadata("BlueprintGetter");
+    }
+    
 }

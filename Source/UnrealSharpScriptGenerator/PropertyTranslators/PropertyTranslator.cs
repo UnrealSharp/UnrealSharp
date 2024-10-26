@@ -25,6 +25,7 @@ public abstract class PropertyTranslator
     public virtual bool IsBlittable => false;
     public virtual bool NeedSetter => true;
     public virtual bool ExportDefaultParameter => true;
+    public virtual bool CacheProperty => false;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
@@ -53,7 +54,15 @@ public abstract class PropertyTranslator
     // Export the static constructor for this property
     public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-       builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName(NativeClassPtr, \"{nativePropertyName}\");");
+        string propertyPointerName = property.GetNativePropertyName();
+        string variableDeclaration = CacheProperty || property.HasAnyNativeGetterSetter() ? "" : "IntPtr ";
+        builder.AppendLine($"{variableDeclaration}{propertyPointerName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{nativePropertyName}\");"); 
+        builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffset({propertyPointerName});");
+        
+        if (property.HasAnyNativeGetterSetter())
+        {
+            builder.AppendLine($"{nativePropertyName}_Size = {ExporterCallbacks.FPropertyCallbacks}.CallGetSize({propertyPointerName});");
+        }
     }
     
     public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
@@ -64,6 +73,16 @@ public abstract class PropertyTranslator
     public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
         builder.AppendLine($"static int {propertyEngineName}_Offset;");
+        
+        if (property.HasAnyGetterOrSetter() || CacheProperty)
+        {
+            AddNativePropertyField(builder, propertyEngineName);
+        }
+        
+        if (property.HasAnyGetterOrSetter())
+        {
+            builder.AppendLine($"static int {propertyEngineName}_Size;");
+        }
     }
     
     public virtual void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string propertyEngineName)
@@ -134,14 +153,58 @@ public abstract class PropertyTranslator
 
         builder.AppendLine("get");
         builder.OpenBrace();
-        ExportPropertyGetter(builder, property, property.SourceName);
+
+        if (property.HasAnyGetter())
+        {
+            if (property.HasNativeGetter())
+            {
+                builder.BeginUnsafeBlock();
+                builder.AppendStackAlloc($"{property.SourceName}_Size", property.GetNativePropertyName());
+                builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);");
+                ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "ParamsBuffer", "0", true, false);
+                builder.AppendLine("return newValue;");
+                builder.EndUnsafeBlock();
+            }
+            else
+            {
+                UhtFunction blueprintGetter = property.GetBlueprintGetter();
+                string castOperation = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly) ? $"({GetManagedType(property)}) " : "";
+                builder.AppendLine($"return {castOperation}{blueprintGetter.GetFunctionName()}();");
+            }
+        }
+        else
+        {
+            ExportPropertyGetter(builder, property, property.SourceName);  
+        }
+
         builder.CloseBrace();
 
         if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
         {
             builder.AppendLine("set");
             builder.OpenBrace();
-            ExportPropertySetter(builder, property, property.SourceName);
+            
+            if (property.HasAnySetter())
+            {
+                if (property.HasNativeSetter())
+                {
+                    builder.BeginUnsafeBlock();
+                    builder.AppendStackAlloc($"{property.SourceName}_Size", property.GetNativePropertyName());
+                    ExportToNative(builder, property, property.SourceName, "ParamsBuffer", "0", "value");
+                    builder.AppendLine($"FPropertyExporter.CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);"); 
+                    builder.EndUnsafeBlock();
+                }
+                else
+                {
+                    UhtFunction blueprintSetter = property.GetBlueprintSetter();
+                    builder.AppendLine($"{blueprintSetter.GetFunctionName()}(value);");
+                }
+            }
+            else
+            {
+                ExportPropertySetter(builder, property, property.SourceName);
+            }
+
             builder.CloseBrace();
         }
         

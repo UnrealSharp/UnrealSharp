@@ -34,6 +34,9 @@ private:
 	static bool HasAnyPropertyFlags(FProperty* Property, EPropertyFlags FlagsToCheck);
 	static bool HasAllPropertyFlags(FProperty* Property, EPropertyFlags FlagsToCheck);
 	static void CopySingleValue(FProperty* Property, void* Dest, void* Src);
+
+	static void GetValue_InContainer(FProperty* Property, void* Container, void* OutValue);
+	static void SetValue_InContainer(FProperty* Property, void* Container, void* Value);
 	
 	
 };

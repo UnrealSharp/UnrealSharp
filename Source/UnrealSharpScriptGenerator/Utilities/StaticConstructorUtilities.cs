@@ -73,7 +73,7 @@ public static class StaticConstructorUtilities
             string functionName = function.SourceName;
             
             generatorStringBuilder.TryAddWithEditor(function);
-            generatorStringBuilder.AppendLine($"{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
+            generatorStringBuilder.AppendLine($"{function.GetNativeFunctionName()} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             
             if (function.HasParametersOrReturnValue())
             {

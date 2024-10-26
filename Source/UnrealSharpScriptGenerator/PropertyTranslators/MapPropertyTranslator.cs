@@ -16,6 +16,7 @@ public class MapPropertyTranslator : PropertyTranslator
     
     public override bool IsBlittable => false;
     public override bool NeedSetter => false;
+    public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)
     {
@@ -57,12 +58,6 @@ public class MapPropertyTranslator : PropertyTranslator
         return $"System.Collections.Generic.{interfaceType}<{keyManagedType}, {valueManagedType}>";
     }
 
-    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
-        builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
-    }
-
     public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
     {
         base.ExportParameterStaticConstructor(builder, property, function, propertyEngineName, functionName);
@@ -91,7 +86,6 @@ public class MapPropertyTranslator : PropertyTranslator
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
         base.ExportPropertyVariables(builder, property, propertyEngineName);
-        builder.AppendLine($"static IntPtr {propertyEngineName}_NativeProperty;");
         
         string marshaller = GetMarshaller((UhtMapProperty) property);
         

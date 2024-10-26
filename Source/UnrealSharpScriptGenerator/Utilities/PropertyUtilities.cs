@@ -33,6 +33,80 @@ public static class PropertyUtilities
     {
         return property.MetaData.ContainsKey(key);
     }
+    
+    public static bool HasNativeGetter(this UhtProperty property)
+    {
+        return !string.IsNullOrEmpty(property.Getter);
+    }
+    
+    public static bool HasNativeSetter(this UhtProperty property)
+    {
+        return !string.IsNullOrEmpty(property.Setter);
+    }
+    
+    public static bool HasAnyNativeGetterSetter(this UhtProperty property)
+    {
+        return property.HasNativeGetter() || property.HasNativeSetter();
+    }
+    
+    public static bool HasBlueprintGetter(this UhtProperty property)
+    {
+        return property.HasMetaData("BlueprintGetter");
+    }
+    
+    public static bool HasBlueprintSetter(this UhtProperty property)
+    {
+        return property.HasMetaData("BlueprintSetter");
+    }
+    
+    public static bool HasBlueprintGetterOrSetter(this UhtProperty property)
+    {
+        return property.HasBlueprintGetter() || property.HasBlueprintSetter();
+    }
+    
+    public static bool HasAnyGetterOrSetter(this UhtProperty property)
+    {
+        return property.HasAnyNativeGetterSetter() || property.HasBlueprintGetterOrSetter();
+    }
+    
+    public static bool HasAnyGetter(this UhtProperty property)
+    {
+        return property.HasNativeGetter() || property.HasBlueprintGetter();
+    }
+    
+    public static bool HasAnySetter(this UhtProperty property)
+    {
+        return property.HasNativeSetter() || property.HasBlueprintSetter();
+    }
+    
+    public static UhtFunction GetBlueprintGetter(this UhtProperty property)
+    {
+        if (!property.HasBlueprintGetter())
+        {
+            throw new InvalidOperationException("Property does not have a blueprint getter.");
+        }
+        
+        UhtClass? classObj = property.Outer as UhtClass;
+        string blueprintGetter = property.GetMetaData("BlueprintGetter");
+        return classObj!.FindFunctionByName(blueprintGetter)!;
+    }
+    
+    public static UhtFunction GetBlueprintSetter(this UhtProperty property)
+    {
+        if (!property.HasBlueprintSetter())
+        {
+            throw new InvalidOperationException("Property does not have a blueprint setter.");
+        }
+        
+        UhtClass? classObj = property.Outer as UhtClass;
+        string blueprintSetter = property.GetMetaData("BlueprintSetter");
+        return classObj!.FindFunctionByName(blueprintSetter)!;
+    }
+    
+    public static string GetNativePropertyName(this UhtProperty property)
+    {
+        return $"{property.SourceName}_NativeProperty";
+    }
 
     public static string GetProtection(this UhtProperty property)
     {

@@ -1,15 +1,18 @@
-﻿using EpicGames.Core;
+﻿using System;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string? functionName)
+    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName)
     {
         foreach (UhtFunction function in classObj.Functions)
         {
-            if (function.SourceName == functionName)
+            if (function.SourceName == functionName
+                || (function.SourceName.Length == functionName.Length 
+                    && function.SourceName.Contains(functionName, StringComparison.InvariantCultureIgnoreCase)))
             {
                 return function;
             }

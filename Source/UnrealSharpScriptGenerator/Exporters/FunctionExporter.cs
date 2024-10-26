@@ -357,7 +357,7 @@ public class FunctionExporter
         exporter.ExportFunctionVariables(builder);
         exporter.ExportOverloads(builder);
         exporter.ExportFunction(builder);
-        
+
         builder.TryEndWithEditor(function);
     }
     
@@ -653,9 +653,7 @@ public class FunctionExporter
         }
         else
         {
-            builder.AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{_function.SourceName}_ParamsSize];");
-            builder.AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
-            builder.AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({nativeFunctionIntPtr}, ParamsBuffer);");
+            builder.AppendStackAlloc($"{_function.SourceName}_ParamsSize", nativeFunctionIntPtr);
             
             ForEachParameter((translator, parameter) =>
             {
@@ -779,6 +777,12 @@ public class FunctionExporter
 
     void DetermineProtectionMode()
     {
+        if (_function.IsBlueprintGetter() || _function.IsBlueprintSetter())
+        {
+            _modifiers = "private ";
+            return;
+        }
+        
         switch (_protectionMode)
         {
             case EFunctionProtectionMode.UseUFunctionProtection:
