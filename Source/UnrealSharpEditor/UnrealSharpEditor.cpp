@@ -619,6 +619,23 @@ void FUnrealSharpEditorModule::ProcessGameplayTags()
 	SaveRuntimeGlue(ScriptBuilder, TEXT("GameplayTags"));
 }
 
+FString ReplaceSpecialCharacters(const FString& Input)
+{
+	FString ModifiedString = Input;
+	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
+	FRegexMatcher Matcher(Pattern, ModifiedString);
+	
+	while (Matcher.FindNext())
+	{
+		int32 MatchStart = Matcher.GetMatchBeginning();
+		int32 MatchEnd = Matcher.GetMatchEnding();
+		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
+		Matcher = FRegexMatcher(Pattern, ModifiedString);
+	}
+
+	return ModifiedString;
+}
+
 void FUnrealSharpEditorModule::ProcessAssetIds()
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
@@ -638,8 +655,7 @@ void FUnrealSharpEditorModule::ProcessAssetIds()
 		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
 		{
 			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.ToString();
-			AssetName = AssetName.Replace(TEXT("."), TEXT("_"));
-			AssetName = AssetName.Replace(TEXT("-"), TEXT("_"));
+			AssetName = ReplaceSpecialCharacters(AssetName);
 			
 			ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetId %s = new(\"%s\", \"%s\");"),
 				*AssetName, *AssetType.PrimaryAssetType.GetName().ToString(), *AssetType.PrimaryAssetName.ToString()));
@@ -664,10 +680,8 @@ void FUnrealSharpEditorModule::ProcessAssetTypes()
 	
 	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
 	{
-		FString AssetTypeName = PrimaryAssetType.PrimaryAssetType.ToString();
-		AssetTypeName = AssetTypeName.Replace(TEXT("."), TEXT("_"));
-		AssetTypeName = AssetTypeName.Replace(TEXT("-"), TEXT("_"));
-		AssetTypeName = AssetTypeName.Replace(TEXT(" "), TEXT("_"));
+		FString AssetTypeName = ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
+
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetType %s = new(\"%s\");"),
 			*AssetTypeName, *PrimaryAssetType.PrimaryAssetType.ToString()));
 	}
