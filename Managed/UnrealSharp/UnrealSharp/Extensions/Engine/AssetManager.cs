@@ -5,12 +5,24 @@ namespace UnrealSharp.Engine;
 
 public partial class UAssetManager
 {
+    /// <summary>
+    /// Gets the AssetManager singleton of the specified type
+    /// </summary>
     public static T Get<T>() where T : UAssetManager
     {
         IntPtr handle = UAssetManagerExporter.CallGetAssetManager();
+        
+        if (handle == IntPtr.Zero)
+        {
+            throw new Exception("Failed to get AssetManager singleton");
+        }
+        
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
+    /// <summary>
+    /// Gets the AssetManager singleton
+    /// </summary>
     public static UAssetManager Get()
     {
         return Get<UAssetManager>();
@@ -26,9 +38,21 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
     public void LoadPrimaryAsset(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAsset loadPrimaryAsset = UAsyncActionLoadPrimaryAsset.AsyncLoadPrimaryAsset(this, primaryAsset, bundles);
+        UAsyncActionLoadPrimaryAsset loadPrimaryAsset = UAsyncActionLoadPrimaryAsset.AsyncLoadPrimaryAsset(WorldContextObject, primaryAsset, bundles);
         loadPrimaryAsset.Completed += onLoaded;
         loadPrimaryAsset.Activate();
+    }
+    
+    /// <summary>
+    /// Load a primary asset object into memory, this will cause it to stay loaded until it is explicitly unloaded.
+    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded object to verify it is the correct type.
+    /// If LoadBundles is specified, those bundles are loaded along with the asset.
+    /// </summary>
+    /// <param name="primaryAsset">The primary asset to load</param>
+    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
+    public void LoadPrimaryAsset(FPrimaryAssetId primaryAsset, OnPrimaryAssetLoaded onLoaded)
+    {
+        LoadPrimaryAsset(primaryAsset, new List<FName>(), onLoaded);
     }
     
     /// <summary>
@@ -41,9 +65,21 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the assets are loaded</param>
     public void LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetListLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetList loadPrimaryAssets = UAsyncActionLoadPrimaryAssetList.AsyncLoadPrimaryAssetList(this, primaryAssets, bundles);
+        UAsyncActionLoadPrimaryAssetList loadPrimaryAssets = UAsyncActionLoadPrimaryAssetList.AsyncLoadPrimaryAssetList(WorldContextObject, primaryAssets, bundles);
         loadPrimaryAssets.Completed += onLoaded;
         loadPrimaryAssets.Activate();
+    }
+    
+    /// <summary>
+    /// Load a list of primary asset objects into memory, this will cause them to stay loaded until explicitly unloaded.
+    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested assets found at completion.
+    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    /// </summary>
+    /// <param name="primaryAssets">The primary assets to load</param>
+    /// <param name="onLoaded">The callback to execute when the assets are loaded</param>
+    public void LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, OnPrimaryAssetListLoaded onLoaded)
+    {
+        LoadPrimaryAssets(primaryAssets, new List<FName>(), onLoaded);
     }
     
     /// <summary>
@@ -56,9 +92,21 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
     public void LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetClassLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetClass loadPrimaryAssetClass = UAsyncActionLoadPrimaryAssetClass.AsyncLoadPrimaryAssetClass(this, primaryAsset, bundles);
+        UAsyncActionLoadPrimaryAssetClass loadPrimaryAssetClass = UAsyncActionLoadPrimaryAssetClass.AsyncLoadPrimaryAssetClass(WorldContextObject, primaryAsset, bundles);
         loadPrimaryAssetClass.Completed += onLoaded;
         loadPrimaryAssetClass.Activate();
+    }
+    
+    /// <summary>
+    /// Load a primary asset class  into memory, this will cause it to stay loaded until it is explicitly unloaded.
+    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded class to verify it is the correct type.
+    /// If LoadBundles is specified, those bundles are loaded along with the asset.
+    /// </summary>
+    /// <param name="primaryAsset">The primary asset to load</param>
+    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
+    public void LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, OnPrimaryAssetClassLoaded onLoaded)
+    {
+        LoadPrimaryAssetClass(primaryAsset, new List<FName>(), onLoaded);
     }
     
     /// <summary>
@@ -71,9 +119,21 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the classes are loaded</param>
     public void LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetClassListLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetClassList loadPrimaryAssetClasses = UAsyncActionLoadPrimaryAssetClassList.AsyncLoadPrimaryAssetClassList(this, primaryAssets, bundles);
+        UAsyncActionLoadPrimaryAssetClassList loadPrimaryAssetClasses = UAsyncActionLoadPrimaryAssetClassList.AsyncLoadPrimaryAssetClassList(WorldContextObject, primaryAssets, bundles);
         loadPrimaryAssetClasses.Completed += onLoaded;
         loadPrimaryAssetClasses.Activate();
+    }
+    
+    /// <summary>
+    /// Load a list of primary asset classes into memory, this will cause them to stay loaded until explicitly unloaded.
+    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested classes found at completion.
+    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    /// </summary>
+    /// <param name="primaryAssets">The primary assets to load</param>
+    /// <param name="onLoaded">The callback to execute when the classes are loaded</param>
+    public void LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, OnPrimaryAssetClassListLoaded onLoaded)
+    {
+        LoadPrimaryAssetClasses(primaryAssets, new List<FName>(), onLoaded);
     }
     
     /// <summary>
@@ -198,5 +258,4 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetCurrentBundleState(primaryAssetId, bForceCurrentState, out outBundles);
     }
-    
 }

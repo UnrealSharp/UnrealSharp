@@ -4,6 +4,8 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+class FCSScriptBuilder;
+
 enum HotReloadStatus
 {
     // Not Hot Reloading
@@ -63,8 +65,29 @@ private:
     void RegisterCommands();
     void RegisterMenu();
     void RegisterGameplayTags();
+    void RegisterAssetTypes();
+
+    static void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName);
+
+    static void OnAssetSearchRootAdded(const FString& RootPath);
+    static void OnCompletedInitialScan();
+
+    static bool IsRegisteredAssetType(const FAssetData& AssetData);
+    static bool IsRegisteredAssetType(UClass* Class);
+    
+    static void OnAssetRemoved(const FAssetData& AssetData);
+    static void OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath);
+    static void OnInMemoryAssetCreated(UObject* Object);
+    static void OnInMemoryAssetDeleted(UObject* Object);
+
+    static void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
+
+    static void WaitUpdateAssetTypes();
 
     static void ProcessGameplayTags();
+    
+    static void ProcessAssetIds();
+    static void ProcessAssetTypes();
     
     FSlateIcon GetMenuIcon() const;
     

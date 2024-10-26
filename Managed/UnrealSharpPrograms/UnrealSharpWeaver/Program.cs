@@ -197,7 +197,7 @@ public static class Program
     {
         string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = false,
         });
 
         string metadataFilePath = Path.ChangeExtension(outputPath, "metadata.json");

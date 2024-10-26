@@ -4,4 +4,5 @@ namespace UnrealSharp.Interop;
 public static unsafe partial class FCSManagerExporter
 {
     public static delegate* unmanaged<IntPtr, IntPtr> FindManagedObject;
+    public static delegate* unmanaged<IntPtr> GetCurrentWorldContext;
 }
