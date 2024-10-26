@@ -9,6 +9,6 @@ void UGEngineExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 
 void* UGEngineExporter::GetEngineSubsystem(UClass* SubsystemClass)
 {
-	UEngineSubsystem* GameInstanceSubsystem = GEngine->GetEngineSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(GameInstanceSubsystem).GetIntPtr();
+	UEngineSubsystem* EngineSubsystem = GEngine->GetEngineSubsystemBase(SubsystemClass);
+	return UCSManager::Get().FindManagedObject(EngineSubsystem).GetIntPtr();
 }

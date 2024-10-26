@@ -85,6 +85,15 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->UpdateCustomPropertyListForPostConstruction();
 		
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
+
+	if (Field->IsChildOf<UEngineSubsystem>()
+#if WITH_EDITOR
+	|| Field->IsChildOf<UEditorSubsystem>()
+#endif
+	)
+	{
+		FSubsystemCollectionBase::ActivateExternalSubsystem(Field);
+	}
 }
 
 void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
@@ -102,6 +111,16 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
 #endif
+
+	if (Field->IsChildOf<UEngineSubsystem>()
+	#if WITH_EDITOR
+	|| Field->IsChildOf<UEditorSubsystem>()
+	#endif
+	)
+	{
+		FSubsystemCollectionBase::DeactivateExternalSubsystem(OldField);
+	}
+	
 	OldField->ClassFlags |= CLASS_NewerVersionExists;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
