@@ -28,11 +28,4 @@ public class SoftObjectPropertyTranslator : SimpleTypePropertyTranslator
         string fullName = softClassProperty.Class.GetFullManagedName();
         return $"SoftObjectMarshaller<{fullName}>";
     }
-
-    public override void GetReferences(UhtProperty property, List<UhtType> references)
-    {
-        base.GetReferences(property, references);
-        UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
-        references.Add(softObjectProperty.Class);
-    }
 }

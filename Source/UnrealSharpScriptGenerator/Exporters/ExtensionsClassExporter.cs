@@ -18,6 +18,7 @@ public static class ExtensionsClassExporter
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
+            exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
             exporter.ExportExtensionMethod(stringBuilder);
         }
         

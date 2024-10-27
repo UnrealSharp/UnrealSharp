@@ -37,14 +37,6 @@ public class MapPropertyTranslator : PropertyTranslator
         return keyTranslator.IsSupportedAsInner() && valueTranslator.IsSupportedAsInner();
     }
 
-    public override void GetReferences(UhtProperty property, List<UhtType> references)
-    {
-        base.GetReferences(property, references);
-        UhtMapProperty mapProperty = (UhtMapProperty) property;
-        references.Add(mapProperty.KeyProperty);
-        references.Add(mapProperty.ValueProperty);
-    }
-
     public override string GetManagedType(UhtProperty property)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;

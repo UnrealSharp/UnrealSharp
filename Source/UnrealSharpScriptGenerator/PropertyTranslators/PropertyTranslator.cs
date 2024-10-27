@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -41,9 +43,6 @@ public abstract class PropertyTranslator
     
     // Get the marshaller for this property to marshal back and forth between C++ and C#
     public abstract string GetMarshaller(UhtProperty property);
-    
-    // Get the references this property need to work.
-    public virtual void GetReferences(UhtProperty property, List<UhtType> references) { }
     
     // Get the marshaller delegates for this property
     public abstract string ExportMarshallerDelegates(UhtProperty property);
@@ -134,56 +133,91 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
     
-    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property)
+    /*public void ExportGetterSetterPair(GeneratorStringBuilder builder, GetterSetterPair pair)
     {
-        builder.AppendLine();
-        builder.TryAddWithEditor(property);
-        
-        string propertyName = property.GetPropertyName();
-        
-        ExportPropertyVariables(builder, property, property.SourceName);
-        builder.AppendLine();
-        
-        string protection = property.GetProtection();
-        builder.AppendTooltip(property);
-        
-        string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {propertyName}");
-        builder.OpenBrace();
-
-        builder.AppendLine("get");
-        builder.OpenBrace();
-
-        if (property.HasAnyGetter())
+        Action? exportBackingFields = null;
+        Action? exportGetter = null;
+        if (pair.Getter is not null)
         {
-            if (property.HasNativeGetter())
+            void ExportGetter()
             {
-                builder.BeginUnsafeBlock();
-                builder.AppendStackAlloc($"{property.SourceName}_Size", property.GetNativePropertyName());
-                builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);");
-                ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "ParamsBuffer", "0", true, false);
-                builder.AppendLine("return newValue;");
-                builder.EndUnsafeBlock();
+                AppendBlueprintGetterCall(builder, pair.Property, pair.Getter);
+            }
+            
+            exportGetter = ExportGetter;
+        }
+        else if (pair.Setter is not null)
+        {
+            void ExportGetter()
+            {
+                ExportGetter_Internal(pair.Property, builder, pair.PropertyName);
+            }
+            
+            void ExportBackingFields()
+            {
+                ExportPropertyVariables(builder, pair.Property, pair.PropertyName);
+            }
+            
+            exportBackingFields = ExportBackingFields;
+            exportGetter = ExportGetter;
+        }
+        
+        Action? exportSetter = null;
+        if (pair.Setter is not null)
+        {
+            void ExportSetter()
+            {
+                AppendBlueprintSetterCall(builder, pair.Setter);
+            }
+            
+            exportSetter = ExportSetter;
+        }
+        
+        ExportProperty_Internal(builder, pair.Property, pair.PropertyName, exportGetter, exportSetter, exportBackingFields);
+    }*/
+    
+    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property, Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters)
+    {
+        UhtFunction? getter = property.GetBlueprintGetter();
+        UhtFunction? setter = property.GetBlueprintSetter();
+        FunctionExporter? exportedGetter = null;
+        FunctionExporter? exportedSetter = null;
+        if (getter is not null && !exportedGetterSetters.TryGetValue(getter, out exportedGetter))
+        {
+            exportedGetter = GetterSetterFunctionExporter.Create(getter, property, GetterSetterMode.Getter);
+        }
+        
+        if (setter is not null && !exportedGetterSetters.TryGetValue(setter, out exportedSetter))
+        {
+            exportedSetter = GetterSetterFunctionExporter.Create(setter, property, GetterSetterMode.Setter);
+        }
+        
+        void ExportGetter()
+        {
+            if (property.HasAnyGetter())
+            {
+                if (property.HasNativeGetter())
+                {
+                    builder.BeginUnsafeBlock();
+                    builder.AppendStackAlloc($"{property.SourceName}_Size", property.GetNativePropertyName());
+                    builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);");
+                    ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "ParamsBuffer", "0", true, false);
+                    builder.AppendLine("return newValue;");
+                    builder.EndUnsafeBlock();
+                }
+                else
+                {
+                    AppendInvoke(builder, exportedGetter); 
+                }
             }
             else
             {
-                UhtFunction blueprintGetter = property.GetBlueprintGetter();
-                string castOperation = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly) ? $"({GetManagedType(property)}) " : "";
-                builder.AppendLine($"return {castOperation}{blueprintGetter.GetFunctionName()}();");
+                ExportPropertyGetter(builder, property, property.SourceName);  
             }
         }
-        else
+        
+        void ExportSetter()
         {
-            ExportPropertyGetter(builder, property, property.SourceName);  
-        }
-
-        builder.CloseBrace();
-
-        if (NeedSetter && !property.HasAllFlags(EPropertyFlags.BlueprintReadOnly))
-        {
-            builder.AppendLine("set");
-            builder.OpenBrace();
-            
             if (property.HasAnySetter())
             {
                 if (property.HasNativeSetter())
@@ -196,21 +230,83 @@ public abstract class PropertyTranslator
                 }
                 else
                 {
-                    UhtFunction blueprintSetter = property.GetBlueprintSetter();
-                    builder.AppendLine($"{blueprintSetter.GetFunctionName()}(value);");
+                    AppendInvoke(builder, exportedSetter);
                 }
             }
             else
             {
                 ExportPropertySetter(builder, property, property.SourceName);
             }
+        }
+        
+        void ExportBackingFields()
+        {
+            if (exportedGetter is not null && !exportedGetterSetters.ContainsKey(getter))
+            {
+                exportedGetter.ExportFunctionVariables(builder);
+                exportedGetterSetters.Add(getter, exportedGetter);
+            }
+            
+            if (exportedSetter is not null && !exportedGetterSetters.ContainsKey(setter))
+            {
+                exportedSetter.ExportFunctionVariables(builder);
+                exportedGetterSetters.Add(setter, exportedSetter);
+            }
 
+            ExportPropertyVariables(builder, property, property.SourceName);
+        }
+        
+        Action? exportSetterAction = NeedSetter && property.HasReadWriteAccess() ? ExportSetter : null;
+        ExportProperty_Internal(builder, property, property.GetPropertyName(), ExportGetter, exportSetterAction, ExportBackingFields); 
+    }
+    
+    private void ExportProperty_Internal(GeneratorStringBuilder builder, UhtProperty property, string propertyName, 
+        Action? exportGetter, 
+        Action? exportSetter,
+        Action? backingFieldsExport = null)
+    {
+        builder.AppendLine();
+        builder.TryAddWithEditor(property);
+        
+        if (backingFieldsExport is not null)
+        {
+            backingFieldsExport();
+            builder.AppendLine();
+        }
+        
+        string protection = property.GetProtection();
+        builder.AppendTooltip(property);
+        
+        string managedType = GetManagedType(property);
+        builder.AppendLine($"{protection}{managedType} {propertyName}");
+        builder.OpenBrace();
+
+        if (exportGetter is not null)
+        {
+            builder.AppendLine("get");
+            builder.OpenBrace();
+            exportGetter();
+            builder.CloseBrace();
+        }
+
+        if (exportSetter is not null)
+        {
+            builder.AppendLine("set");
+            builder.OpenBrace();
+            exportSetter();
             builder.CloseBrace();
         }
         
         builder.CloseBrace();
         builder.TryEndWithEditor(property);
         builder.AppendLine();
+    }
+    
+    private void AppendInvoke(GeneratorStringBuilder builder, FunctionExporter exportedFunction)
+    {
+        builder.BeginUnsafeBlock();
+        exportedFunction.ExportInvoke(builder);
+        builder.EndUnsafeBlock();
     }
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)

@@ -114,7 +114,9 @@ public static class ScriptGeneratorUtilities
         return package.IsPartOfEngine || package.Module == Program.Factory.PluginModule;
     }
     
-    public static void GetExportedFunctions(UhtClass classObj, ref List<UhtFunction> functions, ref List<UhtFunction> overridableFunctions)
+    public static void GetExportedFunctions(UhtClass classObj, 
+        ref List<UhtFunction> functions, 
+        ref List<UhtFunction> overridableFunctions)
     {
         foreach (UhtFunction function in classObj.Functions)
         {
@@ -194,61 +196,5 @@ public static class ScriptGeneratorUtilities
         }
         
         return interfaces;
-    }
-    
-    public static void GatherDependencies(UhtStruct typeObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, List<UhtProperty> properties, List<UhtClass> interfaces, List<string> dependencies)
-    {
-        foreach (UhtType @interface in interfaces)
-        {
-            dependencies.Add(@interface.GetNamespace());
-        }
-
-        if (typeObj.Super != null)
-        {
-            dependencies.Add(typeObj.Super.GetNamespace());
-        }
-
-        foreach (UhtFunction function in functions)
-        {
-            foreach (UhtType child in function.Children)
-            {
-                if (child is not UhtProperty property)
-                {
-                    continue;
-                }
-                
-                GatherDependencies(property, dependencies);
-            }
-        }
-        
-        foreach (UhtFunction function in overridableFunctions)
-        {
-            foreach (UhtType child in function.Children)
-            {
-                if (child is not UhtProperty property)
-                {
-                    continue;
-                }
-                
-                GatherDependencies(property, dependencies);
-            }
-        }
-        
-        foreach (UhtProperty property in properties)
-        {
-            GatherDependencies(property, dependencies);
-        }
-    }
-    
-    public static void GatherDependencies(UhtProperty property, List<string> dependencies)
-    {
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-        List<UhtType> references = new List<UhtType>();
-        translator.GetReferences(property, references);
-        
-        foreach (UhtType reference in references)
-        {
-            dependencies.Add(reference.GetNamespace());
-        }
     }
 }

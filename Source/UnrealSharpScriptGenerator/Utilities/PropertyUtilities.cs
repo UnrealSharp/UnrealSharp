@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using EpicGames.Core;
+﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Tooltip;
 
 namespace UnrealSharpScriptGenerator.Utilities;
+
+public enum AccessorType
+{
+    Getter,
+    Setter
+}
 
 public static class PropertyUtilities
 {
@@ -36,11 +38,21 @@ public static class PropertyUtilities
     
     public static bool HasNativeGetter(this UhtProperty property)
     {
+        if (property.Outer is UhtScriptStruct)
+        {
+            return false;
+        }
+        
         return !string.IsNullOrEmpty(property.Getter);
     }
     
     public static bool HasNativeSetter(this UhtProperty property)
     {
+        if (property.Outer is UhtScriptStruct)
+        {
+            return false;
+        }
+        
         return !string.IsNullOrEmpty(property.Setter);
     }
     
@@ -51,12 +63,12 @@ public static class PropertyUtilities
     
     public static bool HasBlueprintGetter(this UhtProperty property)
     {
-        return property.HasMetaData("BlueprintGetter");
+        return property.GetBlueprintGetter() != null;
     }
     
     public static bool HasBlueprintSetter(this UhtProperty property)
     {
-        return property.HasMetaData("BlueprintSetter");
+        return property.GetBlueprintSetter() != null;
     }
     
     public static bool HasBlueprintGetterOrSetter(this UhtProperty property)
@@ -79,28 +91,45 @@ public static class PropertyUtilities
         return property.HasNativeSetter() || property.HasBlueprintSetter();
     }
     
-    public static UhtFunction GetBlueprintGetter(this UhtProperty property)
+    public static UhtFunction? GetBlueprintGetter(this UhtProperty property)
     {
-        if (!property.HasBlueprintGetter())
-        {
-            throw new InvalidOperationException("Property does not have a blueprint getter.");
-        }
-        
-        UhtClass? classObj = property.Outer as UhtClass;
-        string blueprintGetter = property.GetMetaData("BlueprintGetter");
-        return classObj!.FindFunctionByName(blueprintGetter)!;
+        return property.TryGetNativeAccessor(AccessorType.Getter);
     }
     
-    public static UhtFunction GetBlueprintSetter(this UhtProperty property)
+    public static UhtFunction? GetBlueprintSetter(this UhtProperty property)
     {
-        if (!property.HasBlueprintSetter())
+        return property.TryGetNativeAccessor(AccessorType.Setter);
+    }
+    
+    public static bool HasReadWriteAccess(this UhtProperty property)
+    {
+        return !property.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) || property.HasAnyGetterOrSetter();
+    }
+    
+    public static UhtFunction? TryGetNativeAccessor(this UhtProperty property, AccessorType accessorType)
+    {
+        if (property.Outer is UhtScriptStruct)
         {
-            throw new InvalidOperationException("Property does not have a blueprint setter.");
+            return null;
         }
         
-        UhtClass? classObj = property.Outer as UhtClass;
-        string blueprintSetter = property.GetMetaData("BlueprintSetter");
-        return classObj!.FindFunctionByName(blueprintSetter)!;
+        UhtClass classObj = (property.Outer as UhtClass)!;
+        string blueprintGetter = property.GetMetaData(accessorType == AccessorType.Getter ? "BlueprintGetter" : "BlueprintSetter");
+        UhtFunction? function = classObj.FindFunctionByName(blueprintGetter);
+        
+        if (function != null && function.VerifyAccessor(property))
+        {
+            return function;
+        }
+        
+        string accessorName = accessorType == AccessorType.Getter ? "Get" : "Set";
+        function = classObj.FindFunctionByName(accessorName + property.EngineName);
+        if (function != null && function.VerifyAccessor(property))
+        {
+            return function;
+        }
+
+        return null;
     }
     
     public static string GetNativePropertyName(this UhtProperty property)

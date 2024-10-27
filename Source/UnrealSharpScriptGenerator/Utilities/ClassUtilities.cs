@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
@@ -8,13 +9,28 @@ public static class ClassUtilities
 {
     public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName)
     {
-        foreach (UhtFunction function in classObj.Functions)
+        return FindTypeByName(functionName, classObj.Functions);
+    }
+    
+    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare)
+    {
+        return FindTypeByName(propertyName, classObj.Properties, customCompare);
+    }
+    
+    private static T? FindTypeByName<T>(string typeName, IEnumerable<T> types, Func<T, string, bool>? customCompare = null) where T : UhtType
+    {
+        foreach (var type in types)
         {
-            if (function.SourceName == functionName
-                || (function.SourceName.Length == functionName.Length 
-                    && function.SourceName.Contains(functionName, StringComparison.InvariantCultureIgnoreCase)))
+            if (customCompare != null && customCompare(type, typeName))
             {
-                return function;
+                return type;
+            }
+            
+            if (type.SourceName == typeName
+                || (type.SourceName.Length == typeName.Length 
+                    && type.SourceName.Contains(typeName, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return type;
             }
         }
 
