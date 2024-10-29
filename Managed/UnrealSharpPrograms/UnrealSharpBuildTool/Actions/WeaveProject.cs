@@ -29,7 +29,8 @@ public class WeaveProject : BuildToolAction
         
         if (csprojFiles.Length == 0 && fsprojFiles.Length == 0)
         {
-            return false;
+            Console.WriteLine("No project files found. Skipping weaving...");
+            return true;
         }
         
         List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
@@ -40,6 +41,7 @@ public class WeaveProject : BuildToolAction
         weaveProcess.StartInfo.ArgumentList.Add(weaverPath);
         weaveProcess.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
         
+        bool foundValidProject = false;
         foreach (FileInfo projectFile in allProjectFiles)
         {
             if (projectFile.Directory.Name == "ProjectGlue")
@@ -53,6 +55,13 @@ public class WeaveProject : BuildToolAction
                 Program.GetBuildConfiguration(), Program.GetVersion(), csProjName + ".dll");
             
             weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
+            foundValidProject = true;
+        }
+        
+        if (!foundValidProject)
+        {
+            Console.WriteLine("No valid project found to weave. Skipping weaving...");
+            return true;
         }
 
         // Add path to the output folder for the weaver.
