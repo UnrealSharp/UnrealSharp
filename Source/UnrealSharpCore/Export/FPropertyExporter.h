@@ -34,6 +34,6 @@ private:
 	static bool HasAnyPropertyFlags(FProperty* Property, EPropertyFlags FlagsToCheck);
 	static bool HasAllPropertyFlags(FProperty* Property, EPropertyFlags FlagsToCheck);
 	static void CopySingleValue(FProperty* Property, void* Dest, void* Src);
-	
+	static uint8 GetBoolPropertyFieldMaskFromName(UStruct* InStruct, const char* InPropertyName);
 	
 };
