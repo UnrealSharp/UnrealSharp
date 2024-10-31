@@ -29,7 +29,7 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void StartHotReload();
+    void StartHotReload(bool bRebuild = true);
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
@@ -44,6 +44,7 @@ private:
 
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
+    static void OnReloadManagedCode();
     static void OnRegenerateSolution();
     static void OnOpenSolution();
     static void OnPackageProject();

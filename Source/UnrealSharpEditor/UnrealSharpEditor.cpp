@@ -133,7 +133,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	}
 }
 
-void FUnrealSharpEditorModule::StartHotReload()
+void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 {
 	TArray<FString> ProjectPaths;
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
@@ -146,14 +146,28 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 	HotReloadStatus = Active;
 	
-	FScopedSlowTask Progress(2, LOCTEXT("HotReload", "Hot Reloading C#..."));
+	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Hot Reloading C#..."));
 	Progress.MakeDialog();
 
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (bRebuild)
 	{
-		HotReloadStatus = Inactive;
-		bHotReloadFailed = true;
-		return;
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Building C# Project..."));
+		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+		{
+			HotReloadStatus = Inactive;
+			bHotReloadFailed = true;
+			return;
+		}
+	}
+	else
+	{
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Weaving C# Project..."));
+		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_WEAVE))
+		{
+			HotReloadStatus = Inactive;
+			bHotReloadFailed = true;
+			return;
+		}
 	}
 	
 	UCSManager& CSharpManager = UCSManager::Get();
@@ -196,6 +210,11 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
 	Get().StartHotReload();
+}
+
+void FUnrealSharpEditorModule::OnReloadManagedCode()
+{
+	Get().StartHotReload(false);
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
@@ -331,6 +350,9 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	
 	MenuBuilder.AddMenuEntry(CSCommands.CompileManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.ReloadManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
 	
 	MenuBuilder.EndSection();
 
@@ -419,6 +441,7 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CreateNewProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().ReloadManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));

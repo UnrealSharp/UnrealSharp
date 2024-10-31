@@ -20,6 +20,7 @@ public:
 public:
 	TSharedPtr<FUICommandInfo> CreateNewProject;
 	TSharedPtr<FUICommandInfo> CompileManagedCode;
+	TSharedPtr<FUICommandInfo> ReloadManagedCode;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
 	TSharedPtr<FUICommandInfo> PackageProject;
