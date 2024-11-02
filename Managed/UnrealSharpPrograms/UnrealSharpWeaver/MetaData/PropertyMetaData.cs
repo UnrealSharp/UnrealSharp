@@ -14,8 +14,6 @@ public class PropertyMetaData : BaseMetaData
     public string BlueprintSetter { get; set; }
     public string BlueprintGetter { get; set; }
 
-    public bool IsArray => PropertyDataType is NativeDataArrayType || PropertyDataType is NativeDataNativeArrayType;
-
     // Non-serialized for JSON
     public FieldDefinition PropertyOffsetField;
     public FieldDefinition? NativePropertyField;

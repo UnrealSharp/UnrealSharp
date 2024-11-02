@@ -10,7 +10,6 @@ void FCSPropertyMetaData:: SerializeFromJson(const TSharedPtr<FJsonObject>& Json
 	
 	JsonObject->TryGetStringField(TEXT("BlueprintGetter"), BlueprintGetter);
 	JsonObject->TryGetStringField(TEXT("BlueprintSetter"), BlueprintSetter);
-	JsonObject->TryGetBoolField(TEXT("IsArray"), IsArray);
 
 	FString RepNotifyFunctionNameStr;
 	if (JsonObject->TryGetStringField(TEXT("RepNotifyFunctionName"), RepNotifyFunctionNameStr))
