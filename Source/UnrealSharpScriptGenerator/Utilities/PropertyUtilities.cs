@@ -1,13 +1,8 @@
 ﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Exporters;
 
 namespace UnrealSharpScriptGenerator.Utilities;
-
-public enum AccessorType
-{
-    Getter,
-    Setter
-}
 
 public static class PropertyUtilities
 {
@@ -44,6 +39,13 @@ public static class PropertyUtilities
         }
         
         return !string.IsNullOrEmpty(property.Getter);
+    }
+    
+    public static bool HasGetterAndSetter(this UhtProperty property)
+    {
+        bool hasGetter = property.HasNativeGetter() || property.HasBlueprintGetter();
+        bool hasSetter = property.HasNativeSetter() || property.HasBlueprintSetter();
+        return hasGetter && hasSetter;
     }
     
     public static bool HasNativeSetter(this UhtProperty property)
@@ -93,20 +95,20 @@ public static class PropertyUtilities
     
     public static UhtFunction? GetBlueprintGetter(this UhtProperty property)
     {
-        return property.TryGetNativeAccessor(AccessorType.Getter);
+        return property.TryGetBlueprintAccessor(GetterSetterMode.Get);
     }
     
     public static UhtFunction? GetBlueprintSetter(this UhtProperty property)
     {
-        return property.TryGetNativeAccessor(AccessorType.Setter);
+        return property.TryGetBlueprintAccessor(GetterSetterMode.Set);
     }
     
     public static bool HasReadWriteAccess(this UhtProperty property)
     {
-        return !property.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) || property.HasAnyGetterOrSetter();
+        return !property.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) || property.HasAnySetter();
     }
     
-    public static UhtFunction? TryGetNativeAccessor(this UhtProperty property, AccessorType accessorType)
+    public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)
     {
         if (property.Outer is UhtScriptStruct)
         {
@@ -114,21 +116,38 @@ public static class PropertyUtilities
         }
         
         UhtClass classObj = (property.Outer as UhtClass)!;
-        string blueprintGetter = property.GetMetaData(accessorType == AccessorType.Getter ? "BlueprintGetter" : "BlueprintSetter");
-        UhtFunction? function = classObj.FindFunctionByName(blueprintGetter);
         
-        if (function != null && function.VerifyAccessor(property))
+        UhtFunction? TryFindFunction(string name)
+        {
+            UhtFunction? function = classObj.FindFunctionByName(name);
+        
+            if (function != null && function.VerifyBlueprintAccessor(property))
+            {
+                return function;
+            }
+            
+            return null;
+        }
+        
+        string accessorName = property.GetMetaData(accessorType == GetterSetterMode.Get ? "BlueprintGetter" : "BlueprintSetter");
+        UhtFunction? function = TryFindFunction(accessorName);
+        if (function != null)
         {
             return function;
         }
         
-        string accessorName = accessorType == AccessorType.Getter ? "Get" : "Set";
-        function = classObj.FindFunctionByName(accessorName + property.EngineName);
-        if (function != null && function.VerifyAccessor(property))
+        function = TryFindFunction(accessorType + property.SourceName);
+        if (function != null)
         {
             return function;
         }
 
+        function = TryFindFunction(accessorType + property.GetPropertyName());
+        if (function != null)
+        {
+            return function;
+        }
+        
         return null;
     }
     

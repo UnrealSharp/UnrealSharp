@@ -9,24 +9,49 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class StaticConstructorUtilities
 {
-    public static void ExportStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtStruct structObj, List<UhtProperty> exportedProperties, List<UhtFunction> exportedFunctions, List<UhtFunction> overrides)
+    public static void ExportStaticConstructor(GeneratorStringBuilder generatorStringBuilder, 
+        UhtStruct structObj, 
+        List<UhtProperty> exportedProperties, 
+        List<UhtFunction> exportedFunctions,
+        Dictionary<string, GetterSetterPair> exportedGetterSetters,
+        List<UhtFunction> overrides)
     {
         UhtClass? classObj = structObj as UhtClass;
         UhtScriptStruct? scriptStructObj = structObj as UhtScriptStruct;
         string structName = structObj.GetStructName();
 
-        if (classObj != null && exportedProperties.Count == 0 && exportedFunctions.Count == 0 && overrides.Count == 0)
+        if (classObj != null && exportedProperties.Count == 0 
+                             && exportedFunctions.Count == 0 
+                             && overrides.Count == 0 
+                             && exportedGetterSetters.Count == 0)
         {
             return;
         }
 
-        bool hasStaticFunctions = false;
-        foreach (UhtFunction function in exportedFunctions)
+        bool hasStaticFunctions = true;
+        void IsStaticFunction(UhtFunction function)
         {
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
             {
                 hasStaticFunctions = true;
-                break;
+            }
+        }
+        
+        foreach (UhtFunction function in exportedFunctions)
+        {
+            IsStaticFunction(function);
+        }
+        
+        foreach (GetterSetterPair pair in exportedGetterSetters.Values)
+        {
+            if (pair.Getter != null)
+            {
+                IsStaticFunction(pair.Getter);
+            }
+            
+            if (pair.Setter != null)
+            {
+                IsStaticFunction(pair.Setter);
             }
         }
 
@@ -55,6 +80,19 @@ public static class StaticConstructorUtilities
 
         if (classObj != null)
         {
+            foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
+            {
+                if (pair.Value.Getter != null)
+                {
+                    ExportClassFunctionStaticConstructor(generatorStringBuilder, pair.Value.Getter);
+                }
+                
+                if (pair.Value.Setter != null)
+                {
+                    ExportClassFunctionStaticConstructor(generatorStringBuilder, pair.Value.Setter);
+                }
+            }
+            
             ExportClassFunctionsStaticConstructor(generatorStringBuilder, exportedFunctions);
             ExportClassOverridesStaticConstructor(generatorStringBuilder, overrides);
         }
@@ -70,28 +108,33 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            string functionName = function.SourceName;
-            
-            generatorStringBuilder.TryAddWithEditor(function);
-            generatorStringBuilder.AppendLine($"{function.GetNativeFunctionName()} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
-            
-            if (function.HasParametersOrReturnValue())
-            {
-                generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
-                
-                foreach (UhtType parameter in function.Children)
-                {
-                    if (parameter is not UhtProperty property)
-                    {
-                        continue;
-                    }
-
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
-                }
-            }
-            generatorStringBuilder.TryEndWithEditor(function);
+            ExportClassFunctionStaticConstructor(generatorStringBuilder, function);
         }
+    }
+    
+    public static void ExportClassFunctionStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtFunction function)
+    {
+        string functionName = function.SourceName;
+            
+        generatorStringBuilder.TryAddWithEditor(function);
+        generatorStringBuilder.AppendLine($"{function.GetNativeFunctionName()} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
+            
+        if (function.HasParametersOrReturnValue())
+        {
+            generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+                
+            foreach (UhtType parameter in function.Children)
+            {
+                if (parameter is not UhtProperty property)
+                {
+                    continue;
+                }
+
+                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
+            }
+        }
+        generatorStringBuilder.TryEndWithEditor(function);
     }
     
     public static void ExportClassOverridesStaticConstructor(GeneratorStringBuilder generatorStringBuilder, List<UhtFunction> overrides)

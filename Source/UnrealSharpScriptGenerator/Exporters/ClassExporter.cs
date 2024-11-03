@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -17,10 +19,11 @@ public static class ClassExporter
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
-        ScriptGeneratorUtilities.GetExportedFunctions(classObj, ref exportedFunctions, ref exportedOverrides);
-
+        Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
+        ScriptGeneratorUtilities.GetExportedFunctions(classObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
+        
         List<UhtProperty> exportedProperties = new List<UhtProperty>();
-        ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
+        ScriptGeneratorUtilities.GetExportedProperties(classObj, exportedProperties);
         
         List<UhtClass> interfaces = classObj.GetInterfaces();
         
@@ -51,8 +54,14 @@ public static class ClassExporter
         // For manual exports we just want to generate attributes
         if (!isManualExport)
         { 
-            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
+            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, 
+                exportedProperties, 
+                exportedFunctions, 
+                exportedGetterSetters, 
+                exportedOverrides);
+            
             ExportClassProperties(stringBuilder, exportedProperties);
+            ExportCustomAccessors(stringBuilder, exportedGetterSetters);
             ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
             ExportOverrides(stringBuilder, exportedOverrides);
             stringBuilder.AppendLine();
@@ -87,17 +96,37 @@ public static class ClassExporter
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
         {
-            if (function.IsAnyGetter() || function.IsAnySetter())
-            {
-                continue;
-            }
-            
             if (function.HasAllFlags(EFunctionFlags.Static) && isBlueprintFunctionLibrary)
             {
                 FunctionExporter.TryAddExtensionMethod(function);
             }
             
             FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
+        }
+    }
+
+    static void ExportCustomAccessors(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    {
+        foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
+        {
+            List<UhtFunction> accessors = new List<UhtFunction>();
+            
+            if (pair.Value.Getter != null)
+            {
+                accessors.Add(pair.Value.Getter);
+            }
+            
+            if (pair.Value.Setter != null)
+            {
+                accessors.Add(pair.Value.Setter);
+            }
+            
+            UhtFunction firstAccessor = accessors.First();
+            UhtProperty firstProperty = firstAccessor.Properties.First();
+            string propertyName = pair.Value.PropertyName;
+            
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            translator.ExportCustomAccessor(builder, pair.Value, propertyName, firstProperty);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Exporters;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -71,7 +72,7 @@ public static class FunctionUtilities
     
     private static bool IsBlueprintAccessor(this UhtFunction function, string accessorType, Func<UhtProperty, UhtFunction?> getBlueprintAccessor)
     {
-        if (function.Properties.Count() != 1)
+        if (function.Properties.Count() != 1 )
         {
             return false;
         }
@@ -88,14 +89,7 @@ public static class FunctionUtilities
         
         foreach (UhtProperty property in classObj.Properties)
         {
-            string accessor = property.GetMetadata(accessorType);
-
-            if (string.IsNullOrEmpty(accessor))
-            {
-                continue;
-            }
-            
-            if (function != getBlueprintAccessor(property)! || !function.VerifyAccessor(property))
+            if (function != getBlueprintAccessor(property)! || !function.VerifyBlueprintAccessor(property))
             {
                 continue;
             }
@@ -106,7 +100,7 @@ public static class FunctionUtilities
         return false;
     }
     
-    public static bool VerifyAccessor(this UhtFunction function, UhtProperty property)
+    public static bool VerifyBlueprintAccessor(this UhtFunction function, UhtProperty property)
     {
         if (!function.Properties.Any() || function.Properties.Count() != 1)
         {
@@ -117,14 +111,20 @@ public static class FunctionUtilities
         return firstProperty.IsSameType(property);
     }
     
-    public static bool IsNativeAccesor(this UhtFunction function, string accessorType)
+    public static bool IsNativeAccessor(this UhtFunction function, GetterSetterMode accessorType)
     {
         UhtClass classObj = (function.Outer as UhtClass)!;
         foreach (UhtProperty property in classObj.Properties)
         {
             if (accessorType + property.EngineName == function.SourceName)
             {
-                return true;
+                switch (accessorType)
+                {
+                    case GetterSetterMode.Get:
+                        return property.HasNativeGetter();
+                    case GetterSetterMode.Set:
+                        return property.HasNativeSetter();
+                }
             }
         }
         
@@ -139,7 +139,7 @@ public static class FunctionUtilities
         }
         
         return function.IsBlueprintAccessor("BlueprintGetter", property => property.GetBlueprintGetter()) 
-               || function.IsNativeAccesor("Get");
+               || function.IsNativeAccessor(GetterSetterMode.Get);
     }
 
     public static bool IsAnySetter(this UhtFunction function)
@@ -150,6 +150,6 @@ public static class FunctionUtilities
         }
         
         return function.IsBlueprintAccessor("BlueprintSetter", property => property.GetBlueprintSetter()) 
-               || function.IsNativeAccesor("Set");
+               || function.IsNativeAccessor(GetterSetterMode.Set);
     }
 }

@@ -257,7 +257,6 @@ public static class NameMapper
             if (inName.Length - nameOffset >= 2 && inName[nameOffset] == 'b' && char.IsUpper(inName[nameOffset + 1]))
             {
                 nameOffset += 1;
-                
                 continue;
             }
 
@@ -275,7 +274,7 @@ public static class NameMapper
     
     public static string EscapeKeywords(string name)
     {
-        return IsAKeyword(name) ? $"_{name}" : name;
+        return IsAKeyword(name) || char.IsDigit(name[0]) ? $"_{name}" : name;
     }
     
     private static bool IsAKeyword(string name)

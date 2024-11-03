@@ -7,8 +7,8 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public enum GetterSetterMode
 {
-    Getter,
-    Setter
+    Get,
+    Set
 }
 
 public class GetterSetterFunctionExporter : FunctionExporter
@@ -17,10 +17,13 @@ public class GetterSetterFunctionExporter : FunctionExporter
     private readonly GetterSetterMode _getterSetterMode;
     private string _outParameterName;
     
-    public static GetterSetterFunctionExporter Create(UhtFunction function, UhtProperty propertyGetterSetter, GetterSetterMode getterSetterMode)
+    public static GetterSetterFunctionExporter Create(UhtFunction function, 
+        UhtProperty propertyGetterSetter, 
+        GetterSetterMode getterSetterMode, 
+        EFunctionProtectionMode protectionMode)
     {
         GetterSetterFunctionExporter exporter = new GetterSetterFunctionExporter(function, propertyGetterSetter, getterSetterMode);
-        exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.OverrideWithInternal, EBlueprintVisibility.GetterSetter);
+        exporter.Initialize(OverloadMode.SuppressOverloads, protectionMode, EBlueprintVisibility.GetterSetter);
         return exporter;
     }
     
@@ -34,7 +37,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
 
     protected override string GetParameterName(UhtProperty parameter)
     {
-        return _getterSetterMode == GetterSetterMode.Getter ? _propertyGetterSetter.GetParameterName() : "value";
+        return _getterSetterMode == GetterSetterMode.Get ? _propertyGetterSetter.GetParameterName() : "value";
     }
 
     protected override string MakeOutMarshalDestination(UhtProperty parameter, PropertyTranslator propertyTranslator, GeneratorStringBuilder builder)

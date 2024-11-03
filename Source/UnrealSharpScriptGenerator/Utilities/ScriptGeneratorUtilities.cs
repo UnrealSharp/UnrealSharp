@@ -7,6 +7,13 @@ using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
+public struct GetterSetterPair
+{
+    public UhtFunction? Getter;
+    public UhtFunction? Setter;
+    public string PropertyName;
+}
+
 public static class ScriptGeneratorUtilities
 {
     public const string EngineNamespace = "UnrealSharp.Engine";
@@ -93,7 +100,7 @@ public static class ScriptGeneratorUtilities
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
     
-    public static void GetExportedProperties(UhtStruct structObj, ref List<UhtProperty> properties)
+    public static void GetExportedProperties(UhtStruct structObj, List<UhtProperty> properties)
     {
         if (!structObj.Properties.Any())
         {
@@ -115,13 +122,80 @@ public static class ScriptGeneratorUtilities
     }
     
     public static void GetExportedFunctions(UhtClass classObj, 
-        ref List<UhtFunction> functions, 
-        ref List<UhtFunction> overridableFunctions)
+        List<UhtFunction> functions, 
+         List<UhtFunction> overridableFunctions, 
+        Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         foreach (UhtFunction function in classObj.Functions)
         {
             if (!CanExportFunction(function))
             {
+                continue;
+            }
+            
+            if (function.IsAnyGetter() || function.IsAnySetter())
+            {
+                continue;
+            }
+            
+            if ((function.SourceName.StartsWith("Get") && function.ReturnProperty != null && !function.HasParameters) 
+                || (function.SourceName.StartsWith("Set") && function.Properties.Count() == 1 && !function.Properties.First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm)))
+            {
+                string propertyName;
+                if (function.SourceName.Length > 3)
+                {
+                    propertyName = function.SourceName.Substring(3);
+                }
+                else
+                {
+                    propertyName = function.SourceName;
+                }
+
+                propertyName = NameMapper.EscapeKeywords(propertyName);
+
+                UhtFunction? sameNameFunction = classObj.FindFunctionByName(propertyName);
+                if (sameNameFunction != null && sameNameFunction != function)
+                {
+                    continue;
+                }
+            
+                bool ComparePropertyName(UhtProperty arg1, string arg2)
+                {
+                    return arg1.SourceName == arg2 || arg1.GetPropertyName() == arg2;
+                }
+            
+                UhtProperty classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
+                UhtProperty firstProperty = function.ReturnProperty != null ? function.ReturnProperty : function.Properties.First();
+                if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() || classProperty.HasAnySetter()))
+                {
+                    continue;
+                }
+                
+                if (!getterSetterPairs.TryGetValue(propertyName, out GetterSetterPair pair))
+                {
+                    pair = new GetterSetterPair
+                    {
+                        PropertyName = propertyName
+                    };
+                    
+                    getterSetterPairs[propertyName] = pair;
+                }
+
+                bool IsOutParm(UhtProperty property)
+                {
+                    return property.HasAllFlags(EPropertyFlags.OutParm) && !property.HasAllFlags(EPropertyFlags.ConstParm);
+                }
+
+                if (function.ReturnProperty != null || function.Properties.Any(IsOutParm))
+                {
+                    pair.Getter = function;
+                }
+                else
+                {
+                    pair.Setter = function;
+                }
+                
+                getterSetterPairs[propertyName] = pair;
                 continue;
             }
             
