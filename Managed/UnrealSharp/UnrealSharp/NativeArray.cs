@@ -174,10 +174,10 @@ public class UnrealNativeArrayEnumerator<T>(TNativeArray<T> array) : IEnumerator
     }
 }
 
-public class NativeArrayMarshaller<T>(int length, IntPtr nativeProperty) 
+public class NativeArrayMarshaller<T>(IntPtr nativeProperty) 
     where T : INumber<T>
 {
-    private readonly TNativeArray<T>[] _wrappers = new TNativeArray<T>[length];
+    private TNativeArray<T>? _nativeArrayWrapper;
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, TNativeArray<T> obj)
     {
@@ -194,14 +194,11 @@ public class NativeArrayMarshaller<T>(int length, IntPtr nativeProperty)
 
     public TNativeArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_wrappers[arrayIndex] == null)
+        if (_nativeArrayWrapper == null)
         {
-            unsafe
-            {
-                _wrappers[arrayIndex] = new TNativeArray<T>(nativeProperty, nativeBuffer);
-            }
+            _nativeArrayWrapper = new TNativeArray<T>(nativeProperty, nativeBuffer);
         }
-        return _wrappers[arrayIndex];
+        return _nativeArrayWrapper;
     }
 }
 

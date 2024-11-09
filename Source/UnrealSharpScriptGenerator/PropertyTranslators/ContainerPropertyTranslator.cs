@@ -57,7 +57,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
         string wrapperType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(containerProperty.ValueProperty);
 
-        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}(1, {propertyManagedName}_NativeProperty, {marshallingDelegates});");
+        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}({propertyManagedName}_NativeProperty, {marshallingDelegates});");
         builder.AppendLine($"return {propertyManagedName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0);");
     }
 

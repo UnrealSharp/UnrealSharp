@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -14,6 +12,7 @@ public static class StaticConstructorUtilities
         List<UhtProperty> exportedProperties, 
         List<UhtFunction> exportedFunctions,
         Dictionary<string, GetterSetterPair> exportedGetterSetters,
+        Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties,
         List<UhtFunction> overrides)
     {
         UhtClass? classObj = structObj as UhtClass;
@@ -23,13 +22,14 @@ public static class StaticConstructorUtilities
         if (classObj != null && exportedProperties.Count == 0 
                              && exportedFunctions.Count == 0 
                              && overrides.Count == 0 
-                             && exportedGetterSetters.Count == 0)
+                             && exportedGetterSetters.Count == 0 
+                             && getSetBackedProperties.Count == 0)
         {
             return;
         }
 
         bool hasStaticFunctions = true;
-        void IsStaticFunction(UhtFunction function)
+        void CheckIfStaticFunction(UhtFunction function)
         {
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
             {
@@ -39,19 +39,19 @@ public static class StaticConstructorUtilities
         
         foreach (UhtFunction function in exportedFunctions)
         {
-            IsStaticFunction(function);
+            CheckIfStaticFunction(function);
         }
         
         foreach (GetterSetterPair pair in exportedGetterSetters.Values)
         {
             if (pair.Getter != null)
             {
-                IsStaticFunction(pair.Getter);
+                CheckIfStaticFunction(pair.Getter);
             }
             
             if (pair.Setter != null)
             {
-                IsStaticFunction(pair.Setter);
+                CheckIfStaticFunction(pair.Setter);
             }
         }
 
@@ -77,6 +77,7 @@ public static class StaticConstructorUtilities
         generatorStringBuilder.AppendLine($"{nativeClassPtrDeclaration}NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetNative{type}FromName(\"{structObj.EngineName}\");");
         
         ExportPropertiesStaticConstructor(generatorStringBuilder, exportedProperties);
+        ExportGetSetBackedPropertyStaticConstructor(generatorStringBuilder, getSetBackedProperties);
 
         if (classObj != null)
         {
@@ -171,10 +172,23 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtProperty property in exportedProperties)
         {
-            generatorStringBuilder.TryAddWithEditor(property);
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.SourceName);
-            generatorStringBuilder.TryEndWithEditor(property);
+            ExportPropertyStaticConstructor(generatorStringBuilder, property);
         }
+    }
+    
+    public static void ExportGetSetBackedPropertyStaticConstructor(GeneratorStringBuilder generatorStringBuilder, Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties)
+    {
+        foreach (KeyValuePair<UhtProperty, GetterSetterPair> pair in getSetBackedProperties)
+        {
+            ExportPropertyStaticConstructor(generatorStringBuilder, pair.Key);
+        }
+    }
+    
+    private static void ExportPropertyStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtProperty property)
+    {
+        generatorStringBuilder.TryAddWithEditor(property);
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+        translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.SourceName);
+        generatorStringBuilder.TryEndWithEditor(property);
     }
 }

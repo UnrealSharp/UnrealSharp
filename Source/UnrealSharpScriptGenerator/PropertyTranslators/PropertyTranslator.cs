@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Tooltip;
@@ -50,41 +48,53 @@ public abstract class PropertyTranslator
     // Get the null value for this property
     public abstract string GetNullValue(UhtProperty property);
     
-    // Export the static constructor for this property
     public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
         string propertyPointerName = property.GetNativePropertyName();
-        string variableDeclaration = CacheProperty || property.HasAnyNativeGetterSetter() ? "" : "IntPtr ";
-        
+        bool hasNativeGetterSetter = property.HasAnyNativeGetterSetter();
+        bool hasBlueprintGetterSetter = property.HasBlueprintGetterSetterPair();
+
         string adjustedNativePropertyName = nativePropertyName;
         if (property.Deprecated)
         {
-            int deprecatedSuffixIndex = adjustedNativePropertyName.IndexOf("_Deprecated", StringComparison.InvariantCultureIgnoreCase);
-            if (deprecatedSuffixIndex > 0)
-            {
-                adjustedNativePropertyName = adjustedNativePropertyName.Substring(0, deprecatedSuffixIndex);
-            }
+            int index = nativePropertyName.IndexOf("_DEPRECATED", StringComparison.OrdinalIgnoreCase);
+            adjustedNativePropertyName = index != -1 ? nativePropertyName.Substring(0, index) : nativePropertyName;
+        }
+
+        if (hasNativeGetterSetter || !hasBlueprintGetterSetter)
+        {
+            string variableDeclaration = CacheProperty || hasNativeGetterSetter ? "" : "IntPtr ";
+            builder.AppendLine($"{variableDeclaration}{propertyPointerName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{adjustedNativePropertyName}\");");
+            builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffset({propertyPointerName});");
         }
         
-        builder.AppendLine($"{variableDeclaration}{propertyPointerName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{adjustedNativePropertyName}\");"); 
-        builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffset({propertyPointerName});");
-        
-        UhtFunction? getter = property.GetBlueprintGetter();
-        UhtFunction? setter = property.GetBlueprintSetter();
-        
-        if (property.HasAnyNativeGetterSetter())
+        if (hasNativeGetterSetter)
         {
             builder.AppendLine($"{nativePropertyName}_Size = {ExporterCallbacks.FPropertyCallbacks}.CallGetSize({propertyPointerName});");
         }
         
-        if (getter is not null && !property.HasNativeGetter())
+        // Export the static constructors for the getter and setter
+        TryExportGetterSetterStaticConstructor(property, builder);
+    }
+    
+    private void TryExportGetterSetterStaticConstructor(UhtProperty property, GeneratorStringBuilder builder)
+    {
+        if (!property.HasNativeGetter())
         {
-            StaticConstructorUtilities.ExportClassFunctionStaticConstructor(builder, getter);
+            UhtFunction? getter = property.GetBlueprintGetter();
+            if (getter != null)
+            {
+                StaticConstructorUtilities.ExportClassFunctionStaticConstructor(builder, getter);
+            }
         }
         
-        if (setter is not null && !property.HasNativeSetter())
+        if (!property.HasNativeSetter())
         {
-            StaticConstructorUtilities.ExportClassFunctionStaticConstructor(builder, setter);
+            UhtFunction? setter = property.GetBlueprintSetter();
+            if (setter != null)
+            {
+                StaticConstructorUtilities.ExportClassFunctionStaticConstructor(builder, setter);
+            }
         }
     }
     
@@ -157,15 +167,10 @@ public abstract class PropertyTranslator
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
 
-    public void ExportCustomAccessor(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, string propertyName, UhtProperty property)
+    public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, string propertyName, UhtProperty property)
     {
-        var getterExporter = getterSetterPair.Getter != null
-            ? GetterSetterFunctionExporter.Create(getterSetterPair.Getter, property, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection) 
-            : null;
-
-        var setterExporter = getterSetterPair.Setter != null 
-            ? GetterSetterFunctionExporter.Create(getterSetterPair.Setter, property, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection) 
-            : null;
+        GetterSetterFunctionExporter? getterExporter = getterSetterPair.GetterExporter;
+        GetterSetterFunctionExporter? setterExporter = getterSetterPair.SetterExporter;
         
         void ExportBackingFields()
         {
@@ -201,85 +206,112 @@ public abstract class PropertyTranslator
         ExportProperty_Internal(builder, property, propertyName, ExportBackingFields, ExportProtection, exportGetterAction, exportSetterAction);
     }
     
-    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property, Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters)
+    public void ExportGetSetProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, UhtProperty property, Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters)
     {
-        UhtFunction? getter = property.HasNativeGetter() ? null : property.GetBlueprintGetter();
-        FunctionExporter? exportedGetter = null;
-        if (getter is not null && !exportedGetterSetters.TryGetValue(getter, out exportedGetter))
+        void ExportNativeGetter()
         {
-            exportedGetter = GetterSetterFunctionExporter.Create(getter, property, GetterSetterMode.Get, EFunctionProtectionMode.OverrideWithInternal);
+            builder.BeginUnsafeBlock();
+            builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
+            builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);");
+            ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "ParamsBuffer", "0", true, false);
+            builder.AppendLine("return newValue;");
+            builder.EndUnsafeBlock();
         }
         
-        UhtFunction? setter = property.HasNativeSetter() ? null : property.GetBlueprintSetter();
-        FunctionExporter? exportedSetter = null;
-        if (setter is not null && !exportedGetterSetters.TryGetValue(setter, out exportedSetter))
+        void ExportBlueprintGetter()
         {
-            exportedSetter = GetterSetterFunctionExporter.Create(setter, property, GetterSetterMode.Set, EFunctionProtectionMode.OverrideWithInternal);
+            AppendInvoke(builder, getterSetterPair.GetterExporter!);
         }
         
         void ExportGetter()
         {
-            if (exportedGetter != null || property.HasAnyGetter())
-            {
-                // Prioritize native getters
-                if (property.HasNativeGetter())
-                {
-                    builder.BeginUnsafeBlock();
-                    builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
-                    builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);");
-                    ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "ParamsBuffer", "0", true, false);
-                    builder.AppendLine("return newValue;");
-                    builder.EndUnsafeBlock();
-                }
-                else
-                {
-                    AppendInvoke(builder, exportedGetter); 
-                }
-            }
-            else
-            {
-                ExportPropertyGetter(builder, property, property.SourceName);  
-            }
+            ExportPropertyGetter(builder, property, property.SourceName);
+        }
+        
+        void ExportNativeSetter()
+        {
+            builder.BeginUnsafeBlock();
+            builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
+            ExportToNative(builder, property, property.SourceName, "ParamsBuffer", "0", "value");
+            builder.AppendLine($"FPropertyExporter.CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);"); 
+            builder.EndUnsafeBlock();
+        }
+        
+        void ExportBlueprintSetter()
+        {
+            AppendInvoke(builder, getterSetterPair.SetterExporter!);
         }
         
         void ExportSetter()
         {
-            if (exportedSetter != null || property.HasAnySetter())
-            {
-                // Prioritize native setters
-                if (property.HasNativeSetter())
-                {
-                    builder.BeginUnsafeBlock();
-                    builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
-                    ExportToNative(builder, property, property.SourceName, "ParamsBuffer", "0", "value");
-                    builder.AppendLine($"FPropertyExporter.CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, ParamsBuffer);"); 
-                    builder.EndUnsafeBlock();
-                }
-                else
-                {
-                    AppendInvoke(builder, exportedSetter);
-                }
-            }
-            else
-            {
-                ExportPropertySetter(builder, property, property.SourceName);
-            }
+            ExportPropertySetter(builder, property, property.SourceName);
+        }
+        
+        Action? exportGetterAction;
+        if (property.HasNativeGetter())
+        {
+            exportGetterAction = ExportNativeGetter;
+        }
+        else if (getterSetterPair.GetterExporter != null)
+        {
+            exportGetterAction = ExportBlueprintGetter;
+        }
+        else
+        {
+            exportGetterAction = ExportGetter;
+        }
+        
+        Action? exportSetterAction = null;
+        if (property.HasNativeSetter())
+        {
+            exportSetterAction = ExportNativeSetter;
+        }
+        else if (getterSetterPair.SetterExporter != null)
+        {
+            exportSetterAction = ExportBlueprintSetter;
+        }
+        else if (property.HasReadWriteAccess())
+        {
+            exportSetterAction = ExportSetter;
         }
         
         void ExportBackingFields()
         {
-            if (exportedGetter is not null && !exportedGetterSetters.ContainsKey(getter))
+            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter))
             {
-                exportedGetter.ExportFunctionVariables(builder);
-                exportedGetterSetters.Add(getter, exportedGetter);
-            }
+                getterSetterPair.GetterExporter.ExportFunctionVariables(builder);
+                exportedGetterSetters.Add(getterSetterPair.Getter, getterSetterPair.GetterExporter);
+            }   
             
-            if (exportedSetter is not null && !exportedGetterSetters.ContainsKey(setter))
+            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter))
             {
-                exportedSetter.ExportFunctionVariables(builder);
-                exportedGetterSetters.Add(setter, exportedSetter);
+                getterSetterPair.SetterExporter.ExportFunctionVariables(builder);
+                exportedGetterSetters.Add(getterSetterPair.Setter, getterSetterPair.SetterExporter);
             }
 
+            if (getterSetterPair.GetterExporter is null || getterSetterPair.SetterExporter is null)
+            {
+                ExportPropertyVariables(builder, property, property.SourceName);
+            }
+        }
+        
+        ExportProperty_Internal(builder, property, getterSetterPair.PropertyName, ExportBackingFields, null, exportGetterAction, exportSetterAction); 
+    }
+    
+    public void ExportProperty(GeneratorStringBuilder builder, UhtProperty property)
+    {
+        void ExportGetter()
+        {
+            ExportPropertyGetter(builder, property, property.SourceName);  
+        }
+        
+        void ExportSetter()
+        {
+            ExportPropertySetter(builder, property, property.SourceName);
+        }
+        
+        void ExportBackingFields()
+        {
             ExportPropertyVariables(builder, property, property.SourceName);
         }
         

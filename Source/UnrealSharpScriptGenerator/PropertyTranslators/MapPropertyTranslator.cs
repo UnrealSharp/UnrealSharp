@@ -103,7 +103,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
         string marshaller = GetMarshaller(mapProperty);
 
-        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}(1, {property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}({property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
         builder.AppendLine($"return {property.SourceName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.SourceName}_Offset), 0);");
     }
 

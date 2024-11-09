@@ -3,15 +3,84 @@ using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
-public struct GetterSetterPair
+public class GetterSetterPair
 {
-    public UhtFunction? Getter;
-    public UhtFunction? Setter;
-    public string PropertyName;
+    public GetterSetterPair(UhtProperty property)
+    {
+        PropertyName = property.GetPropertyName();
+        
+        if (property.HasNativeGetter())
+        {
+            GetterName = property.Getter!;
+        }
+        else
+        {
+            UhtFunction? foundGetter = property.GetBlueprintGetter();
+            if (foundGetter != null)
+            {
+                GetterName = foundGetter.SourceName;
+                Getter = foundGetter;
+                GetterExporter = GetterSetterFunctionExporter.Create(foundGetter, property, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection);
+            }
+        }
+        
+        if (property.HasNativeSetter())
+        {
+            SetterName = property.Setter!;
+        }
+        else
+        {
+            UhtFunction? foundSetter = property.GetBlueprintSetter();
+            if (foundSetter != null)
+            {
+                Setter = foundSetter;
+                SetterName = foundSetter.SourceName;
+                SetterExporter = GetterSetterFunctionExporter.Create(foundSetter, property, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
+            }
+        }
+    }
+    
+    public GetterSetterPair(string propertyName)
+    {
+        PropertyName = propertyName;
+    }
+    
+    public string GetterName;
+    public string SetterName;
+    public readonly string PropertyName;
+
+    public UhtFunction? Getter { get; set; }
+    public UhtFunction? Setter { get; set; }
+
+    public GetterSetterFunctionExporter? GetterExporter { get; set; }
+    public GetterSetterFunctionExporter? SetterExporter { get; set; }
+
+    public List<UhtFunction> Accessors
+    {
+        get
+        {
+            List<UhtFunction> accessors = new();
+            
+            UhtFunction? getter = Getter;
+            if (getter != null)
+            {
+                accessors.Add(getter);
+            }
+
+            UhtFunction? setter = Setter;
+            if (setter != null)
+            {
+                accessors.Add(setter);
+            }
+            
+            return accessors;
+        }
+    }
 }
 
 public static class ScriptGeneratorUtilities
@@ -100,18 +169,30 @@ public static class ScriptGeneratorUtilities
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
     
-    public static void GetExportedProperties(UhtStruct structObj, List<UhtProperty> properties)
+    public static void GetExportedProperties(UhtStruct structObj, List<UhtProperty> properties, 
+        Dictionary<UhtProperty, GetterSetterPair> getterSetterBackedProperties)
     {
         if (!structObj.Properties.Any())
         {
             return;
         }
         
+        UhtClass? classObj = structObj as UhtClass;
         foreach (UhtProperty property in structObj.Properties)
         {
-            if (CanExportProperty(property))
+            if (!CanExportProperty(property))
             {
-                properties.Add(property);
+                continue;
+            }
+            
+            if (classObj != null && property.HasAnyGetter() || property.HasAnySetter())
+            {
+                GetterSetterPair pair = new GetterSetterPair(property);
+                getterSetterBackedProperties.Add(property, pair);
+            }
+            else
+            {
+                properties.Add(property); 
             }
         }
     }
@@ -138,64 +219,8 @@ public static class ScriptGeneratorUtilities
                 continue;
             }
             
-            if ((function.SourceName.StartsWith("Get") && function.ReturnProperty != null && !function.HasParameters) 
-                || (function.SourceName.StartsWith("Set") && function.Properties.Count() == 1 && !function.Properties.First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm)))
+            if (TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
-                string propertyName;
-                if (function.SourceName.Length > 3)
-                {
-                    propertyName = function.SourceName.Substring(3);
-                }
-                else
-                {
-                    propertyName = function.SourceName;
-                }
-
-                propertyName = NameMapper.EscapeKeywords(propertyName);
-
-                UhtFunction? sameNameFunction = classObj.FindFunctionByName(propertyName);
-                if (sameNameFunction != null && sameNameFunction != function)
-                {
-                    continue;
-                }
-            
-                bool ComparePropertyName(UhtProperty arg1, string arg2)
-                {
-                    return arg1.SourceName == arg2 || arg1.GetPropertyName() == arg2;
-                }
-            
-                UhtProperty classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
-                UhtProperty firstProperty = function.ReturnProperty != null ? function.ReturnProperty : function.Properties.First();
-                if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() || classProperty.HasAnySetter()))
-                {
-                    continue;
-                }
-                
-                if (!getterSetterPairs.TryGetValue(propertyName, out GetterSetterPair pair))
-                {
-                    pair = new GetterSetterPair
-                    {
-                        PropertyName = propertyName
-                    };
-                    
-                    getterSetterPairs[propertyName] = pair;
-                }
-
-                bool IsOutParm(UhtProperty property)
-                {
-                    return property.HasAllFlags(EPropertyFlags.OutParm) && !property.HasAllFlags(EPropertyFlags.ConstParm);
-                }
-
-                if (function.ReturnProperty != null || function.Properties.Any(IsOutParm))
-                {
-                    pair.Getter = function;
-                }
-                else
-                {
-                    pair.Setter = function;
-                }
-                
-                getterSetterPairs[propertyName] = pair;
                 continue;
             }
             
@@ -270,5 +295,65 @@ public static class ScriptGeneratorUtilities
         }
         
         return interfaces;
+    }
+    
+    public static bool TryMakeGetterSetterPair(UhtFunction function, UhtClass classObj, Dictionary<string, GetterSetterPair> getterSetterPairs)
+    {
+        string scriptName = function.GetFunctionName();
+        
+        if ((!scriptName.StartsWith("Get") || function.ReturnProperty == null || function.HasParameters)
+            && (!scriptName.StartsWith("Set") || function.Properties.Count() != 1 || function.Properties
+                .First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm)))
+        {
+            return false;
+        }
+
+        var propertyName = scriptName.Length > 3 ? scriptName.Substring(3) : function.SourceName;
+        propertyName = NameMapper.EscapeKeywords(propertyName);
+
+        UhtFunction? sameNameFunction = classObj.FindFunctionByName(propertyName);
+        if (sameNameFunction != null && sameNameFunction != function)
+        {
+            return false;
+        }
+        
+        bool ComparePropertyName(UhtProperty arg1, string arg2)
+        {
+            return arg1.SourceName == arg2 || arg1.GetPropertyName() == arg2;
+        }
+        
+        UhtProperty? classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
+        UhtProperty firstProperty = function.ReturnProperty != null ? function.ReturnProperty : function.Properties.First();
+        if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() || classProperty.HasAnySetter()))
+        {
+            return false;
+        }
+            
+        if (!getterSetterPairs.TryGetValue(propertyName, out GetterSetterPair? pair))
+        {
+            pair = new GetterSetterPair(propertyName);
+            getterSetterPairs[propertyName] = pair;
+        }
+
+        bool IsOutParm(UhtProperty property)
+        {
+            return property.HasAllFlags(EPropertyFlags.OutParm) && !property.HasAllFlags(EPropertyFlags.ConstParm);
+        }
+
+        if (function.ReturnProperty != null || function.Properties.Any(IsOutParm))
+        {
+            pair.GetterName = function.SourceName;
+            pair.Getter = function;
+            pair.GetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection);
+        }
+        else
+        {
+            pair.SetterName = function.SourceName;
+            pair.Setter = function;
+            pair.SetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
+        }
+            
+        getterSetterPairs[propertyName] = pair;
+        return true;
     }
 }

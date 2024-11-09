@@ -13,11 +13,12 @@ public static class StructExporter
     {
         GeneratorStringBuilder stringBuilder = new();
         List<UhtProperty> exportedProperties = new();
+        Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
         if (structObj.SuperStruct != null)
         {
-            ScriptGeneratorUtilities.GetExportedProperties(structObj.SuperStruct, exportedProperties);
+            ScriptGeneratorUtilities.GetExportedProperties(structObj.SuperStruct, exportedProperties, getSetBackedProperties);
         }
-        ScriptGeneratorUtilities.GetExportedProperties(structObj, exportedProperties);
+        ScriptGeneratorUtilities.GetExportedProperties(structObj, exportedProperties, getSetBackedProperties);
         
         // Check there are not properties with the same name, remove otherwise
         List<string> propertyNames = new();
@@ -67,7 +68,8 @@ public static class StructExporter
             stringBuilder.AppendLine();
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, 
                 new List<UhtFunction>(), 
-                new Dictionary<string, GetterSetterPair>(),
+                new Dictionary<string, GetterSetterPair>(), 
+                new Dictionary<UhtProperty, GetterSetterPair>(),
                 new List<UhtFunction>());
             
             stringBuilder.AppendLine();

@@ -41,13 +41,6 @@ public static class PropertyUtilities
         return !string.IsNullOrEmpty(property.Getter);
     }
     
-    public static bool HasGetterAndSetter(this UhtProperty property)
-    {
-        bool hasGetter = property.HasNativeGetter() || property.HasBlueprintGetter();
-        bool hasSetter = property.HasNativeSetter() || property.HasBlueprintSetter();
-        return hasGetter && hasSetter;
-    }
-    
     public static bool HasNativeSetter(this UhtProperty property)
     {
         if (property.Outer is UhtScriptStruct)
@@ -78,6 +71,11 @@ public static class PropertyUtilities
         return property.HasBlueprintGetter() || property.HasBlueprintSetter();
     }
     
+    public static bool HasBlueprintGetterSetterPair(this UhtProperty property)
+    {
+        return property.HasBlueprintGetter() && property.HasBlueprintSetter();
+    }
+    
     public static bool HasAnyGetterOrSetter(this UhtProperty property)
     {
         return property.HasAnyNativeGetterSetter() || property.HasBlueprintGetterOrSetter();
@@ -91,6 +89,11 @@ public static class PropertyUtilities
     public static bool HasAnySetter(this UhtProperty property)
     {
         return property.HasNativeSetter() || property.HasBlueprintSetter();
+    }
+    
+    public static bool HasGetterSetterPair(this UhtProperty property)
+    {
+        return property.HasAnyGetter() && property.HasAnySetter();
     }
     
     public static UhtFunction? GetBlueprintGetter(this UhtProperty property)
