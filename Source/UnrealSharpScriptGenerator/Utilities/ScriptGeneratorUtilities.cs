@@ -207,6 +207,20 @@ public static class ScriptGeneratorUtilities
          List<UhtFunction> overridableFunctions, 
         Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
+        List<UhtFunction> exportedFunctions = new();
+        
+        bool HasFunction(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
+        {
+            foreach (UhtFunction function in functionsToCheck)
+            {
+                if (function.SourceName == functionToTest.SourceName || function.CppImplName == functionToTest.CppImplName)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         foreach (UhtFunction function in classObj.Functions)
         {
             if (!CanExportFunction(function))
@@ -219,31 +233,16 @@ public static class ScriptGeneratorUtilities
                 continue;
             }
             
-            if (TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
-            {
-                continue;
-            }
-            
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
             {
                 overridableFunctions.Add(function);
             }
-            else
+            else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
                 functions.Add(function);
             }
-        }
-
-        bool HasFunction(List<UhtFunction> functions, UhtFunction functionToTest)
-        {
-            foreach (UhtFunction function in functions)
-            {
-                if (function.SourceName == functionToTest.SourceName || function.CppImplName == functionToTest.CppImplName)
-                {
-                    return true;
-                }
-            }
-            return false;
+            
+            exportedFunctions.Add(function);
         }
         
         foreach (UhtStruct declaration in classObj.Bases)
@@ -260,12 +259,7 @@ public static class ScriptGeneratorUtilities
             
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (HasFunction(functions, function) || HasFunction(overridableFunctions, function))
-                {
-                    continue;
-                }
-                
-                if (!CanExportFunction(function))
+                if (HasFunction(exportedFunctions, function) || !CanExportFunction(function))
                 {
                     continue;
                 }

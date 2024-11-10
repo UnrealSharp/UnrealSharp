@@ -1,5 +1,4 @@
-﻿using System;
-using EpicGames.Core;
+﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -174,7 +173,13 @@ public class ContainerPropertyTranslator : PropertyTranslator
 
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
-        string marshaller = $"{property.Outer.SourceName}_{paramName}_Marshaller";
+        string nativeMethodName = "";
+        if (property.Outer is UhtFunction function)
+        {
+            nativeMethodName = function.SourceName + "_";
+        }
+        
+        string marshaller = $"{nativeMethodName}{paramName}_Marshaller";
         builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
     }
     
