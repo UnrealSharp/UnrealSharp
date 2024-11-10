@@ -15,7 +15,7 @@ public class MapPropertyTranslator : PropertyTranslator
     }
     
     public override bool IsBlittable => false;
-    public override bool NeedSetter => false;
+    public override bool SupportsSetter => false;
     public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)

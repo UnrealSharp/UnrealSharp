@@ -23,7 +23,7 @@ public abstract class PropertyTranslator
     
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
-    public virtual bool NeedSetter => true;
+    public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
     
@@ -270,7 +270,7 @@ public abstract class PropertyTranslator
         {
             exportSetterAction = ExportBlueprintSetter;
         }
-        else if (property.HasReadWriteAccess())
+        else if (SupportsSetter && property.HasReadWriteAccess())
         {
             exportSetterAction = ExportSetter;
         }
@@ -315,7 +315,7 @@ public abstract class PropertyTranslator
             ExportPropertyVariables(builder, property, property.SourceName);
         }
         
-        Action? exportSetterAction = NeedSetter && property.HasReadWriteAccess() ? ExportSetter : null;
+        Action? exportSetterAction = SupportsSetter && property.HasReadWriteAccess() ? ExportSetter : null;
         ExportProperty_Internal(builder, property, property.GetPropertyName(), ExportBackingFields, null, ExportGetter, exportSetterAction); 
     }
     
