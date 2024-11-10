@@ -52,8 +52,11 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                     namespaces.Add(typeSymbol.ContainingNamespace);
                 }
             }
-            
-            foreach(var ns in namespaces)
+
+            sourceBuilder.AppendLine("#nullable disable");
+            sourceBuilder.AppendLine();
+
+            foreach (var ns in namespaces)
             {
                 sourceBuilder.AppendLine($"using {ns.ToDisplayString()};");
             }

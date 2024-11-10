@@ -92,6 +92,8 @@ public class DelegateWrapperGenerator : ISourceGenerator
             string namespaceName = typeSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
             
             StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("#nullable disable");
+            stringBuilder.AppendLine();
             stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine("using UnrealSharp.Interop;");
             stringBuilder.AppendLine();
