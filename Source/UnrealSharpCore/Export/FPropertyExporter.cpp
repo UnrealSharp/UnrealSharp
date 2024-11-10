@@ -17,6 +17,8 @@ void UFPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 	EXPORT_FUNCTION(CopySingleValue)
 	EXPORT_FUNCTION(DestroyValue_InContainer)
 	EXPORT_FUNCTION(HasAllPropertyFlags)
+	EXPORT_FUNCTION(GetValue_InContainer)
+	EXPORT_FUNCTION(SetValue_InContainer)
 	EXPORT_FUNCTION(GetBoolPropertyFieldMaskFromName)
 }
 
@@ -85,6 +87,16 @@ bool UFPropertyExporter::HasAllPropertyFlags(FProperty* Property, EPropertyFlags
 void UFPropertyExporter::CopySingleValue(FProperty* Property, void* Dest, void* Src)
 {
 	Property->CopySingleValue(Dest, Src);
+}
+
+void UFPropertyExporter::GetValue_InContainer(FProperty* Property, void* Container, void* OutValue)
+{
+	Property->GetValue_InContainer(Container, OutValue);
+}
+
+void UFPropertyExporter::SetValue_InContainer(FProperty* Property, void* Container, void* Value)
+{
+	Property->SetValue_InContainer(Container, Value);
 }
 
 uint8 UFPropertyExporter::GetBoolPropertyFieldMaskFromName(UStruct* InStruct, const char* InPropertyName)

@@ -42,25 +42,24 @@ public class TSetReadOnly<T> : TSetBase<T>, IReadOnlySet<T>
 public class SetReadOnlyMarshaller<T>
 {
     readonly NativeProperty _property;
-    readonly TSetReadOnly<T>[] _wrappers;
     readonly MarshallingDelegates<T>.FromNative _elementFromNative;
+    private TSetReadOnly<T>? _readonlySetWrapper;
 
-    public SetReadOnlyMarshaller(int length, IntPtr setProperty,
+    public SetReadOnlyMarshaller(IntPtr setProperty,
         MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
-        _wrappers = new TSetReadOnly<T>[length];
         _elementFromNative = fromNative;
     }
 
     public TSetReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_wrappers[arrayIndex] == null)
+        if (_readonlySetWrapper == null)
         {
-            _wrappers[arrayIndex] = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative);
+            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative);
         }
         
-        return _wrappers[arrayIndex];
+        return _readonlySetWrapper;
     }
 
     public void ToNative(IntPtr nativeBuffer, IReadOnlyCollection<T> value)

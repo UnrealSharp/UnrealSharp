@@ -15,30 +15,29 @@ public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
 public class ArrayReadOnlyMarshaller<T>
 {
     private readonly IntPtr _nativeProperty;
-    private readonly TArrayReadOnly<T>[] _wrappers;
+    private TArrayReadOnly<T>? _readOnlyWrapper;
     private readonly MarshallingDelegates<T>.FromNative _innerTypeFromNative;
 
-    public ArrayReadOnlyMarshaller(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    public ArrayReadOnlyMarshaller(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _nativeProperty = nativeProperty;
-        _wrappers = new TArrayReadOnly<T>[length];
         _innerTypeFromNative = fromNative;
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, TArrayReadOnly<T> obj)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyList<T> obj)
     {
         throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
     }
 
     public TArrayReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_wrappers[arrayIndex] == null)
+        if (_readOnlyWrapper == null)
         {
             unsafe
             {
-                _wrappers[arrayIndex] = new TArrayReadOnly<T>(_nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), null, _innerTypeFromNative);
+                _readOnlyWrapper = new TArrayReadOnly<T>(_nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), null, _innerTypeFromNative);
             }
         }
-        return _wrappers[arrayIndex];
+        return _readOnlyWrapper;
     }
 }

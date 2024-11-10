@@ -28,13 +28,6 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
         return base.CanExport(property);
     }
 
-    public override void GetReferences(UhtProperty property, List<UhtType> references)
-    {
-        base.GetReferences(property, references);
-        UhtObjectPropertyBase objectProperty = (UhtObjectPropertyBase)property;
-        references.Add(objectProperty.Class);
-    }
-
     public override string GetManagedType(UhtProperty property)
     {
         UhtObjectProperty objectProperty = (UhtObjectProperty)property;

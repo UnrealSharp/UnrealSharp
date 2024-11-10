@@ -400,33 +400,32 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 // Used for members only
 public class MapMarshaller<TKey, TValue>
 {
-    IntPtr nativeProperty;
-    TMap<TKey, TValue>[] wrappers;
-    MarshallingDelegates<TKey>.FromNative keyFromNative;
-    MarshallingDelegates<TKey>.ToNative keyToNative;
-    MarshallingDelegates<TValue>.FromNative valueFromNative;
-    MarshallingDelegates<TValue>.ToNative valueToNative;
+    private readonly IntPtr _nativeProperty;
+    private TMap<TKey, TValue>? _mapWrapper;
+    private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
+    private readonly MarshallingDelegates<TKey>.ToNative _keyToNative;
+    private readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
+    private readonly MarshallingDelegates<TValue>.ToNative _valueToNative;
 
-    public MapMarshaller(int length, IntPtr mapProperty,
+    public MapMarshaller(IntPtr mapProperty,
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative,
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
-        wrappers = new TMap<TKey, TValue>[length];
-        nativeProperty = mapProperty;
-        this.keyFromNative = keyFromNative;
-        this.keyToNative = keyToNative;
-        this.valueFromNative = valueFromNative;
-        this.valueToNative = valueToNative;
+        _nativeProperty = mapProperty;
+        _keyFromNative = keyFromNative;
+        _keyToNative = keyToNative;
+        _valueFromNative = valueFromNative;
+        _valueToNative = valueToNative;
     }
 
     public TMap<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (wrappers[arrayIndex] == null)
+        if (_mapWrapper == null)
         {
-            wrappers[arrayIndex] = new TMap<TKey, TValue>(nativeProperty, nativeBuffer, 
-                keyFromNative, keyToNative, valueFromNative, valueToNative);
+            _mapWrapper = new TMap<TKey, TValue>(_nativeProperty, nativeBuffer, 
+                _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
         }
-        return wrappers[arrayIndex];
+        return _mapWrapper;
     }
 }
 
@@ -434,16 +433,15 @@ public class MapMarshaller<TKey, TValue>
 public class MapReadOnlyMarshaller<TKey, TValue>
 {
     IntPtr nativeProperty;
-    TMapReadOnly<TKey, TValue>[] wrappers;
+    TMapReadOnly<TKey, TValue>? readOnlyMapWrapper;
     MarshallingDelegates<TKey>.FromNative keyFromNative;
     MarshallingDelegates<TValue>.FromNative valueFromNative;
 
-    public MapReadOnlyMarshaller(int length, IntPtr mapProperty,
+    public MapReadOnlyMarshaller(IntPtr mapProperty,
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative, 
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
         nativeProperty = mapProperty;
-        wrappers = new TMapReadOnly<TKey, TValue>[length];
         this.keyFromNative = keyFromNative;
         this.valueFromNative = valueFromNative;
     }
@@ -455,18 +453,13 @@ public class MapReadOnlyMarshaller<TKey, TValue>
 
     public TMapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
     {
-        if (wrappers[arrayIndex] == null)
+        if (readOnlyMapWrapper == null)
         {
-            wrappers[arrayIndex] = new TMapReadOnly<TKey, TValue>(nativeProperty, nativeBuffer +
+            readOnlyMapWrapper = new TMapReadOnly<TKey, TValue>(nativeProperty, nativeBuffer +
                 (arrayIndex * Marshal.SizeOf(typeof(FScriptMap))), keyFromNative, valueFromNative);
         }
         
-        return wrappers[arrayIndex];
-    }
-
-    public void ToNative(IntPtr nativeBuffer, IReadOnlyDictionary<TKey, TValue> value)
-    {
-        ToNative(nativeBuffer, 0, IntPtr.Zero, value);
+        return readOnlyMapWrapper;
     }
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyDictionary<TKey, TValue> value)

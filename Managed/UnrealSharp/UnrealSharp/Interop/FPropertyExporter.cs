@@ -18,5 +18,7 @@ public static unsafe partial class FPropertyExporter
     public static delegate* unmanaged<IntPtr, NativePropertyFlags, NativeBool> HasAnyPropertyFlags;
     public static delegate* unmanaged<IntPtr, NativePropertyFlags, NativeBool> HasAllPropertyFlags;
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, NativeBool> CopySingleValue;
+    public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, void> GetValue_InContainer;
+    public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, void> SetValue_InContainer;
     public static delegate* unmanaged<IntPtr, string, byte> GetBoolPropertyFieldMaskFromName;
 }

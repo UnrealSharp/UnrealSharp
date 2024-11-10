@@ -221,33 +221,31 @@ public class TSet<T> : TSetBase<T>, ISet<T>
     }
 }
 
-// Used for members only
 public class SetMarshaller<T>
 {
     private readonly NativeProperty _property;
     private readonly FScriptSetHelper _helper;
-    private readonly TSet<T>[] _wrappers;
+    private TSet<T>? _setWrapper;
     private readonly MarshallingDelegates<T>.FromNative _elementFromNative;
     private readonly MarshallingDelegates<T>.ToNative _elementToNative;
 
-    public SetMarshaller(int length, IntPtr setProperty,
+    public SetMarshaller(IntPtr setProperty,
         MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
         _helper = new FScriptSetHelper(_property);
-        _wrappers = new TSet<T>[length];
         _elementFromNative = fromNative;
         _elementToNative = toNative;
     }
 
     public TSet<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_wrappers[arrayIndex] == null)
+        if (_setWrapper == null)
         {
-            _wrappers[arrayIndex] = new TSet<T>(_property.Property, nativeBuffer, _elementFromNative, _elementToNative);
+            _setWrapper = new TSet<T>(_property.Property, nativeBuffer, _elementFromNative, _elementToNative);
         }
 
-        return _wrappers[arrayIndex];
+        return _setWrapper;
     }
 
     public void ToNative(IntPtr nativeBuffer, IEnumerable<T> value)

@@ -27,7 +27,7 @@ public static class CSharpExporter
     private static readonly List<Task> Tasks = new();
     private static readonly List<string> ExportedDelegates = new();
     private static readonly Dictionary<string, DateTime> CachedDirectoryTimes = new();
-    private static Dictionary<string, ModuleFolders> _modulesWriteInfo = new();
+    private static Dictionary<string, ModuleFolders?> _modulesWriteInfo = new();
     
     public static void StartExport()
     {
@@ -70,7 +70,7 @@ public static class CSharpExporter
 
         if (jsonValue != null)
         {
-            _modulesWriteInfo = new Dictionary<string, ModuleFolders>(jsonValue);
+            _modulesWriteInfo = new Dictionary<string, ModuleFolders?>(jsonValue!);
         }
     }
 	
@@ -130,7 +130,7 @@ public static class CSharpExporter
             UhtHeaderFile headerFile = (UhtHeaderFile) header;
             string directoryName = Path.GetDirectoryName(headerFile.FilePath)!;
             
-            if (ShouldExportDirectory(directoryName, lastEditTime))
+            if (ShouldExportDirectory(directoryName, lastEditTime!))
             {
                 processedDirectories.Add(directoryName);
                 ForEachTypeInHeader(header, ExportType);
@@ -148,7 +148,7 @@ public static class CSharpExporter
         }
         
         // The glue has been exported, so we need to update the last write times
-        UpdateLastWriteTimes(processedDirectories, lastEditTime);
+        UpdateLastWriteTimes(processedDirectories, lastEditTime!);
     }
     
     private static void ForEachTypeInHeader(UhtType header, Action<UhtType> action)
@@ -166,7 +166,10 @@ public static class CSharpExporter
 
     public static bool HasBeenExported(string directory)
     {
-        return _modulesWriteInfo.TryGetValue(directory, out ModuleFolders lastEditTime) && lastEditTime.HasBeenExported;
+        return _modulesWriteInfo.TryGetValue(directory, out ModuleFolders? lastEditTime) && lastEditTime is
+        {
+            HasBeenExported: true
+        };
     }
 
     private static bool ShouldExportDirectory(string directoryPath, ModuleFolders lastEditTime)
