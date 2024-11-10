@@ -19,6 +19,7 @@ void UFPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExpor
 	EXPORT_FUNCTION(HasAllPropertyFlags)
 	EXPORT_FUNCTION(GetValue_InContainer)
 	EXPORT_FUNCTION(SetValue_InContainer)
+	EXPORT_FUNCTION(GetBoolPropertyFieldMaskFromName)
 }
 
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
@@ -96,6 +97,17 @@ void UFPropertyExporter::GetValue_InContainer(FProperty* Property, void* Contain
 void UFPropertyExporter::SetValue_InContainer(FProperty* Property, void* Container, void* Value)
 {
 	Property->SetValue_InContainer(Container, Value);
+}
+
+uint8 UFPropertyExporter::GetBoolPropertyFieldMaskFromName(UStruct* InStruct, const char* InPropertyName)
+{
+	FBoolProperty* Property = FindFProperty<FBoolProperty>(InStruct, InPropertyName);
+	if (!Property)
+	{
+		return 0;
+	}
+
+	return Property->GetFieldMask();
 }
 
 int32 UFPropertyExporter::GetPropertyOffsetFromName(UStruct* InStruct, const char* InPropertyName)

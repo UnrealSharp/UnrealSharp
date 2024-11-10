@@ -60,6 +60,11 @@ public class AsyncWrapperGenerator : ISourceGenerator
                     continue;
                 }
 
+                if (typeSymbol is INamedTypeSymbol nts && nts.IsGenericType)
+                {
+                    namespaces.UnionWith(nts.TypeArguments.Select(t => t.ContainingNamespace.ToDisplayString()));
+                }
+
                 namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
             }
 
