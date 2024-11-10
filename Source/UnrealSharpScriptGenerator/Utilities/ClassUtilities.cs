@@ -7,12 +7,12 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName)
+    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null)
     {
-        return FindTypeByName(functionName, classObj.Functions);
+        return FindTypeByName(functionName, classObj.Functions, customCompare);
     }
     
-    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare)
+    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null)
     {
         return FindTypeByName(propertyName, classObj.Properties, customCompare);
     }

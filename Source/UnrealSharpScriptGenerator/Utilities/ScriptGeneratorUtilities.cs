@@ -185,7 +185,7 @@ public static class ScriptGeneratorUtilities
                 continue;
             }
             
-            if (classObj != null && property.HasAnyGetter() || property.HasAnySetter())
+            if (classObj != null && (property.HasAnyGetter() || property.HasAnySetter()))
             {
                 GetterSetterPair pair = new GetterSetterPair(property);
                 getterSetterBackedProperties.Add(property, pair);
@@ -301,9 +301,9 @@ public static class ScriptGeneratorUtilities
     {
         string scriptName = function.GetFunctionName();
         
-        if ((!scriptName.StartsWith("Get") || function.ReturnProperty == null || function.HasParameters)
-            && (!scriptName.StartsWith("Set") || function.Properties.Count() != 1 || function.Properties
-                .First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm)))
+        bool isGetter = CheckIfGetter(scriptName, function);
+        bool isSetter = CheckIfSetter(scriptName, function);
+        if (!isGetter && !isSetter)
         {
             return false;
         }
@@ -340,7 +340,9 @@ public static class ScriptGeneratorUtilities
             return property.HasAllFlags(EPropertyFlags.OutParm) && !property.HasAllFlags(EPropertyFlags.ConstParm);
         }
 
-        if (function.ReturnProperty != null || function.Properties.Any(IsOutParm))
+        bool isOutParm = function.Properties.Any(IsOutParm);
+        
+        if (function.ReturnProperty != null || isOutParm)
         {
             pair.GetterName = function.SourceName;
             pair.Getter = function;
@@ -355,5 +357,22 @@ public static class ScriptGeneratorUtilities
             
         getterSetterPairs[propertyName] = pair;
         return true;
+    }
+    
+    static bool CheckIfGetter(string scriptName, UhtFunction function)
+    {
+        bool startsWithGet = scriptName.StartsWith("Get");
+        bool hasReturnProperty = function.ReturnProperty != null;
+        bool hasNoParameters = !function.HasParameters;
+        bool hasSingleOutParam = !hasNoParameters && function.HasOutParams() && function.Properties.Count() == 1;
+        return startsWithGet && hasReturnProperty && (hasNoParameters || hasSingleOutParam);
+    }
+
+    static bool CheckIfSetter(string scriptName, UhtFunction function)
+    {
+        bool startsWithSet = scriptName.StartsWith("Set");
+        bool hasSingleParameter = function.Properties.Count() == 1;
+        bool isNotOutOrReferenceParam = function.HasParameters && !function.Properties.First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm);
+        return startsWithSet && hasSingleParameter && isNotOutOrReferenceParam;
     }
 }

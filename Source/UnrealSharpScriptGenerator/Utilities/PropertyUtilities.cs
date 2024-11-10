@@ -1,4 +1,5 @@
-﻿using EpicGames.Core;
+﻿using System;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
 
@@ -122,7 +123,24 @@ public static class PropertyUtilities
         
         UhtFunction? TryFindFunction(string name)
         {
-            UhtFunction? function = classObj.FindFunctionByName(name);
+            UhtFunction? function = classObj.FindFunctionByName(name, (uhtFunction, typeName) =>
+            {
+                if (uhtFunction.SourceName == typeName
+                    || (uhtFunction.SourceName.Length == typeName.Length 
+                        && uhtFunction.SourceName.Contains(typeName, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    return true;
+                }
+                
+                if (uhtFunction.GetScriptName() == typeName
+                    || (uhtFunction.GetScriptName().Length == typeName.Length 
+                        && uhtFunction.GetScriptName().Contains(typeName, StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    return true;
+                }
+                
+                return false;
+            });
         
             if (function != null && function.VerifyBlueprintAccessor(property))
             {
@@ -146,6 +164,12 @@ public static class PropertyUtilities
         }
 
         function = TryFindFunction(accessorType + property.GetPropertyName());
+        if (function != null)
+        {
+            return function;
+        }
+        
+        function = TryFindFunction(accessorType + NameMapper.ScriptifyName(property.SourceName, ENameType.Property));
         if (function != null)
         {
             return function;

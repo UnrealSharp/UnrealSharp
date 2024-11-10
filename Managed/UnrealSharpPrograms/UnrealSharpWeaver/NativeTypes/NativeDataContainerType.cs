@@ -144,8 +144,7 @@ public class NativeDataContainerType : NativeDataType
         // Save the position of the branch instruction for later, when we have a reference to its target.
         processor.Emit(OpCodes.Ldarg_0);
         Instruction branchPosition = processor.Body.Instructions[^1];
-
-        processor.Emit(OpCodes.Ldc_I4_1);
+        
         processor.Emit(OpCodes.Ldsfld, nativePropertyField);
         EmitDynamicArrayMarshallerDelegates(processor, type);
 
