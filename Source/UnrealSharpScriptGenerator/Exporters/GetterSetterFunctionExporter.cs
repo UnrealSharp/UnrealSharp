@@ -29,6 +29,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
     
     private GetterSetterFunctionExporter(UhtFunction function, UhtProperty propertyGetterSetter, GetterSetterMode getterSetterMode) : base(function)
     {
+        _outParameterName = string.Empty;
         _propertyGetterSetter = propertyGetterSetter;
         _getterSetterMode = getterSetterMode;
         
@@ -52,7 +53,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
         if (_function.ReturnProperty != null && _function.ReturnProperty.IsSameType(_propertyGetterSetter))
         {
             string castOperation = _propertyGetterSetter.HasAllFlags(EPropertyFlags.BlueprintReadOnly) 
-                ? $"({ReturnValueTranslator.GetManagedType(_propertyGetterSetter)})" : string.Empty;
+                ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;
             builder.AppendLine($"return {castOperation}returnValue;");
         }
         

@@ -14,32 +14,22 @@ public class GetterSetterPair
     {
         PropertyName = property.GetPropertyName();
         
-        if (property.HasNativeGetter())
-        {
-            GetterName = property.Getter!;
-        }
-        else
+        if (!property.HasNativeGetter())
         {
             UhtFunction? foundGetter = property.GetBlueprintGetter();
             if (foundGetter != null)
             {
-                GetterName = foundGetter.SourceName;
                 Getter = foundGetter;
                 GetterExporter = GetterSetterFunctionExporter.Create(foundGetter, property, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
         
-        if (property.HasNativeSetter())
-        {
-            SetterName = property.Setter!;
-        }
-        else
+        if (!property.HasNativeSetter())
         {
             UhtFunction? foundSetter = property.GetBlueprintSetter();
             if (foundSetter != null)
             {
                 Setter = foundSetter;
-                SetterName = foundSetter.SourceName;
                 SetterExporter = GetterSetterFunctionExporter.Create(foundSetter, property, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
@@ -49,9 +39,7 @@ public class GetterSetterPair
     {
         PropertyName = propertyName;
     }
-    
-    public string GetterName;
-    public string SetterName;
+
     public readonly string PropertyName;
 
     public UhtFunction? Getter { get; set; }
@@ -338,13 +326,11 @@ public static class ScriptGeneratorUtilities
         
         if (function.ReturnProperty != null || isOutParm)
         {
-            pair.GetterName = function.SourceName;
             pair.Getter = function;
             pair.GetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection);
         }
         else
         {
-            pair.SetterName = function.SourceName;
             pair.Setter = function;
             pair.SetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
         }

@@ -277,16 +277,16 @@ public abstract class PropertyTranslator
         
         void ExportBackingFields()
         {
-            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter))
+            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter!))
             {
                 getterSetterPair.GetterExporter.ExportFunctionVariables(builder);
-                exportedGetterSetters.Add(getterSetterPair.Getter, getterSetterPair.GetterExporter);
+                exportedGetterSetters.Add(getterSetterPair.Getter!, getterSetterPair.GetterExporter);
             }   
             
-            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter))
+            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter!))
             {
                 getterSetterPair.SetterExporter.ExportFunctionVariables(builder);
-                exportedGetterSetters.Add(getterSetterPair.Setter, getterSetterPair.SetterExporter);
+                exportedGetterSetters.Add(getterSetterPair.Setter!, getterSetterPair.SetterExporter);
             }
 
             if (getterSetterPair.GetterExporter is null || getterSetterPair.SetterExporter is null)
