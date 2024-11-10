@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
@@ -31,7 +32,7 @@ public abstract class DelegateBuilder
         else
         {
             stringBuilder.Append($"    protected void Invoker(");
-            stringBuilder.Append(string.Join(", ", delegateSymbol.DelegateInvokeMethod.Parameters.Select(x => $"{x.Type} {x.Name}")));
+            stringBuilder.Append(string.Join(", ", delegateSymbol.DelegateInvokeMethod.Parameters.Select(x => $"{DelegateWrapperGenerator.GetRefKindKeyword(x)}{x.Type} {x.Name}")));
             stringBuilder.Append(")");
             stringBuilder.AppendLine();
         }
