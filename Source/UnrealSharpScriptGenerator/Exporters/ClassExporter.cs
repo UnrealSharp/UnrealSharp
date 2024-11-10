@@ -132,7 +132,9 @@ public static class ClassExporter
             string propertyName = pair.Value.PropertyName;
             
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            builder.TryAddWithEditor(firstAccessor);
             translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty);
+            builder.TryEndWithEditor(firstAccessor);
         }
     }
 }
