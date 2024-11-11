@@ -68,6 +68,9 @@ public class AsyncWrapperGenerator : ISourceGenerator
                 namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
             }
 
+            sourceBuilder.AppendLine("#nullable disable");
+            sourceBuilder.AppendLine();
+
             foreach (var ns in namespaces)
             {
                 sourceBuilder.AppendLine($"using {ns};");
