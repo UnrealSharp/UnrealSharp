@@ -27,8 +27,8 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
             return;
         }
         
-        TypeReference wrapperType = WeaverHelper.FindTypeInAssembly(delegateType.Module.Assembly, $"U{delegateType.Name}", delegateType.Namespace)!;
-        MethodReference? initializeDelegateMethod = WeaverHelper.FindMethod(wrapperType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        TypeReference foundType = GetWrapperType(delegateType);
+        MethodReference? initializeDelegateMethod = WeaverHelper.FindMethod(foundType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
         processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }
