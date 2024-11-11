@@ -32,7 +32,7 @@ public class FunctionMetaData : BaseMetaData
         MethodDef = method;
         bool hasOutParams = false;
         
-        if (method.ReturnType != WeaverHelper.VoidTypeRef)
+        if (!method.ReturnsVoid())
         {
             hasOutParams = true;
             try
@@ -114,7 +114,7 @@ public class FunctionMetaData : BaseMetaData
         {
             flags |= EFunctionFlags.Net;
             
-            if (method.ReturnType != WeaverHelper.VoidTypeRef)
+            if (!method.ReturnsVoid())
             {
                 throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
             }

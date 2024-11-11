@@ -143,7 +143,7 @@ public class PropertyMetaData : BaseMetaData
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
 
-            if (notifyMethod.ReturnType != WeaverHelper.VoidTypeRef)
+            if (!notifyMethod.ReturnsVoid())
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' must return void");
             }
