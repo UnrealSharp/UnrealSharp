@@ -40,9 +40,9 @@ public static class Main
 
         public static (Assembly, PluginLoadContextWrapper) CreateAndLoadFromAssemblyName(AssemblyName assemblyName, string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible)
         {
-            var context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
-            var assembly = context.LoadFromAssemblyName(assemblyName);
-            var wrapper = new PluginLoadContextWrapper(context, assembly);
+            PluginLoadContext context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
+            Assembly assembly = context.LoadFromAssemblyName(assemblyName);
+            PluginLoadContextWrapper wrapper = new PluginLoadContextWrapper(context, assembly);
             return (assembly, wrapper);
         }
         

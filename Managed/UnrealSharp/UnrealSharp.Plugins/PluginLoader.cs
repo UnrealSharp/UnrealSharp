@@ -16,6 +16,7 @@ namespace UnrealSharp.Plugins
             _resolver = new AssemblyDependencyResolver(pluginPath);
             _sharedAssemblies = sharedAssemblies;
             _mainLoadContext = mainLoadContext;
+            AssemblyLoadedPath = pluginPath;
 
             if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
@@ -57,8 +58,6 @@ namespace UnrealSharp.Plugins
             {
                 return default;
             }
-
-            AssemblyLoadedPath = assemblyPath;
             
             using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
