@@ -32,7 +32,8 @@ public class UnrealSharpEditor : ModuleRules
                 "EditorStyle", 
                 "Projects",
                 "GameplayTags",
-                "DeveloperSettings"
+                "DeveloperSettings",
+                "UnrealSharpBlueprint"
             }
         );
     }
