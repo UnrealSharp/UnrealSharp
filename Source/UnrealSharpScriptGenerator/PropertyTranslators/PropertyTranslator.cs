@@ -289,7 +289,10 @@ public abstract class PropertyTranslator
                 exportedGetterSetters.Add(getterSetterPair.Setter!, getterSetterPair.SetterExporter);
             }
 
-            ExportPropertyVariables(builder, property, property.SourceName);
+            if (getterSetterPair.GetterExporter is null || getterSetterPair.SetterExporter is null)
+            {
+                ExportPropertyVariables(builder, property, property.SourceName);
+            }
         }
         
         ExportProperty_Internal(builder, property, getterSetterPair.PropertyName, ExportBackingFields, null, exportGetterAction, exportSetterAction); 

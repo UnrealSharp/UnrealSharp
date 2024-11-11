@@ -33,9 +33,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     {
         if (property.IsBitfield)
         {
-            builder.AppendLine($"static int {GetOffsetFieldName(propertyEngineName)};");
             builder.AppendLine($"static byte {GetFieldMaskFieldName(propertyEngineName)};");
-            return;
         }
     
         base.ExportPropertyVariables(builder, property, propertyEngineName);
