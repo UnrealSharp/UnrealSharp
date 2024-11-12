@@ -21,14 +21,14 @@ public:
 
 	UK2Node_CSAsyncAction();
 
-	static void SetNodeFunc(UEdGraphNode * NewNode, bool, TWeakObjectPtr<UFunction> FunctionPtr);
+	static void SetNodeFunc(UEdGraphNode* NewNode, bool, TWeakObjectPtr<UFunction> FunctionPtr);
 
-	TObjectPtr<UClass> const & GetProxyClass() const
+	const TObjectPtr<UClass> & GetProxyClass() const
 	{
 		return ProxyClass;
 	};
 
-	FName const & GetFactoryFunctionName() const
+	const FName & GetFactoryFunctionName() const
 	{
 		return ProxyFactoryFunctionName;
 	}

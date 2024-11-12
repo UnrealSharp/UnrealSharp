@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-class UK2Node_BaseAsyncTask;
 class UK2Node_CSAsyncAction;
 class UK2Node_CallFunction;
 class FCSReload;
@@ -38,9 +37,9 @@ public:
 	friend FCSReload;
 
 private:
-	UFunction * FindMatchingMember(FMemberReference const & functionReference) const;
-	bool UpdateMemberCall(UK2Node_CallFunction * node) const;
-	bool UpdateMemberCall(UK2Node_CSAsyncAction * node) const;
+	UFunction* FindMatchingMember(const FMemberReference& FunctionReference) const;
+	bool UpdateMemberCall(UK2Node_CallFunction* Node) const;
+	bool UpdateMemberCall(UK2Node_CSAsyncAction* Node) const;
 
 	// Pending classes/interfaces to reinstance
 	TMap<UClass*, UClass*> ClassesToReinstance;

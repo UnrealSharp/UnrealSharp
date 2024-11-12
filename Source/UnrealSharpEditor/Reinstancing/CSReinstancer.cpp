@@ -41,7 +41,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct)
 	{
 		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
-		if (UScriptStruct * const * FoundStruct = StructsToReinstance.Find(Struct))
+		if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
 		{
 			PinType.PinSubCategoryObject = *FoundStruct;
 			return true;
@@ -178,47 +178,47 @@ void FCSReinstancer::PostReinstance()
 	GEditor->BroadcastBlueprintCompiled();	
 }
 
-UFunction * FCSReinstancer::FindMatchingMember(FMemberReference const & functionReference) const
+UFunction* FCSReinstancer::FindMatchingMember(const FMemberReference& FunctionReference) const
 {
-	auto const currentClassType = functionReference.GetMemberParentClass();
-	if (!currentClassType)
+	const UClass* CurrentClassType = FunctionReference.GetMemberParentClass();
+	if (!CurrentClassType)
 	{
 		return nullptr;
 	}
 
-	if (UClass * const * FoundNewClassType = ClassesToReinstance.Find(currentClassType))
+	if (UClass* const * FoundNewClassType = ClassesToReinstance.Find(CurrentClassType))
 	{
-		if (auto func = (*FoundNewClassType)->FindFunctionByName(functionReference.GetMemberName()))
+		if (UFunction* Function = (*FoundNewClassType)->FindFunctionByName(FunctionReference.GetMemberName()))
 		{
-			return func;
+			return Function;
 		}
 	}
 	return nullptr;
 }
 
-bool FCSReinstancer::UpdateMemberCall(UK2Node_CallFunction * node) const
+bool FCSReinstancer::UpdateMemberCall(UK2Node_CallFunction* Node) const
 {
-	if (auto newMember = FindMatchingMember(node->FunctionReference))
+	if (UFunction* NewMember = FindMatchingMember(Node->FunctionReference))
 	{
-		node->SetFromFunction(newMember);
+		Node->SetFromFunction(NewMember);
 		return true;
 	}
 	return false;
 }
 
-bool FCSReinstancer::UpdateMemberCall(UK2Node_CSAsyncAction * node) const
+bool FCSReinstancer::UpdateMemberCall(UK2Node_CSAsyncAction * Node) const
 {
-	auto const currentProxyClass = node->GetProxyClass();
-	if (!currentProxyClass)
+	const TObjectPtr<UClass> CurrentProxyClass = Node->GetProxyClass();
+	if (!CurrentProxyClass)
 	{
 		return false;
 	}
 	
-	if (UClass * const * FoundNewClassType = ClassesToReinstance.Find(currentProxyClass))
+	if (UClass* const * FoundNewClassType = ClassesToReinstance.Find(CurrentProxyClass))
 	{
-		if (auto func = (*FoundNewClassType)->FindFunctionByName(node->GetFactoryFunctionName()))
+		if (UFunction* Function = (*FoundNewClassType)->FindFunctionByName(Node->GetFactoryFunctionName()))
 		{
-			UK2Node_CSAsyncAction::SetNodeFunc(node, false, func);
+			UK2Node_CSAsyncAction::SetNodeFunc(Node, false, Function);
 			return true;
 		}
 	}
@@ -227,7 +227,7 @@ bool FCSReinstancer::UpdateMemberCall(UK2Node_CSAsyncAction * node) const
 
 void FCSReinstancer::UpdateBlueprints()
 {
-	TArray<UK2Node*> nodesToUpdate;
+	TArray<UK2Node*> NodesToUpdate;
 	
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
@@ -281,12 +281,12 @@ void FCSReinstancer::UpdateBlueprints()
 
 			if (bNeedsReconstruction)
 			{
-				nodesToUpdate.Push(Node);
+				NodesToUpdate.Push(Node);
 			}
 		}
 	}
 
-	for (auto Node : nodesToUpdate)
+	for (UK2Node* Node : NodesToUpdate)
 	{
 		Node->ReconstructNode();
 	}
