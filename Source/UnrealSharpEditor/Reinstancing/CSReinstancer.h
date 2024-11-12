@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+class UK2Node_CSAsyncAction;
+class UK2Node_CallFunction;
 class FCSReload;
 class UClass;
 
@@ -28,14 +30,17 @@ public:
 
 	void UpdateBlueprints();
 	
-	bool TryUpdatePin(FEdGraphPinType& PinType);
+	bool TryUpdatePin(FEdGraphPinType& PinType) const;
 
 	static void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
 	friend FCSReload;
 
 private:
-	
+	UFunction* FindMatchingMember(const FMemberReference& FunctionReference) const;
+	bool UpdateMemberCall(UK2Node_CallFunction* Node) const;
+	bool UpdateMemberCall(UK2Node_CSAsyncAction* Node) const;
+
 	// Pending classes/interfaces to reinstance
 	TMap<UClass*, UClass*> ClassesToReinstance;
 

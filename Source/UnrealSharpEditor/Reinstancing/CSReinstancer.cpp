@@ -1,9 +1,11 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
+#include "K2Node_CallFunction.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
+#include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
 {
@@ -32,15 +34,14 @@ void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterf
 	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
 }
 
-
-bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
+bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
 	
 	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct)
 	{
 		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
-		if (UScriptStruct** FoundStruct = StructsToReinstance.Find(Struct))
+		if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
 		{
 			PinType.PinSubCategoryObject = *FoundStruct;
 			return true;
@@ -68,7 +69,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType)
 		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftClass)
 	{
 		UClass* Interface = Cast<UClass>(PinSubCategoryObject);
-		if (UClass** FoundInterface = InterfacesToReinstance.Find(Interface))
+		if (UClass* const * FoundInterface = InterfacesToReinstance.Find(Interface))
 		{
 			PinType.PinSubCategoryObject = *FoundInterface;
 			return true;
@@ -177,8 +178,57 @@ void FCSReinstancer::PostReinstance()
 	GEditor->BroadcastBlueprintCompiled();	
 }
 
+UFunction* FCSReinstancer::FindMatchingMember(const FMemberReference& FunctionReference) const
+{
+	const UClass* CurrentClassType = FunctionReference.GetMemberParentClass();
+	if (!CurrentClassType)
+	{
+		return nullptr;
+	}
+
+	if (UClass* const * FoundNewClassType = ClassesToReinstance.Find(CurrentClassType))
+	{
+		if (UFunction* Function = (*FoundNewClassType)->FindFunctionByName(FunctionReference.GetMemberName()))
+		{
+			return Function;
+		}
+	}
+	return nullptr;
+}
+
+bool FCSReinstancer::UpdateMemberCall(UK2Node_CallFunction* Node) const
+{
+	if (UFunction* NewMember = FindMatchingMember(Node->FunctionReference))
+	{
+		Node->SetFromFunction(NewMember);
+		return true;
+	}
+	return false;
+}
+
+bool FCSReinstancer::UpdateMemberCall(UK2Node_CSAsyncAction * Node) const
+{
+	const TObjectPtr<UClass> CurrentProxyClass = Node->GetProxyClass();
+	if (!CurrentProxyClass)
+	{
+		return false;
+	}
+	
+	if (UClass* const * FoundNewClassType = ClassesToReinstance.Find(CurrentProxyClass))
+	{
+		if (UFunction* Function = (*FoundNewClassType)->FindFunctionByName(Node->GetFactoryFunctionName()))
+		{
+			UK2Node_CSAsyncAction::SetNodeFunc(Node, false, Function);
+			return true;
+		}
+	}
+	return false;
+}
+
 void FCSReinstancer::UpdateBlueprints()
 {
+	TArray<UK2Node*> NodesToUpdate;
+	
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
@@ -193,6 +243,21 @@ void FCSReinstancer::UpdateBlueprints()
 		for (UK2Node* Node : AllNodes)
 		{
 			bool bNeedsReconstruction = false;
+			if (UK2Node_CallFunction* CallFunction = Cast<UK2Node_CallFunction>(Node))
+			{
+				if(UpdateMemberCall(CallFunction))
+				{
+					bNeedsReconstruction = true;
+				}
+			}
+			else if (UK2Node_CSAsyncAction* CustomEvent = Cast<UK2Node_CSAsyncAction>(Node))
+			{
+				if(UpdateMemberCall(CustomEvent))
+				{
+					bNeedsReconstruction = true;
+				}
+			}
+			
 			if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
 			{
 				for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
@@ -216,9 +281,14 @@ void FCSReinstancer::UpdateBlueprints()
 
 			if (bNeedsReconstruction)
 			{
-				Node->ReconstructNode();
+				NodesToUpdate.Push(Node);
 			}
 		}
+	}
+
+	for (UK2Node* Node : NodesToUpdate)
+	{
+		Node->ReconstructNode();
 	}
 }
 
