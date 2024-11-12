@@ -76,7 +76,7 @@ public static class FileExporter
         }
 
         string rootPath = package.IsPackagePartOfEngine() ? Program.EngineGluePath : Program.ProjectGluePath;
-        return Path.Combine(rootPath, package.ShortName);
+        return Path.Combine(rootPath, package.GetShortName());
     }
     
     public static void CleanOldExportedFiles()
@@ -88,6 +88,11 @@ public static class FileExporter
     
     private static void CleanFilesInDirectories(string path, bool recursive = false)
     {
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+        
         string[] directories = Directory.GetDirectories(path);
         
         foreach (var directory in directories)
