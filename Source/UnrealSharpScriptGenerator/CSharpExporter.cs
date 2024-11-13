@@ -163,9 +163,9 @@ public static class CSharpExporter
     private static void ForEachChild(UhtType child, Action<UhtType> action)
     {
         #if UE_5_5_OR_LATER
-        action(header);
+        action(child);
         
-        foreach (UhtType type in header.Children)
+        foreach (UhtType type in child.Children)
         {
             action(type);
         }
@@ -180,6 +180,7 @@ public static class CSharpExporter
             }
         }
         #endif
+        
     }
 
     public static bool HasBeenExported(string directory)
