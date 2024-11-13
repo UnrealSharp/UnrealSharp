@@ -142,11 +142,11 @@ public static class CSharpExporter
             if (ShouldExportDirectory(directoryName, lastEditTime!))
             {
                 processedDirectories.Add(directoryName);
-                ForEachTypeInHeader(child, ExportType);
+                ForEachChild(child, ExportType);
             }
             else
             {
-                ForEachTypeInHeader(child, FileExporter.AddUnchangedType);
+                ForEachChild(child, FileExporter.AddUnchangedType);
             }
         }
         
@@ -160,10 +160,11 @@ public static class CSharpExporter
         UpdateLastWriteTimes(processedDirectories, lastEditTime!);
     }
     
-    private static void ForEachTypeInHeader(UhtType header, Action<UhtType> action)
+    private static void ForEachChild(UhtType header, Action<UhtType> action)
     {
+        #if UE_5_5_OR_LATER
         action(header);
-        
+        #else
         foreach (UhtType type in header.Children)
         {
             action(type);
@@ -173,6 +174,7 @@ public static class CSharpExporter
                 action(innerType);
             }
         }
+        #endif
     }
 
     public static bool HasBeenExported(string directory)
