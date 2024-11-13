@@ -1,4 +1,5 @@
-﻿namespace UnrealSharp.Attributes.MetaTags;
+﻿#pragma warning disable CS9113 // Suppress 'Parameter is unread' on this file as these parameters are used via reflection
+namespace UnrealSharp.Attributes.MetaTags;
 
 //====================================================
 // MetaData Tags
@@ -25,7 +26,7 @@ public sealed class DisplayNameAttribute(string DisplayName) : Attribute { }
 /// Overrides the automatically generated tooltip from code comments.
 /// </summary>
 /// <param name="tooltip">Hand-written tooltip</param>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum  | AttributeTargets.Field | AttributeTargets.Struct | AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum  | AttributeTargets.Field | AttributeTargets.Struct | AttributeTargets.Method | AttributeTargets.Property)]
 public class ToolTipAttribute(string tooltip) : Attribute { }
 
 /// <summary>
