@@ -4,13 +4,9 @@
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
-    <Choose>
-        <When Condition="$(DefineConstants.Contains(UE_5_5_OR_LATER))">
-            <PropertyGroup>
-                <TargetFramework>net8.0</TargetFramework>
-            </PropertyGroup>
-        </When>
-    </Choose>
+    <PropertyGroup Condition="$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
     
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
