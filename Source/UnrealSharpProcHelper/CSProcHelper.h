@@ -38,6 +38,11 @@ public:
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
 	static FString GetUserAssemblyDirectory();
 
+	// Path to file with UnrealSharp metadata
+	static FString GetUnrealSharpMetadataPath();
+
+	static void GetUserProjectNames(TArray<FString>& UserProjectNames);
+
 	//Path to all use assemblies in the Binaries/managed directory
 	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
 

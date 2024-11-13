@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System.IO.Compression;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Mono.Collections.Generic;
@@ -43,6 +44,7 @@ public static class WeaverHelper
     public static readonly string BlittableTypeAttribute = "BlittableTypeAttribute";
     
     public static AssemblyDefinition UserAssembly;
+    public static ICollection<AssemblyDefinition> WeavedAssemblies = [];
     public static AssemblyDefinition BindingsAssembly;
     public static MethodReference NativeObjectGetter;
     public static TypeDefinition IntPtrType;
@@ -86,7 +88,7 @@ public static class WeaverHelper
     public static void ForEachAssembly(Func<AssemblyDefinition, bool> action)
     {
         List<AssemblyDefinition> assemblies = [BindingsAssembly, UserAssembly];
-        foreach (var assembly in assemblies)
+        foreach (var assembly in assemblies.Union(WeavedAssemblies))
         {
             if (!action(assembly))
             {
@@ -437,24 +439,28 @@ public static class WeaverHelper
         IMemberDefinition currentMemberIteration = memberDefinition;
         while (currentMemberIteration != null)
         {
-            foreach (var customAttribute in currentMemberIteration.CustomAttributes)
+            var genTypeAttribute = currentMemberIteration.CustomAttributes
+                .FirstOrDefault(x => x.AttributeType.Name == GeneratedTypeAttribute);
+            
+            if (genTypeAttribute is not null)
             {
-                if (customAttribute.AttributeType.Name != GeneratedTypeAttribute)
-                {
-                    continue;
-                }
-                
-                return (string) customAttribute.ConstructorArguments[0].Value;
+                return (string) genTypeAttribute.ConstructorArguments[0].Value;
+            }
+
+            if (IsUClass(memberDefinition) && memberDefinition.Name.StartsWith('U') ||
+                IsUStruct(memberDefinition) && memberDefinition.Name.StartsWith('F'))
+            {
+                return memberDefinition.Name[1..];
             }
             
-            if (currentMemberIteration is MethodDefinition methodDefinition && methodDefinition.IsVirtual)
+            if (currentMemberIteration is MethodDefinition { IsVirtual: true } virtualMethodDefinition)
             {
-                if (currentMemberIteration == methodDefinition.GetBaseMethod())
+                if (currentMemberIteration == virtualMethodDefinition.GetBaseMethod())
                 {
                     break;
                 }
                 
-                currentMemberIteration = methodDefinition.GetBaseMethod();
+                currentMemberIteration = virtualMethodDefinition.GetBaseMethod();
             }
             else
             {
@@ -970,9 +976,9 @@ public static class WeaverHelper
         return FindAttribute(function.CustomAttributes, UFunctionAttribute);
     }
     
-    public static CustomAttribute? GetUClass(TypeDefinition type)
+    public static CustomAttribute? GetUClass(IMemberDefinition definition)
     {
-        return FindAttribute(type.CustomAttributes, UClassAttribute);
+        return FindAttribute(definition.CustomAttributes, UClassAttribute);
     }
     
     public static CustomAttribute? GetUEnum(TypeDefinition type)
@@ -980,7 +986,7 @@ public static class WeaverHelper
         return FindAttribute(type.CustomAttributes, UEnumAttribute);
     }
     
-    public static CustomAttribute? GetUStruct(TypeDefinition type)
+    public static CustomAttribute? GetUStruct(IMemberDefinition type)
     {
         return FindAttribute(type.CustomAttributes, UStructAttribute);
     }
@@ -1010,9 +1016,9 @@ public static class WeaverHelper
         return GetUInterface(typeDefinition) != null;
     }
     
-    public static bool IsUClass(TypeDefinition typeDefinition)
+    public static bool IsUClass(IMemberDefinition definition)
     {
-        return GetUClass(typeDefinition) != null;
+        return GetUClass(definition) != null;
     }
 
     public static bool IsUMultiDelegate(TypeDefinition typeDefinition)
@@ -1060,9 +1066,9 @@ public static class WeaverHelper
         return GetUEnum(typeDefinition) != null;
     }
     
-    public static bool IsUStruct(TypeDefinition typeDefinition)
+    public static bool IsUStruct(IMemberDefinition definition)
     {
-        return GetUStruct(typeDefinition) != null;
+        return GetUStruct(definition) != null;
     }
     
     public static bool IsUFunction(MethodDefinition method)

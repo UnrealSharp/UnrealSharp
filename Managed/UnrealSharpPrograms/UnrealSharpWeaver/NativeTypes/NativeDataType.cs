@@ -208,6 +208,7 @@ public abstract class NativeDataType
     protected void EmitSimpleMarshallerDelegates(ILProcessor processor, string marshallerTypeName, TypeReference[]? typeParams)
     {
         TypeReference? marshallerType = null;
+        AssemblyDefinition? marshallerAssembly = null;
         WeaverHelper.ForEachAssembly(action: assembly =>
         {
             if (typeParams is { Length: > 0 })
@@ -218,15 +219,21 @@ public abstract class NativeDataType
             {
                 marshallerType = WeaverHelper.FindTypeInAssembly(assembly, marshallerTypeName, string.Empty, false);
             }
+            
+            if (marshallerType != null)
+            {
+                marshallerAssembly = assembly;
+            }
+            
             return marshallerType == null;
         });
         
-        if (marshallerType == null)
+        if (marshallerType == null || marshallerAssembly == null)
         {
             throw new Exception($"Could not find marshaller type {marshallerTypeName} in any assembly.");
         }
-        
-        TypeDefinition marshallerTypeDef = marshallerType.Resolve();
+
+        TypeDefinition marshallerTypeDef = GetMarshallerTypeDefinition(marshallerAssembly, marshallerType);
         MethodReference fromNative = WeaverHelper.FindMethod(marshallerTypeDef, "FromNative")!;
         MethodReference toNative = WeaverHelper.FindMethod(marshallerTypeDef, "ToNative")!;
 
@@ -337,5 +344,11 @@ public abstract class NativeDataType
         WriteMarshalToNative(processor, type, loadBufferPtr, loadArrayIndex, loadSource);
         return null;
     }
+
+    protected static TypeDefinition GetMarshallerTypeDefinition(AssemblyDefinition assembly, TypeReference marshallerTypeReference)
+    {
+        return assembly.Modules.SelectMany(x => x.GetTypes()).First(x => x.Name == marshallerTypeReference.Name);
+    }
+    
 }
 

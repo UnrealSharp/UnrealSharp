@@ -20,7 +20,8 @@ public class UnrealSharpProcHelper : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore", 
-                "Projects"
+                "Projects",
+                "Json"
             }
         );
     }
