@@ -121,7 +121,7 @@ public static class NameMapper
         string packageShortName = "";
         if (outer is UhtPackage package)
         {
-            packageShortName = package.ShortName;
+            packageShortName = package.GetShortName();
         }
         else
         {
@@ -129,9 +129,10 @@ public static class NameMapper
             {
                 outer = outer.Outer;
             
-                if (outer is UhtHeaderFile header)
+                if (outer is UhtPackage header)
                 {
-                    packageShortName = header.Package.ShortName;
+                    packageShortName = header.Package.GetShortName();
+                    break;
                 }
             }
         }

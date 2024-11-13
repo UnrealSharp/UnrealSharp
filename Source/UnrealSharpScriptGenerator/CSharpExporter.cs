@@ -37,10 +37,20 @@ public static class CSharpExporter
             DeserializeModuleData();
         }
         
+        #if UE_5_5_OR_LATER
+        foreach (UhtModule module in Program.Factory.Session.Modules)
+        {
+            foreach (UhtPackage modulePackage in module.Packages)
+            {
+                ExportPackage(modulePackage);
+            }
+        }
+        #else
         foreach (UhtPackage package in Program.Factory.Session.Packages)
         {
             ExportPackage(package);
         }
+        #endif
         
         WaitForTasks();
         
@@ -115,7 +125,7 @@ public static class CSharpExporter
             return;
         }
 
-        string packageName = package.ShortName;
+        string packageName = package.GetShortName();
     
         if (!_modulesWriteInfo.TryGetValue(packageName, out ModuleFolders? lastEditTime))
         {
@@ -125,19 +135,18 @@ public static class CSharpExporter
     
         HashSet<string> processedDirectories = new();
         
-        foreach (UhtType header in package.Children)
+        foreach (UhtType child in package.Children)
         {
-            UhtHeaderFile headerFile = (UhtHeaderFile) header;
-            string directoryName = Path.GetDirectoryName(headerFile.FilePath)!;
+            string directoryName = Path.GetDirectoryName(child.HeaderFile.FilePath)!;
             
             if (ShouldExportDirectory(directoryName, lastEditTime!))
             {
                 processedDirectories.Add(directoryName);
-                ForEachTypeInHeader(header, ExportType);
+                ForEachChild(child, ExportType);
             }
             else
             {
-                ForEachTypeInHeader(header, FileExporter.AddUnchangedType);
+                ForEachChild(child, FileExporter.AddUnchangedType);
             }
         }
         
@@ -151,9 +160,17 @@ public static class CSharpExporter
         UpdateLastWriteTimes(processedDirectories, lastEditTime!);
     }
     
-    private static void ForEachTypeInHeader(UhtType header, Action<UhtType> action)
+    private static void ForEachChild(UhtType child, Action<UhtType> action)
     {
-        foreach (UhtType type in header.Children)
+        #if UE_5_5_OR_LATER
+        action(child);
+        
+        foreach (UhtType type in child.Children)
+        {
+            action(type);
+        }
+        #else
+        foreach (UhtType type in child.Children)
         {
             action(type);
             
@@ -162,6 +179,8 @@ public static class CSharpExporter
                 action(innerType);
             }
         }
+        #endif
+        
     }
 
     public static bool HasBeenExported(string directory)

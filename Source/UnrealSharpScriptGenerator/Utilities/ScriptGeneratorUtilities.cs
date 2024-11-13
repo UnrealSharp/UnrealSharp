@@ -73,24 +73,8 @@ public class GetterSetterPair
 
 public static class ScriptGeneratorUtilities
 {
-    public const string EngineNamespace = "UnrealSharp.Engine";
     public const string InteropNamespace = "UnrealSharp.Interop";
     public const string AttributeNamespace = "UnrealSharp.Attributes";
-    
-    public static string GetModuleName(UhtType typeObj)
-    {
-        if (typeObj.Outer is UhtPackage package)
-        {
-            return package.ShortName;
-        }
-        
-        if (typeObj.Outer is UhtHeaderFile header)
-        {
-            return header.Package.ShortName;
-        }
-
-        return string.Empty;
-    }
     
     public static string TryGetPluginDefine(string key)
     {
@@ -187,7 +171,7 @@ public static class ScriptGeneratorUtilities
     
     public static bool IsPackagePartOfEngine(this UhtPackage package)
     {
-        return package.IsPartOfEngine || package.Module == Program.Factory.PluginModule;
+        return package.IsPartOfEngine() || package.GetModule() == Program.Factory.PluginModule;
     }
     
     public static void GetExportedFunctions(UhtClass classObj, 
