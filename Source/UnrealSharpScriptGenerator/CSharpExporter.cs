@@ -160,12 +160,17 @@ public static class CSharpExporter
         UpdateLastWriteTimes(processedDirectories, lastEditTime!);
     }
     
-    private static void ForEachChild(UhtType header, Action<UhtType> action)
+    private static void ForEachChild(UhtType child, Action<UhtType> action)
     {
         #if UE_5_5_OR_LATER
         action(header);
-        #else
+        
         foreach (UhtType type in header.Children)
+        {
+            action(type);
+        }
+        #else
+        foreach (UhtType type in child.Children)
         {
             action(type);
             
