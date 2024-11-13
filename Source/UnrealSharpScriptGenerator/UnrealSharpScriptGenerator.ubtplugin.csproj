@@ -4,12 +4,11 @@
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(DefineConstants.Contains(UE_5_5_OR_LATER))' != 'true'">
+    <PropertyGroup Condition="'$(UE_5_5_OR_LATER)' != 'true'">
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
     
     <PropertyGroup>
-        
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
         <OutputType>Library</OutputType>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

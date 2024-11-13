@@ -43,10 +43,6 @@
 	"Plugins": 
 	[
 		{
-			"Name": "StructUtils",
-			"Enabled": true
-		},
-		{
 			"Name": "EnhancedInput",
 			"Enabled": true
 		}
