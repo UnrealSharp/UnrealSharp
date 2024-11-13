@@ -1,6 +1,7 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
 #include "K2Node_CallFunction.h"
+#include "K2Node_StructOperation.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
@@ -225,13 +226,61 @@ bool FCSReinstancer::UpdateMemberCall(UK2Node_CSAsyncAction * Node) const
 	return false;
 }
 
+void FCSReinstancer::UpdateInheritance(UBlueprint* Blueprint, bool& RefNeedsNodeReconstruction) const
+{
+	//we do not loop through the parent classes, as every blueprint will get an update on its own.
+	if(UClass* ParentClass = Blueprint->ParentClass)
+	{
+		if (UClass* const* NewClass = ClassesToReinstance.Find(ParentClass))
+		{
+			Blueprint->ParentClass = *NewClass;
+			RefNeedsNodeReconstruction = true;
+		}
+	}
+
+	for (FBPInterfaceDescription& InterfaceDescription : Blueprint->ImplementedInterfaces)
+	{
+		if (UClass* const* NewInterface = InterfacesToReinstance.Find(InterfaceDescription.Interface))
+		{
+			InterfaceDescription.Interface = *NewInterface;
+			RefNeedsNodeReconstruction = true;
+		}
+	}
+}
+
+void FCSReinstancer::UpdateNodePinTypes(UEdGraphNode* Node, bool& RefNeedsNodeReconstruction) const
+{
+	if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
+	{
+		for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
+		{
+			if (TryUpdatePin(Pin->PinType))
+			{
+				RefNeedsNodeReconstruction = true;
+			}
+		}
+	}
+
+	for (UEdGraphPin* Pin : Node->Pins)
+	{
+		if (TryUpdatePin(Pin->PinType))
+		{
+			RefNeedsNodeReconstruction = true;
+		}
+	}
+}
+
 void FCSReinstancer::UpdateBlueprints()
 {
-	TArray<UK2Node*> NodesToUpdate;
+	TSet<UBlueprint*> ToUpdate;
 	
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
+		bool bNeedsNodeReconstruction = false;
 		UBlueprint* Blueprint = *BlueprintIt;
+
+		UpdateInheritance(Blueprint, bNeedsNodeReconstruction);
+		
 		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
 		{
 			TryUpdatePin(NewVariable.VarType);
@@ -242,53 +291,47 @@ void FCSReinstancer::UpdateBlueprints()
 		
 		for (UK2Node* Node : AllNodes)
 		{
-			bool bNeedsReconstruction = false;
 			if (UK2Node_CallFunction* CallFunction = Cast<UK2Node_CallFunction>(Node))
 			{
 				if(UpdateMemberCall(CallFunction))
 				{
-					bNeedsReconstruction = true;
+					bNeedsNodeReconstruction = true;
 				}
 			}
 			else if (UK2Node_CSAsyncAction* CustomEvent = Cast<UK2Node_CSAsyncAction>(Node))
 			{
 				if(UpdateMemberCall(CustomEvent))
 				{
-					bNeedsReconstruction = true;
+					bNeedsNodeReconstruction = true;
+				}
+			}
+			else if (UK2Node_StructOperation* StructOperation = Cast<UK2Node_StructOperation>(Node))
+			{
+				if (UScriptStruct* const * FoundNewStructType = StructsToReinstance.Find(StructOperation->StructType))
+				{
+					StructOperation->StructType = *FoundNewStructType;
+					bNeedsNodeReconstruction = true;
 				}
 			}
 			
-			if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
-			{
-				for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
-				{
-					if (TryUpdatePin(Pin->PinType))
-					{
-						bNeedsReconstruction = true;
-					}
-				}
-			}
-			else
-			{
-				for (UEdGraphPin* Pin : Node->Pins)
-				{
-					if (TryUpdatePin(Pin->PinType))
-					{
-						bNeedsReconstruction = true;
-					}
-				}
-			}
+			UpdateNodePinTypes(Node, bNeedsNodeReconstruction);
+		}
 
-			if (bNeedsReconstruction)
-			{
-				NodesToUpdate.Push(Node);
-			}
+		if (bNeedsNodeReconstruction)
+		{
+			ToUpdate.Add(Blueprint);
 		}
 	}
 
-	for (UK2Node* Node : NodesToUpdate)
+	//in case blueprints will use u# types like in functions they will need to regenerate their BP skeleton to pick up the changed u# type versions.
+	//otherwise they will revert all our node pin updates in BP functions back to the old types after a call to Schema::ReconstructNode since the function parameter infos still refer to the old types in the class/skeleton.
+	//in other words the call to FBlueprintEditorUtils::RefreshAllNodes is important, as it will make sure that the BP skeleton is updated with the new u# types and not just the node pins.
+	//and since we don't want to modify the class skeleton (which would potentially dangerous and its also closed api), we need to refresh the nodes with unreal api to make sure we do not miss important operations. and this is also more robust against future epic changes.
+	//possibly we can improve performance by only refreshing single nodes that have been changed, but for now we will refresh just all nodes in a BP which seems performing well enough.
+	//if performance will become an issue, we should look into parallelizing the update and moving the whole compilation and refreshing task onto threads and a background running task like epic does it for c++ reloads too.
+	for (UBlueprint* Blueprint : ToUpdate)
 	{
-		Node->ReconstructNode();
+		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
 	}
 }
 
