@@ -1,10 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    
+
     <Import Project="UnrealSharpScriptGenerator.ubtplugin.csproj.props" Condition="Exists('UnrealSharpScriptGenerator.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
-
+    
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+    
+    <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
         <OutputType>Library</OutputType>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

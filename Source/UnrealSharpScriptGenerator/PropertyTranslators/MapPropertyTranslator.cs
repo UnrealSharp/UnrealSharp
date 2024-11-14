@@ -197,7 +197,7 @@ public class MapPropertyTranslator : PropertyTranslator
     private string GetMarshaller(UhtMapProperty property)
     {
         bool isStructProperty = property.IsOuter<UhtScriptStruct>();
-        bool isParameter = property.IsOuter<UhtFunction>();
+        bool isParameter = property.IsOuter<UhtFunction>() || property.HasAnyGetter();
         
         PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(property.KeyProperty)!;
         PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(property.ValueProperty)!;
