@@ -1,6 +1,8 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
+#include "BlueprintCompilationManager.h"
 #include "K2Node_CallFunction.h"
+#include "K2Node_DynamicCast.h"
 #include "K2Node_StructOperation.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
@@ -100,6 +102,9 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(InterfacesToReinstance);
 	NotifyChanges(StructsToReinstance);
 	NotifyChanges(ClassesToReinstance);
+
+	FBlueprintCompilationManager::ReparentHierarchies(InterfacesToReinstance);
+	FBlueprintCompilationManager::ReparentHierarchies(ClassesToReinstance);
 
 	// Before we reinstance, we want the BP to know about the new types
 	UpdateBlueprints();
@@ -310,6 +315,14 @@ void FCSReinstancer::UpdateBlueprints()
 				if (UScriptStruct* const * FoundNewStructType = StructsToReinstance.Find(StructOperation->StructType))
 				{
 					StructOperation->StructType = *FoundNewStructType;
+					bNeedsNodeReconstruction = true;
+				}
+			}
+			else if (UK2Node_DynamicCast* Node_DynamicCast = Cast<UK2Node_DynamicCast>(Node))
+			{
+				if (UClass* const * FoundNewStructType = ClassesToReinstance.Find(Node_DynamicCast->TargetType))
+				{
+					Node_DynamicCast->TargetType = *FoundNewStructType;	
 					bNeedsNodeReconstruction = true;
 				}
 			}
