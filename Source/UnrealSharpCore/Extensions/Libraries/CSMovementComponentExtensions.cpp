@@ -38,3 +38,8 @@ bool UCSMovementComponentExtensions::ResolvePenetrationRotator(UMovementComponen
 {
 	return MovementComponent->ResolvePenetration(Adjustment, Hit, NewRotation);
 }
+
+void UCSMovementComponentExtensions::UpdateComponentVelocity(UMovementComponent* MovementComponent)
+{
+	MovementComponent->UpdateComponentVelocity();
+}

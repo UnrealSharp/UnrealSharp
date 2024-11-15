@@ -90,4 +90,8 @@ public:
 	UFUNCTION(meta = (ExtensionMethod, ScriptMethod))
 	static bool ResolvePenetrationRotator(UMovementComponent* MovementComponent, const FVector& Adjustment, const FHitResult& Hit, const FRotator& NewRotation);
 
+	/** Update ComponentVelocity of UpdatedComponent. This needs to be called by derived classes at the end of an update whenever Velocity has changed.	 */
+	UFUNCTION(meta = (ExtensionMethod, ScriptMethod))
+	static void UpdateComponentVelocity(UMovementComponent* MovementComponent);
+
 };
