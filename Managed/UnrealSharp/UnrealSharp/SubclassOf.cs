@@ -26,7 +26,9 @@ public struct TSubclassOf<T>
     public TSubclassOf() : this(typeof(T))
     {
     }
-    
+
+    public TSubclassOf(UClass classType) : this(classType.NativeObject) { }
+
     public TSubclassOf(Type classType)
     {
         if (classType == null)
