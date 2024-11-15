@@ -15,29 +15,36 @@ public class StructMetaData : BaseMetaData
     {
         if (structDefinition.Properties.Count > 0)
         {
-            throw new InvalidUnrealStructException(structDefinition, "UProperties in a UStruct must be fields, not property accessors.");
+            throw new InvalidUnrealStructException(structDefinition, "UStructs don't support properties, use fields instead with UProperty attribute");
         }
         
         Fields = new List<PropertyMetaData>();
+        IsBlittableStruct = true;
+        
         foreach (var field in structDefinition.Fields)
         {
-            if (field.IsStatic || !WeaverHelper.IsUProperty(field))
+            if (field.IsStatic)
             {
                 continue;
             }
             
+            if (!WeaverHelper.IsUProperty(field))
+            {
+                // Struct is not blittable if it has non-UProperty fields
+                IsBlittableStruct = false;
+            }
+            
             PropertyMetaData property = new PropertyMetaData(field);
-            Fields.Add(property);
 
             if (property.IsInstancedReference)
             {
                 StructFlags |= StructFlags.HasInstancedReference;
             }
+            
+            Fields.Add(property);
         }
         
-        IsBlittableStruct = true;
         bool isPlainOldData = true;
-        
         foreach (var prop in Fields)
         {
             if (!prop.PropertyDataType.IsBlittable)
@@ -60,16 +67,14 @@ public class StructMetaData : BaseMetaData
             StructFlags |= StructFlags.ZeroConstructor;
         }
 
-        if (IsBlittableStruct)
+        if (!IsBlittableStruct)
         {
-            CustomAttribute? structAttribute = WeaverHelper.GetUStruct(structDefinition);
-
-            if (structAttribute == null)
-            {
-                return;
-            }
-
-            structAttribute.Fields.Add(new CustomAttributeNamedArgument("IsBlittable", new CustomAttributeArgument(structDefinition.Module.TypeSystem.Boolean, true)));
+            return;
         }
+        
+        CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverHelper.BlittableTypeConstructor);
+        structDefinition.CustomAttributes.Add(structFlagsAttribute);
+        
+        TryAddMetaData("BlueprintType", true);
     }
 }

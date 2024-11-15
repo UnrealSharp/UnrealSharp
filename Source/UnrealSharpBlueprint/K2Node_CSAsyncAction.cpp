@@ -5,6 +5,7 @@
 #include "BlueprintNodeSpawner.h"
 #include "Delegates/Delegate.h"
 #include "EdGraph/EdGraphNode.h"
+#include "Extensions/BlueprintActions/CSBlueprintAsyncActionBase.h"
 #include "HAL/Platform.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "Misc/AssertionMacros.h"
@@ -17,13 +18,25 @@
 #include "UObject/UnrealType.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
-#include "Extensions/CSBlueprintAsyncActionBase.h"
-
 #define LOCTEXT_NAMESPACE "K2Node"
 
 UK2Node_CSAsyncAction::UK2Node_CSAsyncAction()
 {
 	ProxyActivateFunctionName = GET_FUNCTION_NAME_CHECKED(UCSBlueprintAsyncActionBase, Activate);
+}
+
+void UK2Node_CSAsyncAction::SetNodeFunc(UEdGraphNode* NewNode, bool /*bIsTemplateNode*/, TWeakObjectPtr<UFunction> FunctionPtr)
+{
+	UK2Node_CSAsyncAction* AsyncTaskNode = CastChecked<UK2Node_CSAsyncAction>(NewNode);
+	if (FunctionPtr.IsValid())
+	{
+		UFunction* Func = FunctionPtr.Get();
+		FObjectProperty* ReturnProp = CastFieldChecked<FObjectProperty>(Func->GetReturnProperty());
+						
+		AsyncTaskNode->ProxyFactoryFunctionName = Func->GetFName();
+		AsyncTaskNode->ProxyFactoryClass        = Func->GetOuterUClass();
+		AsyncTaskNode->ProxyClass               = ReturnProp->PropertyClass;
+	}
 }
 
 void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const
@@ -52,20 +65,6 @@ void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& Ac
 			}
 		}
 
-		static void SetNodeFunc(UEdGraphNode* NewNode, bool /*bIsTemplateNode*/, TWeakObjectPtr<UFunction> FunctionPtr)
-		{
-			UK2Node_CSAsyncAction* AsyncTaskNode = CastChecked<UK2Node_CSAsyncAction>(NewNode);
-			if (FunctionPtr.IsValid())
-			{
-				UFunction* Func = FunctionPtr.Get();
-				FObjectProperty* ReturnProp = CastFieldChecked<FObjectProperty>(Func->GetReturnProperty());
-						
-				AsyncTaskNode->ProxyFactoryFunctionName = Func->GetFName();
-				AsyncTaskNode->ProxyFactoryClass        = Func->GetOuterUClass();
-				AsyncTaskNode->ProxyClass               = ReturnProp->PropertyClass;
-			}
-		}
-
 		static UBlueprintNodeSpawner* MakeAction(UClass* NodeClass, const UFunction* FactoryFunc)
 		{
 			UClass* FactoryClass = FactoryFunc ? FactoryFunc->GetOwnerClass() : nullptr;
@@ -80,7 +79,7 @@ void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& Ac
 			NodeSpawner->NodeClass = NodeClass;
 
 			TWeakObjectPtr<UFunction> FunctionPtr = MakeWeakObjectPtr(const_cast<UFunction*>(FactoryFunc));
-			NodeSpawner->CustomizeNodeDelegate = UBlueprintNodeSpawner::FCustomizeNodeDelegate::CreateStatic(GetMenuActions_Utils::SetNodeFunc, FunctionPtr);
+			NodeSpawner->CustomizeNodeDelegate = UBlueprintNodeSpawner::FCustomizeNodeDelegate::CreateStatic(SetNodeFunc, FunctionPtr);
 
 			return NodeSpawner;
 		}

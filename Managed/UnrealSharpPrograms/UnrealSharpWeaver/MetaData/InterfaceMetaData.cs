@@ -13,6 +13,7 @@ public class InterfaceMetaData : TypeReferenceMetadata
     public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
     {
         Functions = [];
+        
         foreach (var method in typeDefinition.Methods)
         {
             if (method.IsAbstract && WeaverHelper.IsUFunction(method))

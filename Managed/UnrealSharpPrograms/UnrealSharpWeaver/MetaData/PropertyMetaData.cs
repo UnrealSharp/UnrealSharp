@@ -13,7 +13,7 @@ public class PropertyMetaData : BaseMetaData
     public LifetimeCondition LifetimeCondition { get; set; }
     public string BlueprintSetter { get; set; }
     public string BlueprintGetter { get; set; }
-    
+
     // Non-serialized for JSON
     public FieldDefinition PropertyOffsetField;
     public FieldDefinition? NativePropertyField;
@@ -143,7 +143,7 @@ public class PropertyMetaData : BaseMetaData
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
 
-            if (notifyMethod.ReturnType != WeaverHelper.VoidTypeRef)
+            if (!notifyMethod.ReturnsVoid())
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' must return void");
             }
@@ -166,11 +166,17 @@ public class PropertyMetaData : BaseMetaData
             RepNotifyFunctionName = notifyMethodName;
         }
         
-        bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
-
-        const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject | PropertyFlags.EditConst;
+        if (flags.HasFlag(PropertyFlags.Net) && !PropertyDataType.IsNetworkSupported)
+        {
+            throw new InvalidPropertyException(property, $"{Name} is marked as replicated but the {PropertyDataType.CSharpType} is not supported for replication");
+        }
         
-        if (flags.HasFlag(PropertyFlags.InstancedReference))
+        bool isDefaultComponent = NativeDataDefaultComponent.IsDefaultComponent(property.CustomAttributes);
+        bool isPersistentInstance = (flags & PropertyFlags.PersistentInstance) != 0;
+
+        const PropertyFlags instancedFlags = PropertyFlags.InstancedReference | PropertyFlags.ExportObject;
+        
+        if ((flags & PropertyFlags.InstancedReference) != 0 || isPersistentInstance)
         {
             flags |= instancedFlags;
         }
@@ -181,7 +187,13 @@ public class PropertyMetaData : BaseMetaData
                     | PropertyFlags.BlueprintReadOnly
                     | PropertyFlags.DisableEditOnInstance
                     | PropertyFlags.Edit 
+                    | PropertyFlags.EditConst
                     | instancedFlags;
+        }
+
+        if (isPersistentInstance)
+        {
+            TryAddMetaData("EditInline", "true");
         }
         
         PropertyFlags = flags;

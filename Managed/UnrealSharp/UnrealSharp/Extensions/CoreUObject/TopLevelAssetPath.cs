@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 namespace UnrealSharp.CoreUObject;
 
 [StructLayout(LayoutKind.Sequential)]
-public partial struct TopLevelAssetPath
+public partial struct FTopLevelAssetPath
 {
-    public TopLevelAssetPath(Name packageName, Name assetName)
+    public FTopLevelAssetPath(FName packageName, FName assetName)
     {
         PackageName = packageName;
         AssetName = assetName;
@@ -13,7 +13,7 @@ public partial struct TopLevelAssetPath
     
     public override bool Equals(object obj)
     {
-        if (obj is TopLevelAssetPath other)
+        if (obj is FTopLevelAssetPath other)
         {
             return PackageName == other.PackageName && AssetName == other.AssetName;
         }
@@ -25,23 +25,23 @@ public partial struct TopLevelAssetPath
         return PackageName.GetHashCode() ^ AssetName.GetHashCode();
     }
     
-    public static bool operator == (TopLevelAssetPath a, TopLevelAssetPath b)
+    public static bool operator == (FTopLevelAssetPath a, FTopLevelAssetPath b)
     {
         return a.PackageName == b.PackageName && a.AssetName == b.AssetName;
     }
 
-    public static bool operator != (TopLevelAssetPath a, TopLevelAssetPath b)
+    public static bool operator != (FTopLevelAssetPath a, FTopLevelAssetPath b)
     {
         return !(a == b);
     }
     
     public bool IsValid()
     {
-        return !PackageName.IsNone();
+        return !PackageName.IsNone;
     }
     
     public bool IsNull()
     {
-        return AssetName.IsNone();
+        return AssetName.IsNone;
     }
 }

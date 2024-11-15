@@ -5,8 +5,8 @@
 #include "BlueprintNodeSpawner.h"
 #include "Delegates/Delegate.h"
 #include "EdGraph/EdGraphNode.h"
+#include "Extensions/BlueprintActions/CSCancellableAsyncAction.h"
 #include "HAL/Platform.h"
-#include "Kismet/BlueprintAsyncActionBase.h"
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
 #include "Templates/SubclassOf.h"
@@ -16,8 +16,6 @@
 #include "UObject/ObjectPtr.h"
 #include "UObject/UnrealType.h"
 #include "UObject/WeakObjectPtrTemplates.h"
-
-#include "Extensions/CSCancellableAsyncAction.h"
 
 #define LOCTEXT_NAMESPACE "K2Node"
 

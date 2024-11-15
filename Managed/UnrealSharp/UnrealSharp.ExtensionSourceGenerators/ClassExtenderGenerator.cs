@@ -41,8 +41,8 @@ public class ClassExtenderGenerator : ISourceGenerator
             return;
         }
         
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.Actor")!, new ActorExtensionGenerator());
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.ActorComponent")!, new ActorComponentExtensionGenerator());
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.AActor")!, new ActorExtensionGenerator());
+        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.UActorComponent")!, new ActorComponentExtensionGenerator());
     }
 
     public void Execute(GeneratorExecutionContext context)
@@ -71,6 +71,9 @@ public class ClassExtenderGenerator : ISourceGenerator
             }
                 
             StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("#nullable disable");
+            stringBuilder.AppendLine();
+            
             stringBuilder.AppendLine("using UnrealSharp.Engine;");
             stringBuilder.AppendLine("using UnrealSharp.CoreUObject;");
             stringBuilder.AppendLine("using UnrealSharp;");

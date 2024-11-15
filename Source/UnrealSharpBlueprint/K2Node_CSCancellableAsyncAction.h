@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "K2Node_BaseAsyncTask.h"
+#include "K2Node_CSAsyncAction.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -13,7 +13,7 @@ class FBlueprintActionDatabaseRegistrar;
 class UObject;
 
 UCLASS()
-class UK2Node_CSCancellableAsyncAction : public UK2Node_BaseAsyncTask
+class UK2Node_CSCancellableAsyncAction : public UK2Node_CSAsyncAction
 {
 	GENERATED_BODY()
 

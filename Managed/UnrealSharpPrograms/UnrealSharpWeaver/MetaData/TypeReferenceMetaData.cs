@@ -8,13 +8,13 @@ public class TypeReferenceMetadata : BaseMetaData
     public string Namespace { get; set; }
     
     // Non-serialized for JSON
-    public readonly TypeReference TypeDef;
+    public readonly TypeReference TypeRef;
     // End non-serialized
     
     public TypeReferenceMetadata(TypeReference member, string attributeName = "") : base(member, attributeName)
     {
         AssemblyName = member.Module.Assembly.Name.Name;
         Namespace = member.Namespace;
-        TypeDef = member;
+        TypeRef = member;
     }
 }

@@ -6,25 +6,34 @@ namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class UnrealClassProcessor
 { 
-    public static void ProcessClasses(IEnumerable<TypeDefinition> classes, ApiMetaData assemblyMetadata)
+    public static void ProcessClasses(IList<TypeDefinition> classes, ApiMetaData assemblyMetadata)
     {
-        var typeToClassMetaData = classes.ToDictionary(type => type, type => new ClassMetaData(type));
-        assemblyMetadata.ClassMetaData = typeToClassMetaData.Values.ToArray();
+        assemblyMetadata.ClassMetaData = new List<ClassMetaData>(classes.Count);
 
         var rewrittenClasses = new HashSet<TypeDefinition>();
-        foreach (var classData in typeToClassMetaData)
+        foreach (var classDef in classes)
         {
-            ProcessParentClass(classData.Key, typeToClassMetaData, ref rewrittenClasses);
+            ProcessParentClass(classDef, classes, rewrittenClasses, assemblyMetadata);
+        }
+        
+        foreach (ClassMetaData classMetaData in assemblyMetadata.ClassMetaData)
+        {
+            classMetaData.PostWeaveCleanup();
         }
     }
     
-    private static void ProcessParentClass(TypeDefinition type, IReadOnlyDictionary<TypeDefinition, ClassMetaData> classDictionary, ref HashSet<TypeDefinition> rewrittenClasses)
+    private static void ProcessParentClass(TypeDefinition type, IList<TypeDefinition> classes, HashSet<TypeDefinition> rewrittenClasses, ApiMetaData assemblyMetadata)
     {
-        var baseType = type.BaseType.Resolve();
+        TypeDefinition baseType = type.BaseType.Resolve();
         
-        if (baseType != null && classDictionary.ContainsKey(baseType) && !rewrittenClasses.Contains(baseType))
+        if (!WeaverHelper.IsValidBaseForUObject(baseType))
         {
-            ProcessParentClass(baseType, classDictionary, ref rewrittenClasses);
+            throw new Exception($"{type.FullName} is marked with UClass but doesn't inherit from CoreUObject.Object.");
+        }
+        
+        if (baseType != null && baseType.Module == type.Module && classes.Contains(baseType) && !rewrittenClasses.Contains(baseType))
+        {
+            ProcessParentClass(baseType, classes, rewrittenClasses, assemblyMetadata);
         }
 
         if (rewrittenClasses.Contains(type))
@@ -32,7 +41,10 @@ public static class UnrealClassProcessor
             return;
         }
         
-        ProcessClass(type, classDictionary[type]);
+        ClassMetaData classMetaData = new ClassMetaData(type);
+        assemblyMetadata.ClassMetaData.Add(classMetaData);
+        
+        ProcessClass(type, classMetaData);
         rewrittenClasses.Add(type);
     }
     

@@ -13,7 +13,7 @@ public partial class SystemLibrary
     /// <param name="initialStartDelay"> The initial delay before the timer starts. </param>
     /// <param name="initialStartDelayVariance"> The variance in the initial delay. </param>
     /// <exception cref="ArgumentException"> Thrown if the target of the action is not an UObject. </exception>
-    public static TimerHandle SetTimer(Action action, float time, bool bLooping, float initialStartDelay = 0.000000f)
+    public static FTimerHandle SetTimer(Action action, float time, bool bLooping, float initialStartDelay = 0.000000f)
     {
         unsafe
         {
@@ -22,7 +22,7 @@ public partial class SystemLibrary
                 throw new ArgumentException("The target of the action must be an UObject.");
             }
         
-            TimerHandle timerHandle = new TimerHandle();
+            FTimerHandle timerHandle = new FTimerHandle();
             UWorldExporter.CallSetTimer(owner.NativeObject, action.Method.Name, time, bLooping.ToNativeBool(), initialStartDelay, &timerHandle);
             return timerHandle;
         }

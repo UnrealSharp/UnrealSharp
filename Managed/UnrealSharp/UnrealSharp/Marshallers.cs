@@ -4,7 +4,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-public static class MarshalingDelegates<T>
+public static class MarshallingDelegates<T>
 {
     public delegate void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj);
     public delegate T FromNative(IntPtr nativeBuffer, int arrayIndex);
@@ -59,8 +59,32 @@ public static class BoolMarshaller
     }
 }
 
+public static class BitfieldBoolMarshaller
+{
+    private const int BoolSize = sizeof(NativeBool);
+    public static void ToNative(IntPtr valuePtr, byte fieldMask, bool value)
+    {
+        unsafe
+        {
+            var byteValue = (byte*)valuePtr;
+            var mask = value ? fieldMask : byte.MinValue;
+            *byteValue = (byte)((*byteValue & ~fieldMask) | mask);
+        }
+    }
+
+    public static bool FromNative(IntPtr valuePtr, byte fieldMask)
+    {
+        unsafe
+        {
+            var byteValue = (byte*)valuePtr;
+            return (*byteValue & fieldMask) != 0;
+        }
+    }
+        
+}
+
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
-{ 
+{
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;
@@ -85,6 +109,7 @@ public static class StringMarshaller
     {
         unsafe
         {
+            if (obj == null) obj = string.Empty; //Guard against C# null strings (use string.Empty instead)
             IntPtr ustring = nativeBuffer + arrayIndex * sizeof(UnmanagedArray);
             fixed (char* stringPtr = obj)
             {

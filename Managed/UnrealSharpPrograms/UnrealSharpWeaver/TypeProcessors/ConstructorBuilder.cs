@@ -23,6 +23,11 @@ public static class ConstructorBuilder
                 attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
                 parameterTypes);
         }
+        else
+        {
+            // Remove the return instruction from existing static constructor
+            WeaverHelper.RemoveReturnInstruction(staticConstructor);
+        }
         
         return staticConstructor;
     }
@@ -47,7 +52,7 @@ public static class ConstructorBuilder
         MethodDefinition staticConstructorMethod = MakeStaticConstructor(typeDefinition);
         ILProcessor processor = staticConstructorMethod.Body.GetILProcessor();
         
-        processor.Emit(OpCodes.Ldstr, typeDefinition.Name);
+        processor.Emit(OpCodes.Ldstr, WeaverHelper.GetEngineName(typeDefinition));
         
         foreach (Instruction instruction in initializeInstructions)
         {

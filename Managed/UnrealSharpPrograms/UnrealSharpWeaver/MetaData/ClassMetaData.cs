@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.TypeProcessors;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -29,7 +30,19 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint | ClassFlags.Native;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native | ClassFlags.CompiledFromBlueprint;
+        
+        // Force DefaultConfig if Config is set and no other config flag is set
+        if (ClassFlags.HasFlag(ClassFlags.Config) &&
+            !ClassFlags.HasFlag(ClassFlags.GlobalUserConfig | ClassFlags.DefaultConfig | ClassFlags.ProjectUserConfig))
+        {
+            ClassFlags |= ClassFlags.DefaultConfig;
+        }
+
+        if (WeaverHelper.IsChildOf(type, WeaverHelper.UActorComponentDefinition))
+        {
+            TryAddMetaData("BlueprintSpawnableComponent", true);
+        }
     }
 
     private void AddConfigCategory()
@@ -87,13 +100,13 @@ public class ClassMetaData : TypeReferenceMetadata
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
-                return;
+                continue;
             }
             
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method))
+            if (WeaverHelper.IsUFunction(method) || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
                 if (isBlueprintOverride)
                 {
@@ -102,14 +115,15 @@ public class ClassMetaData : TypeReferenceMetadata
                 
                 FunctionMetaData functionMetaData = new FunctionMetaData(method);
                 
-                if (isInterfaceFunction && functionMetaData.FunctionFlags.HasFlag(FunctionFlags.BlueprintNativeEvent))
+                if (isInterfaceFunction && functionMetaData.FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
                 {
                     throw new Exception("Interface functions cannot be marked as BlueprintEvent. Mark base declaration as BlueprintEvent instead.");
                 }
                 
                 Functions.Add(functionMetaData);
             }
-            else if (isBlueprintOverride || isInterfaceFunction)
+            
+            if (isBlueprintOverride || isInterfaceFunction)
             {
                 VirtualFunctions.Add(new FunctionMetaData(method));
             }
@@ -132,11 +146,28 @@ public class ClassMetaData : TypeReferenceMetadata
         
         foreach (var typeInterface in ClassDefinition.Interfaces)
         {
-            var interfaceType = typeInterface.InterfaceType.Resolve();
-            if (WeaverHelper.IsUInterface(interfaceType))
+            TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
+
+            if (interfaceType == WeaverHelper.IInterfaceType || !WeaverHelper.IsUInterface(interfaceType))
             {
-                Interfaces.Add(interfaceType.Name);
+                continue;
             }
+
+            string interfaceNoPrefix = WeaverHelper.GetEngineName(interfaceType);
+            Interfaces.Add(interfaceNoPrefix);
+        }
+    }
+    
+    public void PostWeaveCleanup()
+    {
+        foreach (FunctionMetaData function in Functions)
+        {
+            function.TryRemoveMethod();
+        }
+        
+        foreach (FunctionMetaData virtualFunction in VirtualFunctions)
+        {
+            virtualFunction.TryRemoveMethod();
         }
     }
 }

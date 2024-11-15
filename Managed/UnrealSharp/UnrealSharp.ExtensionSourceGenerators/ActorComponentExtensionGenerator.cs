@@ -23,7 +23,7 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <param name=\"bManualAttachment\">If true, the component will not be attached to the actor's root component.</param>");
         stringBuilder.AppendLine("     /// <param name=\"relativeTransform\">The relative transform of the component to the actor.</param>");
         stringBuilder.AppendLine("     /// <returns>The constructed component.</returns>");
-        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.Actor owner, bool bManualAttachment, Transform relativeTransform)");
+        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner, bool bManualAttachment, FTransform relativeTransform)");
         stringBuilder.AppendLine("     {");
         stringBuilder.AppendLine($"         return owner.AddComponentByClass<{fullTypeName}>(bManualAttachment, relativeTransform);");
         stringBuilder.AppendLine("     }");
@@ -37,7 +37,7 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <param name=\"bManualAttachment\">If true, the component will not be attached to the actor's root component.</param>");
         stringBuilder.AppendLine("     /// <param name=\"relativeTransform\">The relative transform of the component to the actor.</param>");
         stringBuilder.AppendLine("     /// <returns>The constructed component.</returns>");
-        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.Actor owner, SubclassOf<ActorComponent> componentClass, bool bManualAttachment, Transform relativeTransform)");
+        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner, TSubclassOf<UActorComponent> componentClass, bool bManualAttachment, FTransform relativeTransform)");
         stringBuilder.AppendLine("     {");
         stringBuilder.AppendLine($"         return ({fullTypeName}) owner.AddComponentByClass(componentClass, bManualAttachment, relativeTransform);");
         stringBuilder.AppendLine("     }");
@@ -48,9 +48,9 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// </summary>");
         stringBuilder.AppendLine("     /// <param name=\"owner\">The actor to attach the component to.</param>");
         stringBuilder.AppendLine("     /// <returns>The constructed component.</returns>");
-        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.Actor owner)");
+        stringBuilder.AppendLine($"     public static {fullTypeName} Construct(UnrealSharp.Engine.AActor owner)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"         return ({fullTypeName}) owner.AddComponentByClass(typeof({fullTypeName}), false, new Transform());");
+        stringBuilder.AppendLine($"         return ({fullTypeName}) owner.AddComponentByClass(typeof({fullTypeName}), false, new FTransform());");
         stringBuilder.AppendLine("     }");
     }
     
@@ -63,9 +63,9 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// </summary>");
         stringBuilder.AppendLine("     /// <param name=\"owner\">The actor to get the component from.</param>");
         stringBuilder.AppendLine("     /// <returns>The component if found, otherwise null.</returns>");
-        stringBuilder.AppendLine($"     public static new {fullTypeName}? Get(UnrealSharp.Engine.Actor owner)");
+        stringBuilder.AppendLine($"     public static new {fullTypeName}? Get(UnrealSharp.Engine.AActor owner)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"        ActorComponent? foundComponent = owner.GetComponentByClass(typeof({fullTypeName}));");
+        stringBuilder.AppendLine($"        UActorComponent? foundComponent = owner.GetComponentByClass(typeof({fullTypeName}));");
         stringBuilder.AppendLine("        if (foundComponent != null)");
         stringBuilder.AppendLine("        {");
         stringBuilder.AppendLine($"            return ({fullTypeName}) foundComponent;");

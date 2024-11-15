@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
@@ -32,12 +32,12 @@ public static class FunctionProcessor
             AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDefinition))
+        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDef))
         {
             function.FunctionPointerField = WeaverHelper.AddFieldToType(classDefinition, $"{function.Name}_NativeFunction", WeaverHelper.IntPtrType, FieldAttributes.Private);
             RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
         }
-        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, FunctionFlags.BlueprintCallable))
+        else if (WeaverHelper.HasAnyFlags(function.FunctionFlags, EFunctionFlags.BlueprintCallable))
         {
             foreach (var virtualFunction in classDefinition.Methods)
             {
@@ -46,7 +46,7 @@ public static class FunctionProcessor
                     continue;
                 }
 
-                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != null)
+                if (virtualFunction.IsVirtual && virtualFunction.GetBaseMethod() != virtualFunction)
                 {
                     continue;
                 }
@@ -57,7 +57,7 @@ public static class FunctionProcessor
         }
         else
         {
-            MakeManagedMethodInvoker(classDefinition, function, function.MethodDefinition, function.RewriteInfo.FunctionParams);
+            MakeManagedMethodInvoker(classDefinition, function, function.MethodDef, function.RewriteInfo.FunctionParams);
         }
     }
     
@@ -74,21 +74,46 @@ public static class FunctionProcessor
         }
     }
     
+    public static bool HasSameSignature(MethodReference a, MethodReference b)
+    {
+        if (a.Parameters.Count != b.Parameters.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < a.Parameters.Count; i++)
+        {
+            if (a.Parameters[i].ParameterType.FullName != b.Parameters[i].ParameterType.FullName)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
     public static MethodDefinition MakeImplementationMethod(FunctionMetaData func)
     {
-        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDefinition.Name + "_Implementation", func.MethodDefinition);
+        MethodDefinition copiedMethod = WeaverHelper.CopyMethod(func.MethodDef.Name + "_Implementation", func.MethodDef);
         if (copiedMethod.IsVirtual)
         {
             // Find the call to the original function and replace it with a call to the implementation.
             foreach (var instruction in copiedMethod.Body.Instructions)
             {
-                if (instruction.OpCode != OpCodes.Call && instruction.OpCode != OpCodes.Callvirt)
+                if (instruction.OpCode != OpCodes.Call)
                 {
                     continue;
                 }
                 
                 MethodReference calledMethod = (MethodReference) instruction.Operand;
-                if (calledMethod.Name != func.Name)
+                
+                if (func.SourceName != calledMethod.Name)
+                {
+                    continue;
+                }
+
+                if (!WeaverHelper.IsChildOf(copiedMethod.DeclaringType.Resolve(), calledMethod.DeclaringType.Resolve()) 
+                    || !HasSameSignature(copiedMethod, calledMethod))
                 {
                     continue;
                 }
@@ -162,18 +187,14 @@ public static class FunctionProcessor
             param.PropertyDataType.WriteLoad(processor, type, loadBuffer, paramRewriteInfos[i].OffsetField!, paramVariables[i]);
         }
 
-        OpCode callOp = OpCodes.Callvirt;
+        OpCode callOp = OpCodes.Call;
         
-        if (methodToCall.IsStatic)
-        {
-            callOp = OpCodes.Call;
-        }
-        else
+        if (!methodToCall.IsStatic)
         {
             processor.Emit(OpCodes.Ldarg_0);
             if (methodToCall.IsVirtual)
             {
-                callOp = OpCodes.Call;
+                callOp = OpCodes.Callvirt;
             }
         }
 
@@ -240,12 +261,12 @@ public static class FunctionProcessor
 
     public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        if (func.MethodDefinition.Body != null)
+        if (func.MethodDef.Body != null)
         {
             MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramRewriteInfos);
         }
         
-        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDefinition, paramsSizeField, paramRewriteInfos);
+        RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDef, paramsSizeField, paramRewriteInfos);
     }
 
     public static void RewriteOriginalFunctionToInvokeNative(TypeDefinition type, 
@@ -258,7 +279,7 @@ public static class FunctionProcessor
         methodDef.Body = new MethodBody(methodDef);
 
         bool staticNativeFunction = metadata.FunctionPointerField.IsStatic;
-        bool hasReturnValue = methodDef.ReturnType != WeaverHelper.VoidTypeRef;
+        bool hasReturnValue = !methodDef.ReturnsVoid();
         bool hasParams = methodDef.Parameters.Count > 0 || hasReturnValue;
 
         ILProcessor processor = methodDef.Body.GetILProcessor();
@@ -303,7 +324,7 @@ public static class FunctionProcessor
         }
         
         // Marshal out params back from the native parameter buffer.
-        if (metadata.FunctionFlags.HasFlag(FunctionFlags.HasOutParms))
+        if (metadata.FunctionFlags.HasFlag(EFunctionFlags.HasOutParms))
         {
             for (var i = 0; i < metadata.Parameters.Length; ++i)
             {
@@ -441,8 +462,7 @@ public static class FunctionProcessor
         processor.Emit(OpCodes.Call, WeaverHelper.InitializeStructMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
-        Instruction loadParamBufferInstruction = Instruction.Create(OpCodes.Nop);
-    
+
         for (byte i = 0; i < paramRewriteInfos.Length; ++i)
         {
             PropertyMetaData paramType = paramRewriteInfos[i].PropertyMetaData;
@@ -459,11 +479,8 @@ public static class FunctionProcessor
         
             FieldDefinition offsetField = paramRewriteInfos[i].OffsetField!;
             NativeDataType nativeDataType = paramType.PropertyDataType;
-        
-            nativeDataType.PrepareForRewrite(methodDef.DeclaringType, metadata, paramRewriteInfos[i].PropertyMetaData);
 
-            processor.Append(loadArgumentBuffer);
-            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadParamBufferInstruction, offsetField, i + 1, methodDef.Parameters[i]);
+            IList<Instruction>? cleanupInstructions = nativeDataType.WriteStore(processor, methodDef.DeclaringType, loadArgumentBuffer, offsetField, i + 1, methodDef.Parameters[i]);
 
             if (cleanupInstructions != null)
             {
