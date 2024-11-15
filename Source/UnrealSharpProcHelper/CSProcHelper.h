@@ -20,7 +20,7 @@ enum class EDotNetBuildConfiguration : uint64
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
 #define HOSTFXR_LINUX "libhostfxr.so"
-#define DOTNET_MAJOR_VERSION "8.0.0"
+#define DOTNET_MAJOR_VERSION "9.0.0"
 
 class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
