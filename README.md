@@ -1,7 +1,7 @@
 # UnrealSharp
 
 ## Introduction
-UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C# in their projects with the power of .NET 8. This plugin bridges the gap between C# and UE5, providing a seamless and efficient workflow for those who prefer C# over C++/Blueprints.
+UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C# in their projects with the power of .NET 9. This plugin bridges the gap between C# and UE5, providing a seamless and efficient workflow for those who prefer C# over C++/Blueprints.
 
 [Workflow Showcase](https://www.youtube.com/watch?v=NdbiysPTztA)
 
@@ -17,8 +17,8 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 Check out [UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropout/tree/main), an ongoing effort to convert [Cropout](https://www.unrealengine.com/en-US/blog/cropout-casual-rts-game-sample-project), originally created in Blueprints, into C# using UnrealSharp. 
 
 ## Prerequisites
-- Unreal Engine 5.3+ (Will support earlier versions in the future)
-- .NET 8.0+
+- Unreal Engine 5.3 - 5.5
+- .NET 9.0+
 
 ## Frequently Asked Questions
 

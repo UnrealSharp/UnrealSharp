@@ -40,6 +40,8 @@ private:
 	UFunction* FindMatchingMember(const FMemberReference& FunctionReference) const;
 	bool UpdateMemberCall(UK2Node_CallFunction* Node) const;
 	bool UpdateMemberCall(UK2Node_CSAsyncAction* Node) const;
+	void UpdateInheritance(UBlueprint* Blueprint, bool& RefNeedsNodeReconstruction) const;
+	void UpdateNodePinTypes(UEdGraphNode* Node, bool& RefNeedsNodeReconstruction) const;
 
 	// Pending classes/interfaces to reinstance
 	TMap<UClass*, UClass*> ClassesToReinstance;

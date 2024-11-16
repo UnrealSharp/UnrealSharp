@@ -62,10 +62,10 @@ private:
 	static UCSManager* Instance;
 
 	UPROPERTY()
-	UPackage* UnrealSharpPackage;
+	TObjectPtr<UPackage> UnrealSharpPackage;
 
 	UPROPERTY()
-	UObject* CurrentWorldContext;
+	TObjectPtr<UObject> CurrentWorldContext;
 
 	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
