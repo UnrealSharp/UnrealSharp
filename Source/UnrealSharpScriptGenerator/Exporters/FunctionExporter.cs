@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -58,7 +59,7 @@ public struct FunctionOverload
 
 public class FunctionExporter
 {
-    protected static readonly Dictionary<UhtPackage, List<ExtensionMethod>> ExtensionMethods = new();
+    protected static readonly ConcurrentDictionary<UhtPackage, List<ExtensionMethod>> ExtensionMethods = new();
     
     protected readonly UhtFunction _function;
     protected string _functionName = null!;
@@ -310,7 +311,7 @@ public class FunctionExporter
         if (!ExtensionMethods.TryGetValue(package, out var extensionMethods))
         {
             extensionMethods = new List<ExtensionMethod>();
-            ExtensionMethods.Add(package, extensionMethods);
+            ExtensionMethods.TryAdd(package, extensionMethods);
         }
         
         UhtProperty firstParameter = (function.Children[0] as UhtProperty)!;
@@ -327,7 +328,7 @@ public class FunctionExporter
         
         extensionMethods.Add(newExtensionMethod);
     }
-    
+
     public static void StartExportingExtensionMethods(List<Task> tasks)
     {
         foreach (KeyValuePair<UhtPackage, List<ExtensionMethod>> extensionInfo in ExtensionMethods)
