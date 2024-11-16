@@ -9,13 +9,13 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     private static MethodReference _toNative;
     private static MethodReference _fromNative;
     private static MethodReference _destructInstance;
-    private static bool _bInitialized;
+    private static AssemblyDefinition? _userAssembly;
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
         
-        if (_bInitialized)
+        if (IsInitialized())
         {
             return;
         }
@@ -24,7 +24,6 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         _toNative = WeaverHelper.FindMethod(marshallerType, "ToNative")!;
         _fromNative = WeaverHelper.FindMethod(marshallerType, "FromNative")!;
         _destructInstance = WeaverHelper.FindMethod(marshallerType, "DestructInstance")!;
-        _bInitialized = true;
     }
 
     public override void EmitFixedArrayMarshallerDelegates(ILProcessor processor, TypeDefinition type)
@@ -129,5 +128,13 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
+    }
+
+    private static bool IsInitialized()
+    {
+        if (ReferenceEquals(_userAssembly, WeaverHelper.UserAssembly)) return true;
+        
+        _userAssembly = WeaverHelper.UserAssembly;
+        return false;
     }
 }

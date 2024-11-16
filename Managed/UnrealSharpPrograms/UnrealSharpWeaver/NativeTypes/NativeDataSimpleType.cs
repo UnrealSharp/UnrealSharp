@@ -13,7 +13,9 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     protected MethodReference ToNative;
     protected MethodReference FromNative;
     
-    private bool IsReference;
+    private bool _isReference;
+    private AssemblyDefinition? _assembly;
+    
     public override bool IsPlainOldData => true;
 
     protected virtual TypeReference[] GetTypeParams()
@@ -24,42 +26,21 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
     {
         base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-        IsReference = propertyMetadata.IsOutParameter;
+        _isReference = propertyMetadata.IsOutParameter;
+        _assembly = WeaverHelper.BindingsAssembly;
+        var isGenericMarshaller = marshallerName.Contains('`');
 
         TypeReference[] typeParams = GetTypeParams();
         
-        if (marshallerName.Contains("`"))
-        {
-            MarshallerClass = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, marshallerName, typeParams);
-        }
-        else
-        {
-            //TODO: Make this prettier! :(
-            {
-                // Try to find the marshaller in the bindings assembly
-                MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, marshallerName, WeaverHelper.UnrealSharpNamespace, false);
+        MarshallerClass = isGenericMarshaller
+            ? WeaverHelper.FindGenericTypeInAssembly(_assembly, WeaverHelper.UnrealSharpNamespace, marshallerName, typeParams) 
+            : GetTypeInAssembly();
 
-                if (MarshallerClass == null)
-                {
-                    TypeDefinition propertyTypeDefinition = CSharpType.Resolve();
-                    
-                    // Try to find the marshaller in the bindings again, but with the namespace of the property type.
-                    MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, marshallerName, propertyTypeDefinition.Namespace, false);
-
-                    // Finally, try to find the marshaller in the user assembly.
-                    if (MarshallerClass == null)
-                    {
-                        MarshallerClass = WeaverHelper.FindTypeInAssembly(WeaverHelper.UserAssembly, marshallerName, propertyTypeDefinition.Namespace);
-                    }
-                }
-            }
-        }
-
-        TypeDefinition marshallerTypeDefinition = MarshallerClass.Resolve();
+        var marshallerTypeDefinition = GetMarshallerTypeDefinition();
         ToNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "ToNative")!;
         FromNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "FromNative")!;
         
-        if (marshallerName.Contains("`"))
+        if (isGenericMarshaller)
         {
             ToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ToNative, typeParams);
             FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, typeParams);
@@ -80,7 +61,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     protected override void CreateSetter(TypeDefinition type, MethodDefinition setter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
     {
         ILProcessor processor = BeginSimpleSetter(setter);
-        Instruction loadValue = processor.Create(IsReference ? OpCodes.Ldarga : OpCodes.Ldarg, 1);
+        Instruction loadValue = processor.Create(_isReference ? OpCodes.Ldarga : OpCodes.Ldarg, 1);
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
         WriteMarshalToNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadValue);
         EndSimpleSetter(processor, setter);
@@ -106,7 +87,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         // Load parameter index onto the stack. First argument is always 1, because 0 is the instance.
         List<Instruction> source = [processor.Create(OpCodes.Ldarg, argIndex)];
         
-        if (IsReference)
+        if (_isReference)
         {
             Instruction loadInstructionOutParam = WeaverHelper.CreateLoadInstructionOutParam(paramDefinition, propertyType);
             source.Add(loadInstructionOutParam);
@@ -122,7 +103,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         Instruction[] loadField =
         [
             processor.Create(OpCodes.Ldarg_0),
-            processor.Create(IsReference ? OpCodes.Ldflda : OpCodes.Ldfld, srcField)
+            processor.Create(_isReference ? OpCodes.Ldflda : OpCodes.Ldfld, srcField)
         ];
         
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
@@ -176,5 +157,42 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         }
 
         EmitSimpleMarshallerDelegates(processor, marshallerName, typeParams);
+    }
+
+    private TypeReference GetTypeInAssembly()
+    {
+        // Try to find the marshaller in the bindings assembly
+        var typeInBindingAssembly = WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, WeaverHelper.UnrealSharpNamespace, false);
+        if (typeInBindingAssembly is not null)
+        {
+            return typeInBindingAssembly;
+        }
+        
+        var propType = CSharpType.Resolve();
+            
+        // Try to find the marshaller in the bindings again, but with the namespace of the property type.
+        var type = WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, propType.Namespace, false);
+        if (type is not null)
+        {
+            return type;
+        }
+
+        // Finally, try to find the marshaller in the user assembly.
+        
+        _assembly = GetUserAssemblyByPropertyType(propType);
+        return WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, propType.Namespace)!;
+    }
+
+    private AssemblyDefinition GetUserAssemblyByPropertyType(TypeDefinition type)
+    {
+        var propertyTypeName = type.Module.Assembly.FullName;
+        return WeaverHelper.UserAssembly.FullName == propertyTypeName
+            ? WeaverHelper.UserAssembly
+            : WeaverHelper.WeavedAssemblies.First(x => x.FullName == propertyTypeName);
+    }
+
+    private TypeDefinition GetMarshallerTypeDefinition()
+    {
+        return GetMarshallerTypeDefinition(_assembly, MarshallerClass);
     }
 }

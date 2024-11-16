@@ -175,19 +175,53 @@ FString FCSProcHelper::GetUserAssemblyDirectory()
 	return FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed");
 }
 
+FString FCSProcHelper::GetUnrealSharpMetadataPath()
+{
+	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.metadata.json");
+}
+
+void FCSProcHelper::GetUserProjectNames(TArray<FString>& UserProjectNames)
+{
+	const FString ProjectMetadataPath = GetUnrealSharpMetadataPath();
+	if (!FPaths::FileExists(ProjectMetadataPath))
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Couldn't find UnrealSharp metadata file at: %s"), *ProjectMetadataPath);
+		return;
+	}
+
+	FString JsonString;
+	if (!FFileHelper::LoadFileToString(JsonString, *ProjectMetadataPath))
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Failed to load UnrealSharp metadata file at: %s"), *ProjectMetadataPath);
+		return;
+	}
+
+	TSharedPtr<FJsonObject> JsonObject;
+	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject) || !JsonObject.IsValid())
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Failed to parse UnrealSharp metadata at: %s"), *ProjectMetadataPath);
+		return;
+	}
+
+	for (const auto& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
+	{
+		UserProjectNames.Add(ProjectName->AsString());
+	}
+}
+
+
 void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 	IFileManager& FileManager = IFileManager::Get();
+	
+	TArray<FString> ProjectNames;
+	GetUserProjectNames(ProjectNames);
 
-	TArray<FString> ProjectPaths;
-	GetAllAssemblyPaths(ProjectPaths);
-
-	for (const FString& ProjectPath : ProjectPaths)
+	for (const FString& ProjectName : ProjectNames)
 	{
-		const FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		const FString MetaDataPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".metadata.json"));
-    
+
 		// Continue if the metadata file does not exist.
 		if (!FileManager.FileExists(*MetaDataPath))
 		{

@@ -59,63 +59,131 @@ public static class Program
 
     private static bool ProcessUserAssemblies()
     {
-        DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
+        var outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
         
         if (!outputDirInfo.Exists)
         {
             outputDirInfo.Create();
         }
-
-        foreach (var quotedAssemblyPath in WeaverOptions.AssemblyPaths)
+        
+        var resolver = GetAssemblyResolver();
+        var userAssemblies = LoadUserAssemblies(resolver);
+        var orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
+        
+        WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
+        return ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
+    }
+    
+    private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
+    {
+        var unrealSharpMetadata = new UnrealSharpMetadata
         {
-            string userAssemblyPath = StripQuotes(quotedAssemblyPath);
-            
-            if (!File.Exists(userAssemblyPath))
-            {
-                throw new FileNotFoundException($"Could not find assembly at: {userAssemblyPath}");
-            }
-            
-            DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
+            AssemblyLoadingOrder = orderedAssemblies
+                .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
+        };
+        
+        var metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
+        {
+            WriteIndented = false,
+        });
 
-            foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
-            {
-                string assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
-                resolver.AddSearchDirectory(assemblyDirectory);
-            }
-
-            ReaderParameters readerParams = new ReaderParameters
-            {
-                AssemblyResolver = resolver,
-                ReadSymbols = true,
-                SymbolReaderProvider = new PdbReaderProvider(),
-            };
-
-            AssemblyDefinition userAssembly = AssemblyDefinition.ReadAssembly(userAssemblyPath, readerParams);
-
+        var fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.metadata.json");
+        File.WriteAllText(fileName, metaDataContent);
+    }
+    
+    private static bool ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
+    {
+        var noErrors = true;
+        foreach (var assembly in assemblies)
+        {
             try
             {
-                string weaverOutputPath = Path.Combine(outputDirInfo.FullName, Path.GetFileName(userAssemblyPath));
-                StartWeavingAssembly(userAssembly, weaverOutputPath);
-                continue;
+                var weaverOutputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
+                StartWeavingAssembly(assembly, weaverOutputPath);
             }
             catch (WeaverProcessError error)
             {
-                ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, "Caught fatal error: " + error.Message);
+                ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, $"Caught fatal error: {error.Message}");
+                noErrors = false;
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Exception processing {userAssemblyPath}: {ex.Message}");
+                Console.Error.WriteLine($"Exception processing {assembly.MainModule.FileName}: {ex.Message}");
                 Console.Error.WriteLine(ex.StackTrace);
+                noErrors = false;
             }
-            return false;
+            WeaverHelper.WeavedAssemblies.Add(assembly);
+        }
+
+        return noErrors;
+    }
+
+    private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
+    {
+        var assemblyNames = assemblies.Select(a => a.FullName).ToList();
+        
+        var noReferenceAssemblies = assemblies
+            .Where(x => !x.MainModule.AssemblyReferences.Any(ar => assemblyNames.Contains(ar.FullName)))
+            .ToList();
+        
+        if (noReferenceAssemblies.Count == assemblies.Count) return assemblies;
+
+        var result = new List<AssemblyDefinition>(assemblies.Count);
+        result.AddRange(noReferenceAssemblies);
+        
+        while (result.Count != assemblies.Count)
+        {
+            var dependentAssemblies = assemblies.Except(result)
+                .Where(x => x.MainModule.AssemblyReferences
+                    .Where(ar => assemblyNames.Contains(ar.FullName))
+                    .All(ar => result.Any(r => r.FullName == ar.FullName)));
+            
+            result.AddRange(dependentAssemblies);
         }
         
-        return true;
+        return result;
+    }
+
+    private static DefaultAssemblyResolver GetAssemblyResolver()
+    {
+        var resolver = new DefaultAssemblyResolver();
+
+        foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
+        {
+            var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
+            resolver.AddSearchDirectory(assemblyDirectory);
+        }
+
+        return resolver;
+    }
+
+    private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
+    {
+        var readerParams = new ReaderParameters
+        {
+            AssemblyResolver = resolver,
+            ReadSymbols = true,
+            SymbolReaderProvider = new PdbReaderProvider(),
+        };
+        
+        var result = new List<AssemblyDefinition>();
+        
+        foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
+        {
+            if (!File.Exists(assemblyPath))
+            {
+                throw new FileNotFoundException($"Could not find assembly at: {assemblyPath}");
+            }
+            
+            result.Add(AssemblyDefinition.ReadAssembly(assemblyPath, readerParams));
+        }
+
+        return result;
     }
     
     private static string StripQuotes(string value)
     {
-        if (value.StartsWith("\"") && value.EndsWith("\""))
+        if (value.StartsWith('\"') && value.EndsWith('\"'))
         {
             return value.Substring(1, value.Length - 2);
         }
@@ -204,7 +272,7 @@ public static class Program
         File.WriteAllText(metadataFilePath, metaDataContent);
     }
 
-    static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
+    private static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
     {
         try
         {
