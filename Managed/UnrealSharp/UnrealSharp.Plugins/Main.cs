@@ -15,9 +15,6 @@ public unsafe struct PluginsCallbacks
 public static class Main
 {
     private static readonly Assembly CoreApiAssembly = typeof(UnrealSharpObject).Assembly;
-    private static readonly List<PluginLoadContextWrapper> LoadedPlugins = [];
-    private static readonly List<AssemblyName> SharedAssemblies = [];
-    private static readonly AssemblyLoadContext MainLoadContext = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default;
     private static DllImportResolver? _dllImportResolver;
     
     // This is for advanced use ony. Any hard references at the wrong time will break unloading.
