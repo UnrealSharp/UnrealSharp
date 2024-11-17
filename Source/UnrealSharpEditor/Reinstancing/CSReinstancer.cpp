@@ -90,7 +90,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 
 		return bChanged;
 	}
-	else if (PinType.IsSet() || PinType.IsArray() && (PinType.PinCategory != UEdGraphSchema_K2::PC_Wildcard))
+	else if (PinType.IsSet() || PinType.IsArray())
 	{
 		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
 		if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
