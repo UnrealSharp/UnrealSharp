@@ -92,6 +92,8 @@ public class DelegateWrapperGenerator : ISourceGenerator
             string namespaceName = typeSymbol?.ContainingNamespace.ToDisplayString() ?? "Global";
             
             StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("#nullable disable");
+            stringBuilder.AppendLine();
             stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine("using UnrealSharp.Interop;");
             stringBuilder.AppendLine();
@@ -139,20 +141,20 @@ public class DelegateWrapperGenerator : ISourceGenerator
             context.AddSource($"{namespaceName}.{delegateName}.generated.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
         }
     }
-    
+
     public static void GenerateDelegateExtensionsClass(StringBuilder stringBuilder, INamedTypeSymbol delegateSymbol, string delegateName, DelegateType delegateType)
     {
         stringBuilder.AppendLine($"public static class {delegateName}Extensions");
         stringBuilder.AppendLine("{");
             
         var parametersList = delegateSymbol.DelegateInvokeMethod!.Parameters.ToList();
-            
+
         string args = parametersList.Any()
-            ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Type} {x.Name}"))
+            ? string.Join(", ", parametersList.Select(x => $"{GetRefKindKeyword(x)}{x.Type} {x.Name}"))
             : string.Empty;
             
         string parameters = parametersList.Any()
-            ? string.Join(", ", parametersList.Select(x => $"{(x.RefKind == RefKind.Ref ? "ref " : x.RefKind == RefKind.Out ? "out " : string.Empty)}{x.Name}"))
+            ? string.Join(", ", parametersList.Select(x => $"{GetRefKindKeyword(x)}{x.Name}"))
             : string.Empty;
         
         string delegateTypeString = delegateType == DelegateType.Multicast ? "TMulticastDelegate" : "TDelegate";
@@ -162,5 +164,17 @@ public class DelegateWrapperGenerator : ISourceGenerator
         stringBuilder.AppendLine($"         @delegate.InnerDelegate.Invoke({parameters});");
         stringBuilder.AppendLine("     }");
         stringBuilder.AppendLine("}");
+    }
+
+    public static string GetRefKindKeyword(IParameterSymbol x)
+    {
+        return x.RefKind switch
+               {
+                   RefKind.RefReadOnlyParameter => "in ",
+                   RefKind.In => "in ",
+                   RefKind.Ref => "ref ",
+                   RefKind.Out => "out ",
+                   _ => string.Empty
+               };
     }
 }

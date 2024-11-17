@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
@@ -14,22 +16,22 @@ public static class ClassExporter
         GeneratorStringBuilder stringBuilder = new();
 
         string typeNameSpace = classObj.GetNamespace();
-
-        List<UhtProperty> exportedProperties = new List<UhtProperty>();
-        ScriptGeneratorUtilities.GetExportedProperties(classObj, ref exportedProperties);
-        
-        List<UhtClass> interfaces = classObj.GetInterfaces();
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
-        ScriptGeneratorUtilities.GetExportedFunctions(classObj, ref exportedFunctions, ref exportedOverrides);
-
-        List<string> classDependencies = new();
-        ScriptGeneratorUtilities.GatherDependencies(classObj, exportedFunctions, exportedOverrides, exportedProperties, interfaces, classDependencies);
+        Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
         
-        stringBuilder.DeclareDirectives(classDependencies);
+        ScriptGeneratorUtilities.GetExportedFunctions(classObj, exportedFunctions, 
+            exportedOverrides, 
+            exportedGetterSetters);
+        
+        List<UhtProperty> exportedProperties = new List<UhtProperty>();
+        Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
+        ScriptGeneratorUtilities.GetExportedProperties(classObj, exportedProperties, getSetBackedProperties);
+        
+        List<UhtClass> interfaces = classObj.GetInterfaces();
+        
         stringBuilder.GenerateTypeSkeleton(typeNameSpace);
-        
         stringBuilder.AppendTooltip(classObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(classObj);
@@ -56,10 +58,17 @@ public static class ClassExporter
         // For manual exports we just want to generate attributes
         if (!isManualExport)
         { 
-            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, exportedProperties, exportedFunctions, exportedOverrides);
-        
+            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, classObj, 
+                exportedProperties, 
+                exportedFunctions, 
+                exportedGetterSetters,
+                getSetBackedProperties,
+                exportedOverrides);
+            
             ExportClassProperties(stringBuilder, exportedProperties);
-        
+            ExportGetSetProperties(stringBuilder, getSetBackedProperties);
+            ExportCustomProperties(stringBuilder, exportedGetterSetters);
+            
             ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
             ExportOverrides(stringBuilder, exportedOverrides);
             stringBuilder.AppendLine();
@@ -79,6 +88,18 @@ public static class ClassExporter
         }
     }
     
+    static void ExportGetSetProperties(GeneratorStringBuilder builder, Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties)
+    {
+        Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters = new();
+        foreach (KeyValuePair<UhtProperty, GetterSetterPair> pair in getSetBackedProperties)
+        {
+            UhtProperty property = pair.Key;
+            GetterSetterPair getterSetterPair = pair.Value;
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            translator.ExportGetSetProperty(builder, getterSetterPair, property, exportedGetterSetters);
+        }
+    }
+    
     static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides)
     {
         foreach (UhtFunction function in exportedOverrides)
@@ -87,7 +108,8 @@ public static class ClassExporter
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, 
+        List<UhtFunction> exportedFunctions)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
@@ -98,6 +120,21 @@ public static class ClassExporter
             }
             
             FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
+        }
+    }
+
+    static void ExportCustomProperties(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    {
+        foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
+        {
+            UhtFunction firstAccessor = pair.Value.Accessors.First();
+            UhtProperty firstProperty = firstAccessor.Properties.First();
+            string propertyName = pair.Value.PropertyName;
+            
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            builder.TryAddWithEditor(firstAccessor);
+            translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty);
+            builder.TryEndWithEditor(firstAccessor);
         }
     }
 }

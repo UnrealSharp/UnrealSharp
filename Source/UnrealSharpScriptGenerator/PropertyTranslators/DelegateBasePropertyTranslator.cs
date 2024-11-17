@@ -11,6 +11,8 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     public DelegateBasePropertyTranslator(EPropertyUsageFlags supportedPropertyUsage) : base(supportedPropertyUsage)
     {
     }
+    
+    public override bool CacheProperty => true;
 
     public static string GetDelegateName(UhtFunction function, bool wrapperName = false)
     {
@@ -24,18 +26,6 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     public static string GetFullDelegateName(UhtFunction function, bool wrapperName = false)
     {
         return $"{function.GetNamespace()}.{GetDelegateName(function, wrapperName)}";
-    }
-
-    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
-        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
-    }
-
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
-    {
-        builder.AppendLine($"static readonly IntPtr {propertyEngineName}_NativeProperty;");
-        base.ExportPropertyVariables(builder, property, propertyEngineName);
     }
     
     public override bool CanExport(UhtProperty property)

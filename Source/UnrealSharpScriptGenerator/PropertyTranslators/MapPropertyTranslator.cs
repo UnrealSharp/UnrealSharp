@@ -15,7 +15,8 @@ public class MapPropertyTranslator : PropertyTranslator
     }
     
     public override bool IsBlittable => false;
-    public override bool NeedSetter => false;
+    public override bool SupportsSetter => false;
+    public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)
     {
@@ -36,14 +37,6 @@ public class MapPropertyTranslator : PropertyTranslator
         return keyTranslator.IsSupportedAsInner() && valueTranslator.IsSupportedAsInner();
     }
 
-    public override void GetReferences(UhtProperty property, List<UhtType> references)
-    {
-        base.GetReferences(property, references);
-        UhtMapProperty mapProperty = (UhtMapProperty) property;
-        references.Add(mapProperty.KeyProperty);
-        references.Add(mapProperty.ValueProperty);
-    }
-
     public override string GetManagedType(UhtProperty property)
     {
         UhtMapProperty mapProperty = (UhtMapProperty) property;
@@ -55,12 +48,6 @@ public class MapPropertyTranslator : PropertyTranslator
         
         string interfaceType = property.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? "IReadOnlyDictionary" : "IDictionary";
         return $"System.Collections.Generic.{interfaceType}<{keyManagedType}, {valueManagedType}>";
-    }
-
-    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
-        builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
     }
 
     public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
@@ -91,7 +78,6 @@ public class MapPropertyTranslator : PropertyTranslator
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
         base.ExportPropertyVariables(builder, property, propertyEngineName);
-        builder.AppendLine($"static IntPtr {propertyEngineName}_NativeProperty;");
         
         string marshaller = GetMarshaller((UhtMapProperty) property);
         
@@ -117,7 +103,7 @@ public class MapPropertyTranslator : PropertyTranslator
 
         string marshaller = GetMarshaller(mapProperty);
 
-        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}(1, {property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}({property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
         builder.AppendLine($"return {property.SourceName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.SourceName}_Offset), 0);");
     }
 
@@ -211,7 +197,7 @@ public class MapPropertyTranslator : PropertyTranslator
     private string GetMarshaller(UhtMapProperty property)
     {
         bool isStructProperty = property.IsOuter<UhtScriptStruct>();
-        bool isParameter = property.IsOuter<UhtFunction>();
+        bool isParameter = property.IsOuter<UhtFunction>() || property.HasAnyGetter();
         
         PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(property.KeyProperty)!;
         PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(property.ValueProperty)!;

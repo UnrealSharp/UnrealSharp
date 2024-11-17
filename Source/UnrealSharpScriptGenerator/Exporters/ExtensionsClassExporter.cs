@@ -9,7 +9,7 @@ public static class ExtensionsClassExporter
     public static void ExportExtensionsClass(UhtPackage package, List<ExtensionMethod> extensionMethods)
     {
         string typeNamespace = package.GetNamespace();
-        string className = $"{package.ShortName}Extensions";
+        string className = $"{package.GetShortName()}Extensions";
         
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
@@ -18,6 +18,7 @@ public static class ExtensionsClassExporter
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
+            exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
             exporter.ExportExtensionMethod(stringBuilder);
         }
         

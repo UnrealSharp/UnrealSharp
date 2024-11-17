@@ -15,43 +15,7 @@ public unsafe struct PluginsCallbacks
 public static class Main
 {
     private static readonly Assembly CoreApiAssembly = typeof(UnrealSharpObject).Assembly;
-    private static readonly List<PluginLoadContextWrapper> LoadedPlugins = [];
-    private static readonly List<AssemblyName> SharedAssemblies = [];
-    private static readonly AssemblyLoadContext MainLoadContext = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default;
     private static DllImportResolver? _dllImportResolver;
-    
-    private sealed class PluginLoadContextWrapper
-    {
-        private PluginLoadContext? _pluginLoadContext;
-
-        private PluginLoadContextWrapper(PluginLoadContext pluginLoadContext, Assembly assembly)
-        {
-            _pluginLoadContext = pluginLoadContext;
-            Assembly = new WeakReference<Assembly>(assembly);
-        }
-
-        public string? AssemblyLoadedPath => _pluginLoadContext?.AssemblyLoadedPath;
-        public bool IsCollectible => _pluginLoadContext?.IsCollectible ?? true;
-        public bool IsAlive => _pluginLoadContext != null;
-        
-        // Be careful using this. Any hard reference at the wrong time will prevent the plugin from being unloaded.
-        // Thus breaking hot reloading.
-        public WeakReference<Assembly> Assembly { get; }
-
-        public static (Assembly, PluginLoadContextWrapper) CreateAndLoadFromAssemblyName(AssemblyName assemblyName, string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible)
-        {
-            var context = new PluginLoadContext(pluginPath, sharedAssemblies, mainLoadContext, isCollectible);
-            var assembly = context.LoadFromAssemblyName(assemblyName);
-            var wrapper = new PluginLoadContextWrapper(context, assembly);
-            return (assembly, wrapper);
-        }
-        
-        internal void Unload()
-        {
-            _pluginLoadContext?.Unload();
-            _pluginLoadContext = null;
-        }
-    }
     
     // This is for advanced use ony. Any hard references at the wrong time will break unloading.
     public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible, bool shouldRemoveExtension = true)
@@ -60,7 +24,7 @@ public static class Main
         {
             string assemblyName = shouldRemoveExtension ? Path.GetFileNameWithoutExtension(assemblyPath) : assemblyPath;
             
-            foreach (var plugin in LoadedPlugins)
+            foreach (var plugin in PluginsInfo.LoadedPlugins)
             {
                 if (plugin.AssemblyLoadedPath != assemblyPath)
                 {
@@ -72,7 +36,7 @@ public static class Main
             }
             
             var sharedAssemblies = new List<string>();
-            foreach (var sharedAssembly in SharedAssemblies)
+            foreach (var sharedAssembly in PluginsInfo.SharedAssemblies)
             {
                 string? sharedAssemblyName = sharedAssembly.Name;
                 if (sharedAssemblyName != null)
@@ -81,14 +45,14 @@ public static class Main
                 }
             }
         
-            var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, MainLoadContext, isCollectible);
+            var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, isCollectible);
 
             if (!newPlugin.IsAlive)
             {
                 throw new Exception($"Failed to load plugin from: {assemblyPath}");
             }
         
-            LoadedPlugins.Add(newPlugin);
+            PluginsInfo.LoadedPlugins.Add(newPlugin);
             Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
 
             return loadedAssembly;
@@ -103,7 +67,7 @@ public static class Main
     // This is for advanced use ony. Any hard references at the wrong time will break unloading.
     public static bool UnloadPlugin(string assemblyPath)
     {
-        foreach (var plugin in LoadedPlugins)
+        foreach (var plugin in PluginsInfo.LoadedPlugins)
         {
             if (plugin.AssemblyLoadedPath != assemblyPath)
             {
@@ -149,7 +113,7 @@ public static class Main
                     }
                 }
 
-                LoadedPlugins.Remove(plugin);
+                PluginsInfo.LoadedPlugins.Remove(plugin);
                 Console.WriteLine($"{assemblyName} unloaded successfully!");
                 return true;
             }
@@ -215,7 +179,7 @@ public static class Main
     private static void SetupDllImportResolver(IntPtr assemblyPathPtr)
     {
         _dllImportResolver = new UnrealSharpDllImportResolver(assemblyPathPtr).OnResolveDllImport;
-        SharedAssemblies.Add(CoreApiAssembly.GetName());
+        PluginsInfo.SharedAssemblies.Add(CoreApiAssembly.GetName());
         NativeLibrary.SetDllImportResolver(CoreApiAssembly, _dllImportResolver);
     }
 }

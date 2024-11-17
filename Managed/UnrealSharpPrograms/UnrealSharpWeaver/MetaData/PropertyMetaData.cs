@@ -14,8 +14,6 @@ public class PropertyMetaData : BaseMetaData
     public string BlueprintSetter { get; set; }
     public string BlueprintGetter { get; set; }
 
-    public bool IsArray => PropertyDataType is NativeDataArrayType || PropertyDataType is NativeDataNativeArrayType;
-
     // Non-serialized for JSON
     public FieldDefinition PropertyOffsetField;
     public FieldDefinition? NativePropertyField;
@@ -145,7 +143,7 @@ public class PropertyMetaData : BaseMetaData
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
 
-            if (notifyMethod.ReturnType != WeaverHelper.VoidTypeRef)
+            if (!notifyMethod.ReturnsVoid())
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' must return void");
             }

@@ -20,7 +20,7 @@ enum class EDotNetBuildConfiguration : uint64
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
 #define HOSTFXR_LINUX "libhostfxr.so"
-#define DOTNET_MAJOR_VERSION "8.0.0"
+#define DOTNET_MAJOR_VERSION "9.0.0"
 
 class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
@@ -37,6 +37,11 @@ public:
 
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
 	static FString GetUserAssemblyDirectory();
+
+	// Path to file with UnrealSharp metadata
+	static FString GetUnrealSharpMetadataPath();
+
+	static void GetUserProjectNames(TArray<FString>& UserProjectNames);
 
 	//Path to all use assemblies in the Binaries/managed directory
 	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);

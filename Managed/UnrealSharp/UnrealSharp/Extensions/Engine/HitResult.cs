@@ -5,5 +5,5 @@ public partial struct FHitResult
     /// <summary>
     /// The hit Actor.
     /// </summary>
-    public AActor? Actor => BlockingHit ? Component.Object!.GetOwner() : null;
+    public AActor? Actor => BlockingHit ? Component.Object!.Owner : null;
 }

@@ -31,7 +31,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             var model = compilation.GetSemanticModel(classInfo.ClassDeclaration.SyntaxTree);
             var sourceBuilder = new StringBuilder();
 
-            List<INamespaceSymbol> namespaces = [];
+            HashSet<string> namespaces = [];
             foreach (var delegateInfo in classInfo.Delegates)
             {
                 foreach (var parameter in delegateInfo.Parameters)
@@ -43,19 +43,22 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                     {
                         continue;
                     }
-                    
-                    if (namespaces.Contains(typeSymbol.ContainingNamespace))
+
+                    if (typeSymbol is INamedTypeSymbol nts && nts.IsGenericType)
                     {
-                        continue;
+                        namespaces.UnionWith(nts.TypeArguments.Select(t => t.ContainingNamespace.ToDisplayString()));
                     }
-                    
-                    namespaces.Add(typeSymbol.ContainingNamespace);
+
+                    namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
                 }
             }
-            
-            foreach(var ns in namespaces)
+
+            sourceBuilder.AppendLine("#nullable disable");
+            sourceBuilder.AppendLine();
+
+            foreach (var ns in namespaces)
             {
-                sourceBuilder.AppendLine($"using {ns.ToDisplayString()};");
+                sourceBuilder.AppendLine($"using {ns};");
             }
             
             sourceBuilder.AppendLine();

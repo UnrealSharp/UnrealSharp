@@ -1,17 +1,36 @@
-﻿using EpicGames.Core;
+﻿using System;
+using System.Collections.Generic;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string? functionName)
+    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null)
     {
-        foreach (UhtFunction function in classObj.Functions)
+        return FindTypeByName(functionName, classObj.Functions, customCompare);
+    }
+    
+    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null)
+    {
+        return FindTypeByName(propertyName, classObj.Properties, customCompare);
+    }
+    
+    private static T? FindTypeByName<T>(string typeName, IEnumerable<T> types, Func<T, string, bool>? customCompare = null) where T : UhtType
+    {
+        foreach (var type in types)
         {
-            if (function.SourceName == functionName)
+            if (customCompare != null && customCompare(type, typeName))
             {
-                return function;
+                return type;
+            }
+            
+            if (type.SourceName == typeName
+                || (type.SourceName.Length == typeName.Length 
+                    && type.SourceName.Contains(typeName, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return type;
             }
         }
 

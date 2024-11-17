@@ -7,7 +7,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public WeakObjectPropertyTranslator() : base(typeof(UhtWeakObjectPtrProperty), "WeakObject")
+    public WeakObjectPropertyTranslator() : base(typeof(UhtWeakObjectPtrProperty), "TWeakObjectPtr")
     {
     }
     
@@ -18,13 +18,6 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
         UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
         string fullName = weakObjectProperty.Class.GetFullManagedName();
         return $"TWeakObjectPtr<{fullName}>";
-    }
-
-    public override void GetReferences(UhtProperty property, List<UhtType> references)
-    {
-        base.GetReferences(property, references);
-        UhtWeakObjectPtrProperty weakObjectProperty = (UhtWeakObjectPtrProperty)property;
-        references.Add(weakObjectProperty.Class);
     }
 
     public override bool CanExport(UhtProperty property)

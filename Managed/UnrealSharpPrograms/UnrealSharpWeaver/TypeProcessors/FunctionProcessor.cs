@@ -279,7 +279,7 @@ public static class FunctionProcessor
         methodDef.Body = new MethodBody(methodDef);
 
         bool staticNativeFunction = metadata.FunctionPointerField.IsStatic;
-        bool hasReturnValue = methodDef.ReturnType != WeaverHelper.VoidTypeRef;
+        bool hasReturnValue = !methodDef.ReturnsVoid();
         bool hasParams = methodDef.Parameters.Count > 0 || hasReturnValue;
 
         ILProcessor processor = methodDef.Body.GetILProcessor();

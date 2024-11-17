@@ -31,7 +31,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
                 continue;
             }
             
-            if (method.ReturnType != WeaverHelper.VoidTypeRef)
+            if (!method.ReturnsVoid())
             {
                 throw new Exception($"{delegateType.FullName} is exposed to Unreal Engine, and must have a void return type.");
             }
@@ -60,7 +60,8 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
     
     protected TypeReference GetWrapperType(TypeReference delegateType)
     {
-        return WeaverHelper.FindTypeInAssembly(delegateType.Module.Assembly, $"U{delegateType.Name}", delegateType.Namespace)!;
+        TypeDefinition delegateTypeDefinition = delegateType.Resolve();
+        return WeaverHelper.FindTypeInAssembly(delegateTypeDefinition.Module.Assembly, $"U{delegateType.Name}", delegateType.Namespace)!;
     }
     
 }

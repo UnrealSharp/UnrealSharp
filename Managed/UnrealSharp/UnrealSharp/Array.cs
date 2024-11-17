@@ -154,24 +154,42 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     }
 }
 
-public class ArrayMarshaller<T>(int length, IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
-    private readonly TArray<T>[] _wrappers = new TArray<T> [length];
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, UnrealSharpObject owner, TArray<T> obj)
+    private TArray<T>? _arrayWrapper;
+    
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IList<T> obj)
     {
-        throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
+        unsafe
+        {
+            UnmanagedArray* mirror = (UnmanagedArray*)nativeBuffer;
+            if (mirror->ArrayNum == obj.Count)
+            {
+                for (int i = 0; i < obj.Count; ++i)
+                {
+                    toNative(mirror->Data, i, obj[i]);
+                }
+            }
+            else
+            {
+                FArrayPropertyExporter.CallResizeArray(nativeProperty, mirror, obj.Count);
+                for (int i = 0; i < obj.Count; ++i)
+                {
+                    toNative(mirror->Data, i, obj[i]);
+                }
+            }
+        }
     }
 
     public TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_wrappers[arrayIndex] == null)
+        if (_arrayWrapper == null)
         {
             unsafe
             {
-                _wrappers[arrayIndex] = new TArray<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
+                _arrayWrapper = new TArray<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
             }
         }
-        return _wrappers[arrayIndex];
+        return _arrayWrapper;
     }
 }

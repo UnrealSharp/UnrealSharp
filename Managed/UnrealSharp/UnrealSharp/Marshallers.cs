@@ -59,8 +59,32 @@ public static class BoolMarshaller
     }
 }
 
+public static class BitfieldBoolMarshaller
+{
+    private const int BoolSize = sizeof(NativeBool);
+    public static void ToNative(IntPtr valuePtr, byte fieldMask, bool value)
+    {
+        unsafe
+        {
+            var byteValue = (byte*)valuePtr;
+            var mask = value ? fieldMask : byte.MinValue;
+            *byteValue = (byte)((*byteValue & ~fieldMask) | mask);
+        }
+    }
+
+    public static bool FromNative(IntPtr valuePtr, byte fieldMask)
+    {
+        unsafe
+        {
+            var byteValue = (byte*)valuePtr;
+            return (*byteValue & fieldMask) != 0;
+        }
+    }
+        
+}
+
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
-{ 
+{
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;

@@ -182,4 +182,22 @@ public class GeneratorStringBuilder : IDisposable
         AppendLine($"{accessSpecifier} {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier}{interfacesDeclaration}");
         OpenBrace();
     }
+    
+    public void AppendStackAlloc(string sizeVariableName)
+    {
+        AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{sizeVariableName}];");
+        AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
+    }
+
+    public void AppendStackAllocFunction(string sizeVariableName, string structName)
+    {
+        AppendStackAlloc(sizeVariableName);
+        AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({structName}, ParamsBuffer);");
+    }
+
+    public void AppendStackAllocProperty(string sizeVariableName, string sourcePropertyName)
+    {
+        AppendStackAlloc(sizeVariableName);
+        AppendLine($"{ExporterCallbacks.FPropertyCallbacks}.CallInitializeValue({sourcePropertyName}, ParamsBuffer);");
+    }
 }

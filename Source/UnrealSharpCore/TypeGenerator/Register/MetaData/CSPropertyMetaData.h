@@ -15,8 +15,6 @@ struct FCSPropertyMetaData : FCSMemberMetaData
 	FString BlueprintSetter;
 	FString BlueprintGetter;
 
-	bool IsArray = false;
-
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	//End of implementation

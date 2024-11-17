@@ -121,7 +121,7 @@ public static class NameMapper
         string packageShortName = "";
         if (outer is UhtPackage package)
         {
-            packageShortName = package.ShortName;
+            packageShortName = package.GetShortName();
         }
         else
         {
@@ -129,9 +129,10 @@ public static class NameMapper
             {
                 outer = outer.Outer;
             
-                if (outer is UhtHeaderFile header)
+                if (outer is UhtPackage header)
                 {
-                    packageShortName = header.Package.ShortName;
+                    packageShortName = header.Package.GetShortName();
+                    break;
                 }
             }
         }
@@ -257,7 +258,6 @@ public static class NameMapper
             if (inName.Length - nameOffset >= 2 && inName[nameOffset] == 'b' && char.IsUpper(inName[nameOffset + 1]))
             {
                 nameOffset += 1;
-                
                 continue;
             }
 
@@ -275,7 +275,7 @@ public static class NameMapper
     
     public static string EscapeKeywords(string name)
     {
-        return IsAKeyword(name) ? $"_{name}" : name;
+        return IsAKeyword(name) || char.IsDigit(name[0]) ? $"_{name}" : name;
     }
     
     private static bool IsAKeyword(string name)

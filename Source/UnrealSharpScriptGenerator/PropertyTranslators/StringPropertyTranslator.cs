@@ -9,6 +9,8 @@ public class StringPropertyTranslator : PropertyTranslator
     public StringPropertyTranslator() : base(EPropertyUsageFlags.Any)
     {
     }
+    
+    public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)
     {
@@ -35,23 +37,10 @@ public class StringPropertyTranslator : PropertyTranslator
         return "\"\"";
     }
 
-    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
-        builder.AppendLine($"{nativePropertyName}_NativeProperty = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{property.EngineName}\");");
-    }
-
     public override void ExportFunctionReturnStatement(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName,
         string functionName, string paramsCallString)
     {
         builder.AppendLine($"return {ExporterCallbacks.FStringCallbacks}.CallConvertTCHARToUTF8(Invoke_{functionName}(NativeObject, {functionName}_NativeFunction{paramsCallString}));");
-    }
-
-    public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property,
-        string PropertyEngineName)
-    {
-        base.ExportPropertyVariables(builder, property, PropertyEngineName);
-        builder.AppendLine($"static readonly IntPtr {PropertyEngineName}_NativeProperty;");
     }
 
     public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,

@@ -292,11 +292,6 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 				NewProperty->SetPropertyFlags(CPF_Net | CPF_RepNotify);
 			}
 		}
-
-		if (PropertyMetaData.IsArray)
-		{
-			NewProperty->SetPropertyFlags(NewProperty->PropertyFlags | CPF_ReferenceParm | CPF_OutParm);
-		}
 		
 		FCSMetaDataUtils::ApplyMetaData(PropertyMetaData.MetaData, NewProperty);
 		

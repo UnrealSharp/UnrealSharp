@@ -3,19 +3,18 @@ using System.Runtime.Loader;
 
 namespace UnrealSharp.Plugins
 {
-    public class PluginLoadContext : AssemblyLoadContext
+    internal class PluginLoadContext : AssemblyLoadContext
     {
         private readonly AssemblyDependencyResolver _resolver;
         private readonly ICollection<string> _sharedAssemblies;
-        private readonly AssemblyLoadContext _mainLoadContext;
 
         public string? AssemblyLoadedPath { get; private set; }
 
-        public PluginLoadContext(string pluginPath, ICollection<string> sharedAssemblies, AssemblyLoadContext mainLoadContext, bool isCollectible) : base(isCollectible)
+        public PluginLoadContext(string pluginPath, ICollection<string> sharedAssemblies, bool isCollectible) : base(isCollectible)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
             _sharedAssemblies = sharedAssemblies;
-            _mainLoadContext = mainLoadContext;
+            AssemblyLoadedPath = pluginPath;
 
             if (!string.IsNullOrEmpty(AppContext.BaseDirectory))
             {
@@ -48,7 +47,14 @@ namespace UnrealSharp.Plugins
             
             if (_sharedAssemblies.Contains(assemblyName.Name))
             {
-                return _mainLoadContext.LoadFromAssemblyName(assemblyName);
+                return PluginsInfo.MainLoadContext.LoadFromAssemblyName(assemblyName);
+            }
+            
+            //check if assembly already loaded in another plugin
+            var loadedPlugin = PluginsInfo.LoadedPlugins.FirstOrDefault(x => x.AssemblyFullName == assemblyName.FullName);
+            if (loadedPlugin is not null)
+            {
+                return loadedPlugin.Assembly.TryGetTarget(out var pluginAssembly) ? pluginAssembly : null;
             }
 
             string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
@@ -57,8 +63,6 @@ namespace UnrealSharp.Plugins
             {
                 return default;
             }
-
-            AssemblyLoadedPath = assemblyPath;
             
             using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
@@ -76,12 +80,7 @@ namespace UnrealSharp.Plugins
         {
             string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
             
-            if (libraryPath != null)
-            {
-                return LoadUnmanagedDllFromPath(libraryPath);
-            }
-            
-            return IntPtr.Zero;
+            return libraryPath != null ? LoadUnmanagedDllFromPath(libraryPath) : IntPtr.Zero;
         }
     }
 }
