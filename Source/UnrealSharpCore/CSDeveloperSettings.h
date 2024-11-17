@@ -9,6 +9,8 @@ enum EAutomaticHotReloadMethod : uint8
 {
 	// Automatically Hot Reloads when script changes are saved
 	OnScriptSave,
+	// Automatically Hot Reloads when the built .NET modules changed (build the C# project in your IDE and UnrealSharp will automatically reload)
+	OnModuleChange,
 	// Wait for the Editor to gain focus before Hot Reloading
 	OnEditorFocus,
 	// Will not Hot Reload automatically

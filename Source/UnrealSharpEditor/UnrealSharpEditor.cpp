@@ -101,21 +101,31 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
+		FString NormalizedFileName = ChangedFile.Filename;
+		FPaths::NormalizeFilename(NormalizedFileName);
+		
 		// Skip ProjectGlue files
-		if (ChangedFile.Filename.Contains(TEXT("ProjectGlue")))
+		if (NormalizedFileName.Contains(TEXT("ProjectGlue")))
 		{
 			continue;
 		}
 		
 		// Skip generated files in bin and obj folders
-		if (ChangedFile.Filename.Contains(TEXT("\\bin\\")) || ChangedFile.Filename.Contains(TEXT("\\obj\\")))
+		if (NormalizedFileName.Contains(TEXT("/obj/")))
 		{
 			continue;
 		}
 
-		// Check if the file is a .cs file
-		FString Extension = FPaths::GetExtension(ChangedFile.Filename);
-		if (Extension != "cs")
+		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") && NormalizedFileName.Contains(TEXT("/bin/")))
+		{
+			// A module changed, initiate the reload and return
+			StartHotReload();
+			return;
+		}
+		
+		// Check if the file is a .cs file and not in the bin directory
+		FString Extension = FPaths::GetExtension(NormalizedFileName);
+		if (Extension != "cs" || NormalizedFileName.Contains(TEXT("/bin/")))
 		{
 			continue;
 		}
