@@ -66,6 +66,39 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 			return true;
 		}
 	}
+	else if (PinType.IsMap())
+	{
+		bool bChanged = false;
+		{
+			UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
+			if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
+			{
+				PinType.PinSubCategoryObject = *FoundStruct;
+				bChanged = true;
+			}
+		}
+		
+		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
+		if (UScriptStruct* Struct = Cast<UScriptStruct>(MapValueType))
+		{
+			if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
+			{
+				PinType.PinValueType.TerminalSubCategoryObject = *FoundStruct;
+				bChanged = true;
+			}
+		}
+
+		return bChanged;
+	}
+	else if (PinType.IsSet() || PinType.IsArray() && (PinType.PinCategory != UEdGraphSchema_K2::PC_Wildcard))
+	{
+		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
+		if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
+		{
+			PinType.PinSubCategoryObject = *FoundStruct;
+			return  true;
+		}
+	}
 	else if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Class
 		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_Object
 		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftObject
