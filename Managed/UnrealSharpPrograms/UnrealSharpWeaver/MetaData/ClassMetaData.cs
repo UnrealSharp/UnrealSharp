@@ -106,7 +106,7 @@ public class ClassMetaData : TypeReferenceMetadata
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method) || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
+            if (WeaverHelper.IsUFunction(method))
             {
                 if (isBlueprintOverride)
                 {
@@ -123,7 +123,7 @@ public class ClassMetaData : TypeReferenceMetadata
                 Functions.Add(functionMetaData);
             }
             
-            if (isBlueprintOverride || isInterfaceFunction)
+            if (isBlueprintOverride || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
                 VirtualFunctions.Add(new FunctionMetaData(method));
             }
