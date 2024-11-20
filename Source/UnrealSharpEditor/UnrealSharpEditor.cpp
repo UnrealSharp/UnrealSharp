@@ -119,7 +119,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") && NormalizedFileName.Contains(TEXT("/bin/")))
 		{
 			// A module changed, initiate the reload and return
-			StartHotReload();
+			StartHotReload(false);
 			return;
 		}
 		
