@@ -3,6 +3,7 @@
 #include "BlueprintCompilationManager.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
+#include "K2Node_FunctionTerminator.h"
 #include "K2Node_StructOperation.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
@@ -283,6 +284,12 @@ void FCSReinstancer::UpdateInheritance(UBlueprint* Blueprint, bool& RefNeedsNode
 			InterfaceDescription.Interface = *NewInterface;
 			RefNeedsNodeReconstruction = true;
 		}
+		
+		if (UClass* const* NewInterface = ClassesToReinstance.Find(InterfaceDescription.Interface))
+		{
+			InterfaceDescription.Interface = *NewInterface;
+			RefNeedsNodeReconstruction = true;
+		}
 	}
 }
 
@@ -357,6 +364,21 @@ void FCSReinstancer::UpdateBlueprints()
 				{
 					Node_DynamicCast->TargetType = *FoundNewStructType;	
 					bNeedsNodeReconstruction = true;
+				}
+			}
+			else if (UK2Node_FunctionTerminator* FunctionTerminator = Cast<UK2Node_FunctionTerminator>(Node))
+			{
+				if (const UClass* CurrentClassType = FunctionTerminator->FunctionReference.GetMemberParentClass())
+				{
+					if (UClass* const * FoundNewClassType = ClassesToReinstance.Find(CurrentClassType))
+					{
+						FGuid MemberGuid;
+						UBlueprint::GetFunctionGuidFromClassByFieldName(*FoundNewClassType, FunctionTerminator->FunctionReference.GetMemberName(), MemberGuid); // there is not necessarily a guid
+						FMemberReference MemberReference;
+						MemberReference.SetDirect(FunctionTerminator->FunctionReference.GetMemberName(), MemberGuid, *FoundNewClassType, false);
+						FunctionTerminator->FunctionReference = MemberReference;
+						bNeedsNodeReconstruction = true;
+					}
 				}
 			}
 			
