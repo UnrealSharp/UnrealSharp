@@ -41,6 +41,7 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	while (FPlatformProcess::IsProcRunning(ProcHandle))
 	{
 		Output += FPlatformProcess::ReadPipe(ReadPipe);
+		FPlatformProcess::Sleep(0.1f);
 	}
 
 	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 
 namespace UnrealSharpBuildTool;
 
@@ -34,8 +35,19 @@ public class BuildToolProcess : Process
                 throw new Exception("Failed to start process");
             }
             WriteOutProcess();
-            
-            string output = StandardOutput.ReadToEnd();
+
+            https://learn.microsoft.com/de-de/dotnet/api/system.diagnostics.process.standardoutput?view=net-8.0
+            StringBuilder output = new();
+            this.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    output.AppendLine(args.Data);
+                }
+            };
+            // To avoid deadlocks, use an asynchronous read operation on at least one of the streams.
+            BeginOutputReadLine();
+
             string error = StandardError.ReadToEnd();
             
             WaitForExit();
