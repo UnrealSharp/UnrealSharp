@@ -14,8 +14,8 @@ public class DefaultComponentAnalyzer : DiagnosticAnalyzer
     
     public const string DefaultComponentAnalyzerId = "DefaultComponentAnalyzer";
     private static readonly LocalizableString DefaultComponentAnalyzerTitle = "UnrealSharp DefaultComponent Analyzer";
-    private static readonly LocalizableString DefaultComponentAnalyzerMessageFormat = "{0} is a DefaultComponent, which is not inherit from AActorComponent";
-    private static readonly LocalizableString DefaultComponentAnalyzerDescription = "Ensures property type marked as DefaultComponent inherits from AActorComponent.";
+    private static readonly LocalizableString DefaultComponentAnalyzerMessageFormat = "{0} is a DefaultComponent, which is not inherit from UActorComponent";
+    private static readonly LocalizableString DefaultComponentAnalyzerDescription = "Ensures property type marked as DefaultComponent inherits from UActorComponent.";
     private static readonly DiagnosticDescriptor DefaultComponentRule = new(DefaultComponentAnalyzerId, DefaultComponentAnalyzerTitle, DefaultComponentAnalyzerMessageFormat, RuleCategory.Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: DefaultComponentAnalyzerDescription);
 
     public const string DefaultComponentSetterAnalyzerId = "DefaultComponentSetterAnalyzer";

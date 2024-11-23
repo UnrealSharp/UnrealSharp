@@ -49,21 +49,21 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor UActorComponentCreationRule = new(
         id: "UActorComponentCreationAnalyzer", 
         title: "UnrealSharp UActorComponent creation Analyzer", 
-        messageFormat: "{0} is a UActorComponent, which should be created by calling the method <ActorComponent>.Construct()", 
+        messageFormat: "{0} is a UActorComponent, which should be created by calling the method AddComponentByClass<T>()", 
         RuleCategory.Category, 
         DiagnosticSeverity.Error, 
         isEnabledByDefault: true, 
-        description: "Ensures UActorComponent instantiated by using <ActorComponent>.Construct() method."
+        description: "Ensures UActorComponent instantiated by using AddComponentByClass<T>() method."
     );
     
     private static readonly DiagnosticDescriptor USceneComponentCreationRule = new(
         id: "USceneComponentCreationAnalyzer", 
         title: "UnrealSharp USceneComponent creation Analyzer", 
-        messageFormat: "{0} is a USceneComponent, which should be created by calling the method <SceneComponent>.Construct()", 
+        messageFormat: "{0} is a USceneComponent, which should be created by calling the method AddComponentByClass<T>()", 
         RuleCategory.Category, 
         DiagnosticSeverity.Error, 
         isEnabledByDefault: true, 
-        description: "Ensures USceneComponent instantiated by using <SceneComponent>.Construct() method."
+        description: "Ensures USceneComponent instantiated by using AddComponentByClass<T>() method."
     );
     
     public override void Initialize(AnalysisContext context)
