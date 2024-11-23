@@ -9,6 +9,7 @@
 #include "GameplayTagsSettings.h"
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
+#include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
 #include "Engine/AssetManager.h"
 #include "Engine/AssetManagerSettings.h"
@@ -100,21 +101,31 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
+		FString NormalizedFileName = ChangedFile.Filename;
+		FPaths::NormalizeFilename(NormalizedFileName);
+		
 		// Skip ProjectGlue files
-		if (ChangedFile.Filename.Contains(TEXT("ProjectGlue")))
+		if (NormalizedFileName.Contains(TEXT("ProjectGlue")))
 		{
 			continue;
 		}
 		
 		// Skip generated files in bin and obj folders
-		if (ChangedFile.Filename.Contains(TEXT("\\bin\\")) || ChangedFile.Filename.Contains(TEXT("\\obj\\")))
+		if (NormalizedFileName.Contains(TEXT("/obj/")))
 		{
 			continue;
 		}
 
-		// Check if the file is a .cs file
-		FString Extension = FPaths::GetExtension(ChangedFile.Filename);
-		if (Extension != "cs")
+		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") && NormalizedFileName.Contains(TEXT("/bin/")))
+		{
+			// A module changed, initiate the reload and return
+			StartHotReload(false);
+			return;
+		}
+		
+		// Check if the file is a .cs file and not in the bin directory
+		FString Extension = FPaths::GetExtension(NormalizedFileName);
+		if (Extension != "cs" || NormalizedFileName.Contains(TEXT("/bin/")))
 		{
 			continue;
 		}
@@ -133,7 +144,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	}
 }
 
-void FUnrealSharpEditorModule::StartHotReload()
+void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 {
 	TArray<FString> ProjectPaths;
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
@@ -146,14 +157,28 @@ void FUnrealSharpEditorModule::StartHotReload()
 
 	HotReloadStatus = Active;
 	
-	FScopedSlowTask Progress(2, LOCTEXT("HotReload", "Hot Reloading C#..."));
+	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Hot Reloading C#..."));
 	Progress.MakeDialog();
 
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (bRebuild)
 	{
-		HotReloadStatus = Inactive;
-		bHotReloadFailed = true;
-		return;
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Building C# Project..."));
+		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+		{
+			HotReloadStatus = Inactive;
+			bHotReloadFailed = true;
+			return;
+		}
+	}
+	else
+	{
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Weaving C# Project..."));
+		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_WEAVE))
+		{
+			HotReloadStatus = Inactive;
+			bHotReloadFailed = true;
+			return;
+		}
 	}
 	
 	UCSManager& CSharpManager = UCSManager::Get();
@@ -196,6 +221,11 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
 	Get().StartHotReload();
+}
+
+void FUnrealSharpEditorModule::OnReloadManagedCode()
+{
+	Get().StartHotReload(false);
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
@@ -331,6 +361,9 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	
 	MenuBuilder.AddMenuEntry(CSCommands.CompileManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.ReloadManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
 	
 	MenuBuilder.EndSection();
 
@@ -419,12 +452,17 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CreateNewProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().ReloadManagedCode, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSettings));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenDocumentation, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenDocumentation));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().ReportBug, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
+
+	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
+	const TSharedRef<FUICommandList> Commands = LevelEditorModule.GetGlobalLevelEditorActions();
+	Commands->Append(UnrealSharpCommands.ToSharedRef());
 }
 
 void FUnrealSharpEditorModule::RegisterMenu()
