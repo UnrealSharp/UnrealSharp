@@ -172,7 +172,9 @@ void FCSReinstancer::StartReinstancing()
 	ClassesToReinstance.Empty();
 	
 	FCoreUObjectDelegates::ReloadCompleteDelegate.Broadcast(EReloadCompleteReason::None);
-	Reload->Finalize(true);
+	
+	TGuardValue<bool> GuardIsInitialLoad(GIsInitialLoad, false);
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 void FCSReinstancer::PostReinstance()
