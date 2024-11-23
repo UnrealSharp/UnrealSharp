@@ -8,8 +8,11 @@ namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class UnrealTypeAnalyzer : DiagnosticAnalyzer
 {
-    private const string Category = "Naming";
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(PrefixRule, StructRule, ClassRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        PrefixRule, 
+        StructRule, 
+        ClassRule
+        );
 
     public override void Initialize(AnalysisContext context)
     {
@@ -19,7 +22,7 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
         context.RegisterSymbolAction(AnalyzeStructFields, SymbolKind.Property);
         context.RegisterSymbolAction(AnalyzeClassFields, SymbolKind.Field);
     }
-
+    
     public const string StructAnalyzerId = "StructFieldAnalyzer";
     public const string ClassAnalyzerId = "ClassFieldAnalyzer";
     private static readonly LocalizableString StructAnalyzerTitle = "UnrealSharp Struct Field Analyzer";
@@ -29,10 +32,10 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString StructAnalyzerDescription = "Ensures UProperties in structs are fields.";
     private static readonly LocalizableString ClassAnalyzerDescription = "Ensures UProperties in classes are properties.";
 
-    public static readonly DiagnosticDescriptor StructRule = new(StructAnalyzerId, StructAnalyzerTitle, StructAnalyzerMessageFormat, "Category", DiagnosticSeverity.Error, isEnabledByDefault: true, description: StructAnalyzerDescription);
-    public static readonly DiagnosticDescriptor ClassRule = new(ClassAnalyzerId, ClassAnalyzerTitle, ClassAnalyzerMessageFormat, "Category", DiagnosticSeverity.Error, isEnabledByDefault: true, description: ClassAnalyzerDescription);
+    private static readonly DiagnosticDescriptor StructRule = new(StructAnalyzerId, StructAnalyzerTitle, StructAnalyzerMessageFormat, RuleCategory.Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: StructAnalyzerDescription);
+    private static readonly DiagnosticDescriptor ClassRule = new(ClassAnalyzerId, ClassAnalyzerTitle, ClassAnalyzerMessageFormat, RuleCategory.Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: ClassAnalyzerDescription);
 
-    public static void AnalyzeFields(SymbolAnalysisContext context, TypeKind typeKind, string requiredAttribute, DiagnosticDescriptor rule)
+    private static void AnalyzeFields(SymbolAnalysisContext context, TypeKind typeKind, string requiredAttribute, DiagnosticDescriptor rule)
     {
         ISymbol symbol = context.Symbol;
         INamedTypeSymbol type = symbol.ContainingType;
@@ -48,11 +51,10 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
         }
 
         var diagnostic = Diagnostic.Create(rule, symbol.Locations[0], symbol.Name);
-        SyntaxNode node = symbol.DeclaringSyntaxReferences[0].GetSyntax();
         context.ReportDiagnostic(diagnostic);
     }
 
-    public static void AnalyzeStructFields(SymbolAnalysisContext context)
+    private static void AnalyzeStructFields(SymbolAnalysisContext context)
     {
         if (context.Symbol is IPropertySymbol)
         {
@@ -60,7 +62,7 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    public static void AnalyzeClassFields(SymbolAnalysisContext context)
+    private static void AnalyzeClassFields(SymbolAnalysisContext context)
     {
         if (context.Symbol is IFieldSymbol)
         {
@@ -72,7 +74,7 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
     private static readonly LocalizableString PrefixAnalyzerTitle = "UnrealSharp Prefix Analyzer";
     private static readonly LocalizableString PrefixAnalyzerMessageFormat = "{0} '{1}' is exposed to Unreal Engine and should have prefix '{2}'";
     private static readonly LocalizableString PrefixAnalyzerDescription = "Ensures types have appropriate prefixes.";
-    public static readonly DiagnosticDescriptor PrefixRule = new(PrefixAnalyzerId, PrefixAnalyzerTitle, PrefixAnalyzerMessageFormat, Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: PrefixAnalyzerDescription);
+    private static readonly DiagnosticDescriptor PrefixRule = new(PrefixAnalyzerId, PrefixAnalyzerTitle, PrefixAnalyzerMessageFormat, RuleCategory.Naming, DiagnosticSeverity.Error, isEnabledByDefault: true, description: PrefixAnalyzerDescription);
 
     private static void AnalyzeType(SymbolAnalysisContext context)
     {
