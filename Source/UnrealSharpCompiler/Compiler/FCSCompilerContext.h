@@ -16,7 +16,6 @@ public:
 	// IBlueprintCompiler interface
 	virtual bool CanCompile(const UBlueprint* Blueprint) override;
 	virtual void Compile(UBlueprint* Blueprint, const FKismetCompilerOptions& CompileOptions, FCompilerResultsLog& Results) override;
-	virtual bool GetBlueprintTypesForClass(UClass* ParentClass, UClass*& OutBlueprintClass, UClass*& OutBlueprintGeneratedClass) const override;
 	// End of IBlueprintCompiler interface
 	
 };

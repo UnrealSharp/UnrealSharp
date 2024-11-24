@@ -21,20 +21,6 @@ void FCSBlueprintCompiler::Compile(UBlueprint* Blueprint, const FKismetCompilerO
 	}
 }
 
-bool FCSBlueprintCompiler::GetBlueprintTypesForClass(UClass* ParentClass, UClass*& OutBlueprintClass, UClass*& OutBlueprintGeneratedClass) const
-{
-	UObject* ClassGeneratedBy = ParentClass->ClassGeneratedBy;
-	
-	if (ClassGeneratedBy->GetClass()->IsChildOf(UCSBlueprint::StaticClass()))
-	{
-		OutBlueprintClass = UCSBlueprint::StaticClass();
-		OutBlueprintGeneratedClass = UCSClass::StaticClass();
-		return true;
-	}
-
-	return false;
-}
-
 FCSBlueprintCompiler::FCSBlueprintCompiler()
 {
 }
