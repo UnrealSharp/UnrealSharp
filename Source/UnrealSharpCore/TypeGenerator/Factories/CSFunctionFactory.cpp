@@ -94,7 +94,6 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	
 	// Mark the function as Native as we want the "UClass::InvokeManagedEvent" to always be called on C# UFunctions.
 	Function->FunctionFlags |= FUNC_Native;
-
 	Function->StaticLink(true);
 	
 	if (Function->NumParms == 0)
@@ -146,21 +145,48 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>* OutFunctions)
 {
+	if (OutFunctions)
+	{
+		OutFunctions->Reserve(ClassMetaData->VirtualFunctions.Num());
+	}
+	
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
 
 	for (UFunction* VirtualFunction : VirtualFunctions)
 	{
-		CreateOverriddenFunction(Outer, VirtualFunction);
+		UCSFunctionBase* Function = CreateOverriddenFunction(Outer, VirtualFunction);
+
+		if (OutFunctions)
+		{
+			OutFunctions->Add(Function);
+		}
 	}
 }
 
-void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& Functions)
+void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& Functions, TArray<UCSFunctionBase*>* OutFunctions)
 {
+	if (OutFunctions)
+	{
+		OutFunctions->Reserve(Functions.Num());
+	}
+	
 	for (const FCSFunctionMetaData& FunctionMetaData : Functions)
 	{
-		CreateFunctionFromMetaData(Outer, FunctionMetaData);
+		UCSFunctionBase* Function = CreateFunctionFromMetaData(Outer, FunctionMetaData);
+
+		if (OutFunctions)
+		{
+			OutFunctions->Add(Function);
+		}
 	}
+}
+
+void FCSFunctionFactory::AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function)
+{
+	Function->Next = Outer->Children;
+	Outer->Children = Function;
+	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
 }

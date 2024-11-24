@@ -135,14 +135,11 @@ void FCSReinstancer::StartReinstancing()
 
 	NotifyChanges(InterfacesToReinstance);
 	NotifyChanges(StructsToReinstance);
-	NotifyChanges(ClassesToReinstance);
 
 	FBlueprintCompilationManager::ReparentHierarchies(InterfacesToReinstance);
-	FBlueprintCompilationManager::ReparentHierarchies(ClassesToReinstance);
 
 	// Before we reinstance, we want the BP to know about the new types
 	UpdateBlueprints();
-	
 	Reload->Reinstance();
 	PostReinstance();
 
@@ -165,11 +162,9 @@ void FCSReinstancer::StartReinstancing()
 
 	CleanOldTypes(InterfacesToReinstance, AssetRegistry);
 	CleanOldTypes(StructsToReinstance, AssetRegistry);
-	CleanOldTypes(ClassesToReinstance, AssetRegistry);
 
 	InterfacesToReinstance.Empty();
 	StructsToReinstance.Empty();
-	ClassesToReinstance.Empty();
 	
 	FCoreUObjectDelegates::ReloadCompleteDelegate.Broadcast(EReloadCompleteReason::None);
 	
@@ -179,14 +174,7 @@ void FCSReinstancer::StartReinstancing()
 
 void FCSReinstancer::PostReinstance()
 {
-	FBlueprintActionDatabase& ActionDB = FBlueprintActionDatabase::Get();
-	for (auto& Element : ClassesToReinstance)
-	{
-		ActionDB.ClearAssetActions(Element.Key);
-		ActionDB.RefreshClassActions(Element.Value);
-	}
-
-	for (auto& Struct : StructsToReinstance)
+	for (TTuple<UScriptStruct*, UScriptStruct*>& Struct : StructsToReinstance)
 	{
 		TArray<UDataTable*> Tables;
 		GetTablesDependentOnStruct(Struct.Key, Tables);
@@ -201,7 +189,7 @@ void FCSReinstancer::PostReinstance()
 		}
 	}
 	
-	for (const auto& StructToReinstancePair : StructsToReinstance)
+	for (const TTuple<UScriptStruct*, UScriptStruct*>& StructToReinstancePair : StructsToReinstance)
 	{
 		StructToReinstancePair.Key->ChildProperties = nullptr;
 		StructToReinstancePair.Key->ConditionalBeginDestroy();
@@ -387,7 +375,8 @@ void FCSReinstancer::UpdateBlueprints()
 			UpdateNodePinTypes(Node, bNeedsNodeReconstruction);
 		}
 
-		if (bNeedsNodeReconstruction)
+		if (bNeedsNodeReconstruction || (!FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass)
+				&& FCSGeneratedClassBuilder::GetFirstManagedClass(Blueprint->GeneratedClass) != nullptr))
 		{
 			ToUpdate.Add(Blueprint);
 		}

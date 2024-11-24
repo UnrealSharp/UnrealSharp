@@ -56,7 +56,8 @@ public class UnrealSharpCore : ModuleRules
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"UnrealEd", 
-				"EditorSubsystem", 
+				"EditorSubsystem",
+				"BlueprintGraph"
 			});
 			
 			PublishSolution(Path.Combine(_managedPath, "UnrealSharpPrograms"));

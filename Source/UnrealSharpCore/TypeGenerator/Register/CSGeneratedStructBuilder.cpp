@@ -10,7 +10,7 @@
 
 void FCSGeneratedStructBuilder::StartBuildingType()
 {
-	FCSPropertyFactory::GeneratePropertiesForType(Field, TypeMetaData->Properties);
+	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 	
 #if WITH_EDITOR
 	Field->EditorData = NewObject<UUserDefinedStructEditorData>(Field, NAME_None, RF_Transactional);

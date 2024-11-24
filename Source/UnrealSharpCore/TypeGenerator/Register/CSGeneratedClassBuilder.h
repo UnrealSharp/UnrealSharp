@@ -13,8 +13,8 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual void NewField(UCSClass* OldField, UCSClass* NewField) override;
 	virtual FString GetFieldName() const override;
+	virtual bool ReplaceTypeOnReload() const override { return false; }
 	// End of implementation
 	
 	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
@@ -31,6 +31,8 @@ private:
 	static void ActorComponentConstructor(const FObjectInitializer& ObjectInitializer);
 	static void ActorConstructor(const FObjectInitializer& ObjectInitializer);
 
+	static void SetupTick(UCSClass* ManagedClass);
+
 	static void InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass);
 	
 	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
@@ -38,6 +40,11 @@ private:
 		UClass* ActorClass,
 		UCSClass* FirstManagedClass,
 		const TSharedPtr<FCSharpClassInfo>& ClassInfo);
+	
+#if WITH_EDITOR
+	static void SetupDefaultSubobjectsEditor(UClass* ActorClass, const TSharedPtr<FCSharpClassInfo>& ClassInfo);
+	static void CompileClass(UBlueprint* Blueprint);
+#endif
 	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 };

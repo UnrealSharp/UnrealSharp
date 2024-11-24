@@ -75,7 +75,10 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 
 TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 {
-	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(Class->GetFName());
+	FString Name = Class->GetName();
+	Name.RemoveFromEnd(TEXT("_C"));
+	
+	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(*Name);
 
 	// Native classes are populated on the go as they are needed for managed code.
 	if (!FoundClassInfo.IsValid())

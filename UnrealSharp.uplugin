@@ -13,7 +13,13 @@
 	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
-	"Modules": [
+	"Modules": 
+	[
+		{
+			"Name": "UnrealSharpCompiler",
+			"Type": "Editor",
+			"LoadingPhase": "PreDefault"
+		},
 		{
 			"Name": "UnrealSharpCore",
 			"Type": "Runtime",
@@ -35,13 +41,11 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	"SupportedTargetPlatforms": 
-	[
+	"SupportedTargetPlatforms": [
 		"Win64",
 		"Mac"
 	],
-	"Plugins": 
-	[
+	"Plugins": [
 		{
 			"Name": "EnhancedInput",
 			"Enabled": true

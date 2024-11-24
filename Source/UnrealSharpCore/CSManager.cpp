@@ -4,7 +4,6 @@
 #include "UnrealSharpCore.h"
 #include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
@@ -90,9 +89,6 @@ void UCSManager::Initialize()
 	{
 		return;
 	}
-
-	// Initialize property factory before making the classes.
-	FCSPropertyFactory::InitializePropertyFactory();
 
 	// Try to load the user assembly, can be null when the project is first created.
 	LoadAllUserAssemblies();

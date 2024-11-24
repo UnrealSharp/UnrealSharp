@@ -37,7 +37,6 @@ void CSMetaDataFactory::Initialize()
 	REGISTER_METADATA(ECSPropertyType::Map, FCSMapPropertyMetaData)
 	
 	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
-
 }
 
 TSharedPtr<FCSUnrealType> CSMetaDataFactory::Create(const TSharedPtr<FJsonObject>& PropertyMetaData)

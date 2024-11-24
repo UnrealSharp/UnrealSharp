@@ -30,7 +30,7 @@ public class ClassMetaData : TypeReferenceMetadata
         AddConfigCategory();
         
         ParentClass = new TypeReferenceMetadata(type.BaseType.Resolve());
-        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.Native | ClassFlags.CompiledFromBlueprint;
+        ClassFlags |= GetClassFlags(type, AttributeName) | ClassFlags.CompiledFromBlueprint;
         
         // Force DefaultConfig if Config is set and no other config flag is set
         if (ClassFlags.HasFlag(ClassFlags.Config) &&

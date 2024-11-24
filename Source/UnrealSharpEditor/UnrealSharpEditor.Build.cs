@@ -34,7 +34,8 @@ public class UnrealSharpEditor : ModuleRules
                 "GameplayTags",
                 "DeveloperSettings",
                 "UnrealSharpBlueprint",
-                "Kismet"
+                "Kismet",
+                "KismetCompiler",
             }
         );
     }
