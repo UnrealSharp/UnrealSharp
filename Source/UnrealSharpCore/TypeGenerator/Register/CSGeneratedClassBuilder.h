@@ -24,6 +24,8 @@ public:
 	static UClass* GetFirstNonBlueprintClass(UClass* Class);
 
 	static bool IsManagedType(const UClass* Class);
+
+	static void CreateFunctions(UCSClass* ManagedClass, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>& OutFunctions);
 		
 private:
 	

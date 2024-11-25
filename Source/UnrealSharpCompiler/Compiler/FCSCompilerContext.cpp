@@ -35,19 +35,27 @@ void FCSCompilerContext::CreateFunctionList()
 	FKismetCompilerContext::CreateFunctionList();
 
 	UCSClass* ManagedClass = static_cast<UCSClass*>(Blueprint->GeneratedClass.Get());
-	UClass* SkeletonClass = Blueprint->SkeletonGeneratedClass;
-	
-	TSharedRef<FCSharpClassInfo> ClassMetaDataRef = ManagedClass->GetClassInfo();
-	TSharedRef<FCSClassMetaData> ClassMetaData = ClassMetaDataRef->TypeMetaData.ToSharedRef();
+	TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
 
 	TArray<UCSFunctionBase*> Functions;
-	FCSFunctionFactory::GenerateVirtualFunctions(ManagedClass, ClassMetaData, &Functions);
-	FCSFunctionFactory::GenerateFunctions(ManagedClass, ClassMetaData->Functions, &Functions);
+	FCSGeneratedClassBuilder::CreateFunctions(ManagedClass, ClassInfo->TypeMetaData.ToSharedRef(), Functions);
 
 	// Add them to the skeleton class so they show up in the blueprint editor
 	for (UCSFunctionBase* Function : Functions)
 	{
-		FCSFunctionFactory::AddFunctionToOuter(SkeletonClass, Function);
+		FCSFunctionFactory::AddFunctionToOuter(Blueprint->SkeletonGeneratedClass, Function);
+	}
+}
+
+void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& InOldCDO)
+{
+	FKismetCompilerContext::CleanAndSanitizeClass(ClassToClean, InOldCDO);
+
+	// Re-apply the class flags from the managed class, they are lost during the cleanup process
+	if (UCSClass* ManagedClass = Cast<UCSClass>(ClassToClean))
+	{
+		TSharedRef<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
+		ManagedClass->ClassFlags |= ClassInfo->TypeMetaData->ClassFlags;
 	}
 }
 

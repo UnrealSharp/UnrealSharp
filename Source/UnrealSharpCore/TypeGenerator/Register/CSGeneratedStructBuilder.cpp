@@ -29,7 +29,7 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 }
 
-void FCSGeneratedStructBuilder::NewField(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
+void FCSGeneratedStructBuilder::OnFieldReplaced(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
 {
 	OldField->StructFlags = static_cast<EStructFlags>(OldField->StructFlags | STRUCT_NewerVersionExists);
 	NewField->Guid = OldField->Guid;

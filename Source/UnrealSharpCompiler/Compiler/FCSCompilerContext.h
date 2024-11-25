@@ -28,6 +28,7 @@ public:
 
 	// FKismetCompilerContext interface
 	virtual void CreateFunctionList() override;
+	virtual void CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& OldCDO) override;
 	// End of FKismetCompilerContext interface
 
 protected:

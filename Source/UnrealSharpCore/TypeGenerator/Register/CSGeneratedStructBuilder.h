@@ -12,6 +12,6 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual void NewField(UCSScriptStruct* OldField, UCSScriptStruct* NewField) override;
+	virtual void OnFieldReplaced(UCSScriptStruct* OldField, UCSScriptStruct* NewField) override;
 	// End of implementation
 };

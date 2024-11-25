@@ -61,6 +61,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 #endif
 
+#if !WITH_EDITOR
+	TArray<UCSFunctionBase*> Functions;
+	CreateFunctions(Field, TypeMetaData.ToSharedRef(), Functions);
+#endif
+
 	//Finalize class
 	if (Field->IsChildOf<AActor>())
 	{
@@ -139,6 +144,12 @@ void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& Object
 	
 	// Make the actual object in C#
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+}
+
+void FCSGeneratedClassBuilder::CreateFunctions(UCSClass* ManagedClass, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>& OutFunctions)
+{
+	FCSFunctionFactory::GenerateVirtualFunctions(ManagedClass, ClassMetaData, &OutFunctions);
+	FCSFunctionFactory::GenerateFunctions(ManagedClass, ClassMetaData->Functions, &OutFunctions);
 }
 
 void FCSGeneratedClassBuilder::SetupTick(UCSClass* ManagedClass)

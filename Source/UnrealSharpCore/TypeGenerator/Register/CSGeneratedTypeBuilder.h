@@ -53,7 +53,7 @@ public:
 
 		if (ExistingField)
 		{
-			NewField(ExistingField, Field);
+			OnFieldReplaced(ExistingField, Field);
 		}
 		
 		return Field;
@@ -61,7 +61,7 @@ public:
 
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
-	virtual void NewField(TField* OldField, TField* NewField) {};
+	virtual void OnFieldReplaced(TField* OldField, TField* NewField) {};
 	virtual FString GetFieldName() const { return *TypeMetaData->Name.ToString(); }
 	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
