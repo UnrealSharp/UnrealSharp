@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/UserDefinedStruct.h"
+#include "StructUtils/UserDefinedStruct.h"
 #include "CSScriptStruct.generated.h"
 
 UCLASS()
