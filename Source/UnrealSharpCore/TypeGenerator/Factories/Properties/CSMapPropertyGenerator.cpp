@@ -21,10 +21,3 @@ FProperty* UCSMapPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	NewProperty->ValueProp->Owner = NewProperty;
 	return NewProperty;
 }
-
-#if WITH_EDITOR
-void UCSMapPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType)
-{
-	PinType.ContainerType = EPinContainerType::Map;
-}
-#endif

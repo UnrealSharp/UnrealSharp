@@ -1,16 +1,18 @@
 ﻿#include "CSFunctionFactory.h"
 #include "CSPropertyFactory.h"
+#include "Properties/CSPropertyGenerator.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Functions/CSFunction_NoParams.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
+#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-	NewFunction->SetManagedMethod(FCSGeneratedClassBuilder::TryGetManagedFunction(Outer, Name));
+	NewFunction->SetManagedMethod(TryGetManagedFunction(Outer, Name));
 	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;
@@ -109,7 +111,7 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
 }
 
-void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
+void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
 {
 	TMap<FName, UFunction*> NameToFunctionMap;
 	TMap<FName, UFunction*> InterfaceFunctionMap;
@@ -145,43 +147,35 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>* OutFunctions)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<FCSClassMetaData>& ClassMetaData)
 {
-	if (OutFunctions)
-	{
-		OutFunctions->Reserve(ClassMetaData->VirtualFunctions.Num());
-	}
-	
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
 
 	for (UFunction* VirtualFunction : VirtualFunctions)
 	{
-		UCSFunctionBase* Function = CreateOverriddenFunction(Outer, VirtualFunction);
-
-		if (OutFunctions)
-		{
-			OutFunctions->Add(Function);
-		}
+		CreateOverriddenFunction(Outer, VirtualFunction);
 	}
 }
 
-void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& Functions, TArray<UCSFunctionBase*>* OutFunctions)
+void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData)
 {
-	if (OutFunctions)
+	for (const FCSFunctionMetaData& FunctionMetaData : FunctionsMetaData)
 	{
-		OutFunctions->Reserve(Functions.Num());
+		CreateFunctionFromMetaData(Outer, FunctionMetaData);
+	}
+}
+
+void* FCSFunctionFactory::TryGetManagedFunction(UClass* Outer, const FName& MethodName)
+{
+	UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Outer);
+	if (!IsValid(ManagedClass))
+	{
+		return nullptr;
 	}
 	
-	for (const FCSFunctionMetaData& FunctionMetaData : Functions)
-	{
-		UCSFunctionBase* Function = CreateFunctionFromMetaData(Outer, FunctionMetaData);
-
-		if (OutFunctions)
-		{
-			OutFunctions->Add(Function);
-		}
-	}
+	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
+	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ManagedClass->GetClassInfo()->TypeHandle, *InvokeMethodName);
 }
 
 void FCSFunctionFactory::AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function)

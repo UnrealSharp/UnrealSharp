@@ -11,10 +11,3 @@ FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	ArrayProperty->ElementProp->Owner = ArrayProperty;
 	return ArrayProperty;
 }
-
-#if WITH_EDITOR
-void UCSSetPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType)
-{
-	PinType.ContainerType = EPinContainerType::Set;
-}
-#endif

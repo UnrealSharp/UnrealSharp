@@ -16,11 +16,6 @@
 	"Modules": 
 	[
 		{
-			"Name": "UnrealSharpCompiler",
-			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
-		},
-		{
 			"Name": "UnrealSharpCore",
 			"Type": "Runtime",
 			"LoadingPhase": "PreDefault"

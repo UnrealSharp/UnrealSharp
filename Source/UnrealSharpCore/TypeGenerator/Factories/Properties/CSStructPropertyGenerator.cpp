@@ -10,17 +10,3 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	ensureAlways(StructProperty->Struct);
 	return StructProperty;
 }
-
-#if WITH_EDITOR
-void UCSStructPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData,
-	FEdGraphPinType& PinType)
-{
-	PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
-}
-
-UObject* UCSStructPropertyGenerator::GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const
-{
-	TSharedPtr<FCSStructPropertyMetaData> StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSStructPropertyMetaData>();
-	return FCSTypeRegistry::GetStructFromName(StructPropertyMetaData->TypeRef.Name);
-}
-#endif

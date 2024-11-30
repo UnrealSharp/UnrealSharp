@@ -13,11 +13,10 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual FString GetFieldName() const override;
+	virtual FName GetFieldName() const override;
 	virtual bool ReplaceTypeOnReload() const override { return false; }
+	virtual UCSClass* CreateField(UPackage* Package, FName FieldName) override;
 	// End of implementation
-	
-	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
 
 	static UCSClass* GetFirstManagedClass(UClass* Class);
 	static UClass* GetFirstNativeClass(UClass* Class);
@@ -25,28 +24,12 @@ public:
 
 	static bool IsManagedType(const UClass* Class);
 
-	static void CreateFunctions(UCSClass* ManagedClass, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>& OutFunctions);
-		
 private:
 	
-	static void ObjectConstructor(const FObjectInitializer& ObjectInitializer);
-	static void ActorComponentConstructor(const FObjectInitializer& ObjectInitializer);
-	static void ActorConstructor(const FObjectInitializer& ObjectInitializer);
-
+	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
 	static void SetupTick(UCSClass* ManagedClass);
-
-	static void InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass);
-	
-	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
-		AActor* Actor,
-		UClass* ActorClass,
-		UCSClass* FirstManagedClass,
-		const TSharedPtr<FCSharpClassInfo>& ClassInfo);
-	
-#if WITH_EDITOR
-	static void SetupDefaultSubobjectsEditor(UClass* ActorClass, const TSharedPtr<FCSharpClassInfo>& ClassInfo);
-	static void CompileClass(UBlueprint* Blueprint);
-#endif
-	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
+
+	void SetupDefaultSubobjects(const TSharedPtr<FCSharpClassInfo>& ClassInfo);
+	USCS_Node* CreateNode(UClass* NewComponentClass, FName NewComponentVariableName);
 };

@@ -15,4 +15,6 @@ struct FCSFunctionMetaData : FCSMemberMetaData
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	//End of implementation
+
+	bool HasReturnValue() const { return ReturnValue.Type != nullptr; }
 };

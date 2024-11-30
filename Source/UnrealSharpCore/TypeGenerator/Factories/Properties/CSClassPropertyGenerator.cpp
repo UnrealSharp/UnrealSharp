@@ -13,16 +13,3 @@ FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 	NewProperty->SetMetaClass(Class);
 	return NewProperty;
 }
-
-#if WITH_EDITOR
-void UCSClassPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType)
-{
-	PinType.PinCategory = UEdGraphSchema_K2::PC_Class;
-}
-
-UObject* UCSClassPropertyGenerator::GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const
-{
-	TSharedPtr<FCSObjectMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSObjectMetaData>();
-	return FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
-}
-#endif

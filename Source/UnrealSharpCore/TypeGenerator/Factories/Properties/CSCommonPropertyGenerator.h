@@ -12,15 +12,7 @@ protected:
 	// Begin UCSPropertyGenerator interface
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const override;
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
-#if WITH_EDITOR
-	virtual void CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType) override;
-#endif
 	// End UCSPropertyGenerator interface
-
-	TMap<ECSPropertyType, FFieldClass*> TypeToFieldClass;
-
-#if WITH_EDITOR
-	TMap<ECSPropertyType, FName> PropertyTypeToPinCategory;
-#endif
 	
+	TMap<ECSPropertyType, FFieldClass*> TypeToFieldClass;
 };

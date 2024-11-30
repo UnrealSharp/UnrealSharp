@@ -16,8 +16,5 @@ public:
 
 	// Begin UCSPropertyGenerator interface
 	virtual auto CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) -> FProperty* override;
-#if WITH_EDITOR
-	virtual UObject* GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const override;
-#endif
 	// End UCSPropertyGenerator interface
 };

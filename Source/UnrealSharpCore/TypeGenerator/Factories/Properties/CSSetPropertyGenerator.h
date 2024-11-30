@@ -13,9 +13,5 @@ protected:
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Set; }
 	virtual FFieldClass* GetPropertyClass() override { return FSetProperty::StaticClass(); }
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
-
-#if WITH_EDITOR
-	virtual void CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType) override;
-#endif
 	// End UCSPropertyGenerator interface
 };

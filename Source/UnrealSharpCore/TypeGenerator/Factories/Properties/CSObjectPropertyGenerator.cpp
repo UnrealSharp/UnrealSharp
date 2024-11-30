@@ -10,17 +10,8 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::WeakObject, FWeakObjectProperty::StaticClass() },
 		{ ECSPropertyType::SoftObject, FSoftObjectProperty::StaticClass() },
 		{ ECSPropertyType::ObjectPtr, FObjectProperty::StaticClass() },
+		{ ECSPropertyType::DefaultComponent , FObjectProperty::StaticClass() }
 	};
-
-#if WITH_EDITOR
-	PropertyTypeToPinCategory =
-	{
-		{ ECSPropertyType::Object, UEdGraphSchema_K2::PC_Object },
-		{ ECSPropertyType::WeakObject, UEdGraphSchema_K2::PC_Object },
-		{ ECSPropertyType::SoftObject, UEdGraphSchema_K2::PC_SoftObject },
-		{ ECSPropertyType::ObjectPtr, UEdGraphSchema_K2::PC_Object },
-	};
-#endif
 }
 
 FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -42,10 +33,4 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	}
 	
 	return Property;
-}
-
-UObject* UCSObjectPropertyGenerator::GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const
-{
-	TSharedPtr<FCSObjectMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSObjectMetaData>();
-	return FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 }

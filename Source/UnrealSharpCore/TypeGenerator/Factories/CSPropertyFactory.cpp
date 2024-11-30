@@ -107,21 +107,4 @@ UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType 
 	return nullptr;
 }
 
-void FCSPropertyFactory::CreateAndAssignPropertiesEditor(UBlueprint* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData)
-{
-	Outer->NewVariables.Empty();
-	
-	for (const FCSPropertyMetaData& Property : PropertyMetaData)
-	{
-		UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(Property.Type->PropertyType);
-
-		if (!IsValid(PropertyGenerator))
-		{
-			continue;
-		}
-		
-		PropertyGenerator->CreatePropertyEditor(Outer, Property);
-	}
-}
-
 

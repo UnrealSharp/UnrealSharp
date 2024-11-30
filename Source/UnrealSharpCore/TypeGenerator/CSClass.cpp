@@ -1,6 +1,11 @@
 ﻿#include "CSClass.h"
 
-TSharedRef<FCSharpClassInfo> UCSClass::GetClassInfo() const
+TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
 {
-	return ClassMetaData.ToSharedRef();
+	if (!ClassMetaData.IsValid())
+	{
+		return nullptr;
+	}
+	
+	return ClassMetaData;
 }

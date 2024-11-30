@@ -16,7 +16,7 @@ class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass
 public:
 	friend FCSGeneratedClassBuilder;
 
-	TSharedRef<FCSharpClassInfo> GetClassInfo() const;
+	TSharedPtr<FCSharpClassInfo> GetClassInfo() const;
 
 private:
 

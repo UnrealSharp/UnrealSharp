@@ -10,11 +10,3 @@ FProperty* UCSArrayPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 	NewProperty->Inner->Owner = NewProperty;
 	return NewProperty;
 }
-
-#if WITH_EDITOR
-void UCSArrayPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData,
-	FEdGraphPinType& PinType)
-{
-	PinType.ContainerType = EPinContainerType::Array;
-}
-#endif

@@ -21,8 +21,8 @@ public:
 	TField* CreateType()
 	{
 		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
-		FString FieldName = GetFieldName();
-		TField* ExistingField = FindObject<TField>(Package, *FieldName);
+		FName FieldName = GetFieldName();
+		TField* ExistingField = FindObject<TField>(Package, *FieldName.ToString());
 		
 		if (ExistingField)
 		{
@@ -42,7 +42,7 @@ public:
 #endif
 		}
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), *FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
+		Field = CreateField(Package, FieldName);
 		
 		ApplyBlueprintAccess(Field);
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
@@ -62,8 +62,12 @@ public:
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
 	virtual void OnFieldReplaced(TField* OldField, TField* NewField) {};
-	virtual FString GetFieldName() const { return *TypeMetaData->Name.ToString(); }
+	virtual FName GetFieldName() const { return TypeMetaData->Name; }
 	virtual bool ReplaceTypeOnReload() const { return true; }
+	virtual TField* CreateField(UPackage* Package, const FName FieldName)
+	{
+		return NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
+	}
 	// End of interface
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)

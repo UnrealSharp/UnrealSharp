@@ -21,8 +21,6 @@ public:
 	static void CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData);
 	static UCSPropertyGenerator* FindPropertyGenerator(ECSPropertyType PropertyType);
 
-	static void CreateAndAssignPropertiesEditor(UBlueprint* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData);
-
 private:
 	static void TryInitializePropertyFactory();
 	static TArray<TWeakObjectPtr<UCSPropertyGenerator>> PropertyGenerators;

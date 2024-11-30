@@ -7,36 +7,26 @@
 #include "Engine/Blueprint.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/KismetEditorUtilities.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 #include "MetaData/CSDefaultComponentMetaData.h"
+#include "TypeGenerator/Factories/Properties/CSPropertyGenerator.h"
 
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
-	//Set the super class for this UClass.
-	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
+	Field->PurgeClass(false);
+
 	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
+	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
 
 #if WITH_EDITOR
-	UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
-	FString BlueprintName = TypeMetaData->Name.ToString();
-	UBlueprint* EditorBlueprint = FindObject<UBlueprint>(Package, *BlueprintName);
-	if (!IsValid(EditorBlueprint))
-	{
-		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-		constexpr EObjectFlags Flags = RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted;
-		EditorBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, Flags);
-	}
-	EditorBlueprint->GeneratedClass = Field;
+	UBlueprint* EditorBlueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	EditorBlueprint->ParentClass = SuperClass;
-	Field->ClassGeneratedBy = EditorBlueprint;
+	EditorBlueprint->SkeletonGeneratedClass = Field;
 #endif
 	
 	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
-
 	Field->SetSuperStruct(SuperClass);
 	Field->PropertyLink = SuperClass->PropertyLink;
 	Field->ClassWithin = SuperClass->ClassWithin;
@@ -51,36 +41,22 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		Field->ClassConfigName = TypeMetaData->ClassConfigName;
 	}
 	
-	//Implement all Blueprint interfaces declared
+	// Implement all Blueprint interfaces declared
 	ImplementInterfaces(Field, TypeMetaData->Interfaces);
 	
-	//Generate properties for this class
-#if WITH_EDITOR
-	FCSPropertyFactory::CreateAndAssignPropertiesEditor(EditorBlueprint, TypeMetaData->Properties);
-#else
+	// Generate properties for this class
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
-#endif
 
-#if !WITH_EDITOR
-	TArray<UCSFunctionBase*> Functions;
-	CreateFunctions(Field, TypeMetaData.ToSharedRef(), Functions);
-#endif
+	// Generate functions for this class
+	FCSFunctionFactory::GenerateVirtualFunctions(Field, TypeMetaData);
+	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 
 	//Finalize class
+	Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
+	
 	if (Field->IsChildOf<AActor>())
 	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
-#if WITH_EDITOR
-		SetupDefaultSubobjectsEditor(Field, Field->GetClassInfo());
-#endif
-	}
-	else if (Field->IsChildOf<UActorComponent>()) 
-	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorComponentConstructor;
-	}
-	else
-	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
+		SetupDefaultSubobjects(Field->GetClassInfo());
 	}
 	
 	Field->Bind();
@@ -90,10 +66,12 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	//Create the default object for this class
 	Field->GetDefaultObject();
 	
+	SetupTick(Field);
+	
 	Field->SetUpRuntimeReplicationData();
 	Field->UpdateCustomPropertyListForPostConstruction();
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
-
+	
 	if (Field->IsChildOf<UEngineSubsystem>()
 #if WITH_EDITOR
 	|| Field->IsChildOf<UEditorSubsystem>()
@@ -102,84 +80,19 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	{
 		FSubsystemCollectionBase::ActivateExternalSubsystem(Field);
 	}
-
-#if WITH_EDITOR
-	//Compile the blueprint
-	CompileClass(EditorBlueprint);
-#endif
 	
-	SetupTick(Field);
 }
 
-FString FCSGeneratedClassBuilder::GetFieldName() const
+FName FCSGeneratedClassBuilder::GetFieldName() const
 {
-	return FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+	return *FieldName;
 }
 
-void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
+void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
-	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
-	// Make the actual object in C#
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
-}
-
-void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitializer& ObjectInitializer)
-{
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
-	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
-	// Make the actual object in C#
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
-}
-
-void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& ObjectInitializer)
-{
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
-	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-	
-	// Make the actual object in C#
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
-}
-
-void FCSGeneratedClassBuilder::CreateFunctions(UCSClass* ManagedClass, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>& OutFunctions)
-{
-	FCSFunctionFactory::GenerateVirtualFunctions(ManagedClass, ClassMetaData, &OutFunctions);
-	FCSFunctionFactory::GenerateFunctions(ManagedClass, ClassMetaData->Functions, &OutFunctions);
-}
-
-void FCSGeneratedClassBuilder::SetupTick(UCSClass* ManagedClass)
-{
-	UObject* DefaultObject = ManagedClass->GetDefaultObject();
-	
-	if (AActor* Actor = Cast<AActor>(DefaultObject))
-	{
-		Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
-		Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-	}
-	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
-	{
-		ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
-		ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-	}
-}
-
-void FCSGeneratedClassBuilder::CompileClass(UBlueprint* Blueprint)
-{
-	FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
-	FKismetEditorUtilities::CompileBlueprint(Blueprint);
-	Blueprint->Modify();
-	Blueprint->PostEditChange();
-}
-
-void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass)
-{
-	ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
-	ClassInfo = ManagedClass->GetClassInfo().ToSharedPtr();
+	UCSClass* ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
+	TSharedPtr<FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
 	
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
@@ -200,93 +113,49 @@ void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInit
 		
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
+	
+	// Make the actual object in C#
+	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
-void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
-                                                      AActor* Actor,
-                                                      UClass* ActorClass,
-                                                      UCSClass* FirstManagedClass,
-                                                      const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+void FCSGeneratedClassBuilder::SetupTick(UCSClass* ManagedClass)
 {
-	if (UCSClass* ManagedClass = Cast<UCSClass>(FirstManagedClass->GetSuperClass()))
-	{
-		SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass, ManagedClass->GetClassInfo());
-	}
+	UObject* DefaultObject = ManagedClass->GetDefaultObject();
 	
-	TMap<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponents;
-	TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
-	
-	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
+	if (AActor* Actor = Cast<AActor>(DefaultObject))
 	{
-		if (PropertyMetaData.Type->PropertyType != ECSPropertyType::DefaultComponent)
-		{
-			continue;
-		}
-
-		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponent = StaticCastSharedPtr<FCSDefaultComponentMetaData>(PropertyMetaData.Type);
-		FObjectProperty* ObjectProperty = CastField<FObjectProperty>(ActorClass->FindPropertyByName(PropertyMetaData.Name));
-		
-		UObject* NewSubObject = ObjectInitializer.CreateDefaultSubobject(Actor, ObjectProperty->GetFName(), ObjectProperty->PropertyClass, ObjectProperty->PropertyClass, true, false);
-		ObjectProperty->SetObjectPropertyValue_InContainer(Actor, NewSubObject);
-		DefaultComponents.Add(ObjectProperty, DefaultComponent);
+		Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
+		Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	}
-
-	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>>& DefaultComponent : DefaultComponents)
+	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
 	{
-		FObjectProperty* Property = DefaultComponent.Key;
-		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
-		
-		USceneComponent* SceneComponent = Cast<USceneComponent>(Property->GetObjectPropertyValue_InContainer(Actor));
-		
-		if (!SceneComponent)
-		{
-			continue;
-		}
-
-		if (!Actor->GetRootComponent() && DefaultComponentMetaData->IsRootComponent)
-		{
-			Actor->SetRootComponent(SceneComponent);
-			continue;
-		}
-
-		FName AttachmentComponentName = DefaultComponentMetaData->AttachmentComponent;
-		FName AttachmentSocketName = DefaultComponentMetaData->AttachmentSocket;
-
-		if (FObjectProperty* ObjectProperty = FindFProperty<FObjectProperty>(Actor->GetClass(), *AttachmentComponentName.ToString(), EFieldIterationFlags::IncludeSuper))
-		{
-			USceneComponent* AttachmentComponent = Cast<USceneComponent>(ObjectProperty->GetObjectPropertyValue_InContainer(Actor));
-			if (IsValid(AttachmentComponent))
-			{
-				SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName);
-				continue;
-			}
-		}
-		
-		SceneComponent->SetupAttachment(Actor->GetRootComponent());
+		ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
+		ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
 	}
 }
 
-#if WITH_EDITOR
-void FCSGeneratedClassBuilder::SetupDefaultSubobjectsEditor(UClass* ActorClass, const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 {
-	UBlueprint* Blueprint = Cast<UBlueprint>(ActorClass->ClassGeneratedBy);
 	TMap<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponents;
 	TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 
-    if (Blueprint->SimpleConstructionScript == nullptr)
+	USimpleConstructionScript* ConstructionScript = Field->SimpleConstructionScript;
+	
+    if (ConstructionScript == nullptr)
     {
-        Blueprint->SimpleConstructionScript = NewObject<USimpleConstructionScript>(ActorClass);
-        Blueprint->SimpleConstructionScript->SetFlags(RF_Transactional);
+        ConstructionScript = NewObject<USimpleConstructionScript>(Field);
+        ConstructionScript->SetFlags(RF_Transactional);
+    	Field->SimpleConstructionScript = ConstructionScript;
     }
 	
-	const TArray<USCS_Node*>& ExistingNodes = Blueprint->SimpleConstructionScript->GetAllNodes();
+	const TArray<USCS_Node*>& ExistingNodes = ConstructionScript->GetAllNodes();
 
 	TMap<FName, USCS_Node*> NodeMap;
     for (USCS_Node* Node : ExistingNodes)
     {
         NodeMap.Add(Node->GetVariableName(), Node);
     }
-
+	
     for (const FCSPropertyMetaData& PropertyMetaData : Properties)
     {
         if (PropertyMetaData.Type->PropertyType != ECSPropertyType::DefaultComponent)
@@ -300,38 +169,26 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjectsEditor(UClass* ActorClass, 
         USCS_Node*& ExistingNode = NodeMap.FindOrAdd(PropertyMetaData.Name);
         if (!ExistingNode || ExistingNode->ComponentClass != PropertyClass)
         {
-            ExistingNode = Blueprint->SimpleConstructionScript->CreateNode(PropertyClass, PropertyMetaData.Name);
-            ExistingNode->ParentComponentOrVariableName = PropertyMetaData.Name;
+            ExistingNode = ConstructionScript->CreateNode(PropertyClass, PropertyMetaData.Name);
             ExistingNode->SetVariableName(PropertyMetaData.Name);
         }
     	
         if (DefaultComponent->AttachmentComponent != NAME_None)
         {
             USCS_Node* ParentNode = NodeMap.FindRef(DefaultComponent->AttachmentComponent);
-            if (!ParentNode)
+            if (!IsValid(ParentNode))
             {
-	            ParentNode = Blueprint->SimpleConstructionScript->GetAllNodes()[0];
+	            ParentNode = ConstructionScript->GetAllNodes()[0];
             	UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find parent node, attaching to root"));
             }
 
-        	auto TryRemoveFromOldParent = [ExistingNode, ExistingNodes, DefaultComponent]()
-        	{
-        		for (USCS_Node* Node : ExistingNodes)
-        		{
-        			const TArray<USCS_Node*>& ChildNodes = Node->GetChildNodes();
-        			for (int32 i = ChildNodes.Num() - 1; i >= 0; --i)
-        			{
-        				USCS_Node* ChildNode = ChildNodes[i];
-        				if (ChildNode == ExistingNode && Node->GetVariableName() != DefaultComponent->AttachmentComponent)
-        				{
-        					Node->RemoveChildNode(ChildNode);
-        					return;
-        				}
-        			}
-        		}
-        	};
-
-        	TryRemoveFromOldParent();
+        	// Try removing the node from its old parent, if the parent is different
+        	USCS_Node* OldParentNode = ConstructionScript->FindParentNode(ExistingNode);
+        	if (IsValid(OldParentNode) && OldParentNode->GetVariableName() != DefaultComponent->AttachmentComponent)
+			{
+        		OldParentNode->RemoveChildNode(ExistingNode);
+			}
+        	
             ParentNode->AddChildNode(ExistingNode);
         }
     }
@@ -340,10 +197,11 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjectsEditor(UClass* ActorClass, 
     {
         if (!ExistingNodes.Contains(It->Value))
         {
-            Blueprint->SimpleConstructionScript->AddNode(It->Value);
+            ConstructionScript->AddNode(It->Value);
         }
     }
-	
+
+#if WITH_EDITOR
     for (int32 i = ExistingNodes.Num() - 1; i >= 0; --i)
     {
         USCS_Node* Node = ExistingNodes[i];
@@ -360,11 +218,61 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjectsEditor(UClass* ActorClass, 
 
         if (bShouldBeRemoved)
         {
-            Blueprint->SimpleConstructionScript->RemoveNode(Node);
+            ConstructionScript->RemoveNode(Node);
         }
     }
-}
 #endif
+
+	FName DefaultSceneRoot = USceneComponent::GetDefaultSceneRootVariableName();
+	USCS_Node* RootNode = ConstructionScript->FindSCSNode(DefaultSceneRoot);
+	
+	if (NodeMap.IsEmpty())
+	{
+		if (!IsValid(RootNode))
+		{
+			RootNode = ConstructionScript->CreateNode(USceneComponent::StaticClass(), DefaultSceneRoot);
+			RootNode->SetVariableName(DefaultSceneRoot);
+		}
+	}
+	else if (IsValid(RootNode))
+	{
+		ConstructionScript->RemoveNode(RootNode);
+	}
+}
+
+USCS_Node* FCSGeneratedClassBuilder::CreateNode(UClass* NewComponentClass, FName NewComponentVariableName)
+{
+	UPackage* TransientPackage = GetTransientPackage();
+	UActorComponent* NewComponentTemplate = NewObject<UActorComponent>(TransientPackage, NewComponentClass, NAME_None, RF_ArchetypeObject | RF_Transactional | RF_Public);
+
+#if WITH_EDITOR
+	NewComponentTemplate->Modify();
+#endif
+
+	FString Name = NewComponentVariableName.ToString() + USimpleConstructionScript::ComponentTemplateNameSuffix;
+	UObject* Collision = FindObject<UObject>(Field, *Name);
+	while(Collision)
+	{
+		Collision->Rename(nullptr, GetTransientPackage(), REN_DoNotDirty | REN_DontCreateRedirectors);
+		Collision = FindObject<UObject>(Field, *Name);
+	}
+	
+	NewComponentTemplate->Rename(*Name, Field, REN_DoNotDirty | REN_DontCreateRedirectors);
+
+	FName NewComponentTemplateName = MakeUniqueObjectName(Field, NewComponentClass);
+	USCS_Node* NewNode = NewObject<USCS_Node>(Field->SimpleConstructionScript, NewComponentTemplateName);
+	NewNode->SetFlags(RF_Transactional);
+	NewNode->ComponentClass = NewComponentTemplate->GetClass();
+	NewNode->ComponentTemplate = NewComponentTemplate;
+	NewNode->SetVariableName(NewComponentVariableName, false);
+
+#if WITH_EDITOR
+	NewNode->CategoryName = NSLOCTEXT("SCS", "Default", "Default");
+	NewNode->VariableGuid = FGuid::NewGuid();
+#endif
+	
+	return NewNode;
+}
 
 void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces)
 {
@@ -378,29 +286,24 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 			continue;
 		}
 
-#if WITH_EDITOR
-		UBlueprint* Blueprint = static_cast<UBlueprint*>(ManagedClass->ClassGeneratedBy);
-		FBPInterfaceDescription InterfaceDescription;
-		InterfaceDescription.Interface = InterfaceClass;
-		Blueprint->ImplementedInterfaces.Add(InterfaceDescription);
-#else
 		FImplementedInterface ImplementedInterface;
 		ImplementedInterface.Class = InterfaceClass;
 		ImplementedInterface.bImplementedByK2 = false;
 		ImplementedInterface.PointerOffset = 0;
 		ManagedClass->Interfaces.Add(ImplementedInterface);
-#endif
 	}
 }
 
-void* FCSGeneratedClassBuilder::TryGetManagedFunction(UClass* Outer, const FName& MethodName)
+UCSClass* FCSGeneratedClassBuilder::CreateField(UPackage* Package, const FName FieldName)
 {
-	if (UCSClass* ManagedClass = GetFirstManagedClass(Outer))
-	{
-		const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
-		return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ManagedClass->GetClassInfo()->TypeHandle, *InvokeMethodName);
-	}
-	return nullptr;
+	constexpr EObjectFlags Flags = RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted;
+	UCSBlueprint* NewBP = NewObject<UCSBlueprint>(Package, UCSBlueprint::StaticClass(), TypeMetaData->Name, Flags);
+	UCSClass* Class = TCSGeneratedTypeBuilder::CreateField(Package, FieldName);
+#if WITH_EDITOR
+	Class->ClassGeneratedBy = NewBP;
+#endif
+	NewBP->GeneratedClass = Class;;
+	return Class;
 }
 
 UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)

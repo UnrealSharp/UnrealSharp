@@ -13,16 +13,3 @@ FProperty* UCSMulticastDelegatePropertyGenerator::CreateProperty(UField* Outer, 
 	NewProperty->SignatureFunction = SignatureFunction;
 	return NewProperty;
 }
-
-void UCSMulticastDelegatePropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData,
-	FEdGraphPinType& PinType)
-{
-	PinType.PinCategory = UEdGraphSchema_K2::PC_MCDelegate;
-}
-
-UObject* UCSMulticastDelegatePropertyGenerator::GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const
-{
-	UClass* Class = CastChecked<UClass>(Blueprint->GeneratedClass);
-	TSharedPtr<FCSDelegateMetaData> MulticastDelegateMetaData = PropertyMetaData.GetTypeMetaData<FCSDelegateMetaData>();
-	return FCSFunctionFactory::CreateFunctionFromMetaData(Class, MulticastDelegateMetaData->SignatureFunction);
-}

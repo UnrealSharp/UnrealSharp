@@ -15,28 +15,14 @@ protected:
 
 	virtual ECSPropertyType GetPropertyType() const;
 	virtual FFieldClass* GetPropertyClass();
-#if WITH_EDITOR
-	virtual void CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData, FEdGraphPinType& PinType);
-	virtual FName GetPinCategory(const FCSPropertyMetaData& PropertyMetaData) const;
-#endif
 
 	static bool CanBeHashed(const FProperty* InParam);
 
 	FProperty* NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, FFieldClass* FieldClass = nullptr);
 	
 public:
-
-#if WITH_EDITOR
-	virtual UObject* GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const;
-#endif
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
-	void CreatePropertyEditor(UBlueprint* Outer, const FCSPropertyMetaData& PropertyMetaData);
-
-	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const
-	{
-		ECSPropertyType PropertyType = GetPropertyType();
-		check(PropertyType != ECSPropertyType::Unknown);
-		return PropertyType == InPropertyType;
-	}
+	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
+	
 };

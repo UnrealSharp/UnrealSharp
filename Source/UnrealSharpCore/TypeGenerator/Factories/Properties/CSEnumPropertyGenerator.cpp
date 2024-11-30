@@ -16,15 +16,3 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	
 	return NewProperty;
 }
-
-void UCSEnumPropertyGenerator::CreatePinInfoEditor(const FCSPropertyMetaData& PropertyMetaData,
-	FEdGraphPinType& PinType)
-{
-	PinType.PinCategory = UEdGraphSchema_K2::PC_Byte;
-}
-
-UObject* UCSEnumPropertyGenerator::GetPinSubCategoryObject(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) const
-{
-	const TSharedPtr<FCSEnumPropertyMetaData> EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSEnumPropertyMetaData>();
-	return FCSTypeRegistry::GetEnumFromName(EnumPropertyMetaData->InnerProperty.Name);
-}
