@@ -70,6 +70,9 @@ public:
 	// Path to the current project's script directory
 	static FString& GetScriptFolderDirectory();
 
+	// Path to the current project's glue directory
+	static FString& GetProjectGlueFolderPath();
+
 	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();
 

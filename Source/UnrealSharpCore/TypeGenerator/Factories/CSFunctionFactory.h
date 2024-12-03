@@ -3,18 +3,23 @@
 #include "UnrealSharpCore/TypeGenerator/Functions/CSFunction.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 
+class UCSBlueprint;
 class UClass;
 
-class FCSFunctionFactory
+class UNREALSHARPCORE_API FCSFunctionFactory
 {
 public:
 	
 	static UCSFunctionBase* CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData);
 	static UCSFunctionBase* CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction);
 	
-	static void GetOverriddenFunctions(const UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions);
-	static void GenerateVirtualFunctions(UClass* Outer, const TSharedRef<FCSClassMetaData>& ClassMetaData);
-	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& Functions);
+	static void GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions);
+	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData);
+	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData);
+
+	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
+
+	static void AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function);
 
 	static UCSFunctionBase* CreateFunction(
 		UClass* Outer,

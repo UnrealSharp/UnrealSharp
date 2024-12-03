@@ -1,5 +1,4 @@
 ﻿#include "CSFunction_Params.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
 
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
@@ -37,7 +36,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			}
 
 			// Add any output parameters to the output params chain
-			if (FCSPropertyFactory::IsOutParameter(FunctionParameter))
+			if (IsOutParameter(FunctionParameter))
 			{
 				FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
 				Out->Property = FunctionParameter;
@@ -76,4 +75,12 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	{
 		Function->DestroyStruct(ArgumentBuffer);
 	}
+}
+
+bool UCSFunction_Params::IsOutParameter(const FProperty* InParam)
+{
+	const bool bIsParam = InParam->HasAnyPropertyFlags(CPF_Parm);
+	const bool bIsReturnParam = InParam->HasAnyPropertyFlags(CPF_ReturnParm);
+	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
+	return bIsParam && !bIsReturnParam && bIsOutParam;
 }

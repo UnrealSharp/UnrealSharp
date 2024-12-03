@@ -12,5 +12,6 @@ class UNREALSHARPCORE_API UCSFunction_Params : public UCSFunctionBase
 public:
 	
 	static void InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
+	static bool IsOutParameter(const FProperty* InParam);
 	
 };

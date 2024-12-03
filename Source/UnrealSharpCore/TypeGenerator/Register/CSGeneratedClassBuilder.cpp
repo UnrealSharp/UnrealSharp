@@ -1,6 +1,7 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSTypeRegistry.h"
+#include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
@@ -14,7 +15,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	//Set the super class for this UClass.
 	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
-	Field->ClassMetaData = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
+	Field->SetClassMetaData(FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name));
 
 #if WITH_EDITOR
 	UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
@@ -23,8 +24,9 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	if (!IsValid(DummyBlueprint))
 	{
 		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-		DummyBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone | RF_Transactional | RF_LoadCompleted);
+		DummyBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 	}
+	// Needed for the BP-callable functions to show up in the blueprint editor.
 	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
 	DummyBlueprint->Status = BS_UpToDate;
@@ -32,10 +34,17 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	DummyBlueprint->ParentClass = SuperClass;
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
-	
-	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
 
 	Field->SetSuperStruct(SuperClass);
+
+	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
+
+	// If this is a blueprint task, mark it as native, otherwise it will not be able to be used in the behavior tree.
+	if (Field->IsChildOf(UBTTask_BlueprintBase::StaticClass()))
+	{
+		Field->ClassFlags |= CLASS_Native;
+	}
+	
 	Field->PropertyLink = SuperClass->PropertyLink;
 	Field->ClassWithin = SuperClass->ClassWithin;
 	Field->ClassCastFlags = SuperClass->ClassCastFlags;
@@ -48,44 +57,40 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	{
 		Field->ClassConfigName = TypeMetaData->ClassConfigName;
 	}
-
-	//Implement all Blueprint interfaces declared
+	
+	// Implement all Blueprint interfaces declared
 	ImplementInterfaces(Field, TypeMetaData->Interfaces);
 	
-	//This will only generate functions flagged with BlueprintCallable, BlueprintEvent or virtual functions
-	const TSharedRef<FCSClassMetaData> ClassMetaDataRef = TypeMetaData.ToSharedRef();
-	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassMetaDataRef);
-	FCSFunctionFactory::GenerateFunctions(Field, ClassMetaDataRef->Functions);
-	
-	//Generate properties for this class
-	FCSPropertyFactory::GeneratePropertiesForType(Field, TypeMetaData->Properties);
+	// Generate properties for this class
+	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
+
+	// Generate functions for this class
+	FCSFunctionFactory::GenerateVirtualFunctions(Field, TypeMetaData);
+	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 
 	//Finalize class
 	if (Field->IsChildOf<AActor>())
 	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorConstructor;
-	}
-	else if (Field->IsChildOf<UActorComponent>()) 
-	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ActorComponentConstructor;
+		Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedActorConstructor;
 	}
 	else
 	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ObjectConstructor;
+		Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
 	}
-		
+	
 	Field->Bind();
 	Field->StaticLink(true);
 	Field->AssembleReferenceTokenStream();
 
 	//Create the default object for this class
-	Field->GetDefaultObject();
+	UObject* DefaultObject = Field->GetDefaultObject();
+	SetupDefaultTickSettings(DefaultObject);
 	
 	Field->SetUpRuntimeReplicationData();
 	Field->UpdateCustomPropertyListForPostConstruction();
-		
+	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
-
+	
 	if (Field->IsChildOf<UEngineSubsystem>()
 #if WITH_EDITOR
 	|| Field->IsChildOf<UEditorSubsystem>()
@@ -96,9 +101,16 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	}
 }
 
-void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
+FName FCSGeneratedClassBuilder::GetFieldName() const
 {
+	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+	return *FieldName;
+}
+
 #if WITH_EDITOR
+void FCSGeneratedClassBuilder::OnFieldReplaced(UCSClass* OldField, UCSClass* NewField)
+{
+
 	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
 	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
 	DummyBlueprint->SkeletonGeneratedClass = nullptr;
@@ -110,76 +122,48 @@ void FCSGeneratedClassBuilder::NewField(UCSClass* OldField, UCSClass* NewField)
 	// May be a better way? It works so far.
 	OldField->ClassGeneratedBy = nullptr;
 	OldField->bCooked = true;
-#endif
 
-	if (Field->IsChildOf<UEngineSubsystem>()
-	#if WITH_EDITOR
-	|| Field->IsChildOf<UEditorSubsystem>()
-	#endif
-	)
+	if (Field->IsChildOf<UEngineSubsystem>()|| Field->IsChildOf<UEditorSubsystem>())
 	{
 		FSubsystemCollectionBase::DeactivateExternalSubsystem(OldField);
 	}
 	
-	OldField->ClassFlags |= CLASS_NewerVersionExists;
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
 }
+#endif
 
-FString FCSGeneratedClassBuilder::GetFieldName() const
+void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	return FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
-}
-
-void FCSGeneratedClassBuilder::ObjectConstructor(const FObjectInitializer& ObjectInitializer)
-{
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
+	TSharedPtr<const FCSharpClassInfo> ClassInfo;
+	InitialSetup(ObjectInitializer, ManagedClass, ClassInfo);
 	
-	// Make the actual object in C#
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
-void FCSGeneratedClassBuilder::ActorComponentConstructor(const FObjectInitializer& ObjectInitializer)
+void FCSGeneratedClassBuilder::ManagedActorConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
 	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
-
-	UActorComponent* ActorComponent = static_cast<UActorComponent*>(ObjectInitializer.GetObj());
-	ActorComponent->PrimaryComponentTick.bCanEverTick = ManagedClass->bCanTick;
-	ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = ManagedClass->bCanTick;
-	
-	// Make the actual object in C#
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
-}
-
-void FCSGeneratedClassBuilder::ActorConstructor(const FObjectInitializer& ObjectInitializer)
-{
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
-	UCSClass* ManagedClass;
-	InitialSetup(ObjectInitializer, ClassInfo, ManagedClass);
+	TSharedPtr<const FCSharpClassInfo> ClassInfo;
+	InitialSetup(ObjectInitializer, ManagedClass, ClassInfo);
 
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
-	Actor->PrimaryActorTick.bCanEverTick = ManagedClass->bCanTick;
-	Actor->PrimaryActorTick.bStartWithTickEnabled = ManagedClass->bCanTick;
+	SetupDefaultSubobjects(ObjectInitializer, Actor, Actor->GetClass(), ManagedClass, ClassInfo);
 	
-	SetupDefaultSubobjects(ObjectInitializer, Actor, ObjectInitializer.GetClass(), ManagedClass, ClassInfo);
-	
-	// Make the actual object in C#
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
-void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInitializer, TSharedPtr<FCSharpClassInfo>& ClassInfo, UCSClass*& ManagedClass)
+void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInitializer, UCSClass*& OutManagedClass, TSharedPtr<const FCSharpClassInfo>& OutClassInfo)
 {
-	ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
-	ClassInfo = ManagedClass->GetClassInfo().ToSharedPtr();
+	OutManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
+	OutClassInfo = OutManagedClass->GetClassInfo();
 	
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
 	NativeClass->ClassConstructor(ObjectInitializer);
 
-	for (TFieldIterator<FProperty> PropertyIt(ManagedClass); PropertyIt; ++PropertyIt)
+	// Initialize properties that are not zero initialized such as FText.
+	for (TFieldIterator<FProperty> PropertyIt(OutManagedClass); PropertyIt; ++PropertyIt)
 	{
 		FProperty* Property = *PropertyIt;
 		if (!IsManagedType(Property->GetOwnerClass()))
@@ -196,11 +180,26 @@ void FCSGeneratedClassBuilder::InitialSetup(const FObjectInitializer& ObjectInit
 	}
 }
 
+
+void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject) const
+{
+	if (AActor* Actor = Cast<AActor>(DefaultObject))
+	{
+		Actor->PrimaryActorTick.bCanEverTick = Field->CanTick();
+		Actor->PrimaryActorTick.bStartWithTickEnabled = Field->CanTick();
+	}
+	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
+	{
+		ActorComponent->PrimaryComponentTick.bCanEverTick = Field->CanTick();
+		ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = Field->CanTick();
+	}
+}
+
 void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
                                                       AActor* Actor,
                                                       UClass* ActorClass,
                                                       UCSClass* FirstManagedClass,
-                                                      const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+                                                      const TSharedPtr<const FCSharpClassInfo>& ClassInfo)
 {
 	if (UCSClass* ManagedClass = Cast<UCSClass>(FirstManagedClass->GetSuperClass()))
 	{
@@ -225,7 +224,7 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		DefaultComponents.Add(ObjectProperty, DefaultComponent);
 	}
 
-	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>> DefaultComponent : DefaultComponents)
+	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>>& DefaultComponent : DefaultComponents)
 	{
 		FObjectProperty* Property = DefaultComponent.Key;
 		TSharedPtr<FCSDefaultComponentMetaData> DefaultComponentMetaData = DefaultComponent.Value;
@@ -249,9 +248,25 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		if (FObjectProperty* ObjectProperty = FindFProperty<FObjectProperty>(Actor->GetClass(), *AttachmentComponentName.ToString(), EFieldIterationFlags::IncludeSuper))
 		{
 			USceneComponent* AttachmentComponent = Cast<USceneComponent>(ObjectProperty->GetObjectPropertyValue_InContainer(Actor));
-			if (IsValid(AttachmentComponent))
+			
+			if (IsValid(AttachmentComponent) && AttachmentComponent != SceneComponent)
 			{
-				SceneComponent->SetupAttachment(AttachmentComponent, AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName);
+				FName Socket = AttachmentSocketName.IsNone() ? NAME_None : AttachmentSocketName;
+				
+				// Less great. BP somehow serialize the old attachment component even if we attach it to a new one, so we need to reattach it.
+				// This is a workaround for now until I have sanity to fix this properly.
+				{
+					UObject* Archetype = Actor->GetArchetype();
+					USceneComponent* Template = Cast<USceneComponent>(Archetype->GetDefaultSubobjectByName(DefaultComponent.Key->GetFName()));
+					USceneComponent* TemplateAttachmentComponent = Cast<USceneComponent>(Archetype->GetDefaultSubobjectByName(AttachmentComponentName));
+					
+					if (IsValid(Template) && IsValid(TemplateAttachmentComponent) && Template->GetAttachParent() != TemplateAttachmentComponent)
+					{
+						Template->SetupAttachment(TemplateAttachmentComponent, Socket);
+					}
+				}
+				
+				SceneComponent->SetupAttachment(AttachmentComponent, Socket);
 				continue;
 			}
 		}
@@ -266,7 +281,7 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 	{
 		UClass* InterfaceClass = FCSTypeRegistry::GetInterfaceFromName(InterfaceName);
 
-		if (!InterfaceClass)
+		if (!IsValid(InterfaceClass))
 		{
 			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceName.ToString());
 			continue;
@@ -276,19 +291,8 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 		ImplementedInterface.Class = InterfaceClass;
 		ImplementedInterface.bImplementedByK2 = false;
 		ImplementedInterface.PointerOffset = 0;
-
 		ManagedClass->Interfaces.Add(ImplementedInterface);
 	}
-}
-
-void* FCSGeneratedClassBuilder::TryGetManagedFunction(UClass* Outer, const FName& MethodName)
-{
-	if (UCSClass* ManagedClass = GetFirstManagedClass(Outer))
-	{
-		const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
-		return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ManagedClass->GetClassInfo()->TypeHandle, *InvokeMethodName);
-	}
-	return nullptr;
 }
 
 UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)

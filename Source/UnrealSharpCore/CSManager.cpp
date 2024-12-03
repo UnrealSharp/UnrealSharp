@@ -4,7 +4,6 @@
 #include "UnrealSharpCore.h"
 #include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "Logging/StructuredLog.h"
+#include "TypeGenerator/Factories/CSPropertyFactory.h"
 
 #ifdef _WIN32
 	#define PLATFORM_STRING(string) string
@@ -43,6 +43,11 @@ UCSManager& UCSManager::Get()
 	return *Instance;
 }
 
+void UCSManager::Shutdown()
+{
+	Instance = nullptr;
+}
+
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR
@@ -66,7 +71,7 @@ void UCSManager::Initialize()
 		return;
 	}
 
-	// Compile the C# project for any changes done outside of the editor.
+	// Compile the C# project for any changes done outside the editor.
 	if (!FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		Initialize();
@@ -91,8 +96,7 @@ void UCSManager::Initialize()
 		return;
 	}
 
-	// Initialize property factory before making the classes.
-	FCSPropertyFactory::InitializePropertyFactory();
+	FCSPropertyFactory::Initialize();
 
 	// Try to load the user assembly, can be null when the project is first created.
 	LoadAllUserAssemblies();
@@ -324,10 +328,10 @@ TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 	
 	LoadedPlugins.Add(*NewPlugin->GetAssemblyName(), NewPlugin);
 
-	// Change from ManagedProjectName.dll > ManagedProjectName.json
+	// Change from ManagedProjectName.dll > ManagedProjectName.metadata.json
 	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 
-	// Process the json file and register the types.
+	// Process the json file and register the types from the assembly.
 	if (!FCSTypeRegistry::Get().ProcessMetaData(MetadataPath))
 	{
 		return nullptr;

@@ -1,12 +1,9 @@
 #include "CSTypeRegistry.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
-#include "Interfaces/IPluginManager.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
 #include "TypeInfo/CSClassInfo.h"
-#include "UnrealSharpProcHelper/CSProcHelper.h"
-#include "UnrealSharpUtilities/UnrealSharpStatics.h"
 
 template<typename T>
 void InitializeBuilders(TMap<FName, T>& Map)
@@ -39,28 +36,28 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 		return false;
 	}
 	
-	for (const auto& MetaData : JsonObject->GetArrayField(TEXT("ClassMetaData")))
+	for (const TSharedPtr<FJsonValue>& MetaData : JsonObject->GetArrayField(TEXT("ClassMetaData")))
 	{
 		TSharedPtr<FCSharpClassInfo> ClassInfo = MakeShared<FCSharpClassInfo>(MetaData);
 		ManagedClasses.Add(ClassInfo->TypeMetaData->Name, ClassInfo);
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
-	for (const auto& MetaData : StructMetaData)
+	for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
 	{
 		TSharedPtr<FCSharpStructInfo> StructInfo = MakeShared<FCSharpStructInfo>(MetaData);
 		ManagedStructs.Add(StructInfo->TypeMetaData->Name, StructInfo);
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
-	for (const auto& MetaData : EnumMetaData)
+	for (const TSharedPtr<FJsonValue>& MetaData : EnumMetaData)
 	{
 		TSharedPtr<FCSharpEnumInfo> EnumInfo = MakeShared<FCSharpEnumInfo>(MetaData);
 		ManagedEnums.Add(EnumInfo->TypeMetaData->Name, EnumInfo);
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
-	for (const auto& MetaData : InterfacesMetaData)
+	for (const TSharedPtr<FJsonValue>& MetaData : InterfacesMetaData)
 	{
 		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = MakeShared<FCSharpInterfaceInfo>(MetaData);
 		ManagedInterfaces.Add(InterfaceInfo->TypeMetaData->Name, InterfaceInfo);
@@ -75,17 +72,20 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 
 TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 {
-	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(Class->GetFName());
+	FString Name = Class->GetName();
+	Name.RemoveFromEnd(TEXT("_C"));
+	
+	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(*Name);
 
 	// Native classes are populated on the go as they are needed for managed code.
 	if (!FoundClassInfo.IsValid())
 	{
 		FoundClassInfo = MakeShared<FCSharpClassInfo>();
 		
-		FoundClassInfo->TypeHandle = UCSManager::Get().GetTypeHandle(nullptr,
-			UUnrealSharpStatics::GetNamespace(Class),
-			Class->GetName());
-		FoundClassInfo->Field = Class;
+		// FoundClassInfo->TypeHandle = UCSManager::Get().GetTypeHandle(nullptr,
+		// 	FUnrealSharpUtils::GetNamespace(Class),
+		// 	Class->GetName());
+		// FoundClassInfo->Field = Class;
 
 		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
 	}

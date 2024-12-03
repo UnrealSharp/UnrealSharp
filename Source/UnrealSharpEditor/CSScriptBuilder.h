@@ -1,6 +1,6 @@
 #pragma once
 
-class FCSScriptBuilder
+class UNREALSHARPEDITOR_API FCSScriptBuilder
 {
 public:
 	enum class IndentType

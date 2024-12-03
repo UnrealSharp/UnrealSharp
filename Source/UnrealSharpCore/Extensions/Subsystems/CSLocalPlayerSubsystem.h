@@ -44,7 +44,10 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem
 		K2_PlayerControllerChanged(NewPlayerController);
 	}
 	// End
-	
+
+	UFUNCTION(meta = (ScriptMethod))
+	ULocalPlayer* K2_GetLocalPlayer() const;
+
 protected:
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "PlayerControllerChanged"), Category = "Managed Subsystems")

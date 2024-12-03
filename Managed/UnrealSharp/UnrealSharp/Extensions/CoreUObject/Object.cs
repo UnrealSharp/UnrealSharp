@@ -244,9 +244,9 @@ public partial class UObject
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T GetEditorSubsystem<T>() where T : EditorSubsystem.EditorSubsystem
+    public static T GetEditorSubsystem<T>() where T : EditorSubsystem.UEditorSubsystem
     {
-        var subsystemClass = new SubclassOf<T>(typeof(T));
+        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEditorExporter.CallGetEditorSubsystem(subsystemClass.NativeClass);
         return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }

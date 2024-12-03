@@ -72,6 +72,10 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
 	}
 	
 	// End
+	
+	/** Returns true if Initialize has been called but Deinitialize has not */
+	UFUNCTION(meta = (ScriptMethod))
+	bool GetIsInitialized() const;
 
 protected:
 

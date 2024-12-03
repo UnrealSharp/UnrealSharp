@@ -1,17 +1,17 @@
-﻿#include "UnrealSharpStatics.h"
+﻿#include "UnrealSharpUtils.h"
 
-FString UUnrealSharpStatics::GetNamespace(const UObject* Object)
+FString FUnrealSharpUtils::GetNamespace(const UObject* Object)
 {
 	FName PackageName = GetModuleName(Object);
 	return GetNamespace(PackageName);
 }
 
-FString UUnrealSharpStatics::GetNamespace(const FName PackageName)
+FString FUnrealSharpUtils::GetNamespace(const FName PackageName)
 {
 	return FString::Printf(TEXT("%s.%s"), TEXT("UnrealSharp"), *PackageName.ToString());
 }
 
-FName UUnrealSharpStatics::GetModuleName(const UObject* Object)
+FName FUnrealSharpUtils::GetModuleName(const UObject* Object)
 {
 	return FPackageName::GetShortFName(Object->GetPackage()->GetFName());
 }

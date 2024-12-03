@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "CSDeveloperSettings.h"
 #include "CSMetaDataUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/Class.h"
@@ -21,9 +22,10 @@ public:
 	TField* CreateType()
 	{
 		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
-		FString FieldName = GetFieldName();
-		TField* ExistingField = FindObject<TField>(Package, *FieldName);
-		
+		FName FieldName = GetFieldName();
+
+#if WITH_EDITOR
+		TField* ExistingField = FindObject<TField>(Package, *FieldName.ToString());
 		if (ExistingField)
 		{
 			if (!ReplaceTypeOnReload())
@@ -35,34 +37,36 @@ public:
 			const FString OldPath = ExistingField->GetPathName();
 			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
 			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
-
-#if WITH_EDITOR
+			
 			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
 			AssetRegistry.AssetRenamed(ExistingField, OldPath);
-#endif
+
 		}
+#endif
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), *FieldName, RF_Public | RF_MarkAsRootSet | RF_Transactional);
+		Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone | RF_MarkAsRootSet);
 		
-		ApplyBlueprintAccess(Field);
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
+		
+		ApplyBlueprintAccess();
+		ApplyDisplayName();
 
 #if WITH_EDITOR
-		Field->SetMetaData(TEXT("DisplayName"), *TypeMetaData->Name.ToString());
-#endif
-
 		if (ExistingField)
 		{
-			NewField(ExistingField, Field);
+			OnFieldReplaced(ExistingField, Field);
 		}
+#endif
 		
 		return Field;
 	}
 
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
-	virtual void NewField(TField* OldField, TField* NewField) {};
-	virtual FString GetFieldName() const { return *TypeMetaData->Name.ToString(); }
+#if WITH_EDITOR
+	virtual void OnFieldReplaced(TField* OldField, TField* NewField) {};
+#endif
+	virtual FName GetFieldName() const { return TypeMetaData->Name; }
 	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
 
@@ -81,18 +85,35 @@ public:
 
 protected:
 	
-	TSharedPtr<TMetaData> TypeMetaData;
+	TSharedPtr<const TMetaData> TypeMetaData;
 	TField* Field;
 
 private:
 	
-	static void ApplyBlueprintAccess(UField* Field)
+	void ApplyBlueprintAccess()
 	{
 #if WITH_EDITOR
 		Field->SetMetaData(TEXT("BlueprintType"), TEXT("true"));
 		Field->SetMetaData(TEXT("IsBlueprintBase"), TEXT("true"));
 #endif
 	}
-	
+
+	void ApplyDisplayName()
+	{
+#if WITH_EDITOR
+		static FString DisplayNameKey = TEXT("DisplayName");
+		if (!Field->HasMetaData(*DisplayNameKey))
+		{
+			Field->SetMetaData(*DisplayNameKey, *TypeMetaData->Name.ToString());
+		}
+		
+		if (GetDefault<UCSDeveloperSettings>()->bSuffixGeneratedTypes)
+		{
+			FString DisplayName = Field->GetMetaData(*DisplayNameKey);
+			DisplayName += TEXT(" (C#)");
+			Field->SetMetaData(*DisplayNameKey, *DisplayName);
+		}
+#endif
+	}
 };
 

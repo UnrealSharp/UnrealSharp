@@ -13,7 +13,7 @@ struct UNREALSHARPCORE_API TCSharpTypeInfo
 
 	TCSharpTypeInfo() : Field(nullptr) {}
 	
-	// The meta data for this type (properties, functions et.c.)
+	// The metadata for this type (properties, functions et.c.)
 	TSharedPtr<TMetaData> TypeMetaData;
 
 	// Pointer to the field of this type

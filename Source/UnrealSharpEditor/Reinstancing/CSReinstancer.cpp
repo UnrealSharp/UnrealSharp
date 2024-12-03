@@ -1,14 +1,18 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
+#include "BlueprintEditorLibrary.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
+#include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+#include "Kismet2/KismetReinstanceUtilities.h"
 #include "Kismet2/ReloadUtilities.h"
+#include "Serialization/ArchiveReplaceObjectRef.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -55,13 +59,13 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
 		
-		if (!Enum)
+		if (!Enum || Enum->GetOutermost() != UCSManager::Get().GetUnrealSharpPackage())
 		{
 			return false;
 		}
 
 		// Enums are not reinstanced, so we need to check if the enum is still valid
-		if (FCSTypeRegistry::Get().GetEnumFromName(Enum->GetFName()))
+		if (FCSTypeRegistry::GetEnumFromName(Enum->GetFName()))
 		{
 			PinType.PinSubCategoryObject = Enum;
 			return true;
@@ -118,7 +122,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 void FCSReinstancer::StartReinstancing()
 {
 	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
-	Reload->SetSendReloadCompleteNotification(false);
+	Reload->SetSendReloadCompleteNotification(true);
 
 	auto NotifyChanges = [&Reload](const auto& Container)
 	{
@@ -137,18 +141,11 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(StructsToReinstance);
 	NotifyChanges(ClassesToReinstance);
 
-	FBlueprintCompilationManager::ReparentHierarchies(InterfacesToReinstance);
-	FBlueprintCompilationManager::ReparentHierarchies(ClassesToReinstance);
-
-	// Before we reinstance, we want the BP to know about the new types
 	UpdateBlueprints();
-	
 	Reload->Reinstance();
 	PostReinstance();
 
-	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
-	
-	auto CleanOldTypes = [](const auto& Container, IAssetRegistry& AssetRegistry)
+	auto CleanOldTypes = [](auto& Container)
 	{
 		for (const auto& [Old, New] : Container)
 		{
@@ -156,37 +153,23 @@ void FCSReinstancer::StartReinstancing()
 			{
 				continue;
 			}
-
-			AssetRegistry.AssetDeleted(Old);
+			
 			Old->SetFlags(RF_NewerVersionExists);
 			Old->RemoveFromRoot();
 		}
+
+		Container.Empty();
 	};
-
-	CleanOldTypes(InterfacesToReinstance, AssetRegistry);
-	CleanOldTypes(StructsToReinstance, AssetRegistry);
-	CleanOldTypes(ClassesToReinstance, AssetRegistry);
-
-	InterfacesToReinstance.Empty();
-	StructsToReinstance.Empty();
-	ClassesToReinstance.Empty();
 	
-	FCoreUObjectDelegates::ReloadCompleteDelegate.Broadcast(EReloadCompleteReason::None);
-	
-	TGuardValue<bool> GuardIsInitialLoad(GIsInitialLoad, false);
+	CleanOldTypes(InterfacesToReinstance);
+	CleanOldTypes(StructsToReinstance);
+	CleanOldTypes(ClassesToReinstance);
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 void FCSReinstancer::PostReinstance()
 {
-	FBlueprintActionDatabase& ActionDB = FBlueprintActionDatabase::Get();
-	for (auto& Element : ClassesToReinstance)
-	{
-		ActionDB.ClearAssetActions(Element.Key);
-		ActionDB.RefreshClassActions(Element.Value);
-	}
-
-	for (auto& Struct : StructsToReinstance)
+	for (TTuple<UScriptStruct*, UScriptStruct*>& Struct : StructsToReinstance)
 	{
 		TArray<UDataTable*> Tables;
 		GetTablesDependentOnStruct(Struct.Key, Tables);
@@ -201,23 +184,10 @@ void FCSReinstancer::PostReinstance()
 		}
 	}
 	
-	for (const auto& StructToReinstancePair : StructsToReinstance)
-	{
-		StructToReinstancePair.Key->ChildProperties = nullptr;
-		StructToReinstancePair.Key->ConditionalBeginDestroy();
-	}
-	
 	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
 	{
 		PropertyModule->NotifyCustomizationModuleChanged();
 	}
-
-	if (!GEngine)
-	{
-		return;
-	}
-	
-	GEditor->BroadcastBlueprintCompiled();	
 }
 
 UFunction* FCSReinstancer::FindMatchingMember(const FMemberReference& FunctionReference) const
@@ -402,7 +372,10 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
+		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
+
+	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

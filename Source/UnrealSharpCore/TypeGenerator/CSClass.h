@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "UnrealSharpCore.h"
 #include "UObject/Package.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "CSClass.generated.h"
@@ -14,9 +15,10 @@ class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
 public:
-	friend FCSGeneratedClassBuilder;
 
-	TSharedRef<FCSharpClassInfo> GetClassInfo() const;
+	TSharedPtr<const FCSharpClassInfo> GetClassInfo() const;
+	bool CanTick() const { return bCanTick; }
+	void SetClassMetaData(const TSharedPtr<FCSharpClassInfo>& InClassMetaData);
 
 private:
 
