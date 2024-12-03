@@ -12,6 +12,8 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
+#if WITH_EDITOR
 	virtual void OnFieldReplaced(UCSScriptStruct* OldField, UCSScriptStruct* NewField) override;
+#endif
 	// End of implementation
 };

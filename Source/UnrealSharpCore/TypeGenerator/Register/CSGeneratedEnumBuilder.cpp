@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
-#include "CSMetaDataUtils.h"
 
 void FCSGeneratedEnumBuilder::StartBuildingType()
 {

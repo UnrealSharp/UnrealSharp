@@ -49,12 +49,16 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 {
 	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
 	NewStack.CurrentNativeFunction = NativeFunction;
-
-	int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
-	if (FunctionCallspace & FunctionCallspace::Remote)
+	
+	if (NativeFunction->HasAllFunctionFlags(FUNC_Net))
 	{
-		NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
+		int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
+		if ((FunctionCallspace & FunctionCallspace::Remote) == 0)
+		{
+			return;
+		}
 
+		NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
 		if ((FunctionCallspace & FunctionCallspace::Local) == 0)
 		{
 			return;

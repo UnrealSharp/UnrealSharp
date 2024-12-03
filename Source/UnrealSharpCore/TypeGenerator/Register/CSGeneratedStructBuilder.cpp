@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-#include "CSMetaDataUtils.h"
 #include "CSTypeRegistry.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -29,9 +28,11 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 }
 
+#if WITH_EDITOR
 void FCSGeneratedStructBuilder::OnFieldReplaced(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
 {
 	OldField->StructFlags = static_cast<EStructFlags>(OldField->StructFlags | STRUCT_NewerVersionExists);
 	NewField->Guid = OldField->Guid;
 	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(OldField, NewField);
 }
+#endif

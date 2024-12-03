@@ -1,6 +1,5 @@
 ﻿#include "CSFunctionFactory.h"
 #include "CSPropertyFactory.h"
-#include "Properties/CSPropertyGenerator.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Functions/CSFunction_NoParams.h"
@@ -111,7 +110,7 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
 }
 
-void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
+void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
 {
 	TMap<FName, UFunction*> NameToFunctionMap;
 	TMap<FName, UFunction*> InterfaceFunctionMap;
@@ -147,7 +146,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<FCSClassMetaData>& ClassMetaData)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData)
 {
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);

@@ -1,7 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "CSMovementComponentExtensions.h"
+﻿#include "CSMovementComponentExtensions.h"
 #include "GameFramework/MovementComponent.h"
 
 float UCSMovementComponentExtensions::SlideAlongSurface(UMovementComponent* MovementComponent, const FVector& Delta, float Time, const FVector& Normal, UPARAM(ref) FHitResult& Hit, bool bHandleImpact)

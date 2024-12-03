@@ -1,8 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "CSGameplayTagExtensions.h"
-
+﻿#include "CSGameplayTagExtensions.h"
 #include "GameplayTagContainer.h"
 
 bool UCSGameplayTagExtensions::MatchesTag(const FGameplayTag& Tag, const FGameplayTag& Other)

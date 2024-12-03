@@ -24,6 +24,7 @@ void FUnrealSharpCoreModule::StartupModule()
 
 void FUnrealSharpCoreModule::ShutdownModule()
 {
+	UCSManager::Shutdown();
 }
 
 #undef LOCTEXT_NAMESPACE

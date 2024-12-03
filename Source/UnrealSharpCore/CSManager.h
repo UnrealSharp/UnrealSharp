@@ -14,11 +14,11 @@ UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
 {
 	GENERATED_BODY()
-	
 public:
 	
 	static UCSManager& GetOrCreate();
-	static UCSManager& Get(); 
+	static UCSManager& Get();
+	static void Shutdown();
 	
 	UPackage* GetUnrealSharpPackage() const { return UnrealSharpPackage; }
 
@@ -52,10 +52,10 @@ private:
 	
 	void RemoveManagedObject(const UObjectBase* Object);
 
-	// Begin FUObjectArray::FUObjectDeleteListener Api
+	// Begin FUObjectArray::FUObjectDeleteListener interface
 	virtual void NotifyUObjectDeleted(const UObjectBase *Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override;
-	// End FUObjectArray::FUObjectDeleteListener Api
+	// End FUObjectArray::FUObjectDeleteListener interface
 
 	void OnEnginePreExit();
 
@@ -82,5 +82,4 @@ private:
 	void* UnrealSharpLibraryDLL = nullptr;
 	void* UserScriptsDLL = nullptr;
 	//End
-
 };

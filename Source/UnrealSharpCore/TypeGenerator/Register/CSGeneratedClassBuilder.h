@@ -14,22 +14,30 @@ public:
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
 	virtual FName GetFieldName() const override;
-	virtual bool ReplaceTypeOnReload() const override { return false; }
-	virtual UCSClass* CreateField(UPackage* Package, FName FieldName) override;
+#if WITH_EDITOR
+	virtual void OnFieldReplaced(UCSClass* OldField, UCSClass* NewField) override;
+#endif
 	// End of implementation
 
 	static UCSClass* GetFirstManagedClass(UClass* Class);
 	static UClass* GetFirstNativeClass(UClass* Class);
 	static UClass* GetFirstNonBlueprintClass(UClass* Class);
 
+	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
+													  AActor* Actor,
+													  UClass* ActorClass,
+													  UCSClass* FirstManagedClass,
+													  const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
+
 	static bool IsManagedType(const UClass* Class);
 
 private:
 	
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
-	static void SetupTick(UCSClass* ManagedClass);
-	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
+	static void ManagedActorConstructor(const FObjectInitializer& ObjectInitializer);
 
-	void SetupDefaultSubobjects(const TSharedPtr<FCSharpClassInfo>& ClassInfo);
-	USCS_Node* CreateNode(UClass* NewComponentClass, FName NewComponentVariableName);
+	static void InitialSetup(const FObjectInitializer& ObjectInitializer, UCSClass*& OutManagedClass, TSharedPtr<const FCSharpClassInfo>& OutClassInfo);
+	
+	void SetupDefaultTickSettings(UObject* DefaultObject) const;
+	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 };

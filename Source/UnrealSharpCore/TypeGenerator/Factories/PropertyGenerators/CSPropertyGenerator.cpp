@@ -49,7 +49,7 @@ bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
 	return true;
 }
 
-FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, FFieldClass* FieldClass)
+FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass)
 {
 	FName PropertyName = PropertyMetaData.Name;
 	

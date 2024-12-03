@@ -162,7 +162,7 @@ public class PropertyMetaData : BaseMetaData
             }
 
             // Just a quality of life, if the property is set to ReplicatedUsing, it should be replicating
-            flags |= PropertyFlags.Net;
+            flags |= PropertyFlags.Net | PropertyFlags.RepNotify;
             RepNotifyFunctionName = notifyMethodName;
         }
         
@@ -189,9 +189,10 @@ public class PropertyMetaData : BaseMetaData
                     | PropertyFlags.Edit 
                     | PropertyFlags.EditConst
                     | instancedFlags;
+            
         }
 
-        if (isPersistentInstance)
+        if (isPersistentInstance || isDefaultComponent)
         {
             TryAddMetaData("EditInline", "true");
         }

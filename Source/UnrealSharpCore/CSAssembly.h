@@ -39,10 +39,7 @@ struct UNREALSHARPCORE_API FCSAssembly
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
 private:
-	
 	FGCHandle Assembly;
-	
 	FString AssemblyPath;
 	FString AssemblyName;
-	
 };

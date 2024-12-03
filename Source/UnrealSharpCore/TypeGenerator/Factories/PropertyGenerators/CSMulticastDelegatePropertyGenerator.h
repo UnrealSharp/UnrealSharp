@@ -13,7 +13,7 @@ protected:
 
 	// Begin UCSPropertyGenerator interface
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::MulticastInlineDelegate; }
-	virtual FFieldClass* GetPropertyClass() override { return FMulticastDelegateProperty::StaticClass(); }
+	virtual FFieldClass* GetPropertyClass() override { return FMulticastInlineDelegateProperty::StaticClass(); }
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 	// End UCSPropertyGenerator interface
 	

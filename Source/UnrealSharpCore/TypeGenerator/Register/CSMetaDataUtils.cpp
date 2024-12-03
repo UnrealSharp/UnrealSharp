@@ -3,8 +3,6 @@
 #include "UObject/UnrealType.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSMetaDataFactory.h"
 
-//START ----------------------CSharpMetaDataUtils----------------------------------------
-
 void FCSMetaDataUtils::SerializeFunctions(const TArray<TSharedPtr<FJsonValue>>& FunctionsInfo, TArray<FCSFunctionMetaData>& FunctionMetaData)
 {
 	FunctionMetaData.Reserve(FunctionsInfo.Num());

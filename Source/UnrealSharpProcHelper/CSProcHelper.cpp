@@ -40,9 +40,10 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 
 	while (FPlatformProcess::IsProcRunning(ProcHandle))
 	{
-		Output += FPlatformProcess::ReadPipe(ReadPipe);
 		FPlatformProcess::Sleep(0.1f);
 	}
+
+	Output = FPlatformProcess::ReadPipe(ReadPipe);
 
 	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
 	FPlatformProcess::CloseProc(ProcHandle);
@@ -341,6 +342,12 @@ FString& FCSProcHelper::GetScriptFolderDirectory()
 {
 	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
 	return ScriptFolderDirectory;
+}
+
+FString& FCSProcHelper::GetProjectGlueFolderPath()
+{
+	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / "ProjectGlue";
+	return ProjectGlueFolderPath;
 }
 
 FString FCSProcHelper::GetUserManagedProjectName()

@@ -1,5 +1,4 @@
 ﻿#include "CSFunction_Params.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
 
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {

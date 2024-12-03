@@ -1,23 +1,19 @@
 #include "CSPropertyFactory.h"
-#include "Properties/CSPropertyGenerator.h"
-#include "UnrealSharpCore/UnrealSharpCore.h"
+#include "PropertyGenerators/CSPropertyGenerator.h"
 #include "UObject/UnrealType.h"
 #include "UObject/Class.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 TArray<TWeakObjectPtr<UCSPropertyGenerator>> FCSPropertyFactory::PropertyGenerators;
 
-void FCSPropertyFactory::TryInitializePropertyFactory()
+void FCSPropertyFactory::Initialize()
 {
-	if (PropertyGenerators.Num() > 0)
-	{
-		return;
-	}
-	
 	TArray<UCSPropertyGenerator*> FoundPropertyGenerators;
-	FUnrealSharpCoreModule::GetAllCDOsOfClass<UCSPropertyGenerator>(FoundPropertyGenerators);
+	FUnrealSharpUtils::GetAllCDOsOfClass<UCSPropertyGenerator>(FoundPropertyGenerators);
 
+	PropertyGenerators.Reserve(FoundPropertyGenerators.Num());
 	for (UCSPropertyGenerator* PropertyGenerator : FoundPropertyGenerators)
 	{
 		PropertyGenerators.Add(PropertyGenerator);
@@ -26,8 +22,6 @@ void FCSPropertyFactory::TryInitializePropertyFactory()
 
 FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
-	TryInitializePropertyFactory();
-	
 	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyMetaData.Type->PropertyType);
 	FProperty* NewProperty = PropertyGenerator->CreateProperty(Outer, PropertyMetaData);
 
@@ -55,7 +49,7 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 		}
 	}
 #endif
-
+	
 	if (NewProperty->HasAnyPropertyFlags(CPF_Net))
 	{
 		UBlueprintGeneratedClass* OwnerClass = CastChecked<UBlueprintGeneratedClass>(Outer);
@@ -64,7 +58,6 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 		if (!PropertyMetaData.RepNotifyFunctionName.IsNone())
 		{
 			NewProperty->RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
-			NewProperty->SetPropertyFlags(CPF_Net | CPF_RepNotify);
 		}
 	}
 		
@@ -91,8 +84,6 @@ void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<F
 
 UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType PropertyType)
 {
-	TryInitializePropertyFactory();
-	
 	for (TWeakObjectPtr<UCSPropertyGenerator>& PropertyGenerator : PropertyGenerators)
 	{
 		UCSPropertyGenerator* PropertyGeneratorPtr = PropertyGenerator.Get();

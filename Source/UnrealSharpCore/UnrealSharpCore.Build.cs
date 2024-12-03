@@ -43,7 +43,8 @@ public class UnrealSharpCore : ModuleRules
 				"UnrealSharpProcHelper", 
 				"EnhancedInput", 
 				"UnrealSharpUtilities",
-				"GameplayTags"
+				"GameplayTags", 
+				"AIModule"
 			}
 			);
 

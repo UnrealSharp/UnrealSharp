@@ -18,6 +18,8 @@ enum HotReloadStatus
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 
+DECLARE_MULTICAST_DELEGATE(FOnRefreshRuntimeGlue);
+
 class FUnrealSharpEditorModule : public IModuleInterface
 {
 public:
@@ -34,7 +36,10 @@ public:
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
     bool HasHotReloadFailed() const { return bHotReloadFailed; }
+
+    FOnRefreshRuntimeGlue& OnRefreshRuntimeGlueEvent() { return OnRefreshRuntimeGlueDelegate; }
     
+    static void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
     static void OpenSolution();
 
 private:
@@ -51,6 +56,9 @@ private:
     static void OnOpenSettings();
     static void OnOpenDocumentation();
     static void OnReportBug();
+    
+    void OnRefreshRuntimeGlue() const;
+    
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
 
     static void PackageProject();
@@ -67,8 +75,7 @@ private:
     void RegisterMenu();
     void RegisterGameplayTags();
     void RegisterAssetTypes();
-
-    static void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName);
+    void RegisterCollisionProfile();
 
     static void OnAssetSearchRootAdded(const FString& RootPath);
     static void OnCompletedInitialScan();
@@ -81,19 +88,23 @@ private:
     static void OnInMemoryAssetCreated(UObject* Object);
     static void OnInMemoryAssetDeleted(UObject* Object);
 
+    static void OnCollisionProfileLoaded(UCollisionProfile* Profile);
+
     static void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
     static void WaitUpdateAssetTypes();
 
     static void ProcessGameplayTags();
-    
     static void ProcessAssetIds();
     static void ProcessAssetTypes();
+    static void ProcessTraceTypeQuery();
     
     FSlateIcon GetMenuIcon() const;
     
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
+
+    FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
     
     static FString QuotePath(const FString& Path);
     FTickerDelegate TickDelegate;
