@@ -1,9 +1,11 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace UnrealSharpWeaver.MetaData;
 
+[DebuggerDisplay("{GetType().Name}: {Name}")]
 public class BaseMetaData
 {
     public string Name { get; set; }

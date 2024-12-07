@@ -8,8 +8,8 @@ public class ClassMetaData : TypeReferenceMetadata
 {
     public TypeReferenceMetadata ParentClass { get; set; }
     public List<PropertyMetaData>? Properties { get; set; }
-    public List<FunctionMetaData> Functions { get; set; }
-    public List<FunctionMetaData> VirtualFunctions { get; set; }
+    public HashSet<FunctionMetaData> Functions { get; set; }
+    public HashSet<FunctionMetaData> VirtualFunctions { get; set; }
     public List<string> Interfaces { get; set; }
     public string ConfigCategory { get; set; } 
     public ClassFlags ClassFlags { get; set; }
@@ -106,6 +106,7 @@ public class ClassMetaData : TypeReferenceMetadata
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
+            FunctionMetaData? functionMetaData = default;
             if (WeaverHelper.IsUFunction(method))
             {
                 if (isBlueprintOverride)
@@ -113,8 +114,8 @@ public class ClassMetaData : TypeReferenceMetadata
                     throw new Exception($"{method.FullName} is a Blueprint override and cannot be marked as a UFunction again.");
                 }
                 
-                FunctionMetaData functionMetaData = new FunctionMetaData(method);
                 
+                functionMetaData ??= new FunctionMetaData(method);
                 if (isInterfaceFunction && functionMetaData.FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
                 {
                     throw new Exception("Interface functions cannot be marked as BlueprintEvent. Mark base declaration as BlueprintEvent instead.");
@@ -125,7 +126,7 @@ public class ClassMetaData : TypeReferenceMetadata
             
             if (isBlueprintOverride || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
-                VirtualFunctions.Add(new FunctionMetaData(method));
+                VirtualFunctions.Add(functionMetaData ??= new FunctionMetaData(method));
             }
         }
     }
