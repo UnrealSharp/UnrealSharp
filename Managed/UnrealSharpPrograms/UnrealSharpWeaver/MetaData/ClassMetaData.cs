@@ -123,8 +123,7 @@ public class ClassMetaData : TypeReferenceMetadata
                 
                 Functions.Add(functionMetaData);
             }
-            
-            if (isBlueprintOverride || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
+            else if (isBlueprintOverride || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
             {
                 VirtualFunctions.Add(functionMetaData ??= new FunctionMetaData(method));
             }
