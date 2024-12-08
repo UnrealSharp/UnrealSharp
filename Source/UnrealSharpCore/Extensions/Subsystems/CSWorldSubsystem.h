@@ -19,8 +19,11 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
   
 	virtual void Deinitialize() override
 	{
-		Super::Deinitialize();
-		K2_Deinitialize();
+		if (IsInitialized())
+		{
+			Super::Deinitialize();
+			K2_Deinitialize();
+		}
 	}
   
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
