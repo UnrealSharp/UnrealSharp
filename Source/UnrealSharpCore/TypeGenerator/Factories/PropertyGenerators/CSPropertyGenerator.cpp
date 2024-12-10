@@ -1,4 +1,5 @@
 #include "CSPropertyGenerator.h"
+
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 
 #if WITH_EDITOR
@@ -26,6 +27,12 @@ bool UCSPropertyGenerator::SupportsPropertyType(ECSPropertyType InPropertyType) 
 	ECSPropertyType PropertyType = GetPropertyType();
 	check(PropertyType != ECSPropertyType::Unknown);
 	return PropertyType == InPropertyType;
+}
+
+TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	PURE_VIRTUAL();
+	return nullptr;
 }
 
 bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)

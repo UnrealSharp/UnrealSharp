@@ -21,3 +21,8 @@ FProperty* UCSMapPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	NewProperty->ValueProp->Owner = NewProperty;
 	return NewProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSMapPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSMapPropertyMetaData>();
+}

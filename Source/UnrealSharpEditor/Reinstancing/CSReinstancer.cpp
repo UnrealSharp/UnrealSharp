@@ -140,10 +140,15 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(InterfacesToReinstance);
 	NotifyChanges(StructsToReinstance);
 	NotifyChanges(ClassesToReinstance);
-
-	UpdateBlueprints();
+	
 	Reload->Reinstance();
 	PostReinstance();
+	UpdateBlueprints();
+	
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+	
+	FBlueprintCompilationManager::ReparentHierarchies(ClassesToReinstance);
+	FBlueprintCompilationManager::ReparentHierarchies(InterfacesToReinstance);
 
 	auto CleanOldTypes = [](auto& Container)
 	{
@@ -154,8 +159,8 @@ void FCSReinstancer::StartReinstancing()
 				continue;
 			}
 			
-			Old->SetFlags(RF_NewerVersionExists);
-			Old->RemoveFromRoot();
+			Old->ClearFlags(RF_Standalone);
+			Old->MarkAsGarbage();
 		}
 
 		Container.Empty();

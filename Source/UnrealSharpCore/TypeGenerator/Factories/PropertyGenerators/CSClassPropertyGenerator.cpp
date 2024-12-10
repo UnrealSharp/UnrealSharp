@@ -1,5 +1,6 @@
 #include "CSClassPropertyGenerator.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
+#include "TypeGenerator/Register/MetaData/CSClassPropertyMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 
 FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -12,4 +13,9 @@ FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 	NewProperty->PropertyClass = UClass::StaticClass();
 	NewProperty->SetMetaClass(Class);
 	return NewProperty;
+}
+
+TSharedPtr<FCSUnrealType> UCSClassPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSClassPropertyMetaData>();
 }

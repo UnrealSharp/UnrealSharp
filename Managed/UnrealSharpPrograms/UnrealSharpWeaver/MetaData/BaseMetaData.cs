@@ -30,6 +30,7 @@ public class BaseMetaData
         AddMetaTagsNamespace(); // Add all named attributes in the UnrealSharp.Attributes.MetaTags namespace
         AddBaseAttributes();    // Add fields from base attribute e.g. [UClass | UFunction | UEnum | UProperty | UStruct]
         AddDefaultCategory();   // Add Category="Default" if no category yet added
+        AddBlueprintAccess();   // Add default Blueprint access if not already added
     }
 
     public void TryAddMetaData(string key, string value = "")
@@ -78,6 +79,17 @@ public class BaseMetaData
         {
             TryAddMetaData("Category", "Default");
         }
+    }
+
+    public void AddBlueprintAccess()
+    {
+        if (MetaData.ContainsKey("NotBlueprintType"))
+        {
+            return;
+        }
+        
+        TryAddMetaData("BlueprintType", "true");
+        TryAddMetaData("IsBlueprintBase", "true");
     }
 
     public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)

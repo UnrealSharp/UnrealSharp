@@ -9,3 +9,8 @@ FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCS
 	NewProperty->SignatureFunction = FCSFunctionFactory::CreateFunctionFromMetaData(Outer->GetOwnerClass(), DelegateMetaData->SignatureFunction);
 	return NewProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSDelegatePropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSDelegateMetaData>();
+}

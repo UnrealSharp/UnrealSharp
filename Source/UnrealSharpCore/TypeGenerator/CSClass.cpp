@@ -1,13 +1,9 @@
 ﻿#include "CSClass.h"
+#include "UnrealSharpCore.h"
 
-TSharedPtr<const FCSharpClassInfo> UCSClass::GetClassInfo() const
+TSharedRef<const FCSharpClassInfo> UCSClass::GetClassInfo() const
 {
-	if (!ClassMetaData.IsValid())
-	{
-		return nullptr;
-	}
-	
-	return ClassMetaData;
+	return ClassMetaData.ToSharedRef();
 }
 
 void UCSClass::SetClassMetaData(const TSharedPtr<FCSharpClassInfo>& InClassMetaData)

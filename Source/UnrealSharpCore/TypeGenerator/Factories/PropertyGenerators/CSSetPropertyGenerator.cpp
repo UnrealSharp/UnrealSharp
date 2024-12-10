@@ -10,3 +10,8 @@ FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	ArrayProperty->ElementProp->Owner = ArrayProperty;
 	return ArrayProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSSetPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSContainerBaseMetaData>();
+}
