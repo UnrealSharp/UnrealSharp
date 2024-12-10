@@ -37,27 +37,22 @@ public:
 			const FString OldPath = ExistingField->GetPathName();
 			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
 			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
-			
-			IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
-			AssetRegistry.AssetRenamed(ExistingField, OldPath);
-
 		}
 #endif
 		
-		Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone | RF_MarkAsRootSet);
-		
+		Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone);
+
+#if WITH_EDITOR
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 		
 		ApplyBlueprintAccess();
 		ApplyDisplayName();
-
-#if WITH_EDITOR
+		
 		if (ExistingField)
 		{
 			OnFieldReplaced(ExistingField, Field);
 		}
 #endif
-		
 		return Field;
 	}
 
