@@ -40,6 +40,9 @@ public:
 
 	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
 
+	void RegisterDynamicLogCategory(FName CategoryName, ELogVerbosity::Type Verbosity);
+	bool HasDynamicLogCategory(FName CategoryName) const;
+
 private:
 
 	void Initialize();
@@ -69,6 +72,7 @@ private:
 
 	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
+	TArray<TSharedPtr<FLogCategoryBase>> LogCategories;
 
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 	

@@ -46,15 +46,9 @@ public static class Main
             }
         
             var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, isCollectible);
-
-            if (!newPlugin.IsAlive)
-            {
-                throw new Exception($"Failed to load plugin from: {assemblyPath}");
-            }
         
             PluginsInfo.LoadedPlugins.Add(newPlugin);
             Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
-
             return loadedAssembly;
         }
         catch (Exception ex)

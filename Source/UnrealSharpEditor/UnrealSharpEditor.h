@@ -42,6 +42,8 @@ public:
     static void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
     static void OpenSolution();
 
+    static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
+
 private:
     static FString SelectArchiveDirectory();
 

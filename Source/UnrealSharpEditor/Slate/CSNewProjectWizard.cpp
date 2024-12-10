@@ -135,9 +135,19 @@ void SCSNewProjectDialog::OnCancel()
 void SCSNewProjectDialog::OnFinish()
 {
 	TMap<FString, FString> Arguments;
-	Arguments.Add("NewProjectName", NameTextBox->GetText().ToString());
-	Arguments.Add("NewProjectPath", PathTextBox->GetText().ToString());
+	FString ModuleName = NameTextBox->GetText().ToString();
+	FString ProjectPath = PathTextBox->GetText().ToString();
+
+	TMap<FString, FString> SolutionArguments;
+	SolutionArguments.Add(TEXT("MODULENAME"), ModuleName);
+	
+	FString ModuleFilePath = ProjectPath / ModuleName / ModuleName + ".cs";
+	FUnrealSharpEditorModule::FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
+	
+	Arguments.Add(TEXT("NewProjectName"), ModuleName);
+	Arguments.Add(TEXT("NewProjectPath"), ProjectPath);
 	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments);
+	
 	FUnrealSharpEditorModule::OpenSolution();
 	CloseWindow();
 }

@@ -5,6 +5,7 @@ void UFCSManagerExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 {
 	EXPORT_FUNCTION(FindManagedObject)
 	EXPORT_FUNCTION(GetCurrentWorldContext)
+	EXPORT_FUNCTION(RegisterDynamicLogCategory)
 }
 
 void* UFCSManagerExporter::FindManagedObject(UObject* Object)
@@ -15,4 +16,9 @@ void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 void* UFCSManagerExporter::GetCurrentWorldContext()
 {
 	return FindManagedObject(UCSManager::Get().GetCurrentWorldContext());
+}
+
+void UFCSManagerExporter::RegisterDynamicLogCategory(FName CategoryName, ELogVerbosity::Type Verbosity)
+{
+	UCSManager::Get().RegisterDynamicLogCategory(CategoryName, Verbosity);
 }
