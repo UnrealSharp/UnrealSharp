@@ -13,3 +13,8 @@ FProperty* UCSMulticastDelegatePropertyGenerator::CreateProperty(UField* Outer, 
 	NewProperty->SignatureFunction = SignatureFunction;
 	return NewProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSMulticastDelegatePropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSDelegateMetaData>();
+}

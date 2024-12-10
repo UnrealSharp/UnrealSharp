@@ -14,6 +14,8 @@ public:
 	static FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static FProperty* CreateAndAssignProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	static void CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData);
+	
+	static TSharedPtr<FCSUnrealType> CreateTypeMetaData(const TSharedPtr<FJsonObject>& PropertyMetaData);
 
 private:
 	static TArray<TWeakObjectPtr<UCSPropertyGenerator>> PropertyGenerators;

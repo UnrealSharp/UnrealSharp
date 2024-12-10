@@ -10,3 +10,8 @@ FProperty* UCSArrayPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 	NewProperty->Inner->Owner = NewProperty;
 	return NewProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSArrayPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSContainerBaseMetaData>();
+}

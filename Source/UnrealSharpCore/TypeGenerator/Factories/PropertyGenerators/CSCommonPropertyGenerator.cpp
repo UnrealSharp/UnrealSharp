@@ -10,3 +10,17 @@ FProperty* UCSCommonPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	FFieldClass* FieldClass = TypeToFieldClass.FindChecked(PropertyMetaData.Type->PropertyType);
 	return NewProperty(Outer, PropertyMetaData, FieldClass);
 }
+
+TSharedPtr<FCSUnrealType> UCSCommonPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	TSharedPtr<FCSUnrealType> MetaData;
+	if (TFunction<TSharedPtr<FCSUnrealType>()>* FactoryMethod = MetaDataFactoryMap.Find(PropertyType))
+	{
+		MetaData = (*FactoryMethod)();
+	}
+	else
+	{
+		MetaData = MakeShared<FCSUnrealType>();
+	}
+	return MetaData;
+}

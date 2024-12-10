@@ -82,6 +82,18 @@ void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<F
 	}
 }
 
+TSharedPtr<FCSUnrealType> FCSPropertyFactory::CreateTypeMetaData(const TSharedPtr<FJsonObject>& PropertyMetaData)
+{
+	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField(TEXT("PropertyDataType"));
+	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField(TEXT("PropertyType")));
+	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyType);
+	
+	TSharedPtr<FCSUnrealType> PropertiesMetaData = PropertyGenerator->CreateTypeMetaData(PropertyType);
+	PropertiesMetaData->SerializeFromJson(PropertyTypeObject);
+	
+	return PropertiesMetaData;
+}
+
 UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType PropertyType)
 {
 	for (TWeakObjectPtr<UCSPropertyGenerator>& PropertyGenerator : PropertyGenerators)

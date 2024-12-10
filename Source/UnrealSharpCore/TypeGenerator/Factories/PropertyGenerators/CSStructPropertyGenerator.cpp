@@ -1,4 +1,5 @@
 #include "CSStructPropertyGenerator.h"
+
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSStructPropertyMetaData.h"
 
@@ -9,4 +10,9 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	StructProperty->Struct = FCSTypeRegistry::GetStructFromName(StructPropertyMetaData->TypeRef.Name);
 	ensureAlways(StructProperty->Struct);
 	return StructProperty;
+}
+
+TSharedPtr<FCSUnrealType> UCSStructPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSStructPropertyMetaData>();
 }

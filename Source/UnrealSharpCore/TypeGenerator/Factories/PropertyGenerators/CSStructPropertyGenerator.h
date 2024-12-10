@@ -13,5 +13,6 @@ class UNREALSHARPCORE_API UCSStructPropertyGenerator : public UCSPropertyGenerat
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Struct; }
 	virtual FFieldClass* GetPropertyClass() override { return FStructProperty::StaticClass(); }
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
+	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
 	// End UCSPropertyGenerator interface
 };
