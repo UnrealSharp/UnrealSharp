@@ -1,5 +1,6 @@
 #include "CSObjectPropertyGenerator.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
+#include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 
 UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
@@ -12,6 +13,12 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::ObjectPtr, FObjectProperty::StaticClass() },
 		{ ECSPropertyType::DefaultComponent , FObjectProperty::StaticClass() }
 	};
+
+	REGISTER_METADATA(ECSPropertyType::Object, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::WeakObject, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::ObjectPtr, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
 }
 
 FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)

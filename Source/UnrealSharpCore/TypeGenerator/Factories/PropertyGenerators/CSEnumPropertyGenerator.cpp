@@ -16,3 +16,8 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	
 	return NewProperty;
 }
+
+TSharedPtr<FCSUnrealType> UCSEnumPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
+	return MakeShared<FCSEnumPropertyMetaData>();
+}

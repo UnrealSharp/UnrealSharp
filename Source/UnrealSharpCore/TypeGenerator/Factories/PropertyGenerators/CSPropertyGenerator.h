@@ -24,5 +24,6 @@ public:
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
+	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType);
 	
 };

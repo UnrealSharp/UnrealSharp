@@ -15,6 +15,6 @@ public:
 	UCSObjectPropertyGenerator(FObjectInitializer const& ObjectInitializer);
 
 	// Begin UCSPropertyGenerator interface
-	virtual auto CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) -> FProperty* override;
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 	// End UCSPropertyGenerator interface
 };

@@ -1,7 +1,7 @@
 #include "CSMetaDataUtils.h"
 #include "Dom/JsonObject.h"
+#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "UObject/UnrealType.h"
-#include "UnrealSharpCore/TypeGenerator/Factories/CSMetaDataFactory.h"
 
 void FCSMetaDataUtils::SerializeFunctions(const TArray<TSharedPtr<FJsonValue>>& FunctionsInfo, TArray<FCSFunctionMetaData>& FunctionMetaData)
 {
@@ -29,7 +29,7 @@ void FCSMetaDataUtils::SerializeProperties(const TArray<TSharedPtr<FJsonValue>>&
 
 void FCSMetaDataUtils::SerializeProperty(const TSharedPtr<FJsonObject>& PropertyMetaData, FCSPropertyMetaData& PropertiesMetaData, EPropertyFlags DefaultFlags)
 {
-	PropertiesMetaData.Type = CSMetaDataFactory::Create(PropertyMetaData);
+	PropertiesMetaData.Type = FCSPropertyFactory::CreateTypeMetaData(PropertyMetaData);
 	PropertiesMetaData.SerializeFromJson(PropertyMetaData);
 }
 
