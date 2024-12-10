@@ -50,7 +50,7 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 	}
 #endif
 	
-	if (NewProperty->HasAnyPropertyFlags(CPF_Net))
+	if (NewProperty->HasAnyPropertyFlags(CPF_Net) && Outer->IsA<UBlueprintGeneratedClass>())
 	{
 		UBlueprintGeneratedClass* OwnerClass = CastChecked<UBlueprintGeneratedClass>(Outer);
 		++OwnerClass->NumReplicatedProperties;
@@ -86,11 +86,11 @@ TSharedPtr<FCSUnrealType> FCSPropertyFactory::CreateTypeMetaData(const TSharedPt
 {
 	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField(TEXT("PropertyDataType"));
 	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField(TEXT("PropertyType")));
+	
 	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyType);
-	
 	TSharedPtr<FCSUnrealType> PropertiesMetaData = PropertyGenerator->CreateTypeMetaData(PropertyType);
-	PropertiesMetaData->SerializeFromJson(PropertyTypeObject);
 	
+	PropertiesMetaData->SerializeFromJson(PropertyTypeObject);
 	return PropertiesMetaData;
 }
 

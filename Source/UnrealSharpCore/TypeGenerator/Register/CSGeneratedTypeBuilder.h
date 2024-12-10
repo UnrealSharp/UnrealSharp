@@ -44,8 +44,6 @@ public:
 
 #if WITH_EDITOR
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
-		
-		ApplyBlueprintAccess();
 		ApplyDisplayName();
 		
 		if (ExistingField)
@@ -84,14 +82,6 @@ protected:
 	TField* Field;
 
 private:
-	
-	void ApplyBlueprintAccess()
-	{
-#if WITH_EDITOR
-		Field->SetMetaData(TEXT("BlueprintType"), TEXT("true"));
-		Field->SetMetaData(TEXT("IsBlueprintBase"), TEXT("true"));
-#endif
-	}
 
 	void ApplyDisplayName()
 	{
