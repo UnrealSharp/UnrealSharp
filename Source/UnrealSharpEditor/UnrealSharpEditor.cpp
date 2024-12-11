@@ -342,7 +342,8 @@ void FUnrealSharpEditorModule::OpenSolution()
 	}
 	
 	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *SolutionPath);
-	FPlatformProcess::ExecProcess(TEXT("cmd.exe"), *OpenSolutionArgs, nullptr, nullptr, nullptr);
+	FPlatformProcess::CreateProc(TEXT("cmd.exe"), *OpenSolutionArgs, true, true, false, nullptr, 0, nullptr, nullptr);
+
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
