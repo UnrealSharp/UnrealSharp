@@ -4,6 +4,7 @@
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
+#include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
@@ -365,6 +366,13 @@ void FCSReinstancer::UpdateBlueprints()
 				if (UClass* const * FoundNewStructType = ClassesToReinstance.Find(Node_DynamicCast->TargetType))
 				{
 					Node_DynamicCast->TargetType = *FoundNewStructType;	
+					bNeedsNodeReconstruction = true;
+				}
+			}
+			else if (UK2Node_MacroInstance* Node_MacroInstance = Cast<UK2Node_MacroInstance>(Node))
+			{
+				if (TryUpdatePin(Node_MacroInstance->ResolvedWildcardType))
+				{
 					bNeedsNodeReconstruction = true;
 				}
 			}
