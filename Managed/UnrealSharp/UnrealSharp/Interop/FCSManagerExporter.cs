@@ -7,5 +7,6 @@ public static unsafe partial class FCSManagerExporter
 {
     public static delegate* unmanaged<IntPtr, IntPtr> FindManagedObject;
     public static delegate* unmanaged<IntPtr> GetCurrentWorldContext;
+    public static delegate* unmanaged<IntPtr> GetCurrentWorldPtr;
     public static delegate* unmanaged<FName, ELogVerbosity, void> RegisterDynamicLogCategory;
 }

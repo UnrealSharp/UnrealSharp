@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerator
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.ExtensionSourceGenerators", "UnrealSharp.ExtensionSourceGenerators\UnrealSharp.ExtensionSourceGenerators.csproj", "{9F386187-DD90-46D8-816D-57F08757AF6F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.StaticVars", "UnrealSharp.StaticVars\UnrealSharp.StaticVars.csproj", "{3D6935BB-BD64-4793-BCC2-B535E92421FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{9F386187-DD90-46D8-816D-57F08757AF6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F386187-DD90-46D8-816D-57F08757AF6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F386187-DD90-46D8-816D-57F08757AF6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D6935BB-BD64-4793-BCC2-B535E92421FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D6935BB-BD64-4793-BCC2-B535E92421FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D6935BB-BD64-4793-BCC2-B535E92421FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D6935BB-BD64-4793-BCC2-B535E92421FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
