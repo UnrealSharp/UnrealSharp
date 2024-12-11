@@ -4,6 +4,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
 #include "TypeInfo/CSClassInfo.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 template<typename T>
 void InitializeBuilders(TMap<FName, T>& Map)
@@ -81,12 +82,10 @@ TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 	if (!FoundClassInfo.IsValid())
 	{
 		FoundClassInfo = MakeShared<FCSharpClassInfo>();
-		
-		// FoundClassInfo->TypeHandle = UCSManager::Get().GetTypeHandle(nullptr,
-		// 	FUnrealSharpUtils::GetNamespace(Class),
-		// 	Class->GetName());
-		// FoundClassInfo->Field = Class;
-
+		FoundClassInfo->TypeHandle = UCSManager::Get().GetTypeHandle(nullptr,
+		 	FUnrealSharpUtils::GetNamespace(Class),
+		 	Class->GetName());
+		FoundClassInfo->Field = Class;
 		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
 	}
 	

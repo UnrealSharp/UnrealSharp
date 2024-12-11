@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using UnrealSharp.Logging;
 
 namespace UnrealSharp.Interop;
 
@@ -49,13 +50,13 @@ public static class ExportedFunctionsManager
             {
                 if (unmanagedDelegate.Value.GetValue(null) == null)
                 {
-                    Console.WriteLine($"Failed to initialize {unmanagedDelegate.Key}.");
+                    LogUnrealSharp.LogWarning($"Failed to initialize {unmanagedDelegate.Key}.");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to initialize native functions: {ex}");
+            LogUnrealSharp.LogError($"Failed to initialize native functions: {ex}");
         }
     }
 
@@ -74,7 +75,7 @@ public static class ExportedFunctionsManager
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Failed to register native function \"{nativeFunctionNameString}\" exception: {e}");
+            LogUnrealSharp.Log($"Failed to register native function \"{nativeFunctionNameString}\" exception: {e}");
         }
     }
 }

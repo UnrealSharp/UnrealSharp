@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Logging;
 
 namespace UnrealSharp.Interop;
 
@@ -34,7 +35,7 @@ public static class UnmanagedCallbacks
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to create new managed object: {ex.Message}");
+            LogUnrealSharp.Log($"Failed to create new managed object: {ex.Message}");
         }
 
         return default;
@@ -73,7 +74,7 @@ public static class UnmanagedCallbacks
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Exception while trying to look up managed method: {e.Message}");
+            LogUnrealSharp.LogError($"Exception while trying to look up managed method: {e.Message}");
         }
 
         return default;
@@ -115,7 +116,7 @@ public static class UnmanagedCallbacks
         }
         catch (TypeLoadException ex)
         {
-            Console.WriteLine($"Exception while trying to look up managed type: {ex.Message}, {ex.StackTrace}, {ex.InnerException}");
+            LogUnrealSharp.LogError($"TypeLoadException while trying to look up managed type: {ex.Message}");
             return default;
         }
     }
@@ -170,7 +171,7 @@ public static class UnmanagedCallbacks
         catch (Exception ex)
         {
             StringMarshaller.ToNative(exceptionTextBuffer, 0, ex.ToString());
-            Console.WriteLine($"Exception during InvokeManagedMethod: {ex}");
+            LogUnrealSharp.LogError($"Exception during InvokeManagedMethod: {ex.Message}");
             return 1;
         }
     }
@@ -196,7 +197,7 @@ public static class UnmanagedCallbacks
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Exception during InvokeDelegate: {ex}");
+            LogUnrealSharp.LogError($"Exception during InvokeDelegate: {ex.Message}");
         }
     }
 

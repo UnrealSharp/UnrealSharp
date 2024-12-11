@@ -1,0 +1,16 @@
+using UnrealSharp.Engine.Core.Modules;
+
+namespace %MODULENAME%;
+
+public class F%MODULENAME% : IModuleInterface
+{
+    public void StartupModule()
+    {
+
+    }
+
+    public void ShutdownModule()
+    {
+
+    }
+}

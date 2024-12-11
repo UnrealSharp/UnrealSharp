@@ -21,5 +21,6 @@ private:
 
 	static void* FindManagedObject(UObject* Object);
 	static void* GetCurrentWorldContext();
+	static void* GetCurrentWorldPtr();
 	
 };

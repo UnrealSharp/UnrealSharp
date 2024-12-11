@@ -1,7 +1,6 @@
 ﻿#include "AsyncExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "CSManagedCallbacksCache.h"
-#include "HAL/ThreadManager.h"
 
 void UAsyncExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
