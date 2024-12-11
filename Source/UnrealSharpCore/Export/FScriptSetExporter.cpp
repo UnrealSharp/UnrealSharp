@@ -62,6 +62,5 @@ int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Proper
 
 int UFScriptSetExporter::FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn)
 {
-	TFunctionRef<bool (const void*, const void*)> TestEqualityFn = EqualityFn;
 	return ScriptSet->FindIndex(Element, Property->SetLayout, GetKeyHash, EqualityFn);
 }
