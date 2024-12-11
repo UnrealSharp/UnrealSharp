@@ -48,30 +48,6 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
-void UCSManager::RegisterDynamicLogCategory(FName CategoryName, ELogVerbosity::Type Verbosity)
-{
-	if (HasDynamicLogCategory(CategoryName))
-	{
-		return;
-	}
-	
-	TSharedPtr<FLogCategoryBase> NewCategory = MakeShared<FLogCategoryBase>(CategoryName, Verbosity, Verbosity);
-	LogCategories.Add(NewCategory);
-}
-
-bool UCSManager::HasDynamicLogCategory(FName CategoryName) const
-{
-	for (const TSharedPtr<FLogCategoryBase>& LogCategory : LogCategories)
-	{
-		if (LogCategory->GetCategoryName() == CategoryName)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR

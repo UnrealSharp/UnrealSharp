@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using UnrealSharp.Interop;
+using UnrealSharp.Logging;
 
 namespace UnrealSharp.Plugins;
 
@@ -31,7 +32,7 @@ public static class Main
                     continue;
                 }
                 
-                Console.WriteLine($"Plugin {assemblyName} is already loaded.");
+                LogUnrealSharp.Log($"Plugin {assemblyName} is already loaded.");
                 return plugin.Assembly.TryGetTarget(out var assembly) ? assembly : default;
             }
             
@@ -48,12 +49,12 @@ public static class Main
             var (loadedAssembly, newPlugin) = PluginLoadContextWrapper.CreateAndLoadFromAssemblyName(new AssemblyName(assemblyName), assemblyPath, sharedAssemblies, isCollectible);
         
             PluginsInfo.LoadedPlugins.Add(newPlugin);
-            Console.WriteLine($"Successfully loaded plugin: {assemblyName}");
+            LogUnrealSharp.Log($"Successfully loaded plugin: {assemblyName}");
             return loadedAssembly;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred while loading the plugin: {ex.Message}");
+            LogUnrealSharp.LogError($"An error occurred while loading the plugin: {ex.Message}");
         }
         return default;
     }
@@ -74,9 +75,9 @@ public static class Main
                 {
                     throw new InvalidOperationException("Cannot unload a plugin that's not set to IsCollectible.");
                 }
-                
+
                 string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-                Console.WriteLine($"Unloading plugin {assemblyName}...");
+                LogUnrealSharp.Log($"Unloading plugin {assemblyName}...");
 
                 plugin.Unload();
 
@@ -108,12 +109,12 @@ public static class Main
                 }
 
                 PluginsInfo.LoadedPlugins.Remove(plugin);
-                Console.WriteLine($"{assemblyName} unloaded successfully!");
+                LogUnrealSharp.Log($"{assemblyName} unloaded successfully!");
                 return true;
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e);
+                LogUnrealSharp.LogError($"An error occurred while unloading the plugin: {e.Message}");
                 return false;
             }
         }
@@ -146,12 +147,12 @@ public static class Main
             // Initialize managed callbacks
             *managedCallbacks = ManagedCallbacks.Create();
 
-            Console.WriteLine("UnrealSharp successfully setup!");
+            LogUnrealSharp.Log("UnrealSharp successfully setup!");
             return NativeBool.True;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error initializing C# from Engine: {ex.Message}");
+            LogUnrealSharp.LogError($"Error initializing UnrealSharp: {ex.Message}");
             return NativeBool.False;
         }
     }

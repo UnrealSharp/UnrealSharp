@@ -22,6 +22,5 @@ private:
 	static void* FindManagedObject(UObject* Object);
 	static void* GetCurrentWorldContext();
 	static void* GetCurrentWorldPtr();
-	static void RegisterDynamicLogCategory(FName CategoryName, ELogVerbosity::Type Verbosity);
 	
 };

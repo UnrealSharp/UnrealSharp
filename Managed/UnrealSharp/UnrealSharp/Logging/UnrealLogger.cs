@@ -4,11 +4,6 @@ namespace UnrealSharp.Logging;
 
 public static class UnrealLogger
 {
-    public static void RegisterLog(string logName, ELogVerbosity logVerbosity)
-    {
-        FCSManagerExporter.CallRegisterDynamicLogCategory(new FName(logName), logVerbosity);
-    }
-    
     public static void Log(string logName, string message, ELogVerbosity logVerbosity = ELogVerbosity.Display)
     {
         unsafe
