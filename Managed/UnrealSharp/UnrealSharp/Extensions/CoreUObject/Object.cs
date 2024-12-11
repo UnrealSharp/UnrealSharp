@@ -1,6 +1,7 @@
 ﻿using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -186,7 +187,7 @@ public partial class UObject
         APawn? instigator = null, 
         AActor? owner = null) where T : AActor
     {
-        FActorSpawnParameters actorSpawnParameters = new FActorSpawnParameters
+        FCSSpawnActorParameters actorSpawnParameters = new FCSSpawnActorParameters
         {
             Instigator = instigator,
             DeferConstruction = false,
@@ -205,13 +206,9 @@ public partial class UObject
     /// <param name="spawnParameters"> The parameters to use when spawning the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FActorSpawnParameters spawnParameters) where T : AActor
+    public T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters) where T : AActor
     {
-        unsafe
-        {
-            IntPtr handle = UWorldExporter.CallSpawnActor(NativeObject, &spawnTransform, actorType.NativeClass, ref spawnParameters);
-            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
-        }
+        return (T) UCSWorldExtensions.SpawnActor(this, new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
     }
     
     /// <summary>

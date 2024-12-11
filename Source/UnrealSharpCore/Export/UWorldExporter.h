@@ -6,15 +6,6 @@
 #include "FunctionsExporter.h"
 #include "UWorldExporter.generated.h"
 
-struct FSpawnActorParameters_Interop
-{
-	AActor* Owner;
-	APawn* Instigator;
-	AActor* Template;
-	bool DeferConstruction;
-	ESpawnActorCollisionHandlingMethod SpawnMethod;
-};
-
 UCLASS(meta = (NotGeneratorValid))
 class UNREALSHARPCORE_API UUWorldExporter : public UFunctionsExporter
 {
@@ -27,8 +18,7 @@ public:
 	// End
 
 private:
-
-	static void* SpawnActor(const UObject* Outer, const FTransform* SpawnTransform, UClass* Class, const FSpawnActorParameters_Interop* ManagedSpawnedParameters);
+	
 	static void SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle);
 	static void InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle);
 	static void* GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject);

@@ -69,10 +69,13 @@ public struct TSubclassOf<T>
     /// Get the default object of the class.
     /// </summary>
     /// <returns>The default object of the class.</returns>
-    public T GetDefaultObject()
+    public T DefaultObject 
     {
-        IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        get
+        {
+            IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
+            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        }
     }
     
     /// <summary>
@@ -114,6 +117,17 @@ public struct TSubclassOf<T>
     public static implicit operator TSubclassOf<T>(Type inClass)
     {
         return new TSubclassOf<T>(inClass);
+    }
+    
+    public static implicit operator TSubclassOf<T>(UClass inClass)
+    {
+        return new TSubclassOf<T>(inClass);
+    }
+    
+    public static implicit operator UClass(TSubclassOf<T> subclass)
+    {
+        IntPtr handle = FCSManagerExporter.CallFindManagedObject(subclass.NativeClass);
+        return GcHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
     }
 
     /// <inheritdoc />
