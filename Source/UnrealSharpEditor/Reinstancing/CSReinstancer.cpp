@@ -343,6 +343,13 @@ void FCSReinstancer::UpdateBlueprints()
 					bNeedsNodeReconstruction = true;
 				}
 			}
+			else if (UK2Node_MacroInstance* Node_MacroInstance = Cast<UK2Node_MacroInstance>(Node))
+			{
+				if (TryUpdatePin(Node_MacroInstance->ResolvedWildcardType))
+				{
+					bNeedsNodeReconstruction = true;
+				}
+			}
 			else if (UK2Node_FunctionTerminator* FunctionTerminator = Cast<UK2Node_FunctionTerminator>(Node))
 			{
 				if (const UClass* CurrentClassType = FunctionTerminator->FunctionReference.GetMemberParentClass())
