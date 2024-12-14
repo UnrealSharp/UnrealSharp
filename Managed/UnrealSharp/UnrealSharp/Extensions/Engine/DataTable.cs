@@ -91,7 +91,7 @@ public partial class UDataTable
         IList<FName> rowNames = GetRowNames();
         foreach (FName rowName in rowNames)
         {
-            action(rowName, FindRow<T>(rowName.ToString()));
+            action(rowName, FindRow<T>(rowName));
         }
     }
     
@@ -105,7 +105,7 @@ public partial class UDataTable
         IList<FName> rowNames = GetRowNames();
         foreach (FName rowName in rowNames)
         {
-            action(FindRow<T>(rowName.ToString()));
+            action(FindRow<T>(rowName));
         }
     }
     
