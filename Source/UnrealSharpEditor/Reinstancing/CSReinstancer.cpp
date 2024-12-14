@@ -15,6 +15,8 @@
 #include "Serialization/ArchiveReplaceObjectRef.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
+DEFINE_LOG_CATEGORY(LogUnrealSharpReinstancer);
+
 FCSReinstancer& FCSReinstancer::Get()
 {
 	static FCSReinstancer Instance;
@@ -159,6 +161,13 @@ void FCSReinstancer::StartReinstancing()
 				continue;
 			}
 			
+			if (Old->IsRooted()) 
+			{
+				// something didn't go right
+				UE_LOG(LogUnrealSharpReinstancer, Error, TEXT("Cannot mark %s for GarbageCollection because IsRooted"), *Old->GetName());
+				continue;
+			}
+
 			Old->ClearFlags(RF_Standalone);
 			Old->MarkAsGarbage();
 		}

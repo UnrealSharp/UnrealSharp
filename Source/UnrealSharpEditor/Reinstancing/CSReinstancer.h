@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "Logging/LogMacros.h"
+DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpReinstancer, Log, All);
+
 class UK2Node_CSAsyncAction;
 class UK2Node_CallFunction;
 class FCSReload;
