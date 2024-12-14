@@ -197,6 +197,11 @@ public class FunctionExporter
             string refQualifier = GetRefQualifier(parameter);
             string parameterName = GetParameterName(parameter);
 
+            if (!translator.ShouldBeDeclaredAsParameter)
+            {
+                continue;
+            }
+
             if (_selfParameter == parameter)
             {
                 if (string.IsNullOrEmpty(_paramsStringCall))

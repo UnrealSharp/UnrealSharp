@@ -85,14 +85,19 @@ public static class BitfieldBoolMarshaller
 
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr nativeObj)
     {
         IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;
 
         unsafe
         {
-            *(IntPtr*) uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
+            *(IntPtr*)uObjectPosition = nativeObj;
         }
+    }
+    
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
+    {
+        ToNative(nativeBuffer, arrayIndex, obj?.NativeObject ?? IntPtr.Zero);
     }
     
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)

@@ -38,7 +38,7 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
     public void LoadPrimaryAsset(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAsset loadPrimaryAsset = UAsyncActionLoadPrimaryAsset.AsyncLoadPrimaryAsset(WorldContextObject, primaryAsset, bundles);
+        UAsyncActionLoadPrimaryAsset loadPrimaryAsset = UAsyncActionLoadPrimaryAsset.AsyncLoadPrimaryAsset(primaryAsset, bundles);
         loadPrimaryAsset.Completed += onLoaded;
         loadPrimaryAsset.Activate();
     }
@@ -65,7 +65,7 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the assets are loaded</param>
     public void LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetListLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetList loadPrimaryAssets = UAsyncActionLoadPrimaryAssetList.AsyncLoadPrimaryAssetList(WorldContextObject, primaryAssets, bundles);
+        UAsyncActionLoadPrimaryAssetList loadPrimaryAssets = UAsyncActionLoadPrimaryAssetList.AsyncLoadPrimaryAssetList(primaryAssets, bundles);
         loadPrimaryAssets.Completed += onLoaded;
         loadPrimaryAssets.Activate();
     }
@@ -92,7 +92,7 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
     public void LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetClassLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetClass loadPrimaryAssetClass = UAsyncActionLoadPrimaryAssetClass.AsyncLoadPrimaryAssetClass(WorldContextObject, primaryAsset, bundles);
+        UAsyncActionLoadPrimaryAssetClass loadPrimaryAssetClass = UAsyncActionLoadPrimaryAssetClass.AsyncLoadPrimaryAssetClass(primaryAsset, bundles);
         loadPrimaryAssetClass.Completed += onLoaded;
         loadPrimaryAssetClass.Activate();
     }
@@ -119,7 +119,7 @@ public partial class UAssetManager
     /// <param name="onLoaded">The callback to execute when the classes are loaded</param>
     public void LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetClassListLoaded onLoaded)
     {
-        UAsyncActionLoadPrimaryAssetClassList loadPrimaryAssetClasses = UAsyncActionLoadPrimaryAssetClassList.AsyncLoadPrimaryAssetClassList(WorldContextObject, primaryAssets, bundles);
+        UAsyncActionLoadPrimaryAssetClassList loadPrimaryAssetClasses = UAsyncActionLoadPrimaryAssetClassList.AsyncLoadPrimaryAssetClassList(primaryAssets, bundles);
         loadPrimaryAssetClasses.Completed += onLoaded;
         loadPrimaryAssetClasses.Activate();
     }
