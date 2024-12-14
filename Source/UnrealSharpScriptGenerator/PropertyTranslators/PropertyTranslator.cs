@@ -26,7 +26,10 @@ public abstract class PropertyTranslator
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
-    public virtual bool ShouldExportParameter => true;
+    
+    // Should this property be declared as a parameter in the function signature? 
+    // A property can support being a parameter but not be declared as one, such as WorldContextObjectPropertyTranslator
+    public virtual bool ShouldBeDeclaredAsParameter => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {

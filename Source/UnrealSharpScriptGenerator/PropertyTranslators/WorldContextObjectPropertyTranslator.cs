@@ -5,7 +5,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
 {
-    public override bool ShouldExportParameter => false;
+    public override bool ShouldBeDeclaredAsParameter => false;
 
     public override bool CanExport(UhtProperty property)
     {
@@ -31,6 +31,6 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
-        builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, FCSManagerExporter.CallGetCurrentWorldContext());");
+        base.ExportToNative(builder, property, propertyName, destinationBuffer, offset, "FCSManagerExporter.CallGetCurrentWorldContext()");
     }
 }
