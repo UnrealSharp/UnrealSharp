@@ -34,8 +34,15 @@ public partial class UDataTable
     /// <returns>The row if found, otherwise the default value of the type</returns>
     public T FindRow<T>(string rowName) where T : struct
     {
+        Type type = typeof(T);
+        
+        if (type.GetCustomAttributes(typeof(UStructAttribute), false).Length == 0)
+        {
+            throw new Exception($"The type {type.Name} must be a UStruct.");
+        }
+        
         IntPtr rowPtr = UDataTableExporter.CallGetRow(NativeObject, rowName);
-        return (T)Activator.CreateInstance(typeof(T), rowPtr)!;
+        return (T)Activator.CreateInstance(type, rowPtr)!;
     }
     
     /// <summary>
@@ -124,5 +131,10 @@ public partial class UDataTable
     private int GetNumRows()
     {
         return GetRowNames().Count;
+    }
+    
+    public static bool IsUStruct<T>() where T : struct
+    {
+        return typeof(T).GetCustomAttributes(typeof(UStructAttribute), false).Length > 0;
     }
 }
