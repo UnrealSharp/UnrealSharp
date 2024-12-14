@@ -35,9 +35,8 @@ public class UEnumAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var isUEnum = namedTypeSymbol.TypeKind == TypeKind.Enum &&
-                        AnalyzerStatics.HasAttribute(namedTypeSymbol, AnalyzerStatics.UEnumAttribute);
-        if (isUEnum && !IsByteEnum(namedTypeSymbol))
+        var isUEnum = namedTypeSymbol.TypeKind == TypeKind.Enum && AnalyzerStatics.HasAttribute(namedTypeSymbol, AnalyzerStatics.UEnumAttribute);
+        if (isUEnum && !IsByteEnum(namedTypeSymbol) && !AnalyzerStatics.HasAttribute(namedTypeSymbol, AnalyzerStatics.GeneratedTypeAttribute))
         {
             context.ReportDiagnostic(Diagnostic.Create(UEnumIsByteEnumRule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name));
         }
