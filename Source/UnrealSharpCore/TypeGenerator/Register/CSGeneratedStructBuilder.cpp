@@ -10,10 +10,6 @@
 void FCSGeneratedStructBuilder::StartBuildingType()
 {
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
-	
-#if WITH_EDITOR
-	Field->EditorData = NewObject<UUserDefinedStructEditorData>(Field, NAME_None, RF_Transactional);
-#endif
 		
 	Field->Status = UDSS_UpToDate;
 	if (!Field->Guid.IsValid())
