@@ -26,6 +26,7 @@ public abstract class PropertyTranslator
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
+    public virtual bool ShouldExportParameter => true;
     
     public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
     {
