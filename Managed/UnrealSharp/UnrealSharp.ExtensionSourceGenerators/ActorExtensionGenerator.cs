@@ -40,9 +40,9 @@ public class ActorExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// </summary>");
         stringBuilder.AppendLine("     /// <param name=\"worldContextObject\">The object to get the actors from.</param>");
         stringBuilder.AppendLine("     /// <param name=\"outActors\">The list to store the actors in.</param>");
-        stringBuilder.AppendLine("     public static new void GetAllActorsOfClass(UnrealSharp.CoreUObject.UObject worldContextObject, out IList<AActor> outActors)");
+        stringBuilder.AppendLine("     public static new void GetAllActorsOfClass(out IList<AActor> outActors)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"         UGameplayStatics.GetAllActorsOfClass(worldContextObject, typeof({fullTypeName}), out outActors);");
+        stringBuilder.AppendLine($"         UGameplayStatics.GetAllActorsOfClass(typeof({fullTypeName}), out outActors);");
         stringBuilder.AppendLine("     }");
     }
 }
