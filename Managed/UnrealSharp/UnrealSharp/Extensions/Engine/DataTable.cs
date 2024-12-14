@@ -32,7 +32,7 @@ public partial class UDataTable
     /// <param name="rowName">The name of the row to find</param>
     /// <typeparam name="T">The type of the row to find</typeparam>
     /// <returns>The row if found, otherwise the default value of the type</returns>
-    public T FindRow<T>(string rowName) where T : struct
+    public T FindRow<T>(FName rowName) where T : struct
     {
         Type type = typeof(T);
         
@@ -77,7 +77,7 @@ public partial class UDataTable
     /// </summary>
     /// <param name="rowName">The name of the row to check</param>
     /// <returns>True if the row exists, otherwise false</returns>
-    public bool HasRow(string rowName)
+    public bool HasRow(FName rowName)
     {
         return UDataTableFunctionLibrary.DoesRowExist(this, rowName);
     }
