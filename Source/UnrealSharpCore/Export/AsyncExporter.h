@@ -19,7 +19,7 @@ public:
 
 private:
 	
-	static void RunOnThread(ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle);
+	static void RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle);
 	static int GetCurrentNamedThread();
 	
 };

@@ -65,6 +65,7 @@ namespace UnrealSharp
         {
             var previousContext = SynchronizationContext.Current;
             var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+            unrealContext.WorldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
 
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
@@ -83,6 +84,7 @@ namespace UnrealSharp
         {
             var previousContext = SynchronizationContext.Current;
             var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+            unrealContext.WorldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
 
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
@@ -102,6 +104,7 @@ namespace UnrealSharp
         {
             var previousContext = SynchronizationContext.Current;
             var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+            unrealContext.WorldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
 
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
@@ -122,6 +125,7 @@ namespace UnrealSharp
         {
             var previousContext = SynchronizationContext.Current;
             var unrealContext = UnrealSynchronizationContext.GetContext(thread);
+            unrealContext.WorldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
 
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
@@ -149,10 +153,11 @@ namespace UnrealSharp
             => syncContextCache.GetOrAdd(thread, static thread => new(thread));
 
         public NamedThread Thread = thread;
+        public nint WorldContextObject;
 
         public override void Post(SendOrPostCallback d, object? state)
         {
-            RunOnThread(Thread, () => d(state));
+            RunOnThread(WorldContextObject, Thread, () => d(state));
         }
 
         public override void Send(SendOrPostCallback d, object? state)
@@ -163,7 +168,7 @@ namespace UnrealSharp
                 return;
             }
             var semaphore = new ManualResetEventSlim(initialState: false);
-            RunOnThread(Thread, () =>
+            RunOnThread(WorldContextObject, Thread, () =>
             {
                 d(state);
                 semaphore.Set();
@@ -171,12 +176,12 @@ namespace UnrealSharp
             semaphore.Wait();
         }
 
-        public static void RunOnThread(NamedThread thread, Action callback)
+        public static void RunOnThread(nint worldContextObject, NamedThread thread, Action callback)
         {
             unsafe
             {
                 GCHandle gcHandle = GCHandle.Alloc(callback);
-                AsyncExporter.CallRunOnThread((int)thread, GCHandle.ToIntPtr(gcHandle));
+                AsyncExporter.CallRunOnThread(worldContextObject, (int)thread, GCHandle.ToIntPtr(gcHandle));
             }
         }
     }
