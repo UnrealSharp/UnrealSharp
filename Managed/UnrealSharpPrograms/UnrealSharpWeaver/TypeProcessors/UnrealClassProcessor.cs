@@ -97,6 +97,7 @@ public static class UnrealClassProcessor
             EmitFunctionGlueToStaticCtor(virtualFunction, processor, loadNativeClassField, staticConstructor);
         }
 
+        WeaverHelper.FinalizeMethod(staticConstructor);
     }
 
     static void EmitFunctionGlueToStaticCtor(FunctionMetaData function, ILProcessor processor, Instruction loadNativeClassField, MethodDefinition staticConstructor)
@@ -119,7 +120,5 @@ public static class UnrealClassProcessor
         {
             param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
         }
-        
-        WeaverHelper.FinalizeMethod(staticConstructor);
     }
 }
