@@ -31,6 +31,6 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
-        base.ExportToNative(builder, property, propertyName, destinationBuffer, offset, "FCSManagerExporter.CallGetCurrentWorldContext()");
+        builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, FCSManagerExporter.CallGetCurrentWorldContext());");
     }
 }
