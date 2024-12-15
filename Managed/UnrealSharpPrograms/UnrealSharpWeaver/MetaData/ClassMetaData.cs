@@ -106,7 +106,7 @@ public class ClassMetaData : TypeReferenceMetadata
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method))
+            if (WeaverHelper.IsUFunction(method) && !isInterfaceFunction)
             {
                 if (isBlueprintOverride)
                 {

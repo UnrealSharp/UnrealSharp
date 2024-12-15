@@ -17,6 +17,7 @@ public static class AnalyzerStatics
     public const string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
     public const string UPropertyAttribute = "UPropertyAttribute";
+    public const string UFunctionAttribute = "UFunctionAttribute";
     
     public const string BindingAttribute = "BindingAttribute";
     
