@@ -1,4 +1,4 @@
-﻿#include "CSProcHelper.h"
+#include "CSProcHelper.h"
 #include "UnrealSharpProcHelper.h"
 #include "Misc/App.h"
 #include "Misc/Paths.h"
@@ -38,8 +38,19 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 		return false;
 	}
 
+	constexpr double TimeoutSeconds = 20.0;
+	double StartLoopTime = FPlatformTime::Seconds();
+
 	while (FPlatformProcess::IsProcRunning(ProcHandle))
 	{
+		// Ensures editor can still startup even when dotnet process hangs
+		if (FPlatformTime::Seconds() - StartLoopTime > TimeoutSeconds)
+		{
+			UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s task timed out (Args: %s)."), *ProgramName, *Arguments);
+			FPlatformProcess::TerminateProc(ProcHandle);
+			break;
+		}
+
 		FPlatformProcess::Sleep(0.1f);
 	}
 
