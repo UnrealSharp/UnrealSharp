@@ -208,7 +208,7 @@ public partial class UObject
     /// <returns> The spawned actor. </returns>
     public T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters) where T : AActor
     {
-        return (T) UCSWorldExtensions.SpawnActor(this, new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
+        return (T) UCSWorldExtensions.SpawnActor(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
     }
     
     /// <summary>

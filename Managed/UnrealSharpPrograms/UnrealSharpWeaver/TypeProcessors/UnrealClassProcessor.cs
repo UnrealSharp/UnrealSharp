@@ -81,29 +81,44 @@ public static class UnrealClassProcessor
         {
             ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
         }
-        
+
         foreach (var function in metadata.Functions)
         {
-            if (!function.HasParameters)
+            EmitFunctionGlueToStaticCtor(function, processor, loadNativeClassField, staticConstructor);
+        }
+
+        foreach (var virtualFunction in metadata.VirtualFunctions)
+        {
+            if (!FunctionMetaData.IsInterfaceFunction(virtualFunction.MethodDef))
             {
                 continue;
             }
             
-            VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
-            Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
-            Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
-            
-            function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
-            function.EmitFunctionParamOffsets(processor, loadNativePointer);
-            function.EmitFunctionParamSize(processor, loadNativePointer);
-            function.EmitParamNativeProperty(processor, loadNativePointer);
-            
-            foreach (var param in function.Parameters)
-            {
-                param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
-            }
+            EmitFunctionGlueToStaticCtor(virtualFunction, processor, loadNativeClassField, staticConstructor);
         }
-        
+
         WeaverHelper.FinalizeMethod(staticConstructor);
+    }
+
+    static void EmitFunctionGlueToStaticCtor(FunctionMetaData function, ILProcessor processor, Instruction loadNativeClassField, MethodDefinition staticConstructor)
+    {
+        if (!function.HasParameters)
+        {
+            return;
+        }
+            
+        VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
+        Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+        Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
+            
+        function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
+        function.EmitFunctionParamOffsets(processor, loadNativePointer);
+        function.EmitFunctionParamSize(processor, loadNativePointer);
+        function.EmitParamNativeProperty(processor, loadNativePointer);
+            
+        foreach (var param in function.Parameters)
+        {
+            param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
+        }
     }
 }

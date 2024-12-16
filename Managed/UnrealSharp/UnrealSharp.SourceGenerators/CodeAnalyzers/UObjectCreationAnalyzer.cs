@@ -68,9 +68,11 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     
     public override void Initialize(AnalysisContext context)
     {
+        context.EnableConcurrentExecution();
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterOperationAction(AnalyzeUObjectCreation, OperationKind.ObjectCreation);
     }
-    
+
     //check new <UObject> syntax
     private static void AnalyzeUObjectCreation(OperationAnalysisContext context)
     {

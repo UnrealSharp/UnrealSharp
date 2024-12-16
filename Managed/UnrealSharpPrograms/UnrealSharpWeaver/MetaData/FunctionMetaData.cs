@@ -21,8 +21,7 @@ public class FunctionMetaData : BaseMetaData
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
     public bool IsRpc => WeaverHelper.HasAnyFlags(FunctionFlags, RpcFlags);
-
-    private bool shouldBeRemoved = false;
+    private bool _shouldBeRemoved;
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
@@ -163,13 +162,13 @@ public class FunctionMetaData : BaseMetaData
             
             // We don't need the override anymore. It's copied into the Implementation method.
             // But we can't remove it here because it would mess up for child classes during weaving.
-            shouldBeRemoved = true;
+            _shouldBeRemoved = true;
         }
     }
     
     public void TryRemoveMethod()
     {
-        if (!shouldBeRemoved)
+        if (!_shouldBeRemoved)
         {
             return;
         }

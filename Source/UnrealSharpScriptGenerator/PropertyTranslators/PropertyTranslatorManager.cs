@@ -44,10 +44,18 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtTextProperty), new TextPropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtWeakObjectPtrProperty), new WeakObjectPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtObjectPropertyBase), new ObjectPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtObjectPtrProperty), new ObjectPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtObjectProperty), new ObjectPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), new ObjectPropertyTranslator());
+        
+        WorldContextObjectPropertyTranslator worldContextObjectPropertyTranslator = new();
+        AddPropertyTranslator(typeof(UhtObjectPropertyBase), worldContextObjectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtObjectPtrProperty), worldContextObjectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtObjectProperty), worldContextObjectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), worldContextObjectPropertyTranslator);
+        
+        ObjectPropertyTranslator objectPropertyTranslator = new();
+        AddPropertyTranslator(typeof(UhtObjectPropertyBase), objectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtObjectPtrProperty), objectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtObjectProperty), objectPropertyTranslator);
+        AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), objectPropertyTranslator);
         
         AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());

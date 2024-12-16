@@ -91,7 +91,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
 
         unsafe
         {
-            *(IntPtr*) uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
+            *(IntPtr*)uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
         }
     }
     
