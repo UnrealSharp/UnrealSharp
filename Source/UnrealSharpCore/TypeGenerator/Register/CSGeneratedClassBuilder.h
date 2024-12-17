@@ -23,7 +23,7 @@ public:
 	static UClass* GetFirstNativeClass(UClass* Class);
 	static UClass* GetFirstNonBlueprintClass(UClass* Class);
 
-	static bool SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
+	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
 													  AActor* Actor,
 													  UClass* ActorClass,
 													  UCSClass* FirstManagedClass,

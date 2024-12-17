@@ -147,11 +147,7 @@ void FCSGeneratedClassBuilder::ManagedActorConstructor(const FObjectInitializer&
 	InitialSetup(ObjectInitializer, ManagedClass, ClassInfo);
 
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
-	if (!SetupDefaultSubobjects(ObjectInitializer, Actor, Actor->GetClass(), ManagedClass, ClassInfo) || !Actor->GetRootComponent())
-	{
-		USceneComponent* DefaultSceneRoot = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(Actor, USceneComponent::GetDefaultSceneRootVariableName());
-		Actor->SetRootComponent(DefaultSceneRoot);
-	}
+	SetupDefaultSubobjects(ObjectInitializer, Actor, Actor->GetClass(), ManagedClass, ClassInfo);
 
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
@@ -199,17 +195,16 @@ void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject) 
 	}
 }
 
-bool FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
+void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
                                                       AActor* Actor,
                                                       UClass* ActorClass,
                                                       UCSClass* FirstManagedClass,
                                                       const TSharedPtr<const FCSharpClassInfo>& ClassInfo)
 {
-	bool bCreatedComponents = false;
 	
 	if (UCSClass* ManagedClass = Cast<UCSClass>(FirstManagedClass->GetSuperClass()))
 	{
-		bCreatedComponents = SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass,
+		SetupDefaultSubobjects(ObjectInitializer, Actor, ActorClass, ManagedClass,
 		                                           ManagedClass->GetClassInfo());
 	}
 
@@ -234,7 +229,6 @@ bool FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 
 		ObjectProperty->SetObjectPropertyValue_InContainer(Actor, NewSubObject);
 		DefaultComponents.Add(ObjectProperty, DefaultComponent);
-		bCreatedComponents = true;
 	}
 
 	for (const TTuple<FObjectProperty*, TSharedPtr<FCSDefaultComponentMetaData>>& DefaultComponent : DefaultComponents)
@@ -291,8 +285,6 @@ bool FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 
 		SceneComponent->SetupAttachment(Actor->GetRootComponent());
 	}
-
-	return bCreatedComponents;
 }
 
 void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces)
