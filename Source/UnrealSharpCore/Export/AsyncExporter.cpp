@@ -8,13 +8,18 @@ void UAsyncExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedF
 	EXPORT_FUNCTION(GetCurrentNamedThread)
 }
 
-void UAsyncExporter::RunOnThread(ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle)
+void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle)
 {
 	AsyncTask(Thread, [=]()
 	{
+		UCSManager& Manager = UCSManager::Get();
+		Manager.SetCurrentWorldContext(WorldContextObject);
+
 		FGCHandle GCHandle(DelegateHandle);
 		FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(DelegateHandle);
 		GCHandle.Dispose();
+
+		Manager.SetCurrentWorldContext(nullptr);
 	});
 }
 
