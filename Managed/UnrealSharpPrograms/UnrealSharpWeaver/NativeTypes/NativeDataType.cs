@@ -169,11 +169,9 @@ public abstract class NativeDataType
     }
 
     // Subclasses may override to do additional prep, such as adding additional backing fields.
-    public virtual void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public virtual void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata, string optionalOuterName = "")
     {
-        PropertyDefinition propertyDef = propertyMetadata.FindPropertyDefinition(typeDefinition);
-        
-        if (ArrayDim > 1)
+        if (ArrayDim > 1 && propertyMetadata.MemberDefinition is PropertyDefinition propertyDef)
         {
             // Suppress the setter.  All modifications should be done by modifying the FixedSizeArray wrapper
             // returned by the getter, which will apply the changes to the underlying native array.

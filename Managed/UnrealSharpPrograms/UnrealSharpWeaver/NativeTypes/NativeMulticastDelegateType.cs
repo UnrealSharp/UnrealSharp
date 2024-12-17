@@ -13,10 +13,11 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         NeedsNativePropertyField = true;
     }
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        string optionalOuterName = "")
     {
         AddBackingField(typeDefinition, propertyMetadata);
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
     }
     
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,

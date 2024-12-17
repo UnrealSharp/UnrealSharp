@@ -15,7 +15,7 @@ public static class PropertyProcessor
     {
         var removedBackingFields = new Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition)>();
 
-        foreach (var prop in properties)
+        foreach (PropertyMetaData prop in properties)
         {
             FieldDefinition offsetField = AddOffsetField(type, prop, WeaverHelper.Int32TypeRef);
             FieldDefinition? nativePropertyField = AddNativePropertyField(type, prop, WeaverHelper.IntPtrType);
@@ -28,9 +28,11 @@ public static class PropertyProcessor
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
             }
             
+            prop.PropertyDataType.PrepareForRewrite(type, prop);
+            
             if (prop.MemberRef.Resolve() is PropertyDefinition propertyRef)
             {
-                prop.PropertyDataType.PrepareForRewrite(type, null, prop);
+
                 prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, offsetField, nativePropertyField);
                 prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, offsetField, nativePropertyField);
 

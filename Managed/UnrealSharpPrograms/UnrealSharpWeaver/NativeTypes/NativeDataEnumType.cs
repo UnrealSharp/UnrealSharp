@@ -7,10 +7,10 @@ class NativeDataEnumType(TypeReference typeRef, int arrayDim) : NativeDataSimple
 {
     public TypeReferenceMetadata InnerProperty { get; set; } = new(typeRef.Resolve());
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata,
-        PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition,
+        PropertyMetaData propertyMetadata, string optionalOuterName = "")
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
         
         if (!WeaverHelper.IsUEnum(InnerProperty.TypeRef.Resolve()))
         {

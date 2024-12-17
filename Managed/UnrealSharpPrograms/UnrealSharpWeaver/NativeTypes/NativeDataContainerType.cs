@@ -9,8 +9,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 public class NativeDataContainerType : NativeDataType
 {
     public PropertyMetaData InnerProperty { get; set; }
-
-
+    
     protected TypeReference ContainerMarshallerType;
     protected TypeReference CopyContainerMarshallerType;
     protected FieldDefinition ContainerMarshallerField;
@@ -60,12 +59,10 @@ public class NativeDataContainerType : NativeDataType
         InnerProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
     }
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata, string optionalOuterName = "")
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-        InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-        
-        PropertyDefinition propertyDef = propertyMetadata.FindPropertyDefinition(typeDefinition);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata);
+        InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, propertyMetadata);
         
         // Ensure that IList<T> itself is imported.
         WeaverHelper.ImportType(CSharpType);
@@ -108,28 +105,32 @@ public class NativeDataContainerType : NativeDataType
         // Otherwise, we're copying data for a struct UProp, parameter, or return value.
         string prefix = propertyMetadata.Name + "_";
         
-        if (propertyDef != null)
+        if (propertyMetadata.MemberDefinition is PropertyDefinition propertyDef)
         {
             // Add a field to store the Container marshaller for the getter.                
             ContainerMarshallerField = new FieldDefinition(prefix + "Marshaller", FieldAttributes.Private, ContainerMarshallerType);
-            propertyDef.DeclaringType.Fields.Add(ContainerMarshallerField);
+            typeDefinition.Fields.Add(ContainerMarshallerField);
 
             // Suppress the setter.  All modifications should be done by modifying the IList<T> returned by the getter,
             // which will propagate the changes to the underlying native TContainer memory.
-            propertyDef.DeclaringType.Methods.Remove(propertyDef.SetMethod);
+            typeDefinition.Methods.Remove(propertyDef.SetMethod);
             propertyDef.SetMethod = null;
-            return;
         }
-
-        if (functionMetadata != null)
+        else
         {
-            prefix = functionMetadata.Name + "_" + prefix;
+            if (propertyMetadata.MemberDefinition is IMemberDefinition field)
+            {
+                if (!string.IsNullOrEmpty(optionalOuterName))
+                {
+                    prefix = optionalOuterName + "_" + prefix;
+                }
 
-            ContainerMarshallerField = new FieldDefinition(prefix + "Marshaller", FieldAttributes.Private | FieldAttributes.Static, CopyContainerMarshallerType);
-            functionMetadata.MethodDef.DeclaringType.Fields.Add(ContainerMarshallerField);
+                ContainerMarshallerField = new FieldDefinition(prefix + "Marshaller", FieldAttributes.Private | FieldAttributes.Static, CopyContainerMarshallerType);
+                typeDefinition.Fields.Add(ContainerMarshallerField);
+            }
+
+            NativePropertyField = WeaverHelper.FindFieldInType(typeDefinition, prefix + "NativeProperty").Resolve(); 
         }
-
-        NativePropertyField = WeaverHelper.FindFieldInType(typeDefinition, prefix + "NativeProperty").Resolve();
     }
     
     
@@ -194,15 +195,7 @@ public class NativeDataContainerType : NativeDataType
         Instruction loadBufferInstruction, FieldDefinition offsetField, int argIndex,
         ParameterDefinition paramDefinition)
     {
-        Instruction[] loadSource = argIndex switch
-        {
-            0 => [processor.Create(OpCodes.Ldarg_0)],
-            1 => [processor.Create(OpCodes.Ldarg_1)],
-            2 => [processor.Create(OpCodes.Ldarg_2)],
-            3 => [processor.Create(OpCodes.Ldarg_3)],
-            _ => [processor.Create(OpCodes.Ldarg_S, (byte)argIndex)],
-        };
-
+        Instruction[] loadSource = [processor.Create(OpCodes.Ldarg, argIndex)];
         Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBufferInstruction, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
     }
@@ -225,7 +218,7 @@ public class NativeDataContainerType : NativeDataType
             processor.Body.Instructions.Add(inst);
         }
         processor.Body.Instructions.Add(loadContainerIndex);
-        processor.Emit(OpCodes.Callvirt, CopyFromNative);
+        processor.Emit(OpCodes.Call, CopyFromNative);
     }
 
     public override void WriteMarshalToNative(ILProcessor processor, TypeDefinition type, Instruction[] loadBufferPtr,
@@ -233,16 +226,28 @@ public class NativeDataContainerType : NativeDataType
     {
         WriteInitCopyMarshaller(processor, type);
 
-        processor.Emit(OpCodes.Ldsfld, ContainerMarshallerField);
+        if (ContainerMarshallerField.IsStatic)
+        {
+            processor.Emit(OpCodes.Ldsflda, ContainerMarshallerField);
+        }
+        else
+        {
+            processor.Emit(OpCodes.Ldarg_0);
+            processor.Emit(OpCodes.Ldflda, ContainerMarshallerField);
+        }
+        
         foreach (var i in loadBufferPtr)
         {
             processor.Append(i);
         }
+        
         processor.Append(loadContainerIndex);
+        
         foreach( var i in loadSource)
         {
             processor.Append(i);
         }
+        
         processor.Emit(OpCodes.Callvirt, CopyToNative);
     }
 
@@ -253,8 +258,7 @@ public class NativeDataContainerType : NativeDataType
 
         return
         [
-            processor.Create(OpCodes.Ldsfld, ContainerMarshallerField),
-            .. loadBufferPtr,
+            processor.Create(OpCodes.Ldsfld, ContainerMarshallerField), .. loadBufferPtr,
             processor.Create(OpCodes.Ldc_I4_0),
             processor.Create(OpCodes.Call, CopyDestructInstance),
         ];

@@ -23,9 +23,10 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         return [WeaverHelper.ImportType(CSharpType)];
     }
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        string optionalOuterName = "")
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
         _isReference = propertyMetadata.IsOutParameter;
         _assembly = WeaverHelper.BindingsAssembly;
         var isGenericMarshaller = marshallerName.Contains('`');

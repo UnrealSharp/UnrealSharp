@@ -63,11 +63,6 @@ public static class UnrealStructProcessor
         {
             throw new RewriteException(structTypeDefinition, "Structs cannot have a constructor that takes an IntPtr");
         }
-
-        foreach (var prop in metadata.Fields)
-        {
-            prop.PropertyDataType.PrepareForRewrite(structTypeDefinition, null, prop);
-        }
         
         var propertyOffsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
         var propertyPointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();

@@ -177,7 +177,7 @@ public static class FunctionProcessor
             TypeReference paramType = WeaverHelper.ImportType(param.PropertyDataType.CSharpType);
             paramVariables[i] = WeaverHelper.AddVariableToMethod(invokerFunction, paramType);
             
-            param.PropertyDataType.PrepareForRewrite(type, func, param);
+            param.PropertyDataType.PrepareForRewrite(type, param, func.Name);
 
             if (param.PropertyFlags.HasFlag(PropertyFlags.OutParm))
             {
@@ -232,7 +232,7 @@ public static class FunctionProcessor
             NativeDataType nativeDataParamType = param.PropertyDataType;
 
             Instruction loadLocalVariable = processor.Create(OpCodes.Ldloc, localVariable);
-            nativeDataParamType.PrepareForRewrite(type, func, param);
+            nativeDataParamType.PrepareForRewrite(type, param);
             
             Instruction[] loadBufferPtr = NativeDataType.GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
             
@@ -250,7 +250,7 @@ public static class FunctionProcessor
 
             Instruction loadReturnProperty = processor.Create(OpCodes.Ldloc, returnIndex);
 
-            nativeReturnType.PrepareForRewrite(type, func, func.ReturnValue);
+            nativeReturnType.PrepareForRewrite(type, func.ReturnValue);
             
             nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
                 processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);

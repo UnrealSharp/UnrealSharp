@@ -11,9 +11,10 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     private static MethodReference _destructInstance;
     private static AssemblyDefinition? _userAssembly;
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        string optionalOuterName = "")
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata);
         
         if (IsInitialized())
         {
