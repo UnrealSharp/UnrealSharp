@@ -185,27 +185,25 @@ public static class PropertyUtilities
 
     public static string GetProtection(this UhtProperty property)
     {
-        string blueprintGetter = property.GetMetaData("BlueprintGetter");
-        string blueprintSetter = property.GetMetaData("BlueprintSetter");
         UhtClass? classObj = property.Outer as UhtClass;
         bool isClassOwner = classObj != null;
         
-        if (isClassOwner && blueprintGetter != string.Empty || blueprintSetter != string.Empty)
+        if (isClassOwner && property.HasAnyGetterOrSetter())
         {
-            UhtFunction? getter = classObj!.FindFunctionByName(blueprintGetter);
-            UhtFunction? setter = classObj!.FindFunctionByName(blueprintSetter);
-            
-            if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public))))
+            UhtFunction? getter = property.GetBlueprintGetter();
+            UhtFunction? setter = property.GetBlueprintSetter();
+    
+            if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public)) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public)))
             {
                 return "public ";
             }
             
-            if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected))))
+            if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected)) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected)))
             {
                 return "protected ";
             }
         }
-
+    
         if (property.HasAllFlags(EPropertyFlags.NativeAccessSpecifierPublic) ||
             (property.HasAllFlags(EPropertyFlags.NativeAccessSpecifierPrivate) && property.HasMetaData("AllowPrivateAccess")) ||
             (!isClassOwner && property.HasAllFlags(EPropertyFlags.Protected)))
