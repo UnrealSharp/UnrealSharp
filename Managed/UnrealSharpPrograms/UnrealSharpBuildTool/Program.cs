@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Newtonsoft.Json;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharpBuildTool;
@@ -147,5 +148,49 @@ public static class Program
         Version currentVersion = Environment.Version;
         string currentVersionStr = $"{currentVersion.Major}.{currentVersion.Minor}";
         return "net" + currentVersionStr;
+    }
+    
+    public static void CreateOrUpdateLaunchSettings(string launchSettingsPath)
+    {
+        Root root = new Root();
+
+        string executablePath = string.Empty;
+        if (OperatingSystem.IsWindows())
+        {
+            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+        }
+        string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
+        
+        // Create a new profile if it doesn't exist
+        if (root.Profiles == null)
+        {
+            root.Profiles = new Profiles();
+        }
+            
+        root.Profiles.ProfileName = new Profile
+        {
+            CommandName = "Executable",
+            ExecutablePath = executablePath,
+            CommandLineArgs = $"\"{commandLineArgs}\"",
+        };
+        
+        string newJsonString = JsonConvert.SerializeObject(root, Newtonsoft.Json.Formatting.Indented);
+        StreamWriter writer = File.CreateText(launchSettingsPath);
+        writer.Write(newJsonString);
+        writer.Close();
+    }
+
+    public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
+    {
+        FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
+        FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
+        List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
+        allProjectFiles.AddRange(csprojFiles);
+        allProjectFiles.AddRange(fsprojFiles);
+        return allProjectFiles;
     }
 }

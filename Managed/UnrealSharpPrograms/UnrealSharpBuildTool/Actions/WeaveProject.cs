@@ -24,18 +24,12 @@ public class WeaveProject : BuildToolAction
     
     private bool Weave(DirectoryInfo scriptFolder, string weaverPath)
     {
-        FileInfo[] csprojFiles = scriptFolder.GetFiles("*.csproj", SearchOption.AllDirectories);
-        FileInfo[] fsprojFiles = scriptFolder.GetFiles("*.fsproj", SearchOption.AllDirectories);
-        
-        if (csprojFiles.Length == 0 && fsprojFiles.Length == 0)
+        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(scriptFolder);
+        if (allProjectFiles.Count == 0)
         {
             Console.WriteLine("No project files found. Skipping weaving...");
             return true;
         }
-        
-        List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
-        allProjectFiles.AddRange(csprojFiles);
-        allProjectFiles.AddRange(fsprojFiles);
         
         BuildToolProcess weaveProcess = new BuildToolProcess();
         weaveProcess.StartInfo.ArgumentList.Add(weaverPath);

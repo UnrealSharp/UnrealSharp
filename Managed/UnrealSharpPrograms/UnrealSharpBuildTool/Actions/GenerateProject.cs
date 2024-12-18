@@ -239,41 +239,7 @@ public class GenerateProject : BuildToolAction
             return;
         }
         
-        CreateOrUpdateLaunchSettings(launchSettingsPath);
-    }
-    
-    void CreateOrUpdateLaunchSettings(string launchSettingsPath)
-    {
-        Root root = new Root();
-
-        string executablePath = string.Empty;
-        if (OperatingSystem.IsWindows())
-        {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
-        }
-        else if (OperatingSystem.IsMacOS())
-        {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
-        }
-        string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
-        
-        // Create a new profile if it doesn't exist
-        if (root.Profiles == null)
-        {
-            root.Profiles = new Profiles();
-        }
-            
-        root.Profiles.ProfileName = new Profile
-        {
-            CommandName = "Executable",
-            ExecutablePath = executablePath,
-            CommandLineArgs = $"\"{commandLineArgs}\"",
-        };
-        
-        string newJsonString = JsonConvert.SerializeObject(root, Newtonsoft.Json.Formatting.Indented);
-        StreamWriter writer = File.CreateText(launchSettingsPath);
-        writer.Write(newJsonString);
-        writer.Close();
+        Program.CreateOrUpdateLaunchSettings(launchSettingsPath);
     }
 }
 
