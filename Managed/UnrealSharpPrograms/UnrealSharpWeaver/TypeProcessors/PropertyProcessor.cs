@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.NativeTypes;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -28,20 +29,20 @@ public static class PropertyProcessor
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
             }
             
-            prop.PropertyDataType.PrepareForRewrite(type, prop);
+            prop.PropertyDataType.PrepareForRewrite(type, prop, prop.MemberRef);
+
+            Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, offsetField);
             
             if (prop.MemberRef.Resolve() is PropertyDefinition propertyRef)
             {
-
-                prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, offsetField, nativePropertyField);
-                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, offsetField, nativePropertyField);
+                prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, loadBuffer, nativePropertyField);
+                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
 
                 string backingFieldName = RemovePropertyBackingField(type, prop);
                 removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
             }
             
             prop.PropertyOffsetField = offsetField;
-            
         }
 
         RemoveBackingFieldReferences(type, removedBackingFields);
@@ -98,11 +99,12 @@ public static class PropertyProcessor
                         voidRef);
                     m.Parameters.Add(new ParameterDefinition(prop.def.PropertyType));
                     type.Methods.Add(m);
-                    prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, prop.offsetField, prop.nativePropertyField);
+                    
+                    Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
+                    prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
                 }
 
-                var newInstr = Instruction.Create((m.IsReuseSlot && m.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call,
-                    m);
+                var newInstr = Instruction.Create((m.IsReuseSlot && m.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, m);
                 newInstr.Offset = instr.Offset;
                 alteredInstructions[alteredInstructions.Count - 1] = newInstr;
 

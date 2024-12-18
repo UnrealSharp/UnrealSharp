@@ -8,9 +8,10 @@ abstract class NativeDataGenericObjectType(TypeReference typeRef, TypeReference 
 {
     public TypeReferenceMetadata InnerType { get; set; } = new(innerTypeReference.Resolve());
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata, string optionalOuterName)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        object outer)
     {
-        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
         
         if (!WeaverHelper.IsValidBaseForUObject(InnerType.TypeRef.Resolve()))
         {

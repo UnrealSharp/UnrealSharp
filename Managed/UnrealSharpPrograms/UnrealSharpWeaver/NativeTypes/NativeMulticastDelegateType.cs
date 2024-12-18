@@ -14,10 +14,10 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     }
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
-        string optionalOuterName = "")
+        object outer)
     {
         AddBackingField(typeDefinition, propertyMetadata);
-        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
     }
     
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
@@ -34,20 +34,20 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }
 
-    protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
+    public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
         
-        foreach (var i in loadBufferInstructions)
+        foreach (Instruction instruction in loadBufferPtr)
         {
-            processor.Append(i);
+            processor.Append(instruction);
         }
         
-        processor.Emit(OpCodes.Ldsfld, nativePropertyField);
+        processor.Emit(OpCodes.Ldsfld, fieldDefinition);
         processor.Emit(OpCodes.Ldc_I4_0);
 
         processor.Emit(OpCodes.Call, FromNative);
-        EndSimpleGetter(processor, getter);
+        getter.FinalizeMethod();
     }
 }

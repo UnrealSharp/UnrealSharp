@@ -31,10 +31,10 @@ public class NativeDataMapType : NativeDataContainerType
     }
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
-        string optionalOuterName = "")
+        object outer)
     {
-        base.PrepareForRewrite(typeDefinition, propertyMetadata, optionalOuterName);
-        ValueProperty.PropertyDataType.PrepareForRewrite(typeDefinition, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
+        ValueProperty.PropertyDataType.PrepareForRewrite(typeDefinition, propertyMetadata, "");
     }
 
     public override void InitializeMarshallerParameters()

@@ -472,7 +472,7 @@ public static class WeaverHelper
         return memberDefinition.Name;
     }
     
-    public static void FinalizeMethod(MethodDefinition method)
+    public static void FinalizeMethod(this MethodDefinition method)
     {
         method.Body.GetILProcessor().Emit(OpCodes.Ret);
         OptimizeMethod(method);
