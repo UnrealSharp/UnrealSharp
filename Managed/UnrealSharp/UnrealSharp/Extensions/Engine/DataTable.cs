@@ -6,15 +6,17 @@ namespace UnrealSharp.Engine;
 
 public partial class UDataTable
 {
-    /// <summary>
-    /// Gets the table as a CSV string.
-    /// </summary>
+	/// <summary>
+	/// Gets the table as a CSV string.
+	/// </summary>
+#if WITH_EDITOR
     public string ToCSV => UCSDataTableExtensions.GetTableAsCSV(this);
     
     /// <summary>
     /// Gets the table as a JSON string.
     /// </summary>
     public string ToJSON => UCSDataTableExtensions.GetTableAsJSON(this);
+#endif
     
     /// <summary>
     /// Gets the number of rows in the table.
