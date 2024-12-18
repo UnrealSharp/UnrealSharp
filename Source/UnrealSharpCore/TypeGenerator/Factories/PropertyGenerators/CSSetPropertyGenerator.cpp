@@ -1,4 +1,6 @@
 #include "CSSetPropertyGenerator.h"
+
+#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/MetaData/CSContainerBaseMetaData.h"
 
 FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -6,7 +8,7 @@ FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPrope
 	FSetProperty* ArrayProperty = static_cast<FSetProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
 
 	TSharedPtr<FCSContainerBaseMetaData> ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
-	ArrayProperty->ElementProp = CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
+	ArrayProperty->ElementProp = FCSPropertyFactory::CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
 	ArrayProperty->ElementProp->Owner = ArrayProperty;
 	return ArrayProperty;
 }

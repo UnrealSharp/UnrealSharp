@@ -11,9 +11,10 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     private static MethodReference _destructInstance;
     private static AssemblyDefinition? _userAssembly;
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        object outer)
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, "");
         
         if (IsInitialized())
         {
@@ -31,26 +32,25 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         EmitSimpleMarshallerDelegates(processor, "StringMarshaller", null);
     }
 
-    protected override void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
+    public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
-        WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
-        EndSimpleGetter(processor, getter);
+        WriteMarshalFromNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0));
+        getter.FinalizeMethod();
     }
-    
-    protected override void CreateSetter(TypeDefinition type, MethodDefinition setter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
+
+    public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition)
     {
         ILProcessor processor = BeginSimpleSetter(setter);
         Instruction loadValue = processor.Create(OpCodes.Ldarg_1);
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, null, offsetField);
-        WriteMarshalToNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadValue);
-        EndSimpleSetter(processor, setter);
+        WriteMarshalToNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0), loadValue);
     }
 
     public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, VariableDefinition localVar)
     {
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(loadBuffer, offsetField);
         WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
         processor.Emit(OpCodes.Stloc, localVar);
     }
@@ -58,7 +58,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, FieldDefinition destField)
     {
         processor.Emit(OpCodes.Ldarg_0);
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(loadBuffer, offsetField);
         WriteMarshalFromNative(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0));
         processor.Emit(OpCodes.Stfld, destField);
     }
@@ -115,7 +115,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
             3 => [processor.Create(OpCodes.Ldarg_3)],
             _ => [processor.Create(OpCodes.Ldarg_S, (byte)argIndex)],
         };
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(loadBuffer, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
     }
     public override IList<Instruction>? WriteStore(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, FieldDefinition srcField)
@@ -126,7 +126,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
             processor.Create(OpCodes.Ldfld, srcField),
         };
         
-        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
+        Instruction[] loadBufferInstructions = GetArgumentBufferInstructions(loadBuffer, offsetField);
         return WriteMarshalToNativeWithCleanup(processor, type, loadBufferInstructions, processor.Create(OpCodes.Ldc_I4_0), loadSource);
     }
 

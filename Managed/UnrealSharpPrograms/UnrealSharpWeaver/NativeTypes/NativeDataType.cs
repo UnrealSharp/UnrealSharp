@@ -46,21 +46,14 @@ public abstract class NativeDataType
     
     internal TypeReference CSharpType { get; set; }
     public int ArrayDim { get; set; }
-    public bool NeedsNativePropertyField { get; set; } 
-    public bool NeedsElementSizeField { get; set; }
     public PropertyType PropertyType { get; set; }
     public virtual bool IsBlittable { get { return false; } }
     public virtual bool IsPlainOldData { get { return false; } }
     public bool IsNetworkSupported = true;
     
-    // Non-json properties
-    // Generic instance type for fixed-size array wrapper. Populated only when ArrayDim > 1.
-    protected TypeReference FixedSizeArrayWrapperType;
-    
-    // Instance backing field for fixed-size array wrapper. Populated only when ArrayDim > 1.
-    protected FieldDefinition FixedSizeArrayWrapperField;
-    
     protected FieldDefinition? BackingField;
+    
+    public bool NeedsNativePropertyField { get; set; }
 
     private TypeReference ToNativeDelegateType;
     private TypeReference FromNativeDelegateType;
@@ -85,7 +78,7 @@ public abstract class NativeDataType
         BackingField = WeaverHelper.AddFieldToType(type, $"{propertyMetaData.Name}_BackingField", CSharpType, FieldAttributes.Private);
     }
     
-    public static Instruction[] GetArgumentBufferInstructions(ILProcessor processor, Instruction? loadBufferInstruction, FieldDefinition offsetField)
+    public static Instruction[] GetArgumentBufferInstructions(Instruction? loadBufferInstruction, FieldDefinition offsetField)
     {
         List<Instruction> instructionBuffer = [];
         
@@ -95,12 +88,12 @@ public abstract class NativeDataType
         }
         else
         {
-            instructionBuffer.Add(processor.Create(OpCodes.Ldarg_0));
-            instructionBuffer.Add(processor.Create(OpCodes.Call, WeaverHelper.NativeObjectGetter));
+            instructionBuffer.Add(Instruction.Create(OpCodes.Ldarg_0));
+            instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverHelper.NativeObjectGetter));
         }
 
-        instructionBuffer.Add(processor.Create(OpCodes.Ldsfld, offsetField));  
-        instructionBuffer.Add(processor.Create(OpCodes.Call, WeaverHelper.IntPtrAdd));
+        instructionBuffer.Add(Instruction.Create(OpCodes.Ldsfld, offsetField));  
+        instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverHelper.IntPtrAdd));
 
         return instructionBuffer.ToArray();
     }
@@ -126,12 +119,6 @@ public abstract class NativeDataType
         } // end of method MonoTestsObject::get_TestReadableInt32
          */
         return processor;
-    }
-
-    protected static void EndSimpleGetter(ILProcessor processor, MethodDefinition getter)
-    {
-        processor.Emit(OpCodes.Ret);
-        getter.Body.OptimizeMacros();
     }
     
     protected static ILProcessor BeginSimpleSetter(MethodDefinition setter)
@@ -162,30 +149,11 @@ public abstract class NativeDataType
         
     }
 
-    protected static void EndSimpleSetter(ILProcessor processor, MethodDefinition setter)
-    {
-        processor.Emit(OpCodes.Ret);
-        setter.Body.OptimizeMacros();
-    }
-
     // Subclasses may override to do additional prep, such as adding additional backing fields.
-    public virtual void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public virtual void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        object outer)
     {
-        PropertyDefinition propertyDef = propertyMetadata.FindPropertyDefinition(typeDefinition);
-        
-        if (ArrayDim > 1)
-        {
-            // Suppress the setter.  All modifications should be done by modifying the FixedSizeArray wrapper
-            // returned by the getter, which will apply the changes to the underlying native array.
-            propertyDef.DeclaringType.Methods.Remove(propertyDef.SetMethod);
-            propertyDef.SetMethod = null;
-
-            // Add an instance backing field to hold the fixed-size array wrapper.
-            FixedSizeArrayWrapperType = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "FixedSizeArrayReadWrite`1", [CSharpType]);
-            FixedSizeArrayWrapperField = WeaverHelper.AddFieldToType(typeDefinition, propertyDef.Name + "_Marshaller", FixedSizeArrayWrapperType);
-        }
-        
-        var marshallingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshallingDelegates`1", [CSharpType]);
+        TypeReference? marshallingDelegates = WeaverHelper.FindGenericTypeInAssembly(WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "MarshallingDelegates`1", [CSharpType]);
         TypeDefinition marshallingDelegatesDef = marshallingDelegates.Resolve();
         
         ToNativeDelegateType = WeaverHelper.FindNestedType(marshallingDelegatesDef, "ToNative");
@@ -253,71 +221,10 @@ public abstract class NativeDataType
         EmitFixedArrayMarshallerDelegates(processor, type);
     }
 
-    public void WriteGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
-    {
-        if (ArrayDim == 1)
-        {
-            CreateGetter(type, getter, offsetField, nativePropertyField);
-        }
-        else
-        {
-            ILProcessor processor = InitPropertyAccessor(getter);
-
-            processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldfld, FixedSizeArrayWrapperField);
-
-            // Store branch position for later insertion
-            processor.Emit(OpCodes.Ldarg_0);
-            Instruction branchPosition = processor.Body.Instructions[processor.Body.Instructions.Count - 1];
-            processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldsfld, offsetField);
-            processor.Emit(OpCodes.Ldc_I4, ArrayDim);
-
-            // Allow subclasses to control construction of their own marshallers, as there may be
-            // generics and/or ctor parameters involved.
-            EmitFixedArrayMarshallerDelegates(processor, type);
-            
-            var constructors = (from method in FixedSizeArrayWrapperType.Resolve().GetConstructors()
-                where (!method.IsStatic
-                       && method.HasParameters
-                       && method.Parameters.Count == 5
-                       && method.Parameters[0].ParameterType.FullName == "UnrealEngine.Runtime.UnrealObject"
-                       && method.Parameters[1].ParameterType.FullName == "System.Int32"
-                       && method.Parameters[2].ParameterType.FullName == "System.Int32"
-                       && method.Parameters[3].ParameterType.IsGenericInstance
-                       && ((GenericInstanceType)method.Parameters[3].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/ToNative"
-                       && ((GenericInstanceType)method.Parameters[4].ParameterType).GetElementType().FullName == "UnrealEngine.Runtime.MarshallingDelegates`1/FromNative")
-                select method).ToArray();
-            ConstructorBuilder.VerifySingleResult(constructors, type, "FixedSizeArrayWrapper UObject-backed constructor");
-            processor.Emit(OpCodes.Newobj, WeaverHelper.UserAssembly.MainModule.ImportReference(FunctionProcessor.MakeMethodDeclaringTypeGeneric(constructors[0], [CSharpType])));
-            processor.Emit(OpCodes.Stfld, FixedSizeArrayWrapperField);
-
-            // Store branch target
-            processor.Emit(OpCodes.Ldarg_0);
-            Instruction branchTarget = processor.Body.Instructions[^1];
-            processor.Emit(OpCodes.Ldfld, FixedSizeArrayWrapperField);
-
-            // Insert branch
-            processor.InsertBefore(branchPosition, processor.Create(OpCodes.Brtrue, branchTarget));
-
-            EndSimpleGetter(processor, getter);
-        }
-    }
-
-    public void WriteSetter(TypeDefinition type, MethodDefinition setter, FieldDefinition offsetField, FieldDefinition nativePropertyField)
-    {
-        if (ArrayDim == 1)
-        {
-            CreateSetter(type, setter, offsetField, nativePropertyField);
-        }
-        else
-        {
-            throw new NotSupportedException("Fixed-size array property setters should be stripped, not rewritten.");
-        }
-    }
-
-    protected abstract void CreateGetter(TypeDefinition type, MethodDefinition getter, FieldDefinition offsetField, FieldDefinition nativePropertyField);
-    protected abstract void CreateSetter(TypeDefinition type, MethodDefinition setter, FieldDefinition offsetField, FieldDefinition nativePropertyField);
+    public abstract void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition);
+    public abstract void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition);
 
     // Subclasses must implement to handle loading of values from a native buffer.
     // Returns the local variable containing the loaded value.

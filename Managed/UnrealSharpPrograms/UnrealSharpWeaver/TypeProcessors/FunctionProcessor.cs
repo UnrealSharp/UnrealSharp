@@ -177,7 +177,7 @@ public static class FunctionProcessor
             TypeReference paramType = WeaverHelper.ImportType(param.PropertyDataType.CSharpType);
             paramVariables[i] = WeaverHelper.AddVariableToMethod(invokerFunction, paramType);
             
-            param.PropertyDataType.PrepareForRewrite(type, func, param);
+            param.PropertyDataType.PrepareForRewrite(type, param, methodToCall);
 
             if (param.PropertyFlags.HasFlag(PropertyFlags.OutParm))
             {
@@ -232,9 +232,9 @@ public static class FunctionProcessor
             NativeDataType nativeDataParamType = param.PropertyDataType;
 
             Instruction loadLocalVariable = processor.Create(OpCodes.Ldloc, localVariable);
-            nativeDataParamType.PrepareForRewrite(type, func, param);
+            nativeDataParamType.PrepareForRewrite(type, param, invokerFunction);
             
-            Instruction[] loadBufferPtr = NativeDataType.GetArgumentBufferInstructions(processor, loadBuffer, offsetField);
+            Instruction[] loadBufferPtr = NativeDataType.GetArgumentBufferInstructions(loadBuffer, offsetField);
             
             nativeDataParamType.WriteMarshalToNative(processor, 
                 type, 
@@ -250,7 +250,7 @@ public static class FunctionProcessor
 
             Instruction loadReturnProperty = processor.Create(OpCodes.Ldloc, returnIndex);
 
-            nativeReturnType.PrepareForRewrite(type, func, func.ReturnValue);
+            nativeReturnType.PrepareForRewrite(type, func.ReturnValue, invokerFunction);
             
             nativeReturnType.WriteMarshalToNative(processor, type, [processor.Create(OpCodes.Ldarg_2)],
                 processor.Create(OpCodes.Ldc_I4_0), loadReturnProperty);
@@ -337,7 +337,7 @@ public static class FunctionProcessor
 
                 processor.Emit(OpCodes.Ldarg, i + 1);
 
-                Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[i].OffsetField!);
+                Instruction[] load = NativeDataType.GetArgumentBufferInstructions(loadArgumentBuffer, paramRewriteInfos[i].OffsetField!);
                 param.PropertyDataType.WriteMarshalFromNative(processor, type, load, processor.Create(OpCodes.Ldc_I4_0));
             
                 Instruction setInstructionOutParam = WeaverHelper.CreateSetInstructionOutParam(methodDef.Parameters[i], param.PropertyDataType.PropertyType);
@@ -349,7 +349,7 @@ public static class FunctionProcessor
         if (metadata.HasReturnValue)
         {
             // Return value is always the last parameter.
-            Instruction[] load = NativeDataType.GetArgumentBufferInstructions(processor, loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);
+            Instruction[] load = NativeDataType.GetArgumentBufferInstructions(loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);
             metadata.ReturnValue.PropertyDataType.WriteMarshalFromNative(processor, type, load, Instruction.Create(OpCodes.Ldc_I4_0));
         }
 

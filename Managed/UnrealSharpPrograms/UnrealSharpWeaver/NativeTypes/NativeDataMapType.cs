@@ -30,10 +30,11 @@ public class NativeDataMapType : NativeDataContainerType
         ValueProperty.PropertyDataType.EmitDynamicArrayMarshallerDelegates(processor, type);
     }
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata, PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
+        object outer)
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
-        ValueProperty.PropertyDataType.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
+        ValueProperty.PropertyDataType.PrepareForRewrite(typeDefinition, propertyMetadata, "");
     }
 
     public override void InitializeMarshallerParameters()

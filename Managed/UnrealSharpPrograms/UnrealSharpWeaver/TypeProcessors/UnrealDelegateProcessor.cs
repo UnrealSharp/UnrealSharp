@@ -109,7 +109,7 @@ public static class UnrealDelegateProcessor
                 PropertyMetaData param = functionMetaData.Parameters[i];
                 NativeDataType nativeDataType = param.PropertyDataType;
 
-                nativeDataType.PrepareForRewrite(invokerMethodDefinition.DeclaringType, functionMetaData, param);
+                nativeDataType.PrepareForRewrite(invokerMethodDefinition.DeclaringType, param, param.MemberRef);
             }
 
             FunctionProcessor.WriteParametersToNative(invokerMethodProcessor,

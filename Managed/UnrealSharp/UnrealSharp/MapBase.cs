@@ -418,6 +418,16 @@ public class MapMarshaller<TKey, TValue>
         _valueToNative = valueToNative;
     }
 
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value)
+    {
+        _mapWrapper.Clear();
+        
+        foreach (KeyValuePair<TKey, TValue> pair in value)
+        {
+            _mapWrapper!.Add(pair.Key, pair.Value);
+        }
+    }
+    
     public TMap<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_mapWrapper == null)

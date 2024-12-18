@@ -8,10 +8,10 @@ class NativeDataStructType(TypeReference structType, string marshallerName, int 
 {
     public TypeReferenceMetadata InnerType { get; set; } = new(structType.Resolve());
 
-    public override void PrepareForRewrite(TypeDefinition typeDefinition, FunctionMetaData? functionMetadata,
-        PropertyMetaData propertyMetadata)
+    public override void PrepareForRewrite(TypeDefinition typeDefinition,
+        PropertyMetaData propertyMetadata, object outer)
     {
-        base.PrepareForRewrite(typeDefinition, functionMetadata, propertyMetadata);
+        base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
 
         if (!WeaverHelper.IsUStruct(InnerType.TypeRef.Resolve()))
         {
