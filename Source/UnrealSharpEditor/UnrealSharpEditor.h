@@ -94,6 +94,8 @@ private:
 
     static void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
+    void OnPIEEnded(bool IsSimulating);
+
     static void WaitUpdateAssetTypes();
 
     static void ProcessGameplayTags();
@@ -105,6 +107,7 @@ private:
     
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
+    bool bHasQueuedHotReload = false;
 
     FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
     

@@ -38,14 +38,13 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 		return false;
 	}
 
-	while (FPlatformProcess::IsProcRunning(ProcHandle))
+	bool bProcessFinished = false;
+	while (!bProcessFinished)
 	{
-		FPlatformProcess::Sleep(0.1f);
+		bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
+		Output += FPlatformProcess::ReadPipe(ReadPipe);
 	}
-
-	Output = FPlatformProcess::ReadPipe(ReadPipe);
-
-	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
+	
 	FPlatformProcess::CloseProc(ProcHandle);
 	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
 

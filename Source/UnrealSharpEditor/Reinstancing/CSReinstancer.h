@@ -28,6 +28,8 @@ public:
 
 	void PostReinstance();
 
+	void FixDataTables();
+
 	void UpdateBlueprints();
 	
 	bool TryUpdatePin(FEdGraphPinType& PinType) const;

@@ -36,6 +36,9 @@ public:
 			
 			const FString OldPath = ExistingField->GetPathName();
 			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
+
+			ExistingField->SetFlags(RF_NewerVersionExists);
+			ExistingField->ClearFlags(RF_Public | RF_Standalone);
 			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
 		}
 #endif

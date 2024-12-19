@@ -1,18 +1,14 @@
 ﻿#include "CSReinstancer.h"
-#include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
-#include "BlueprintEditorLibrary.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
 #include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
-#include "AssetRegistry/AssetRegistryModule.h"
+#include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/KismetReinstanceUtilities.h"
 #include "Kismet2/ReloadUtilities.h"
-#include "Serialization/ArchiveReplaceObjectRef.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -142,38 +138,27 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(ClassesToReinstance);
 	
 	Reload->Reinstance();
-	PostReinstance();
 	UpdateBlueprints();
+	PostReinstance();
 	
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+	StructsToReinstance.Empty();
+	InterfacesToReinstance.Empty();
+	ClassesToReinstance.Empty();
 	
-	FBlueprintCompilationManager::ReparentHierarchies(ClassesToReinstance);
-	FBlueprintCompilationManager::ReparentHierarchies(InterfacesToReinstance);
-
-	auto CleanOldTypes = [](auto& Container)
-	{
-		for (const auto& [Old, New] : Container)
-		{
-			if (!Old || !New)
-			{
-				continue;
-			}
-			
-			Old->ClearFlags(RF_Standalone);
-			Old->RemoveFromRoot();
-			Old->MarkAsGarbage();
-		}
-
-		Container.Empty();
-	};
-	
-	CleanOldTypes(InterfacesToReinstance);
-	CleanOldTypes(StructsToReinstance);
-	CleanOldTypes(ClassesToReinstance);
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 void FCSReinstancer::PostReinstance()
+{
+	FixDataTables();
+	
+	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
+	{
+		PropertyModule->NotifyCustomizationModuleChanged();
+	}
+}
+
+void FCSReinstancer::FixDataTables()
 {
 	for (TTuple<UScriptStruct*, UScriptStruct*>& Struct : StructsToReinstance)
 	{
@@ -188,11 +173,6 @@ void FCSReinstancer::PostReinstance()
 			Table->RowStruct = Struct.Value;
 			Table->CreateTableFromJSONString(Data);
 		}
-	}
-	
-	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
-	{
-		PropertyModule->NotifyCustomizationModuleChanged();
 	}
 }
 
