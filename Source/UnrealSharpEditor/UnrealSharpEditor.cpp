@@ -17,7 +17,6 @@
 #include "UnrealSharpCore/CSDeveloperSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
-#include "Interfaces/IPluginManager.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
@@ -63,6 +62,8 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	FCSReinstancer::Get().Initialize();
 
+	FEditorDelegates::EndPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEEnded);
+
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
 
@@ -95,8 +96,14 @@ void FUnrealSharpEditorModule::ShutdownModule()
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
 {
-	if (IsHotReloading() || FPlayWorldCommandCallbacks::IsInPIE())
+	if (IsHotReloading())
 	{
+		return;
+	}
+	
+	if (FPlayWorldCommandCallbacks::IsInPIE())
+	{
+		bHasQueuedHotReload = true;
 		return;
 	}
 	
@@ -625,6 +632,17 @@ void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object, FP
 {
 	WaitUpdateAssetTypes();
 	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetTypes));
+}
+
+void FUnrealSharpEditorModule::OnPIEEnded(bool IsSimulating)
+{
+	if (!bHasQueuedHotReload)
+	{
+		return;
+	}
+
+	bHasQueuedHotReload = false;
+	StartHotReload();
 }
 
 bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)

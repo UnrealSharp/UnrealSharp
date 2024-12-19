@@ -116,6 +116,8 @@ void FCSGeneratedClassBuilder::OnFieldReplaced(UCSClass* OldField, UCSClass* New
 	DummyBlueprint->GeneratedClass = nullptr;
 	DummyBlueprint->ParentClass = nullptr;
 
+	OldField->ClassFlags |= CLASS_NewerVersionExists;
+	
 	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
 	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
 	// May be a better way? It works so far.
@@ -226,7 +228,7 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		UObject* NewSubObject = ObjectInitializer.CreateDefaultSubobject(
 			Actor, ObjectProperty->GetFName(), ObjectProperty->PropertyClass, ObjectProperty->PropertyClass, true,
 			false);
-
+		
 		ObjectProperty->SetObjectPropertyValue_InContainer(Actor, NewSubObject);
 		DefaultComponents.Add(ObjectProperty, DefaultComponent);
 	}
@@ -248,7 +250,7 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 			Actor->SetRootComponent(SceneComponent);
 			continue;
 		}
-
+		
 		FName AttachmentComponentName = DefaultComponentMetaData->AttachmentComponent;
 		FName AttachmentSocketName = DefaultComponentMetaData->AttachmentSocket;
 
@@ -277,7 +279,7 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 						Template->SetupAttachment(TemplateAttachmentComponent, Socket);
 					}
 				}
-
+				
 				SceneComponent->SetupAttachment(AttachmentComponent, Socket);
 				continue;
 			}
