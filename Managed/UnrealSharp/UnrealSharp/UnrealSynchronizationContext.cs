@@ -121,7 +121,9 @@ namespace UnrealSharp
         public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
         {
             var previousContext = SynchronizationContext.Current;
-            SynchronizationContext.SetSynchronizationContext(new UnrealSynchronizationContext(thread));
+            var unrealContext = new UnrealSynchronizationContext(thread);
+
+            SynchronizationContext.SetSynchronizationContext(unrealContext);
 
             return task.AsTask().ContinueWith((t) =>
             {
