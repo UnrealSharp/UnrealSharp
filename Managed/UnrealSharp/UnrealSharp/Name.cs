@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
@@ -9,9 +9,12 @@ namespace UnrealSharp;
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
     private int ComparisonIndex;
-    private int DisplayIndex;
     private int Number;
-    
+
+#if DEBUG
+    private int DisplayIndex;
+#endif
+
     public static readonly FName None = new(0, 0);
     
     public FName(string name)
