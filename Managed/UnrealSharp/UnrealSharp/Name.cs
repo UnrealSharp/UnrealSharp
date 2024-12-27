@@ -8,11 +8,13 @@ namespace UnrealSharp;
 [UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
+#if PACKAGE
     private int ComparisonIndex;
     private int Number;
-
-#if DEBUG
+#else
+	private int ComparisonIndex;
     private int DisplayIndex;
+    private int Number;
 #endif
 
     public static readonly FName None = new(0, 0);
