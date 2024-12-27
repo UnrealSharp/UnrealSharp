@@ -26,3 +26,8 @@ AActor* UCSWorldExtensions::SpawnActor(const UObject* WorldContextObject, const 
 	
 	return World->SpawnActor(Class, &Transform, SpawnParameters);
 }
+
+void UCSWorldExtensions::FinishSpawning(AActor* Actor, const FTransform& UserTransform, bool bIsDefaultTransform)
+{
+	Actor->FinishSpawning(UserTransform, bIsDefaultTransform);
+}

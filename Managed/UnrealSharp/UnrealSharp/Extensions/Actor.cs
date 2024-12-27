@@ -1,5 +1,6 @@
 ﻿using UnrealSharp.CoreUObject;
 using UnrealSharp.EnhancedInput;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.Engine;
 
@@ -103,5 +104,21 @@ public partial class AActor
         }
         
         return GetComponentByClass(@class.Value) as T;
+    }
+	    
+    /// <summary>
+    /// Finish spawning deferred actor with default transform.
+    /// </summary>
+    public void FinishSpawning()
+    {
+        UCSWorldExtensions.FinishSpawning(this, ActorTransform, true);
+    }
+
+    /// <summary>
+    /// Finish spawning deferred actor user transform.
+    /// </summary>
+    public void FinishSpawning(FTransform transform, bool isDefaultTransform = false)
+    {
+        UCSWorldExtensions.FinishSpawning(this, transform, isDefaultTransform);
     }
 }
