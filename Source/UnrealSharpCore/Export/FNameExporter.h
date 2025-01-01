@@ -18,7 +18,7 @@ public:
 private:
 	
 	static void NameToString(FName Name, FString& OutString);
-	static void StringToName(FName* Name, const UTF16CHAR* String);
+	static void StringToName(FName& Name, const UTF16CHAR* String);
 	static bool IsValid(FName Name);
 	
 };

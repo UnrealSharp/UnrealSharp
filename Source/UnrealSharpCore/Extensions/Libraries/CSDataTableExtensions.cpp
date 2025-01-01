@@ -1,5 +1,6 @@
 #include "CSDataTableExtensions.h"
 
+#if WITH_EDITOR
 FString UCSDataTableExtensions::GetTableAsJSON(const UDataTable* DataTable)
 {
 	if (!IsValid(DataTable))
@@ -19,3 +20,4 @@ FString UCSDataTableExtensions::GetTableAsCSV(const UDataTable* DataTable)
 	
 	return DataTable->GetTableAsCSV();
 }
+#endif

@@ -154,7 +154,13 @@ public struct TSubclassOf<T>
     
     public override string ToString()
     {
-        return Valid ? UObjectExporter.CallNativeGetName(NativeClass).ToString() : "null";
+        if (!Valid)
+        {
+            return "null";
+        }
+        
+        UObjectExporter.CallNativeGetName(NativeClass, out FName className);
+        return className.ToString();
     }
 }
 
