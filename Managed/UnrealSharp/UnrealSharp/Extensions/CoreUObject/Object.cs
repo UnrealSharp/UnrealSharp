@@ -10,7 +10,19 @@ public partial class UObject
     /// <summary>
     /// The name of the object in Unreal Engine.
     /// </summary>
-    public FName ObjectName => IsDestroyed ? FName.None : UObjectExporter.CallNativeGetName(NativeObject);
+    public FName ObjectName
+    {
+        get
+        {
+            if (IsDestroyed)
+            {
+                return FName.None;
+            }
+            
+            UObjectExporter.CallNativeGetName(NativeObject, out FName objectName);
+            return objectName;
+        }
+    }
     
     /// <summary>
     /// Whether the object is valid. UObjects can be valid but pending kill.

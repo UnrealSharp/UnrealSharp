@@ -20,7 +20,7 @@ private:
 
 	static void* CreateNewObject(UObject* Outer, UClass* Class, UObject* Template);
 	static void* GetTransientPackage();
-	static FName NativeGetName(UObject* Object);
+	static void NativeGetName(UObject* Object, FName& OutName);
 	static void InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params);
 	static void InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params);
 	static bool NativeIsValid(UObject* Object);

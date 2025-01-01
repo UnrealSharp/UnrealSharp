@@ -9,12 +9,12 @@ namespace UnrealSharp;
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
 #if PACKAGE
-    private int ComparisonIndex;
-    private int Number;
+    private uint ComparisonIndex;
+    private uint Number;
 #else
-	private int ComparisonIndex;
-    private int DisplayIndex;
-    private int Number;
+	private uint ComparisonIndex;
+    private uint DisplayIndex;
+    private uint Number;
 #endif
 
     public static readonly FName None = new(0, 0);
@@ -30,7 +30,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         }
     }
 
-    private FName(int comparisonIndex, int number)
+    private FName(uint comparisonIndex, uint number)
     {
         ComparisonIndex = comparisonIndex;
         Number = number;
@@ -58,7 +58,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     /// Check if the name is valid.
     /// </summary>
     /// <returns>True if the name is valid, false otherwise.</returns>
-    public bool IsValid => FNameExporter.CallIsValid(this);
+    public bool IsValid => FNameExporter.CallIsValid(this).ToManagedBool();
     
     /// <summary>
     /// Check if the name is None.
@@ -108,7 +108,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     
     public override int GetHashCode()
     {
-        return ComparisonIndex;
+        return (int)ComparisonIndex;
     }
     
     /// <summary>
@@ -118,13 +118,13 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     /// <returns>0 if the names are equal, a negative value if this name is less than the other name, and a positive value if this name is greater than the other name.</returns>
     public int CompareTo(FName other)
     {
-        int diff = ComparisonIndex - other.ComparisonIndex;
+        uint diff = ComparisonIndex - other.ComparisonIndex;
         
         if (diff != 0)
         {
-            return diff;
+            return (int)diff;
         }
         
-        return Number - other.Number;
+        return (int)(Number - other.Number);
     }
 }

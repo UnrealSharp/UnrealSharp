@@ -9,10 +9,12 @@ class UNREALSHARPCORE_API UCSDataTableExtensions : public UBlueprintFunctionLibr
 {
 	GENERATED_BODY()
 public:
+#if WITH_EDITOR
 	UFUNCTION(meta=(ScriptMethod))
 	static FString GetTableAsJSON(const UDataTable* DataTable);
 
 	UFUNCTION(meta=(ScriptMethod))
 	static FString GetTableAsCSV(const UDataTable* DataTable);
+#endif
 };
 
