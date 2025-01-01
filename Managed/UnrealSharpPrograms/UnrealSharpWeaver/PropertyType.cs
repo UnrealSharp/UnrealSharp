@@ -30,6 +30,8 @@ public enum PropertyType
     DefaultComponent,
     LazyObject,
     WeakObject,
+    
+    ScriptInterface,
 
     SoftClass,
     SoftObject,

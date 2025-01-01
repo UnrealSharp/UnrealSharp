@@ -47,12 +47,13 @@ public static class ConstructorBuilder
         return constructor;
     }
     
-    public static void CreateTypeInitializer(TypeDefinition typeDefinition, Instruction field, Instruction[] initializeInstructions)
+    public static void CreateTypeInitializer(TypeDefinition typeDefinition, Instruction field, Instruction[] initializeInstructions, string engineName = "", bool finalizeMethod = false)
     {
         MethodDefinition staticConstructorMethod = MakeStaticConstructor(typeDefinition);
         ILProcessor processor = staticConstructorMethod.Body.GetILProcessor();
         
-        processor.Emit(OpCodes.Ldstr, WeaverHelper.GetEngineName(typeDefinition));
+        engineName = string.IsNullOrEmpty(engineName) ? WeaverHelper.GetEngineName(typeDefinition) : engineName;
+        processor.Emit(OpCodes.Ldstr, engineName);
         
         foreach (Instruction instruction in initializeInstructions)
         {
@@ -60,6 +61,11 @@ public static class ConstructorBuilder
         }
         
         processor.Append(field);
+        
+        if (finalizeMethod)
+        {
+            staticConstructorMethod.FinalizeMethod();
+        }
     }
     
     public static void VerifySingleResult<T>(T[] results, TypeDefinition type, string endMessage)

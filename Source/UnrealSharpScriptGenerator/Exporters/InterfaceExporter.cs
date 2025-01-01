@@ -23,8 +23,6 @@ public static class InterfaceExporter
         
         stringBuilder.AppendLine(attributeBuilder.ToString());
         stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
-
-        stringBuilder.AppendLine($"public static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
@@ -41,23 +39,17 @@ public static class InterfaceExporter
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
+        stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine("	if (obj is CoreUObject.UObject objectPointer)");
-        stringBuilder.AppendLine("	{");
-        stringBuilder.AppendLine("		InterfaceData data = new InterfaceData();");
-        stringBuilder.AppendLine("		data.ObjectPointer = objectPointer.NativeObject;");
-        stringBuilder.AppendLine($"		data.InterfacePointer = {interfaceName}.NativeInterfaceClassPtr;");
-        stringBuilder.AppendLine("		BlittableMarshaller<InterfaceData>.ToNative(nativeBuffer, arrayIndex, data);");
-        stringBuilder.AppendLine("	}");
+        stringBuilder.AppendLine($"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.ToNative(nativeBuffer, arrayIndex, obj, NativeInterfaceClassPtr);");
         stringBuilder.CloseBrace();
         stringBuilder.AppendLine();
 
         stringBuilder.AppendLine($"public static {interfaceName} FromNative(IntPtr nativeBuffer, int arrayIndex)");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine("	InterfaceData interfaceData = BlittableMarshaller<InterfaceData>.FromNative(nativeBuffer, arrayIndex);");
-        stringBuilder.AppendLine("	CoreUObject.UObject unrealObject = ObjectMarshaller<CoreUObject.UObject>.FromNative(interfaceData.ObjectPointer, 0);");
-        stringBuilder.AppendLine($"	return unrealObject as {interfaceName};");
+        stringBuilder.AppendLine($"return UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.FromNative(nativeBuffer, arrayIndex);");
         stringBuilder.CloseBrace();
         stringBuilder.CloseBrace();
         
