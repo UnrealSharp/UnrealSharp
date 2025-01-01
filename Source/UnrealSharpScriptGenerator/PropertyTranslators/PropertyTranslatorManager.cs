@@ -57,6 +57,8 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtObjectProperty), objectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), objectPropertyTranslator);
         
+        AddPropertyTranslator(typeof(UhtInterfaceProperty), new InterfacePropertyTranslator());
+        
         AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());

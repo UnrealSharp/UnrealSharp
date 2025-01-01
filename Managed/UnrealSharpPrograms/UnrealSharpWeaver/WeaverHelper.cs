@@ -76,6 +76,8 @@ public static class WeaverHelper
     public static TypeDefinition UObjectDefinition;
     public static TypeDefinition UActorComponentDefinition;
     
+    public static TypeDefinition ScriptInterfaceMarshaller;
+    
     public static MethodReference BlittableTypeConstructor;
     
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
@@ -139,6 +141,8 @@ public static class WeaverHelper
 
         TypeReference generatedType = FindTypeInAssembly(BindingsAssembly, GeneratedTypeAttribute, AttributeNamespace)!;
         GeneratedTypeCtor = FindMethod(generatedType.Resolve(), ".ctor")!;
+        
+        ScriptInterfaceMarshaller = FindTypeInAssembly(BindingsAssembly, "ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
     }
     
     public static TypeReference? FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters, bool bThrowOnException = true)
@@ -478,7 +482,7 @@ public static class WeaverHelper
         OptimizeMethod(method);
     }
     
-    public static void OptimizeMethod(MethodDefinition method)
+    public static void OptimizeMethod(this MethodDefinition method)
     {
         if (method.Body.CodeSize == 0)
         {
@@ -656,6 +660,11 @@ public static class WeaverHelper
                     // }
 
                     return new NativeDataEnumType(typeDef, arrayDim);
+                }
+
+                if (typeDef.IsInterface)
+                {
+                    return new NativeDataInterfaceType(typeRef, typeDef.Name + "Marshaller");
                 }
 
                 if (!typeDef.IsClass)
@@ -1006,32 +1015,32 @@ public static class WeaverHelper
         return FindAttribute(type.CustomAttributes, USingleDelegateAttribute);
     }
 
-    public static bool IsUProperty(IMemberDefinition property)
+    public static bool IsUProperty(this IMemberDefinition property)
     {
         return GetUProperty(property) != null;
     }
     
-    public static bool IsUInterface(TypeDefinition typeDefinition)
+    public static bool IsUInterface(this TypeDefinition typeDefinition)
     {
         return GetUInterface(typeDefinition) != null;
     }
     
-    public static bool IsUClass(IMemberDefinition definition)
+    public static bool IsUClass(this IMemberDefinition definition)
     {
         return GetUClass(definition) != null;
     }
 
-    public static bool IsUMultiDelegate(TypeDefinition typeDefinition)
+    public static bool IsUMultiDelegate(this TypeDefinition typeDefinition)
     {
         return GetUMultiDelegateInterface(typeDefinition) != null;
     }
 
-    public static bool IsUSingleDelegate(TypeDefinition typeDefinition)
+    public static bool IsUSingleDelegate(this TypeDefinition typeDefinition)
     {
         return GetUSingleDelegateInterface(typeDefinition) != null;
     }
 
-    public static bool IsGenerated(TypeDefinition typeDefinition)
+    public static bool IsGenerated(this TypeDefinition typeDefinition)
     {
         return FindAttribute(typeDefinition.CustomAttributes, GeneratedTypeAttribute) != null;
     }

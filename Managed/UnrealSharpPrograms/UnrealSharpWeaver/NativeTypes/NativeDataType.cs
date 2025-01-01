@@ -30,6 +30,7 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataMapType))]
 [JsonDerivedType(typeof(NativeDataSetType))]
 [JsonDerivedType(typeof(NativeDataClassType))]
+[JsonDerivedType(typeof(NativeDataInterfaceType))]
 public abstract class NativeDataType
 {
     public NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)

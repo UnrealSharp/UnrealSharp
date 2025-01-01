@@ -32,6 +32,8 @@ enum class ECSPropertyType : uint8
 	LazyObject,
 	WeakObject,
 
+	ScriptInterface,
+
 	SoftClass,
 	SoftObject,
 
