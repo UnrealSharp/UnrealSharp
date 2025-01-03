@@ -234,7 +234,7 @@ public class AsyncWrapperGenerator : ISourceGenerator
             // sourceBuilder.AppendLine($"        if (!IsDestroyed) {{ PrintString($\"OnTaskCompleted for {{this}} on {{UnrealSynchronizationContext.CurrentThread}}\"); }}");
             sourceBuilder.AppendLine($"        if (UnrealSynchronizationContext.CurrentThread != NamedThread.GameThread)");
             sourceBuilder.AppendLine($"        {{");
-            sourceBuilder.AppendLine($"            UnrealSynchronizationContext.GetContext(NamedThread.GameThread).Post(_ => OnTaskCompleted(t), null);");
+            sourceBuilder.AppendLine($"            new UnrealSynchronizationContext(NamedThread.GameThread).Post(_ => OnTaskCompleted(t), null);");
             sourceBuilder.AppendLine($"            return;");
             sourceBuilder.AppendLine($"        }}");
             if (cancellationTokenParameter != null)
