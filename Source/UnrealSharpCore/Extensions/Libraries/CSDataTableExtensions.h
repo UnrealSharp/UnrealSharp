@@ -5,7 +5,7 @@
 #include "CSDataTableExtensions.generated.h"
 
 UCLASS(meta = (Internal))
-class UNREALSHARPCORE_API UCSDataTableExtensions : public UBlueprintFunctionLibrary
+class UCSDataTableExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:

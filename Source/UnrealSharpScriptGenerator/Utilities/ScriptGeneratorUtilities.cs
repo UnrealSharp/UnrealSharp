@@ -152,7 +152,7 @@ public static class ScriptGeneratorUtilities
         UhtClass? classObj = structObj as UhtClass;
         foreach (UhtProperty property in structObj.Properties)
         {
-            if (!CanExportProperty(property))
+            if (!CanExportProperty(property) || InclusionLists.HasBannedProperty(property))
             {
                 continue;
             }

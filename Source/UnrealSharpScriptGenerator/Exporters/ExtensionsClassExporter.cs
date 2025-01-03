@@ -8,8 +8,33 @@ public static class ExtensionsClassExporter
 {
     public static void ExportExtensionsClass(UhtPackage package, List<ExtensionMethod> extensionMethods)
     {
+        Dictionary<UhtType, List<ExtensionMethod>?> libraryToExtensionMethod = new();
+        
+        foreach (ExtensionMethod extensionMethod in extensionMethods)
+        {
+            UhtType outerClass = extensionMethod.Function.Outer!;
+            
+            if (!libraryToExtensionMethod.TryGetValue(outerClass, out List<ExtensionMethod>? libraryExtensions))
+            {
+                libraryExtensions = new List<ExtensionMethod>();
+                libraryToExtensionMethod[outerClass] = libraryExtensions;
+            }
+            
+            libraryExtensions!.Add(extensionMethod);
+        }
+        
+        foreach (KeyValuePair<UhtType, List<ExtensionMethod>?> pair in libraryToExtensionMethod)
+        {
+            UhtType libraryClass = pair.Key;
+            List<ExtensionMethod>? libraryExtensions = pair.Value;
+            ExportLibrary(package, libraryClass, libraryExtensions!);
+        }
+    }
+
+    public static void ExportLibrary(UhtPackage package, UhtType libraryClass, List<ExtensionMethod> extensionMethods)
+    {
         string typeNamespace = package.GetNamespace();
-        string className = $"{package.GetShortName()}Extensions";
+        string className = $"{libraryClass.EngineName}_Extensions";
         
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(typeNamespace);

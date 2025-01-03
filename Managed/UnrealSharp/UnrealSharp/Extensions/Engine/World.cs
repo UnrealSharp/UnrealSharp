@@ -1,0 +1,43 @@
+﻿namespace UnrealSharp.Engine;
+
+public partial class UWorld
+{
+    /// <summary>
+    /// Get the game mode of this world.
+    /// </summary>
+    /// <returns>The game mode of this world.</returns>
+    public AGameModeBase GameMode => UGameplayStatics.GetGameMode();
+    
+    /// <summary>
+    /// Get the game mode of this world as a specific type.
+    /// </summary>
+    /// <typeparam name="T">The type of the game mode.</typeparam>
+    /// <returns>The game mode of this world as the specified type.</returns>
+    public T GameModeAs<T>() where T : AGameModeBase => (T) GameMode;
+    
+    /// <summary>
+    /// Get the game instance of this world.
+    /// </summary>
+    /// <returns>The game instance of this world.</returns>
+    public UGameInstance GameInstance => UGameplayStatics.GetGameInstance();
+    
+    /// <summary>
+    /// Get the game instance of this world as a specific type.
+    /// </summary>
+    /// <typeparam name="T">The type of the game instance.</typeparam>
+    /// <returns>The game instance of this world as the specified type.</returns>
+    public T GameInstanceAs<T>() where T : UGameInstance => (T) GameInstance;
+    
+    /// <summary>
+    /// Get the game state of this world.
+    /// </summary>
+    /// <returns>The game state of this world.</returns>
+    public AGameStateBase GameState => UGameplayStatics.GetGameState();
+    
+    /// <summary>
+    /// Get the game state of this world as a specific type.
+    /// </summary>
+    /// <typeparam name="T">The type of the game state.</typeparam>
+    /// <returns>The game state of this world as the specified type.</returns>
+    public T GameStateAs<T>() where T : AGameStateBase => (T) GameState;
+}
