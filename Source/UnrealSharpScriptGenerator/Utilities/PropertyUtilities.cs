@@ -109,7 +109,7 @@ public static class PropertyUtilities
     
     public static bool HasReadWriteAccess(this UhtProperty property)
     {
-        return !property.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) || property.HasAnySetter();
+        return property.HasAnyFlags(EPropertyFlags.Edit | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter();
     }
     
     public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)

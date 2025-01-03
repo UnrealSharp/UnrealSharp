@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Tooltip;
@@ -355,7 +356,7 @@ public abstract class PropertyTranslator
 
         if (exportSetter is not null)
         {
-            builder.AppendLine("set");
+            AppendSetOrInit(builder, property);
             builder.OpenBrace();
             exportSetter();
             builder.CloseBrace();
@@ -364,6 +365,18 @@ public abstract class PropertyTranslator
         builder.CloseBrace();
         builder.TryEndWithEditor(property);
         builder.AppendLine();
+    }
+    
+    private void AppendSetOrInit(GeneratorStringBuilder builder, UhtProperty property)
+    {
+        if (property.HasAllFlags(EPropertyFlags.BlueprintReadOnly | EPropertyFlags.Edit))
+        {
+            builder.AppendLine("init");
+        }
+        else
+        {
+            builder.AppendLine("set");
+        }
     }
     
     private void AppendInvoke(GeneratorStringBuilder builder, FunctionExporter exportedFunction)
