@@ -53,9 +53,14 @@ public class UInterfaceAnalyzer : DiagnosticAnalyzer
         }
         
         var isInterfaceType = propertySymbol.Type.TypeKind == TypeKind.Interface;
+        if (!isInterfaceType)
+        {
+            return;
+        }
+        
         var hasUInterfaceAttribute = AnalyzerStatics.HasAttribute(propertySymbol.Type, AnalyzerStatics.UInterfaceAttribute);
 
-        if (isInterfaceType && !hasUInterfaceAttribute)
+        if (!hasUInterfaceAttribute && !AnalyzerStatics.IsContainerInterface(propertySymbol.Type))
         {
             context.ReportDiagnostic(Diagnostic.Create(UInterfacePropertyTypeRule, propertySymbol.Locations[0], propertySymbol.Name));
         }
@@ -87,7 +92,7 @@ public class UInterfaceAnalyzer : DiagnosticAnalyzer
         }
         
         var hasUInterfaceAttribute = AnalyzerStatics.HasAttribute(parameterSymbol.Type, AnalyzerStatics.UInterfaceAttribute);
-        if (!hasUInterfaceAttribute)
+        if (!hasUInterfaceAttribute && !AnalyzerStatics.IsContainerInterface(parameterSymbol.Type))
         {
             context.ReportDiagnostic(Diagnostic.Create(UInterfaceFunctionParameterTypeRule, parameterSymbol.Locations[0], parameterSymbol.Name));
         }
