@@ -70,6 +70,9 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
+		if (property.HasMetaData("GenericType"))
+			return property.GetMetaData("GenericType");
+
         return ManagedType;
     }
 
@@ -140,4 +143,6 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
     {
 	    // No cleanup needed
     }
+
+	public override bool CanSupportGenericType(UhtProperty property) => true;
 }

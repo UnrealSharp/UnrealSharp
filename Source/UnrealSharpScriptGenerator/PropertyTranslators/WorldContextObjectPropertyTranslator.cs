@@ -33,4 +33,6 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
     {
         builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, FCSManagerExporter.CallGetCurrentWorldContext());");
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

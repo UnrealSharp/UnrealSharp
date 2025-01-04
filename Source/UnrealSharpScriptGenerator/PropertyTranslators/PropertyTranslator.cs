@@ -39,7 +39,10 @@ public abstract class PropertyTranslator
     
     // Can we export this property?
     public abstract bool CanExport(UhtProperty property);
-    
+
+    // Can we support generic types?
+    public abstract bool CanSupportGenericType(UhtProperty property);
+
     // Get the managed type for this property
     // Example: "int" for a property of type "int32"
     public abstract string GetManagedType(UhtProperty property);

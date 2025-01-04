@@ -69,4 +69,6 @@ public class StringPropertyTranslator : PropertyTranslator
     {
         return "\"" + defaultValue + "\"";
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

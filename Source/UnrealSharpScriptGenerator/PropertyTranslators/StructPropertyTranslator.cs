@@ -27,4 +27,6 @@ public class StructPropertyTranslator : SimpleTypePropertyTranslator
     {
         ExportDefaultStructParameter(builder, variableName, defaultValue, paramProperty, this);
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

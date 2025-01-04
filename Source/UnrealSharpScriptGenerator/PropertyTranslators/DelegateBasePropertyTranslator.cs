@@ -69,4 +69,6 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     {
         throw new System.NotImplementedException();
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

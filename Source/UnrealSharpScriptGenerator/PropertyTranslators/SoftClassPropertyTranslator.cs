@@ -14,6 +14,12 @@ public class SoftClassPropertyTranslator : SimpleTypePropertyTranslator
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty)property;
         string fullName = softClassProperty.Class.GetFullManagedName();
+
+        if (property.HasMetaData("GenericType"))
+        {
+            fullName = property.GetMetaData("GenericType");
+        }
+
         return $"TSoftClassPtr<{fullName}>";
     }
 
@@ -21,6 +27,12 @@ public class SoftClassPropertyTranslator : SimpleTypePropertyTranslator
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty) property;
         string fullName = softClassProperty.Class.GetFullManagedName();
+
+        if (property.HasMetaData("GenericType"))
+        {
+            fullName = property.GetMetaData("GenericType");
+        }
+
         return $"SoftClassMarshaller<{fullName}>";
     }
 

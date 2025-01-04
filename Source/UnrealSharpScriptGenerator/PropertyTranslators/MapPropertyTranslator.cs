@@ -210,4 +210,6 @@ public class MapPropertyTranslator : PropertyTranslator
         
         return $"{marshallerType}<{keyType}, {valueType}>";
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }
