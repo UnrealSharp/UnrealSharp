@@ -154,9 +154,9 @@ public static class NameMapper
             functionName = DelegateBasePropertyTranslator.GetDelegateName(function);
         }
         
-        if (functionName.Contains("K2_"))
+        if (functionName.StartsWith("K2_") || functionName.StartsWith("BP_"))
         {
-            functionName = functionName.Replace("K2_", "");
+            functionName = functionName.Substring(3);
         }
 
         if (function.Outer is not UhtClass)

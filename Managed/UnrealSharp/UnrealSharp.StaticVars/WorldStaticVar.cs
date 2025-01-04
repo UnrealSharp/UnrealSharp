@@ -8,21 +8,18 @@ namespace UnrealSharp.StaticVars;
 /// A static variable that has the lifetime of a UWorld. When the world is destroyed, the value is destroyed.
 /// For example when traveling between levels, the value is destroyed.
 /// </summary>
-public class FWorldStaticVar<T> : FBaseStaticVar<T>
+public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly Dictionary<IntPtr, T> _worldToValue = new Dictionary<IntPtr, T>();
-    
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    private readonly FWorldDelegates.FWorldCleanupEvent _onWorldCleanupDelegate;
     
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onWorldCleanupHandle;
     
     public FWorldStaticVar()
     {
-        _onWorldCleanupDelegate = OnWorldCleanup;
-        IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(_onWorldCleanupDelegate);
+        FWorldDelegates.FWorldCleanupEvent onWorldCleanupDelegate = OnWorldCleanup;
+        IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(onWorldCleanupDelegate);
         FWorldDelegatesExporter.CallBindOnWorldCleanup(onWorldCleanup, out _onWorldCleanupHandle);
     }
     
@@ -36,7 +33,7 @@ public class FWorldStaticVar<T> : FBaseStaticVar<T>
         FWorldDelegatesExporter.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
     }
     
-    public sealed override T? Value
+    public override T? Value
     {
         get => GetWorldValue();
         set => SetWorldValue(value!);

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
@@ -29,6 +30,17 @@ public static class AnalyzerStatics
     public const string UActorComponent = "UActorComponent";
     public const string USceneComponent = "USceneComponent";
     public const string UUserWidget = "UUserWidget";
+    
+    private const string ContainerNamespace = "System.Collections.Generic";
+    private static readonly string[] ContainerInterfaces =
+    {
+        "IList",
+        "IReadOnlyList",
+        "IDictionary",
+        "IReadOnlyDictionary",
+        "ISet",
+        "IReadOnlySet",
+    };
     
     internal static bool HasAttribute(ISymbol symbol, string attributeName)
     {
@@ -100,4 +112,12 @@ public static class AnalyzerStatics
         location = objectCreationExpression.NewKeyword.GetLocation();
         return objectCreationExpression.NewKeyword.ValueText == New;
     }
+
+    internal static bool IsContainerInterface(ITypeSymbol symbol)
+    {
+        var namespaceName = symbol.ContainingNamespace.ToString();
+        return namespaceName.Equals(ContainerNamespace, StringComparison.InvariantCultureIgnoreCase) &&
+               ContainerInterfaces.Contains(symbol.Name);
+    }
+    
 }

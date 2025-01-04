@@ -28,7 +28,7 @@ struct FCSSpawnActorParameters
 };
 
 UCLASS(meta = (Internal))
-class UNREALSHARPCORE_API UCSWorldExtensions : public UBlueprintFunctionLibrary
+class UCSWorldExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:
