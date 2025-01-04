@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -85,6 +89,9 @@ public class FunctionExporter
 
     protected readonly List<FunctionOverload> _overloads = new();
 
+    protected UhtProperty? _genericParam;
+    protected UhtProperty? _dynamicOutputParam;
+
     public FunctionExporter(ExtensionMethod extensionMethod)
     {
         _selfParameter = extensionMethod.SelfParameter;
@@ -126,8 +133,74 @@ public class FunctionExporter
         _overloadMode = overloadMode;
         _protectionMode = protectionMode;
         _blueprintVisibility = blueprintVisibility;
-        
+
         _parameterTranslators = new List<PropertyTranslator>(_function.Children.Count);
+
+        if (_function.HasMetadata("DeterminesOutputType"))
+        {
+            var dotType = _function.GetMetadata("DeterminesOutputType");
+
+            _genericParam = _function.Properties
+                .Where(p => p.EngineName == dotType)
+                .Where(p =>
+                {
+                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(p)!;
+                    return translator.CanSupportGenericType(p);
+                })
+                .FirstOrDefault();
+
+            if (_genericParam != null)
+            {
+                _genericParam.MetaData.Add("GenericType", "DOT");
+
+                // Seperate because of unreal copy paste errors with DOTs
+                if (_function.HasMetadata("DynamicOutputParam"))
+                {
+                    var dopType = _function.GetMetadata("DynamicOutputParam");
+
+                    _dynamicOutputParam = _function.Properties
+                        .Where(p => p.EngineName == dopType)
+                        .FirstOrDefault();
+
+                    if (_dynamicOutputParam != null)
+                    {
+                        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(_dynamicOutputParam)!;
+                        if (translator.CanSupportGenericType(_dynamicOutputParam))
+                        {
+                            var genericTypeName = _genericParam.GetGenericManagedType();
+                            var dynamicTypeName = _dynamicOutputParam.GetGenericManagedType();
+
+                            if (genericTypeName == dynamicTypeName)
+                            {
+                                _dynamicOutputParam.MetaData.Add("GenericType", "DOT");
+                            }
+                        }
+                        else
+                        {
+                            _genericParam.MetaData.Remove("GenericType");
+
+                            _dynamicOutputParam = null;
+                            _genericParam = null;
+                        }
+                    } 
+                }
+                else if (_function.HasReturnProperty)
+                {
+                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(_function.ReturnProperty!)!;
+                    if (translator.CanSupportGenericType(_function.ReturnProperty!))
+                    {
+                        _function.ReturnProperty!.MetaData.Add("GenericType", "DOT");
+                    }
+                    else
+                    {
+                        _genericParam.MetaData.Remove("GenericType");
+
+                        _genericParam = null;
+                    }
+                }
+            }
+        }
+
         foreach (UhtProperty parameter in _function.Properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
@@ -191,11 +264,17 @@ public class FunctionExporter
             {
                 continue;
             }
-            
+
+            if (_genericParam == parameter && parameter is UhtClassProperty)
+            {
+                continue;
+            }
+
             PropertyTranslator translator = _parameterTranslators[i];
             
             string refQualifier = GetRefQualifier(parameter);
             string parameterName = GetParameterName(parameter);
+            string parameterManagedType = translator.GetManagedType(parameter);
 
             if (!translator.ShouldBeDeclaredAsParameter)
             {
@@ -228,7 +307,7 @@ public class FunctionExporter
                 }
 
                 paramsStringCallNative += $"{refQualifier}{parameterName}";
-                paramString += $"{refQualifier}{translator.GetManagedType(parameter)} {parameterName}";
+                paramString += $"{refQualifier}{parameterManagedType} {parameterName}";
 
                 if ((hasDefaultParameters || cppDefaultValue.Length > 0) && _overloadMode == OverloadMode.AllowOverloads)
                 {
@@ -247,7 +326,7 @@ public class FunctionExporter
                     if (!string.IsNullOrEmpty(csharpDefaultValue))
                     {
                         string defaultValue = $" = {csharpDefaultValue}";
-                        _paramStringApiWithDefaults += $"{refQualifier}{translator.GetManagedType(parameter)} {parameterName}{defaultValue}";
+                        _paramStringApiWithDefaults += $"{refQualifier}{parameterManagedType} {parameterName}{defaultValue}";
                     }
                     else
                     {
@@ -625,11 +704,28 @@ public class FunctionExporter
                 returnType = ReturnValueTranslator!.GetManagedType(_function.ReturnProperty);
                 returnStatement = "return ";
             }
-            
-            builder.AppendLine($"{Modifiers}{returnType} {_functionName}({overload.ParamStringApiWithDefaults})");
+
+            if (_genericParam != null)
+            {
+                var genericTypeName = _genericParam.GetGenericManagedType();
+                builder.AppendLine($"{Modifiers}{returnType} {_functionName}<DOT>({overload.ParamStringApiWithDefaults}) where DOT : {genericTypeName}");
+            }
+            else
+            {
+                builder.AppendLine($"{Modifiers}{returnType} {_functionName}({overload.ParamStringApiWithDefaults})");
+            }
+
             builder.OpenBrace();
             overload.Translator.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, _function, overload.Parameter);
-            builder.AppendLine($"{returnStatement}{_functionName}({overload.ParamsStringCall});");
+
+            if (_genericParam != null)
+            {
+                builder.AppendLine($"{returnStatement}{_functionName}<DOT>({overload.ParamsStringCall});");
+            }
+            else
+            {
+                builder.AppendLine($"{returnStatement}{_functionName}({overload.ParamsStringCall});");
+            }
             builder.CloseBrace();
         }
     }
@@ -779,13 +875,37 @@ public class FunctionExporter
         }
         
         attributeBuilder.AddGeneratedTypeAttribute(_function);
+
+        if (_genericParam != null)
+        {
+            attributeBuilder.AddAttribute("UMetaData");
+            attributeBuilder.AddArgument($"\"DeterminesOutputType\"");
+            attributeBuilder.AddArgument($"\"{_genericParam.GetParameterName()}\"");
+        }
+
+        if (_dynamicOutputParam != null)
+        {
+            attributeBuilder.AddAttribute("UMetaData");
+            attributeBuilder.AddArgument($"\"DynamicOutputParam\"");
+            attributeBuilder.AddArgument($"\"{_dynamicOutputParam.GetParameterName()}\"");
+        }
+
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
-        
+
         string returnType = _function.ReturnProperty != null
             ? ReturnValueTranslator!.GetManagedType(_function.ReturnProperty)
             : "void";
-        builder.AppendLine($"{protection}{returnType} {_functionName}({_paramStringApiWithDefaults})");
+
+        if (_genericParam != null)
+        {
+            var genericTypeName = _genericParam.GetGenericManagedType();
+            builder.AppendLine($"{protection}{returnType} {_functionName}<DOT>({_paramStringApiWithDefaults}) where DOT : {genericTypeName}");
+        }
+        else
+        {
+            builder.AppendLine($"{protection}{returnType} {_functionName}({_paramStringApiWithDefaults})");
+        }
     }
     
 
