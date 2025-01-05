@@ -88,6 +88,12 @@ public struct TSoftClassPtr<T> where T : UObject
         IntPtr nativeClass = TPersistentObjectPtrExporter.CallGetNativePointer(ref SoftObjectPtr.Data);
         return new TSubclassOf<T>(nativeClass);
     }
+    
+    public static implicit operator TSoftClassPtr<T>(TSubclassOf<T> obj) => new TSoftClassPtr<T>(obj);
+    public static implicit operator TSoftClassPtr<T>(Type obj) => new TSoftClassPtr<T>(obj);
+    public static implicit operator TSoftClassPtr<T>(UObject obj) => new TSoftClassPtr<T>(obj);
+    public static implicit operator TSubclassOf<T>(TSoftClassPtr<T> obj) => obj.Class;
+    public static implicit operator FSoftObjectPath(TSoftClassPtr<T> obj) => obj.SoftObjectPath;
 }
 
 public static class SoftClassPtrExtensions

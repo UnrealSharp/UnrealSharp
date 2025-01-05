@@ -40,11 +40,15 @@ public static class ExtensionsClassExporter
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.DeclareType(package, "static class", className, null, false);
 
+        List<FunctionExporter> functionExporters = new(extensionMethods.Count);
+        
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
             exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+            
             exporter.ExportExtensionMethod(stringBuilder);
+            functionExporters.Add(exporter);
         }
         
         stringBuilder.CloseBrace();
