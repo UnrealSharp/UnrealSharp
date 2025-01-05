@@ -58,6 +58,10 @@ public static class CSharpExporter
         
         WaitForTasks();
         
+        AutocastExporter.StartExportingAutocastFunctions(Tasks);
+        
+        WaitForTasks();
+        
         SerializeModuleData();
     }
     

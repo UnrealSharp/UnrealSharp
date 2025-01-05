@@ -174,10 +174,7 @@ public static class ScriptGeneratorUtilities
         return package.IsPartOfEngine() || package.GetModule() == Program.Factory.PluginModule;
     }
     
-    public static void GetExportedFunctions(UhtClass classObj, 
-        List<UhtFunction> functions, 
-         List<UhtFunction> overridableFunctions, 
-        Dictionary<string, GetterSetterPair> getterSetterPairs)
+    public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         List<UhtFunction> exportedFunctions = new();
         
@@ -208,6 +205,16 @@ public static class ScriptGeneratorUtilities
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
             {
                 overridableFunctions.Add(function);
+            }
+            else if (function.IsAutocast())
+            {
+                if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
+                {
+                    continue;
+                }
+                
+                AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
+                functions.Add(function);
             }
             else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {

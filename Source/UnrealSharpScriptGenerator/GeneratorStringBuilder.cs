@@ -158,6 +158,11 @@ public class GeneratorStringBuilder : IDisposable
         AppendLine();
     }
     
+    public void GenerateTypeSkeleton(UhtType type)
+    {
+        GenerateTypeSkeleton(type.GetNamespace());
+    }
+    
     public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? interfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -108,8 +107,7 @@ public static class ClassExporter
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, 
-        List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)

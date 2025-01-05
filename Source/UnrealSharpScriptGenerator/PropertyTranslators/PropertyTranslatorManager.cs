@@ -64,15 +64,15 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         
-        AddBlittableCustomStructPropertyTranslator("FVector2f", "System.Numerics.Vector2");
-        AddBlittableCustomStructPropertyTranslator("FVector3f", "System.Numerics.Vector3");
+        AddBlittableCustomStructPropertyTranslator("FVector2f", "UnrealSharp.CoreUObject.FVector2f");
+        AddBlittableCustomStructPropertyTranslator("FVector3f", "UnrealSharp.CoreUObject.FVector3f");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize10", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize100", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantizeNormal", "UnrealSharp.CoreUObject.FVector");
-        AddBlittableCustomStructPropertyTranslator("FVector4f", "System.Numerics.Vector4");
-        AddBlittableCustomStructPropertyTranslator("FQuatf4", "System.Numerics.Quaternion");
-        AddBlittableCustomStructPropertyTranslator("FMatrix44f", "System.Numerics.Matrix4x4");
+        AddBlittableCustomStructPropertyTranslator("FVector4f", "UnrealSharp.CoreUObject.FVector4f");
+        AddBlittableCustomStructPropertyTranslator("FQuatf4", "UnrealSharp.CoreUObject.FVector4f");
+        AddBlittableCustomStructPropertyTranslator("FMatrix44f", "UnrealSharp.CoreUObject.FMatrix44f");
         AddBlittableCustomStructPropertyTranslator("FRotator", "UnrealSharp.CoreUObject.FRotator");
         AddBlittableCustomStructPropertyTranslator("FTransform", "UnrealSharp.CoreUObject.FTransform");
         
