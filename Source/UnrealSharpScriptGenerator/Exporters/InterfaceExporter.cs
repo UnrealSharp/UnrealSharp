@@ -27,7 +27,6 @@ public static class InterfaceExporter
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
-        Dictionary<UhtStruct, List<UhtFunction>> typeToAutocastFunctions = new();
 
         if (interfaceObj.AlternateObject is UhtClass alternateObject)
         {
