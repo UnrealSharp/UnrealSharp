@@ -107,19 +107,23 @@ public static class PropertyUtilities
         return property.TryGetBlueprintAccessor(GetterSetterMode.Set);
     }
     
-    public static bool HasReadWriteAccess(this UhtProperty property)
+    public static bool IsReadWrite(this UhtProperty property)
     {
-        return property.HasAnyFlags(EPropertyFlags.Edit | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter();
+        bool isReadOnly = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly);
+        return !isReadOnly && (property.PropertyFlags.HasAnyFlags(EPropertyFlags.Edit | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter());
+    }
+    
+    public static bool IsEditDefaultsOnly(this UhtProperty property)
+    {
+        return property.HasAllFlags(EPropertyFlags.BlueprintReadOnly | EPropertyFlags.Edit);
     }
     
     public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)
     {
-        if (property.Outer is UhtScriptStruct)
+        if (property.Outer is UhtScriptStruct || property.Outer is not UhtClass classObj)
         {
             return null;
         }
-        
-        UhtClass classObj = (property.Outer as UhtClass)!;
         
         UhtFunction? TryFindFunction(string name)
         {
