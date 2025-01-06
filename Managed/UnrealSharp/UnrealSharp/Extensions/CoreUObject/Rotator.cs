@@ -117,8 +117,23 @@ public partial struct FRotator
             Roll = rotator.Roll * scale
         };
     }
+    
+    public static FRotator operator *(FRotator rotator, float scale)
+    {
+        return new FRotator
+        {
+            Pitch = rotator.Pitch * scale,
+            Yaw = rotator.Yaw * scale,
+            Roll = rotator.Roll * scale
+        };
+    }
 
     public static FRotator operator *(double scale, FRotator rotator)
+    {
+        return rotator * scale;
+    }
+    
+    public static FRotator operator *(float scale, FRotator rotator)
     {
         return rotator * scale;
     }

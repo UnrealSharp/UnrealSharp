@@ -468,6 +468,18 @@ public partial struct FVector2D
     {
         return left * new FVector2D(right, right);
     }
+    
+    /// <summary>
+    /// Multiplies a vector by the given scalar.
+    /// </summary>
+    /// <param name="left">The source vector.</param>
+    /// <param name="right">The scalar value.</param>
+    /// <returns>The scaled vector.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static FVector2D operator *(FVector2D left, float right)
+    {
+        return left * new FVector2D(right, right);
+    }
 
     /// <summary>
     /// Divides the first vector by the second.
@@ -491,6 +503,21 @@ public partial struct FVector2D
     public static FVector2D operator /(FVector2D value1, double value2)
     {
         double invDiv = 1.0 / value2;
+        return new FVector2D(
+            value1.X * invDiv,
+            value1.Y * invDiv);
+    }
+    
+    /// <summary>
+    /// Divides the vector by the given scalar.
+    /// </summary>
+    /// <param name="value1">The source vector.</param>
+    /// <param name="value2">The scalar value.</param>
+    /// <returns>The result of the division.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static FVector2D operator /(FVector2D value1, float value2)
+    {
+        float invDiv = 1.0f / value2;
         return new FVector2D(
             value1.X * invDiv,
             value1.Y * invDiv);
