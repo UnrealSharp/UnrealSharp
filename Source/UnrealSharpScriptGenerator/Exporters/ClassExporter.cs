@@ -126,7 +126,7 @@ public static class ClassExporter
         foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
         {
             UhtFunction firstAccessor = pair.Value.Accessors.First();
-            UhtProperty firstProperty = firstAccessor.Properties.First();
+            UhtProperty firstProperty = pair.Value.Property;
             string propertyName = pair.Value.PropertyName;
             
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;

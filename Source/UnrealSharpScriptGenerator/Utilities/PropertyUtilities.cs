@@ -107,6 +107,22 @@ public static class PropertyUtilities
         return property.TryGetBlueprintAccessor(GetterSetterMode.Set);
     }
     
+    public static bool IsWorldContextParameter(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function)
+        {
+            return false;
+        }
+
+        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != Program.Factory.Session.UObject)
+        {
+            return false;
+        }
+
+        string sourceName = property.SourceName;
+        return function.GetMetadata("WorldContext") == sourceName || sourceName is "WorldContextObject" or "WorldContext" or "ContextObject";
+    }
+    
     public static bool IsReadWrite(this UhtProperty property)
     {
         bool isReadOnly = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly);
