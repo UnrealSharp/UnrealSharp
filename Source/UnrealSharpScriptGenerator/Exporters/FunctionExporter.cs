@@ -876,18 +876,18 @@ public class FunctionExporter
         
         attributeBuilder.AddGeneratedTypeAttribute(_function);
 
-        if (_genericParam != null)
+        if (_function.HasMetadata("DeterminesOutputType"))
         {
             attributeBuilder.AddAttribute("UMetaData");
             attributeBuilder.AddArgument($"\"DeterminesOutputType\"");
-            attributeBuilder.AddArgument($"\"{_genericParam.GetParameterName()}\"");
+            attributeBuilder.AddArgument($"\"{_function.GetMetadata("DeterminesOutputType")}\"");
         }
 
-        if (_dynamicOutputParam != null)
+        if (_function.HasMetadata("DynamicOutputParam"))
         {
             attributeBuilder.AddAttribute("UMetaData");
             attributeBuilder.AddArgument($"\"DynamicOutputParam\"");
-            attributeBuilder.AddArgument($"\"{_dynamicOutputParam.GetParameterName()}\"");
+            attributeBuilder.AddArgument($"\"{_function.GetMetadata("DynamicOutputParam")}\"");
         }
 
         attributeBuilder.Finish();
