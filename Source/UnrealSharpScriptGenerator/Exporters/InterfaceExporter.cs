@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
@@ -33,7 +35,10 @@ public static class InterfaceExporter
             ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters);
         }
         
+        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
+        
         ExportIntefaceFunctions(stringBuilder, exportedFunctions);
+        ExportIntefaceFunctions(stringBuilder, exportedOverrides);
         
         stringBuilder.CloseBrace();
 
