@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection.Metadata;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
@@ -219,6 +221,45 @@ public static class PropertyUtilities
         {
             return "private ";
         }
+    }
+
+    public static bool DeterminesOutputType(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function) return false;
+        return function.HasMetadata("DeterminesOutputType");
+    }
+
+    public static bool IsGenericType(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function) return false;
+        if (!function.HasGenericTypeSupport()) return false;
+
+        if (function.HasMetadata("DynamicOutputParam")
+            && function.GetMetadata("DynamicOutputParam") == property.EngineName)
+        {
+            var propertyDeterminingOutputType = function.Properties
+                .Where(p => p.EngineName == function.GetMetadata("DeterminesOutputType"))
+                .FirstOrDefault();
+
+            if (propertyDeterminingOutputType == null) return false;
+
+            if (propertyDeterminingOutputType!.GetGenericManagedType() != property.GetGenericManagedType()) return false;
+
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            return translator.CanSupportGenericType(property);
+        }
+        else if (!function.HasMetadata("DynamicOutputParam") && property.HasAllFlags(EPropertyFlags.ReturnParm))
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            return translator.CanSupportGenericType(property);
+        }
+        else if (function.GetMetadata("DeterminesOutputType") == property.EngineName)
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            return translator.CanSupportGenericType(property);
+        }
+
+        return false;
     }
 
     public static string GetGenericManagedType(this UhtProperty property)
