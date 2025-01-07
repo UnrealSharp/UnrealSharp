@@ -64,7 +64,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
     {
         base.ExportPropertyVariables(builder, property, propertyEngineName);
 
-        if (property.HasMetaData("GenericType")) return;
+        if (property.IsGenericType()) return;
 
         string wrapperType = GetWrapperType(property);
         if (property.IsOuter<UhtScriptStruct>())
@@ -84,7 +84,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
         base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
         builder.AppendLine($"static IntPtr {nativeMethodName}_{propertyEngineName}_NativeProperty;");
 
-        if (property.HasMetaData("GenericType")) return;
+        if (property.IsGenericType()) return;
 
         string wrapperType = GetWrapperType(property);
         if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
@@ -137,7 +137,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
 
         if (!reuseRefMarshallers)
         {
-            if (property.HasMetaData("GenericType"))
+            if (property.IsGenericType())
             {
                 builder.AppendLine($"var {marshaller} = new {marshallerType}({nativeProperty}, {marshallingDelegates});");
             }
@@ -176,7 +176,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
         string marshallerType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(valueProperty);
 
-        if (property.HasMetaData("GenericType"))
+        if (property.IsGenericType())
         {
             builder.AppendLine($"var {marshaller} = new {marshallerType}({nativeProperty}, {marshallingDelegates});");
         }
@@ -207,8 +207,8 @@ public class ContainerPropertyTranslator : PropertyTranslator
         UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
 
-        string innerManagedType = property.HasMetaData("GenericType") ?
-            property.GetMetaData("GenericType") : translator.GetManagedType(containerProperty.ValueProperty);
+        string innerManagedType = property.IsGenericType() ?
+            "DOT" : translator.GetManagedType(containerProperty.ValueProperty);
 
         string containerType = isStructProperty || isParameter ? CopyMarshallerName : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyMarshallerName : MarshallerName;
         return $"{containerType}<{innerManagedType}>";
@@ -219,8 +219,8 @@ public class ContainerPropertyTranslator : PropertyTranslator
         UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
 
-        string innerManagedType = property.HasMetaData("GenericType") ? 
-            property.GetMetaData("GenericType") : translator.GetManagedType(containerProperty.ValueProperty);
+        string innerManagedType = property.IsGenericType() ? 
+            "DOT" : translator.GetManagedType(containerProperty.ValueProperty);
 
         string interfaceType = property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyInterfaceName : InterfaceName;
         return $"System.Collections.Generic.{interfaceType}<{innerManagedType}>";

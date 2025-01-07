@@ -28,8 +28,7 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        if (property.HasMetaData("GenericType"))
-            return property.GetMetaData("GenericType");
+        if (property.IsGenericType()) return "DOT";
 
         UhtObjectProperty objectProperty = (UhtObjectProperty)property;
         return objectProperty.Class.GetFullManagedName();
@@ -37,10 +36,9 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetMarshaller(UhtProperty property)
     {
-        if (property.Outer != null 
-            && property.Outer.HasMetadata("GenericType"))
+        if (property.Outer is UhtProperty outerProperty && outerProperty.IsGenericType())
         {
-            return $"ObjectMarshaller<{property.Outer.GetMetadata("GenericType")}>";
+            return $"ObjectMarshaller<DOT>";
         }
 
         return $"ObjectMarshaller<{GetManagedType(property)}>";

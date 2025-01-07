@@ -13,12 +13,8 @@ public class ClassPropertyTranslator : SimpleTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtClassProperty classProperty = (UhtClassProperty)property;
-        string fullName = classProperty.MetaClass!.GetFullManagedName();
-
-        if (property.HasMetaData("GenericType"))
-        {
-            fullName = property.GetMetaData("GenericType");
-        }
+        string fullName = property.IsGenericType() ? "DOT" 
+            : classProperty.MetaClass!.GetFullManagedName();
 
         return $"TSubclassOf<{fullName}>";
     }
@@ -26,27 +22,22 @@ public class ClassPropertyTranslator : SimpleTypePropertyTranslator
     public override string GetMarshaller(UhtProperty property)
     {
         UhtClassProperty classProperty = (UhtClassProperty)property;
-        string fullName = classProperty.MetaClass!.GetFullManagedName();
-
-        if (property.HasMetaData("GenericType"))
-        {
-            fullName = property.GetMetaData("GenericType");
-        }
+        string fullName = property.IsGenericType() ? "DOT"
+            : classProperty.MetaClass!.GetFullManagedName();
 
         return $"SubclassOfMarshaller<{fullName}>";
     }
 
+    /*
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source)
     {
-        if (property.HasMetaData("GenericType"))
+        if (property.IsGenericType())
         {
-            var genericParam = property.GetMetaData("GenericType");
-
-            builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, typeof({genericParam}));");
+            builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, typeof(DOT));");
         }
         else
         {
             base.ExportToNative(builder, property, propertyName, destinationBuffer, offset, source);
         }
-    }
+    }*/
 }
