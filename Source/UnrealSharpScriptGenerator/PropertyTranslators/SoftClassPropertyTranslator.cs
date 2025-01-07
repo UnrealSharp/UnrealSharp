@@ -13,14 +13,18 @@ public class SoftClassPropertyTranslator : SimpleTypePropertyTranslator
     public override string GetManagedType(UhtProperty property)
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty)property;
-        string fullName = softClassProperty.Class.GetFullManagedName();
+        string fullName = property.IsGenericType()
+             ? "DOT" : softClassProperty.Class.GetFullManagedName();
+
         return $"TSoftClassPtr<{fullName}>";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
         UhtSoftClassProperty softClassProperty = (UhtSoftClassProperty) property;
-        string fullName = softClassProperty.Class.GetFullManagedName();
+        string fullName = property.IsGenericType()
+             ? "DOT" : softClassProperty.Class.GetFullManagedName();
+
         return $"SoftClassMarshaller<{fullName}>";
     }
 

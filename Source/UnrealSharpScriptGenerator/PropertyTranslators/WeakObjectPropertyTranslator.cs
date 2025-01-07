@@ -24,4 +24,6 @@ public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
     {
         return property is UhtWeakObjectPtrProperty;
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

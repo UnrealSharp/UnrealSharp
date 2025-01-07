@@ -64,6 +64,8 @@ public class ContainerPropertyTranslator : PropertyTranslator
     {
         base.ExportPropertyVariables(builder, property, propertyEngineName);
 
+        if (property.IsGenericType()) return;
+
         string wrapperType = GetWrapperType(property);
         if (property.IsOuter<UhtScriptStruct>())
         {
@@ -81,7 +83,9 @@ public class ContainerPropertyTranslator : PropertyTranslator
     {
         base.ExportParameterVariables(builder, function, nativeMethodName, property, propertyEngineName);
         builder.AppendLine($"static IntPtr {nativeMethodName}_{propertyEngineName}_NativeProperty;");
-        
+
+        if (property.IsGenericType()) return;
+
         string wrapperType = GetWrapperType(property);
         if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
         {
@@ -133,11 +137,17 @@ public class ContainerPropertyTranslator : PropertyTranslator
 
         if (!reuseRefMarshallers)
         {
-            builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
-            
+            if (property.IsGenericType())
+            {
+                builder.AppendLine($"var {marshaller} = new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+            }
+            else
+            {
+                builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+            }
             builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = IntPtr.Add({sourceBuffer}, {offset});");
         }
-        
+
         builder.AppendLine($"{assignmentOrReturn} {marshaller}.FromNative({propertyName}_NativeBuffer, 0);");
         
         if (bCleanupSourceBuffer)
@@ -165,8 +175,15 @@ public class ContainerPropertyTranslator : PropertyTranslator
         
         string marshallerType = GetWrapperType(property);
         string marshallingDelegates = translator.ExportMarshallerDelegates(valueProperty);
-        
-        builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+
+        if (property.IsGenericType())
+        {
+            builder.AppendLine($"var {marshaller} = new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+        }
+        else
+        {
+            builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+        }
         builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = IntPtr.Add({destinationBuffer}, {offset});");
         builder.AppendLine($"{marshaller}.ToNative({propertyName}_NativeBuffer, 0, {source});");
     }
@@ -189,17 +206,31 @@ public class ContainerPropertyTranslator : PropertyTranslator
         bool isParameter = property.IsOuter<UhtFunction>();
         UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
-        
+
+        string innerManagedType = property.IsGenericType() ?
+            "DOT" : translator.GetManagedType(containerProperty.ValueProperty);
+
         string containerType = isStructProperty || isParameter ? CopyMarshallerName : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyMarshallerName : MarshallerName;
-        return $"{containerType}<{translator.GetManagedType(containerProperty.ValueProperty)}>";
+        return $"{containerType}<{innerManagedType}>";
     }
 
     private string GetWrapperInterface(UhtProperty property)
     {
         UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
-        string innerManagedType = translator.GetManagedType(containerProperty.ValueProperty);
+
+        string innerManagedType = property.IsGenericType() ? 
+            "DOT" : translator.GetManagedType(containerProperty.ValueProperty);
+
         string interfaceType = property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyInterfaceName : InterfaceName;
         return $"System.Collections.Generic.{interfaceType}<{innerManagedType}>";
+    }
+
+    public override bool CanSupportGenericType(UhtProperty property)
+    {
+        UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty)property;
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
+
+        return translator.CanSupportGenericType(containerProperty.ValueProperty);
     }
 }

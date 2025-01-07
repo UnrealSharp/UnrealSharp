@@ -89,23 +89,7 @@ public partial class AActor
     /// <returns>The component if added, otherwise null</returns>
     public UActorComponent AddComponentByClass(TSubclassOf<UActorComponent> @class, bool bManualAttachment, FTransform relativeTransform) 
         => AddComponentByClass(@class, bManualAttachment, relativeTransform, deferredFinish: false);
- 
-    /// <summary>
-    /// Tries to get a component by class, will return null if the component is not found.
-    /// </summary>
-    /// <typeparam name="T">The type of the component to get</typeparam>
-    /// <param name="class">The class of the component to get. Can be left null.</param>
-    /// <returns>The component if found, otherwise null</returns>
-    public T? GetComponentByClass<T>(TSubclassOf<UActorComponent>? @class = null) where T : UActorComponent
-    {
-        if (@class == null)
-        {
-            @class = new TSubclassOf<UActorComponent>(typeof(T));
-        }
-        
-        return GetComponentByClass(@class.Value) as T;
-    }
-	    
+ 	    
     /// <summary>
     /// Finish spawning deferred actor with default transform.
     /// </summary>

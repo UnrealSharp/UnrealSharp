@@ -21,4 +21,6 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
         string defaultValueString = ConvertCPPDefaultValue(defaultValue, function, paramProperty);
         builder.AppendLine($"{ManagedType} {variableName} = {defaultValueString};");
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

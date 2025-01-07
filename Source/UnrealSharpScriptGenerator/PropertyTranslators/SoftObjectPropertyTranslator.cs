@@ -28,4 +28,6 @@ public class SoftObjectPropertyTranslator : SimpleTypePropertyTranslator
         string fullName = softClassProperty.Class.GetFullManagedName();
         return $"SoftObjectMarshaller<{fullName}>";
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }
