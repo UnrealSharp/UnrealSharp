@@ -70,7 +70,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        return ManagedType;
+        return property.IsGenericType() ? "DOT" : ManagedType;
     }
 
     protected void ExportDefaultStructParameter(GeneratorStringBuilder builder, string variableName, string cppDefaultValue,
@@ -140,4 +140,6 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
     {
 	    // No cleanup needed
     }
+
+	public override bool CanSupportGenericType(UhtProperty property) => true;
 }

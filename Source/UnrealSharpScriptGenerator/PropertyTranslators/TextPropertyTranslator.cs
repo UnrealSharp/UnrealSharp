@@ -27,4 +27,6 @@ public class TextPropertyTranslator : BlittableTypePropertyTranslator
     {
         return "TextMarshaller";
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

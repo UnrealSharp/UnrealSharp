@@ -4,6 +4,7 @@ using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -173,5 +174,53 @@ public static class FunctionUtilities
         
         return function.IsBlueprintAccessor("BlueprintSetter", property => property.GetBlueprintSetter()) 
                || function.IsNativeAccessor(GetterSetterMode.Set);
+    }
+
+    public static bool HasGenericTypeSupport(this UhtFunction function)
+    {
+        if (!function.HasMetadata("DeterminesOutputType")) return false;
+
+        var propertyDOTEngineName = function.GetMetadata("DeterminesOutputType");
+
+        var propertyDeterminingOutputType = function.Properties
+            .Where(p => p.EngineName == propertyDOTEngineName)
+            .FirstOrDefault();
+
+        if (propertyDeterminingOutputType == null) return false;
+
+        PropertyTranslator dotParamTranslator = PropertyTranslatorManager.GetTranslator(propertyDeterminingOutputType)!;
+        if (!dotParamTranslator.CanSupportGenericType(propertyDeterminingOutputType)) return false;
+
+        if (function.HasMetadata("DynamicOutputParam"))
+        {
+            var propertyDynamicOutputParam = function.Properties
+                .Where(p => p.EngineName == function.GetMetadata("DynamicOutputParam"))
+                .FirstOrDefault();
+
+            if (propertyDynamicOutputParam == null) return false;
+
+            if (propertyDeterminingOutputType!.GetGenericManagedType() != propertyDynamicOutputParam.GetGenericManagedType()) return false;
+
+            PropertyTranslator dopParamTranslator = PropertyTranslatorManager.GetTranslator(propertyDynamicOutputParam)!;
+            return dopParamTranslator.CanSupportGenericType(propertyDynamicOutputParam);
+        }
+        else if (function.HasReturnProperty)
+        {
+            PropertyTranslator returnParamTranslator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty!)!;
+            return returnParamTranslator.CanSupportGenericType(function.ReturnProperty!);
+        }
+
+        return false;
+    }
+
+    public static string GetGenericTypeConstraint(this UhtFunction function)
+    {
+        if (!function.HasMetadata("DeterminesOutputType")) return string.Empty;
+
+        var propertyDeterminingOutputType = function.Properties
+            .Where(p => p.EngineName == function.GetMetadata("DeterminesOutputType"))
+            .FirstOrDefault();
+
+        return propertyDeterminingOutputType?.GetGenericManagedType() ?? string.Empty;
     }
 }

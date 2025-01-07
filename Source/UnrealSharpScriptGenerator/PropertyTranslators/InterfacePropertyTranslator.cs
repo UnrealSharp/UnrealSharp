@@ -19,4 +19,6 @@ public class InterfacePropertyTranslator : SimpleTypePropertyTranslator
     {
         return $"{GetManagedType(property)}Marshaller";
     }
+
+    public override bool CanSupportGenericType(UhtProperty property) => true;
 }
