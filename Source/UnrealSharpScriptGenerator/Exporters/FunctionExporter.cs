@@ -90,7 +90,7 @@ public class FunctionExporter
     protected readonly UhtClass? _classBeingExtended;
 
     protected readonly List<FunctionOverload> _overloads = new();
-
+    
     public FunctionExporter(ExtensionMethod extensionMethod)
     {
         _selfParameter = extensionMethod.SelfParameter;
@@ -185,7 +185,7 @@ public class FunctionExporter
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(_selfParameter)!;
             string paramType = _classBeingExtended != null
-                ? _classBeingExtended.GetStructName()
+                ? _classBeingExtended.GetFullManagedName()
                 : translator.GetManagedType(_selfParameter);
             
             paramString = $"this {paramType} {_selfParameter.GetParameterName()}, ";
@@ -217,7 +217,7 @@ public class FunctionExporter
             {
                 continue;
             }
-
+            
             if (_selfParameter == parameter)
             {
                 if (string.IsNullOrEmpty(paramsStringCallGenerics))
@@ -376,12 +376,13 @@ public class FunctionExporter
     
     public static void TryAddExtensionMethod(UhtFunction function)
     {
-        if (!function.HasMetadata("ExtensionMethod") || function.Children.Count == 0)
+        if (!function.HasMetadata("ExtensionMethod") && !function.IsAutocast())
         {
             return;
         }
-
+        
         UhtPackage package = function.Outer!.Package;
+        
         if (!ExtensionMethods.TryGetValue(package, out var extensionMethods))
         {
             extensionMethods = new List<ExtensionMethod>();
@@ -652,7 +653,9 @@ public class FunctionExporter
             returnManagedType = ReturnValueTranslator.GetManagedType(_function.ReturnProperty!);
         }
         
-        builder.AppendLine($"{Modifiers}{returnManagedType} {_functionName}({_paramStringApiWithDefaults})");
+        string functionNameToUse = _function.IsAutocast() ? _function.GetBlueprintAutocastName() : _functionName;
+        
+        builder.AppendLine($"{Modifiers}{returnManagedType} {functionNameToUse}({_paramStringApiWithDefaults})");
         builder.OpenBrace();
         string returnStatement = _function.ReturnProperty != null ? "return " : "";
         UhtClass functionOwner = (UhtClass) _function.Outer!;

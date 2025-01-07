@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection.Metadata;
 using EpicGames.Core;
@@ -109,21 +109,41 @@ public static class PropertyUtilities
     {
         return property.TryGetBlueprintAccessor(GetterSetterMode.Set);
     }
-
-    public static bool HasReadWriteAccess(this UhtProperty property)
+    
+    public static bool IsWorldContextParameter(this UhtProperty property)
     {
-        return property.HasAnyFlags(EPropertyFlags.Edit | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter();
-    }
+        if (property.Outer is not UhtFunction function)
+        {
+            return false;
+        }
 
+        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != Program.Factory.Session.UObject)
+        {
+            return false;
+        }
+
+        string sourceName = property.SourceName;
+        return function.GetMetadata("WorldContext") == sourceName || sourceName is "WorldContextObject" or "WorldContext" or "ContextObject";
+    }
+    
+    public static bool IsReadWrite(this UhtProperty property)
+    {
+        bool isReadOnly = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly);
+        return !isReadOnly && (property.PropertyFlags.HasAnyFlags(EPropertyFlags.Edit | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter());
+    }
+    
+    public static bool IsEditDefaultsOnly(this UhtProperty property)
+    {
+        return property.HasAllFlags(EPropertyFlags.BlueprintReadOnly | EPropertyFlags.Edit);
+    }
+    
     public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)
     {
-        if (property.Outer is UhtScriptStruct)
+        if (property.Outer is UhtScriptStruct || property.Outer is not UhtClass classObj)
         {
             return null;
         }
-
-        UhtClass classObj = (property.Outer as UhtClass)!;
-
+        
         UhtFunction? TryFindFunction(string name)
         {
             UhtFunction? function = classObj.FindFunctionByName(name, (uhtFunction, typeName) =>

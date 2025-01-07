@@ -69,6 +69,8 @@ public class GetterSetterPair
             return accessors;
         }
     }
+
+    public UhtProperty Property { get; set; }
 }
 
 public static class ScriptGeneratorUtilities
@@ -174,10 +176,7 @@ public static class ScriptGeneratorUtilities
         return package.IsPartOfEngine() || package.GetModule() == Program.Factory.PluginModule;
     }
     
-    public static void GetExportedFunctions(UhtClass classObj, 
-        List<UhtFunction> functions, 
-         List<UhtFunction> overridableFunctions, 
-        Dictionary<string, GetterSetterPair> getterSetterPairs)
+    public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         List<UhtFunction> exportedFunctions = new();
         
@@ -208,6 +207,24 @@ public static class ScriptGeneratorUtilities
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
             {
                 overridableFunctions.Add(function);
+            }
+            else if (function.IsAutocast())
+            {
+                if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
+                {
+                    continue;
+                }
+                
+                // These will be interfaces in C#, which implicit conversion doesn't work for.
+                // TODO: Support these in the future.
+                UhtProperty returnProperty = function.ReturnProperty!;
+                if (returnProperty is UhtArrayProperty or UhtSetProperty or UhtMapProperty)
+                {
+                    continue;
+                }
+                
+                AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
+                functions.Add(function);
             }
             else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
@@ -290,6 +307,7 @@ public static class ScriptGeneratorUtilities
         
         UhtProperty? classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
         UhtProperty firstProperty = function.ReturnProperty != null ? function.ReturnProperty : function.Properties.First();
+        
         if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() || classProperty.HasAnySetter()))
         {
             return false;
@@ -318,6 +336,8 @@ public static class ScriptGeneratorUtilities
             pair.Setter = function;
             pair.SetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
         }
+        
+        pair.Property = firstProperty;
             
         getterSetterPairs[propertyName] = pair;
         return true;
@@ -325,18 +345,28 @@ public static class ScriptGeneratorUtilities
     
     static bool CheckIfGetter(string scriptName, UhtFunction function)
     {
-        bool startsWithGet = scriptName.StartsWith("Get");
+        if (!scriptName.StartsWith("Get"))
+        {
+            return false;
+        }
+        
+        int childrenCount = function.Children.Count;
         bool hasReturnProperty = function.ReturnProperty != null;
         bool hasNoParameters = !function.HasParameters;
-        bool hasSingleOutParam = !hasNoParameters && function.HasOutParams() && function.Properties.Count() == 1;
-        return startsWithGet && hasReturnProperty && (hasNoParameters || hasSingleOutParam);
+        bool hasSingleOutParam = !hasNoParameters && childrenCount == 1 && function.HasOutParams();
+        bool hasWorldContextPassParam = childrenCount == 2 && function.Properties.Any(property => property.IsWorldContextParameter());
+        return hasReturnProperty && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
     }
 
     static bool CheckIfSetter(string scriptName, UhtFunction function)
     {
-        bool startsWithSet = scriptName.StartsWith("Set");
+        if (!scriptName.StartsWith("Set"))
+        {
+            return false;
+        }
+        
         bool hasSingleParameter = function.Properties.Count() == 1;
         bool isNotOutOrReferenceParam = function.HasParameters && !function.Properties.First().HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm);
-        return startsWithSet && hasSingleParameter && isNotOutOrReferenceParam;
+        return hasSingleParameter && isNotOutOrReferenceParam;
     }
 }

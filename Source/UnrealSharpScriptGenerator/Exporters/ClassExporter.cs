@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -108,8 +107,7 @@ public static class ClassExporter
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, 
-        List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
@@ -128,7 +126,7 @@ public static class ClassExporter
         foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
         {
             UhtFunction firstAccessor = pair.Value.Accessors.First();
-            UhtProperty firstProperty = firstAccessor.Properties.First();
+            UhtProperty firstProperty = pair.Value.Property;
             string propertyName = pair.Value.PropertyName;
             
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;

@@ -71,6 +71,28 @@ public static class FunctionUtilities
         return $"{function.SourceName}_NativeFunction";
     }
     
+    public static bool IsAutocast(this UhtFunction function)
+    {
+        if (!function.FunctionFlags.HasAllFlags(EFunctionFlags.Static) || function.ReturnProperty == null || function.Children.Count != 2)
+        {            
+            return false;
+        }
+
+        if (function.HasMetadata("BlueprintAutocast"))
+        {
+            return true;
+        }
+        
+        string sourceName = function.SourceName;
+        return sourceName.StartsWith("Conv_", StringComparison.OrdinalIgnoreCase) || sourceName.StartsWith("To");
+    }
+    
+    public static string GetBlueprintAutocastName(this UhtFunction function)
+    {
+        int toTypeIndex = function.SourceName.IndexOf("Conv_", StringComparison.Ordinal);
+        return toTypeIndex == -1 ? function.SourceName : function.SourceName.Substring(toTypeIndex + 5);
+    }
+    
     private static bool IsBlueprintAccessor(this UhtFunction function, string accessorType, Func<UhtProperty, UhtFunction?> getBlueprintAccessor)
     {
         if (function.Properties.Count() != 1 )

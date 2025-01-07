@@ -6,7 +6,7 @@ public partial class UWorld
     /// Get the game mode of this world.
     /// </summary>
     /// <returns>The game mode of this world.</returns>
-    public AGameModeBase GameMode => UGameplayStatics.GetGameMode();
+    public AGameModeBase GameMode => UGameplayStatics.GameMode;
     
     /// <summary>
     /// Get the game mode of this world as a specific type.
@@ -19,7 +19,7 @@ public partial class UWorld
     /// Get the game instance of this world.
     /// </summary>
     /// <returns>The game instance of this world.</returns>
-    public UGameInstance GameInstance => UGameplayStatics.GetGameInstance();
+    public UGameInstance GameInstance => UGameplayStatics.GameInstance;
     
     /// <summary>
     /// Get the game instance of this world as a specific type.
@@ -32,7 +32,7 @@ public partial class UWorld
     /// Get the game state of this world.
     /// </summary>
     /// <returns>The game state of this world.</returns>
-    public AGameStateBase GameState => UGameplayStatics.GetGameState();
+    public AGameStateBase GameState => UGameplayStatics.GameState;
     
     /// <summary>
     /// Get the game state of this world as a specific type.

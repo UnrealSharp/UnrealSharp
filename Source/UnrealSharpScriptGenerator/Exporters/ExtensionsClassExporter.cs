@@ -39,7 +39,7 @@ public static class ExtensionsClassExporter
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(typeNamespace);
         stringBuilder.DeclareType(package, "static class", className, null, false);
-
+        
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
