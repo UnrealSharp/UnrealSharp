@@ -5,7 +5,6 @@
 #include "K2Node_FunctionTerminator.h"
 #include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
-#include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/ReloadUtilities.h"
@@ -41,6 +40,12 @@ void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterf
 bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
+	UObject* TerminalSubCategoryObject = PinType.PinValueType.TerminalSubCategoryObject.Get();
+
+	if (!IsValid(PinSubCategoryObject) && !IsValid(TerminalSubCategoryObject))
+	{
+		return false;
+	}
 	
 	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct)
 	{
@@ -79,8 +84,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 			}
 		}
 		
-		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
-		if (UScriptStruct* Struct = Cast<UScriptStruct>(MapValueType))
+		if (UScriptStruct* Struct = Cast<UScriptStruct>(TerminalSubCategoryObject))
 		{
 			if (UScriptStruct* const * FoundStruct = StructsToReinstance.Find(Struct))
 			{
@@ -100,15 +104,24 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 			return  true;
 		}
 	}
-	else if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Class
-		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_Object
-		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftObject
-		|| PinType.PinSubCategory == UEdGraphSchema_K2::PC_SoftClass)
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Class
+		|| PinType.PinCategory == UEdGraphSchema_K2::PC_Object
+		|| PinType.PinCategory == UEdGraphSchema_K2::PC_SoftObject
+		|| PinType.PinCategory == UEdGraphSchema_K2::PC_SoftClass)
 	{
-		UClass* Interface = Cast<UClass>(PinSubCategoryObject);
-		if (UClass* const * FoundInterface = InterfacesToReinstance.Find(Interface))
+		UClass* Class = static_cast<UClass*>(PinSubCategoryObject);
+		
+		if (Class->ClassFlags & CLASS_Interface)
 		{
-			PinType.PinSubCategoryObject = *FoundInterface;
+			if (UClass* const * FoundInterface = InterfacesToReinstance.Find(Class))
+			{
+				PinType.PinSubCategoryObject = *FoundInterface;
+				return true;
+			}
+		}
+		else if (UClass* const * FoundClass = ClassesToReinstance.Find(Class))
+		{
+			PinType.PinSubCategoryObject = *FoundClass;
 			return true;
 		}
 	}
@@ -136,9 +149,9 @@ void FCSReinstancer::StartReinstancing()
 	NotifyChanges(InterfacesToReinstance);
 	NotifyChanges(StructsToReinstance);
 	NotifyChanges(ClassesToReinstance);
-	
-	Reload->Reinstance();
+
 	UpdateBlueprints();
+	Reload->Reinstance();
 	PostReinstance();
 	
 	StructsToReinstance.Empty();
@@ -364,11 +377,15 @@ void FCSReinstancer::UpdateBlueprints()
 	//if performance will become an issue, we should look into parallelizing the update and moving the whole compilation and refreshing task onto threads and a background running task like epic does it for c++ reloads too.
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
-		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
 		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
 
 	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+
+	for (UBlueprint* Blueprint : ToUpdate)
+	{
+		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
+	}
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

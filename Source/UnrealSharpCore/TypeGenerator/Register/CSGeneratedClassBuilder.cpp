@@ -29,8 +29,6 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	// Needed for the BP-callable functions to show up in the blueprint editor.
 	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
-	DummyBlueprint->Status = BS_UpToDate;
-	DummyBlueprint->bHasBeenRegenerated = true;
 	DummyBlueprint->ParentClass = SuperClass;
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
@@ -110,20 +108,16 @@ FName FCSGeneratedClassBuilder::GetFieldName() const
 #if WITH_EDITOR
 void FCSGeneratedClassBuilder::OnFieldReplaced(UCSClass* OldField, UCSClass* NewField)
 {
-	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
-	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
-	DummyBlueprint->SkeletonGeneratedClass = nullptr;
-	DummyBlueprint->GeneratedClass = nullptr;
-	DummyBlueprint->ParentClass = nullptr;
-
-	OldField->ClassFlags |= CLASS_NewerVersionExists;
-	
 	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
 	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
 	// May be a better way? It works so far.
-	OldField->ClassGeneratedBy = nullptr;
-	OldField->bCooked = true;
+	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
+	DummyBlueprint->SetFlags(RF_NeedLoad);
 
+	OldField->ClassFlags |= CLASS_NewerVersionExists;
+	OldField->SetFlags(RF_NewerVersionExists);
+	OldField->ClearFlags(RF_Public | RF_Standalone);
+	
 	if (Field->IsChildOf<UEngineSubsystem>() || Field->IsChildOf<UEditorSubsystem>())
 	{
 		FSubsystemCollectionBase::DeactivateExternalSubsystem(OldField);
