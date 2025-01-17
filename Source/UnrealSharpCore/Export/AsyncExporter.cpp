@@ -18,8 +18,6 @@ void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Typ
 		FGCHandle GCHandle(DelegateHandle);
 		FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(DelegateHandle);
 		GCHandle.Dispose();
-
-		Manager.SetCurrentWorldContext(nullptr);
 	});
 }
 
