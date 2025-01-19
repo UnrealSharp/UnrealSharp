@@ -17,7 +17,7 @@ public:
 	// Begin UCSPropertyGenerator interface
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 #if WITH_EDITOR
-	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const override;
+	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const override;
 #endif
 	// End UCSPropertyGenerator interface
 };

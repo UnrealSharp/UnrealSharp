@@ -26,8 +26,8 @@ public:
 
 	// FKismetCompilerContext interface
 	virtual void FinishCompilingClass(UClass* Class) override;
-	virtual void EnsureProperGeneratedClass(UClass*& TargetClass) override;
 	virtual void CreateFunctionList() override;
+	virtual void CreateClassVariablesFromBlueprint() override;
 	virtual void SpawnNewClass(const FString& NewClassName) override;
 	// End of FKismetCompilerContext interface
 

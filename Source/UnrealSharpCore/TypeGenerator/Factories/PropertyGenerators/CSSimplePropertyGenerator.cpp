@@ -47,3 +47,18 @@ FFieldClass* UCSSimplePropertyGenerator::GetPropertyClass()
 {
 	return TypeToFieldClass[GetPropertyType()];
 }
+
+#if WITH_EDITOR
+FEdGraphPinType UCSSimplePropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
+{
+	FEdGraphPinType PinType = Super::GetPinType(PropertyType, MetaData, Outer);
+
+	if (PropertyType == ECSPropertyType::Float || PropertyType == ECSPropertyType::Double)
+	{
+		PinType.PinSubCategory = PinType.PinCategory;
+		PinType.PinCategory = UEdGraphSchema_K2::PC_Real;
+	}
+
+	return PinType;
+}
+#endif

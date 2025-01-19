@@ -49,7 +49,7 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	return Property;
 }
 
-FEdGraphPinType UCSObjectPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const
+FEdGraphPinType UCSObjectPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
 {
 	TSharedPtr<FCSObjectMetaData> ObjectMetaData = MetaData.GetTypeMetaData<FCSObjectMetaData>();
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
@@ -57,6 +57,8 @@ FEdGraphPinType UCSObjectPropertyGenerator::GetPinType(ECSPropertyType PropertyT
 	FEdGraphPinType PinType;
 	PinType.PinCategory = TypeToPinType[PropertyType].PinCategory;
 	PinType.PinSubCategoryObject = Class;
+	PinType.bIsWeakPointer = PropertyType == ECSPropertyType::WeakObject;
+	
 	return PinType;
 }
 

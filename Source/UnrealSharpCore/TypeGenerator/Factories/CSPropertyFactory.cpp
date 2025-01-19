@@ -62,7 +62,8 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 	}
 		
 	FCSMetaDataUtils::ApplyMetaData(PropertyMetaData.MetaData, NewProperty);
-		
+
+	NewProperty->SetFlags(RF_LoadCompleted);
 	return NewProperty;
 }
 
@@ -100,6 +101,11 @@ TSharedPtr<FCSUnrealType> FCSPropertyFactory::CreateTypeMetaData(const TSharedPt
 
 void FCSPropertyFactory::CreatePropertyEditor(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
+	if (PropertyMetaData.Type->PropertyType == ECSPropertyType::Delegate)
+	{
+		return;
+	}
+	
 	UClass* OwnerClass = CastChecked<UClass>(Outer);
 	UBlueprint* Blueprint = CastChecked<UBlueprint>(OwnerClass->ClassGeneratedBy);
 	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyMetaData.Type->PropertyType);

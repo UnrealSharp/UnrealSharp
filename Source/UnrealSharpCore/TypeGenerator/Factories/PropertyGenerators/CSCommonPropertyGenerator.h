@@ -24,10 +24,7 @@ protected:
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
 #if WITH_EDITOR
-	virtual FEdGraphPinType GetPinType(ECSPropertyType InPropertyType, const FCSPropertyMetaData& PropertyMetaData) const override
-	{
-		return TypeToPinType[InPropertyType];
-	}
+	virtual FEdGraphPinType GetPinType(ECSPropertyType InPropertyType, const FCSPropertyMetaData& PropertyMetaData, UBlueprint* Outer) const override;
 #endif
 	// End UCSPropertyGenerator interface
 

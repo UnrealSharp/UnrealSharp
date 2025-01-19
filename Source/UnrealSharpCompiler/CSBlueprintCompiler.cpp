@@ -1,11 +1,13 @@
 #include "CSBlueprintCompiler.h"
 
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/KismetReinstanceUtilities.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
+#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
 #define LOCTEXT_NAMESPACE "AdventureCompilerContext"
@@ -35,27 +37,18 @@ FCSCompilerContext::FCSCompilerContext(UCSBlueprint* SourceAdventureBP, FCompile
 
 void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
-	if (Class->GetName().StartsWith("SKEL_"))
-	{
-		FKismetCompilerContext::FinishCompilingClass(Class);
-		return;
-	}
-	
 	Class->ClassConstructor = &FCSGeneratedClassBuilder::ManagedActorConstructor;
 	FKismetCompilerContext::FinishCompilingClass(Class);
 }
 
-void FCSCompilerContext::EnsureProperGeneratedClass(UClass*& TargetUClass)
-{
-	if (TargetUClass && !((UObject*)TargetUClass)->IsA(UCSClass::StaticClass()))
-	{
-		FKismetCompilerUtilities::ConsignToOblivion(TargetUClass, Blueprint->bIsRegeneratingOnLoad);
-		TargetUClass = nullptr;
-	}
-}
-
 void FCSCompilerContext::CreateFunctionList()
 {
+	Super::CreateFunctionList();
+	for (int32 i = 0; i < Blueprint->DelegateSignatureGraphs.Num(); ++i)
+	{
+		ProcessOneFunctionGraph(Blueprint->DelegateSignatureGraphs[i]);
+	}
+	
 	TArray<UCSFunctionBase*> FunctionBases;
 	UCSClass* MainClass = Cast<UCSClass>(Blueprint->GeneratedClass);
 	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetClassInfo()->TypeMetaData;
@@ -70,7 +63,24 @@ void FCSCompilerContext::CreateFunctionList()
 	
 	for (UCSFunctionBase* FunctionBase : FunctionBases)
 	{
+		// Add this to the skeleton so functions show up in the blueprint editor
 		FCSFunctionFactory::FinalizeFunctionSetup(Blueprint->SkeletonGeneratedClass, FunctionBase);
+	}
+}
+
+void FCSCompilerContext::CreateClassVariablesFromBlueprint()
+{
+	Super::CreateClassVariablesFromBlueprint();
+	
+	UCSClass* MainClass = CastChecked<UCSClass>(NewClass);
+	const TArray<FCSPropertyMetaData>& Properties = MainClass->GetClassInfo()->TypeMetaData->Properties;
+	
+	for (const FCSPropertyMetaData& Property : Properties)
+	{
+		if (Property.Type->PropertyType == ECSPropertyType::Delegate)
+		{
+			FCSPropertyFactory::CreatePropertyEditor(MainClass, Property);
+		}
 	}
 }
 
@@ -81,6 +91,9 @@ void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 	if (SkeletonClass == nullptr)
 	{
 		SkeletonClass = NewObject<UCSClass>(Blueprint->GetOutermost(), FName(*NewClassName), RF_Public | RF_Transactional);
+
+		TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::Get().GetClassInfoFromName(Blueprint->GetFName());
+		SkeletonClass->SetClassMetaData(ClassInfo);
 	}
 	
 	NewClass = SkeletonClass;

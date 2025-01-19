@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSDelegateBasePropertyGenerator.h"
 #include "CSPropertyGenerator.h"
 #include "CSDelegatePropertyGenerator.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UCSDelegatePropertyGenerator : public UCSPropertyGenerator
+class UNREALSHARPCORE_API UCSDelegatePropertyGenerator : public UCSDelegateBasePropertyGenerator
 {
 	GENERATED_BODY()
 

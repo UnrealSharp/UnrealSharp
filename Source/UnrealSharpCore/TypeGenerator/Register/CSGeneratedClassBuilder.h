@@ -28,7 +28,7 @@ public:
 													  const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
 
 #if WITH_EDITOR
-	void ValidateComponentNodes(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
+	static void ValidateBlueprint(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
 #endif
 
 	static bool IsManagedType(const UClass* Class);

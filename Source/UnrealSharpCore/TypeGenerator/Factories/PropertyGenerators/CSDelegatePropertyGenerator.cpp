@@ -1,4 +1,6 @@
 #include "CSDelegatePropertyGenerator.h"
+
+#include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
 

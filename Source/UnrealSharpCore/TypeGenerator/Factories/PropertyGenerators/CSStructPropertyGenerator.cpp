@@ -16,3 +16,13 @@ TSharedPtr<FCSUnrealType> UCSStructPropertyGenerator::CreateTypeMetaData(ECSProp
 {
 	return MakeShared<FCSStructPropertyMetaData>();
 }
+
+FEdGraphPinType UCSStructPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
+{
+	FEdGraphPinType PinType;
+	PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+	TSharedPtr<FCSStructPropertyMetaData> StructPropertyMetaData = MetaData.GetTypeMetaData<FCSStructPropertyMetaData>();
+	UScriptStruct* Struct = FCSTypeRegistry::GetStructFromName(StructPropertyMetaData->TypeRef.Name);
+	PinType.PinSubCategoryObject = Struct;
+	return PinType;
+}

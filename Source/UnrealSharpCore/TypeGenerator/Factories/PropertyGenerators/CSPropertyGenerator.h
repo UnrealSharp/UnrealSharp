@@ -28,7 +28,10 @@ public:
 
 #if WITH_EDITOR
 	virtual void CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData);
-	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const;;
+	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const;
 #endif
+
+protected:
 	
+	static FGuid ConstructGUIDFromName(const FName& Name);
 };

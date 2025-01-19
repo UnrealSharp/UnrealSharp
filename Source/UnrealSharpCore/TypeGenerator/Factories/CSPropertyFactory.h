@@ -6,7 +6,7 @@
 
 class UCSPropertyGenerator;
 
-class FCSPropertyFactory
+class UNREALSHARPCORE_API FCSPropertyFactory
 {
 public:
 	static void Initialize();
@@ -21,7 +21,8 @@ public:
 	static void CreatePropertyEditor(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 #endif
 
+	static UCSPropertyGenerator* FindPropertyGenerator(ECSPropertyType PropertyType);
+
 private:
 	static TArray<TWeakObjectPtr<UCSPropertyGenerator>> PropertyGenerators;
-	static UCSPropertyGenerator* FindPropertyGenerator(ECSPropertyType PropertyType);
 };

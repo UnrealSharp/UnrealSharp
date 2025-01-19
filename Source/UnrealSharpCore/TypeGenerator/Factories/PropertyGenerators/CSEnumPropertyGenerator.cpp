@@ -21,3 +21,16 @@ TSharedPtr<FCSUnrealType> UCSEnumPropertyGenerator::CreateTypeMetaData(ECSProper
 {
 	return MakeShared<FCSEnumPropertyMetaData>();
 }
+
+#if WITH_EDITOR
+FEdGraphPinType UCSEnumPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
+{
+	TSharedPtr<FCSEnumPropertyMetaData> EnumMetaData = MetaData.GetTypeMetaData<FCSEnumPropertyMetaData>();
+	UEnum* Enum = FCSTypeRegistry::GetEnumFromName(EnumMetaData->InnerProperty.Name);
+	
+	FEdGraphPinType PinType;
+	PinType.PinCategory = UEdGraphSchema_K2::PC_Byte;
+	PinType.PinSubCategoryObject = Enum;
+	return PinType;
+}
+#endif

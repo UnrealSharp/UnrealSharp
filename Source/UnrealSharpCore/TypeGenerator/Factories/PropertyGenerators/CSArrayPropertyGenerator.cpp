@@ -15,3 +15,17 @@ TSharedPtr<FCSUnrealType> UCSArrayPropertyGenerator::CreateTypeMetaData(ECSPrope
 {
 	return MakeShared<FCSContainerBaseMetaData>();
 }
+
+#if WITH_EDITOR
+FEdGraphPinType UCSArrayPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
+{
+	TSharedPtr<FCSContainerBaseMetaData> ArrayPropertyMetaData = MetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
+	ECSPropertyType InnerPropertyType = ArrayPropertyMetaData->InnerProperty.Type->PropertyType;
+	UCSPropertyGenerator* PropertyGenerator = FCSPropertyFactory::FindPropertyGenerator(InnerPropertyType);
+	
+	FEdGraphPinType PinType = PropertyGenerator->GetPinType(InnerPropertyType, ArrayPropertyMetaData->InnerProperty, Outer);
+	PinType.ContainerType = EPinContainerType::Array;
+	
+	return PinType;
+}
+#endif

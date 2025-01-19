@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 
+#include "BlueprintActionDatabase.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSTypeRegistry.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
@@ -22,22 +23,20 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->SetClassMetaData(FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name));
 
 #if WITH_EDITOR
-	UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
-	FString BlueprintName = TypeMetaData->Name.ToString();
-	UBlueprint* DummyBlueprint = FindObject<UBlueprint>(Package, *BlueprintName);
-	if (!IsValid(DummyBlueprint))
+	UBlueprint* Blueprint = Cast<UBlueprint>(Field->ClassGeneratedBy);
+	if (!Blueprint)
 	{
-		// Make a dummy blueprint to trick the engine into thinking this class is a blueprint.
-		DummyBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
+		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
+		FString BlueprintName = TypeMetaData->Name.ToString();
+		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
+		Blueprint->GeneratedClass = Field;
+		Blueprint->ParentClass = SuperClass;
+		Field->ClassGeneratedBy = Blueprint;
 	}
-	// Needed for the BP-callable functions to show up in the blueprint editor.
-	DummyBlueprint->GeneratedClass = Field;
-	DummyBlueprint->ParentClass = SuperClass;
-	Field->ClassGeneratedBy = DummyBlueprint;
+	Blueprint->NewVariables.Empty();
 #endif
 
 	Field->SetSuperStruct(SuperClass);
-
 	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
 
 	// If this is a blueprint task, mark it as native, otherwise it will not be able to be used in the behavior tree.
@@ -65,9 +64,9 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	// Generate properties for this class
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 
-	ValidateComponentNodes(DummyBlueprint, Field->GetClassInfo());
+	ValidateBlueprint(Blueprint, Field->GetClassInfo());
 	
-	FKismetEditorUtilities::CompileBlueprint(DummyBlueprint);
+	FKismetEditorUtilities::CompileBlueprint(Blueprint);
 	
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field, Field);
 }
@@ -234,7 +233,7 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 	}
 }
 
-void FCSGeneratedClassBuilder::ValidateComponentNodes(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo)
+void FCSGeneratedClassBuilder::ValidateBlueprint(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo)
 {
 	if (!Blueprint->SimpleConstructionScript)
 	{

@@ -41,8 +41,9 @@ void UCSPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCS
 	FBPVariableDescription NewVariable;
 	NewVariable.PropertyFlags = PropertyMetaData.PropertyFlags;
 	NewVariable.VarName = PropertyMetaData.Name;
-	NewVariable.VarGuid = FGuid::NewGuid();
-	NewVariable.VarType = GetPinType(PropertyMetaData.Type->PropertyType, PropertyMetaData);
+	NewVariable.VarGuid = ConstructGUIDFromName(PropertyMetaData.Name);
+	NewVariable.VarType = GetPinType(PropertyMetaData.Type->PropertyType, PropertyMetaData, Blueprint);
+	NewVariable.FriendlyName = FName::NameToDisplayString(NewVariable.VarName.ToString(), NewVariable.VarType.PinCategory == UEdGraphSchema_K2::PC_Boolean);
 	NewVariable.RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
 	NewVariable.ReplicationCondition = PropertyMetaData.LifetimeCondition;
 
@@ -50,9 +51,7 @@ void UCSPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCS
 	{
 		if (Variable.VarName == NewVariable.VarName && Variable.VarType == NewVariable.VarType)
 		{
-			FGuid CurrentGuid = Variable.VarGuid;
 			Variable = NewVariable;
-			Variable.VarGuid = CurrentGuid;
 			return;
 		}
 	}
@@ -60,12 +59,21 @@ void UCSPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCS
 	Blueprint->NewVariables.Add(NewVariable);
 }
 
-FEdGraphPinType UCSPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const
+FEdGraphPinType UCSPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
 {
 	PURE_VIRTUAL();
 	return FEdGraphPinType();
 }
 #endif
+
+FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FName& Name)
+{
+	const FString HashString = Name.ToString();
+	const uint32 BufferLength = HashString.Len() * sizeof(HashString[0]);
+	uint32 HashBuffer[5];
+	FSHA1::HashBuffer(*HashString, BufferLength, reinterpret_cast<uint8*>(HashBuffer));
+	return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]);
+}
 
 bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
 {
