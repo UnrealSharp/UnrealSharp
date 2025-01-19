@@ -6,8 +6,9 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 {
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
-	
-	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
+
+	TArray<UCSFunctionBase*> FunctionBases;
+	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions, FunctionBases);
 
 	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
 	

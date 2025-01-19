@@ -14,9 +14,7 @@ public:
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
 	virtual FName GetFieldName() const override;
-#if WITH_EDITOR
-	virtual void OnFieldReplaced(UCSClass* OldField, UCSClass* NewField) override;
-#endif
+	virtual bool ReplaceTypeOnReload() const override { return false; }
 	// End of implementation
 
 	static UCSClass* GetFirstManagedClass(UClass* Class);
@@ -29,12 +27,17 @@ public:
 													  UCSClass* FirstManagedClass,
 													  const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
 
+#if WITH_EDITOR
+	void ValidateComponentNodes(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
+#endif
+
 	static bool IsManagedType(const UClass* Class);
 
-private:
-	
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
 	static void ManagedActorConstructor(const FObjectInitializer& ObjectInitializer);
+
+private:
+
 
 	static void InitialSetup(const FObjectInitializer& ObjectInitializer, UCSClass*& OutManagedClass, TSharedPtr<const FCSharpClassInfo>& OutClassInfo);
 	

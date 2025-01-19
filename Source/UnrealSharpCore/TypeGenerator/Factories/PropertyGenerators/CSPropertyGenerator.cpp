@@ -35,6 +35,38 @@ TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyTy
 	return nullptr;
 }
 
+#if WITH_EDITOR
+void UCSPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData)
+{
+	FBPVariableDescription NewVariable;
+	NewVariable.PropertyFlags = PropertyMetaData.PropertyFlags;
+	NewVariable.VarName = PropertyMetaData.Name;
+	NewVariable.VarGuid = FGuid::NewGuid();
+	NewVariable.VarType = GetPinType(PropertyMetaData.Type->PropertyType, PropertyMetaData);
+	NewVariable.RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
+	NewVariable.ReplicationCondition = PropertyMetaData.LifetimeCondition;
+
+	for (FBPVariableDescription& Variable : Blueprint->NewVariables)
+	{
+		if (Variable.VarName == NewVariable.VarName && Variable.VarType == NewVariable.VarType)
+		{
+			FGuid CurrentGuid = Variable.VarGuid;
+			Variable = NewVariable;
+			Variable.VarGuid = CurrentGuid;
+			return;
+		}
+	}
+	
+	Blueprint->NewVariables.Add(NewVariable);
+}
+
+FEdGraphPinType UCSPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const
+{
+	PURE_VIRTUAL();
+	return FEdGraphPinType();
+}
+#endif
+
 bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
 {
 #if WITH_EDITOR

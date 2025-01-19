@@ -26,6 +26,8 @@ public:
 	// Process any pending re-instance requests
 	void StartReinstancing();
 
+	void UpdateAllBlueprints();
+
 	void PostReinstance();
 
 	void FixDataTables();

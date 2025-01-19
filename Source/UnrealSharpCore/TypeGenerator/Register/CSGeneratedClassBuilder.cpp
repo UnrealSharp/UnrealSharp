@@ -1,4 +1,5 @@
 ﻿#include "CSGeneratedClassBuilder.h"
+
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSTypeRegistry.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
@@ -6,6 +7,9 @@
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -27,10 +31,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		DummyBlueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 	}
 	// Needed for the BP-callable functions to show up in the blueprint editor.
-	DummyBlueprint->SkeletonGeneratedClass = Field;
 	DummyBlueprint->GeneratedClass = Field;
-	DummyBlueprint->Status = BS_UpToDate;
-	DummyBlueprint->bHasBeenRegenerated = true;
 	DummyBlueprint->ParentClass = SuperClass;
 	Field->ClassGeneratedBy = DummyBlueprint;
 #endif
@@ -64,41 +65,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	// Generate properties for this class
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 
-	// Generate functions for this class
-	FCSFunctionFactory::GenerateVirtualFunctions(Field, TypeMetaData);
-	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
-
-	//Finalize class
-	if (Field->IsChildOf<AActor>())
-	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedActorConstructor;
-	}
-	else
-	{
-		Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
-	}
-
-	Field->Bind();
-	Field->StaticLink(true);
-	Field->AssembleReferenceTokenStream();
-
-	//Create the default object for this class
-	UObject* DefaultObject = Field->GetDefaultObject();
-	SetupDefaultTickSettings(DefaultObject);
-
-	Field->SetUpRuntimeReplicationData();
-	Field->UpdateCustomPropertyListForPostConstruction();
-
-	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
-
-	if (Field->IsChildOf<UEngineSubsystem>()
-#if WITH_EDITOR
-		|| Field->IsChildOf<UEditorSubsystem>()
-#endif
-	)
-	{
-		FSubsystemCollectionBase::ActivateExternalSubsystem(Field);
-	}
+	ValidateComponentNodes(DummyBlueprint, Field->GetClassInfo());
+	
+	FKismetEditorUtilities::CompileBlueprint(DummyBlueprint);
+	
+	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field, Field);
 }
 
 FName FCSGeneratedClassBuilder::GetFieldName() const
@@ -106,32 +77,6 @@ FName FCSGeneratedClassBuilder::GetFieldName() const
 	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
 	return *FieldName;
 }
-
-#if WITH_EDITOR
-void FCSGeneratedClassBuilder::OnFieldReplaced(UCSClass* OldField, UCSClass* NewField)
-{
-	// We reuse the Blueprint for the new reinstanced class, so we need to clear the old class references.
-	UBlueprint* DummyBlueprint = Cast<UBlueprint>(OldField->ClassGeneratedBy);
-	DummyBlueprint->SkeletonGeneratedClass = nullptr;
-	DummyBlueprint->GeneratedClass = nullptr;
-	DummyBlueprint->ParentClass = nullptr;
-
-	OldField->ClassFlags |= CLASS_NewerVersionExists;
-	
-	// Since these classes are of UBlueprintGeneratedClass, Unreal considers them in the reinstancing of Blueprints, when a C# class is inheriting from another C# class.
-	// We don't want that, so we set the old Blueprint to nullptr. Look ReloadUtilities.cpp:line 166
-	// May be a better way? It works so far.
-	OldField->ClassGeneratedBy = nullptr;
-	OldField->bCooked = true;
-
-	if (Field->IsChildOf<UEngineSubsystem>() || Field->IsChildOf<UEditorSubsystem>())
-	{
-		FSubsystemCollectionBase::DeactivateExternalSubsystem(OldField);
-	}
-
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
-}
-#endif
 
 void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
@@ -149,7 +94,7 @@ void FCSGeneratedClassBuilder::ManagedActorConstructor(const FObjectInitializer&
 	InitialSetup(ObjectInitializer, ManagedClass, ClassInfo);
 
 	AActor* Actor = static_cast<AActor*>(ObjectInitializer.GetObj());
-	SetupDefaultSubobjects(ObjectInitializer, Actor, Actor->GetClass(), ManagedClass, ClassInfo);
+	//SetupDefaultSubobjects(ObjectInitializer, Actor, Actor->GetClass(), ManagedClass, ClassInfo);
 
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
@@ -286,6 +231,39 @@ void FCSGeneratedClassBuilder::SetupDefaultSubobjects(const FObjectInitializer& 
 		}
 
 		SceneComponent->SetupAttachment(Actor->GetRootComponent());
+	}
+}
+
+void FCSGeneratedClassBuilder::ValidateComponentNodes(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo)
+{
+	if (!Blueprint->SimpleConstructionScript)
+	{
+		return;
+	}
+	
+	TArray<USCS_Node*> Nodes;
+	for (const FCSPropertyMetaData& Property : ClassInfo->TypeMetaData->Properties)
+	{
+		if (Property.Type->PropertyType != ECSPropertyType::DefaultComponent)
+		{
+			continue;
+		}
+		
+		USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
+		USCS_Node* Node = SCS->FindSCSNode(Property.Name);
+		Nodes.Add(Node);
+	}
+
+	// Remove all nodes that are not part of the class anymore.
+	int32 NumNodes = Blueprint->SimpleConstructionScript->GetAllNodes().Num();
+	TArray<USCS_Node*> AllNodes = Blueprint->SimpleConstructionScript->GetAllNodes();
+	for (int32 i = NumNodes - 1; i >= 0; --i)
+	{
+		USCS_Node* Node = AllNodes[i];
+		if (!Nodes.Contains(Node))
+		{
+			Blueprint->SimpleConstructionScript->RemoveNode(Node);
+		}
 	}
 }
 

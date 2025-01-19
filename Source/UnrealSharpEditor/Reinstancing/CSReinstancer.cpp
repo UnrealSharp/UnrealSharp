@@ -1,5 +1,6 @@
 ﻿#include "CSReinstancer.h"
 #include "BlueprintCompilationManager.h"
+#include "FileHelpers.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
@@ -148,6 +149,26 @@ void FCSReinstancer::StartReinstancing()
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
+void FCSReinstancer::UpdateAllBlueprints()
+{
+	TArray<UBlueprint*> Blueprints;
+	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
+	{
+		UBlueprint* Blueprint = *BlueprintIt;
+		if (FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		{
+			continue;
+		}
+		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
+		Blueprints.Add(Blueprint);
+	}
+	
+	for (UBlueprint* Blueprint : Blueprints)
+	{
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+	}
+}
+
 void FCSReinstancer::PostReinstance()
 {
 	FixDataTables();
@@ -282,6 +303,11 @@ void FCSReinstancer::UpdateBlueprints()
 		bool bNeedsNodeReconstruction = false;
 		UBlueprint* Blueprint = *BlueprintIt;
 
+		if (FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		{
+			continue;
+		}
+
 		UpdateInheritance(Blueprint, bNeedsNodeReconstruction);
 		
 		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
@@ -365,10 +391,20 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
 
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	for (UBlueprint* Blueprint : ToUpdate)
+	{
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+	}
+
+	const bool bPromptUserToSave = false;
+	const bool bSaveMapPackages = true;
+	const bool bSaveContentPackages = true;
+	const bool bFastSave = false;
+	const bool bNotifyNoPackagesSaved = false;
+	const bool bCanBeDeclined = false;
+	FEditorFileUtils::SaveDirtyPackages( bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined );
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

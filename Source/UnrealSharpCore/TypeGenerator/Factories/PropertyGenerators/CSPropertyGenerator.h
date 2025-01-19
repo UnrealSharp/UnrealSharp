@@ -25,5 +25,10 @@ public:
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType);
+
+#if WITH_EDITOR
+	virtual void CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData);
+	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData) const;;
+#endif
 	
 };
