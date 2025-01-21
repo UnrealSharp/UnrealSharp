@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpCompiler.h"
-
 #include "CSBlueprintCompiler.h"
+#include "CSCompilerContext.h"
 #include "KismetCompiler.h"
 #include "TypeGenerator/CSBlueprint.h"
 

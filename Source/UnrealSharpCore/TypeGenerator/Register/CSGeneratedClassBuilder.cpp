@@ -1,6 +1,4 @@
 ﻿#include "CSGeneratedClassBuilder.h"
-
-#include "BlueprintActionDatabase.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSTypeRegistry.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
@@ -20,7 +18,8 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	//Set the super class for this UClass.
 	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
-	Field->SetClassMetaData(FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name));
+	TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
+	Field->SetClassMetaData(ClassInfo);
 
 #if WITH_EDITOR
 	UBlueprint* Blueprint = Cast<UBlueprint>(Field->ClassGeneratedBy);
@@ -33,6 +32,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 		Blueprint->ParentClass = SuperClass;
 		Field->ClassGeneratedBy = Blueprint;
 	}
+	
 	Blueprint->NewVariables.Empty();
 #endif
 
