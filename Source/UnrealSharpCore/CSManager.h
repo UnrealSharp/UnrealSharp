@@ -36,7 +36,7 @@ public:
 	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const;
 
 	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-	UObject* GetCurrentWorldContext() const { return CurrentWorldContext; }
+	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
 	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
 
@@ -65,7 +65,7 @@ private:
 	TObjectPtr<UPackage> UnrealSharpPackage;
 
 	UPROPERTY()
-	TObjectPtr<UObject> CurrentWorldContext;
+	TWeakObjectPtr<UObject> CurrentWorldContext;
 
 	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
