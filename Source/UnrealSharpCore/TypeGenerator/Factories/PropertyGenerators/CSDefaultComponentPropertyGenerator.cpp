@@ -19,27 +19,42 @@ void UCSDefaultComponentPropertyGenerator::CreatePropertyEditor(UBlueprint* Blue
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 
 	USCS_Node* Node = SimpleConstructionScript->FindSCSNode(PropertyMetaData.Name);
-	if (!IsValid(Node) || Node->ComponentClass != Class)
+	
+	if (!Node)
 	{
-		if (IsValid(Node))
-		{
-			SimpleConstructionScript->RemoveNode(Node);
-		}
-		
 		Node = SimpleConstructionScript->CreateNode(Class, PropertyMetaData.Name);
-	}
-
-	Node->AttachToName = ObjectMetaData->AttachmentComponent;
-	Node->SetVariableName(PropertyMetaData.Name, false);
-	Node->ComponentClass = Class;
-	Node->VariableGuid = ConstructGUIDFromName(PropertyMetaData.Name);
-
-	if (USCS_Node* ParentNode = SimpleConstructionScript->FindSCSNode(ObjectMetaData->AttachmentComponent))
-	{
-		ParentNode->AddChildNode(Node);
+		Node->SetVariableName(PropertyMetaData.Name, false);
+		SimpleConstructionScript->AddNode(Node);
 	}
 	
-	SimpleConstructionScript->AddNode(Node);
+	FName AttachToComponentName = ObjectMetaData->AttachmentComponent;
+	bool HasValidAttachment = AttachToComponentName != "None";
+	
+	Node->AttachToName = HasValidAttachment ? ObjectMetaData->AttachmentSocket : NAME_None;
+	Node->ComponentClass = Class;
+
+	if (HasValidAttachment)
+	{
+		USCS_Node* ParentNode = SimpleConstructionScript->FindSCSNode(AttachToComponentName);
+		if (ParentNode->ChildNodes.Contains(Node))
+		{
+			return;
+		}
+		
+		Node->bIsParentComponentNative = false;
+		Node->ParentComponentOrVariableName = AttachToComponentName;
+		Node->ParentComponentOwnerClassName = Blueprint->GeneratedClass->GetFName();
+		
+		for (USCS_Node* NodeItr : SimpleConstructionScript->GetAllNodes())
+		{
+			if (NodeItr != Node && NodeItr->ChildNodes.Contains(Node) && NodeItr->GetVariableName() != AttachToComponentName)
+			{
+				// The attachment has changed, remove the node from the old parent
+				NodeItr->RemoveChildNode(Node, false);
+				break;
+			}
+		}
+	}
 }
 
 TSharedPtr<FCSUnrealType> UCSDefaultComponentPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)

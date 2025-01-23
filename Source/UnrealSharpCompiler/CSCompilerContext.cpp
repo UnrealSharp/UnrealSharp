@@ -1,6 +1,7 @@
 #include "CSCompilerContext.h"
 #include "TypeGenerator/CSBlueprint.h"
 #include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
@@ -64,7 +65,9 @@ void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassTo
 
 void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 {
-	NewClass = NewObject<UBlueprintGeneratedClass>(Blueprint->GetOutermost(), FName(*NewClassName), RF_Public | RF_Transactional);
+	UCSSkeletonClass* NewSkeletonClass = NewObject<UCSSkeletonClass>(Blueprint->GetOutermost(), FName(*NewClassName), RF_Public | RF_Transactional);
+	NewSkeletonClass->SetGeneratedClass(GetMainClass());
+	NewClass = NewSkeletonClass;
 	
 	// Skeleton class doesn't generate functions on the first pass.
 	// It's done in CleanAndSanitizeClass which doesn't run when the skeleton class is created

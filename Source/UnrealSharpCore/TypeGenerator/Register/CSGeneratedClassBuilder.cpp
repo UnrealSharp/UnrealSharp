@@ -65,7 +65,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 
 	ValidateBlueprint(Blueprint, Field->GetClassInfo());
-	
+
 	FKismetEditorUtilities::CompileBlueprint(Blueprint);
 	
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field, Field);
@@ -261,7 +261,7 @@ void FCSGeneratedClassBuilder::ValidateBlueprint(UBlueprint* Blueprint, const TS
 		USCS_Node* Node = AllNodes[i];
 		if (!Nodes.Contains(Node))
 		{
-			Blueprint->SimpleConstructionScript->RemoveNode(Node);
+			Blueprint->SimpleConstructionScript->RemoveNode(Node, true);
 		}
 	}
 }
