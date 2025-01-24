@@ -35,6 +35,11 @@ public partial class UObject
     public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject);
 
     /// <summary>
+    /// The unique ID of the object... These are reused so it is only unique while the object is alive.
+    /// </summary>
+    public int UniqueID => UObjectExporter.CallGetUniqueID(NativeObject);
+
+    /// <summary>
     /// The world that the object belongs to.
     /// </summary>
     public UWorld World
