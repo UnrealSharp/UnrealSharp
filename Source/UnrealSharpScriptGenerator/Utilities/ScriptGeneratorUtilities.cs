@@ -204,38 +204,28 @@ public static class ScriptGeneratorUtilities
                 continue;
             }
 
-            exportedFunctions.Add(function);
-
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
             {
                 overridableFunctions.Add(function);
             }
             else if (function.IsAutocast())
             {
-                functions.Add(function);
-
                 if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
                 {
                     continue;
                 }
-                
-                // These will be interfaces in C#, which implicit conversion doesn't work for.
-                // TODO: Support these in the future.
-                UhtProperty returnProperty = function.ReturnProperty!;
-                if (returnProperty is UhtArrayProperty or UhtSetProperty or UhtMapProperty)
-                {
-                    continue;
-                }
-                
+
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
+                functions.Add(function);
             }
             else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
                 functions.Add(function);
             }
-           
+
+            exportedFunctions.Add(function);
         }
-        
+
         foreach (UhtStruct declaration in classObj.Bases)
         {
             if (declaration.EngineType is not (UhtEngineType.Interface or UhtEngineType.NativeInterface))
