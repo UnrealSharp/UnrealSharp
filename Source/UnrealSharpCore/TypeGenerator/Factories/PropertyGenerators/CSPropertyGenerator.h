@@ -21,17 +21,11 @@ protected:
 	FProperty* NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass = nullptr);
 	
 public:
+
+	static FGuid ConstructGUIDFromName(const FName& Name);
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType);
 
-#if WITH_EDITOR
-	virtual void CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData);
-	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const;
-#endif
-
-protected:
-	
-	static FGuid ConstructGUIDFromName(const FName& Name);
 };

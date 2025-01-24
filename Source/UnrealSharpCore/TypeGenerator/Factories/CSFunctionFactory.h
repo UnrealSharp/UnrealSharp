@@ -14,8 +14,8 @@ public:
 	static UCSFunctionBase* CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction);
 	
 	static void GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions);
-	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData,TArray<UCSFunctionBase*>& FunctionBases);
-	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData, TArray<UCSFunctionBase*>& FunctionBases);
+	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData);
+	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData);
 
 	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
 

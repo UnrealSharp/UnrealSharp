@@ -20,6 +20,7 @@ void FCSReinstancer::Initialize()
 {
 	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
 	FCSTypeRegistry::Get().GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
 }
 
 void FCSReinstancer::AddPendingClass(UClass* OldClass, UClass* NewClass)
@@ -114,7 +115,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	return false;
 }
 
-void FCSReinstancer::StartReinstancing()
+void FCSReinstancer::FinishHotReload()
 {
 	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
 	Reload->SetSendReloadCompleteNotification(true);
@@ -131,50 +132,23 @@ void FCSReinstancer::StartReinstancing()
 			Reload->NotifyChange(New, Old);
 		}
 	};
-
-	NotifyChanges(InterfacesToReinstance);
+	
 	NotifyChanges(StructsToReinstance);
-	NotifyChanges(ClassesToReinstance);
 	
 	Reload->Reinstance();
 	UpdateBlueprints();
-	PostReinstance();
-	
-	StructsToReinstance.Empty();
-	InterfacesToReinstance.Empty();
-	ClassesToReinstance.Empty();
-	
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
-}
-
-void FCSReinstancer::UpdateAllBlueprints()
-{
-	TArray<UBlueprint*> Blueprints;
-	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
-	{
-		UBlueprint* Blueprint = *BlueprintIt;
-		if (FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
-		{
-			continue;
-		}
-		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
-		Blueprints.Add(Blueprint);
-	}
-	
-	for (UBlueprint* Blueprint : Blueprints)
-	{
-		FKismetEditorUtilities::CompileBlueprint(Blueprint);
-	}
-}
-
-void FCSReinstancer::PostReinstance()
-{
 	FixDataTables();
 	
 	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
 	{
 		PropertyModule->NotifyCustomizationModuleChanged();
 	}
+	
+	StructsToReinstance.Empty();
+	InterfacesToReinstance.Empty();
+	ClassesToReinstance.Empty();
+	
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 void FCSReinstancer::FixDataTables()
@@ -389,11 +363,6 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
-	}
-
-	for (UBlueprint* Blueprint : ToUpdate)
-	{
-		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 	}
 }
 

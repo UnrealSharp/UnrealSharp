@@ -79,11 +79,7 @@ void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<F
 {
 	for (const FCSPropertyMetaData& Property : PropertyMetaData)
 	{
-#if WITH_EDITOR
-		CreatePropertyEditor(Outer, Property);
-#else
 		CreateAndAssignProperty(Outer, Property);
-#endif
 	}
 }
 
@@ -97,19 +93,6 @@ TSharedPtr<FCSUnrealType> FCSPropertyFactory::CreateTypeMetaData(const TSharedPt
 	
 	PropertiesMetaData->SerializeFromJson(PropertyTypeObject);
 	return PropertiesMetaData;
-}
-
-void FCSPropertyFactory::CreatePropertyEditor(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
-{
-	if (PropertyMetaData.Type->PropertyType == ECSPropertyType::Delegate)
-	{
-		return;
-	}
-	
-	UClass* OwnerClass = CastChecked<UClass>(Outer);
-	UBlueprint* Blueprint = CastChecked<UBlueprint>(OwnerClass->ClassGeneratedBy);
-	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyMetaData.Type->PropertyType);
-	PropertyGenerator->CreatePropertyEditor(Blueprint, PropertyMetaData);
 }
 
 UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType PropertyType)

@@ -336,6 +336,8 @@ TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 	{
 		return nullptr;
 	}
+
+	OnManagedAssemblyLoaded.Broadcast(NewPlugin->GetAssemblyName());
  
 	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
 	return NewPlugin;

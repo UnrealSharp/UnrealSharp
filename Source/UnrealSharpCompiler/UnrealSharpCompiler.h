@@ -12,5 +12,10 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 
+
+private:
+    static void OnNewClass(UClass* OldClass, UClass* NewClass);
+    static void OnManagedAssemblyLoaded(const FString& AssemblyName);
+
     FCSBlueprintCompiler BlueprintCompiler;
 };

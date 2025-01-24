@@ -19,13 +19,6 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSObjectMetaData)
 	REGISTER_METADATA(ECSPropertyType::ObjectPtr, FCSObjectMetaData)
 	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
-
-#if WITH_EDITOR
-	AddPinType(ECSPropertyType::Object, UEdGraphSchema_K2::PC_Object);
-	AddPinType(ECSPropertyType::WeakObject, UEdGraphSchema_K2::PC_Object);
-	AddPinType(ECSPropertyType::SoftObject, UEdGraphSchema_K2::PC_SoftObject);
-	AddPinType(ECSPropertyType::ObjectPtr, UEdGraphSchema_K2::PC_Object);
-#endif
 }
 
 FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -47,18 +40,5 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	}
 	
 	return Property;
-}
-
-FEdGraphPinType UCSObjectPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	TSharedPtr<FCSObjectMetaData> ObjectMetaData = MetaData.GetTypeMetaData<FCSObjectMetaData>();
-	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
-	
-	FEdGraphPinType PinType;
-	PinType.PinCategory = TypeToPinType[PropertyType].PinCategory;
-	PinType.PinSubCategoryObject = Class;
-	PinType.bIsWeakPointer = PropertyType == ECSPropertyType::WeakObject;
-	
-	return PinType;
 }
 

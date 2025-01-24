@@ -19,14 +19,3 @@ TSharedPtr<FCSUnrealType> UCSClassPropertyGenerator::CreateTypeMetaData(ECSPrope
 {
 	return MakeShared<FCSClassPropertyMetaData>();
 }
-
-FEdGraphPinType UCSClassPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	TSharedPtr<FCSObjectMetaData> ObjectMetaData = MetaData.GetTypeMetaData<FCSObjectMetaData>();
-	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
-	
-	FEdGraphPinType PinType;
-	PinType.PinCategory = UEdGraphSchema_K2::PC_Class;
-	PinType.PinSubCategoryObject = Class;
-	return PinType;
-}

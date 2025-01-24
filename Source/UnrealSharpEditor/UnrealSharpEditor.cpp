@@ -217,7 +217,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));
-	FCSReinstancer::Get().UpdateBlueprints();
+	FCSReinstancer::Get().FinishHotReload();
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;

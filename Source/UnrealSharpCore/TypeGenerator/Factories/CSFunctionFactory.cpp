@@ -146,26 +146,22 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UCSFunctionBase*>& FunctionBases)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData)
 {
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
-
-	FunctionBases.Reserve(VirtualFunctions.Num());
+	
 	for (UFunction* VirtualFunction : VirtualFunctions)
 	{
-		UCSFunctionBase* NewFunction = CreateOverriddenFunction(Outer, VirtualFunction);
-		FunctionBases.Add(NewFunction);
+		CreateOverriddenFunction(Outer, VirtualFunction);
 	}
 }
 
-void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData, TArray<UCSFunctionBase*>& FunctionBases)
+void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData)
 {
-	FunctionBases.Reserve(FunctionsMetaData.Num());
 	for (const FCSFunctionMetaData& FunctionMetaData : FunctionsMetaData)
 	{
-		UCSFunctionBase* NewFunction = CreateFunctionFromMetaData(Outer, FunctionMetaData);
-		FunctionBases.Add(NewFunction);
+		CreateFunctionFromMetaData(Outer, FunctionMetaData);
 	}
 }
 

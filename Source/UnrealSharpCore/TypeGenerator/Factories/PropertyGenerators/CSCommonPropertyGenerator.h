@@ -23,24 +23,8 @@ protected:
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const override;
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
-#if WITH_EDITOR
-	virtual FEdGraphPinType GetPinType(ECSPropertyType InPropertyType, const FCSPropertyMetaData& PropertyMetaData, UBlueprint* Outer) const override;
-#endif
 	// End UCSPropertyGenerator interface
-
-#if WITH_EDITOR
-	void AddPinType(ECSPropertyType PropertyType, FName PinCategory)
-	{
-		FEdGraphPinType PinType;
-		PinType.PinCategory = PinCategory;
-		TypeToPinType.Add(PropertyType, PinType);
-	};
-#endif
 	
 	TMap<ECSPropertyType, FFieldClass*> TypeToFieldClass;
 	TMap<ECSPropertyType, TFunction<TSharedPtr<FCSUnrealType>()>> MetaDataFactoryMap;
-
-#if WITH_EDITOR
-	TMap<ECSPropertyType, FEdGraphPinType> TypeToPinType;
-#endif
 };

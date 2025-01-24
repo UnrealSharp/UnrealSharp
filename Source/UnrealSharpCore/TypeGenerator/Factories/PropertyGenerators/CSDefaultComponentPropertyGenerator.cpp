@@ -1,30 +1,52 @@
 #include "CSDefaultComponentPropertyGenerator.h"
-
+#include "CSObjectPropertyGenerator.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 
-void UCSDefaultComponentPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData)
+TSharedPtr<FCSUnrealType> UCSDefaultComponentPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {
-	if (!IsValid(Blueprint->SimpleConstructionScript))
+	return MakeShared<FCSDefaultComponentMetaData>();
+}
+
+FProperty* UCSDefaultComponentPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+{
+	UBlueprintGeneratedClass* OuterClass = static_cast<UBlueprintGeneratedClass*>(Outer);
+	
+	TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript;
+#if WITH_EDITOR
+	UBlueprint* Blueprint = static_cast<UBlueprint*>(OuterClass->ClassGeneratedBy.Get());
+	OuterClass = static_cast<UBlueprintGeneratedClass*>(Blueprint->GeneratedClass.Get());
+	SimpleConstructionScript = &Blueprint->SimpleConstructionScript;
+#else
+	SimpleConstructionScript = &OuterClass->SimpleConstructionScript;;
+#endif
+	
+	AddDefaultComponentNode(OuterClass, SimpleConstructionScript, PropertyMetaData);
+
+	UCSObjectPropertyGenerator* ObjectPropertyGenerator = GetMutableDefault<UCSObjectPropertyGenerator>();
+	return ObjectPropertyGenerator->CreateProperty(Outer, PropertyMetaData);
+}
+
+void UCSDefaultComponentPropertyGenerator::AddDefaultComponentNode(UObject* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const FCSPropertyMetaData& PropertyMetaData)
+{
+	USimpleConstructionScript* CurrentSCS = SimpleConstructionScript->Get();
+	if (!IsValid(CurrentSCS))
 	{
-		Blueprint->SimpleConstructionScript = NewObject<USimpleConstructionScript>(Blueprint->GeneratedClass);
+		CurrentSCS = NewObject<USimpleConstructionScript>(Outer, NAME_None, RF_Transactional);
+		*SimpleConstructionScript = CurrentSCS;
 	}
 	
-	USimpleConstructionScript* SimpleConstructionScript = Blueprint->SimpleConstructionScript;
-
 	TSharedPtr<FCSDefaultComponentMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSDefaultComponentMetaData>();
 	UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
 
-	USCS_Node* Node = SimpleConstructionScript->FindSCSNode(PropertyMetaData.Name);
+	USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.Name);
 	
 	if (!Node)
 	{
-		Node = SimpleConstructionScript->CreateNode(Class, PropertyMetaData.Name);
-		Node->SetVariableName(PropertyMetaData.Name, false);
-		SimpleConstructionScript->AddNode(Node);
+		Node = CreateNode(CurrentSCS, Outer, Class, PropertyMetaData.Name);
 	}
 	
 	FName AttachToComponentName = ObjectMetaData->AttachmentComponent;
@@ -35,7 +57,13 @@ void UCSDefaultComponentPropertyGenerator::CreatePropertyEditor(UBlueprint* Blue
 
 	if (HasValidAttachment)
 	{
-		USCS_Node* ParentNode = SimpleConstructionScript->FindSCSNode(AttachToComponentName);
+		USCS_Node* ParentNode = CurrentSCS->FindSCSNode(AttachToComponentName);
+
+		if (!ParentNode)
+		{
+			ParentNode = CurrentSCS->GetRootNodes()[0];
+		}
+		
 		if (ParentNode->ChildNodes.Contains(Node))
 		{
 			return;
@@ -43,9 +71,9 @@ void UCSDefaultComponentPropertyGenerator::CreatePropertyEditor(UBlueprint* Blue
 		
 		Node->bIsParentComponentNative = false;
 		Node->ParentComponentOrVariableName = AttachToComponentName;
-		Node->ParentComponentOwnerClassName = Blueprint->GeneratedClass->GetFName();
+		Node->ParentComponentOwnerClassName = SimpleConstructionScript->GetFName();
 		
-		for (USCS_Node* NodeItr : SimpleConstructionScript->GetAllNodes())
+		for (USCS_Node* NodeItr : CurrentSCS->GetAllNodes())
 		{
 			if (NodeItr != Node && NodeItr->ChildNodes.Contains(Node) && NodeItr->GetVariableName() != AttachToComponentName)
 			{
@@ -55,9 +83,34 @@ void UCSDefaultComponentPropertyGenerator::CreatePropertyEditor(UBlueprint* Blue
 			}
 		}
 	}
+		
 }
 
-TSharedPtr<FCSUnrealType> UCSDefaultComponentPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+USCS_Node* UCSDefaultComponentPropertyGenerator::CreateNode(USimpleConstructionScript* SimpleConstructionScript, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName)
 {
-	return MakeShared<FCSDefaultComponentMetaData>();
+	UPackage* TransientPackage = GetTransientPackage();
+	UActorComponent* NewComponentTemplate = NewObject<UActorComponent>(TransientPackage, NewComponentClass, NAME_None, RF_ArchetypeObject | RF_Transactional | RF_Public);
+	NewComponentTemplate->Modify();
+
+	FString Name = NewComponentVariableName.ToString() + TEXT("_GEN_VARIABLE");
+	UObject* Collision = FindObject<UObject>(GeneratedClass, *Name);
+	
+	while(Collision)
+	{
+		Collision->Rename(nullptr, GetTransientPackage(), REN_DoNotDirty | REN_DontCreateRedirectors);
+		Collision = FindObject<UObject>(GeneratedClass, *Name);
+	}
+
+	NewComponentTemplate->Rename(*Name, GeneratedClass, REN_DoNotDirty | REN_DontCreateRedirectors);
+
+	USCS_Node* NewNode = NewObject<USCS_Node>(SimpleConstructionScript, MakeUniqueObjectName(SimpleConstructionScript, USCS_Node::StaticClass()));
+	NewNode->SetFlags(RF_Transactional);
+	NewNode->ComponentClass = NewComponentTemplate->GetClass();
+	NewNode->ComponentTemplate = NewComponentTemplate;
+	NewNode->SetVariableName(NewComponentVariableName, false);
+	NewNode->VariableGuid = ConstructGUIDFromName(NewComponentVariableName);
+	
+	SimpleConstructionScript->AddNode(NewNode);
+	
+	return NewNode;
 }

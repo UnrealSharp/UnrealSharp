@@ -1,4 +1,5 @@
 #include "CSTypeRegistry.h"
+
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
@@ -68,6 +69,7 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 	InitializeBuilders(ManagedStructs);
 	InitializeBuilders(ManagedEnums);
 	InitializeBuilders(ManagedInterfaces);
+	
 	return true;
 }
 

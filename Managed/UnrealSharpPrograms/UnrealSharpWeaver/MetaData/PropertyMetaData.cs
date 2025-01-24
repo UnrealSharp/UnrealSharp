@@ -183,13 +183,7 @@ public class PropertyMetaData : BaseMetaData
         
         if (isDefaultComponent)
         {
-            flags = PropertyFlags.BlueprintVisible 
-                    | PropertyFlags.BlueprintReadOnly
-                    | PropertyFlags.DisableEditOnInstance
-                    | PropertyFlags.Edit 
-                    | PropertyFlags.EditConst
-                    | instancedFlags;
-            
+            flags = PropertyFlags.BlueprintVisible | PropertyFlags.NonTransactional | PropertyFlags.InstancedReference;
         }
 
         if (isPersistentInstance || isDefaultComponent)

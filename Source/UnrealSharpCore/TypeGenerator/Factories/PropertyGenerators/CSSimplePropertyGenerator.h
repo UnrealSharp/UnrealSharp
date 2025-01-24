@@ -19,8 +19,5 @@ protected:
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const override;
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Unknown; }
 	virtual FFieldClass* GetPropertyClass() override;
-#if WITH_EDITOR
-	virtual FEdGraphPinType GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const override;
-#endif
 	// End UCSPropertyGenerator interface
 };

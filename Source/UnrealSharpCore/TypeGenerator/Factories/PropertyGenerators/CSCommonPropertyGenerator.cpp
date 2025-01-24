@@ -24,10 +24,3 @@ TSharedPtr<FCSUnrealType> UCSCommonPropertyGenerator::CreateTypeMetaData(ECSProp
 	}
 	return MetaData;
 }
-
-#if WITH_EDITOR
-FEdGraphPinType UCSCommonPropertyGenerator::GetPinType(ECSPropertyType InPropertyType, const FCSPropertyMetaData& PropertyMetaData, UBlueprint* Outer) const
-{
-	return TypeToPinType[InPropertyType];
-}
-#endif

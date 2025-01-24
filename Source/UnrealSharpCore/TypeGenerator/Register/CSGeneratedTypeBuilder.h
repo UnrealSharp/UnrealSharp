@@ -26,6 +26,7 @@ public:
 
 #if WITH_EDITOR
 		TField* ExistingField = FindObject<TField>(Package, *FieldName.ToString());
+		
 		if (ExistingField)
 		{
 			if (!ReplaceTypeOnReload())

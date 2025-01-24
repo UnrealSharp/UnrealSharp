@@ -7,7 +7,7 @@
 class UCSClass;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSSkeletonClass : public UAnimBlueprintGeneratedClass
+class UNREALSHARPCORE_API UCSSkeletonClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
 public:

@@ -1,7 +1,5 @@
 #include "CSPropertyGenerator.h"
-
 #include "TypeGenerator/Register/CSTypeRegistry.h"
-
 #if WITH_EDITOR
 #include "Kismet2/BlueprintEditorUtils.h"
 #endif
@@ -34,37 +32,6 @@ TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyTy
 	PURE_VIRTUAL();
 	return nullptr;
 }
-
-#if WITH_EDITOR
-void UCSPropertyGenerator::CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData)
-{
-	FBPVariableDescription NewVariable;
-	NewVariable.PropertyFlags = PropertyMetaData.PropertyFlags;
-	NewVariable.VarName = PropertyMetaData.Name;
-	NewVariable.VarGuid = ConstructGUIDFromName(PropertyMetaData.Name);
-	NewVariable.VarType = GetPinType(PropertyMetaData.Type->PropertyType, PropertyMetaData, Blueprint);
-	NewVariable.FriendlyName = FName::NameToDisplayString(NewVariable.VarName.ToString(), NewVariable.VarType.PinCategory == UEdGraphSchema_K2::PC_Boolean);
-	NewVariable.RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
-	NewVariable.ReplicationCondition = PropertyMetaData.LifetimeCondition;
-
-	for (FBPVariableDescription& Variable : Blueprint->NewVariables)
-	{
-		if (Variable.VarName == NewVariable.VarName && Variable.VarType == NewVariable.VarType)
-		{
-			Variable = NewVariable;
-			return;
-		}
-	}
-	
-	Blueprint->NewVariables.Add(NewVariable);
-}
-
-FEdGraphPinType UCSPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	PURE_VIRTUAL();
-	return FEdGraphPinType();
-}
-#endif
 
 FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FName& Name)
 {

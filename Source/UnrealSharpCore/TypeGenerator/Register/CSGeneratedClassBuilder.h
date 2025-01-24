@@ -21,26 +21,18 @@ public:
 	static UClass* GetFirstNativeClass(UClass* Class);
 	static UClass* GetFirstNonBlueprintClass(UClass* Class);
 
-	static void SetupDefaultSubobjects(const FObjectInitializer& ObjectInitializer,
-													  AActor* Actor,
-													  UClass* ActorClass,
-													  UCSClass* FirstManagedClass,
-													  const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
+	static bool IsManagedType(const UClass* Class);
+	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
+	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
+	static void TryRegisterSubsystem(UClass* ManagedClass);
+	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData);
 
 #if WITH_EDITOR
-	static void ValidateBlueprint(UBlueprint* Blueprint, const TSharedPtr<const FCSharpClassInfo>& ClassInfo);
+	void CreateClassEditor(UClass* SuperClass);
 #endif
-
-	static bool IsManagedType(const UClass* Class);
-
-	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
-	static void ManagedActorConstructor(const FObjectInitializer& ObjectInitializer);
+	void CreateClass(UClass* SuperClass);
 
 private:
-
-
-	static void InitialSetup(const FObjectInitializer& ObjectInitializer, UCSClass*& OutManagedClass, TSharedPtr<const FCSharpClassInfo>& OutClassInfo);
 	
 	void SetupDefaultTickSettings(UObject* DefaultObject) const;
-	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 };

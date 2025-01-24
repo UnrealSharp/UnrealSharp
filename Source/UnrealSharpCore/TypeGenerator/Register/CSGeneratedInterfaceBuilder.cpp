@@ -4,11 +4,11 @@
 
 void FCSGeneratedInterfaceBuilder::StartBuildingType()
 {
+	Field->PurgeClass(true);
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
-
-	TArray<UCSFunctionBase*> FunctionBases;
-	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions, FunctionBases);
+	
+	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 
 	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
 	
@@ -21,6 +21,6 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 #if WITH_EDITOR
 void FCSGeneratedInterfaceBuilder::OnFieldReplaced(UClass* OldField, UClass* NewField)
 {
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(OldField, NewField);
 }
 #endif

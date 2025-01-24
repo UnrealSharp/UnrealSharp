@@ -19,23 +19,6 @@ UCSSimplePropertyGenerator::UCSSimplePropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::Name, FNameProperty::StaticClass() },
 		{ ECSPropertyType::Text, FTextProperty::StaticClass() },
 	};
-
-#if WITH_EDITOR
-	AddPinType(ECSPropertyType::Bool, UEdGraphSchema_K2::PC_Boolean);
-	AddPinType(ECSPropertyType::Int8, UEdGraphSchema_K2::PC_Byte);
-	AddPinType(ECSPropertyType::Int16, UEdGraphSchema_K2::PC_Int);
-	AddPinType(ECSPropertyType::Int, UEdGraphSchema_K2::PC_Int);
-	AddPinType(ECSPropertyType::Int64, UEdGraphSchema_K2::PC_Int64);
-	AddPinType(ECSPropertyType::Byte, UEdGraphSchema_K2::PC_Byte);
-	AddPinType(ECSPropertyType::UInt16, UEdGraphSchema_K2::PC_Int);
-	AddPinType(ECSPropertyType::UInt32, UEdGraphSchema_K2::PC_Int);
-	AddPinType(ECSPropertyType::UInt64, UEdGraphSchema_K2::PC_Int64);
-	AddPinType(ECSPropertyType::Double, UEdGraphSchema_K2::PC_Double);
-	AddPinType(ECSPropertyType::Float, UEdGraphSchema_K2::PC_Float);
-	AddPinType(ECSPropertyType::String, UEdGraphSchema_K2::PC_String);
-	AddPinType(ECSPropertyType::Name, UEdGraphSchema_K2::PC_Name);
-	AddPinType(ECSPropertyType::Text, UEdGraphSchema_K2::PC_Text);
-#endif
 }
 
 bool UCSSimplePropertyGenerator::SupportsPropertyType(ECSPropertyType InPropertyType) const
@@ -47,18 +30,3 @@ FFieldClass* UCSSimplePropertyGenerator::GetPropertyClass()
 {
 	return TypeToFieldClass[GetPropertyType()];
 }
-
-#if WITH_EDITOR
-FEdGraphPinType UCSSimplePropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	FEdGraphPinType PinType = Super::GetPinType(PropertyType, MetaData, Outer);
-
-	if (PropertyType == ECSPropertyType::Float || PropertyType == ECSPropertyType::Double)
-	{
-		PinType.PinSubCategory = PinType.PinCategory;
-		PinType.PinCategory = UEdGraphSchema_K2::PC_Real;
-	}
-
-	return PinType;
-}
-#endif

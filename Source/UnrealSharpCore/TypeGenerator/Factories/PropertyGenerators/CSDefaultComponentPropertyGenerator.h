@@ -10,10 +10,15 @@ UCLASS()
 class UNREALSHARPCORE_API UCSDefaultComponentPropertyGenerator : public UCSPropertyGenerator
 {
 	GENERATED_BODY()
-	
-#if WITH_EDITOR
+public:
+	// UCSPropertyGenerator interface
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::DefaultComponent; }
-	virtual void CreatePropertyEditor(UBlueprint* Blueprint, const FCSPropertyMetaData& PropertyMetaData) override;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
-#endif
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
+	// End of implementation
+
+private:
+	
+	static void AddDefaultComponentNode(UObject* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const FCSPropertyMetaData& PropertyMetaData);
+	static USCS_Node* CreateNode(USimpleConstructionScript* SimpleConstructionScript, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
 };

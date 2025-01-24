@@ -38,6 +38,7 @@ public:
 
 	FOnNewClass& GetOnNewClassEvent() { return OnNewClass; }
 	FOnNewStruct& GetOnNewStructEvent() { return OnNewStruct; }
+	FOnNewClass& GetOnNewInterfaceEvent() { return OnNewInterface; }
 
 	static UClass* GetClassFromName(FName Name);
 	static UScriptStruct* GetStructFromName(FName Name);
@@ -76,6 +77,7 @@ private:
 	TMap<FName, FPendingClasses> PendingClasses;
 	
 	FOnNewClass OnNewClass;
+	FOnNewClass OnNewInterface;
 	FOnNewStruct OnNewStruct;
 	
 };

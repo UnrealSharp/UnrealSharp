@@ -26,25 +26,3 @@ TSharedPtr<FCSUnrealType> UCSMapPropertyGenerator::CreateTypeMetaData(ECSPropert
 {
 	return MakeShared<FCSMapPropertyMetaData>();
 }
-
-#if WITH_EDITOR
-FEdGraphPinType UCSMapPropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	TSharedPtr<FCSMapPropertyMetaData> MapPropertyMetaData = MetaData.GetTypeMetaData<FCSMapPropertyMetaData>();
-
-	ECSPropertyType KeyPropertyType = MapPropertyMetaData->InnerProperty.Type->PropertyType;
-	UCSPropertyGenerator* KeyPropertyGenerator = FCSPropertyFactory::FindPropertyGenerator(KeyPropertyType);
-	FEdGraphPinType PinType = KeyPropertyGenerator->GetPinType(KeyPropertyType, MapPropertyMetaData->InnerProperty, Outer);
-
-	ECSPropertyType ValuePropertyType = MapPropertyMetaData->ValueType.Type->PropertyType;
-	UCSPropertyGenerator* ValuePropertyGenerator = FCSPropertyFactory::FindPropertyGenerator(ValuePropertyType);
-	FEdGraphPinType ValueType = ValuePropertyGenerator->GetPinType(ValuePropertyType, MapPropertyMetaData->ValueType, Outer);
-
-	PinType.PinValueType.TerminalCategory = ValueType.PinCategory;
-	PinType.PinValueType.TerminalSubCategoryObject = ValueType.PinSubCategoryObject;
-	PinType.PinValueType.bTerminalIsWeakPointer = ValueType.bIsWeakPointer;
-	PinType.PinValueType.bTerminalIsUObjectWrapper = ValueType.bIsUObjectWrapper;
-	PinType.ContainerType = EPinContainerType::Map;
-	return PinType;
-}
-#endif

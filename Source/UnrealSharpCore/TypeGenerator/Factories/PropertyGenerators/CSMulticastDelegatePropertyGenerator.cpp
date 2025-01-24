@@ -20,10 +20,3 @@ TSharedPtr<FCSUnrealType> UCSMulticastDelegatePropertyGenerator::CreateTypeMetaD
 {
 	return MakeShared<FCSDelegateMetaData>();
 }
-
-#if WITH_EDITOR
-FEdGraphPinType UCSMulticastDelegatePropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	return MakeDelegate(UEdGraphSchema_K2::PC_MCDelegate, MetaData, Outer);
-}
-#endif

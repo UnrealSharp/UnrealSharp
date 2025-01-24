@@ -15,16 +15,3 @@ TSharedPtr<FCSUnrealType> UCSScriptInterfacePropertyGenerator::CreateTypeMetaDat
 {
 	return MakeShared<FCSObjectMetaData>();
 }
-
-#if WITH_EDITOR
-FEdGraphPinType UCSScriptInterfacePropertyGenerator::GetPinType(ECSPropertyType PropertyType, const FCSPropertyMetaData& MetaData, UBlueprint* Outer) const
-{
-	TSharedPtr<FCSObjectMetaData> InterfaceData = MetaData.GetTypeMetaData<FCSObjectMetaData>();
-	UClass* InterfaceClass = FCSTypeRegistry::GetInterfaceFromName(InterfaceData->InnerType.Name);
-
-	FEdGraphPinType PinType;
-	PinType.PinCategory = UEdGraphSchema_K2::PC_Interface;
-	PinType.PinSubCategoryObject = InterfaceClass;
-	return PinType;
-}
-#endif
