@@ -4,7 +4,6 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.EnhancedInput;
 
-[StructLayout(LayoutKind.Sequential)]
 public partial struct FInputActionValue
 {
     private FVector AxisValue;

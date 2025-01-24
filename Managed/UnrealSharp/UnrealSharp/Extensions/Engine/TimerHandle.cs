@@ -3,7 +3,6 @@ using UnrealSharp.Attributes;
 
 namespace UnrealSharp.Engine;
 
-[StructLayout(LayoutKind.Sequential)]
 public partial struct FTimerHandle
 {
     private const uint IndexBits = 24;

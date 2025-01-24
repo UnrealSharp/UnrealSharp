@@ -148,10 +148,15 @@ public class GeneratorStringBuilder : IDisposable
         CloseBrace();
     }
     
-    public void GenerateTypeSkeleton(string typeNameSpace)
+    public void GenerateTypeSkeleton(string typeNameSpace, bool blittable = false)
     {
         DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
+
+        if (blittable)
+        {
+            DeclareDirective(ScriptGeneratorUtilities.InteropServicesNamespace);
+        }
 
         AppendLine();
         AppendLine($"namespace {typeNameSpace};");

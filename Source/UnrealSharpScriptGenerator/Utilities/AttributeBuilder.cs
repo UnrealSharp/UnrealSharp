@@ -38,6 +38,12 @@ public class AttributeBuilder
         AddAttribute("BlittableType");
     }
 
+    public void AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind layoutKind)
+    {
+        AddAttribute("StructLayout");
+        AddArgument($"LayoutKind.{layoutKind}");
+    }
+
     private static string GetAttributeForType(UhtType type)
     {
         if (type is UhtClass uhtClass)
