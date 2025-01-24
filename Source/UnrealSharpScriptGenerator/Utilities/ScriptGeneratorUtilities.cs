@@ -212,6 +212,8 @@ public static class ScriptGeneratorUtilities
             }
             else if (function.IsAutocast())
             {
+                functions.Add(function);
+
                 if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
                 {
                     continue;
@@ -226,7 +228,6 @@ public static class ScriptGeneratorUtilities
                 }
                 
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
-                functions.Add(function);
             }
             else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
