@@ -203,7 +203,9 @@ public static class ScriptGeneratorUtilities
             {
                 continue;
             }
-            
+
+            exportedFunctions.Add(function);
+
             if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
             {
                 overridableFunctions.Add(function);
@@ -230,8 +232,7 @@ public static class ScriptGeneratorUtilities
             {
                 functions.Add(function);
             }
-            
-            exportedFunctions.Add(function);
+           
         }
         
         foreach (UhtStruct declaration in classObj.Bases)
