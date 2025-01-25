@@ -80,7 +80,12 @@ public partial class UObject
     {
         return NativeObject.GetHashCode();
     }
-    
+
+    public static implicit operator bool(UObject Object)
+    {
+        return Object != null && UObjectExporter.CallNativeIsValid(Object.NativeObject);
+    }
+
     /// <summary>
     /// Prints a message to the screen and/or console.
     /// </summary>
