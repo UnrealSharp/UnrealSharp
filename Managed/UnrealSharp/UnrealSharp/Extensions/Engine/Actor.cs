@@ -89,22 +89,6 @@ public partial class AActor
     /// <returns>The component if added, otherwise null</returns>
     public UActorComponent AddComponentByClass(TSubclassOf<UActorComponent> @class, bool bManualAttachment, FTransform relativeTransform) 
         => AddComponentByClass(@class, bManualAttachment, relativeTransform, deferredFinish: false);
- 	    
-    /// <summary>
-    /// Finish spawning deferred actor with default transform.
-    /// </summary>
-    public void FinishSpawning()
-    {
-        UCSWorldExtensions.FinishSpawning(this, ActorTransform, true);
-    }
-
-    /// <summary>
-    /// Finish spawning deferred actor user transform.
-    /// </summary>
-    public void FinishSpawning(FTransform transform, bool isDefaultTransform = false)
-    {
-        UCSWorldExtensions.FinishSpawning(this, transform, isDefaultTransform);
-    }
     
     /// <summary>
     /// Register a SubObject that will get replicated along with the actor component.

@@ -37,6 +37,7 @@ public class UnrealSharpEditor : ModuleRules
                 "Kismet",
                 "KismetCompiler", 
                 "BlueprintEditorLibrary",
+                "SubobjectDataInterface"
             }
         );
     }

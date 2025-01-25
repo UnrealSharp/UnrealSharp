@@ -1,5 +1,6 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
+#include "BlueprintEditorLibrary.h"
 #include "CSCommands.h"
 #include "CSScriptBuilder.h"
 #include "DirectoryWatcherModule.h"
@@ -9,10 +10,13 @@
 #include "GameplayTagsSettings.h"
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
+#include "KismetCompilerMisc.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
+#include "SubobjectDataSubsystem.h"
 #include "Engine/AssetManager.h"
 #include "Engine/AssetManagerSettings.h"
+#include "Engine/InheritableComponentHandler.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "UnrealSharpCore/CSDeveloperSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -21,6 +25,8 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
@@ -273,6 +279,140 @@ void FUnrealSharpEditorModule::OnReportBug()
 	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
+void FUnrealSharpEditorModule::FixUpBlueprints()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
+	AssetRegistryModule.Get().SearchAllAssets(/*bSynchronousSearch =*/true);
+	
+	TArray<FAssetData> OutAssetData;
+	AssetRegistryModule.Get().GetAssetsByClass(UBlueprint::StaticClass()->GetClassPathName(), OutAssetData, true);
+
+	FScopedSlowTask Progress(OutAssetData.Num());
+	Progress.MakeDialog();
+
+	USubobjectDataSubsystem* SubobjectDataSubsystem = GEngine->GetEngineSubsystem<USubobjectDataSubsystem>();
+	
+	for (FAssetData const& Asset : OutAssetData)
+	{
+		FString const AssetPath = Asset.GetObjectPathString();
+		UBlueprint* LoadedBlueprint = Cast<UBlueprint>(StaticLoadObject(Asset.GetClass(), nullptr, *AssetPath,nullptr));
+		UClass* GeneratedClass = LoadedBlueprint->GeneratedClass;
+		UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(GeneratedClass);
+
+		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Fixing up Blueprint: %s"), *AssetPath)));
+
+		if (!ManagedClass)
+		{
+			continue;
+		}
+
+		AActor* ActorCDO = Cast<AActor>(GeneratedClass->GetDefaultObject(false));
+		if (!ActorCDO)
+		{
+			continue;
+		}
+
+		TArray<FSubobjectDataHandle> SubobjectData;
+		SubobjectDataSubsystem->K2_GatherSubobjectDataForBlueprint(LoadedBlueprint, SubobjectData);
+
+		UInheritableComponentHandler* InheritableComponentHandler = LoadedBlueprint->GetInheritableComponentHandler(false);
+
+		if (!InheritableComponentHandler)
+		{
+			continue;
+		}
+
+		TArray<UObject*> Subobjects;
+		ActorCDO->GetDefaultSubobjects(Subobjects);
+
+		bool bCompileBlueprint = false;
+		for (TFieldIterator<FObjectProperty> PropertyIt(ManagedClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++PropertyIt)
+		{
+			FObjectProperty* Property = *PropertyIt;
+
+			if (!FCSGeneratedClassBuilder::IsManagedType(Property->GetOwnerClass()))
+			{
+				break;
+			}
+				
+			UActorComponent* DefaultObject = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(ActorCDO));
+
+			if (!DefaultObject || !Subobjects.Contains(DefaultObject))
+			{
+				continue;
+			}
+				
+			Property->SetObjectPropertyValue_InContainer(ActorCDO, nullptr);
+			
+			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(DefaultObject->GetFName());
+				
+			if (!ComponentKey.IsValid())
+			{
+				continue;
+			}
+			
+			UActorComponent* BestArchetype = InheritableComponentHandler->FindBestArchetype(ComponentKey);
+			CopyProperties(DefaultObject, BestArchetype);
+			bCompileBlueprint = true;
+		}
+
+		if (bCompileBlueprint)
+		{
+			InheritableComponentHandler->ValidateTemplates();
+			UBlueprintEditorLibrary::CompileBlueprint(LoadedBlueprint);
+		}
+	}
+}
+
+void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorComponent* Target)
+{
+	UClass* SourceClass = Source->GetClass();
+	UClass* TargetClass = Target->GetClass();
+
+	if (SourceClass != TargetClass)
+	{
+		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Source and Target classes are not the same."));
+		return;
+	}
+	
+	for (TFieldIterator<FProperty> PropertyIt(SourceClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++PropertyIt)
+	{
+		FProperty* Property = *PropertyIt;
+
+		if (!Property->HasAnyPropertyFlags(CPF_BlueprintVisible | CPF_Edit))
+		{
+			continue;
+		}
+
+		if (FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Property))
+		{
+			FString ObjectPath;
+			ObjectProperty->ExportTextItem_InContainer(ObjectPath, Source, nullptr, nullptr, PPF_None);
+			UObject* LoadedObject = LoadObject<UObject>(nullptr, *ObjectPath);
+
+			if (UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(Target))
+			{
+				StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(LoadedObject));
+			}
+			else if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Target))
+			{
+				SkeletalMeshComponent->SetSkeletalMesh(Cast<USkeletalMesh>(LoadedObject));
+			}
+			else
+			{
+				ObjectProperty->SetObjectPropertyValue_InContainer(Target, LoadedObject);
+			}
+		}
+		else
+		{
+			Property->CopyCompleteValue_InContainer(Target, Source);
+		}
+	}
+
+	Target->PostLoad();
+}
+
+
 void FUnrealSharpEditorModule::OnRefreshRuntimeGlue() const
 {
 	ProcessAssetIds();
@@ -282,6 +422,8 @@ void FUnrealSharpEditorModule::OnRefreshRuntimeGlue() const
 
 	// Let external modules act on the runtime glue refresh, if they want to.
 	OnRefreshRuntimeGlueDelegate.Broadcast();
+
+	FUnrealSharpEditorModule::FixUpBlueprints();
 }
 
 void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirectory)

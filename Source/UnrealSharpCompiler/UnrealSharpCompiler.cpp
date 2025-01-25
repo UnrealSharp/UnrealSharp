@@ -19,10 +19,11 @@ void FUnrealSharpCompilerModule::StartupModule()
 	IKismetCompilerInterface& KismetCompilerModule = FModuleManager::LoadModuleChecked<IKismetCompilerInterface>("KismetCompiler");
 	KismetCompilerModule.GetCompilers().Add(&BlueprintCompiler);
 
-	FCSTypeRegistry::Get().GetOnNewClassEvent().AddStatic(&FUnrealSharpCompilerModule::OnNewClass);
-	UCSManager::GetOrCreate().OnManagedAssemblyLoadedEvent().AddStatic(&FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
+	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	UCSManager::GetOrCreate().OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	// Try to recompile and reinstance all blueprints when the module is loaded.
+	RecompileAndReinstanceBlueprints();
 }
 
 void FUnrealSharpCompilerModule::ShutdownModule()
@@ -30,17 +31,43 @@ void FUnrealSharpCompilerModule::ShutdownModule()
     
 }
 
+void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
+{
+	auto CompileBlueprints = [](TArray<UBlueprint*>& Blueprints) -> void
+	{
+		for (UBlueprint* Blueprint : Blueprints)
+		{
+			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+		}
+		
+		FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+		Blueprints.Empty();
+	};
+	
+	// Components need to be compiled first, as they can be dependencies for actors as components.
+	CompileBlueprints(ManagedComponentsToCompile);
+	CompileBlueprints(OtherManagedClasses);
+}
+
+
 void FUnrealSharpCompilerModule::OnNewClass(UClass* OldClass, UClass* NewClass)
 {
 	if (UBlueprint* Blueprint = Cast<UBlueprint>(NewClass->ClassGeneratedBy))
 	{
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+		if (NewClass->IsChildOf(UActorComponent::StaticClass()))
+		{
+			ManagedComponentsToCompile.Add(Blueprint);
+		}
+		else
+		{
+			OtherManagedClasses.Add(Blueprint);
+		}
 	}
 }
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FString& AssemblyName)
 {
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	RecompileAndReinstanceBlueprints();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -19,6 +19,8 @@ public:
 
 private:
 	
-	static void AddDefaultComponentNode(UObject* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const FCSPropertyMetaData& PropertyMetaData);
+	static void AddDefaultComponentNode(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const FCSPropertyMetaData& PropertyMetaData);
 	static USCS_Node* CreateNode(USimpleConstructionScript* SimpleConstructionScript, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
+	static void UpdateTemplateComponent(USCS_Node* Node, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
+	static void UpdateChildren(UClass* Outer, USCS_Node* Node);
 };

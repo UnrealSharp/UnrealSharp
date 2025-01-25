@@ -44,10 +44,14 @@ public:
 
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
 
+    static void FixUpBlueprints();
+
 private:
     static FString SelectArchiveDirectory();
 
     static void RunGame(FString ExecutablePath);
+
+    static void CopyProperties(UActorComponent* Source, UActorComponent* Target);
 
     static void OnCreateNewProject();
     static void OnCompileManagedCode();

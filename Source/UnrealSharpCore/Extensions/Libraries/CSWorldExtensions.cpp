@@ -1,7 +1,29 @@
 #include "CSWorldExtensions.h"
 #include "UnrealSharpCore.h"
+#include "GameFramework/Actor.h"
 
 AActor* UCSWorldExtensions::SpawnActor(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& InSpawnParameters)
+{
+	return SpawnActor_Internal(WorldContextObject, Class, Transform, InSpawnParameters, false);
+}
+
+AActor* UCSWorldExtensions::SpawnActorDeferred(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters)
+{
+	return SpawnActor_Internal(WorldContextObject, Class, Transform, SpawnParameters, true);
+}
+
+void UCSWorldExtensions::ExecuteConstruction(AActor* Actor, const FTransform& Transform)
+{
+	Actor->ExecuteConstruction(Transform, nullptr, nullptr, true);
+}
+
+void UCSWorldExtensions::PostActorConstruction(AActor* Actor)
+{
+	Actor->PostActorConstruction();
+	Actor->PostLoad();
+}
+
+AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction)
 {
 	if (!IsValid(WorldContextObject) || !IsValid(Class))
 	{
@@ -17,17 +39,13 @@ AActor* UCSWorldExtensions::SpawnActor(const UObject* WorldContextObject, const 
 		return nullptr;
 	}
 
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Instigator = InSpawnParameters.Instigator;
-	SpawnParameters.Owner = InSpawnParameters.Owner;
-	SpawnParameters.Template = InSpawnParameters.Template;
-	SpawnParameters.bDeferConstruction = InSpawnParameters.DeferConstruction;
-	SpawnParameters.SpawnCollisionHandlingOverride = InSpawnParameters.SpawnMethod;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Instigator = SpawnParameters.Instigator;
+	SpawnParams.Owner = SpawnParameters.Owner;
+	SpawnParams.Template = SpawnParameters.Template;
+	SpawnParams.SpawnCollisionHandlingOverride = SpawnParameters.SpawnMethod;
+	SpawnParams.bDeferConstruction = bDeferConstruction;
 	
-	return World->SpawnActor(Class, &Transform, SpawnParameters);
+	return World->SpawnActor(Class, &Transform, SpawnParams);
 }
 
-void UCSWorldExtensions::FinishSpawning(AActor* Actor, const FTransform& UserTransform, bool bIsDefaultTransform)
-{
-	Actor->FinishSpawning(UserTransform, bIsDefaultTransform);
-}
