@@ -21,7 +21,9 @@
 #include "UnrealSharpCore/CSDeveloperSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/DebuggerCommands.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
@@ -325,7 +327,10 @@ void FUnrealSharpEditorModule::FixUpBlueprints()
 		TArray<UObject*> Subobjects;
 		ActorCDO->GetDefaultSubobjects(Subobjects);
 
-		bool bCompileBlueprint = false;
+		FKismetEditorUtilities::ApplyInstanceChangesToBlueprint(ActorCDO);
+		TArray<UObject*> MatchingBlueprintObjects;
+		GetObjectsOfClass(LoadedBlueprint->GeneratedClass, MatchingBlueprintObjects, true, RF_NoFlags, EInternalObjectFlags::Garbage);
+		
 		for (TFieldIterator<FObjectProperty> PropertyIt(ManagedClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++PropertyIt)
 		{
 			FObjectProperty* Property = *PropertyIt;
@@ -353,13 +358,20 @@ void FUnrealSharpEditorModule::FixUpBlueprints()
 			
 			UActorComponent* BestArchetype = InheritableComponentHandler->FindBestArchetype(ComponentKey);
 			CopyProperties(DefaultObject, BestArchetype);
-			bCompileBlueprint = true;
-		}
 
-		if (bCompileBlueprint)
-		{
-			InheritableComponentHandler->ValidateTemplates();
-			UBlueprintEditorLibrary::CompileBlueprint(LoadedBlueprint);
+			for (UObject* MatchingObj : MatchingBlueprintObjects)
+			{
+				AActor* Actor = static_cast<AActor*>(MatchingObj);
+				TArray<TObjectPtr<UActorComponent>> BlueprintCreatedComps = Actor->BlueprintCreatedComponents;
+
+				for (TObjectPtr<UActorComponent>& BlueprintCreatedComp : BlueprintCreatedComps)
+				{
+					if (BlueprintCreatedComp->GetName() == DefaultObject->GetName())
+					{
+						CopyProperties(DefaultObject, BlueprintCreatedComp);
+					}
+				}
+			}
 		}
 	}
 }
@@ -389,27 +401,13 @@ void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorCom
 			FString ObjectPath;
 			ObjectProperty->ExportTextItem_InContainer(ObjectPath, Source, nullptr, nullptr, PPF_None);
 			UObject* LoadedObject = LoadObject<UObject>(nullptr, *ObjectPath);
-
-			if (UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(Target))
-			{
-				StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(LoadedObject));
-			}
-			else if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Target))
-			{
-				SkeletalMeshComponent->SetSkeletalMesh(Cast<USkeletalMesh>(LoadedObject));
-			}
-			else
-			{
-				ObjectProperty->SetObjectPropertyValue_InContainer(Target, LoadedObject);
-			}
+			ObjectProperty->SetObjectPropertyValue_InContainer(Target, LoadedObject);
 		}
 		else
 		{
 			Property->CopyCompleteValue_InContainer(Target, Source);
 		}
 	}
-
-	Target->PostLoad();
 }
 
 

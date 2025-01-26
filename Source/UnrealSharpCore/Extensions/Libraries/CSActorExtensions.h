@@ -17,4 +17,7 @@ public:
 	
 	UFUNCTION(meta=(ScriptMethod))
 	static bool IsReplicatedSubObjectRegistered(AActor* Actor, UObject* SubObject);
+
+	UFUNCTION(meta=(ScriptMethod))
+	static UActorComponent* GetComponentTemplate(const AActor* Actor, FName ComponentName);
 };

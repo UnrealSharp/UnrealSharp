@@ -694,7 +694,7 @@ public static class WeaverHelper
             
                 if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
                 {
-                    return new NativeDataDefaultComponent(customAttributes, typeDef, "ObjectMarshaller`1", arrayDim);
+                    return new NativeDataDefaultComponent(customAttributes, typeDef, arrayDim);
                 }
             
                 TypeDefinition superType = typeDef;

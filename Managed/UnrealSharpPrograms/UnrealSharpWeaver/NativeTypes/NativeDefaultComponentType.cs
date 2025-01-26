@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
 
@@ -6,10 +7,10 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataDefaultComponent : NativeDataSimpleType
 {
-    public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, string marshallerName, int arrayDim) 
-        : base(typeRef, marshallerName, arrayDim, PropertyType.DefaultComponent)
+    public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, int arrayDim) 
+        : base(typeRef, "DefaultComponentMarshaller`1", arrayDim, PropertyType.DefaultComponent)
     {
-        var defaultComponentType = typeRef.Resolve();
+        TypeDefinition? defaultComponentType = typeRef.Resolve();
         
         if (!WeaverHelper.IsValidBaseForUObject(defaultComponentType))
         {
@@ -38,7 +39,26 @@ class NativeDataDefaultComponent : NativeDataSimpleType
             AttachmentSocket = (string) attachmentSocketValue.Value.Value;
         }
     }
-    
+
+    public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
+        FieldDefinition fieldDefinition)
+    {
+        ILProcessor processor = BeginSimpleGetter(getter);
+        string propertyName = getter.Name.Substring(4);
+        
+        List<Instruction> loadBuffer = new List<Instruction>();
+        loadBuffer.Add(processor.Create(OpCodes.Ldarg_0));
+        loadBuffer.Add(processor.Create(OpCodes.Ldstr, propertyName));
+        
+        foreach (Instruction instruction in loadBufferPtr)
+        {
+            loadBuffer.Add(instruction);
+        }
+        
+        WriteMarshalFromNative(processor, type, loadBuffer.ToArray(), processor.Create(OpCodes.Ldc_I4_0));
+        getter.FinalizeMethod();
+    }
+
     public bool IsRootComponent { get; set; }
     public string AttachmentComponent { get; set; }
     public string AttachmentSocket { get; set; }
