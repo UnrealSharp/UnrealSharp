@@ -1,4 +1,6 @@
 ﻿#include "CSActorExtensions.h"
+
+#include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
@@ -20,14 +22,34 @@ bool UCSActorExtensions::IsReplicatedSubObjectRegistered(AActor* Actor, UObject*
 
 UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, FName ComponentName)
 {
-	UCSClass* ClassData = FCSGeneratedClassBuilder::GetFirstManagedClass(Actor->GetClass());
-
-	if (!IsValid(ClassData))
+	if (!IsValid(Actor))
 	{
 		return nullptr;
 	}
 
-	USimpleConstructionScript* SCS = ClassData->SimpleConstructionScript;
-	USCS_Node* Node = SCS->FindSCSNode(ComponentName);
-	return Node->ComponentTemplate;
+	UBlueprintGeneratedClass* CurrentClass = Cast<UBlueprintGeneratedClass>(Actor->GetClass());
+
+	while (CurrentClass)
+	{
+		if (USimpleConstructionScript* SCS = CurrentClass->SimpleConstructionScript)
+		{
+			if (USCS_Node* Node = SCS->FindSCSNode(ComponentName))
+			{
+				return Node->ComponentTemplate;
+			}
+		}
+
+		if (UInheritableComponentHandler* InheritableComponentHandler = CurrentClass->GetInheritableComponentHandler())
+		{
+			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(ComponentName);
+			if (UActorComponent* ComponentTemplate = InheritableComponentHandler->GetOverridenComponentTemplate(ComponentKey))
+			{
+				return ComponentTemplate;
+			}
+		}
+		
+		CurrentClass = Cast<UBlueprintGeneratedClass>(CurrentClass->GetSuperClass());
+	}
+
+	return nullptr;
 }

@@ -14,7 +14,6 @@ public:
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
 	virtual FName GetFieldName() const override;
-	virtual bool ReplaceTypeOnReload() const override { return false; }
 	// End of implementation
 
 	static UCSClass* GetFirstManagedClass(UClass* Class);

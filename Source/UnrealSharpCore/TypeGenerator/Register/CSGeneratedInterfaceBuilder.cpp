@@ -16,11 +16,8 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 	Field->Bind();
 	Field->AssembleReferenceTokenStream();
 	Field->GetDefaultObject();
-}
 
 #if WITH_EDITOR
-void FCSGeneratedInterfaceBuilder::OnFieldReplaced(UClass* OldField, UClass* NewField)
-{
-	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(OldField, NewField);
-}
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field, Field);
 #endif
+}

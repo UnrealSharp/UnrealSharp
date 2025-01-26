@@ -1,5 +1,4 @@
 ﻿#include "CSReinstancer.h"
-#include "BlueprintCompilationManager.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
@@ -7,7 +6,6 @@
 #include "K2Node_StructOperation.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/ReloadUtilities.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -117,25 +115,6 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 
 void FCSReinstancer::FinishHotReload()
 {
-	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
-	Reload->SetSendReloadCompleteNotification(true);
-
-	auto NotifyChanges = [&Reload](const auto& Container)
-	{
-		for (const auto& [Old, New] : Container)
-		{
-			if (!Old || !New)
-			{
-				continue;
-			}
-
-			Reload->NotifyChange(New, Old);
-		}
-	};
-	
-	NotifyChanges(StructsToReinstance);
-	
-	Reload->Reinstance();
 	UpdateBlueprints();
 	FixDataTables();
 	

@@ -13,6 +13,5 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-	virtual bool ReplaceTypeOnReload() const override { return false; }
 	// End of implementation
 };
