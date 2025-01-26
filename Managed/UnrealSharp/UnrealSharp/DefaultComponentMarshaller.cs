@@ -9,6 +9,7 @@ public static class DefaultComponentMarshaller<T> where T : UActorComponent
     {
         T? defaultComponent = ObjectMarshaller<T>.FromNative(buffer, offset);
         
+        // If the default component is null, we're in construction phase and the component is not spawned yet.
         // So we access the template instead which BP uses to spawn the component later.
         // This is basically the same what the engine does with BP components.
         if (defaultComponent == null)
