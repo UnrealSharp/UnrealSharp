@@ -36,18 +36,19 @@ public static class StructExporter
                 propertyNames.Add(scriptName);
             }
         }
-        
-        string typeNameSpace = structObj.GetNamespace();
-        stringBuilder.GenerateTypeSkeleton(typeNameSpace);
-        
+
         bool isBlittable = structObj.IsStructBlittable();
-        
+
+        string typeNameSpace = structObj.GetNamespace();
+        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable);
+                
         stringBuilder.AppendTooltip(structObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(structObj);
         if (isBlittable)
         {
             attributeBuilder.AddIsBlittableAttribute();
+            attributeBuilder.AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential);
         }
         attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();

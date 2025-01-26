@@ -48,6 +48,5 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 	}
 #endif
 
-	Manager.SetCurrentWorldContext(nullptr);
 	return bSuccess;
 }

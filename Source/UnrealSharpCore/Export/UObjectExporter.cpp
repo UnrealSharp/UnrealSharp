@@ -10,6 +10,7 @@ void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExporte
 	EXPORT_FUNCTION(InvokeNativeFunction);
 	EXPORT_FUNCTION(NativeIsValid)
 	EXPORT_FUNCTION(GetWorld_Internal);
+	EXPORT_FUNCTION(GetUniqueID);
 }
 
 void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
@@ -118,4 +119,9 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 
 	UWorld* World = Object->GetWorld();
 	return UCSManager::Get().FindManagedObject(World).GetIntPtr();
+}
+
+uint32 UUObjectExporter::GetUniqueID(UObject* Object)
+{
+	return Object->GetUniqueID();
 }
