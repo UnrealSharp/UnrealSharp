@@ -20,5 +20,9 @@ public:
 private:
 
 	static uint16 GetNativeFunctionParamsSize(const UFunction* NativeFunction);
-	
+
+	static UFunction* CreateNativeFunctionCustomStructSpecialization(UFunction* NativeFunction, FProperty** CustomStructParams, UScriptStruct** CustomStructs);
+
+	static void InitializeFunctionParams(UFunction* NativeFunction, void* Params);
+
 };

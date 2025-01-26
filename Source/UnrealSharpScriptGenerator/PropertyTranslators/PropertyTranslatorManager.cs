@@ -20,7 +20,6 @@ public static class PropertyTranslatorManager
         
         AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte");
         AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short");
-        AddBlittablePropertyTranslator(typeof(UhtIntProperty), "int");
         AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long");
         AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort");
         AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint");
@@ -29,6 +28,7 @@ public static class PropertyTranslatorManager
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtIntProperty), new IntPropertyTranslator());
 
         MulticastDelegatePropertyTranslator multicastDelegatePropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtMulticastSparseDelegateProperty), multicastDelegatePropertyTranslator);

@@ -18,5 +18,4 @@ public:
 private:
 
 	static int GetNativeStructSize(const UScriptStruct* ScriptStruct);
-	
 };
