@@ -52,8 +52,10 @@ public static class StructExporter
         attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
+
+        string structName = structObj.GetStructName();
         
-        stringBuilder.DeclareType(structObj, "struct", structObj.GetStructName());
+        stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: isBlittable || !isManualExport ? new List<string>{$"MarshalledStruct<{structName}>"} : null);
 
         // For manual exports we just want to generate attributes
         if (!isManualExport)
@@ -63,7 +65,7 @@ public static class StructExporter
             ExportStructProperties(stringBuilder, exportedProperties, isBlittable, reservedNames);
         }
 
-        if (!isBlittable && !isManualExport)
+        if (!isManualExport)
         {
             stringBuilder.AppendLine();
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, 
@@ -75,6 +77,20 @@ public static class StructExporter
             stringBuilder.AppendLine();
             ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
         }
+        else if (isBlittable)
+        {
+            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, 
+                new List<UhtProperty>(), 
+                new List<UhtFunction>(),
+                new Dictionary<string, GetterSetterPair>(),
+                new Dictionary<UhtProperty, GetterSetterPair>(),
+                new List<UhtFunction>(), 
+                true);
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine($"public static {structName} FromNative(IntPtr buffer) => BlittableMarshaller<{structName}>.FromNative(buffer, 0);");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine($"public void ToNative(IntPtr buffer) => BlittableMarshaller<{structName}>.ToNative(buffer, 0, this);");
+        }
         
         stringBuilder.CloseBrace();
         
@@ -82,6 +98,7 @@ public static class StructExporter
         {
             ExportStructMarshaller(stringBuilder, structObj);
         }
+        
         
         FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
@@ -138,8 +155,9 @@ public static class StructExporter
 
     public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties)
     {
+        string structName = structObj.GetStructName();
         builder.AppendLine();
-        builder.AppendLine($"public {structObj.GetStructName()}(IntPtr InNativeStruct)");
+        builder.AppendLine($"public {structName}(IntPtr InNativeStruct)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         
@@ -156,6 +174,9 @@ public static class StructExporter
         
         builder.EndUnsafeBlock();
         builder.CloseBrace();
+        
+        builder.AppendLine();
+        builder.AppendLine($"public static {structName} FromNative(IntPtr buffer) => new {structName}(buffer);");
         
         builder.AppendLine();
         builder.AppendLine("public void ToNative(IntPtr buffer)");

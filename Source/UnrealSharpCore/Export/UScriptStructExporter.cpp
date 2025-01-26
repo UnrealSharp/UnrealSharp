@@ -10,10 +10,11 @@ void UUScriptStructExporter::ExportFunctions(FRegisterExportedFunction RegisterE
 
 int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruct)
 {
-	if (ScriptStruct->GetCppStructOps())
+	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
 	{
-		return ScriptStruct->GetCppStructOps()->GetSize();
+		return CppStructOps->GetSize();
 	}
 	
 	return ScriptStruct->GetStructureSize();
 }
+

@@ -223,4 +223,30 @@ public static class FunctionUtilities
 
         return propertyDeterminingOutputType?.GetGenericManagedType() ?? string.Empty;
     }
+
+    public static bool HasCustomStructParamSupport(this UhtFunction function)
+    {
+        if (!function.HasMetadata("CustomStructureParam")) return false;
+
+        var customStructParams = function.GetCustomStructParams();
+        return customStructParams.All(customParamName =>
+            function.Properties.Count(param => param.EngineName == customParamName) == 1);
+    }
+
+    public static List<string> GetCustomStructParams(this UhtFunction function)
+    {
+        if (!function.HasMetadata("CustomStructureParam")) return new List<string>();
+
+        return function.GetMetadata("CustomStructureParam").Split(",").ToList();
+    }
+    
+    public static int GetCustomStructParamCount(this UhtFunction function) => function.GetCustomStructParams().Count;
+    
+    public static List<string> GetCustomStructParamTypes(this UhtFunction function)
+    {
+        if (!function.HasMetadata("CustomStructureParam")) return new List<string>();
+        int paramCount = function.GetCustomStructParamCount();
+        if (paramCount == 1) return new List<string> { "CSP" };
+        return Enumerable.Range(0, paramCount).ToList().ConvertAll(i => $"CSP{i}");
+    }
 }
