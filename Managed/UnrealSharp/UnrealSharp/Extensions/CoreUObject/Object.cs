@@ -221,21 +221,33 @@ public partial class UObject
     {
         return (T) UCSWorldExtensions.SpawnActor(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
     }
-    
+
     /// <summary>
     /// Spawns an actor of the specified type, with a callback to initialize the actor.
     /// </summary>
     /// <param name="spawnTransform"> The transform to spawn the actor at. </param>
     /// <param name="actorType"> The type of the actor to spawn. </param>
     /// <param name="spawnParameters"> The parameters to use when spawning the actor. </param>
-    /// <param name="initializeActor"> Callback to initialize the actor. </param>
+    /// <param name="initializeActor"> Callback to initialize actor properties. C# spawned components are not yet valid here.</param>
+    /// <param name="initializeComponents"> Callback to initialize components properties. Both actor and components are valid here.</param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActorDeferred<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters, Action<T> initializeActor) where T : AActor
+    public T SpawnActorDeferred<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters, Action<T>? initializeActor = null, Action<T>? initializeComponents = null) where T : AActor
     {
         T spawnedActor = (T) UCSWorldExtensions.SpawnActorDeferred(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
+        
+        if (initializeActor != null)
+        {
+            initializeActor(spawnedActor);
+        }
+        
         UCSWorldExtensions.ExecuteConstruction(spawnedActor, spawnTransform);
-        initializeActor(spawnedActor);
+        
+        if (initializeComponents != null)
+        {
+            initializeComponents(spawnedActor);
+        }
+        
         UCSWorldExtensions.PostActorConstruction(spawnedActor);
         return spawnedActor;
     }

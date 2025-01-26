@@ -281,7 +281,7 @@ void FUnrealSharpEditorModule::OnReportBug()
 	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
-void FUnrealSharpEditorModule::FixUpBlueprints()
+void FUnrealSharpEditorModule::RepairComponents()
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(AssetRegistryConstants::ModuleName);
 	AssetRegistryModule.Get().SearchAllAssets(/*bSynchronousSearch =*/true);
@@ -296,17 +296,23 @@ void FUnrealSharpEditorModule::FixUpBlueprints()
 	
 	for (FAssetData const& Asset : OutAssetData)
 	{
-		FString const AssetPath = Asset.GetObjectPathString();
+		const FString AssetPath = Asset.GetObjectPathString();
+
+		if (!AssetPath.Contains(TEXT("/Game/")))
+		{
+			continue;
+		}
+		
 		UBlueprint* LoadedBlueprint = Cast<UBlueprint>(StaticLoadObject(Asset.GetClass(), nullptr, *AssetPath,nullptr));
 		UClass* GeneratedClass = LoadedBlueprint->GeneratedClass;
 		UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(GeneratedClass);
-
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Fixing up Blueprint: %s"), *AssetPath)));
 
 		if (!ManagedClass)
 		{
 			continue;
 		}
+
+		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Fixing up Blueprint: %s"), *AssetPath)));
 
 		AActor* ActorCDO = Cast<AActor>(GeneratedClass->GetDefaultObject(false));
 		if (!ActorCDO)
@@ -326,10 +332,9 @@ void FUnrealSharpEditorModule::FixUpBlueprints()
 
 		TArray<UObject*> Subobjects;
 		ActorCDO->GetDefaultSubobjects(Subobjects);
-
-		FKismetEditorUtilities::ApplyInstanceChangesToBlueprint(ActorCDO);
-		TArray<UObject*> MatchingBlueprintObjects;
-		GetObjectsOfClass(LoadedBlueprint->GeneratedClass, MatchingBlueprintObjects, true, RF_NoFlags, EInternalObjectFlags::Garbage);
+		
+		TArray<UObject*> MatchingInstances;
+		GetObjectsOfClass(LoadedBlueprint->GeneratedClass, MatchingInstances, true, RF_ClassDefaultObject, EInternalObjectFlags::Garbage);
 		
 		for (TFieldIterator<FObjectProperty> PropertyIt(ManagedClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++PropertyIt)
 		{
@@ -340,39 +345,42 @@ void FUnrealSharpEditorModule::FixUpBlueprints()
 				break;
 			}
 				
-			UActorComponent* DefaultObject = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(ActorCDO));
+			UActorComponent* OldComponentArchetype = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(ActorCDO));
 
-			if (!DefaultObject || !Subobjects.Contains(DefaultObject))
+			if (!OldComponentArchetype || !Subobjects.Contains(OldComponentArchetype))
 			{
 				continue;
 			}
 				
 			Property->SetObjectPropertyValue_InContainer(ActorCDO, nullptr);
 			
-			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(DefaultObject->GetFName());
+			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(OldComponentArchetype->GetFName());
 				
 			if (!ComponentKey.IsValid())
 			{
 				continue;
 			}
 			
-			UActorComponent* BestArchetype = InheritableComponentHandler->FindBestArchetype(ComponentKey);
-			CopyProperties(DefaultObject, BestArchetype);
-
-			for (UObject* MatchingObj : MatchingBlueprintObjects)
+			UActorComponent* NewArchetype = InheritableComponentHandler->GetOverridenComponentTemplate(ComponentKey);
+			CopyProperties(OldComponentArchetype, NewArchetype);
+			FBlueprintEditorUtils::MarkBlueprintAsModified(LoadedBlueprint, Property);
+			
+			for (UObject* Instance : MatchingInstances)
 			{
-				AActor* Actor = static_cast<AActor*>(MatchingObj);
-				TArray<TObjectPtr<UActorComponent>> BlueprintCreatedComps = Actor->BlueprintCreatedComponents;
-
-				for (TObjectPtr<UActorComponent>& BlueprintCreatedComp : BlueprintCreatedComps)
+				AActor* ActorInstance = static_cast<AActor*>(Instance);
+				TArray<TObjectPtr<UActorComponent>>& Components = ActorInstance->BlueprintCreatedComponents;
+				
+				for (TObjectPtr<UActorComponent>& Component : Components)
 				{
-					if (BlueprintCreatedComp->GetName() == DefaultObject->GetName())
+					if (Component->GetName() == OldComponentArchetype->GetName())
 					{
-						CopyProperties(DefaultObject, BlueprintCreatedComp);
+						CopyProperties(OldComponentArchetype, Component);
 					}
 				}
 			}
 		}
+
+		UBlueprintEditorLibrary::CompileBlueprint(LoadedBlueprint);
 	}
 }
 
@@ -396,18 +404,12 @@ void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorCom
 			continue;
 		}
 
-		if (FObjectProperty* ObjectProperty = CastField<FObjectProperty>(Property))
-		{
-			FString ObjectPath;
-			ObjectProperty->ExportTextItem_InContainer(ObjectPath, Source, nullptr, nullptr, PPF_None);
-			UObject* LoadedObject = LoadObject<UObject>(nullptr, *ObjectPath);
-			ObjectProperty->SetObjectPropertyValue_InContainer(Target, LoadedObject);
-		}
-		else
-		{
-			Property->CopyCompleteValue_InContainer(Target, Source);
-		}
+		FString Data;
+		Property->ExportTextItem_InContainer(Data, Source, nullptr, nullptr, PPF_None);
+		Property->ImportText_InContainer(*Data, Target, Target, 0);
 	}
+
+	Target->PostLoad();
 }
 
 
@@ -420,8 +422,11 @@ void FUnrealSharpEditorModule::OnRefreshRuntimeGlue() const
 
 	// Let external modules act on the runtime glue refresh, if they want to.
 	OnRefreshRuntimeGlueDelegate.Broadcast();
+}
 
-	FUnrealSharpEditorModule::FixUpBlueprints();
+void FUnrealSharpEditorModule::OnRepairComponents()
+{
+	RepairComponents();
 }
 
 void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirectory)
@@ -571,6 +576,11 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
 
 	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("Tools", LOCTEXT("Tools", "Tools"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.RepairComponents, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
 	
 	return MenuBuilder.MakeWidget();
 }
@@ -629,6 +639,7 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenDocumentation, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenDocumentation));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().ReportBug, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RefreshRuntimeGlue, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRefreshRuntimeGlue));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().RepairComponents, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRepairComponents));
 
 	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
 	const TSharedRef<FUICommandList> Commands = LevelEditorModule.GetGlobalLevelEditorActions();

@@ -44,7 +44,7 @@ public:
 
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
 
-    static void FixUpBlueprints();
+    static void RepairComponents();
 
 private:
     static FString SelectArchiveDirectory();
@@ -64,6 +64,8 @@ private:
     static void OnReportBug();
     
     void OnRefreshRuntimeGlue() const;
+
+    static void OnRepairComponents();
     
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
 
