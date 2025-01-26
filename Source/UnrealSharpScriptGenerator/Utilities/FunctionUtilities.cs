@@ -78,6 +78,19 @@ public static class FunctionUtilities
             return false;
         }
 
+        if (function.Properties.First() is not UhtStructProperty)
+        {
+            return false;
+        }
+
+        // These will be interfaces in C#, which implicit conversion doesn't work for.
+        // TODO: Support these in the future.
+        UhtProperty returnProperty = function.ReturnProperty!;
+        if (returnProperty is UhtArrayProperty or UhtSetProperty or UhtMapProperty)
+        {
+            return false;
+        }
+
         if (function.HasMetadata("BlueprintAutocast"))
         {
             return true;
