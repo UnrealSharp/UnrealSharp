@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
+#include "CSSimpleConstructionScriptBuilder.h"
 #include "CSTypeRegistry.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
@@ -57,6 +58,9 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 
 	// Generate properties for this class
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
+
+	// Build the construction script that will spawn the components
+	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Field, &Field->SimpleConstructionScript, TypeMetaData->Properties);
 
 	// Generate functions for this class
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, TypeMetaData);

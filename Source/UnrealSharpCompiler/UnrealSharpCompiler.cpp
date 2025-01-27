@@ -19,7 +19,9 @@ void FUnrealSharpCompilerModule::StartupModule()
 	IKismetCompilerInterface& KismetCompilerModule = FModuleManager::LoadModuleChecked<IKismetCompilerInterface>("KismetCompiler");
 	KismetCompilerModule.GetCompilers().Add(&BlueprintCompiler);
 
-	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	FCSTypeRegistry& TypeRegistry = FCSTypeRegistry::Get();
+	TypeRegistry.GetOnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	TypeRegistry.GetOnPendingClassesProcessedEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	UCSManager::GetOrCreate().OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
 	// Try to recompile and reinstance all blueprints when the module is loaded.

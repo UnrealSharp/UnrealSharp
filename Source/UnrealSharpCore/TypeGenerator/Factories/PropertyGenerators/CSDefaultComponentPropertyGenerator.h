@@ -16,11 +16,4 @@ public:
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
 	// End of implementation
-
-private:
-	
-	static void AddDefaultComponentNode(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const FCSPropertyMetaData& PropertyMetaData);
-	static USCS_Node* CreateNode(USimpleConstructionScript* SimpleConstructionScript, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
-	static void UpdateTemplateComponent(USCS_Node* Node, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
-	static void UpdateChildren(UClass* Outer, USCS_Node* Node);
 };

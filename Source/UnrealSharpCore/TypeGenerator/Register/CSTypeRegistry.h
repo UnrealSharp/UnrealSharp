@@ -10,6 +10,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewClass, UClass*);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewStruct, UScriptStruct*);
 DECLARE_MULTICAST_DELEGATE_OneParam(PFOnNewEnum, UEnum*);
 
+DECLARE_MULTICAST_DELEGATE(FOnPendingClassesProcessed);
+
 struct FPendingClasses
 {
 	TSet<FCSharpClassInfo*> Classes;
@@ -39,6 +41,7 @@ public:
 	FOnNewClass& GetOnNewClassEvent() { return OnNewClass; }
 	FOnNewStruct& GetOnNewStructEvent() { return OnNewStruct; }
 	FOnNewClass& GetOnNewInterfaceEvent() { return OnNewInterface; }
+	FOnPendingClassesProcessed& GetOnPendingClassesProcessedEvent() { return OnPendingClassesProcessed; }
 
 	static UClass* GetClassFromName(FName Name);
 	static UScriptStruct* GetStructFromName(FName Name);
@@ -79,5 +82,6 @@ private:
 	FOnNewClass OnNewClass;
 	FOnNewClass OnNewInterface;
 	FOnNewStruct OnNewStruct;
+	FOnPendingClassesProcessed OnPendingClassesProcessed;
 	
 };

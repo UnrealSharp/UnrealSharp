@@ -8,6 +8,7 @@
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
@@ -85,13 +86,16 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 
 void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSharpClassInfo>& ClassInfo) const
 {
+	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
+	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
+	
 	if (!Blueprint->SimpleConstructionScript)
 	{
 		return;
 	}
 	
 	TArray<USCS_Node*> Nodes;
-	for (const FCSPropertyMetaData& Property : ClassInfo->TypeMetaData->Properties)
+	for (const FCSPropertyMetaData& Property : Properties)
 	{
 		if (Property.Type->PropertyType != ECSPropertyType::DefaultComponent)
 		{

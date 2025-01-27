@@ -174,7 +174,8 @@ void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason I
 	{
 		return;
 	}
-	
+
+	int32 NumPendingClasses = PendingClasses.Num();
 	for (auto Itr = PendingClasses.CreateIterator(); Itr; ++Itr)
 	{
 		UClass* Class = GetClassFromName(Itr.Key());
@@ -192,4 +193,11 @@ void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason I
 
 		Itr.RemoveCurrent();
 	}
+
+#if WITH_EDITOR
+	if (NumPendingClasses != PendingClasses.Num())
+	{
+		OnPendingClassesProcessed.Broadcast();
+	}
+#endif
 }
