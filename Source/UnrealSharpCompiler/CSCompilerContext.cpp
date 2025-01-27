@@ -33,6 +33,14 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 }
 
+void FCSCompilerContext::PostCompile()
+{
+	FKismetCompilerContext::PostCompile();
+
+	UClass* Class = GetMainClass();
+	FCSGeneratedClassBuilder::TryRegisterSubsystem(Class);
+}
+
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
 	TSharedRef<const FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
@@ -41,11 +49,12 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 	NewClass->PropertyGuids.Empty(Properties.Num());
 	TryValidateSimpleConstructionScript(ClassInfo);
 	
-	for (const FCSPropertyMetaData& Property : Properties)
+	FCSPropertyFactory::CreateAndAssignProperties(NewClass, Properties, [this](const FProperty* NewProperty)
 	{
-		FCSPropertyFactory::CreateAndAssignProperty(NewClass, Property);
-		NewClass->PropertyGuids.Add(Property.Name, UCSPropertyGenerator::ConstructGUIDFromName(Property.Name));
-	}
+		FName PropertyName = NewProperty->GetFName();
+		FGuid PropertyGuid = UCSPropertyGenerator::ConstructGUIDFromName(PropertyName);
+		NewClass->PropertyGuids.Add(PropertyName, PropertyGuid);
+	});
 }
 
 void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& InOldCDO)

@@ -75,11 +75,17 @@ FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FCSP
 	return Property;
 }
 
-void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData)
+void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData, const TFunction<void(FProperty*)>& OnPropertyCreated)
 {
-	for (const FCSPropertyMetaData& Property : PropertyMetaData)
+	for (int32 i = PropertyMetaData.Num() - 1; i >= 0; --i)
 	{
-		CreateAndAssignProperty(Outer, Property);
+		const FCSPropertyMetaData& Property = PropertyMetaData[i];
+		FProperty* NewProperty = CreateAndAssignProperty(Outer, Property);
+
+		if (OnPropertyCreated)
+		{
+			OnPropertyCreated(NewProperty);
+		}
 	}
 }
 

@@ -36,6 +36,8 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
 		return K2_ShouldCreateSubsystem();
 	}
 
+	virtual void BeginDestroy() override;
+
 	// End
 	
 	// UWorldSubsystem begin

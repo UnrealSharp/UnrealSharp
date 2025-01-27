@@ -22,7 +22,7 @@ protected:
 	
 public:
 
-	static FGuid ConstructGUIDFromName(const FString& Name);
+	static FGuid ConstructGUIDFromString(const FString& Name);
 	static FGuid ConstructGUIDFromName(const FName& Name);
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);

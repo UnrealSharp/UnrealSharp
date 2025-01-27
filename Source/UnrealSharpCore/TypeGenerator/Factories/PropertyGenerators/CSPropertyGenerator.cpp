@@ -35,10 +35,10 @@ TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyTy
 
 FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FName& Name)
 {
-	return ConstructGUIDFromName(Name.ToString());
+	return ConstructGUIDFromString(Name.ToString());
 }
 
-FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FString& Name)
+FGuid UCSPropertyGenerator::ConstructGUIDFromString(const FString& Name)
 {
 	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);
 	uint32 HashBuffer[5];
