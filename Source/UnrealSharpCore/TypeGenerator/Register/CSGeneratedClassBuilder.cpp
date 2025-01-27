@@ -38,7 +38,7 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		Field->ClassGeneratedBy = Blueprint;
 	}
 
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field, Field);
+	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
 }
 #endif
 

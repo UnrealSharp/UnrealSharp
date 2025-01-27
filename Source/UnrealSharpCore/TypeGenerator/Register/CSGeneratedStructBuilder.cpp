@@ -25,7 +25,7 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 
 #if WITH_EDITOR
-	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field, Field);
+	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field);
 #endif
 }
 

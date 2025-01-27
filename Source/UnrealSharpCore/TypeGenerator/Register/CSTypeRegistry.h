@@ -6,9 +6,9 @@
 #include "TypeInfo/CSInterfaceInfo.h"
 #include "TypeInfo/CSStructInfo.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNewClass, UClass*, UClass*);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNewStruct, UScriptStruct*, UScriptStruct*);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNewEnum, UEnum*, UEnum*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewClass, UClass*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewStruct, UScriptStruct*);
+DECLARE_MULTICAST_DELEGATE_OneParam(PFOnNewEnum, UEnum*);
 
 struct FPendingClasses
 {

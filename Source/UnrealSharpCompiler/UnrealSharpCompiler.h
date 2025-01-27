@@ -12,7 +12,7 @@ public:
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
 private:
-    void OnNewClass(UClass* OldClass, UClass* NewClass);
+    void OnNewClass(UClass* NewClass);
     void OnManagedAssemblyLoaded(const FString& AssemblyName);
 
     void RecompileAndReinstanceBlueprints();

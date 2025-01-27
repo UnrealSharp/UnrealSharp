@@ -18,6 +18,6 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 	Field->GetDefaultObject();
 
 #if WITH_EDITOR
-	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field, Field);
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field);
 #endif
 }

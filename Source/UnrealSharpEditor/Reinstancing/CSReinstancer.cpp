@@ -21,19 +21,19 @@ void FCSReinstancer::Initialize()
 	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
 }
 
-void FCSReinstancer::AddPendingClass(UClass* OldClass, UClass* NewClass)
+void FCSReinstancer::AddPendingClass(UClass* NewClass)
 {
-	ClassesToReinstance.Add(MakeTuple(OldClass, NewClass));
+	ClassesToReinstance.Add(NewClass);
 }
 
-void FCSReinstancer::AddPendingStruct(UScriptStruct* OldStruct, UScriptStruct* NewStruct)
+void FCSReinstancer::AddPendingStruct(UScriptStruct* NewStruct)
 {
-	StructsToReinstance.Add(MakeTuple(OldStruct, NewStruct));
+	StructsToReinstance.Add(NewStruct);
 }
 
-void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterface)
+void FCSReinstancer::AddPendingInterface(UClass* NewInterface)
 {
-	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
+	InterfacesToReinstance.Add(NewInterface);
 }
 
 bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
@@ -132,17 +132,17 @@ void FCSReinstancer::FinishHotReload()
 
 void FCSReinstancer::FixDataTables()
 {
-	for (TTuple<UScriptStruct*, UScriptStruct*>& Struct : StructsToReinstance)
+	for (UScriptStruct* Struct : StructsToReinstance)
 	{
 		TArray<UDataTable*> Tables;
-		GetTablesDependentOnStruct(Struct.Key, Tables);
+		GetTablesDependentOnStruct(Struct, Tables);
 		
 		for (UDataTable*& Table : Tables)
 		{
 			FString Data = Table->GetTableAsJSON();
-			Struct.Key->StructFlags = static_cast<EStructFlags>(STRUCT_NoDestructor | Struct.Key->StructFlags);
+			Struct->StructFlags = static_cast<EStructFlags>(STRUCT_NoDestructor | Struct->StructFlags);
 			Table->CleanBeforeStructChange();
-			Table->RowStruct = Struct.Value;
+			Table->RowStruct = Struct;
 			Table->CreateTableFromJSONString(Data);
 		}
 	}

@@ -50,7 +50,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 }
 
 
-void FUnrealSharpCompilerModule::OnNewClass(UClass* OldClass, UClass* NewClass)
+void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 {
 	if (UBlueprint* Blueprint = Cast<UBlueprint>(NewClass->ClassGeneratedBy))
 	{

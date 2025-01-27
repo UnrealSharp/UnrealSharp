@@ -23,9 +23,9 @@ private:
 
 	void GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables);
 
-	void AddPendingClass(UClass* OldClass, UClass* NewClass);
-	void AddPendingStruct(UScriptStruct* OldStruct, UScriptStruct* NewStruct);
-	void AddPendingInterface(UClass* OldInterface, UClass* NewInterface);
+	void AddPendingClass(UClass* NewClass);
+	void AddPendingStruct(UScriptStruct* NewStruct);
+	void AddPendingInterface(UClass* NewInterface);
 	
 	UFunction* FindMatchingMember(const FMemberReference& FunctionReference) const;
 	bool UpdateMemberCall(UK2Node_CallFunction* Node) const;
@@ -33,7 +33,7 @@ private:
 	void UpdateInheritance(UBlueprint* Blueprint, bool& RefNeedsNodeReconstruction) const;
 	void UpdateNodePinTypes(UEdGraphNode* Node, bool& RefNeedsNodeReconstruction) const;
 	
-	TMap<UClass*, UClass*> ClassesToReinstance;
-	TMap<UScriptStruct*, UScriptStruct*> StructsToReinstance;
-	TMap<UClass*, UClass*> InterfacesToReinstance;
+	TSet<UClass*> ClassesToReinstance;
+	TSet<UScriptStruct*> StructsToReinstance;
+	TSet<UClass*> InterfacesToReinstance;
 };
