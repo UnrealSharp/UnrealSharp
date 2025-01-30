@@ -131,7 +131,8 @@ bool UCSManager::InitializeRuntime()
 	const FString EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
 	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpLibraryPath());
-	
+	const FString UserWorkingDirectory = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUserAssemblyDirectory());
+
 	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
 		PLATFORM_STRING(*EntryPointClassName),
 		PLATFORM_STRING(*EntryPointFunctionName),
@@ -146,7 +147,8 @@ bool UCSManager::InitializeRuntime()
 	}
 
 	// Entry point to C# to initialize UnrealSharp
-	if (!InitializeUnrealSharp(*UnrealSharpLibraryAssembly,
+	if (!InitializeUnrealSharp(*UserWorkingDirectory,
+		*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
 		&FCSManagedCallbacks::ManagedCallbacks,
 		(const void*)&UFunctionsExporter::StartExportingAPI))
@@ -336,6 +338,8 @@ TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 	{
 		return nullptr;
 	}
+
+	OnManagedAssemblyLoaded.Broadcast(NewPlugin->GetAssemblyName());
  
 	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
 	return NewPlugin;
