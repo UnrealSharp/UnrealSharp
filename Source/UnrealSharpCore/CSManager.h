@@ -8,7 +8,9 @@
 
 struct FCSTypeReferenceMetaData;
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FString&);
 
 UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
@@ -40,6 +42,8 @@ public:
 
 	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
 
+	FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
+
 private:
 
 	void Initialize();
@@ -69,6 +73,8 @@ private:
 
 	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
+
+	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 	
