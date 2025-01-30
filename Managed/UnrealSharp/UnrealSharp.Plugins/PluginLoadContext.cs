@@ -3,7 +3,7 @@ using System.Runtime.Loader;
 
 namespace UnrealSharp.Plugins;
 
-public class PluginLoadContext(AssemblyDependencyResolver resolver) : AssemblyLoadContext(true)
+public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isCollectible) : AssemblyLoadContext(isCollectible)
 {
     protected override Assembly? Load(AssemblyName assemblyName)
     {

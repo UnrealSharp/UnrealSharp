@@ -28,7 +28,7 @@ public static class PluginLoader
                 return loadedPlugin.WeakRefAssembly;
             }
 
-            var pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath));
+            var pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
             var weakRefPluginLoadContext = new WeakReference(pluginLoadContext);
 
             var plugin = new Plugin(assemblyName, weakRefPluginLoadContext);
