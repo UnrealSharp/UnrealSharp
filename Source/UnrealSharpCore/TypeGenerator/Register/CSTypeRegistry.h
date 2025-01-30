@@ -48,6 +48,9 @@ public:
 	static UEnum* GetEnumFromName(FName Name);
 	static UClass* GetInterfaceFromName(FName Name);
 
+	void RegisterClassToFilePath(const UTF16CHAR* ClassName, const UTF16CHAR* FilePath);
+	void GetClassFilePath(FName ClassName, FString& OutFilePath);
+
 	static TSharedPtr<FCSharpClassInfo> GetClassInfoFromName(FName Name)
 	{
 		return Get().ManagedClasses.FindRef(Name);
@@ -78,6 +81,7 @@ private:
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	
 	TMap<FName, FPendingClasses> PendingClasses;
+	TMap<FName, FString> ClassToFilePath;
 	
 	FOnNewClass OnNewClass;
 	FOnNewClass OnNewInterface;

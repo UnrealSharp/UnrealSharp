@@ -168,6 +168,19 @@ UClass* FCSTypeRegistry::GetInterfaceFromName(FName Name)
 	return FoundType;
 }
 
+void FCSTypeRegistry::RegisterClassToFilePath(const UTF16CHAR* ClassName, const UTF16CHAR* FilePath)
+{
+	ClassToFilePath.Add(FName(ClassName), FilePath);
+}
+
+void FCSTypeRegistry::GetClassFilePath(FName ClassName, FString& OutFilePath)
+{
+	if (FString* FilePath = ClassToFilePath.Find(ClassName))
+	{
+		OutFilePath = *FilePath;
+	}
+}
+
 void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
 {
 	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)

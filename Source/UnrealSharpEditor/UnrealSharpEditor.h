@@ -4,6 +4,7 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+class IAssetTools;
 class FCSScriptBuilder;
 
 enum HotReloadStatus

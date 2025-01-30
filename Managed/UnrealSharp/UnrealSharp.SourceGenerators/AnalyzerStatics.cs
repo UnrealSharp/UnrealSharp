@@ -42,7 +42,7 @@ public static class AnalyzerStatics
         "IReadOnlySet",
     };
     
-    internal static bool HasAttribute(ISymbol symbol, string attributeName)
+    public static bool HasAttribute(ISymbol symbol, string attributeName)
     {
         foreach (var attribute in symbol.GetAttributes())
         {
@@ -55,7 +55,7 @@ public static class AnalyzerStatics
         return false;
     }
 
-    internal static bool TryGetAttribute(ISymbol symbol, string attributeName, out AttributeData? attribute)
+    public static bool TryGetAttribute(ISymbol symbol, string attributeName, out AttributeData? attribute)
     {
         attribute = symbol.GetAttributes()
             .FirstOrDefault(x => x.AttributeClass is not null && x.AttributeClass.Name == attributeName);
@@ -63,19 +63,28 @@ public static class AnalyzerStatics
         return attribute is not null;
     }
     
-    internal static bool HasAttribute(MemberDeclarationSyntax memberDecl, string attributeName)
+    public static bool HasAttribute(MemberDeclarationSyntax memberDecl, string attributeName)
     {
-        return memberDecl.AttributeLists
-            .SelectMany(attrList => attrList.Attributes)
-            .Any(attr => attr.Name.ToString().Contains(attributeName));
+        foreach (var attrList in memberDecl.AttributeLists)
+        {
+            foreach (var attr in attrList.Attributes)
+            {
+                if (attr.Name.ToString().Contains(attributeName))
+                {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
-    internal static bool InheritsFrom(IPropertySymbol propertySymbol, string baseTypeName)
+    public static bool InheritsFrom(IPropertySymbol propertySymbol, string baseTypeName)
     {
         return propertySymbol.Type is INamedTypeSymbol namedTypeSymbol && InheritsFrom(namedTypeSymbol, baseTypeName);
     }
 
-    internal static bool InheritsFrom(INamedTypeSymbol symbol, string baseTypeName)
+    public static bool InheritsFrom(INamedTypeSymbol symbol, string baseTypeName)
     {
         INamedTypeSymbol currentSymbol = symbol;
 
@@ -91,7 +100,7 @@ public static class AnalyzerStatics
         return false;
     }
 
-    internal static bool IsDefaultComponent(AttributeData? attributeData)
+    public static bool IsDefaultComponent(AttributeData? attributeData)
     {
         if (attributeData?.AttributeClass?.Name != UPropertyAttribute) return false;
 
@@ -101,7 +110,7 @@ public static class AnalyzerStatics
         return argument.Value.Value is true;
     }
 
-    internal static bool IsNewKeywordInstancingOperation(IObjectCreationOperation operation, out Location? location)
+    public static bool IsNewKeywordInstancingOperation(IObjectCreationOperation operation, out Location? location)
     {
         location = null;
         if (operation.Syntax is not ObjectCreationExpressionSyntax objectCreationExpression)
@@ -113,7 +122,7 @@ public static class AnalyzerStatics
         return objectCreationExpression.NewKeyword.ValueText == New;
     }
 
-    internal static bool IsContainerInterface(ITypeSymbol symbol)
+    public static bool IsContainerInterface(ITypeSymbol symbol)
     {
         var namespaceName = symbol.ContainingNamespace.ToString();
         return namespaceName.Equals(ContainerNamespace, StringComparison.InvariantCultureIgnoreCase) &&
