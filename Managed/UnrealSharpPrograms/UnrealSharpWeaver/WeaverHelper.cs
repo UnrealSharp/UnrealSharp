@@ -66,6 +66,8 @@ public static class WeaverHelper
     public static MethodReference GetNativePropertyFromNameMethod;
     public static MethodReference GetNativeFunctionFromClassAndNameMethod;
     public static MethodReference GetNativeFunctionParamsSizeMethod;
+    public static MethodReference CreateNativeFunctionCustomStructSpecializationMethod;
+    public static MethodReference InitializeFunctionParamsMethod;
     public static MethodReference GetNativeStructSizeMethod;
     public static MethodReference InvokeNativeFunctionMethod;
     public static MethodReference GetSignatureFunction;
@@ -128,6 +130,9 @@ public static class WeaverHelper
         GetNativePropertyFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetNativePropertyFromName");
         GetNativeFunctionFromClassAndNameMethod = FindExporterMethod(UClassCallbacks, "CallGetNativeFunctionFromClassAndName");
         GetNativeFunctionParamsSizeMethod = FindExporterMethod(UFunctionCallbacks, "CallGetNativeFunctionParamsSize");
+        CreateNativeFunctionCustomStructSpecializationMethod = FindExporterMethod(UFunctionCallbacks,
+            "CallCreateNativeFunctionCustomStructSpecialization");
+        InitializeFunctionParamsMethod = FindExporterMethod(UFunctionCallbacks, "CallInitializeFunctionParams");
         GetNativeStructSizeMethod = FindExporterMethod(UScriptStructCallbacks, "CallGetNativeStructSize");
         InvokeNativeFunctionMethod = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunction");
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");

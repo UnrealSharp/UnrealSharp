@@ -13,7 +13,8 @@ public static class StaticConstructorUtilities
         List<UhtFunction> exportedFunctions,
         Dictionary<string, GetterSetterPair> exportedGetterSetters,
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties,
-        List<UhtFunction> overrides)
+        List<UhtFunction> overrides,
+        bool isBlittable = false)
     {
         UhtClass? classObj = structObj as UhtClass;
         UhtScriptStruct? scriptStructObj = structObj as UhtScriptStruct;
@@ -67,7 +68,24 @@ public static class StaticConstructorUtilities
 
         if (scriptStructObj != null)
         {
-            generatorStringBuilder.AppendLine("public static readonly int NativeDataSize;");
+            if(classObj == null) generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
+            if (isBlittable)
+            {
+                generatorStringBuilder.AppendLine("public static int GetNativeDataSize()");
+                generatorStringBuilder.OpenBrace();
+                generatorStringBuilder.BeginUnsafeBlock();
+                generatorStringBuilder.AppendLine($"return sizeof({structName});");
+                generatorStringBuilder.EndUnsafeBlock();
+                generatorStringBuilder.CloseBrace();
+            }
+            else
+            {
+                generatorStringBuilder.AppendLine("public static readonly int NativeDataSize;");
+                if (classObj == null)
+                {
+                    generatorStringBuilder.AppendLine("public static int GetNativeDataSize() => NativeDataSize;");
+                }
+            }
         }
         
         generatorStringBuilder.AppendLine($"static {structName}()");
@@ -97,10 +115,7 @@ public static class StaticConstructorUtilities
             ExportClassFunctionsStaticConstructor(generatorStringBuilder, exportedFunctions);
             ExportClassOverridesStaticConstructor(generatorStringBuilder, overrides);
         }
-        else
-        {
-            generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
-        }
+        else if (!isBlittable) generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
         
         generatorStringBuilder.CloseBrace();
     }
@@ -116,13 +131,17 @@ public static class StaticConstructorUtilities
     public static void ExportClassFunctionStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtFunction function)
     {
         string functionName = function.SourceName;
+
+        string nativeFunctionName = function.GetNativeFunctionName();
             
         generatorStringBuilder.TryAddWithEditor(function);
-        generatorStringBuilder.AppendLine($"{function.GetNativeFunctionName()} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
+        generatorStringBuilder.AppendLine($"{nativeFunctionName} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             
         if (function.HasParametersOrReturnValue())
         {
-            generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+            bool hasCustomStructParams = function.HasCustomStructParamSupport();
+            string variableName = hasCustomStructParams ? $"{functionName}_NativeParamsSize" : $"{functionName}_ParamsSize";
+            generatorStringBuilder.AppendLine($"{variableName} = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
                 
             foreach (UhtType parameter in function.Children)
             {
@@ -133,6 +152,14 @@ public static class StaticConstructorUtilities
 
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
                 translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
+            }
+            
+            if (hasCustomStructParams)
+            {
+                List<string> customStructParams = function.GetCustomStructParams();
+                List<string> initializerElements = customStructParams.ConvertAll(param =>
+                    $"{ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({nativeFunctionName}, \"{param}\")");
+                generatorStringBuilder.AppendLine($"{functionName}_CustomStructureNativeProperties = new IntPtr[]{{{string.Join(", ", initializerElements)}}};");
             }
         }
         generatorStringBuilder.TryEndWithEditor(function);

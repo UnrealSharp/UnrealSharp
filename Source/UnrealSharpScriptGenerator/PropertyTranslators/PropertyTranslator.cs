@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Exporters;
@@ -42,6 +43,9 @@ public abstract class PropertyTranslator
 
     // Can we support generic types?
     public abstract bool CanSupportGenericType(UhtProperty property);
+    
+    // Can we support custom structs?
+    public virtual bool CanSupportCustomStruct(UhtProperty property) => false;
 
     // Get the managed type for this property
     // Example: "int" for a property of type "int32"
@@ -108,7 +112,8 @@ public abstract class PropertyTranslator
     
     public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
     {
-        builder.AppendLine($"{functionName}_{propertyEngineName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
+        string variableName = $"{functionName}_{propertyEngineName}_{(property.GetPrecedingCustomStructParams() > 0 ? "NativeOffset" : "Offset")}";
+        builder.AppendLine($"{variableName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
     }
     
     public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
@@ -128,6 +133,33 @@ public abstract class PropertyTranslator
     
     public virtual void ExportParameterVariables(GeneratorStringBuilder builder, UhtFunction function, string nativeMethodName, UhtProperty property, string propertyEngineName)
     {
+        if (function.HasCustomStructParamSupport())
+        {
+            List<UhtProperty> precedingParams = property.GetPrecedingParams()!;
+            int precedingCustomStructProperties = precedingParams.Count(param => param.IsCustomStructureType());
+            if (precedingCustomStructProperties > 0)
+            {
+                builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_NativeOffset;");
+                List<string> customStructParamTypes =
+                    function.GetCustomStructParamTypes().GetRange(0, precedingCustomStructProperties);
+                builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_Offset<{string.Join(", ", customStructParamTypes)}>()");
+                builder.Indent();
+                foreach (string customStructParamType in customStructParamTypes)
+                {
+                    builder.AppendLine($"where {customStructParamType} : MarshalledStruct<{customStructParamType}>");
+                }
+
+                string variableNames = string.Join(" + ",
+                    customStructParamTypes.ConvertAll(customStructParamType =>
+                        $"{customStructParamType}.GetNativeDataSize()"));
+                string nativeOffsetSubtractionMultiplier = string.Empty;
+                if (precedingCustomStructProperties > 1)
+                    nativeOffsetSubtractionMultiplier += $"{precedingCustomStructProperties} * ";
+                builder.AppendLine($"=> {nativeMethodName}_{propertyEngineName}_NativeOffset + {variableNames} - {nativeOffsetSubtractionMultiplier}sizeof(int);");
+                builder.UnIndent();
+                return;
+            }
+        }
         builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_Offset;");
     }
 
