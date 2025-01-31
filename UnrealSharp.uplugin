@@ -13,12 +13,11 @@
 	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
-	"Modules": 
-	[
+	"Modules": [
 		{
 			"Name": "UnrealSharpCore",
 			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "Default"
 		},
 		{
 			"Name": "UnrealSharpProcHelper",
@@ -34,6 +33,11 @@
 			"Name": "UnrealSharpBlueprint",
 			"Type": "UncookedOnly",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnrealSharpCompiler",
+			"Type": "Editor",
+			"LoadingPhase": "PreDefault"
 		}
 	],
 	"SupportedTargetPlatforms": [

@@ -4,6 +4,7 @@
 
 void FCSGeneratedInterfaceBuilder::StartBuildingType()
 {
+	Field->PurgeClass(true);
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
 	
@@ -15,11 +16,8 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 	Field->Bind();
 	Field->AssembleReferenceTokenStream();
 	Field->GetDefaultObject();
-}
 
 #if WITH_EDITOR
-void FCSGeneratedInterfaceBuilder::OnFieldReplaced(UClass* OldField, UClass* NewField)
-{
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(OldField, NewField);
-}
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field);
 #endif
+}

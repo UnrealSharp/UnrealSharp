@@ -1,5 +1,7 @@
 #include "CSMulticastDelegatePropertyGenerator.h"
+
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
+#include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
 
 FProperty* UCSMulticastDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)

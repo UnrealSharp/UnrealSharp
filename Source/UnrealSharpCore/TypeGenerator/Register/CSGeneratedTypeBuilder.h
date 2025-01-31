@@ -2,7 +2,6 @@
 
 #include "CSDeveloperSettings.h"
 #include "CSMetaDataUtils.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UnrealSharpCore/CSManager.h"
@@ -25,45 +24,24 @@ public:
 		FName FieldName = GetFieldName();
 
 #if WITH_EDITOR
-		TField* ExistingField = FindObject<TField>(Package, *FieldName.ToString());
-		if (ExistingField)
-		{
-			if (!ReplaceTypeOnReload())
-			{
-				Field = ExistingField;
-				return Field;
-			}
-			
-			const FString OldPath = ExistingField->GetPathName();
-			const FString OldTypeName = FString::Printf(TEXT("%s_OLD_%d"), *ExistingField->GetName(), ExistingField->GetUniqueID());
-
-			ExistingField->SetFlags(RF_NewerVersionExists);
-			ExistingField->ClearFlags(RF_Public | RF_Standalone);
-			ExistingField->Rename(*OldTypeName, nullptr, REN_DontCreateRedirectors);
-		}
+		Field = FindObject<TField>(Package, *FieldName.ToString());
+		if (!Field)
 #endif
-		
-		Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone);
+		{
+			Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone);
+		}
 
 #if WITH_EDITOR
 		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 		ApplyDisplayName();
-		
-		if (ExistingField)
-		{
-			OnFieldReplaced(ExistingField, Field);
-		}
 #endif
+		
 		return Field;
 	}
 
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void StartBuildingType() = 0;
-#if WITH_EDITOR
-	virtual void OnFieldReplaced(TField* OldField, TField* NewField) {};
-#endif
 	virtual FName GetFieldName() const { return TypeMetaData->Name; }
-	virtual bool ReplaceTypeOnReload() const { return true; }
 	// End of interface
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)

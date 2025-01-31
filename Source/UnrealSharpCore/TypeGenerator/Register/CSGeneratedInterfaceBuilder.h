@@ -11,8 +11,5 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void StartBuildingType() override;
-#if WITH_EDITOR
-	virtual void OnFieldReplaced(UClass* OldField, UClass* NewField) override;
-#endif
 	// End of implementation
 };

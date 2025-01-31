@@ -1,14 +1,11 @@
 ﻿#include "CSReinstancer.h"
-#include "BlueprintCompilationManager.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
 #include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
-#include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/ReloadUtilities.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -21,21 +18,22 @@ void FCSReinstancer::Initialize()
 {
 	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
 	FCSTypeRegistry::Get().GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
+	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
 }
 
-void FCSReinstancer::AddPendingClass(UClass* OldClass, UClass* NewClass)
+void FCSReinstancer::AddPendingClass(UClass* NewClass)
 {
-	ClassesToReinstance.Add(MakeTuple(OldClass, NewClass));
+	ClassesToReinstance.Add(NewClass);
 }
 
-void FCSReinstancer::AddPendingStruct(UScriptStruct* OldStruct, UScriptStruct* NewStruct)
+void FCSReinstancer::AddPendingStruct(UScriptStruct* NewStruct)
 {
-	StructsToReinstance.Add(MakeTuple(OldStruct, NewStruct));
+	StructsToReinstance.Add(NewStruct);
 }
 
-void FCSReinstancer::AddPendingInterface(UClass* OldInterface, UClass* NewInterface)
+void FCSReinstancer::AddPendingInterface(UClass* NewInterface)
 {
-	InterfacesToReinstance.Add(MakeTuple(OldInterface, NewInterface));
+	InterfacesToReinstance.Add(NewInterface);
 }
 
 bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
@@ -115,31 +113,15 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	return false;
 }
 
-void FCSReinstancer::StartReinstancing()
+void FCSReinstancer::FinishHotReload()
 {
-	TUniquePtr<FReload> Reload = MakeUnique<FReload>(EActiveReloadType::Reinstancing, TEXT(""), *GWarn);
-	Reload->SetSendReloadCompleteNotification(true);
-
-	auto NotifyChanges = [&Reload](const auto& Container)
-	{
-		for (const auto& [Old, New] : Container)
-		{
-			if (!Old || !New)
-			{
-				continue;
-			}
-
-			Reload->NotifyChange(New, Old);
-		}
-	};
-
-	NotifyChanges(InterfacesToReinstance);
-	NotifyChanges(StructsToReinstance);
-	NotifyChanges(ClassesToReinstance);
-	
-	Reload->Reinstance();
 	UpdateBlueprints();
-	PostReinstance();
+	FixDataTables();
+	
+	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
+	{
+		PropertyModule->NotifyCustomizationModuleChanged();
+	}
 	
 	StructsToReinstance.Empty();
 	InterfacesToReinstance.Empty();
@@ -148,29 +130,19 @@ void FCSReinstancer::StartReinstancing()
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
-void FCSReinstancer::PostReinstance()
-{
-	FixDataTables();
-	
-	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
-	{
-		PropertyModule->NotifyCustomizationModuleChanged();
-	}
-}
-
 void FCSReinstancer::FixDataTables()
 {
-	for (TTuple<UScriptStruct*, UScriptStruct*>& Struct : StructsToReinstance)
+	for (UScriptStruct* Struct : StructsToReinstance)
 	{
 		TArray<UDataTable*> Tables;
-		GetTablesDependentOnStruct(Struct.Key, Tables);
+		GetTablesDependentOnStruct(Struct, Tables);
 		
 		for (UDataTable*& Table : Tables)
 		{
 			FString Data = Table->GetTableAsJSON();
-			Struct.Key->StructFlags = static_cast<EStructFlags>(STRUCT_NoDestructor | Struct.Key->StructFlags);
+			Struct->StructFlags = static_cast<EStructFlags>(STRUCT_NoDestructor | Struct->StructFlags);
 			Table->CleanBeforeStructChange();
-			Table->RowStruct = Struct.Value;
+			Table->RowStruct = Struct;
 			Table->CreateTableFromJSONString(Data);
 		}
 	}
@@ -282,6 +254,11 @@ void FCSReinstancer::UpdateBlueprints()
 		bool bNeedsNodeReconstruction = false;
 		UBlueprint* Blueprint = *BlueprintIt;
 
+		if (FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		{
+			continue;
+		}
+
 		UpdateInheritance(Blueprint, bNeedsNodeReconstruction);
 		
 		for (FBPVariableDescription& NewVariable : Blueprint->NewVariables)
@@ -365,10 +342,7 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
-
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

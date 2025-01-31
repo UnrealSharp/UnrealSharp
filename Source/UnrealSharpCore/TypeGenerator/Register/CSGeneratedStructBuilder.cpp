@@ -9,6 +9,7 @@
 
 void FCSGeneratedStructBuilder::StartBuildingType()
 {
+	PurgeStruct();
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 		
 	Field->Status = UDSS_UpToDate;
@@ -22,13 +23,24 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	Field->RecreateDefaults();
 	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
-}
 
 #if WITH_EDITOR
-void FCSGeneratedStructBuilder::OnFieldReplaced(UCSScriptStruct* OldField, UCSScriptStruct* NewField)
-{
-	OldField->StructFlags = static_cast<EStructFlags>(OldField->StructFlags | STRUCT_NewerVersionExists);
-	NewField->Guid = OldField->Guid;
-	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(OldField, NewField);
-}
+	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field);
 #endif
+}
+
+void FCSGeneratedStructBuilder::PurgeStruct()
+{
+	Field->PropertyLink = nullptr;
+	Field->DestructorLink = nullptr;
+	Field->ChildProperties = nullptr;
+	Field->Children = nullptr;
+	Field->PropertiesSize = 0;
+	Field->MinAlignment = 0;
+	Field->RefLink = nullptr;
+#if WITH_EDITOR
+	Field->TotalFieldCount = 0;
+	Field->PrimaryStruct = nullptr;
+	Field->EditorData = nullptr;
+#endif
+}

@@ -1,5 +1,4 @@
 #include "CSStructPropertyGenerator.h"
-
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSStructPropertyMetaData.h"
 

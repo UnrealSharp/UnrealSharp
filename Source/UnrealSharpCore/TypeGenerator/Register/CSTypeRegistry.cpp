@@ -1,4 +1,5 @@
 #include "CSTypeRegistry.h"
+
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
@@ -68,6 +69,7 @@ bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
 	InitializeBuilders(ManagedStructs);
 	InitializeBuilders(ManagedEnums);
 	InitializeBuilders(ManagedInterfaces);
+	
 	return true;
 }
 
@@ -166,13 +168,27 @@ UClass* FCSTypeRegistry::GetInterfaceFromName(FName Name)
 	return FoundType;
 }
 
+void FCSTypeRegistry::RegisterClassToFilePath(const UTF16CHAR* ClassName, const UTF16CHAR* FilePath)
+{
+	ClassToFilePath.Add(FName(ClassName), FilePath);
+}
+
+void FCSTypeRegistry::GetClassFilePath(FName ClassName, FString& OutFilePath)
+{
+	if (FString* FilePath = ClassToFilePath.Find(ClassName))
+	{
+		OutFilePath = *FilePath;
+	}
+}
+
 void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
 {
 	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
 	{
 		return;
 	}
-	
+
+	int32 NumPendingClasses = PendingClasses.Num();
 	for (auto Itr = PendingClasses.CreateIterator(); Itr; ++Itr)
 	{
 		UClass* Class = GetClassFromName(Itr.Key());
@@ -190,4 +206,11 @@ void FCSTypeRegistry::OnModulesChanged(FName InModuleName, EModuleChangeReason I
 
 		Itr.RemoveCurrent();
 	}
+
+#if WITH_EDITOR
+	if (NumPendingClasses != PendingClasses.Num())
+	{
+		OnPendingClassesProcessed.Broadcast();
+	}
+#endif
 }

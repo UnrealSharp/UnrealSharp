@@ -23,5 +23,6 @@ public:
 	TSharedPtr<FUICommandInfo> OpenDocumentation;
 	TSharedPtr<FUICommandInfo> ReportBug;
 	TSharedPtr<FUICommandInfo> RefreshRuntimeGlue;
+	TSharedPtr<FUICommandInfo> RepairComponents;
 };
 

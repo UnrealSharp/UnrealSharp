@@ -2,7 +2,7 @@
 #include "CSMemberMetaData.h"
 #include "CSUnrealType.h"
 
-struct FCSPropertyMetaData : FCSMemberMetaData
+struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSMemberMetaData
 {
 	virtual ~FCSPropertyMetaData() = default;
 

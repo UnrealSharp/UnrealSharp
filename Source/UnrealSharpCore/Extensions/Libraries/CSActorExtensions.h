@@ -4,6 +4,9 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSActorExtensions.generated.h"
 
+struct FComponentOverrideRecord;
+struct FComponentKey;
+
 UCLASS(meta = (Internal))
 class UCSActorExtensions : public UBlueprintFunctionLibrary
 {
@@ -17,4 +20,11 @@ public:
 	
 	UFUNCTION(meta=(ScriptMethod))
 	static bool IsReplicatedSubObjectRegistered(AActor* Actor, UObject* SubObject);
+
+	UFUNCTION(meta=(ScriptMethod))
+	static UActorComponent* GetComponentTemplate(const AActor* Actor, FName ComponentName);
+
+public:
+	static void CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord);
+	static UActorComponent* FindBestArchetype(UObject* Outer, FComponentKey Key, FName TemplateName = NAME_None);
 };

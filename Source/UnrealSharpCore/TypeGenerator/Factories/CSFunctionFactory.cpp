@@ -150,7 +150,7 @@ void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPt
 {
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
-
+	
 	for (UFunction* VirtualFunction : VirtualFunctions)
 	{
 		CreateOverriddenFunction(Outer, VirtualFunction);

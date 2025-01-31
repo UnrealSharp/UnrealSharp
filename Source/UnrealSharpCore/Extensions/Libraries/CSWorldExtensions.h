@@ -1,9 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSWorldExtensions.generated.h"
 
 USTRUCT()
@@ -21,9 +17,6 @@ struct FCSSpawnActorParameters
 	AActor* Template;
 
 	UPROPERTY()
-	bool DeferConstruction;
-
-	UPROPERTY()
 	ESpawnActorCollisionHandlingMethod SpawnMethod;
 };
 
@@ -34,7 +27,17 @@ class UCSWorldExtensions : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(meta = (ScriptMethod))
 	static AActor* SpawnActor(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters);
-	
+
 	UFUNCTION(meta = (ScriptMethod))
-	static void FinishSpawning(AActor* Actor, const FTransform& UserTransform, bool bIsDefaultTransform);
+	static AActor* SpawnActorDeferred(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters);
+
+	UFUNCTION(meta = (ScriptMethod))
+	static void ExecuteConstruction(AActor* Actor, const FTransform& Transform);
+
+	UFUNCTION(meta = (ScriptMethod))
+	static void PostActorConstruction(AActor* Actor);
+	
+private:
+	static AActor* SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction);
 };
+

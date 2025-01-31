@@ -25,6 +25,7 @@ void FCSCommands::RegisterCommands()
 	UI_COMMAND(OpenDocumentation, "Open Documentation", "Open the Documentation website", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(ReportBug, "Report a Bug", "Open the Issues Github page", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(RefreshRuntimeGlue, "Refresh Runtime Glue", "Refresh the generated runtime glue such as the GameplayTags, AssetIds, AssetTypes, TraceChannel", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(RepairComponents, "Repair Components", "Transfers data from the old component system to the new one. This tool is only relevant if you see double instances of the same component in your BPs.", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

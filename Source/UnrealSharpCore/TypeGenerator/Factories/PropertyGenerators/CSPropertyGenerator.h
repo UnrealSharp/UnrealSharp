@@ -21,9 +21,12 @@ protected:
 	FProperty* NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass = nullptr);
 	
 public:
+
+	static FGuid ConstructGUIDFromString(const FString& Name);
+	static FGuid ConstructGUIDFromName(const FName& Name);
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
 	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType);
-	
+
 };

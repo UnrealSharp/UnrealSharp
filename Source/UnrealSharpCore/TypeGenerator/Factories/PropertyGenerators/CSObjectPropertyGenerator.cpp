@@ -41,3 +41,4 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	
 	return Property;
 }
+

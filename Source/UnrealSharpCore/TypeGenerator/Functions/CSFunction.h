@@ -11,6 +11,10 @@ class UNREALSHARPCORE_API UCSFunctionBase : public UFunction
 	GENERATED_BODY()
 
 public:
+
+	// UFunction interface
+	virtual void Bind() override;
+	// End of UFunction interface
 	
 	void SetManagedMethod(void* InManagedMethod);
 

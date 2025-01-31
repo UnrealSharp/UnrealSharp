@@ -44,7 +44,7 @@ public class UnrealSharpCore : ModuleRules
 				"EnhancedInput", 
 				"UnrealSharpUtilities",
 				"GameplayTags", 
-				"AIModule"
+				"AIModule",
 			}
 			);
 
@@ -58,7 +58,7 @@ public class UnrealSharpCore : ModuleRules
 			{
 				"UnrealEd", 
 				"EditorSubsystem",
-				"BlueprintGraph"
+				"BlueprintGraph",
 			});
 			
 			PublishSolution(Path.Combine(_managedPath, "UnrealSharpPrograms"));

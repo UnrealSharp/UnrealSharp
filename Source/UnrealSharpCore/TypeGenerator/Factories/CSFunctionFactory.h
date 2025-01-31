@@ -28,9 +28,10 @@ public:
 		EFunctionFlags FunctionFlags = FUNC_None,
 		UStruct* ParentFunction = nullptr);
 
+	static void FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function);
+
 private:
 
 	static FProperty* CreateProperty(UCSFunctionBase* Function, const FCSPropertyMetaData& PropertyMetaData);
-	static void FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function);
 	
 };
