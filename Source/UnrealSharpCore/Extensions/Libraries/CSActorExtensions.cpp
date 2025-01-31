@@ -97,7 +97,7 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 
 void UCSActorExtensions::CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord)
 {
-	UActorComponent* BestArchetype = InheritableComponentHandler->FindBestArchetype(Key);
+	UActorComponent* BestArchetype = FindBestArchetype(InheritableComponentHandler->GetOuter(), Key);
 	FName NewComponentTemplateName = BestArchetype->GetFName();
 	
 	if (USCS_Node* SCSNode = Key.FindSCSNode())
@@ -116,4 +116,30 @@ void UCSActorExtensions::CreateNewRecord(const UInheritableComponentHandler* Inh
 	NewRecord->ComponentKey = Key;
 	NewRecord->ComponentClass = NewComponentTemplate->GetClass();
 	NewRecord->ComponentTemplate = NewComponentTemplate;
+}
+
+UActorComponent* UCSActorExtensions::FindBestArchetype(UObject* Outer, FComponentKey Key, FName TemplateName)
+{
+	UActorComponent* ClosestArchetype = nullptr;
+	UBlueprintGeneratedClass* MainClass = Cast<UBlueprintGeneratedClass>(Outer);
+	
+	if (MainClass && Key.GetComponentOwner() && MainClass != Key.GetComponentOwner())
+	{
+		while (!ClosestArchetype && MainClass)
+		{
+			if (MainClass->InheritableComponentHandler)
+			{
+				ClosestArchetype = MainClass->InheritableComponentHandler->GetOverridenComponentTemplate(Key);
+			}
+			
+			MainClass = Cast<UBlueprintGeneratedClass>(MainClass->GetSuperClass());
+		}
+
+		if (!ClosestArchetype)
+		{
+			ClosestArchetype = Key.GetOriginalTemplate(TemplateName);
+		}
+	}
+
+	return ClosestArchetype;
 }

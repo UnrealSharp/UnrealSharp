@@ -26,4 +26,5 @@ public:
 
 public:
 	static void CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord);
+	static UActorComponent* FindBestArchetype(UObject* Outer, FComponentKey Key, FName TemplateName = NAME_None);
 };
