@@ -21,7 +21,7 @@ void FCSAssetTypeAction_CSBlueprint::OpenAssetEditor(const TArray<UObject*>& InO
 		return;
 	}
 
-	// TODO: Replace this to open in the correct solution instance for C#. This is just a placeholder.
-	FString AbsoluteHeaderPath = FPaths::ProjectDir() + OutFilePath;
-	FSourceCodeNavigation::OpenSourceFile(AbsoluteHeaderPath);
+	// TODO: Add support for opening the file in an external editor.
+	// Currently Rider doesn't support opening files from the command line as it opens the file in every instance of Rider, even if I have specified the solution to open it in.
+	// A ticket has been created to try to get it fixed.
 }

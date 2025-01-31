@@ -12,8 +12,6 @@ using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPl
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FString&);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FString&);
-
 UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
 {
