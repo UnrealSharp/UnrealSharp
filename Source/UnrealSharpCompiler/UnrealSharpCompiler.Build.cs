@@ -23,7 +23,8 @@ public class UnrealSharpCompiler : ModuleRules
                 "UnrealSharpCore",
                 "KismetCompiler",
                 "Kismet",
-                "BlueprintGraph"
+                "BlueprintGraph",
+                "UnrealEd"
             }
         );
     }

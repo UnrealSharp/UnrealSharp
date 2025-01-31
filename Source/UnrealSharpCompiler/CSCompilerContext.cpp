@@ -1,4 +1,6 @@
 #include "CSCompilerContext.h"
+
+#include "BlueprintActionDatabase.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"
@@ -39,7 +41,15 @@ void FCSCompilerContext::PostCompile()
 	FKismetCompilerContext::PostCompile();
 
 	UClass* Class = GetMainClass();
-	FCSGeneratedClassBuilder::TryRegisterSubsystem(Class);
+	if (Class == NewClass)
+	{
+		FCSGeneratedClassBuilder::TryRegisterSubsystem(Class);
+		
+		if (GEditor)
+		{
+			FBlueprintActionDatabase::Get().RefreshClassActions(Class);
+		}
+	}
 }
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()

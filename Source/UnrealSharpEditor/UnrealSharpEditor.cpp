@@ -44,21 +44,18 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 
 void FUnrealSharpEditorModule::StartupModule()
 {
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	FDelegateHandle Handle;
-
-	{
-		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-		AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
-	}
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
 	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
-
 	if (!FPaths::DirectoryExists(FullScriptPath))
 	{
 		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
 	}
+
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDelegateHandle Handle;
 	
 	//Bind to directory watcher to look for changes in C# code.
 	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
