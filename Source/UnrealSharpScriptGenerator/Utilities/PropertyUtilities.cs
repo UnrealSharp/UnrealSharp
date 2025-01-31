@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
 using EpicGames.Core;
@@ -303,5 +304,34 @@ public static class PropertyUtilities
         }
 
         return "";
+    }
+
+    public static bool IsCustomStructureType(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function) return false;
+        if (!function.HasCustomStructParamSupport()) return false;
+
+        if (function.GetCustomStructParams().Contains(property.EngineName))
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+            return translator.CanSupportCustomStruct(property);
+        }
+
+        return false;
+    }
+
+    public static List<UhtProperty>? GetPrecedingParams(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function) return null;
+        return function.Children.Cast<UhtProperty>().TakeWhile(param => param != property).ToList();
+    }
+    
+    public static int GetPrecedingCustomStructParams(this UhtProperty property)
+    {
+        if (property.Outer is not UhtFunction function) return 0;
+        if (!function.HasCustomStructParamSupport()) return 0;
+
+        return property.GetPrecedingParams()!
+            .Count(param => param.IsCustomStructureType());
     }
 }

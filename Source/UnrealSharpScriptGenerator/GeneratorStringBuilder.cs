@@ -168,19 +168,25 @@ public class GeneratorStringBuilder : IDisposable
         GenerateTypeSkeleton(type.GetNamespace());
     }
     
-    public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? interfaces = default)
+    public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? nativeInterfaces = default, List<string>? csInterfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
-        string baseSpecifier = !string.IsNullOrEmpty(baseType) ? $" : {baseType}" : string.Empty;
-        string interfacesDeclaration = string.Empty;
+        List<string> inheritingFrom = new List<string>();
+        
+        if (!string.IsNullOrEmpty(baseType)) inheritingFrom.Add(baseType);
 
-        if (interfaces != null)
+        if (nativeInterfaces != null)
         {
-            foreach (UhtType @interface in interfaces)
+            foreach (UhtType @interface in nativeInterfaces)
             {
                 string fullInterfaceName = @interface.GetFullManagedName();
-                interfacesDeclaration += $", {fullInterfaceName}";
+                inheritingFrom.Add(fullInterfaceName);
             }
+        }
+
+        if (csInterfaces != null)
+        {
+            foreach (string @interface in csInterfaces) inheritingFrom.Add(@interface);
         }
 
         string accessSpecifier = "public";
@@ -188,8 +194,11 @@ public class GeneratorStringBuilder : IDisposable
         {
             accessSpecifier = "internal";
         }
+
+        string inheritanceSpecifier =
+            inheritingFrom.Count > 0 ? $" : {string.Join(", ", inheritingFrom)}" : string.Empty;
         
-        AppendLine($"{accessSpecifier} {partialSpecifier}{typeName} {declaredTypeName}{baseSpecifier}{interfacesDeclaration}");
+        AppendLine($"{accessSpecifier} {partialSpecifier}{typeName} {declaredTypeName}{inheritanceSpecifier}");
         OpenBrace();
     }
     
@@ -202,7 +211,7 @@ public class GeneratorStringBuilder : IDisposable
     public void AppendStackAllocFunction(string sizeVariableName, string structName)
     {
         AppendStackAlloc(sizeVariableName);
-        AppendLine($"{ExporterCallbacks.UStructCallbacks}.CallInitializeStruct({structName}, ParamsBuffer);");
+        AppendLine($"{ExporterCallbacks.UFunctionCallbacks}.CallInitializeFunctionParams({structName}, ParamsBuffer);");
     }
 
     public void AppendStackAllocProperty(string sizeVariableName, string sourcePropertyName)
