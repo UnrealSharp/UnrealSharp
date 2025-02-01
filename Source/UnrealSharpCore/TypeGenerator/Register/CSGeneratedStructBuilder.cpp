@@ -39,7 +39,9 @@ void FCSGeneratedStructBuilder::PurgeStruct()
 	Field->MinAlignment = 0;
 	Field->RefLink = nullptr;
 #if WITH_EDITOR
+#if ENGINE_MINOR_VERSION >= 5
 	Field->TotalFieldCount = 0;
+#endif
 	Field->PrimaryStruct = nullptr;
 	Field->EditorData = nullptr;
 #endif
