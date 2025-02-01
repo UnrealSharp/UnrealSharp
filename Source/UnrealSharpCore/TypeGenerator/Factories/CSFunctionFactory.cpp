@@ -1,9 +1,11 @@
 ﻿#include "CSFunctionFactory.h"
 #include "CSPropertyFactory.h"
+#include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Functions/CSFunction_NoParams.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
+#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
@@ -123,15 +125,35 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 			NameToFunctionMap.Add(Function->GetFName(), Function);
 		}
 	}
-	
-	for (const FImplementedInterface& Interface : Outer->Interfaces)
+
+	auto IterateInterfaceFunctions = [&](const UClass* Interface)
 	{
-		for (TFieldIterator<UFunction> It(Interface.Class); It; ++It)
+		for (TFieldIterator<UFunction> It(Interface); It; ++It)
 		{
 			UFunction* InterfaceFunction = *It;
 			InterfaceFunctionMap.Add(InterfaceFunction->GetFName(), InterfaceFunction);
 		}
+	};
+
+#if WITH_EDITOR
+	// The BP compiler purges the interfaces from the UClass pre-compilation, so we need to get them from the metadata instead.
+	for (FName InterfaceName : ClassMetaData->Interfaces)
+	{
+		if (UClass* Interface = FCSTypeRegistry::GetInterfaceFromName(InterfaceName))
+		{
+			IterateInterfaceFunctions(Interface);
+		}
+		else
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("Can't find interface: %s"), *InterfaceName.ToString());
+		}
 	}
+#else
+	for (const FImplementedInterface& Interface : Outer->Interfaces)
+	{
+		IterateThroughInterface(Interface.Class);
+	}
+#endif
 	
 	for (const FName& VirtualFunction : ClassMetaData->VirtualFunctions)
 	{

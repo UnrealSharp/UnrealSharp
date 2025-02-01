@@ -222,6 +222,7 @@ bool UCSManager::LoadAllUserAssemblies()
 		}
 	}
 
+	OnAssembliesLoaded.Broadcast();
 	return true;
 }
 

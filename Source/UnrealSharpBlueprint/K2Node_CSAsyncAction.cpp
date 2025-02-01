@@ -7,10 +7,10 @@
 #include "EdGraph/EdGraphNode.h"
 #include "Extensions/BlueprintActions/CSBlueprintAsyncActionBase.h"
 #include "HAL/Platform.h"
-#include "Kismet/BlueprintAsyncActionBase.h"
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
 #include "Templates/SubclassOf.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UObject/NameTypes.h"
@@ -88,7 +88,7 @@ void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& Ac
 	UClass* NodeClass = GetClass();
 	UClass* TargetType = UCSBlueprintAsyncActionBase::StaticClass();
 
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	for (TObjectIterator<UCSClass> ClassIt; ClassIt; ++ClassIt)
 	{
 		UClass* Class = *ClassIt;
 		if (Class->HasAnyClassFlags(CLASS_Abstract) || !Class->IsChildOf(TargetType))

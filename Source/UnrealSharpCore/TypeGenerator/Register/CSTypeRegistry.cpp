@@ -83,12 +83,12 @@ TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 	// Native classes are populated on the go as they are needed for managed code.
 	if (!FoundClassInfo.IsValid())
 	{
-		FoundClassInfo = MakeShared<FCSharpClassInfo>();
-		FoundClassInfo->TypeHandle = UCSManager::Get().GetTypeHandle(nullptr,
-		 	FUnrealSharpUtils::GetNamespace(Class),
-		 	Class->GetName());
-		FoundClassInfo->Field = Class;
+		FoundClassInfo = MakeShared<FCSharpClassInfo>(Class);
 		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
+	}
+	else
+	{
+		FoundClassInfo->TryUpdateTypeHandle();
 	}
 	
 	return FoundClassInfo.ToSharedRef();
