@@ -39,12 +39,6 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		Blueprint->ParentClass = SuperClass;
 		Field->ClassGeneratedBy = Blueprint;
 	}
-	else
-	{
-		Blueprint->CachedDependents.Empty();
-		Blueprint->CachedDependencies.Empty();
-		Blueprint->CachedUDSDependencies.Empty();
-	}
 
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
 }

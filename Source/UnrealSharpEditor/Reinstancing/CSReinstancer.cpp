@@ -344,6 +344,10 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
+	}
+
+	for (UBlueprint* Blueprint : ToUpdate)
+	{
 		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
 		
