@@ -25,6 +25,7 @@
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "Logging/StructuredLog.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
@@ -159,6 +160,14 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 
 void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 {
+	if (HotReloadStatus == FailedToUnload)
+	{
+		// If we failed to unload an assembly, we can't hot reload until the editor is restarted.
+		bHotReloadFailed = true;
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Hot reload is disabled until the editor is restarted.");
+		return;
+	}
+	
 	TArray<FString> ProjectPaths;
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 	
@@ -203,8 +212,12 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		if (!CSharpManager.UnloadAssembly(ProjectName))
 		{
-			HotReloadStatus = Inactive;
-			bHotReloadFailed = false;
+			HotReloadStatus = FailedToUnload;
+			bHotReloadFailed = true;
+
+			FString DialogText = FString::Printf(TEXT("Failed to unload %s. Hot reload will now be disabled until editor restart.\n\nPossible causes: Strong GC handles, running threads, etc."), *ProjectName);
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+
 			return;
 		}
 	}

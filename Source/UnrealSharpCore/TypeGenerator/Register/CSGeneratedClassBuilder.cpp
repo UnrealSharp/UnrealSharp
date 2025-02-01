@@ -39,12 +39,6 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		Blueprint->ParentClass = SuperClass;
 		Field->ClassGeneratedBy = Blueprint;
 	}
-	else
-	{
-		Blueprint->CachedDependents.Empty();
-		Blueprint->CachedDependencies.Empty();
-		Blueprint->CachedUDSDependencies.Empty();
-	}
 
 	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
 }
@@ -82,7 +76,7 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 
 	//Create the default object for this class
 	UObject* DefaultObject = Field->GetDefaultObject();
-	SetupDefaultTickSettings(DefaultObject);
+	SetupDefaultTickSettings(DefaultObject, Field);
 
 	Field->SetUpRuntimeReplicationData();
 	Field->UpdateCustomPropertyListForPostConstruction();
@@ -126,18 +120,37 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
 }
 
-void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject) const
+void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
 {
+	FTickFunction* TickFunction;
 	if (AActor* Actor = Cast<AActor>(DefaultObject))
 	{
-		Actor->PrimaryActorTick.bCanEverTick = Field->CanTick();
-		Actor->PrimaryActorTick.bStartWithTickEnabled = Field->CanTick();
+		TickFunction = &Actor->PrimaryActorTick;
 	}
 	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
 	{
-		ActorComponent->PrimaryComponentTick.bCanEverTick = Field->CanTick();
-		ActorComponent->PrimaryComponentTick.bStartWithTickEnabled = Field->CanTick();
+		TickFunction = &ActorComponent->PrimaryComponentTick;
 	}
+	else
+	{
+		return;
+	}
+
+	UFunction* FoundTick = nullptr;
+	while (Class && !Class->HasAnyClassFlags(CLASS_Native))
+	{
+		FoundTick = Class->FindFunctionByName(TEXT("ReceiveTick"), EIncludeSuperFlag::ExcludeSuper);
+		if (FoundTick)
+		{
+			break;
+		}
+
+		Class = Class->GetSuperClass();
+	}
+	
+	bool bCanTick = FoundTick != nullptr;
+	TickFunction->bCanEverTick = bCanTick;
+	TickFunction->bStartWithTickEnabled = bCanTick;
 }
 
 void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces)
