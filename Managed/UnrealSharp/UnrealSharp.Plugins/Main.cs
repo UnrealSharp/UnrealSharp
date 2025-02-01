@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Loader;
 using UnrealSharp.Interop;
 using UnrealSharp.Logging;
 
@@ -21,8 +20,6 @@ public static class Main
         try
         {
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-
-            AlcReloadCfg.Configure(true);
 
             SetupDllImportResolver(assemblyPath);
 

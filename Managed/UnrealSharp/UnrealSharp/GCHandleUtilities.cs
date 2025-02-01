@@ -7,11 +7,7 @@ namespace UnrealSharp;
 
 public static class GcHandleUtilities
 {
-    private static readonly ConditionalWeakTable<AssemblyLoadContext, object?> AlCsBeingUnloaded = new();
     private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongReferencesByAlc = new();
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static bool IsAlcBeingUnloaded(AssemblyLoadContext alc) => AlCsBeingUnloaded.TryGetValue(alc, out _);
 
     private static AssemblyLoadContext? GetAssemblyLoadContext(object obj)
     {
@@ -21,19 +17,13 @@ public static class GcHandleUtilities
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnAlcUnloading(AssemblyLoadContext alc)
     {
-        AlCsBeingUnloaded.Add(alc, null);
         StrongReferencesByAlc.TryRemove(alc, out _);
     }
 
     public static GCHandle AllocateStrongPointer(object value)
     {
-        if (!AlcReloadCfg.IsAlcReloadingEnabled)
-        {
-            return GCHandle.Alloc(value, GCHandleType.Normal);
-        }
-
         var alc = GetAssemblyLoadContext(value);
-        if (alc == null || IsAlcBeingUnloaded(alc))
+        if (alc == null)
         {
             return GCHandle.Alloc(value, GCHandleType.Weak);
         }
@@ -58,16 +48,13 @@ public static class GcHandleUtilities
 
     public static void Free(GCHandle handle)
     {
-        if (AlcReloadCfg.IsAlcReloadingEnabled)
+        object? target = handle.Target;
+        if (target != null)
         {
-            var target = handle.Target;
-            if (target != null)
+            var alc = GetAssemblyLoadContext(target);
+            if (alc != null && StrongReferencesByAlc.TryGetValue(alc, out var strongReferences))
             {
-                var alc = GetAssemblyLoadContext(target);
-                if (alc != null && StrongReferencesByAlc.TryGetValue(alc, out var strongReferences))
-                {
-                    strongReferences.TryRemove(handle, out _);
-                }
+                strongReferences.TryRemove(handle, out _);
             }
         }
 
