@@ -1,4 +1,6 @@
 ﻿#include "CSReinstancer.h"
+
+#include "BlueprintCompilationManager.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
@@ -342,7 +344,10 @@ void FCSReinstancer::UpdateBlueprints()
 	for (UBlueprint* Blueprint : ToUpdate)
 	{
 		FBlueprintEditorUtils::RefreshAllNodes(Blueprint);
+		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
+		
+	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)
