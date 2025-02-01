@@ -13,7 +13,7 @@ public:
 
 	// FKismetCompilerContext interface
 	virtual void FinishCompilingClass(UClass* Class) override;
-	virtual void PostCompile() override;
+	virtual void OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context) override;
 	virtual void CreateClassVariablesFromBlueprint() override;
 	virtual void CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& OldCDO) override;
 	virtual void SpawnNewClass(const FString& NewClassName) override;

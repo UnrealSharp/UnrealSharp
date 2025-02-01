@@ -36,11 +36,13 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 }
 
-void FCSCompilerContext::PostCompile()
+void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context)
 {
-	FKismetCompilerContext::PostCompile();
-
-	UClass* Class = GetMainClass();
+	FKismetCompilerContext::OnPostCDOCompiled(Context);
+	
+	FCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
+	
+	UCSClass* Class = GetMainClass();
 	if (Class == NewClass)
 	{
 		FCSGeneratedClassBuilder::TryRegisterSubsystem(Class);
