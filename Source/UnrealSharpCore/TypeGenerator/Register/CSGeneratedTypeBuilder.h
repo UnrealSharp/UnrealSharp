@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "CSDeveloperSettings.h"
+#include "CSUnrealSharpSettings.h"
 #include "CSMetaDataUtils.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
@@ -73,7 +73,7 @@ private:
 			Field->SetMetaData(*DisplayNameKey, *TypeMetaData->Name.ToString());
 		}
 		
-		if (GetDefault<UCSDeveloperSettings>()->bSuffixGeneratedTypes)
+		if (GetDefault<UCSUnrealSharpSettings>()->bSuffixGeneratedTypes)
 		{
 			FString DisplayName = Field->GetMetaData(*DisplayNameKey);
 			DisplayName += TEXT(" (C#)");

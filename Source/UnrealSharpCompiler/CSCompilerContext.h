@@ -26,6 +26,10 @@ private:
 	void GenerateFunctions() const;
 	UCSClass* GetMainClass() const;
 	TSharedRef<const FCSharpClassInfo> GetClassInfo() const;
+
+	bool IsDeveloperSettings() const;
+	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
+	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
 	
 };
 
