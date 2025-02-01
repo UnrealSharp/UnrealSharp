@@ -6,6 +6,7 @@
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
+#include "TypeGenerator/CSSkeletonClass.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -214,4 +215,9 @@ UClass* FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(UClass* Class)
 bool FCSGeneratedClassBuilder::IsManagedType(const UClass* Class)
 {
 	return Class->GetClass() == UCSClass::StaticClass();
+}
+
+bool FCSGeneratedClassBuilder::IsSkeletonType(const UClass* Class)
+{
+	return Class->GetClass() == UCSSkeletonClass::StaticClass();
 }

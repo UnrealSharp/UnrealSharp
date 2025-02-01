@@ -10,6 +10,8 @@
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
 #include "Templates/SubclassOf.h"
+#include "TypeGenerator/CSSkeletonClass.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UObject/NameTypes.h"
@@ -87,10 +89,10 @@ void UK2Node_CSCancellableAsyncAction::GetMenuActions(FBlueprintActionDatabaseRe
 	UClass* NodeClass = GetClass();
 	UClass* TargetType = UCSCancellableAsyncAction::StaticClass();
 
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	for (TObjectIterator<UBlueprintGeneratedClass> ClassIt; ClassIt; ++ClassIt)
 	{
 		UClass* Class = *ClassIt;
-		if (Class->HasAnyClassFlags(CLASS_Abstract) || !Class->IsChildOf(TargetType))
+		if (Class->HasAnyClassFlags(CLASS_Abstract) || !Class->IsChildOf(TargetType) || FCSGeneratedClassBuilder::IsSkeletonType(Class))
 		{
 			continue;
 		}

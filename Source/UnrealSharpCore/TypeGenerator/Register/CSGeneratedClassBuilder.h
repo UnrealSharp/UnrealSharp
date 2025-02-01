@@ -21,6 +21,7 @@ public:
 	static UClass* GetFirstNonBlueprintClass(UClass* Class);
 
 	static bool IsManagedType(const UClass* Class);
+	static bool IsSkeletonType(const UClass* Class);
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
 	static void TryRegisterSubsystem(UClass* ManagedClass);
