@@ -14,7 +14,9 @@ enum HotReloadStatus
     // When the DirectoryWatcher picks up on new code changes that haven't been Hot Reloaded yet
     PendingReload,
     // Actively Hot Reloading
-    Active
+    Active,
+    // Failed to unload an assembly during Hot Reload
+    FailedToUnload
 };
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
