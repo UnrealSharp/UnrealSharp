@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.StaticVars;
@@ -18,10 +19,12 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onPieEndHandle;
     
+    private readonly FEditorDelegates.FOnPIEEvent _onPIEndDelegate;
+
     public FGameStaticVar()
     {
-        FEditorDelegates.FOnPIEEvent onPIEndDelegate = OnPIEStartEnd;
-        IntPtr onPIEStartEndFuncPtr = Marshal.GetFunctionPointerForDelegate(onPIEndDelegate);
+        _onPIEndDelegate = OnPIEStartEnd;
+        IntPtr onPIEStartEndFuncPtr = Marshal.GetFunctionPointerForDelegate(_onPIEndDelegate);
         FEditorDelegatesExporter.CallBindEndPIE(onPIEStartEndFuncPtr, out _onPieEndHandle);
         FEditorDelegatesExporter.CallBindStartPIE(onPIEStartEndFuncPtr, out _onPieStartEndHandle);
     }
@@ -31,15 +34,25 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
         Value = value;
     }
     
+    ~FGameStaticVar()
+    {
+        Cleanup();
+    }
+
+    protected override void OnAlcUnloading(AssemblyLoadContext alc)
+    {
+        base.OnAlcUnloading(alc);
+        Cleanup();
+    }
+
     private void OnPIEStartEnd(NativeBool simulating)
     {
         ResetToDefault();
     }
     
-    ~FGameStaticVar()
+    void Cleanup()
     {
         ResetToDefault();
-        
         FEditorDelegatesExporter.CallUnbindStartPIE(_onPieStartEndHandle);
         FEditorDelegatesExporter.CallUnbindEndPIE(_onPieEndHandle);
     }

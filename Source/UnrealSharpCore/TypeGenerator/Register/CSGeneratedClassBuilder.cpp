@@ -6,14 +6,26 @@
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
+#include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 
+FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData): TCSGeneratedTypeBuilder(InTypeMetaData)
+{
+	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
+}
+
 void FCSGeneratedClassBuilder::StartBuildingType()
 {
 	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
+	
+	if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
+	{
+		SuperClass = *RedirectedClass;
+	}
+	
 	TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
 	
 	Field->SetClassMetaData(ClassInfo);

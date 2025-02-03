@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.StaticVars;
@@ -60,4 +61,12 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     {
         _worldToValue.Remove(world);
     }
+
+#if !PACKAGE
+    protected override void OnAlcUnloading(AssemblyLoadContext alc)
+    {
+        base.OnAlcUnloading(alc);
+        FWorldDelegatesExporter.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
+    }
+#endif
 }

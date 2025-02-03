@@ -1,6 +1,8 @@
 #include "CSCompilerContext.h"
 
 #include "BlueprintActionDatabase.h"
+#include "ISettingsModule.h"
+#include "UnrealSharpCompiler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"
@@ -34,6 +36,7 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	Class->ClassFlags |= TypeMetaData->ClassFlags;
 	
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
+	TryInitializeAsDeveloperSettings(Class);
 }
 
 void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context)
@@ -73,6 +76,8 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& InOldCDO)
 {
 	FKismetCompilerContext::CleanAndSanitizeClass(ClassToClean, InOldCDO);
+
+	TryDeinitializeAsDeveloperSettings(InOldCDO);
 
 	// Too late to generate functions in CreateFunctionList for child blueprints
 	GenerateFunctions();
@@ -157,6 +162,41 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 TSharedRef<const FCSharpClassInfo> FCSCompilerContext::GetClassInfo() const
 {
 	return GetMainClass()->GetClassInfo();
+}
+
+bool FCSCompilerContext::IsDeveloperSettings() const
+{
+	return Blueprint->GeneratedClass == NewClass && NewClass->IsChildOf<UDeveloperSettings>();
+}
+
+void FCSCompilerContext::TryInitializeAsDeveloperSettings(const UClass* Class) const
+{
+	if (!IsDeveloperSettings())
+	{
+		return;
+	}
+
+	UDeveloperSettings* Settings = static_cast<UDeveloperSettings*>(Class->GetDefaultObject());
+	ISettingsModule& SettingsModule = FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
+		
+	SettingsModule.RegisterSettings(Settings->GetContainerName(), Settings->GetCategoryName(), Settings->GetSectionName(),
+		Settings->GetSectionText(),
+		Settings->GetSectionDescription(),
+		Settings);
+
+	Settings->LoadConfig();
+}
+
+void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) const
+{
+	if (!IsValid(Settings) || !IsDeveloperSettings())
+	{
+		return;
+	}
+
+	ISettingsModule& SettingsModule = FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
+	UDeveloperSettings* DeveloperSettings = static_cast<UDeveloperSettings*>(Settings);
+	SettingsModule.UnregisterSettings(DeveloperSettings->GetContainerName(), DeveloperSettings->GetCategoryName(), DeveloperSettings->GetSectionName());
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
-#include "CSDeveloperSettings.generated.h"
+#include "CSUnrealSharpSettings.generated.h"
 
 UENUM()
 enum EAutomaticHotReloadMethod : uint8
@@ -18,7 +18,7 @@ enum EAutomaticHotReloadMethod : uint8
 };
 
 UCLASS(config = EditorPerProjectUserSettings, meta = (DisplayName = "UnrealSharp Settings"))
-class UNREALSHARPCORE_API UCSDeveloperSettings : public UDeveloperSettings
+class UNREALSHARPCORE_API UCSUnrealSharpSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 

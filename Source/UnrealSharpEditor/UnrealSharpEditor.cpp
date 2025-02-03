@@ -19,7 +19,7 @@
 #include "Engine/AssetManagerSettings.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "UnrealSharpCore/CSManager.h"
-#include "UnrealSharpCore/CSDeveloperSettings.h"
+#include "UnrealSharpCore/CSUnrealSharpSettings.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Kismet2/BlueprintEditorUtils.h"
@@ -111,7 +111,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		return;
 	}
 	
-	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
@@ -624,7 +624,7 @@ void FUnrealSharpEditorModule::SuggestProjectSetup()
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 {
-	const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
 	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() && FApp::HasFocus())
 	{
 		StartHotReload();

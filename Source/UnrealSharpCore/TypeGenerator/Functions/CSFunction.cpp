@@ -1,5 +1,5 @@
 #include "CSFunction.h"
-#include "CSDeveloperSettings.h"
+#include "CSUnrealSharpSettings.h"
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "TypeGenerator/CSClass.h"
@@ -64,7 +64,7 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 #if WITH_EDITOR
 	if (!bSuccess)
 	{
-		const UCSDeveloperSettings* Settings = GetDefault<UCSDeveloperSettings>();
+		const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
 		EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::NonFatalError;
 		
 		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
