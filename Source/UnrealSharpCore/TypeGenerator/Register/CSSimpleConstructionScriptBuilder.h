@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Engine/SCS_Node.h"
+
 struct FCSPropertyMetaData;
 
 class  FCSSimpleConstructionScriptBuilder
