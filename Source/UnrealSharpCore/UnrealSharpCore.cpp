@@ -1,13 +1,4 @@
-﻿#if defined(__APPLE__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpragma-once-outside-header"
-#endif
-#pragma once
-#if defined(__APPLE__)
-#pragma clang diagnostic pop
-#endif
-
-#include "UnrealSharpCore.h"
+﻿#include "UnrealSharpCore.h"
 #include "CoreMinimal.h"
 #include "CSManager.h"
 #include "Modules/ModuleManager.h"
