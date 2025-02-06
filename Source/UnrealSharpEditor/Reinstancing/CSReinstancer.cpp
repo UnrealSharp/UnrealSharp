@@ -18,9 +18,10 @@ FCSReinstancer& FCSReinstancer::Get()
 
 void FCSReinstancer::Initialize()
 {
-	FCSTypeRegistry::Get().GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
-	FCSTypeRegistry::Get().GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
-	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
+	FCSTypeRegistry& TypeRegistry = FCSTypeRegistry::Get();
+	TypeRegistry.GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
+	TypeRegistry.GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
+	TypeRegistry.GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
 }
 
 void FCSReinstancer::AddPendingClass(UClass* NewClass)
@@ -117,6 +118,11 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 
 void FCSReinstancer::FinishHotReload()
 {
+	if (StructsToReinstance.Num() == 0 && InterfacesToReinstance.Num() == 0 && ClassesToReinstance.Num() == 0)
+    {
+        return;
+    }
+	
 	UpdateBlueprints();
 	FixDataTables();
 	

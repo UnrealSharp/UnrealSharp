@@ -10,7 +10,6 @@
 #include "GameplayTagsSettings.h"
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
-#include "KismetCompilerMisc.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
 #include "SubobjectDataSubsystem.h"
@@ -24,15 +23,14 @@
 #include "Interfaces/IMainFrameModule.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/DebuggerCommands.h"
-#include "Kismet2/KismetEditorUtilities.h"
 #include "Logging/StructuredLog.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "TypeGenerator/CSClass.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -151,7 +149,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		}
 		else
 		{
-			StartHotReload();
+			StartHotReload(false);
 		}
 		
 		return;

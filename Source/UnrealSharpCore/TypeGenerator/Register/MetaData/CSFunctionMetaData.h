@@ -17,4 +17,17 @@ struct FCSFunctionMetaData : FCSMemberMetaData
 	//End of implementation
 
 	bool HasReturnValue() const { return ReturnValue.Type != nullptr; }
+
+	bool operator==(const FCSFunctionMetaData& Other) const
+	{
+		if (!FCSMemberMetaData::operator==(Other))
+		{
+			return false;
+		}
+
+		return  Parameters == Other.Parameters &&
+				(!HasReturnValue() || ReturnValue == Other.ReturnValue) &&
+				IsVirtual == Other.IsVirtual &&
+				FunctionFlags == Other.FunctionFlags;
+	}
 };

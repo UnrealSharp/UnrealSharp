@@ -34,7 +34,7 @@ struct FGCHandle
 	bool IsNull() const { return !Handle.IntPtr; }
 	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
 	const GCHandleIntPtr& GetHandle() const { return Handle; }
-	void* GetIntPtr() const { return Handle.IntPtr; };
+	uint8* GetPointer() const { return Handle.IntPtr; };
 	
 	void Dispose();
 
@@ -47,6 +47,16 @@ struct FGCHandle
 	FGCHandle()
 	{
 		
+	}
+
+	FGCHandle(GCHandleIntPtr InHandle, GCHandleType InType) : Handle(InHandle), Type(InType)
+	{
+		
+	}
+
+	FGCHandle(uint8* InHandle, GCHandleType InType) : Type(InType)
+	{
+		Handle.IntPtr = InHandle;
 	}
 
 	FGCHandle(GCHandleIntPtr InHandle) : Handle(InHandle)

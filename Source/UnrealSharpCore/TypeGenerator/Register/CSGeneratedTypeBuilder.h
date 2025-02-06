@@ -15,7 +15,15 @@ public:
 	
 	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData) : TypeMetaData(InTypeMetaData), Field(nullptr)
 	{
-	
+	}
+
+	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData, TField* InField) : TypeMetaData(InTypeMetaData), Field(InField)
+	{
+	}
+
+	TCSGeneratedTypeBuilder() : Field(nullptr)
+	{
+		
 	}
 
 	TField* CreateType()
@@ -40,7 +48,8 @@ public:
 	}
 
 	// Start TCSGeneratedTypeBuilder interface
-	virtual void StartBuildingType() = 0;
+	virtual void RebuildType() = 0;
+	virtual void UpdateType() = 0;
 	virtual FName GetFieldName() const { return TypeMetaData->Name; }
 	// End of interface
 

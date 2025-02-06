@@ -1,77 +1,8 @@
 #include "CSTypeRegistry.h"
-
-#include "UnrealSharpCore/UnrealSharpCore.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
 #include "TypeInfo/CSClassInfo.h"
-#include "UnrealSharpUtilities/UnrealSharpUtils.h"
-
-template<typename T>
-void InitializeBuilders(TMap<FName, T>& Map)
-{
-	for (auto It = Map.CreateIterator(); It; ++It)
-	{
-		It->Value->InitializeBuilder();
-	}
-}
-
-bool FCSTypeRegistry::ProcessMetaData(const FString& FilePath)
-{
-	if (!FPaths::FileExists(FilePath))
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find metadata file at: %s"), *FilePath);
-		return false;
-	}
-
-	FString JsonString;
-	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load MetaDataPath at: %s"), *FilePath);
-		return false;
-	}
-
-	TSharedPtr<FJsonObject> JsonObject;
-	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject) || !JsonObject.IsValid())
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to parse JSON at: %s"), *FilePath);
-		return false;
-	}
-	
-	for (const TSharedPtr<FJsonValue>& MetaData : JsonObject->GetArrayField(TEXT("ClassMetaData")))
-	{
-		TSharedPtr<FCSharpClassInfo> ClassInfo = MakeShared<FCSharpClassInfo>(MetaData);
-		ManagedClasses.Add(ClassInfo->TypeMetaData->Name, ClassInfo);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
-	{
-		TSharedPtr<FCSharpStructInfo> StructInfo = MakeShared<FCSharpStructInfo>(MetaData);
-		ManagedStructs.Add(StructInfo->TypeMetaData->Name, StructInfo);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : EnumMetaData)
-	{
-		TSharedPtr<FCSharpEnumInfo> EnumInfo = MakeShared<FCSharpEnumInfo>(MetaData);
-		ManagedEnums.Add(EnumInfo->TypeMetaData->Name, EnumInfo);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : InterfacesMetaData)
-	{
-		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = MakeShared<FCSharpInterfaceInfo>(MetaData);
-		ManagedInterfaces.Add(InterfaceInfo->TypeMetaData->Name, InterfaceInfo);
-	}
-
-	InitializeBuilders(ManagedClasses);
-	InitializeBuilders(ManagedStructs);
-	InitializeBuilders(ManagedEnums);
-	InitializeBuilders(ManagedInterfaces);
-	
-	return true;
-}
 
 TSharedRef<FCSharpClassInfo> FCSTypeRegistry::FindManagedType(UClass* Class)
 {

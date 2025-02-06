@@ -6,14 +6,22 @@
 #include "TypeGenerator/Functions/CSFunction_NoParams.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
-#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-	NewFunction->SetManagedMethod(TryGetManagedFunction(Outer, Name));
+
+	if (UCSClass* ManagedClass = NewFunction->GetOwningManagedClass())
+	{
+		TSharedPtr<FCSAssembly> Assembly = ManagedClass->GetOwningAssembly();
+		const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *Name.ToString());
+		
+		TSharedPtr<FGCHandle> MethodHandle = Assembly->GetMethodHandle(ManagedClass, InvokeMethodName);
+		
+		NewFunction->SetManagedMethod(MethodHandle);
+	}
 	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;
@@ -185,18 +193,6 @@ void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFuncti
 	{
 		CreateFunctionFromMetaData(Outer, FunctionMetaData);
 	}
-}
-
-void* FCSFunctionFactory::TryGetManagedFunction(UClass* Outer, const FName& MethodName)
-{
-	UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Outer);
-	if (!IsValid(ManagedClass))
-	{
-		return nullptr;
-	}
-	
-	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *MethodName.ToString());
-	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(ManagedClass->GetClassInfo()->TypeHandle, *InvokeMethodName);
 }
 
 void FCSFunctionFactory::AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function)

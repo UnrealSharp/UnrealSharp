@@ -2,7 +2,6 @@
 
 #include "BlueprintActionDatabase.h"
 #include "ISettingsModule.h"
-#include "UnrealSharpCompiler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"

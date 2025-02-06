@@ -8,7 +8,7 @@ namespace UnrealSharp.Interop;
 public static class UnmanagedCallbacks
 {
     [UnmanagedCallersOnly]
-    internal static IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandle)
+    internal static IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandlePtr)
     {
         try
         {
@@ -17,21 +17,14 @@ public static class UnmanagedCallbacks
                 throw new ArgumentNullException(nameof(nativeObject));
             }
             
-            RuntimeTypeHandle handle = RuntimeTypeHandle.FromIntPtr(typeHandle);
-
-            if (handle == null)
+            GCHandle handle = GCHandle.FromIntPtr(typeHandlePtr);
+            
+            if (handle.Target is not Type type)
             {
-                throw new ArgumentNullException(nameof(nativeObject));
+                throw new ArgumentNullException(nameof(typeHandlePtr));
             }
 
-            Type? typeToCreate = Type.GetTypeFromHandle(handle);
-
-            if (typeToCreate == null)
-            {
-                throw new ArgumentNullException(nameof(nativeObject));
-            }
-
-            return UnrealSharpObject.Create(typeToCreate, nativeObject);
+            return UnrealSharpObject.Create(type, nativeObject);
         }
         catch (Exception ex)
         {
@@ -47,16 +40,15 @@ public static class UnmanagedCallbacks
         try
         {
             string methodNameString = new string(methodName);
-            RuntimeTypeHandle typeHandle = RuntimeTypeHandle.FromIntPtr(typeHandlePtr);
-            Type? foundType = Type.GetTypeFromHandle(typeHandle);
-
-            if (typeHandle == null || foundType == null)
+            GCHandle typeHandle = GCHandle.FromIntPtr(typeHandlePtr);
+            
+            if (typeHandle.Target is not Type type)
             {
-                throw new Exception("Couldn't find type with TypeHandle");
+                throw new Exception("Invalid type handle");
             }
             
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var currentType = foundType;
+            var currentType = type;
             
             while (currentType != null)
             {
@@ -64,7 +56,7 @@ public static class UnmanagedCallbacks
 
                 if (method != null)
                 {
-                    return method.MethodHandle.GetFunctionPointer();
+                    return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(method));
                 }
                 
                 currentType = currentType.BaseType;
@@ -101,6 +93,7 @@ public static class UnmanagedCallbacks
                         return foundType;
                     }
                 }
+                
                 throw new Exception($"The type '{fullTypeName}' was not found in any loaded assemblies.");
             }
 
@@ -117,7 +110,7 @@ public static class UnmanagedCallbacks
         catch (TypeLoadException ex)
         {
             LogUnrealSharp.LogError($"TypeLoadException while trying to look up managed type: {ex.Message}");
-            return default;
+            return IntPtr.Zero;
         }
     }
     
@@ -141,7 +134,7 @@ public static class UnmanagedCallbacks
                 string fullName = (string)attributeData.ConstructorArguments[1].Value!;
                 if (fullName == fullTypeName)
                 {
-                    return type.TypeHandle.Value;
+                    return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(type));
                 }
             }
         }
@@ -151,20 +144,28 @@ public static class UnmanagedCallbacks
     
     [UnmanagedCallersOnly]
     public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle,
-        delegate*<object, IntPtr, IntPtr, void> methodPtr, 
+        IntPtr methodHandle, 
         IntPtr argumentsBuffer, 
         IntPtr returnValueBuffer, 
         IntPtr exceptionTextBuffer)
     {
         try
         {
+            GCHandle handle = GCHandle.FromIntPtr(methodHandle);
+            
+            if (handle.Target is not MethodInfo methodInfo)
+            {
+                throw new ArgumentNullException(nameof(methodInfo));
+            }
+            
             object? managedObject = GCHandle.FromIntPtr(managedObjectHandle).Target;
             
             if (managedObject == null)
             {
                 throw new ArgumentNullException(nameof(managedObject));
             }
-            
+
+            delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodInfo.MethodHandle.GetFunctionPointer();
             methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
             return 0;
         }

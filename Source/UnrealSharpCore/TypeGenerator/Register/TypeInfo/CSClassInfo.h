@@ -1,12 +1,12 @@
 ﻿#pragma once
 
 #include "CSTypeInfo.h"
+#include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "UObject/Class.h"
 
 struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, UClass, FCSGeneratedClassBuilder>
 {
-	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData);
+	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData,const TSharedPtr<FCSAssembly>& InOwningAssembly);
 	FCSharpClassInfo(UClass* InField);
 
 	// TCharpTypeInfo interface implementation
@@ -15,11 +15,11 @@ struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, 
 	
 	void TryUpdateTypeHandle();
 
-	// Pointer to the TypeHandle in CSharp
-	uint8* TypeHandle;
+	TSharedPtr<FGCHandle> TypeHandle;
 
 private:
-	static uint8* GetHandle(UClass* Class);
+	void OnNewClassOrModified(UClass* Class);
+	uint8* GetHandle(UClass* Class);
 	void OnAssembliesLoaded();
 	
 	bool bDirtyHandle = false;

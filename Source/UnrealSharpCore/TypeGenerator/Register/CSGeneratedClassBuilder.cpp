@@ -17,7 +17,7 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
 }
 
-void FCSGeneratedClassBuilder::StartBuildingType()
+void FCSGeneratedClassBuilder::RebuildType()
 {
 	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
 	
@@ -27,8 +27,7 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	}
 	
 	TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
-	
-	Field->SetClassMetaData(ClassInfo);
+	Field->SetClassInfo(ClassInfo);
 	Field->SetSuperStruct(SuperClass);
 	
 #if WITH_EDITOR
@@ -36,6 +35,11 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 #else
 	CreateClass(SuperClass);
 #endif
+}
+
+void FCSGeneratedClassBuilder::UpdateType()
+{
+	FCSTypeRegistry::Get().GetOnClassModifiedEvent().Broadcast(Field);
 }
 
 #if WITH_EDITOR
@@ -106,8 +110,7 @@ FName FCSGeneratedClassBuilder::GetFieldName() const
 void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	UCSClass* ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
-	TSharedPtr<const FCSharpClassInfo> ClassInfo = ManagedClass->GetClassInfo();
-
+	
 	//Execute the native class' constructor first.
 	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
 	NativeClass->ClassConstructor(ObjectInitializer);
@@ -129,7 +132,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj(), ClassInfo->TypeHandle);
+	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
@@ -212,10 +215,16 @@ void FCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TShared
 
 UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
 {
+	if (Class->HasAnyClassFlags(CLASS_Native))
+	{
+		return nullptr;
+	}
+	
 	while (Class && !IsManagedType(Class))
 	{
 		Class = Class->GetSuperClass();
 	}
+	
 	return Cast<UCSClass>(Class);
 }
 

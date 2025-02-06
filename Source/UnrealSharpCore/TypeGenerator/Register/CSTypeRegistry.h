@@ -6,8 +6,8 @@
 #include "TypeInfo/CSInterfaceInfo.h"
 #include "TypeInfo/CSStructInfo.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewClass, UClass*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewStruct, UScriptStruct*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UClass*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSStructEvent, UScriptStruct*);
 DECLARE_MULTICAST_DELEGATE_OneParam(PFOnNewEnum, UEnum*);
 
 DECLARE_MULTICAST_DELEGATE(FOnPendingClassesProcessed);
@@ -33,14 +33,17 @@ public:
 		return Instance;
 	}
 
-	bool ProcessMetaData(const FString& FilePath);
-
 	TSharedRef<FCSharpClassInfo> FindManagedType(UClass* Class);
 	void AddPendingClass(FName ParentClass, FCSharpClassInfo* NewClass);
 
-	FOnNewClass& GetOnNewClassEvent() { return OnNewClass; }
-	FOnNewStruct& GetOnNewStructEvent() { return OnNewStruct; }
-	FOnNewClass& GetOnNewInterfaceEvent() { return OnNewInterface; }
+	FCSClassEvent& GetOnNewClassEvent() { return OnNewClass; }
+	FCSClassEvent& GetOnNewInterfaceEvent() { return OnNewInterface; }
+	FCSStructEvent& GetOnNewStructEvent() { return OnNewStruct; }
+
+	FCSClassEvent& GetOnClassModifiedEvent() { return OnClassModified; }
+	FCSClassEvent& GetOnInterfaceModifiedEvent() { return OnInterfaceModified; }
+	FCSStructEvent& GetOnStructModifiedEvent() { return OnStructModified; }
+	
 	FOnPendingClassesProcessed& GetOnPendingClassesProcessedEvent() { return OnPendingClassesProcessed; }
 
 	static UClass* GetClassFromName(FName Name);
@@ -83,9 +86,14 @@ private:
 	TMap<FName, FPendingClasses> PendingClasses;
 	TMap<FName, FString> ClassToFilePath;
 	
-	FOnNewClass OnNewClass;
-	FOnNewClass OnNewInterface;
-	FOnNewStruct OnNewStruct;
+	FCSClassEvent OnNewClass;
+	FCSClassEvent OnNewInterface;
+	FCSStructEvent OnNewStruct;
+
+	FCSClassEvent OnClassModified;
+	FCSClassEvent OnInterfaceModified;
+	FCSStructEvent OnStructModified;
+	
 	FOnPendingClassesProcessed OnPendingClassesProcessed;
 	
 };

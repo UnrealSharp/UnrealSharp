@@ -17,7 +17,7 @@ void FCSPropertyFactory::Initialize()
 	for (UCSPropertyGenerator* PropertyGenerator : FoundPropertyGenerators)
 	{
 		PropertyGenerators.Add(PropertyGenerator);
-	}
+	}	
 }
 
 FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)

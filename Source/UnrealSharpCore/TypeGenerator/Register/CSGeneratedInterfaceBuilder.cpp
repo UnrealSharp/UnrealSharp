@@ -2,7 +2,7 @@
 #include "CSTypeRegistry.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
-void FCSGeneratedInterfaceBuilder::StartBuildingType()
+void FCSGeneratedInterfaceBuilder::RebuildType()
 {
 	Field->PurgeClass(true);
 	Field->SetSuperStruct(UInterface::StaticClass());
@@ -20,4 +20,9 @@ void FCSGeneratedInterfaceBuilder::StartBuildingType()
 #if WITH_EDITOR
 	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field);
 #endif
+}
+
+void FCSGeneratedInterfaceBuilder::UpdateType()
+{
+	FCSTypeRegistry::Get().GetOnInterfaceModifiedEvent().Broadcast(Field);
 }

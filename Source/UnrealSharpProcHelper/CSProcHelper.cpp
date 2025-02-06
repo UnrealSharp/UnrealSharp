@@ -165,9 +165,19 @@ FString FCSProcHelper::GetAssembliesPath()
 #endif
 }
 
-FString FCSProcHelper::GetUnrealSharpLibraryPath()
+FString FCSProcHelper::GetUnrealSharpPluginsPath()
 {
 	return GetAssembliesPath() / "UnrealSharp.Plugins.dll";
+}
+
+FString FCSProcHelper::GetUnrealSharpCorePath()
+{
+	return GetAssembliesPath() / "UnrealSharp.dll";
+}
+
+FString FCSProcHelper::GetGlueLibraryPath()
+{
+	return GetUserAssemblyDirectory() / "ProjectGlue.dll";
 }
 
 FString FCSProcHelper::GetRuntimeConfigPath()

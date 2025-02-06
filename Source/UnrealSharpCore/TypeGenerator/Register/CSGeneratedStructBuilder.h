@@ -11,7 +11,8 @@ public:
 	FCSGeneratedStructBuilder(const TSharedPtr<FCSStructMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) {}
 
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void StartBuildingType() override;
+	virtual void RebuildType() override;
+	virtual void UpdateType() override;
 	// End of implementation
 
 private:

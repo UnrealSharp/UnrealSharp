@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "MetaData/CSClassMetaData.h"
 
 class UNREALSHARPCORE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>
@@ -12,7 +11,8 @@ public:
 	FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData);
 
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void StartBuildingType() override;
+	virtual void RebuildType() override;
+	virtual void UpdateType() override;
 	virtual FName GetFieldName() const override;
 	// End of implementation
 

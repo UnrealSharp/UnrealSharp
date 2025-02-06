@@ -44,7 +44,7 @@ public class UnrealSharpCore : ModuleRules
 				"EnhancedInput", 
 				"UnrealSharpUtilities",
 				"GameplayTags", 
-				"AIModule",
+				"AIModule", "BlueprintEditorLibrary",
 			}
 			);
 

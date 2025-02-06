@@ -37,6 +37,11 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
 	auto CompileBlueprints = [](TArray<UBlueprint*>& Blueprints) -> void
 	{
+		if (Blueprints.Num() == 0)
+		{
+			return;
+		}
+		
 		for (UBlueprint* Blueprint : Blueprints)
 		{
 			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
@@ -67,7 +72,7 @@ void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 	}
 }
 
-void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FString& AssemblyName)
+void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FName& AssemblyName)
 {
 	RecompileAndReinstanceBlueprints();
 }

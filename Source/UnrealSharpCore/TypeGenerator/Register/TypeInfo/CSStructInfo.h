@@ -5,8 +5,8 @@
 
 class FCSGeneratedStructBuilder;
 
-struct UNREALSHARPCORE_API FCSharpStructInfo : TCSharpTypeInfo<FCSStructMetaData, UScriptStruct, FCSGeneratedStructBuilder>
+struct UNREALSHARPCORE_API FCSharpStructInfo : TCSharpTypeInfo<FCSStructMetaData, UCSScriptStruct, FCSGeneratedStructBuilder>
 {
-	FCSharpStructInfo(const TSharedPtr<FJsonValue>& MetaData) : TCSharpTypeInfo(MetaData) {}
+	FCSharpStructInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly) {}
 	FCSharpStructInfo() {};
 };

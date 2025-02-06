@@ -2,14 +2,13 @@
 #include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
-FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData): TCSharpTypeInfo(MetaData)
+FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
 {
-	TypeHandle = UCSManager::Get().GetTypeHandle(*TypeMetaData);
+	FCSTypeRegistry::Get().GetOnClassModifiedEvent().AddRaw(this, &FCSharpClassInfo::OnNewClassOrModified);
 }
 
 FCSharpClassInfo::FCSharpClassInfo(UClass* InField)
 {
-	TypeHandle = GetHandle(InField);
 	Field = InField;
 	bInitFromClass = true;
 
@@ -20,7 +19,7 @@ FCSharpClassInfo::FCSharpClassInfo(UClass* InField)
 
 UClass* FCSharpClassInfo::InitializeBuilder()
 {
-	if (Field)
+	if (Field && Field->HasAllClassFlags(CLASS_Native))
 	{
 		return Field;
 	}
@@ -41,7 +40,6 @@ void FCSharpClassInfo::TryUpdateTypeHandle()
 {
 	if (bDirtyHandle && bInitFromClass)
 	{
-		TypeHandle = GetHandle(Field);
 		bDirtyHandle = false;
 	}
 }
@@ -51,8 +49,26 @@ void FCSharpClassInfo::OnAssembliesLoaded()
 	bDirtyHandle = true;
 }
 
+void FCSharpClassInfo::OnNewClassOrModified(UClass* Class)
+{
+	if (Class == Field)
+	{
+		bDirtyHandle = true;
+		bInitFromClass = true;
+		TryUpdateTypeHandle();
+		bInitFromClass = false;
+	}
+}
+
 uint8* FCSharpClassInfo::GetHandle(UClass* Class)
 {
-	return UCSManager::Get().GetTypeHandle(nullptr, FUnrealSharpUtils::GetNamespace(Class), Class->GetName());
+	if (FCSGeneratedClassBuilder::IsManagedType(Class))
+	{
+		return UCSManager::Get().GetTypeHandle(*TypeMetaData);
+	}
+	else
+	{
+		return UCSManager::Get().GetTypeHandle(nullptr, FUnrealSharpUtils::GetNamespace(Class), Class->GetName());
+	}
 }
 

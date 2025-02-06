@@ -17,26 +17,35 @@ public class Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext)
 
     public bool Load()
     {
-        if (WeakRefLoadContext == null) return false;
-        if (!WeakRefLoadContext.IsAlive) return false;
-        if (WeakRefLoadContext.Target is not PluginLoadContext loadContext) return false;
+        if (WeakRefLoadContext == null || !WeakRefLoadContext.IsAlive || WeakRefLoadContext.Target is not PluginLoadContext loadContext)
+        {
+            return false;
+        }
 
         Assembly assembly = loadContext.LoadFromAssemblyName(AssemblyName);
         WeakRefAssembly = new WeakReference(assembly);
 
-        if (weakRefModuleInterfaces != null)
+        if (weakRefModuleInterfaces == null)
         {
-            var moduleInterfaceTypes = assembly.GetTypes()
-                .Where(t => typeof(IModuleInterface).IsAssignableFrom(t));
-
-            foreach (var moduleInterfaceType in moduleInterfaceTypes)
+            return true;
+        }
+        
+        Type[] types = assembly.GetTypes();
+            
+        foreach (Type type in types)
+        {
+            if (type == typeof(IModuleInterface) || !typeof(IModuleInterface).IsAssignableFrom(type))
             {
-                if (Activator.CreateInstance(moduleInterfaceType) is not IModuleInterface moduleInterface) continue;
-
-                moduleInterface.StartupModule();
-
-                weakRefModuleInterfaces.Add(new WeakReference(moduleInterface));
+                continue;
             }
+
+            if (Activator.CreateInstance(type) is not IModuleInterface moduleInterface)
+            {
+                continue;
+            }
+
+            moduleInterface.StartupModule();
+            weakRefModuleInterfaces.Add(new WeakReference(moduleInterface));
         }
 
         return true;

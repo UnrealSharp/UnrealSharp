@@ -6,6 +6,12 @@
 #define __stdcall
 #endif
 
+class UCSClass;
+struct FCSharpClassInfo;
+struct FCSharpInterfaceInfo;
+struct FCSharpEnumInfo;
+struct FCSharpStructInfo;
+
 struct FCSManagedPluginCallbacks
 {
 	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*);
@@ -15,31 +21,50 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-struct UNREALSHARPCORE_API FCSAssembly
+struct FCSAssembly : public TSharedFromThis<FCSAssembly>
 {
-	explicit FCSAssembly(const FString& InAssemblyPath)
-	{
-		AssemblyPath = FPaths::ConvertRelativePathToFull(InAssemblyPath);
+	FCSAssembly(const FString& InAssemblyPath);
 
-#if defined(_WIN32)
-		// Replace forward slashes with backslashes
-		AssemblyPath.ReplaceInline(TEXT("/"), TEXT("\\"));
+	bool Load(bool bProcessMetaData = true);
+	bool Unload();
+#if WITH_EDITOR
+	bool Reload();
 #endif
-		
-		AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
-	}
+	bool IsValid() const;
 
-	bool Load();
-	bool Unload() const;
-
-	bool IsAssemblyValid() const;
-	
 	const GCHandleIntPtr& GetAssemblyHandle() const { return Assembly.Handle; }
-	const FString& GetAssemblyName() const { return AssemblyName; }
+	const FName& GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
+	TSharedPtr<FGCHandle> GetTypeHandle(const FString& Namespace, const FString& TypeName);
+	TSharedPtr<FGCHandle> GetTypeHandle(const UClass* Class);
+	
+	TSharedPtr<FGCHandle> GetMethodHandle(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
+	TSharedPtr<FGCHandle> GetMethodHandle(const UCSClass* Class, const FString& MethodName);
+
+	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
+	TSharedPtr<FCSharpClassInfo> FindClassInfo(FName ClassName) const;
+
+	FGCHandle* CreateNewManagedObject(UObject* Object);
+	FGCHandle* FindManagedObject(UObject* Object);
+
 private:
+
+	bool ProcessMetaData(const FString& FilePath);
+
+	void RemoveManagedObject(const UObjectBase* Object);
+
+	TMap<FName, TSharedPtr<FCSharpClassInfo>> ManagedClasses;
+	TMap<FName, TSharedPtr<FCSharpStructInfo>> ManagedStructs;
+	TMap<FName, TSharedPtr<FCSharpEnumInfo>> ManagedEnums;
+	TMap<FName, TSharedPtr<FCSharpInterfaceInfo>> ManagedInterfaces;
+
+	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
+	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
+	
 	FGCHandle Assembly;
 	FString AssemblyPath;
-	FString AssemblyName;
+	FName AssemblyName;
+
+	
 };

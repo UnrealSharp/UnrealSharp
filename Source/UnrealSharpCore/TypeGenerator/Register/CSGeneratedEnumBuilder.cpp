@@ -1,6 +1,6 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
 
-void FCSGeneratedEnumBuilder::StartBuildingType()
+void FCSGeneratedEnumBuilder::RebuildType()
 {
 	const int32 NumItems = TypeMetaData->Items.Num();
     
@@ -17,4 +17,9 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 	
 	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
+}
+
+void FCSGeneratedEnumBuilder::UpdateType()
+{
+	
 }

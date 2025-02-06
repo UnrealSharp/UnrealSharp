@@ -10,21 +10,22 @@ public unsafe struct PluginsCallbacks
 {
     public delegate* unmanaged<char*, nint> LoadPlugin;
     public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
-
+    
     [UnmanagedCallersOnly]
-    private static unsafe nint ManagedLoadPlugin(char* assemblyPath)
+    private static nint ManagedLoadPlugin(char* assemblyPath)
     {
-        var weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), true);
+        WeakReference? weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), true);
 
-        if (weakRef == null) return default;
-        if (!weakRef.IsAlive) return default;
-        if (weakRef.Target is not Assembly assembly) return default;
+        if (weakRef == null || !weakRef.IsAlive)
+        {
+            return IntPtr.Zero;
+        }
 
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(assembly));
+        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(weakRef.Target!));
     }
 
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool ManagedUnloadPlugin(char* assemblyPath)
+    private static NativeBool ManagedUnloadPlugin(char* assemblyPath)
     {
         string assemblyPathStr = new(assemblyPath);
         return PluginLoader.UnloadPlugin(assemblyPathStr).ToNativeBool();
@@ -32,7 +33,7 @@ public unsafe struct PluginsCallbacks
 
     public static PluginsCallbacks Create()
     {
-        return new ()
+        return new PluginsCallbacks
         {
             LoadPlugin = &ManagedLoadPlugin,
             UnloadPlugin = &ManagedUnloadPlugin,

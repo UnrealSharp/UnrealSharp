@@ -9,14 +9,9 @@
 #include "Blueprint/BlueprintExceptionInfo.h"
 #endif
 
-void UCSFunctionBase::SetManagedMethod(void* InManagedMethod)
+void UCSFunctionBase::SetManagedMethod(const TSharedPtr<FGCHandle>& InMethodHandle)
 {
-	if (ManagedMethod)
-	{
-		return;
-	}
-	
-	ManagedMethod = InManagedMethod;
+	MethodHandle = InMethodHandle;
 }
 
 void UCSFunctionBase::Bind()
@@ -44,7 +39,6 @@ void UCSFunctionBase::Bind()
 bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
 	UCSManager& Manager = UCSManager::Get();
-	
 	Manager.SetCurrentWorldContext(ObjectToInvokeOn);
 	
 	if (Stack.Code)
@@ -52,11 +46,11 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		++Stack.Code;
 	}
 	
-	const FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
+	const FGCHandle* ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
 	FString ExceptionMessage;
 	
-	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
-		Function->ManagedMethod,
+	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle->GetHandle(),
+		Function->MethodHandle->GetPointer(),
 		ArgumentBuffer,
 		RESULT_PARAM,
 		&ExceptionMessage) == 0;
@@ -73,4 +67,9 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 #endif
 
 	return bSuccess;
+}
+
+UCSClass* UCSFunctionBase::GetOwningManagedClass() const
+{
+	return static_cast<UCSClass*>(GetOuter());
 }

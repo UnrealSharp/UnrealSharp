@@ -7,7 +7,7 @@
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 #endif
 
-void FCSGeneratedStructBuilder::StartBuildingType()
+void FCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
@@ -27,6 +27,11 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 #if WITH_EDITOR
 	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field);
 #endif
+}
+
+void FCSGeneratedStructBuilder::UpdateType()
+{
+	FCSTypeRegistry::Get().GetOnStructModifiedEvent().Broadcast(Field);
 }
 
 void FCSGeneratedStructBuilder::PurgeStruct()

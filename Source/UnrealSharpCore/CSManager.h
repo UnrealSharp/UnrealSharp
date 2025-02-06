@@ -10,7 +10,7 @@ struct FCSTypeReferenceMetaData;
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FString&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
 UCLASS()
@@ -27,14 +27,17 @@ public:
 
 	bool LoadAllUserAssemblies();
 	
-	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath);
+	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath, bool bProcessMetaData = true);
+	
+	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
+	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
+	
 	bool UnloadAssembly(const FString& AssemblyName);
 
-	FGCHandle CreateNewManagedObject(UObject* Object, UClass* Class);
-	FGCHandle CreateNewManagedObject(UObject* Object, uint8* TypeHandle);
-	FGCHandle FindManagedObject(UObject* Object);
-
-	uint8* GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName) const;
+	FGCHandle* CreateNewManagedObject(UObject* Object) const;
+	FGCHandle* FindManagedObject(UObject* Object) const;
+	
+	static uint8* GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName);
 	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const;
 	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const;
 
@@ -74,7 +77,11 @@ private:
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 
 	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
+	
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
+	
+	TSharedPtr<FCSAssembly> CoreAssembly;
+	TSharedPtr<FCSAssembly> GlueAssembly;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
