@@ -8,7 +8,7 @@ public static class PluginLoader
 {
     public static List<Assembly> SharedAssemblies = [];
 
-    private static List<Plugin> loadedPlugins = [];
+    public static List<Plugin> loadedPlugins = [];
     public static IReadOnlyList<Plugin> LoadedPlugins => loadedPlugins;
 
     public static WeakReference? LoadPlugin(string assemblyPath, bool isCollectible)
