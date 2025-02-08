@@ -1,5 +1,7 @@
 ﻿#include "UCoreUObjectExporter.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
+#include "CSAssembly.h"
+#include "CSManager.h"
+#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
 void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -7,14 +9,19 @@ void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterEx
 	EXPORT_FUNCTION(GetNativeStructFromName)
 }
 
-UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InClassName)
+UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName, const char* InClassName)
 {
-	UClass* Class = FCSTypeRegistry::GetClassFromName(InClassName);
-	return Class;
+	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+	
+	// This gets called by the static constructor of the class, so we can cache the class info of native classes here.
+	TSharedPtr<FCSharpClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(InClassName);
+	
+	return ClassInfo->Field;
 }
 
-UStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InStructName)
+UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InStructName)
 {
-	UStruct* Struct = FCSTypeRegistry::GetStructFromName(InStructName);
-	return Struct;
+	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
+	UScriptStruct* ScriptStruct = Assembly->FindStruct(InStructName);
+	return ScriptStruct;
 }

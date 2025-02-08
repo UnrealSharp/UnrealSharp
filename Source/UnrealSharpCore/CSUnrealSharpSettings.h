@@ -36,4 +36,9 @@ public:
 	// Needs restart to take effect.
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
 	bool bSuffixGeneratedTypes = false;
+
+	// Should we enable namespace support for generated types?
+	// If false, all types will be generated in the global package and all types need to have unique names.
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Namespace")
+	bool bEnableNamespaceSupport = false;
 };

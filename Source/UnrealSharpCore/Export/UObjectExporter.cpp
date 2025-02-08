@@ -21,7 +21,7 @@ void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* 
 	}
 	
 	UObject* NewCSharpObject = NewObject<UObject>(Outer, Class, NAME_None, RF_NoFlags, Template);
-	return UCSManager::Get().FindManagedObject(NewCSharpObject)->GetPointer();
+	return UCSManager::Get().FindManagedObject(NewCSharpObject).GetPointer();
 }
 
 void* UUObjectExporter::GetTransientPackage()
@@ -33,7 +33,7 @@ void* UUObjectExporter::GetTransientPackage()
 		return nullptr;
 	}
 
-	return UCSManager::Get().FindManagedObject(TransientPackage)->GetPointer();
+	return UCSManager::Get().FindManagedObject(TransientPackage).GetPointer();
 }
 
 void UUObjectExporter::NativeGetName(UObject* Object, FName& OutName)
@@ -118,7 +118,7 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 	}
 
 	UWorld* World = Object->GetWorld();
-	return UCSManager::Get().FindManagedObject(World)->GetPointer();
+	return UCSManager::Get().FindManagedObject(World).GetPointer();
 }
 
 uint32 UUObjectExporter::GetUniqueID(UObject* Object)

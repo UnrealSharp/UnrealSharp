@@ -2,12 +2,16 @@
 #include "UnrealSharpCore.h"
 #include "Misc/Paths.h"
 #include "CSManager.h"
+#include "Logging/StructuredLog.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSEnumMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSInterfaceMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSStructMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "TypeGenerator/Register/TypeInfo/CSEnumInfo.h"
+#include "TypeGenerator/Register/TypeInfo/CSInterfaceInfo.h"
+#include "TypeGenerator/Register/TypeInfo/CSStructInfo.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
@@ -20,9 +24,17 @@ FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
 #endif
 		
 	AssemblyName = *FPaths::GetBaseFilename(AssemblyPath);
+
+	GUObjectArray.AddUObjectDeleteListener(this);
+
+	FModuleManager::Get().OnModulesChanged().AddRaw(this, &FCSAssembly::OnModulesChanged);
+	
+	// Remove this listener when the engine is shutting down.
+	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
+	FCoreDelegates::OnPreExit.AddRaw(this, &FCSAssembly::OnEnginePreExit);
 }
 
-bool FCSAssembly::Load(bool bProcessMetaData)
+bool FCSAssembly::Load()
 {
 	if (IsValid())
 	{
@@ -44,25 +56,36 @@ bool FCSAssembly::Load(bool bProcessMetaData)
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load: %s"), *AssemblyPath);
 		return false;
 	}
-
-	if (bProcessMetaData)
+	
+	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
+	if (FPaths::FileExists(MetadataPath))
 	{
-		// Change from ManagedProjectName.dll > ManagedProjectName.metadata.json
-		const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 		return ProcessMetaData(MetadataPath);
 	}
-	
+
 	return true;
 }
 
 bool FCSAssembly::Unload()
 {
-	for (const TSharedPtr<FGCHandle>& Handle : AllocatedHandles)
+	ClassHandles.Empty();
+	
+	for (TSharedPtr<FGCHandle>& Handle : AllHandles)
 	{
 		Handle->Dispose();
-	}
+		
+		int32 RefCount = Handle.GetSharedReferenceCount();
+		if (RefCount > 1)
+		{
+			UE_LOG(LogUnrealSharp, Error, TEXT("Handle %p has %d references"), Handle.Get(), RefCount);
+			ensureAlwaysMsgf(false, TEXT("Handle has references"));
+		}
 
-	AllocatedHandles.Empty();
+		Handle.Reset();
+	}
+	
+	AllHandles.Empty();
+	Assembly.Dispose();
 	
 	if (!UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath))
 	{
@@ -73,26 +96,29 @@ bool FCSAssembly::Unload()
 	return true;
 }
 
-#if WITH_EDITOR
-bool FCSAssembly::Reload()
-{
-	return Unload() && Load();
-}
-#endif
-
 bool FCSAssembly::IsValid() const
 {
 	return !Assembly.IsNull();
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::GetTypeHandle(const FString& Namespace, const FString& TypeName)
+bool FCSAssembly::ContainsClass(const UClass* Class) const
+{
+	return Classes.Contains(Class->GetFName());
+}
+
+TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FName& Namespace, const FName& TypeName)
 {
 	if (!IsValid())
 	{
 		return nullptr;
 	}
-	
-	uint8* TypeHandle = UCSManager::Get().GetTypeHandle(Assembly.GetPointer(), Namespace, TypeName);
+
+	if (TSharedPtr<FGCHandle>* Handle = ClassHandles.Find(TypeName))
+	{
+		return *Handle;
+	}
+
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Assembly.GetPointer(), *Namespace.ToString(), *TypeName.ToString());
 	
 	if (TypeHandle == nullptr)
 	{
@@ -100,71 +126,151 @@ TSharedPtr<FGCHandle> FCSAssembly::GetTypeHandle(const FString& Namespace, const
 	}
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(TypeHandle, GCHandleType::WeakHandle);
-	AllocatedHandles.Add(AllocatedHandle);
-	return AllocatedHandle;
+	
+	AllHandles.Add(AllocatedHandle);
+	ClassHandles.Add(TypeName, AllocatedHandle);
+	
+	return AllocatedHandle.ToWeakPtr();
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::GetTypeHandle(const UClass* Class)
+TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const UClass* Class)
 {
-	return GetTypeHandle(FUnrealSharpUtils::GetNamespace(Class), Class->GetName());
+	return TryFindTypeHandle(FUnrealSharpUtils::GetNamespace(Class), Class->GetFName());
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::GetMethodHandle(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName)
+
+TWeakPtr<FGCHandle> FCSAssembly::GetMethodHandle(const UCSClass* Class, const FString& MethodName)
 {
 	if (!IsValid())
 	{
 		return nullptr;
 	}
+
+	TSharedRef<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
+	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle().Pin();
 	
-	uint8* MethodHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(TypeHandle->GetPointer(), *MethodName);
+	uint8* MethodHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(PinnedHandle->GetPointer(), *MethodName);
 	
 	if (MethodHandle == nullptr)
 	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find method {0} in {1}", *MethodName, *Class->GetName());
 		return nullptr;
 	}
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(MethodHandle, GCHandleType::WeakHandle);
-	AllocatedHandles.Add(AllocatedHandle);
-	return AllocatedHandle;
+	AllHandles.Add(AllocatedHandle);
+	return AllocatedHandle.ToWeakPtr();
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::GetMethodHandle(const UCSClass* Class, const FString& MethodName)
-{
-	return GetMethodHandle(Class->GetClassInfo()->TypeHandle, MethodName);
-}
-
-TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
+TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(const UClass* Class)
 {
 	FString Name = Class->GetName();
-	Name.RemoveFromEnd(TEXT("_C"));
+	if (Class->HasAllClassFlags(CLASS_CompiledFromBlueprint))
+	{
+		Name.RemoveFromEnd(TEXT("_C"));
+	}
 	
-	TSharedPtr<FCSharpClassInfo> FoundClassInfo = ManagedClasses.FindRef(*Name);
+	return FindOrAddClassInfo(*Name);
+}
+
+TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(FName ClassName)
+{
+	TSharedPtr<FCSharpClassInfo> FoundClassInfo = Classes.FindRef(ClassName);
 
 	// Native classes are populated on the go as they are needed for managed code.
 	if (!FoundClassInfo.IsValid())
 	{
-		FoundClassInfo = MakeShared<FCSharpClassInfo>(Class);
-		ManagedClasses.Add(Class->GetFName(), FoundClassInfo);
+		UClass* Class = FindFirstObject<UClass>(*ClassName.ToString());
+		TWeakPtr<FGCHandle> TypeHandle = TryFindTypeHandle(Class);
+		FoundClassInfo = MakeShared<FCSharpClassInfo>(Class, SharedThis(this), TypeHandle);
+		Classes.Add(ClassName, FoundClassInfo);
 	}
-	else
-	{
-		FoundClassInfo->TryUpdateTypeHandle();
-	}
-	
-	return FoundClassInfo.ToSharedRef();
+
+	return FoundClassInfo;
 }
 
 TSharedPtr<FCSharpClassInfo> FCSAssembly::FindClassInfo(FName ClassName) const
 {
-	return ManagedClasses.FindRef(ClassName);
+	return Classes.FindRef(ClassName);
 }
+
+UClass* FCSAssembly::FindClass(FName ClassName) const
+{
+	UClass* Class;
+	if (TSharedPtr<FCSharpClassInfo> ClassInfo = Classes.FindRef(ClassName))
+	{
+		Class = ClassInfo->InitializeBuilder();
+	}
+	else
+	{
+		Class = FindFirstObject<UClass>(*ClassName.ToString());
+	}
+
+	check(Class);
+	return Class;
+}
+
+UScriptStruct* FCSAssembly::FindStruct(FName StructName) const
+{
+	UScriptStruct* Struct;
+	if (TSharedPtr<FCSharpStructInfo> StructInfo = Structs.FindRef(StructName))
+	{
+		Struct = StructInfo->InitializeBuilder();
+	}
+	else
+	{
+		Struct = FindFirstObject<UScriptStruct>(*StructName.ToString());
+	}
+
+	check(Struct);
+	return Struct;
+}
+
+UEnum* FCSAssembly::FindEnum(FName EnumName) const
+{
+	UEnum* Enum;
+	if (TSharedPtr<FCSharpEnumInfo> EnumInfo = Enums.FindRef(EnumName))
+	{
+		Enum = EnumInfo->InitializeBuilder();
+	}
+	else
+	{
+		Enum = FindFirstObject<UEnum>(*EnumName.ToString());
+	}
+
+	check(Enum);
+	return Enum;
+}
+
+UClass* FCSAssembly::FindInterface(FName InterfaceName) const
+{
+	UClass* Interface;
+	if (TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = Interfaces.FindRef(InterfaceName))
+	{
+		Interface = InterfaceInfo->InitializeBuilder();
+	}
+	else
+	{
+		Interface = FindFirstObject<UClass>(*InterfaceName.ToString());
+	}
+
+	check(Interface);
+	return Interface;
+}
+
 
 FGCHandle* FCSAssembly::CreateNewManagedObject(UObject* Object)
 {
-	ensureAlways(!UnmanagedToManagedMap.Contains(Object));
+	ensureAlways(!ObjectHandles.Contains(Object));
+
+	UClass* Class = FCSGeneratedClassBuilder::GetFirstManagedClass(Object->GetClass());
+	if (!Class)
+	{
+		Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Object->GetClass());
+	}
 	
-	TSharedPtr<FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Object->GetClass());
-	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->TypeHandle;
+	TSharedPtr<FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Class);
+	TSharedPtr<const FGCHandle> TypeHandle = ClassInfo->GetTypeHandle().Pin();
 	
 	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer());
 	NewManagedObject.Type = GCHandleType::StrongHandle;
@@ -176,32 +282,88 @@ FGCHandle* FCSAssembly::CreateNewManagedObject(UObject* Object)
 		return nullptr;
 	}
 	
-	return &UnmanagedToManagedMap.Add(Object, NewManagedObject);
+	return &ObjectHandles.Add(Object, NewManagedObject);
 }
 
-FGCHandle* FCSAssembly::FindManagedObject(UObject* Object)
+FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 {
 	if (!::IsValid(Object))
 	{
 		RemoveManagedObject(Object);
-		return nullptr;
-	}
-	
-	if (FGCHandle* Handle = UnmanagedToManagedMap.Find(Object))
-	{
-		return Handle;
+		return FGCHandle();
 	}
 
-	return CreateNewManagedObject(Object);
+	FGCHandle* Handle = ObjectHandles.Find(Object);
+	if (!Handle)
+	{
+		Handle = CreateNewManagedObject(Object);
+	}
+	return *Handle;
+}
+
+void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass)
+{
+	FPendingClasses& PendingClass = PendingClasses.FindOrAdd(ParentClass);
+	PendingClass.Classes.Add(NewClass);
 }
 
 void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 {
 	FGCHandle Handle;
-	if (UnmanagedToManagedMap.RemoveAndCopyValue(Object, Handle))
+	if (ObjectHandles.RemoveAndCopyValue(Object, Handle))
 	{
 		Handle.Dispose();
 	}
+}
+
+void FCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
+{
+	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
+	{
+		return;
+	}
+
+	int32 NumPendingClasses = PendingClasses.Num();
+	for (auto Itr = PendingClasses.CreateIterator(); Itr; ++Itr)
+	{
+		UClass* Class = Itr.Key().GetOwningClass();
+		
+		if (!Class)
+		{
+			// Class still not loaded from this module.
+			continue;
+		}
+
+		for (FCSharpClassInfo* PendingClass : Itr.Value().Classes)
+		{
+			PendingClass->InitializeBuilder();
+		}
+
+		Itr.RemoveCurrent();
+	}
+
+#if WITH_EDITOR
+	if (NumPendingClasses != PendingClasses.Num())
+	{
+		UCSManager::Get().OnProcessedPendingClassesEvent().Broadcast();
+	}
+#endif
+}
+
+void FCSAssembly::OnEnginePreExit()
+{
+	GUObjectArray.RemoveUObjectDeleteListener(this);
+}
+
+
+void FCSAssembly::NotifyUObjectDeleted(const class UObjectBase* Object, int32 Index)
+{
+	RemoveManagedObject(Object);
+}
+
+void FCSAssembly::OnUObjectArrayShutdown()
+{
+	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
 
 template<typename T>
@@ -244,12 +406,6 @@ void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<F
 
 bool FCSAssembly::ProcessMetaData(const FString& FilePath)
 {
-	if (!FPaths::FileExists(FilePath))
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find metadata file at: %s"), *FilePath);
-		return false;
-	}
-
 	FString JsonString;
 	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
 	{
@@ -269,33 +425,34 @@ bool FCSAssembly::ProcessMetaData(const FString& FilePath)
 	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
 	{
-		RegisterMetaData<FCSharpStructInfo, FCSStructMetaData>(OwningAssembly, MetaData, ManagedStructs);
+		RegisterMetaData<FCSharpStructInfo, FCSStructMetaData>(OwningAssembly, MetaData, Structs);
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : EnumMetaData)
 	{
-		RegisterMetaData<FCSharpEnumInfo, FCSEnumMetaData>(OwningAssembly, MetaData, ManagedEnums);
+		RegisterMetaData<FCSharpEnumInfo, FCSEnumMetaData>(OwningAssembly, MetaData, Enums);
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : InterfacesMetaData)
 	{
-		RegisterMetaData<FCSharpInterfaceInfo, FCSInterfaceMetaData>(OwningAssembly, MetaData, ManagedInterfaces);
+		RegisterMetaData<FCSharpInterfaceInfo, FCSInterfaceMetaData>(OwningAssembly, MetaData, Interfaces);
 	}
 	
 	for (const TSharedPtr<FJsonValue>& MetaData : JsonObject->GetArrayField(TEXT("ClassMetaData")))
 	{
-		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, ManagedClasses, [](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [OwningAssembly](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 		{
 			ClassInfo->State = ETypeState::NeedUpdate;
+			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->Namespace, ClassInfo->TypeMetaData->Name);
 		});
 	}
 
-	InitializeBuilders(ManagedStructs);
-	InitializeBuilders(ManagedEnums);
-	InitializeBuilders(ManagedClasses);
-	InitializeBuilders(ManagedInterfaces);
+	InitializeBuilders(Structs);
+	InitializeBuilders(Enums);
+	InitializeBuilders(Classes);
+	InitializeBuilders(Interfaces);
 	
 	return true;
 }

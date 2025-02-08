@@ -21,13 +21,14 @@ public:
 	virtual void Bind() override;
 	// End of UFunction interface
 	
-	void SetManagedMethod(const TSharedPtr<FGCHandle>& MethodHandle);
+	void UpdateMethodInfo();
 
 	UCSClass* GetOwningManagedClass() const;
 
 protected:
-	
+
+	void OnClassReloaded(UClass* Class);
 	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
 	
-	TSharedPtr<FGCHandle> MethodHandle;
+	TWeakPtr<FGCHandle> MethodHandle;
 };

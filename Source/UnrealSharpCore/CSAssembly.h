@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CSManagedGCHandle.h"
+#include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
 
 #if !defined(_WIN32)
 #define __stdcall
@@ -21,50 +22,71 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-struct FCSAssembly : public TSharedFromThis<FCSAssembly>
+struct FPendingClasses
+{
+	TSet<FCSharpClassInfo*> Classes;
+};
+
+struct FCSAssembly : public TSharedFromThis<FCSAssembly>, public FUObjectArray::FUObjectDeleteListener
 {
 	FCSAssembly(const FString& InAssemblyPath);
 
-	bool Load(bool bProcessMetaData = true);
-	bool Unload();
-#if WITH_EDITOR
-	bool Reload();
-#endif
+	UNREALSHARPCORE_API bool Load();
+	UNREALSHARPCORE_API bool Unload();
+	
 	bool IsValid() const;
 
 	const GCHandleIntPtr& GetAssemblyHandle() const { return Assembly.Handle; }
 	const FName& GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
-	TSharedPtr<FGCHandle> GetTypeHandle(const FString& Namespace, const FString& TypeName);
-	TSharedPtr<FGCHandle> GetTypeHandle(const UClass* Class);
+	TWeakPtr<FGCHandle> TryFindTypeHandle(const FName& Namespace, const FName& TypeName);
+	TWeakPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
+
+	bool ContainsClass(const UClass* Class) const;
 	
-	TSharedPtr<FGCHandle> GetMethodHandle(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
-	TSharedPtr<FGCHandle> GetMethodHandle(const UCSClass* Class, const FString& MethodName);
+	TWeakPtr<FGCHandle> GetMethodHandle(const UCSClass* Class, const FString& MethodName);
 
-	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
+	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const UClass* Class);
+	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(FName ClassName);
 	TSharedPtr<FCSharpClassInfo> FindClassInfo(FName ClassName) const;
-
+	
+	UClass* FindClass(FName ClassName) const;
+	UScriptStruct* FindStruct(FName StructName) const;
+	UEnum* FindEnum(FName EnumName) const;
+	UClass* FindInterface(FName InterfaceName) const;
+	
 	FGCHandle* CreateNewManagedObject(UObject* Object);
-	FGCHandle* FindManagedObject(UObject* Object);
+	void RemoveManagedObject(const UObjectBase* Object);
+	
+	FGCHandle FindManagedObject(UObject* Object);
+
+	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass);
 
 private:
 
 	bool ProcessMetaData(const FString& FilePath);
 
-	void RemoveManagedObject(const UObjectBase* Object);
+	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
+	void OnEnginePreExit();
 
-	TMap<FName, TSharedPtr<FCSharpClassInfo>> ManagedClasses;
-	TMap<FName, TSharedPtr<FCSharpStructInfo>> ManagedStructs;
-	TMap<FName, TSharedPtr<FCSharpEnumInfo>> ManagedEnums;
-	TMap<FName, TSharedPtr<FCSharpInterfaceInfo>> ManagedInterfaces;
+	// UObjectArray listener interface
+	virtual void NotifyUObjectDeleted(const class UObjectBase *Object, int32 Index) override;
+	virtual void OnUObjectArrayShutdown() override;
+	// End of interface
 
-	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
-	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
+	TMap<FName, TSharedPtr<FCSharpClassInfo>> Classes;
+	TMap<FName, TSharedPtr<FCSharpStructInfo>> Structs;
+	TMap<FName, TSharedPtr<FCSharpEnumInfo>> Enums;
+	TMap<FName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
+	
+	TArray<TSharedPtr<FGCHandle>> AllHandles;
+	TMap<FName, TSharedPtr<FGCHandle>> ClassHandles;
+	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
+	
+	TMap<FCSTypeReferenceMetaData, FPendingClasses> PendingClasses;
 	
 	FGCHandle Assembly;
 	FString AssemblyPath;
 	FName AssemblyName;
-
-	
 };

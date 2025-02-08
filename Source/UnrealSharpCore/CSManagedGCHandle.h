@@ -33,6 +33,7 @@ struct FGCHandle
 
 	bool IsNull() const { return !Handle.IntPtr; }
 	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
+	
 	const GCHandleIntPtr& GetHandle() const { return Handle; }
 	uint8* GetPointer() const { return Handle.IntPtr; };
 	

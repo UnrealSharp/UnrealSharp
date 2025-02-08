@@ -34,5 +34,5 @@ void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldC
 	}
 	
 	UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(WorldSubsystem)->GetPointer();
+	return UCSManager::Get().FindManagedObject(WorldSubsystem).GetPointer();
 }

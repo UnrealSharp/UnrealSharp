@@ -19,9 +19,14 @@ public unsafe struct PluginsCallbacks
         if (weakRef == null || !weakRef.IsAlive)
         {
             return IntPtr.Zero;
+        };
+
+        if (weakRef.Target is not Assembly assembly)
+        {
+            return IntPtr.Zero;
         }
 
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(weakRef.Target!));
+        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(assembly));
     }
 
     [UnmanagedCallersOnly]

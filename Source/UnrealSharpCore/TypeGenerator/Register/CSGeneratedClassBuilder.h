@@ -8,7 +8,7 @@ class UNREALSHARPCORE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuil
 	
 public:
 
-	FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData);
+	FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
@@ -23,7 +23,7 @@ public:
 	static bool IsManagedType(const UClass* Class);
 	static bool IsSkeletonType(const UClass* Class);
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
-	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces);
+	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceMetaData>& Interfaces);
 	static void TryRegisterSubsystem(UClass* ManagedClass);
 	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData);
 	static void SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class);

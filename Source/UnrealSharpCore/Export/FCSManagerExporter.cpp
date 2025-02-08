@@ -10,7 +10,7 @@ void UFCSManagerExporter::ExportFunctions(FRegisterExportedFunction RegisterExpo
 
 void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 {
-	return UCSManager::Get().FindManagedObject(Object)->GetPointer();
+	return UCSManager::Get().FindManagedObject(Object).GetPointer();
 }
 
 void* UFCSManagerExporter::GetCurrentWorldContext()

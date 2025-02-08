@@ -3,10 +3,17 @@ using UnrealSharp.Engine.Core.Modules;
 
 namespace UnrealSharp.Plugins;
 
-public class Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext)
+public class Plugin
 {
-    public AssemblyName AssemblyName { get; } = assemblyName;
-    public WeakReference? WeakRefLoadContext { get; private set; } = weakRefLoadContext;
+    public Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext)
+    {
+        AssemblyName = assemblyName;
+        WeakRefLoadContext = weakRefLoadContext;
+    }
+    
+    public AssemblyName AssemblyName { get; }
+    
+    public WeakReference? WeakRefLoadContext { get; }
     public WeakReference? WeakRefAssembly { get; private set; }
 
     private List<WeakReference>? weakRefModuleInterfaces = [];

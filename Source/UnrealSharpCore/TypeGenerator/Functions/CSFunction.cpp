@@ -9,11 +9,6 @@
 #include "Blueprint/BlueprintExceptionInfo.h"
 #endif
 
-void UCSFunctionBase::SetManagedMethod(const TSharedPtr<FGCHandle>& InMethodHandle)
-{
-	MethodHandle = InMethodHandle;
-}
-
 void UCSFunctionBase::Bind()
 {
 	UClass* ClassToFindFunction = GetOwnerClass();
@@ -25,6 +20,8 @@ void UCSFunctionBase::Bind()
 	{
 		ClassToFindFunction = OwnerClass->GetGeneratedClass();
 	}
+
+	UCSManager::Get().OnClassReloadedEvent().AddUObject(this, &UCSFunctionBase::OnClassReloaded);
 #endif
 
 	for (FNativeFunctionLookup& Function : ClassToFindFunction->NativeFunctionLookupTable)
@@ -34,6 +31,21 @@ void UCSFunctionBase::Bind()
 			SetNativeFunc(Function.Pointer);
 		}
 	}
+}
+
+void UCSFunctionBase::UpdateMethodInfo()
+{
+	if (MethodHandle.IsValid())
+	{
+		return;
+	}
+	
+	UCSClass* ManagedClass = GetOwningManagedClass();
+	TSharedPtr<FCSAssembly> Assembly = ManagedClass->GetOwningAssembly();
+	
+	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
+	MethodHandle = Assembly->GetMethodHandle(ManagedClass, InvokeMethodName);
+	check(MethodHandle.IsValid());
 }
 
 bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
@@ -46,11 +58,12 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		++Stack.Code;
 	}
 	
-	const FGCHandle* ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
+	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
+	TSharedPtr<FGCHandle> MethodHandle = Function->MethodHandle.Pin();
 	FString ExceptionMessage;
 	
-	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle->GetHandle(),
-		Function->MethodHandle->GetPointer(),
+	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
+		MethodHandle->GetPointer(),
 		ArgumentBuffer,
 		RESULT_PARAM,
 		&ExceptionMessage) == 0;
@@ -71,5 +84,13 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 
 UCSClass* UCSFunctionBase::GetOwningManagedClass() const
 {
-	return static_cast<UCSClass*>(GetOuter());
+	return Cast<UCSClass>(GetOwnerClass());
+}
+
+void UCSFunctionBase::OnClassReloaded(UClass* Class)
+{
+	if (Class == GetOuter())
+	{
+		UpdateMethodInfo();
+	}
 }

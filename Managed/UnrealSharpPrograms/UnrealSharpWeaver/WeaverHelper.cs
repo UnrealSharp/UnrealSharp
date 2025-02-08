@@ -82,6 +82,9 @@ public static class WeaverHelper
     
     public static MethodReference BlittableTypeConstructor;
     
+    public static MethodReference GetAssemblyNameMethod;
+    public static MethodReference GetTypeFromHandleMethod;
+    
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
     
     public static void Initialize(AssemblyDefinition bindingsAssembly)
@@ -148,6 +151,12 @@ public static class WeaverHelper
         GeneratedTypeCtor = FindMethod(generatedType.Resolve(), ".ctor")!;
         
         ScriptInterfaceMarshaller = FindTypeInAssembly(BindingsAssembly, "ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
+        
+        TypeReference typeExtensions = FindTypeInAssembly(BindingsAssembly, "TypeExtensions", UnrealSharpNamespace)!;
+        GetAssemblyNameMethod = FindMethod(typeExtensions.Resolve(), "GetAssemblyName")!;
+        
+        TypeReference? typeType = BindingsAssembly.MainModule.ImportReference(typeof(Type));
+        GetTypeFromHandleMethod = FindMethod(typeType.Resolve(), "GetTypeFromHandle")!;
     }
     
     public static TypeReference? FindGenericTypeInAssembly(AssemblyDefinition assembly, string typeNamespace, string typeName, TypeReference[] typeParameters, bool bThrowOnException = true)

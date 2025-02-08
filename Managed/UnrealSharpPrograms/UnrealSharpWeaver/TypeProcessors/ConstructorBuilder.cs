@@ -52,6 +52,11 @@ public static class ConstructorBuilder
         MethodDefinition staticConstructorMethod = MakeStaticConstructor(typeDefinition);
         ILProcessor processor = staticConstructorMethod.Body.GetILProcessor();
         
+        // typeof(TypeDefinition).GetAssemblyName()
+        processor.Emit(OpCodes.Ldtoken, typeDefinition);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetTypeFromHandleMethod);
+        processor.Emit(OpCodes.Call, WeaverHelper.GetAssemblyNameMethod); 
+        
         engineName = string.IsNullOrEmpty(engineName) ? WeaverHelper.GetEngineName(typeDefinition) : engineName;
         processor.Emit(OpCodes.Ldstr, engineName);
         

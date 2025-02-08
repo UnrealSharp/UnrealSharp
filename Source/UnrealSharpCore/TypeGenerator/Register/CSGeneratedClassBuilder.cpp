@@ -1,7 +1,6 @@
 ﻿#include "CSGeneratedClassBuilder.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSSimpleConstructionScriptBuilder.h"
-#include "CSTypeRegistry.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
@@ -12,21 +11,21 @@
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 
-FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData): TCSGeneratedTypeBuilder(InTypeMetaData)
+FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly): TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly)
 {
 	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
 }
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
-	UClass* SuperClass = FCSTypeRegistry::GetClassFromName(TypeMetaData->ParentClass.Name);
+	UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
 	
 	if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
 	{
 		SuperClass = *RedirectedClass;
 	}
 	
-	TSharedPtr<FCSharpClassInfo> ClassInfo = FCSTypeRegistry::GetClassInfoFromName(TypeMetaData->Name);
+	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->Name);
 	Field->SetClassInfo(ClassInfo);
 	Field->SetSuperStruct(SuperClass);
 	
@@ -39,7 +38,19 @@ void FCSGeneratedClassBuilder::RebuildType()
 
 void FCSGeneratedClassBuilder::UpdateType()
 {
-	FCSTypeRegistry::Get().GetOnClassModifiedEvent().Broadcast(Field);
+	UObject* ClassDefaultObject = Field->ClassDefaultObject;
+	ClassDefaultObject->ClearFlags(RF_Public);
+	ClassDefaultObject->SetFlags(RF_Transient);
+	ClassDefaultObject->RemoveFromRoot();
+	ClassDefaultObject->Rename(nullptr, GetTransientPackage(), REN_ForceNoResetLoaders | REN_DontCreateRedirectors | REN_DoNotDirty | REN_NonTransactional);
+	ClassDefaultObject->MarkAsGarbage();
+	Field->ClassDefaultObject = nullptr;
+	
+	OwningAssembly->RemoveManagedObject(ClassDefaultObject);
+	
+	Field->GetDefaultObject(true);
+	
+	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
 }
 
 #if WITH_EDITOR
@@ -56,7 +67,7 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		Field->ClassGeneratedBy = Blueprint;
 	}
 
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
+	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 }
 #endif
 
@@ -132,7 +143,8 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	UCSManager::Get().CreateNewManagedObject(ObjectInitializer.GetObj());
+	TSharedPtr<FCSAssembly> OwningAssembly = ManagedClass->GetOwningAssembly();
+	OwningAssembly->CreateNewManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
@@ -168,15 +180,15 @@ void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, 
 	TickFunction->bStartWithTickEnabled = bCanTick;
 }
 
-void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FName>& Interfaces)
+void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceMetaData>& Interfaces)
 {
-	for (const FName& InterfaceName : Interfaces)
+	for (const FCSTypeReferenceMetaData& InterfaceData : Interfaces)
 	{
-		UClass* InterfaceClass = FCSTypeRegistry::GetInterfaceFromName(InterfaceName);
+		UClass* InterfaceClass = InterfaceData.GetOwningInterface();
 
 		if (!IsValid(InterfaceClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceName.ToString());
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.Name.ToString());
 			continue;
 		}
 

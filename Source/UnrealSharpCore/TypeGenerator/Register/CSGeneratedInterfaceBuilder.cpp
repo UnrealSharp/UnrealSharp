@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
-#include "CSTypeRegistry.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
 void FCSGeneratedInterfaceBuilder::RebuildType()
@@ -18,11 +17,11 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 	Field->GetDefaultObject();
 
 #if WITH_EDITOR
-	FCSTypeRegistry::Get().GetOnNewInterfaceEvent().Broadcast(Field);
+	UCSManager::Get().OnNewInterfaceEvent().Broadcast(Field);
 #endif
 }
 
 void FCSGeneratedInterfaceBuilder::UpdateType()
 {
-	FCSTypeRegistry::Get().GetOnInterfaceModifiedEvent().Broadcast(Field);
+	UCSManager::Get().OnInterfaceReloadedEvent().Broadcast(Field);
 }

@@ -13,8 +13,13 @@ using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPl
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UClass*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSStructEvent, UScriptStruct*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSInterfaceEvent, UClass*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UEnum*);
+
 UCLASS()
-class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
+class UNREALSHARPCORE_API UCSManager : public UObject
 {
 	GENERATED_BODY()
 public:
@@ -27,19 +32,16 @@ public:
 
 	bool LoadAllUserAssemblies();
 	
-	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath, bool bProcessMetaData = true);
+	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath);
+	TSharedPtr<FCSAssembly> LoadAssemblyByName(const FName AssemblyName);
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
 	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
 	
-	bool UnloadAssembly(const FString& AssemblyName);
-
-	FGCHandle* CreateNewManagedObject(UObject* Object) const;
-	FGCHandle* FindManagedObject(UObject* Object) const;
+	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const;
+	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName);
 	
-	static uint8* GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName);
-	uint8* GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const;
-	uint8* GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const;
+	FGCHandle FindManagedObject(UObject* Object) const;
 
 	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
@@ -48,6 +50,18 @@ public:
 
 	FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
 	FOnAssembliesReloaded& OnAssembliesLoadedEvent() { return OnAssembliesLoaded; }
+
+	FCSClassEvent& OnNewClassEvent() { return OnNewClass; }
+	FCSStructEvent& OnNewStructEvent() { return OnNewStruct; }
+	FCSInterfaceEvent& OnNewInterfaceEvent() { return OnNewInterface; }
+	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
+
+	FCSInterfaceEvent& OnInterfaceReloadedEvent() { return OnInterfaceReloaded; }
+	FCSClassEvent& OnClassReloadedEvent() { return OnClassReloaded; }
+	FCSStructEvent& OnStructReloadedEvent() { return OnStructReloaded; }
+	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
+	
+	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 
 private:
 
@@ -58,15 +72,6 @@ private:
 	
 	bool LoadRuntimeHost();
 	bool InitializeRuntime();
-	
-	void RemoveManagedObject(const UObjectBase* Object);
-
-	// Begin FUObjectArray::FUObjectDeleteListener interface
-	virtual void NotifyUObjectDeleted(const UObjectBase *Object, int32 Index) override;
-	virtual void OnUObjectArrayShutdown() override;
-	// End FUObjectArray::FUObjectDeleteListener interface
-
-	void OnEnginePreExit();
 
 	static UCSManager* Instance;
 
@@ -75,16 +80,24 @@ private:
 
 	UPROPERTY()
 	TWeakObjectPtr<UObject> CurrentWorldContext;
-
-	TMap<const UObjectBase*, FGCHandle> UnmanagedToManagedMap;
 	
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
-	
-	TSharedPtr<FCSAssembly> CoreAssembly;
-	TSharedPtr<FCSAssembly> GlueAssembly;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
+
+	FCSClassEvent OnNewClass;
+	FCSStructEvent OnNewStruct;
+	FCSInterfaceEvent OnNewInterface;
+	FCSEnumEvent OnNewEnum;
+
+	FCSClassEvent OnClassReloaded;
+	FCSStructEvent OnStructReloaded;
+	FCSInterfaceEvent OnInterfaceReloaded;
+	FCSEnumEvent OnEnumReloaded;
+	
+	FSimpleMulticastDelegate OnProcessedPendingClasses;
+	
 
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 	

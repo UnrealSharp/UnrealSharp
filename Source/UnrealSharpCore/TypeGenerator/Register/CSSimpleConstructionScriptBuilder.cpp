@@ -3,7 +3,6 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 
@@ -32,7 +31,7 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		}
 	
 		TSharedPtr<FCSDefaultComponentMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSDefaultComponentMetaData>();
-		UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
+		UClass* Class = ObjectMetaData->InnerType.GetOwningClass();
 
 		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.Name);
 	

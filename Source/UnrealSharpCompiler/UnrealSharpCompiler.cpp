@@ -3,9 +3,9 @@
 #include "BlueprintCompilationManager.h"
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
+#include "CSManager.h"
 #include "KismetCompiler.h"
 #include "TypeGenerator/CSBlueprint.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
@@ -19,12 +19,22 @@ void FUnrealSharpCompilerModule::StartupModule()
 	IKismetCompilerInterface& KismetCompilerModule = FModuleManager::LoadModuleChecked<IKismetCompilerInterface>("KismetCompiler");
 	KismetCompilerModule.GetCompilers().Add(&BlueprintCompiler);
 
-	FCSTypeRegistry& TypeRegistry = FCSTypeRegistry::Get();
-	TypeRegistry.GetOnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
-	TypeRegistry.GetOnPendingClassesProcessedEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
+	UCSManager& Manager = UCSManager::GetOrCreate();
+	Manager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	Manager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	UCSManager::GetOrCreate().OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
 	// Try to recompile and reinstance all blueprints when the module is loaded.
+
+	ForEachObjectWithPackage(UCSManager::Get().GetUnrealSharpPackage(), [this](UObject* Object)
+	{
+		if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
+		{
+			OnNewClass(Blueprint->GeneratedClass);
+		}
+		return true;
+	}, false);
+	
 	RecompileAndReinstanceBlueprints();
 }
 

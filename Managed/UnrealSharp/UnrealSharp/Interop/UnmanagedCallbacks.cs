@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using UnrealSharp.Attributes;
 using UnrealSharp.Logging;
 
@@ -56,7 +57,8 @@ public static class UnmanagedCallbacks
 
                 if (method != null)
                 {
-                    return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(method));
+                    GCHandle methodHandle = GcHandleUtilities.AllocateStrongPointer(method, type.Assembly);
+                    return GCHandle.ToIntPtr(methodHandle);
                 }
                 
                 currentType = currentType.BaseType;
@@ -81,24 +83,8 @@ public static class UnmanagedCallbacks
             string typeEngineNameString = new string(typeEngineName);
             string fullTypeName = $"{typeNamespaceString}.{typeEngineNameString}";
             
-            if (assemblyHandle == IntPtr.Zero)
-            {
-                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                
-                foreach (Assembly assembly in assemblies)
-                {
-                    IntPtr foundType = FindTypeInAssembly(assembly, fullTypeName);
-                    if (foundType != IntPtr.Zero)
-                    {
-                        return foundType;
-                    }
-                }
-                
-                throw new Exception($"The type '{fullTypeName}' was not found in any loaded assemblies.");
-            }
-
-            // Load the specific assembly if assemblyHandle is provided
-            Assembly? loadedAssembly = GCHandle.FromIntPtr(assemblyHandle).Target as Assembly;
+            GCHandle handle = GCHandle.FromIntPtr(assemblyHandle);
+            Assembly? loadedAssembly = handle.Target as Assembly;
 
             if (loadedAssembly == null)
             {
@@ -134,7 +120,7 @@ public static class UnmanagedCallbacks
                 string fullName = (string)attributeData.ConstructorArguments[1].Value!;
                 if (fullName == fullTypeName)
                 {
-                    return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(type));
+                    return GCHandle.ToIntPtr(GcHandleUtilities.AllocateStrongPointer(type, assembly));
                 }
             }
         }

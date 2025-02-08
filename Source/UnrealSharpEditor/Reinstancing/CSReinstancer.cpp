@@ -1,13 +1,14 @@
 ﻿#include "CSReinstancer.h"
 
 #include "BlueprintCompilationManager.h"
+#include "CSManager.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_DynamicCast.h"
 #include "K2Node_FunctionTerminator.h"
 #include "K2Node_MacroInstance.h"
 #include "K2Node_StructOperation.h"
-#include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpBlueprint/K2Node_CSAsyncAction.h"
 
 FCSReinstancer& FCSReinstancer::Get()
@@ -18,10 +19,10 @@ FCSReinstancer& FCSReinstancer::Get()
 
 void FCSReinstancer::Initialize()
 {
-	FCSTypeRegistry& TypeRegistry = FCSTypeRegistry::Get();
-	TypeRegistry.GetOnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
-	TypeRegistry.GetOnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
-	TypeRegistry.GetOnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
+	UCSManager& Manager = UCSManager::Get();
+	Manager.OnNewClassEvent().AddRaw(this, &FCSReinstancer::AddPendingClass);
+	Manager.OnNewStructEvent().AddRaw(this, &FCSReinstancer::AddPendingStruct);
+	Manager.OnNewInterfaceEvent().AddRaw(this, &FCSReinstancer::AddPendingInterface);
 }
 
 void FCSReinstancer::AddPendingClass(UClass* NewClass)
@@ -55,18 +56,7 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
-		
-		if (!Enum || Enum->GetOutermost() != UCSManager::Get().GetUnrealSharpPackage())
-		{
-			return false;
-		}
-
-		// Enums are not reinstanced, so we need to check if the enum is still valid
-		if (FCSTypeRegistry::GetEnumFromName(Enum->GetFName()))
-		{
-			PinType.PinSubCategoryObject = Enum;
-			return true;
-		}
+		return Enum && Enum->GetOutermost() == UCSManager::Get().GetUnrealSharpPackage();
 	}
 	else if (PinType.IsMap())
 	{

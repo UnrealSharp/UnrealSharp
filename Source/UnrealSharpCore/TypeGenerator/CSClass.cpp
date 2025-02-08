@@ -6,14 +6,14 @@ TSharedRef<const FCSharpClassInfo> UCSClass::GetClassInfo() const
 	return ClassInfo.ToSharedRef();
 }
 
-TSharedRef<const FGCHandle> UCSClass::GetClassHandle() const
+TWeakPtr<const FGCHandle> UCSClass::GetClassHandle() const
 {
-	return ClassInfo->TypeHandle.ToSharedRef();
+	return ClassInfo->GetTypeHandle();
 }
 
 TSharedPtr<FCSAssembly> UCSClass::GetOwningAssembly() const
 {
-	return nullptr;
+	return ClassInfo->OwningAssembly;
 }
 
 void UCSClass::SetClassInfo(const TSharedPtr<FCSharpClassInfo>& InClassMetaData)

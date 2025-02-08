@@ -15,7 +15,7 @@ class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass
 public:
 	
 	TSharedRef<const FCSharpClassInfo> GetClassInfo() const;
-	TSharedRef<const FGCHandle> GetClassHandle() const;
+	TWeakPtr<const FGCHandle> GetClassHandle() const;
 	TSharedPtr<FCSAssembly> GetOwningAssembly() const;
 
 	void SetClassInfo(const TSharedPtr<FCSharpClassInfo>& InClassMetaData);

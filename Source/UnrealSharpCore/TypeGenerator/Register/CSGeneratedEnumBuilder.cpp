@@ -17,9 +17,11 @@ void FCSGeneratedEnumBuilder::RebuildType()
 	
 	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
+
+	UCSManager::Get().OnNewEnumEvent().Broadcast(Field);
 }
 
 void FCSGeneratedEnumBuilder::UpdateType()
 {
-	
+	UCSManager::Get().OnEnumReloadedEvent().Broadcast(Field);
 }

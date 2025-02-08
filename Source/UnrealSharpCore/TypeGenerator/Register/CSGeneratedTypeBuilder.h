@@ -13,7 +13,7 @@ public:
 	
 	virtual ~TCSGeneratedTypeBuilder() = default;
 	
-	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData) : TypeMetaData(InTypeMetaData), Field(nullptr)
+	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TypeMetaData(InTypeMetaData), Field(nullptr), OwningAssembly(InOwningAssembly)
 	{
 	}
 
@@ -70,6 +70,8 @@ protected:
 	
 	TSharedPtr<const TMetaData> TypeMetaData;
 	TField* Field;
+	
+	TSharedPtr<FCSAssembly> OwningAssembly;
 
 private:
 

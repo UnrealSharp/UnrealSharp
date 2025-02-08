@@ -6,22 +6,19 @@
 
 struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, UClass, FCSGeneratedClassBuilder>
 {
-	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData,const TSharedPtr<FCSAssembly>& InOwningAssembly);
-	FCSharpClassInfo(UClass* InField);
+	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
+	FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TWeakPtr<FGCHandle>& TypeHandle);
 
 	// TCharpTypeInfo interface implementation
 	virtual UClass* InitializeBuilder() override;
 	// End of implementation
-	
-	void TryUpdateTypeHandle();
 
-	TSharedPtr<FGCHandle> TypeHandle;
+	TWeakPtr<FGCHandle> GetTypeHandle() const { return TypeHandle; }
 
 private:
-	void OnNewClassOrModified(UClass* Class);
-	uint8* GetHandle(UClass* Class);
-	void OnAssembliesLoaded();
+	friend struct FCSAssembly;
 	
+	TWeakPtr<FGCHandle> TypeHandle;
 	bool bDirtyHandle = false;
 	bool bInitFromClass = false;
 };

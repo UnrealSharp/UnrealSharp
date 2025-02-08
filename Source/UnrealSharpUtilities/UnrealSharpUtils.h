@@ -5,8 +5,8 @@
 
 namespace FUnrealSharpUtils
 {
-	UNREALSHARPUTILITIES_API FString GetNamespace(const UObject* Object);
-	UNREALSHARPUTILITIES_API FString GetNamespace(FName PackageName);
+	UNREALSHARPUTILITIES_API FName GetNamespace(const UObject* Object);
+	UNREALSHARPUTILITIES_API FName GetNamespace(FName PackageName);
 	
 	UNREALSHARPUTILITIES_API FName GetModuleName(const UObject* Object);
 

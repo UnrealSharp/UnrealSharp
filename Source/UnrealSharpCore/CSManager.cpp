@@ -5,7 +5,6 @@
 #include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "UObject/Object.h"
@@ -13,7 +12,6 @@
 #include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
-
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -79,23 +77,16 @@ void UCSManager::Initialize()
 	}
 #endif
 
-	// Remove this listener when the engine is shutting down.
-	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
-	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
-	
-	//Create the package where we will store our generated types.
-	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public);
-	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
-
-	// Listen to GC callbacks.
-	GUObjectArray.AddUObjectDeleteListener(this);
-
 	// Initialize the C# runtime.
 	if (!InitializeRuntime())
 	{
 		return;
 	}
-
+	
+	//Create the package where we will store our generated types.
+	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public);
+	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
+	
 	FCSPropertyFactory::Initialize();
 
 	// Try to load the user assembly, can be null when the project is first created.
@@ -156,10 +147,7 @@ bool UCSManager::InitializeRuntime()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
 	}
-	
-	CoreAssembly = LoadAssembly(FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpCorePath()), false);
-	GlueAssembly = LoadAssembly(FPaths::ConvertRelativePathToFull(FCSProcHelper::GetGlueLibraryPath()), false);
-	
+
 	return true;
 }
 
@@ -321,27 +309,50 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath, bool bProcessMetaData)
+TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
+	LoadedPlugins.Add(NewPlugin->GetAssemblyName(), NewPlugin);
 	
-	if (!NewPlugin->Load(bProcessMetaData))
+	if (!NewPlugin->Load())
 	{
 		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to load Assembly with path: %s."), *AssemblyPath));
 		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
 		return nullptr;
 	}
 	
-	LoadedPlugins.Add(NewPlugin->GetAssemblyName(), NewPlugin);
 	OnManagedAssemblyLoaded.Broadcast(NewPlugin->GetAssemblyName());
  
 	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
 	return NewPlugin;
 }
 
+TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByName(const FName AssemblyName)
+{
+	FString AssemblyPath = FCSProcHelper::GetUserAssemblyDirectory();
+	AssemblyPath /= AssemblyName.ToString() + ".dll";
+	return LoadAssembly(AssemblyPath);
+}
+
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(const UObject* Object) const
 {
 	return FindOwningAssembly(Object->GetClass());
+}
+
+TSharedPtr<FCSAssembly> UCSManager::FindAssembly(const FName AssemblyName) const
+{
+	TSharedPtr<FCSAssembly> Assembly = LoadedPlugins.FindRef(AssemblyName);
+	return Assembly;
+}
+
+TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
+{
+	if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
+	{
+		return Assembly;
+	}
+	
+	return LoadAssemblyByName(AssemblyName);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
@@ -352,93 +363,31 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 		return FirstManagedClass->GetOwningAssembly();
 	}
 	
-	for (const TPair<FName, TSharedPtr<FCSAssembly>>& Plugin : LoadedPlugins)
+	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedPlugins)
 	{
-		if (Plugin.Value->GetTypeHandle(Class))
+		TWeakPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);
+		if (TypeHandle.IsValid())
 		{
-			return Plugin.Value;
+			return Assembly.Value;
 		}
 	}
-	
+
 	return nullptr;
 }
 
-bool UCSManager::UnloadAssembly(const FString& AssemblyName)
+FGCHandle UCSManager::FindManagedObject(UObject* Object) const
 {
-	TSharedPtr<FCSAssembly> Assembly;
-	if (LoadedPlugins.RemoveAndCopyValue(*AssemblyName, Assembly))
+	if (!IsValid(Object))
 	{
-		return Assembly->Unload();
+		return FGCHandle();
 	}
-
-	// If we can't find the Assembly, it's probably already unloaded.
-	return true;
-}
-
-FGCHandle* UCSManager::CreateNewManagedObject(UObject* Object) const
-{
-	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(Object->GetClass());
-	return OwningAssembly->CreateNewManagedObject(Object);
-}
-
-FGCHandle* UCSManager::FindManagedObject(UObject* Object) const
-{
+	
 	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(Object);
+
+	if (!OwningAssembly.IsValid())
+	{
+		return FGCHandle();
+	}
+	
 	return OwningAssembly->FindManagedObject(Object);
-}
-
-void UCSManager::RemoveManagedObject(const UObjectBase* Object)
-{
-	FGCHandle Handle;
-	if (UnmanagedToManagedMap.RemoveAndCopyValue(Object, Handle))
-	{
-		Handle.Dispose();
-	}
-}
-
-void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
-{
-	RemoveManagedObject(Object);
-}
-
-void UCSManager::OnUObjectArrayShutdown()
-{
-	GUObjectArray.RemoveUObjectDeleteListener(this);
-}
-
-void UCSManager::OnEnginePreExit()
-{
-	OnUObjectArrayShutdown();
-}
-
-uint8* UCSManager::GetTypeHandle(uint8* AssemblyHandle, const FString& Namespace, const FString& TypeName)
-{
-	return FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle, *Namespace, *TypeName);
-}
-
-uint8* UCSManager::GetTypeHandle(const FString& AssemblyName, const FString& Namespace, const FString& TypeName) const
-{
-	const TSharedPtr<FCSAssembly> Plugin = LoadedPlugins.FindRef(*AssemblyName);
-
-	if (!Plugin.IsValid() || !Plugin->IsValid())
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Assembly is not valid."))
-		return nullptr;
-	}
-
-	uint8* TypeHandle = GetTypeHandle(Plugin->GetAssemblyHandle().IntPtr, Namespace, TypeName);
-
-	if (TypeHandle == nullptr)
-	{
-		// This should never happen. Something seriously wrong.
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Couldn't find a TypeHandle for %s."), *TypeName);
-		return nullptr;
-	}
-
-	return TypeHandle;
-}
-
-uint8* UCSManager::GetTypeHandle(const FCSTypeReferenceMetaData& TypeMetaData) const
-{
-	return GetTypeHandle(TypeMetaData.AssemblyName.ToString(), TypeMetaData.Namespace.ToString(), TypeMetaData.Name.ToString());
 }

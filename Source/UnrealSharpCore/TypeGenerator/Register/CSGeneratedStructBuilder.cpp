@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-#include "CSTypeRegistry.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -25,13 +24,13 @@ void FCSGeneratedStructBuilder::RebuildType()
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 
 #if WITH_EDITOR
-	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field);
+	UCSManager::Get().OnNewStructEvent().Broadcast(Field);
 #endif
 }
 
 void FCSGeneratedStructBuilder::UpdateType()
 {
-	FCSTypeRegistry::Get().GetOnStructModifiedEvent().Broadcast(Field);
+	UCSManager::Get().OnStructReloadedEvent().Broadcast(Field);
 }
 
 void FCSGeneratedStructBuilder::PurgeStruct()

@@ -2,10 +2,15 @@
 
 struct FCSAssembly;
 
-enum ETypeState
+enum ETypeState : uint8
 {
-	None,
+	// The type is up to date. No need to rebuild or update.
+	UpToDate,
+
+	// The type needs to be rebuilt. The structure has changed.
 	NeedRebuild,
+
+	// The type just needs to be updated. New method ptr et.c.
 	NeedUpdate,
 };
 
@@ -39,8 +44,14 @@ struct UNREALSHARPCORE_API TCSharpTypeInfo
 
 	virtual TField* InitializeBuilder()
 	{
+		if (Field && State == UpToDate)
+        {
+			// No need to rebuild or update
+            return Field;
+        }
+		
 		// Builder for this type
-		TTypeBuilder TypeBuilder(TypeMetaData);
+		TTypeBuilder TypeBuilder(TypeMetaData, OwningAssembly);
 		Field = TypeBuilder.CreateType();
 		
 		if (State == NeedRebuild)
@@ -52,7 +63,7 @@ struct UNREALSHARPCORE_API TCSharpTypeInfo
             TypeBuilder.UpdateType();
 		}
 	
-		State = None;
+		State = UpToDate;
 		return Field;
 	}
 };

@@ -102,7 +102,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
-	
+
 	if (FPlayWorldCommandCallbacks::IsInPIE())
 	{
 		bHasQueuedHotReload = true;
@@ -149,7 +149,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		}
 		else
 		{
-			StartHotReload(false);
+			StartHotReload(true);
 		}
 		
 		return;
@@ -202,32 +202,50 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 	
 	UCSManager& CSharpManager = UCSManager::Get();
+	bool bUnloadFailed = false;
 
-	// Unload the user's assembly, to apply the new one.
-	// TODO: Unload the assembly that was modified, not all of them, for sake of hot reload speed.
 	for (const FString& ProjectPath : ProjectPaths)
 	{
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
-		if (!CSharpManager.UnloadAssembly(ProjectName))
+		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
+
+		if (!Assembly.IsValid())
 		{
-			HotReloadStatus = FailedToUnload;
-			bHotReloadFailed = true;
+			UE_LOG(LogTemp, Warning, TEXT("Assembly not found for project: %s"), *ProjectName);
+			continue;
+		}
 
-			FString DialogText = FString::Printf(TEXT("Failed to unload %s. Hot reload will now be disabled until editor restart.\n\nPossible causes: Strong GC handles, running threads, etc."), *ProjectName);
-			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-
-			return;
+		if (!Assembly->Unload())
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to unload assembly: %s"), *ProjectName);
+			bUnloadFailed = true;
 		}
 	}
 
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Loading C# Assembly..."));
-
-	// TODO: Same here, only load the assembly that was modified.
-	if (!CSharpManager.LoadAllUserAssemblies())
+	if (bUnloadFailed)
 	{
-		HotReloadStatus = Inactive;
+		HotReloadStatus = FailedToUnload;
 		bHotReloadFailed = true;
+
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HotReloadFailure", 
+			"One or more assemblies failed to unload. Hot reload will be disabled until the editor restarts.\n\n"
+			"Possible causes: Strong GC handles, running threads, etc."));
+
 		return;
+	}
+	
+	for (const FString& ProjectPath : ProjectPaths)
+	{
+		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
+		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
+
+		if (!Assembly.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Skipping load: Assembly not found for project: %s"), *ProjectName);
+			continue;
+		}
+
+		Assembly->Load();
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));

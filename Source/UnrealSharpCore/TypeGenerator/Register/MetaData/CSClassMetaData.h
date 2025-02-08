@@ -16,7 +16,7 @@ struct FCSClassMetaData : public FCSTypeReferenceMetaData
 	TArray<FCSFunctionMetaData> Functions;
 	TArray<FName> VirtualFunctions;
 	
-	TArray<FName> Interfaces;
+	TArray<FCSTypeReferenceMetaData> Interfaces;
 
 	bool bCanTick = false;
 	bool bOverrideInput = false;

@@ -1,5 +1,4 @@
 ﻿#include "FCSTypeRegistryExporter.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 
 void UFCSTypeRegistryExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
@@ -8,5 +7,5 @@ void UFCSTypeRegistryExporter::ExportFunctions(FRegisterExportedFunction Registe
 
 void UFCSTypeRegistryExporter::RegisterClassToFilePath(const UTF16CHAR* ClassName, const UTF16CHAR* FilePath)
 {
-	FCSTypeRegistry::Get().RegisterClassToFilePath(ClassName, FilePath);
+	//FCSTypeRegistry::Get().RegisterClassToFilePath(ClassName, FilePath);
 }
