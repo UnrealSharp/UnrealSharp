@@ -8,8 +8,9 @@ UCLASS(Abstract, meta = (NotGeneratorValid))
 class UCSDeveloperSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
-
+#if WITH_EDITOR
 	// UDeveloperSettings interface
 	virtual bool SupportsAutoRegistration() const override { return false; }
 	// End of UDeveloperSettings interface
+#endif
 };
