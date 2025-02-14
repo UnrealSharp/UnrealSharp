@@ -151,7 +151,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 #else
 	for (const FImplementedInterface& Interface : Outer->Interfaces)
 	{
-		IterateThroughInterface(Interface.Class);
+		IterateInterfaceFunctions(Interface.Class);
 	}
 #endif
 	
