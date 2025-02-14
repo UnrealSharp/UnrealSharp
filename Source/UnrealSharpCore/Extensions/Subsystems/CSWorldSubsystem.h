@@ -1,15 +1,17 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#if ENGINE_MINOR_VERSION >= 5
 #include "Streaming/StreamingWorldSubsystemInterface.h"
+#endif
 #include "Subsystems/WorldSubsystem.h"
 #include "CSWorldSubsystem.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
 class UCSWorldSubsystem : public UTickableWorldSubsystem
-# if ENGINE_MINOR_VERSION >= 5
+#if ENGINE_MINOR_VERSION >= 5
 	, public IStreamingWorldSubsystemInterface
-# endif
+#endif
 {
 	GENERATED_BODY()
 
@@ -63,7 +65,7 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
 		K2_OnWorldComponentsUpdated();
 	}
 
-# if ENGINE_MINOR_VERSION >= 5
+#if ENGINE_MINOR_VERSION >= 5
 	virtual void OnUpdateStreamingState() override
 	{
         K2_UpdateStreamingState();
