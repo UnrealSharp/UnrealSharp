@@ -149,11 +149,6 @@ public static class NameMapper
     {
         string functionName = function.GetScriptName();
 
-        if (function.SourceName.Contains("OnBookmarkChanged_Implementation"))
-        {
-            Console.WriteLine("OnBookmarkChanged");
-        }
-
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {
             functionName = DelegateBasePropertyTranslator.GetDelegateName(function);

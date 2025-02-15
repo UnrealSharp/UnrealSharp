@@ -73,7 +73,7 @@ public static class DotNetUtilities
     public static void InvokeDotNet(Collection<string> arguments)
     {
 	    string dotnetPath = FindDotNetExecutable();
-    	
+    
 	    Process process = new Process();
 	    process.StartInfo.FileName = dotnetPath;
 	    
@@ -82,14 +82,41 @@ public static class DotNetUtilities
 		    process.StartInfo.ArgumentList.Add(argument);
 	    }
 	    
-	    process.Start();
-	    process.WaitForExit();
-    	
-	    if (process.ExitCode != 0)
+	    process.StartInfo.RedirectStandardOutput = true;
+	    process.StartInfo.RedirectStandardError = true;
+	    process.StartInfo.UseShellExecute = false;
+	    process.StartInfo.CreateNoWindow = true;
+    
+	    try
 	    {
-		    throw new Exception($"Failed to invoke dotnet with arguments: {string.Join(" ", arguments)}");
+		    process.Start();
 	    }
+	    catch (Exception ex)
+	    {
+		    throw new Exception($"Failed to start process '{dotnetPath}' with arguments: {string.Join(" ", arguments)}", ex);
+	    }
+	    
+	    string standardOutput = process.StandardOutput.ReadToEnd();
+	    string standardError = process.StandardError.ReadToEnd();
+	    
+	    process.WaitForExit();
+
+	    if (process.ExitCode == 0)
+	    {
+		    return;
+	    }
+	    
+	    string errorDetails = $@"
+Failed to invoke dotnet command:
+Executable: {dotnetPath}
+Arguments: {string.Join(" ", arguments)}
+Exit Code: {process.ExitCode}
+Standard Output: {standardOutput}
+Standard Error: {standardError}";
+        
+	    throw new Exception(errorDetails);
     }
+
 
     public static void InvokeUSharpBuildTool(string action, Dictionary<string, string>? additionalArguments = null)
     {
