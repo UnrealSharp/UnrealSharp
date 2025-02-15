@@ -235,14 +235,11 @@ public static class ScriptGeneratorUtilities
             exportedFunctions.Add(function);
         }
 
-        foreach (UhtStruct declaration in classObj.Bases)
+        foreach (UhtClass declaration in classObj.GetInterfaces())
         {
-            if (declaration.EngineType is not (UhtEngineType.Interface or UhtEngineType.NativeInterface))
-            {
-                continue;
-            }
+            UhtClass? interfaceClass = declaration.GetInterfaceAlternateClass();
             
-            if (declaration.AlternateObject is not UhtClass interfaceClass)
+            if (interfaceClass == null)
             {
                 continue;
             }
