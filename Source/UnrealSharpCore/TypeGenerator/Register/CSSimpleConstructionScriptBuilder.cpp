@@ -1,6 +1,6 @@
 ﻿#include "CSSimpleConstructionScriptBuilder.h"
 #include "Engine/InheritableComponentHandler.h"
-#include "Engine/SCS_Node.h"
+
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/CSTypeRegistry.h"
