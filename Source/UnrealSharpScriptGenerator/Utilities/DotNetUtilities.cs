@@ -62,26 +62,31 @@ public static class DotNetUtilities
 	    string dotNetExecutable = FindDotNetExecutable();
 	    string dotNetExecutableDirectory = Path.GetDirectoryName(dotNetExecutable)!;
 	    string dotNetSdkDirectory = Path.Combine(dotNetExecutableDirectory!, "sdk");
-	    
+    
 	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
-	    
+    
 	    string highestVersion = "0.0.0";
 
 	    foreach (string folderPath in folderPaths)
 	    {
 		    string folderName = Path.GetFileName(folderPath);
 		    
+		    if (string.IsNullOrEmpty(folderName) || !char.IsDigit(folderName[0]))
+		    {
+			    continue;
+		    }
+        
 		    if (string.Compare(folderName, highestVersion, StringComparison.Ordinal) > 0)
 		    {
 			    highestVersion = folderName;
 		    }
 	    }
-	    
+    
 	    if (highestVersion == "0.0.0")
 	    {
 		    throw new Exception("Failed to find the latest .NET SDK version.");
 	    }
-	    
+    
 	    if (!highestVersion.StartsWith(DOTNET_MAJOR_VERSION))
 	    {
 		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {highestVersion}");
