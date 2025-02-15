@@ -36,6 +36,16 @@ public static class ClassUtilities
 
         return null;
     }
+
+    public static UhtClass? GetInterfaceAlternateClass(this UhtClass thisInterface)
+    {
+        if (thisInterface.EngineType is not (UhtEngineType.Interface or UhtEngineType.NativeInterface))
+        {
+            return null;
+        }
+            
+        return thisInterface.AlternateObject as UhtClass;
+    }
     
     public static bool HasAnyFlags(this UhtClass classObj, EClassFlags flags)
     {

@@ -149,6 +149,11 @@ public static class NameMapper
     {
         string functionName = function.GetScriptName();
 
+        if (function.SourceName.Contains("OnBookmarkChanged_Implementation"))
+        {
+            Console.WriteLine("OnBookmarkChanged");
+        }
+
         if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
         {
             functionName = DelegateBasePropertyTranslator.GetDelegateName(function);
@@ -157,6 +162,11 @@ public static class NameMapper
         if (functionName.StartsWith("K2_") || functionName.StartsWith("BP_"))
         {
             functionName = functionName.Substring(3);
+        }
+
+        if (function.IsInterfaceFunction() && functionName.EndsWith("_Implementation"))
+        {
+            functionName = functionName.Substring(0, functionName.Length - 15);
         }
 
         if (function.Outer is not UhtClass)
@@ -213,9 +223,16 @@ public static class NameMapper
                 {
                     continue;
                 }
-                
-                if (IsConflictingWithChild(interfaceClass.Children))
+
+                UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) => uhtFunction.GetFunctionName() == s);
+
+                if (function != null && type is UhtFunction typeAsFunction)
                 {
+                    if (function.HasSameSignature(typeAsFunction))
+                    {
+                        continue;
+                    }
+                    
                     isConflicting = true;
                     break;
                 }
