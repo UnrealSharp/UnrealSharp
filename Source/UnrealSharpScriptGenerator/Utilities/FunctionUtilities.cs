@@ -31,20 +31,32 @@ public static class FunctionUtilities
         {
             return true;
         }
-        
-        while (classOwner.Super != null)
+
+        string sourceName;
+        if (function.SourceName.EndsWith("_Implementation"))
         {
-            classOwner = (UhtClass) classOwner.Super;
-            
-            List<UhtClass> interfaces = classOwner.GetInterfaces();
-            foreach (UhtClass interfaceClass in interfaces)
+            sourceName = function.SourceName.Substring(0, function.SourceName.Length - 15);
+        }
+        else
+        {
+            sourceName = function.SourceName;
+        }
+        
+        UhtClass? currentClass = classOwner;
+        while (currentClass != null)
+        {
+            foreach (UhtClass currentInterface in currentClass.GetInterfaces())
             {
-                if (interfaceClass.FindFunctionByName(function.SourceName) != null)
+                UhtClass? interfaceClass = currentInterface.GetInterfaceAlternateClass();
+                if (interfaceClass != null && interfaceClass.FindFunctionByName(sourceName) != null)
                 {
                     return true;
                 }
             }
+    
+            currentClass = currentClass.Super as UhtClass;
         }
+
         return false;
     }
     
@@ -69,6 +81,25 @@ public static class FunctionUtilities
     public static string GetNativeFunctionName(this UhtFunction function)
     {
         return $"{function.SourceName}_NativeFunction";
+    }
+
+    public static bool HasSameSignature(this UhtFunction function, UhtFunction otherFunction)
+    {
+        if (function.Children.Count != otherFunction.Children.Count)
+        {
+            return false;
+        }
+        
+        for (int i = 0; i < function.Children.Count; i++)
+        {
+            UhtProperty param = (UhtProperty) function.Children[i];
+            UhtProperty otherParam = (UhtProperty) otherFunction.Children[i];
+            if (!param.IsSameType(otherParam))
+            {
+                return false;
+            }
+        }
+        return true;
     }
     
     public static bool IsAutocast(this UhtFunction function)

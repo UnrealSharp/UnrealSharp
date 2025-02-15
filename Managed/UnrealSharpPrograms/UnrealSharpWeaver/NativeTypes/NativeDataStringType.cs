@@ -46,6 +46,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         ILProcessor processor = BeginSimpleSetter(setter);
         Instruction loadValue = processor.Create(OpCodes.Ldarg_1);
         WriteMarshalToNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0), loadValue);
+        setter.FinalizeMethod();
     }
 
     public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBuffer, FieldDefinition offsetField, VariableDefinition localVar)

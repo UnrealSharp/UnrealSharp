@@ -252,7 +252,7 @@ void FCSReinstancer::UpdateBlueprints()
 		bool bNeedsNodeReconstruction = false;
 		UBlueprint* Blueprint = *BlueprintIt;
 
-		if (FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		if (!IsValid(Blueprint->GeneratedClass) || FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
 		{
 			continue;
 		}
