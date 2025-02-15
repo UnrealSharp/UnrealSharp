@@ -79,3 +79,5 @@ DerivedDataCache/*
 bin/
 Generated/
 obj/
+
+*.props
