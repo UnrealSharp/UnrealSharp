@@ -18,6 +18,9 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
+	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->Name);
+	Field->SetClassInfo(ClassInfo);
+	
 	UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
 	
 	if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
@@ -25,8 +28,6 @@ void FCSGeneratedClassBuilder::RebuildType()
 		SuperClass = *RedirectedClass;
 	}
 	
-	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->Name);
-	Field->SetClassInfo(ClassInfo);
 	Field->SetSuperStruct(SuperClass);
 	
 #if WITH_EDITOR
@@ -59,10 +60,11 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
 	{
-		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
+		UPackage* Package = TypeMetaData->GetOwningPackage();
 		FString BlueprintName = TypeMetaData->Name.ToString();
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
+		Blueprint->BlueprintNamespace = TypeMetaData->Namespace.ToString();
 		Blueprint->ParentClass = SuperClass;
 		Field->ClassGeneratedBy = Blueprint;
 	}

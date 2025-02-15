@@ -46,6 +46,46 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
+UPackage* UCSManager::CreateNewUnrealSharpPackage(const FString& InPackageName)
+{
+	FString PackageName = MakePackageName(InPackageName);
+	UPackage* NewPackage = NewObject<UPackage>(nullptr, *PackageName, RF_Public);
+	NewPackage->SetPackageFlags(PKG_CompiledIn);
+	
+	AllPackages.Add(NewPackage);
+	return NewPackage;
+}
+
+FString UCSManager::MakePackageName(const FString& PackageName)
+{
+	return FString::Printf(TEXT("/Script/%s"), *PackageName);
+}
+
+void UCSManager::ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const
+{
+	for (UPackage* Package : AllPackages)
+	{
+		Callback(Package);
+	}
+}
+
+void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) const
+{
+	for (UPackage* Package : AllPackages)
+	{
+		ForEachObjectWithPackage(Package, [&Callback](UObject* Object)
+		{
+			Callback(Object);
+			return true;
+		}, false);
+	}
+}
+
+bool UCSManager::IsUnrealSharpPackage(UPackage* Package) const
+{
+	return AllPackages.Contains(Package);
+}
+
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR
@@ -82,10 +122,8 @@ void UCSManager::Initialize()
 	{
 		return;
 	}
-	
-	//Create the package where we will store our generated types.
-	UnrealSharpPackage = NewObject<UPackage>(nullptr, "/Script/UnrealSharp", RF_Public);
-	UnrealSharpPackage->SetPackageFlags(PKG_CompiledIn);
+
+	GlobalUnrealSharpPackage = CreateNewUnrealSharpPackage("UnrealSharp");
 	
 	FCSPropertyFactory::Initialize();
 
@@ -206,7 +244,7 @@ bool UCSManager::LoadAllUserAssemblies()
 
 	for(const FString& UserAssembly : UserAssemblies)
 	{
-		if (!LoadAssembly(UserAssembly))
+		if (!LoadPlugin(UserAssembly))
 		{
 			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssembly);
 			return false;
@@ -309,12 +347,12 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
+TSharedPtr<FCSAssembly> UCSManager::LoadPlugin(const FString& AssemblyPath, bool bisCollectible)
 {
 	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
 	LoadedPlugins.Add(NewPlugin->GetAssemblyName(), NewPlugin);
 	
-	if (!NewPlugin->Load())
+	if (!NewPlugin->Load(bisCollectible))
 	{
 		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to load Assembly with path: %s."), *AssemblyPath));
 		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
@@ -327,11 +365,11 @@ TSharedPtr<FCSAssembly> UCSManager::LoadAssembly(const FString& AssemblyPath)
 	return NewPlugin;
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByName(const FName AssemblyName)
+TSharedPtr<FCSAssembly> UCSManager::LoadPluginByName(const FName AssemblyName)
 {
 	FString AssemblyPath = FCSProcHelper::GetUserAssemblyDirectory();
 	AssemblyPath /= AssemblyName.ToString() + ".dll";
-	return LoadAssembly(AssemblyPath);
+	return LoadPlugin(AssemblyPath);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(const UObject* Object) const
@@ -352,7 +390,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
 		return Assembly;
 	}
 	
-	return LoadAssemblyByName(AssemblyName);
+	return LoadPluginByName(AssemblyName);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const

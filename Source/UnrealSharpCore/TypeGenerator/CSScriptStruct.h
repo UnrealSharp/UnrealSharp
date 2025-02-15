@@ -8,6 +8,8 @@
 
 #include "CSScriptStruct.generated.h"
 
+struct FCSharpStructInfo;
+
 UCLASS()
 class UNREALSHARPCORE_API UCSScriptStruct : public UUserDefinedStruct
 {
@@ -19,4 +21,10 @@ public:
 	{
 		DefaultStructInstance.Recreate(this);
 	}
+
+	void SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo);
+	TSharedPtr<FCSharpStructInfo> GetStructInfo() const { return StructInfo; }
+
+private:
+	TSharedPtr<FCSharpStructInfo> StructInfo;
 };

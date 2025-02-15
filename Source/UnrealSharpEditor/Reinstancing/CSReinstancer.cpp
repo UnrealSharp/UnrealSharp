@@ -56,8 +56,9 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
-		return Enum && Enum->GetOutermost() == UCSManager::Get().GetUnrealSharpPackage();
+		return Enum && UCSManager::Get().IsUnrealSharpPackage(Enum->GetOutermost());
 	}
+	
 	else if (PinType.IsMap())
 	{
 		bool bChanged = false;

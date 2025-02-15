@@ -2,6 +2,9 @@
 
 void FCSGeneratedEnumBuilder::RebuildType()
 {
+	TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->Name);
+	Field->SetEnumInfo(EnumInfo);
+	
 	const int32 NumItems = TypeMetaData->Items.Num();
     
 	TArray<TPair<FName, int64>> Entries;

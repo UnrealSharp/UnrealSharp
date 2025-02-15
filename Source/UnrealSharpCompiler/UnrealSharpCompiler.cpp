@@ -11,6 +11,8 @@
 
 void FUnrealSharpCompilerModule::StartupModule()
 {
+	UCSManager& CSManager = UCSManager::GetOrCreate();
+	
 	FKismetCompilerContext::RegisterCompilerForBP(UCSBlueprint::StaticClass(), [](UBlueprint* InBlueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompileOptions)
 	{
 		return MakeShared<FCSCompilerContext>(CastChecked<UCSBlueprint>(InBlueprint), InMessageLog, InCompileOptions);
@@ -18,22 +20,23 @@ void FUnrealSharpCompilerModule::StartupModule()
 	
 	IKismetCompilerInterface& KismetCompilerModule = FModuleManager::LoadModuleChecked<IKismetCompilerInterface>("KismetCompiler");
 	KismetCompilerModule.GetCompilers().Add(&BlueprintCompiler);
-
-	UCSManager& Manager = UCSManager::GetOrCreate();
-	Manager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
-	Manager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
-	UCSManager::GetOrCreate().OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
+	
+	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	CSManager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
+	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
 	// Try to recompile and reinstance all blueprints when the module is loaded.
-
-	ForEachObjectWithPackage(UCSManager::Get().GetUnrealSharpPackage(), [this](UObject* Object)
+	CSManager.ForEachUnrealSharpPackage([this](const UPackage* Package)
 	{
-		if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
+		ForEachObjectWithPackage(Package, [this](UObject* Object)
 		{
-			OnNewClass(Blueprint->GeneratedClass);
-		}
-		return true;
-	}, false);
+			if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
+			{
+				OnNewClass(Blueprint->GeneratedClass);
+			}
+			return true;
+		}, false);
+	});
 	
 	RecompileAndReinstanceBlueprints();
 }

@@ -15,7 +15,7 @@ struct FCSharpStructInfo;
 
 struct FCSManagedPluginCallbacks
 {
-	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*);
+	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
 	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
 	
 	LoadPluginCallback LoadPlugin = nullptr;
@@ -31,10 +31,12 @@ struct FCSAssembly : public TSharedFromThis<FCSAssembly>, public FUObjectArray::
 {
 	FCSAssembly(const FString& InAssemblyPath);
 
-	UNREALSHARPCORE_API bool Load();
+	UNREALSHARPCORE_API bool Load(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool Unload();
 	
 	bool IsValid() const;
+
+	UPackage* GetPackage(const FName Namespace);
 
 	const GCHandleIntPtr& GetAssemblyHandle() const { return Assembly.Handle; }
 	const FName& GetAssemblyName() const { return AssemblyName; }
@@ -50,6 +52,10 @@ struct FCSAssembly : public TSharedFromThis<FCSAssembly>, public FUObjectArray::
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const UClass* Class);
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(FName ClassName);
 	TSharedPtr<FCSharpClassInfo> FindClassInfo(FName ClassName) const;
+
+	TSharedPtr<FCSharpStructInfo> FindStructInfo(FName StructName) const;
+	TSharedPtr<FCSharpEnumInfo> FindEnumInfo(FName EnumName) const;
+	TSharedPtr<FCSharpInterfaceInfo> FindInterfaceInfo(FName InterfaceName) const;
 	
 	UClass* FindClass(FName ClassName) const;
 	UScriptStruct* FindStruct(FName StructName) const;
@@ -85,6 +91,7 @@ private:
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
 	
 	TMap<FCSTypeReferenceMetaData, FPendingClasses> PendingClasses;
+	TArray<UPackage*> AssemblyPackages;
 	
 	FGCHandle Assembly;
 	FString AssemblyPath;

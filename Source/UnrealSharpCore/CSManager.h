@@ -28,12 +28,12 @@ public:
 	static UCSManager& Get();
 	static void Shutdown();
 	
-	UPackage* GetUnrealSharpPackage() const { return UnrealSharpPackage; }
+	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
 
 	bool LoadAllUserAssemblies();
 	
-	TSharedPtr<FCSAssembly> LoadAssembly(const FString& AssemblyPath);
-	TSharedPtr<FCSAssembly> LoadAssemblyByName(const FName AssemblyName);
+	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath, bool bisCollectible = true);
+	TSharedPtr<FCSAssembly> LoadPluginByName(const FName AssemblyName);
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
 	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
@@ -63,6 +63,13 @@ public:
 	
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 
+	UPackage* CreateNewUnrealSharpPackage(const FString& PackageName);
+	static FString MakePackageName(const FString& PackageName);
+	
+	void ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const;
+	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
+	bool IsUnrealSharpPackage(UPackage* Package) const;
+
 private:
 
 	void Initialize();
@@ -76,8 +83,11 @@ private:
 	static UCSManager* Instance;
 
 	UPROPERTY()
-	TObjectPtr<UPackage> UnrealSharpPackage;
+	TObjectPtr<UPackage> GlobalUnrealSharpPackage;
 
+	UPROPERTY()
+	TSet<TObjectPtr<UPackage>> AllPackages;
+ 
 	UPROPERTY()
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 	

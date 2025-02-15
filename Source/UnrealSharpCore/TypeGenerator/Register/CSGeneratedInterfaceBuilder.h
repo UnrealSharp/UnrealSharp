@@ -2,8 +2,9 @@
 
 #include "CSGeneratedTypeBuilder.h"
 #include "MetaData/CSInterfaceMetaData.h"
+#include "TypeGenerator/CSInterface.h"
 
-class UNREALSHARPCORE_API FCSGeneratedInterfaceBuilder : public TCSGeneratedTypeBuilder<FCSInterfaceMetaData, UClass>
+class UNREALSHARPCORE_API FCSGeneratedInterfaceBuilder : public TCSGeneratedTypeBuilder<FCSInterfaceMetaData, UCSInterface>
 {
 public:
 

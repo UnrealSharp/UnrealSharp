@@ -3,6 +3,9 @@
 
 void FCSGeneratedInterfaceBuilder::RebuildType()
 {
+	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->Name);
+	Field->SetInterfaceInfo(InterfaceInfo);
+	
 	Field->PurgeClass(true);
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;

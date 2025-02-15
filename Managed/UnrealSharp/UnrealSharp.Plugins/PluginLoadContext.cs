@@ -16,7 +16,7 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
         {
             if (sharedAssembly.GetName().Name == assemblyName.Name)
             {
-                return sharedAssembly;
+                return Main.MainLoadContext.LoadFromAssemblyName(assemblyName);
             }
         }
         

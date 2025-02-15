@@ -34,7 +34,7 @@ FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
 	FCoreDelegates::OnPreExit.AddRaw(this, &FCSAssembly::OnEnginePreExit);
 }
 
-bool FCSAssembly::Load()
+bool FCSAssembly::Load(bool bisCollectible)
 {
 	if (IsValid())
 	{
@@ -48,7 +48,7 @@ bool FCSAssembly::Load()
 		return false;
 	}
 	
-	Assembly.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath);
+	Assembly.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
 	Assembly.Type = GCHandleType::WeakHandle;
 
 	if (!IsValid())
@@ -99,6 +99,32 @@ bool FCSAssembly::Unload()
 bool FCSAssembly::IsValid() const
 {
 	return !Assembly.IsNull();
+}
+
+UPackage* FCSAssembly::GetPackage(const FName Namespace)
+{
+	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
+	UCSManager& Manager = UCSManager::Get();
+
+	UPackage* FoundPackage;
+	if (Settings->bEnableNamespaceSupport)
+	{
+		for (UPackage* Package : AssemblyPackages)
+		{
+			if (Package->GetFName() == Namespace)
+			{
+				return Package;
+			}
+		}
+		
+		FoundPackage = Manager.CreateNewUnrealSharpPackage(Namespace.ToString());
+	}
+	else
+	{
+		FoundPackage = Manager.GetGlobalUnrealSharpPackage();
+	}
+
+	return FoundPackage;
 }
 
 bool FCSAssembly::ContainsClass(const UClass* Class) const
@@ -192,6 +218,21 @@ TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(FName ClassName)
 TSharedPtr<FCSharpClassInfo> FCSAssembly::FindClassInfo(FName ClassName) const
 {
 	return Classes.FindRef(ClassName);
+}
+
+TSharedPtr<FCSharpStructInfo> FCSAssembly::FindStructInfo(FName StructName) const
+{
+	return Structs.FindRef(StructName);
+}
+
+TSharedPtr<FCSharpEnumInfo> FCSAssembly::FindEnumInfo(FName EnumName) const
+{
+	return Enums.FindRef(EnumName);
+}
+
+TSharedPtr<FCSharpInterfaceInfo> FCSAssembly::FindInterfaceInfo(FName InterfaceName) const
+{
+	return Interfaces.FindRef(InterfaceName);
 }
 
 UClass* FCSAssembly::FindClass(FName ClassName) const

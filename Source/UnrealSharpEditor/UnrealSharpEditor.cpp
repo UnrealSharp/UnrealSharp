@@ -87,6 +87,10 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterGameplayTags();
 	RegisterAssetTypes();
 	RegisterCollisionProfile();
+
+
+	FString EditorAssemblyPath = FCSProcHelper::GetAssembliesPath() / "UnrealSharp.Editor.dll";
+	UCSManager::Get().LoadPlugin(EditorAssemblyPath, false);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -292,7 +296,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 
 void FUnrealSharpEditorModule::OnOpenSettings()
 {
-	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Editor", "General", "CSDeveloperSettings");
+	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Editor", "General", "CSUnrealSharpSettings");
 }
 
 void FUnrealSharpEditorModule::OnOpenDocumentation()

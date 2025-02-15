@@ -1,20 +1,18 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
-using UnrealSharp.Interop;
-using UnrealSharp.Logging;
 
 namespace UnrealSharp.Plugins;
 
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct PluginsCallbacks
 {
-    public delegate* unmanaged<char*, nint> LoadPlugin;
+    public delegate* unmanaged<char*, NativeBool, nint> LoadPlugin;
     public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
     
     [UnmanagedCallersOnly]
-    private static nint ManagedLoadPlugin(char* assemblyPath)
+    private static nint ManagedLoadPlugin(char* assemblyPath, NativeBool isCollectible)
     {
-        WeakReference? weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), true);
+        WeakReference? weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), isCollectible.ToManagedBool());
 
         if (weakRef == null || !weakRef.IsAlive)
         {

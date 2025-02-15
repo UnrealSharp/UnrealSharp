@@ -39,6 +39,12 @@ UClass* FCSTypeReferenceMetaData::GetOwningInterface() const
 	return Assembly->FindInterface(Name);
 }
 
+UPackage* FCSTypeReferenceMetaData::GetOwningPackage() const
+{
+	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
+	return Assembly->GetPackage(Namespace);
+}
+
 void FCSTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	Name = *JsonObject->GetStringField(TEXT("Name"));

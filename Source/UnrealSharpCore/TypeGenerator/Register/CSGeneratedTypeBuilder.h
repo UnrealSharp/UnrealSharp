@@ -28,7 +28,7 @@ public:
 
 	TField* CreateType()
 	{
-		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
+		UPackage* Package = OwningAssembly->GetPackage(TypeMetaData->Namespace);
 		FName FieldName = GetFieldName();
 
 #if WITH_EDITOR
@@ -55,9 +55,7 @@ public:
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)
 	{
-		UPackage* Package = UCSManager::Get().GetUnrealSharpPackage();
-		
-		NotifyRegistrationEvent(*Package->GetName(),
+		NotifyRegistrationEvent(*Field->GetOutermost()->GetName(),
 		*Field->GetName(),
 		RegistrationType,
 		ENotifyRegistrationPhase::NRP_Finished,

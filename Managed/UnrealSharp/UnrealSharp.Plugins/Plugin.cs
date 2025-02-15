@@ -5,19 +5,21 @@ namespace UnrealSharp.Plugins;
 
 public class Plugin
 {
-    public Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext)
+    public Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext, string assemblyPath)
     {
         AssemblyName = assemblyName;
         WeakRefLoadContext = weakRefLoadContext;
+        AssemblyPath = assemblyPath;
     }
     
     public AssemblyName AssemblyName { get; }
+    public string AssemblyPath;
     
     public WeakReference? WeakRefLoadContext { get; }
     public WeakReference? WeakRefAssembly { get; private set; }
 
-    private List<WeakReference>? weakRefModuleInterfaces = [];
-    public IReadOnlyList<WeakReference>? WeakRefModuleInterfaces => weakRefModuleInterfaces;
+    private readonly List<IModuleInterface>? _moduleInterfaces = [];
+    public IReadOnlyList<IModuleInterface>? ModuleInterfaces => _moduleInterfaces;
 
     public bool IsAssemblyAlive => WeakRefAssembly != null && WeakRefAssembly.IsAlive;
     public bool IsLoadContextAlive => WeakRefLoadContext != null && WeakRefLoadContext.IsAlive;
@@ -32,7 +34,7 @@ public class Plugin
         Assembly assembly = loadContext.LoadFromAssemblyName(AssemblyName);
         WeakRefAssembly = new WeakReference(assembly);
 
-        if (weakRefModuleInterfaces == null)
+        if (_moduleInterfaces == null)
         {
             return true;
         }
@@ -52,7 +54,7 @@ public class Plugin
             }
 
             moduleInterface.StartupModule();
-            weakRefModuleInterfaces.Add(new WeakReference(moduleInterface));
+            _moduleInterfaces.Add(moduleInterface);
         }
 
         return true;
@@ -60,17 +62,14 @@ public class Plugin
 
     public void Unload()
     {
-        if (weakRefModuleInterfaces != null)
+        if (_moduleInterfaces != null)
         {
-            foreach (var weakRefModuleInterface in weakRefModuleInterfaces)
+            foreach (IModuleInterface moduleInterface in _moduleInterfaces)
             {
-                if (!weakRefModuleInterface.IsAlive) continue;
-                if (weakRefModuleInterface.Target is not IModuleInterface moduleInterface) continue;
-
                 moduleInterface.ShutdownModule();
             }
 
-            weakRefModuleInterfaces.Clear();
+            _moduleInterfaces.Clear();
         }
 
         if (WeakRefLoadContext != null && WeakRefLoadContext.IsAlive && WeakRefLoadContext.Target is PluginLoadContext loadContext)
