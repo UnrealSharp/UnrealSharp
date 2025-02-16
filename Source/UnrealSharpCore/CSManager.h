@@ -29,11 +29,14 @@ public:
 	static void Shutdown();
 	
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
-
-	bool LoadAllUserAssemblies();
 	
-	TSharedPtr<FCSAssembly> LoadPlugin(const FString& AssemblyPath, bool bisCollectible = true);
-	TSharedPtr<FCSAssembly> LoadPluginByName(const FName AssemblyName);
+	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bisCollectible = true);
+
+	// Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
+	TSharedPtr<FCSAssembly> LoadUserAssemblyByName(const FName AssemblyName, bool bisCollectible = true);
+
+	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
+	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bisCollectible = true);
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
 	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
@@ -72,6 +75,8 @@ public:
 
 private:
 
+	bool LoadUserAssemblies();
+
 	void Initialize();
 
 	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
@@ -91,7 +96,7 @@ private:
 	UPROPERTY()
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 	
-	TMap<FName, TSharedPtr<FCSAssembly>> LoadedPlugins;
+	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
@@ -108,7 +113,6 @@ private:
 	
 	FSimpleMulticastDelegate OnProcessedPendingClasses;
 	
-
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 	
 	//.NET Core Host API

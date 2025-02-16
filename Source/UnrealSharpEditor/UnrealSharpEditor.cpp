@@ -87,10 +87,8 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterGameplayTags();
 	RegisterAssetTypes();
 	RegisterCollisionProfile();
-
-
-	FString EditorAssemblyPath = FCSProcHelper::GetAssembliesPath() / "UnrealSharp.Editor.dll";
-	UCSManager::Get().LoadPlugin(EditorAssemblyPath, false);
+	
+	UCSManager::Get().LoadPluginAssemblyByName("UnrealSharp.Editor.dll", false);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -219,7 +217,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 			continue;
 		}
 
-		if (!Assembly->Unload())
+		if (!Assembly->UnloadAssembly())
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to unload assembly: %s"), *ProjectName);
 			bUnloadFailed = true;
@@ -249,7 +247,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 			continue;
 		}
 
-		Assembly->Load();
+		Assembly->LoadAssembly();
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));

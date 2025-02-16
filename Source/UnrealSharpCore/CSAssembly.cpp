@@ -34,7 +34,7 @@ FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
 	FCoreDelegates::OnPreExit.AddRaw(this, &FCSAssembly::OnEnginePreExit);
 }
 
-bool FCSAssembly::Load(bool bisCollectible)
+bool FCSAssembly::LoadAssembly(bool bisCollectible)
 {
 	if (IsValid())
 	{
@@ -56,17 +56,27 @@ bool FCSAssembly::Load(bool bisCollectible)
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load: %s"), *AssemblyPath);
 		return false;
 	}
-	
-	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
-	if (FPaths::FileExists(MetadataPath))
+
+	if (ProcessMetadata())
 	{
-		return ProcessMetaData(MetadataPath);
+		BuildUnrealTypes();
 	}
 
 	return true;
 }
 
-bool FCSAssembly::Unload()
+bool FCSAssembly::ProcessMetadata()
+{
+	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
+	if (!FPaths::FileExists(MetadataPath))
+	{
+		return true;
+	}
+
+	return ProcessMetaData_Internal(MetadataPath);
+}
+
+bool FCSAssembly::UnloadAssembly()
 {
 	ClassHandles.Empty();
 	
@@ -94,11 +104,6 @@ bool FCSAssembly::Unload()
 	}
 	
 	return true;
-}
-
-bool FCSAssembly::IsValid() const
-{
-	return !Assembly.IsNull();
 }
 
 UPackage* FCSAssembly::GetPackage(const FName Namespace)
@@ -344,8 +349,8 @@ FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 
 void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass)
 {
-	FPendingClasses& PendingClass = PendingClasses.FindOrAdd(ParentClass);
-	PendingClass.Classes.Add(NewClass);
+	TSet<FCSharpClassInfo*>& PendingClass = PendingClasses.FindOrAdd(ParentClass);
+	PendingClass.Add(NewClass);
 }
 
 void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
@@ -375,7 +380,7 @@ void FCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InMod
 			continue;
 		}
 
-		for (FCSharpClassInfo* PendingClass : Itr.Value().Classes)
+		for (FCSharpClassInfo* PendingClass : Itr.Value())
 		{
 			PendingClass->InitializeBuilder();
 		}
@@ -395,7 +400,6 @@ void FCSAssembly::OnEnginePreExit()
 {
 	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
-
 
 void FCSAssembly::NotifyUObjectDeleted(const class UObjectBase* Object, int32 Index)
 {
@@ -445,7 +449,7 @@ void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<F
 	}
 }
 
-bool FCSAssembly::ProcessMetaData(const FString& FilePath)
+bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 {
 	FString JsonString;
 	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
@@ -489,14 +493,18 @@ bool FCSAssembly::ProcessMetaData(const FString& FilePath)
 			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->Namespace, ClassInfo->TypeMetaData->Name);
 		});
 	}
+	
+	return true;
+}
 
+void FCSAssembly::BuildUnrealTypes()
+{
 	InitializeBuilders(Structs);
 	InitializeBuilders(Enums);
 	InitializeBuilders(Classes);
 	InitializeBuilders(Interfaces);
-	
-	return true;
 }
+
 
 
 

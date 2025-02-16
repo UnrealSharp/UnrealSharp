@@ -46,10 +46,9 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
-UPackage* UCSManager::CreateNewUnrealSharpPackage(const FString& InPackageName)
+UPackage* UCSManager::CreateNewUnrealSharpPackage(const FString& PackageName)
 {
-	FString PackageName = MakePackageName(InPackageName);
-	UPackage* NewPackage = NewObject<UPackage>(nullptr, *PackageName, RF_Public);
+	UPackage* NewPackage = NewObject<UPackage>(nullptr, *MakePackageName(PackageName), RF_Public);
 	NewPackage->SetPackageFlags(PKG_CompiledIn);
 	
 	AllPackages.Add(NewPackage);
@@ -124,11 +123,12 @@ void UCSManager::Initialize()
 	}
 
 	GlobalUnrealSharpPackage = CreateNewUnrealSharpPackage("UnrealSharp");
-	
+
+	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();
 
 	// Try to load the user assembly, can be null when the project is first created.
-	LoadAllUserAssemblies();
+	LoadUserAssemblies();
 }
 
 bool UCSManager::InitializeRuntime()
@@ -232,21 +232,21 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
-bool UCSManager::LoadAllUserAssemblies()
+bool UCSManager::LoadUserAssemblies()
 {
-	TArray<FString> UserAssemblies;
-	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblies);
+	TArray<FString> UserAssemblyPaths;
+	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
 
-	if (UserAssemblies.IsEmpty())
+	if (UserAssemblyPaths.IsEmpty())
 	{
 		return true;
 	}
 
-	for(const FString& UserAssembly : UserAssemblies)
+	for(const FString& UserAssemblyPath : UserAssemblyPaths)
 	{
-		if (!LoadPlugin(UserAssembly))
+		if (!LoadAssemblyByPath(UserAssemblyPath))
 		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssembly);
+			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
 			return false;
 		}
 	}
@@ -312,7 +312,7 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfConta
 	std::vector Args { PLATFORM_STRING(*MainAssemblyPath) };
 	
 	hostfxr_handle HostFXR_Handle = nullptr;
-	FString DotNetPath = FCSProcHelper::GetAssembliesPath();
+	FString DotNetPath = FCSProcHelper::GetPluginAssembliesPath();
 	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
 
 	hostfxr_initialize_parameters InitializeParameters;
@@ -347,29 +347,32 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadPlugin(const FString& AssemblyPath, bool bisCollectible)
+TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bisCollectible)
 {
-	TSharedPtr<FCSAssembly> NewPlugin = MakeShared<FCSAssembly>(AssemblyPath);
-	LoadedPlugins.Add(NewPlugin->GetAssemblyName(), NewPlugin);
+	TSharedPtr<FCSAssembly> NewAssembly = MakeShared<FCSAssembly>(AssemblyPath);
+	LoadedAssemblies.Add(NewAssembly->GetAssemblyName(), NewAssembly);
 	
-	if (!NewPlugin->Load(bisCollectible))
+	if (!NewAssembly->LoadAssembly(bisCollectible))
 	{
-		FText DialogText = FText::FromString(FString::Printf(TEXT("Failed to load Assembly with path: %s."), *AssemblyPath));
-		FMessageDialog::Open(EAppMsgCategory::Error, EAppMsgType::Ok, DialogText);
 		return nullptr;
 	}
 	
-	OnManagedAssemblyLoaded.Broadcast(NewPlugin->GetAssemblyName());
+	OnManagedAssemblyLoaded.Broadcast(NewAssembly->GetAssemblyName());
  
 	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
-	return NewPlugin;
+	return NewAssembly;
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadPluginByName(const FName AssemblyName)
+TSharedPtr<FCSAssembly> UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bisCollectible)
 {
-	FString AssemblyPath = FCSProcHelper::GetUserAssemblyDirectory();
-	AssemblyPath /= AssemblyName.ToString() + ".dll";
-	return LoadPlugin(AssemblyPath);
+	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetUserAssemblyDirectory(), AssemblyName.ToString() + ".dll");
+	return LoadAssemblyByPath(AssemblyPath, bisCollectible);
+}
+
+TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bisCollectible)
+{
+	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetPluginAssembliesPath(), AssemblyName.ToString() + ".dll");
+	return LoadAssemblyByPath(AssemblyPath, bisCollectible);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(const UObject* Object) const
@@ -379,7 +382,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(const UObject* Object) co
 
 TSharedPtr<FCSAssembly> UCSManager::FindAssembly(const FName AssemblyName) const
 {
-	TSharedPtr<FCSAssembly> Assembly = LoadedPlugins.FindRef(AssemblyName);
+	TSharedPtr<FCSAssembly> Assembly = LoadedAssemblies.FindRef(AssemblyName);
 	return Assembly;
 }
 
@@ -390,7 +393,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
 		return Assembly;
 	}
 	
-	return LoadPluginByName(AssemblyName);
+	return LoadUserAssemblyByName(AssemblyName);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
@@ -401,7 +404,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 		return FirstManagedClass->GetOwningAssembly();
 	}
 	
-	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedPlugins)
+	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)
 	{
 		TWeakPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);
 		if (TypeHandle.IsValid())

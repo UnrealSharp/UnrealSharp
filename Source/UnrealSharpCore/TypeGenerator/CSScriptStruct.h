@@ -17,12 +17,9 @@ class UNREALSHARPCORE_API UCSScriptStruct : public UUserDefinedStruct
 
 public:
 
-	void RecreateDefaults()
-	{
-		DefaultStructInstance.Recreate(this);
-	}
-
+	void RecreateDefaults();
 	void SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo);
+	
 	TSharedPtr<FCSharpStructInfo> GetStructInfo() const { return StructInfo; }
 
 private:

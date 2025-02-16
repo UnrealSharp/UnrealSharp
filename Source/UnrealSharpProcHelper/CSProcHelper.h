@@ -31,7 +31,7 @@ public:
 	
 	static FString GetRuntimeConfigPath();
 	
-	static FString GetAssembliesPath();
+	static FString GetPluginAssembliesPath();
 	
 	static FString GetUnrealSharpPluginsPath();
 	static FString GetUnrealSharpCorePath();

@@ -62,10 +62,12 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 	{
 		UPackage* Package = TypeMetaData->GetOwningPackage();
 		FString BlueprintName = TypeMetaData->Name.ToString();
+		
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
 		Blueprint->BlueprintNamespace = TypeMetaData->Namespace.ToString();
 		Blueprint->ParentClass = SuperClass;
+		
 		Field->ClassGeneratedBy = Blueprint;
 	}
 

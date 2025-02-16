@@ -22,19 +22,15 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-struct FPendingClasses
+struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
 {
-	TSet<FCSharpClassInfo*> Classes;
-};
+	FCSAssembly(const FString& AssemblyPath);
 
-struct FCSAssembly : public TSharedFromThis<FCSAssembly>, public FUObjectArray::FUObjectDeleteListener
-{
-	FCSAssembly(const FString& InAssemblyPath);
-
-	UNREALSHARPCORE_API bool Load(bool bIsCollectible = true);
-	UNREALSHARPCORE_API bool Unload();
+	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
+	UNREALSHARPCORE_API bool UnloadAssembly();
 	
-	bool IsValid() const;
+	UNREALSHARPCORE_API bool IsValid() const { return !Assembly.IsNull(); }
+	UNREALSHARPCORE_API FGCHandle GetAssemblyHandle() { return Assembly; }
 
 	UPackage* GetPackage(const FName Namespace);
 
@@ -70,8 +66,11 @@ struct FCSAssembly : public TSharedFromThis<FCSAssembly>, public FUObjectArray::
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass);
 
 private:
+	
+	bool ProcessMetadata();
+	bool ProcessMetaData_Internal(const FString& FilePath);
 
-	bool ProcessMetaData(const FString& FilePath);
+	void BuildUnrealTypes();
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void OnEnginePreExit();
@@ -90,7 +89,7 @@ private:
 	TMap<FName, TSharedPtr<FGCHandle>> ClassHandles;
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
 	
-	TMap<FCSTypeReferenceMetaData, FPendingClasses> PendingClasses;
+	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
 	TArray<UPackage*> AssemblyPackages;
 	
 	FGCHandle Assembly;
