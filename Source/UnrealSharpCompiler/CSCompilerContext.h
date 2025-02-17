@@ -30,6 +30,6 @@ private:
 	bool IsDeveloperSettings() const;
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
-	
+	void ApplyMetaData();
 };
 

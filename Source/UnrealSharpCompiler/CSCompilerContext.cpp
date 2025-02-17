@@ -36,6 +36,8 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 	TryInitializeAsDeveloperSettings(Class);
+
+	ApplyMetaData();
 }
 
 void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context)
@@ -196,6 +198,27 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 	ISettingsModule& SettingsModule = FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
 	UDeveloperSettings* DeveloperSettings = static_cast<UDeveloperSettings*>(Settings);
 	SettingsModule.UnregisterSettings(DeveloperSettings->GetContainerName(), DeveloperSettings->GetCategoryName(), DeveloperSettings->GetSectionName());
+}
+
+void FCSCompilerContext::ApplyMetaData()
+{
+	TSharedPtr<const FCSharpClassInfo> ClassInfo = GetClassInfo();
+	TSharedPtr<const FCSClassMetaData> TypeMetaData = ClassInfo->TypeMetaData;
+		
+	static FString DisplayNameKey = TEXT("DisplayName");
+	if (!NewClass->HasMetaData(*DisplayNameKey))
+	{
+		NewClass->SetMetaData(*DisplayNameKey, *TypeMetaData->Name.ToString());
+	}
+		
+	if (GetDefault<UCSUnrealSharpSettings>()->bSuffixGeneratedTypes)
+	{
+		FString DisplayName = NewClass->GetMetaData(*DisplayNameKey);
+		DisplayName += TEXT(" (C#)");
+		NewClass->SetMetaData(*DisplayNameKey, *DisplayName);
+	}
+
+	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, NewClass);
 }
 
 #undef LOCTEXT_NAMESPACE
