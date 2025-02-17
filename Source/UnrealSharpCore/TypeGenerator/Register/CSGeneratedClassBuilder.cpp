@@ -32,7 +32,15 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->SetSuperStruct(SuperClass);
 	
 #if WITH_EDITOR
-	CreateClassEditor(SuperClass);
+	if (GIsEditor)
+	{
+		CreateClassEditor(SuperClass);
+	}
+	else
+	{
+		CreateBlueprint(SuperClass);
+		CreateClass(SuperClass);
+	}
 #else
 	CreateClass(SuperClass);
 #endif
@@ -40,6 +48,12 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 
 #if WITH_EDITOR
 void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
+{
+	CreateBlueprint(SuperClass);
+	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
+}
+
+void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 {
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
@@ -51,8 +65,6 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		Blueprint->ParentClass = SuperClass;
 		Field->ClassGeneratedBy = Blueprint;
 	}
-
-	FCSTypeRegistry::Get().GetOnNewClassEvent().Broadcast(Field);
 }
 #endif
 
