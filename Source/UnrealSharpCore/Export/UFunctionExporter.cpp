@@ -2,6 +2,8 @@
 
 #include "UFunctionExporter.h"
 
+#include "UnrealSharpCore.h"
+
 void UUFunctionExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
 {
 	EXPORT_FUNCTION(GetNativeFunctionParamsSize)
@@ -65,7 +67,7 @@ UFunction* UUFunctionExporter::CreateNativeFunctionCustomStructSpecialization(UF
 		}
 		else
 		{
-			OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~EInternalObjectFlags::Native));
+			OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName(), RF_AllFlags, CS_EInternalObjectFlags_AllFlags & ~EInternalObjectFlags::Native));
 			OutProperty->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
 			OutProperty->Next = nullptr;
 		}
