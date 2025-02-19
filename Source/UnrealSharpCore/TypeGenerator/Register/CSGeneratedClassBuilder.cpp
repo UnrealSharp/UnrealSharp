@@ -11,6 +11,7 @@
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData): TCSGeneratedTypeBuilder(InTypeMetaData)
 {
@@ -32,14 +33,14 @@ void FCSGeneratedClassBuilder::StartBuildingType()
 	Field->SetSuperStruct(SuperClass);
 	
 #if WITH_EDITOR
-	if (GIsEditor)
-	{
-		CreateClassEditor(SuperClass);
-	}
-	else
+	if (FUnrealSharpUtils::IsStandalonePIE())
 	{
 		CreateBlueprint(SuperClass);
 		CreateClass(SuperClass);
+	}
+	else
+	{
+		CreateClassEditor(SuperClass);
 	}
 #else
 	CreateClass(SuperClass);

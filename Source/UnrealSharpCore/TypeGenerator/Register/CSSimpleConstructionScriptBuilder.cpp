@@ -6,6 +6,7 @@
 #include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyMetaData>& PropertyMetaDatas)
 {
@@ -64,27 +65,36 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 	{
 		FName AttachToComponentName = AttachmentNode.AttachToComponentName;
 		USCS_Node* Node = AttachmentNode.Node;
-		USCS_Node* ParentNode = CurrentSCS->FindSCSNode(AttachToComponentName);
+		
+		USCS_Node* ParentNode = nullptr;
+		USimpleConstructionScript* ParentSimpleConstructionComponent = nullptr;
+		FindParentNodeAndComponent(AttachToComponentName, Outer, ParentNode, ParentSimpleConstructionComponent);
 
-		if (!ParentNode)
+		if (!ParentNode || !ParentSimpleConstructionComponent)
 		{
 			ParentNode = CurrentSCS->GetRootNodes()[0];
-		}
-		
-		if (ParentNode->ChildNodes.Contains(Node))
-		{
-			return;
+			ParentSimpleConstructionComponent = CurrentSCS;
 		}
 
-		ParentNode->AddChildNode(Node);
-		
-		Node->bIsParentComponentNative = false;
-		Node->ParentComponentOrVariableName = AttachToComponentName;
-		Node->ParentComponentOwnerClassName = SimpleConstructionScript->GetFName();
-		
+		if (ParentSimpleConstructionComponent == CurrentSCS)
+		{
+			if (!ParentNode->ChildNodes.Contains(Node))
+			{
+				ParentNode->AddChildNode(Node, false);
+			}
+		}
+		else
+		{
+			Node->bIsParentComponentNative = false;
+			Node->ParentComponentOrVariableName = AttachToComponentName;
+			Node->ParentComponentOwnerClassName = ParentSimpleConstructionComponent->GetOwnerClass()->GetFName();
+		}
+
 		for (USCS_Node* NodeItr : CurrentSCS->GetAllNodes())
 		{
-			if (NodeItr != Node && NodeItr->ChildNodes.Contains(Node) && NodeItr->GetVariableName() != AttachToComponentName)
+			FName ParentComponentName = NodeItr->GetVariableName();
+			
+			if (NodeItr != Node && NodeItr->ChildNodes.Contains(Node) && ParentComponentName != AttachToComponentName)
 			{
 				// The attachment has changed, remove the node from the old parent
 				NodeItr->RemoveChildNode(Node, false);
@@ -159,4 +169,41 @@ void FCSSimpleConstructionScriptBuilder::UpdateChildren(UClass* Outer, USCS_Node
 		Blueprint->InheritableComponentHandler->RemoveOverridenComponentTemplate(ComponentKey);
 	}
 #endif
+}
+
+void FCSSimpleConstructionScriptBuilder::FindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS)
+{
+	for (UClass* CurrentClass = ClassToSearch; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
+	{
+		UBlueprintGeneratedClass* CurrentGeneratedClass = Cast<UBlueprintGeneratedClass>(CurrentClass);
+		if (!IsValid(CurrentGeneratedClass))
+		{
+			continue;
+		}
+
+		USimpleConstructionScript* CurrentSCS;
+#if WITH_EDITOR
+		if (FUnrealSharpUtils::IsStandalonePIE())
+		{
+			CurrentSCS = CurrentGeneratedClass->SimpleConstructionScript;
+		}
+		else
+		{
+			UBlueprint* Blueprint = Cast<UBlueprint>(CurrentGeneratedClass->ClassGeneratedBy);
+			CurrentSCS = Blueprint->SimpleConstructionScript;
+		}
+#else
+		CurrentSCS = CurrentGeneratedClass->SimpleConstructionScript;
+#endif
+		
+		USCS_Node* FoundNode = CurrentSCS->FindSCSNode(ParentComponentName);
+		if (!IsValid(FoundNode))
+		{
+			continue;
+		}
+
+		OutNode = FoundNode;
+		OutSCS = CurrentSCS;
+		break;
+	}
 }
