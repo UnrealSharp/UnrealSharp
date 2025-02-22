@@ -34,9 +34,8 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 		return nullptr;
 	}
 
-	UBlueprintGeneratedClass* CurrentClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Actor->GetClass());
-
-	while (FCSGeneratedClassBuilder::IsManagedType(CurrentClass))
+	UBlueprintGeneratedClass* CurrentClass = Cast<UBlueprintGeneratedClass>(Actor->GetClass());
+	while (IsValid(CurrentClass))
 	{
 		if (USimpleConstructionScript* SCS = CurrentClass->SimpleConstructionScript)
 		{
