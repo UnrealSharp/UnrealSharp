@@ -9,6 +9,15 @@
 struct FCSNamespace;
 struct FCSTypeReferenceMetaData;
 
+struct FCSManagedPluginCallbacks
+{
+	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
+	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
+	
+	LoadPluginCallback LoadPlugin = nullptr;
+	UnloadPluginCallback UnloadPlugin = nullptr;
+};
+
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
@@ -28,16 +37,18 @@ public:
 	static UCSManager& GetOrCreate();
 	static UCSManager& Get();
 	static void Shutdown();
-	
+
+	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
+	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
 	
-	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bisCollectible = true);
+	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
 	// Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-	TSharedPtr<FCSAssembly> LoadUserAssemblyByName(const FName AssemblyName, bool bisCollectible = true);
+	TSharedPtr<FCSAssembly> LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
 	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bisCollectible = true);
+	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
 	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
@@ -66,16 +77,12 @@ public:
 	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
 	
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
-
-	UPackage* FindOrAddUnrealSharpPackage(FCSNamespace Namespace);
 	
-	void ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const;
+	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const;
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
-	bool IsUnrealSharpPackage(UPackage* Package) const;
+	bool IsManagedPackage(const UPackage* Package) const;
 
 private:
-
-	bool LoadUserAssemblies();
 
 	void Initialize();
 
@@ -84,6 +91,8 @@ private:
 	
 	bool LoadRuntimeHost();
 	bool InitializeRuntime();
+
+	bool LoadUserAssemblies();
 
 	static UCSManager* Instance;
 

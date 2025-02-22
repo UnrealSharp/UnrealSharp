@@ -56,9 +56,8 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Enum || PinType.PinCategory == UEdGraphSchema_K2::PC_Byte)
 	{
 		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
-		return Enum && UCSManager::Get().IsUnrealSharpPackage(Enum->GetOutermost());
+		return Enum && UCSManager::Get().IsManagedPackage(Enum->GetOutermost());
 	}
-	
 	else if (PinType.IsMap())
 	{
 		bool bChanged = false;
@@ -105,46 +104,6 @@ bool FCSReinstancer::TryUpdatePin(FEdGraphPinType& PinType) const
 		}
 	}
 	return false;
-}
-
-void FCSReinstancer::FinishHotReload()
-{
-	if (StructsToReinstance.Num() == 0 && InterfacesToReinstance.Num() == 0 && ClassesToReinstance.Num() == 0)
-    {
-        return;
-    }
-	
-	UpdateBlueprints();
-	FixDataTables();
-	
-	if (FPropertyEditorModule* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor"))
-	{
-		PropertyModule->NotifyCustomizationModuleChanged();
-	}
-	
-	StructsToReinstance.Empty();
-	InterfacesToReinstance.Empty();
-	ClassesToReinstance.Empty();
-	
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
-}
-
-void FCSReinstancer::FixDataTables()
-{
-	for (UScriptStruct* Struct : StructsToReinstance)
-	{
-		TArray<UDataTable*> Tables;
-		GetTablesDependentOnStruct(Struct, Tables);
-		
-		for (UDataTable*& Table : Tables)
-		{
-			FString Data = Table->GetTableAsJSON();
-			Struct->StructFlags = static_cast<EStructFlags>(STRUCT_NoDestructor | Struct->StructFlags);
-			Table->CleanBeforeStructChange();
-			Table->RowStruct = Struct;
-			Table->CreateTableFromJSONString(Data);
-		}
-	}
 }
 
 UFunction* FCSReinstancer::FindMatchingMember(const FMemberReference& FunctionReference) const
@@ -246,8 +205,12 @@ void FCSReinstancer::UpdateNodePinTypes(UEdGraphNode* Node, bool& RefNeedsNodeRe
 
 void FCSReinstancer::UpdateBlueprints()
 {
-	TSet<UBlueprint*> ToUpdate;
+	if (StructsToReinstance.IsEmpty() && InterfacesToReinstance.IsEmpty() && ClassesToReinstance.IsEmpty())
+	{
+		return;
+	}
 	
+	TSet<UBlueprint*> ToUpdate;
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		bool bNeedsNodeReconstruction = false;
@@ -349,6 +312,10 @@ void FCSReinstancer::UpdateBlueprints()
 	}
 		
 	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	
+	StructsToReinstance.Empty();
+	InterfacesToReinstance.Empty();
+	ClassesToReinstance.Empty();
 }
 
 void FCSReinstancer::GetTablesDependentOnStruct(UScriptStruct* Struct, TArray<UDataTable*>& DataTables)

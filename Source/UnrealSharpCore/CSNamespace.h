@@ -2,14 +2,13 @@
 
 struct FCSNamespace
 {
-	FCSNamespace(FName InNamespace = FName());
+	FCSNamespace(FName InNamespace = NAME_None);
 	
 	FName GetFullNamespace() const { return Namespace; }
 	FString GetFullNamespaceString() const { return Namespace.ToString(); }
 	FString GetThisNamespace() const;
 
-	bool GetParent(FCSNamespace& OutParent) const;
-	
+	bool GetParentNamespace(FCSNamespace& OutParent) const;
 	bool IsValid() const { return Namespace != NAME_None; }
 
 	UPackage* GetPackage() const;

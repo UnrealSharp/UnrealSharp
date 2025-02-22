@@ -24,7 +24,7 @@ FString FCSNamespace::GetThisNamespace() const
 	return NamespaceString.Right(NamespaceString.Len() - LastDotIndex - 1);
 }
 
-bool FCSNamespace::GetParent(FCSNamespace& OutParent) const
+bool FCSNamespace::GetParentNamespace(FCSNamespace& OutParent) const
 {
 	FString NamespaceString = Namespace.ToString();
 	int32 LastDotIndex = NamespaceString.Find(".", ESearchCase::CaseSensitive, ESearchDir::FromEnd);
@@ -41,7 +41,7 @@ bool FCSNamespace::GetParent(FCSNamespace& OutParent) const
 
 UPackage* FCSNamespace::GetPackage() const
 {
-	return UCSManager::Get().FindOrAddUnrealSharpPackage(*this);
+	return UCSManager::Get().FindOrAddManagedPackage(*this);
 }
 
 UPackage* FCSNamespace::TryGetAsNativePackage() const

@@ -12,9 +12,6 @@ public:
 	static FCSReinstancer& Get();
 	
 	void Initialize();
-	
-	void FinishHotReload();
-	void FixDataTables();
 	void UpdateBlueprints();
 
 private:

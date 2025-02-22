@@ -52,8 +52,8 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		return false;
 	}
 	
-	Assembly.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
-	Assembly.Type = GCHandleType::WeakHandle;
+	AssemblyHandle.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
+	AssemblyHandle.Type = GCHandleType::WeakHandle;
 
 	if (!IsValid())
 	{
@@ -66,6 +66,7 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		BuildUnrealTypes();
 	}
 
+	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(AssemblyName);
 	return true;
 }
 
@@ -84,7 +85,7 @@ bool FCSAssembly::UnloadAssembly()
 {
 	ClassHandles.Empty();
 	
-	for (TSharedPtr<FGCHandle>& Handle : AllHandles)
+	for (TSharedPtr<FGCHandle>& Handle : AllocatedHandles)
 	{
 		Handle->Dispose();
 		
@@ -98,8 +99,8 @@ bool FCSAssembly::UnloadAssembly()
 		Handle.Reset();
 	}
 	
-	AllHandles.Empty();
-	Assembly.Dispose();
+	AllocatedHandles.Empty();
+	AssemblyHandle.Dispose();
 	
 	if (!UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath))
 	{
@@ -112,13 +113,12 @@ bool FCSAssembly::UnloadAssembly()
 
 UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
 {
-	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
 	UCSManager& Manager = UCSManager::Get();
 
 	UPackage* FoundPackage;
-	if (Settings->bEnableNamespaceSupport)
+	if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
 	{
-		FoundPackage = Manager.FindOrAddUnrealSharpPackage(Namespace);
+		FoundPackage = Manager.FindOrAddManagedPackage(Namespace);
 	}
 	else
 	{
@@ -141,7 +141,7 @@ TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName
 	}
 
 	FString FullName = FieldName.GetFullName().ToString();
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(Assembly.GetPointer(), *FullName);
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle.GetPointer(), *FullName);
 	
 	if (TypeHandle == nullptr)
 	{
@@ -150,7 +150,7 @@ TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(TypeHandle, GCHandleType::WeakHandle);
 	
-	AllHandles.Add(AllocatedHandle);
+	AllocatedHandles.Add(AllocatedHandle);
 	ClassHandles.Add(FieldName, AllocatedHandle);
 	
 	return AllocatedHandle.ToWeakPtr();
@@ -177,7 +177,7 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& Type
 	}
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(MethodHandle, GCHandleType::WeakHandle);
-	AllHandles.Add(AllocatedHandle);
+	AllocatedHandles.Add(AllocatedHandle);
 
 	FCSManagedMethod ManagedMethod(AllocatedHandle);
 	return ManagedMethod;
@@ -496,7 +496,11 @@ bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 	{
 		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [OwningAssembly](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 		{
-			ClassInfo->State = ETypeState::NeedUpdate;
+			if (ClassInfo->State != NeedRebuild)
+			{
+				ClassInfo->State = NeedUpdate;
+			}
+			
 			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->FieldName);
 		});
 	}

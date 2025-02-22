@@ -14,28 +14,20 @@ struct FCSharpInterfaceInfo;
 struct FCSharpEnumInfo;
 struct FCSharpStructInfo;
 
-struct FCSManagedPluginCallbacks
-{
-	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
-	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
-	
-	LoadPluginCallback LoadPlugin = nullptr;
-	UnloadPluginCallback UnloadPlugin = nullptr;
-};
-
+/**
+ * Represents a managed assembly.
+ * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the assembly.
+ */
 struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
 {
 	FCSAssembly(const FString& AssemblyPath);
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
+	UNREALSHARPCORE_API bool IsValid() const { return !AssemblyHandle.IsNull(); }
+
+	UPackage* GetPackage(const FCSNamespace Namespace);
 	
-	UNREALSHARPCORE_API bool IsValid() const { return !Assembly.IsNull(); }
-	UNREALSHARPCORE_API FGCHandle GetAssemblyHandle() { return Assembly; }
-
-	static UPackage* GetPackage(const FCSNamespace Namespace);
-
-	const GCHandleIntPtr& GetAssemblyHandle() const { return Assembly.Handle; }
 	const FName& GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
@@ -76,7 +68,7 @@ private:
 	void OnEnginePreExit();
 
 	template<typename T>
-	T* TryFindField(FCSFieldName FieldName) const
+	T* TryFindField(const FCSFieldName FieldName) const
 	{
 		UPackage* Package = FieldName.GetPackage();
 
@@ -93,19 +85,27 @@ private:
 	virtual void OnUObjectArrayShutdown() override;
 	// End of interface
 
+	// All Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FCSharpClassInfo>> Classes;
 	TMap<FCSFieldName, TSharedPtr<FCSharpStructInfo>> Structs;
 	TMap<FCSFieldName, TSharedPtr<FCSharpEnumInfo>> Enums;
 	TMap<FCSFieldName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
 	
-	TArray<TSharedPtr<FGCHandle>> AllHandles;
+	// All handles allocated by this assembly. This is used to ensure that all handles are freed when the assembly is unloaded.
+	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
+
+	// Handles to all Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
+
+	// Handles to all active UObjects that has a managed counterpart.
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
-	
+
+	// Pending classes that are waiting for their parent class to be loaded.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
-	TArray<UPackage*> AssemblyPackages;
+
+	// Handle to the Assembly in C#.
+	FGCHandle AssemblyHandle;
 	
-	FGCHandle Assembly;
 	FString AssemblyPath;
 	FName AssemblyName;
 };

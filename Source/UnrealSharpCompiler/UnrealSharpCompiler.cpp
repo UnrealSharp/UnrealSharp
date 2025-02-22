@@ -26,7 +26,7 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
 	// Try to recompile and reinstance all blueprints when the module is loaded.
-	CSManager.ForEachUnrealSharpPackage([this](const UPackage* Package)
+	CSManager.ForEachManagedPackage([this](const UPackage* Package)
 	{
 		ForEachObjectWithPackage(Package, [this](UObject* Object)
 		{
@@ -61,12 +61,13 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		}
 		
 		Blueprints.Empty();
-		FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 	};
 	
 	// Components need to be compiled first, as they can be dependencies for actors as components.
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(OtherManagedClasses);
+
+	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 }
 
 

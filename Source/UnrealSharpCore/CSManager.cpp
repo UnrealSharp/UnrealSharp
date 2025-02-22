@@ -48,7 +48,7 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
-UPackage* UCSManager::FindOrAddUnrealSharpPackage(FCSNamespace Namespace)
+UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace Namespace)
 {
 	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
 	{
@@ -61,7 +61,7 @@ UPackage* UCSManager::FindOrAddUnrealSharpPackage(FCSNamespace Namespace)
 	{
 		Parents.Add(CurrentNamespace);
 		
-		if (!CurrentNamespace.GetParent(CurrentNamespace))
+		if (!CurrentNamespace.GetParentNamespace(CurrentNamespace))
 		{
 			break;
 		}
@@ -84,7 +84,8 @@ UPackage* UCSManager::FindOrAddUnrealSharpPackage(FCSNamespace Namespace)
 
 		if (!ParentPackage)
 		{
-			ParentPackage = NewObject<UPackage>(ParentPackage, PackageName, RF_Public);
+			UPackage* OwningPackage = ParentPackage ? ParentPackage : GlobalUnrealSharpPackage.Get();
+			ParentPackage = NewObject<UPackage>(OwningPackage, PackageName, RF_Public);
 			ParentPackage->SetPackageFlags(PKG_CompiledIn);
 			AllPackages.Add(ParentPackage);
 		}
@@ -93,7 +94,7 @@ UPackage* UCSManager::FindOrAddUnrealSharpPackage(FCSNamespace Namespace)
 	return ParentPackage;
 }
 
-void UCSManager::ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const
+void UCSManager::ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
 {
 	for (UPackage* Package : AllPackages)
 	{
@@ -113,7 +114,7 @@ void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) 
 	}
 }
 
-bool UCSManager::IsUnrealSharpPackage(UPackage* Package) const
+bool UCSManager::IsManagedPackage(const UPackage* Package) const
 {
 	return AllPackages.Contains(Package);
 }
@@ -155,7 +156,7 @@ void UCSManager::Initialize()
 		return;
 	}
 
-	GlobalUnrealSharpPackage = FindOrAddUnrealSharpPackage(FCSNamespace(TEXT("UnrealSharp")));
+	GlobalUnrealSharpPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
 
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();
@@ -380,32 +381,32 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfConta
 #endif
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bisCollectible)
+TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
 {
 	TSharedPtr<FCSAssembly> NewAssembly = MakeShared<FCSAssembly>(AssemblyPath);
 	LoadedAssemblies.Add(NewAssembly->GetAssemblyName(), NewAssembly);
 	
-	if (!NewAssembly->LoadAssembly(bisCollectible))
+	if (!NewAssembly->LoadAssembly(bIsCollectible))
 	{
 		return nullptr;
 	}
 	
 	OnManagedAssemblyLoaded.Broadcast(NewAssembly->GetAssemblyName());
  
-	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded Assembly with path %s."), *AssemblyPath);
+	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded AssemblyHandle with path %s."), *AssemblyPath);
 	return NewAssembly;
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bisCollectible)
+TSharedPtr<FCSAssembly> UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
 	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetUserAssemblyDirectory(), AssemblyName.ToString() + ".dll");
-	return LoadAssemblyByPath(AssemblyPath, bisCollectible);
+	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bisCollectible)
+TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
 	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetPluginAssembliesPath(), AssemblyName.ToString() + ".dll");
-	return LoadAssemblyByPath(AssemblyPath, bisCollectible);
+	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(const UObject* Object) const
@@ -436,7 +437,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetOwningAssembly();
 	}
-	
+
+	// Slow path for native classes.
 	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)
 	{
 		TWeakPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);

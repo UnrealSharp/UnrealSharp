@@ -213,7 +213,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 		if (!Assembly.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Assembly not found for project: %s"), *ProjectName);
+			UE_LOG(LogTemp, Warning, TEXT("AssemblyHandle not found for project: %s"), *ProjectName);
 			continue;
 		}
 
@@ -243,15 +243,15 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 		if (!Assembly.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Skipping load: Assembly not found for project: %s"), *ProjectName);
+			UE_LOG(LogTemp, Warning, TEXT("Skipping load: AssemblyHandle not found for project: %s"), *ProjectName);
 			continue;
 		}
 
 		Assembly->LoadAssembly();
 	}
 
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Reinstancing..."));
-	FCSReinstancer::Get().FinishHotReload();
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Updating Blueprints..."));
+	FCSReinstancer::Get().UpdateBlueprints();
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
@@ -294,7 +294,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 
 void FUnrealSharpEditorModule::OnOpenSettings()
 {
-	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Editor", "General", "CSUnrealSharpSettings");
+	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Editor", "General", "CSUnrealSharpEditorSettings");
 }
 
 void FUnrealSharpEditorModule::OnOpenDocumentation()
