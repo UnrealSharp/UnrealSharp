@@ -2,6 +2,7 @@
 #include "UnrealSharpCore.h"
 #include "Misc/Paths.h"
 #include "CSManager.h"
+#include "CSUnrealSharpSettings.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"

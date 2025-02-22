@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
+#include "TypeGenerator/CSClass.h"
 #include "MetaData/CSClassMetaData.h"
 
 class UNREALSHARPCORE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>

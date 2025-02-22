@@ -1,5 +1,6 @@
 ﻿#include "CSSimpleConstructionScriptBuilder.h"
 
+#include "CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"

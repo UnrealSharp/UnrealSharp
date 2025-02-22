@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "CSUnrealSharpSettings.h"
-#include "CSMetaDataUtils.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UnrealSharpCore/CSManager.h"

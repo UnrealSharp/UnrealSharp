@@ -1,6 +1,7 @@
 #include "CSCompilerContext.h"
 
 #include "BlueprintActionDatabase.h"
+#include "CSUnrealSharpSettings.h"
 #include "ISettingsModule.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
@@ -11,6 +12,7 @@
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"

@@ -4,6 +4,7 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
+#include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 
 namespace ReflectionHelper
