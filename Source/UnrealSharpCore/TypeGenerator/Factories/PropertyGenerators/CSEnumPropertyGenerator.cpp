@@ -9,7 +9,7 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	const TSharedPtr<FCSEnumPropertyMetaData> EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSEnumPropertyMetaData>();
 
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(EnumPropertyMetaData->InnerProperty.AssemblyName);
-	UEnum* Enum = Assembly->FindEnum(EnumPropertyMetaData->InnerProperty.Name);
+	UEnum* Enum = Assembly->FindEnum(EnumPropertyMetaData->InnerProperty.FieldName);
 	
 	FByteProperty* UnderlyingProp = new FByteProperty(NewProperty, "UnderlyingType", RF_Public);
 	

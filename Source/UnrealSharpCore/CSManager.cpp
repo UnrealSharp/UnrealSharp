@@ -12,6 +12,8 @@
 #include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
+
+#include "CSNamespace.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -46,18 +48,49 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
-UPackage* UCSManager::CreateNewUnrealSharpPackage(const FString& PackageName)
+UPackage* UCSManager::FindOrAddUnrealSharpPackage(FCSNamespace Namespace)
 {
-	UPackage* NewPackage = NewObject<UPackage>(nullptr, *MakePackageName(PackageName), RF_Public);
-	NewPackage->SetPackageFlags(PKG_CompiledIn);
-	
-	AllPackages.Add(NewPackage);
-	return NewPackage;
-}
+	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
+	{
+		return NativePackage;
+	}
+		
+	FCSNamespace CurrentNamespace = Namespace;
+	TArray<FCSNamespace> Parents;
+	while (true)
+	{
+		Parents.Add(CurrentNamespace);
+		
+		if (!CurrentNamespace.GetParent(CurrentNamespace))
+		{
+			break;
+		}
+	}
 
-FString UCSManager::MakePackageName(const FString& PackageName)
-{
-	return FString::Printf(TEXT("/Script/%s"), *PackageName);
+	UPackage* ParentPackage = nullptr;
+	for (int32 i = Parents.Num() - 1; i >= 0; i--)
+	{
+		FCSNamespace ParentNamespace = Parents[i];
+		FName PackageName = ParentNamespace.GetPackageName();
+
+		for (UPackage* Package : AllPackages)
+		{
+			if (PackageName == Package->GetFName())
+			{
+				ParentPackage = Package;
+				break;
+			}
+		}
+
+		if (!ParentPackage)
+		{
+			ParentPackage = NewObject<UPackage>(ParentPackage, PackageName, RF_Public);
+			ParentPackage->SetPackageFlags(PKG_CompiledIn);
+			AllPackages.Add(ParentPackage);
+		}
+	}
+
+	return ParentPackage;
 }
 
 void UCSManager::ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const
@@ -122,7 +155,7 @@ void UCSManager::Initialize()
 		return;
 	}
 
-	GlobalUnrealSharpPackage = CreateNewUnrealSharpPackage("UnrealSharp");
+	GlobalUnrealSharpPackage = FindOrAddUnrealSharpPackage(FCSNamespace(TEXT("UnrealSharp")));
 
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();

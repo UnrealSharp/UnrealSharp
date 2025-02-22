@@ -1,13 +1,15 @@
 ﻿#pragma once
 
+#include "CSFieldName.h"
+
 struct FCSAssembly;
 
 struct FCSTypeReferenceMetaData
 {
 	virtual ~FCSTypeReferenceMetaData() = default;
+	FCSTypeReferenceMetaData();
 
-	FName Name;
-	FName Namespace;
+	FCSFieldName FieldName;
 	FName AssemblyName;
 
 	TSharedPtr<FCSAssembly> GetOwningAssemblyChecked() const;
@@ -24,7 +26,7 @@ struct FCSTypeReferenceMetaData
 
 	bool operator==(const FCSTypeReferenceMetaData& Other) const
 	{
-		if (Name != Other.Name || Namespace != Other.Namespace || AssemblyName != Other.AssemblyName)
+		if (FieldName != Other.FieldName || AssemblyName != Other.AssemblyName)
 		{
 			return false;
 		}
@@ -42,6 +44,6 @@ struct FCSTypeReferenceMetaData
 	
 	friend uint32 GetTypeHash(const FCSTypeReferenceMetaData& Type)
     {
-        return GetTypeHash(Type.Name) ^ GetTypeHash(Type.Namespace) ^ GetTypeHash(Type.AssemblyName);
+        return GetTypeHash(Type.FieldName) ^ GetTypeHash(Type.AssemblyName);
     }
 };

@@ -26,7 +26,7 @@ public:
 
 	TField* CreateType()
 	{
-		UPackage* Package = OwningAssembly->GetPackage(TypeMetaData->Namespace);
+		UPackage* Package = OwningAssembly->GetPackage(TypeMetaData->FieldName.GetNamespace());
 		FName FieldName = GetFieldName();
 
 #if WITH_EDITOR
@@ -43,7 +43,7 @@ public:
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void RebuildType() = 0;
 	virtual void UpdateType() = 0;
-	virtual FName GetFieldName() const { return TypeMetaData->Name; }
+	virtual FName GetFieldName() const { return TypeMetaData->FieldName.GetName(); }
 	// End of interface
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)

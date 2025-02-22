@@ -1,7 +1,6 @@
 #include "CSCompilerContext.h"
 
 #include "BlueprintActionDatabase.h"
-#include "CSUnrealSharpSettings.h"
 #include "ISettingsModule.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
@@ -16,6 +15,7 @@
 #include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions):
 	FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -210,10 +210,10 @@ void FCSCompilerContext::ApplyMetaData()
 	static FString DisplayNameKey = TEXT("DisplayName");
 	if (!NewClass->HasMetaData(*DisplayNameKey))
 	{
-		NewClass->SetMetaData(*DisplayNameKey, *TypeMetaData->Name.ToString());
+		NewClass->SetMetaData(*DisplayNameKey, *TypeMetaData->FieldName.GetNameString());
 	}
 		
-	if (GetDefault<UCSUnrealSharpSettings>()->bSuffixGeneratedTypes)
+	if (GetDefault<UCSUnrealSharpEditorSettings>()->bSuffixGeneratedTypes)
 	{
 		FString DisplayName = NewClass->GetMetaData(*DisplayNameKey);
 		DisplayName += TEXT(" (C#)");

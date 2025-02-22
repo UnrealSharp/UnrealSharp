@@ -2,7 +2,7 @@
 
 void FCSGeneratedEnumBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->Name);
+	TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
 	Field->SetEnumInfo(EnumInfo);
 	
 	const int32 NumItems = TypeMetaData->Items.Num();

@@ -34,10 +34,12 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 	return NativeObject->FindFunctionChecked(FunctionName);
 }
 
-void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* ClassName)
+void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName)
 {
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-	UClass* Class = Assembly->FindClass(ClassName);
+	FCSFieldName FieldName(Namespace, ClassName);
+	
+	UClass* Class = Assembly->FindClass(FieldName);
 	
 	if (!IsValid(Class))
 	{

@@ -75,14 +75,11 @@ public static class UnmanagedCallbacks
     }
 
     [UnmanagedCallersOnly]
-    public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* typeNamespace, char* typeEngineName)
+    public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* fullTypeName)
     {
         try
         {
-            string typeNamespaceString = new string(typeNamespace);
-            string typeEngineNameString = new string(typeEngineName);
-            string fullTypeName = $"{typeNamespaceString}.{typeEngineNameString}";
-            
+            string fullTypeNameString = new string(fullTypeName);
             GCHandle handle = GCHandle.FromIntPtr(assemblyHandle);
             Assembly? loadedAssembly = handle.Target as Assembly;
 
@@ -91,7 +88,7 @@ public static class UnmanagedCallbacks
                 throw new InvalidOperationException("The provided assembly handle does not point to a valid assembly.");
             }
 
-            return FindTypeInAssembly(loadedAssembly, fullTypeName);
+            return FindTypeInAssembly(loadedAssembly, fullTypeNameString);
         }
         catch (TypeLoadException ex)
         {

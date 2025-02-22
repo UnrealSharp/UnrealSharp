@@ -9,19 +9,20 @@ void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterEx
 	EXPORT_FUNCTION(GetNativeStructFromName)
 }
 
-UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName, const char* InClassName)
+UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName)
 {
-	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
-	
 	// This gets called by the static constructor of the class, so we can cache the class info of native classes here.
-	TSharedPtr<FCSharpClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(InClassName);
+	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+	FCSFieldName FieldName(InClassName, InNamespace);
 	
+	TSharedPtr<FCSharpClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(FieldName);
 	return ClassInfo->Field;
 }
 
-UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InStructName)
+UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName)
 {
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
-	UScriptStruct* ScriptStruct = Assembly->FindStruct(InStructName);
+	FCSFieldName FieldName(InStructName, InNamespace);
+	UScriptStruct* ScriptStruct = Assembly->FindStruct(FieldName);
 	return ScriptStruct;
 }

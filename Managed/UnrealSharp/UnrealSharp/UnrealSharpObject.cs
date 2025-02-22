@@ -74,11 +74,11 @@ internal static class ReflectionHelper
     
     internal static IntPtr TryGetNativeClass(this Type type)
     {
-        return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetAssemblyName(), type.GetEngineName());
+        return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
     
     internal static IntPtr TryGetNativeClassDefaults(this Type type)
     {
-        return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.GetEngineName());
+        return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
 }

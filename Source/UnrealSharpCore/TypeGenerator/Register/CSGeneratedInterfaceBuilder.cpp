@@ -3,7 +3,7 @@
 
 void FCSGeneratedInterfaceBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->Name);
+	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
 	Field->SetInterfaceInfo(InterfaceInfo);
 	
 	Field->PurgeClass(true);

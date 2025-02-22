@@ -6,6 +6,7 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+struct FCSNamespace;
 struct FCSTypeReferenceMetaData;
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
@@ -66,8 +67,7 @@ public:
 	
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 
-	UPackage* CreateNewUnrealSharpPackage(const FString& PackageName);
-	static FString MakePackageName(const FString& PackageName);
+	UPackage* FindOrAddUnrealSharpPackage(FCSNamespace Namespace);
 	
 	void ForEachUnrealSharpPackage(const TFunction<void(UPackage*)>& Callback) const;
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;

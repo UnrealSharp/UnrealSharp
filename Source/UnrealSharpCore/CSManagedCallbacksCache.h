@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "CSFieldName.h"
+
 #if !defined(_WIN32)
 #define __stdcall
 #endif
@@ -18,7 +20,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		using ManagedCallbacks_InvokeManagedEvent = int(__stdcall*)(GCHandleIntPtr, void*, void*, void*, void*);
 		using ManagedCallbacks_InvokeDelegate = int(__stdcall*)(GCHandleIntPtr);
 		using ManagedCallbacks_LookupMethod = uint8*(__stdcall*)(void*, const TCHAR*);
-		using ManagedCallbacks_LookupType = uint8*(__stdcall*)(uint8*, const TCHAR*, const TCHAR*);
+		using ManagedCallbacks_LookupType = uint8*(__stdcall*)(uint8*, const TCHAR*);
 		using ManagedCallbacks_Dispose = void(__stdcall*)(GCHandleIntPtr);
 		
 		ManagedCallbacks_CreateNewManagedObject CreateNewManagedObject;

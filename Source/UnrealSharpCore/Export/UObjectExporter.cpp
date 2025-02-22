@@ -45,7 +45,6 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 {
 	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
 	NewStack.CurrentNativeFunction = NativeFunction;
-	const bool bHasReturnParam = NativeFunction->ReturnValueOffset != MAX_uint16;
 	
 	if (NativeFunction->HasAllFunctionFlags(FUNC_Net))
 	{
@@ -95,7 +94,8 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 			(*LastOut)->NextOutParm = nullptr;
 		}
 	}
-	
+
+	const bool bHasReturnParam = NativeFunction->ReturnValueOffset != MAX_uint16;
 	uint8* ReturnValueAddress = bHasReturnParam ? Params + NativeFunction->ReturnValueOffset : nullptr;
 	NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
 }

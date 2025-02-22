@@ -32,31 +32,29 @@ struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDelete
 	UNREALSHARPCORE_API bool IsValid() const { return !Assembly.IsNull(); }
 	UNREALSHARPCORE_API FGCHandle GetAssemblyHandle() { return Assembly; }
 
-	UPackage* GetPackage(const FName Namespace);
+	static UPackage* GetPackage(const FCSNamespace Namespace);
 
 	const GCHandleIntPtr& GetAssemblyHandle() const { return Assembly.Handle; }
 	const FName& GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
-	TWeakPtr<FGCHandle> TryFindTypeHandle(const FName& Namespace, const FName& TypeName);
+	TWeakPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
 	TWeakPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
-
-	bool ContainsClass(const UClass* Class) const;
 	
 	TWeakPtr<FGCHandle> GetMethodHandle(const UCSClass* Class, const FString& MethodName);
 
-	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const UClass* Class);
-	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(FName ClassName);
-	TSharedPtr<FCSharpClassInfo> FindClassInfo(FName ClassName) const;
+	TSharedPtr<const FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
+	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
+	TSharedPtr<FCSharpClassInfo> FindClassInfo(const FCSFieldName& ClassName) const;
 
-	TSharedPtr<FCSharpStructInfo> FindStructInfo(FName StructName) const;
-	TSharedPtr<FCSharpEnumInfo> FindEnumInfo(FName EnumName) const;
-	TSharedPtr<FCSharpInterfaceInfo> FindInterfaceInfo(FName InterfaceName) const;
+	TSharedPtr<FCSharpStructInfo> FindStructInfo(const FCSFieldName& StructName) const;
+	TSharedPtr<FCSharpEnumInfo> FindEnumInfo(const FCSFieldName& EnumName) const;
+	TSharedPtr<FCSharpInterfaceInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const;
 	
-	UClass* FindClass(FName ClassName) const;
-	UScriptStruct* FindStruct(FName StructName) const;
-	UEnum* FindEnum(FName EnumName) const;
-	UClass* FindInterface(FName InterfaceName) const;
+	UClass* FindClass(const FCSFieldName& FieldName) const;
+	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
+	UEnum* FindEnum(const FCSFieldName& EnumName) const;
+	UClass* FindInterface(const FCSFieldName& InterfaceName) const;
 	
 	FGCHandle* CreateNewManagedObject(UObject* Object);
 	void RemoveManagedObject(const UObjectBase* Object);
@@ -75,18 +73,31 @@ private:
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void OnEnginePreExit();
 
+	template<typename T>
+	T* TryFindField(FCSFieldName FieldName) const
+	{
+		UPackage* Package = FieldName.GetPackage();
+
+		if (!Package)
+		{
+			return nullptr;
+		}
+
+		return FindObject<T>(Package, *FieldName.GetNameString());
+	}
+
 	// UObjectArray listener interface
 	virtual void NotifyUObjectDeleted(const class UObjectBase *Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override;
 	// End of interface
 
-	TMap<FName, TSharedPtr<FCSharpClassInfo>> Classes;
-	TMap<FName, TSharedPtr<FCSharpStructInfo>> Structs;
-	TMap<FName, TSharedPtr<FCSharpEnumInfo>> Enums;
-	TMap<FName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
+	TMap<FCSFieldName, TSharedPtr<FCSharpClassInfo>> Classes;
+	TMap<FCSFieldName, TSharedPtr<FCSharpStructInfo>> Structs;
+	TMap<FCSFieldName, TSharedPtr<FCSharpEnumInfo>> Enums;
+	TMap<FCSFieldName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
 	
 	TArray<TSharedPtr<FGCHandle>> AllHandles;
-	TMap<FName, TSharedPtr<FGCHandle>> ClassHandles;
+	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
 	
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;

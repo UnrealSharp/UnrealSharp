@@ -2,7 +2,7 @@
 
 FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
 {
-	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->Namespace, TypeMetaData->Name);
+	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 }
 
 FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TWeakPtr<FGCHandle>& InTypeHandle)

@@ -142,7 +142,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 		}
 		else
 		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Can't find interface: %s"), *InterfaceInfo.Name.ToString());
+			UE_LOG(LogUnrealSharp, Error, TEXT("Can't find interface: %s"), *InterfaceInfo.FieldName.GetNameString());
 		}
 	}
 #else

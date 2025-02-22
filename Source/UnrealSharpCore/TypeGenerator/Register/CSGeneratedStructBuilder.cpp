@@ -8,7 +8,7 @@
 
 void FCSGeneratedStructBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->Name);
+	TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
 	Field->SetStructInfo(StructInfo);
 	
 	PurgeStruct();

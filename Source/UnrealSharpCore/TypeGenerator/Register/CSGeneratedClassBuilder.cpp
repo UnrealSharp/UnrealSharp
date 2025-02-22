@@ -19,7 +19,7 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->Name);
+	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
 	Field->SetClassInfo(ClassInfo);
 	
 	UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
@@ -76,11 +76,11 @@ void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 	if (!Blueprint)
 	{
 		UPackage* Package = TypeMetaData->GetOwningPackage();
-		FString BlueprintName = TypeMetaData->Name.ToString();
+		FString BlueprintName = TypeMetaData->FieldName.GetNameString();
 		
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
-		Blueprint->BlueprintNamespace = TypeMetaData->Namespace.ToString();
+		Blueprint->BlueprintNamespace = TypeMetaData->FieldName.GetNamespace().GetFullNamespaceString();
 		Blueprint->ParentClass = SuperClass;
 		
 		Field->ClassGeneratedBy = Blueprint;
@@ -131,7 +131,7 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 
 FName FCSGeneratedClassBuilder::GetFieldName() const
 {
-	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->Name.ToString());
+	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->FieldName.GetNameString());
 	return *FieldName;
 }
 
@@ -205,7 +205,7 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 
 		if (!IsValid(InterfaceClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.Name.ToString());
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.FieldName.GetNameString());
 			continue;
 		}
 
@@ -248,7 +248,8 @@ UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
 	{
 		return nullptr;
 	}
-	
+
+	const UClass* CurrentClass = Class;
 	while (Class && !IsManagedType(Class))
 	{
 		Class = Class->GetSuperClass();
@@ -268,7 +269,7 @@ UClass* FCSGeneratedClassBuilder::GetFirstNativeClass(UClass* Class)
 
 UClass* FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(UClass* Class)
 {
-	while (Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
+	while (Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint) && !IsManagedType(Class))
 	{
 		Class = Class->GetSuperClass();
 	}

@@ -1,7 +1,7 @@
 #include "CSFunction.h"
-#include "CSUnrealSharpSettings.h"
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
+#include "CSUnrealSharpSettings.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 
@@ -67,8 +67,7 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		ArgumentBuffer,
 		RESULT_PARAM,
 		&ExceptionMessage) == 0;
-
-#if WITH_EDITOR
+	
 	if (!bSuccess)
 	{
 		const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
@@ -77,7 +76,6 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
-#endif
 
 	return bSuccess;
 }
