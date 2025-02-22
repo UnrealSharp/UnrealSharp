@@ -15,3 +15,12 @@ FName FUnrealSharpUtils::GetModuleName(const UObject* Object)
 {
 	return FPackageName::GetShortFName(Object->GetPackage()->GetFName());
 }
+
+bool FUnrealSharpUtils::IsStandalonePIE()
+{
+#if WITH_EDITOR
+	return !GIsEditor;
+#else
+		return false;
+#endif
+}

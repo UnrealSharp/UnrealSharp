@@ -10,6 +10,7 @@
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly): TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly)
 {
@@ -31,7 +32,15 @@ void FCSGeneratedClassBuilder::RebuildType()
 	Field->SetSuperStruct(SuperClass);
 	
 #if WITH_EDITOR
-	CreateClassEditor(SuperClass);
+	if (FUnrealSharpUtils::IsStandalonePIE())
+	{
+		CreateBlueprint(SuperClass);
+		CreateClass(SuperClass);
+	}
+	else
+	{
+		CreateClassEditor(SuperClass);
+	}
 #else
 	CreateClass(SuperClass);
 #endif
@@ -57,6 +66,12 @@ void FCSGeneratedClassBuilder::UpdateType()
 #if WITH_EDITOR
 void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 {
+	CreateBlueprint(SuperClass);
+	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
+}
+
+void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
+{
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
 	{
@@ -70,8 +85,6 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 		
 		Field->ClassGeneratedBy = Blueprint;
 	}
-
-	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 }
 #endif
 

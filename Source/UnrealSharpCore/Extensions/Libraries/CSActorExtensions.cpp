@@ -50,8 +50,11 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 		if (UInheritableComponentHandler* InheritableComponentHandler = CurrentClass->GetInheritableComponentHandler(true))
 		{
 #if WITH_EDITOR
-			UBlueprint* Blueprint = static_cast<UBlueprint*>(CurrentClass->ClassGeneratedBy);
-			Blueprint->InheritableComponentHandler = InheritableComponentHandler;
+			if (GIsEditor)
+			{
+				UBlueprint* Blueprint = static_cast<UBlueprint*>(CurrentClass->ClassGeneratedBy);
+				Blueprint->InheritableComponentHandler = InheritableComponentHandler;
+			}
 #endif
 			
 			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(ComponentName);

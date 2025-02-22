@@ -30,6 +30,7 @@ public:
 
 private:
 #if WITH_EDITOR
+	void CreateBlueprint(UClass* SuperClass);
 	void CreateClassEditor(UClass* SuperClass);
 #endif
 	void CreateClass(UClass* SuperClass);

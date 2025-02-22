@@ -10,6 +10,8 @@ namespace FUnrealSharpUtils
 	
 	UNREALSHARPUTILITIES_API FName GetModuleName(const UObject* Object);
 
+	UNREALSHARPUTILITIES_API bool IsStandalonePIE();
+
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)
 	{
@@ -26,5 +28,4 @@ namespace FUnrealSharpUtils
 			OutObjects.Add(CDO);
 		}
 	}
-	
 };

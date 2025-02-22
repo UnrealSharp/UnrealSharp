@@ -133,7 +133,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 		USCS_Node* Node = AllNodes[i];
 		if (!Nodes.Contains(Node))
 		{
-			Blueprint->SimpleConstructionScript->RemoveNode(Node, true);
+			Blueprint->SimpleConstructionScript->RemoveNode(Node);
 		}
 	}
 

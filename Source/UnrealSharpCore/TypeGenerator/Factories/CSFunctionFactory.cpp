@@ -57,12 +57,6 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, c
 
 UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction)
 {
-	#if ENGINE_MINOR_VERSION >= 4
-	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags_AllFlags
-	#else
-	#define CS_EInternalObjectFlags_AllFlags EInternalObjectFlags::AllFlags
-	#endif
-	
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure);
 	UCSFunctionBase* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionMetaData(), FunctionFlags, ParentFunction);
 	
