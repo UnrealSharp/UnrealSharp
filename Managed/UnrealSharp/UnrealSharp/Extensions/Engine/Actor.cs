@@ -122,4 +122,20 @@ public partial class AActor
     {
         return UCSActorExtensions.IsReplicatedSubObjectRegistered(this, subObject);
     }
+
+    /// <summary>
+    /// Move the Actor to the specified location.
+    /// </summary>
+    public bool SetActorLocation(FVector newLocation)
+    {
+        return SetActorLocation(newLocation, false, out _, false);
+    }
+    
+    /// <summary>
+    /// Move the actor instantly to the specified location and rotation.
+    /// </summary>
+    public bool SetActorLocationRotation(FVector newLocation, FRotator newRotation)
+    {
+        return SetActorLocationAndRotation(newLocation, newRotation, false, out _, false);
+    }
 }
