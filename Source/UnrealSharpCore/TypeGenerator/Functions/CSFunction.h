@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSManagedMethod.h"
 #include "CSFunction.generated.h"
 
 class UCSClass;
@@ -29,6 +30,7 @@ protected:
 
 	void OnClassReloaded(UClass* Class);
 	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
-	
-	TWeakPtr<FGCHandle> MethodHandle;
+
+private:
+	FCSManagedMethod MethodHandle;
 };

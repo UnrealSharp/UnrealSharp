@@ -44,7 +44,7 @@ void UCSFunctionBase::UpdateMethodInfo()
 	TSharedPtr<FCSAssembly> Assembly = ManagedClass->GetOwningAssembly();
 	
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
-	MethodHandle = Assembly->GetMethodHandle(ManagedClass, InvokeMethodName);
+	MethodHandle = Assembly->GetManagedMethod(ManagedClass, InvokeMethodName);
 	check(MethodHandle.IsValid());
 }
 
@@ -59,14 +59,9 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 	}
 	
 	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
-	TSharedPtr<FGCHandle> MethodHandle = Function->MethodHandle.Pin();
-	FString ExceptionMessage;
 	
-	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
-		MethodHandle->GetPointer(),
-		ArgumentBuffer,
-		RESULT_PARAM,
-		&ExceptionMessage) == 0;
+	FString ExceptionMessage;
+	const bool bSuccess = Function->MethodHandle.Invoke(ManagedObjectHandle, ArgumentBuffer, RESULT_PARAM, ExceptionMessage);
 	
 	if (!bSuccess)
 	{
@@ -76,7 +71,7 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
-
+	
 	return bSuccess;
 }
 

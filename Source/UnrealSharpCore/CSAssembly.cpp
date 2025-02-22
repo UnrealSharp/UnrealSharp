@@ -1,4 +1,6 @@
 ﻿#include "CSAssembly.h"
+
+#include "CSManagedMethod.h"
 #include "UnrealSharpCore.h"
 #include "Misc/Paths.h"
 #include "CSManager.h"
@@ -159,27 +161,38 @@ TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const UClass* Class)
 	return TryFindTypeHandle(FCSFieldName(Class));
 }
 
-TWeakPtr<FGCHandle> FCSAssembly::GetMethodHandle(const UCSClass* Class, const FString& MethodName)
+FCSManagedMethod FCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName)
 {
-	if (!IsValid())
+	if (!TypeHandle.IsValid())
 	{
-		return nullptr;
+		return FCSManagedMethod::Invalid();
 	}
-
-	TSharedRef<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
-	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle().Pin();
 	
-	uint8* MethodHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(PinnedHandle->GetPointer(), *MethodName);
+	uint8* MethodHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedMethod(TypeHandle->GetPointer(), *MethodName);
 	
 	if (MethodHandle == nullptr)
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find method {0} in {1}", *MethodName, *Class->GetName());
-		return nullptr;
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find method %s", *MethodName);
+		return FCSManagedMethod::Invalid();
 	}
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(MethodHandle, GCHandleType::WeakHandle);
 	AllHandles.Add(AllocatedHandle);
-	return AllocatedHandle.ToWeakPtr();
+
+	FCSManagedMethod ManagedMethod(AllocatedHandle);
+	return ManagedMethod;
+}
+
+FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FString& MethodName)
+{
+	if (!IsValid())
+	{
+		return FCSManagedMethod::Invalid();
+	}
+
+	TSharedRef<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
+	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle().Pin();
+	return GetManagedMethod(PinnedHandle, MethodName);
 }
 
 TSharedPtr<const FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
@@ -429,7 +442,8 @@ void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<F
 			*ExistingValue->TypeMetaData = NewMetaData;
 			ExistingValue->State = NeedRebuild;
 		}
-		else if (OnUpdate)
+		
+		if (OnUpdate)
 		{
 			OnUpdate(ExistingValue);
 		}

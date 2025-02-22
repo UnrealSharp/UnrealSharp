@@ -7,6 +7,7 @@
 #define __stdcall
 #endif
 
+struct FCSManagedMethod;
 class UCSClass;
 struct FCSharpClassInfo;
 struct FCSharpInterfaceInfo;
@@ -40,8 +41,9 @@ struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDelete
 
 	TWeakPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
 	TWeakPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
-	
-	TWeakPtr<FGCHandle> GetMethodHandle(const UCSClass* Class, const FString& MethodName);
+
+	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
+	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
 
 	TSharedPtr<const FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
