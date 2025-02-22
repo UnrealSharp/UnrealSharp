@@ -33,7 +33,7 @@ void UCSFunctionBase::Bind()
 	}
 }
 
-void UCSFunctionBase::UpdateMethodInfo()
+void UCSFunctionBase::UpdateMethodHandle()
 {
 	if (MethodHandle.IsValid())
 	{
@@ -80,10 +80,15 @@ UCSClass* UCSFunctionBase::GetOwningManagedClass() const
 	return Cast<UCSClass>(GetOwnerClass());
 }
 
+bool UCSFunctionBase::IsOwnedByGeneratedClass() const
+{
+	return GetOwningManagedClass() != nullptr;
+}
+
 void UCSFunctionBase::OnClassReloaded(UClass* Class)
 {
 	if (Class == GetOuter())
 	{
-		UpdateMethodInfo();
+		UpdateMethodHandle();
 	}
 }

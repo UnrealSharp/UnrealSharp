@@ -48,7 +48,7 @@ void UCSManager::Shutdown()
 	Instance = nullptr;
 }
 
-UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace Namespace)
+UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
 {
 	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
 	{
@@ -125,7 +125,7 @@ void UCSManager::Initialize()
 	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
 	if (DotNetInstallationPath.IsEmpty())
 	{
-		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET8 SDK can't be found on your system."));
+		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
@@ -156,7 +156,7 @@ void UCSManager::Initialize()
 		return;
 	}
 
-	GlobalUnrealSharpPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
+	GlobalUnrealSharpPackage = FindManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
 
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();

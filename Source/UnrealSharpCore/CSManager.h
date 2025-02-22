@@ -40,7 +40,7 @@ public:
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
-	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
+	UPackage* FindManagedPackage(FCSNamespace Namespace);
 	
 	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 

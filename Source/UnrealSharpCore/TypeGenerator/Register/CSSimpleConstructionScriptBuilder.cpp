@@ -90,11 +90,28 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		{
 			// If we can't find a node, it's defined in a native parent class and don't have a node for it.
 			UClass* NativeParent = FCSGeneratedClassBuilder::GetFirstNativeClass(Outer);
-			if (FProperty* Property = NativeParent->FindPropertyByName(AttachToComponentName))
+			if (FObjectProperty* Property = CastField<FObjectProperty>(NativeParent->FindPropertyByName(AttachToComponentName)))
 			{
+				UActorComponent* Component = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(NativeParent->GetDefaultObject()));
+
+				if (!IsValid(Component))
+				{
+					UE_LOG(LogUnrealSharp, Error, TEXT("Parent component %s not found in class %s"), *AttachToComponentName.ToString(), *NativeParent->GetName());
+					continue;
+				}
+				
+				if (Component->GetFName() != AttachToComponentName)
+				{
+					Node->ParentComponentOwnerClassName = Component->GetClass()->GetFName();
+					Node->ParentComponentOrVariableName = Component->GetFName();
+				}
+				else
+				{
+					Node->ParentComponentOrVariableName = AttachToComponentName;
+					Node->ParentComponentOwnerClassName = Property->GetOwnerClass()->GetFName();
+				}
+
 				Node->bIsParentComponentNative = true;
-				Node->ParentComponentOrVariableName = AttachToComponentName;
-				Node->ParentComponentOwnerClassName = Property->GetOwnerClass()->GetFName();
 			}
 			else
 			{

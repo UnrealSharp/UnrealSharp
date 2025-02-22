@@ -18,7 +18,7 @@ struct FCSharpStructInfo;
  * Represents a managed assembly.
  * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the assembly.
  */
-struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
+struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
 {
 	FCSAssembly(const FString& AssemblyPath);
 
@@ -55,6 +55,7 @@ struct FCSAssembly : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDelete
 	
 	FGCHandle FindManagedObject(UObject* Object);
 
+	// Add a class that is waiting for its parent class to be loaded before it can be created.
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass);
 
 private:
@@ -94,7 +95,7 @@ private:
 	// All handles allocated by this assembly. This is used to ensure that all handles are freed when the assembly is unloaded.
 	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
 
-	// Handles to all Unreal types that are defined in this assembly.
+	// Handles to all class types that are defined in this assembly. Only UClasses that are defined in this assembly will have a handle.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 
 	// Handles to all active UObjects that has a managed counterpart.

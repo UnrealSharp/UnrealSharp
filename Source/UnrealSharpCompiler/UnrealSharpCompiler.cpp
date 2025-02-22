@@ -66,7 +66,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	// Components need to be compiled first, as they can be dependencies for actors as components.
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(OtherManagedClasses);
-
+	
 	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 }
 

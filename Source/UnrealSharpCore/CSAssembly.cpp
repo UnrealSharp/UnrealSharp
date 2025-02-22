@@ -1,5 +1,4 @@
 ﻿#include "CSAssembly.h"
-
 #include "CSManagedMethod.h"
 #include "UnrealSharpCore.h"
 #include "Misc/Paths.h"
@@ -83,23 +82,16 @@ bool FCSAssembly::ProcessMetadata()
 
 bool FCSAssembly::UnloadAssembly()
 {
-	ClassHandles.Empty();
-	
 	for (TSharedPtr<FGCHandle>& Handle : AllocatedHandles)
 	{
 		Handle->Dispose();
-		
-		int32 RefCount = Handle.GetSharedReferenceCount();
-		if (RefCount > 1)
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Handle %p has %d references"), Handle.Get(), RefCount);
-			ensureAlwaysMsgf(false, TEXT("Handle has references"));
-		}
-
 		Handle.Reset();
 	}
 	
+	ClassHandles.Empty();
+	ObjectHandles.Empty();
 	AllocatedHandles.Empty();
+	
 	AssemblyHandle.Dispose();
 	
 	if (!UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath))
@@ -118,7 +110,7 @@ UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
 	UPackage* FoundPackage;
 	if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
 	{
-		FoundPackage = Manager.FindOrAddManagedPackage(Namespace);
+		FoundPackage = Manager.FindManagedPackage(Namespace);
 	}
 	else
 	{

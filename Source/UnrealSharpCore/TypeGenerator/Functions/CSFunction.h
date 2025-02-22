@@ -22,9 +22,10 @@ public:
 	virtual void Bind() override;
 	// End of UFunction interface
 	
-	void UpdateMethodInfo();
+	void UpdateMethodHandle();
 
 	UCSClass* GetOwningManagedClass() const;
+	bool IsOwnedByGeneratedClass() const;
 
 protected:
 

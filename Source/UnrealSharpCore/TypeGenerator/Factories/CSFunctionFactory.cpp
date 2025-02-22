@@ -1,7 +1,6 @@
 ﻿#include "CSFunctionFactory.h"
 #include "CSPropertyFactory.h"
 #include "UnrealSharpCore.h"
-#include "TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Functions/CSFunction_NoParams.h"
@@ -13,9 +12,11 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
 
-	if (UCSClass* ManagedClass = NewFunction->GetOwningManagedClass())
+	// Ignore delegate signatures and classes that are not the generated class.
+	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.
+	if (!NewFunction->HasAnyFunctionFlags(FUNC_Delegate) && NewFunction->IsOwnedByGeneratedClass())
 	{
-		NewFunction->UpdateMethodInfo();
+		NewFunction->UpdateMethodHandle();
 	}
 	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);

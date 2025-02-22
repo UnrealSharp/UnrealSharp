@@ -1,6 +1,7 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
 #include "BlueprintEditorLibrary.h"
+#include "CSBlueprintUpdater.h"
 #include "CSCommands.h"
 #include "CSScriptBuilder.h"
 #include "DirectoryWatcherModule.h"
@@ -25,7 +26,6 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Logging/StructuredLog.h"
 #include "Misc/ScopedSlowTask.h"
-#include "Reinstancing/CSReinstancer.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
@@ -62,7 +62,7 @@ void FUnrealSharpEditorModule::StartupModule()
 		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
 		Handle);
 
-	FCSReinstancer::Get().Initialize();
+	FCSBlueprintUpdater::Get().Initialize();
 
 	FEditorDelegates::EndPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEEnded);
 
@@ -251,7 +251,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Updating Blueprints..."));
-	FCSReinstancer::Get().UpdateBlueprints();
+	FCSBlueprintUpdater::Get().UpdateBlueprints();
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;

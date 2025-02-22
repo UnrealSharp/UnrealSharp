@@ -41,7 +41,7 @@ bool FCSNamespace::GetParentNamespace(FCSNamespace& OutParent) const
 
 UPackage* FCSNamespace::GetPackage() const
 {
-	return UCSManager::Get().FindOrAddManagedPackage(*this);
+	return UCSManager::Get().FindManagedPackage(*this);
 }
 
 UPackage* FCSNamespace::TryGetAsNativePackage() const
