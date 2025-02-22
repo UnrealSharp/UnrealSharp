@@ -1,4 +1,6 @@
 ﻿#include "CSSimpleConstructionScriptBuilder.h"
+
+#include "UnrealSharpCore.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
@@ -68,28 +70,34 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		
 		USCS_Node* ParentNode = nullptr;
 		USimpleConstructionScript* ParentSimpleConstructionComponent = nullptr;
-		FindParentNodeAndComponent(AttachToComponentName, Outer, ParentNode, ParentSimpleConstructionComponent);
-
-		if (!ParentNode || !ParentSimpleConstructionComponent)
+		if (TryFindParentNodeAndComponent(AttachToComponentName, Outer, ParentNode, ParentSimpleConstructionComponent))
 		{
-			ParentNode = CurrentSCS->GetRootNodes()[0];
-			ParentSimpleConstructionComponent = CurrentSCS;
-		}
-
-		if (ParentSimpleConstructionComponent == CurrentSCS)
-		{
-			if (!ParentNode->ChildNodes.Contains(Node))
+			if (ParentSimpleConstructionComponent == CurrentSCS)
 			{
-				ParentNode->AddChildNode(Node, false);
+				if (!ParentNode->ChildNodes.Contains(Node))
+				{
+					ParentNode->AddChildNode(Node, false);
+				}
+			}
+			else
+			{
+				Node->bIsParentComponentNative = false;
+				Node->ParentComponentOrVariableName = AttachToComponentName;
+				Node->ParentComponentOwnerClassName = ParentSimpleConstructionComponent->GetOwnerClass()->GetFName();
 			}
 		}
+		// If we can't find a node, it's defined in a native parent class and don't have a node for it.
+		else if (FObjectProperty* Property = CastField<FObjectProperty>(Outer->FindPropertyByName(AttachToComponentName)))
+        {
+            Node->bIsParentComponentNative = true;
+            Node->ParentComponentOrVariableName = AttachToComponentName;
+            Node->ParentComponentOwnerClassName = Property->GetOwnerClass()->GetFName();
+        }
 		else
 		{
-			Node->bIsParentComponentNative = false;
-			Node->ParentComponentOrVariableName = AttachToComponentName;
-			Node->ParentComponentOwnerClassName = ParentSimpleConstructionComponent->GetOwnerClass()->GetFName();
+			UE_LOG(LogUnrealSharp, Error, TEXT("Parent component %s not found in class %s"), *AttachToComponentName.ToString(), *Outer->GetName());
 		}
-
+		
 		for (USCS_Node* NodeItr : CurrentSCS->GetAllNodes())
 		{
 			FName ParentComponentName = NodeItr->GetVariableName();
@@ -171,7 +179,7 @@ void FCSSimpleConstructionScriptBuilder::UpdateChildren(UClass* Outer, USCS_Node
 #endif
 }
 
-void FCSSimpleConstructionScriptBuilder::FindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS)
+bool FCSSimpleConstructionScriptBuilder::TryFindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS)
 {
 	for (UClass* CurrentClass = ClassToSearch; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
@@ -204,6 +212,8 @@ void FCSSimpleConstructionScriptBuilder::FindParentNodeAndComponent(FName Parent
 
 		OutNode = FoundNode;
 		OutSCS = CurrentSCS;
-		break;
+		return true;
 	}
+
+	return false;
 }
