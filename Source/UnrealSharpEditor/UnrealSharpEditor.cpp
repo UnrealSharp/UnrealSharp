@@ -1052,7 +1052,7 @@ void FUnrealSharpEditorModule::OnEnumRebuilt(UEnum* NewEnum)
 	RebuiltEnums.Add(NewEnum);
 }
 
-bool FUnrealSharpEditorModule::TryUpdatePin(const FEdGraphPinType& PinType) const
+bool FUnrealSharpEditorModule::IsPinAffectedByReload(const FEdGraphPinType& PinType) const
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
 	if (!IsValid(PinSubCategoryObject) || !Manager->IsManagedField(PinSubCategoryObject))
@@ -1106,13 +1106,13 @@ bool FUnrealSharpEditorModule::TryUpdatePin(const FEdGraphPinType& PinType) cons
 	return false;
 }
 
-bool FUnrealSharpEditorModule::UpdateNodePinTypes(UEdGraphNode* Node) const
+bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
 {
 	if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
 	{
 		for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
 		{
-			if (TryUpdatePin(Pin->PinType))
+			if (IsPinAffectedByReload(Pin->PinType))
 			{
 				return true;
 			}
@@ -1121,7 +1121,7 @@ bool FUnrealSharpEditorModule::UpdateNodePinTypes(UEdGraphNode* Node) const
 
 	for (UEdGraphPin* Pin : Node->Pins)
 	{
-		if (TryUpdatePin(Pin->PinType))
+		if (IsPinAffectedByReload(Pin->PinType))
 		{
 			return true;
 		}
@@ -1134,10 +1134,11 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 {
 	if (RebuiltStructs.IsEmpty() && RebuiltClasses.IsEmpty() && RebuiltEnums.IsEmpty())
 	{
+		// Early out if nothing has changed its structure.
 		return;
 	}
 	
-	TSet<UBlueprint*> ToUpdate;
+	TSet<UBlueprint*> AffectedBlueprints;
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
@@ -1146,32 +1147,30 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 			continue;
 		}
 
-		bool BlueprintHasBeenUpdated = false;
+		bool BlueprintHasBeenModified = false;
 
-		TArray<UK2Node*> AllNodes;
-		FBlueprintEditorUtils::GetAllNodesOfClass(Blueprint, AllNodes);
+		TArray<UK2Node*> AllBlueprintNodes;
+		FBlueprintEditorUtils::GetAllNodesOfClass<UK2Node>(Blueprint, AllBlueprintNodes);
 		
-		for (UK2Node* Node : AllNodes)
+		for (UK2Node* BlueprintNode : AllBlueprintNodes)
 		{
-			if (UpdateNodePinTypes(Node))
+			if (IsNodeAffectedByReload(BlueprintNode))
 			{
-				Node->ReconstructNode();
-				BlueprintHasBeenUpdated = true;
+				BlueprintNode->ReconstructNode();
+				BlueprintHasBeenModified = true;
 			}
 		}
 
-		if (BlueprintHasBeenUpdated)
+		if (BlueprintHasBeenModified)
 		{
-			ToUpdate.Add(Blueprint);
+			AffectedBlueprints.Add(Blueprint);
 		}
 	}
 	
-	for (UBlueprint* Blueprint : ToUpdate)
+	for (UBlueprint* Blueprint : AffectedBlueprints)
 	{
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 	}
-		
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 	
 	RebuiltStructs.Empty();
 	RebuiltClasses.Empty();

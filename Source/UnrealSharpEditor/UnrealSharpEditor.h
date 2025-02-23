@@ -118,8 +118,9 @@ private:
     void OnClassRebuilt(UClass* NewClass);
     void OnEnumRebuilt(UEnum* NewEnum);
 
-    bool TryUpdatePin(const FEdGraphPinType& PinType) const;
-    bool UpdateNodePinTypes(UEdGraphNode* Node) const;
+    bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
+    bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
+    
     void RefreshAffectedBlueprints();
 
     FSlateIcon GetMenuIcon() const;
