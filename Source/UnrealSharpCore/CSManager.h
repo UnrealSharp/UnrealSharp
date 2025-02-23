@@ -81,6 +81,7 @@ public:
 	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const;
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
 	bool IsManagedPackage(const UPackage* Package) const;
+	bool IsManagedField(const UObject* Field) const;
 
 private:
 

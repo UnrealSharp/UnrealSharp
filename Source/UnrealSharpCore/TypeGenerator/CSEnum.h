@@ -7,7 +7,7 @@
 struct FCSharpEnumInfo;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSEnum : public UUserDefinedEnum
+class UCSEnum : public UUserDefinedEnum
 {
 	GENERATED_BODY()
 
@@ -18,7 +18,7 @@ public:
 	// End of UEnum interface
 
 	void SetEnumInfo(const TSharedPtr<FCSharpEnumInfo>& InEnumInfo);
-	TSharedPtr<FCSharpEnumInfo> GetEnumInfo() const { return EnumInfo; }
+	UNREALSHARPCORE_API TSharedPtr<FCSharpEnumInfo> GetEnumInfo() const { return EnumInfo; }
 
 private:
 	TSharedPtr<FCSharpEnumInfo> EnumInfo;

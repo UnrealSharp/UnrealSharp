@@ -16,19 +16,19 @@ struct FCSharpStructInfo;
 
 /**
  * Represents a managed assembly.
- * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the assembly.
+ * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the C# assembly.
  */
 struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
 {
-	FCSAssembly(const FString& AssemblyPath);
+	explicit FCSAssembly(const FString& AssemblyPath);
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
-	UNREALSHARPCORE_API bool IsValid() const { return !AssemblyHandle.IsNull(); }
+	UNREALSHARPCORE_API bool IsValid() const { return AssemblyHandle.IsValid() && !AssemblyHandle->IsNull(); }
 
 	UPackage* GetPackage(const FCSNamespace Namespace);
-	
-	const FName& GetAssemblyName() const { return AssemblyName; }
+
+	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
 	TWeakPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
@@ -98,14 +98,14 @@ private:
 	// Handles to all class types that are defined in this assembly. Only UClasses that are defined in this assembly will have a handle.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 
-	// Handles to all active UObjects that has a managed counterpart.
+	// Handles to all active UObjects that has a C# counterpart.
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
 
-	// Handle to the Assembly in C#.
-	FGCHandle AssemblyHandle;
+	// Handle to the Assembly object in C#.
+	TSharedPtr<FGCHandle> AssemblyHandle;
 	
 	FString AssemblyPath;
 	FName AssemblyName;

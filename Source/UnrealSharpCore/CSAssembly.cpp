@@ -51,14 +51,17 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		return false;
 	}
 	
-	AssemblyHandle.Handle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
-	AssemblyHandle.Type = GCHandleType::WeakHandle;
+	FGCHandle NewHandle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
+	NewHandle.Type = GCHandleType::WeakHandle;
 
-	if (!IsValid())
+	if (NewHandle.IsNull())
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load: %s"), *AssemblyPath);
 		return false;
 	}
+
+	AssemblyHandle = MakeShared<FGCHandle>(NewHandle);
+	AllocatedHandles.Add(AssemblyHandle);
 
 	if (ProcessMetadata())
 	{
@@ -91,8 +94,6 @@ bool FCSAssembly::UnloadAssembly()
 	ClassHandles.Empty();
 	ObjectHandles.Empty();
 	AllocatedHandles.Empty();
-	
-	AssemblyHandle.Dispose();
 	
 	if (!UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath))
 	{
@@ -133,7 +134,7 @@ TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName
 	}
 
 	FString FullName = FieldName.GetFullName().ToString();
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle.GetPointer(), *FullName);
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle->GetPointer(), *FullName);
 	
 	if (TypeHandle == nullptr)
 	{
@@ -182,7 +183,7 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FStr
 		return FCSManagedMethod::Invalid();
 	}
 
-	TSharedRef<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
+	TSharedPtr<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
 	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle().Pin();
 	return GetManagedMethod(PinnedHandle, MethodName);
 }

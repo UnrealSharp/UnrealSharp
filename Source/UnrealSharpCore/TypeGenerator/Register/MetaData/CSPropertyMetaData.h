@@ -32,7 +32,7 @@ struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSMemberMetaData
 			return false;
 		}
 		
-		return  Type->PropertyType == Other.Type->PropertyType &&
+		return  Type->IsEqual(Other.Type) &&
 				RepNotifyFunctionName == Other.RepNotifyFunctionName &&
 				ArrayDim == Other.ArrayDim &&
 				PropertyFlags == Other.PropertyFlags &&

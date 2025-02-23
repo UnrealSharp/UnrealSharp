@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,13 +5,11 @@
 #include "CSFunction.generated.h"
 
 class UCSClass;
-struct FGCHandle;
 
 UCLASS()
 class UCSFunctionBase : public UFunction
 {
 	GENERATED_BODY()
-
 public:
 
 	UCSFunctionBase() : MethodHandle(nullptr) {}
@@ -21,17 +17,20 @@ public:
 	// UFunction interface
 	virtual void Bind() override;
 	// End of UFunction interface
-	
-	void UpdateMethodHandle();
 
+	// Tries to update the method handle to the function pointer in C#.
+	void TryUpdateMethodHandle();
+
+	// Gets the owning managed class of this function.
 	UCSClass* GetOwningManagedClass() const;
+
+	// Checks if this function is owned by a generated class.
 	bool IsOwnedByGeneratedClass() const;
 
 protected:
-
-	void OnClassReloaded(UClass* Class);
 	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
-
 private:
+	void OnClassReloaded(UClass* Class);
+	
 	FCSManagedMethod MethodHandle;
 };

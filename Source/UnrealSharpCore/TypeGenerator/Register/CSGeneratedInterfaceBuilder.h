@@ -12,6 +12,8 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
+#if WITH_EDITOR
 	virtual void UpdateType() override;
+#endif
 	// End of implementation
 };

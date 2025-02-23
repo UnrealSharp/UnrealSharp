@@ -1,9 +1,9 @@
 ﻿#include "CSClass.h"
 #include "Register/TypeInfo/CSClassInfo.h"
 
-TSharedRef<const FCSharpClassInfo> UCSClass::GetClassInfo() const
+TSharedPtr<const FCSharpClassInfo> UCSClass::GetClassInfo() const
 {
-	return ClassInfo.ToSharedRef();
+	return ClassInfo;
 }
 
 TWeakPtr<const FGCHandle> UCSClass::GetClassHandle() const

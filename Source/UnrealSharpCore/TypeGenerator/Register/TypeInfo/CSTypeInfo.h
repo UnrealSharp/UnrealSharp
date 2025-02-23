@@ -12,6 +12,9 @@ enum ETypeState : uint8
 
 	// The type just needs to be updated. New method ptr et.c.
 	NeedUpdate,
+
+	// This type is currently being built. Used to prevent circular dependencies.
+	CurrentlyBuilding,
 };
 
 template<typename TMetaData, typename TField, typename TTypeBuilder>
@@ -44,7 +47,7 @@ struct UNREALSHARPCORE_API TCSharpTypeInfo
 
 	virtual TField* InitializeBuilder()
 	{
-		if (Field && State == UpToDate)
+		if (Field && (State == UpToDate || State == CurrentlyBuilding))
         {
 			// No need to rebuild or update
             return Field;
@@ -56,12 +59,16 @@ struct UNREALSHARPCORE_API TCSharpTypeInfo
 		
 		if (State == NeedRebuild)
 		{
+			State = CurrentlyBuilding;
 			TypeBuilder.RebuildType();
         }
+#if WITH_EDITOR
         else if (State == NeedUpdate)
         {
+        	State = CurrentlyBuilding;
             TypeBuilder.UpdateType();
 		}
+#endif
 	
 		State = UpToDate;
 		return Field;

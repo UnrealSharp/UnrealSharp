@@ -2,8 +2,13 @@
 
 void FCSGeneratedEnumBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
-	Field->SetEnumInfo(EnumInfo);
+	PurgeEnum();
+
+	if (!Field->GetEnumInfo().IsValid())
+	{
+		TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
+		Field->SetEnumInfo(EnumInfo);
+	}
 	
 	const int32 NumItems = TypeMetaData->Items.Num();
     
@@ -21,10 +26,19 @@ void FCSGeneratedEnumBuilder::RebuildType()
 	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
 
+#if WITH_EDITOR
 	UCSManager::Get().OnNewEnumEvent().Broadcast(Field);
+#endif
 }
 
+#if WITH_EDITOR
 void FCSGeneratedEnumBuilder::UpdateType()
 {
 	UCSManager::Get().OnEnumReloadedEvent().Broadcast(Field);
+}
+#endif
+
+void FCSGeneratedEnumBuilder::PurgeEnum() const
+{
+	Field->DisplayNameMap.Empty();
 }

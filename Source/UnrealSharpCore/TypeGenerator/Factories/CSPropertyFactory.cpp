@@ -77,7 +77,6 @@ FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FCSP
 {
 	FProperty* Property = CreateProperty(Outer, PropertyMetaData);
 	Outer->AddCppProperty(Property);
-	PropertyMetaData.Type->OnPropertyCreated(Property);
 	return Property;
 }
 

@@ -9,7 +9,6 @@ class UNREALSHARPCORE_API UCSUnrealSharpSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 public:
-	
 	// Should we exit PIE when an exception is thrown in C#?
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Debugging")
 	bool bCrashOnException = true;

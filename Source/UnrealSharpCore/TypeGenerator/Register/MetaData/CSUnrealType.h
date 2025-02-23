@@ -5,13 +5,22 @@
 struct FCSUnrealType
 {
 	virtual ~FCSUnrealType() = default;
-
-	FName UnrealPropertyClass;
+	
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
-	int32 ArrayDim;
 
 	// Begin FCSUnrealType
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject);
-	virtual void OnPropertyCreated(FProperty* Property) {};
+	virtual bool IsEqual(TSharedPtr<FCSUnrealType> Other) const;
 	// End FCSUnrealType
+
+	template<typename T>
+	TSharedPtr<T> SafeCast(const TSharedPtr<FCSUnrealType> Other) const
+	{
+		if (Other.IsValid() && Other->PropertyType == PropertyType)
+		{
+			return StaticCastSharedPtr<T>(Other);
+		}
+		
+		return nullptr;
+	}
 };

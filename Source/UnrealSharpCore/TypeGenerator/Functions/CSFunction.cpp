@@ -33,9 +33,11 @@ void UCSFunctionBase::Bind()
 	}
 }
 
-void UCSFunctionBase::UpdateMethodHandle()
+void UCSFunctionBase::TryUpdateMethodHandle()
 {
-	if (MethodHandle.IsValid())
+	// Ignore delegate signatures and classes that are not the generated class.
+	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.
+	if (MethodHandle.IsValid() || HasAllFunctionFlags(FUNC_Delegate) || !IsOwnedByGeneratedClass())
 	{
 		return;
 	}
@@ -89,6 +91,6 @@ void UCSFunctionBase::OnClassReloaded(UClass* Class)
 {
 	if (Class == GetOuter())
 	{
-		UpdateMethodHandle();
+		TryUpdateMethodHandle();
 	}
 }

@@ -19,34 +19,57 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
-	Field->SetClassInfo(ClassInfo);
-	
-	UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
-	
-	if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
+	if (!Field->GetClassInfo().IsValid())
 	{
-		SuperClass = *RedirectedClass;
+		TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
+		Field->SetClassInfo(ClassInfo);
+	}
+
+	UClass* CurrentSuperClass = Field->GetSuperClass();
+	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
+	{
+		UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
+		if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
+		{
+			SuperClass = *RedirectedClass;
+		}
+
+		CurrentSuperClass = SuperClass;
 	}
 	
-	Field->SetSuperStruct(SuperClass);
+	Field->SetSuperStruct(CurrentSuperClass);
 	
 #if WITH_EDITOR
 	if (FUnrealSharpUtils::IsStandalonePIE())
 	{
-		CreateBlueprint(SuperClass);
-		CreateClass(SuperClass);
+		// Since the BP-compiler is not present in standalone, we just do a normal class creation like in a packaged game.
+		// Some things still reference the Blueprint in standalone, so we need to create it.
+		CreateBlueprint(CurrentSuperClass);
+		CreateClass(CurrentSuperClass);
 	}
 	else
 	{
-		CreateClassEditor(SuperClass);
+		CreateClassEditor(CurrentSuperClass);
 	}
 #else
-	CreateClass(SuperClass);
+	CreateClass(CurrentSuperClass);
 #endif
 }
 
+#if WITH_EDITOR
 void FCSGeneratedClassBuilder::UpdateType()
+{
+	UpdateClassDefaultObject();
+	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
+}
+
+void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
+{
+	CreateBlueprint(SuperClass);
+	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
+}
+
+void FCSGeneratedClassBuilder::UpdateClassDefaultObject() const
 {
 	UObject* ClassDefaultObject = Field->ClassDefaultObject;
 	ClassDefaultObject->ClearFlags(RF_Public);
@@ -59,15 +82,6 @@ void FCSGeneratedClassBuilder::UpdateType()
 	OwningAssembly->RemoveManagedObject(ClassDefaultObject);
 	
 	Field->GetDefaultObject(true);
-	
-	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
-}
-
-#if WITH_EDITOR
-void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
-{
-	CreateBlueprint(SuperClass);
-	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 }
 
 void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)

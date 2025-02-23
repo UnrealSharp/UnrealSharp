@@ -18,15 +18,18 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 	{
 		return Field;
 	}
-	
-	UClass* ParentClass = TypeMetaData->ParentClass.GetOwningClass();
 
-	if (!ParentClass)
+	if (!IsValid(Field) || !IsValid(Field->GetSuperClass()))
 	{
-		OwningAssembly->AddPendingClass(TypeMetaData->ParentClass, this);
-		return nullptr;
+		UClass* ParentClass = TypeMetaData->ParentClass.GetOwningClass();
+
+		if (!ParentClass)
+		{
+			OwningAssembly->AddPendingClass(TypeMetaData->ParentClass, this);
+			return nullptr;
+		}
 	}
-	
+
 	return TCSharpTypeInfo::InitializeBuilder();
 }
 

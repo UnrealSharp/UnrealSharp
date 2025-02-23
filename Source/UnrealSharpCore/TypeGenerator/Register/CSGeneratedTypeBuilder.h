@@ -42,7 +42,9 @@ public:
 
 	// Start TCSGeneratedTypeBuilder interface
 	virtual void RebuildType() = 0;
+#if WITH_EDITOR
 	virtual void UpdateType() = 0;
+#endif
 	virtual FName GetFieldName() const { return TypeMetaData->FieldName.GetName(); }
 	// End of interface
 

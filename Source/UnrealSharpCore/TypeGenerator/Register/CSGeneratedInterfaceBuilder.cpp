@@ -3,10 +3,14 @@
 
 void FCSGeneratedInterfaceBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
-	Field->SetInterfaceInfo(InterfaceInfo);
-	
 	Field->PurgeClass(true);
+
+	if (!Field->GetInterfaceInfo().IsValid())
+	{
+		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
+		Field->SetInterfaceInfo(InterfaceInfo);
+	}
+	
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
 	
@@ -24,7 +28,9 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 #endif
 }
 
+#if WITH_EDITOR
 void FCSGeneratedInterfaceBuilder::UpdateType()
 {
 	UCSManager::Get().OnInterfaceReloadedEvent().Broadcast(Field);
 }
+#endif

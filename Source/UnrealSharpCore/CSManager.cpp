@@ -56,10 +56,10 @@ UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
 	}
 		
 	FCSNamespace CurrentNamespace = Namespace;
-	TArray<FCSNamespace> Parents;
+	TArray<FCSNamespace> ParentNamespaces;
 	while (true)
 	{
-		Parents.Add(CurrentNamespace);
+		ParentNamespaces.Add(CurrentNamespace);
 		
 		if (!CurrentNamespace.GetParentNamespace(CurrentNamespace))
 		{
@@ -68,9 +68,9 @@ UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
 	}
 
 	UPackage* ParentPackage = nullptr;
-	for (int32 i = Parents.Num() - 1; i >= 0; i--)
+	for (int32 i = ParentNamespaces.Num() - 1; i >= 0; i--)
 	{
-		FCSNamespace ParentNamespace = Parents[i];
+		FCSNamespace ParentNamespace = ParentNamespaces[i];
 		FName PackageName = ParentNamespace.GetPackageName();
 
 		for (UPackage* Package : AllPackages)
@@ -117,6 +117,11 @@ void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) 
 bool UCSManager::IsManagedPackage(const UPackage* Package) const
 {
 	return AllPackages.Contains(Package);
+}
+
+bool UCSManager::IsManagedField(const UObject* Field) const
+{
+	return IsManagedPackage(Field->GetOutermost());
 }
 
 void UCSManager::Initialize()

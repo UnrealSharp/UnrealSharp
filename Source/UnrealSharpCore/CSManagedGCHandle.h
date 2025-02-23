@@ -45,22 +45,15 @@ struct FGCHandle
 		Type = Other.Type;
 	}
 
-	FGCHandle()
-	{
-		
-	}
+	FGCHandle(){}
+	FGCHandle(const GCHandleIntPtr InHandle, const GCHandleType InType) : Handle(InHandle), Type(InType) {}
 
-	FGCHandle(GCHandleIntPtr InHandle, GCHandleType InType) : Handle(InHandle), Type(InType)
-	{
-		
-	}
-
-	FGCHandle(uint8* InHandle, GCHandleType InType) : Type(InType)
+	FGCHandle(uint8* InHandle, const GCHandleType InType) : Type(InType)
 	{
 		Handle.IntPtr = InHandle;
 	}
 
-	FGCHandle(GCHandleIntPtr InHandle) : Handle(InHandle)
+	FGCHandle(const GCHandleIntPtr InHandle) : Handle(InHandle)
 	{
 		Type = GCHandleType::Null;
 	}

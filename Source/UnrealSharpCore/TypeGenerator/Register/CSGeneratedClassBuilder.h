@@ -13,7 +13,9 @@ public:
 
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
+#if WITH_EDITOR
 	virtual void UpdateType() override;
+#endif
 	virtual FName GetFieldName() const override;
 	// End of implementation
 
@@ -33,6 +35,7 @@ private:
 #if WITH_EDITOR
 	void CreateBlueprint(UClass* SuperClass);
 	void CreateClassEditor(UClass* SuperClass);
+	void UpdateClassDefaultObject() const;
 #endif
 	void CreateClass(UClass* SuperClass);
 	

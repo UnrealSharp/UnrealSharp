@@ -11,13 +11,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-
-	// Ignore delegate signatures and classes that are not the generated class.
-	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.
-	if (!NewFunction->HasAnyFunctionFlags(FUNC_Delegate) && NewFunction->IsOwnedByGeneratedClass())
-	{
-		NewFunction->UpdateMethodHandle();
-	}
+	NewFunction->TryUpdateMethodHandle();
 	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;

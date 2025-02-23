@@ -6,12 +6,12 @@
 struct FCSharpInterfaceInfo;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSInterface : public UClass
+class UCSInterface : public UClass
 {
 	GENERATED_BODY()
 public:
 	void SetInterfaceInfo(const TSharedPtr<FCSharpInterfaceInfo>& InInterfaceInfo);
-	TSharedPtr<FCSharpInterfaceInfo> GetInterfaceInfo() const { return InterfaceInfo; }
+	UNREALSHARPCORE_API TSharedPtr<FCSharpInterfaceInfo> GetInterfaceInfo() const { return InterfaceInfo; }
 private:
 	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo;
 };

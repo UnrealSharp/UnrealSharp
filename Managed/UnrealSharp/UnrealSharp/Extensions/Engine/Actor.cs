@@ -138,4 +138,43 @@ public partial class AActor
     {
         return SetActorLocationAndRotation(newLocation, newRotation, false, out _, false);
     }
+    
+    /// <summary>
+    /// Returns the world space bounding box of all components in this Actor.
+    /// </summary>
+    /// <param name="bNonColliding">Indicates that you want to include non-colliding components in the bounding box</param>
+    /// <param name="bIncludeFromChildActors">If true then recurse in to ChildActor components and find components of the appropriate type in those Actors as well</param>
+    /// <returns>The bounding box of all components in this actor</returns>
+    public FBox GetComponentsBoundingBox(bool bNonColliding = false, bool bIncludeFromChildActors = false)
+    {
+        return UCSActorExtensions.GetComponentsBoundingBox(this, bNonColliding, bIncludeFromChildActors);
+    }
+    
+    /// <summary>
+    /// Iterates over all components of the specified class and executes the action.
+    /// </summary>
+    /// <param name="action">The action to execute</param>
+    /// <typeparam name="T">The type of the component</typeparam>
+    public void ForEachComponent<T>(Action<T> action) where T : UActorComponent
+    {
+        IList<T> components = GetComponentsByClass<T>();
+        
+        foreach (T component in components)
+        {
+            action(component);
+        }
+    }
+    
+    /// <summary>
+    /// Iterates over all components of the actor
+    /// </summary>
+    public void ForEachComponent(Action<UActorComponent> action)
+    {
+        ForEachComponent<UActorComponent>(action);
+    }
+    
+    /// <summary>
+    /// All components of the actor
+    /// </summary>
+    public IList<UActorComponent> Components => GetComponentsByClass<UActorComponent>();
 }

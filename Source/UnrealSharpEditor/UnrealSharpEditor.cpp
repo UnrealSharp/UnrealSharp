@@ -1,7 +1,7 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
+#include "BlueprintCompilationManager.h"
 #include "BlueprintEditorLibrary.h"
-#include "CSBlueprintUpdater.h"
 #include "CSCommands.h"
 #include "CSScriptBuilder.h"
 #include "DirectoryWatcherModule.h"
@@ -61,8 +61,12 @@ void FUnrealSharpEditorModule::StartupModule()
 		FullScriptPath,
 		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
 		Handle);
-
-	FCSBlueprintUpdater::Get().Initialize();
+	
+	Manager = &UCSManager::Get();
+	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
+	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
+	Manager->OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
+	Manager->OnNewEnumEvent().AddRaw(this, &FUnrealSharpEditorModule::OnEnumRebuilt);
 
 	FEditorDelegates::EndPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEEnded);
 
@@ -179,12 +183,12 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 	HotReloadStatus = Active;
 	
-	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Hot Reloading C#..."));
+	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Reloading C#..."));
 	Progress.MakeDialog();
 
 	if (bRebuild)
 	{
-		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Building C# Project..."));
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Building C#..."));
 		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 		{
 			HotReloadStatus = Inactive;
@@ -194,7 +198,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 	else
 	{
-		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Weaving C# Project..."));
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Weaving C#..."));
 		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_WEAVE))
 		{
 			HotReloadStatus = Inactive;
@@ -250,8 +254,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		Assembly->LoadAssembly();
 	}
 
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Updating Blueprints..."));
-	FCSBlueprintUpdater::Get().UpdateBlueprints();
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Refreshing Affected Blueprints..."));
+	RefreshAffectedBlueprints();
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
@@ -1031,6 +1035,147 @@ void FUnrealSharpEditorModule::ProcessTraceTypeQuery()
 	ScriptBuilder.CloseBrace();
 	
 	SaveRuntimeGlue(ScriptBuilder, TEXT("TraceChannel"));
+}
+
+void FUnrealSharpEditorModule::OnStructRebuilt(UScriptStruct* NewStruct)
+{
+	RebuiltStructs.Add(NewStruct);
+}
+
+void FUnrealSharpEditorModule::OnClassRebuilt(UClass* NewClass)
+{
+	RebuiltClasses.Add(NewClass);
+}
+
+void FUnrealSharpEditorModule::OnEnumRebuilt(UEnum* NewEnum)
+{
+	RebuiltEnums.Add(NewEnum);
+}
+
+bool FUnrealSharpEditorModule::TryUpdatePin(const FEdGraphPinType& PinType) const
+{
+	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
+	if (!IsValid(PinSubCategoryObject) || !Manager->IsManagedField(PinSubCategoryObject))
+	{
+		return false;
+	}
+
+	if (PinSubCategoryObject->IsA<UClass>())
+	{
+		UClass* Class = static_cast<UClass*>(PinSubCategoryObject);
+		return RebuiltClasses.Contains(Class);
+	}
+
+	if (PinSubCategoryObject->IsA<UEnum>())
+	{
+		UEnum* Enum = static_cast<UEnum*>(PinSubCategoryObject);
+		return RebuiltEnums.Contains(Enum);
+	}
+	
+	if (PinSubCategoryObject->IsA<UScriptStruct>())
+	{
+		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
+		return RebuiltStructs.Contains(Struct);
+	}
+
+	if (PinSubCategoryObject->IsA<UEnum>())
+	{
+		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
+		return RebuiltEnums.Contains(Enum);
+	}
+	
+	if (PinType.IsMap())
+	{
+		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
+		if (UScriptStruct* Struct = Cast<UScriptStruct>(MapValueType))
+		{
+			return RebuiltStructs.Contains(Struct);
+		}
+
+		if (UClass* Class = Cast<UClass>(MapValueType))
+		{
+			return RebuiltClasses.Contains(Class);
+		}
+
+		if (UEnum* Enum = Cast<UEnum>(MapValueType))
+		{
+			return RebuiltEnums.Contains(Enum);
+		}
+	}
+
+	return false;
+}
+
+bool FUnrealSharpEditorModule::UpdateNodePinTypes(UEdGraphNode* Node) const
+{
+	if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
+	{
+		for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
+		{
+			if (TryUpdatePin(Pin->PinType))
+			{
+				return true;
+			}
+		}
+	}
+
+	for (UEdGraphPin* Pin : Node->Pins)
+	{
+		if (TryUpdatePin(Pin->PinType))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
+{
+	if (RebuiltStructs.IsEmpty() && RebuiltClasses.IsEmpty() && RebuiltEnums.IsEmpty())
+	{
+		return;
+	}
+	
+	TSet<UBlueprint*> ToUpdate;
+	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
+	{
+		UBlueprint* Blueprint = *BlueprintIt;
+		if (!IsValid(Blueprint->GeneratedClass) || FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		{
+			continue;
+		}
+
+		bool BlueprintHasBeenUpdated = false;
+
+		TArray<UK2Node*> AllNodes;
+		FBlueprintEditorUtils::GetAllNodesOfClass(Blueprint, AllNodes);
+		
+		for (UK2Node* Node : AllNodes)
+		{
+			if (UpdateNodePinTypes(Node))
+			{
+				Node->ReconstructNode();
+				BlueprintHasBeenUpdated = true;
+			}
+		}
+
+		if (BlueprintHasBeenUpdated)
+		{
+			ToUpdate.Add(Blueprint);
+		}
+	}
+	
+	for (UBlueprint* Blueprint : ToUpdate)
+	{
+		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+	}
+		
+	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	
+	RebuiltStructs.Empty();
+	RebuiltClasses.Empty();
+	RebuiltEnums.Empty();
 }
 
 FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const

@@ -8,10 +8,14 @@
 
 void FCSGeneratedStructBuilder::RebuildType()
 {
-	TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
-	Field->SetStructInfo(StructInfo);
-	
 	PurgeStruct();
+
+	if (!Field->GetStructInfo().IsValid())
+	{
+		TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
+		Field->SetStructInfo(StructInfo);
+	}
+	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 		
 	Field->Status = UDSS_UpToDate;
@@ -31,10 +35,12 @@ void FCSGeneratedStructBuilder::RebuildType()
 #endif
 }
 
+#if WITH_EDITOR
 void FCSGeneratedStructBuilder::UpdateType()
 {
 	UCSManager::Get().OnStructReloadedEvent().Broadcast(Field);
 }
+#endif
 
 void FCSGeneratedStructBuilder::PurgeStruct()
 {

@@ -9,7 +9,7 @@ struct FCSMemberMetaData
 	
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject);
 
-	bool operator== (const FCSMemberMetaData& Other) const
+	bool operator == (const FCSMemberMetaData& Other) const
 	{
 		if (Name != Other.Name)
 		{
