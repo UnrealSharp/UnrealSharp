@@ -24,9 +24,9 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
-	UNREALSHARPCORE_API bool IsValid() const { return AssemblyHandle.IsValid() && !AssemblyHandle->IsNull(); }
+	UNREALSHARPCORE_API bool IsValidAssembly() const { return AssemblyHandle.IsValid() && !AssemblyHandle->IsNull(); }
 
-	UPackage* GetPackage(const FCSNamespace Namespace);
+	static UPackage* GetPackage(const FCSNamespace Namespace);
 
 	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }

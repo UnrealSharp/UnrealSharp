@@ -62,7 +62,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<const FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
+	TSharedPtr<FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
 	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());

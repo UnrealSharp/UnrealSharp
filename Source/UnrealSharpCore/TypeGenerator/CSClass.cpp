@@ -1,7 +1,7 @@
 ﻿#include "CSClass.h"
 #include "Register/TypeInfo/CSClassInfo.h"
 
-TSharedPtr<const FCSharpClassInfo> UCSClass::GetClassInfo() const
+TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
 {
 	return ClassInfo;
 }

@@ -6,6 +6,7 @@
 #include "CSManager.h"
 #include "KismetCompiler.h"
 #include "TypeGenerator/CSBlueprint.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 

@@ -37,9 +37,9 @@ FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
 
 bool FCSAssembly::LoadAssembly(bool bisCollectible)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString::Printf(TEXT("FCSAssembly::LoadAssembly %s"), *AssemblyPath));
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::LoadAssembly: " + AssemblyName.ToString())));
 	
-	if (IsValid())
+	if (IsValidAssembly())
 	{
 		UE_LOG(LogUnrealSharp, Display, TEXT("%s is already loaded"), *AssemblyPath);
 		return true;
@@ -74,6 +74,8 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 
 bool FCSAssembly::ProcessMetadata()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::ProcessMetadata);
+	
 	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 	if (!FPaths::FileExists(MetadataPath))
 	{
@@ -85,6 +87,8 @@ bool FCSAssembly::ProcessMetadata()
 
 bool FCSAssembly::UnloadAssembly()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
+	
 	for (TSharedPtr<FGCHandle>& Handle : AllocatedHandles)
 	{
 		Handle->Dispose();
@@ -107,23 +111,25 @@ bool FCSAssembly::UnloadAssembly()
 UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
 {
 	UCSManager& Manager = UCSManager::Get();
+	return Manager.GetGlobalUnrealSharpPackage();
 
-	UPackage* FoundPackage;
-	if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
-	{
-		FoundPackage = Manager.FindManagedPackage(Namespace);
-	}
-	else
-	{
-		FoundPackage = Manager.GetGlobalUnrealSharpPackage();
-	}
-
-	return FoundPackage;
+	// TODO: Uncomment this when I have made a tool to switch between namespace and global package.
+	// UPackage* FoundPackage;
+	// if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
+	// {
+	// 	FoundPackage = Manager.FindManagedPackage(Namespace);
+	// }
+	// else
+	// {
+	// 	FoundPackage = Manager.GetGlobalUnrealSharpPackage();
+	// }
+	//
+	// return FoundPackage;
 }
 
 TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName)
 {
-	if (!IsValid())
+	if (!IsValidAssembly())
 	{
 		return nullptr;
 	}
@@ -178,7 +184,7 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& Type
 
 FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FString& MethodName)
 {
-	if (!IsValid())
+	if (!IsValidAssembly())
 	{
 		return FCSManagedMethod::Invalid();
 	}
@@ -465,6 +471,7 @@ bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 	}
 
 	TSharedPtr<FCSAssembly> OwningAssembly = SharedThis(this);
+	UCSManager& Manager = UCSManager::Get();
 
 	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
@@ -487,14 +494,32 @@ bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 	const TArray<TSharedPtr<FJsonValue>>& ClassesMetaData = JsonObject->GetArrayField(TEXT("ClassMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : ClassesMetaData)
 	{
-		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [OwningAssembly](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [OwningAssembly, &Manager](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 		{
-			if (ClassInfo->State != NeedRebuild)
+			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->FieldName);
+			
+			if (ClassInfo->State == NeedRebuild)
+			{
+				// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
+				TArray<UClass*> DerivedClasses;
+				GetDerivedClasses(ClassInfo->Field, DerivedClasses);
+								
+				for (UClass* DerivedClass : DerivedClasses)
+				{
+					if (!Manager.IsManagedField(DerivedClass))
+					{
+						continue;
+					}
+									
+					UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
+					TSharedPtr<FCSharpClassInfo> ChildClassInfo = ManagedClass->GetClassInfo();
+					ChildClassInfo->State = NeedRebuild;
+				}
+			}
+			else
 			{
 				ClassInfo->State = NeedUpdate;
 			}
-			
-			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->FieldName);
 		});
 	}
 	
@@ -503,6 +528,8 @@ bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 
 void FCSAssembly::BuildUnrealTypes()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::BuildUnrealTypes);
+	
 	InitializeBuilders(Structs);
 	InitializeBuilders(Enums);
 	InitializeBuilders(Classes);
