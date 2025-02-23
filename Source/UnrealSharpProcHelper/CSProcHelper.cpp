@@ -289,6 +289,9 @@ FString FCSProcHelper::GetDotNetDirectory()
 #elif defined(__APPLE__)
 	FString PathDotnet = "/usr/local/share/dotnet/";
 	return PathDotnet;
+#elif defined(__linux__)
+	const char* DotnetEnv = std::getenv("DOTNET_ROOT");
+    FString PathDotnet = DotnetEnv ? FString(DotnetEnv) : "/usr/lib64/dotnet/";
 #endif
 	for (FString &Path : Paths)
 	{
