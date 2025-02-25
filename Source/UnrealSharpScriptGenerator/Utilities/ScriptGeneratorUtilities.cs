@@ -218,7 +218,8 @@ public static class ScriptGeneratorUtilities
                     continue;
                 }
                 
-                if (structToConvertProperty.ScriptStruct.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
+                if (structToConvertProperty.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine()
+                    || structToConvertProperty.ScriptStruct.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
                 {
                     // For auto-casts to work, they both need to be in the same generated assembly. 
                     // Currently not supported, as we separate engine and project generated assemblies.
