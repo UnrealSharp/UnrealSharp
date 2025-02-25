@@ -56,7 +56,10 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
         string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
     {
-        throw new System.NotImplementedException();
+        // Not supported:
+        // UFUNCTION()
+        // FMyDelegate& GetMyDelegate();
+        // throw new System.NotImplementedException();
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
