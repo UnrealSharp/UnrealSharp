@@ -260,6 +260,8 @@ public static class ScriptGeneratorUtilities
                 {
                     functions.Add(function);
                 }
+                
+                exportedFunctions.Add(function);
             }
         }
     }
