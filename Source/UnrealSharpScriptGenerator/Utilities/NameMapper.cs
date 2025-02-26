@@ -153,16 +153,6 @@ public static class NameMapper
         {
             functionName = DelegateBasePropertyTranslator.GetDelegateName(function);
         }
-        
-        if (functionName.StartsWith("K2_") || functionName.StartsWith("BP_"))
-        {
-            functionName = functionName.Substring(3);
-        }
-
-        if (function.IsInterfaceFunction() && functionName.EndsWith("_Implementation"))
-        {
-            functionName = functionName.Substring(0, functionName.Length - 15);
-        }
 
         if (function.Outer is not UhtClass)
         {

@@ -16,7 +16,7 @@ class UNREALSHARPCORE_API UFunctionsExporter : public UObject
 public:
 
 	// UFunctionsExporter interface begin
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) { PURE_VIRTUAL() }
+	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) PURE_VIRTUAL(UFunctionsExporter::ExportFunctions)
 	// End
 	
 	static void StartExportingAPI(FRegisterExportedFunction RegisterExportedFunction);
