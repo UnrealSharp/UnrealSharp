@@ -9,12 +9,6 @@ ECSPropertyType UCSPropertyGenerator::GetPropertyType() const
 	return ECSPropertyType::Unknown;
 }
 
-FFieldClass* UCSPropertyGenerator::GetPropertyClass()
-{
-	PURE_VIRTUAL();
-	return nullptr;
-}
-
 FProperty* UCSPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	return NewProperty(Outer, PropertyMetaData);
@@ -25,12 +19,6 @@ bool UCSPropertyGenerator::SupportsPropertyType(ECSPropertyType InPropertyType) 
 	ECSPropertyType PropertyType = GetPropertyType();
 	check(PropertyType != ECSPropertyType::Unknown);
 	return PropertyType == InPropertyType;
-}
-
-TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
-{
-	PURE_VIRTUAL();
-	return nullptr;
 }
 
 FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FName& Name)

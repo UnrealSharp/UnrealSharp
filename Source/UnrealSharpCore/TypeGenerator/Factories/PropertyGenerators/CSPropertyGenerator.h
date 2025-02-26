@@ -14,7 +14,7 @@ class UNREALSHARPCORE_API UCSPropertyGenerator : public UObject
 protected:
 
 	virtual ECSPropertyType GetPropertyType() const;
-	virtual FFieldClass* GetPropertyClass();
+	virtual FFieldClass* GetPropertyClass() PURE_VIRTUAL(UCSPropertyGenerator::GetPropertyClass, return nullptr;)
 
 	static bool CanBeHashed(const FProperty* InParam);
 
@@ -27,6 +27,6 @@ public:
 	
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const;
-	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType);
+	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) PURE_VIRTUAL(UCSPropertyGenerator::CreateTypeMetaData, return nullptr;)
 
 };
