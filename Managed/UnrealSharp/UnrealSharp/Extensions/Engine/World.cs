@@ -1,7 +1,14 @@
-﻿namespace UnrealSharp.Engine;
+﻿using UnrealSharp.UnrealSharpCore;
+
+namespace UnrealSharp.Engine;
 
 public partial class UWorld
 {
+    /// <summary>
+    /// The URL that was used when loading this World.
+    /// </summary>
+    public FURL URL => UCSWorldExtensions.WorldURL();
+
     /// <summary>
     /// Get the game mode of this world.
     /// </summary>

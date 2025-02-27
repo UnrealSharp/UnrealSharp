@@ -23,6 +23,25 @@ void UCSWorldExtensions::PostActorConstruction(AActor* Actor)
 	Actor->PostLoad();
 }
 
+FURL UCSWorldExtensions::WorldURL(const UObject* WorldContextObject)
+{
+	if (!IsValid(WorldContextObject))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
+		return nullptr;
+	}
+
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+
+	if (!IsValid(World))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to get world from context object"));
+		return nullptr;
+	}
+
+	return World->URL;
+}
+
 AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction)
 {
 	if (!IsValid(WorldContextObject) || !IsValid(Class))
