@@ -118,7 +118,7 @@ public class UnrealSharpCore : ModuleRules
 		}
 
 		if (OperatingSystem.IsLinux()) {
-			string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
+			string dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
 			if (!string.IsNullOrEmpty(dotnetRoot)) {
 				string dotnetPath = Path.Combine(dotnetRoot, "dotnet");
 				if (File.Exists(dotnetPath)) {
