@@ -23,17 +23,8 @@ public:
 
 	static void SetNodeFunc(UEdGraphNode* NewNode, bool, TWeakObjectPtr<UFunction> FunctionPtr);
 
-	const TObjectPtr<UClass> & GetProxyClass() const
-	{
-		return ProxyClass;
-	};
-
-	const FName & GetFactoryFunctionName() const
-	{
-		return ProxyFactoryFunctionName;
-	}
-
 	// UK2Node interface
 	virtual void GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const override;
+	virtual void ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph) override;
 	// End of UK2Node interface
 };

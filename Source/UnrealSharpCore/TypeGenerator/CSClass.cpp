@@ -1,11 +1,22 @@
 ﻿#include "CSClass.h"
+#include "Register/TypeInfo/CSClassInfo.h"
 
-TSharedRef<const FCSharpClassInfo> UCSClass::GetClassInfo() const
+TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
 {
-	return ClassMetaData.ToSharedRef();
+	return ClassInfo;
 }
 
-void UCSClass::SetClassMetaData(const TSharedPtr<FCSharpClassInfo>& InClassMetaData)
+TSharedPtr<const FGCHandle> UCSClass::GetClassHandle() const
 {
-	ClassMetaData = InClassMetaData;
+	return ClassInfo->GetTypeHandle();
+}
+
+TSharedPtr<FCSAssembly> UCSClass::GetOwningAssembly() const
+{
+	return ClassInfo->OwningAssembly;
+}
+
+void UCSClass::SetClassInfo(const TSharedPtr<FCSharpClassInfo>& InClassMetaData)
+{
+	ClassInfo = InClassMetaData;
 }

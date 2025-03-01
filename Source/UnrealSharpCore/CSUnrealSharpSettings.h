@@ -1,39 +1,37 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
 #include "CSUnrealSharpSettings.generated.h"
 
-UENUM()
-enum EAutomaticHotReloadMethod : uint8
-{
-	// Automatically Hot Reloads when script changes are saved
-	OnScriptSave,
-	// Automatically Hot Reloads when the built .NET modules changed (build the C# project in your IDE and UnrealSharp will automatically reload)
-	OnModuleChange,
-	// Wait for the Editor to gain focus before Hot Reloading
-	OnEditorFocus,
-	// Will not Hot Reload automatically
-	Off,
-};
-
-UCLASS(config = EditorPerProjectUserSettings, meta = (DisplayName = "UnrealSharp Settings"))
+UCLASS(config = UnrealSharp, defaultconfig, meta = (DisplayName = "UnrealSharp Settings"))
 class UNREALSHARPCORE_API UCSUnrealSharpSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
-
+	
 public:
 
+#if WITH_EDITOR
+	// UObject interface
+	virtual void PreEditChange(FProperty* PropertyAboutToChange) override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	// End of UObject interface
+#endif
+	
 	// Should we exit PIE when an exception is thrown in C#?
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Debugging")
 	bool bCrashOnException = true;
-	
-	// Whether Hot Reload should automatically start on script save, gaining Editor focus, or not at all.
-	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Hot Reload")
-	TEnumAsByte<EAutomaticHotReloadMethod> AutomaticHotReloading = OnScriptSave;
 
-	// Should we suffix generated types' DisplayName with "TypeName (C#)"?
-	// Needs restart to take effect.
-	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
-	bool bSuffixGeneratedTypes = false;
+	bool HasNamespaceSupport() const;
+
+protected:
+	
+	// Should we enable namespace support for generated types?
+	// If false, all types will be generated in the global package and all types need to have unique names.
+	// Currently destructive to the project if changed after BPs of C# types have been created.
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Namespace", Experimental)
+	bool bEnableNamespaceSupport = false;
+
+	bool bRecentlyChangedNamespaceSupport = false;
+	bool OldValueOfNamespaceSupport = false;
 };

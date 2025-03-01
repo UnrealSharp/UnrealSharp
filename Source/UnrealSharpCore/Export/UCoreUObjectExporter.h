@@ -19,6 +19,6 @@ public:
 
 private:
 
-	static UClass* GetNativeClassFromName(const char* InClassName);
-	static UStruct* GetNativeStructFromName(const char* InStructName);
+	static UClass* GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName);
+	static UScriptStruct* GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName);
 };

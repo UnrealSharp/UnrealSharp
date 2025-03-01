@@ -4,6 +4,8 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+class UCSManager;
+struct FCSAssembly;
 class IAssetTools;
 class FCSScriptBuilder;
 
@@ -112,6 +114,15 @@ private:
     static void ProcessAssetTypes();
     static void ProcessTraceTypeQuery();
     
+    void OnStructRebuilt(UScriptStruct* NewStruct);
+    void OnClassRebuilt(UClass* NewClass);
+    void OnEnumRebuilt(UEnum* NewEnum);
+
+    bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
+    bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
+    
+    void RefreshAffectedBlueprints();
+
     FSlateIcon GetMenuIcon() const;
     
     HotReloadStatus HotReloadStatus = Inactive;
@@ -121,7 +132,15 @@ private:
     FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
     
     static FString QuotePath(const FString& Path);
+
+    TSharedPtr<FCSAssembly> EditorAssembly;
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
+    
+    TSet<UScriptStruct*> RebuiltStructs;
+    TSet<UClass*> RebuiltClasses;
+    TSet<UEnum*> RebuiltEnums;
+    
+    UCSManager* Manager = nullptr;
 };

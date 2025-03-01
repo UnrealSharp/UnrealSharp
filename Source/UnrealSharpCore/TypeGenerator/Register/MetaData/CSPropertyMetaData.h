@@ -24,4 +24,20 @@ struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSMemberMetaData
 	{
 		return StaticCastSharedPtr<T>(Type);
 	}
+
+	bool operator==(const FCSPropertyMetaData& Other) const
+	{
+		if (!FCSMemberMetaData::operator==(Other))
+		{ 
+			return false;
+		}
+		
+		return  Type->IsEqual(Other.Type) &&
+				RepNotifyFunctionName == Other.RepNotifyFunctionName &&
+				ArrayDim == Other.ArrayDim &&
+				PropertyFlags == Other.PropertyFlags &&
+				LifetimeCondition == Other.LifetimeCondition &&
+				BlueprintSetter == Other.BlueprintSetter &&
+				BlueprintGetter == Other.BlueprintGetter;
+	}
 };

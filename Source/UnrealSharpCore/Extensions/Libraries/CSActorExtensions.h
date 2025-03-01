@@ -24,6 +24,9 @@ public:
 	UFUNCTION(meta=(ScriptMethod))
 	static UActorComponent* GetComponentTemplate(const AActor* Actor, FName ComponentName);
 
+	UFUNCTION(meta=(ScriptMethod))
+	static FBox GetComponentsBoundingBox(const AActor* Actor, bool bNonColliding = false, bool bIncludeFromChildActors = false);
+
 public:
 	static void CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord);
 	static UActorComponent* FindBestArchetype(UObject* Outer, FComponentKey Key, FName TemplateName = NAME_None);

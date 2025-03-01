@@ -76,6 +76,12 @@ public static class NameMapper
 
         return type.SourceName;
     }
+
+    public static string ExportGetAssemblyName(this UhtType type)
+    {
+        string structName = type.GetStructName();
+        return $"typeof({structName}).GetAssemblyName()";
+    }
     
     public static string GetFullManagedName(this UhtType type)
     {

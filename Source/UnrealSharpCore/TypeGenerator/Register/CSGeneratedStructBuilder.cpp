@@ -1,5 +1,6 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-#include "CSTypeRegistry.h"
+
+#include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -7,9 +8,16 @@
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 #endif
 
-void FCSGeneratedStructBuilder::StartBuildingType()
+void FCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
+
+	if (!Field->GetStructInfo().IsValid())
+	{
+		TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
+		Field->SetStructInfo(StructInfo);
+	}
+	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 		
 	Field->Status = UDSS_UpToDate;
@@ -25,9 +33,16 @@ void FCSGeneratedStructBuilder::StartBuildingType()
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 
 #if WITH_EDITOR
-	FCSTypeRegistry::Get().GetOnNewStructEvent().Broadcast(Field);
+	UCSManager::Get().OnNewStructEvent().Broadcast(Field);
 #endif
 }
+
+#if WITH_EDITOR
+void FCSGeneratedStructBuilder::UpdateType()
+{
+	UCSManager::Get().OnStructReloadedEvent().Broadcast(Field);
+}
+#endif
 
 void FCSGeneratedStructBuilder::PurgeStruct()
 {

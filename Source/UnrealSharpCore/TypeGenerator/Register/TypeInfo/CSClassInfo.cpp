@@ -1,58 +1,50 @@
 ﻿#include "CSClassInfo.h"
-#include "UnrealSharpCore/TypeGenerator/Register/CSTypeRegistry.h"
-#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
-FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData): TCSharpTypeInfo(MetaData)
+#include "CSAssembly.h"
+
+FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
 {
-	TypeHandle = UCSManager::Get().GetTypeHandle(*TypeMetaData);
+	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 }
 
-FCSharpClassInfo::FCSharpClassInfo(UClass* InField)
+FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
 {
-	TypeHandle = GetHandle(InField);
 	Field = InField;
-	bInitFromClass = true;
-
-#if WITH_EDITOR
-	UCSManager::Get().OnAssembliesLoadedEvent().AddRaw(this, &FCSharpClassInfo::OnAssembliesLoaded);
-#endif
+	OwningAssembly = InOwningAssembly;
+	TypeHandle = InTypeHandle;
 }
 
 UClass* FCSharpClassInfo::InitializeBuilder()
 {
-	if (Field)
+	if (Field && Field->HasAllClassFlags(CLASS_Native))
 	{
 		return Field;
 	}
-	
-	FName ParentClassName = TypeMetaData->ParentClass.Name;
-	UClass* ParentClass = FCSTypeRegistry::GetClassFromName(ParentClassName);
 
-	if (!ParentClass)
+	if (!IsValid(Field) || !IsValid(Field->GetSuperClass()))
 	{
-		FCSTypeRegistry::Get().AddPendingClass(ParentClassName, this);
-		return nullptr;
+		UClass* ParentClass = TypeMetaData->ParentClass.GetOwningClass();
+
+		if (!ParentClass)
+		{
+			OwningAssembly->AddPendingClass(TypeMetaData->ParentClass, this);
+			return nullptr;
+		}
 	}
-	
+
 	return TCSharpTypeInfo::InitializeBuilder();
 }
 
-void FCSharpClassInfo::TryUpdateTypeHandle()
+TSharedPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
 {
-	if (bDirtyHandle && bInitFromClass)
+#if WITH_EDITOR
+	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
 	{
-		TypeHandle = GetHandle(Field);
-		bDirtyHandle = false;
+		// Lazy load the type handle in editor. Gets null during hot reload.
+		TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 	}
-}
+#endif
 
-void FCSharpClassInfo::OnAssembliesLoaded()
-{
-	bDirtyHandle = true;
-}
-
-uint8* FCSharpClassInfo::GetHandle(UClass* Class)
-{
-	return UCSManager::Get().GetTypeHandle(nullptr, FUnrealSharpUtils::GetNamespace(Class), Class->GetName());
+	return TypeHandle;
 }
 

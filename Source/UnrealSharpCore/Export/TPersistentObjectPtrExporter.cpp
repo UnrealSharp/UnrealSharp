@@ -23,7 +23,7 @@ void UTPersistentObjectPtrExporter::FromSoftObjectPath(TPersistentObjectPtr<FSof
 void* UTPersistentObjectPtrExporter::Get(TPersistentObjectPtr<FSoftObjectPath>* Path)
 {
 	UObject* Object = Path->Get();
-	return UCSManager::Get().FindManagedObject(Object).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(Object).GetPointer();
 }
 
 void* UTPersistentObjectPtrExporter::GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path)

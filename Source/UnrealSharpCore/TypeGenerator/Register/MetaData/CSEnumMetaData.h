@@ -11,4 +11,14 @@ struct FCSEnumMetaData : public FCSTypeReferenceMetaData
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	//End of implementation
+
+	bool operator ==(const FCSEnumMetaData& Other) const
+	{
+		if (!FCSTypeReferenceMetaData::operator==(Other))
+		{
+			return false;
+		}
+
+		return Items == Other.Items;
+	}
 };

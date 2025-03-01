@@ -1,5 +1,5 @@
 #include "CSPropertyGenerator.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
+
 #if WITH_EDITOR
 #include "Kismet2/BlueprintEditorUtils.h"
 #endif
