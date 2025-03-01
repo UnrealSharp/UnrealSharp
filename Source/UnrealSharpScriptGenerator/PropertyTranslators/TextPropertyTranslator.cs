@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using EpicGames.UHT.Types;
+﻿using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -14,7 +12,7 @@ public class TextPropertyTranslator : BlittableTypePropertyTranslator
     
     public override string GetNullValue(UhtProperty property)
     {
-        return "FText.None";
+        return "default(FText)";
     }
 
     public override void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName, string defaultValue,
