@@ -145,9 +145,12 @@ void UCSManager::Initialize()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
+	
+	TArray<FString> UserAssemblyPaths;
+	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (!UserAssemblyPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		Initialize();
 		return;

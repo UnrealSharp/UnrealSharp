@@ -216,13 +216,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (!Assembly.IsValid())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("AssemblyHandle not found for project: %s"), *ProjectName);
-			continue;
-		}
-
-		if (!Assembly->UnloadAssembly())
+		if (Assembly.IsValid() && !Assembly->UnloadAssembly())
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to unload assembly: %s"), *ProjectName);
 			bUnloadFailed = true;
@@ -246,13 +240,15 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (!Assembly.IsValid())
+		if (Assembly.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Skipping load: AssemblyHandle not found for project: %s"), *ProjectName);
-			continue;
+			Assembly->LoadAssembly();
 		}
-
-		Assembly->LoadAssembly();
+		else
+		{
+			// If the assembly is not loaded. It's a new project, and we need to load it.
+			CSharpManager.LoadUserAssemblyByName(*ProjectName);
+		}
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Refreshing Affected Blueprints..."));
