@@ -1,4 +1,6 @@
 ﻿#include "UClassExporter.h"
+
+#include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
 

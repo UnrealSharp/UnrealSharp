@@ -1,5 +1,7 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
 
+#include "CSManager.h"
+
 void FCSGeneratedEnumBuilder::RebuildType()
 {
 	PurgeEnum();

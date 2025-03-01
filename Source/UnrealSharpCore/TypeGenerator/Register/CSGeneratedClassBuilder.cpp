@@ -1,5 +1,9 @@
 ﻿#include "CSGeneratedClassBuilder.h"
+
+#include "CSAssembly.h"
 #include "CSGeneratedInterfaceBuilder.h"
+#include "CSManager.h"
+#include "CSMetaDataUtils.h"
 #include "CSSimpleConstructionScriptBuilder.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
@@ -90,7 +94,7 @@ void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 	if (!Blueprint)
 	{
 		UPackage* Package = TypeMetaData->GetOwningPackage();
-		FName BlueprintName = GetAdjustedFieldName(TypeMetaData->FieldName);
+		FName BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
 		
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName.ToString(), RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;

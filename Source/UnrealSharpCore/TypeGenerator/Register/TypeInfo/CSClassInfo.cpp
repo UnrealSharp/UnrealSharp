@@ -1,5 +1,7 @@
 ﻿#include "CSClassInfo.h"
 
+#include "CSAssembly.h"
+
 FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
 {
 	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);

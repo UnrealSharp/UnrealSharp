@@ -6,7 +6,6 @@
 #include "CSManager.h"
 #include "KismetCompiler.h"
 #include "TypeGenerator/CSBlueprint.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
@@ -49,24 +48,14 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
-	auto QueueBlueprints = [](TArray<UBlueprint*>& Blueprints) -> void
+	for (UBlueprint* Blueprint : ManagedClassesToCompile)
 	{
-		for (UBlueprint* Blueprint : Blueprints)
-		{
-			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
-		}
-	};
-	
-	// Components need to be compiled first, as they can be dependencies for actors as components.
-	QueueBlueprints(ManagedComponentsToCompile);
-	QueueBlueprints(OtherManagedClasses);
+		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+	}
 	
 	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
-
-	ManagedComponentsToCompile.Empty();
-	OtherManagedClasses.Empty();
+	ManagedClassesToCompile.Empty();
 }
-
 
 void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 {
@@ -74,11 +63,11 @@ void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 	{
 		if (NewClass->IsChildOf(UActorComponent::StaticClass()))
 		{
-			ManagedComponentsToCompile.Add(Blueprint);
+			ManagedClassesToCompile.Insert(Blueprint, 0);
 		}
 		else
 		{
-			OtherManagedClasses.Add(Blueprint);
+			ManagedClassesToCompile.Add(Blueprint);
 		}
 	}
 }

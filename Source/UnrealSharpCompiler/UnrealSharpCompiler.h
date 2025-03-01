@@ -19,6 +19,5 @@ private:
 
     FCSBlueprintCompiler BlueprintCompiler;
     
-    TArray<UBlueprint*> OtherManagedClasses;
-    TArray<UBlueprint*> ManagedComponentsToCompile;
+    TArray<UBlueprint*> ManagedClassesToCompile;
 };

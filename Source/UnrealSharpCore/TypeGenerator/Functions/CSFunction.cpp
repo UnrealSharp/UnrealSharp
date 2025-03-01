@@ -20,8 +20,6 @@ void UCSFunctionBase::Bind()
 	{
 		ClassToFindFunction = OwnerClass->GetGeneratedClass();
 	}
-
-	UCSManager::Get().OnClassReloadedEvent().AddUObject(this, &UCSFunctionBase::OnClassReloaded);
 #endif
 
 	for (FNativeFunctionLookup& Function : ClassToFindFunction->NativeFunctionLookupTable)
@@ -50,7 +48,7 @@ void UCSFunctionBase::TryUpdateMethodHandle()
 	check(MethodHandle.IsValid());
 }
 
-bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
+bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
 	UCSManager& Manager = UCSManager::Get();
 	Manager.SetCurrentWorldContext(ObjectToInvokeOn);
@@ -61,6 +59,14 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 	}
 	
 	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
+
+#if WITH_EDITOR
+	if (!Function->MethodHandle.IsValid())
+	{
+		// Lazy load the method ptr in editor. Gets null during hot reload.
+		Function->TryUpdateMethodHandle();
+	}
+#endif
 	
 	FString ExceptionMessage;
 	const bool bSuccess = Function->MethodHandle.Invoke(ManagedObjectHandle, ArgumentBuffer, RESULT_PARAM, ExceptionMessage);
@@ -85,12 +91,4 @@ UCSClass* UCSFunctionBase::GetOwningManagedClass() const
 bool UCSFunctionBase::IsOwnedByGeneratedClass() const
 {
 	return GetOwningManagedClass() != nullptr;
-}
-
-void UCSFunctionBase::OnClassReloaded(UClass* Class)
-{
-	if (Class == GetOuter())
-	{
-		TryUpdateMethodHandle();
-	}
 }

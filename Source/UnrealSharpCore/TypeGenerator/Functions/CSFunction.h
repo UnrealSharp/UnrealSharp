@@ -28,9 +28,7 @@ public:
 	bool IsOwnedByGeneratedClass() const;
 
 protected:
-	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
+	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
 private:
-	void OnClassReloaded(UClass* Class);
-	
 	FCSManagedMethod MethodHandle;
 };

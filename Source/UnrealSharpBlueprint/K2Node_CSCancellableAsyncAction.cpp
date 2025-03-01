@@ -111,4 +111,14 @@ void UK2Node_CSCancellableAsyncAction::GetMenuActions(FBlueprintActionDatabaseRe
 	}
 }
 
+void UK2Node_CSCancellableAsyncAction::ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph)
+{
+	if (ProxyClass->bLayoutChanging)
+	{
+		return;
+	}
+	
+	Super::ExpandNode(CompilerContext, SourceGraph);
+}
+
 #undef LOCTEXT_NAMESPACE

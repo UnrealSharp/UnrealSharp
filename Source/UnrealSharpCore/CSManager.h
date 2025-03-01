@@ -66,6 +66,7 @@ public:
 	FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
 	FOnAssembliesReloaded& OnAssembliesLoadedEvent() { return OnAssembliesLoaded; }
 
+#if WITH_EDITOR
 	FCSClassEvent& OnNewClassEvent() { return OnNewClass; }
 	FCSStructEvent& OnNewStructEvent() { return OnNewStruct; }
 	FCSInterfaceEvent& OnNewInterfaceEvent() { return OnNewInterface; }
@@ -75,8 +76,9 @@ public:
 	FCSClassEvent& OnClassReloadedEvent() { return OnClassReloaded; }
 	FCSStructEvent& OnStructReloadedEvent() { return OnStructReloaded; }
 	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
-	
+		
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
+#endif
 	
 	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const;
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
@@ -111,6 +113,7 @@ private:
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
 
+#if WITH_EDITORONLY_DATA
 	FCSClassEvent OnNewClass;
 	FCSStructEvent OnNewStruct;
 	FCSInterfaceEvent OnNewInterface;
@@ -120,8 +123,9 @@ private:
 	FCSStructEvent OnStructReloaded;
 	FCSInterfaceEvent OnInterfaceReloaded;
 	FCSEnumEvent OnEnumReloaded;
-	
+
 	FSimpleMulticastDelegate OnProcessedPendingClasses;
+#endif
 	
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 	

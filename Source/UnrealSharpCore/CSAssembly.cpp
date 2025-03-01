@@ -111,7 +111,7 @@ bool FCSAssembly::UnloadAssembly()
 UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
 {
 	UPackage* FoundPackage;
-	if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
+	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())
 	{
 		FoundPackage = UCSManager::Get().FindManagedPackage(Namespace);
 	}

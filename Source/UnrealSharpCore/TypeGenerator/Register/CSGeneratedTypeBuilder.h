@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "CSUnrealSharpSettings.h"
+#include "CSMetaDataUtils.h"
+#include "CSAssembly.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
-#include "UnrealSharpCore/CSManager.h"
 
 template<typename TMetaData, class TField>
 class TCSGeneratedTypeBuilder
@@ -48,7 +48,7 @@ public:
 #endif
 	virtual FName GetFieldName() const
 	{
-		return GetAdjustedFieldName(TypeMetaData->FieldName);
+		return FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
 	}
 	// End of interface
 
@@ -63,27 +63,12 @@ public:
 		Field);
 	}
 	
-	static FName GetAdjustedFieldName(const FCSFieldName& FieldName)
-	{
-		FString Name;
-		if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
-		{
-			Name = FieldName.GetFullName().ToString();
-		}
-		else
-		{
-			Name = FieldName.GetName();
-		}
-
-		return *Name;
-	}
-	
 
 protected:
 	
 	TSharedPtr<const TMetaData> TypeMetaData;
 	TField* Field;
-	TSharedPtr<FCSAssembly> OwningAssembly;
+	TSharedPtr<struct FCSAssembly> OwningAssembly;
 	
 };
 

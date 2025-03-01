@@ -11,7 +11,7 @@ FCSNamespace FCSNamespace::Invalid()
 	return FCSNamespace();
 }
 
-FString FCSNamespace::GetThisNamespace() const
+FString FCSNamespace::GetLastNamespace() const
 {
 	FString NamespaceString = Namespace.ToString();
 	int32 LastDotIndex = NamespaceString.Find(TEXT("."), ESearchCase::CaseSensitive, ESearchDir::FromEnd);
@@ -46,7 +46,7 @@ UPackage* FCSNamespace::GetPackage() const
 
 UPackage* FCSNamespace::TryGetAsNativePackage() const
 {
-	FString NativePackageName = FString::Printf(TEXT("/Script/%s"), *GetThisNamespace());
+	FString NativePackageName = FString::Printf(TEXT("/Script/%s"), *GetLastNamespace());
 	return FindPackage(nullptr, *NativePackageName);
 }
 

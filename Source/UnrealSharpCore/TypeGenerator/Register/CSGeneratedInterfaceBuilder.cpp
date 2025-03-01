@@ -1,4 +1,6 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
+
+#include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
 void FCSGeneratedInterfaceBuilder::RebuildType()

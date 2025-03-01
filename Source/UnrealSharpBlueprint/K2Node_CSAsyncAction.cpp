@@ -111,4 +111,14 @@ void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& Ac
 	}
 }
 
+void UK2Node_CSAsyncAction::ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph)
+{
+	if (ProxyClass->bLayoutChanging)
+	{
+		return;
+	}
+	
+	Super::ExpandNode(CompilerContext, SourceGraph);
+}
+
 #undef LOCTEXT_NAMESPACE

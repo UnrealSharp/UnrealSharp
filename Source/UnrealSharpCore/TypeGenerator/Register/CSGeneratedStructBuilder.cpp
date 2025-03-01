@@ -1,4 +1,6 @@
 ﻿#include "CSGeneratedStructBuilder.h"
+
+#include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 
