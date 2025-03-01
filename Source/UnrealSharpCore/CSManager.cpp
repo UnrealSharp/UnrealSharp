@@ -84,8 +84,7 @@ UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
 
 		if (!ParentPackage)
 		{
-			UPackage* OwningPackage = ParentPackage ? ParentPackage : GlobalUnrealSharpPackage.Get();
-			ParentPackage = NewObject<UPackage>(OwningPackage, PackageName, RF_Public);
+			ParentPackage = NewObject<UPackage>(nullptr, PackageName, RF_Public);
 			ParentPackage->SetPackageFlags(PKG_CompiledIn);
 			AllPackages.Add(ParentPackage);
 		}

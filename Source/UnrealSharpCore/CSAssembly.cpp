@@ -110,21 +110,17 @@ bool FCSAssembly::UnloadAssembly()
 
 UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
 {
-	UCSManager& Manager = UCSManager::Get();
-	return Manager.GetGlobalUnrealSharpPackage();
-
-	// TODO: Uncomment this when I have made a tool to switch between namespace and global package.
-	// UPackage* FoundPackage;
-	// if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
-	// {
-	// 	FoundPackage = Manager.FindManagedPackage(Namespace);
-	// }
-	// else
-	// {
-	// 	FoundPackage = Manager.GetGlobalUnrealSharpPackage();
-	// }
-	//
-	// return FoundPackage;
+	UPackage* FoundPackage;
+	if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
+	{
+		FoundPackage = UCSManager::Get().FindManagedPackage(Namespace);
+	}
+	else
+	{
+		FoundPackage = UCSManager::Get().GetGlobalUnrealSharpPackage();
+	}
+	
+	 return FoundPackage;
 }
 
 TWeakPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName)
@@ -189,12 +185,12 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FStr
 		return FCSManagedMethod::Invalid();
 	}
 
-	TSharedPtr<const FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
+	TSharedPtr<FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
 	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle().Pin();
 	return GetManagedMethod(PinnedHandle, MethodName);
 }
 
-TSharedPtr<const FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
+TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
 {
 	if (UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class))
 	{
@@ -313,8 +309,8 @@ FGCHandle* FCSAssembly::CreateNewManagedObject(UObject* Object)
 	ensureAlways(!ObjectHandles.Contains(Object));
 
 	UClass* Class = FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(Object->GetClass());
-	TSharedPtr<const FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Class);
-	TSharedPtr<const FGCHandle> TypeHandle = ClassInfo->GetTypeHandle().Pin();
+	TSharedPtr<FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Class);
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeHandle().Pin();
 	
 	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer());
 	NewManagedObject.Type = GCHandleType::StrongHandle;
@@ -421,7 +417,7 @@ void InitializeBuilders(TMap<FCSFieldName, T>& Map)
 }
 
 template<typename T, typename MetaDataType>
-void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<FJsonValue>& MetaData, TMap<FCSFieldName, TSharedPtr<T>>& Map, TFunction<void(TSharedPtr<T>)> OnUpdate = nullptr)
+void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<FJsonValue>& MetaData, TMap<FCSFieldName, TSharedPtr<T>>& Map, TFunction<void(TSharedPtr<T>)> OnRebuild = nullptr)
 {
 	const TSharedPtr<FJsonObject>& MetaDataObject = MetaData->AsObject();
 	
@@ -436,15 +432,19 @@ void RegisterMetaData(TSharedPtr<FCSAssembly> OwningAssembly, const TSharedPtr<F
 		MetaDataType NewMetaData;
 		NewMetaData.SerializeFromJson(MetaDataObject);
 
-		if (NewMetaData != *ExistingValue->TypeMetaData)
+		if (ExistingValue->State == NeedRebuild || NewMetaData != *ExistingValue->TypeMetaData)
 		{
 			*ExistingValue->TypeMetaData = NewMetaData;
 			ExistingValue->State = NeedRebuild;
+
+			if (OnRebuild)
+			{
+				OnRebuild(ExistingValue);
+			}
 		}
-		
-		if (OnUpdate)
+		else
 		{
-			OnUpdate(ExistingValue);
+			ExistingValue->State = NeedUpdate;
 		}
 	}
 	else
@@ -494,31 +494,22 @@ bool FCSAssembly::ProcessMetaData_Internal(const FString& FilePath)
 	const TArray<TSharedPtr<FJsonValue>>& ClassesMetaData = JsonObject->GetArrayField(TEXT("ClassMetaData"));
 	for (const TSharedPtr<FJsonValue>& MetaData : ClassesMetaData)
 	{
-		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [OwningAssembly, &Manager](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [&Manager](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 		{
-			ClassInfo->TypeHandle = OwningAssembly->TryFindTypeHandle(ClassInfo->TypeMetaData->FieldName);
-			
-			if (ClassInfo->State == NeedRebuild)
-			{
-				// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
-				TArray<UClass*> DerivedClasses;
-				GetDerivedClasses(ClassInfo->Field, DerivedClasses);
+			// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
+			TArray<UClass*> DerivedClasses;
+			GetDerivedClasses(ClassInfo->Field, DerivedClasses, false);
 								
-				for (UClass* DerivedClass : DerivedClasses)
-				{
-					if (!Manager.IsManagedField(DerivedClass))
-					{
-						continue;
-					}
-									
-					UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
-					TSharedPtr<FCSharpClassInfo> ChildClassInfo = ManagedClass->GetClassInfo();
-					ChildClassInfo->State = NeedRebuild;
-				}
-			}
-			else
+			for (UClass* DerivedClass : DerivedClasses)
 			{
-				ClassInfo->State = NeedUpdate;
+				if (!Manager.IsManagedField(DerivedClass))
+				{
+					continue;
+				}
+									
+				UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
+				TSharedPtr<FCSharpClassInfo> ChildClassInfo = ManagedClass->GetClassInfo();
+				ChildClassInfo->State = NeedRebuild;
 			}
 		});
 	}

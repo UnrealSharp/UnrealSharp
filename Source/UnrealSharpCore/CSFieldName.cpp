@@ -6,18 +6,8 @@ FCSFieldName::FCSFieldName(FName Name, FName Namespace): Name(Name), Namespace(N
 {
 }
 
-FCSFieldName::FCSFieldName(const UClass* Class)
+FCSFieldName::FCSFieldName(const UClass* NativeClass)
 {
-	if (Class->HasAllClassFlags(CLASS_CompiledFromBlueprint))
-	{
-		FString ClassName = Class->GetName();
-		ClassName.RemoveFromEnd(TEXT("_C"));
-		Name = *ClassName;
-	}
-	else
-	{
-		Name = Class->GetFName();
-	}
-	
-	Namespace = FUnrealSharpUtils::GetNamespace(Class);
+	Name = NativeClass->GetFName();
+	Namespace = FUnrealSharpUtils::GetNamespace(NativeClass);
 }

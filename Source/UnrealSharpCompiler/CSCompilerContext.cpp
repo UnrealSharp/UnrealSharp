@@ -210,7 +210,7 @@ void FCSCompilerContext::ApplyMetaData()
 	static FString DisplayNameKey = TEXT("DisplayName");
 	if (!NewClass->HasMetaData(*DisplayNameKey))
 	{
-		NewClass->SetMetaData(*DisplayNameKey, *TypeMetaData->FieldName.GetNameString());
+		NewClass->SetMetaData(*DisplayNameKey, *TypeMetaData->FieldName.GetName());
 	}
 		
 	if (GetDefault<UCSUnrealSharpEditorSettings>()->bSuffixGeneratedTypes)

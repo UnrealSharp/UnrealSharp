@@ -182,6 +182,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 
 	HotReloadStatus = Active;
+	double StartTime = FPlatformTime::Seconds();
 	
 	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Reloading C#..."));
 	Progress.MakeDialog();
@@ -259,6 +260,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
+	
+	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }
 
 void FUnrealSharpEditorModule::OnCreateNewProject()

@@ -37,7 +37,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
 
-	TSharedPtr<const FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
+	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
 	TSharedPtr<FCSharpClassInfo> FindClassInfo(const FCSFieldName& ClassName) const;
 
@@ -78,7 +78,7 @@ private:
 			return nullptr;
 		}
 
-		return FindObject<T>(Package, *FieldName.GetNameString());
+		return FindObject<T>(Package, *FieldName.GetName());
 	}
 
 	// UObjectArray listener interface

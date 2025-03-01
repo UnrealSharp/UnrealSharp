@@ -49,26 +49,22 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
-	auto CompileBlueprints = [](TArray<UBlueprint*>& Blueprints) -> void
+	auto QueueBlueprints = [](TArray<UBlueprint*>& Blueprints) -> void
 	{
-		if (Blueprints.Num() == 0)
-		{
-			return;
-		}
-		
 		for (UBlueprint* Blueprint : Blueprints)
 		{
 			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 		}
-		
-		Blueprints.Empty();
 	};
 	
 	// Components need to be compiled first, as they can be dependencies for actors as components.
-	CompileBlueprints(ManagedComponentsToCompile);
-	CompileBlueprints(OtherManagedClasses);
+	QueueBlueprints(ManagedComponentsToCompile);
+	QueueBlueprints(OtherManagedClasses);
 	
 	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+
+	ManagedComponentsToCompile.Empty();
+	OtherManagedClasses.Empty();
 }
 
 

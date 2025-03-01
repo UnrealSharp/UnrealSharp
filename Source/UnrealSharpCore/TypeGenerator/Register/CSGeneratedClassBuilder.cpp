@@ -90,11 +90,11 @@ void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 	if (!Blueprint)
 	{
 		UPackage* Package = TypeMetaData->GetOwningPackage();
-		FString BlueprintName = TypeMetaData->FieldName.GetNameString();
+		FName BlueprintName = GetAdjustedFieldName(TypeMetaData->FieldName);
 		
-		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
+		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName.ToString(), RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
-		Blueprint->BlueprintNamespace = TypeMetaData->FieldName.GetNamespace().GetFullNamespaceString();
+		Blueprint->BlueprintNamespace = TypeMetaData->FieldName.GetNamespace().GetName();
 		Blueprint->ParentClass = SuperClass;
 		
 		Field->ClassGeneratedBy = Blueprint;
@@ -145,7 +145,10 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 
 FName FCSGeneratedClassBuilder::GetFieldName() const
 {
-	FString FieldName = FString::Printf(TEXT("%s_C"), *TypeMetaData->FieldName.GetNameString());
+	// Blueprint classes have a _C suffix
+	FString FieldName = TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>::GetFieldName().ToString();
+	FieldName += TEXT("_C");
+	
 	return *FieldName;
 }
 
@@ -219,7 +222,7 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 
 		if (!IsValid(InterfaceClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.FieldName.GetNameString());
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find interface: %s"), *InterfaceData.FieldName.GetName());
 			continue;
 		}
 
@@ -262,8 +265,7 @@ UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
 	{
 		return nullptr;
 	}
-
-	const UClass* CurrentClass = Class;
+	
 	while (Class && !IsManagedType(Class))
 	{
 		Class = Class->GetSuperClass();

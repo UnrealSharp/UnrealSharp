@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "CSUnrealSharpSettings.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UnrealSharpCore/CSManager.h"
@@ -45,7 +46,10 @@ public:
 #if WITH_EDITOR
 	virtual void UpdateType() = 0;
 #endif
-	virtual FName GetFieldName() const { return TypeMetaData->FieldName.GetName(); }
+	virtual FName GetFieldName() const
+	{
+		return GetAdjustedFieldName(TypeMetaData->FieldName);
+	}
 	// End of interface
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)
@@ -58,6 +62,22 @@ public:
 		false,
 		Field);
 	}
+	
+	static FName GetAdjustedFieldName(const FCSFieldName& FieldName)
+	{
+		FString Name;
+		if (GetDefault<UCSUnrealSharpSettings>()->bEnableNamespaceSupport)
+		{
+			Name = FieldName.GetFullName().ToString();
+		}
+		else
+		{
+			Name = FieldName.GetName();
+		}
+
+		return *Name;
+	}
+	
 
 protected:
 	

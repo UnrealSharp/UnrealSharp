@@ -4,17 +4,20 @@
 
 struct UNREALSHARPCORE_API FCSFieldName
 {
+	FCSFieldName() = default;
 	FCSFieldName(FName Name, FName Namespace);
-	FCSFieldName(const UClass* Class);
+	FCSFieldName(const UClass* NativeClass);
 
-	FName GetName() const { return Name; }
-	FString GetNameString() const { return Name.ToString(); }
+	FName GetFName() const { return Name; }
+	FString GetName() const { return Name.ToString(); }
+	
 	FCSNamespace GetNamespace() const { return Namespace; }
 	UPackage* GetPackage() const { return Namespace.GetPackage(); }
+	FName GetPackageName() const { return Namespace.GetPackageName(); }
 	
 	FName GetFullName() const
 	{
-		return *FString::Printf(TEXT("%s.%s"), *Namespace.GetFullNamespaceString(), *Name.ToString());
+		return *FString::Printf(TEXT("%s.%s"), *Namespace.GetName(), *Name.ToString());
 	}
 
 	bool operator == (const FCSFieldName& Other) const

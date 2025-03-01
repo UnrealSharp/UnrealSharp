@@ -33,3 +33,13 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 	return TCSharpTypeInfo::InitializeBuilder();
 }
 
+TWeakPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
+{
+	if (!TypeHandle.IsValid())
+	{
+		TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+	}
+
+	return TypeHandle;
+}
+
