@@ -7,15 +7,15 @@
 struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, UClass, FCSGeneratedClassBuilder>
 {
 	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
-	FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TWeakPtr<FGCHandle>& TypeHandle);
+	FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
 
 	// TCharpTypeInfo interface implementation
 	virtual UClass* InitializeBuilder() override;
 	// End of implementation
 
-	TWeakPtr<FGCHandle> GetTypeHandle();
+	TSharedPtr<FGCHandle> GetTypeHandle();
 
 private:
 	friend struct FCSAssembly;
-	TWeakPtr<FGCHandle> TypeHandle;
+	TSharedPtr<FGCHandle> TypeHandle;
 };

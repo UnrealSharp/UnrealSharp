@@ -1,5 +1,4 @@
 #include "CSFieldName.h"
-
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 FCSFieldName::FCSFieldName(FName Name, FName Namespace): Name(Name), Namespace(Namespace)

@@ -7,7 +7,7 @@ FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const
 	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 }
 
-FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TWeakPtr<FGCHandle>& InTypeHandle)
+FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
 {
 	Field = InField;
 	OwningAssembly = InOwningAssembly;
@@ -35,12 +35,15 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 	return TCSharpTypeInfo::InitializeBuilder();
 }
 
-TWeakPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
+TSharedPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
 {
-	if (!TypeHandle.IsValid())
+#if WITH_EDITOR
+	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
 	{
+		// Lazy load the type handle in editor. Gets null during hot reload.
 		TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 	}
+#endif
 
 	return TypeHandle;
 }

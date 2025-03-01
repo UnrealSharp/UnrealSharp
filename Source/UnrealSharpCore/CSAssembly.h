@@ -31,14 +31,15 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
-	TWeakPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	TWeakPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
+	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
+	TSharedPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
 
 	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
-
+	
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(UClass* Class);
 	TSharedPtr<FCSharpClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
+	
 	TSharedPtr<FCSharpClassInfo> FindClassInfo(const FCSFieldName& ClassName) const;
 
 	TSharedPtr<FCSharpStructInfo> FindStructInfo(const FCSFieldName& StructName) const;
@@ -49,10 +50,14 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
 	UEnum* FindEnum(const FCSFieldName& EnumName) const;
 	UClass* FindInterface(const FCSFieldName& InterfaceName) const;
-	
-	FGCHandle* CreateNewManagedObject(UObject* Object);
+
+	// Creates a C# counterpart for the given UObject.
+	FGCHandle* CreateManagedObject(UObject* Object);
+
+	// Removes the C# counterpart for the given UObject, if it exists.
 	void RemoveManagedObject(const UObjectBase* Object);
-	
+
+	// Finds the object handle for the given UObject.
 	FGCHandle FindManagedObject(UObject* Object);
 
 	// Add a class that is waiting for its parent class to be loaded before it can be created.
@@ -61,7 +66,6 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 private:
 	
 	bool ProcessMetadata();
-	bool ProcessMetaData_Internal(const FString& FilePath);
 
 	void BuildUnrealTypes();
 
@@ -82,7 +86,7 @@ private:
 	}
 
 	// UObjectArray listener interface
-	virtual void NotifyUObjectDeleted(const class UObjectBase *Object, int32 Index) override;
+	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override;
 	// End of interface
 
@@ -92,16 +96,16 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FCSharpEnumInfo>> Enums;
 	TMap<FCSFieldName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
 	
-	// All handles allocated by this assembly. This is used to ensure that all handles are freed when the assembly is unloaded.
+	// All handles allocated by this assembly. Handles to types, methods, objects.
 	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
 
-	// Handles to all class types that are defined in this assembly. Only UClasses that are defined in this assembly will have a handle.
+	// Handles to all UClasses types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 
 	// Handles to all active UObjects that has a C# counterpart.
 	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
 
-	// Pending classes that are waiting for their parent class to be loaded.
+	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
 
 	// Handle to the Assembly object in C#.

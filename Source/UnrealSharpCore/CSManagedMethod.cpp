@@ -2,12 +2,15 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManagedGCHandle.h"
 
+bool FCSManagedMethod::IsValid() const
+{
+	return MethodHandle.IsValid() && !MethodHandle->IsNull();
+}
+
 bool FCSManagedMethod::Invoke(const FGCHandle& ObjectHandle, uint8* ArgumentBuffer, void* ReturnValue, FString& ExceptionMessage) const
 {
-	TSharedPtr<FGCHandle> PinnedMethodHandle = MethodHandle.Pin();
-
 #if WITH_EDITOR
-	if (GCompilingBlueprint && !PinnedMethodHandle.IsValid())
+	if (GCompilingBlueprint && (!MethodHandle.IsValid() || !MethodHandle->IsNull()))
 	{
 		// Full reload is in progress. Ignore the call for now.
 		return true;
@@ -15,7 +18,7 @@ bool FCSManagedMethod::Invoke(const FGCHandle& ObjectHandle, uint8* ArgumentBuff
 #endif
 	
 	return FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ObjectHandle.GetHandle(),
-		PinnedMethodHandle->GetPointer(),
+		MethodHandle->GetPointer(),
 		ArgumentBuffer,
 		ReturnValue,
 		&ExceptionMessage) == 0;

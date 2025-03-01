@@ -182,7 +182,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	}
 
 	TSharedPtr<FCSAssembly> OwningAssembly = ManagedClass->GetOwningAssembly();
-	OwningAssembly->CreateNewManagedObject(ObjectInitializer.GetObj());
+	OwningAssembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)

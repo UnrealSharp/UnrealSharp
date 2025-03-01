@@ -280,7 +280,7 @@ bool UCSManager::LoadUserAssemblies()
 		return true;
 	}
 
-	for(const FString& UserAssemblyPath : UserAssemblyPaths)
+	for (const FString& UserAssemblyPath : UserAssemblyPaths)
 	{
 		if (!LoadAssemblyByPath(UserAssemblyPath))
 		{
@@ -445,8 +445,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 	// Slow path for native classes.
 	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)
 	{
-		TWeakPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);
-		if (TypeHandle.IsValid())
+		TSharedPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);
+		if (TypeHandle.IsValid() && !TypeHandle->IsNull())
 		{
 			return Assembly.Value;
 		}

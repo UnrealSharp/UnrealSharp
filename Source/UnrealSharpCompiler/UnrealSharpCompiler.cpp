@@ -48,6 +48,11 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
+	if (ManagedClassesToCompile.IsEmpty())
+	{
+		return;
+	}
+	
 	for (UBlueprint* Blueprint : ManagedClassesToCompile)
 	{
 		FBlueprintCompilationManager::QueueForCompilation(Blueprint);

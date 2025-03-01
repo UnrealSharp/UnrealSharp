@@ -6,7 +6,7 @@ TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
 	return ClassInfo;
 }
 
-TWeakPtr<const FGCHandle> UCSClass::GetClassHandle() const
+TSharedPtr<const FGCHandle> UCSClass::GetClassHandle() const
 {
 	return ClassInfo->GetTypeHandle();
 }
