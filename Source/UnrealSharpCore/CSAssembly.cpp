@@ -162,7 +162,7 @@ bool FCSAssembly::ProcessMetadata()
 		{
 			// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
 			TArray<UClass*> DerivedClasses;
-			GetDerivedClasses(ClassInfo->Field, DerivedClasses, false);
+			GetDerivedClasses(ClassInfo->Field, DerivedClasses);
 								
 			for (UClass* DerivedClass : DerivedClasses)
 			{
