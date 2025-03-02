@@ -124,6 +124,13 @@ public class UnrealSharpCore : ModuleRules
 				if (File.Exists(dotnetPath)) {
 					return dotnetPath;
 				}
+				else{
+					// If the previous path isn't found (at least with Nix), we can try this:
+					dotnetPath = Path.Combine(dotnetRoot, "bin", "dotnet");
+					if (File.Exists(dotnetPath)) {
+						return dotnetPath;
+					}
+				}
 			}
 			if (File.Exists("/usr/lib64/dotnet/dotnet")) {
 				return "/usr/lib64/dotnet/dotnet";
