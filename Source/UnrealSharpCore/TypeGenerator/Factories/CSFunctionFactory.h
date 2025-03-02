@@ -17,8 +17,6 @@ public:
 	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData);
 	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData);
 
-	static void* TryGetManagedFunction(UClass* Outer, const FName& MethodName);
-
 	static void AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function);
 
 	static UCSFunctionBase* CreateFunction(

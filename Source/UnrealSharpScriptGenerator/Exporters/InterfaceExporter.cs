@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
@@ -37,15 +36,15 @@ public static class InterfaceExporter
         
         ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
         
-        ExportIntefaceFunctions(stringBuilder, exportedFunctions);
-        ExportIntefaceFunctions(stringBuilder, exportedOverrides);
+        ExportInterfaceFunctions(stringBuilder, exportedFunctions);
+        ExportInterfaceFunctions(stringBuilder, exportedOverrides);
         
         stringBuilder.CloseBrace();
 
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
+        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName({interfaceObj.ExportGetAssemblyName()}, \"{interfaceObj.GetNamespace()}\", \"{interfaceObj.EngineName}\");");
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();
@@ -62,7 +61,7 @@ public static class InterfaceExporter
         FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
     }
     
-    static void ExportIntefaceFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)
+    static void ExportInterfaceFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)
     {
         foreach (UhtFunction function in exportedFunctions)
         {

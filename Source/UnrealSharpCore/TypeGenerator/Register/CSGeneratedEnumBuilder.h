@@ -9,9 +9,15 @@ class UNREALSHARPCORE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuild
 	
 public:
 	
-	FCSGeneratedEnumBuilder(const TSharedPtr<FCSEnumMetaData>& InTypeMetaData) : TCSGeneratedTypeBuilder(InTypeMetaData) { }
+	FCSGeneratedEnumBuilder(const TSharedPtr<FCSEnumMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly) { }
 
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void StartBuildingType() override;
+	virtual void RebuildType() override;
+#if WITH_EDITOR
+	virtual void UpdateType() override;
+#endif
 	// End of implementation
+
+private:
+	void PurgeEnum() const;
 };

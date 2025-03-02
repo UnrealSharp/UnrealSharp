@@ -341,4 +341,32 @@ public partial class UObject
             return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
         }
     }
+    
+    /// <summary>
+    /// Marks the object as garbage.
+    /// </summary>
+    public void MarkAsGarbage()
+    {
+        UCSObjectExtensions.MarkAsGarbage(this);
+    }
+    
+    /// <summary>
+    /// Determines whether the object is a template / class default object.
+    /// </summary>
+    public bool IsTemplate => UCSObjectExtensions.IsTemplate(this);
+    
+    /// <summary>
+    /// Gets the current world settings for this object.
+    /// </summary>
+    public AWorldSettings WorldSettings => UCSObjectExtensions.GetWorldSettings(this);
+    
+    /// <summary>
+    /// Gets the world settings as the specified type.
+    /// </summary>
+    /// <typeparam name="T"> The type of the world settings to get. </typeparam>
+    /// <returns> The world settings as the specified type. </returns>
+    public T GetWorldSettingsAs<T>() where T : AWorldSettings
+    {
+        return (T) WorldSettings;
+    }
 }

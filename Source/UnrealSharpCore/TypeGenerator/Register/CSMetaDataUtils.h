@@ -5,6 +5,8 @@
 #include "MetaData/CSFunctionMetaData.h"
 #include "UObject/ObjectMacros.h"
 
+struct FCSFieldName;
+
 namespace FCSMetaDataUtils
 {
 	void SerializeFunctions(const TArray<TSharedPtr<FJsonValue>>& FunctionsInfo, TArray<FCSFunctionMetaData>& FunctionMetaData);
@@ -28,6 +30,8 @@ namespace FCSMetaDataUtils
 	};
 	
 	void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject, TMap<FString, FString>& MetaDataMap);
-	void ApplyMetaData(const TMap<FString, FString>& MetaDataMap, UField* Field);
-	void ApplyMetaData(const TMap<FString, FString>& MetaDataMap, FField* Field);
+	UNREALSHARPCORE_API void ApplyMetaData(const TMap<FString, FString>& MetaDataMap, UField* Field);
+	UNREALSHARPCORE_API void ApplyMetaData(const TMap<FString, FString>& MetaDataMap, FField* Field);
+
+	UNREALSHARPCORE_API FName GetAdjustedFieldName(const FCSFieldName& FieldName);
 }

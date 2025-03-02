@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
@@ -20,16 +21,25 @@ public static class GcHandleUtilities
         StrongReferencesByAlc.TryRemove(alc, out _);
     }
 
-    public static GCHandle AllocateStrongPointer(object value)
+    public static GCHandle AllocateStrongPointer(object value, Assembly? alc = null)
     {
-        var alc = GetAssemblyLoadContext(value);
+        AssemblyLoadContext? assemblyLoadContext;
         if (alc == null)
+        {
+            assemblyLoadContext = GetAssemblyLoadContext(value);
+        }
+        else
+        {
+            assemblyLoadContext = AssemblyLoadContext.GetLoadContext(alc)!;
+        }
+        
+        if (assemblyLoadContext == null)
         {
             return GCHandle.Alloc(value, GCHandleType.Weak);
         }
-
+        
         var weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
-        var strongReferences = StrongReferencesByAlc.GetOrAdd(alc, alcInstance =>
+        var strongReferences = StrongReferencesByAlc.GetOrAdd(assemblyLoadContext, alcInstance =>
         {
             alcInstance.Unloading += OnAlcUnloading;
             return new ConcurrentDictionary<GCHandle, object>();

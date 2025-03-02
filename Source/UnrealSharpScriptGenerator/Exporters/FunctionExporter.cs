@@ -642,6 +642,8 @@ public class FunctionExporter
         exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
         exporter.ExportSignature(builder, "public ");
         builder.Append(";");
+        
+        builder.TryEndWithEditor(function);
     }
     
     public void ForEachParameter(Action<PropertyTranslator, UhtProperty> action)

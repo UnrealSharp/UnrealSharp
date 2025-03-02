@@ -2,7 +2,6 @@
 
 #include "BlueprintActionDatabase.h"
 #include "ISettingsModule.h"
-#include "UnrealSharpCompiler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"
@@ -12,9 +11,11 @@
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions):
 	FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -37,6 +38,8 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 	TryInitializeAsDeveloperSettings(Class);
+
+	ApplyMetaData();
 }
 
 void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context)
@@ -59,7 +62,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedRef<const FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
+	TSharedPtr<FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
 	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
@@ -132,7 +135,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 		USCS_Node* Node = AllNodes[i];
 		if (!Nodes.Contains(Node))
 		{
-			Blueprint->SimpleConstructionScript->RemoveNode(Node, true);
+			Blueprint->SimpleConstructionScript->RemoveNode(Node);
 		}
 	}
 
@@ -159,7 +162,7 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 	return CastChecked<UCSClass>(Blueprint->GeneratedClass);
 }
 
-TSharedRef<const FCSharpClassInfo> FCSCompilerContext::GetClassInfo() const
+TSharedPtr<const FCSharpClassInfo> FCSCompilerContext::GetClassInfo() const
 {
 	return GetMainClass()->GetClassInfo();
 }
@@ -197,6 +200,27 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 	ISettingsModule& SettingsModule = FModuleManager::GetModuleChecked<ISettingsModule>("Settings");
 	UDeveloperSettings* DeveloperSettings = static_cast<UDeveloperSettings*>(Settings);
 	SettingsModule.UnregisterSettings(DeveloperSettings->GetContainerName(), DeveloperSettings->GetCategoryName(), DeveloperSettings->GetSectionName());
+}
+
+void FCSCompilerContext::ApplyMetaData()
+{
+	TSharedPtr<const FCSharpClassInfo> ClassInfo = GetClassInfo();
+	TSharedPtr<const FCSClassMetaData> TypeMetaData = ClassInfo->TypeMetaData;
+		
+	static FString DisplayNameKey = TEXT("DisplayName");
+	if (!NewClass->HasMetaData(*DisplayNameKey))
+	{
+		NewClass->SetMetaData(*DisplayNameKey, *Blueprint->GetName());
+	}
+		
+	if (GetDefault<UCSUnrealSharpEditorSettings>()->bSuffixGeneratedTypes)
+	{
+		FString DisplayName = NewClass->GetMetaData(*DisplayNameKey);
+		DisplayName += TEXT(" (C#)");
+		NewClass->SetMetaData(*DisplayNameKey, *DisplayName);
+	}
+
+	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, NewClass);
 }
 
 #undef LOCTEXT_NAMESPACE

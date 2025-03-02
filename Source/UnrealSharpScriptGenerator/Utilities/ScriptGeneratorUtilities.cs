@@ -211,13 +211,21 @@ public static class ScriptGeneratorUtilities
             }
             else if (function.IsAutocast())
             {
+                functions.Add(function);
+                
                 if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
                 {
                     continue;
                 }
+                
+                if (structToConvertProperty.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
+                {
+                    // For auto-casts to work, they both need to be in the same generated assembly. 
+                    // Currently not supported, as we separate engine and project generated assemblies.
+                    continue;
+                }
 
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
-                functions.Add(function);
             }
             else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
             {
@@ -227,14 +235,11 @@ public static class ScriptGeneratorUtilities
             exportedFunctions.Add(function);
         }
 
-        foreach (UhtStruct declaration in classObj.Bases)
+        foreach (UhtClass declaration in classObj.GetInterfaces())
         {
-            if (declaration.EngineType is not (UhtEngineType.Interface or UhtEngineType.NativeInterface))
-            {
-                continue;
-            }
+            UhtClass? interfaceClass = declaration.GetInterfaceAlternateClass();
             
-            if (declaration.AlternateObject is not UhtClass interfaceClass)
+            if (interfaceClass == null)
             {
                 continue;
             }
