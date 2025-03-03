@@ -247,7 +247,7 @@ TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 	return AllocatedHandle;
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const UClass* Class)
+TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(UClass* Class)
 {
 	return TryFindTypeHandle(FCSFieldName(Class));
 }
@@ -344,8 +344,7 @@ UClass* FCSAssembly::FindClass(const FCSFieldName& FieldName) const
 	{
 		Class = TryFindField<UClass>(FieldName);
 	}
-
-	check(Class);
+	
 	return Class;
 }
 

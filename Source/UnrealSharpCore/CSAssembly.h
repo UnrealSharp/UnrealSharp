@@ -32,7 +32,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	TSharedPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
+	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class);
 
 	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);

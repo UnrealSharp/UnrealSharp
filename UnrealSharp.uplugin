@@ -17,12 +17,12 @@
 		{
 			"Name": "UnrealSharpCore",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostDefault"
 		},
 		{
 			"Name": "UnrealSharpProcHelper",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostDefault"
 		},
 		{
 			"Name": "UnrealSharpEditor",
@@ -32,12 +32,12 @@
 		{
 			"Name": "UnrealSharpBlueprint",
 			"Type": "UncookedOnly",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PostDefault"
 		},
 		{
 			"Name": "UnrealSharpCompiler",
 			"Type": "Editor",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "PostDefault"
 		}
 	],
 	"SupportedTargetPlatforms": [
