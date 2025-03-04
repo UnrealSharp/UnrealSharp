@@ -6,10 +6,11 @@ namespace UnrealSharp.Plugins;
 
 public static class PluginLoader
 {
-    public static List<Assembly> SharedAssemblies = [];
+    public static readonly List<Assembly> SharedAssemblies = [];
+    public static readonly List<PluginLoadContext> NonCollectibleLoadContexts = [];
 
-    private static List<Plugin> loadedPlugins = [];
-    public static IReadOnlyList<Plugin> LoadedPlugins => loadedPlugins;
+    private static readonly List<Plugin> _loadedPlugins = [];
+    public static IReadOnlyList<Plugin> LoadedPlugins => _loadedPlugins;
 
     public static WeakReference? LoadPlugin(string assemblyPath, bool isCollectible)
     {
@@ -17,7 +18,7 @@ public static class PluginLoader
         {
             var assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(assemblyPath));
 
-            foreach (var loadedPlugin in loadedPlugins)
+            foreach (var loadedPlugin in _loadedPlugins)
             {
                 if (!loadedPlugin.IsAssemblyAlive) continue;
                 if (loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly) continue;
@@ -31,11 +32,16 @@ public static class PluginLoader
             var pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
             var weakRefPluginLoadContext = new WeakReference(pluginLoadContext);
 
-            var plugin = new Plugin(assemblyName, weakRefPluginLoadContext);
+            var plugin = new Plugin(assemblyName, weakRefPluginLoadContext, assemblyPath);
   
             if (plugin.Load())
             {
-                loadedPlugins.Add(plugin);
+                _loadedPlugins.Add(plugin);
+                
+                if (!isCollectible)
+                {
+                    NonCollectibleLoadContexts.Add(pluginLoadContext);
+                }
 
                 LogUnrealSharp.Log($"Successfully loaded plugin: {assemblyName}");
                 return plugin.WeakRefAssembly;
@@ -60,7 +66,7 @@ public static class PluginLoader
         string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 
         Plugin? pluginToUnload = null;
-        foreach (Plugin loadedPlugin in loadedPlugins)
+        foreach (Plugin loadedPlugin in _loadedPlugins)
         {
             // Trying to resolve the weakptr to the assembly here will cause unload issues, so we compare names instead
             if (!loadedPlugin.IsAssemblyAlive || loadedPlugin.AssemblyName.Name != assemblyName)
@@ -108,7 +114,7 @@ public static class PluginLoader
                 }
             }
 
-            loadedPlugins.Remove(pluginToUnload);
+            _loadedPlugins.Remove(pluginToUnload);
 
             LogUnrealSharp.Log($"{assemblyName} unloaded successfully!");
             return true;
@@ -118,5 +124,18 @@ public static class PluginLoader
             LogUnrealSharp.LogError($"An error occurred while unloading the plugin: {e.Message}");
             return false;
         }
+    }
+    
+    public static Plugin? FindPluginByName(string assemblyName)
+    {
+        foreach (Plugin loadedPlugin in _loadedPlugins)
+        {
+            if (loadedPlugin.AssemblyName.Name == assemblyName)
+            {
+                return loadedPlugin;
+            }
+        }
+
+        return null;
     }
 }

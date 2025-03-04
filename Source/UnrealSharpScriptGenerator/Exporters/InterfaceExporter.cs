@@ -44,7 +44,7 @@ public static class InterfaceExporter
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName(\"{interfaceObj.EngineName}\");");
+        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName({interfaceObj.ExportGetAssemblyName()}, \"{interfaceObj.GetNamespace()}\", \"{interfaceObj.EngineName}\");");
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();

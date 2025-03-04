@@ -1,7 +1,17 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
 
-void FCSGeneratedEnumBuilder::StartBuildingType()
+#include "CSManager.h"
+
+void FCSGeneratedEnumBuilder::RebuildType()
 {
+	PurgeEnum();
+
+	if (!Field->GetEnumInfo().IsValid())
+	{
+		TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
+		Field->SetEnumInfo(EnumInfo);
+	}
+	
 	const int32 NumItems = TypeMetaData->Items.Num();
     
 	TArray<TPair<FName, int64>> Entries;
@@ -17,4 +27,20 @@ void FCSGeneratedEnumBuilder::StartBuildingType()
 	
 	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
+
+#if WITH_EDITOR
+	UCSManager::Get().OnNewEnumEvent().Broadcast(Field);
+#endif
+}
+
+#if WITH_EDITOR
+void FCSGeneratedEnumBuilder::UpdateType()
+{
+	UCSManager::Get().OnEnumReloadedEvent().Broadcast(Field);
+}
+#endif
+
+void FCSGeneratedEnumBuilder::PurgeEnum() const
+{
+	Field->DisplayNameMap.Empty();
 }

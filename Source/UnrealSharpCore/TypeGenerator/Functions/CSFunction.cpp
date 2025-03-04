@@ -1,23 +1,13 @@
 #include "CSFunction.h"
-#include "CSUnrealSharpSettings.h"
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
+#include "CSUnrealSharpSettings.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 
 #if ENGINE_MINOR_VERSION >= 4
 #include "Blueprint/BlueprintExceptionInfo.h"
 #endif
-
-void UCSFunctionBase::SetManagedMethod(void* InManagedMethod)
-{
-	if (ManagedMethod)
-	{
-		return;
-	}
-	
-	ManagedMethod = InManagedMethod;
-}
 
 void UCSFunctionBase::Bind()
 {
@@ -41,10 +31,26 @@ void UCSFunctionBase::Bind()
 	}
 }
 
-bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, const UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
+void UCSFunctionBase::TryUpdateMethodHandle()
+{
+	// Ignore delegate signatures and classes that are not the generated class.
+	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.
+	if (MethodHandle.IsValid() || HasAllFunctionFlags(FUNC_Delegate) || !IsOwnedByGeneratedClass())
+	{
+		return;
+	}
+	
+	UCSClass* ManagedClass = GetOwningManagedClass();
+	TSharedPtr<FCSAssembly> Assembly = ManagedClass->GetOwningAssembly();
+	
+	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
+	MethodHandle = Assembly->GetManagedMethod(ManagedClass, InvokeMethodName);
+	check(MethodHandle.IsValid());
+}
+
+bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
 	UCSManager& Manager = UCSManager::Get();
-	
 	Manager.SetCurrentWorldContext(ObjectToInvokeOn);
 	
 	if (Stack.Code)
@@ -52,16 +58,19 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		++Stack.Code;
 	}
 	
-	const FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
-	FString ExceptionMessage;
-	
-	bool bSuccess = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(ManagedObjectHandle.GetHandle(),
-		Function->ManagedMethod,
-		ArgumentBuffer,
-		RESULT_PARAM,
-		&ExceptionMessage) == 0;
+	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
 
 #if WITH_EDITOR
+	if (!Function->MethodHandle.IsValid())
+	{
+		// Lazy load the method ptr in editor. Gets null during hot reload.
+		Function->TryUpdateMethodHandle();
+	}
+#endif
+	
+	FString ExceptionMessage;
+	const bool bSuccess = Function->MethodHandle.Invoke(ManagedObjectHandle, ArgumentBuffer, RESULT_PARAM, ExceptionMessage);
+	
 	if (!bSuccess)
 	{
 		const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
@@ -70,7 +79,16 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 		FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 	}
-#endif
-
+	
 	return bSuccess;
+}
+
+UCSClass* UCSFunctionBase::GetOwningManagedClass() const
+{
+	return Cast<UCSClass>(GetOwnerClass());
+}
+
+bool UCSFunctionBase::IsOwnedByGeneratedClass() const
+{
+	return GetOwningManagedClass() != nullptr;
 }

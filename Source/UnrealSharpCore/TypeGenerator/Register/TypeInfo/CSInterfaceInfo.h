@@ -7,7 +7,7 @@ class FCSGeneratedInterfaceBuilder;
 
 struct UNREALSHARPCORE_API FCSharpInterfaceInfo : TCSharpTypeInfo<FCSInterfaceMetaData, UClass, FCSGeneratedInterfaceBuilder>
 {
-	FCSharpInterfaceInfo(const TSharedPtr<FJsonValue>& MetaData) : TCSharpTypeInfo(MetaData) {}
+	FCSharpInterfaceInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly) {}
 	FCSharpInterfaceInfo() {};
 };
 

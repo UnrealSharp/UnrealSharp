@@ -16,7 +16,7 @@ struct FCSClassMetaData : public FCSTypeReferenceMetaData
 	TArray<FCSFunctionMetaData> Functions;
 	TArray<FName> VirtualFunctions;
 	
-	TArray<FName> Interfaces;
+	TArray<FCSTypeReferenceMetaData> Interfaces;
 
 	bool bCanTick = false;
 	bool bOverrideInput = false;
@@ -28,4 +28,22 @@ struct FCSClassMetaData : public FCSTypeReferenceMetaData
 	// FTypeReferenceMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	// End of implementation
+	
+	bool operator==(const FCSClassMetaData& Other) const
+	{
+		if (!FCSTypeReferenceMetaData::operator==(Other))
+		{
+			return false;
+		}
+
+		return  ParentClass == Other.ParentClass &&
+				Properties == Other.Properties &&
+				Functions == Other.Functions &&
+				VirtualFunctions == Other.VirtualFunctions &&
+				Interfaces == Other.Interfaces &&
+				bCanTick == Other.bCanTick &&
+				bOverrideInput == Other.bOverrideInput &&
+				ClassFlags == Other.ClassFlags &&
+				ClassConfigName == Other.ClassConfigName;
+	}
 };

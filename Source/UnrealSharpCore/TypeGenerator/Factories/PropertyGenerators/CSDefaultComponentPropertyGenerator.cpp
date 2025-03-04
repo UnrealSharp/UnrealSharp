@@ -1,6 +1,5 @@
 #include "CSDefaultComponentPropertyGenerator.h"
 #include "CSObjectPropertyGenerator.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 

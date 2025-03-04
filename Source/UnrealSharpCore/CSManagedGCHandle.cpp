@@ -3,7 +3,7 @@
 
 void FGCHandle::Dispose()
 {
-	if (!Handle.IntPtr)
+	if (!Handle.IntPtr || Type == GCHandleType::Null)
 	{
 		return;
 	}

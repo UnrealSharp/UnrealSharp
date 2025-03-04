@@ -14,5 +14,5 @@ void* UULocalPlayerExporter::GetLocalPlayerSubsystem(UClass* SubsystemClass, APl
 	}
 
 	ULocalPlayerSubsystem* LocalPlayerSubsystem = PlayerController->GetLocalPlayer()->GetSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(LocalPlayerSubsystem).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(LocalPlayerSubsystem).GetPointer();
 }

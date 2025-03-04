@@ -1,11 +1,11 @@
 ﻿#include "CSSimpleConstructionScriptBuilder.h"
 
+#include "CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
-#include "TypeGenerator/Register/CSTypeRegistry.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
@@ -35,7 +35,7 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		}
 	
 		TSharedPtr<FCSDefaultComponentMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSDefaultComponentMetaData>();
-		UClass* Class = FCSTypeRegistry::GetClassFromName(ObjectMetaData->InnerType.Name);
+		UClass* Class = ObjectMetaData->InnerType.GetOwningClass();
 
 		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.Name);
 	
@@ -90,11 +90,28 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		{
 			// If we can't find a node, it's defined in a native parent class and don't have a node for it.
 			UClass* NativeParent = FCSGeneratedClassBuilder::GetFirstNativeClass(Outer);
-			if (FProperty* Property = NativeParent->FindPropertyByName(AttachToComponentName))
+			if (FObjectProperty* Property = CastField<FObjectProperty>(NativeParent->FindPropertyByName(AttachToComponentName)))
 			{
+				UActorComponent* Component = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(NativeParent->GetDefaultObject()));
+
+				if (!IsValid(Component))
+				{
+					UE_LOG(LogUnrealSharp, Error, TEXT("Parent component %s not found in class %s"), *AttachToComponentName.ToString(), *NativeParent->GetName());
+					continue;
+				}
+				
+				if (Component->GetFName() != AttachToComponentName)
+				{
+					Node->ParentComponentOwnerClassName = Component->GetClass()->GetFName();
+					Node->ParentComponentOrVariableName = Component->GetFName();
+				}
+				else
+				{
+					Node->ParentComponentOrVariableName = AttachToComponentName;
+					Node->ParentComponentOwnerClassName = Property->GetOwnerClass()->GetFName();
+				}
+
 				Node->bIsParentComponentNative = true;
-				Node->ParentComponentOrVariableName = AttachToComponentName;
-				Node->ParentComponentOwnerClassName = Property->GetOwnerClass()->GetFName();
 			}
 			else
 			{

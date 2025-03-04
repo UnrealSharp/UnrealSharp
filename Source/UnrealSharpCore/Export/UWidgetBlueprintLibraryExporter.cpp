@@ -16,5 +16,5 @@ void* UUWidgetBlueprintLibraryExporter::CreateWidget(UObject* WorldContextObject
 	}
 		
 	UUserWidget* UserWidget = UWidgetBlueprintLibrary::Create(WorldContextObject, WidgetClass, OwningPlayer);
-	return UCSManager::Get().FindManagedObject(UserWidget).GetIntPtr();
+	return UCSManager::Get().FindManagedObject(UserWidget).GetPointer();
 }

@@ -10,7 +10,7 @@
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
 #include "Templates/SubclassOf.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/CSClass.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UObject/NameTypes.h"
@@ -90,7 +90,7 @@ void UK2Node_CSCancellableAsyncAction::GetMenuActions(FBlueprintActionDatabaseRe
 
 	for (TObjectIterator<UCSClass> ClassIt; ClassIt; ++ClassIt)
 	{
-		UClass* Class = *ClassIt;
+		UCSClass* Class = *ClassIt;
 		if (Class->HasAnyClassFlags(CLASS_Abstract) || !Class->IsChildOf(TargetType))
 		{
 			continue;
@@ -109,6 +109,16 @@ void UK2Node_CSCancellableAsyncAction::GetMenuActions(FBlueprintActionDatabaseRe
 			}
 		}
 	}
+}
+
+void UK2Node_CSCancellableAsyncAction::ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph)
+{
+	if (ProxyClass->bLayoutChanging)
+	{
+		return;
+	}
+	
+	Super::ExpandNode(CompilerContext, SourceGraph);
 }
 
 #undef LOCTEXT_NAMESPACE
