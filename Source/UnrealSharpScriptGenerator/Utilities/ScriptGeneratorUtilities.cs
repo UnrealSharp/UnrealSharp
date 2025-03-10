@@ -177,7 +177,7 @@ public static class ScriptGeneratorUtilities
         return package.IsPartOfEngine() || package.GetModule() == Program.Factory.PluginModule;
     }
     
-     public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
+    public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         List<UhtFunction> processedFunctions = new();
         
