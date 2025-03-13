@@ -1,3 +1,5 @@
+using UnrealSharp.Log;
+
 namespace UnrealSharp.Logging;
 
 [CustomLog]

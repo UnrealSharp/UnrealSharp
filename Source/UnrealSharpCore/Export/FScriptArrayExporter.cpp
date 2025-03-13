@@ -1,13 +1,5 @@
 ﻿#include "FScriptArrayExporter.h"
 
-void UFScriptArrayExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetData)
-	EXPORT_FUNCTION(IsValidIndex)
-	EXPORT_FUNCTION(Num)
-	EXPORT_FUNCTION(Destroy)
-}
-
 void* UFScriptArrayExporter::GetData(FScriptArray* Instance)
 {
 	return Instance->GetData();

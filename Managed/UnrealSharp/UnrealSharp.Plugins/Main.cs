@@ -1,14 +1,13 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
-using UnrealSharp.Interop;
-using UnrealSharp.Logging;
+using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
 public static class Main
 {
-    internal static readonly Assembly CoreApiAssembly = typeof(UnrealSharpObject).Assembly;
     internal static DllImportResolver _dllImportResolver = null!;
     
     public static readonly AssemblyLoadContext MainLoadContext =
@@ -16,36 +15,26 @@ public static class Main
         AssemblyLoadContext.Default;
 
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, 
-        nint assemblyPath,
-        PluginsCallbacks* pluginCallbacks,
-        ManagedCallbacks* managedCallbacks,
-        nint exportFunctionsPtr)
+    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks)
     {
         try
         {
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
             
-            _dllImportResolver = new UnrealSharpDllImportResolver(assemblyPath).OnResolveDllImport;
-            PluginLoader.SharedAssemblies.Add(CoreApiAssembly);
             PluginLoader.SharedAssemblies.Add(Assembly.GetExecutingAssembly());
-            NativeLibrary.SetDllImportResolver(CoreApiAssembly, _dllImportResolver);
+            PluginLoader.SharedAssemblies.Add(typeof(NativeBinds).Assembly);
 
             // Initialize plugin and managed callbacks
             *pluginCallbacks = PluginsCallbacks.Create();
+            
+            NativeBinds.InitializeNativeBinds(bindsCallbacks);
 
-            // Initialize exported functions
-            ExportedFunctionsManager.Initialize(exportFunctionsPtr);
-
-            // Initialize managed callbacks
-            *managedCallbacks = ManagedCallbacks.Create();
-
-            LogUnrealSharp.Log("UnrealSharp successfully setup!");
+            LogUnrealSharpPlugins.Log("UnrealSharp successfully setup!");
             return NativeBool.True;
         }
         catch (Exception ex)
         {
-            LogUnrealSharp.LogError($"Error initializing UnrealSharp: {ex.Message}");
+            LogUnrealSharpPlugins.LogError($"Error initializing UnrealSharp: {ex.Message}");
             return NativeBool.False;
         }
     }

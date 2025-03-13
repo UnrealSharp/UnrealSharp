@@ -3,29 +3,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "TPersistentObjectPtrExporter.generated.h"
 
-/**
- * 
- */
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UTPersistentObjectPtrExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UTPersistentObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* Object);
+
+	UNREALSHARP_FUNCTION()
 	static void FromSoftObjectPath(TPersistentObjectPtr<FSoftObjectPath>* Path, const FSoftObjectPath* SoftObjectPath);
+
+	UNREALSHARP_FUNCTION()
 	static void* Get(TPersistentObjectPtr<FSoftObjectPath>* Path);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path);
 	
 };

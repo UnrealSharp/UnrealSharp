@@ -1,22 +1,17 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FStringExporter.generated.h"
 
-UCLASS(meta=(NotGeneratorValid))
-class UNREALSHARPCORE_API UFStringExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFStringExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	
-	// UFunctionsExporter interface
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End of UFunctionsExporter interface
 
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void MarshalToNativeString(FString* String, TCHAR* ManagedString);
 	
 };

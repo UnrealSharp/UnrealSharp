@@ -44,7 +44,7 @@ public:
 
     FOnRefreshRuntimeGlue& OnRefreshRuntimeGlueEvent() { return OnRefreshRuntimeGlueDelegate; }
     
-    static void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
+    void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
     static void OpenSolution();
 
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
@@ -68,7 +68,7 @@ private:
     static void OnOpenDocumentation();
     static void OnReportBug();
     
-    void OnRefreshRuntimeGlue() const;
+    void OnRefreshRuntimeGlue();
 
     static void OnRepairComponents();
     
@@ -90,29 +90,28 @@ private:
     void RegisterAssetTypes();
     void RegisterCollisionProfile();
 
-    static void OnAssetSearchRootAdded(const FString& RootPath);
-    static void OnCompletedInitialScan();
+    void OnAssetSearchRootAdded(const FString& RootPath);
+    void OnCompletedInitialScan();
 
-    static bool IsRegisteredAssetType(const FAssetData& AssetData);
-    static bool IsRegisteredAssetType(UClass* Class);
+    bool IsRegisteredAssetType(const FAssetData& AssetData);
+    bool IsRegisteredAssetType(UClass* Class);
     
-    static void OnAssetRemoved(const FAssetData& AssetData);
-    static void OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath);
-    static void OnInMemoryAssetCreated(UObject* Object);
-    static void OnInMemoryAssetDeleted(UObject* Object);
+    void OnAssetRemoved(const FAssetData& AssetData);
+    void OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath);
+    void OnInMemoryAssetCreated(UObject* Object);
+    void OnInMemoryAssetDeleted(UObject* Object);
 
-    static void OnCollisionProfileLoaded(UCollisionProfile* Profile);
-
-    static void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
+    void OnCollisionProfileLoaded(UCollisionProfile* Profile);
+    void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
     void OnPIEEnded(bool IsSimulating);
 
-    static void WaitUpdateAssetTypes();
+    void WaitUpdateAssetTypes();
 
-    static void ProcessGameplayTags();
-    static void ProcessAssetIds();
-    static void ProcessAssetTypes();
-    static void ProcessTraceTypeQuery();
+    void ProcessGameplayTags();
+    void ProcessAssetIds();
+    void ProcessAssetTypes();
+    void ProcessTraceTypeQuery();
     
     void OnStructRebuilt(UScriptStruct* NewStruct);
     void OnClassRebuilt(UClass* NewClass);
@@ -143,4 +142,5 @@ private:
     TSet<UEnum*> RebuiltEnums;
     
     UCSManager* Manager = nullptr;
+    bool bDirtyGlue = false;
 };

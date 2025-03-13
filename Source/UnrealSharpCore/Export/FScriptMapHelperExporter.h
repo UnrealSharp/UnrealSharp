@@ -1,31 +1,44 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FScriptMapHelperExporter.generated.h"
 
 UCLASS(meta=(NotGeneratorValid))
-class UNREALSHARPCORE_API UFScriptMapHelperExporter : public UFunctionsExporter
+class UNREALSHARPCORE_API UFScriptMapHelperExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End of implementation
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void AddPair(FMapProperty* MapProperty, const void* Address, const void* Key, const void* Value);
+	
+	UNREALSHARP_FUNCTION()
 	static void* FindOrAdd(FMapProperty* MapProperty, const void* Address, const void* Key);
+
+	UNREALSHARP_FUNCTION()
 	static int Num(FMapProperty* MapProperty, const void* Address);
+
+	UNREALSHARP_FUNCTION()
 	static int FindMapPairIndexFromHash(FMapProperty* MapProperty, const void* Address, const void* Key);
+
+	UNREALSHARP_FUNCTION()
 	static void RemoveIndex(FMapProperty* MapProperty, const void* Address, int Index);
+
+	UNREALSHARP_FUNCTION()
 	static void EmptyValues(FMapProperty* MapProperty, const void* Address);
+
+	UNREALSHARP_FUNCTION()
 	static void Remove(FMapProperty* MapProperty, const void* Address, const void* Key);
+
+	UNREALSHARP_FUNCTION()
 	static bool IsValidIndex(FMapProperty* MapProperty, const void* Address, int Index);
+
+	UNREALSHARP_FUNCTION()
 	static int GetMaxIndex(FMapProperty* MapProperty, const void* Address);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetPairPtr(FMapProperty* MapProperty, const void* Address, int Index);
 	
 };

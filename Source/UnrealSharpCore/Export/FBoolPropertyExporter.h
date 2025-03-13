@@ -3,23 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FBoolPropertyExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFBoolPropertyExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFBoolPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static bool GetBitfieldValueFromProperty(uint8* NativeBuffer, FProperty* Property, int32 Offset);
+
+	UNREALSHARP_FUNCTION()
 	static void SetBitfieldValueForProperty(uint8* NativeObject, FProperty* Property, int32 Offset, bool Value);
 	
 };

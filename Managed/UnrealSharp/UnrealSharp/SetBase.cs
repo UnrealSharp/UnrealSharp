@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;

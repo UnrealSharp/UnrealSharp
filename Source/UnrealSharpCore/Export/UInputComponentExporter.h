@@ -1,26 +1,25 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "UInputComponentExporter.generated.h"
 
 class UInputAction;
 
-UCLASS(meta=(NotGeneratorValid))
-class UNREALSHARPCORE_API UUInputComponentExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUInputComponentExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-	
-private:
 
+	UNREALSHARP_FUNCTION()
 	static void BindAction(UInputComponent* InputComponent, const FName ActionName, const EInputEvent KeyEvent, UObject* Object, const FName FunctionName, bool bConsumeInput, bool bExecuteWhenPaused);
+
+	UNREALSHARP_FUNCTION()
 	static void BindActionKeySignature(UInputComponent* InputComponent, const FName ActionName, const EInputEvent KeyEvent, UObject* Object, const FName FunctionName, bool bConsumeInput, bool bExecuteWhenPaused);
+
+	UNREALSHARP_FUNCTION()
 	static void BindAxis(UInputComponent* InputComponent, const FName AxisName, UObject* Object, const FName FunctionName, bool bConsumeInput, bool bExecuteWhenPaused);
 	
 };

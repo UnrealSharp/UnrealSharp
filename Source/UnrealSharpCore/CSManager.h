@@ -6,6 +6,7 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+class UFunctionsExporter;
 struct FCSNamespace;
 struct FCSTypeReferenceMetaData;
 
@@ -18,7 +19,7 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
@@ -36,7 +37,9 @@ public:
 	
 	static UCSManager& GetOrCreate();
 	static UCSManager& Get();
+	
 	static void Shutdown();
+	void Initialize();
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
@@ -86,8 +89,6 @@ public:
 	bool IsManagedField(const UObject* Field) const;
 
 private:
-
-	void Initialize();
 
 	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
 	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;

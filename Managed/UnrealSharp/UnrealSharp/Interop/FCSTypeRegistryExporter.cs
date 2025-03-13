@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Logging;
+﻿using UnrealSharp.Binds;
+using UnrealSharp.Logging;
 
 namespace UnrealSharp.Interop;
 

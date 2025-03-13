@@ -1,20 +1,15 @@
 ﻿#pragma once
 
-#include "UnrealSharpCore/Export/FunctionsExporter.h"
 #include "CoreMinimal.h"
+#include "UnrealSharpBinds.h"
 #include "GEditorExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UGEditorExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UGEditorExporter : public UObject
 {
 	GENERATED_BODY()
 public:
-
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	
+	UNREALSHARP_FUNCTION()
 	static void* GetEditorSubsystem(UClass* SubsystemClass);
 };

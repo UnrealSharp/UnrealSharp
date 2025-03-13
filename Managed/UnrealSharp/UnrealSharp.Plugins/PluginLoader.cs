@@ -1,18 +1,16 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
-using UnrealSharp.Logging;
 
 namespace UnrealSharp.Plugins;
 
 public static class PluginLoader
 {
     public static readonly List<Assembly> SharedAssemblies = [];
-    public static readonly List<PluginLoadContext> NonCollectibleLoadContexts = [];
 
     private static readonly List<Plugin> _loadedPlugins = [];
     public static IReadOnlyList<Plugin> LoadedPlugins => _loadedPlugins;
 
-    public static WeakReference? LoadPlugin(string assemblyPath, bool isCollectible)
+    public static Plugin? LoadPlugin(string assemblyPath, bool isCollectible)
     {
         try
         {
@@ -25,67 +23,37 @@ public static class PluginLoader
 
                 if (assembly.GetName() != assemblyName) continue;
 
-                LogUnrealSharp.Log($"Plugin {assemblyName} is already loaded.");
-                return loadedPlugin.WeakRefAssembly;
+                LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is already loaded.");
+                return loadedPlugin;
             }
 
-            var pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
-            var weakRefPluginLoadContext = new WeakReference(pluginLoadContext);
-
-            var plugin = new Plugin(assemblyName, weakRefPluginLoadContext, assemblyPath);
+            PluginLoadContext pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
+            Plugin plugin = new Plugin(assemblyName, pluginLoadContext, assemblyPath);
   
             if (plugin.Load())
             {
                 _loadedPlugins.Add(plugin);
-                
-                if (!isCollectible)
-                {
-                    NonCollectibleLoadContexts.Add(pluginLoadContext);
-                }
 
-                LogUnrealSharp.Log($"Successfully loaded plugin: {assemblyName}");
-                return plugin.WeakRefAssembly;
-            }
-            else
-            {
-                LogUnrealSharp.LogError($"Failed to load plugin: {assemblyName}");
+                LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
+                return plugin;
             }
 
+            LogUnrealSharpPlugins.LogError($"Failed to load plugin: {assemblyName}");
             return default;
         }
         catch (Exception ex)
         {
-            LogUnrealSharp.LogError($"An error occurred while loading the plugin: {ex.Message}");
+            LogUnrealSharpPlugins.LogError($"An error occurred while loading the plugin: {ex.Message}");
         }
 
-        return default;
+        return null;
     }
 
-    public static bool UnloadPlugin(string assemblyPath)
+    public static bool UnloadPlugin(Plugin pluginToUnload)
     {
-        string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-
-        Plugin? pluginToUnload = null;
-        foreach (Plugin loadedPlugin in _loadedPlugins)
-        {
-            // Trying to resolve the weakptr to the assembly here will cause unload issues, so we compare names instead
-            if (!loadedPlugin.IsAssemblyAlive || loadedPlugin.AssemblyName.Name != assemblyName)
-            {
-                continue;
-            }
-            
-            pluginToUnload = loadedPlugin;
-            break;
-        }
-
-        if (pluginToUnload == null)
-        {
-            return false;
-        }
-        
         try
         {
-            LogUnrealSharp.Log($"Unloading plugin {assemblyName}...");
+            LogUnrealSharpPlugins.Log($"Unloading plugin {pluginToUnload.AssemblyName}...");
             pluginToUnload.Unload();
 
             int startTimeMs = Environment.TickCount;
@@ -106,7 +74,7 @@ public static class PluginLoader
                 if (!takingTooLong && elapsedTimeMs >= 200)
                 {
                     takingTooLong = true;
-                    LogUnrealSharp.LogError("Unloading assembly is taking longer than expected...");
+                    LogUnrealSharpPlugins.LogError("Unloading assembly is taking longer than expected...");
                 }
                 else if (elapsedTimeMs >= 1000)
                 {
@@ -116,12 +84,12 @@ public static class PluginLoader
 
             _loadedPlugins.Remove(pluginToUnload);
 
-            LogUnrealSharp.Log($"{assemblyName} unloaded successfully!");
+            LogUnrealSharpPlugins.Log($"{pluginToUnload.AssemblyName} unloaded successfully!");
             return true;
         }
         catch (Exception e)
         {
-            LogUnrealSharp.LogError($"An error occurred while unloading the plugin: {e.Message}");
+            LogUnrealSharpPlugins.LogError($"An error occurred while unloading the plugin: {e.Message}");
             return false;
         }
     }

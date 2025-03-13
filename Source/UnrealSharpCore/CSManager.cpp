@@ -2,7 +2,6 @@
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
 #include "UnrealSharpCore.h"
-#include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "Misc/Paths.h"
@@ -13,7 +12,9 @@
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
 
+#include "CSBindsManager.h"
 #include "CSNamespace.h"
+#include "UnrealSharpBinds.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -32,7 +33,6 @@ UCSManager& UCSManager::GetOrCreate()
 	if (!Instance)
 	{
 		Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
-		Instance->Initialize();
 	}
 
 	return *Instance;
@@ -146,11 +146,11 @@ void UCSManager::Initialize()
 		return;
 	}
 	
-	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetUserProjectNames(ProjectPaths);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!UserAssemblyPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		Initialize();
 		return;
@@ -220,8 +220,7 @@ bool UCSManager::InitializeRuntime()
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
 		*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
-		&FCSManagedCallbacks::ManagedCallbacks,
-		(const void*)&UFunctionsExporter::StartExportingAPI))
+		(const void*)&UCSBindsManager::GetBoundNativeFunction))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;

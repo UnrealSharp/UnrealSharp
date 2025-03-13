@@ -1,22 +1,17 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FVectorExporter.generated.h"
 
 UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFVectorExporter : public UFunctionsExporter
+class UNREALSHARPCORE_API UFVectorExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static FVector FromRotator(const FRotator& Rotator);
 	
 };

@@ -1,3 +1,5 @@
+using UnrealSharp.Binds;
+
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]

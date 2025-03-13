@@ -1,43 +1,52 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnrealSharp.Engine.Core.Modules;
 
 namespace UnrealSharp.Plugins;
 
 public class Plugin
 {
-    public Plugin(AssemblyName assemblyName, WeakReference weakRefLoadContext, string assemblyPath)
+    public Plugin(AssemblyName assemblyName, PluginLoadContext loadContext, string assemblyPath)
     {
         AssemblyName = assemblyName;
-        WeakRefLoadContext = weakRefLoadContext;
         AssemblyPath = assemblyPath;
+        
+        LoadContext = loadContext;
+        WeakRefLoadContext = new WeakReference(loadContext, trackResurrection: true);
     }
     
     public AssemblyName AssemblyName { get; }
     public string AssemblyPath;
     
-    public WeakReference? WeakRefLoadContext { get; }
+    public PluginLoadContext? LoadContext { get; private set; }
+    public WeakReference WeakRefLoadContext { get; private set; }
+    
     public WeakReference? WeakRefAssembly { get; private set; }
 
-    private readonly List<IModuleInterface>? _moduleInterfaces = [];
-    public IReadOnlyList<IModuleInterface>? ModuleInterfaces => _moduleInterfaces;
+    private readonly List<IModuleInterface> _moduleInterfaces = [];
+    public IReadOnlyList<IModuleInterface> ModuleInterfaces => _moduleInterfaces;
 
-    public bool IsAssemblyAlive => WeakRefAssembly != null && WeakRefAssembly.IsAlive;
-    public bool IsLoadContextAlive => WeakRefLoadContext != null && WeakRefLoadContext.IsAlive;
+    public bool IsAssemblyAlive
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get => WeakRefAssembly != null && WeakRefAssembly.IsAlive;
+    }
+
+    public bool IsLoadContextAlive
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        get => WeakRefLoadContext.IsAlive;
+    }
 
     public bool Load()
     {
-        if (WeakRefLoadContext == null || !WeakRefLoadContext.IsAlive || WeakRefLoadContext.Target is not PluginLoadContext loadContext)
+        if (LoadContext == null || !WeakRefLoadContext.IsAlive || WeakRefLoadContext.Target is not PluginLoadContext loadContext)
         {
             return false;
         }
 
         Assembly assembly = loadContext.LoadFromAssemblyName(AssemblyName);
         WeakRefAssembly = new WeakReference(assembly);
-
-        if (_moduleInterfaces == null)
-        {
-            return true;
-        }
         
         Type[] types = assembly.GetTypes();
             
@@ -60,6 +69,7 @@ public class Plugin
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public void Unload()
     {
         if (_moduleInterfaces != null)
@@ -72,9 +82,10 @@ public class Plugin
             _moduleInterfaces.Clear();
         }
 
-        if (WeakRefLoadContext != null && WeakRefLoadContext.IsAlive && WeakRefLoadContext.Target is PluginLoadContext loadContext)
+        if (LoadContext != null)
         {
-            loadContext.Unload();
+            LoadContext.Unload();
+            LoadContext = null;
         }
     }
 }

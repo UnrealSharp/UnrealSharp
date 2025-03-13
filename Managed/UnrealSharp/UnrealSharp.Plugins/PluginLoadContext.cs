@@ -5,11 +5,17 @@ namespace UnrealSharp.Plugins;
 
 public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isCollectible) : AssemblyLoadContext(isCollectible)
 {
+    // make destructor
+    ~PluginLoadContext()
+    {
+        Console.WriteLine("PluginLoadContext is being collected");
+    }
+    
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         if (string.IsNullOrEmpty(assemblyName.Name))
         {
-            return default;
+            return null;
         }
         
         foreach (Assembly sharedAssembly in PluginLoader.SharedAssemblies)
@@ -26,8 +32,9 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
             {
                 continue;
             }
-
-            if (assembly.GetName() == assemblyName)
+            
+            string loadedAssemblyName = assembly.GetName().Name;
+            if (loadedAssemblyName == assemblyName.Name)
             {
                 return assembly;
             }

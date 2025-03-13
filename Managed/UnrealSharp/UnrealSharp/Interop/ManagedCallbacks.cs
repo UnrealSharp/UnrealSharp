@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Interop;
 
@@ -14,16 +15,15 @@ public unsafe struct ManagedCallbacks
 
     public static ManagedCallbacks Create()
     {
-        return new()
+        return new ManagedCallbacks
         {
             ScriptManagerBridge_CreateManagedObject = &UnmanagedCallbacks.CreateNewManagedObject,
             ScriptManagerBridge_InvokeManagedMethod = &UnmanagedCallbacks.InvokeManagedMethod,
             ScriptManagerBridge_InvokeDelegate = &UnmanagedCallbacks.InvokeDelegate,
             ScriptManagerBridge_LookupManagedMethod = &UnmanagedCallbacks.LookupManagedMethod,
-            ScriptManagedBridge_LookupManagedType = &UnmanagedCallbacks.LookupManagedType,
             ScriptManagedBridge_Dispose = &UnmanagedCallbacks.Dispose,
         };
     }
 
-    public static void Create(IntPtr outManagedCallbacks) => *(ManagedCallbacks*)outManagedCallbacks = Create();
+    internal static void Create(IntPtr outManagedCallbacks) => *(ManagedCallbacks*)outManagedCallbacks = Create();
 }

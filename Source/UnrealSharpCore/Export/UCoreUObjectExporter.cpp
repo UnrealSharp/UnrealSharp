@@ -3,12 +3,6 @@
 #include "CSManager.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
-void UUCoreUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetNativeClassFromName)
-	EXPORT_FUNCTION(GetNativeStructFromName)
-}
-
 UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName)
 {
 	// This gets called by the static constructor of the class, so we can cache the class info of native classes here.

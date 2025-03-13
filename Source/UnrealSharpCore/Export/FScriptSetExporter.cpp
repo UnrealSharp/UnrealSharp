@@ -1,19 +1,5 @@
 ﻿#include "FScriptSetExporter.h"
 
-void UFScriptSetExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(IsValidIndex);
-	EXPORT_FUNCTION(Num);
-	EXPORT_FUNCTION(GetMaxIndex);
-	EXPORT_FUNCTION(GetData);
-	EXPORT_FUNCTION(Empty);
-	EXPORT_FUNCTION(RemoveAt);
-	EXPORT_FUNCTION(AddUninitialized);
-	EXPORT_FUNCTION(Add);
-	EXPORT_FUNCTION(FindOrAdd);
-	EXPORT_FUNCTION(FindIndex);
-}
-
 bool UFScriptSetExporter::IsValidIndex(FScriptSet* ScriptSet, int32 Index)
 {
 	return ScriptSet->IsValidIndex(Index);

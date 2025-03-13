@@ -70,7 +70,7 @@ public class CustomLogSourceGenerator : ISourceGenerator
         string className = classSymbol.Name;
         StringBuilder builder = new StringBuilder();
         
-        builder.AppendLine("using UnrealSharp.Logging;");
+        builder.AppendLine("using UnrealSharp.Log;");
 
         if (!string.IsNullOrEmpty(namespaceName))
         {

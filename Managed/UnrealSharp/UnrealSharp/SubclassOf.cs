@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -62,7 +64,7 @@ public struct TSubclassOf<T>
         
         NativeClass = nativeClass;
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
-        ManagedType = GcHandleUtilities.GetObjectFromHandlePtr(handle).GetType();
+        ManagedType = GCHandleUtilities.GetObjectFromHandlePtr(handle).GetType();
     }
     
     /// <summary>
@@ -74,7 +76,7 @@ public struct TSubclassOf<T>
         get
         {
             IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
-            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
         }
     }
     
@@ -127,7 +129,7 @@ public struct TSubclassOf<T>
     public static implicit operator UClass(TSubclassOf<T> subclass)
     {
         IntPtr handle = FCSManagerExporter.CallFindManagedObject(subclass.NativeClass);
-        return GcHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
     }
 
     /// <inheritdoc />

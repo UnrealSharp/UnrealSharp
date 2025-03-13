@@ -19,7 +19,8 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 void FUnrealSharpCoreModule::StartupModule()
 {
 	// Initialize the C# runtime
-	UCSManager::GetOrCreate();
+	UCSManager& CSManager = UCSManager::GetOrCreate();
+	CSManager.Initialize();
 }
 
 void FUnrealSharpCoreModule::ShutdownModule()

@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -49,7 +50,7 @@ public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObjec
     private T? Get()
     {
         IntPtr handle = FWeakObjectPtrExporter.CallGetObject(Data);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
 
     /// <summary>

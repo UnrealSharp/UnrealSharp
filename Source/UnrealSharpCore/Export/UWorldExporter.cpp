@@ -2,13 +2,6 @@
 #include "UnrealSharpCore/CSManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-void UUWorldExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(SetTimer)
-	EXPORT_FUNCTION(InvalidateTimer)
-	EXPORT_FUNCTION(GetWorldSubsystem)
-}
-
 void UUWorldExporter::SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle)
 {
 	FTimerDynamicDelegate Delegate;

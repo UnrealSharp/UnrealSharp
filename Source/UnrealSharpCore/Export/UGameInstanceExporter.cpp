@@ -1,11 +1,6 @@
 ﻿#include "UGameInstanceExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 
-void UUGameInstanceExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetGameInstanceSubsystem)
-}
-
 void* UUGameInstanceExporter::GetGameInstanceSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)
 {
 	if (!IsValid(WorldContextObject))

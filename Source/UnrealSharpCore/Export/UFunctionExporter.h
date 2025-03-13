@@ -3,26 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "UFunctionExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UUFunctionExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUFunctionExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static uint16 GetNativeFunctionParamsSize(const UFunction* NativeFunction);
 
+	UNREALSHARP_FUNCTION()
 	static UFunction* CreateNativeFunctionCustomStructSpecialization(UFunction* NativeFunction, FProperty** CustomStructParams, UScriptStruct** CustomStructs);
 
+	UNREALSHARP_FUNCTION()
 	static void InitializeFunctionParams(UFunction* NativeFunction, void* Params);
 
 };

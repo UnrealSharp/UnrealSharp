@@ -1,24 +1,19 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "UCoreUObjectExporter.generated.h"
 
 UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UUCoreUObjectExporter : public UFunctionsExporter
+class UNREALSHARPCORE_API UUCoreUObjectExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static UClass* GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName);
+
+	UNREALSHARP_FUNCTION()
 	static UScriptStruct* GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName);
 };

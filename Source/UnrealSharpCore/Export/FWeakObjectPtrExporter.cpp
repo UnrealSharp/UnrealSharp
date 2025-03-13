@@ -1,15 +1,5 @@
 ﻿#include "FWeakObjectPtrExporter.h"
-
 #include "UnrealSharpCore/CSManager.h"
-
-void UFWeakObjectPtrExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(SetObject)
-	EXPORT_FUNCTION(GetObject)
-	EXPORT_FUNCTION(IsValid)
-	EXPORT_FUNCTION(IsStale)
-	EXPORT_FUNCTION(NativeEquals)
-}
 
 void UFWeakObjectPtrExporter::SetObject(TWeakObjectPtr<UObject>& WeakObject, UObject* Object)
 {

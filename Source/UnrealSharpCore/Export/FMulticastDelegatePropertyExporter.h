@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FMulticastDelegatePropertyExporter.generated.h"
 
 struct Interop_FScriptDelegate
@@ -19,30 +19,40 @@ struct Interop_FScriptDelegate
 	}
 };
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFMulticastDelegatePropertyExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFMulticastDelegatePropertyExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
-
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void AddDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
+
+	UNREALSHARP_FUNCTION()
 	static bool IsBound(FMulticastScriptDelegate* Delegate);
+
+	UNREALSHARP_FUNCTION()
 	static void ToString(FMulticastScriptDelegate* Delegate, FString& OutString);
+	
+	UNREALSHARP_FUNCTION()
 	static void RemoveDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
+
+	UNREALSHARP_FUNCTION()
 	static void ClearDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate);
+
+	UNREALSHARP_FUNCTION()
 	static void BroadcastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, void* Parameters);
+
+	UNREALSHARP_FUNCTION()
 	static bool ContainsDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
 
+	UNREALSHARP_FUNCTION()
 	static void* GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty);
 
+	UNREALSHARP_FUNCTION()
 	static FScriptDelegate MakeScriptDelegate(UObject* Target, const char* FunctionName);
+
+	UNREALSHARP_FUNCTION()
 	static const FMulticastScriptDelegate* TryGetSparseMulticastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate);
 	
 };

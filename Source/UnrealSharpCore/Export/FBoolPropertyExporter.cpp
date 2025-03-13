@@ -1,13 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "FBoolPropertyExporter.h"
-
-void UFBoolPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetBitfieldValueFromProperty)
-	EXPORT_FUNCTION(SetBitfieldValueForProperty)
-}
+﻿#include "FBoolPropertyExporter.h"
 
 bool UFBoolPropertyExporter::GetBitfieldValueFromProperty(uint8* NativeBuffer, FProperty* Property, int32 Offset)
 {

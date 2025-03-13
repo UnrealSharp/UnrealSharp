@@ -1,4 +1,7 @@
-﻿namespace UnrealSharp.Interop.Properties;
+﻿using UnrealSharp.Core;
+using UnrealSharp.Core.Marshallers;
+
+namespace UnrealSharp.Interop.Properties;
 
 internal class NativeProperty
 {

@@ -1,16 +1,5 @@
 ﻿#include "FRandomStreamExporter.h"
 
-void UFRandomStreamExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GenerateNewSeed)
-	EXPORT_FUNCTION(GetFraction)
-	EXPORT_FUNCTION(GetUnsignedInt)
-	EXPORT_FUNCTION(GetUnitVector)
-	EXPORT_FUNCTION(RandRange)
-	EXPORT_FUNCTION(VRandCone)
-	EXPORT_FUNCTION(VRandCone2)
-}
-
 void UFRandomStreamExporter::GenerateNewSeed(FRandomStream* RandomStream)
 {
 	RandomStream->GenerateNewSeed();

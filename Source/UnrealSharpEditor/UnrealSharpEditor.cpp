@@ -74,7 +74,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
 
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	FCSProcHelper::GetUserProjectNames(ProjectPaths);
 
 	if (ProjectPaths.IsEmpty())
 	{
@@ -442,7 +442,7 @@ void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorCom
 }
 
 
-void FUnrealSharpEditorModule::OnRefreshRuntimeGlue() const
+void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
 {
 	ProcessAssetIds();
 	ProcessGameplayTags();
@@ -696,21 +696,21 @@ void FUnrealSharpEditorModule::RegisterMenu()
 
 void FUnrealSharpEditorModule::RegisterGameplayTags()
 {
-	IGameplayTagsModule::OnTagSettingsChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
-	IGameplayTagsModule::OnGameplayTagTreeChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
+	IGameplayTagsModule::OnTagSettingsChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
+	IGameplayTagsModule::OnGameplayTagTreeChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
 	ProcessGameplayTags();
 }
 
 void FUnrealSharpEditorModule::RegisterAssetTypes()
 {
 	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
-		FSimpleMulticastDelegate::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnCompletedInitialScan));
+		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnCompletedInitialScan));
 }
 
 void FUnrealSharpEditorModule::RegisterCollisionProfile()
 {
 	UCollisionProfile* CollisionProfile = UCollisionProfile::Get();
-	CollisionProfile->OnLoadProfileConfig.AddStatic(&FUnrealSharpEditorModule::OnCollisionProfileLoaded);
+	CollisionProfile->OnLoadProfileConfig.AddRaw(this, &FUnrealSharpEditorModule::OnCollisionProfileLoaded);
 	ProcessTraceTypeQuery();
 }
 
@@ -721,21 +721,23 @@ void FUnrealSharpEditorModule::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBui
 	{
 		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s"), *FileName);
 	}
+
+	bDirtyGlue = true;
 }
 
 void FUnrealSharpEditorModule::OnCompletedInitialScan()
 {
 	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
-	AssetRegistry.OnAssetRemoved().AddStatic(&FUnrealSharpEditorModule::OnAssetRemoved);
-	AssetRegistry.OnAssetRenamed().AddStatic(&FUnrealSharpEditorModule::OnAssetRenamed);
-	AssetRegistry.OnInMemoryAssetCreated().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetCreated);
-	AssetRegistry.OnInMemoryAssetDeleted().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
+	AssetRegistry.OnAssetRemoved().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRemoved);
+	AssetRegistry.OnAssetRenamed().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRenamed);
+	AssetRegistry.OnInMemoryAssetCreated().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetCreated);
+	AssetRegistry.OnInMemoryAssetDeleted().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
 	
 	UAssetManager::Get().Register_OnAddedAssetSearchRoot(
-		FOnAddedAssetSearchRoot::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnAssetSearchRootAdded));
+		FOnAddedAssetSearchRoot::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnAssetSearchRootAdded));
 
 	UAssetManagerSettings* Settings = UAssetManagerSettings::StaticClass()->GetDefaultObject<UAssetManagerSettings>();
-	Settings->OnSettingChanged().AddStatic(&FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
+	Settings->OnSettingChanged().AddRaw(this, &FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
 	
 	ProcessAssetIds();
 }
@@ -805,13 +807,13 @@ void FUnrealSharpEditorModule::OnInMemoryAssetDeleted(UObject* Object)
 
 void FUnrealSharpEditorModule::OnCollisionProfileLoaded(UCollisionProfile* Profile)
 {
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessTraceTypeQuery));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessTraceTypeQuery));
 }
 
 void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	WaitUpdateAssetTypes();
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetTypes));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetTypes));
 }
 
 void FUnrealSharpEditorModule::OnPIEEnded(bool IsSimulating)
@@ -852,7 +854,7 @@ bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMa
 
 void FUnrealSharpEditorModule::WaitUpdateAssetTypes()
 {
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetIds));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetIds));
 }
 
 void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
@@ -863,13 +865,13 @@ void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
 void FUnrealSharpEditorModule::ProcessGameplayTags()
 {
 	TArray<const FGameplayTagSource*> Sources;
-	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
+	UGameplayTagsManager& GameplayTagsManager = UGameplayTagsManager::Get();
 
 	const int32 NumValues = StaticEnum<EGameplayTagSourceType>()->NumEnums();
 	for (int32 Index = 0; Index < NumValues; Index++)
 	{
 		EGameplayTagSourceType SourceType = static_cast<EGameplayTagSourceType>(Index);
-		Manager.FindTagSourcesWithType(SourceType, Sources);
+		GameplayTagsManager.FindTagSourcesWithType(SourceType, Sources);
 	}
 
 	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);

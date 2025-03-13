@@ -1,25 +1,22 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
 #include "Async/Async.h"
 #include "CSManagedGCHandle.h"
+#include "UnrealSharpBinds.h"
 #include "AsyncExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UAsyncExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UAsyncExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
 
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle);
+	
+	UNREALSHARP_FUNCTION()
 	static int GetCurrentNamedThread();
 	
 };

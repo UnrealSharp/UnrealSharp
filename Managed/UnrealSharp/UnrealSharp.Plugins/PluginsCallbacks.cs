@@ -1,5 +1,5 @@
-﻿using System.Reflection;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
@@ -7,31 +7,32 @@ namespace UnrealSharp.Plugins;
 public unsafe struct PluginsCallbacks
 {
     public delegate* unmanaged<char*, NativeBool, nint> LoadPlugin;
-    public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
+    public delegate* unmanaged<IntPtr, NativeBool> UnloadPlugin;
     
     [UnmanagedCallersOnly]
     private static nint ManagedLoadPlugin(char* assemblyPath, NativeBool isCollectible)
     {
-        WeakReference? weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), isCollectible.ToManagedBool());
+        Plugin? newPlugin = PluginLoader.LoadPlugin(new string(assemblyPath), isCollectible.ToManagedBool());
 
-        if (weakRef == null || !weakRef.IsAlive)
+        if (newPlugin == null || !newPlugin.IsAssemblyAlive)
         {
             return IntPtr.Zero;
         };
 
-        if (weakRef.Target is not Assembly assembly)
-        {
-            return IntPtr.Zero;
-        }
-
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(assembly));
+        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(newPlugin));
     }
 
     [UnmanagedCallersOnly]
-    private static NativeBool ManagedUnloadPlugin(char* assemblyPath)
+    private static NativeBool ManagedUnloadPlugin(IntPtr pluginHandle)
     {
-        string assemblyPathStr = new(assemblyPath);
-        return PluginLoader.UnloadPlugin(assemblyPathStr).ToNativeBool();
+        Plugin? loadedAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Plugin>(pluginHandle);
+        
+        if (loadedAssembly == null)
+        {
+            return NativeBool.False;
+        }
+        
+        return PluginLoader.UnloadPlugin(loadedAssembly).ToNativeBool();
     }
 
     public static PluginsCallbacks Create()

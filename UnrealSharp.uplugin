@@ -37,7 +37,12 @@
 		{
 			"Name": "UnrealSharpCompiler",
 			"Type": "Editor",
-			"LoadingPhase": "PostDefault"
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnrealSharpBinds",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"SupportedTargetPlatforms": [

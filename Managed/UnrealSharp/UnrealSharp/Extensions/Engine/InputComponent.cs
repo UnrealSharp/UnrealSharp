@@ -1,4 +1,5 @@
-﻿using UnrealSharp.CoreUObject;
+﻿using UnrealSharp.Core;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.Engine;

@@ -1,27 +1,27 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "UnrealSharpBinds.h"
 #include "FEditorDelegatesExporter.generated.h"
 
 using FPIEEvent = void(*)(bool);
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFEditorDelegatesExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFEditorDelegatesExporter : public UObject
 {
 	GENERATED_BODY()
 	
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void BindEndPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle);
+
+	UNREALSHARP_FUNCTION()
 	static void BindStartPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle);
 
+	UNREALSHARP_FUNCTION()
 	static void UnbindEndPIE(FDelegateHandle DelegateHandle);
+
+	UNREALSHARP_FUNCTION()
 	static void UnbindStartPIE(FDelegateHandle DelegateHandle);
 };

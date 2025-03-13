@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
@@ -61,7 +63,7 @@ public struct TSoftObjectPtr<T> where T : UObject
     public T LoadSynchronous()
     {
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
     
     /// <summary>

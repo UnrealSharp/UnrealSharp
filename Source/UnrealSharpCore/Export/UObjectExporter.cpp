@@ -1,18 +1,6 @@
 ﻿#include "UObjectExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 
-void UUObjectExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(CreateNewObject)
-	EXPORT_FUNCTION(GetTransientPackage)
-	EXPORT_FUNCTION(NativeGetName)
-	EXPORT_FUNCTION(InvokeNativeStaticFunction);
-	EXPORT_FUNCTION(InvokeNativeFunction);
-	EXPORT_FUNCTION(NativeIsValid)
-	EXPORT_FUNCTION(GetWorld_Internal);
-	EXPORT_FUNCTION(GetUniqueID);
-}
-
 void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
 {
 	if (!IsValid(Outer))

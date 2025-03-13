@@ -1,6 +1,5 @@
 using UnrealSharp.Attributes;
 
-
 namespace UnrealSharp.CoreUObject;
 
 [Binding]
