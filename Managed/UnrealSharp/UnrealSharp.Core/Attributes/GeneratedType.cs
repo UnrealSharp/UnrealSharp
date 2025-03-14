@@ -1,4 +1,4 @@
-﻿namespace UnrealSharp.Attributes;
+﻿namespace UnrealSharp.Core.Attributes;
 
 /// <summary>
 /// Used to mark a type as generated. Don't use this attribute in your code.

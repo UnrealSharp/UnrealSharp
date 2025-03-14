@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace UnrealSharp;
+namespace UnrealSharp.Core;
 
 /// <summary>
 /// Struct representing a handle to a delegate.

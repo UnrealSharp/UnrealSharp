@@ -1,45 +1,62 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
+using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
 public static class PluginLoader
 {
     public static readonly List<Assembly> SharedAssemblies = [];
-
     private static readonly List<Plugin> _loadedPlugins = [];
     public static IReadOnlyList<Plugin> LoadedPlugins => _loadedPlugins;
+    
+    static PluginLoader()
+    {
+        SharedAssemblies.Add(Assembly.GetExecutingAssembly());
+        SharedAssemblies.Add(typeof(NativeBinds).Assembly);
+        SharedAssemblies.Add(typeof(UnrealSharpObject).Assembly);
+    }
 
-    public static Plugin? LoadPlugin(string assemblyPath, bool isCollectible)
+    public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible)
     {
         try
         {
-            var assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(assemblyPath));
+            AssemblyName assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(assemblyPath));
 
             foreach (var loadedPlugin in _loadedPlugins)
             {
-                if (!loadedPlugin.IsAssemblyAlive) continue;
-                if (loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly) continue;
+                if (!loadedPlugin.IsAssemblyAlive)
+                {
+                    continue;
+                }
+                
+                if (loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly)
+                {
+                    continue;
+                }
 
-                if (assembly.GetName() != assemblyName) continue;
+                if (assembly.GetName() != assemblyName)
+                {
+                    continue;
+                }
 
                 LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is already loaded.");
-                return loadedPlugin;
+                return assembly;
             }
 
             PluginLoadContext pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
             Plugin plugin = new Plugin(assemblyName, pluginLoadContext, assemblyPath);
   
-            if (plugin.Load())
+            if (plugin.Load() && plugin.WeakRefAssembly != null && plugin.WeakRefAssembly.Target is Assembly loadedAssembly)
             {
                 _loadedPlugins.Add(plugin);
-
                 LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
-                return plugin;
+                return loadedAssembly;
             }
 
             LogUnrealSharpPlugins.LogError($"Failed to load plugin: {assemblyName}");
-            return default;
+            return null;
         }
         catch (Exception ex)
         {

@@ -2,10 +2,19 @@
 
 public class ApiMetaData
 {
-    public List<ClassMetaData> ClassMetaData { get; set; }
-    public StructMetaData[] StructMetaData { get; set; }
-    public EnumMetaData[] EnumMetaData { get; set; }
-    public InterfaceMetaData[] InterfacesMetaData { get; set; }
+    public ApiMetaData(string assemblyName)
+    {
+        AssemblyName = assemblyName;
+        ClassMetaData = new List<ClassMetaData>();
+        StructMetaData = new List<StructMetaData>();
+        EnumMetaData = new List<EnumMetaData>();
+        InterfacesMetaData = new List<InterfaceMetaData>();
+    }
+
+    public List<ClassMetaData> ClassMetaData { get; set; }  
+    public List<StructMetaData> StructMetaData { get; set; }
+    public List<EnumMetaData> EnumMetaData { get; set; }
+    public List<InterfaceMetaData> InterfacesMetaData { get; set; }
     
     public string AssemblyName { get; set; }
 }

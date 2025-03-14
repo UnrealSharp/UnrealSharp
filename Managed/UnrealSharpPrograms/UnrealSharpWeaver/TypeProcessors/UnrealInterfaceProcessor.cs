@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -8,12 +9,12 @@ public static class UnrealInterfaceProcessor
 { 
     public static void ProcessInterfaces(List<TypeDefinition> interfaces, ApiMetaData assemblyMetadata)
     {
-        assemblyMetadata.InterfacesMetaData = new InterfaceMetaData[interfaces.Count];
+        assemblyMetadata.InterfacesMetaData.Capacity = interfaces.Count;
         
         for (var i = 0; i < interfaces.Count; ++i)
         {
             TypeDefinition interfaceType = interfaces[i];
-            assemblyMetadata.InterfacesMetaData[i] = new InterfaceMetaData(interfaceType);
+            assemblyMetadata.InterfacesMetaData.Add(new InterfaceMetaData(interfaceType));
             
             CreateInterfaceMarshaller(interfaceType);
         }
@@ -21,18 +22,17 @@ public static class UnrealInterfaceProcessor
 
     public static void CreateInterfaceMarshaller(TypeDefinition interfaceType)
     {
-        TypeDefinition structMarshallerClass = WeaverHelper.CreateNewClass(WeaverHelper.UserAssembly, 
-            interfaceType.Namespace, WeaverHelper.GetMarshallerClassName(interfaceType), 
+        TypeDefinition structMarshallerClass = WeaverImporter.UserAssembly.CreateNewClass(interfaceType.Namespace, interfaceType.GetMarshallerClassName(), 
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
         
-        FieldDefinition nativePointerField = WeaverHelper.AddFieldToType(structMarshallerClass, "NativeInterfaceClassPtr", 
-            WeaverHelper.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
+        FieldDefinition nativePointerField = structMarshallerClass.AddField("NativeInterfaceClassPtr", 
+            WeaverImporter.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
         
-        string interfaceName = WeaverHelper.GetEngineName(interfaceType);
+        string interfaceName = interfaceType.GetEngineName();
         const bool finalizeMethod = true;
         
         ConstructorBuilder.CreateTypeInitializer(structMarshallerClass, Instruction.Create(OpCodes.Stsfld, nativePointerField), 
-            [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)], interfaceName, finalizeMethod);
+            [Instruction.Create(OpCodes.Call, WeaverImporter.GetNativeClassFromNameMethod)], interfaceName, finalizeMethod);
         
         MakeToNativeMethod(interfaceType, structMarshallerClass, nativePointerField);
         MakeFromNativeMethod(interfaceType, structMarshallerClass, nativePointerField);
@@ -40,11 +40,11 @@ public static class UnrealInterfaceProcessor
     
     public static void MakeToNativeMethod(TypeDefinition interfaceType, TypeDefinition structMarshallerClass, FieldDefinition nativePointerField)
     {
-        MethodDefinition toNativeMarshallerMethod = WeaverHelper.AddMethodToType(structMarshallerClass, "ToNative", 
-            WeaverHelper.VoidTypeRef,
-            MethodAttributes.Public | MethodAttributes.Static, WeaverHelper.IntPtrType, WeaverHelper.Int32TypeRef, interfaceType);
+        MethodDefinition toNativeMarshallerMethod = interfaceType.AddMethod("ToNative", 
+            WeaverImporter.VoidTypeRef,
+            MethodAttributes.Public | MethodAttributes.Static, WeaverImporter.IntPtrType, WeaverImporter.Int32TypeRef, interfaceType);
         
-        MethodReference toNativeMethod = WeaverHelper.FindMethod(WeaverHelper.ScriptInterfaceMarshaller, "ToNative")!;
+        MethodReference toNativeMethod = WeaverImporter.ScriptInterfaceMarshaller.FindMethod("ToNative")!;
         toNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(toNativeMethod, interfaceType);
         
         ILProcessor toNativeMarshallerProcessor = toNativeMarshallerMethod.Body.GetILProcessor();
@@ -59,12 +59,12 @@ public static class UnrealInterfaceProcessor
     
     public static void MakeFromNativeMethod(TypeDefinition interfaceType, TypeDefinition structMarshallerClass, FieldDefinition nativePointerField)
     {
-        MethodDefinition fromNativeMarshallerMethod = WeaverHelper.AddMethodToType(structMarshallerClass, "FromNative", 
+        MethodDefinition fromNativeMarshallerMethod = structMarshallerClass.AddMethod("FromNative", 
             interfaceType,
             MethodAttributes.Public | MethodAttributes.Static,
-            [WeaverHelper.IntPtrType, WeaverHelper.Int32TypeRef]);
+            [WeaverImporter.IntPtrType, WeaverImporter.Int32TypeRef]);
         
-        MethodReference fromNativeMethod = WeaverHelper.FindMethod(WeaverHelper.ScriptInterfaceMarshaller, "FromNative")!;
+        MethodReference fromNativeMethod = WeaverImporter.ScriptInterfaceMarshaller.FindMethod("FromNative")!;
         fromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(fromNativeMethod, interfaceType);
         
         ILProcessor fromNativeMarshallerProcessor = fromNativeMarshallerMethod.Body.GetILProcessor();

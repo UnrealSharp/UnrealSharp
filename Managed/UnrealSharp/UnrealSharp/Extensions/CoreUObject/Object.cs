@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;

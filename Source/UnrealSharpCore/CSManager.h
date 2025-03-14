@@ -19,7 +19,7 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks::FManagedCallbacks*);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);

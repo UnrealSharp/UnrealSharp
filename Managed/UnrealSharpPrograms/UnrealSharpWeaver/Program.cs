@@ -3,6 +3,7 @@ using Mono.Cecil;
 using Mono.Cecil.Pdb;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver;
 
@@ -13,11 +14,7 @@ public static class Program
     public static int Main(string[] args)
     {
         WeaverOptions = WeaverOptions.ParseArguments(args);
-
-        if (!LoadBindingsAssembly())
-        {
-            return 1;
-        }
+        LoadBindingsAssembly();
         
         if (!ProcessUserAssemblies())
         {
@@ -27,7 +24,7 @@ public static class Program
         return 0;
     }
 
-    private static bool LoadBindingsAssembly()
+    private static void LoadBindingsAssembly()
     {
         DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
         
@@ -43,18 +40,7 @@ public static class Program
             resolver.AddSearchDirectory(directory);
         }
 
-        try
-        {
-            var unrealSharpLibraryAssembly = resolver.Resolve(new AssemblyNameReference(WeaverHelper.UnrealSharpNamespace, new Version(0, 0, 0, 0)));
-            WeaverHelper.Initialize(unrealSharpLibraryAssembly);
-            return true;
-        }
-        catch
-        {
-            Console.Error.WriteLine("Could not resolve the UnrealSharp library assembly.");
-        }
-        
-        return false;
+        WeaverImporter.Initialize(resolver);
     }
 
     private static bool ProcessUserAssemblies()
@@ -112,7 +98,7 @@ public static class Program
                 Console.Error.WriteLine(ex.StackTrace);
                 noErrors = false;
             }
-            WeaverHelper.WeavedAssemblies.Add(assembly);
+            WeaverImporter.WeavedAssemblies.Add(assembly);
         }
 
         return noErrors;
@@ -232,13 +218,10 @@ public static class Program
             File.Move(pdbOutputFile.FullName, tmpDestFileName);
         }
 
-        var cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
-        var assemblyMetaData = new ApiMetaData
-                               {
-                                   AssemblyName = assembly.Name.Name,
-                               };
+        Task cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
+        ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
         
-        WeaverHelper.ImportCommonTypes(assembly);
+        WeaverImporter.ImportCommonTypes(assembly);
         StartProcessingAssembly(assembly, ref assemblyMetaData);
         
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
@@ -288,26 +271,26 @@ public static class Program
                 void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
                 {
                     typeDefinitions.Add(typeDefinition);
-                    WeaverHelper.AddGeneratedTypeAttribute(typeDefinition);
+                    typeDefinition.AddGeneratedTypeAttribute();
                 }
                 
-                foreach (var module in userAssembly.Modules)
+                foreach (ModuleDefinition? module in userAssembly.Modules)
                 {
-                    foreach (var type in module.Types)
+                    foreach (TypeDefinition? type in module.Types)
                     {
-                        if (WeaverHelper.IsUClass(type))
+                        if (type.IsUClass())
                         {
                             RegisterType(classes, type);
                         }
-                        else if (WeaverHelper.IsUEnum(type))
+                        else if (type.IsUEnum())
                         {
                             RegisterType(enums, type);
                         }
-                        else if (WeaverHelper.IsUStruct(type))
+                        else if (type.IsUStruct())
                         {
                             RegisterType(structs, type);
                         }
-                        else if (WeaverHelper.IsUInterface(type))
+                        else if (type.IsUInterface())
                         {
                             RegisterType(interfaces, type);
                         }

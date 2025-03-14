@@ -379,16 +379,16 @@ public partial struct FVector4
         StringBuilder sb = new StringBuilder();
         string separator = NumberFormatInfo.GetInstance(formatProvider).NumberGroupSeparator;
         sb.Append('<');
-        sb.Append(this.X.ToString(format, formatProvider));
+        sb.Append(X.ToString(format, formatProvider));
         sb.Append(separator);
         sb.Append(' ');
-        sb.Append(this.Y.ToString(format, formatProvider));
+        sb.Append(Y.ToString(format, formatProvider));
         sb.Append(separator);
         sb.Append(' ');
-        sb.Append(this.Z.ToString(format, formatProvider));
+        sb.Append(Z.ToString(format, formatProvider));
         sb.Append(separator);
         sb.Append(' ');
-        sb.Append(this.W.ToString(format, formatProvider));
+        sb.Append(W.ToString(format, formatProvider));
         sb.Append('>');
         return sb.ToString();
     }

@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -18,15 +19,15 @@ public static class ConstructorBuilder
 
         if (staticConstructor == null)
         {
-            staticConstructor = WeaverHelper.AddMethodToType(type, ".cctor", 
-                WeaverHelper.VoidTypeRef,
+            staticConstructor = type.AddMethod(".cctor", 
+                WeaverImporter.VoidTypeRef,
                 attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
                 parameterTypes);
         }
         else
         {
             // Remove the return instruction from existing static constructor
-            WeaverHelper.RemoveReturnInstruction(staticConstructor);
+            staticConstructor.RemoveReturnInstruction();
         }
         
         return staticConstructor;
@@ -38,8 +39,8 @@ public static class ConstructorBuilder
         
         if (constructor == null)
         {
-            constructor = WeaverHelper.AddMethodToType(typeDefinition, ".ctor", 
-                WeaverHelper.VoidTypeRef,
+            constructor = typeDefinition.AddMethod(".ctor", 
+                WeaverImporter.VoidTypeRef,
                 attributes | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                 parameterTypes);
         }
@@ -55,7 +56,7 @@ public static class ConstructorBuilder
         processor.Emit(OpCodes.Ldstr, typeDefinition.Module.Assembly.Name.Name);
         processor.Emit(OpCodes.Ldstr, typeDefinition.Namespace);
         
-        engineName = string.IsNullOrEmpty(engineName) ? WeaverHelper.GetEngineName(typeDefinition) : engineName;
+        engineName = string.IsNullOrEmpty(engineName) ? typeDefinition.GetEngineName() : engineName;
         processor.Emit(OpCodes.Ldstr, engineName);
         
         foreach (Instruction instruction in initializeInstructions)
@@ -91,7 +92,7 @@ public static class ConstructorBuilder
             Instruction setNativeProperty;
             if (property.NativePropertyField == null)
             {
-                VariableDefinition nativePropertyVar = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+                VariableDefinition nativePropertyVar = processor.Body.Method.AddLocalVariable(WeaverImporter.IntPtrType);
                 loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
                 setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
             }

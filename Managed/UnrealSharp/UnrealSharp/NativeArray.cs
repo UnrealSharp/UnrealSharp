@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -12,8 +13,7 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
 [Binding]
-public unsafe class TNativeArray<T> : IEnumerable<T> 
-    where T : INumber<T>
+public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
 {
     protected readonly IntPtr NativeUnrealProperty;
     protected UnmanagedArray* NativeBuffer { get; }

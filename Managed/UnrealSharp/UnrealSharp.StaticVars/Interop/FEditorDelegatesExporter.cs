@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
 
-namespace UnrealSharp.Interop;
+namespace UnrealSharp.StaticVars.Interop;
 
 public struct FEditorDelegates
 {

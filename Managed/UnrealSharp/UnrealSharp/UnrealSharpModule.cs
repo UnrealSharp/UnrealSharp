@@ -1,3 +1,4 @@
+using UnrealSharp.Core;
 using UnrealSharp.Engine.Core.Modules;
 using UnrealSharp.Interop;
 
@@ -7,17 +8,11 @@ public class UnrealSharpModule : IModuleInterface
 {
     public void StartupModule()
     {
-        InitializeManagedCallbacks();
+        
     }
 
     public void ShutdownModule()
     {
        
-    }
-    
-    void InitializeManagedCallbacks()
-    {
-        IntPtr managedCallbacks = FCSManagedCallbacksExporter.CallGetManagedCallbacks();
-        ManagedCallbacks.Create(managedCallbacks);
     }
 }

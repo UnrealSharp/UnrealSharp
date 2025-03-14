@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.UnrealSharpCore;

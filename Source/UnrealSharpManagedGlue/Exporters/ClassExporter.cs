@@ -49,7 +49,7 @@ public static class ClassExporter
         }
         else
         {
-            superClassName = "UnrealSharpObject";
+            superClassName = "UnrealSharp.Core.UnrealSharpObject";
         }
         
         stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, true, interfaces);

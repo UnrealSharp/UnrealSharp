@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -10,19 +11,19 @@ public class InterfaceMetaData : TypeReferenceMetadata
     const string CannotImplementInterfaceInBlueprint = "CannotImplementInterfaceInBlueprint";
     // End non-serialized
     
-    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, WeaverHelper.UInterfaceAttribute)
+    public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, TypeDefinitionUtilities.UInterfaceAttribute)
     {
         Functions = [];
         
         foreach (var method in typeDefinition.Methods)
         {
-            if (method.IsAbstract && WeaverHelper.IsUFunction(method))
+            if (method.IsAbstract && method.IsUFunction())
             {
                 Functions.Add(new FunctionMetaData(method, onlyCollectMetaData: true));
             }
         }
         
-        CustomAttributeArgument? nonBpInterface = WeaverHelper.FindAttributeField(BaseAttribute, CannotImplementInterfaceInBlueprint);
+        CustomAttributeArgument? nonBpInterface = BaseAttribute.FindAttributeField(CannotImplementInterfaceInBlueprint);
         if (nonBpInterface != null)
         {
             TryAddMetaData(CannotImplementInterfaceInBlueprint, (bool) nonBpInterface.Value.Value);

@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -12,7 +13,7 @@ class NativeDataEnumType(TypeReference typeRef, int arrayDim) : NativeDataSimple
     {
         base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
         
-        if (!WeaverHelper.IsUEnum(InnerProperty.TypeRef.Resolve()))
+        if (!InnerProperty.TypeRef.Resolve().IsUEnum())
         {
             throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UEnum if exposed through UProperty!");
         }

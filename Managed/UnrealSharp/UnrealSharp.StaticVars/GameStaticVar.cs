@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using UnrealSharp.Core;
-using UnrealSharp.Interop;
+using UnrealSharp.StaticVars.Interop;
 
 namespace UnrealSharp.StaticVars;
 

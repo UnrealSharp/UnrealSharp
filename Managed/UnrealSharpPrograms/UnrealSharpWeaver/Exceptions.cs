@@ -41,18 +41,9 @@ class InvalidPropertyException(string propertyName, SequencePoint sequencePoint,
 
 
 [Serializable]
-class InvalidUnrealFunctionException(MethodDefinition method, string message, Exception innerException = null)
-    : WeaverProcessError($"Method '{method.Name}' is invalid for unreal function: {message}", innerException,
+class InvalidUnrealFunctionException(MethodDefinition method, string message, Exception? innerException = null)
+    : WeaverProcessError($"Method '{method.Name}' is invalid for unreal function: {message}", null,
         ErrorEmitter.GetSequencePointFromMemberDefinition(method));
-
-[Serializable]
-class InvalidEnumMemberException(
-    TypeDefinition enom,
-    FieldReference field,
-    string message,
-    Exception innerException = null)
-    : WeaverProcessError($"Enum '{enom.Name}' has invalid field '{field.Name}': {message}",
-        innerException, ErrorEmitter.GetSequencePointFromMemberDefinition(enom));
 
 [Serializable]
 class NotDerivableClassException(TypeDefinition klass, TypeDefinition superKlass) : WeaverProcessError(

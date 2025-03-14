@@ -1,10 +1,8 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
-using UnrealSharp.Core;
 
-namespace UnrealSharp;
+namespace UnrealSharp.Core;
 
 /// <summary>
 /// Represents a UObject in Unreal Engine. Don't inherit from this class directly, use a CoreUObject.Object instead.

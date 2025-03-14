@@ -78,6 +78,7 @@ public static class ScriptGeneratorUtilities
     public const string InteropNamespace = "UnrealSharp.Interop";
     public const string MarshallerNamespace = "UnrealSharp.Core.Marshallers";
     public const string AttributeNamespace = "UnrealSharp.Attributes";
+    public const string CoreAttributeNamespace = "UnrealSharp.Core.Attributes";
     public const string InteropServicesNamespace = "System.Runtime.InteropServices";
 
     public static string TryGetPluginDefine(string key)

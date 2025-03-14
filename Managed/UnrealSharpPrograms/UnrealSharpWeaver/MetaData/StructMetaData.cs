@@ -1,4 +1,6 @@
 ﻿using Mono.Cecil;
+using UnrealSharpWeaver.Utilities;
+using PropertyUtilities = UnrealSharpWeaver.Utilities.PropertyUtilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -11,7 +13,7 @@ public class StructMetaData : TypeReferenceMetadata
     public readonly bool IsBlittableStruct;
     // End non-serialized
     
-    public StructMetaData(TypeDefinition structDefinition) : base(structDefinition, WeaverHelper.UStructAttribute)
+    public StructMetaData(TypeDefinition structDefinition) : base(structDefinition, TypeDefinitionUtilities.UStructAttribute)
     {
         if (structDefinition.Properties.Count > 0)
         {
@@ -28,7 +30,7 @@ public class StructMetaData : TypeReferenceMetadata
                 continue;
             }
             
-            if (!WeaverHelper.IsUProperty(field))
+            if (!field.IsUProperty())
             {
                 // Struct is not blittable if it has non-UProperty fields
                 IsBlittableStruct = false;
@@ -72,7 +74,7 @@ public class StructMetaData : TypeReferenceMetadata
             return;
         }
         
-        CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverHelper.BlittableTypeConstructor);
+        CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverImporter.BlittableTypeConstructor);
         structDefinition.CustomAttributes.Add(structFlagsAttribute);
         
         TryAddMetaData("BlueprintType", true);

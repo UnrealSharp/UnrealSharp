@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
-using UnrealSharp.Core;
 
-namespace UnrealSharp.Interop;
+namespace UnrealSharp.Core;
 
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct ManagedCallbacks
@@ -13,17 +12,16 @@ public unsafe struct ManagedCallbacks
     public delegate* unmanaged<IntPtr, char*, IntPtr> ScriptManagedBridge_LookupManagedType;
     public delegate* unmanaged<IntPtr, void> ScriptManagedBridge_Dispose;
 
-    public static ManagedCallbacks Create()
+    public static void Initialize(IntPtr outManagedCallbacks)
     {
-        return new ManagedCallbacks
+        *(ManagedCallbacks*)outManagedCallbacks = new ManagedCallbacks
         {
             ScriptManagerBridge_CreateManagedObject = &UnmanagedCallbacks.CreateNewManagedObject,
             ScriptManagerBridge_InvokeManagedMethod = &UnmanagedCallbacks.InvokeManagedMethod,
             ScriptManagerBridge_InvokeDelegate = &UnmanagedCallbacks.InvokeDelegate,
             ScriptManagerBridge_LookupManagedMethod = &UnmanagedCallbacks.LookupManagedMethod,
+            ScriptManagedBridge_LookupManagedType = &UnmanagedCallbacks.LookupManagedType,
             ScriptManagedBridge_Dispose = &UnmanagedCallbacks.Dispose,
         };
     }
-
-    internal static void Create(IntPtr outManagedCallbacks) => *(ManagedCallbacks*)outManagedCallbacks = Create();
 }

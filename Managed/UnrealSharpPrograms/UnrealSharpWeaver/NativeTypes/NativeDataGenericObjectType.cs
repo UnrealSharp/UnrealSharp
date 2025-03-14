@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -13,7 +14,7 @@ abstract class NativeDataGenericObjectType(TypeReference typeRef, TypeReference 
     {
         base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
         
-        if (!WeaverHelper.IsValidBaseForUObject(InnerType.TypeRef.Resolve()))
+        if (!InnerType.TypeRef.Resolve().IsUObject())
         {
             throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UClass if exposed through UProperty!");
         }

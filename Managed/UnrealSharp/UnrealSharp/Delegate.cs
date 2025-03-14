@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 

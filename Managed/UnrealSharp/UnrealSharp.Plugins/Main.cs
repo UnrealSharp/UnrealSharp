@@ -15,19 +15,17 @@ public static class Main
         AssemblyLoadContext.Default;
 
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks)
+    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
     {
         try
         {
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-            
-            PluginLoader.SharedAssemblies.Add(Assembly.GetExecutingAssembly());
-            PluginLoader.SharedAssemblies.Add(typeof(NativeBinds).Assembly);
 
             // Initialize plugin and managed callbacks
             *pluginCallbacks = PluginsCallbacks.Create();
             
             NativeBinds.InitializeNativeBinds(bindsCallbacks);
+            ManagedCallbacks.Initialize(managedCallbacks);
 
             LogUnrealSharpPlugins.Log("UnrealSharp successfully setup!");
             return NativeBool.True;

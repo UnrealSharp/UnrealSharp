@@ -8,7 +8,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.Engine;
 
-public partial class UMovementComponent : UnrealSharp.Engine.UActorComponent
+public partial class UMovementComponent : UActorComponent
 {
     /// <summary>
     /// Update ComponentVelocity of UpdatedComponent. This needs to be called by derived classes at the end of an update whenever Velocity has changed.	 */
@@ -28,7 +28,7 @@ public partial class UMovementComponent : UnrealSharp.Engine.UActorComponent
     /// <param name="hit">[In] HitResult of the attempted move that resulted in the impact triggering the slide. [Out] HitResult of last attempted move.</param>
     /// <param name="handleImpact">Whether to call HandleImpact on each hit.</param>
     /// <returns>The percentage of requested distance (Delta * Percent) actually applied (between 0 and 1). 0 if no movement occurred, non-zero if movement occurred.</returns>
-    public float SlideAlongSurface(UnrealSharp.CoreUObject.FVector delta, float time, UnrealSharp.CoreUObject.FVector normal, ref FHitResult hit, bool handleImpact = false)
+    public float SlideAlongSurface(FVector delta, float time, FVector normal, ref FHitResult hit, bool handleImpact = false)
     {
         return UCSMovementComponentExtensions.SlideAlongSurface(this, delta, time, normal, ref hit, handleImpact);
     }
@@ -40,7 +40,7 @@ public partial class UMovementComponent : UnrealSharp.Engine.UActorComponent
     /// <param name="time">Amount of move to apply (between 0 and 1).</param>
     /// <param name="normal">Normal opposed to movement. Not necessarily equal to Hit.Normal.</param>
     /// <param name="hit">HitResult of the move that resulted in the slide.</param>
-    public UnrealSharp.CoreUObject.FVector ComputeSlideVector(UnrealSharp.CoreUObject.FVector delta, float time, UnrealSharp.CoreUObject.FVector normal, FHitResult hit)
+    public FVector ComputeSlideVector(FVector delta, float time, FVector normal, FHitResult hit)
     {
         return UCSMovementComponentExtensions.ComputeSlideVector(this, delta, time, normal, hit);
     }
