@@ -82,6 +82,11 @@ public static class Program
         var noErrors = true;
         foreach (var assembly in assemblies)
         {
+            if (assembly.Name.Name == "ProjectGlue")
+            {
+                WeaverHelper.WeavedAssemblies.Add(assembly);
+                continue;
+            }
             try
             {
                 var weaverOutputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
