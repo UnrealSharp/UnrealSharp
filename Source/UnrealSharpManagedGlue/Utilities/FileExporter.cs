@@ -86,6 +86,22 @@ public static class FileExporter
         CleanFilesInDirectories(Program.ProjectGluePath, true);
     }
     
+    public static void CleanGeneratedFiles()
+    {
+        CleanDirectory(Program.EngineGluePath);
+        CleanDirectory(Program.ProjectGluePath);
+    }
+    
+    public static void CleanDirectory(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+        
+        Directory.Delete(path, true);
+    }
+    
     private static void CleanFilesInDirectories(string path, bool recursive = false)
     {
         if (!Directory.Exists(path))

@@ -214,7 +214,7 @@ void FCSProcHelper::GetUserProjectNames(TArray<FString>& UserProjectNames)
 		return;
 	}
 
-	for (const auto& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
+	for (const TSharedPtr<FJsonValue>& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
 	{
 		UserProjectNames.Add(ProjectName->AsString());
 	}

@@ -36,6 +36,14 @@ public static class CSharpExporter
             // The source for this generator hasn't changed, so we don't need to re-export the whole API.
             DeserializeModuleData();
         }
+        else
+        {
+            // Just in case the source has changed, we need to clean the old files
+            Console.WriteLine("Source has changed, cleaning old files...");
+            FileExporter.CleanGeneratedFiles();
+        }
+        
+        Console.WriteLine("Exporting C++ to C#...");
         
         #if UE_5_5_OR_LATER
         foreach (UhtModule module in Program.Factory.Session.Modules)

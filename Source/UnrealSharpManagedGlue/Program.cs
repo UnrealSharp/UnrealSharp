@@ -51,7 +51,6 @@ public static class Program
 	        Stopwatch stopwatch = new Stopwatch();
 	        stopwatch.Start();
 	        
-	        Console.WriteLine("Exporting C++ to C#...");
 	        CSharpExporter.StartExport();
 	        
 	        FileExporter.CleanOldExportedFiles();
