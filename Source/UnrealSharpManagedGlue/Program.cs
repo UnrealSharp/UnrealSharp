@@ -33,7 +33,6 @@ public static class Program
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
-		return;
 	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
 	    
