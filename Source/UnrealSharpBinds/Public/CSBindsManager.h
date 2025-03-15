@@ -1,24 +1,21 @@
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CSExportedFunction.h"
-#include "UObject/Object.h"
-#include "CSBindsManager.generated.h"
 
 #define UNREALSHARP_FUNCTION()
 
-UCLASS()
-class UCSBindsManager : public UObject
+class FCSBindsManager
 {
-	GENERATED_BODY()
 public:
+
+	FCSBindsManager() = default;
 	
-	static UCSBindsManager* Get();
+	static FCSBindsManager* Get();
 	
 	UNREALSHARPBINDS_API static void RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction);
 	UNREALSHARPBINDS_API static void* GetBoundFunction(TCHAR* OuterName, TCHAR* FunctionName, int32 ManagedFunctionSize);
 	
 private:
-	static UCSBindsManager* BindsManagerInstance;
+	static FCSBindsManager* BindsManagerInstance;
 	TMap<FName, TArray<FCSExportedFunction>> ExportedFunctionsMap;
 };

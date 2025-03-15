@@ -7,5 +7,5 @@ FCSExportedFunction::FCSExportedFunction(const FName& OuterName, const FName& Na
 	FunctionPointer(InFunctionPointer),
 	Size(InSize)
 {
-	UCSBindsManager::RegisterExportedFunction(OuterName, *this);
+	FCSBindsManager::RegisterExportedFunction(OuterName, *this);
 }

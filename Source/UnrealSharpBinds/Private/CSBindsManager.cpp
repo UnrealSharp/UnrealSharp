@@ -2,31 +2,30 @@
 
 #include "UnrealSharpBinds.h"
 
-UCSBindsManager* UCSBindsManager::BindsManagerInstance = nullptr;
+FCSBindsManager* FCSBindsManager::BindsManagerInstance = nullptr;
 
-UCSBindsManager* UCSBindsManager::Get()
+FCSBindsManager* FCSBindsManager::Get()
 {
 	if (!BindsManagerInstance)
 	{
-		constexpr EObjectFlags ObjectFlags = RF_Public | RF_MarkAsRootSet;
-		BindsManagerInstance = NewObject<UCSBindsManager>(GetTransientPackage(), TEXT("CSBindsManager"), ObjectFlags);
+		BindsManagerInstance = new FCSBindsManager();
 	}
 
 	return BindsManagerInstance;
 }
 
-void UCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction)
+void FCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction)
 {
-	UCSBindsManager* Instance = Get();
+	FCSBindsManager* Instance = Get();
 	TArray<FCSExportedFunction>& ExportedFunctions = Instance->ExportedFunctionsMap.FindOrAdd(ClassName);
 	ExportedFunctions.Add(ExportedFunction);
 }
 
-void* UCSBindsManager::GetBoundFunction(TCHAR* InOuterName, TCHAR* InFunctionName, int32 ManagedFunctionSize)
+void* FCSBindsManager::GetBoundFunction(TCHAR* InOuterName, TCHAR* InFunctionName, int32 ManagedFunctionSize)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSBindsManager::GetBoundFunction);
 	
-	UCSBindsManager* Instance = Get();
+	FCSBindsManager* Instance = Get();
 	FName ManagedOuterName = FName(InOuterName);
 	FName ManagedFunctionName = FName(InFunctionName);
 	

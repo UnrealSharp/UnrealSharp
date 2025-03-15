@@ -220,7 +220,7 @@ bool UCSManager::InitializeRuntime()
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
 		*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
-		(const void*)&UCSBindsManager::GetBoundFunction,
+		(const void*)&FCSBindsManager::GetBoundFunction,
 		&FCSManagedCallbacks::ManagedCallbacks))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
