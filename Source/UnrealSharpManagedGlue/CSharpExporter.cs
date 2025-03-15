@@ -40,7 +40,7 @@ public static class CSharpExporter
         {
             // Just in case the source has changed, we need to clean the old files
             Console.WriteLine("Source has changed, cleaning old files...");
-            FileExporter.CleanGeneratedFiles();
+            FileExporter.CleanModuleFolders();
         }
         
         Console.WriteLine("Exporting C++ to C#...");

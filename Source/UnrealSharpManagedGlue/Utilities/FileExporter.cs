@@ -86,20 +86,25 @@ public static class FileExporter
         CleanFilesInDirectories(Program.ProjectGluePath, true);
     }
     
-    public static void CleanGeneratedFiles()
+    public static void CleanModuleFolders()
     {
-        CleanDirectory(Program.EngineGluePath);
-        CleanDirectory(Program.ProjectGluePath);
+        CleanGeneratedFolder(Program.EngineGluePath);
+        CleanGeneratedFolder(Program.ProjectGluePath);
     }
     
-    public static void CleanDirectory(string path)
+    public static void CleanGeneratedFolder(string path)
     {
         if (!Directory.Exists(path))
         {
             return;
         }
         
-        Directory.Delete(path, true);
+        // Just remove the modules.
+        string[] directories = Directory.GetDirectories(path);
+        foreach (string directory in directories)
+        {
+            Directory.Delete(directory, true);
+        }
     }
     
     private static void CleanFilesInDirectories(string path, bool recursive = false)

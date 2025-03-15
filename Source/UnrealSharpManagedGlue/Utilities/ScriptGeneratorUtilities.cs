@@ -181,9 +181,9 @@ public static class ScriptGeneratorUtilities
     
     public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
-        List<UhtFunction> processedFunctions = new();
+        List<UhtFunction> exportedFunctions = new();
         
-        bool HasFunctionProcessed(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
+        bool HasFunction(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
         {
             foreach (UhtFunction function in functionsToCheck)
             {
@@ -204,7 +204,6 @@ public static class ScriptGeneratorUtilities
             
             if (function.IsAnyGetter() || function.IsAnySetter())
             {
-                processedFunctions.Add(function);
                 continue;
             }
 
@@ -221,8 +220,7 @@ public static class ScriptGeneratorUtilities
                     continue;
                 }
                 
-                if (structToConvertProperty.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine()
-                    || structToConvertProperty.ScriptStruct.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
+                if (structToConvertProperty.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
                 {
                     // For auto-casts to work, they both need to be in the same generated assembly. 
                     // Currently not supported, as we separate engine and project generated assemblies.
@@ -236,7 +234,7 @@ public static class ScriptGeneratorUtilities
                 functions.Add(function);
             }
 
-            processedFunctions.Add(function);
+            exportedFunctions.Add(function);
         }
 
         foreach (UhtClass declaration in classObj.GetInterfaces())
@@ -250,7 +248,7 @@ public static class ScriptGeneratorUtilities
             
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (HasFunctionProcessed(processedFunctions, function) || !CanExportFunction(function))
+                if (HasFunction(exportedFunctions, function) || !CanExportFunction(function))
                 {
                     continue;
                 }
@@ -263,8 +261,6 @@ public static class ScriptGeneratorUtilities
                 {
                     functions.Add(function);
                 }
-                
-                processedFunctions.Add(function);
             }
         }
     }

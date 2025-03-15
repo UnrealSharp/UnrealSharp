@@ -52,9 +52,9 @@ public static class Program
             outputDirInfo.Create();
         }
         
-        var resolver = GetAssemblyResolver();
-        var userAssemblies = LoadUserAssemblies(resolver);
-        var orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
+        DefaultAssemblyResolver resolver = GetAssemblyResolver();
+        List<AssemblyDefinition> userAssemblies = LoadUserAssemblies(resolver);
+        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
         
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
         return ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
@@ -80,16 +80,16 @@ public static class Program
     private static bool ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
     {
         var noErrors = true;
-        foreach (var assembly in assemblies)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.Name == "ProjectGlue")
+            if (assembly.Name.FullName == WeaverImporter.ProjectGlueAssembly.FullName)
             {
-                WeaverHelper.WeavedAssemblies.Add(assembly);
                 continue;
             }
+            
             try
             {
-                var weaverOutputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
+                string weaverOutputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, weaverOutputPath);
             }
             catch (WeaverProcessError error)
@@ -137,15 +137,7 @@ public static class Program
 
     private static DefaultAssemblyResolver GetAssemblyResolver()
     {
-        var resolver = new DefaultAssemblyResolver();
-
-        foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
-        {
-            var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
-            resolver.AddSearchDirectory(assemblyDirectory);
-        }
-
-        return resolver;
+        return WeaverImporter.AssemblyResolver;
     }
 
     private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
@@ -227,6 +219,7 @@ public static class Program
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
         
         WeaverImporter.ImportCommonTypes(assembly);
+        
         StartProcessingAssembly(assembly, ref assemblyMetaData);
         
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;

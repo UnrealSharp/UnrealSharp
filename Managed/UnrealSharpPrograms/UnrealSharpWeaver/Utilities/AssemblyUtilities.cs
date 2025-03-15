@@ -48,8 +48,14 @@ public static class AssemblyUtilities
     
     public static void ForEachAssembly(Func<AssemblyDefinition, bool> action)
     {
-        List<AssemblyDefinition> assemblies = [WeaverImporter.UnrealSharpAssembly, WeaverImporter.UnrealSharpCoreAssembly, WeaverImporter.UserAssembly];
-        foreach (var assembly in assemblies.Union(WeaverImporter.WeavedAssemblies))
+        List<AssemblyDefinition> assemblies = [WeaverImporter.UnrealSharpAssembly, 
+            WeaverImporter.UnrealSharpCoreAssembly, 
+            WeaverImporter.UserAssembly, 
+            WeaverImporter.ProjectGlueAssembly];
+        
+        assemblies.AddRange(WeaverImporter.WeavedAssemblies);
+        
+        foreach (AssemblyDefinition assembly in assemblies)
         {
             if (!action(assembly))
             {

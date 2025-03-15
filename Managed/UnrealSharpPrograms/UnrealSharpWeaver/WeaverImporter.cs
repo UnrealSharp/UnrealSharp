@@ -33,10 +33,11 @@ public static class WeaverImporter
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
     public static AssemblyDefinition UserAssembly;
-    public static ICollection<AssemblyDefinition> WeavedAssemblies = [];
+    public static readonly ICollection<AssemblyDefinition> WeavedAssemblies = [];
     
     public static AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
     public static AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
+    public static AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
     
     public static MethodReference NativeObjectGetter;
     public static TypeDefinition IntPtrType;
@@ -73,16 +74,16 @@ public static class WeaverImporter
     public static MethodReference GetAssemblyNameMethod;
     public static MethodReference GetTypeFromHandleMethod;
 
-    private static DefaultAssemblyResolver _assemblyResolver;
+    public static DefaultAssemblyResolver AssemblyResolver;
     
     public static void Initialize(DefaultAssemblyResolver assemblyResolver)
     {
-        _assemblyResolver = assemblyResolver;
+        AssemblyResolver = assemblyResolver;
     }
     
     static AssemblyDefinition FindAssembly(string assemblyName)
     {
-        return _assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, new Version(0, 0)));
+        return AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, new Version(0, 0)));
     }
 
     public static void ImportCommonTypes(AssemblyDefinition userAssembly)
