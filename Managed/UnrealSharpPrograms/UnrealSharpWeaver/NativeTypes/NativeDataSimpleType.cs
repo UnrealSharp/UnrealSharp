@@ -33,20 +33,21 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
 
         TypeReference[] typeParams = GetTypeParams();
         
-        AssemblyDefinition[] assemblies = [WeaverImporter.UnrealSharpAssembly, WeaverImporter.UnrealSharpCoreAssembly];
-        foreach (AssemblyDefinition assembly in assemblies)
+        AssemblyUtilities.ForEachAssembly(definition =>
         {
             TypeReference? foundMarshaller = isGenericMarshaller
-                ? assembly.FindGenericType("", marshallerName, typeParams, false) 
-                : GetTypeInAssembly(assembly);
+                ? definition.FindGenericType("", marshallerName, typeParams, false) 
+                : GetTypeInAssembly(definition);
             
             if (foundMarshaller is not null)
             {
                 MarshallerClass = foundMarshaller;
-                _assembly = assembly;
-                break;
+                _assembly = definition;
+                return false;
             }
-        }
+            
+            return true;
+        });
         
         if (MarshallerClass is null)
         {

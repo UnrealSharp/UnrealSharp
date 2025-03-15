@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using FScriptArrayExporter = UnrealSharp.Core.Interop.FScriptArrayExporter;
+using UnrealSharp.Core.Interop;
 
 namespace UnrealSharp.Core;
 
@@ -12,9 +12,16 @@ public struct UnmanagedArray
     
     public void Destroy()
     {
-        FScriptArrayExporter.CallDestroy(ref this);
-        Data = IntPtr.Zero;
-        ArrayNum = 0;
-        ArrayMax = 0;
+        unsafe
+        {
+            fixed (UnmanagedArray* ptr = &this)
+            {
+                FScriptArrayExporter.CallDestroy(ptr);
+            }
+            
+            Data = IntPtr.Zero;
+            ArrayNum = 0;
+            ArrayMax = 0;
+        }
     }
 }

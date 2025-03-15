@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
 #include "FScriptArrayExporter.generated.h"
 
 UCLASS()

@@ -1,5 +1,4 @@
 ﻿#include "CSClassInfo.h"
-
 #include "CSAssembly.h"
 
 FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
@@ -41,7 +40,14 @@ TSharedPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
 	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
 	{
 		// Lazy load the type handle in editor. Gets null during hot reload.
-		TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+		if (FCSGeneratedClassBuilder::IsManagedType(Field))
+		{
+			TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+		}
+		else
+		{
+			TypeHandle = OwningAssembly->TryFindTypeHandle(Field);
+		}
 	}
 #endif
 

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "UEnhancedInputComponentExporter.generated.h"
 
 enum class ETriggerEvent : uint8;
@@ -9,7 +9,7 @@ enum class ETriggerEvent : uint8;
 class UInputAction;
 class UEnhancedInputComponent;
 
-UCLASS(meta = (NotGeneratorValid))
+UCLASS()
 class UNREALSHARPCORE_API UUEnhancedInputComponentExporter : public UObject
 {
 	GENERATED_BODY()

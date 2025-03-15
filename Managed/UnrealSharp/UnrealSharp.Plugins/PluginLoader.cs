@@ -8,14 +8,16 @@ namespace UnrealSharp.Plugins;
 public static class PluginLoader
 {
     public static readonly List<Assembly> SharedAssemblies = [];
+    
     private static readonly List<Plugin> _loadedPlugins = [];
     public static IReadOnlyList<Plugin> LoadedPlugins => _loadedPlugins;
     
     static PluginLoader()
     {
-        SharedAssemblies.Add(Assembly.GetExecutingAssembly());
+        SharedAssemblies.Add(typeof(PluginLoader).Assembly);
         SharedAssemblies.Add(typeof(NativeBinds).Assembly);
         SharedAssemblies.Add(typeof(UnrealSharpObject).Assembly);
+        SharedAssemblies.Add(typeof(UnrealSharpModule).Assembly);
     }
 
     public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible)
@@ -54,9 +56,8 @@ public static class PluginLoader
                 LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
                 return loadedAssembly;
             }
-
-            LogUnrealSharpPlugins.LogError($"Failed to load plugin: {assemblyName}");
-            return null;
+            
+            throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
         }
         catch (Exception ex)
         {
@@ -66,11 +67,31 @@ public static class PluginLoader
         return null;
     }
 
-    public static bool UnloadPlugin(Plugin pluginToUnload)
+    public static bool UnloadPlugin(string assemblyPath)
     {
+        string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+
+        Plugin? pluginToUnload = null;
+        foreach (Plugin loadedPlugin in _loadedPlugins)
+        {
+            // Trying to resolve the weakptr to the assembly here will cause unload issues, so we compare names instead
+            if (!loadedPlugin.IsAssemblyAlive || loadedPlugin.AssemblyName.Name != assemblyName)
+            {
+                continue;
+            }
+            
+            pluginToUnload = loadedPlugin;
+            break;
+        }
+
+        if (pluginToUnload == null)
+        {
+            return false;
+        }
+        
         try
         {
-            LogUnrealSharpPlugins.Log($"Unloading plugin {pluginToUnload.AssemblyName}...");
+            LogUnrealSharpPlugins.Log($"Unloading plugin {assemblyName}...");
             pluginToUnload.Unload();
 
             int startTimeMs = Environment.TickCount;
@@ -91,17 +112,17 @@ public static class PluginLoader
                 if (!takingTooLong && elapsedTimeMs >= 200)
                 {
                     takingTooLong = true;
-                    LogUnrealSharpPlugins.LogError("Unloading assembly is taking longer than expected...");
+                    LogUnrealSharpPlugins.LogError($"Unloading {assemblyName} is taking longer than expected...");
                 }
                 else if (elapsedTimeMs >= 1000)
                 {
-                    throw new InvalidOperationException("Failed to unload assemblies. Possible causes: Strong GC handles, running threads, etc.");
+                    throw new InvalidOperationException($"Failed to unload {assemblyName}. Possible causes: Strong GC handles, running threads, etc.");
                 }
             }
 
             _loadedPlugins.Remove(pluginToUnload);
 
-            LogUnrealSharpPlugins.Log($"{pluginToUnload.AssemblyName} unloaded successfully!");
+            LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully!");
             return true;
         }
         catch (Exception e)

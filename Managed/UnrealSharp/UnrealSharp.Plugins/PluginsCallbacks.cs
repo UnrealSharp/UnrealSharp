@@ -8,7 +8,7 @@ namespace UnrealSharp.Plugins;
 public unsafe struct PluginsCallbacks
 {
     public delegate* unmanaged<char*, NativeBool, nint> LoadPlugin;
-    public delegate* unmanaged<IntPtr, NativeBool> UnloadPlugin;
+    public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
     
     [UnmanagedCallersOnly]
     private static nint ManagedLoadPlugin(char* assemblyPath, NativeBool isCollectible)
@@ -24,16 +24,10 @@ public unsafe struct PluginsCallbacks
     }
 
     [UnmanagedCallersOnly]
-    private static NativeBool ManagedUnloadPlugin(IntPtr pluginHandle)
+    private static NativeBool ManagedUnloadPlugin(char* assemblyPath)
     {
-        Plugin? loadedAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Plugin>(pluginHandle);
-        
-        if (loadedAssembly == null)
-        {
-            return NativeBool.False;
-        }
-        
-        return PluginLoader.UnloadPlugin(loadedAssembly).ToNativeBool();
+        string assemblyPathStr = new(assemblyPath);
+        return PluginLoader.UnloadPlugin(assemblyPathStr).ToNativeBool();
     }
 
     public static PluginsCallbacks Create()

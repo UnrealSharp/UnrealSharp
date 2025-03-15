@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "ULocalPlayerExporter.generated.h"
 
 UCLASS()

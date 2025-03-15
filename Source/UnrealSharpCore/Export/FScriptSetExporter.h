@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "FScriptSetExporter.generated.h"
 
 using FGetKeyHash = uint32(*)(const void*);
@@ -9,7 +9,7 @@ using FEqualityFn = bool(*)(const void*, const void*);
 using FConstructFn = void(*)(void*);
 using FDestructFn = void(*)(void*);
 
-UCLASS(meta=(NotGeneratorValid))
+UCLASS()
 class UNREALSHARPCORE_API UFScriptSetExporter : public UObject
 {
 	GENERATED_BODY()

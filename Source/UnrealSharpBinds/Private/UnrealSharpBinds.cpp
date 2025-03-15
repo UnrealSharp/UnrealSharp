@@ -1,17 +1,8 @@
 ﻿#include "UnrealSharpBinds.h"
 
-#include "CSBindsManager.h"
-
 #define LOCTEXT_NAMESPACE "FUnrealSharpBindsModule"
 
-FCSExportedFunction::FCSExportedFunction(const FName& OuterName, const FName& FunctionName, void* InFunctionPointer,
-	int32 InSize):
-	FunctionName(FunctionName),
-	FunctionPointer(InFunctionPointer),
-	Size(InSize)
-{
-	UCSBindsManager::RegisterExportedFunction(OuterName, *this);
-}
+DEFINE_LOG_CATEGORY(LogUnrealSharpBinds);
 
 void FUnrealSharpBindsModule::StartupModule()
 {

@@ -5,12 +5,6 @@ namespace UnrealSharp.Plugins;
 
 public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isCollectible) : AssemblyLoadContext(isCollectible)
 {
-    // make destructor
-    ~PluginLoadContext()
-    {
-        Console.WriteLine("PluginLoadContext is being collected");
-    }
-    
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         if (string.IsNullOrEmpty(assemblyName.Name))

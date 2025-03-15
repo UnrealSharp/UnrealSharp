@@ -112,31 +112,48 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                 sourceBuilder.AppendLine(")");
                 sourceBuilder.AppendLine("        {");
 
-                string delegateName = $"{classInfo.Name}.{delegateInfo.Name}";
+                string delegateName = delegateInfo.Name;
                 
                 sourceBuilder.AppendLine($"             if ({delegateName} == null)");
                 sourceBuilder.AppendLine("             {");
-                
-                sourceBuilder.AppendLine("                 int totalSize = 0;");
-                
-                void AppendSizeOf(TypeSyntax type)
-                {
-                    string typeFullName = model.GetTypeInfo(type).Type.ToDisplayString();
-                    sourceBuilder.AppendLine($"                 totalSize += sizeof({typeFullName});");
-                }
-                
-                foreach (var parameter in delegateInfo.Parameters)
-                {
-                    AppendSizeOf(parameter.Type);
-                }
 
-                if (delegateInfo.HasReturnValue)
+                if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
                 {
-                    AppendSizeOf(returnValueType.Type);
+                    sourceBuilder.AppendLine("                 int totalSize = 0;");
                 }
+                else
+                {
+                    sourceBuilder.Append("                 int totalSize = ");
+
+                    void AppendSizeOf(TypeSyntax type)
+                    {
+                        string typeFullName = model.GetTypeInfo(type).Type.ToDisplayString();
+                        sourceBuilder.Append($"sizeof({typeFullName})");
+                    }
+                    
+                    for (int i = 0; i < delegateInfo.Parameters.Count; i++)
+                    {
+                        DelegateParameterInfo parameter = delegateInfo.Parameters[i];
+                        AppendSizeOf(parameter.Type);
+
+                        if (i != delegateInfo.Parameters.Count - 1)
+                        {
+                            sourceBuilder.Append(" + ");
+                        }
+                    }
+                    
+                    if (delegateInfo.HasReturnValue)
+                    {
+                        sourceBuilder.Append(" + ");
+                        AppendSizeOf(returnValueType.Type);
+                    }
+                    
+                    sourceBuilder.AppendLine(";");
+                }
+                
                 
                 sourceBuilder.AppendLine($"                 IntPtr funcPtr = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", totalSize);");
-                sourceBuilder.AppendLine($"                 {delegateName} = (delegate* unmanaged<");
+                sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
                 sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
                 {
                     string prefix = "";
@@ -152,14 +169,15 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
 
                     return prefix + model.GetTypeInfo(p.Type).Type.ToDisplayString();
                 })));
-                
+
                 if (delegateInfo.Parameters.Count > 0)
                 {
                     sourceBuilder.Append(", ");
                 }
-                
+
                 sourceBuilder.Append(model.GetTypeInfo(returnValueType.Type).Type.ToDisplayString());
-                sourceBuilder.AppendLine(">)funcPtr;");
+                sourceBuilder.Append(">)funcPtr;");
+                sourceBuilder.AppendLine();
                 
                 sourceBuilder.AppendLine("             }");
                 sourceBuilder.AppendLine();

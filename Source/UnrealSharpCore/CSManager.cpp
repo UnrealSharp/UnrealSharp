@@ -220,7 +220,7 @@ bool UCSManager::InitializeRuntime()
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
 		*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
-		(const void*)&UCSBindsManager::GetBoundNativeFunction,
+		(const void*)&UCSBindsManager::GetBoundFunction,
 		&FCSManagedCallbacks::ManagedCallbacks))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
@@ -444,6 +444,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetOwningAssembly();
 	}
+
+	Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
 
 	// Slow path for native classes.
 	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)

@@ -19,16 +19,16 @@ public static class UnmanagedCallbacks
             
             GCHandle handle = GCHandle.FromIntPtr(typeHandlePtr);
             
-            if (handle.Target is not Type type)
+            if (!handle.IsAllocated || handle.Target is not Type type)
             {
-                throw new ArgumentNullException(nameof(typeHandlePtr));
+                throw new Exception("Invalid type handle");
             }
 
             return UnrealSharpObject.Create(type, nativeObject);
         }
         catch (Exception ex)
         {
-            LogUnrealSharpCore.Log($"Failed to create new managed object: {ex.Message}");
+            LogUnrealSharpCore.LogError($"Failed to create new managed object: {ex.Message}");
         }
 
         return default;

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "FWorldDelegatesExporter.generated.h"
 
 using FWorldCleanupEventDelegate = void(*)(UWorld*, bool, bool);

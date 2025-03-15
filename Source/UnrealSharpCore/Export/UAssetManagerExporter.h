@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "UAssetManagerExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
+UCLASS()
 class UNREALSHARPCORE_API UUAssetManagerExporter : public UObject
 {
 	GENERATED_BODY()

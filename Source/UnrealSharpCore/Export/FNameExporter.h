@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "FNameExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
+UCLASS()
 class UNREALSHARPCORE_API UFNameExporter : public UObject
 {
 	GENERATED_BODY()

@@ -13,7 +13,7 @@
 // - Have the meta=(ExtensionMethod) attribute
 // - The first parameter must be a reference to the type that the extension method is extending
 // - In BlueprintFunctionLibrary classes
-UCLASS(meta = (NotGeneratorValid))
+UCLASS()
 class UCSTestExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

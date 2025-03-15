@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "UStructExporter.generated.h"
 
 UCLASS()
@@ -11,6 +11,6 @@ class UNREALSHARPCORE_API UUStructExporter : public UObject
 
 public:
 
-	UNREALSHARP_FUNCTION()
+
 	static void InitializeStruct(UStruct* Struct, void* Data);
 };

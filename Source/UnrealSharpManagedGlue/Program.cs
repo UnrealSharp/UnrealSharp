@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using EpicGames.Core;
-using EpicGames.UHT.Parsers;
 using EpicGames.UHT.Tables;
-using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
-using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
@@ -38,6 +33,7 @@ public static class Program
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
 	{
+		return;
 	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
 	    
@@ -55,7 +51,7 @@ public static class Program
 	    {
 	        Stopwatch stopwatch = new Stopwatch();
 	        stopwatch.Start();
-
+	        
 	        Console.WriteLine("Exporting C++ to C#...");
 	        CSharpExporter.StartExport();
 	        

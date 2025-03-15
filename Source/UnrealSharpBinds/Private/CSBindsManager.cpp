@@ -1,5 +1,7 @@
 #include "CSBindsManager.h"
 
+#include "UnrealSharpBinds.h"
+
 UCSBindsManager* UCSBindsManager::BindsManagerInstance = nullptr;
 
 UCSBindsManager* UCSBindsManager::Get()
@@ -20,8 +22,10 @@ void UCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCS
 	ExportedFunctions.Add(ExportedFunction);
 }
 
-void* UCSBindsManager::GetBoundNativeFunction(TCHAR* InOuterName, TCHAR* InFunctionName, int32 ManagedFunctionSize)
+void* UCSBindsManager::GetBoundFunction(TCHAR* InOuterName, TCHAR* InFunctionName, int32 ManagedFunctionSize)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSBindsManager::GetBoundFunction);
+	
 	UCSBindsManager* Instance = Get();
 	FName ManagedOuterName = FName(InOuterName);
 	FName ManagedFunctionName = FName(InFunctionName);
@@ -30,26 +34,26 @@ void* UCSBindsManager::GetBoundNativeFunction(TCHAR* InOuterName, TCHAR* InFunct
 	
 	if (!ExportedFunctions)
 	{
-		UE_LOG(LogTemp, Error, TEXT("No exported functions found for %s"), InOuterName);
+		UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: No exported functions found for %s"), InOuterName);
 		return nullptr;
 	}
 
 	for (FCSExportedFunction& NativeFunction : *ExportedFunctions)
 	{
-		if (NativeFunction.FunctionName != ManagedFunctionName)
+		if (NativeFunction.Name != ManagedFunctionName)
 		{
 			continue;
 		}
 			
 		if (NativeFunction.Size != ManagedFunctionSize)
 		{
-			UE_LOG(LogTemp, Fatal, TEXT("Function size mismatch for %s::%s"), InOuterName, InFunctionName);
+			UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: Function size mismatch for %s::%s."), InOuterName, InFunctionName);
 			return nullptr;
 		}
 			
 		return NativeFunction.FunctionPointer;
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("No function found for %s.%s"), InOuterName, InFunctionName);
+	UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: No function found for %s.%s"), InOuterName, InFunctionName);
 	return nullptr;
 }

@@ -1,6 +1,6 @@
 using UnrealSharp.Log;
 
-namespace UnrealSharp.Logging;
+namespace UnrealSharp;
 
 [CustomLog]
 public static partial class LogUnrealSharp;

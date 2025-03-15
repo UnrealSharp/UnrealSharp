@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UnrealSharpBinds.h"
+#include "CSBindsManager.h"
 #include "FScriptMapHelperExporter.generated.h"
 
-UCLASS(meta=(NotGeneratorValid))
+UCLASS()
 class UNREALSHARPCORE_API UFScriptMapHelperExporter : public UObject
 {
 	GENERATED_BODY()

@@ -103,7 +103,7 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 
 	// Handles to all active UObjects that has a C# counterpart.
-	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
+	TMap<int32, FGCHandle> ObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;

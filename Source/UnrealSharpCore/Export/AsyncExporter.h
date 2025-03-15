@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "CSBindsManager.h"
 #include "Async/Async.h"
 #include "CSManagedGCHandle.h"
-#include "UnrealSharpBinds.h"
 #include "AsyncExporter.generated.h"
 
 UCLASS()

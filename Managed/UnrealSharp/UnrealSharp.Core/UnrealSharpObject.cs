@@ -9,17 +9,25 @@ namespace UnrealSharp.Core;
 /// </summary>
 public class UnrealSharpObject : IDisposable
 {
-    internal static IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
+    internal static unsafe IntPtr Create(Type typeToCreate, IntPtr nativeObjectPtr)
     {
-        unsafe
+        const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        ConstructorInfo? foundDefaultCtor = typeToCreate.GetConstructor(bindingFlags, Type.EmptyTypes);
+            
+        if (foundDefaultCtor == null)
         {
-            UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
-            const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-            var foundConstructor = (delegate*<object, void>) typeToCreate.GetConstructor(bindingFlags, Type.EmptyTypes)!.MethodHandle.GetFunctionPointer();
-            createdObject.NativeObject = nativeObjectPtr;
-            foundConstructor(createdObject);
-            return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject));
+            LogUnrealSharpCore.LogError("Failed to find default constructor for type: " + typeToCreate.FullName);
+            return IntPtr.Zero;
         }
+            
+        delegate*<object, void> foundConstructor = (delegate*<object, void>) foundDefaultCtor.MethodHandle.GetFunctionPointer();
+            
+        UnrealSharpObject createdObject = (UnrealSharpObject) RuntimeHelpers.GetUninitializedObject(typeToCreate);
+        createdObject.NativeObject = nativeObjectPtr;
+            
+        foundConstructor(createdObject);
+            
+        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject));
     }
     
     /// <summary>

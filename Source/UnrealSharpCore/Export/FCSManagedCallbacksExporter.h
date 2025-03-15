@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSBindsManager.h"
 #include "CSManagedCallbacksCache.h"
-#include "UnrealSharpBinds.h"
 #include "UObject/Object.h"
 #include "FCSManagedCallbacksExporter.generated.h"
 

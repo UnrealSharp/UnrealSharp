@@ -173,7 +173,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 	
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths, bDirtyGlue);
+	bDirtyGlue = false;
 	
 	if (ProjectPaths.IsEmpty())
 	{
@@ -717,6 +718,16 @@ void FUnrealSharpEditorModule::RegisterCollisionProfile()
 void FUnrealSharpEditorModule::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
 {
 	const FString Path = FPaths::Combine(FCSProcHelper::GetProjectGlueFolderPath(), FileName + Suffix);
+
+	FString CurrentRuntimeGlue;
+	FFileHelper::LoadFileToString(CurrentRuntimeGlue, *Path);
+	
+	if (CurrentRuntimeGlue == ScriptBuilder.ToString())
+	{
+		// No changes, return
+		return;
+	}
+	
 	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
 	{
 		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s"), *FileName);
