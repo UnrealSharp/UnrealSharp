@@ -62,7 +62,7 @@ void FUnrealSharpEditorModule::StartupModule()
 		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
 		Handle);
 	
-	Manager = &UCSManager::Get();
+	Manager = &UCSManager::GetOrCreate();
 	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
 	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
 	Manager->OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
@@ -74,7 +74,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
 
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetUserProjectNames(ProjectPaths);
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 
 	if (ProjectPaths.IsEmpty())
 	{
@@ -89,10 +89,16 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterCommands();
 	RegisterMenu();
 	RegisterGameplayTags();
-	RegisterAssetTypes();
 	RegisterCollisionProfile();
-	
-	UCSManager::Get().LoadPluginAssemblyByName("UnrealSharp.Editor.dll", false);
+
+	if (UAssetManager::IsInitialized())
+	{
+		TryRegisterAssetTypes();
+	}
+	else
+	{
+		FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpEditorModule::OnModulesChanged);
+	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -702,10 +708,16 @@ void FUnrealSharpEditorModule::RegisterGameplayTags()
 	ProcessGameplayTags();
 }
 
-void FUnrealSharpEditorModule::RegisterAssetTypes()
+void FUnrealSharpEditorModule::TryRegisterAssetTypes()
 {
+	if (bHasRegisteredAssetTypes || !UAssetManager::IsInitialized())
+	{
+		return;
+	}
+	
 	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
 		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnCompletedInitialScan));
+	bHasRegisteredAssetTypes = true;
 }
 
 void FUnrealSharpEditorModule::RegisterCollisionProfile()
@@ -1140,6 +1152,16 @@ bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
 	}
 
 	return false;
+}
+
+void FUnrealSharpEditorModule::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
+{
+	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
+	{
+		return;
+	}
+	
+	TryRegisterAssetTypes();
 }
 
 void FUnrealSharpEditorModule::RefreshAffectedBlueprints()

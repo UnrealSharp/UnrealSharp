@@ -92,6 +92,7 @@ public static class FileExporter
         CleanGeneratedFolder(Program.ProjectGluePath);
     }
     
+    
     public static void CleanGeneratedFolder(string path)
     {
         if (!Directory.Exists(path))
@@ -99,10 +100,17 @@ public static class FileExporter
             return;
         }
         
-        // Just remove the modules.
+        // TODO: Move runtime glue to a separate csproj. So we can fully clean the ProjectGlue folder.
+        // Below is a temporary solution to not delete runtime glue that can cause compilation errors on editor startup,
+        // and avoid having to restore nuget packages.
         string[] directories = Directory.GetDirectories(path);
         foreach (string directory in directories)
         {
+            if (IsIntermediateDirectory(directory))
+            {
+                continue;
+            }
+            
             Directory.Delete(directory, true);
         }
     }
@@ -143,5 +151,11 @@ public static class FileExporter
                 Directory.Delete(directory, recursive);
             }
         }
+    }
+    
+    static bool IsIntermediateDirectory(string path)
+    {
+        string directoryName = Path.GetFileName(path);
+        return directoryName is "obj" or "bin" or "Properties";
     }
 }

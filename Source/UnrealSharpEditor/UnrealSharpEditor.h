@@ -87,7 +87,7 @@ private:
     void RegisterCommands();
     void RegisterMenu();
     void RegisterGameplayTags();
-    void RegisterAssetTypes();
+    void TryRegisterAssetTypes();
     void RegisterCollisionProfile();
 
     void OnAssetSearchRootAdded(const FString& RootPath);
@@ -119,6 +119,8 @@ private:
 
     bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
     bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
+
+    void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
     
     void RefreshAffectedBlueprints();
 
@@ -127,6 +129,8 @@ private:
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
     bool bHasQueuedHotReload = false;
+
+    bool bHasRegisteredAssetTypes = false;
 
     FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
     

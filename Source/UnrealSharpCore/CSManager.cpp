@@ -147,7 +147,7 @@ void UCSManager::Initialize()
 	}
 	
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetUserProjectNames(ProjectPaths);
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 
 	// Compile the C# project for any changes done outside the editor.
 	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))

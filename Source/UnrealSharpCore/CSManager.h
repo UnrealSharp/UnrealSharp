@@ -6,6 +6,7 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+class FUnrealSharpCoreModule;
 class UFunctionsExporter;
 struct FCSNamespace;
 struct FCSTypeReferenceMetaData;
@@ -37,9 +38,6 @@ public:
 	
 	static UCSManager& GetOrCreate();
 	static UCSManager& Get();
-	
-	static void Shutdown();
-	void Initialize();
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
@@ -89,6 +87,11 @@ public:
 	bool IsManagedField(const UObject* Field) const;
 
 private:
+
+	friend FUnrealSharpCoreModule;
+
+	void Initialize();
+	static void Shutdown();
 
 	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
 	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
