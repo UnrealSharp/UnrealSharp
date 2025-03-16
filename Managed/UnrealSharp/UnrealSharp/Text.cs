@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -44,7 +46,7 @@ public struct FText
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        return obj.GetType() == this.GetType() && Equals((FText)obj);
+        return obj.GetType() == GetType() && Equals((FText)obj);
     }
 
     /// <inheritdoc />

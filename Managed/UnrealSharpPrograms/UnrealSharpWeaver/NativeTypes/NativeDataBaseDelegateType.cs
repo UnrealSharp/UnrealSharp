@@ -1,5 +1,6 @@
 using Mono.Cecil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -13,7 +14,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
 
     protected override TypeReference[] GetTypeParams()
     {
-        return [WeaverHelper.ImportType(delegateType)];
+        return [delegateType.ImportType()];
     }
 
     public NativeDataBaseDelegateType(TypeReference typeRef, string marshallerName, PropertyType propertyType) 
@@ -61,7 +62,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
     protected TypeReference GetWrapperType(TypeReference delegateType)
     {
         TypeDefinition delegateTypeDefinition = delegateType.Resolve();
-        return WeaverHelper.FindTypeInAssembly(delegateTypeDefinition.Module.Assembly, $"U{delegateType.Name}", delegateType.Namespace)!;
+        return delegateTypeDefinition.Module.Assembly.FindType($"U{delegateType.Name}", delegateType.Namespace)!;
     }
     
 }

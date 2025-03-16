@@ -1,23 +1,20 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FQuatExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFQuatExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFQuatExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void ToQuaternion(FQuat& Quaternion, const FRotator& Rotator);
+
+	UNREALSHARP_FUNCTION()
 	static void ToRotator(FRotator& Rotator, const FQuat& Quaternion);
 	
 };

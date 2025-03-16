@@ -1,28 +1,29 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FWeakObjectPtrExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFWeakObjectPtrExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFWeakObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void SetObject(TWeakObjectPtr<UObject>& WeakObject, UObject* Object);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetObject(TWeakObjectPtr<UObject> WeakObjectPtr);
+
+	UNREALSHARP_FUNCTION()
 	static bool IsValid(TWeakObjectPtr<UObject> WeakObjectPtr);
+
+	UNREALSHARP_FUNCTION()
 	static bool IsStale(TWeakObjectPtr<UObject> WeakObjectPtr);
+
+	UNREALSHARP_FUNCTION()
 	static bool NativeEquals(TWeakObjectPtr<UObject> A, TWeakObjectPtr<UObject> B);
 };
 

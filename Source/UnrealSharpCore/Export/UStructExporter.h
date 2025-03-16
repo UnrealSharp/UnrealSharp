@@ -1,22 +1,14 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "UStructExporter.generated.h"
 
-UCLASS(meta=(NotGeneratorValid))
-class UNREALSHARPCORE_API UUStructExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUStructExporter : public UObject
 {
 	GENERATED_BODY()
-
 public:
-
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-	
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void InitializeStruct(UStruct* Struct, void* Data);
-	
 };

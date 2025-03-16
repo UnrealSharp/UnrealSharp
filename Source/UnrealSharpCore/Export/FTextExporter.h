@@ -1,25 +1,23 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FTextExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFTextExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFTextExporter : public UObject
 {
 	GENERATED_BODY()
-
 public:
-	
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static const TCHAR* ToString(FText* Text);
-	static void FromString(FText* Text, const char* String);
-	static void FromName(FText* Text, FName Name);
-	static void CreateEmptyText(FText* Text);
 	
+	UNREALSHARP_FUNCTION()
+	static void FromString(FText* Text, const char* String);
+
+	UNREALSHARP_FUNCTION()
+	static void FromName(FText* Text, FName Name);
+	
+	UNREALSHARP_FUNCTION()
+	static void CreateEmptyText(FText* Text);
 };

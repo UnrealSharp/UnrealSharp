@@ -128,7 +128,10 @@ public class GenerateProject : BuildToolAction
             }
             
             AppendProperties(csprojDocument);
+            
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
+            AppendReference(csprojDocument, newItemGroup, "UnrealSharp.Core", GetPathToBinaries());
+            
             AppendSourceGeneratorReference(csprojDocument, newItemGroup);
 
             if (!Program.HasArgument("SkipIncludeProjectGlue"))

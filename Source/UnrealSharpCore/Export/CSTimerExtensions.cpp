@@ -1,10 +1,5 @@
 #include "CSTimerExtensions.h"
 
-void UCSTimerExtensions::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(SetTimerForNextTick)
-}
-
 void UCSTimerExtensions::SetTimerForNextTick(FNextTickEvent NextTickEvent)
 {
 #if WITH_EDITOR

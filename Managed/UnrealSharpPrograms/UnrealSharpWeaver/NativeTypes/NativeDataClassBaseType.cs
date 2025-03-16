@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -7,6 +8,6 @@ class NativeDataClassBaseType(TypeReference typeRef, TypeReference innerTypeRefe
 {
     protected override TypeReference[] GetTypeParams()
     {
-        return [WeaverHelper.ImportType(InnerType.TypeRef)];
+        return [InnerType.TypeRef.ImportType()];
     }
 };

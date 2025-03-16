@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Interop.Properties;
+﻿using UnrealSharp.Core.Marshallers;
+using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -20,11 +21,11 @@ public class BaseMetaData
     {
         MemberDefinition = member.Resolve();
         SourceName = MemberDefinition.Name;
-        Name = WeaverHelper.GetEngineName(MemberDefinition);
+        Name = MemberDefinition.GetEngineName();
 
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        BaseAttribute = WeaverHelper.FindAttribute(MemberDefinition.CustomAttributes, AttributeName);
+        BaseAttribute = MemberDefinition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpNamespace, AttributeName);
 
         AddMetaData();          // Add any [UMetaData("key", "value")] attributes (general metadata attribute to allow support of any engine tag)
         AddMetaTagsNamespace(); // Add all named attributes in the UnrealSharp.Attributes.MetaTags namespace
@@ -94,7 +95,7 @@ public class BaseMetaData
 
     public static ulong GetFlags(IEnumerable<CustomAttribute> customAttributes, string flagsAttributeName)
     {
-        CustomAttribute? flagsAttribute = WeaverHelper.FindAttributeByType(customAttributes, WeaverHelper.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
+        CustomAttribute? flagsAttribute = customAttributes.FindAttributeByType(WeaverImporter.UnrealSharpNamespace + ".Attributes", flagsAttributeName);
         return flagsAttribute == null ? 0 : GetFlags(flagsAttribute);
     }
 
@@ -128,7 +129,7 @@ public class BaseMetaData
             return 0;
         }
 
-        PropertyDefinition? foundProperty = WeaverHelper.FindPropertyByName(attributeType.Properties, namedArg.Name);
+        PropertyDefinition? foundProperty = attributeType.FindPropertyByName(namedArg.Name);
 
         if (foundProperty == null)
         {
@@ -155,7 +156,7 @@ public class BaseMetaData
                 continue;
             }
 
-            CustomAttribute? flagsMap = WeaverHelper.FindAttribute(attributeClass.CustomAttributes, flagsAttributeName);
+            CustomAttribute? flagsMap = attributeClass.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, flagsAttributeName);
 
             if (flagsMap == null)
             {
@@ -202,7 +203,7 @@ public class BaseMetaData
     private void AddMetaData()
     {
         //[UMetaData("key","value")]
-        CustomAttribute?[] metaDataAttributes = WeaverHelper.FindMetaDataAttributes(MemberDefinition.CustomAttributes);
+        CustomAttribute?[] metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributes();
         foreach (var attrib in metaDataAttributes)
         {
             switch (attrib.ConstructorArguments.Count)
@@ -222,7 +223,7 @@ public class BaseMetaData
     private void AddMetaTagsNamespace() 
     {
         //Specific MetaData Tags - all attributes in the UnrealSharp.Attributes.MetaTags Namespace
-        CustomAttribute[] metaDataAttributes = WeaverHelper.FindMetaDataAttributesByNamespace(MemberDefinition.CustomAttributes);
+        CustomAttribute[] metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributesByNamespace();
         foreach (var attrib in metaDataAttributes)
         {
             var key = attrib.AttributeType.Name.Replace("Attribute", "");
@@ -244,13 +245,13 @@ public class BaseMetaData
             return;
         }
 
-        CustomAttributeArgument? displayNameArgument = WeaverHelper.FindAttributeField(BaseAttribute, "DisplayName");
+        CustomAttributeArgument? displayNameArgument = BaseAttribute.FindAttributeField("DisplayName");
         if (displayNameArgument.HasValue)
         {
             TryAddMetaData("DisplayName", (string) displayNameArgument.Value.Value);
         }
 
-        CustomAttributeArgument? categoryArgument = WeaverHelper.FindAttributeField(BaseAttribute, "Category");
+        CustomAttributeArgument? categoryArgument = BaseAttribute.FindAttributeField("Category");
         if (categoryArgument.HasValue)
         {
             TryAddMetaData("Category", (string) categoryArgument.Value.Value);

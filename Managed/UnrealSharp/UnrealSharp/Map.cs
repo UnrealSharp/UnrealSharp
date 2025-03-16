@@ -1,4 +1,6 @@
 ﻿using UnrealSharp.Attributes;
+using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core.Marshallers;
 
 namespace UnrealSharp;
 

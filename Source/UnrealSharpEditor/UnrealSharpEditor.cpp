@@ -62,7 +62,7 @@ void FUnrealSharpEditorModule::StartupModule()
 		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
 		Handle);
 	
-	Manager = &UCSManager::Get();
+	Manager = &UCSManager::GetOrCreate();
 	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
 	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
 	Manager->OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
@@ -89,10 +89,16 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterCommands();
 	RegisterMenu();
 	RegisterGameplayTags();
-	RegisterAssetTypes();
 	RegisterCollisionProfile();
-	
-	UCSManager::Get().LoadPluginAssemblyByName("UnrealSharp.Editor.dll", false);
+
+	if (UAssetManager::IsInitialized())
+	{
+		TryRegisterAssetTypes();
+	}
+	else
+	{
+		FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpEditorModule::OnModulesChanged);
+	}
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -173,7 +179,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 	
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths, bDirtyGlue);
+	bDirtyGlue = false;
 	
 	if (ProjectPaths.IsEmpty())
 	{
@@ -442,7 +449,7 @@ void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorCom
 }
 
 
-void FUnrealSharpEditorModule::OnRefreshRuntimeGlue() const
+void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
 {
 	ProcessAssetIds();
 	ProcessGameplayTags();
@@ -696,46 +703,64 @@ void FUnrealSharpEditorModule::RegisterMenu()
 
 void FUnrealSharpEditorModule::RegisterGameplayTags()
 {
-	IGameplayTagsModule::OnTagSettingsChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
-	IGameplayTagsModule::OnGameplayTagTreeChanged.AddStatic(&FUnrealSharpEditorModule::ProcessGameplayTags);
+	IGameplayTagsModule::OnTagSettingsChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
+	IGameplayTagsModule::OnGameplayTagTreeChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
 	ProcessGameplayTags();
 }
 
-void FUnrealSharpEditorModule::RegisterAssetTypes()
+void FUnrealSharpEditorModule::TryRegisterAssetTypes()
 {
+	if (bHasRegisteredAssetTypes || !UAssetManager::IsInitialized())
+	{
+		return;
+	}
+	
 	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
-		FSimpleMulticastDelegate::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnCompletedInitialScan));
+		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnCompletedInitialScan));
+	bHasRegisteredAssetTypes = true;
 }
 
 void FUnrealSharpEditorModule::RegisterCollisionProfile()
 {
 	UCollisionProfile* CollisionProfile = UCollisionProfile::Get();
-	CollisionProfile->OnLoadProfileConfig.AddStatic(&FUnrealSharpEditorModule::OnCollisionProfileLoaded);
+	CollisionProfile->OnLoadProfileConfig.AddRaw(this, &FUnrealSharpEditorModule::OnCollisionProfileLoaded);
 	ProcessTraceTypeQuery();
 }
 
 void FUnrealSharpEditorModule::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
 {
 	const FString Path = FPaths::Combine(FCSProcHelper::GetProjectGlueFolderPath(), FileName + Suffix);
+
+	FString CurrentRuntimeGlue;
+	FFileHelper::LoadFileToString(CurrentRuntimeGlue, *Path);
+	
+	if (CurrentRuntimeGlue == ScriptBuilder.ToString())
+	{
+		// No changes, return
+		return;
+	}
+	
 	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
 	{
 		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s"), *FileName);
 	}
+
+	bDirtyGlue = true;
 }
 
 void FUnrealSharpEditorModule::OnCompletedInitialScan()
 {
 	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
-	AssetRegistry.OnAssetRemoved().AddStatic(&FUnrealSharpEditorModule::OnAssetRemoved);
-	AssetRegistry.OnAssetRenamed().AddStatic(&FUnrealSharpEditorModule::OnAssetRenamed);
-	AssetRegistry.OnInMemoryAssetCreated().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetCreated);
-	AssetRegistry.OnInMemoryAssetDeleted().AddStatic(&FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
+	AssetRegistry.OnAssetRemoved().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRemoved);
+	AssetRegistry.OnAssetRenamed().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRenamed);
+	AssetRegistry.OnInMemoryAssetCreated().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetCreated);
+	AssetRegistry.OnInMemoryAssetDeleted().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
 	
 	UAssetManager::Get().Register_OnAddedAssetSearchRoot(
-		FOnAddedAssetSearchRoot::FDelegate::CreateStatic(&FUnrealSharpEditorModule::OnAssetSearchRootAdded));
+		FOnAddedAssetSearchRoot::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnAssetSearchRootAdded));
 
 	UAssetManagerSettings* Settings = UAssetManagerSettings::StaticClass()->GetDefaultObject<UAssetManagerSettings>();
-	Settings->OnSettingChanged().AddStatic(&FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
+	Settings->OnSettingChanged().AddRaw(this, &FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
 	
 	ProcessAssetIds();
 }
@@ -805,13 +830,13 @@ void FUnrealSharpEditorModule::OnInMemoryAssetDeleted(UObject* Object)
 
 void FUnrealSharpEditorModule::OnCollisionProfileLoaded(UCollisionProfile* Profile)
 {
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessTraceTypeQuery));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessTraceTypeQuery));
 }
 
 void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent)
 {
 	WaitUpdateAssetTypes();
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetTypes));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetTypes));
 }
 
 void FUnrealSharpEditorModule::OnPIEEnded(bool IsSimulating)
@@ -852,7 +877,7 @@ bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMa
 
 void FUnrealSharpEditorModule::WaitUpdateAssetTypes()
 {
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateStatic(&FUnrealSharpEditorModule::ProcessAssetIds));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetIds));
 }
 
 void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
@@ -863,13 +888,13 @@ void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
 void FUnrealSharpEditorModule::ProcessGameplayTags()
 {
 	TArray<const FGameplayTagSource*> Sources;
-	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
+	UGameplayTagsManager& GameplayTagsManager = UGameplayTagsManager::Get();
 
 	const int32 NumValues = StaticEnum<EGameplayTagSourceType>()->NumEnums();
 	for (int32 Index = 0; Index < NumValues; Index++)
 	{
 		EGameplayTagSourceType SourceType = static_cast<EGameplayTagSourceType>(Index);
-		Manager.FindTagSourcesWithType(SourceType, Sources);
+		GameplayTagsManager.FindTagSourcesWithType(SourceType, Sources);
 	}
 
 	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
@@ -1127,6 +1152,16 @@ bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
 	}
 
 	return false;
+}
+
+void FUnrealSharpEditorModule::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
+{
+	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
+	{
+		return;
+	}
+	
+	TryRegisterAssetTypes();
 }
 
 void FUnrealSharpEditorModule::RefreshAffectedBlueprints()

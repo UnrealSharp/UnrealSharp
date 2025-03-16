@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -6,7 +7,7 @@ public class EnumMetaData : TypeReferenceMetadata
 {
     public List<string> Items { get; set; }
 
-    public EnumMetaData(TypeDefinition enumType) : base(enumType, WeaverHelper.UEnumAttribute)
+    public EnumMetaData(TypeDefinition enumType) : base(enumType, TypeDefinitionUtilities.UEnumAttribute)
     {
         Items = new List<string>();
         

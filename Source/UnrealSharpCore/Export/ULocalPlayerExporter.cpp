@@ -1,11 +1,6 @@
 ﻿#include "ULocalPlayerExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 
-void UULocalPlayerExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetLocalPlayerSubsystem)
-}
-
 void* UULocalPlayerExporter::GetLocalPlayerSubsystem(UClass* SubsystemClass, APlayerController* PlayerController)
 {
 	if (!IsValid(PlayerController) || !IsValid(SubsystemClass))

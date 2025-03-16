@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -31,38 +34,67 @@ public struct TSubclassOf<T>
 
     public TSubclassOf(Type classType)
     {
-        if (classType == null)
+        try 
         {
-            throw new ArgumentNullException(nameof(classType));
-        }
-        
-        if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
-        {
-            string typeName = classType.GetEngineName();
-            NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.GetAssemblyName(), classType.Namespace, typeName);
-            ManagedType = classType;
-            
-            if (NativeClass == IntPtr.Zero)
+            if (classType == null)
             {
-                throw new ArgumentException($"Class {classType.Name} not found.");
+                throw new ArgumentNullException(nameof(classType));
+            }
+            
+            if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
+            {
+                string typeName = classType.GetEngineName();
+                NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.GetAssemblyName(), classType.Namespace, typeName);
+                
+                if (NativeClass == IntPtr.Zero)
+                {
+                    throw new ArgumentException($"Class {classType.Name} not found.");
+                }
+                
+                ManagedType = classType;
+            }
+            else
+            {
+                throw new ArgumentException($"{classType.Name} is not a subclass of {nameof(T)}.");
             }
         }
-        else
+        catch (Exception exception)
         {
-            throw new ArgumentException($"{classType.Name} is not a subclass of {nameof(T)}.");
+            LogUnrealSharpCore.Log("Failed to create TSubclassOf instance: " + exception.Message);
         }
     }
     
     internal TSubclassOf(IntPtr nativeClass)
     {
-        if (nativeClass == IntPtr.Zero)
+        try
         {
-            return;
-        }
+            if (nativeClass == IntPtr.Zero)
+            {
+                return;
+            }
         
-        NativeClass = nativeClass;
-        IntPtr handle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
-        ManagedType = GcHandleUtilities.GetObjectFromHandlePtr(handle).GetType();
+            NativeClass = nativeClass;
+        
+            IntPtr classHandle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
+
+            if (classHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Invalid class handle.");
+            }
+
+            object? obj = GCHandleUtilities.GetObjectFromHandlePtr(classHandle);
+        
+            if (obj == null)
+            {
+                throw new InvalidOperationException("Invalid class object.");
+            }
+
+            ManagedType = obj.GetType();
+        }
+        catch (Exception exception)
+        {
+            LogUnrealSharpCore.Log("Failed to create TSubclassOf instance from native: " + exception.Message);
+        }
     }
     
     /// <summary>
@@ -74,7 +106,7 @@ public struct TSubclassOf<T>
         get
         {
             IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
-            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
         }
     }
     
@@ -127,7 +159,7 @@ public struct TSubclassOf<T>
     public static implicit operator UClass(TSubclassOf<T> subclass)
     {
         IntPtr handle = FCSManagerExporter.CallFindManagedObject(subclass.NativeClass);
-        return GcHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
     }
 
     /// <inheritdoc />

@@ -11,7 +11,12 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-	NewFunction->TryUpdateMethodHandle();
+	
+	if (!NewFunction->TryUpdateMethodHandle())
+	{
+		// If we can't find the method handle, we can't create the function. This is a fatal error.
+		return nullptr;
+	}
 	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;

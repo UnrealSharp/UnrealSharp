@@ -51,7 +51,7 @@ public:
 	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
 
 	// Path to all project directories in /Script
-	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);
+	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);
 
 	// Path to all assembly directories in /Binaries/Managed
 	static void GetAllAssemblyPaths(TArray<FString>& AssemblyPaths);

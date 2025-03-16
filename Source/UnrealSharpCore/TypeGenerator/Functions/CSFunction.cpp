@@ -2,6 +2,7 @@
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "CSUnrealSharpSettings.h"
+#include "UnrealSharpCore.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 
@@ -31,13 +32,13 @@ void UCSFunctionBase::Bind()
 	}
 }
 
-void UCSFunctionBase::TryUpdateMethodHandle()
+bool UCSFunctionBase::TryUpdateMethodHandle()
 {
 	// Ignore delegate signatures and classes that are not the generated class.
 	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.
 	if (MethodHandle.IsValid() || HasAllFunctionFlags(FUNC_Delegate) || !IsOwnedByGeneratedClass())
 	{
-		return;
+		return true;
 	}
 	
 	UCSClass* ManagedClass = GetOwningManagedClass();
@@ -45,7 +46,14 @@ void UCSFunctionBase::TryUpdateMethodHandle()
 	
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
 	MethodHandle = Assembly->GetManagedMethod(ManagedClass, InvokeMethodName);
-	check(MethodHandle.IsValid());
+
+	if (!MethodHandle.IsValid())
+	{
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to find managed method for %s"), *GetName());
+		return false;
+	}
+	
+	return true;
 }
 
 bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
@@ -61,10 +69,9 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
 
 #if WITH_EDITOR
-	if (!Function->MethodHandle.IsValid())
+	if (!Function->MethodHandle.IsValid() && !Function->TryUpdateMethodHandle())
 	{
-		// Lazy load the method ptr in editor. Gets null during hot reload.
-		Function->TryUpdateMethodHandle();
+		return false;
 	}
 #endif
 	
@@ -90,5 +97,9 @@ UCSClass* UCSFunctionBase::GetOwningManagedClass() const
 
 bool UCSFunctionBase::IsOwnedByGeneratedClass() const
 {
+#if WITH_EDITOR
 	return GetOwningManagedClass() != nullptr;
+#else
+	return true;
+#endif
 }

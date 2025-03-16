@@ -1,24 +1,26 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "UClassExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UUClassExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUClassExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static UFunction* GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName);
+
+	UNREALSHARP_FUNCTION()
 	static UFunction* GetNativeFunctionFromInstanceAndName(const UObject* NativeObject, const char* FunctionName);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName);
+
+	UNREALSHARP_FUNCTION()
 	static void* GetDefaultFromInstance(UObject* Object);
+	
 };

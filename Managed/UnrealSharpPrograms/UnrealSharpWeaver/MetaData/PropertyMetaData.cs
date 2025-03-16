@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -24,7 +25,7 @@ public class PropertyMetaData : BaseMetaData
     public bool IsInstancedReference => (PropertyFlags & PropertyFlags.InstancedReference) == PropertyFlags.InstancedReference;
     // End non-serialized
     
-    private PropertyMetaData(MemberReference memberRef) : base(memberRef, WeaverHelper.UPropertyAttribute)
+    private PropertyMetaData(MemberReference memberRef) : base(memberRef, PropertyUtilities.UPropertyAttribute)
     {
         
     }
@@ -33,7 +34,7 @@ public class PropertyMetaData : BaseMetaData
     {
         MemberRef = typeRef;
         Name = paramName;
-        PropertyDataType = WeaverHelper.GetDataType(typeRef, paramName, null);
+        PropertyDataType = typeRef.GetDataType(paramName, null);
         
         PropertyFlags flags = PropertyFlags.None;
         
@@ -70,12 +71,12 @@ public class PropertyMetaData : BaseMetaData
             throw new InvalidPropertyException(property, "Unreal properties must have a default get method");
         }
         
-        if (!WeaverHelper.MethodIsCompilerGenerated(getter))
+        if (!getter.MethodIsCompilerGenerated())
         {
             throw new InvalidPropertyException(property, "Getter can not have a body for Unreal properties");
         }
 
-        if (setter != null && !WeaverHelper.MethodIsCompilerGenerated(getter))
+        if (setter != null && !getter.MethodIsCompilerGenerated())
         {
             throw new InvalidPropertyException(property, "Setter can not have a body for Unreal properties");
         }
@@ -100,45 +101,45 @@ public class PropertyMetaData : BaseMetaData
     private void Initialize(IMemberDefinition property, TypeReference propertyType)
     {
         Name = property.Name;
-        PropertyDataType = WeaverHelper.GetDataType(propertyType, property.FullName, property.CustomAttributes);
+        PropertyDataType = propertyType.GetDataType(property.FullName, property.CustomAttributes);
         PropertyFlags flags = (PropertyFlags) GetFlags(property, "PropertyFlagsMapAttribute");
         
-        CustomAttribute? upropertyAttribute = WeaverHelper.FindAttribute(property.CustomAttributes, "UPropertyAttribute");
+        CustomAttribute? upropertyAttribute = property.GetUProperty();
         if (upropertyAttribute == null)
         {
             return;
         }
 
-        CustomAttributeArgument? blueprintSetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintSetter");
+        CustomAttributeArgument? blueprintSetterArgument = upropertyAttribute.FindAttributeField("BlueprintSetter");
         if (blueprintSetterArgument.HasValue)
         {
             BlueprintSetter = (string) blueprintSetterArgument.Value.Value;
         }
         
-        CustomAttributeArgument? blueprintGetterArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "BlueprintGetter");
+        CustomAttributeArgument? blueprintGetterArgument = upropertyAttribute.FindAttributeField("BlueprintGetter");
         if (blueprintGetterArgument.HasValue)
         {
             BlueprintGetter = (string) blueprintGetterArgument.Value.Value;
         }
         
-        CustomAttributeArgument? lifetimeConditionField = WeaverHelper.FindAttributeField(upropertyAttribute, "LifetimeCondition");
+        CustomAttributeArgument? lifetimeConditionField = upropertyAttribute.FindAttributeField("LifetimeCondition");
         if (lifetimeConditionField.HasValue)
         {
             LifetimeCondition = (LifetimeCondition) lifetimeConditionField.Value.Value;
         }
         
-        CustomAttributeArgument? notifyMethodArgument = WeaverHelper.FindAttributeField(upropertyAttribute, "ReplicatedUsing");
+        CustomAttributeArgument? notifyMethodArgument = upropertyAttribute.FindAttributeField("ReplicatedUsing");
         if (notifyMethodArgument.HasValue)
         {
             string notifyMethodName = (string) notifyMethodArgument.Value.Value;
-            MethodReference? notifyMethod = WeaverHelper.FindMethod(property.DeclaringType, notifyMethodName);
+            MethodReference? notifyMethod = property.DeclaringType.FindMethod(notifyMethodName);
             
             if (notifyMethod == null)
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' not found on {property.DeclaringType.Name}");
             }
             
-            if (!WeaverHelper.IsUFunction(notifyMethod.Resolve()))
+            if (!notifyMethod.Resolve().IsUFunction())
             {
                 throw new InvalidPropertyException(property, $"RepNotify method '{notifyMethodName}' needs to be declared as a UFunction.");
             }
@@ -198,14 +199,14 @@ public class PropertyMetaData : BaseMetaData
     {
         processor.Append(loadNativeType);
         processor.Emit(OpCodes.Ldstr, Name);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
         processor.Append(setPropertyPointer);
     }
     
     public void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType)
     {
         processor.Append(loadNativeType);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffset);
+        processor.Emit(OpCodes.Call, WeaverImporter.GetPropertyOffset);
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
     }
     

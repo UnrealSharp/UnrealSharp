@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -17,16 +18,16 @@ public class FunctionMetaData : BaseMetaData
     public readonly MethodDefinition MethodDef;
     public FunctionRewriteInfo RewriteInfo;
     public FieldDefinition FunctionPointerField;
-    public bool IsBlueprintEvent => WeaverHelper.HasAnyFlags(FunctionFlags, EFunctionFlags.BlueprintNativeEvent);
+    public bool IsBlueprintEvent => FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
-    public bool IsRpc => WeaverHelper.HasAnyFlags(FunctionFlags, RpcFlags);
+    public bool IsRpc => FunctionFlags.HasAnyFlags(RpcFlags);
     private bool _shouldBeRemoved;
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
 
-    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, WeaverHelper.UFunctionAttribute)
+    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, Utilities.MethodUtilities.UFunctionAttribute)
     {
         MethodDef = method;
         bool hasOutParams = false;
@@ -46,7 +47,7 @@ public class FunctionMetaData : BaseMetaData
 
         if (BaseAttribute != null)
         {
-            CustomAttributeArgument? callInEditor = WeaverHelper.FindAttributeField(BaseAttribute, CallInEditorName);
+            CustomAttributeArgument? callInEditor = BaseAttribute.FindAttributeField(CallInEditorName);
             if (callInEditor.HasValue)
             {
                 TryAddMetaData(CallInEditorName, (bool) callInEditor.Value.Value);
@@ -109,7 +110,7 @@ public class FunctionMetaData : BaseMetaData
             flags |= EFunctionFlags.Static;
         }
         
-        if (WeaverHelper.HasAnyFlags(flags, RpcFlags))
+        if (flags.HasAnyFlags(RpcFlags))
         {
             flags |= EFunctionFlags.Net;
             
@@ -152,8 +153,8 @@ public class FunctionMetaData : BaseMetaData
         else
         {
             EFunctionFlags flags = GetFunctionFlags(MethodDef.GetOriginalBaseMethod());
-            if (WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintCallable) 
-                && !WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintNativeEvent))
+            if (flags.HasAnyFlags(EFunctionFlags.BlueprintCallable) 
+                && !flags.HasAnyFlags(EFunctionFlags.BlueprintNativeEvent))
             {
                 return;
             }
@@ -183,7 +184,7 @@ public class FunctionMetaData : BaseMetaData
             return false;
         }
 
-        CustomAttribute? functionAttribute = WeaverHelper.GetUFunction(method);
+        CustomAttribute? functionAttribute = method.GetUFunction();
         if (functionAttribute == null)
         {
             return false;
@@ -208,7 +209,7 @@ public class FunctionMetaData : BaseMetaData
         MethodDefinition baseMethod = method.GetOriginalBaseMethod();
         if (baseMethod != method && baseMethod.HasCustomAttributes)
         {
-            return WeaverHelper.IsUFunction(baseMethod);
+            return baseMethod.IsUFunction();
         }
 
         return false;
@@ -246,7 +247,7 @@ public class FunctionMetaData : BaseMetaData
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
             
-            if (!WeaverHelper.IsUInterface(interfaceType))
+            if (!interfaceType.IsUInterface())
             {
                 continue; 
             }
@@ -265,14 +266,14 @@ public class FunctionMetaData : BaseMetaData
     public static bool IsBlueprintCallable(MethodDefinition method)
     {
         EFunctionFlags flags = GetFunctionFlags(method);
-        return WeaverHelper.HasAnyFlags(flags, EFunctionFlags.BlueprintCallable);
+        return flags.HasAnyFlags(EFunctionFlags.BlueprintCallable);
     }
     
     public void EmitFunctionPointers(ILProcessor processor, Instruction loadTypeField, Instruction setFunctionPointer)
     {
         processor.Append(loadTypeField);
         processor.Emit(OpCodes.Ldstr, Name);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionFromClassAndNameMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.GetNativeFunctionFromClassAndNameMethod);
         processor.Append(setFunctionPointer);
     }
     
@@ -290,7 +291,7 @@ public class FunctionMetaData : BaseMetaData
                 
             processor.Append(loadFunctionPointer);
             processor.Emit(OpCodes.Ldstr, param.Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetPropertyOffsetFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.GetPropertyOffsetFromNameMethod);
             processor.Emit(OpCodes.Stsfld, offsetField);
         }
     }
@@ -303,7 +304,7 @@ public class FunctionMetaData : BaseMetaData
         }
 
         processor.Append(loadFunctionPointer);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetNativeFunctionParamsSizeMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.GetNativeFunctionParamsSizeMethod);
         processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
     }
     
@@ -319,7 +320,7 @@ public class FunctionMetaData : BaseMetaData
 
             processor.Append(loadFunctionPointer);
             processor.Emit(OpCodes.Ldstr, paramRewriteInfo.PropertyMetaData.Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stsfld, nativePropertyField);
         }
     }

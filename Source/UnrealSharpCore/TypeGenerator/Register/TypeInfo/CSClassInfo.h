@@ -13,9 +13,9 @@ struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, 
 	virtual UClass* InitializeBuilder() override;
 	// End of implementation
 
-	TSharedPtr<FGCHandle> GetTypeHandle();
+	TSharedPtr<FGCHandle> GetManagedTypeHandle();
 
 private:
 	friend struct FCSAssembly;
-	TSharedPtr<FGCHandle> TypeHandle;
+	TSharedPtr<FGCHandle> ManagedTypeHandle;
 };

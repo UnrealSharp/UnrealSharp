@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -13,7 +14,7 @@ class NativeDataStructType(TypeReference structType, string marshallerName, int 
     {
         base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
 
-        if (!WeaverHelper.IsUStruct(InnerType.TypeRef.Resolve()))
+        if (!InnerType.TypeRef.Resolve().IsUStruct())
         {
             throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UStruct if exposed through UProperty!");
         }

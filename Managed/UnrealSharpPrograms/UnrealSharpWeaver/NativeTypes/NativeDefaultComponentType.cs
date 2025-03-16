@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -12,28 +13,28 @@ class NativeDataDefaultComponent : NativeDataSimpleType
     {
         TypeDefinition? defaultComponentType = typeRef.Resolve();
         
-        if (!WeaverHelper.IsValidBaseForUObject(defaultComponentType))
+        if (!defaultComponentType.IsUObject())
         {
             throw new Exception($"{defaultComponentType.FullName} needs to be a UClass if exposed through UProperty!");
         }
         
         InnerType = new TypeReferenceMetadata(defaultComponentType);
         
-        CustomAttribute upropertyAttribute = WeaverHelper.GetUProperty(customAttributes)!;
+        CustomAttribute upropertyAttribute = PropertyUtilities.GetUProperty(customAttributes)!;
         
-        CustomAttributeArgument? isRootComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "RootComponent");
+        CustomAttributeArgument? isRootComponentValue = upropertyAttribute.FindAttributeField("RootComponent");
         if (isRootComponentValue != null)
         {
             IsRootComponent = (bool) isRootComponentValue.Value.Value;
         }
 
-        CustomAttributeArgument? attachmentComponentValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentComponent");
+        CustomAttributeArgument? attachmentComponentValue = upropertyAttribute.FindAttributeField("AttachmentComponent");
         if (attachmentComponentValue != null)
         {
             AttachmentComponent = (string) attachmentComponentValue.Value.Value;
         }
         
-        CustomAttributeArgument? attachmentSocketValue = WeaverHelper.FindAttributeField(upropertyAttribute, "AttachmentSocket");
+        CustomAttributeArgument? attachmentSocketValue = upropertyAttribute.FindAttributeField("AttachmentSocket");
         if (attachmentSocketValue != null)
         {
             AttachmentSocket = (string) attachmentSocketValue.Value.Value;
@@ -71,14 +72,14 @@ class NativeDataDefaultComponent : NativeDataSimpleType
             return false;
         }
         
-        var upropertyAttribute = WeaverHelper.GetUProperty(customAttributes);
+        var upropertyAttribute = PropertyUtilities.GetUProperty(customAttributes);
 
         if (upropertyAttribute == null)
         {
             return false;
         }
         
-        CustomAttributeArgument? isDefaultComponent = WeaverHelper.FindAttributeField(upropertyAttribute, "DefaultComponent");
+        CustomAttributeArgument? isDefaultComponent = upropertyAttribute.FindAttributeField("DefaultComponent");
 
         if (isDefaultComponent == null)
         {

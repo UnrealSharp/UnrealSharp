@@ -2,6 +2,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -14,13 +15,13 @@ public class NativeDataDelegateType(TypeReference typeRef) : NativeDataBaseDeleg
             return;
         }
         
-        MethodReference? initialize = WeaverHelper.FindMethod(wrapperType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        MethodReference? initialize = wrapperType.Resolve().FindMethod(UnrealDelegateProcessor.InitializeUnrealDelegate);
         if (propertyMetadata.MemberRef is not PropertyDefinition)
         {
-            VariableDefinition propertyPointer = WeaverHelper.AddVariableToMethod(processor.Body.Method, WeaverHelper.IntPtrType);
+            VariableDefinition propertyPointer = processor.Body.Method.AddLocalVariable(WeaverImporter.IntPtrType);
             processor.Append(loadNativePointer);
             processor.Emit(OpCodes.Ldstr, propertyMetadata.Name);
-            processor.Emit(OpCodes.Call, WeaverHelper.GetNativePropertyFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stloc, propertyPointer);
             processor.Emit(OpCodes.Ldloc, propertyPointer);
         }

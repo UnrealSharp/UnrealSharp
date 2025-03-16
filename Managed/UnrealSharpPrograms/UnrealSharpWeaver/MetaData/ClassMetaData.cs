@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
@@ -19,7 +20,7 @@ public class ClassMetaData : TypeReferenceMetadata
     private readonly TypeDefinition ClassDefinition;
     // End non-serialized
     
-    public ClassMetaData(TypeDefinition type) : base(type, WeaverHelper.UClassAttribute)
+    public ClassMetaData(TypeDefinition type) : base(type, TypeDefinitionUtilities.UClassAttribute)
     {
         ClassDefinition = type;
         
@@ -39,7 +40,7 @@ public class ClassMetaData : TypeReferenceMetadata
             ClassFlags |= ClassFlags.DefaultConfig;
         }
 
-        if (WeaverHelper.IsChildOf(type, WeaverHelper.UActorComponentDefinition))
+        if (type.IsChildOf(WeaverImporter.UActorComponentDefinition))
         {
             TryAddMetaData("BlueprintSpawnableComponent", true);
         }
@@ -47,8 +48,8 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void AddConfigCategory()
     {
-        CustomAttribute? uClassAttribute = WeaverHelper.GetUClass(ClassDefinition);
-        CustomAttributeArgument? configCategoryProperty = WeaverHelper.FindAttributeField(uClassAttribute, nameof(ConfigCategory));
+        CustomAttribute? uClassAttribute = ClassDefinition.GetUClass();
+        CustomAttributeArgument? configCategoryProperty = uClassAttribute.FindAttributeField(nameof(ConfigCategory));
         if (configCategoryProperty != null)
         {
             ConfigCategory = (string) configCategoryProperty.Value.Value;
@@ -66,7 +67,7 @@ public class ClassMetaData : TypeReferenceMetadata
         
         foreach (PropertyDefinition property in ClassDefinition.Properties)
         {
-            CustomAttribute? uPropertyAttribute = WeaverHelper.GetUProperty(property);
+            CustomAttribute? uPropertyAttribute = property.GetUProperty();
 
             if (uPropertyAttribute == null)
             {
@@ -106,7 +107,7 @@ public class ClassMetaData : TypeReferenceMetadata
             bool isBlueprintOverride = FunctionMetaData.IsBlueprintEventOverride(method);
             bool isInterfaceFunction = FunctionMetaData.IsInterfaceFunction(method);
             
-            if (WeaverHelper.IsUFunction(method) && !isInterfaceFunction)
+            if (method.IsUFunction() && !isInterfaceFunction)
             {
                 if (isBlueprintOverride)
                 {
@@ -148,7 +149,7 @@ public class ClassMetaData : TypeReferenceMetadata
         {
             TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
 
-            if (interfaceType == WeaverHelper.IInterfaceType || !interfaceType.IsUInterface())
+            if (interfaceType == WeaverImporter.IInterfaceType || !interfaceType.IsUInterface())
             {
                 continue;
             }

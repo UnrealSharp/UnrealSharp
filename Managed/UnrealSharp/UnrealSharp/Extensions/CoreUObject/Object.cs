@@ -1,11 +1,15 @@
-﻿using UnrealSharp.Engine;
+﻿using System.Reflection;
+using UnrealSharp.Attributes;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
+using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial class UObject
+public partial class UObject : UnrealSharpObject
 {
     /// <summary>
     /// The name of the object in Unreal Engine.
@@ -52,7 +56,7 @@ public partial class UObject
             }
             
             IntPtr worldPtr = UObjectExporter.CallGetWorld_Internal(NativeObject);
-            UWorld? foundWorld = GcHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
+            UWorld? foundWorld = GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
             
             if (foundWorld == null)
             {
@@ -157,7 +161,7 @@ public partial class UObject
         }
         
         IntPtr handle = UObjectExporter.CallCreateNewObject(nativeOuter, classType.NativeClass, nativeTemplate);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
     /// <summary>
@@ -167,7 +171,7 @@ public partial class UObject
     public static UPackage? GetTransientPackage()
     {
         IntPtr handle = UObjectExporter.CallGetTransientPackage();
-        return GcHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle);
     }
     
     /// <summary>
@@ -178,7 +182,7 @@ public partial class UObject
     public static T GetDefault<T>() where T : UObject
     {
         IntPtr nativeClass = typeof(T).TryGetNativeClassDefaults();
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
     }
     
     /// <summary>
@@ -190,7 +194,7 @@ public partial class UObject
     public static T GetDefault<T>(UObject obj) where T : UnrealSharpObject
     {
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(obj.NativeObject);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
     /// <summary>
@@ -271,7 +275,7 @@ public partial class UObject
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = UWorldExporter.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
     /// <summary>
@@ -283,7 +287,7 @@ public partial class UObject
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
 #if WITH_EDITOR
@@ -296,7 +300,7 @@ public partial class UObject
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEditorExporter.CallGetEditorSubsystem(subsystemClass.NativeClass);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 #endif
     
@@ -309,7 +313,7 @@ public partial class UObject
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
     /// <summary>
@@ -322,7 +326,7 @@ public partial class UObject
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
     /// <summary>
@@ -338,7 +342,7 @@ public partial class UObject
         {
             IntPtr owningPlayerPtr = owningController?.NativeObject ?? IntPtr.Zero;
             IntPtr handle = UWidgetBlueprintLibraryExporter.CreateWidget(NativeObject, widgetClass.NativeClass, owningPlayerPtr);
-            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
         }
     }
     
@@ -368,5 +372,38 @@ public partial class UObject
     public T GetWorldSettingsAs<T>() where T : AWorldSettings
     {
         return (T) WorldSettings;
+    }
+}
+
+internal static class ReflectionHelper
+{
+    // Get the name without the U/A/F/E prefix.
+    internal static string GetEngineName(this Type type)
+    {
+        Attribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
+        
+        if (generatedTypeAttribute is null)
+        {
+            return type.Name;
+        }
+            
+        FieldInfo? field = generatedTypeAttribute.GetType().GetField("EngineName");
+        
+        if (field == null)
+        {
+            throw new InvalidOperationException($"The EngineName field was not found in the {nameof(GeneratedTypeAttribute)}.");
+        }
+            
+        return (string) field.GetValue(generatedTypeAttribute)!;
+    }
+    
+    internal static IntPtr TryGetNativeClass(this Type type)
+    {
+        return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+    }
+    
+    internal static IntPtr TryGetNativeClassDefaults(this Type type)
+    {
+        return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
 }

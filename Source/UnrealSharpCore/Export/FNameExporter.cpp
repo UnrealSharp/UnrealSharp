@@ -1,12 +1,5 @@
 ﻿#include "FNameExporter.h"
 
-void UFNameExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(NameToString)
-	EXPORT_FUNCTION(StringToName)
-	EXPORT_FUNCTION(IsValid)
-}
-
 void UFNameExporter::NameToString(FName Name, FString& OutString)
 {
 	Name.ToString(OutString);

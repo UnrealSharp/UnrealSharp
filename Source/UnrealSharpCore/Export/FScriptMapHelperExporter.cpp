@@ -1,21 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "FScriptMapHelperExporter.h"
-
-void UFScriptMapHelperExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(AddPair)
-	EXPORT_FUNCTION(FindOrAdd)
-	EXPORT_FUNCTION(Num)
-	EXPORT_FUNCTION(FindMapPairIndexFromHash)
-	EXPORT_FUNCTION(RemoveIndex)
-	EXPORT_FUNCTION(EmptyValues)
-	EXPORT_FUNCTION(Remove)
-	EXPORT_FUNCTION(IsValidIndex)
-	EXPORT_FUNCTION(GetMaxIndex)
-	EXPORT_FUNCTION(GetPairPtr)
-}
+﻿#include "FScriptMapHelperExporter.h"
 
 void UFScriptMapHelperExporter::AddPair(FMapProperty* MapProperty, const void* Address, const void* Key, const void* Value)
 {

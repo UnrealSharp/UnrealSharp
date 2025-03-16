@@ -5,11 +5,6 @@
 #include "EditorSubsystem.h"
 #endif
 
-void UGEditorExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetEditorSubsystem)
-}
-
 void* UGEditorExporter::GetEditorSubsystem(UClass* SubsystemClass)
 {
 #if WITH_EDITOR

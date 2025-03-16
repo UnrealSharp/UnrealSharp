@@ -1,22 +1,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "CSTimerExtensions.generated.h"
 
 using FNextTickEvent = void(*)();
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UCSTimerExtensions : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UCSTimerExtensions : public UObject
 {
 	GENERATED_BODY()
 	
 public:
 
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
+	UNREALSHARP_FUNCTION()
 	static void SetTimerForNextTick(FNextTickEvent NextTickEvent);
 };

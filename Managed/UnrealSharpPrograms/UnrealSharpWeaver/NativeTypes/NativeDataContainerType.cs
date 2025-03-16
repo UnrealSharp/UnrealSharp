@@ -3,6 +3,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -40,7 +41,7 @@ public class NativeDataContainerType : NativeDataType
     
     public virtual void InitializeMarshallerParameters()
     {
-        ContainerMarshallerTypeParameters = [WeaverHelper.ImportType(InnerProperty.PropertyDataType.CSharpType)];
+        ContainerMarshallerTypeParameters = [InnerProperty.PropertyDataType.CSharpType.ImportType()];
     }
     
     public virtual string GetContainerWrapperType()
@@ -64,7 +65,7 @@ public class NativeDataContainerType : NativeDataType
         InnerProperty.PropertyDataType.PrepareForRewrite(typeDefinition, propertyMetadata, "");
 
         // Ensure that IList<T> itself is imported.
-        WeaverHelper.ImportType(CSharpType);
+        CSharpType.ImportType();
 
         InitializeMarshallerParameters();
 
@@ -75,22 +76,19 @@ public class NativeDataContainerType : NativeDataType
         if (outer is MethodDefinition method)
         {
             prefix = method.Name + "_" + prefix;
-            TypeReference genericCopyMarshallerTypeRef = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, 
-                GetCopyContainerMarshallerName(), WeaverHelper.UnrealSharpNamespace)!;
+            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.UnrealSharpAssembly.FindType(GetCopyContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
             
-            ContainerMarshallerType = WeaverHelper.ImportType(genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters));
+            ContainerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
             
-            CopyDestructInstance = WeaverHelper.FindMethod(ContainerMarshallerType.Resolve(), "DestructInstance")!;
+            CopyDestructInstance = ContainerMarshallerType.Resolve().FindMethod("DestructInstance")!;
             CopyDestructInstance = FunctionProcessor.MakeMethodDeclaringTypeGeneric(CopyDestructInstance, ContainerMarshallerTypeParameters);
             
             fieldAttributes |= FieldAttributes.Static;
         }
         else
         {
-            TypeReference genericCopyMarshallerTypeRef = WeaverHelper.FindTypeInAssembly(WeaverHelper.BindingsAssembly, 
-                GetContainerMarshallerName(), WeaverHelper.UnrealSharpNamespace)!;
-            
-            ContainerMarshallerType = WeaverHelper.ImportType(genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters));
+            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.UnrealSharpAssembly.FindType(GetContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
+            ContainerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
 
             if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition)
             {
@@ -102,16 +100,16 @@ public class NativeDataContainerType : NativeDataType
         TypeDefinition arrTypeDef = ContainerMarshallerType.Resolve();
         
         ContainerMashallerCtor = arrTypeDef.GetConstructors().Single();
-        ContainerMashallerCtor = WeaverHelper.ImportMethod(ContainerMashallerCtor);
+        ContainerMashallerCtor = ContainerMashallerCtor.ImportMethod();
         ContainerMashallerCtor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ContainerMashallerCtor, ContainerMarshallerTypeParameters);
         
-        FromNative = WeaverHelper.FindMethod(arrTypeDef, "FromNative")!;
+        FromNative = arrTypeDef.FindMethod("FromNative")!;
         FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, ContainerMarshallerTypeParameters);
 
-        ToNative = WeaverHelper.FindMethod(arrTypeDef, "ToNative")!;
+        ToNative = arrTypeDef.FindMethod("ToNative")!;
         ToNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ToNative, ContainerMarshallerTypeParameters);
         
-        ContainerMarshallerField = WeaverHelper.AddFieldToType(typeDefinition, prefix + "Marshaller", ContainerMarshallerType, fieldAttributes);
+        ContainerMarshallerField = typeDefinition.AddField(prefix + "Marshaller", ContainerMarshallerType, fieldAttributes);
         NativePropertyField = propertyMetadata.NativePropertyField!;
     }
 
@@ -130,7 +128,7 @@ public class NativeDataContainerType : NativeDataType
         EmitDynamicArrayMarshallerDelegates(processor, type);
 
         MethodDefinition? constructor = ContainerMarshallerType.Resolve().GetConstructors().Single();
-        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverHelper.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
+        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverImporter.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
         processor.Emit(OpCodes.Stfld, ContainerMarshallerField);
 
         // Store the branch destination

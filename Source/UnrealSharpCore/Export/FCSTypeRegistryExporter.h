@@ -3,22 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FCSTypeRegistryExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UFCSTypeRegistryExporter : public UFunctionsExporter
+UCLASS()
+class UFCSTypeRegistryExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void RegisterClassToFilePath(const UTF16CHAR* ClassName, const UTF16CHAR* FilePath);
 	
 };

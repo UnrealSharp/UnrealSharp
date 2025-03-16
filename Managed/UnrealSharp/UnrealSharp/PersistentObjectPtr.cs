@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -47,7 +48,7 @@ public struct FPersistentObjectPtr
     public UObject? Get()
     {
         IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref Data);
-        return GcHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
     
     public override bool Equals(object? obj)

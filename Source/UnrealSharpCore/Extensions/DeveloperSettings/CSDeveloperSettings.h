@@ -4,7 +4,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "CSDeveloperSettings.generated.h"
 
-UCLASS(Abstract, meta = (NotGeneratorValid))
+UCLASS(Abstract)
 class UCSDeveloperSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()

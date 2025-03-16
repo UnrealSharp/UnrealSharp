@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
@@ -41,7 +42,7 @@ public static class ScriptInterfaceMarshaller<T> where T : class
         {
             FScriptInterface* scriptInterface = (FScriptInterface*)(nativeBuffer + arrayIndex * sizeof(FScriptInterface));
             IntPtr handle = FCSManagerExporter.CallFindManagedObject(scriptInterface->ObjectPointer);
-            return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
         }
     }
 }

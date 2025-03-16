@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -29,7 +30,7 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         }
         
         TypeReference foundType = GetWrapperType(delegateType);
-        MethodReference? initializeDelegateMethod = WeaverHelper.FindMethod(foundType.Resolve(), UnrealDelegateProcessor.InitializeUnrealDelegate);
+        MethodReference? initializeDelegateMethod = foundType.Resolve().FindMethod(UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
         processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }

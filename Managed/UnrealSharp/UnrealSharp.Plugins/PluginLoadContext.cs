@@ -9,7 +9,7 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
     {
         if (string.IsNullOrEmpty(assemblyName.Name))
         {
-            return default;
+            return null;
         }
         
         foreach (Assembly sharedAssembly in PluginLoader.SharedAssemblies)
@@ -26,8 +26,9 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
             {
                 continue;
             }
-
-            if (assembly.GetName() == assemblyName)
+            
+            string loadedAssemblyName = assembly.GetName().Name;
+            if (loadedAssemblyName == assemblyName.Name)
             {
                 return assembly;
             }
