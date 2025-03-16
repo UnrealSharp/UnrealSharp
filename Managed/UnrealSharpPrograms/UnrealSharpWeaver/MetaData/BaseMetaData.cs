@@ -25,7 +25,7 @@ public class BaseMetaData
 
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        BaseAttribute = MemberDefinition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpNamespace, AttributeName);
+        BaseAttribute = MemberDefinition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, AttributeName);
 
         AddMetaData();          // Add any [UMetaData("key", "value")] attributes (general metadata attribute to allow support of any engine tag)
         AddMetaTagsNamespace(); // Add all named attributes in the UnrealSharp.Attributes.MetaTags namespace
@@ -203,7 +203,7 @@ public class BaseMetaData
     private void AddMetaData()
     {
         //[UMetaData("key","value")]
-        CustomAttribute?[] metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributes();
+        List<CustomAttribute> metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributes();
         foreach (var attrib in metaDataAttributes)
         {
             switch (attrib.ConstructorArguments.Count)
@@ -223,7 +223,7 @@ public class BaseMetaData
     private void AddMetaTagsNamespace() 
     {
         //Specific MetaData Tags - all attributes in the UnrealSharp.Attributes.MetaTags Namespace
-        CustomAttribute[] metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributesByNamespace();
+        List<CustomAttribute> metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributesByNamespace();
         foreach (var attrib in metaDataAttributes)
         {
             var key = attrib.AttributeType.Name.Replace("Attribute", "");

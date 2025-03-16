@@ -7,12 +7,12 @@ public static class AttributeUtilities
     public static readonly string UMetaDataAttribute = "UMetaDataAttribute";
     public static readonly string MetaTagsNamespace = WeaverImporter.AttributeNamespace + ".MetaTags";
     
-    public static CustomAttribute?[] FindMetaDataAttributes(this IEnumerable<CustomAttribute> customAttributes)
+    public static List<CustomAttribute> FindMetaDataAttributes(this IEnumerable<CustomAttribute> customAttributes)
     {
         return FindAttributesByType(customAttributes, WeaverImporter.AttributeNamespace, UMetaDataAttribute);
     }
 
-    public static CustomAttribute[] FindMetaDataAttributesByNamespace(this IEnumerable<CustomAttribute> customAttributes)
+    public static List<CustomAttribute> FindMetaDataAttributesByNamespace(this IEnumerable<CustomAttribute> customAttributes)
     {
         return FindAttributesByNamespace(customAttributes, MetaTagsNamespace);
     }
@@ -31,21 +31,33 @@ public static class AttributeUtilities
     
     public static CustomAttribute? FindAttributeByType(this IEnumerable<CustomAttribute> customAttributes, string typeNamespace, string typeName)
     {
-        CustomAttribute?[] attribs = FindAttributesByType(customAttributes, typeNamespace, typeName);
-        return attribs.Length == 0 ? null : attribs[0];
+        List<CustomAttribute> attribs = FindAttributesByType(customAttributes, typeNamespace, typeName);
+        return attribs.Count == 0 ? null : attribs[0];
     }
 
-    public static CustomAttribute?[] FindAttributesByType(this IEnumerable<CustomAttribute> customAttributes, string typeNamespace, string typeName)
+    public static List<CustomAttribute> FindAttributesByType(this IEnumerable<CustomAttribute> customAttributes, string typeNamespace, string typeName)
     {
-        return (from attrib in customAttributes
-            where attrib.AttributeType.Namespace == typeNamespace && attrib.AttributeType.Name == typeName
-            select attrib).ToArray ();
+        List<CustomAttribute> attribs = new List<CustomAttribute>();
+        foreach (CustomAttribute attrib in customAttributes)
+        {
+            if (attrib.AttributeType.Namespace == typeNamespace && attrib.AttributeType.Name == typeName)
+            {
+                attribs.Add(attrib);
+            }
+        }
+        return attribs;
     }
 
-    public static CustomAttribute[] FindAttributesByNamespace(this IEnumerable<CustomAttribute> customAttributes, string typeNamespace)
+    public static List<CustomAttribute> FindAttributesByNamespace(this IEnumerable<CustomAttribute> customAttributes, string typeNamespace)
     {
-        return (from attrib in customAttributes
-            where attrib.AttributeType.Namespace == typeNamespace
-            select attrib).ToArray();
+        List<CustomAttribute> attribs = new List<CustomAttribute>();
+        foreach (var attrib in customAttributes)
+        {
+            if (attrib.AttributeType.Namespace == typeNamespace)
+            {
+                attribs.Add(attrib);
+            }
+        }
+        return attribs;
     }
 }
