@@ -1,4 +1,6 @@
 #include "CSPropertyFactory.h"
+
+#include "INotifyFieldValueChanged.h"
 #include "PropertyGenerators/CSPropertyGenerator.h"
 #include "UObject/UnrealType.h"
 #include "UObject/Class.h"
@@ -55,19 +57,23 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 		}
 	}
 #endif
-	
-	if (NewProperty->HasAnyPropertyFlags(CPF_Net) && Outer->IsA<UBlueprintGeneratedClass>())
-	{
-		UBlueprintGeneratedClass* OwnerClass = static_cast<UBlueprintGeneratedClass*>(Outer);
-		++OwnerClass->NumReplicatedProperties;
-			
-		if (!PropertyMetaData.RepNotifyFunctionName.IsNone())
-		{
-			NewProperty->RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
-		}
-	}
-		
+
 	FCSMetaDataUtils::ApplyMetaData(PropertyMetaData.MetaData, NewProperty);
+	
+	if (UBlueprintGeneratedClass* OwningClass = Cast<UBlueprintGeneratedClass>(Outer))
+	{
+		if (NewProperty->HasAnyPropertyFlags(CPF_Net))
+		{
+			++OwningClass->NumReplicatedProperties;
+			
+			if (!PropertyMetaData.RepNotifyFunctionName.IsNone())
+			{
+				NewProperty->RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
+			}
+		}
+
+		TryAddPropertyAsFieldNotify(NewProperty, OwningClass);
+	}
 
 	NewProperty->SetFlags(RF_LoadCompleted);
 	return NewProperty;
@@ -120,5 +126,19 @@ UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType 
 	
 	return nullptr;
 }
+
+void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FProperty* Property, UBlueprintGeneratedClass* Class)
+{
+	bool bImplementsInterface = Class->ImplementsInterface(UNotifyFieldValueChanged::StaticClass());
+	bool bHasFieldNotifyMetaData = Property->HasMetaData(FBlueprintMetadata::MD_FieldNotify);
+	
+	if (!bImplementsInterface || !bHasFieldNotifyMetaData)
+	{
+		return;
+	}
+	
+	Class->FieldNotifies.Add(FFieldNotificationId(Property->GetFName()));
+}
+
 
 

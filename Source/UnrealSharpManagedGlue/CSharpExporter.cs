@@ -147,11 +147,15 @@ public static class CSharpExporter
     
         HashSet<string> processedDirectories = new();
         
+        string generatedPath = FileExporter.GetDirectoryPath(package);
+        bool doesDirectoryExist = Directory.Exists(generatedPath);
+        
         foreach (UhtType child in package.Children)
         {
             string directoryName = Path.GetDirectoryName(child.HeaderFile.FilePath)!;
             
-            if (ShouldExportDirectory(directoryName, lastEditTime!))
+            // We only need to export the C++ directory if it doesn't exist or if it has been modified
+            if (!doesDirectoryExist || ShouldExportDirectory(directoryName, lastEditTime!))
             {
                 processedDirectories.Add(directoryName);
                 ForEachChild(child, ExportType);
