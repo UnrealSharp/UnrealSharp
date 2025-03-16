@@ -341,7 +341,7 @@ public partial class UObject : UnrealSharpObject
         unsafe
         {
             IntPtr owningPlayerPtr = owningController?.NativeObject ?? IntPtr.Zero;
-            IntPtr handle = UWidgetBlueprintLibraryExporter.CreateWidget(NativeObject, widgetClass.NativeClass, owningPlayerPtr);
+            IntPtr handle = UWidgetBlueprintLibraryExporter.CallCreateWidget(NativeObject, widgetClass.NativeClass, owningPlayerPtr);
             return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
         }
     }
