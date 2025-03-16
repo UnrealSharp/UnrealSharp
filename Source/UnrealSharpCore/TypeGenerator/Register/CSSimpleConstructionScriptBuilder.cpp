@@ -3,7 +3,7 @@
 #include "CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore.h"
 #include "Engine/InheritableComponentHandler.h"
-#include "Engine/SCS_Node.h"
+
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
