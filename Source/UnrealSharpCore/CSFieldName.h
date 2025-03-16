@@ -10,6 +10,8 @@ struct UNREALSHARPCORE_API FCSFieldName
 
 	FName GetFName() const { return Name; }
 	FString GetName() const { return Name.ToString(); }
+
+	bool IsValid() const { return Name != NAME_None; }
 	
 	FCSNamespace GetNamespace() const { return Namespace; }
 	UPackage* GetPackage() const { return Namespace.GetPackage(); }

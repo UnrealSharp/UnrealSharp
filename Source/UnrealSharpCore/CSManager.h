@@ -97,9 +97,9 @@ private:
 	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
 	
 	bool LoadRuntimeHost();
-	bool InitializeRuntime();
+	bool InitializeDotNetRuntime();
 
-	bool LoadUserAssemblies();
+	bool TryLoadUserAssemblies();
 
 	static UCSManager* Instance;
 

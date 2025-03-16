@@ -45,7 +45,12 @@ UCSManager& UCSManager::Get()
 
 void UCSManager::Shutdown()
 {
-	Instance = nullptr;
+	if (IsValid(Instance))
+	{
+		Instance->RemoveFromRoot();
+		Instance->MarkAsGarbage();
+		Instance = nullptr;
+	}
 }
 
 UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
@@ -140,8 +145,9 @@ void UCSManager::Initialize()
 		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
 		FString DialogText = FString::Printf(TEXT(
 			"The bindings library could not be found at the following location:\n%s\n\n"
-			"Right-click on the .uproject file and select \"Generate Visual Studio project files\" to compile.\n"
+			"Most likely, the bindings library failed to build due to invalid generated glue."
 		), *FullPath);
+		
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
@@ -158,7 +164,7 @@ void UCSManager::Initialize()
 #endif
 
 	// Initialize the C# runtime.
-	if (!InitializeRuntime())
+	if (!InitializeDotNetRuntime())
 	{
 		return;
 	}
@@ -168,11 +174,11 @@ void UCSManager::Initialize()
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();
 
-	// Try to load the user assembly, can be null when the project is first created.
-	LoadUserAssemblies();
+	// Try to load the user assembly. Can be empty if the user hasn't created any csproj yet.
+	TryLoadUserAssemblies();
 }
 
-bool UCSManager::InitializeRuntime()
+bool UCSManager::InitializeDotNetRuntime()
 {
 	if (!LoadRuntimeHost())
 	{
@@ -233,7 +239,6 @@ bool UCSManager::InitializeRuntime()
 bool UCSManager::LoadRuntimeHost()
 {
 	const FString RuntimeHostPath = FCSProcHelper::GetRuntimeHostPath();
-
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find Hostfxr.dll"));
@@ -241,7 +246,6 @@ bool UCSManager::LoadRuntimeHost()
 	}
 	
 	RuntimeHost = FPlatformProcess::GetDllHandle(*RuntimeHostPath);
-
 	if (RuntimeHost == nullptr)
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to get the RuntimeHost DLL handle!"));
@@ -273,7 +277,7 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
-bool UCSManager::LoadUserAssemblies()
+bool UCSManager::TryLoadUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
 	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);

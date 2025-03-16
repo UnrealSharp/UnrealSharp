@@ -3,14 +3,14 @@
 
 FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
 {
-	TypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+	ManagedTypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 }
 
 FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
 {
 	Field = InField;
 	OwningAssembly = InOwningAssembly;
-	TypeHandle = InTypeHandle;
+	ManagedTypeHandle = InTypeHandle;
 }
 
 UClass* FCSharpClassInfo::InitializeBuilder()
@@ -34,23 +34,24 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 	return TCSharpTypeInfo::InitializeBuilder();
 }
 
-TSharedPtr<FGCHandle> FCSharpClassInfo::GetTypeHandle()
+TSharedPtr<FGCHandle> FCSharpClassInfo::GetManagedTypeHandle()
 {
 #if WITH_EDITOR
-	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
+	if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
 	{
 		// Lazy load the type handle in editor. Gets null during hot reload.
 		if (FCSGeneratedClassBuilder::IsManagedType(Field))
 		{
-			TypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 		}
 		else
 		{
-			TypeHandle = OwningAssembly->TryFindTypeHandle(Field);
+			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(Field);
 		}
 	}
 #endif
 
-	return TypeHandle;
+	ensureMsgf(ManagedTypeHandle.IsValid(), TEXT("Failed to find managed type handle for %s"), *TypeMetaData->FieldName.GetName());
+	return ManagedTypeHandle;
 }
 

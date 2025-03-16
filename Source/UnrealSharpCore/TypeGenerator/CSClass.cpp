@@ -8,7 +8,7 @@ TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
 
 TSharedPtr<const FGCHandle> UCSClass::GetClassHandle() const
 {
-	return ClassInfo->GetTypeHandle();
+	return ClassInfo->GetManagedTypeHandle();
 }
 
 TSharedPtr<FCSAssembly> UCSClass::GetOwningAssembly() const

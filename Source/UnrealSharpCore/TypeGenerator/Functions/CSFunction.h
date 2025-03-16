@@ -19,7 +19,7 @@ public:
 	// End of UFunction interface
 
 	// Tries to update the method handle to the function pointer in C#.
-	void TryUpdateMethodHandle();
+	bool TryUpdateMethodHandle();
 
 	// Gets the owning managed class of this function.
 	UCSClass* GetOwningManagedClass() const;

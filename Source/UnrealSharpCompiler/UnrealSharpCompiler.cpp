@@ -68,6 +68,7 @@ void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 	{
 		if (NewClass->IsChildOf(UActorComponent::StaticClass()))
 		{
+			// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
 			ManagedClassesToCompile.Insert(Blueprint, 0);
 		}
 		else

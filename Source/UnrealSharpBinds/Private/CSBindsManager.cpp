@@ -1,5 +1,4 @@
 #include "CSBindsManager.h"
-
 #include "UnrealSharpBinds.h"
 
 FCSBindsManager* FCSBindsManager::BindsManagerInstance = nullptr;

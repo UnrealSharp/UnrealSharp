@@ -159,21 +159,16 @@ FName FCSGeneratedClassBuilder::GetFieldName() const
 void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	UCSClass* ManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
-	
+	UClass* NativeClass = GetFirstNativeClass(ManagedClass);
+
 	//Execute the native class' constructor first.
-	UClass* NativeClass = GetFirstNativeClass(ObjectInitializer.GetClass());
 	NativeClass->ClassConstructor(ObjectInitializer);
 
-	// Initialize properties that are not zero initialized such as FText.
+	// Initialize managed properties that are not zero initialized such as FText.
 	for (TFieldIterator<FProperty> PropertyIt(ManagedClass); PropertyIt; ++PropertyIt)
 	{
 		FProperty* Property = *PropertyIt;
-		if (!IsManagedType(Property->GetOwnerClass()))
-		{
-			break;
-		}
-
-		if (Property->HasAllPropertyFlags(CPF_ZeroConstructor))
+		if (!IsManagedType(Property->GetOwnerClass()) || Property->HasAnyPropertyFlags(CPF_ZeroConstructor))
 		{
 			continue;
 		}

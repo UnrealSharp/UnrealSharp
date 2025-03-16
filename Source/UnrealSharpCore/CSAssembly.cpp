@@ -282,8 +282,8 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FStr
 	}
 
 	TSharedPtr<FCSharpClassInfo> ClassInfo = Class->GetClassInfo();
-	TSharedPtr<FGCHandle> PinnedHandle = ClassInfo->GetTypeHandle();
-	return GetManagedMethod(PinnedHandle, MethodName);
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
+	return GetManagedMethod(TypeHandle, MethodName);
 }
 
 TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
@@ -410,16 +410,21 @@ UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 	return Interface;
 }
 
-
 FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateNewManagedObject);
 	
-	ensureAlways(!ObjectHandles.Contains(Object->GetUniqueID()));
+	if (FGCHandle* FoundHandle = ObjectHandles.Find(Object->GetUniqueID()))
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Object {0} already has a managed counterpart", *Object->GetName());
+		return FoundHandle;
+	}
 
+	// Only managed/native classes have a C# counterpart.
 	UClass* Class = FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(Object->GetClass());
+	
 	TSharedPtr<FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Class);
-	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeHandle();
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
 	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer());
 	NewManagedObject.Type = GCHandleType::StrongHandle;
@@ -427,7 +432,7 @@ FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 	if (NewManagedObject.IsNull())
 	{
 		// This should never happen. Potential issues: IL errors, typehandle is invalid.
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed object for {0}", *Object->GetName());
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", *Object->GetName());
 		return nullptr;
 	}
 	
@@ -445,10 +450,12 @@ FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 	}
 
 	FGCHandle* Handle = ObjectHandles.Find(Object->GetUniqueID());
+	
 	if (!Handle)
 	{
 		Handle = CreateManagedObject(Object);
 	}
+	
 	return *Handle;
 }
 
@@ -460,6 +467,8 @@ void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, F
 
 void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::RemoveManagedObject);
+	
 	FGCHandle Handle;
 	if (ObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
 	{
