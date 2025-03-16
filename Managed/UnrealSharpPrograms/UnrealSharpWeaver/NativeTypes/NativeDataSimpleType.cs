@@ -179,31 +179,22 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
 
     private TypeReference? GetTypeInAssembly(AssemblyDefinition assemblyDefinition)
     {
-        // Try to find the marshaller in the bindings assembly
+        // Try to find the marshaller in the bindings again, but with the namespace of the property type.
+        TypeDefinition? propType = CSharpType.Resolve();
+        TypeReference? type = assemblyDefinition.FindType(marshallerName, propType.Namespace, false);
+        if (type is not null)
+        {
+            return type;
+        }
+        
+        // Try to find the marshaller in the bindings assembly. These are unique so we don't need to check the namespace.
         TypeReference? typeInBindingAssembly = assemblyDefinition.FindType(marshallerName, "", false);
         if (typeInBindingAssembly is not null)
         {
             return typeInBindingAssembly;
         }
-        
-        TypeDefinition? propType = CSharpType.Resolve();
-            
-        // Try to find the marshaller in the bindings again, but with the namespace of the property type.
-        TypeReference? type = WeaverImporter.UserAssembly.FindType(marshallerName, propType.Namespace, false);
-        if (type is not null)
-        {
-            return type;
-        }
 
-        // Finally, try to find the marshaller in the user assembly.
-        AssemblyDefinition? propAssembly = GetUserAssemblyByPropertyType(propType);
-
-        if (propAssembly is null)
-        {
-            return null;
-        }
-        
-        return propAssembly.FindType(marshallerName, propType.Namespace, false);
+        return null;
     }
 
     private AssemblyDefinition? GetUserAssemblyByPropertyType(TypeDefinition type)
