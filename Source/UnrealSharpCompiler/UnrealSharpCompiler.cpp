@@ -48,18 +48,30 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
-	if (ManagedClassesToCompile.IsEmpty())
+	if (ManagedComponentsToCompile.IsEmpty() && ManagedClassesToCompile.IsEmpty())
 	{
 		return;
 	}
 	
-	for (UBlueprint* Blueprint : ManagedClassesToCompile)
+	auto QueueAndCompile = [this](TArray<UBlueprint*>& Blueprints)
 	{
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
-	}
-	
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
-	ManagedClassesToCompile.Empty();
+		if (Blueprints.IsEmpty())
+		{
+			return;
+		}
+		
+		for (UBlueprint* Blueprint : Blueprints)
+		{
+			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+		}
+		
+		FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+		Blueprints.Empty();
+	};
+
+	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
+	QueueAndCompile(ManagedComponentsToCompile);
+	QueueAndCompile(ManagedClassesToCompile);
 }
 
 void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
@@ -68,8 +80,7 @@ void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
 	{
 		if (NewClass->IsChildOf(UActorComponent::StaticClass()))
 		{
-			// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
-			ManagedClassesToCompile.Insert(Blueprint, 0);
+			ManagedComponentsToCompile.Add(Blueprint);
 		}
 		else
 		{
