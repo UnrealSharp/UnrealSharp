@@ -45,12 +45,7 @@ UCSManager& UCSManager::Get()
 
 void UCSManager::Shutdown()
 {
-	if (IsValid(Instance))
-	{
-		Instance->RemoveFromRoot();
-		Instance->MarkAsGarbage();
-		Instance = nullptr;
-	}
+	Instance = nullptr;
 }
 
 UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
