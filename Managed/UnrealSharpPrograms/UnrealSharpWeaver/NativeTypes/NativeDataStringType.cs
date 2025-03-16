@@ -22,7 +22,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
             return;
         }
         
-        TypeDefinition marshallerType = WeaverImporter.UnrealSharpAssembly.FindType("StringMarshaller", WeaverImporter.UnrealSharpNamespace)!.Resolve();
+        TypeDefinition marshallerType = WeaverImporter.UnrealSharpCoreAssembly.FindType("StringMarshaller", WeaverImporter.UnrealSharpCoreMarshallers)!.Resolve();
         _toNative = marshallerType.FindMethod("ToNative")!;
         _fromNative = marshallerType.FindMethod("FromNative")!;
         _destructInstance = marshallerType.FindMethod("DestructInstance")!;

@@ -100,14 +100,13 @@ public static class UnrealStructProcessor
     private static void CreateStructStaticConstructor(StructMetaData metadata, TypeDefinition structTypeDefinition)
     {
         MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(structTypeDefinition);
-        ILProcessor staticConstructorBody = staticConstructor.Body.GetILProcessor();
         
         // Create a field to cache the native struct class.
         // nint a = UCoreUObjectExporter.CallGetNativeStructFromName("MyStruct");
         VariableDefinition nativeStructClass = staticConstructor.AddLocalVariable(WeaverImporter.IntPtrType);
-        staticConstructorBody.Emit(OpCodes.Ldstr, metadata.Name);
-        staticConstructorBody.Emit(OpCodes.Call, WeaverImporter.GetNativeStructFromNameMethod);
-        staticConstructorBody.Emit(OpCodes.Stloc, nativeStructClass);
+        Instruction callGetNativeStructFromNameMethod = Instruction.Create(OpCodes.Call, WeaverImporter.GetNativeStructFromNameMethod);
+        Instruction setNativeStruct = Instruction.Create(OpCodes.Stloc, nativeStructClass);
+        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, setNativeStruct, [callGetNativeStructFromNameMethod]);
         
         ConstructorBuilder.InitializeFields(staticConstructor, [.. metadata.Fields], Instruction.Create(OpCodes.Ldloc, nativeStructClass));
         staticConstructor.FinalizeMethod();
