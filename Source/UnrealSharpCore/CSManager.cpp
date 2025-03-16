@@ -123,6 +123,20 @@ bool UCSManager::IsManagedField(const UObject* Field) const
 	return IsManagedPackage(Field->GetOutermost());
 }
 
+bool UCSManager::IsLoadingAnyAssembly() const
+{
+	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& LoadedAssembly : LoadedAssemblies)
+	{
+		TSharedPtr<FCSAssembly> AssemblyPtr = LoadedAssembly.Value;
+		if (AssemblyPtr.IsValid() && AssemblyPtr->IsLoading())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR

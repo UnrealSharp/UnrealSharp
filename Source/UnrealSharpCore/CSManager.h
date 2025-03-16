@@ -86,6 +86,8 @@ public:
 	bool IsManagedPackage(const UPackage* Package) const;
 	bool IsManagedField(const UObject* Field) const;
 
+	bool IsLoadingAnyAssembly() const;
+
 private:
 
 	friend FUnrealSharpCoreModule;

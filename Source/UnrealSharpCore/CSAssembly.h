@@ -33,6 +33,8 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
+	bool IsLoading() const { return bIsLoading; }
+
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class);
 
@@ -66,6 +68,8 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass);
 
 private:
+
+	bool bIsLoading = false;
 	
 	bool ProcessMetadata();
 

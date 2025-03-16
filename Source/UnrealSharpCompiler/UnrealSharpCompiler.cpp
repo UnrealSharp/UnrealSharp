@@ -48,8 +48,15 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
+	if (UCSManager::Get().IsLoadingAnyAssembly())
+	{
+		// Wait until all assemblies are loaded, so we can recompile all blueprints at once.
+		return;
+	}
+	
 	if (ManagedComponentsToCompile.IsEmpty() && ManagedClassesToCompile.IsEmpty())
 	{
+		// Nothing to compile.
 		return;
 	}
 	

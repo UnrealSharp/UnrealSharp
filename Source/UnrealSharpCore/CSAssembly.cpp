@@ -50,7 +50,8 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		UE_LOG(LogUnrealSharp, Display, TEXT("%s doesn't exist"), *AssemblyPath);
 		return false;
 	}
-	
+
+	bIsLoading = true;
 	FGCHandle NewHandle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyPath, bisCollectible);
 	NewHandle.Type = GCHandleType::WeakHandle;
 
@@ -68,6 +69,7 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		BuildUnrealTypes();
 	}
 
+	bIsLoading = false;
 	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(AssemblyName);
 	return true;
 }
