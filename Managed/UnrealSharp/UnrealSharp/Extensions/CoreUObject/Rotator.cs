@@ -30,7 +30,7 @@ public partial struct FRotator
     
     public FRotator(FQuat quat)
     {
-        FQuatExporter.CallToRotator(out this, ref quat);
+        FQuatExporter.CallToRotator(out this, quat);
     }
     
     public bool Equals(FRotator other)
@@ -50,7 +50,7 @@ public partial struct FRotator
     
     public FRotator(FMatrix rotationMatrix)
     {
-        FRotatorExporter.CallFromMatrix(out this, ref rotationMatrix);
+        FRotatorExporter.CallFromMatrix(ref this, rotationMatrix);
     }
 
     public FRotator(FVector vec)
@@ -62,13 +62,13 @@ public partial struct FRotator
     
     public FQuat ToQuaternion()
     {
-        FQuatExporter.CallToQuaternion(out var quat, ref this);
+        FQuatExporter.CallToQuaternion(out var quat, this);
         return quat;
     }
 
     public FMatrix ToMatrix()
     {
-        FMatrixExporter.CallFromRotator(out var rotationMatrix, ref this);
+        FMatrixExporter.CallFromRotator(out var rotationMatrix, this);
         return rotationMatrix;
     }
 

@@ -12,9 +12,9 @@ class UNREALSHARPCORE_API UFQuatExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void ToQuaternion(FQuat& Quaternion, const FRotator& Rotator);
+	static void ToQuaternion(FQuat* Quaternion, const FRotator& Rotator);
 
 	UNREALSHARP_FUNCTION()
-	static void ToRotator(FRotator& Rotator, const FQuat& Quaternion);
+	static void ToRotator(FRotator* Rotator, const FQuat& Quaternion);
 	
 };

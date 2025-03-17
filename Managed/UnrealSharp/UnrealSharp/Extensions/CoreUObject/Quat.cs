@@ -20,7 +20,7 @@ public partial struct FQuat
     /// </summary>
     public FQuat(FRotator rotator)
     {
-        FQuatExporter.CallToQuaternion(out this, ref rotator);
+        FQuatExporter.CallToQuaternion(out this, rotator);
     }
     
     /// <summary>
@@ -56,7 +56,7 @@ public partial struct FQuat
     /// </summary>
     public FRotator ToRotator()
     {
-        FQuatExporter.CallToRotator(out var rotator, ref this);
+        FQuatExporter.CallToRotator(out var rotator, this);
         return rotator;
     }
 

@@ -15,7 +15,7 @@ class UNREALSHARPCORE_API UFWorldDelegatesExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle& Handle);
+	static void BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle* Handle);
 
 	UNREALSHARP_FUNCTION()
 	static void UnbindOnWorldCleanup(FDelegateHandle Handle);

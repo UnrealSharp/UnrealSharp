@@ -125,16 +125,21 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                 {
                     sourceBuilder.Append("                 int totalSize = ");
 
-                    void AppendSizeOf(TypeSyntax type)
+                    void AppendSizeOf(DelegateParameterInfo param)
                     {
-                        string typeFullName = model.GetTypeInfo(type).Type.ToDisplayString();
+                        string typeFullName = model.GetTypeInfo(param.Type).Type.ToDisplayString();
+                        
+                        if (param.IsOutParameter || param.IsRefParameter)
+                        {
+                            typeFullName += "*";
+                        }
+                        
                         sourceBuilder.Append($"sizeof({typeFullName})");
                     }
                     
                     for (int i = 0; i < delegateInfo.Parameters.Count; i++)
                     {
-                        DelegateParameterInfo parameter = delegateInfo.Parameters[i];
-                        AppendSizeOf(parameter.Type);
+                        AppendSizeOf(delegateInfo.Parameters[i]);
 
                         if (i != delegateInfo.Parameters.Count - 1)
                         {
@@ -145,7 +150,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                     if (delegateInfo.HasReturnValue)
                     {
                         sourceBuilder.Append(" + ");
-                        AppendSizeOf(returnValueType.Type);
+                        AppendSizeOf(returnValueType);
                     }
                     
                     sourceBuilder.AppendLine(";");

@@ -14,10 +14,10 @@ class UNREALSHARPCORE_API UFEditorDelegatesExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void BindEndPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle);
+	static void BindEndPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle);
 
 	UNREALSHARP_FUNCTION()
-	static void BindStartPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle);
+	static void BindStartPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle);
 
 	UNREALSHARP_FUNCTION()
 	static void UnbindEndPIE(FDelegateHandle DelegateHandle);

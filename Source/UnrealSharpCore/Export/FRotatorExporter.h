@@ -12,6 +12,6 @@ class UNREALSHARPCORE_API UFRotatorExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void FromMatrix(FRotator& Rotator, const FMatrix& Matrix);
+	static void FromMatrix(FRotator* Rotator, const FMatrix& Matrix);
 	
 };

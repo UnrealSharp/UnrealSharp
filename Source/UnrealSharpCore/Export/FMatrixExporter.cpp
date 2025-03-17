@@ -1,6 +1,6 @@
 ﻿#include "FMatrixExporter.h"
 
-void UFMatrixExporter::FromRotator(FMatrix& Matrix, const FRotator& Rotator)
+void UFMatrixExporter::FromRotator(FMatrix* Matrix, const FRotator Rotator)
 {
-	Matrix = Rotator.Quaternion().ToMatrix();
+	*Matrix = Rotator.Quaternion().ToMatrix();
 }

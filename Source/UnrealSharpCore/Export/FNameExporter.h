@@ -12,10 +12,10 @@ class UNREALSHARPCORE_API UFNameExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void NameToString(FName Name, FString& OutString);
+	static void NameToString(FName Name, FString* OutString);
 
 	UNREALSHARP_FUNCTION()
-	static void StringToName(FName& Name, const UTF16CHAR* String);
+	static void StringToName(FName* Name, const UTF16CHAR* String);
 	
 	UNREALSHARP_FUNCTION()
 	static bool IsValid(FName Name);

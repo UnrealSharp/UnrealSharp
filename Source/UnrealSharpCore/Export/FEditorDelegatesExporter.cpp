@@ -1,16 +1,16 @@
 #include "FEditorDelegatesExporter.h"
 
-void UFEditorDelegatesExporter::BindEndPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle)
+void UFEditorDelegatesExporter::BindEndPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
 {
 #if WITH_EDITOR
-	DelegateHandle = FEditorDelegates::EndPIE.AddLambda(Delegate);
+	*DelegateHandle = FEditorDelegates::EndPIE.AddLambda(Delegate);
 #endif
 }
 
-void UFEditorDelegatesExporter::BindStartPIE(FPIEEvent Delegate, FDelegateHandle& DelegateHandle)
+void UFEditorDelegatesExporter::BindStartPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
 {
 #if WITH_EDITOR
-	DelegateHandle = FEditorDelegates::BeginPIE.AddLambda(Delegate);
+	*DelegateHandle = FEditorDelegates::BeginPIE.AddLambda(Delegate);
 #endif
 }
 

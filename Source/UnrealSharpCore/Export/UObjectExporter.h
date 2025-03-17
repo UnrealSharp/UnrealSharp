@@ -15,15 +15,12 @@ public:
 
 	UNREALSHARP_FUNCTION()
 	static void* CreateNewObject(UObject* Outer, UClass* Class, UObject* Template);
-
-	UNREALSHARP_FUNCTION()
-	static TSharedPtr<int> TestFunc() { return nullptr; }
 	
 	UNREALSHARP_FUNCTION()
 	static void* GetTransientPackage();
 
 	UNREALSHARP_FUNCTION()
-	static void NativeGetName(UObject* Object, FName& OutName);
+	static void NativeGetName(UObject* Object, FName* OutName);
 
 	UNREALSHARP_FUNCTION()
 	static void InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params);

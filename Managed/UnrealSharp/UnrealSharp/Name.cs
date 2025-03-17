@@ -26,7 +26,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         {
             fixed (char* stringPtr = name)
             {
-                FNameExporter.CallStringToName(ref this, (IntPtr) stringPtr);
+                FNameExporter.CallStringToName(ref this, stringPtr);
             }
         }
     }

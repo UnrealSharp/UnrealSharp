@@ -24,9 +24,9 @@ void* UUObjectExporter::GetTransientPackage()
 	return UCSManager::Get().FindManagedObject(TransientPackage).GetPointer();
 }
 
-void UUObjectExporter::NativeGetName(UObject* Object, FName& OutName)
+void UUObjectExporter::NativeGetName(UObject* Object, FName* OutName)
 {
-	OutName = !IsValid(Object) ? NAME_None : Object->GetFName();
+	*OutName = !IsValid(Object) ? NAME_None : Object->GetFName();
 }
 
 void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params)

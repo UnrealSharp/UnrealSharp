@@ -1,8 +1,8 @@
 #include "FWorldDelegatesExporter.h"
 
-void UFWorldDelegatesExporter::BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle& Handle)
+void UFWorldDelegatesExporter::BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle* Handle)
 {
-	Handle = FWorldDelegates::OnWorldCleanup.AddLambda(Delegate);
+	*Handle = FWorldDelegates::OnWorldCleanup.AddLambda(Delegate);
 }
 
 void UFWorldDelegatesExporter::UnbindOnWorldCleanup(const FDelegateHandle Handle)
