@@ -178,11 +178,10 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		return;
 	}
 	
-	TArray<FString> ProjectsToLoad;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsToLoad, bDirtyGlue);
-	bDirtyGlue = false;
+	TArray<FString> AllProjects;
+	FCSProcHelper::GetAllProjectPaths(AllProjects);
 	
-	if (ProjectsToLoad.IsEmpty())
+	if (AllProjects.IsEmpty())
 	{
 		SuggestProjectSetup();
 		return;
@@ -218,19 +217,27 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	UCSManager& CSharpManager = UCSManager::Get();
 	bool bUnloadFailed = false;
 
-	// Unload all assemblies in reverse order, to avoid unloading an assembly that another assembly depends on.
-	// For example all the assemblies depend on ProjectGlue, so we need to unload ProjectGlue last.
-	for (int32 i = ProjectsToLoad.Num() - 1; i >= 0; --i)
+	TArray<FString> ProjectsByLoadOrder;
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, bDirtyGlue);
+
+	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
+	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
+	// Good info: https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
+	// Note: An assembly is only referenced if any of its types are referenced in code.
+	// Otherwise optimized out, so ProjectGlue can be unloaded first if it's not used.
+	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
 	{
-		const FString& ProjectName = ProjectsToLoad[i];
+		const FString& ProjectName = ProjectsByLoadOrder[i];
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (Assembly.IsValid() && !Assembly->UnloadAssembly())
+		if (Assembly.IsValid() && Assembly->UnloadAssembly())
 		{
-			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
-			bUnloadFailed = true;
-			break;
+			continue;
 		}
+
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
+		bUnloadFailed = true;
+		break;
 	}
 
 	if (bUnloadFailed)
@@ -246,7 +253,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	}
 
 	// Load all assemblies again in the correct order.
-	for (const FString& ProjectName : ProjectsToLoad)
+	for (const FString& ProjectName : ProjectsByLoadOrder)
 	{
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
@@ -266,6 +273,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
+	bDirtyGlue = false;
 	
 	UE_LOGFMT(LogUnrealSharpEditor, Log, "Hot reload took {0} seconds to execute", FPlatformTime::Seconds() - StartTime);
 }

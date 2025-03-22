@@ -15,7 +15,7 @@ UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName
 
 UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName)
 {
-	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
+	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
 	FCSFieldName FieldName(InStructName, InNamespace);
 	UScriptStruct* ScriptStruct = Assembly->FindStruct(FieldName);
 	return ScriptStruct;
