@@ -79,7 +79,7 @@ public static class GCHandleUtilities
         }
         
         GCHandle subObjectGcHandle = GCHandle.FromIntPtr(handle);
-        return subObjectGcHandle.Target;
+        return subObjectGcHandle.IsAllocated ? subObjectGcHandle.Target : null;
     }
         
     public static T? GetObjectFromHandlePtr<T>(IntPtr handle)

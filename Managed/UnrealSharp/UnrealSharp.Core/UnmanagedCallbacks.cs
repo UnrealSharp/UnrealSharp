@@ -56,7 +56,8 @@ public static class UnmanagedCallbacks
 
                 if (method != null)
                 {
-                    GCHandle methodHandle = GCHandleUtilities.AllocateStrongPointer(method, type.Assembly);
+                    IntPtr functionPtr = method.MethodHandle.GetFunctionPointer();
+                    GCHandle methodHandle = GCHandleUtilities.AllocateStrongPointer(functionPtr, type.Assembly);
                     return GCHandle.ToIntPtr(methodHandle);
                 }
                 
@@ -126,29 +127,23 @@ public static class UnmanagedCallbacks
     
     [UnmanagedCallersOnly]
     public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle,
-        IntPtr methodHandle, 
+        IntPtr methodHandlePtr, 
         IntPtr argumentsBuffer, 
         IntPtr returnValueBuffer, 
         IntPtr exceptionTextBuffer)
     {
         try
         {
-            GCHandle handle = GCHandle.FromIntPtr(methodHandle);
+            IntPtr? methodHandle = GCHandleUtilities.GetObjectFromHandlePtr<IntPtr>(methodHandlePtr);
+            object? managdObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
             
-            if (handle.Target is not MethodInfo methodInfo)
+            if (methodHandle == null || managdObject == null)
             {
-                throw new ArgumentNullException(nameof(methodInfo));
+                throw new Exception("Invalid method or target handle");
             }
             
-            object? managedObject = GCHandle.FromIntPtr(managedObjectHandle).Target;
-            
-            if (managedObject == null)
-            {
-                throw new ArgumentNullException(nameof(managedObject));
-            }
-
-            delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodInfo.MethodHandle.GetFunctionPointer();
-            methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
+            delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodHandle;
+            methodPtr(managdObject, argumentsBuffer, returnValueBuffer);
             return 0;
         }
         catch (Exception ex)
