@@ -20,7 +20,7 @@ public:
 	
 	static TSharedPtr<FCSUnrealType> CreateTypeMetaData(const TSharedPtr<FJsonObject>& PropertyMetaData);
 
-	static void TryAddPropertyAsFieldNotify(const FProperty* Property, UBlueprintGeneratedClass* Class);
+	static void TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& PropertyMetaData, UBlueprintGeneratedClass* Class);
 
 private:
 	static TArray<TObjectPtr<UCSPropertyGenerator>> PropertyGenerators;

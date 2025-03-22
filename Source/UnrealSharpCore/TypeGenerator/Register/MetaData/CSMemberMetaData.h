@@ -9,6 +9,11 @@ struct FCSMemberMetaData
 	
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject);
 
+	bool HasMetaData(const FString& Key) const
+	{
+		return MetaData.Contains(Key);
+	}
+
 	bool operator == (const FCSMemberMetaData& Other) const
 	{
 		if (Name != Other.Name)

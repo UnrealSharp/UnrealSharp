@@ -28,7 +28,7 @@ FProperty* FCSFunctionFactory::CreateProperty(UCSFunctionBase* Function, const F
 
 	if (UBlueprintGeneratedClass* Class = Cast<UBlueprintGeneratedClass>(Function->GetOuter()))
 	{
-		FCSPropertyFactory::TryAddPropertyAsFieldNotify(NewParam, Class);
+		FCSPropertyFactory::TryAddPropertyAsFieldNotify(PropertyMetaData, Class);
 	}
 
 	if (!NewParam->HasAnyPropertyFlags(CPF_ZeroConstructor))

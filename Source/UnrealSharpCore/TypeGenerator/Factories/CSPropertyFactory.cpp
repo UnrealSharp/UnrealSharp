@@ -72,7 +72,7 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 			}
 		}
 
-		TryAddPropertyAsFieldNotify(NewProperty, OwningClass);
+		TryAddPropertyAsFieldNotify(PropertyMetaData, OwningClass);
 	}
 
 	NewProperty->SetFlags(RF_LoadCompleted);
@@ -127,17 +127,17 @@ UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType 
 	return nullptr;
 }
 
-void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FProperty* Property, UBlueprintGeneratedClass* Class)
+void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& PropertyMetaData, UBlueprintGeneratedClass* Class)
 {
 	bool bImplementsInterface = Class->ImplementsInterface(UNotifyFieldValueChanged::StaticClass());
-	bool bHasFieldNotifyMetaData = Property->HasMetaData(FBlueprintMetadata::MD_FieldNotify);
+	bool bHasFieldNotifyMetaData = PropertyMetaData.HasMetaData(TEXT("FieldNotify"));
 	
 	if (!bImplementsInterface || !bHasFieldNotifyMetaData)
 	{
 		return;
 	}
 	
-	Class->FieldNotifies.Add(FFieldNotificationId(Property->GetFName()));
+	Class->FieldNotifies.Add(FFieldNotificationId(PropertyMetaData.Name));
 }
 
 
