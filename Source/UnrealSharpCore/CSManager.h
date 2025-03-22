@@ -101,7 +101,7 @@ private:
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
 
-	bool TryLoadUserAssemblies();
+	bool LoadAllUserAssemblies();
 
 	static UCSManager* Instance;
 

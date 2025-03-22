@@ -178,11 +178,11 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		return;
 	}
 	
-	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths, bDirtyGlue);
+	TArray<FString> ProjectsToLoad;
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsToLoad, bDirtyGlue);
 	bDirtyGlue = false;
 	
-	if (ProjectPaths.IsEmpty())
+	if (ProjectsToLoad.IsEmpty())
 	{
 		SuggestProjectSetup();
 		return;
@@ -218,15 +218,18 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	UCSManager& CSharpManager = UCSManager::Get();
 	bool bUnloadFailed = false;
 
-	for (const FString& ProjectPath : ProjectPaths)
+	// Unload all assemblies in reverse order, to avoid unloading an assembly that another assembly depends on.
+	// For example all the assemblies depend on ProjectGlue, so we need to unload ProjectGlue last.
+	for (int32 i = ProjectsToLoad.Num() - 1; i >= 0; --i)
 	{
-		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
+		const FString& ProjectName = ProjectsToLoad[i];
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
 		if (Assembly.IsValid() && !Assembly->UnloadAssembly())
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to unload assembly: %s"), *ProjectName);
+			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
 			bUnloadFailed = true;
+			break;
 		}
 	}
 
@@ -241,10 +244,10 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 		return;
 	}
-	
-	for (const FString& ProjectPath : ProjectPaths)
+
+	// Load all assemblies again in the correct order.
+	for (const FString& ProjectName : ProjectsToLoad)
 	{
-		FString ProjectName = FPaths::GetBaseFilename(ProjectPath);
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
 		if (Assembly.IsValid())
@@ -264,7 +267,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
 	
-	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
+	UE_LOGFMT(LogUnrealSharpEditor, Log, "Hot reload took {0} seconds to execute", FPlatformTime::Seconds() - StartTime);
 }
 
 void FUnrealSharpEditorModule::OnCreateNewProject()

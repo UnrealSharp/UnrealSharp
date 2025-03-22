@@ -34,9 +34,7 @@ public:
 	static FString GetPluginAssembliesPath();
 	
 	static FString GetUnrealSharpPluginsPath();
-	static FString GetUnrealSharpCorePath();
 	
-	static FString GetGlueLibraryPath();
 	static FString GetUnrealSharpBuildToolPath();
 
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
@@ -45,16 +43,14 @@ public:
 	// Path to file with UnrealSharp metadata
 	static FString GetUnrealSharpMetadataPath();
 
-	static void GetUserProjectNames(TArray<FString>& UserProjectNames);
+	// Gets the project names in the order they should be loaded.
+	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeProjectGlue = false);
 
-	//Path to all use assemblies in the Binaries/managed directory
-	static void GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths);
+	// Same as GetProjectNamesByLoadOrder, but returns the paths to the assemblies instead.
+	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeProjectGlue = false);
 
-	// Path to all project directories in /Script
+	// Gets all the project paths in the /Scripts directory.
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);
-
-	// Path to all assembly directories in /Binaries/Managed
-	static void GetAllAssemblyPaths(TArray<FString>& AssemblyPaths);
 
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
