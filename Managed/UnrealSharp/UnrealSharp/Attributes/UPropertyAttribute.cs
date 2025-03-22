@@ -62,6 +62,9 @@ public enum PropertyFlags : ulong
     
     [PropertyFlagsMap(NativePropertyFlags.VisibleInstanceOnly)]
     VisibleInstanceOnly = NativePropertyFlags.VisibleInstanceOnly,
+    
+    [PropertyFlagsMap(NativePropertyFlags.Transient)]
+    Transient = NativePropertyFlags.Transient,
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
