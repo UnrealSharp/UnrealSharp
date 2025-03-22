@@ -98,7 +98,6 @@ void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 		
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName.ToString(), RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
-		Blueprint->BlueprintNamespace = TypeMetaData->FieldName.GetNamespace().GetName();
 		Blueprint->ParentClass = SuperClass;
 		
 		Field->ClassGeneratedBy = Blueprint;
