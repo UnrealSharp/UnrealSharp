@@ -184,7 +184,7 @@ void UCSManager::Initialize()
 	FCSPropertyFactory::Initialize();
 
 	// Try to load the user assembly. Can be empty if the user hasn't created any csproj yet.
-	TryLoadUserAssemblies();
+	LoadAllUserAssemblies();
 }
 
 bool UCSManager::InitializeDotNetRuntime()
@@ -286,10 +286,10 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
-bool UCSManager::TryLoadUserAssemblies()
+bool UCSManager::LoadAllUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
+	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
 
 	if (UserAssemblyPaths.IsEmpty())
 	{

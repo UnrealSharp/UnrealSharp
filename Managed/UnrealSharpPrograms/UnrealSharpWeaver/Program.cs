@@ -27,10 +27,16 @@ public static class Program
     private static void LoadBindingsAssembly()
     {
         DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
-        
-        foreach (var assemblyPath in WeaverOptions.AssemblyPaths)
+
+        List<string> searchPaths = new();
+        foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
         {
             string? directory = Path.GetDirectoryName(StripQuotes(assemblyPath));
+            
+            if (string.IsNullOrEmpty(directory) || searchPaths.Contains(directory))
+            {
+                continue;
+            }
             
             if (!Directory.Exists(directory))
             {
@@ -38,6 +44,7 @@ public static class Program
             }
             
             resolver.AddSearchDirectory(directory);
+            searchPaths.Add(directory);
         }
 
         WeaverImporter.Initialize(resolver);
@@ -111,27 +118,102 @@ public static class Program
 
     private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
     {
-        var assemblyNames = assemblies.Select(a => a.FullName).ToList();
+        HashSet<string> assemblyNames = new HashSet<string>();
         
-        var noReferenceAssemblies = assemblies
-            .Where(x => !x.MainModule.AssemblyReferences.Any(ar => assemblyNames.Contains(ar.FullName)))
-            .ToList();
-        
-        if (noReferenceAssemblies.Count == assemblies.Count) return assemblies;
-
-        var result = new List<AssemblyDefinition>(assemblies.Count);
-        result.AddRange(noReferenceAssemblies);
-        
-        while (result.Count != assemblies.Count)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
-            var dependentAssemblies = assemblies.Except(result)
-                .Where(x => x.MainModule.AssemblyReferences
-                    .Where(ar => assemblyNames.Contains(ar.FullName))
-                    .All(ar => result.Any(r => r.FullName == ar.FullName)));
+            assemblyNames.Add(assembly.FullName);
+        }
+
+        List<AssemblyDefinition> result = new List<AssemblyDefinition>(assemblies.Count);
+        HashSet<AssemblyDefinition> remaining = new HashSet<AssemblyDefinition>(assemblies);
+
+        // Add assemblies with no references first between the user assemblies.
+        foreach (AssemblyDefinition assembly in assemblies)
+        {
+            bool hasReferenceToUserAssembly = false;
+            foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
+            {
+                if (!assemblyNames.Contains(reference.FullName))
+                {
+                    continue;
+                }
+                
+                hasReferenceToUserAssembly = true;
+                break;
+            }
+
+            if (hasReferenceToUserAssembly)
+            {
+                continue;
+            }
             
-            result.AddRange(dependentAssemblies);
+            result.Add(assembly);
+            remaining.Remove(assembly);
         }
         
+        do
+        {
+            bool added = false;
+
+            foreach (AssemblyDefinition assembly in assemblies)
+            {
+                if (!remaining.Contains(assembly))
+                {
+                    continue;
+                }
+                
+                bool allResolved = true;
+                foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
+                {
+                    if (assemblyNames.Contains(reference.FullName))
+                    {
+                        bool found = false;
+                        foreach (AssemblyDefinition addedAssembly in result)
+                        {
+                            if (addedAssembly.FullName != reference.FullName)
+                            {
+                                continue;
+                            }
+                            
+                            found = true;
+                            break;
+                        }
+
+                        if (found)
+                        {
+                            continue;
+                        }
+                        
+                        allResolved = false;
+                        break;
+                    }
+                }
+
+                if (!allResolved)
+                {
+                    continue;
+                }
+                
+                result.Add(assembly);
+                remaining.Remove(assembly);
+                added = true;
+            }
+            
+            if (added || remaining.Count <= 0)
+            {
+                continue;
+            }
+            
+            foreach (AssemblyDefinition asm in remaining)
+            {
+                result.Add(asm);
+            }
+            
+            break;
+
+        } while (remaining.Count > 0);
+
         return result;
     }
 
@@ -142,14 +224,14 @@ public static class Program
 
     private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
     {
-        var readerParams = new ReaderParameters
+        ReaderParameters readerParams = new ReaderParameters
         {
             AssemblyResolver = resolver,
             ReadSymbols = true,
             SymbolReaderProvider = new PdbReaderProvider(),
         };
         
-        var result = new List<AssemblyDefinition>();
+        List<AssemblyDefinition> result = new List<AssemblyDefinition>();
         
         foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
         {
@@ -158,7 +240,8 @@ public static class Program
                 throw new FileNotFoundException($"Could not find assembly at: {assemblyPath}");
             }
             
-            result.Add(AssemblyDefinition.ReadAssembly(assemblyPath, readerParams));
+            AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(assemblyPath, readerParams);
+            result.Add(assembly);
         }
 
         return result;

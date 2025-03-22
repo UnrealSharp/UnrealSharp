@@ -165,16 +165,6 @@ FString FCSProcHelper::GetUnrealSharpPluginsPath()
 	return GetPluginAssembliesPath() / "UnrealSharp.Plugins.dll";
 }
 
-FString FCSProcHelper::GetUnrealSharpCorePath()
-{
-	return GetPluginAssembliesPath() / "UnrealSharp.dll";
-}
-
-FString FCSProcHelper::GetGlueLibraryPath()
-{
-	return GetUserAssemblyDirectory() / "ProjectGlue.dll";
-}
-
 FString FCSProcHelper::GetRuntimeConfigPath()
 {
 	return GetPluginAssembliesPath() / "UnrealSharp.runtimeconfig.json";
@@ -190,7 +180,7 @@ FString FCSProcHelper::GetUnrealSharpMetadataPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.metadata.json");
 }
 
-void FCSProcHelper::GetUserProjectNames(TArray<FString>& UserProjectNames)
+void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeProjectGlue)
 {
 	const FString ProjectMetadataPath = GetUnrealSharpMetadataPath();
 	
@@ -214,31 +204,29 @@ void FCSProcHelper::GetUserProjectNames(TArray<FString>& UserProjectNames)
 		return;
 	}
 
-	for (const TSharedPtr<FJsonValue>& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
+	for (const TSharedPtr<FJsonValue>& OrderEntry : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
 	{
-		UserProjectNames.Add(ProjectName->AsString());
+		FString ProjectName = OrderEntry->AsString();
+		
+		if (!bIncludeProjectGlue && ProjectName == TEXT("ProjectGlue"))
+		{
+			continue;
+		}
+		
+		UserProjectNames.Add(OrderEntry->AsString());
 	}
 }
 
 
-void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
+void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeProjectGlue)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
-	IFileManager& FileManager = IFileManager::Get();
 	
 	TArray<FString> ProjectNames;
-	GetUserProjectNames(ProjectNames);
+	GetProjectNamesByLoadOrder(ProjectNames, bIncludeProjectGlue);
 
 	for (const FString& ProjectName : ProjectNames)
 	{
-		const FString MetaDataPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".metadata.json"));
-
-		// Continue if the metadata file does not exist.
-		if (!FileManager.FileExists(*MetaDataPath))
-		{
-			continue;
-		}
-
 		const FString AssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".dll"));
 		AssemblyPaths.Add(AssemblyPath);
 	}
@@ -269,17 +257,6 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncl
 		ProjectPaths.RemoveAt(i);
 		return;
 	}
-}
-
-void FCSProcHelper::GetAllAssemblyPaths(TArray<FString>& AssemblyPaths)
-{
-	// Use the FileManager to find files matching the pattern
-	IFileManager::Get().FindFilesRecursive(AssemblyPaths,
-		*GetUserAssemblyDirectory(),
-		TEXT("*.dll"),
-		true,
-		false,
-		false);
 }
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
