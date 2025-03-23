@@ -8,6 +8,7 @@ using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
+using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator.Exporters;
 
@@ -41,7 +42,7 @@ public static class NativeBindExporter
     [UhtExporter(Name = "UnrealSharpNativeGlue", 
         Description = "Exports Native Glue", 
         Options = UhtExporterOptions.Default, 
-        ModuleName = "UnrealSharpCore", CppFilters = ["*.unrealsharp.gen.cpp"])]
+        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.gen.cpp" })]
     private static void Main(IUhtExportFactory factory)
     {
         ExportBindMethods(factory);
@@ -110,7 +111,7 @@ public static class NativeBindExporter
             
             GeneratorStringBuilder builder = new();
             builder.AppendLine("#include \"UnrealSharpBinds.h\"");
-            builder.AppendLine($"#include \"{headerFile}\"");
+            builder.AppendLine($"#include \"{headerFile.FilePath}\"");
             builder.AppendLine();
             
             foreach (NativeBindTypeInfo containingType in containingTypesInHeader)
@@ -141,10 +142,15 @@ public static class NativeBindExporter
                 builder.AppendLine();
                 builder.AppendLine();
             }
+
+            UHTManifest.Module manifestModule;
+            #if UE_5_5_OR_LATER
+            manifestModule = headerFile.Module.Module;
+            #else
+            manifestModule= headerFile.Package.GetModule();
+            #endif
             
-            UHTManifest.Module manifestModule = headerFile.Module.Module;
             string outputDirectory = manifestModule.OutputDirectory;
-            
             string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.gen.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             

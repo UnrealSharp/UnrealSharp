@@ -3,9 +3,7 @@
     <Import Project="UnrealSharpManagedGlue.ubtplugin.csproj.props" Condition="Exists('UnrealSharpManagedGlue.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
     
-    <PropertyGroup>
-        <DefineConstants>UE_5_5_OR_LATER</DefineConstants>
-    </PropertyGroup>
+
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
