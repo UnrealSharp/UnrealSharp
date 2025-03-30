@@ -656,4 +656,11 @@ public sealed class MakeEditWidgetAttribute : Attribute { }
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class NoGetterAttribute : Attribute { }
 
+/// <summary>
+/// [BindWidget]
+/// Used for UWidget properties. Indicates that the property should be bound to a widget in the Blueprint Editor.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class BindWidgetAttribute : Attribute { }
+
 #endregion
