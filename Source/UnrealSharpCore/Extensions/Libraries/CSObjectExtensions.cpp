@@ -29,3 +29,13 @@ bool UCSObjectExtensions::IsTemplate(const UObject* Object)
 
 	return Object->IsTemplate();
 }
+
+UClass* UCSObjectExtensions::K2_GetClass(const UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		return nullptr;
+	}
+
+	return Object->GetClass();
+}

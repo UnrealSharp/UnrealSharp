@@ -17,4 +17,7 @@ public:
 
 	UFUNCTION(meta=(ScriptMethod))
 	static bool IsTemplate(const UObject* Object);
+
+	UFUNCTION(meta = (ScriptMethod))
+	static UClass* K2_GetClass(const UObject* Object);
 };

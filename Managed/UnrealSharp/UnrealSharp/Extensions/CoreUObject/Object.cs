@@ -355,6 +355,11 @@ public partial class UObject : UnrealSharpObject
     }
     
     /// <summary>
+    /// Gets the class of the object.
+    /// </summary>
+    public UClass Class => UCSObjectExtensions.GetClass(this);
+    
+    /// <summary>
     /// Determines whether the object is a template / class default object.
     /// </summary>
     public bool IsTemplate => UCSObjectExtensions.IsTemplate(this);
