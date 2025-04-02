@@ -663,4 +663,11 @@ public sealed class NoGetterAttribute : Attribute { }
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class BindWidgetAttribute : Attribute { }
 
+/// <summary>
+/// [BindWidgetAnim]
+/// Used for binding widget animations to a property
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class BindWidgetAnimAttribute : Attribute { }
+
 #endregion
