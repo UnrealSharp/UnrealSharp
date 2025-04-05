@@ -25,16 +25,15 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative? keyToNative,
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative? valueToNative)
     {
-        _helper = new ScriptMapHelper(mapProperty, address);
         _nativeProperty = new NativeProperty(mapProperty);
+        _keyProperty = new NativeProperty(FMapPropertyExporter.CallGetKey(mapProperty));
+        _valueProperty = new NativeProperty(FMapPropertyExporter.CallGetValue(mapProperty));
+        
+        _helper = new ScriptMapHelper(_nativeProperty, _keyProperty, _valueProperty, address);
         _keyFromNative = keyFromNative;
         _keyToNative = keyToNative;
         _valueFromNative = valueFromNative;
         _valueToNative = valueToNative;
-        
-        List<NativeProperty> innerFields = _nativeProperty.InnerFields;
-        _keyProperty = innerFields[0];
-        _valueProperty = innerFields[1];
     }
     
     internal int GetMaxIndex()

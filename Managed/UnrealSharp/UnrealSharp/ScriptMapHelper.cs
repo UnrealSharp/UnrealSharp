@@ -14,14 +14,22 @@ internal unsafe struct ScriptMapHelper
     private readonly NativeProperty _keyProp;
     private readonly NativeProperty _valueProp;
     
-    public ScriptMapHelper(IntPtr mapProperty, IntPtr map = default)
-    {                        
-        _mapProperty = new NativeProperty(mapProperty);
+    public ScriptMapHelper(NativeProperty mapProperty, NativeProperty key, NativeProperty value, IntPtr map = default)
+    {
         MapAddress = map;
         
-        List<NativeProperty> innerProperties = _mapProperty.InnerFields;
-        _keyProp = innerProperties[0];
-        _valueProp = innerProperties[1];
+        _mapProperty = mapProperty;
+        _keyProp = key;
+        _valueProp = value;
+    }
+    
+    public ScriptMapHelper(IntPtr mapProperty)
+    {
+        MapAddress = IntPtr.Zero;
+        
+        _mapProperty = new NativeProperty(mapProperty);
+        _keyProp = new NativeProperty(FMapPropertyExporter.CallGetKey(mapProperty));
+        _valueProp = new NativeProperty(FMapPropertyExporter.CallGetValue(mapProperty));
     }
 
     /// <summary>

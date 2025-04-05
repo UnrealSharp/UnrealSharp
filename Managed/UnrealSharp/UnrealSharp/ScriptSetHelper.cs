@@ -39,7 +39,7 @@ internal unsafe struct FScriptSetHelper
     {           
         Set = new FScriptSet(set);
         _setProperty = setProperty;
-        _elementProp = setProperty.GetInnerField(0)!;
+        _elementProp = new NativeProperty(FSetPropertyExporter.CallGetElement(setProperty.Property));
     }
 
     /// <summary>
