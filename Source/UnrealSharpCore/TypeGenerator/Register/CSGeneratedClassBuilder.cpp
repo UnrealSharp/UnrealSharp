@@ -85,7 +85,8 @@ void FCSGeneratedClassBuilder::UpdateClassDefaultObject() const
 	
 	OwningAssembly->RemoveManagedObject(ClassDefaultObject);
 	
-	Field->GetDefaultObject(true);
+	UObject* DefaultObject = Field->GetDefaultObject(true);
+	SetupDefaultTickSettings(DefaultObject, Field);
 }
 
 void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
