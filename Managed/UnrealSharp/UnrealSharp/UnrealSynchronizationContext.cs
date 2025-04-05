@@ -8,9 +8,11 @@ namespace UnrealSharp
     public enum NamedThread
     {
         UnusedAnchor = -1,
+
         /** The always-present, named threads are listed next **/
         RHIThread,
         GameThread,
+
         // The render thread is sometimes the game thread and is sometimes the actual rendering thread
         ActualRenderingThread = GameThread + 1,
         // CAUTION ThreadedRenderingThread must be the last named thread, insert new named threads before it
@@ -61,134 +63,118 @@ namespace UnrealSharp
 
     public static class UnrealContextTaskExtension
     {
-        public static Task ConfigureWithUnrealContext(this Task task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
+        public static Task ConfigureWithUnrealContext(this Task task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
         {
-            var previousContext = SynchronizationContext.Current;
+            SynchronizationContext? previousContext = SynchronizationContext.Current;
             var unrealContext = new UnrealSynchronizationContext(thread);
-
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
-            return task.ContinueWith((t) =>
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-
-                if (thrownOnCancel && t.IsCanceled)
+            return task.ContinueWith((Task t, object? state) =>
                 {
-                    throw new TaskCanceledException();
-                }
-            });
+                    SynchronizationContext newPreviousContext = (SynchronizationContext) state!;
+                    try
+                    {
+                        if (t.IsCanceled && throwOnCancel)
+                        {
+                            throw new TaskCanceledException();
+                        }
+                        
+                        t.GetAwaiter().GetResult();
+                    }
+                    finally
+                    {
+                        SynchronizationContext.SetSynchronizationContext(newPreviousContext);
+                    }
+                },
+                previousContext,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
 
-        public static Task ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
-        {
-            var previousContext = SynchronizationContext.Current;
-            var unrealContext = new UnrealSynchronizationContext(thread);
+        public static Task ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false) 
+            => task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel);
 
+        public static Task<T> ConfigureWithUnrealContext<T>(this Task<T> task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
+        {
+            SynchronizationContext? previousContext = SynchronizationContext.Current;
+            UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread);
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
-            return task.AsTask().ContinueWith((t) =>
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-
-                if (thrownOnCancel && t.IsCanceled)
+            return task.ContinueWith((t, state) =>
                 {
-                    throw new TaskCanceledException();
-                }
-            });
+                    SynchronizationContext newPreviousContext = (SynchronizationContext) state!;
+                    try
+                    {
+                        if (t.IsCanceled && throwOnCancel)
+                        {
+                            throw new TaskCanceledException();
+                        }
+                        
+                        return t.GetAwaiter().GetResult();
+                    }
+                    finally
+                    {
+                        SynchronizationContext.SetSynchronizationContext(newPreviousContext);
+                    }
+                },
+                previousContext,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
 
-
-        public static Task<T> ConfigureWithUnrealContext<T>(this Task<T> task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
-        {
-            var previousContext = SynchronizationContext.Current;
-            var unrealContext = new UnrealSynchronizationContext(thread);
-
-            SynchronizationContext.SetSynchronizationContext(unrealContext);
-
-            return task.ContinueWith((t) =>
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-
-                if (thrownOnCancel && t.IsCanceled)
-                {
-                    throw new TaskCanceledException();
-                }
-
-                return t.Result;
-            });
-        }
-
-        public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread, bool thrownOnCancel = false)
-        {
-            var previousContext = SynchronizationContext.Current;
-            var unrealContext = new UnrealSynchronizationContext(thread);
-
-            SynchronizationContext.SetSynchronizationContext(unrealContext);
-
-            return task.AsTask().ContinueWith((t) =>
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-
-                if (thrownOnCancel && t.IsCanceled)
-                {
-                    throw new TaskCanceledException();
-                }
-
-                return t.Result;
-            });
-        }
+        public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread,
+            bool throwOnCancel = false)
+            => task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel);
     }
-
-    public class UnrealSynchronizationContext : SynchronizationContext
+    
+    public sealed class UnrealSynchronizationContext : SynchronizationContext
     {
         public static NamedThread CurrentThread => (NamedThread)AsyncExporter.CallGetCurrentNamedThread();
 
-        private NamedThread thread;
-        private nint worldContextObject;
+        private readonly NamedThread _thread;
+        private readonly nint _worldContext;
 
         public UnrealSynchronizationContext(NamedThread thread)
         {
-            this.thread = thread;
-            worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
+            _thread = thread;
+            _worldContext = FCSManagerExporter.CallGetCurrentWorldContext();
         }
 
-        public override void Post(SendOrPostCallback d, object? state)
-        {
-            RunOnThread(worldContextObject, thread, () => d(state));
-        }
+        public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));
 
         public override void Send(SendOrPostCallback d, object? state)
         {
-            if (CurrentThread == thread)
+            if (CurrentThread == _thread)
             {
                 d(state);
                 return;
             }
-            var semaphore = new ManualResetEventSlim(initialState: false);
-            RunOnThread(worldContextObject, thread, () =>
+
+            using ManualResetEventSlim manualResetEventInstance = new ManualResetEventSlim(false);
+            
+            RunOnThread(_worldContext, _thread, () =>
             {
-                d(state);
-                semaphore.Set();
+                try
+                {
+                    d(state);
+                }
+                finally
+                {
+                    manualResetEventInstance.Set();
+                }
             });
-            semaphore.Wait();
+            manualResetEventInstance.Wait();
         }
 
         internal static void RunOnThread(nint worldContextObject, NamedThread thread, Action callback)
         {
-            unsafe
-            {
-                GCHandle gcHandle = GCHandle.Alloc(callback);
-                AsyncExporter.CallRunOnThread(worldContextObject, (int)thread, GCHandle.ToIntPtr(gcHandle));
-            }
+            GCHandle callbackHandle = GCHandleUtilities.AllocateStrongPointer(callback);
+            AsyncExporter.CallRunOnThread(worldContextObject, (int) thread, GCHandle.ToIntPtr(callbackHandle));
         }
 
         public static void RunOnThread(UObject worldContextObject, NamedThread thread, Action callback)
-        {
-            unsafe
-            {
-                GCHandle gcHandle = GCHandle.Alloc(callback);
-                AsyncExporter.CallRunOnThread(worldContextObject.NativeObject, (int)thread, GCHandle.ToIntPtr(gcHandle));
-            }
-        }
+            => RunOnThread(worldContextObject.NativeObject, thread, callback);
     }
 }

@@ -4,14 +4,22 @@
 
 void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle)
 {
-	AsyncTask(Thread, [=]()
+	TWeakObjectPtr<UObject> WeakWorldContextObject(WorldContextObject);
+	
+	AsyncTask(Thread, [WeakWorldContextObject, DelegateHandle]()
 	{
-		UCSManager& Manager = UCSManager::Get();
-		Manager.SetCurrentWorldContext(WorldContextObject);
+		FGCHandle Handle(DelegateHandle);
+		
+		if (!WeakWorldContextObject.IsValid())
+		{
+			return;
+		}
 
-		FGCHandle GCHandle(DelegateHandle);
+		UObject* WorldContextObject = WeakWorldContextObject.Get();
+		UCSManager::Get().SetCurrentWorldContext(WorldContextObject);
+		
 		FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(DelegateHandle);
-		GCHandle.Dispose();
+		Handle.Dispose();
 	});
 }
 

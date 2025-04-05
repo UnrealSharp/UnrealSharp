@@ -114,14 +114,14 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	{
 		return;
 	}
+	
+	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 
-	if (FPlayWorldCommandCallbacks::IsInPIE())
+	if (FPlayWorldCommandCallbacks::IsInPIE() && Settings->AutomaticHotReloading == OnScriptSave)
 	{
 		bHasQueuedHotReload = true;
 		return;
 	}
-	
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{

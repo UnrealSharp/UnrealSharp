@@ -59,9 +59,11 @@ public static class GCHandleUtilities
     public static void Free(GCHandle handle)
     {
         object? target = handle.Target;
+        
         if (target != null)
         {
-            var alc = GetAssemblyLoadContext(target);
+            AssemblyLoadContext? alc = GetAssemblyLoadContext(target);
+            
             if (alc != null && StrongReferencesByAlc.TryGetValue(alc, out var strongReferences))
             {
                 strongReferences.TryRemove(handle, out _);
