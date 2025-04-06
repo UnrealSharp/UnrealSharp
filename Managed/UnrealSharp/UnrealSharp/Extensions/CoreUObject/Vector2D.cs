@@ -18,6 +18,18 @@ public partial struct FVector2D
         X = vec.X;
         Y = vec.Y;
     }
+    
+    public FVector2D(Vector2 vec)
+    {
+        X = vec.X;
+        Y = vec.Y;
+    }
+    
+    public FVector2D(FVector vec)
+    {
+        X = vec.X;
+        Y = vec.Y;
+    }
 
     public static implicit operator FVector2D(Vector2 vec) => new FVector2D(vec.X, vec.Y);
     public static implicit operator Vector2(FVector2D vec) => new Vector2((float)vec.X, (float)vec.Y);

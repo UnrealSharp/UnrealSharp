@@ -12,6 +12,13 @@ public partial struct FVector
         Y = y;
         Z = z;
     }
+
+    public FVector(double xyz)
+    {
+        X = xyz;
+        Y = xyz;
+        Z = xyz;
+    }
     
     public static FVector One => new(1, 1, 1);
     public static FVector Zero => new(0, 0, 0);
@@ -389,6 +396,12 @@ public partial struct FVector
         return -value;
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Dot(FVector left, FVector right)
+    {
+        return (float)(left.X * right.X + left.Y * right.Y + left.Z * right.Z);
+    }
+    
     public static bool operator == (FVector left, FVector right)
     {
         return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
@@ -489,5 +502,15 @@ public partial struct FVector
     public static FVector operator %(float left, FVector right)
     {
         return new FVector(left % right.X, left % right.Y, left % right.Z);
+    }
+    
+    public static FVector operator +(FVector value, double value2)
+    {
+        return new FVector(value.X + value2, value.Y + value2, value.Z + value2);
+    }
+    
+    public static FVector operator +(FVector value, float value2)
+    {
+        return new FVector(value.X + value2, value.Y + value2, value.Z + value2);
     }
 }
