@@ -3,8 +3,15 @@ using System.Runtime.Loader;
 
 namespace UnrealSharp.Plugins;
 
-public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isCollectible) : AssemblyLoadContext(isCollectible)
+public class PluginLoadContext : AssemblyLoadContext
 {
+    public PluginLoadContext(string assemblyName, AssemblyDependencyResolver resolver, bool isCollectible) : base(assemblyName, isCollectible)
+    {
+        _resolver = resolver;
+    }
+    
+    private readonly AssemblyDependencyResolver _resolver;
+    
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         if (string.IsNullOrEmpty(assemblyName.Name))
@@ -34,7 +41,7 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
             }
         }
 
-        string? assemblyPath = resolver.ResolveAssemblyToPath(assemblyName);
+        string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
 
         if (string.IsNullOrEmpty(assemblyPath))
         {
@@ -55,7 +62,7 @@ public class PluginLoadContext(AssemblyDependencyResolver resolver, bool isColle
 
     protected override nint LoadUnmanagedDll(string unmanagedDllName)
     {
-        string? libraryPath = resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+        string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
 
         return libraryPath != null ? LoadUnmanagedDllFromPath(libraryPath) : nint.Zero;
     }

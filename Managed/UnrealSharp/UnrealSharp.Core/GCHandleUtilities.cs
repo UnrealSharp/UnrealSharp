@@ -8,7 +8,7 @@ namespace UnrealSharp.Core;
 
 public static class GCHandleUtilities
 {
-    private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongReferencesByAlc = new();
+    private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongRefsByAssembly = new();
 
     private static AssemblyLoadContext? GetAssemblyLoadContext(object obj)
     {
@@ -18,7 +18,7 @@ public static class GCHandleUtilities
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnAlcUnloading(AssemblyLoadContext alc)
     {
-        StrongReferencesByAlc.TryRemove(alc, out _);
+        StrongRefsByAssembly.TryRemove(alc, out _);
     }
 
     public static GCHandle AllocateStrongPointer(object value, Assembly? alc = null)
@@ -38,8 +38,8 @@ public static class GCHandleUtilities
             return GCHandle.Alloc(value, GCHandleType.Weak);
         }
         
-        var weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
-        var strongReferences = StrongReferencesByAlc.GetOrAdd(assemblyLoadContext, alcInstance =>
+        GCHandle weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
+        ConcurrentDictionary<GCHandle, object> strongReferences = StrongRefsByAssembly.GetOrAdd(assemblyLoadContext, alcInstance =>
         {
             alcInstance.Unloading += OnAlcUnloading;
             return new ConcurrentDictionary<GCHandle, object>();
@@ -64,7 +64,7 @@ public static class GCHandleUtilities
         {
             AssemblyLoadContext? alc = GetAssemblyLoadContext(target);
             
-            if (alc != null && StrongReferencesByAlc.TryGetValue(alc, out var strongReferences))
+            if (alc != null && StrongRefsByAssembly.TryGetValue(alc, out var strongReferences))
             {
                 strongReferences.TryRemove(handle, out _);
             }

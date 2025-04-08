@@ -47,7 +47,10 @@ public static class PluginLoader
                 return assembly;
             }
 
-            PluginLoadContext pluginLoadContext = new PluginLoadContext(new AssemblyDependencyResolver(assemblyPath), isCollectible);
+            // Just for debugging
+            string pluginLoadContextName = assemblyName.Name! + "_AssemblyLoadContext";
+            
+            PluginLoadContext pluginLoadContext = new PluginLoadContext(pluginLoadContextName, new AssemblyDependencyResolver(assemblyPath), isCollectible);
             Plugin plugin = new Plugin(assemblyName, pluginLoadContext, assemblyPath);
   
             if (plugin.Load() && plugin.WeakRefAssembly != null && plugin.WeakRefAssembly.Target is Assembly loadedAssembly)

@@ -20,7 +20,7 @@ public unsafe struct PluginsCallbacks
             return IntPtr.Zero;
         };
 
-        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(newPlugin));
+        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(newPlugin, newPlugin));
     }
 
     [UnmanagedCallersOnly]
