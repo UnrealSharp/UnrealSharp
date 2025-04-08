@@ -230,14 +230,12 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 		const FString& ProjectName = ProjectsByLoadOrder[i];
 		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (Assembly.IsValid() && Assembly->UnloadAssembly())
+		if (Assembly.IsValid() && !Assembly->UnloadAssembly())
 		{
-			continue;
+			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
+			bUnloadFailed = true;
+			break;
 		}
-
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
-		bUnloadFailed = true;
-		break;
 	}
 
 	if (bUnloadFailed)

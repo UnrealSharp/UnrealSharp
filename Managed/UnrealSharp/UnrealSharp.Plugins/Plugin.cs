@@ -12,19 +12,17 @@ public class Plugin
         AssemblyPath = assemblyPath;
         
         LoadContext = loadContext;
-        WeakRefLoadContext = new WeakReference(loadContext, trackResurrection: true);
+        WeakRefLoadContext = new WeakReference(loadContext);
     }
     
-    public AssemblyName AssemblyName { get; }
+    public AssemblyName AssemblyName { get; set; }
     public string AssemblyPath;
     
     public PluginLoadContext? LoadContext { get; private set; }
-    public WeakReference WeakRefLoadContext { get; private set; }
+    public WeakReference? WeakRefLoadContext { get ; private set; }
     
     public WeakReference? WeakRefAssembly { get; private set; }
-
-    private readonly List<IModuleInterface> _moduleInterfaces = [];
-    public IReadOnlyList<IModuleInterface> ModuleInterfaces => _moduleInterfaces;
+    public List<IModuleInterface> ModuleInterfaces { get; } = [];
 
     public bool IsAssemblyAlive
     {
@@ -32,20 +30,14 @@ public class Plugin
         get => WeakRefAssembly != null && WeakRefAssembly.IsAlive;
     }
 
-    public bool IsLoadContextAlive
-    {
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        get => WeakRefLoadContext.IsAlive;
-    }
-
     public bool Load()
     {
-        if (LoadContext == null || !WeakRefLoadContext.IsAlive || WeakRefLoadContext.Target is not PluginLoadContext loadContext)
+        if (LoadContext == null || (WeakRefAssembly != null && WeakRefAssembly.IsAlive))
         {
             return false;
         }
-
-        Assembly assembly = loadContext.LoadFromAssemblyName(AssemblyName);
+        
+        Assembly assembly = LoadContext.LoadFromAssemblyName(AssemblyName);
         WeakRefAssembly = new WeakReference(assembly);
         
         Type[] types = assembly.GetTypes();
@@ -63,7 +55,7 @@ public class Plugin
             }
 
             moduleInterface.StartupModule();
-            _moduleInterfaces.Add(moduleInterface);
+            ModuleInterfaces.Add(moduleInterface);
         }
 
         return true;
@@ -72,20 +64,32 @@ public class Plugin
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void Unload()
     {
-        if (_moduleInterfaces != null)
-        {
-            foreach (IModuleInterface moduleInterface in _moduleInterfaces)
-            {
-                moduleInterface.ShutdownModule();
-            }
+        ShutdownModule();
 
-            _moduleInterfaces.Clear();
+        if (LoadContext == null)
+        {
+            return;
+        }
+        
+        LoadContext.Unload();
+        LoadContext = null;
+        WeakRefLoadContext = null;
+    }
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void PostUnload()
+    {
+        WeakRefAssembly = null;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void ShutdownModule()
+    {
+        foreach (IModuleInterface moduleInterface in ModuleInterfaces)
+        {
+            moduleInterface.ShutdownModule();
         }
 
-        if (LoadContext != null)
-        {
-            LoadContext.Unload();
-            LoadContext = null;
-        }
+        ModuleInterfaces.Clear();
     }
 }

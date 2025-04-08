@@ -61,8 +61,8 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 		return false;
 	}
 
-	AssemblyHandle = MakeShared<FGCHandle>(NewHandle);
-	AllocatedHandles.Add(AssemblyHandle);
+	ManagedAssemblyHandle = MakeShared<FGCHandle>(NewHandle);
+	AllocatedManagedHandles.Add(ManagedAssemblyHandle);
 
 	if (ProcessMetadata())
 	{
@@ -187,23 +187,20 @@ bool FCSAssembly::UnloadAssembly()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
 	
-	for (TSharedPtr<FGCHandle>& Handle : AllocatedHandles)
+	for (TSharedPtr<FGCHandle>& Handle : AllocatedManagedHandles)
 	{
 		Handle->Dispose();
 		Handle.Reset();
 	}
 	
-	ClassHandles.Empty();
-	ObjectHandles.Empty();
-	AllocatedHandles.Empty();
+	ManagedClassHandles.Empty();
+	ManagedObjectHandles.Empty();
+	AllocatedManagedHandles.Empty();
+
+	// Don't need the assembly handle anymore, we use the path to unload the assembly.
+	ManagedAssemblyHandle.Reset();
 	
-	if (!UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to unload: %s"), *AssemblyPath);
-		return false;
-	}
-	
-	return true;
+	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
 }
 
 UPackage* FCSAssembly::GetPackage(const FCSNamespace Namespace)
@@ -228,13 +225,13 @@ TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 		return nullptr;
 	}
 
-	if (TSharedPtr<FGCHandle>* Handle = ClassHandles.Find(FieldName))
+	if (TSharedPtr<FGCHandle>* Handle = ManagedClassHandles.Find(FieldName))
 	{
 		return *Handle;
 	}
 
 	FString FullName = FieldName.GetFullName().ToString();
-	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(AssemblyHandle->GetPointer(), *FullName);
+	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(ManagedAssemblyHandle->GetPointer(), *FullName);
 	
 	if (TypeHandle == nullptr)
 	{
@@ -243,8 +240,8 @@ TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(TypeHandle, GCHandleType::WeakHandle);
 	
-	AllocatedHandles.Add(AllocatedHandle);
-	ClassHandles.Add(FieldName, AllocatedHandle);
+	AllocatedManagedHandles.Add(AllocatedHandle);
+	ManagedClassHandles.Add(FieldName, AllocatedHandle);
 	
 	return AllocatedHandle;
 }
@@ -270,7 +267,7 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& Type
 	}
 	
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(MethodHandle, GCHandleType::WeakHandle);
-	AllocatedHandles.Add(AllocatedHandle);
+	AllocatedManagedHandles.Add(AllocatedHandle);
 
 	FCSManagedMethod ManagedMethod(AllocatedHandle);
 	return ManagedMethod;
@@ -416,7 +413,7 @@ FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateNewManagedObject);
 	
-	if (FGCHandle* FoundHandle = ObjectHandles.Find(Object->GetUniqueID()))
+	if (FGCHandle* FoundHandle = ManagedObjectHandles.Find(Object->GetUniqueID()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Object {0} already has a managed counterpart", *Object->GetName());
 		return FoundHandle;
@@ -438,7 +435,7 @@ FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 		return nullptr;
 	}
 	
-	return &ObjectHandles.Add(Object->GetUniqueID(), NewManagedObject);
+	return &ManagedObjectHandles.Add(Object->GetUniqueID(), NewManagedObject);
 }
 
 FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
@@ -451,7 +448,7 @@ FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 		return FGCHandle();
 	}
 
-	FGCHandle* Handle = ObjectHandles.Find(Object->GetUniqueID());
+	FGCHandle* Handle = ManagedObjectHandles.Find(Object->GetUniqueID());
 	
 	if (!Handle)
 	{
@@ -472,7 +469,7 @@ void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::RemoveManagedObject);
 	
 	FGCHandle Handle;
-	if (ObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
+	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
 	{
 		Handle.Dispose();
 	}
