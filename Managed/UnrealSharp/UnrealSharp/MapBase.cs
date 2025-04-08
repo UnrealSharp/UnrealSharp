@@ -442,18 +442,22 @@ public class MapMarshaller<TKey, TValue>
 // Used for members only where they are exposed as readonly
 public class MapReadOnlyMarshaller<TKey, TValue>
 {
-    IntPtr nativeProperty;
-    TMapReadOnly<TKey, TValue>? readOnlyMapWrapper;
-    MarshallingDelegates<TKey>.FromNative keyFromNative;
-    MarshallingDelegates<TValue>.FromNative valueFromNative;
+    private readonly IntPtr _nativeProperty;
+    private TMapReadOnly<TKey, TValue>? _readOnlyMapWrapper;
+    private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
+    private readonly MarshallingDelegates<TKey>.ToNative _keyToNative;
+    private readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
+    private readonly MarshallingDelegates<TValue>.ToNative _valueToNative;
 
     public MapReadOnlyMarshaller(IntPtr mapProperty,
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative, 
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
     {
-        nativeProperty = mapProperty;
-        this.keyFromNative = keyFromNative;
-        this.valueFromNative = valueFromNative;
+        _nativeProperty = mapProperty;
+        _keyFromNative = keyFromNative;
+        _keyToNative = keyToNative;
+        _valueFromNative = valueFromNative;
+        _valueToNative = valueToNative;
     }
 
     public TMapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
@@ -463,13 +467,13 @@ public class MapReadOnlyMarshaller<TKey, TValue>
 
     public TMapReadOnly<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop)
     {
-        if (readOnlyMapWrapper == null)
+        if (_readOnlyMapWrapper == null)
         {
-            readOnlyMapWrapper = new TMapReadOnly<TKey, TValue>(nativeProperty, nativeBuffer +
-                (arrayIndex * Marshal.SizeOf(typeof(FScriptMap))), keyFromNative, valueFromNative);
+            _readOnlyMapWrapper = new TMapReadOnly<TKey, TValue>(_nativeProperty, nativeBuffer +
+                (arrayIndex * Marshal.SizeOf(typeof(FScriptMap))), _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
         }
         
-        return readOnlyMapWrapper;
+        return _readOnlyMapWrapper;
     }
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyDictionary<TKey, TValue> value)
