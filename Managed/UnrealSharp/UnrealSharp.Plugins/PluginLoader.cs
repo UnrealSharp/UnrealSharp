@@ -86,7 +86,8 @@ public static class PluginLoader
 
         if (pluginToUnload == null)
         {
-            return false;
+            LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is not loaded or already unloaded. No unload required.");
+            return true;
         }
         
         try
@@ -97,18 +98,19 @@ public static class PluginLoader
             int startTimeMs = Environment.TickCount;
             bool takingTooLong = false;
 
-            while (pluginToUnload.IsAssemblyAlive && pluginToUnload.IsLoadContextAlive)
+            while (pluginToUnload.IsAssemblyAlive)
             {
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
                 GC.WaitForPendingFinalizers();
 
-                if (!pluginToUnload.IsAssemblyAlive && !pluginToUnload.IsLoadContextAlive)
+                if (!pluginToUnload.IsAssemblyAlive)
                 {
+                    pluginToUnload.PostUnload();
                     break;
                 }
 
                 int elapsedTimeMs = Environment.TickCount - startTimeMs;
-
+                
                 if (!takingTooLong && elapsedTimeMs >= 200)
                 {
                     takingTooLong = true;

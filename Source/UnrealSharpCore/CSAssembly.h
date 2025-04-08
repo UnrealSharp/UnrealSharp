@@ -26,7 +26,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
-	UNREALSHARPCORE_API bool IsValidAssembly() const { return AssemblyHandle.IsValid() && !AssemblyHandle->IsNull(); }
+	UNREALSHARPCORE_API bool IsValidAssembly() const { return ManagedAssemblyHandle.IsValid() && !ManagedAssemblyHandle->IsNull(); }
 
 	static UPackage* GetPackage(const FCSNamespace Namespace);
 
@@ -112,19 +112,19 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FCSharpInterfaceInfo>> Interfaces;
 	
 	// All handles allocated by this assembly. Handles to types, methods, objects.
-	TArray<TSharedPtr<FGCHandle>> AllocatedHandles;
+	TArray<TSharedPtr<FGCHandle>> AllocatedManagedHandles;
 
 	// Handles to all UClasses types that are defined in this assembly.
-	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
+	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
 
 	// Handles to all active UObjects that has a C# counterpart.
-	TMap<uint32, FGCHandle> ObjectHandles;
+	TMap<uint32, FGCHandle> ManagedObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
 
 	// Handle to the Assembly object in C#.
-	TSharedPtr<FGCHandle> AssemblyHandle;
+	TSharedPtr<FGCHandle> ManagedAssemblyHandle;
 	
 	FString AssemblyPath;
 	FName AssemblyName;

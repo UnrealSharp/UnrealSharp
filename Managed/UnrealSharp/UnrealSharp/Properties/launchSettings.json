@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "UnrealSharp": {
+      "commandName": "Executable",
+      "executablePath": "C:/Program Files/Epic Games/UE_5.5/Engine/Binaries\\Win64\\UnrealEditor-Win64-DebugGame.exe",
+      "commandLineArgs": "\"C:\\Users\\oscar\\Documents\\Unreal Projects\\TestCSharp\\TestCSharp.uproject\""
+    }
+  }
+}
