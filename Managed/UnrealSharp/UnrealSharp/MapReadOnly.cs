@@ -8,8 +8,9 @@ public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictio
 {
     /// <inheritdoc />
     public TMapReadOnly(IntPtr mapProperty, IntPtr address,
-        MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TValue>.FromNative valueFromNative)
-        : base(mapProperty, address, keyFromNative, null, valueFromNative, null)
+        MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative keyToNative,
+        MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative valueToNative)
+        : base(mapProperty, address, keyFromNative, keyToNative, valueFromNative, valueToNative)
     {
     }
 
