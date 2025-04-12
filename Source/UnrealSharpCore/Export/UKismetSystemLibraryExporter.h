@@ -12,5 +12,5 @@ class UNREALSHARPCORE_API UUKismetSystemLibraryExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void PrintString(const UObject* WorldContextObject, const UTF16CHAR* Message, float Duration, FLinearColor Color, bool PrintToScreen, bool PrintToConsole);
+	static void PrintString(const UObject* WorldContextObject, const UTF16CHAR* Message, float Duration, FLinearColor Color, bool PrintToScreen, bool PrintToConsole, const FName Key);
 };
