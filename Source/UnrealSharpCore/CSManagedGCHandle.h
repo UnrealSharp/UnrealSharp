@@ -8,14 +8,14 @@ enum class GCHandleType : char
 	PinnedHandle,
 };
 
-struct GCHandleIntPtr
+struct FGCHandleIntPtr
 {
-	bool operator == (const GCHandleIntPtr& Other) const
+	bool operator == (const FGCHandleIntPtr& Other) const
 	{
 		return IntPtr == Other.IntPtr;
 	}
 
-	bool operator != (const GCHandleIntPtr& Other) const
+	bool operator != (const FGCHandleIntPtr& Other) const
 	{
 		return IntPtr != Other.IntPtr;
 	}
@@ -24,20 +24,20 @@ struct GCHandleIntPtr
 	uint8* IntPtr = nullptr;
 };
 
-static_assert(sizeof(GCHandleIntPtr) == sizeof(void *));
+static_assert(sizeof(FGCHandleIntPtr) == sizeof(void *));
 
 struct FGCHandle
 {
-	GCHandleIntPtr Handle;
+	FGCHandleIntPtr Handle;
 	GCHandleType Type = GCHandleType::Null;
 
 	bool IsNull() const { return !Handle.IntPtr; }
 	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
 	
-	const GCHandleIntPtr& GetHandle() const { return Handle; }
+	const FGCHandleIntPtr& GetHandle() const { return Handle; }
 	uint8* GetPointer() const { return Handle.IntPtr; };
 	
-	void Dispose();
+	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr());
 
 	void operator = (const FGCHandle& Other)
 	{
@@ -46,14 +46,14 @@ struct FGCHandle
 	}
 
 	FGCHandle(){}
-	FGCHandle(const GCHandleIntPtr InHandle, const GCHandleType InType) : Handle(InHandle), Type(InType) {}
+	FGCHandle(const FGCHandleIntPtr InHandle, const GCHandleType InType) : Handle(InHandle), Type(InType) {}
 
 	FGCHandle(uint8* InHandle, const GCHandleType InType) : Type(InType)
 	{
 		Handle.IntPtr = InHandle;
 	}
 
-	FGCHandle(const GCHandleIntPtr InHandle) : Handle(InHandle)
+	FGCHandle(const FGCHandleIntPtr InHandle) : Handle(InHandle)
 	{
 		Type = GCHandleType::Null;
 	}

@@ -170,7 +170,7 @@ namespace UnrealSharp
 
         internal static void RunOnThread(nint worldContextObject, NamedThread thread, Action callback)
         {
-            GCHandle callbackHandle = GCHandleUtilities.AllocateStrongPointer(callback);
+            GCHandle callbackHandle = GCHandle.Alloc(callback);
             AsyncExporter.CallRunOnThread(worldContextObject, (int) thread, GCHandle.ToIntPtr(callbackHandle));
         }
 

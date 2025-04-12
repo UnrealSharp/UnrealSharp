@@ -62,7 +62,6 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 	}
 
 	ManagedAssemblyHandle = MakeShared<FGCHandle>(NewHandle);
-	AllocatedManagedHandles.Add(ManagedAssemblyHandle);
 
 	if (ProcessMetadata())
 	{
@@ -185,19 +184,28 @@ bool FCSAssembly::ProcessMetadata()
 
 bool FCSAssembly::UnloadAssembly()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
+	if (!IsValidAssembly())
+	{
+		// Assembly is already unloaded.
+		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", *AssemblyName.ToString());
+		return true;
+	}
 	
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
+
+	FGCHandleIntPtr AssemblyHandle = ManagedAssemblyHandle->GetHandle();
 	for (TSharedPtr<FGCHandle>& Handle : AllocatedManagedHandles)
 	{
-		Handle->Dispose();
+		Handle->Dispose(AssemblyHandle);
 		Handle.Reset();
 	}
 	
-	ManagedClassHandles.Empty();
-	ManagedObjectHandles.Empty();
-	AllocatedManagedHandles.Empty();
+	ManagedClassHandles.Reset();
+	ManagedObjectHandles.Reset();
+	AllocatedManagedHandles.Reset();
 
 	// Don't need the assembly handle anymore, we use the path to unload the assembly.
+	ManagedAssemblyHandle->Dispose();
 	ManagedAssemblyHandle.Reset();
 	
 	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
@@ -471,7 +479,7 @@ void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 	FGCHandle Handle;
 	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
 	{
-		Handle.Dispose();
+		Handle.Dispose(ManagedAssemblyHandle->GetHandle());
 	}
 }
 

@@ -56,15 +56,24 @@ public static class GCHandleUtilities
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GCHandle AllocatePinnedPointer(object value) => GCHandle.Alloc(value, GCHandleType.Pinned);
 
-    public static void Free(GCHandle handle)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void Free(GCHandle handle, Assembly? assembly = null)
     {
         object? target = handle.Target;
         
         if (target != null)
         {
-            AssemblyLoadContext? alc = GetAssemblyLoadContext(target);
+            AssemblyLoadContext? assemblyLoadContext;
+            if (assembly == null)
+            {
+                assemblyLoadContext = GetAssemblyLoadContext(target);
+            }
+            else
+            {
+                assemblyLoadContext = AssemblyLoadContext.GetLoadContext(assembly)!;
+            }
             
-            if (alc != null && StrongRefsByAssembly.TryGetValue(alc, out var strongReferences))
+            if (assemblyLoadContext != null && StrongRefsByAssembly.TryGetValue(assemblyLoadContext, out var strongReferences))
             {
                 strongReferences.TryRemove(handle, out _);
             }
