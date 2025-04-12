@@ -417,11 +417,11 @@ UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 	return Interface;
 }
 
-FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
+TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateNewManagedObject);
 	
-	if (FGCHandle* FoundHandle = ManagedObjectHandles.Find(Object->GetUniqueID()))
+	if (TSharedPtr<FGCHandle> FoundHandle = ManagedObjectHandles.FindRef(Object->GetUniqueID()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Object {0} already has a managed counterpart", *Object->GetName());
 		return FoundHandle;
@@ -442,23 +442,27 @@ FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", *Object->GetName());
 		return nullptr;
 	}
+
+	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(NewManagedObject);
+	ManagedObjectHandles.Add(Object->GetUniqueID(), AllocatedHandle);
+	AllocatedManagedHandles.Add(AllocatedHandle);
 	
-	return &ManagedObjectHandles.Add(Object->GetUniqueID(), NewManagedObject);
+	return AllocatedHandle;
 }
 
 FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::FindManagedObject);
 	
-	if (!::IsValid(Object))
+	if (!IsValid(Object))
 	{
 		RemoveManagedObject(Object);
 		return FGCHandle();
 	}
 
-	FGCHandle* Handle = ManagedObjectHandles.Find(Object->GetUniqueID());
+	TSharedPtr<FGCHandle> Handle = ManagedObjectHandles.FindRef(Object->GetUniqueID());
 	
-	if (!Handle)
+	if (!Handle.IsValid())
 	{
 		Handle = CreateManagedObject(Object);
 	}
@@ -476,10 +480,11 @@ void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::RemoveManagedObject);
 	
-	FGCHandle Handle;
-	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
+	TSharedPtr<FGCHandle> ObjectHandle;
+	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), ObjectHandle))
 	{
-		Handle.Dispose(ManagedAssemblyHandle->GetHandle());
+		FGCHandleIntPtr AssemblyHandle = ManagedAssemblyHandle->GetHandle();
+		ObjectHandle->Dispose(AssemblyHandle);
 	}
 }
 

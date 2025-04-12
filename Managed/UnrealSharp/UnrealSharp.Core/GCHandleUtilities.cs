@@ -10,32 +10,19 @@ public static class GCHandleUtilities
 {
     private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongRefsByAssembly = new();
 
-    private static AssemblyLoadContext? GetAssemblyLoadContext(object obj)
-    {
-        return AssemblyLoadContext.GetLoadContext(obj.GetType().Assembly);
-    }
-
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnAlcUnloading(AssemblyLoadContext alc)
     {
         StrongRefsByAssembly.TryRemove(alc, out _);
     }
 
-    public static GCHandle AllocateStrongPointer(object value, Assembly? alc = null)
+    public static GCHandle AllocateStrongPointer(object value, Assembly alc)
     {
-        AssemblyLoadContext? assemblyLoadContext;
-        if (alc == null)
-        {
-            assemblyLoadContext = GetAssemblyLoadContext(value);
-        }
-        else
-        {
-            assemblyLoadContext = AssemblyLoadContext.GetLoadContext(alc)!;
-        }
+        AssemblyLoadContext? assemblyLoadContext = AssemblyLoadContext.GetLoadContext(alc);
         
         if (assemblyLoadContext == null)
         {
-            return GCHandle.Alloc(value, GCHandleType.Weak);
+            throw new InvalidOperationException("AssemblyLoadContext is null.");
         }
         
         GCHandle weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
@@ -57,23 +44,18 @@ public static class GCHandleUtilities
     public static GCHandle AllocatePinnedPointer(object value) => GCHandle.Alloc(value, GCHandleType.Pinned);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void Free(GCHandle handle, Assembly? assembly = null)
+    public static void Free(GCHandle handle, Assembly? assembly)
     {
-        object? target = handle.Target;
-        
-        if (target != null)
+        if (assembly != null)
         {
-            AssemblyLoadContext? assemblyLoadContext;
-            if (assembly == null)
+            AssemblyLoadContext? assemblyLoadContext = AssemblyLoadContext.GetLoadContext(assembly);
+            
+            if (assemblyLoadContext == null)
             {
-                assemblyLoadContext = GetAssemblyLoadContext(target);
-            }
-            else
-            {
-                assemblyLoadContext = AssemblyLoadContext.GetLoadContext(assembly)!;
+                throw new InvalidOperationException("AssemblyLoadContext is null.");
             }
             
-            if (assemblyLoadContext != null && StrongRefsByAssembly.TryGetValue(assemblyLoadContext, out var strongReferences))
+            if (StrongRefsByAssembly.TryGetValue(assemblyLoadContext, out var strongReferences))
             {
                 strongReferences.TryRemove(handle, out _);
             }
