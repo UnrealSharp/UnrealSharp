@@ -192,11 +192,10 @@ bool FCSAssembly::UnloadAssembly()
 	}
 	
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
-
-	FGCHandleIntPtr AssemblyHandle = ManagedAssemblyHandle->GetHandle();
+	
 	for (TSharedPtr<FGCHandle>& Handle : AllocatedManagedHandles)
 	{
-		Handle->Dispose(AssemblyHandle);
+		Handle->Dispose(ManagedAssemblyHandle->GetHandle());
 		Handle.Reset();
 	}
 	
