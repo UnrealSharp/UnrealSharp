@@ -27,7 +27,7 @@ public class UnrealSharpObject : IDisposable
             
         foundConstructor(createdObject);
             
-        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject));
+        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject, typeToCreate.Assembly));
     }
     
     /// <summary>
