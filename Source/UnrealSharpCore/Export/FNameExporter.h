@@ -1,24 +1,23 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FNameExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFNameExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFNameExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void NameToString(FName Name, FString& OutString);
+
+	UNREALSHARP_FUNCTION()
 	static void StringToName(FName& Name, const UTF16CHAR* String);
+	
+	UNREALSHARP_FUNCTION()
 	static bool IsValid(FName Name);
 	
 };

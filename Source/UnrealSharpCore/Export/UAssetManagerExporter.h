@@ -3,22 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "UAssetManagerExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UUAssetManagerExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUAssetManagerExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void* GetAssetManager();
 	
 };

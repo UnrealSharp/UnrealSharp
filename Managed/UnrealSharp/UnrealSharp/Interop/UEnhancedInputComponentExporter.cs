@@ -1,4 +1,5 @@
-﻿using UnrealSharp.EnhancedInput;
+﻿using UnrealSharp.Binds;
+using UnrealSharp.EnhancedInput;
 
 namespace UnrealSharp.Interop;
 

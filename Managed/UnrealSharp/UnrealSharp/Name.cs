@@ -1,11 +1,12 @@
 using System.Runtime.InteropServices;
 
 using UnrealSharp.Attributes;
+using UnrealSharp.Core;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-[UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
+[UStruct, StructLayout(LayoutKind.Sequential)]
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
 #if PACKAGE

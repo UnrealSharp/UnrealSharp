@@ -8,6 +8,12 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
+public struct ParameterInfo
+{
+    public DelegateParameterInfo Parameter { get; set; }
+    
+}
+
 [Generator]
 public class NativeCallbacksWrapperGenerator : ISourceGenerator
 {
@@ -24,7 +30,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             return;
         }
 
-        var compilation = context.Compilation;
+        Compilation compilation = context.Compilation;
         
         foreach (var classInfo in receiver.ClassesWithNativeCallbacks)
         {
@@ -36,7 +42,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             {
                 foreach (var parameter in delegateInfo.Parameters)
                 {
-                    var typeInfo = model.GetTypeInfo(parameter.type);
+                    var typeInfo = model.GetTypeInfo(parameter.Type);
                     var typeSymbol = typeInfo.Type;
                     
                     if (typeSymbol == null || typeSymbol.ContainingNamespace == null)
@@ -75,13 +81,12 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                 // Remove return value. We don't need it anymore.
                 delegateInfo.Parameters.RemoveAt(lastIndex);
                 
-                sourceBuilder.Append($"        public static {returnValueType.type.ToString()} Call{delegateInfo.Name}(");
+                sourceBuilder.Append($"        public static {returnValueType.Type.ToString()} Call{delegateInfo.Name}(");
 
                 // Handle parameters
                 bool firstParameter = true;
-                char paramName = 'a';
 
-                foreach (var parameter in delegateInfo.Parameters)
+                foreach (DelegateParameterInfo parameter in delegateInfo.Parameters)
                 {
                     if (!firstParameter)
                     {
@@ -90,34 +95,95 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
 
                     firstParameter = false;
 
-                    if (parameter.isOutParameter)
+                    if (parameter.IsOutParameter)
                     {
                         sourceBuilder.Append("out ");
                     }
                     
-                    if (parameter.isRefParameter)
+                    if (parameter.IsRefParameter)
                     {
                         sourceBuilder.Append("ref ");
                     }
                     
-                    string typeFullName = model.GetTypeInfo(parameter.type).Type.ToDisplayString();
-                    sourceBuilder.Append($"{typeFullName} {paramName}");
-                    paramName++;
+                    string typeFullName = model.GetTypeInfo(parameter.Type).Type.ToDisplayString();
+                    sourceBuilder.Append($"{typeFullName} {parameter.Name}");
                 }
 
                 sourceBuilder.AppendLine(")");
                 sourceBuilder.AppendLine("        {");
 
-                string delegateName = $"{classInfo.Name}.{delegateInfo.Name}";
+                string delegateName = delegateInfo.Name;
                 
                 sourceBuilder.AppendLine($"             if ({delegateName} == null)");
                 sourceBuilder.AppendLine("             {");
-                sourceBuilder.AppendLine($"                 throw new System.InvalidOperationException(\"{delegateName} is null\");");
+
+                if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
+                {
+                    sourceBuilder.AppendLine("                 int totalSize = 0;");
+                }
+                else
+                {
+                    sourceBuilder.Append("                 int totalSize = ");
+
+                    void AppendSizeOf(TypeSyntax type)
+                    {
+                        string typeFullName = model.GetTypeInfo(type).Type.ToDisplayString();
+                        sourceBuilder.Append($"sizeof({typeFullName})");
+                    }
+                    
+                    for (int i = 0; i < delegateInfo.Parameters.Count; i++)
+                    {
+                        DelegateParameterInfo parameter = delegateInfo.Parameters[i];
+                        AppendSizeOf(parameter.Type);
+
+                        if (i != delegateInfo.Parameters.Count - 1)
+                        {
+                            sourceBuilder.Append(" + ");
+                        }
+                    }
+                    
+                    if (delegateInfo.HasReturnValue)
+                    {
+                        sourceBuilder.Append(" + ");
+                        AppendSizeOf(returnValueType.Type);
+                    }
+                    
+                    sourceBuilder.AppendLine(";");
+                }
+                
+                
+                sourceBuilder.AppendLine($"                 IntPtr funcPtr = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", totalSize);");
+                sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
+                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
+                {
+                    string prefix = "";
+
+                    if (p.IsOutParameter)
+                    {
+                        prefix = "out ";
+                    }
+                    else if (p.IsRefParameter)
+                    {
+                        prefix = "ref ";
+                    }
+
+                    return prefix + model.GetTypeInfo(p.Type).Type.ToDisplayString();
+                })));
+
+                if (delegateInfo.Parameters.Count > 0)
+                {
+                    sourceBuilder.Append(", ");
+                }
+
+                sourceBuilder.Append(model.GetTypeInfo(returnValueType.Type).Type.ToDisplayString());
+                sourceBuilder.Append(">)funcPtr;");
+                sourceBuilder.AppendLine();
+                
                 sourceBuilder.AppendLine("             }");
                 sourceBuilder.AppendLine();
 
                 // Method body
-                if (returnValueType.type.ToString() != "void")
+                if (returnValueType.Type.ToString() != "void")
                 {
                     sourceBuilder.Append($"            return {delegateName}(");
                 }
@@ -126,31 +192,21 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
                     sourceBuilder.Append($"            {delegateName}(");
                 }
 
-                // Handling method parameters
-                firstParameter = true;
-                paramName = 'a';
-                foreach (var parameter in delegateInfo.Parameters)
+                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
                 {
-                    if (!firstParameter)
+                    string prefix = "";
+                    
+                    if (p.IsOutParameter)
                     {
-                        sourceBuilder.Append(", ");
+                        prefix = "out ";
+                    }
+                    else if (p.IsRefParameter)
+                    {
+                        prefix = "ref ";
                     }
 
-                    firstParameter = false;
-
-                    if (parameter.isOutParameter)
-                    {
-                        sourceBuilder.Append("out ");
-                    }
-                    
-                    if (parameter.isRefParameter)
-                    {
-                        sourceBuilder.Append("ref ");
-                    }
-                    
-                    sourceBuilder.Append(paramName);
-                    paramName++;
-                }
+                    return prefix + p.Name;
+                })));
 
                 sourceBuilder.AppendLine(");");
                 sourceBuilder.AppendLine("        }");
@@ -176,7 +232,7 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
             return;
         }
         
-        var hasNativeCallbacksAttribute = classDeclaration.AttributeLists
+        bool hasNativeCallbacksAttribute = classDeclaration.AttributeLists
             .SelectMany(a => a.Attributes)
             .Any(a => a.Name.ToString() == "NativeCallbacks");
 
@@ -189,15 +245,12 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
         SyntaxNode currentNode = classDeclaration.Parent;
         while (currentNode != null)
         {
-            // Check if the current node is a NamespaceDeclarationSyntax
             if (currentNode is FileScopedNamespaceDeclarationSyntax namespaceDeclaration)
             {
-                // Get the name of the namespace
                 namespaceName = namespaceDeclaration.Name.ToString();
                 break;
             }
-
-            // Move up to the next parent node
+            
             currentNode = currentNode.Parent;
         }
 
@@ -230,17 +283,30 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
             };
 
             // Iterate through each parameter in the function pointer type syntax
-            foreach (var param in functionPointerTypeSyntax.ParameterList.Parameters)
+            char paramName = 'a';
+            
+            for (int i = 0; i < functionPointerTypeSyntax.ParameterList.Parameters.Count; i++)
             {
+                FunctionPointerParameterSyntax param = functionPointerTypeSyntax.ParameterList.Parameters[i];
+                
+                bool isReturnParameter = i == functionPointerTypeSyntax.ParameterList.Parameters.Count - 1;
+                if (isReturnParameter && param.Type.ToString() != "void")
+                {
+                    delegateInfo.HasReturnValue = true;
+                }
+                
+                // Create a new parameter info object
                 var parameter = new DelegateParameterInfo
                 {
                     // Check if the parameter has the 'out' modifier
-                    isOutParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.OutKeyword)),
-                    isRefParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.RefKeyword)),
-                    type = param.Type,
+                    Name = paramName.ToString(),
+                    IsOutParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.OutKeyword)),
+                    IsRefParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.RefKeyword)),
+                    Type = param.Type,
                 };
                             
                 delegateInfo.Parameters.Add(parameter);
+                paramName++;
             }
 
             classInfo.Delegates.Add(delegateInfo);
@@ -252,21 +318,23 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
 
 internal struct ClassInfo
 {
-    public ClassDeclarationSyntax ClassDeclaration { get; set; }
-    public string Name { get; set; }
-    public string Namespace { get; set; }
-    public List<DelegateInfo> Delegates { get; set; }
+    public ClassDeclarationSyntax ClassDeclaration;
+    public string Name;
+    public string Namespace;
+    public List<DelegateInfo> Delegates;
 }
 
 internal struct DelegateInfo
 {
-    public string Name { get; set; }
-    public List<DelegateParameterInfo> Parameters { get; set; }
+    public string Name;
+    public List<DelegateParameterInfo> Parameters;
+    public bool HasReturnValue;
 }
 
-internal struct DelegateParameterInfo
+public struct DelegateParameterInfo
 {
-    public TypeSyntax type { get; set; }
-    public bool isOutParameter { get; set; }
-    public bool isRefParameter { get; set; }
+    public string Name;
+    public TypeSyntax Type;
+    public bool IsOutParameter;
+    public bool IsRefParameter;
 }

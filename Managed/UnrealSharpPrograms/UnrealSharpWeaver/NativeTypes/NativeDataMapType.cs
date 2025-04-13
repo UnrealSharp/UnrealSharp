@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -41,8 +42,8 @@ public class NativeDataMapType : NativeDataContainerType
     {
         ContainerMarshallerTypeParameters =
         [
-            WeaverHelper.ImportType(InnerProperty.PropertyDataType.CSharpType),
-            WeaverHelper.ImportType(ValueProperty.PropertyDataType.CSharpType)
+            InnerProperty.PropertyDataType.CSharpType.ImportType(),
+            ValueProperty.PropertyDataType.CSharpType.ImportType()
         ];
     }
 

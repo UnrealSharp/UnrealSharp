@@ -1,22 +1,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FMsgExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFMsgExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFMsgExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	
-	// UFunctions interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
 
-private:
-	
-	static void Log(FName CategoryName, ELogVerbosity::Type Verbosity, const UTF16CHAR* Message);
+	UNREALSHARP_FUNCTION()
+	static void Log(const UTF16CHAR* ManagedCategoryName, ELogVerbosity::Type Verbosity, const UTF16CHAR* ManagedMessage);
 	
 };

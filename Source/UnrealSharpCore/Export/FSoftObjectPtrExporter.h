@@ -1,22 +1,17 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FSoftObjectPtrExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UFSoftObjectPtrExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFSoftObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-	
+	UNREALSHARP_FUNCTION()
 	static void* LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr);
 	
 };

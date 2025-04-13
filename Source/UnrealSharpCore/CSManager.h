@@ -6,6 +6,8 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+class FUnrealSharpCoreModule;
+class UFunctionsExporter;
 struct FCSNamespace;
 struct FCSTypeReferenceMetaData;
 
@@ -18,7 +20,7 @@ struct FCSManagedPluginCallbacks
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, FCSManagedCallbacks::FManagedCallbacks*, const void*);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks::FManagedCallbacks*);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
@@ -36,7 +38,6 @@ public:
 	
 	static UCSManager& GetOrCreate();
 	static UCSManager& Get();
-	static void Shutdown();
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
@@ -85,17 +86,22 @@ public:
 	bool IsManagedPackage(const UPackage* Package) const;
 	bool IsManagedField(const UObject* Field) const;
 
+	bool IsLoadingAnyAssembly() const;
+
 private:
 
+	friend FUnrealSharpCoreModule;
+
 	void Initialize();
+	static void Shutdown();
 
 	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
 	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
 	
 	bool LoadRuntimeHost();
-	bool InitializeRuntime();
+	bool InitializeDotNetRuntime();
 
-	bool LoadUserAssemblies();
+	bool TryLoadUserAssemblies();
 
 	static UCSManager* Instance;
 

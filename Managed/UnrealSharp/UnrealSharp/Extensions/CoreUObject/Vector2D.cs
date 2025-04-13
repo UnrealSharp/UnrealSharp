@@ -343,7 +343,7 @@ public partial struct FVector2D
     /// <returns>True if the other FVector2D is equal to this instance; False otherwise.</returns>
     public bool Equals(FVector2D other)
     {
-        return this.X == other.X && this.Y == other.Y;
+        return X == other.X && Y == other.Y;
     }
     
     /// <summary>

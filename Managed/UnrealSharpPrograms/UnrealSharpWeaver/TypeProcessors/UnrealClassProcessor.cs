@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -8,7 +9,7 @@ public static class UnrealClassProcessor
 { 
     public static void ProcessClasses(IList<TypeDefinition> classes, ApiMetaData assemblyMetadata)
     {
-        assemblyMetadata.ClassMetaData = new List<ClassMetaData>(classes.Count);
+        assemblyMetadata.ClassMetaData.Capacity = classes.Count;
 
         var rewrittenClasses = new HashSet<TypeDefinition>();
         foreach (var classDef in classes)
@@ -26,7 +27,7 @@ public static class UnrealClassProcessor
     {
         TypeDefinition baseType = type.BaseType.Resolve();
         
-        if (!WeaverHelper.IsValidBaseForUObject(baseType))
+        if (!baseType.IsUObject())
         {
             throw new Exception($"{type.FullName} is marked with UClass but doesn't inherit from CoreUObject.Object.");
         }
@@ -60,10 +61,10 @@ public static class UnrealClassProcessor
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
-        FieldDefinition nativeClassField = WeaverHelper.AddFieldToType(classTypeDefinition, "NativeClass", WeaverHelper.IntPtrType);
+        FieldDefinition nativeClassField = classTypeDefinition.AddField("NativeClass", WeaverImporter.IntPtrType);
         
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
-            [Instruction.Create(OpCodes.Call, WeaverHelper.GetNativeClassFromNameMethod)]);
+            [Instruction.Create(OpCodes.Call, WeaverImporter.GetNativeClassFromNameMethod)]);
 
         foreach (var field in classTypeDefinition.Fields)
         {
@@ -107,7 +108,7 @@ public static class UnrealClassProcessor
             return;
         }
             
-        VariableDefinition variableDefinition = WeaverHelper.AddVariableToMethod(staticConstructor, WeaverHelper.IntPtrType);
+        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.IntPtrType);
         Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
         Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
             

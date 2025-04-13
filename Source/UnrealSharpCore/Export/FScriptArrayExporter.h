@@ -1,25 +1,26 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "FScriptArrayExporter.generated.h"
 
-UCLASS(meta=(NotGeneratorValid))
-class UNREALSHARPCORE_API UFScriptArrayExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UFScriptArrayExporter : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	// Begin UFunctionsExporter interface
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End UFunctionsExporter interface
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static void* GetData(FScriptArray* Instance);
+
+	UNREALSHARP_FUNCTION()
 	static bool IsValidIndex(FScriptArray* Instance, int32 i);
+
+	UNREALSHARP_FUNCTION()
 	static int Num(FScriptArray* Instance);
+
+	UNREALSHARP_FUNCTION()
 	static void Destroy(FScriptArray* Instance);
 	
 };

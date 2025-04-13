@@ -1,4 +1,5 @@
-﻿using UnrealSharp.CoreUObject;
+﻿using UnrealSharp.Core;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.Engine;
@@ -17,7 +18,7 @@ public partial class UAssetManager
             throw new Exception("Failed to get AssetManager singleton");
         }
         
-        return GcHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
     
     /// <summary>

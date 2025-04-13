@@ -1,17 +1,5 @@
 ﻿#include "FMulticastDelegatePropertyExporter.h"
 
-void UFMulticastDelegatePropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(AddDelegate)
-	EXPORT_FUNCTION(RemoveDelegate)
-	EXPORT_FUNCTION(ClearDelegate)
-	EXPORT_FUNCTION(BroadcastDelegate)
-	EXPORT_FUNCTION(GetSignatureFunction)
-	EXPORT_FUNCTION(ContainsDelegate)
-	EXPORT_FUNCTION(IsBound)
-	EXPORT_FUNCTION(ToString)
-}
-
 void UFMulticastDelegatePropertyExporter::AddDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)
 {
 	FScriptDelegate NewScriptDelegate = MakeScriptDelegate(Target, FunctionName);

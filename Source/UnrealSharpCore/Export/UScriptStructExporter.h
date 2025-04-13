@@ -1,21 +1,14 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "FunctionsExporter.h"
+#include "CSBindsManager.h"
 #include "UScriptStructExporter.generated.h"
 
-UCLASS(meta = (NotGeneratorValid))
-class UNREALSHARPCORE_API UUScriptStructExporter : public UFunctionsExporter
+UCLASS()
+class UNREALSHARPCORE_API UUScriptStructExporter : public UObject
 {
 	GENERATED_BODY()
-
 public:
-
-	// UFunctionsExporter interface implementation
-	virtual void ExportFunctions(FRegisterExportedFunction RegisterExportedFunction) override;
-	// End
-
-private:
-
+	UNREALSHARP_FUNCTION()
 	static int GetNativeStructSize(const UScriptStruct* ScriptStruct);
 };

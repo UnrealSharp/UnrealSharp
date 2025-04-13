@@ -1,4 +1,6 @@
 ﻿using System.Runtime.InteropServices;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 

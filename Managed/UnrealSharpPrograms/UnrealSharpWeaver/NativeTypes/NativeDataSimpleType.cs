@@ -2,6 +2,7 @@
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.TypeProcessors;
+using UnrealSharpWeaver.Utilities;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 namespace UnrealSharpWeaver.NativeTypes;
@@ -20,7 +21,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
 
     protected virtual TypeReference[] GetTypeParams()
     {
-        return [WeaverHelper.ImportType(CSharpType)];
+        return [CSharpType.ImportType()];
     }
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
@@ -28,18 +29,34 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     {
         base.PrepareForRewrite(typeDefinition, propertyMetadata, outer);
         _isReference = propertyMetadata.IsOutParameter;
-        _assembly = WeaverHelper.BindingsAssembly;
         var isGenericMarshaller = marshallerName.Contains('`');
 
         TypeReference[] typeParams = GetTypeParams();
         
-        MarshallerClass = isGenericMarshaller
-            ? WeaverHelper.FindGenericTypeInAssembly(_assembly, WeaverHelper.UnrealSharpNamespace, marshallerName, typeParams) 
-            : GetTypeInAssembly();
-
+        AssemblyUtilities.ForEachAssembly(definition =>
+        {
+            TypeReference? foundMarshaller = isGenericMarshaller
+                ? definition.FindGenericType("", marshallerName, typeParams, false) 
+                : GetTypeInAssembly(definition);
+            
+            if (foundMarshaller is not null)
+            {
+                MarshallerClass = foundMarshaller;
+                _assembly = definition;
+                return false;
+            }
+            
+            return true;
+        });
+        
+        if (MarshallerClass is null)
+        {
+            throw new Exception($"Could not find marshaller class {marshallerName} for type {CSharpType.FullName}");
+        }
+        
         var marshallerTypeDefinition = GetMarshallerTypeDefinition();
-        ToNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "ToNative")!;
-        FromNative = WeaverHelper.FindMethod(marshallerTypeDefinition, "FromNative")!;
+        ToNative = marshallerTypeDefinition.FindMethod("ToNative")!;
+        FromNative = marshallerTypeDefinition.FindMethod("FromNative")!;
         
         if (isGenericMarshaller)
         {
@@ -47,8 +64,8 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
             FromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(FromNative, typeParams);
         }
         
-        ToNative = WeaverHelper.ImportMethod(ToNative);
-        FromNative = WeaverHelper.ImportMethod(FromNative);
+        ToNative = ToNative.ImportMethod();
+        FromNative = FromNative.ImportMethod();
     }
 
     public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
@@ -90,7 +107,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         
         if (_isReference)
         {
-            Instruction loadInstructionOutParam = WeaverHelper.CreateLoadInstructionOutParam(paramDefinition, propertyType);
+            Instruction loadInstructionOutParam = paramDefinition.CreateLoadInstructionOutParam(propertyType);
             source.Add(loadInstructionOutParam);
         }
         
@@ -153,43 +170,51 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
             else
             {
                 GenericInstanceType generic = (GenericInstanceType)CSharpType;
-                typeParams = [WeaverHelper.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
+                typeParams = [WeaverImporter.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
             }
         }
 
         EmitSimpleMarshallerDelegates(processor, marshallerName, typeParams);
     }
 
-    private TypeReference GetTypeInAssembly()
+    private TypeReference? GetTypeInAssembly(AssemblyDefinition assemblyDefinition)
     {
-        // Try to find the marshaller in the bindings assembly
-        var typeInBindingAssembly = WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, WeaverHelper.UnrealSharpNamespace, false);
-        if (typeInBindingAssembly is not null)
-        {
-            return typeInBindingAssembly;
-        }
-        
-        var propType = CSharpType.Resolve();
-            
         // Try to find the marshaller in the bindings again, but with the namespace of the property type.
-        var type = WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, propType.Namespace, false);
+        TypeDefinition? propType = CSharpType.Resolve();
+        TypeReference? type = assemblyDefinition.FindType(marshallerName, propType.Namespace, false);
         if (type is not null)
         {
             return type;
         }
-
-        // Finally, try to find the marshaller in the user assembly.
         
-        _assembly = GetUserAssemblyByPropertyType(propType);
-        return WeaverHelper.FindTypeInAssembly(_assembly, marshallerName, propType.Namespace)!;
+        // Try to find the marshaller in the bindings assembly. These are unique so we don't need to check the namespace.
+        TypeReference? typeInBindingAssembly = assemblyDefinition.FindType(marshallerName, "", false);
+        if (typeInBindingAssembly is not null)
+        {
+            return typeInBindingAssembly;
+        }
+
+        return null;
     }
 
-    private AssemblyDefinition GetUserAssemblyByPropertyType(TypeDefinition type)
+    private AssemblyDefinition? GetUserAssemblyByPropertyType(TypeDefinition type)
     {
         var propertyTypeName = type.Module.Assembly.FullName;
-        return WeaverHelper.UserAssembly.FullName == propertyTypeName
-            ? WeaverHelper.UserAssembly
-            : WeaverHelper.WeavedAssemblies.First(x => x.FullName == propertyTypeName);
+
+        if (WeaverImporter.UserAssembly.FullName == propertyTypeName)
+        {
+            return WeaverImporter.UserAssembly;
+        }
+        
+        foreach (AssemblyDefinition assemblyDefinition in WeaverImporter.WeavedAssemblies)
+        {
+            if (assemblyDefinition.FullName == propertyTypeName)
+            {
+                return assemblyDefinition;
+            }
+        }
+
+        return null;
     }
 
     private TypeDefinition GetMarshallerTypeDefinition()

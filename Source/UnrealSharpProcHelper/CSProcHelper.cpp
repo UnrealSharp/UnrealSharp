@@ -214,7 +214,7 @@ void FCSProcHelper::GetUserProjectNames(TArray<FString>& UserProjectNames)
 		return;
 	}
 
-	for (const auto& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
+	for (const TSharedPtr<FJsonValue>& ProjectName : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
 	{
 		UserProjectNames.Add(ProjectName->AsString());
 	}
@@ -244,7 +244,7 @@ void FCSProcHelper::GetAllUserAssemblyPaths(TArray<FString>& AssemblyPaths)
 	}
 }
 
-void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
+void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue)
 {
 	// Use the FileManager to find files matching the pattern
 	IFileManager::Get().FindFilesRecursive(ProjectPaths,
@@ -253,10 +253,15 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths)
 		true,
 		false,
 		false);
+
+	if (bIncludeProjectGlue)
+	{
+		return;
+	}
 	
 	for (int32 i = ProjectPaths.Num() - 1; i >= 0; i--)
 	{
-		if (!ProjectPaths[i].Contains("ProjectGlue.csproj"))
+		if (!ProjectPaths[i].EndsWith("ProjectGlue.csproj"))
 		{
 			continue;
 		}

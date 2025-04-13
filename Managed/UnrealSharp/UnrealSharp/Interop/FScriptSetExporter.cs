@@ -1,4 +1,7 @@
-﻿namespace UnrealSharp.Interop;
+﻿using UnrealSharp.Binds;
+using UnrealSharp.Core;
+
+namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
 public static unsafe partial class FScriptSetExporter

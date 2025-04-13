@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
@@ -12,19 +13,14 @@ public unsafe struct PluginsCallbacks
     [UnmanagedCallersOnly]
     private static nint ManagedLoadPlugin(char* assemblyPath, NativeBool isCollectible)
     {
-        WeakReference? weakRef = PluginLoader.LoadPlugin(new string(assemblyPath), isCollectible.ToManagedBool());
+        Assembly? newPlugin = PluginLoader.LoadPlugin(new string(assemblyPath), isCollectible.ToManagedBool());
 
-        if (weakRef == null || !weakRef.IsAlive)
+        if (newPlugin == null)
         {
             return IntPtr.Zero;
         };
 
-        if (weakRef.Target is not Assembly assembly)
-        {
-            return IntPtr.Zero;
-        }
-
-        return GCHandle.ToIntPtr(GcHandleUtilities.AllocateWeakPointer(assembly));
+        return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(newPlugin));
     }
 
     [UnmanagedCallersOnly]

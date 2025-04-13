@@ -1,3 +1,6 @@
+using UnrealSharp.Core;
+using UnrealSharp.Core.Marshallers;
+
 namespace UnrealSharp;
 
 public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>

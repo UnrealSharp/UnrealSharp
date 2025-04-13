@@ -1,27 +1,5 @@
 ﻿#include "FPropertyExporter.h"
 
-void UFPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetNativePropertyFromName)
-	EXPORT_FUNCTION(GetPropertyOffsetFromName)
-	EXPORT_FUNCTION(GetPropertyArrayDimFromName)
-	EXPORT_FUNCTION(GetPropertyOffset)
-	EXPORT_FUNCTION(GetSize)
-	EXPORT_FUNCTION(GetArrayDim)
-	EXPORT_FUNCTION(DestroyValue)
-	EXPORT_FUNCTION(InitializeValue)
-	EXPORT_FUNCTION(GetInnerFields)
-	EXPORT_FUNCTION(Identical)
-	EXPORT_FUNCTION(GetValueTypeHash)
-	EXPORT_FUNCTION(HasAnyPropertyFlags)
-	EXPORT_FUNCTION(CopySingleValue)
-	EXPORT_FUNCTION(DestroyValue_InContainer)
-	EXPORT_FUNCTION(HasAllPropertyFlags)
-	EXPORT_FUNCTION(GetValue_InContainer)
-	EXPORT_FUNCTION(SetValue_InContainer)
-	EXPORT_FUNCTION(GetBoolPropertyFieldMaskFromName)
-}
-
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
 {
 	FProperty* Property = FindFProperty<FProperty>(Struct, PropertyName);

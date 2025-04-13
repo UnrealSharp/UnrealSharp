@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "CSManagedGCHandle.h"
+#include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
 #include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
 
 #if !defined(_WIN32)
@@ -31,8 +33,10 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
+	bool IsLoading() const { return bIsLoading; }
+
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	TSharedPtr<FGCHandle> TryFindTypeHandle(const UClass* Class);
+	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class);
 
 	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
@@ -64,6 +68,8 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass);
 
 private:
+
+	bool bIsLoading = false;
 	
 	bool ProcessMetadata();
 
@@ -75,10 +81,19 @@ private:
 	template<typename T>
 	T* TryFindField(const FCSFieldName FieldName) const
 	{
-		UPackage* Package = FieldName.GetPackage();
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::TryFindField);
+		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
 
-		if (!Package)
+		if (!FieldName.IsValid())
 		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetName());
+			return nullptr;
+		}
+
+		UPackage* Package = FieldName.GetPackage();
+		if (!IsValid(Package))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetName());
 			return nullptr;
 		}
 
@@ -103,7 +118,7 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ClassHandles;
 
 	// Handles to all active UObjects that has a C# counterpart.
-	TMap<const UObjectBase*, FGCHandle> ObjectHandles;
+	TMap<uint32, FGCHandle> ObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;

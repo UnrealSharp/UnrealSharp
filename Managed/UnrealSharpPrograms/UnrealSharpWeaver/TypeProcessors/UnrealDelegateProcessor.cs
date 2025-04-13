@@ -4,6 +4,7 @@ using Mono.Cecil.Rocks;
 using System.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.NativeTypes;
+using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -15,7 +16,7 @@ public static class UnrealDelegateProcessor
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker", throwIfNotFound: false);
+            MethodReference? invokerMethod = type.FindMethod("Invoker", throwIfNotFound: false);
             
             if (invokerMethod == null)
             {
@@ -36,31 +37,28 @@ public static class UnrealDelegateProcessor
     
     public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
     {
-        TypeReference? delegateDataStruct = WeaverHelper.FindTypeInAssembly(
-            WeaverHelper.BindingsAssembly, "DelegateData", WeaverHelper.UnrealSharpNamespace);
+        TypeReference delegateDataStruct = WeaverImporter.UnrealSharpAssembly.FindType("DelegateData", WeaverImporter.UnrealSharpNamespace)!;
+        TypeReference blittableMarshaller = WeaverImporter.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "BlittableMarshaller`1", [delegateDataStruct])!;
         
-        TypeReference blittableMarshaller = WeaverHelper.FindGenericTypeInAssembly(
-                WeaverHelper.BindingsAssembly, WeaverHelper.UnrealSharpNamespace, "BlittableMarshaller`1", [delegateDataStruct]);
-        
-        MethodReference? blittabletoNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "ToNative");
-        MethodReference? blittablefromNativeMethod = WeaverHelper.FindMethod(blittableMarshaller.Resolve(), "FromNative");
+        MethodReference? blittabletoNativeMethod = blittableMarshaller.Resolve().FindMethod("ToNative");
+        MethodReference? blittablefromNativeMethod = blittableMarshaller.Resolve().FindMethod("FromNative");
         
         blittabletoNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
         blittablefromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
         
         foreach (TypeDefinition type in delegateExtensions)
         {
-            TypeDefinition marshaller = WeaverHelper.CreateNewClass(assembly, type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
+            TypeDefinition marshaller = assembly.CreateNewClass(type.Namespace, type.Name + "Marshaller", TypeAttributes.Class | TypeAttributes.Public);
             
             // Create a delegate from the marshaller
-            MethodDefinition fromNativeMethod = WeaverHelper.AddFromNativeMethod(marshaller, type);
-            MethodDefinition toNativeMethod = WeaverHelper.AddToNativeMethod(marshaller, type);
+            MethodDefinition fromNativeMethod = marshaller.AddFromNativeMethod(type);
+            MethodDefinition toNativeMethod = marshaller.AddToNativeMethod(type);
             ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
             
-            MethodReference? constructor = WeaverHelper.FindMethod(type, ".ctor", true, delegateDataStruct);
+            MethodReference? constructor = type.FindMethod(".ctor", true, delegateDataStruct);
             constructor.DeclaringType = type;
 
-            VariableDefinition delegateDataVar = WeaverHelper.AddVariableToMethod(fromNativeMethod, delegateDataStruct);
+            VariableDefinition delegateDataVar = fromNativeMethod.AddLocalVariable(delegateDataStruct);
             
             // Load native buffer
             processor.Emit(OpCodes.Ldarg_0);
@@ -73,11 +71,11 @@ public static class UnrealDelegateProcessor
             
             processor.Emit(OpCodes.Ldloc, delegateDataVar);
             
-            MethodReference? constructorDelegate = WeaverHelper.FindMethod(type, ".ctor", true, [delegateDataStruct]);
+            MethodReference? constructorDelegate = type.FindMethod(".ctor", true, [delegateDataStruct]);
             processor.Emit(OpCodes.Newobj, constructorDelegate);
             processor.Emit(OpCodes.Ret);
             
-            MethodReference? invokerMethod = WeaverHelper.FindMethod(type, "Invoker");
+            MethodReference? invokerMethod = type.FindMethod("Invoker");
             
             if (invokerMethod.Parameters.Count == 0)
             {
@@ -100,7 +98,7 @@ public static class UnrealDelegateProcessor
 
         if (functionMetaData.Parameters.Length > 0)
         {
-            functionMetaData.FunctionPointerField = WeaverHelper.AddFieldToType(invokerMethodDefinition.DeclaringType, "SignatureFunction", WeaverHelper.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
+            functionMetaData.FunctionPointerField = invokerMethodDefinition.DeclaringType.AddField("SignatureFunction", WeaverImporter.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
             
             List<Instruction> allCleanupInstructions = [];
 
@@ -126,26 +124,23 @@ public static class UnrealDelegateProcessor
         else
         {
             invokerMethodProcessor.Emit(OpCodes.Ldarg_0);
-            invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverHelper.IntPtrZero);
+            invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverImporter.IntPtrZero);
         }
         
         invokerMethodProcessor.Append(CallBase);
-        invokerMethodProcessor.Emit(OpCodes.Ret);
-        
-        WeaverHelper.OptimizeMethod(invokerMethodDefinition);
+        invokerMethodDefinition.FinalizeMethod();
     }
     
     static void ProcessInitialize(TypeDefinition type, FunctionMetaData functionMetaData)
     {
-        MethodDefinition initializeDelegate = WeaverHelper.AddMethodToType(type, 
-            InitializeUnrealDelegate, 
-            WeaverHelper.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
-            [WeaverHelper.IntPtrType]);
+        MethodDefinition initializeDelegate = type.AddMethod(InitializeUnrealDelegate, 
+            WeaverImporter.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
+            [WeaverImporter.IntPtrType]);
 
         var processor = initializeDelegate.Body.GetILProcessor();
         
         processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Call, WeaverHelper.GetSignatureFunction);
+        processor.Emit(OpCodes.Call, WeaverImporter.GetSignatureFunction);
         processor.Emit(OpCodes.Stsfld, functionMetaData.FunctionPointerField);
         
         Instruction loadFunctionPointer = processor.Create(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
@@ -153,6 +148,6 @@ public static class UnrealDelegateProcessor
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
         functionMetaData.EmitParamNativeProperty(processor, loadFunctionPointer);
         
-        WeaverHelper.FinalizeMethod(initializeDelegate);
+        initializeDelegate.FinalizeMethod();
     }
 }

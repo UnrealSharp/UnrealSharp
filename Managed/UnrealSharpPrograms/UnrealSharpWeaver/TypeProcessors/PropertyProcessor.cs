@@ -18,8 +18,8 @@ public static class PropertyProcessor
 
         foreach (PropertyMetaData prop in properties)
         {
-            FieldDefinition offsetField = AddOffsetField(type, prop, WeaverHelper.Int32TypeRef);
-            FieldDefinition? nativePropertyField = AddNativePropertyField(type, prop, WeaverHelper.IntPtrType);
+            FieldDefinition offsetField = AddOffsetField(type, prop, WeaverImporter.Int32TypeRef);
+            FieldDefinition? nativePropertyField = AddNativePropertyField(type, prop, WeaverImporter.IntPtrType);
             
             propertyOffsetsToInitialize.Add(Tuple.Create(offsetField, prop));
             

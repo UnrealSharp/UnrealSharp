@@ -1,6 +1,7 @@
 #pragma once
 #include "KismetCompiler.h"
 
+struct FCSPropertyMetaData;
 struct FCSharpClassInfo;
 class UCSClass;
 class UCSBlueprint;
@@ -31,5 +32,7 @@ private:
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
 	void ApplyMetaData();
+
+	void CreateDummyBlueprintVariables(const TArray<FCSPropertyMetaData>& Properties) const;
 };
 

@@ -1,15 +1,6 @@
 ﻿#include "TPersistentObjectPtrExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 
-void UTPersistentObjectPtrExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(FromObject)
-	EXPORT_FUNCTION(Get)
-	EXPORT_FUNCTION(GetNativePointer)
-	EXPORT_FUNCTION(GetUniqueID)
-	EXPORT_FUNCTION(FromSoftObjectPath)
-}
-
 void UTPersistentObjectPtrExporter::FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* InObject)
 {
 	*Path = InObject;

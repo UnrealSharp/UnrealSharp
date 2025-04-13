@@ -1,15 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "UFunctionExporter.h"
-
+﻿#include "UFunctionExporter.h"
 #include "UnrealSharpCore.h"
-
-void UUFunctionExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetNativeFunctionParamsSize)
-	EXPORT_FUNCTION(CreateNativeFunctionCustomStructSpecialization)
-	EXPORT_FUNCTION(InitializeFunctionParams)
-}
 
 uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 {

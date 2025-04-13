@@ -74,12 +74,17 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 		FGuid PropertyGuid = UCSPropertyGenerator::ConstructGUIDFromName(PropertyName);
 		NewClass->PropertyGuids.Add(PropertyName, PropertyGuid);
 	});
+
+	// Create dummy variables for the blueprint.
+	// They should not get compiled, just there for metadata for different Unreal modules.
+	CreateDummyBlueprintVariables(Properties);
 }
 
 void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& InOldCDO)
 {
 	FKismetCompilerContext::CleanAndSanitizeClass(ClassToClean, InOldCDO);
-
+	NewClass->FieldNotifies.Reset();
+	
 	TryDeinitializeAsDeveloperSettings(InOldCDO);
 
 	// Too late to generate functions in CreateFunctionList for child blueprints
@@ -221,6 +226,25 @@ void FCSCompilerContext::ApplyMetaData()
 	}
 
 	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, NewClass);
+}
+
+void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyMetaData>& Properties) const
+{
+	Blueprint->NewVariables.Empty(Properties.Num());
+
+	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
+	{
+		FBPVariableDescription VariableDescription;
+		VariableDescription.FriendlyName = PropertyMetaData.Name.ToString();
+		VariableDescription.VarName = PropertyMetaData.Name;
+
+		for (const TTuple<FString, FString>& MetaData : PropertyMetaData.MetaData)
+		{
+			VariableDescription.SetMetaData(*MetaData.Key, MetaData.Value);
+		}
+
+		Blueprint->NewVariables.Add(VariableDescription);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

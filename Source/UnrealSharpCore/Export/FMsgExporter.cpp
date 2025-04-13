@@ -1,12 +1,9 @@
 #include "FMsgExporter.h"
 
-void UFMsgExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
+void UFMsgExporter::Log(const UTF16CHAR* ManagedCategoryName, ELogVerbosity::Type Verbosity, const UTF16CHAR* ManagedMessage)
 {
-	EXPORT_FUNCTION(Log);
-}
-
-void UFMsgExporter::Log(FName CategoryName, ELogVerbosity::Type Verbosity, const UTF16CHAR* Message)
-{
-	FString MessageStr = FString(Message);
-	FMsg::Logf(nullptr, 0, CategoryName, Verbosity, TEXT("%s"), *MessageStr);
+	FString Message = FString(ManagedMessage);
+	FName CategoryName = FName(ManagedCategoryName);
+	
+	FMsg::Logf(nullptr, 0, CategoryName, Verbosity, TEXT("%s"), *Message);
 }

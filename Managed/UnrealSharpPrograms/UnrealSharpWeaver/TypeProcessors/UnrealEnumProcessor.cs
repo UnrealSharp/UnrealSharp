@@ -7,10 +7,11 @@ public static class UnrealEnumProcessor
 { 
     public static void ProcessEnums(List<TypeDefinition> foundEnums, ApiMetaData assemblyMetadata)
     {
-        assemblyMetadata.EnumMetaData = new EnumMetaData[foundEnums.Count];
+        assemblyMetadata.EnumMetaData.Capacity = foundEnums.Count;
+        
         for (var i = 0; i < foundEnums.Count; i++)
         {
-            assemblyMetadata.EnumMetaData[i] = new EnumMetaData(foundEnums[i]);
+            assemblyMetadata.EnumMetaData.Add(new EnumMetaData(foundEnums[i]));
         }
     }
 }

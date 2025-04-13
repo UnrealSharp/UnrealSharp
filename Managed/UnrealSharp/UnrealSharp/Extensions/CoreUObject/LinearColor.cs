@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace UnrealSharp.CoreUObject;
 
 public partial struct FLinearColor : IEquatable<FLinearColor>
@@ -9,6 +11,17 @@ public partial struct FLinearColor : IEquatable<FLinearColor>
         B = b;
         A = a;
     }
+    
+    public static implicit operator FLinearColor(FColor color)
+    {
+        return new FLinearColor(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+    }
+    
+    public static implicit operator FLinearColor(Color color)
+    {
+        return new FLinearColor(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+    }
+    
     
     public static FLinearColor operator *(FLinearColor a, FLinearColor b)
     {
@@ -73,6 +86,17 @@ public partial struct FLinearColor : IEquatable<FLinearColor>
     public override string ToString()
     {
         return $"R={R}, G={G}, B={B}, A={A}";
+    }
+    
+    public FLinearColor ToLinearColor()
+    {
+        return new FLinearColor
+        {
+            R = R,
+            G = G,
+            B = B,
+            A = A
+        };;
     }
     
     public static FLinearColor Red => new(1, 0, 0);

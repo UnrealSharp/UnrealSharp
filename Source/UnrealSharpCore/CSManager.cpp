@@ -2,7 +2,6 @@
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
 #include "UnrealSharpCore.h"
-#include "Export/FunctionsExporter.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "Misc/Paths.h"
@@ -13,7 +12,9 @@
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
 
+#include "CSBindsManager.h"
 #include "CSNamespace.h"
+#include "UnrealSharpBinds.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -32,7 +33,6 @@ UCSManager& UCSManager::GetOrCreate()
 	if (!Instance)
 	{
 		Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
-		Instance->Initialize();
 	}
 
 	return *Instance;
@@ -123,6 +123,20 @@ bool UCSManager::IsManagedField(const UObject* Field) const
 	return IsManagedPackage(Field->GetOutermost());
 }
 
+bool UCSManager::IsLoadingAnyAssembly() const
+{
+	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& LoadedAssembly : LoadedAssemblies)
+	{
+		TSharedPtr<FCSAssembly> AssemblyPtr = LoadedAssembly.Value;
+		if (AssemblyPtr.IsValid() && AssemblyPtr->IsLoading())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR
@@ -140,17 +154,18 @@ void UCSManager::Initialize()
 		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
 		FString DialogText = FString::Printf(TEXT(
 			"The bindings library could not be found at the following location:\n%s\n\n"
-			"Right-click on the .uproject file and select \"Generate Visual Studio project files\" to compile.\n"
+			"Most likely, the bindings library failed to build due to invalid generated glue."
 		), *FullPath);
+		
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
 	
-	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!UserAssemblyPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
 	{
 		Initialize();
 		return;
@@ -158,7 +173,7 @@ void UCSManager::Initialize()
 #endif
 
 	// Initialize the C# runtime.
-	if (!InitializeRuntime())
+	if (!InitializeDotNetRuntime())
 	{
 		return;
 	}
@@ -168,11 +183,11 @@ void UCSManager::Initialize()
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();
 
-	// Try to load the user assembly, can be null when the project is first created.
-	LoadUserAssemblies();
+	// Try to load the user assembly. Can be empty if the user hasn't created any csproj yet.
+	TryLoadUserAssemblies();
 }
 
-bool UCSManager::InitializeRuntime()
+bool UCSManager::InitializeDotNetRuntime()
 {
 	if (!LoadRuntimeHost())
 	{
@@ -220,8 +235,8 @@ bool UCSManager::InitializeRuntime()
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
 		*UnrealSharpLibraryAssembly,
 		&ManagedPluginsCallbacks,
-		&FCSManagedCallbacks::ManagedCallbacks,
-		(const void*)&UFunctionsExporter::StartExportingAPI))
+		(const void*)&FCSBindsManager::GetBoundFunction,
+		&FCSManagedCallbacks::ManagedCallbacks))
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize UnrealSharp!"));
 		return false;
@@ -233,7 +248,6 @@ bool UCSManager::InitializeRuntime()
 bool UCSManager::LoadRuntimeHost()
 {
 	const FString RuntimeHostPath = FCSProcHelper::GetRuntimeHostPath();
-
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find Hostfxr.dll"));
@@ -241,7 +255,6 @@ bool UCSManager::LoadRuntimeHost()
 	}
 	
 	RuntimeHost = FPlatformProcess::GetDllHandle(*RuntimeHostPath);
-
 	if (RuntimeHost == nullptr)
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to get the RuntimeHost DLL handle!"));
@@ -273,7 +286,7 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close && Hostfxr_Initialize_For_Runtime_Config;
 }
 
-bool UCSManager::LoadUserAssemblies()
+bool UCSManager::TryLoadUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
 	FCSProcHelper::GetAllUserAssemblyPaths(UserAssemblyPaths);
@@ -444,6 +457,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetOwningAssembly();
 	}
+
+	Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
 
 	// Slow path for native classes.
 	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)

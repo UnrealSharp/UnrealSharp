@@ -1,16 +1,7 @@
 ﻿#include "UClassExporter.h"
-
 #include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/UnrealSharpCore.h"
-
-void UUClassExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(GetDefaultFromName)
-	EXPORT_FUNCTION(GetDefaultFromInstance)
-	EXPORT_FUNCTION(GetNativeFunctionFromClassAndName)
-	EXPORT_FUNCTION(GetNativeFunctionFromInstanceAndName)
-}
 
 UFunction* UUClassExporter::GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName)
 {

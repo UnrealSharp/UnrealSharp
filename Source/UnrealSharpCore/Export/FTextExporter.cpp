@@ -1,13 +1,5 @@
 ﻿#include "FTextExporter.h"
 
-void UFTextExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(ToString)
-	EXPORT_FUNCTION(FromString)
-	EXPORT_FUNCTION(FromName)
-	EXPORT_FUNCTION(CreateEmptyText)
-}
-
 const TCHAR* UFTextExporter::ToString(FText* Text)
 {
 	if (!Text)

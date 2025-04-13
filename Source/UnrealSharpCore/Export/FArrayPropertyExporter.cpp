@@ -1,16 +1,5 @@
 ﻿#include "FArrayPropertyExporter.h"
 
-void UFArrayPropertyExporter::ExportFunctions(FRegisterExportedFunction RegisterExportedFunction)
-{
-	EXPORT_FUNCTION(InitializeArray)
-	EXPORT_FUNCTION(EmptyArray)
-	EXPORT_FUNCTION(AddToArray)
-	EXPORT_FUNCTION(InsertInArray)
-	EXPORT_FUNCTION(RemoveFromArray)
-	EXPORT_FUNCTION(ResizeArray)
-	EXPORT_FUNCTION(SwapValues)
-}
-
 void UFArrayPropertyExporter::InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
 {
 	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
