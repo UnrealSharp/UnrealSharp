@@ -30,18 +30,18 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName)
 {
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-	FCSFieldName FieldName(Namespace, ClassName);
+	FCSFieldName FieldName(ClassName, Namespace);
 	
 	UClass* Class = Assembly->FindClass(FieldName);
 	
 	if (!IsValid(Class))
 	{
-		ensureAlways("Failed to get Class from name");
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object. ClassName: {0}", *FieldName.GetName());
 		return nullptr;
 	}
 
-	UObject* CDO = Class->GetDefaultObject();
-	return UCSManager::Get().FindManagedObject(CDO).GetPointer();
+	UObject* DefaultObject = Class->GetDefaultObject();
+	return Assembly->FindManagedObject(DefaultObject).GetPointer();
 }
 
 void* UUClassExporter::GetDefaultFromInstance(UObject* Object)

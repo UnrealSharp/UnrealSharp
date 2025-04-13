@@ -13,7 +13,7 @@ struct FCSTypeReferenceMetaData;
 
 struct FCSManagedPluginCallbacks
 {
-	using LoadPluginCallback = GCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
+	using LoadPluginCallback = FGCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
 	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
 	
 	LoadPluginCallback LoadPlugin = nullptr;

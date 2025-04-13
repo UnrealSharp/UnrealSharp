@@ -14,7 +14,7 @@ class UNREALSHARPCORE_API UAsyncExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, GCHandleIntPtr DelegateHandle);
+	static void RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle);
 	
 	UNREALSHARP_FUNCTION()
 	static int GetCurrentNamedThread();

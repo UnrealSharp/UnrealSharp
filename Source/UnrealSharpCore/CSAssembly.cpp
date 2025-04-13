@@ -62,7 +62,6 @@ bool FCSAssembly::LoadAssembly(bool bisCollectible)
 	}
 
 	ManagedAssemblyHandle = MakeShared<FGCHandle>(NewHandle);
-	AllocatedManagedHandles.Add(ManagedAssemblyHandle);
 
 	if (ProcessMetadata())
 	{
@@ -185,19 +184,27 @@ bool FCSAssembly::ProcessMetadata()
 
 bool FCSAssembly::UnloadAssembly()
 {
+	if (!IsValidAssembly())
+	{
+		// Assembly is already unloaded.
+		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", *AssemblyName.ToString());
+		return true;
+	}
+	
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("FCSAssembly::UnloadAssembly: " + AssemblyName.ToString())));
 	
 	for (TSharedPtr<FGCHandle>& Handle : AllocatedManagedHandles)
 	{
-		Handle->Dispose();
+		Handle->Dispose(ManagedAssemblyHandle->GetHandle());
 		Handle.Reset();
 	}
 	
-	ManagedClassHandles.Empty();
-	ManagedObjectHandles.Empty();
-	AllocatedManagedHandles.Empty();
+	ManagedClassHandles.Reset();
+	ManagedObjectHandles.Reset();
+	AllocatedManagedHandles.Reset();
 
 	// Don't need the assembly handle anymore, we use the path to unload the assembly.
+	ManagedAssemblyHandle->Dispose();
 	ManagedAssemblyHandle.Reset();
 	
 	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
@@ -409,11 +416,11 @@ UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 	return Interface;
 }
 
-FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
+TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateNewManagedObject);
 	
-	if (FGCHandle* FoundHandle = ManagedObjectHandles.Find(Object->GetUniqueID()))
+	if (TSharedPtr<FGCHandle> FoundHandle = ManagedObjectHandles.FindRef(Object->GetUniqueID()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Object {0} already has a managed counterpart", *Object->GetName());
 		return FoundHandle;
@@ -434,23 +441,27 @@ FGCHandle* FCSAssembly::CreateManagedObject(UObject* Object)
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", *Object->GetName());
 		return nullptr;
 	}
+
+	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(NewManagedObject);
+	ManagedObjectHandles.Add(Object->GetUniqueID(), AllocatedHandle);
+	AllocatedManagedHandles.Add(AllocatedHandle);
 	
-	return &ManagedObjectHandles.Add(Object->GetUniqueID(), NewManagedObject);
+	return AllocatedHandle;
 }
 
 FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::FindManagedObject);
 	
-	if (!::IsValid(Object))
+	if (!IsValid(Object))
 	{
 		RemoveManagedObject(Object);
 		return FGCHandle();
 	}
 
-	FGCHandle* Handle = ManagedObjectHandles.Find(Object->GetUniqueID());
+	TSharedPtr<FGCHandle> Handle = ManagedObjectHandles.FindRef(Object->GetUniqueID());
 	
-	if (!Handle)
+	if (!Handle.IsValid())
 	{
 		Handle = CreateManagedObject(Object);
 	}
@@ -468,10 +479,11 @@ void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::RemoveManagedObject);
 	
-	FGCHandle Handle;
-	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), Handle))
+	TSharedPtr<FGCHandle> ObjectHandle;
+	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), ObjectHandle))
 	{
-		Handle.Dispose();
+		FGCHandleIntPtr AssemblyHandle = ManagedAssemblyHandle->GetHandle();
+		ObjectHandle->Dispose(AssemblyHandle);
 	}
 }
 

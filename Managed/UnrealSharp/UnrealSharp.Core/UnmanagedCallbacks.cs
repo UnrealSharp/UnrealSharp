@@ -159,19 +159,14 @@ public static class UnmanagedCallbacks
     {
         try
         {
-            if (delegatePtr == IntPtr.Zero)
+            Delegate? foundDelegate = GCHandleUtilities.GetObjectFromHandlePtr<Delegate>(delegatePtr);
+            
+            if (foundDelegate == null)
             {
-                return;
+                throw new Exception("Invalid delegate handle");
             }
 
-            GCHandle foundHandle = GCHandle.FromIntPtr(delegatePtr);
-
-            if (foundHandle.Target is not Delegate @delegate)
-            {
-                return;
-            }
-
-            @delegate.DynamicInvoke();
+            foundDelegate.DynamicInvoke();
         }
         catch (Exception ex)
         {
@@ -180,20 +175,21 @@ public static class UnmanagedCallbacks
     }
 
     [UnmanagedCallersOnly]
-    public static void Dispose(IntPtr handle)
+    public static void Dispose(IntPtr handle, IntPtr assemblyHandle)
     {
-        if (handle == IntPtr.Zero)
+        GCHandle foundHandle = GCHandle.FromIntPtr(handle);
+        
+        if (!foundHandle.IsAllocated)
         {
             return;
         }
-
-        GCHandle foundHandle = GCHandle.FromIntPtr(handle);
-
+        
         if (foundHandle.Target is IDisposable disposable)
         {
             disposable.Dispose();
         }
 
-        GCHandleUtilities.Free(foundHandle);
+        Assembly? foundAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Assembly>(assemblyHandle);
+        GCHandleUtilities.Free(foundHandle, foundAssembly);
     }
 }

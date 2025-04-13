@@ -56,7 +56,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	UClass* FindInterface(const FCSFieldName& InterfaceName) const;
 
 	// Creates a C# counterpart for the given UObject.
-	FGCHandle* CreateManagedObject(UObject* Object);
+	TSharedPtr<FGCHandle> CreateManagedObject(UObject* Object);
 
 	// Removes the C# counterpart for the given UObject, if it exists.
 	void RemoveManagedObject(const UObjectBase* Object);
@@ -118,7 +118,7 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
 
 	// Handles to all active UObjects that has a C# counterpart.
-	TMap<uint32, FGCHandle> ManagedObjectHandles;
+	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSharpClassInfo*>> PendingClasses;
