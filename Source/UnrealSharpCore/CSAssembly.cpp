@@ -138,45 +138,57 @@ bool FCSAssembly::ProcessMetadata()
 	TSharedPtr<FCSAssembly> OwningAssembly = SharedThis(this);
 	UCSManager& Manager = UCSManager::Get();
 
-	const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
+	if (JsonObject->HasField(TEXT("StructMetaData")))
 	{
-		RegisterMetaData<FCSharpStructInfo, FCSStructMetaData>(OwningAssembly, MetaData, Structs);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : EnumMetaData)
-	{
-		RegisterMetaData<FCSharpEnumInfo, FCSEnumMetaData>(OwningAssembly, MetaData, Enums);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : InterfacesMetaData)
-	{
-		RegisterMetaData<FCSharpInterfaceInfo, FCSInterfaceMetaData>(OwningAssembly, MetaData, Interfaces);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>& ClassesMetaData = JsonObject->GetArrayField(TEXT("ClassMetaData"));
-	for (const TSharedPtr<FJsonValue>& MetaData : ClassesMetaData)
-	{
-		RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [&Manager](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
+		const TArray<TSharedPtr<FJsonValue>>& StructMetaData = JsonObject->GetArrayField(TEXT("StructMetaData"));
+		for (const TSharedPtr<FJsonValue>& MetaData : StructMetaData)
 		{
-			// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
-			TArray<UClass*> DerivedClasses;
-			GetDerivedClasses(ClassInfo->Field, DerivedClasses);
-								
-			for (UClass* DerivedClass : DerivedClasses)
-			{
-				if (!Manager.IsManagedField(DerivedClass))
+			RegisterMetaData<FCSharpStructInfo, FCSStructMetaData>(OwningAssembly, MetaData, Structs);
+		}
+	}
+
+	if (JsonObject->HasField(TEXT("EnumMetaData")))
+	{
+		const TArray<TSharedPtr<FJsonValue>>& EnumMetaData = JsonObject->GetArrayField(TEXT("EnumMetaData"));
+		for (const TSharedPtr<FJsonValue>& MetaData : EnumMetaData)
+		{
+			RegisterMetaData<FCSharpEnumInfo, FCSEnumMetaData>(OwningAssembly, MetaData, Enums);
+		}
+	}
+
+	if (JsonObject->HasField(TEXT("InterfacesMetaData")))
+	{
+		const TArray<TSharedPtr<FJsonValue>>& InterfacesMetaData = JsonObject->GetArrayField(TEXT("InterfacesMetaData"));
+		for (const TSharedPtr<FJsonValue>& MetaData : InterfacesMetaData)
+		{
+			RegisterMetaData<FCSharpInterfaceInfo, FCSInterfaceMetaData>(OwningAssembly, MetaData, Interfaces);
+		}
+	}
+
+	if (JsonObject->HasField(TEXT("ClassMetaData")))
+	{
+		const TArray<TSharedPtr<FJsonValue>>& ClassesMetaData = JsonObject->GetArrayField(TEXT("ClassMetaData"));
+		for (const TSharedPtr<FJsonValue>& MetaData : ClassesMetaData)
+		{
+			RegisterMetaData<FCSharpClassInfo, FCSClassMetaData>(OwningAssembly, MetaData, Classes, [&Manager](const TSharedPtr<FCSharpClassInfo>& ClassInfo)
 				{
-					continue;
-				}
-									
-				UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
-				TSharedPtr<FCSharpClassInfo> ChildClassInfo = ManagedClass->GetClassInfo();
-				ChildClassInfo->State = NeedRebuild;
-			}
-		});
+					// Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
+					TArray<UClass*> DerivedClasses;
+					GetDerivedClasses(ClassInfo->Field, DerivedClasses);
+
+					for (UClass* DerivedClass : DerivedClasses)
+					{
+						if (!Manager.IsManagedField(DerivedClass))
+						{
+							continue;
+						}
+
+						UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
+						TSharedPtr<FCSharpClassInfo> ChildClassInfo = ManagedClass->GetClassInfo();
+						ChildClassInfo->State = NeedRebuild;
+					}
+				});
+		}
 	}
 	
 	return true;
