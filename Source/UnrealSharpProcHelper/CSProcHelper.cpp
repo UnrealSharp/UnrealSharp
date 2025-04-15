@@ -177,7 +177,7 @@ FString FCSProcHelper::GetUserAssemblyDirectory()
 
 FString FCSProcHelper::GetUnrealSharpMetadataPath()
 {
-	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.metadata.json");
+	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.assemblyloadorder.json");
 }
 
 void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeProjectGlue)

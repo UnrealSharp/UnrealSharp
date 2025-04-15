@@ -80,7 +80,7 @@ public static class Program
             WriteIndented = false,
         });
 
-        var fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.metadata.json");
+        var fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
         File.WriteAllText(fileName, metaDataContent);
     }
     
