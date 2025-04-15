@@ -65,7 +65,7 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     /// <returns>The component if found, otherwise null.</returns>");
         stringBuilder.AppendLine($"     public static new {fullTypeName}? Get(UnrealSharp.Engine.AActor owner)");
         stringBuilder.AppendLine("     {");
-        stringBuilder.AppendLine($"        UActorComponent? foundComponent = owner.GetComponentByClass(typeof({fullTypeName}));");
+        stringBuilder.AppendLine($"        UActorComponent? foundComponent = owner.GetComponentByClass<{fullTypeName}>(typeof({fullTypeName}));");
         stringBuilder.AppendLine("        if (foundComponent != null)");
         stringBuilder.AppendLine("        {");
         stringBuilder.AppendLine($"            return ({fullTypeName}) foundComponent;");
