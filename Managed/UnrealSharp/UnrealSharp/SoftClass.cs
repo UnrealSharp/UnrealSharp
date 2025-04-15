@@ -62,7 +62,7 @@ public struct TSoftClassPtr<T> where T : UObject
     public TSubclassOf<T> LoadSynchronous()
     {
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
-        UCSClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UCSClass>(handle);
+        UClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
         return new TSubclassOf<T>(loadedClass);
     }
 
