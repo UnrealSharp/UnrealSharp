@@ -53,7 +53,19 @@ public static class DotNetUtilities
 				return "/opt/homebrew/bin/dotnet";
 			}
 		}
-
+		
+		if (OperatingSystem.IsLinux()) {
+    		string? dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
+    		if (!string.IsNullOrEmpty(dotnetRoot)) {
+        		string dotnetPath = Path.Combine(dotnetRoot, "dotnet");
+        		if (File.Exists(dotnetPath)) {
+					return dotnetPath;
+        		}
+    		}
+    		if (File.Exists("/usr/lib64/dotnet/dotnet")) {
+				return "/usr/lib64/dotnet/dotnet";
+			}
+		}
 		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
     }
 

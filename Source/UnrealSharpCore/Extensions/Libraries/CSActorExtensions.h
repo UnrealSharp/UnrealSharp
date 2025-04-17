@@ -7,6 +7,12 @@
 struct FComponentOverrideRecord;
 struct FComponentKey;
 
+namespace ReflectionHelper
+{
+	extern const FName Records;
+	extern const FString RootPrefix;
+}
+
 UCLASS(meta = (Internal))
 class UCSActorExtensions : public UBlueprintFunctionLibrary
 {

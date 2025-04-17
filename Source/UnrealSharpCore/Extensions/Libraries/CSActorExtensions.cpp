@@ -7,8 +7,8 @@
 
 namespace ReflectionHelper
 {
-	extern inline FName Records = FName(TEXT("Records"));
-	extern inline FString RootPrefix = TEXT("ICH-");
+	const FName Records = FName(TEXT("Records"));
+	const FString RootPrefix = TEXT("ICH-");
 }
 
 void UCSActorExtensions::AddReplicatedSubObject(AActor* Actor, UObject* SubObject, ELifetimeCondition NetCondition)
