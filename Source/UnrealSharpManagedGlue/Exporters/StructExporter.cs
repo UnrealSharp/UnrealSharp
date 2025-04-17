@@ -201,7 +201,7 @@ public static class StructExporter
         
         if (structObj.IsStructNativelyCopyable())
         {
-            builder.AppendLine("if(Allocation is null)");
+            builder.AppendLine("if (Allocation is null)");
             builder.OpenBrace();
             builder.AppendLine("Allocation = new byte[NativeDataSize];");
             builder.CloseBrace();
