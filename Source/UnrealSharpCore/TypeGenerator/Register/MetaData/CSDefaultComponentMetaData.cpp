@@ -1,12 +1,5 @@
 ﻿#include "CSDefaultComponentMetaData.h"
 
-#include "UnrealSharpCore.h"
-
-bool FCSDefaultComponentMetaData::HasValidAttachment() const
-{
-	return AttachmentComponent != NAME_None;
-}
-
 void FCSDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)
 {
 	FCSObjectMetaData::SerializeFromJson(JsonObject);
@@ -15,27 +8,13 @@ void FCSDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject
 	FString AttachmentComponentStr;
 	if (JsonObject->TryGetStringField(TEXT("AttachmentComponent"), AttachmentComponentStr))
 	{
-		if (!IsRootComponent)
-		{
-			AttachmentComponent = *AttachmentComponentStr;
-		}
-		else
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment component!"), *AttachmentComponentStr);
-		}
+		AttachmentComponent = *AttachmentComponentStr;
 	}
 
 	FString AttachmentSocketStr;
 	if (JsonObject->TryGetStringField(TEXT("AttachmentSocket"), AttachmentSocketStr))
 	{
-		if (!IsRootComponent)
-		{
-			AttachmentSocket = *AttachmentSocketStr;
-		}
-		else
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment socket!"), *AttachmentSocketStr);
-		}
+		AttachmentSocket = *AttachmentSocketStr;
 	}
 }
 
