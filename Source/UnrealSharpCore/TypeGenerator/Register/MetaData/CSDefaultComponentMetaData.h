@@ -9,6 +9,8 @@ struct FCSDefaultComponentMetaData : public FCSObjectMetaData
 	FName AttachmentComponent;
 	FName AttachmentSocket;
 
+	bool HasValidAttachment() const;
+
 	//FUnrealType interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
 	virtual bool IsEqual(TSharedPtr<FCSUnrealType> Other) const override;
