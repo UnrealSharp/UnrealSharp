@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+struct FCSDefaultComponentMetaData;
 struct FCSPropertyMetaData;
 
 class FCSSimpleConstructionScriptBuilder
@@ -11,4 +12,5 @@ private:
 	static void UpdateTemplateComponent(USCS_Node* Node, UObject* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
 	static void UpdateChildren(UClass* Outer, USCS_Node* Node);
 	static bool TryFindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS);
+	static bool IsRootNode(const TSharedPtr<FCSDefaultComponentMetaData>& ObjectMetaData, const USCS_Node* Node);
 };

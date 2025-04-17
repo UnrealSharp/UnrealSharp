@@ -39,28 +39,38 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 
 		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.Name);
 	
-		if (!Node)
+		if (!IsValid(Node))
 		{
 			Node = CreateNode(CurrentSCS, Outer, Class, PropertyMetaData.Name);
+
+			if (IsRootNode(ObjectMetaData, Node))
+			{
+				CurrentSCS->AddNode(Node);
+			}
 		}
 		else if (Class != Node->ComponentClass)
 		{
 			UpdateChildren(Outer, Node);
 			UpdateTemplateComponent(Node, Outer, Class, PropertyMetaData.Name);
 		}
-	
-		FName AttachToComponentName = ObjectMetaData->AttachmentComponent;
-		bool HasValidAttachment = AttachToComponentName != "None";
-	
-		Node->AttachToName = HasValidAttachment ? ObjectMetaData->AttachmentSocket : NAME_None;
-
-		if (HasValidAttachment)
+		
+		if (Node->IsRootNode())
 		{
-			FCSAttachmentNode AttachmentNode;
-			AttachmentNode.Node = Node;
-			AttachmentNode.AttachToComponentName = AttachToComponentName;
-			AttachmentNodes.Add(AttachmentNode);
+			if (IsRootNode(ObjectMetaData, Node))
+			{
+				// Node hasn't changed, so we don't need to do anything
+				continue;
+			}
+			
+			CurrentSCS->RemoveNode(Node, false);
 		}
+
+		FCSAttachmentNode AttachmentNode;
+		AttachmentNode.Node = Node;
+		AttachmentNode.AttachToComponentName = ObjectMetaData->AttachmentComponent;
+		AttachmentNodes.Add(AttachmentNode);
+
+		Node->AttachToName = ObjectMetaData->AttachmentSocket;
 	}
 
 	for (const FCSAttachmentNode& AttachmentNode : AttachmentNodes)
@@ -113,10 +123,13 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 
 				Node->bIsParentComponentNative = true;
 			}
-			else
-			{
-				UE_LOG(LogUnrealSharp, Error, TEXT("Parent component %s not found in class %s"), *AttachToComponentName.ToString(), *Outer->GetName());
-			}
+		}
+
+		if (!IsValid(ParentNode) || ParentNode->GetOuter() != CurrentSCS)
+		{
+			// If we can't find any valid attachment or the component is in a parent class,
+			// we'll add it to the current SCS root set
+			CurrentSCS->AddNode(Node);
 		}
 		
 		for (USCS_Node* NodeItr : CurrentSCS->GetAllNodes())
@@ -141,8 +154,7 @@ USCS_Node* FCSSimpleConstructionScriptBuilder::CreateNode(USimpleConstructionScr
 	NewNode->VariableGuid = UCSPropertyGenerator::ConstructGUIDFromName(NewComponentVariableName);
 	
 	UpdateTemplateComponent(NewNode, GeneratedClass, NewComponentClass, NewComponentVariableName);
-	
-	SimpleConstructionScript->AddNode(NewNode);
+
 	return NewNode;
 }
 
@@ -233,6 +245,28 @@ bool FCSSimpleConstructionScriptBuilder::TryFindParentNodeAndComponent(FName Par
 
 		OutNode = FoundNode;
 		OutSCS = CurrentSCS;
+		return true;
+	}
+
+	return false;
+}
+
+bool FCSSimpleConstructionScriptBuilder::IsRootNode(const TSharedPtr<FCSDefaultComponentMetaData>& ObjectMetaData, const USCS_Node* Node)
+{
+	if (Node->IsRootNode())
+	{
+		return true;
+	}
+	
+	if (ObjectMetaData->IsRootComponent || !ObjectMetaData->HasValidAttachment())
+	{
+		// Root components and components with no valid attachment are just root nodes.
+		return true;
+	}
+
+	if (!Node->ComponentClass->IsChildOf(USceneComponent::StaticClass()))
+	{
+		// Any component without a transform is a root node.
 		return true;
 	}
 
