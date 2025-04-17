@@ -35,7 +35,6 @@ private:
 #if WITH_EDITOR
 	void CreateBlueprint(UClass* SuperClass);
 	void CreateClassEditor(UClass* SuperClass);
-	void UpdateClassDefaultObject() const;
 #endif
 	void CreateClass(UClass* SuperClass);
 	

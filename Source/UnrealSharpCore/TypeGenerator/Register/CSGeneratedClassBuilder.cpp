@@ -63,7 +63,6 @@ void FCSGeneratedClassBuilder::RebuildType()
 #if WITH_EDITOR
 void FCSGeneratedClassBuilder::UpdateType()
 {
-	UpdateClassDefaultObject();
 	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
 }
 
@@ -71,22 +70,6 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 {
 	CreateBlueprint(SuperClass);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
-}
-
-void FCSGeneratedClassBuilder::UpdateClassDefaultObject() const
-{
-	UObject* ClassDefaultObject = Field->ClassDefaultObject;
-	ClassDefaultObject->ClearFlags(RF_Public);
-	ClassDefaultObject->SetFlags(RF_Transient);
-	ClassDefaultObject->RemoveFromRoot();
-	ClassDefaultObject->Rename(nullptr, GetTransientPackage(), REN_ForceNoResetLoaders | REN_DontCreateRedirectors | REN_DoNotDirty | REN_NonTransactional);
-	ClassDefaultObject->MarkAsGarbage();
-	Field->ClassDefaultObject = nullptr;
-	
-	OwningAssembly->RemoveManagedObject(ClassDefaultObject);
-	
-	UObject* DefaultObject = Field->GetDefaultObject(true);
-	SetupDefaultTickSettings(DefaultObject, Field);
 }
 
 void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
