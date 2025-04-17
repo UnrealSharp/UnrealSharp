@@ -11,4 +11,7 @@ class UNREALSHARPCORE_API UUScriptStructExporter : public UObject
 public:
 	UNREALSHARP_FUNCTION()
 	static int GetNativeStructSize(const UScriptStruct* ScriptStruct);
+
+	UNREALSHARP_FUNCTION()
+	static bool NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest);
 };

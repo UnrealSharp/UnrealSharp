@@ -38,6 +38,7 @@ public static class StructExporter
         }
 
         bool isBlittable = structObj.IsStructBlittable();
+        bool isCopyable = structObj.IsStructNativelyCopyable();
 
         string typeNameSpace = structObj.GetNamespace();
         stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable);
@@ -58,6 +59,11 @@ public static class StructExporter
         
         stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: isBlittable || !isManualExport ? new List<string>{$"MarshalledStruct<{structName}>"} : null);
 
+        if (isCopyable)
+        {
+            stringBuilder.AppendLine("private byte[] Allocation;");
+        }
+        
         // For manual exports we just want to generate attributes
         if (!isManualExport)
         {
@@ -161,6 +167,15 @@ public static class StructExporter
         builder.AppendLine($"public {structName}(IntPtr InNativeStruct)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
+
+        if (structObj.IsStructNativelyCopyable())
+        {
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, InNativeStruct, (nint) AllocationPointer);");
+            builder.CloseBrace();
+        }
         
         foreach (UhtProperty property in properties)
         {
@@ -183,6 +198,18 @@ public static class StructExporter
         builder.AppendLine("public void ToNative(IntPtr buffer)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
+        
+        if (structObj.IsStructNativelyCopyable())
+        {
+            builder.AppendLine("if(Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.CloseBrace();
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, (nint) AllocationPointer, buffer);");
+            builder.CloseBrace();
+        }
         
         foreach (UhtProperty property in properties)
         {

@@ -10,3 +10,13 @@ int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruc
 	return ScriptStruct->GetStructureSize();
 }
 
+bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest)
+{
+	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
+	{
+		return CppStructOps->Copy(Dest, Src, 1);
+	}
+	
+	return false;
+}
+
