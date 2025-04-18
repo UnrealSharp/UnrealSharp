@@ -3,6 +3,7 @@
 #include "CSUserWidgetExtensions.h"
 #include "GameFramework/PlayerState.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 
 APlayerController* UCSUserWidgetExtensions::GetOwningPlayerController(UUserWidget* UserWidget)
 {
@@ -42,4 +43,10 @@ ULocalPlayer* UCSUserWidgetExtensions::GetOwningLocalPlayer(UUserWidget* UserWid
 	}
 
 	return UserWidget->GetOwningLocalPlayer();
+}
+
+UUserWidget* UCSUserWidgetExtensions::CreateWidget(UObject* WorldContextObject, const TSubclassOf<UUserWidget>& UserWidgetClass, APlayerController* OwningController)
+{
+	UUserWidget* UserWidget = UWidgetBlueprintLibrary::Create(WorldContextObject, UserWidgetClass, OwningController);
+	return UserWidget;
 }

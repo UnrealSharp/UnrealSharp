@@ -48,10 +48,9 @@ TSharedPtr<FGCHandle> FCSharpClassInfo::GetManagedTypeHandle()
 		{
 			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(Field);
 		}
+		ensureMsgf(ManagedTypeHandle.IsValid(), TEXT("Failed to find managed type handle for %s"), *TypeMetaData->FieldName.GetName());
 	}
 #endif
-
-	ensureMsgf(ManagedTypeHandle.IsValid(), TEXT("Failed to find managed type handle for %s"), *TypeMetaData->FieldName.GetName());
 	return ManagedTypeHandle;
 }
 

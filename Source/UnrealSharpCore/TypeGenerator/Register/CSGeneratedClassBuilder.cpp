@@ -151,7 +151,14 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	for (TFieldIterator<FProperty> PropertyIt(ManagedClass); PropertyIt; ++PropertyIt)
 	{
 		FProperty* Property = *PropertyIt;
-		if (!IsManagedType(Property->GetOwnerClass()) || Property->HasAnyPropertyFlags(CPF_ZeroConstructor))
+
+		if (Property->GetOwnerClass() == NativeClass)
+		{
+			// Break if we reach the first native class
+			break;
+		}
+		
+		if (Property->HasAnyPropertyFlags(CPF_ZeroConstructor))
 		{
 			continue;
 		}
@@ -160,7 +167,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	}
 
 	TSharedPtr<FCSAssembly> OwningAssembly = ManagedClass->GetOwningAssembly();
-	OwningAssembly->CreateManagedObject(ObjectInitializer.GetObj());
+	OwningAssembly->FindOrCreateManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)

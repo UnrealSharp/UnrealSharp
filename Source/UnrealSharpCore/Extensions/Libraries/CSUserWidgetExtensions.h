@@ -22,4 +22,7 @@ public:
 
 	UFUNCTION(meta=(ScriptMethod))
 	static ULocalPlayer* GetOwningLocalPlayer(UUserWidget* UserWidget);
+
+	UFUNCTION(meta=(ScriptMethod, UserWidgetClass = "/Script/UMG.UserWidget", DeterminesOutputType = "UserWidgetClass"))
+	static UUserWidget* CreateWidget(UObject* WorldContextObject, const TSubclassOf<UUserWidget>& UserWidgetClass, APlayerController* OwningController);
 };

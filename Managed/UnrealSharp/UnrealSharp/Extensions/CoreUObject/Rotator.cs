@@ -1,4 +1,5 @@
 ﻿using UnrealSharp.Interop;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -30,7 +31,7 @@ public partial struct FRotator
     
     public FRotator(FQuat quat)
     {
-        FQuatExporter.CallToRotator(out this, quat);
+        UCSQuatExtensions.ToRotator(out this, this);
     }
     
     public bool Equals(FRotator other)
@@ -62,7 +63,7 @@ public partial struct FRotator
     
     public FQuat ToQuaternion()
     {
-        FQuatExporter.CallToQuaternion(out var quat, this);
+        UCSQuatExtensions.ToQuaternion(out var quat, this);
         return quat;
     }
 

@@ -59,7 +59,7 @@ public:
 	
 	FGCHandle FindManagedObject(UObject* Object) const;
 
-	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
+	void SetCurrentWorldContext(UObject* WorldContext);
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
 	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }

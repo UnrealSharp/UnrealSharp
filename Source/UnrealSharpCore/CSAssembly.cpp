@@ -240,7 +240,7 @@ TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 	FString FullName = FieldName.GetFullName().ToString();
 	uint8* TypeHandle = FCSManagedCallbacks::ManagedCallbacks.LookupManagedType(ManagedAssemblyHandle->GetPointer(), *FullName);
 	
-	if (TypeHandle == nullptr)
+	if (!TypeHandle)
 	{
 		return nullptr;
 	}
@@ -416,13 +416,18 @@ UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 	return Interface;
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
+TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObject(UObject* Object)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateNewManagedObject);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::FindOrCreateManagedObject);
+
+	if (!IsValid(Object))
+	{
+		RemoveManagedObject(Object);
+		return nullptr;
+	}
 	
 	if (TSharedPtr<FGCHandle> FoundHandle = ManagedObjectHandles.FindRef(Object->GetUniqueID()))
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Object {0} already has a managed counterpart", *Object->GetName());
 		return FoundHandle;
 	}
 
@@ -447,26 +452,6 @@ TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 	AllocatedManagedHandles.Add(AllocatedHandle);
 	
 	return AllocatedHandle;
-}
-
-FGCHandle FCSAssembly::FindManagedObject(UObject* Object)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::FindManagedObject);
-	
-	if (!IsValid(Object))
-	{
-		RemoveManagedObject(Object);
-		return FGCHandle();
-	}
-
-	TSharedPtr<FGCHandle> Handle = ManagedObjectHandles.FindRef(Object->GetUniqueID());
-	
-	if (!Handle.IsValid())
-	{
-		Handle = CreateManagedObject(Object);
-	}
-	
-	return *Handle;
 }
 
 void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass)

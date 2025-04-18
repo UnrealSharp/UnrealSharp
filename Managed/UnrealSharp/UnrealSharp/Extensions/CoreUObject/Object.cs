@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Engine;
@@ -9,7 +8,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial class UObject : UnrealSharpObject
+public partial class UObject
 {
     /// <summary>
     /// The name of the object in Unreal Engine.
@@ -100,34 +99,21 @@ public partial class UObject : UnrealSharpObject
     /// <param name="printToConsole"> Whether to print the message to the console. </param>
     /// <param name="key"> Whether to print the message to the console. </param>
     /// <param name="key"> If a non-empty key is provided, the message will replace any existing on-screen messages with the same key. </param>
-    public void PrintString(string message = "Hello", float duration = 2.0f, FLinearColor color = default, bool printToScreen = true, bool printToConsole = true, string key = "")
+    public static void PrintString(string message = "Hello", float duration = 2.0f, FLinearColor color = default, bool printToScreen = true, bool printToConsole = true, string key = "")
     {
-        unsafe
+        if (color.IsZero())
         {
-            fixed (char* messagePtr = message)
+            // Use the default color if none is provided
+            color = new FLinearColor
             {
-                // Use the default color if none is provided
-                if (color.IsZero())
-                {
-                    color = new FLinearColor
-                    {
-                        R = 0.0f,
-                        G = 0.66f,
-                        B = 1.0f,
-                        A = 1.0f
-                    };
-                }
-                
-                UKismetSystemLibraryExporter.CallPrintString(
-                    NativeObject, 
-                    (IntPtr) messagePtr, 
-                    duration, 
-                    color, 
-                    printToScreen.ToNativeBool(), 
-                    printToConsole.ToNativeBool(),
-                    key);
-            }
+                R = 0.0f,
+                G = 0.66f,
+                B = 1.0f,
+                A = 1.0f
+            };
         }
+        
+        UCSSystemExtensions.PrintStringInternal(message, printToScreen, printToConsole, color, duration, key);
     }
     
     /// <summary>
@@ -148,22 +134,21 @@ public partial class UObject : UnrealSharpObject
     /// <typeparam name="T"> The type of the object to create. </typeparam>
     /// <returns> The newly created object. </returns>
     /// <exception cref="ArgumentException"> Thrown if the outer object is not valid. </exception>
-    public static T NewObject<T>(UObject outer, TSubclassOf<T> classType = default, UObject? template = null) where T : UnrealSharpObject
+    public static T NewObject<T>(UObject? outer = null, TSubclassOf<T> classType = default, UObject? template = null) where T : UnrealSharpObject
     {
         if (classType.NativeClass == IntPtr.Zero)
         {
             classType = new TSubclassOf<T>();
         }
         
-        IntPtr nativeOuter = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
 
-        if (nativeOuter == IntPtr.Zero)
+        if (outer == null || outer.NativeObject == IntPtr.Zero)
         {
-            throw new ArgumentException("Outer must be a valid object", nameof(outer));
+            outer = GetTransientPackage();
         }
         
-        IntPtr handle = UObjectExporter.CallCreateNewObject(nativeOuter, classType.NativeClass, nativeTemplate);
+        IntPtr handle = UObjectExporter.CallCreateNewObject(outer.NativeObject, classType.NativeClass, nativeTemplate);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -171,10 +156,10 @@ public partial class UObject : UnrealSharpObject
     /// Gets the transient package.
     /// </summary>
     /// <returns> The transient package. </returns>
-    public static UPackage? GetTransientPackage()
+    public static UPackage GetTransientPackage()
     {
         IntPtr handle = UObjectExporter.CallGetTransientPackage();
-        return GCHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle)!;
     }
     
     /// <summary>
@@ -210,7 +195,7 @@ public partial class UObject : UnrealSharpObject
     /// <param name="owner"> The owner of the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActor<T>(TSubclassOf<T> actorType = default, 
+    public static T SpawnActor<T>(TSubclassOf<T> actorType = default, 
         FTransform spawnTransform = default,
         ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined, 
         APawn? instigator = null, 
@@ -234,7 +219,7 @@ public partial class UObject : UnrealSharpObject
     /// <param name="spawnParameters"> The parameters to use when spawning the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters) where T : AActor
+    public static T SpawnActor<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters) where T : AActor
     {
         return (T) UCSWorldExtensions.SpawnActor(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
     }
@@ -249,7 +234,7 @@ public partial class UObject : UnrealSharpObject
     /// <param name="initializeComponents"> Callback to initialize components properties. Both actor and components are valid here.</param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public T SpawnActorDeferred<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters, Action<T>? initializeActor = null, Action<T>? initializeComponents = null) where T : AActor
+    public static T SpawnActorDeferred<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters, Action<T>? initializeActor = null, Action<T>? initializeComponents = null) where T : AActor
     {
         T spawnedActor = (T) UCSWorldExtensions.SpawnActorDeferred(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
         
@@ -339,23 +324,15 @@ public partial class UObject : UnrealSharpObject
     /// <param name="owningController"> The owning player controller. </param>
     /// <typeparam name="T"> The type of the widget to create. </typeparam>
     /// <returns></returns>
-    public T CreateWidget<T>(TSubclassOf<T> widgetClass, APlayerController? owningController = null) where T : UUserWidget
+    public static T CreateWidget<T>(TSubclassOf<T> widgetClass, APlayerController? owningController = null) where T : UUserWidget
     {
-        unsafe
-        {
-            IntPtr owningPlayerPtr = owningController?.NativeObject ?? IntPtr.Zero;
-            IntPtr handle = UWidgetBlueprintLibraryExporter.CallCreateWidget(NativeObject, widgetClass.NativeClass, owningPlayerPtr);
-            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
-        }
+        return UCSUserWidgetExtensions.CreateWidget(widgetClass, owningController);
     }
     
     /// <summary>
     /// Marks the object as garbage.
     /// </summary>
-    public void MarkAsGarbage()
-    {
-        UCSObjectExtensions.MarkAsGarbage(this);
-    }
+    public void MarkAsGarbage() => UCSObjectExtensions.MarkAsGarbage(this);
     
     /// <summary>
     /// Gets the class of the object.

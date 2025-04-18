@@ -14,7 +14,6 @@
 
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
-#include "UnrealSharpBinds.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 
@@ -305,7 +304,7 @@ bool UCSManager::LoadAllUserAssemblies()
 		}
 	}
 
-	OnAssembliesLoaded.Broadcast();
+	OnAssembliesLoaded.Broadcast(); 
 	return true;
 }
 
@@ -469,7 +468,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 			return Assembly.Value;
 		}
 	}
-
+	
 	return nullptr;
 }
 
@@ -484,8 +483,35 @@ FGCHandle UCSManager::FindManagedObject(UObject* Object) const
 
 	if (!OwningAssembly.IsValid())
 	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *Object->GetName());
 		return FGCHandle();
 	}
 	
-	return OwningAssembly->FindManagedObject(Object);
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedObject(Object);
+
+	if (!FoundHandle.IsValid())
+	{
+		return FGCHandle();
+	}
+
+	return *FoundHandle;
+}
+
+void UCSManager::SetCurrentWorldContext(UObject* WorldContext)
+{
+	if (!IsValid(WorldContext))
+	{
+		CurrentWorldContext.Reset();
+		return;
+	}
+
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::LogAndReturnNull);
+
+	if (!IsValid(World))
+	{
+		// Keep the current world context if the new one is invalid.
+		return;
+	}
+	
+	CurrentWorldContext = WorldContext;
 }

@@ -41,7 +41,8 @@ void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* 
 	}
 
 	UObject* DefaultObject = Class->GetDefaultObject();
-	return Assembly->FindManagedObject(DefaultObject).GetPointer();
+	TSharedPtr<FGCHandle> Handle = Assembly->FindOrCreateManagedObject(DefaultObject);
+	return Handle.IsValid() ? Handle->GetPointer() : nullptr;
 }
 
 void* UUClassExporter::GetDefaultFromInstance(UObject* Object)

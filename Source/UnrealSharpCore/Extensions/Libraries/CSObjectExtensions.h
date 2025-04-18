@@ -5,7 +5,7 @@
 #include "CSObjectExtensions.generated.h"
 
 UCLASS(meta = (Internal))
-class UNREALSHARPCORE_API UCSObjectExtensions : public UBlueprintFunctionLibrary
+class UCSObjectExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:
