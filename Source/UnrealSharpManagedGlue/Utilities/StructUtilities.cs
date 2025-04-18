@@ -8,7 +8,7 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
-        if (PropertyTranslatorManager.ManuallyExportedTypes.Contains(structObj.SourceName))
+        if (PropertyTranslatorManager.BlittableTypes.Contains(structObj.SourceName))
         {
             return true;
         }
@@ -19,5 +19,10 @@ public static class StructUtilities
         // but have a non-UPROPERTY property that is not picked up by UHT, that makes it not blittable causing a mismatch in memory layout.
         // This is a temporary solution until we can get that working.
         return false;
+    }
+
+    public static bool IsStructNativelyCopyable(this UhtStruct structObj)
+    {
+        return PropertyTranslatorManager.NativelyCopyableTypes.Contains(structObj.SourceName);
     }
 }

@@ -235,7 +235,7 @@ public static class CSharpExporter
     
     private static void ExportType(UhtType type)
     {
-        bool isManualExport = PropertyTranslatorManager.ManuallyExportedTypes.Contains(type.SourceName);
+        bool isManualExport = PropertyTranslatorManager.BlittableTypes.Contains(type.SourceName);
 
         if (type.HasMetadata("NotGeneratorValid"))
         {

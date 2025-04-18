@@ -7,12 +7,15 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    public static readonly List<string> ManuallyExportedTypes = new();
+    public static readonly List<string> BlittableTypes = new();
+    public static readonly List<string> NativelyCopyableTypes = new();
     
     static PropertyTranslatorManager()
     {
-        ManuallyExportedTypes.Add("EStreamingSourcePriority");
-        ManuallyExportedTypes.Add("ETriggerEvent");
+        BlittableTypes.Add("EStreamingSourcePriority");
+        BlittableTypes.Add("ETriggerEvent");
+        
+        NativelyCopyableTypes.Add("FMoverDataCollection");
 
         EnumPropertyTranslator enumPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
@@ -134,6 +137,6 @@ public static class PropertyTranslatorManager
     private static void AddBlittableCustomStructPropertyTranslator(string nativeName, string managedType)
     {
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
-        ManuallyExportedTypes.Add(nativeName);
+        BlittableTypes.Add(nativeName);
     }
 }
