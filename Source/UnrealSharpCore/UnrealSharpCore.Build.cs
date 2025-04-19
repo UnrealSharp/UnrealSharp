@@ -83,18 +83,18 @@ public class UnrealSharpCore : ModuleRules
 		const string DOTNET_WIN = "dotnet.exe";
 		const string DOTNET_UNIX = "dotnet";
 
-		var dotnetExe = OperatingSystem.IsWindows() ? DOTNET_WIN : DOTNET_UNIX;
+		string dotnetExe = OperatingSystem.IsWindows() ? DOTNET_WIN : DOTNET_UNIX;
 
-		var pathVariable = Environment.GetEnvironmentVariable("PATH");
+		string pathVariable = Environment.GetEnvironmentVariable("PATH");
     
 		if (pathVariable == null)
 		{
 			return null;
 		}
     
-		var paths = pathVariable.Split(Path.PathSeparator);
+		string[] paths = pathVariable.Split(Path.PathSeparator);
     
-		foreach (var path in paths)
+		foreach (string path in paths)
 		{
 			// This is a hack to avoid using the dotnet.exe from the Unreal Engine installation directory.
 			// Can't use the dotnet.exe from the Unreal Engine installation directory because it's .NET 6.0
@@ -111,11 +111,14 @@ public class UnrealSharpCore : ModuleRules
 			}
 		}
 
-		if ( OperatingSystem.IsMacOS() ) {
-			if ( File.Exists( "/usr/local/share/dotnet/dotnet" ) ) {
+		if ( OperatingSystem.IsMacOS() ) 
+		{
+			if (File.Exists("/usr/local/share/dotnet/dotnet")) 
+			{
 				return "/usr/local/share/dotnet/dotnet";
 			}
-			if ( File.Exists( "/opt/homebrew/bin/dotnet" ) ) {
+			if (File.Exists("/opt/homebrew/bin/dotnet")) 
+			{
 				return "/opt/homebrew/bin/dotnet";
 			}
 		}
@@ -139,16 +142,12 @@ public class UnrealSharpCore : ModuleRules
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
 		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{_managedBinariesPath}\"");
-
-		// process.StartInfo.ArgumentList.Add($"-p:Configuration=\"Development\"");
-		// process.StartInfo.ArgumentList.Add($"-p:Platform=\"Any CPU\"");
 		
 		process.Start();
 		process.WaitForExit();
 		
 		if (process.ExitCode != 0)
 		{
-			// throw new Exception($"Failed to publish solution: {projectRootDirectory}");
 			Console.WriteLine($"Failed to publish solution: {projectRootDirectory}");
 		}
 	}

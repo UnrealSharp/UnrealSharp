@@ -324,7 +324,7 @@ public static class TypeDefinitionUtilities
     {
         int arrayDim = 1;
         TypeDefinition typeDef = typeRef.Resolve();
-        SequencePoint sequencePoint = ErrorEmitter.GetSequencePointFromMemberDefinition(typeDef);
+        SequencePoint? sequencePoint = ErrorEmitter.GetSequencePointFromMemberDefinition(typeDef);
 
         if (customAttributes != null)
         {
@@ -484,12 +484,12 @@ public static class TypeDefinitionUtilities
                     return new NativeDataDelegateType(typeRef);
                 }
             
-                if (NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
+                if (customAttributes != null && NativeDataDefaultComponent.IsDefaultComponent(customAttributes))
                 {
                     return new NativeDataDefaultComponent(customAttributes, typeDef, arrayDim);
                 }
             
-                TypeDefinition superType = typeDef;
+                TypeDefinition? superType = typeDef;
                 while (superType != null && superType.FullName != "UnrealSharp.Core.UnrealSharpObject")
                 {
                     TypeReference superTypeRef = superType.BaseType;

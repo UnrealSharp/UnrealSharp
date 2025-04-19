@@ -16,7 +16,7 @@ class NativeDataStructType(TypeReference structType, string marshallerName, int 
 
         if (!InnerType.TypeRef.Resolve().IsUStruct())
         {
-            throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UStruct if exposed through UProperty!");
+            throw new Exception($"{propertyMetadata.MemberRef!.FullName} needs to be a UStruct if exposed through UProperty!");
         }
     }
 }

@@ -26,7 +26,7 @@ public static class FunctionProcessor
             function.RewriteInfo.FunctionParamSizeField = paramsSizeField;
         }
 
-        if (function.HasReturnValue)
+        if (function.ReturnValue != null)
         {
             int index = function.Parameters.Length > 0 ? function.Parameters.Length : 0;
             AddOffsetField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
@@ -64,6 +64,11 @@ public static class FunctionProcessor
     
     public static void LoadNativeFunctionField(ILProcessor processor, FunctionMetaData functionMetaData)
     {
+        if (functionMetaData.FunctionPointerField == null)
+        {
+            throw new InvalidOperationException("Function pointer field is null.");
+        }
+        
         if (functionMetaData.FunctionPointerField.IsStatic)
         {
             processor.Emit(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
@@ -244,7 +249,7 @@ public static class FunctionProcessor
                 loadLocalVariable);
         }
 
-        if (func.HasReturnValue)
+        if (func.ReturnValue != null)
         {
             NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
             processor.Emit(OpCodes.Stloc, returnIndex);
@@ -278,6 +283,11 @@ public static class FunctionProcessor
     {
         // Remove the original method body. We'll replace it with a call to the native function.
         methodDef.Body = new MethodBody(methodDef);
+        
+        if (metadata.FunctionPointerField == null)
+        {
+            throw new InvalidOperationException("Function pointer field is null.");
+        }
 
         bool staticNativeFunction = metadata.FunctionPointerField.IsStatic;
         bool hasReturnValue = !methodDef.ReturnsVoid();
@@ -347,7 +357,7 @@ public static class FunctionProcessor
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.HasReturnValue)
+        if (metadata.ReturnValue != null)
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);

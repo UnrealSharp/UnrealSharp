@@ -14,7 +14,7 @@ public class BuildWeave : BuildToolAction
 
         foreach (FileInfo projectFile in allProjectFiles)
         {
-            if (projectFile.Directory.Name == "ProjectGlue")
+            if (projectFile.Directory!.Name == "ProjectGlue")
             {
                 continue;
             }

@@ -32,49 +32,49 @@ public static class WeaverImporter
     
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
-    public static AssemblyDefinition UserAssembly;
+    public static AssemblyDefinition UserAssembly = null!;
     public static readonly ICollection<AssemblyDefinition> WeavedAssemblies = [];
     
     public static AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
     public static AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
     public static AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
     
-    public static MethodReference NativeObjectGetter;
-    public static TypeDefinition IntPtrType;
-    public static MethodReference IntPtrAdd;
-    public static FieldReference IntPtrZero;
-    public static MethodReference IntPtrEqualsOperator;
-    public static TypeReference UnrealSharpObjectType;
-    public static TypeDefinition IInterfaceType;
-    public static MethodReference GetNativeFunctionFromInstanceAndNameMethod;
-    public static TypeReference Int32TypeRef;
-    public static TypeReference VoidTypeRef;
-    public static TypeReference ByteTypeRef;
-    public static MethodReference GetNativeClassFromNameMethod;
-    public static MethodReference GetNativeStructFromNameMethod;
-    public static MethodReference GetPropertyOffsetFromNameMethod;
-    public static MethodReference GetPropertyOffset;
-    public static MethodReference GetNativePropertyFromNameMethod;
-    public static MethodReference GetNativeFunctionFromClassAndNameMethod;
-    public static MethodReference GetNativeFunctionParamsSizeMethod;
-    public static MethodReference GetNativeStructSizeMethod;
-    public static MethodReference InvokeNativeFunctionMethod;
-    public static MethodReference GetSignatureFunction;
-    public static MethodReference InitializeStructMethod;
+    public static MethodReference NativeObjectGetter = null!;
+    public static TypeDefinition IntPtrType = null!;
+    public static MethodReference IntPtrAdd = null!;
+    public static FieldReference IntPtrZero = null!;
+    public static MethodReference IntPtrEqualsOperator = null!;
+    public static TypeReference UnrealSharpObjectType = null!;
+    public static TypeDefinition IInterfaceType = null!;
+    public static MethodReference GetNativeFunctionFromInstanceAndNameMethod = null!;
+    public static TypeReference Int32TypeRef = null!;
+    public static TypeReference VoidTypeRef = null!;
+    public static TypeReference ByteTypeRef = null!;
+    public static MethodReference GetNativeClassFromNameMethod = null!;
+    public static MethodReference GetNativeStructFromNameMethod = null!;
+    public static MethodReference GetPropertyOffsetFromNameMethod = null!;
+    public static MethodReference GetPropertyOffset = null!;
+    public static MethodReference GetNativePropertyFromNameMethod = null!;
+    public static MethodReference GetNativeFunctionFromClassAndNameMethod = null!;
+    public static MethodReference GetNativeFunctionParamsSizeMethod = null!;
+    public static MethodReference GetNativeStructSizeMethod = null!;
+    public static MethodReference InvokeNativeFunctionMethod = null!;
+    public static MethodReference GetSignatureFunction = null!;
+    public static MethodReference InitializeStructMethod = null!;
 
-    public static MethodReference GeneratedTypeCtor;
+    public static MethodReference GeneratedTypeCtor = null!;
     
-    public static TypeDefinition UObjectDefinition;
-    public static TypeDefinition UActorComponentDefinition;
+    public static TypeDefinition UObjectDefinition = null!;
+    public static TypeDefinition UActorComponentDefinition = null!;
     
-    public static TypeDefinition ScriptInterfaceMarshaller;
+    public static TypeDefinition ScriptInterfaceMarshaller = null!;
     
-    public static MethodReference BlittableTypeConstructor;
+    public static MethodReference BlittableTypeConstructor = null!;
     
-    public static MethodReference GetAssemblyNameMethod;
-    public static MethodReference GetTypeFromHandleMethod;
+    public static MethodReference GetAssemblyNameMethod = null!;
+    public static MethodReference GetTypeFromHandleMethod = null!;
 
-    public static DefaultAssemblyResolver AssemblyResolver;
+    public static DefaultAssemblyResolver AssemblyResolver = null!;
     
     public static void Initialize(DefaultAssemblyResolver assemblyResolver)
     {

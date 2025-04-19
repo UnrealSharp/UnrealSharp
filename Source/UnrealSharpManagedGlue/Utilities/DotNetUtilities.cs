@@ -10,7 +10,7 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class DotNetUtilities
 {
-	const string DOTNET_MAJOR_VERSION = "9.0";
+	const string DOTNET_MAJOR_VERSION = "9";
 	
     public static string FindDotNetExecutable()
     {
@@ -59,42 +59,39 @@ public static class DotNetUtilities
 
     private static string GetLatestDotNetSdkPath()
     {
-	    string dotNetExecutable = FindDotNetExecutable();
-	    string dotNetExecutableDirectory = Path.GetDirectoryName(dotNetExecutable)!;
-	    string dotNetSdkDirectory = Path.Combine(dotNetExecutableDirectory!, "sdk");
-    
-	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
-    
-	    string highestVersion = "0.0.0";
+        string dotNetExecutable = FindDotNetExecutable();
+        string dotNetExecutableDirectory = Path.GetDirectoryName(dotNetExecutable)!;
+        string dotNetSdkDirectory = Path.Combine(dotNetExecutableDirectory, "sdk");
 
-	    foreach (string folderPath in folderPaths)
-	    {
-		    string folderName = Path.GetFileName(folderPath);
-		    
-		    if (string.IsNullOrEmpty(folderName) || !char.IsDigit(folderName[0]))
-		    {
-			    continue;
-		    }
-        
-		    if (string.Compare(folderName, highestVersion, StringComparison.Ordinal) > 0)
-		    {
-			    highestVersion = folderName;
-		    }
-	    }
-    
-	    if (highestVersion == "0.0.0")
-	    {
-		    throw new Exception("Failed to find the latest .NET SDK version.");
-	    }
-    
-	    if (!highestVersion.StartsWith(DOTNET_MAJOR_VERSION))
-	    {
-		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {highestVersion}");
-	    }
+        string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
 
-	    return Path.Combine(dotNetSdkDirectory, highestVersion);
+        Version? highestVersion = null;
+        foreach (string folderPath in folderPaths)
+        {
+            string folderName = Path.GetFileName(folderPath);
+
+            if (string.IsNullOrEmpty(folderName) || !char.IsDigit(folderName[0]))
+            {
+                continue;
+            }
+
+            if (Version.TryParse(folderName, out Version? version) && version.Major.ToString() == DOTNET_MAJOR_VERSION)
+            {
+                if (highestVersion == null || version > highestVersion)
+                {
+                    highestVersion = version;
+                }
+            }
+        }
+
+        if (highestVersion == null)
+        {
+            throw new Exception($"Failed to find the latest .NET SDK version for major version {DOTNET_MAJOR_VERSION}.");
+        }
+
+        return Path.Combine(dotNetSdkDirectory, highestVersion.ToString());
     }
-    
+
     public static void BuildSolution(string projectRootDirectory)
     {
     	if (!Directory.Exists(projectRootDirectory))
@@ -119,12 +116,13 @@ public static class DotNetUtilities
     public static void InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
     {
 	    string dotnetPath = FindDotNetExecutable();
-
 	    var startInfo = new ProcessStartInfo
 	    {
 		    FileName = dotnetPath,
 		    RedirectStandardOutput = true,
-		    RedirectStandardError = true
+		    RedirectStandardError = true,
+		    UseShellExecute = false,
+		    CreateNoWindow = true
 	    };
 
 	    foreach (string argument in arguments)
@@ -136,9 +134,8 @@ public static class DotNetUtilities
 	    {
 		    startInfo.WorkingDirectory = workingDirectory;
 	    }
-	    
+
 	    // Set the MSBuild environment variables to the latest .NET SDK that U# supports.
-	    // Otherwise, we'll use the .NET SDK that comes with the Unreal Engine.
 	    {
 		    string latestDotNetSdkPath = GetLatestDotNetSdkPath();
 		    startInfo.Environment["MSBuildExtensionsPath"] = latestDotNetSdkPath;
@@ -149,19 +146,19 @@ public static class DotNetUtilities
 	    using (Process process = new Process())
 	    {
 		    process.StartInfo = startInfo;
-		    
+
 		    try
 		    {
-			   process.Start();
+			    process.Start();
 		    }
 		    catch (Exception ex)
 		    {
-			    throw new Exception($"Failed to start process '{dotnetPath}' with arguments: {process.StartInfo.Arguments}", ex);
+			    throw new Exception($"Failed to start process '{dotnetPath}' with arguments: {string.Join(" ", startInfo.ArgumentList)}", ex);
 		    }
-		    
-		    var standardOutput = process.StandardOutput.ReadToEnd();
-		    var standardError = process.StandardError.ReadToEnd();
-		    
+
+		    string standardOutput = process.StandardOutput.ReadToEnd();
+		    string standardError = process.StandardError.ReadToEnd();
+
 		    process.WaitForExit();
 
 		    if (process.ExitCode == 0)
@@ -172,7 +169,7 @@ public static class DotNetUtilities
 		    string errorDetails = $@"
 Failed to invoke dotnet command:
 Executable: {dotnetPath}
-Arguments: {process.StartInfo.Arguments}
+Arguments: {string.Join(" ", startInfo.ArgumentList)}
 Exit Code: {process.ExitCode}
 Standard Output: {standardOutput}
 Standard Error: {standardError}";

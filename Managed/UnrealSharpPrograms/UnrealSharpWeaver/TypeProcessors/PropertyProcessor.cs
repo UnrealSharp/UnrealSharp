@@ -14,7 +14,7 @@ public static class PropertyProcessor
         TypeDefinition type,
         IEnumerable<PropertyMetaData> properties)
     {
-        var removedBackingFields = new Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition)>();
+        var removedBackingFields = new Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)>();
 
         foreach (PropertyMetaData prop in properties)
         {
@@ -27,6 +27,11 @@ public static class PropertyProcessor
             {
                 prop.NativePropertyField = nativePropertyField;
                 propertyPointersToInitialize.Add(Tuple.Create(nativePropertyField, prop));
+            }
+
+            if (prop.MemberRef == null)
+            {
+                throw new InvalidDataException($"Property '{prop.Name}' does not have a member reference");
             }
             
             prop.PropertyDataType.PrepareForRewrite(type, prop, prop.MemberRef);
@@ -48,11 +53,11 @@ public static class PropertyProcessor
         RemoveBackingFieldReferences(type, removedBackingFields);
     }
     
-    static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition)> strippedFields)
+    static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)> strippedFields)
     {
-        foreach (var ctor in type.GetConstructors().ToList())
+        foreach (MethodDefinition? constructor in type.GetConstructors().ToList())
         {
-            if (!ctor.HasBody)
+            if (!constructor.HasBody)
             {
                 continue;
             }
@@ -61,7 +66,7 @@ public static class PropertyProcessor
             var alteredInstructions = new List<Instruction>();
             var deferredInstructions = new List<Instruction>();
 
-            foreach (var instr in ctor.Body.Instructions)
+            foreach (Instruction? instr in constructor.Body.Instructions)
             {
                 alteredInstructions.Add(instr);
 
@@ -77,7 +82,7 @@ public static class PropertyProcessor
                 }
 
                 if (!strippedFields.TryGetValue(field.Name, out (PropertyMetaData meta, PropertyDefinition def, FieldDefinition offsetField,
-                        FieldDefinition nativePropertyField) prop))
+                        FieldDefinition? nativePropertyField) prop))
                 {
                     continue;
                 }
@@ -85,26 +90,26 @@ public static class PropertyProcessor
                 // for now, we only handle simple stores
                 if (instr.OpCode != OpCodes.Stfld)
                 {
-                    throw new UnableToFixPropertyBackingReferenceException(ctor, prop.def, instr.OpCode);
+                    throw new UnableToFixPropertyBackingReferenceException(constructor, prop.def, instr.OpCode);
                 }
 
-                var m = prop.def.SetMethod;
+                MethodDefinition? setMethod = prop.def.SetMethod;
 
                 //if the property did not have a setter, add a private one for the ctor to use
-                if (m == null)
+                if (setMethod == null)
                 {
                     var voidRef = type.Module.ImportReference(typeof(void));
-                    prop.def.SetMethod = m = new MethodDefinition($"set_{prop.def.Name}",
+                    prop.def.SetMethod = setMethod = new MethodDefinition($"set_{prop.def.Name}",
                         MethodAttributes.SpecialName | MethodAttributes.Private | MethodAttributes.HideBySig,
                         voidRef);
-                    m.Parameters.Add(new ParameterDefinition(prop.def.PropertyType));
-                    type.Methods.Add(m);
+                    setMethod.Parameters.Add(new ParameterDefinition(prop.def.PropertyType));
+                    type.Methods.Add(setMethod);
                     
                     Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
                     prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
                 }
 
-                var newInstr = Instruction.Create((m.IsReuseSlot && m.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, m);
+                var newInstr = Instruction.Create((setMethod.IsReuseSlot && setMethod.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, setMethod);
                 newInstr.Offset = instr.Offset;
                 alteredInstructions[alteredInstructions.Count - 1] = newInstr;
 
@@ -133,29 +138,34 @@ public static class PropertyProcessor
             }
 
             //add back the instructions and fix up their offsets
-            ctor.Body.Instructions.Clear();
+            constructor.Body.Instructions.Clear();
             int offset = 0;
             foreach (var instr in alteredInstructions)
             {
                 int oldOffset = instr.Offset;
                 instr.Offset = offset;
-                ctor.Body.Instructions.Add(instr);
+                constructor.Body.Instructions.Add(instr);
 
                 //fix up the sequence point offsets too
-                if (ctor.DebugInformation == null || oldOffset == offset)
+                if (constructor.DebugInformation == null || oldOffset == offset)
                 {
                     continue;
                 }
                 
                 //this only uses the offset so doesn't matter that we replaced the instruction
-                var seqPoint = ctor.DebugInformation?.GetSequencePoint(instr);
+                var seqPoint = constructor.DebugInformation?.GetSequencePoint(instr);
                 if (seqPoint == null)
                 {
                     continue;
                 }
                 
-                ctor.DebugInformation.SequencePoints.Remove(seqPoint);
-                ctor.DebugInformation.SequencePoints.Add(
+                if (constructor.DebugInformation == null)
+                {
+                    continue;
+                }
+                
+                constructor.DebugInformation.SequencePoints.Remove(seqPoint);
+                constructor.DebugInformation.SequencePoints.Add(
                     new SequencePoint(instr, seqPoint.Document)
                     {
                         StartLine = seqPoint.StartLine,
@@ -200,8 +210,7 @@ public static class PropertyProcessor
             return null;
         }
 
-        var field = new FieldDefinition(prop.Name + "_NativeProperty",
-            FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private, intPtrTypeRef);
+        FieldDefinition field = new FieldDefinition(prop.Name + "_NativeProperty", FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private, intPtrTypeRef);
         type.Fields.Add(field);
         return field;
     }

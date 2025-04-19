@@ -10,7 +10,7 @@ class InvalidConstructorException(MethodDefinition constructor, string message) 
 class ConstructorNotFoundException(TypeDefinition type, string message) : WeaverProcessError(message, ErrorEmitter.GetSequencePointFromMemberDefinition(type));
 
 [Serializable]
-class InvalidUnrealClassException(string propertyName, SequencePoint sequencePoint, string message) : WeaverProcessError($"Class '{propertyName}' is invalid as a unreal class: {message}",
+class InvalidUnrealClassException(string propertyName, SequencePoint? sequencePoint, string message) : WeaverProcessError($"Class '{propertyName}' is invalid as a unreal class: {message}",
         sequencePoint)
 {
     public InvalidUnrealClassException(TypeDefinition klass, string message)
@@ -29,7 +29,7 @@ class InvalidUnrealEnumException(TypeDefinition enumType, string message) : Weav
     ErrorEmitter.GetSequencePointFromMemberDefinition(enumType));
 
 [Serializable]
-class InvalidPropertyException(string propertyName, SequencePoint sequencePoint, string message)
+class InvalidPropertyException(string propertyName, SequencePoint? sequencePoint, string message)
     : WeaverProcessError($"Property '{propertyName}' is invalid for unreal property: {message}",
         sequencePoint)
 {
@@ -41,7 +41,7 @@ class InvalidPropertyException(string propertyName, SequencePoint sequencePoint,
 
 
 [Serializable]
-class InvalidUnrealFunctionException(MethodDefinition method, string message, Exception? innerException = null)
+class InvalidUnrealFunctionException(MethodDefinition method, string message)
     : WeaverProcessError($"Method '{method.Name}' is invalid for unreal function: {message}", null,
         ErrorEmitter.GetSequencePointFromMemberDefinition(method));
 
@@ -66,4 +66,4 @@ class UnsupportedPropertyInitializerException(PropertyDefinition property) : Wea
 class RewriteException(TypeDefinition type, string message) : WeaverProcessError($"{type.FullName}: {message}", ErrorEmitter.GetSequencePointFromMemberDefinition(type));
 
 [Serializable]
-class InvalidAttributeException(TypeDefinition attributeType, SequencePoint point, string message) : WeaverProcessError($"Invalid attribute class {attributeType.Name}: {message}", point);
+class InvalidAttributeException(TypeDefinition attributeType, SequencePoint? point, string message) : WeaverProcessError($"Invalid attribute class {attributeType.Name}: {message}", point);

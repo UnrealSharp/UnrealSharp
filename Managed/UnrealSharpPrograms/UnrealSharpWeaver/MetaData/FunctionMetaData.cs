@@ -17,7 +17,7 @@ public class FunctionMetaData : BaseMetaData
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDef;
     public FunctionRewriteInfo RewriteInfo;
-    public FieldDefinition FunctionPointerField;
+    public FieldDefinition? FunctionPointerField;
     public bool IsBlueprintEvent => FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
@@ -39,9 +39,9 @@ public class FunctionMetaData : BaseMetaData
             {
                 ReturnValue = PropertyMetaData.FromTypeReference(method.ReturnType, "ReturnValue", ParameterType.ReturnValue);
             }
-            catch (InvalidPropertyException e)
+            catch (InvalidPropertyException)
             {
-                throw new InvalidUnrealFunctionException(method, $"'{method.ReturnType.FullName}' is invalid for unreal function return value.", e);
+                throw new InvalidUnrealFunctionException(method, $"'{method.ReturnType.FullName}' is invalid for unreal function return value.");
             }
         }
 

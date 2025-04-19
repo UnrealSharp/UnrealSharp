@@ -4,8 +4,6 @@ using UnrealSharpWeaver.MetaData;
 namespace UnrealSharpWeaver.NativeTypes;
 class NativeDataCoreStructType : NativeDataBlittableStructTypeBase
 { 
-    public TypeReferenceMetadata InnerType { get; set; }
-
     public NativeDataCoreStructType(TypeReference structType, int arrayDim) : base(structType, arrayDim)
     {
         var innerPropertyName = structType.Name switch

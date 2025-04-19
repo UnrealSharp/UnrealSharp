@@ -43,6 +43,11 @@ public static class UnrealDelegateProcessor
         MethodReference? blittabletoNativeMethod = blittableMarshaller.Resolve().FindMethod("ToNative");
         MethodReference? blittablefromNativeMethod = blittableMarshaller.Resolve().FindMethod("FromNative");
         
+        if (blittabletoNativeMethod == null || blittablefromNativeMethod == null)
+        {
+            throw new Exception("Could not find ToNative or FromNative method in BlittableMarshaller");
+        }
+        
         blittabletoNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
         blittablefromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
         
@@ -55,7 +60,7 @@ public static class UnrealDelegateProcessor
             MethodDefinition toNativeMethod = marshaller.AddToNativeMethod(type);
             ILProcessor processor = fromNativeMethod.Body.GetILProcessor();
             
-            MethodReference? constructor = type.FindMethod(".ctor", true, delegateDataStruct);
+            MethodReference constructor = type.FindMethod(".ctor", true, delegateDataStruct)!;
             constructor.DeclaringType = type;
 
             VariableDefinition delegateDataVar = fromNativeMethod.AddLocalVariable(delegateDataStruct);
@@ -76,6 +81,11 @@ public static class UnrealDelegateProcessor
             processor.Emit(OpCodes.Ret);
             
             MethodReference? invokerMethod = type.FindMethod("Invoker");
+            
+            if (invokerMethod == null)
+            {
+                throw new Exception("Could not find Invoker method in delegate type");
+            }
             
             if (invokerMethod.Parameters.Count == 0)
             {
@@ -106,6 +116,11 @@ public static class UnrealDelegateProcessor
             {
                 PropertyMetaData param = functionMetaData.Parameters[i];
                 NativeDataType nativeDataType = param.PropertyDataType;
+                
+                if (param.MemberRef == null)
+                {
+                    throw new Exception($"Parameter {param.Name} does not have a valid member reference");
+                }
 
                 nativeDataType.PrepareForRewrite(invokerMethodDefinition.DeclaringType, param, param.MemberRef);
             }

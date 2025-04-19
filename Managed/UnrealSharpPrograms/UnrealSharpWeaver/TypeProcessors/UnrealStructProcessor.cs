@@ -78,6 +78,16 @@ public static class UnrealStructProcessor
         
         foreach (PropertyMetaData prop in metadata.Fields)
         {
+            if (prop.MemberRef == null)
+            {
+                throw new InvalidDataException($"Property '{prop.Name}' does not have a member reference");
+            }
+            
+            if (prop.PropertyOffsetField == null)
+            {
+                throw new InvalidDataException($"Property '{prop.Name}' does not have an offset field");
+            }
+            
             FieldDefinition fieldDefinition = (FieldDefinition) prop.MemberRef.Resolve();
             prop.PropertyDataType.WriteLoad(constructorBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);
             prop.PropertyDataType.WriteStore(toNativeBody, structTypeDefinition, loadBufferInstruction, prop.PropertyOffsetField, fieldDefinition);

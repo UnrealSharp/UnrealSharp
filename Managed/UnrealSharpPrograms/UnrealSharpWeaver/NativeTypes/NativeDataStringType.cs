@@ -7,9 +7,9 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType(typeRef, arrayDim, PropertyType.String)
 {
-    private static MethodReference _toNative;
-    private static MethodReference _fromNative;
-    private static MethodReference _destructInstance;
+    private static MethodReference? _toNative;
+    private static MethodReference? _fromNative;
+    private static MethodReference? _destructInstance;
     private static AssemblyDefinition? _userAssembly;
 
     public override void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
@@ -34,7 +34,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     }
 
     public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+        FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
         WriteMarshalFromNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0));
@@ -42,7 +42,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
     }
 
     public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+        FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleSetter(setter);
         Instruction loadValue = processor.Create(OpCodes.Ldarg_1);

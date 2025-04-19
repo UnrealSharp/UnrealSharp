@@ -19,7 +19,7 @@ public class WeaverOptions
             return;
         }
         
-        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly()!.Location);
         Console.Error.WriteLine($"Usage: {name}");
         Console.Error.WriteLine("Commands: ");
         

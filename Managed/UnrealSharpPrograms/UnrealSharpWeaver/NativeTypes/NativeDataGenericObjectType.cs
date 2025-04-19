@@ -16,7 +16,7 @@ abstract class NativeDataGenericObjectType(TypeReference typeRef, TypeReference 
         
         if (!InnerType.TypeRef.Resolve().IsUObject())
         {
-            throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UClass if exposed through UProperty!");
+            throw new Exception($"{propertyMetadata.MemberRef!.FullName} needs to be a UClass if exposed through UProperty!");
         }
     }
 }
