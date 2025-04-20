@@ -61,10 +61,10 @@ public static class UnrealClassProcessor
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
-        FieldDefinition nativeClassField = classTypeDefinition.AddField("NativeClass", WeaverImporter.IntPtrType);
+        FieldDefinition nativeClassField = classTypeDefinition.AddField("NativeClass", WeaverImporter.Instance.IntPtrType);
         
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
-            [Instruction.Create(OpCodes.Call, WeaverImporter.GetNativeClassFromNameMethod)]);
+            [Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeClassFromNameMethod)]);
 
         foreach (var field in classTypeDefinition.Fields)
         {
@@ -108,7 +108,7 @@ public static class UnrealClassProcessor
             return;
         }
             
-        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.IntPtrType);
+        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
         Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
         Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
             

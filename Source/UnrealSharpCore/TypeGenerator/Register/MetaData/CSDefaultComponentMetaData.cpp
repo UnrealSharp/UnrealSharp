@@ -15,26 +15,32 @@ void FCSDefaultComponentMetaData::SerializeFromJson(const TSharedPtr<FJsonObject
 	FString AttachmentComponentStr;
 	if (JsonObject->TryGetStringField(TEXT("AttachmentComponent"), AttachmentComponentStr))
 	{
-		if (!IsRootComponent)
+		if (!AttachmentComponentStr.IsEmpty())
 		{
-			AttachmentComponent = *AttachmentComponentStr;
-		}
-		else
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment component!"), *AttachmentComponentStr);
+			if (!IsRootComponent)
+			{
+				AttachmentComponent = *AttachmentComponentStr;
+			}
+			else
+			{
+				UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment component!"), *AttachmentComponentStr);
+			}
 		}
 	}
 
 	FString AttachmentSocketStr;
 	if (JsonObject->TryGetStringField(TEXT("AttachmentSocket"), AttachmentSocketStr))
 	{
-		if (!IsRootComponent)
+		if (!AttachmentSocketStr.IsEmpty())
 		{
-			AttachmentSocket = *AttachmentSocketStr;
-		}
-		else
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment socket!"), *AttachmentSocketStr);
+			if (!IsRootComponent)
+			{
+				AttachmentSocket = *AttachmentSocketStr;
+			}
+			else
+			{
+				UE_LOG(LogUnrealSharp, Error, TEXT("Root component %s cannot have an attachment socket!"), *AttachmentSocketStr);
+			}
 		}
 	}
 }

@@ -4,6 +4,9 @@
 #include "CSBlueprintCompiler.h"
 #include "Modules/ModuleManager.h"
 
+struct FCSManagedReferencesCollection;
+class UCSEnum;
+class UCSScriptStruct;
 class FCSBlueprintCompiler;
 
 class FUnrealSharpCompilerModule : public IModuleInterface
@@ -13,9 +16,14 @@ public:
     virtual void ShutdownModule() override;
 private:
     
-    void OnNewClass(UClass* NewClass);
+    void OnNewClass(UCSClass* NewClass);
+    void OnNewStruct(UCSScriptStruct* NewStruct);
+    void OnNewEnum(UCSEnum* NewEnum);
+    
     void OnManagedAssemblyLoaded(const FName& AssemblyName);
     void RecompileAndReinstanceBlueprints();
+
+    void AddManagedReferences(FCSManagedReferencesCollection& Collection);
 
     FCSBlueprintCompiler BlueprintCompiler;
     

@@ -6,6 +6,9 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+class UCSInterface;
+class UCSEnum;
+class UCSScriptStruct;
 class FUnrealSharpCoreModule;
 class UFunctionsExporter;
 struct FCSNamespace;
@@ -25,10 +28,10 @@ using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPl
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UClass*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FCSStructEvent, UScriptStruct*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FCSInterfaceEvent, UClass*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UEnum*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UCSClass*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSStructEvent, UCSScriptStruct*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSInterfaceEvent, UCSInterface*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UCSEnum*);
 
 UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject

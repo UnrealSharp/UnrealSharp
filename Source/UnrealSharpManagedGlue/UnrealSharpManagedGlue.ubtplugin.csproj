@@ -3,7 +3,6 @@
     <Import Project="UnrealSharpManagedGlue.ubtplugin.csproj.props" Condition="Exists('UnrealSharpManagedGlue.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
     
-
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
@@ -42,4 +41,9 @@
             <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
         </Reference>
     </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\Managed\Shared\DotNetUtilities.cs" Link="..\..\..\Managed\Shared\DotNetUtilities.cs" />
+    </ItemGroup>
+    
 </Project>

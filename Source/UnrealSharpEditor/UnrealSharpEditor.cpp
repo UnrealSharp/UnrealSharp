@@ -31,6 +31,8 @@
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/CSEnum.h"
+#include "TypeGenerator/CSScriptStruct.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -65,7 +67,6 @@ void FUnrealSharpEditorModule::StartupModule()
 	Manager = &UCSManager::GetOrCreate();
 	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
 	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
-	Manager->OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
 	Manager->OnNewEnumEvent().AddRaw(this, &FUnrealSharpEditorModule::OnEnumRebuilt);
 
 	FEditorDelegates::EndPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEEnded);
@@ -99,6 +100,9 @@ void FUnrealSharpEditorModule::StartupModule()
 	{
 		FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpEditorModule::OnModulesChanged);
 	}
+
+	UCSManager& CSharpManager = UCSManager::Get();
+	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -192,26 +196,17 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	
 	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Reloading C#..."));
 	Progress.MakeDialog();
-
-	if (bRebuild)
+	
+	FString SolutionPath = FCSProcHelper::GetPathToSolution();
+	FString OutputPath = FCSProcHelper::GetUserAssemblyDirectory();
+	FString ExceptionMessage;
+	
+	if (!HotReloadCallbacks.BuildProject(*SolutionPath, *OutputPath, &ExceptionMessage, bRebuild))
 	{
-		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Building C#..."));
-		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
-		{
-			HotReloadStatus = Inactive;
-			bHotReloadFailed = true;
-			return;
-		}
-	}
-	else
-	{
-		Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Weaving C#..."));
-		if(!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_WEAVE))
-		{
-			HotReloadStatus = Inactive;
-			bHotReloadFailed = true;
-			return;
-		}
+		HotReloadStatus = Inactive;
+		bHotReloadFailed = true;
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage));
+		return;
 	}
 	
 	UCSManager& CSharpManager = UCSManager::Get();
@@ -274,6 +269,11 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	bDirtyGlue = false;
 	
 	UE_LOGFMT(LogUnrealSharpEditor, Log, "Hot reload took {0} seconds to execute", FPlatformTime::Seconds() - StartTime);
+}
+
+void FUnrealSharpEditorModule::InitializeUnrealSharpEditorCallbacks(FManagedUnrealSharpEditorCallbacks Callbacks)
+{
+	HotReloadCallbacks = Callbacks;
 }
 
 void FUnrealSharpEditorModule::OnCreateNewProject()
@@ -1070,17 +1070,17 @@ void FUnrealSharpEditorModule::ProcessTraceTypeQuery()
 	SaveRuntimeGlue(ScriptBuilder, TEXT("TraceChannel"));
 }
 
-void FUnrealSharpEditorModule::OnStructRebuilt(UScriptStruct* NewStruct)
+void FUnrealSharpEditorModule::OnStructRebuilt(UCSScriptStruct* NewStruct)
 {
 	RebuiltStructs.Add(NewStruct);
 }
 
-void FUnrealSharpEditorModule::OnClassRebuilt(UClass* NewClass)
+void FUnrealSharpEditorModule::OnClassRebuilt(UCSClass* NewClass)
 {
 	RebuiltClasses.Add(NewClass);
 }
 
-void FUnrealSharpEditorModule::OnEnumRebuilt(UEnum* NewEnum)
+void FUnrealSharpEditorModule::OnEnumRebuilt(UCSEnum* NewEnum)
 {
 	RebuiltEnums.Add(NewEnum);
 }
@@ -1095,42 +1095,42 @@ bool FUnrealSharpEditorModule::IsPinAffectedByReload(const FEdGraphPinType& PinT
 
 	if (PinSubCategoryObject->IsA<UClass>())
 	{
-		UClass* Class = static_cast<UClass*>(PinSubCategoryObject);
+		UCSClass* Class = static_cast<UCSClass*>(PinSubCategoryObject);
 		return RebuiltClasses.Contains(Class);
 	}
 
 	if (PinSubCategoryObject->IsA<UEnum>())
 	{
-		UEnum* Enum = static_cast<UEnum*>(PinSubCategoryObject);
+		UCSEnum* Enum = static_cast<UCSEnum*>(PinSubCategoryObject);
 		return RebuiltEnums.Contains(Enum);
 	}
 	
 	if (PinSubCategoryObject->IsA<UScriptStruct>())
 	{
-		UScriptStruct* Struct = Cast<UScriptStruct>(PinSubCategoryObject);
+		UCSScriptStruct* Struct = Cast<UCSScriptStruct>(PinSubCategoryObject);
 		return RebuiltStructs.Contains(Struct);
 	}
 
 	if (PinSubCategoryObject->IsA<UEnum>())
 	{
-		UEnum* Enum = Cast<UEnum>(PinSubCategoryObject);
+		UCSEnum* Enum = Cast<UCSEnum>(PinSubCategoryObject);
 		return RebuiltEnums.Contains(Enum);
 	}
 	
 	if (PinType.IsMap())
 	{
 		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
-		if (UScriptStruct* Struct = Cast<UScriptStruct>(MapValueType))
+		if (UCSScriptStruct* Struct = Cast<UCSScriptStruct>(MapValueType))
 		{
 			return RebuiltStructs.Contains(Struct);
 		}
 
-		if (UClass* Class = Cast<UClass>(MapValueType))
+		if (UCSClass* Class = Cast<UCSClass>(MapValueType))
 		{
 			return RebuiltClasses.Contains(Class);
 		}
 
-		if (UEnum* Enum = Cast<UEnum>(MapValueType))
+		if (UCSEnum* Enum = Cast<UCSEnum>(MapValueType))
 		{
 			return RebuiltEnums.Contains(Enum);
 		}

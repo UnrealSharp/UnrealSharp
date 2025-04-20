@@ -6,6 +6,9 @@
 #include "CSManager.h"
 #include "KismetCompiler.h"
 #include "TypeGenerator/CSBlueprint.h"
+#include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/CSEnum.h"
+#include "TypeGenerator/CSScriptStruct.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
@@ -22,6 +25,9 @@ void FUnrealSharpCompilerModule::StartupModule()
 	KismetCompilerModule.GetCompilers().Add(&BlueprintCompiler);
 	
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
+	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
+	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
+	
 	CSManager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
@@ -32,7 +38,7 @@ void FUnrealSharpCompilerModule::StartupModule()
 		{
 			if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
 			{
-				OnNewClass(Blueprint->GeneratedClass);
+				OnNewClass(static_cast<UCSClass*>(Blueprint->GeneratedClass.Get()));
 			}
 			return true;
 		}, false);
@@ -69,31 +75,66 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		
 		for (UBlueprint* Blueprint : Blueprints)
 		{
-			FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+			FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 		}
 		
-		FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
-		Blueprints.Empty();
+		Blueprints.Reset();
 	};
 
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
 	QueueAndCompile(ManagedComponentsToCompile);
 	QueueAndCompile(ManagedClassesToCompile);
+
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
-void FUnrealSharpCompilerModule::OnNewClass(UClass* NewClass)
+void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollection& Collection)
 {
-	if (UBlueprint* Blueprint = Cast<UBlueprint>(NewClass->ClassGeneratedBy))
+	Collection.ForEachManagedReference([&](UStruct* Struct)
 	{
-		if (NewClass->IsChildOf(UActorComponent::StaticClass()))
+		if (UCSClass* Class = Cast<UCSClass>(Struct))
 		{
-			ManagedComponentsToCompile.Add(Blueprint);
+			OnNewClass(Class);
 		}
-		else
-		{
-			ManagedClassesToCompile.Add(Blueprint);
-		}
+	});
+}
+
+void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
+{
+	UBlueprint* Blueprint = Cast<UBlueprint>(NewClass->ClassGeneratedBy);
+	if (!IsValid(Blueprint))
+	{
+		return;
 	}
+
+	auto AddToCompileList = [this](TArray<UBlueprint*>& List, UBlueprint* Blueprint)
+	{
+		if (List.Contains(Blueprint))
+		{
+			return;
+		}
+
+		List.Add(Blueprint);
+	};
+		
+	if (NewClass->IsChildOf(UActorComponent::StaticClass()))
+	{
+		AddToCompileList(ManagedComponentsToCompile, Blueprint);
+	}
+	else
+	{
+		AddToCompileList(ManagedClassesToCompile, Blueprint);
+	}
+}
+
+void FUnrealSharpCompilerModule::OnNewStruct(UCSScriptStruct* NewStruct)
+{
+	AddManagedReferences(NewStruct->ManagedReferences);
+}
+
+void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
+{
+	AddManagedReferences(NewEnum->ManagedReferences);
 }
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FName& AssemblyName)

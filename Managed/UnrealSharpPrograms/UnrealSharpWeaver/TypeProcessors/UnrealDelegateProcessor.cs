@@ -37,8 +37,8 @@ public static class UnrealDelegateProcessor
     
     public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
     {
-        TypeReference delegateDataStruct = WeaverImporter.UnrealSharpAssembly.FindType("DelegateData", WeaverImporter.UnrealSharpNamespace)!;
-        TypeReference blittableMarshaller = WeaverImporter.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "BlittableMarshaller`1", [delegateDataStruct])!;
+        TypeReference delegateDataStruct = WeaverImporter.Instance.UnrealSharpAssembly.FindType("DelegateData", WeaverImporter.UnrealSharpNamespace)!;
+        TypeReference blittableMarshaller = WeaverImporter.Instance.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "BlittableMarshaller`1", [delegateDataStruct])!;
         
         MethodReference? blittabletoNativeMethod = blittableMarshaller.Resolve().FindMethod("ToNative");
         MethodReference? blittablefromNativeMethod = blittableMarshaller.Resolve().FindMethod("FromNative");
@@ -108,7 +108,7 @@ public static class UnrealDelegateProcessor
 
         if (functionMetaData.Parameters.Length > 0)
         {
-            functionMetaData.FunctionPointerField = invokerMethodDefinition.DeclaringType.AddField("SignatureFunction", WeaverImporter.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
+            functionMetaData.FunctionPointerField = invokerMethodDefinition.DeclaringType.AddField("SignatureFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
             
             List<Instruction> allCleanupInstructions = [];
 
@@ -139,7 +139,7 @@ public static class UnrealDelegateProcessor
         else
         {
             invokerMethodProcessor.Emit(OpCodes.Ldarg_0);
-            invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverImporter.IntPtrZero);
+            invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero);
         }
         
         invokerMethodProcessor.Append(CallBase);
@@ -149,13 +149,13 @@ public static class UnrealDelegateProcessor
     static void ProcessInitialize(TypeDefinition type, FunctionMetaData functionMetaData)
     {
         MethodDefinition initializeDelegate = type.AddMethod(InitializeUnrealDelegate, 
-            WeaverImporter.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
-            [WeaverImporter.IntPtrType]);
+            WeaverImporter.Instance.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
+            [WeaverImporter.Instance.IntPtrType]);
 
         var processor = initializeDelegate.Body.GetILProcessor();
         
         processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetSignatureFunction);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetSignatureFunction);
         processor.Emit(OpCodes.Stsfld, functionMetaData.FunctionPointerField);
         
         Instruction loadFunctionPointer = processor.Create(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);

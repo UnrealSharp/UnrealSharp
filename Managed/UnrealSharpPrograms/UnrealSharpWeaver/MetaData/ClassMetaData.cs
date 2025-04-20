@@ -46,7 +46,7 @@ public class ClassMetaData : TypeReferenceMetadata
             ClassFlags |= ClassFlags.DefaultConfig;
         }
 
-        if (type.IsChildOf(WeaverImporter.UActorComponentDefinition))
+        if (type.IsChildOf(WeaverImporter.Instance.UActorComponentDefinition))
         {
             TryAddMetaData("BlueprintSpawnableComponent", true);
         }
@@ -155,7 +155,7 @@ public class ClassMetaData : TypeReferenceMetadata
         {
             TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
 
-            if (interfaceType == WeaverImporter.IInterfaceType || !interfaceType.IsUInterface())
+            if (interfaceType == WeaverImporter.Instance.IInterfaceType || !interfaceType.IsUInterface())
             {
                 continue;
             }

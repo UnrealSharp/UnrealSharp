@@ -14,7 +14,7 @@ public class BaseMetaData
     // Non-serialized for JSON
     public readonly string AttributeName;
     public readonly IMemberDefinition MemberDefinition;
-    public readonly CustomAttribute BaseAttribute;
+    public readonly CustomAttribute? BaseAttribute;
     public readonly string SourceName;
     // End non-serialized
 

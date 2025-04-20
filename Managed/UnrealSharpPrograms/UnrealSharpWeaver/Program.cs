@@ -11,6 +11,15 @@ public static class Program
 {
     public static WeaverOptions WeaverOptions { get; private set; } = null!;
 
+    public static void Weave(WeaverOptions weaverOptions)
+    {
+        WeaverOptions = weaverOptions;
+        LoadBindingsAssembly();
+        ProcessUserAssemblies();
+        
+        WeaverImporter.Shutdown();
+    }
+
     public static int Main(string[] args)
     {
         WeaverOptions = WeaverOptions.ParseArguments(args);
@@ -47,12 +56,12 @@ public static class Program
             searchPaths.Add(directory);
         }
 
-        WeaverImporter.Initialize(resolver);
+        WeaverImporter.Instance.AssemblyResolver = resolver;
     }
 
     private static bool ProcessUserAssemblies()
     {
-        var outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
+        DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
         
         if (!outputDirInfo.Exists)
         {
@@ -69,18 +78,18 @@ public static class Program
     
     private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
     {
-        var unrealSharpMetadata = new UnrealSharpMetadata
+        UnrealSharpMetadata unrealSharpMetadata = new UnrealSharpMetadata
         {
             AssemblyLoadingOrder = orderedAssemblies
                 .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
         };
         
-        var metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
+        string metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
         {
             WriteIndented = false,
         });
 
-        var fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
+        string fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
         File.WriteAllText(fileName, metaDataContent);
     }
     
@@ -89,7 +98,7 @@ public static class Program
         var noErrors = true;
         foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.FullName == WeaverImporter.ProjectGlueAssembly.FullName)
+            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName)
             {
                 continue;
             }
@@ -110,7 +119,7 @@ public static class Program
                 Console.Error.WriteLine(ex.StackTrace);
                 noErrors = false;
             }
-            WeaverImporter.WeavedAssemblies.Add(assembly);
+            WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
         }
 
         return noErrors;
@@ -219,7 +228,7 @@ public static class Program
 
     private static DefaultAssemblyResolver GetAssemblyResolver()
     {
-        return WeaverImporter.AssemblyResolver;
+        return WeaverImporter.Instance.AssemblyResolver;
     }
 
     private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
@@ -299,11 +308,10 @@ public static class Program
         }
 
         Task cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
+        WeaverImporter.Instance.ImportCommonTypes(assembly);
+        
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
-        
-        WeaverImporter.ImportCommonTypes(assembly);
-        
-        StartProcessingAssembly(assembly, ref assemblyMetaData);
+        StartProcessingAssembly(assembly, assemblyMetaData);
         
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
         CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
@@ -336,7 +344,7 @@ public static class Program
         File.WriteAllText(metadataFilePath, metaDataContent);
     }
 
-    private static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
+    private static void StartProcessingAssembly(AssemblyDefinition userAssembly, ApiMetaData metadata)
     {
         try
         {

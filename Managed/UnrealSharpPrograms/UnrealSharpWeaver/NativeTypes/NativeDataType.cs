@@ -91,11 +91,11 @@ public abstract class NativeDataType
         else
         {
             instructionBuffer.Add(Instruction.Create(OpCodes.Ldarg_0));
-            instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.NativeObjectGetter));
+            instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.Instance.NativeObjectGetter));
         }
 
         instructionBuffer.Add(Instruction.Create(OpCodes.Ldsfld, offsetField));  
-        instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.IntPtrAdd));
+        instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.Instance.IntPtrAdd));
 
         return instructionBuffer.ToArray();
     }
@@ -155,7 +155,7 @@ public abstract class NativeDataType
     public virtual void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
         object outer)
     {
-        TypeReference? marshallingDelegates = WeaverImporter.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "MarshallingDelegates`1", [CSharpType]);
+        TypeReference? marshallingDelegates = WeaverImporter.Instance.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "MarshallingDelegates`1", [CSharpType]);
         
         if (marshallingDelegates == null)
         {
@@ -171,11 +171,11 @@ public abstract class NativeDataType
     protected void EmitDelegate(ILProcessor processor, TypeReference delegateType, MethodReference method)
     {
         processor.Emit(OpCodes.Ldnull);
-        method = WeaverImporter.UserAssembly.MainModule.ImportReference(method);
+        method = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(method);
         processor.Emit(OpCodes.Ldftn, method);
         MethodReference ctor = (from constructor in delegateType.Resolve().GetConstructors() where constructor.Parameters.Count == 2 select constructor).First().Resolve();
         ctor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ctor, CSharpType);
-        ctor = WeaverImporter.UserAssembly.MainModule.ImportReference(ctor);
+        ctor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(ctor);
         processor.Emit(OpCodes.Newobj, ctor);
     }
 

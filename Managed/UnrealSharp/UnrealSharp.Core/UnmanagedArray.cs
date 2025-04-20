@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using UnrealSharp.Core.Interop;
+using UnrealSharp.Core.Marshallers;
 
 namespace UnrealSharp.Core;
 
@@ -23,5 +24,33 @@ public struct UnmanagedArray
             ArrayNum = 0;
             ArrayMax = 0;
         }
+    }
+    
+    public List<T> ToBlittableList<T>() where T : unmanaged
+    {
+        List<T> list = new List<T>(ArrayNum);
+        
+        unsafe
+        {
+            T* data = (T*) Data.ToPointer();
+            for (int i = 0; i < ArrayNum; i++)
+            {
+                list.Add(data[i]);
+            }
+        }
+        
+        return list;
+    }
+    
+    public List<T> ToListWithMarshaller<T>(Func<IntPtr, int, T> resolver)
+    {
+        List<T> list = new List<T>(ArrayNum);
+
+        for (int i = 0; i < ArrayNum; i++)
+        {
+            list.Add(resolver(Data, i));
+        }
+
+        return list;
     }
 }

@@ -60,8 +60,8 @@ public static class Program
 	        
 	        if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
 	        {
-	            Console.WriteLine("Detected modified engine glue. Starting the build process...");
-	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
+	            Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
+	            UnrealSharp.Shared.DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
 	        }
 	        
 	        TryCreateGlueProject();
@@ -109,7 +109,17 @@ public static class Program
 			{ "NewProjectPath", $"\"{ProjectGluePath}\""},
 			{ "SkipIncludeProjectGlue", "true" }
 		};
+
+		string engineDirectory = Factory.Session.EngineDirectory!;
+		string projectDirectory = Factory.Session.ProjectDirectory!;
+		string projectName = Path.GetFileNameWithoutExtension(Program.Factory.Session.ProjectFile)!;
 		
-		DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", arguments);
+		
+		UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath, 
+			projectName, 
+			PluginDirectory, 
+			projectDirectory, 
+			engineDirectory, 
+			arguments);
 	}
 }

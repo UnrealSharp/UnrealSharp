@@ -77,7 +77,7 @@ public class NativeDataContainerType : NativeDataType
         if (outer is MethodDefinition method)
         {
             prefix = method.Name + "_" + prefix;
-            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.UnrealSharpAssembly.FindType(GetCopyContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
+            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.Instance.UnrealSharpAssembly.FindType(GetCopyContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
             
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
             
@@ -88,7 +88,7 @@ public class NativeDataContainerType : NativeDataType
         }
         else
         {
-            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.UnrealSharpAssembly.FindType(GetContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
+            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.Instance.UnrealSharpAssembly.FindType(GetContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
 
             if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition)
@@ -134,7 +134,7 @@ public class NativeDataContainerType : NativeDataType
         }
 
         MethodDefinition? constructor = _containerMarshallerType.Resolve().GetConstructors().Single();
-        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverImporter.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
+        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
         processor.Emit(OpCodes.Stfld, _containerMarshallerField);
 
         // Store the branch destination

@@ -74,7 +74,7 @@ public class StructMetaData : TypeReferenceMetadata
             return;
         }
         
-        CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverImporter.BlittableTypeConstructor);
+        CustomAttribute structFlagsAttribute = new CustomAttribute(WeaverImporter.Instance.BlittableTypeConstructor);
         structDefinition.CustomAttributes.Add(structFlagsAttribute);
         
         TryAddMetaData("BlueprintType", true);

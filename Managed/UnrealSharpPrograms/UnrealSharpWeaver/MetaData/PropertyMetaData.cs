@@ -198,14 +198,14 @@ public class PropertyMetaData : BaseMetaData
     {
         processor.Append(loadNativeType);
         processor.Emit(OpCodes.Ldstr, Name);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativePropertyFromNameMethod);
         processor.Append(setPropertyPointer);
     }
     
     public void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType)
     {
         processor.Append(loadNativeType);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetPropertyOffset);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetPropertyOffset);
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
     }
     

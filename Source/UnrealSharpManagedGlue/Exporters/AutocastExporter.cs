@@ -9,7 +9,7 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class AutocastExporter 
 {
-    private static readonly ConcurrentDictionary<UhtStruct, List<UhtFunction>?> ExportedAutocasts = new();
+    private static readonly ConcurrentDictionary<UhtStruct, List<UhtFunction>> ExportedAutocasts = new();
     
     public static void AddAutocastFunction(UhtStruct conversionStruct, UhtFunction function)
     {
@@ -24,7 +24,7 @@ public static class AutocastExporter
     
     public static void StartExportingAutocastFunctions(List<Task> tasks)
     {
-        foreach (KeyValuePair<UhtStruct, List<UhtFunction>?> pair in ExportedAutocasts)
+        foreach (KeyValuePair<UhtStruct, List<UhtFunction>> pair in ExportedAutocasts)
         {
             tasks.Add(Program.Factory.CreateTask(_ => 
             {
@@ -33,7 +33,7 @@ public static class AutocastExporter
         }
     }
     
-    static void ExportAutocast(UhtStruct conversionStruct, List<UhtFunction>? functions)
+    static void ExportAutocast(UhtStruct conversionStruct, List<UhtFunction> functions)
     {
         GeneratorStringBuilder stringBuilder = new();
         stringBuilder.GenerateTypeSkeleton(conversionStruct);
@@ -99,8 +99,10 @@ public static class AutocastExporter
     static bool ReturnValueIsSameAsParameter(UhtFunction function)
     {
         UhtProperty returnProperty = function.ReturnProperty!;
-        foreach (UhtProperty parameter in function.Children)
+        foreach (UhtType uhtType in function.Children)
         {
+            UhtProperty parameter = (UhtProperty) uhtType;
+            
             if (parameter != returnProperty && parameter.IsSameType(returnProperty))
             {
                 return true;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
@@ -125,6 +126,11 @@ public static class ClassExporter
     {
         foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
         {
+            if (pair.Value.Property == null)
+            {
+                throw new InvalidDataException($"Property '{pair.Value.PropertyName}' does not have a UProperty");
+            }
+            
             UhtFunction firstAccessor = pair.Value.Accessors.First();
             UhtProperty firstProperty = pair.Value.Property;
             string propertyName = pair.Value.PropertyName;

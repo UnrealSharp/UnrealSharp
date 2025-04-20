@@ -5,12 +5,13 @@
 #else
 #include "Engine/UserDefinedStruct.h"
 #endif
+#include "ManagedReferencesCollection.h"
 
 #include "CSScriptStruct.generated.h"
 
 struct FCSharpStructInfo;
 
-UCLASS()
+UCLASS(MinimalAPI)
 class UCSScriptStruct : public UUserDefinedStruct
 {
 	GENERATED_BODY()
@@ -21,6 +22,11 @@ public:
 
 	void RecreateDefaults();
 	void SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo);
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(Transient)
+	FCSManagedReferencesCollection ManagedReferences;
+#endif
 
 private:
 	TSharedPtr<FCSharpStructInfo> StructInfo;

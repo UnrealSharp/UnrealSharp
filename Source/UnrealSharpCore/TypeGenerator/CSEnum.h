@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "ManagedReferencesCollection.h"
 #include "Engine/UserDefinedEnum.h"
 #include "CSEnum.generated.h"
 
 struct FCSharpEnumInfo;
 
-UCLASS()
+UCLASS(MinimalAPI)
 class UCSEnum : public UUserDefinedEnum
 {
 	GENERATED_BODY()
@@ -18,7 +19,12 @@ public:
 	// End of UEnum interface
 
 	void SetEnumInfo(const TSharedPtr<FCSharpEnumInfo>& InEnumInfo);
-	UNREALSHARPCORE_API TSharedPtr<FCSharpEnumInfo> GetEnumInfo() const { return EnumInfo; }
+	TSharedPtr<FCSharpEnumInfo> GetEnumInfo() const { return EnumInfo; }
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(Transient)
+	FCSManagedReferencesCollection ManagedReferences;
+#endif
 
 private:
 	TSharedPtr<FCSharpEnumInfo> EnumInfo;

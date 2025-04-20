@@ -96,6 +96,6 @@ public static class MethodUtilities
     
     public static MethodReference ImportMethod(this MethodReference method)
     {
-        return WeaverImporter.UserAssembly.MainModule.ImportReference(method);
+        return WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(method);
     }
 }

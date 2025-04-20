@@ -11,6 +11,16 @@ public class WeaverOptions
 
     [Option('o', "output", Required = true, HelpText = "DLL output directory.")]
     public required string OutputDirectory { get; set; }
+    
+    public WeaverOptions(IEnumerable<string> assemblyPaths, string outputDirectory)
+    {
+        AssemblyPaths = assemblyPaths;
+        OutputDirectory = outputDirectory;
+    }
+    
+    public WeaverOptions() : this([], string.Empty)
+    {
+    }
 
     private static void PrintHelp(ParserResult<WeaverOptions> result)
     {

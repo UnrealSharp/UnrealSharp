@@ -273,7 +273,7 @@ public class FunctionMetaData : BaseMetaData
     {
         processor.Append(loadTypeField);
         processor.Emit(OpCodes.Ldstr, Name);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetNativeFunctionFromClassAndNameMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativeFunctionFromClassAndNameMethod);
         processor.Append(setFunctionPointer);
     }
     
@@ -291,7 +291,7 @@ public class FunctionMetaData : BaseMetaData
                 
             processor.Append(loadFunctionPointer);
             processor.Emit(OpCodes.Ldstr, param.Name);
-            processor.Emit(OpCodes.Call, WeaverImporter.GetPropertyOffsetFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetPropertyOffsetFromNameMethod);
             processor.Emit(OpCodes.Stsfld, offsetField);
         }
     }
@@ -304,7 +304,7 @@ public class FunctionMetaData : BaseMetaData
         }
 
         processor.Append(loadFunctionPointer);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetNativeFunctionParamsSizeMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativeFunctionParamsSizeMethod);
         processor.Emit(OpCodes.Stsfld, RewriteInfo.FunctionParamSizeField);
     }
     
@@ -320,7 +320,7 @@ public class FunctionMetaData : BaseMetaData
 
             processor.Append(loadFunctionPointer);
             processor.Emit(OpCodes.Ldstr, paramRewriteInfo.PropertyMetaData.Name);
-            processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stsfld, nativePropertyField);
         }
     }

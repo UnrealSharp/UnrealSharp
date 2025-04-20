@@ -169,7 +169,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
             else
             {
                 GenericInstanceType generic = (GenericInstanceType)CSharpType;
-                typeParams = [WeaverImporter.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
+                typeParams = [WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
             }
         }
 

@@ -20,6 +20,14 @@
         </ProjectReference>
         
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
+        
+        <PackageReference Include="Microsoft.Build.Locator">
+            <Version>1.9.1</Version>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\Shared\DotNetUtilities.cs" Link="..\..\Shared\DotNetUtilities.cs" />
     </ItemGroup>
     
 </Project>

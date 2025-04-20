@@ -23,7 +23,7 @@ public class InterfaceMetaData : TypeReferenceMetadata
             }
         }
         
-        CustomAttributeArgument? nonBpInterface = BaseAttribute.FindAttributeField(CannotImplementInterfaceInBlueprint);
+        CustomAttributeArgument? nonBpInterface = BaseAttribute!.FindAttributeField(CannotImplementInterfaceInBlueprint);
         if (nonBpInterface != null)
         {
             TryAddMetaData(CannotImplementInterfaceInBlueprint, (bool) nonBpInterface.Value.Value);

@@ -70,7 +70,7 @@ public class GetterSetterPair
         }
     }
 
-    public UhtProperty Property { get; set; }
+    public UhtProperty? Property { get; set; }
 }
 
 public static class ScriptGeneratorUtilities

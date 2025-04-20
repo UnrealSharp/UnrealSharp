@@ -6,13 +6,13 @@
 
 class UCSClass;
 
-UCLASS()
-class UNREALSHARPCORE_API UCSSkeletonClass : public UBlueprintGeneratedClass
+UCLASS(MinimalAPI)
+class UCSSkeletonClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
 public:
-	void SetGeneratedClass(UCSClass* InGeneratedClass);
-	UCSClass* GetGeneratedClass() const { return GeneratedClass; }
+	UNREALSHARPCORE_API void SetGeneratedClass(UCSClass* InGeneratedClass);
+	UNREALSHARPCORE_API UCSClass* GetGeneratedClass() const { return GeneratedClass; }
 private:
 	UPROPERTY()
 	TObjectPtr<UCSClass> GeneratedClass;

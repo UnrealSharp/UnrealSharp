@@ -4,6 +4,10 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+class UCSInterface;
+class UCSEnum;
+class UCSClass;
+class UCSScriptStruct;
 class UCSManager;
 struct FCSAssembly;
 class IAssetTools;
@@ -21,6 +25,15 @@ enum HotReloadStatus
     FailedToUnload
 };
 
+struct FManagedUnrealSharpEditorCallbacks
+{
+    FManagedUnrealSharpEditorCallbacks() : BuildProject(nullptr) {}
+
+    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, void*, bool);
+    FBuildProject BuildProject;
+};
+
+
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 
 DECLARE_MULTICAST_DELEGATE(FOnRefreshRuntimeGlue);
@@ -37,6 +50,8 @@ public:
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
     void StartHotReload(bool bRebuild = true);
+
+    void InitializeUnrealSharpEditorCallbacks(FManagedUnrealSharpEditorCallbacks Callbacks);
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
@@ -113,9 +128,9 @@ private:
     void ProcessAssetTypes();
     void ProcessTraceTypeQuery();
     
-    void OnStructRebuilt(UScriptStruct* NewStruct);
-    void OnClassRebuilt(UClass* NewClass);
-    void OnEnumRebuilt(UEnum* NewEnum);
+    void OnStructRebuilt(UCSScriptStruct* NewStruct);
+    void OnClassRebuilt(UCSClass* NewClass);
+    void OnEnumRebuilt(UCSEnum* NewEnum);
 
     bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
     bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
@@ -141,9 +156,11 @@ private:
     FTSTicker::FDelegateHandle TickDelegateHandle;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     
-    TSet<UScriptStruct*> RebuiltStructs;
-    TSet<UClass*> RebuiltClasses;
-    TSet<UEnum*> RebuiltEnums;
+    TSet<UCSScriptStruct*> RebuiltStructs;
+    TSet<UCSClass*> RebuiltClasses;
+    TSet<UCSEnum*> RebuiltEnums;
+
+    FManagedUnrealSharpEditorCallbacks HotReloadCallbacks;
     
     UCSManager* Manager = nullptr;
     bool bDirtyGlue = false;

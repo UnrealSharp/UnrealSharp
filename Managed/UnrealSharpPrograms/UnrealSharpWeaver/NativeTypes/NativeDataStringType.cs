@@ -22,7 +22,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
             return;
         }
         
-        TypeDefinition marshallerType = WeaverImporter.UnrealSharpCoreAssembly.FindType("StringMarshaller", WeaverImporter.UnrealSharpCoreMarshallers)!.Resolve();
+        TypeDefinition marshallerType = WeaverImporter.Instance.UnrealSharpCoreAssembly.FindType("StringMarshaller", WeaverImporter.UnrealSharpCoreMarshallers)!.Resolve();
         _toNative = marshallerType.FindMethod("ToNative")!;
         _fromNative = marshallerType.FindMethod("FromNative")!;
         _destructInstance = marshallerType.FindMethod("DestructInstance")!;
@@ -99,7 +99,7 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
         IList<Instruction> cleanupInstructions = new List<Instruction>(); ;
         cleanupInstructions.Add(Instruction.Create(OpCodes.Ldloc_1));
         cleanupInstructions.Add(offsteField);
-        cleanupInstructions.Add(Instruction.Create(OpCodes.Call, WeaverImporter.IntPtrAdd));
+        cleanupInstructions.Add(Instruction.Create(OpCodes.Call, WeaverImporter.Instance.IntPtrAdd));
         cleanupInstructions.Add(loadArrayIndex);
         cleanupInstructions.Add(processor.Create(OpCodes.Call, _destructInstance));
         
@@ -134,9 +134,9 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
 
     private static bool IsInitialized()
     {
-        if (ReferenceEquals(_userAssembly, WeaverImporter.UserAssembly)) return true;
+        if (ReferenceEquals(_userAssembly, WeaverImporter.Instance.UserAssembly)) return true;
         
-        _userAssembly = WeaverImporter.UserAssembly;
+        _userAssembly = WeaverImporter.Instance.UserAssembly;
         return false;
     }
 }
