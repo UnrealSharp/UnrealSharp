@@ -1,4 +1,4 @@
-﻿#include "UnrealSharpEditor.h"
+#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
 #include "BlueprintCompilationManager.h"
 #include "BlueprintEditorLibrary.h"
@@ -168,6 +168,53 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	}
 }
 
+void FUnrealSharpEditorModule::CallHotReloadCallbacks() const
+{
+	if (!FPlayWorldCommandCallbacks::IsInPIE())
+	{
+		return;
+	}
+	UCSManager& CSharpManager = UCSManager::Get();
+	bool bUnloadFailed = false;
+
+	TArray<FString> ProjectsByLoadOrder;
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, bDirtyGlue);
+
+	TArray<UObject*> Instances;
+	for (TObjectIterator<UObject> It; It; ++It)
+	{
+		UObject* Object = *It;
+		Instances.Add(Object);
+	}
+
+	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
+	{
+		const FString& ProjectName = ProjectsByLoadOrder[i];
+		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
+
+		if (Assembly.IsValid())
+		{
+			TArray<UClass*> classes = Assembly->GetAllClasses();
+			for (UClass* Class : classes)
+			{
+				UFunction* Function = Class->FindFunctionByName(TEXT("OnHotReload"));
+				if (!Function)
+				{
+					continue;
+				}
+				// call function "OnHotReload" on all instances
+				for (UObject* Object : Instances)
+				{
+					if (Object->IsA(Class))
+					{
+						Object->ProcessEvent(Function, nullptr);
+					}
+				}
+			}
+		}
+	}
+}
+
 void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 {
 	if (HotReloadStatus == FailedToUnload)
@@ -268,7 +315,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Refreshing Affected Blueprints..."));
 	RefreshAffectedBlueprints();
-
+	CallHotReloadCallbacks();
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
 	bDirtyGlue = false;

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CSManagedGCHandle.h"
 #include "UnrealSharpCore.h"
@@ -27,7 +27,8 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
 	UNREALSHARPCORE_API bool IsValidAssembly() const { return ManagedAssemblyHandle.IsValid() && !ManagedAssemblyHandle->IsNull(); }
-
+	UNREALSHARPCORE_API TArray<UClass*> GetAllClasses() const;
+	
 	static UPackage* GetPackage(const FCSNamespace Namespace);
 
 	FName GetAssemblyName() const { return AssemblyName; }
@@ -51,6 +52,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	TSharedPtr<FCSharpInterfaceInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const;
 	
 	UClass* FindClass(const FCSFieldName& FieldName) const;
+
 	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
 	UEnum* FindEnum(const FCSFieldName& EnumName) const;
 	UClass* FindInterface(const FCSFieldName& InterfaceName) const;

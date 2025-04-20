@@ -368,6 +368,21 @@ UClass* FCSAssembly::FindClass(const FCSFieldName& FieldName) const
 	return Class;
 }
 
+
+TArray<UClass*> FCSAssembly::GetAllClasses() const
+{
+	 TArray<UClass*> AllClasses;
+	 for (const auto& Pair : Classes)
+	 {
+	 	UClass* uclass = FindClass(Pair.Key);
+	 	if ((uclass))
+	 	{
+	 		AllClasses.Add(uclass);
+	 	}
+	 }
+	return AllClasses;
+}
+
 UScriptStruct* FCSAssembly::FindStruct(const FCSFieldName& StructName) const
 {
 	UScriptStruct* Struct;

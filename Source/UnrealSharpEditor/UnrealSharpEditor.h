@@ -36,6 +36,7 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
+    void CallHotReloadCallbacks() const;
     void StartHotReload(bool bRebuild = true);
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
