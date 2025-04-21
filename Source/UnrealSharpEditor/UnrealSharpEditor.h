@@ -4,6 +4,7 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+enum ECSLoggerVerbosity : uint8;
 class UCSInterface;
 class UCSEnum;
 class UCSClass;
@@ -25,12 +26,12 @@ enum HotReloadStatus
     FailedToUnload
 };
 
-struct FManagedUnrealSharpEditorCallbacks
+struct FCSManagedUnrealSharpEditorCallbacks
 {
-    FManagedUnrealSharpEditorCallbacks() : BuildProject(nullptr) {}
+    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr) {}
 
-    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, void*, bool);
-    FBuildProject BuildProject;
+    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, ECSLoggerVerbosity, void*, bool);
+    FBuildProject Build;
 };
 
 
@@ -51,7 +52,7 @@ public:
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
     void StartHotReload(bool bRebuild = true);
 
-    void InitializeUnrealSharpEditorCallbacks(FManagedUnrealSharpEditorCallbacks Callbacks);
+    void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
@@ -140,6 +141,10 @@ private:
     void RefreshAffectedBlueprints();
 
     FSlateIcon GetMenuIcon() const;
+
+    static FString QuotePath(const FString& Path);
+
+    FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
     
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
@@ -148,8 +153,6 @@ private:
     bool bHasRegisteredAssetTypes = false;
 
     FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
-    
-    static FString QuotePath(const FString& Path);
 
     TSharedPtr<FCSAssembly> EditorAssembly;
     FTickerDelegate TickDelegate;
@@ -159,8 +162,6 @@ private:
     TSet<UCSScriptStruct*> RebuiltStructs;
     TSet<UCSClass*> RebuiltClasses;
     TSet<UCSEnum*> RebuiltEnums;
-
-    FManagedUnrealSharpEditorCallbacks HotReloadCallbacks;
     
     UCSManager* Manager = nullptr;
     bool bDirtyGlue = false;

@@ -2,7 +2,7 @@
 
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
-void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FManagedUnrealSharpEditorCallbacks Callbacks)
+void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks)
 {
 	FUnrealSharpEditorModule::Get().InitializeUnrealSharpEditorCallbacks(Callbacks);
 }
