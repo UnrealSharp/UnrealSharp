@@ -50,7 +50,7 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void StartHotReload(bool bRebuild = true);
+    void StartHotReload(bool bRebuild = true, bool bPromptPlayerWithNewProject = true);
 
     void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
 

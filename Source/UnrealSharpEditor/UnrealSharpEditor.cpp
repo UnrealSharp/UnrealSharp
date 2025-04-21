@@ -104,6 +104,8 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	UCSManager& CSharpManager = UCSManager::Get();
 	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
+
+	StartHotReload(true, false);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -174,7 +176,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 	}
 }
 
-void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
+void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerWithNewProject)
 {
 	if (HotReloadStatus == FailedToUnload)
 	{
@@ -189,7 +191,11 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 
 	if (AllProjects.IsEmpty())
 	{
-		SuggestProjectSetup();
+		if (bPromptPlayerWithNewProject)
+		{
+			SuggestProjectSetup();
+		}
+
 		return;
 	}
 
