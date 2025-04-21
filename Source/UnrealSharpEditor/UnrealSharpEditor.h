@@ -30,7 +30,7 @@ struct FCSManagedUnrealSharpEditorCallbacks
 {
     FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr) {}
 
-    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, ECSLoggerVerbosity, void*, bool);
+    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, void*, ECSLoggerVerbosity, void*, bool);
     FBuildProject Build;
 };
 

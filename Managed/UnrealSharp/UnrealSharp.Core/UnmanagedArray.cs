@@ -53,4 +53,13 @@ public struct UnmanagedArray
 
         return list;
     }
+    
+    public void ForEachWithMarshaller<T>(Func<IntPtr, int, T> resolver, Action<T> action)
+    {
+        for (int i = 0; i < ArrayNum; i++)
+        {
+            T item = resolver(Data, i);
+            action(item);
+        }
+    }
 }

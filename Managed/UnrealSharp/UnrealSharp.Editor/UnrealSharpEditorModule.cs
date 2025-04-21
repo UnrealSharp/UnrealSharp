@@ -16,7 +16,7 @@ namespace UnrealSharp.Editor;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct FManagedUnrealSharpEditorCallbacks
 {
-    public delegate* unmanaged<char*, char*, char*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
+    public delegate* unmanaged<char*, char*, char*, UnmanagedArray*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
 
     public FManagedUnrealSharpEditorCallbacks()
     {
@@ -29,18 +29,18 @@ class ErrorCollectingLogger : ILogger
     public StringBuilder ErrorLog { get; } = new();
     public LoggerVerbosity Verbosity { get; set; }
     public string Parameters { get; set; } = string.Empty;
-    
+
     public ErrorCollectingLogger(LoggerVerbosity verbosity = LoggerVerbosity.Normal)
     {
         Verbosity = verbosity;
     }
-    
+
     public void Initialize(IEventSource eventSource)
     {
         eventSource.ErrorRaised += (sender, e) =>
         {
             string fileName = Path.GetFileName(e.File);
-            
+
             ErrorLog.AppendLine($"{fileName}({e.LineNumber},{e.ColumnNumber}): {e.Message}");
             ErrorLog.AppendLine();
         };
@@ -48,7 +48,6 @@ class ErrorCollectingLogger : ILogger
 
     public void Shutdown()
     {
-        
     }
 }
 
@@ -56,25 +55,40 @@ public static class ManagedUnrealSharpEditorCallbacks
 {
     private static readonly ProjectCollection ProjectCollection = new();
     private static readonly BuildManager UnrealSharpBuildManager = new("UnrealSharpBuildManager");
-    
+
     public static void Initialize()
     {
         FUnrealSharpEditorModuleExporter.CallGetProjectPaths(out UnmanagedArray projectPaths);
         List<string> projectPathsList = projectPaths.ToListWithMarshaller(StringMarshaller.FromNative);
-        
+
         foreach (string projectPath in projectPathsList)
         {
             ProjectCollection.LoadProject(projectPath);
         }
     }
-    
+
     [UnmanagedCallersOnly]
-    public static unsafe NativeBool Build(char* solutionPath, char* outputPath, char* buildConfiguration, LoggerVerbosity loggerVerbosity, IntPtr exceptionBuffer, NativeBool buildSolution)
+    public static unsafe NativeBool Build(char* solutionPath,
+        char* outputPath,
+        char* buildConfiguration,
+        UnmanagedArray* projectPaths,
+        LoggerVerbosity loggerVerbosity,
+        IntPtr exceptionBuffer,
+        NativeBool buildSolution)
     {
         try
         {
             string buildConfigurationString = new string(buildConfiguration);
             
+            if (projectPaths->ArrayNum > ProjectCollection.Count - 1)
+            {
+                // New projects has been added, so we need to load them.
+                projectPaths->ForEachWithMarshaller<string>(StringMarshaller.FromNative, projectPath =>
+                {
+                    ProjectCollection.LoadProject(projectPath);
+                });
+            }
+
             if (buildSolution == NativeBool.True)
             {
                 ErrorCollectingLogger logger = new ErrorCollectingLogger(loggerVerbosity);
@@ -82,12 +96,12 @@ public static class ManagedUnrealSharpEditorCallbacks
                 {
                     Loggers = new List<ILogger> { logger }
                 };
-                
+
                 Dictionary<string, string?> globalProperties = new()
                 {
                     ["Configuration"] = buildConfigurationString,
                 };
-    
+
                 BuildRequestData buildRequest = new BuildRequestData(
                     new string(solutionPath),
                     globalProperties,
@@ -95,14 +109,14 @@ public static class ManagedUnrealSharpEditorCallbacks
                     new[] { "Build" },
                     null
                 );
-            
+
                 BuildResult result = UnrealSharpBuildManager.Build(buildParameters, buildRequest);
                 if (result.OverallResult == BuildResultCode.Failure)
                 {
                     throw new Exception(logger.ErrorLog.ToString());
                 }
             }
-            
+
             Weave(outputPath, buildConfigurationString);
         }
         catch (Exception exception)
@@ -110,7 +124,7 @@ public static class ManagedUnrealSharpEditorCallbacks
             StringMarshaller.ToNative(exceptionBuffer, 0, exception.Message);
             return NativeBool.False;
         }
-        
+
         return NativeBool.True;
     }
 
@@ -120,18 +134,18 @@ public static class ManagedUnrealSharpEditorCallbacks
         foreach (Project? projectFile in ProjectCollection.LoadedProjects)
         {
             string projectName = Path.GetFileNameWithoutExtension(projectFile.FullPath);
-            string assemblyPath = Path.Combine(projectFile.DirectoryPath, "bin", 
+            string assemblyPath = Path.Combine(projectFile.DirectoryPath, "bin",
                 buildConfiguration, DotNetUtilities.DOTNET_MAJOR_VERSION_DISPLAY, projectName + ".dll");
-            
+
             assemblyPaths.Add(assemblyPath);
         }
-        
+
         WeaverOptions weaverOptions = new WeaverOptions
         {
             AssemblyPaths = assemblyPaths,
             OutputDirectory = new string(outputPath),
         };
-        
+
         Program.Weave(weaverOptions);
     }
 }
@@ -147,6 +161,5 @@ public class FUnrealSharpEditor : IModuleInterface
 
     public void ShutdownModule()
     {
-
     }
 }

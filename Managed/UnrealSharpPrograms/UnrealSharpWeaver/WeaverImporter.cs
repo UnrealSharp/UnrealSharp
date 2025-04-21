@@ -138,10 +138,6 @@ public class WeaverImporter
         GeneratedTypeCtor = generatedType.FindMethod(".ctor")!;
         
         ScriptInterfaceMarshaller = UnrealSharpAssembly.FindType("ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
-        
-        TypeReference typeExtensions = UnrealSharpAssembly.FindType("TypeExtensions", UnrealSharpNamespace)!;
-
-        TypeReference? typeType = UnrealSharpAssembly.MainModule.ImportReference(typeof(Type));
     }
 
     private static MethodReference FindBindingsStaticMethod(string findNamespace, string findClass, string findMethod)

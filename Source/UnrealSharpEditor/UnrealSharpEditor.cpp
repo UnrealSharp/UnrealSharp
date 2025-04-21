@@ -207,7 +207,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild)
 	ECSLoggerVerbosity LogVerbosity = Settings->LogVerbosity;
 	
 	FString ExceptionMessage;
-	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
+	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, &AllProjects, LogVerbosity, &ExceptionMessage, bRebuild))
 	{
 		HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
