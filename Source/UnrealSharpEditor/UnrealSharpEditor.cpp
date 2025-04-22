@@ -217,7 +217,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	{
 		HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Hot Reload Failed")));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
 		return;
 	}
 
