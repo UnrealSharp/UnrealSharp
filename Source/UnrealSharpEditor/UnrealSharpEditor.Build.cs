@@ -10,6 +10,7 @@ public class UnrealSharpEditor : ModuleRules
             new string[]
             {
                 "Core",
+                "UnrealSharpBinds"
             }
         );
 
@@ -39,7 +40,6 @@ public class UnrealSharpEditor : ModuleRules
                 "BlueprintEditorLibrary",
                 "SubobjectDataInterface",
                 "AssetTools",
-                "UnrealSharpBinds"
             }
         );
     }
