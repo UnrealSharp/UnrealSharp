@@ -85,7 +85,18 @@ void FUnrealSharpEditorModule::StartupModule()
 			SuggestProjectSetup();
 		});
 	}
-
+	
+	// Make managed types not available for edit in the editor
+	{
+		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
+	
+		Manager->ForEachManagedPackage([&AssetToolsRef](const UPackage* Package)
+		{
+			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
+		});
+	}
+	
 	FCSStyle::Initialize();
 
 	RegisterCommands();

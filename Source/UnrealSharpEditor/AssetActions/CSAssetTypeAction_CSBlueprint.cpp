@@ -14,3 +14,14 @@ void FCSAssetTypeAction_CSBlueprint::OpenAssetEditor(const TArray<UObject*>& InO
 	// Currently Rider doesn't support opening files from the command line as it opens the file in every instance of Rider, even if I have specified the solution to open it in.
 	// A ticket has been created to try to get it fixed.
 }
+
+bool FCSAssetTypeAction_CSBlueprint::SupportsOpenedMethod(const EAssetTypeActivationOpenedMethod OpenedMethod) const
+{
+	// Always return false for now. Same issue as above.
+	return false;
+}
+
+FText FCSAssetTypeAction_CSBlueprint::GetName() const
+{
+	return FText::FromString(FString::Printf(TEXT("C# Class")));
+}
