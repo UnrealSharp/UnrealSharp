@@ -52,7 +52,7 @@ public static class UnrealClassProcessor
     private static void ProcessClass(TypeDefinition classTypeDefinition, ClassMetaData metadata)
     {
         // Rewrite all the properties of the class to make getters/setters that call Native code.
-        if (metadata.HasProperties)
+        if (metadata.Properties != null)
         {
             var offsetsToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
             var pointersToInitialize = new List<Tuple<FieldDefinition, PropertyMetaData>>();
@@ -61,10 +61,10 @@ public static class UnrealClassProcessor
         
         // Add a field to cache the native UClass pointer.
         // Example: private static readonly nint NativeClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName("MyActorClass");
-        FieldDefinition nativeClassField = classTypeDefinition.AddField("NativeClass", WeaverImporter.IntPtrType);
+        FieldDefinition nativeClassField = classTypeDefinition.AddField("NativeClass", WeaverImporter.Instance.IntPtrType);
         
         ConstructorBuilder.CreateTypeInitializer(classTypeDefinition, Instruction.Create(OpCodes.Stsfld, nativeClassField), 
-            [Instruction.Create(OpCodes.Call, WeaverImporter.GetNativeClassFromNameMethod)]);
+            [Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeClassFromNameMethod)]);
 
         foreach (var field in classTypeDefinition.Fields)
         {
@@ -78,7 +78,7 @@ public static class UnrealClassProcessor
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
         
-        if (metadata.HasProperties)
+        if (metadata.Properties != null)
         {
             ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
         }
@@ -108,7 +108,7 @@ public static class UnrealClassProcessor
             return;
         }
             
-        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.IntPtrType);
+        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
         Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
         Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
             

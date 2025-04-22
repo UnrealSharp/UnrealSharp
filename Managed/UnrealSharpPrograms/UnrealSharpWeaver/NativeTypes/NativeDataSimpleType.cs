@@ -10,9 +10,10 @@ namespace UnrealSharpWeaver.NativeTypes;
 public abstract class NativeDataSimpleType(TypeReference typeRef, string marshallerName, int arrayDim, PropertyType propertyType) 
     : NativeDataType(typeRef, arrayDim, propertyType)
 {
-    protected TypeReference MarshallerClass;
-    protected MethodReference ToNative;
-    protected MethodReference FromNative;
+    protected TypeReference? MarshallerClass;
+    protected MethodReference? ToNative;
+    protected MethodReference? FromNative;
+    
     
     private bool _isReference;
     private AssemblyDefinition? _assembly;
@@ -68,16 +69,14 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         FromNative = FromNative.ImportMethod();
     }
 
-    public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+    public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr, FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
         WriteMarshalFromNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0));
         getter.FinalizeMethod();
     }
 
-    public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+    public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr, FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleSetter(setter);
         Instruction loadValue = processor.Create(_isReference ? OpCodes.Ldarga : OpCodes.Ldarg, 1);
@@ -107,7 +106,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         
         if (_isReference)
         {
-            Instruction loadInstructionOutParam = paramDefinition.CreateLoadInstructionOutParam(propertyType);
+            Instruction loadInstructionOutParam = paramDefinition.CreateLoadInstructionOutParam(PropertyType);
             source.Add(loadInstructionOutParam);
         }
         
@@ -170,7 +169,7 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
             else
             {
                 GenericInstanceType generic = (GenericInstanceType)CSharpType;
-                typeParams = [WeaverImporter.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
+                typeParams = [WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(generic.GenericArguments[0].Resolve())];
             }
         }
 
@@ -197,28 +196,18 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         return null;
     }
 
-    private AssemblyDefinition? GetUserAssemblyByPropertyType(TypeDefinition type)
-    {
-        var propertyTypeName = type.Module.Assembly.FullName;
-
-        if (WeaverImporter.UserAssembly.FullName == propertyTypeName)
-        {
-            return WeaverImporter.UserAssembly;
-        }
-        
-        foreach (AssemblyDefinition assemblyDefinition in WeaverImporter.WeavedAssemblies)
-        {
-            if (assemblyDefinition.FullName == propertyTypeName)
-            {
-                return assemblyDefinition;
-            }
-        }
-
-        return null;
-    }
-
     private TypeDefinition GetMarshallerTypeDefinition()
     {
+        if (MarshallerClass is null)
+        {
+            throw new Exception($"Marshaller class is null for type {CSharpType.FullName}");
+        }
+        
+        if (_assembly is null)
+        {
+            throw new Exception($"Could not find assembly for marshaller {MarshallerClass.Name}");
+        }
+        
         return GetMarshallerTypeDefinition(_assembly, MarshallerClass);
     }
 }

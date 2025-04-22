@@ -9,7 +9,14 @@ public class BuildToolProcess : Process
     {
         if (fileName == null)
         {
-            fileName = Program.BuildToolOptions.DotNetPath ?? "dotnet";
+            if (string.IsNullOrEmpty(Program.BuildToolOptions.DotNetPath))
+            {
+                fileName = "dotnet";
+            }
+            else
+            {
+                fileName = Program.BuildToolOptions.DotNetPath;
+            }
         }
         
         StartInfo.FileName = fileName;
@@ -34,17 +41,18 @@ public class BuildToolProcess : Process
             {
                 throw new Exception("Failed to start process");
             }
+            
             WriteOutProcess();
 
-            https://learn.microsoft.com/de-de/dotnet/api/system.diagnostics.process.standardoutput?view=net-8.0
             StringBuilder output = new();
-            this.OutputDataReceived += (sender, args) =>
+            OutputDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
                 {
                     output.AppendLine(args.Data);
                 }
             };
+            
             // To avoid deadlocks, use an asynchronous read operation on at least one of the streams.
             BeginOutputReadLine();
 

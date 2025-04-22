@@ -18,10 +18,10 @@ public class NativeDataDelegateType(TypeReference typeRef) : NativeDataBaseDeleg
         MethodReference? initialize = wrapperType.Resolve().FindMethod(UnrealDelegateProcessor.InitializeUnrealDelegate);
         if (propertyMetadata.MemberRef is not PropertyDefinition)
         {
-            VariableDefinition propertyPointer = processor.Body.Method.AddLocalVariable(WeaverImporter.IntPtrType);
+            VariableDefinition propertyPointer = processor.Body.Method.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
             processor.Append(loadNativePointer);
             processor.Emit(OpCodes.Ldstr, propertyMetadata.Name);
-            processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
+            processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativePropertyFromNameMethod);
             processor.Emit(OpCodes.Stloc, propertyPointer);
             processor.Emit(OpCodes.Ldloc, propertyPointer);
         }

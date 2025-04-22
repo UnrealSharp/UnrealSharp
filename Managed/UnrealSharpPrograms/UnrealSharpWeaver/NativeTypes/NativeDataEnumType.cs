@@ -15,7 +15,7 @@ class NativeDataEnumType(TypeReference typeRef, int arrayDim) : NativeDataSimple
         
         if (!InnerProperty.TypeRef.Resolve().IsUEnum())
         {
-            throw new Exception($"{propertyMetadata.MemberRef.FullName} needs to be a UEnum if exposed through UProperty!");
+            throw new Exception($"{propertyMetadata.MemberRef!.FullName} needs to be a UEnum if exposed through UProperty!");
         }
     }
 };

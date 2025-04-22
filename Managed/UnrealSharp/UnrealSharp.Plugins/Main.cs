@@ -1,8 +1,10 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
+using UnrealSharp.Shared;
 
 namespace UnrealSharp.Plugins;
 
@@ -19,6 +21,11 @@ public static class Main
     {
         try
         {
+            #if !PACKAGE
+            string dotnetSdk = DotNetUtilities.GetLatestDotNetSdkPath();
+            MSBuildLocator.RegisterMSBuildPath(dotnetSdk);
+            #endif
+            
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
 
             // Initialize plugin and managed callbacks

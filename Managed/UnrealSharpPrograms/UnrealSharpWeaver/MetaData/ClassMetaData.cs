@@ -8,7 +8,7 @@ namespace UnrealSharpWeaver.MetaData;
 public class ClassMetaData : TypeReferenceMetadata
 {
     public TypeReferenceMetadata ParentClass { get; set; }
-    public List<PropertyMetaData>? Properties { get; set; }
+    public List<PropertyMetaData> Properties { get; set; }
     public List<FunctionMetaData> Functions { get; set; }
     public List<FunctionMetaData> VirtualFunctions { get; set; }
     public List<TypeReferenceMetadata> Interfaces { get; set; }
@@ -23,6 +23,12 @@ public class ClassMetaData : TypeReferenceMetadata
     public ClassMetaData(TypeDefinition type) : base(type, TypeDefinitionUtilities.UClassAttribute)
     {
         ClassDefinition = type;
+        Properties = [];
+        Functions = [];
+        VirtualFunctions = [];
+        
+        ConfigCategory = string.Empty;
+        Interfaces = [];
         
         PopulateInterfaces();
         PopulateProperties();
@@ -40,7 +46,7 @@ public class ClassMetaData : TypeReferenceMetadata
             ClassFlags |= ClassFlags.DefaultConfig;
         }
 
-        if (type.IsChildOf(WeaverImporter.UActorComponentDefinition))
+        if (type.IsChildOf(WeaverImporter.Instance.UActorComponentDefinition))
         {
             TryAddMetaData("BlueprintSpawnableComponent", true);
         }
@@ -48,7 +54,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void AddConfigCategory()
     {
-        CustomAttribute? uClassAttribute = ClassDefinition.GetUClass();
+        CustomAttribute uClassAttribute = ClassDefinition.GetUClass()!;
         CustomAttributeArgument? configCategoryProperty = uClassAttribute.FindAttributeField(nameof(ConfigCategory));
         if (configCategoryProperty != null)
         {
@@ -149,7 +155,7 @@ public class ClassMetaData : TypeReferenceMetadata
         {
             TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
 
-            if (interfaceType == WeaverImporter.IInterfaceType || !interfaceType.IsUInterface())
+            if (interfaceType == WeaverImporter.Instance.IInterfaceType || !interfaceType.IsUInterface())
             {
                 continue;
             }

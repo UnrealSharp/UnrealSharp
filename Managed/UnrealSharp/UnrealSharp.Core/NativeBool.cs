@@ -3,8 +3,8 @@
 // Bools are not blittable, so we need to convert them to bytes
 public enum NativeBool : byte
 {
-    True = 1,
-    False = 0
+    False = 0,
+    True = 1
 }
 
 public static class BoolConverter

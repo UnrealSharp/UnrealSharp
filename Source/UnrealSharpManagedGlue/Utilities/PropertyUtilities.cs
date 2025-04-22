@@ -313,7 +313,7 @@ public static class PropertyUtilities
 
         if (function.GetCustomStructParams().Contains(property.EngineName))
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property);
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             return translator.CanSupportCustomStruct(property);
         }
 

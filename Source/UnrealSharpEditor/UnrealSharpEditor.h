@@ -4,6 +4,11 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+enum ECSLoggerVerbosity : uint8;
+class UCSInterface;
+class UCSEnum;
+class UCSClass;
+class UCSScriptStruct;
 class UCSManager;
 struct FCSAssembly;
 class IAssetTools;
@@ -21,6 +26,15 @@ enum HotReloadStatus
     FailedToUnload
 };
 
+struct FCSManagedUnrealSharpEditorCallbacks
+{
+    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr) {}
+
+    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, void*, ECSLoggerVerbosity, void*, bool);
+    FBuildProject Build;
+};
+
+
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 
 DECLARE_MULTICAST_DELEGATE(FOnRefreshRuntimeGlue);
@@ -36,7 +50,9 @@ public:
     // End
     
     void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void StartHotReload(bool bRebuild = true);
+    void StartHotReload(bool bRebuild = true, bool bPromptPlayerWithNewProject = true);
+
+    void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
 
     bool IsHotReloading() const { return HotReloadStatus == Active; }
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
@@ -113,9 +129,9 @@ private:
     void ProcessAssetTypes();
     void ProcessTraceTypeQuery();
     
-    void OnStructRebuilt(UScriptStruct* NewStruct);
-    void OnClassRebuilt(UClass* NewClass);
-    void OnEnumRebuilt(UEnum* NewEnum);
+    void OnStructRebuilt(UCSScriptStruct* NewStruct);
+    void OnClassRebuilt(UCSClass* NewClass);
+    void OnEnumRebuilt(UCSEnum* NewEnum);
 
     bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
     bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
@@ -125,6 +141,10 @@ private:
     void RefreshAffectedBlueprints();
 
     FSlateIcon GetMenuIcon() const;
+
+    static FString QuotePath(const FString& Path);
+
+    FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
     
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
@@ -133,17 +153,15 @@ private:
     bool bHasRegisteredAssetTypes = false;
 
     FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
-    
-    static FString QuotePath(const FString& Path);
 
     TSharedPtr<FCSAssembly> EditorAssembly;
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     
-    TSet<UScriptStruct*> RebuiltStructs;
-    TSet<UClass*> RebuiltClasses;
-    TSet<UEnum*> RebuiltEnums;
+    TSet<UCSScriptStruct*> RebuiltStructs;
+    TSet<UCSClass*> RebuiltClasses;
+    TSet<UCSEnum*> RebuiltEnums;
     
     UCSManager* Manager = nullptr;
     bool bDirtyGlue = false;

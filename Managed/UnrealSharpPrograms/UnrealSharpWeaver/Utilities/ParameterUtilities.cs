@@ -88,9 +88,7 @@ public static class ParameterUtilities
             switch (paramTypeCode)
             {
                 case PropertyType.Enum:
-                    var param1 = param;
-                    param = null;
-                    paramTypeCode = param1.ParameterType.Resolve().GetEnumUnderlyingType().GetPrimitiveTypeCode();
+                    paramTypeCode = param.ParameterType.Resolve().GetEnumUnderlyingType().GetPrimitiveTypeCode();
                     continue;
 
                 case PropertyType.Bool:

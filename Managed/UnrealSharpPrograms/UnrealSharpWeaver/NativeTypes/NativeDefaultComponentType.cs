@@ -8,6 +8,11 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 class NativeDataDefaultComponent : NativeDataSimpleType
 {
+    public bool IsRootComponent { get; set; }
+    public string AttachmentComponent { get; set; } = string.Empty;
+    public string AttachmentSocket { get; set; } = string.Empty;
+    public TypeReferenceMetadata InnerType { get; set; }
+    
     public NativeDataDefaultComponent(Collection<CustomAttribute> customAttributes, TypeReference typeRef, int arrayDim) 
         : base(typeRef, "DefaultComponentMarshaller`1", arrayDim, PropertyType.DefaultComponent)
     {
@@ -42,7 +47,7 @@ class NativeDataDefaultComponent : NativeDataSimpleType
     }
 
     public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+        FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
         string propertyName = getter.Name.Substring(4);
@@ -59,11 +64,6 @@ class NativeDataDefaultComponent : NativeDataSimpleType
         WriteMarshalFromNative(processor, type, loadBuffer.ToArray(), processor.Create(OpCodes.Ldc_I4_0));
         getter.FinalizeMethod();
     }
-
-    public bool IsRootComponent { get; set; }
-    public string AttachmentComponent { get; set; }
-    public string AttachmentSocket { get; set; }
-    public TypeReferenceMetadata InnerType { get; set; }
 
     public static bool IsDefaultComponent(Collection<CustomAttribute>? customAttributes)
     {

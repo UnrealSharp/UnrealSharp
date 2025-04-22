@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Collections.Generic;
 using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.MetaData;
@@ -25,7 +26,7 @@ public class BaseMetaData
 
         AttributeName = attributeName;
         MetaData = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        BaseAttribute = MemberDefinition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, AttributeName);
+        BaseAttribute = MemberDefinition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, AttributeName)!;
 
         AddMetaData();          // Add any [UMetaData("key", "value")] attributes (general metadata attribute to allow support of any engine tag)
         AddMetaTagsNamespace(); // Add all named attributes in the UnrealSharp.Attributes.MetaTags namespace
@@ -143,8 +144,9 @@ public class BaseMetaData
 
     public static ulong GetFlags(IMemberDefinition member, string flagsAttributeName)
     {
-        SequencePoint sequencePoint = ErrorEmitter.GetSequencePointFromMemberDefinition(member);
-        var customAttributes = member.CustomAttributes;
+        SequencePoint? sequencePoint = ErrorEmitter.GetSequencePointFromMemberDefinition(member);
+        Collection<CustomAttribute>? customAttributes = member.CustomAttributes;
+        
         ulong flags = 0;
 
         foreach (CustomAttribute attribute in customAttributes)

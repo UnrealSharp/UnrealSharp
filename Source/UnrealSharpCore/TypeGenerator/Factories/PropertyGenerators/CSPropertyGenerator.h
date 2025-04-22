@@ -19,6 +19,8 @@ protected:
 	static bool CanBeHashed(const FProperty* InParam);
 
 	FProperty* NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass = nullptr);
+
+	static UClass* TryFindingOwningClass(UField* Outer);
 	
 public:
 

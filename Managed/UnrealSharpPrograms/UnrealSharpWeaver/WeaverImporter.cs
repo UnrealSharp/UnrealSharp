@@ -4,8 +4,11 @@ using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver;
 
-public static class WeaverImporter
+public class WeaverImporter
 {
+    private static WeaverImporter? _instance;
+    public static WeaverImporter Instance => _instance ??= new WeaverImporter();
+
     private static readonly string Attributes = ".Attributes";
     
     public static readonly string UnrealSharpNamespace = "UnrealSharp";
@@ -32,61 +35,58 @@ public static class WeaverImporter
     
     public static readonly string GeneratedTypeAttribute = "GeneratedTypeAttribute";
     
-    public static AssemblyDefinition UserAssembly;
-    public static readonly ICollection<AssemblyDefinition> WeavedAssemblies = [];
+    public AssemblyDefinition UserAssembly = null!;
+    public readonly ICollection<AssemblyDefinition> WeavedAssemblies = [];
     
-    public static AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
-    public static AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
-    public static AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
+    public AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
+    public AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
+    public AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
     
-    public static MethodReference NativeObjectGetter;
-    public static TypeDefinition IntPtrType;
-    public static MethodReference IntPtrAdd;
-    public static FieldReference IntPtrZero;
-    public static MethodReference IntPtrEqualsOperator;
-    public static TypeReference UnrealSharpObjectType;
-    public static TypeDefinition IInterfaceType;
-    public static MethodReference GetNativeFunctionFromInstanceAndNameMethod;
-    public static TypeReference Int32TypeRef;
-    public static TypeReference VoidTypeRef;
-    public static TypeReference ByteTypeRef;
-    public static MethodReference GetNativeClassFromNameMethod;
-    public static MethodReference GetNativeStructFromNameMethod;
-    public static MethodReference GetPropertyOffsetFromNameMethod;
-    public static MethodReference GetPropertyOffset;
-    public static MethodReference GetNativePropertyFromNameMethod;
-    public static MethodReference GetNativeFunctionFromClassAndNameMethod;
-    public static MethodReference GetNativeFunctionParamsSizeMethod;
-    public static MethodReference GetNativeStructSizeMethod;
-    public static MethodReference InvokeNativeFunctionMethod;
-    public static MethodReference GetSignatureFunction;
-    public static MethodReference InitializeStructMethod;
+    public MethodReference NativeObjectGetter = null!;
+    public TypeDefinition IntPtrType = null!;
+    public MethodReference IntPtrAdd = null!;
+    public FieldReference IntPtrZero = null!;
+    public MethodReference IntPtrEqualsOperator = null!;
+    public TypeReference UnrealSharpObjectType = null!;
+    public TypeDefinition IInterfaceType = null!;
+    public MethodReference GetNativeFunctionFromInstanceAndNameMethod = null!;
+    public TypeReference Int32TypeRef = null!;
+    public TypeReference VoidTypeRef = null!;
+    public TypeReference ByteTypeRef = null!;
+    public MethodReference GetNativeClassFromNameMethod = null!;
+    public MethodReference GetNativeStructFromNameMethod = null!;
+    public MethodReference GetPropertyOffsetFromNameMethod = null!;
+    public MethodReference GetPropertyOffset = null!;
+    public MethodReference GetNativePropertyFromNameMethod = null!;
+    public MethodReference GetNativeFunctionFromClassAndNameMethod = null!;
+    public MethodReference GetNativeFunctionParamsSizeMethod = null!;
+    public MethodReference GetNativeStructSizeMethod = null!;
+    public MethodReference InvokeNativeFunctionMethod = null!;
+    public MethodReference GetSignatureFunction = null!;
+    public MethodReference InitializeStructMethod = null!;
 
-    public static MethodReference GeneratedTypeCtor;
+    public MethodReference GeneratedTypeCtor = null!;
     
-    public static TypeDefinition UObjectDefinition;
-    public static TypeDefinition UActorComponentDefinition;
+    public TypeDefinition UObjectDefinition = null!;
+    public TypeDefinition UActorComponentDefinition = null!;
     
-    public static TypeDefinition ScriptInterfaceMarshaller;
+    public TypeDefinition ScriptInterfaceMarshaller = null!;
     
-    public static MethodReference BlittableTypeConstructor;
-    
-    public static MethodReference GetAssemblyNameMethod;
-    public static MethodReference GetTypeFromHandleMethod;
+    public MethodReference BlittableTypeConstructor = null!;
 
-    public static DefaultAssemblyResolver AssemblyResolver;
+    public DefaultAssemblyResolver AssemblyResolver = null!;
     
-    public static void Initialize(DefaultAssemblyResolver assemblyResolver)
+    public static void Shutdown()
     {
-        AssemblyResolver = assemblyResolver;
+        _instance = null;
     }
     
     static AssemblyDefinition FindAssembly(string assemblyName)
     {
-        return AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, new Version(0, 0)));
+        return Instance.AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, new Version(0, 0)));
     }
 
-    public static void ImportCommonTypes(AssemblyDefinition userAssembly)
+    public void ImportCommonTypes(AssemblyDefinition userAssembly)
     {
         UserAssembly = userAssembly;
         
@@ -138,17 +138,11 @@ public static class WeaverImporter
         GeneratedTypeCtor = generatedType.FindMethod(".ctor")!;
         
         ScriptInterfaceMarshaller = UnrealSharpAssembly.FindType("ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
-        
-        TypeReference typeExtensions = UnrealSharpAssembly.FindType("TypeExtensions", UnrealSharpNamespace)!;
-        GetAssemblyNameMethod = typeExtensions.FindMethod("GetAssemblyName")!;
-        
-        TypeReference? typeType = UnrealSharpAssembly.MainModule.ImportReference(typeof(Type));
-        GetTypeFromHandleMethod = typeType.FindMethod("GetTypeFromHandle")!;
     }
 
     private static MethodReference FindBindingsStaticMethod(string findNamespace, string findClass, string findMethod)
     {
-        foreach (var module in UnrealSharpAssembly.Modules)
+        foreach (var module in Instance.UnrealSharpAssembly.Modules)
         {
             foreach (var type in module.GetAllTypes())
             {
@@ -161,7 +155,7 @@ public static class WeaverImporter
                 {
                     if (method.IsStatic && method.Name == findMethod)
                     {
-                        return UserAssembly.MainModule.ImportReference(method);
+                        return Instance.UserAssembly.MainModule.ImportReference(method);
                     }
                 }
             }

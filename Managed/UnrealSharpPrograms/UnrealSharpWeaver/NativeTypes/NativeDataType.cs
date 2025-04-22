@@ -34,6 +34,21 @@ namespace UnrealSharpWeaver.NativeTypes;
 [JsonDerivedType(typeof(NativeDataInterfaceType))]
 public abstract class NativeDataType
 {
+    internal TypeReference CSharpType { get; set; }
+    public int ArrayDim { get; set; }
+    public PropertyType PropertyType { get; set; }
+    public virtual bool IsBlittable => false;
+    public virtual bool IsPlainOldData => false;
+    public bool IsNetworkSupported = true;
+    
+    protected FieldDefinition? BackingField;
+    
+    public bool NeedsNativePropertyField { get; set; }
+    
+    private TypeReference? ToNativeDelegateType;
+    private TypeReference? FromNativeDelegateType;
+    // End non-json properties
+    
     public NativeDataType(TypeReference typeRef, int arrayDim, PropertyType propertyType = PropertyType.Unknown)
     {
         if (typeRef.IsByReference)
@@ -45,21 +60,6 @@ public abstract class NativeDataType
         ArrayDim = arrayDim;
         PropertyType = propertyType;
     }
-    
-    internal TypeReference CSharpType { get; set; }
-    public int ArrayDim { get; set; }
-    public PropertyType PropertyType { get; set; }
-    public virtual bool IsBlittable { get { return false; } }
-    public virtual bool IsPlainOldData { get { return false; } }
-    public bool IsNetworkSupported = true;
-    
-    protected FieldDefinition? BackingField;
-    
-    public bool NeedsNativePropertyField { get; set; }
-
-    private TypeReference ToNativeDelegateType;
-    private TypeReference FromNativeDelegateType;
-    // End non-json properties
 
     protected static ILProcessor InitPropertyAccessor(MethodDefinition method)
     {
@@ -91,11 +91,11 @@ public abstract class NativeDataType
         else
         {
             instructionBuffer.Add(Instruction.Create(OpCodes.Ldarg_0));
-            instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.NativeObjectGetter));
+            instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.Instance.NativeObjectGetter));
         }
 
         instructionBuffer.Add(Instruction.Create(OpCodes.Ldsfld, offsetField));  
-        instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.IntPtrAdd));
+        instructionBuffer.Add(Instruction.Create(OpCodes.Call, WeaverImporter.Instance.IntPtrAdd));
 
         return instructionBuffer.ToArray();
     }
@@ -155,7 +155,13 @@ public abstract class NativeDataType
     public virtual void PrepareForRewrite(TypeDefinition typeDefinition, PropertyMetaData propertyMetadata,
         object outer)
     {
-        TypeReference? marshallingDelegates = WeaverImporter.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "MarshallingDelegates`1", [CSharpType]);
+        TypeReference? marshallingDelegates = WeaverImporter.Instance.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "MarshallingDelegates`1", [CSharpType]);
+        
+        if (marshallingDelegates == null)
+        {
+            throw new Exception($"Could not find marshalling delegates for {CSharpType.FullName}");
+        }
+        
         TypeDefinition marshallingDelegatesDef = marshallingDelegates.Resolve();
         
         ToNativeDelegateType = marshallingDelegatesDef.FindNestedType("ToNative");
@@ -165,11 +171,11 @@ public abstract class NativeDataType
     protected void EmitDelegate(ILProcessor processor, TypeReference delegateType, MethodReference method)
     {
         processor.Emit(OpCodes.Ldnull);
-        method = WeaverImporter.UserAssembly.MainModule.ImportReference(method);
+        method = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(method);
         processor.Emit(OpCodes.Ldftn, method);
         MethodReference ctor = (from constructor in delegateType.Resolve().GetConstructors() where constructor.Parameters.Count == 2 select constructor).First().Resolve();
         ctor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ctor, CSharpType);
-        ctor = WeaverImporter.UserAssembly.MainModule.ImportReference(ctor);
+        ctor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(ctor);
         processor.Emit(OpCodes.Newobj, ctor);
     }
 
@@ -212,6 +218,11 @@ public abstract class NativeDataType
             fromNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(fromNative, typeParams);
             toNative = FunctionProcessor.MakeMethodDeclaringTypeGeneric(toNative, typeParams);
         }
+        
+        if (ToNativeDelegateType == null || FromNativeDelegateType == null)
+        {
+            throw new Exception($"Could not find marshaller delegates for {marshallerTypeName}");
+        }
 
         EmitDelegate(processor, ToNativeDelegateType, toNative);
         EmitDelegate(processor, FromNativeDelegateType, fromNative);
@@ -224,9 +235,9 @@ public abstract class NativeDataType
     }
 
     public abstract void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition);
+        FieldDefinition? fieldDefinition);
     public abstract void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition);
+        FieldDefinition? fieldDefinition);
 
     // Subclasses must implement to handle loading of values from a native buffer.
     // Returns the local variable containing the loaded value.

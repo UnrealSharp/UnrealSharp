@@ -22,11 +22,11 @@ public static class FunctionProcessor
                 AddNativePropertyField(classDefinition, param, function, i, function.RewriteInfo.FunctionParams);
             }
 
-            paramsSizeField = classDefinition.AddField($"{function.Name}_ParamsSize", WeaverImporter.Int32TypeRef);
+            paramsSizeField = classDefinition.AddField($"{function.Name}_ParamsSize", WeaverImporter.Instance.Int32TypeRef);
             function.RewriteInfo.FunctionParamSizeField = paramsSizeField;
         }
 
-        if (function.HasReturnValue)
+        if (function.ReturnValue != null)
         {
             int index = function.Parameters.Length > 0 ? function.Parameters.Length : 0;
             AddOffsetField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
@@ -35,7 +35,7 @@ public static class FunctionProcessor
         
         if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDef))
         {
-            function.FunctionPointerField = classDefinition.AddField($"{function.Name}_NativeFunction", WeaverImporter.IntPtrType, FieldAttributes.Private);
+            function.FunctionPointerField = classDefinition.AddField($"{function.Name}_NativeFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Private);
             RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
         }
         else if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintCallable))
@@ -64,6 +64,11 @@ public static class FunctionProcessor
     
     public static void LoadNativeFunctionField(ILProcessor processor, FunctionMetaData functionMetaData)
     {
+        if (functionMetaData.FunctionPointerField == null)
+        {
+            throw new InvalidOperationException("Function pointer field is null.");
+        }
+        
         if (functionMetaData.FunctionPointerField.IsStatic)
         {
             processor.Emit(OpCodes.Ldsfld, functionMetaData.FunctionPointerField);
@@ -163,9 +168,9 @@ public static class FunctionProcessor
     private static void MakeManagedMethodInvoker(TypeDefinition type, FunctionMetaData func, MethodDefinition methodToCall, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
         MethodDefinition invokerFunction = type.AddMethod("Invoke_" + func.Name, 
-            WeaverImporter.VoidTypeRef, 
+            WeaverImporter.Instance.VoidTypeRef, 
             MethodAttributes.Private, 
-            [WeaverImporter.IntPtrType, WeaverImporter.IntPtrType]);
+            [WeaverImporter.Instance.IntPtrType, WeaverImporter.Instance.IntPtrType]);
 
         ILProcessor processor = invokerFunction.Body.GetILProcessor();
         Instruction loadBuffer = processor.Create(OpCodes.Ldarg_1);
@@ -244,7 +249,7 @@ public static class FunctionProcessor
                 loadLocalVariable);
         }
 
-        if (func.HasReturnValue)
+        if (func.ReturnValue != null)
         {
             NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
             processor.Emit(OpCodes.Stloc, returnIndex);
@@ -278,6 +283,11 @@ public static class FunctionProcessor
     {
         // Remove the original method body. We'll replace it with a call to the native function.
         methodDef.Body = new MethodBody(methodDef);
+        
+        if (metadata.FunctionPointerField == null)
+        {
+            throw new InvalidOperationException("Function pointer field is null.");
+        }
 
         bool staticNativeFunction = metadata.FunctionPointerField.IsStatic;
         bool hasReturnValue = !methodDef.ReturnsVoid();
@@ -296,7 +306,7 @@ public static class FunctionProcessor
         }
         
         processor.Emit(OpCodes.Ldarg_0);
-        processor.Emit(OpCodes.Call, WeaverImporter.NativeObjectGetter);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.NativeObjectGetter);
 
         if (staticNativeFunction)
         {
@@ -314,10 +324,10 @@ public static class FunctionProcessor
         }
         else
         {
-            processor.Emit(OpCodes.Ldsfld, WeaverImporter.IntPtrZero);
+            processor.Emit(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero);
         }
 
-        processor.Emit(OpCodes.Call, WeaverImporter.InvokeNativeFunctionMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InvokeNativeFunctionMethod);
 
         foreach (Instruction instruction in allCleanupInstructions)
         {
@@ -347,7 +357,7 @@ public static class FunctionProcessor
         }
 
         // Marshal return value back from the native parameter buffer.
-        if (metadata.HasReturnValue)
+        if (metadata.ReturnValue != null)
         {
             // Return value is always the last parameter.
             Instruction[] load = NativeDataType.GetArgumentBufferInstructions(loadArgumentBuffer, paramRewriteInfos[^1].OffsetField!);
@@ -364,17 +374,17 @@ public static class FunctionProcessor
         Instruction branchTarget = processor.Body.Instructions[0];
         processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldarg_0));
         processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldfld, metadata.FunctionPointerField));
-        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldsfld, WeaverImporter.IntPtrZero));
+        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero));
         
-        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.IntPtrEqualsOperator));
+        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.Instance.IntPtrEqualsOperator));
 
         Instruction branchPosition = processor.Create(OpCodes.Ldarg_0);
 
         processor.InsertBefore(branchTarget, branchPosition);
         processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldarg_0));
-        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.NativeObjectGetter));
+        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.Instance.NativeObjectGetter));
         processor.InsertBefore(branchTarget, processor.Create(OpCodes.Ldstr, methodDef.Name));
-        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.GetNativeFunctionFromInstanceAndNameMethod));
+        processor.InsertBefore(branchTarget, processor.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeFunctionFromInstanceAndNameMethod));
         processor.InsertBefore(branchTarget, processor.Create(OpCodes.Stfld, metadata.FunctionPointerField));
         processor.InsertBefore(branchPosition, processor.Create(OpCodes.Brfalse, branchTarget));
         
@@ -389,7 +399,7 @@ public static class FunctionProcessor
 
     public static MethodDefinition CreateMethod(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
-        MethodDefinition def = new MethodDefinition(name, attributes, returnType ?? WeaverImporter.VoidTypeRef);
+        MethodDefinition def = new MethodDefinition(name, attributes, returnType ?? WeaverImporter.Instance.VoidTypeRef);
 
         if (parameters != null)
         {
@@ -410,7 +420,7 @@ public static class FunctionProcessor
     
     public static void AddOffsetField(TypeDefinition classDefinition, PropertyMetaData propertyMetaData, FunctionMetaData func, int index, FunctionParamRewriteInfo[] paramRewriteInfos)
     {
-        FieldDefinition newField = classDefinition.AddField(func.Name + "_" + propertyMetaData.Name + "_Offset", WeaverImporter.Int32TypeRef);
+        FieldDefinition newField = classDefinition.AddField(func.Name + "_" + propertyMetaData.Name + "_Offset", WeaverImporter.Instance.Int32TypeRef);
         paramRewriteInfos[index].OffsetField = newField;
         propertyMetaData.PropertyOffsetField = newField;
     }
@@ -422,7 +432,7 @@ public static class FunctionProcessor
             return;
         }
 
-        var newField = classDefinition.AddField(func.Name + "_" + propertyMetaData.Name + "_NativeProperty", WeaverImporter.IntPtrType,
+        var newField = classDefinition.AddField(func.Name + "_" + propertyMetaData.Name + "_NativeProperty", WeaverImporter.Instance.IntPtrType,
             FieldAttributes.InitOnly | FieldAttributes.Static | FieldAttributes.Private);
         paramRewriteInfos[index].NativePropertyField = newField;
         propertyMetaData.NativePropertyField = newField;
@@ -445,7 +455,7 @@ public static class FunctionProcessor
         processor.Emit(OpCodes.Ldsfld, paramsSizeField);
         processor.Emit(OpCodes.Conv_I4);
         processor.Emit(OpCodes.Localloc);
-        VariableDefinition argumentsBuffer = methodDef.AddLocalVariable(new PointerType(WeaverImporter.ByteTypeRef));
+        VariableDefinition argumentsBuffer = methodDef.AddLocalVariable(new PointerType(WeaverImporter.Instance.ByteTypeRef));
         processor.Emit(OpCodes.Stloc, argumentsBuffer);
 
         // nint num = (nint) ptr;
@@ -454,13 +464,13 @@ public static class FunctionProcessor
         //IL_003c: stloc 1
         processor.Emit(OpCodes.Ldloc, argumentsBuffer);
         processor.Emit(OpCodes.Conv_I);
-        argumentsBufferPtr = methodDef.AddLocalVariable(WeaverImporter.IntPtrType);
+        argumentsBufferPtr = methodDef.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
         processor.Emit(OpCodes.Stloc, argumentsBufferPtr);
         
         // Initialize values
         LoadNativeFunctionField(processor, metadata);
         processor.Emit(OpCodes.Ldloc, argumentsBufferPtr);
-        processor.Emit(OpCodes.Call, WeaverImporter.InitializeStructMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InitializeStructMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
 

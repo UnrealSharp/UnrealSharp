@@ -1,6 +1,7 @@
 #include "CSEnumPropertyGenerator.h"
 
 #include "CSManager.h"
+#include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/Register/MetaData/CSEnumPropertyMetaData.h"
 
 FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -10,6 +11,14 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(EnumPropertyMetaData->InnerProperty.AssemblyName);
 	UEnum* Enum = Assembly->FindEnum(EnumPropertyMetaData->InnerProperty.FieldName);
+
+	if (UCSEnum* ManagedEnum = Cast<UCSEnum>(Enum))
+	{
+		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
+		{
+			ManagedEnum->ManagedReferences.AddReference(OwningClass);
+		}
+	}
 	
 	FByteProperty* UnderlyingProp = new FByteProperty(NewProperty, "UnderlyingType", RF_Public);
 	

@@ -20,7 +20,7 @@ public static class ConstructorBuilder
         if (staticConstructor == null)
         {
             staticConstructor = type.AddMethod(".cctor", 
-                WeaverImporter.VoidTypeRef,
+                WeaverImporter.Instance.VoidTypeRef,
                 attributes | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
                 parameterTypes);
         }
@@ -40,7 +40,7 @@ public static class ConstructorBuilder
         if (constructor == null)
         {
             constructor = typeDefinition.AddMethod(".ctor", 
-                WeaverImporter.VoidTypeRef,
+                WeaverImporter.Instance.VoidTypeRef,
                 attributes | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                 parameterTypes);
         }
@@ -92,7 +92,7 @@ public static class ConstructorBuilder
             Instruction setNativeProperty;
             if (property.NativePropertyField == null)
             {
-                VariableDefinition nativePropertyVar = processor.Body.Method.AddLocalVariable(WeaverImporter.IntPtrType);
+                VariableDefinition nativePropertyVar = processor.Body.Method.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
                 loadNativeProperty = Instruction.Create(OpCodes.Ldloc, nativePropertyVar);
                 setNativeProperty = Instruction.Create(OpCodes.Stloc, nativePropertyVar);
             }

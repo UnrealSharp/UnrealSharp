@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharp.Shared;
 
 public static class DotNetUtilities
 {
-	const string DOTNET_MAJOR_VERSION = "9.0";
+	public const string DOTNET_MAJOR_VERSION = "9.0";
+	public const string DOTNET_MAJOR_VERSION_DISPLAY = "net" + DOTNET_MAJOR_VERSION;
 	
     public static string FindDotNetExecutable()
     {
@@ -57,7 +56,7 @@ public static class DotNetUtilities
 		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
     }
 
-    private static string GetLatestDotNetSdkPath()
+    public static string GetLatestDotNetSdkPath()
     {
 	    string dotNetExecutable = FindDotNetExecutable();
 	    string dotNetExecutableDirectory = Path.GetDirectoryName(dotNetExecutable)!;
@@ -95,22 +94,22 @@ public static class DotNetUtilities
 	    return Path.Combine(dotNetSdkDirectory, highestVersion);
     }
     
-    public static void BuildSolution(string projectRootDirectory)
+    public static void BuildSolution(string projectRootDirectory, string managedBinariesPath)
     {
     	if (!Directory.Exists(projectRootDirectory))
     	{
     		throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
     	}
 	    
-	    if (!Directory.Exists(Program.ManagedBinariesPath))
+	    if (!Directory.Exists(managedBinariesPath))
 	    {
-		    Directory.CreateDirectory(Program.ManagedBinariesPath);
+		    Directory.CreateDirectory(managedBinariesPath);
 	    }
 	    
     	Collection<string> arguments = new Collection<string>
 		{
 			"publish",
-			$"-p:PublishDir=\"{Program.ManagedBinariesPath}\""
+			$"-p:PublishDir=\"{managedBinariesPath}\""
 		};
 
 	    InvokeDotNet(arguments, projectRootDirectory);
@@ -181,11 +180,16 @@ Standard Error: {standardError}";
 	    }
     }
 
-    public static void InvokeUSharpBuildTool(string action, Dictionary<string, string>? additionalArguments = null)
+    public static void InvokeUSharpBuildTool(string action, 
+	    string managedBinariesPath, 
+	    string projectName, 
+	    string pluginDirectory, 
+	    string projectDirectory, 
+	    string engineDirectory, 
+	    Dictionary<string, string>? additionalArguments = null)
     {
 	    string dotNetExe = FindDotNetExecutable();
-	    string projectName = Path.GetFileNameWithoutExtension(Program.Factory.Session.ProjectFile)!;
-	    string unrealSharpBuildToolPath = Path.Combine(Program.ManagedBinariesPath, "UnrealSharpBuildTool.dll");
+	    string unrealSharpBuildToolPath = Path.Combine(managedBinariesPath, "UnrealSharpBuildTool.dll");
 	    
 	    if (!File.Exists(unrealSharpBuildToolPath))
 	    {
@@ -200,16 +204,16 @@ Standard Error: {standardError}";
 		    action,
 		    
 		    "--EngineDirectory",
-		    $"{Program.Factory.Session.EngineDirectory}",
+		    $"{engineDirectory}",
 		    
 		    "--ProjectDirectory",
-		    $"{Program.Factory.Session.ProjectDirectory}",
+		    $"{projectDirectory}",
 		    
 		    "--ProjectName",
 		    projectName,
 		    
 		    "--PluginDirectory",
-		    $"{Program.PluginDirectory}",
+		    $"{pluginDirectory}",
 		    
 		    "--DotNetPath",
 		    $"{dotNetExe}"

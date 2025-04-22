@@ -112,7 +112,7 @@ public class GenerateProject : BuildToolAction
             if (csprojDocument.SelectSingleNode("//ItemGroup") is not XmlElement newItemGroup)
             {
                 newItemGroup = csprojDocument.CreateElement("ItemGroup");
-                csprojDocument.DocumentElement.AppendChild(newItemGroup);
+                csprojDocument.DocumentElement!.AppendChild(newItemGroup);
             }
             
             AppendProperties(csprojDocument);
@@ -237,22 +237,22 @@ public class GenerateProject : BuildToolAction
 public class Root
 {
     [JsonProperty("profiles")]
-    public Profiles Profiles { get; set; }
+    public Profiles Profiles { get; set; } = new Profiles();
 }
 public class Profiles
 {
     [JsonProperty("UnrealSharp")]
-    public Profile ProfileName { get; set; }
+    public Profile ProfileName { get; set; } = new Profile();
 }
 
 public class Profile
 {
     [JsonProperty("commandName")]
-    public string CommandName { get; set; }
+    public string CommandName { get; set; } = string.Empty;
 
     [JsonProperty("executablePath")]
-    public string ExecutablePath { get; set; }
+    public string ExecutablePath { get; set; } = string.Empty;
 
     [JsonProperty("commandLineArgs")]
-    public string CommandLineArgs { get; set; }
+    public string CommandLineArgs { get; set; } = string.Empty;
 }

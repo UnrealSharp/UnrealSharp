@@ -204,9 +204,6 @@ public class FunctionExporter
 
         bool hasGenericClassParam = false;
 
-        int customStructParamCount = _function.GetCustomStructParams().Count;
-        int customStructParamIndex = 0;
-
         _customStructParamTypes = _function.GetCustomStructParamTypes();
         
         for (int i = 0; i < _function.Children.Count; i++)

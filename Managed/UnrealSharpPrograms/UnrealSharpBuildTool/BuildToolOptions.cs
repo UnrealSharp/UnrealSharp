@@ -29,22 +29,22 @@ public class BuildToolOptions
     public BuildAction Action { get; set; }
     
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
-    public string? DotNetPath { get; set; }
+    public string DotNetPath { get; set; } = string.Empty;
     
     [Option("ProjectDirectory", Required = true, HelpText = "The directory where the .uproject file resides.")]
-    public string ProjectDirectory { get; set; }
+    public string ProjectDirectory { get; set; } = string.Empty;
     
     [Option("PluginDirectory", Required = false, HelpText = "The UnrealSharp plugin directory.")]
-    public string PluginDirectory { get; set; }
+    public string PluginDirectory { get; set; } = string.Empty;
     
     [Option("EngineDirectory", Required = false, HelpText = "The Unreal Engine directory.")]
-    public string EngineDirectory { get; set; }
+    public string EngineDirectory { get; set; } = string.Empty;
     
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
-    public string ProjectName { get; set; }
+    public string ProjectName { get; set; } = string.Empty;
     
     [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments for the build tool.")]
-    public IEnumerable<string> AdditionalArgs { get; set; }
+    public IEnumerable<string> AdditionalArgs { get; set; } = new List<string>();
     
     public string TryGetArgument(string argument)
     {
@@ -75,7 +75,7 @@ public class BuildToolOptions
 
     public static void PrintHelp(ParserResult<BuildToolOptions> result)
     {
-        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly()!.Location);
         Console.Error.WriteLine($"Usage: {name} [options]");
         Console.Error.WriteLine("Options:");
 

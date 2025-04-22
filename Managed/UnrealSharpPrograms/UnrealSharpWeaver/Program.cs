@@ -11,17 +11,34 @@ public static class Program
 {
     public static WeaverOptions WeaverOptions { get; private set; } = null!;
 
+    public static void Weave(WeaverOptions weaverOptions)
+    {
+        try 
+        {
+            WeaverOptions = weaverOptions;
+            LoadBindingsAssembly();
+            ProcessUserAssemblies();
+        }
+        finally
+        {
+            WeaverImporter.Shutdown();
+        }
+    }
+
     public static int Main(string[] args)
     {
-        WeaverOptions = WeaverOptions.ParseArguments(args);
-        LoadBindingsAssembly();
-        
-        if (!ProcessUserAssemblies())
+        try 
         {
-            return 2;
+            WeaverOptions = WeaverOptions.ParseArguments(args);
+            LoadBindingsAssembly();
+            ProcessUserAssemblies();
+            return 0;
         }
-
-        return 0;
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            return 1;
+        }
     }
 
     private static void LoadBindingsAssembly()
@@ -47,12 +64,12 @@ public static class Program
             searchPaths.Add(directory);
         }
 
-        WeaverImporter.Initialize(resolver);
+        WeaverImporter.Instance.AssemblyResolver = resolver;
     }
 
-    private static bool ProcessUserAssemblies()
+    private static void ProcessUserAssemblies()
     {
-        var outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
+        DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
         
         if (!outputDirInfo.Exists)
         {
@@ -64,56 +81,59 @@ public static class Program
         ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
         
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
-        return ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
+        ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
     }
     
     private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
     {
-        var unrealSharpMetadata = new UnrealSharpMetadata
+        UnrealSharpMetadata unrealSharpMetadata = new UnrealSharpMetadata
         {
             AssemblyLoadingOrder = orderedAssemblies
                 .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
         };
         
-        var metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
+        string metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
         {
             WriteIndented = false,
         });
 
-        var fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
+        string fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
         File.WriteAllText(fileName, metaDataContent);
     }
     
-    private static bool ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
+    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
     {
-        var noErrors = true;
+        Exception? exception = null;
+
         foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.FullName == WeaverImporter.ProjectGlueAssembly.FullName)
+            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName)
             {
                 continue;
             }
             
             try
             {
-                string weaverOutputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
-                StartWeavingAssembly(assembly, weaverOutputPath);
-            }
-            catch (WeaverProcessError error)
-            {
-                ErrorEmitter.Error(error.GetType().Name, error.File, error.Line, $"Caught fatal error: {error.Message}");
-                noErrors = false;
+                string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
+                StartWeavingAssembly(assembly, outputPath);
+                WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Exception processing {assembly.MainModule.FileName}: {ex.Message}");
-                Console.Error.WriteLine(ex.StackTrace);
-                noErrors = false;
+                exception = ex;
+                break;
             }
-            WeaverImporter.WeavedAssemblies.Add(assembly);
         }
 
-        return noErrors;
+        foreach (AssemblyDefinition assembly in assemblies)
+        {
+            assembly.Dispose();
+        }
+
+        if (exception != null)
+        {
+            throw new AggregateException("Assembly processing failed", exception);
+        }
     }
 
     private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
@@ -219,7 +239,7 @@ public static class Program
 
     private static DefaultAssemblyResolver GetAssemblyResolver()
     {
-        return WeaverImporter.AssemblyResolver;
+        return WeaverImporter.Instance.AssemblyResolver;
     }
 
     private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
@@ -299,28 +319,19 @@ public static class Program
         }
 
         Task cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
+        WeaverImporter.Instance.ImportCommonTypes(assembly);
+        
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
-        
-        WeaverImporter.ImportCommonTypes(assembly);
-        
-        StartProcessingAssembly(assembly, ref assemblyMetaData);
+        StartProcessingAssembly(assembly, assemblyMetaData);
         
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
         CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
 
-        try
+        Task.WaitAll(cleanupTask);
+        assembly.Write(assemblyOutputPath, new WriterParameters
         {
-            Task.WaitAll(cleanupTask);
-            assembly.Write(assemblyOutputPath, new WriterParameters
-            {
-                SymbolWriterProvider = new PdbWriterProvider(),
-            });
-        }
-        catch (Exception ex)
-        {
-            ErrorEmitter.Error("WeaverError", assembly.MainModule.FileName, 0, "Failed to write assembly: " + ex.Message);
-            throw;
-        }
+            SymbolWriterProvider = new PdbWriterProvider(),
+        });
         
         WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
     }
@@ -336,7 +347,7 @@ public static class Program
         File.WriteAllText(metadataFilePath, metaDataContent);
     }
 
-    private static void StartProcessingAssembly(AssemblyDefinition userAssembly, ref ApiMetaData metadata)
+    private static void StartProcessingAssembly(AssemblyDefinition userAssembly, ApiMetaData metadata)
     {
         try
         {

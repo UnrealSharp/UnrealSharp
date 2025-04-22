@@ -36,7 +36,7 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     }
 
     public override void WriteGetter(TypeDefinition type, MethodDefinition getter, Instruction[] loadBufferPtr,
-        FieldDefinition fieldDefinition)
+        FieldDefinition? fieldDefinition)
     {
         ILProcessor processor = BeginSimpleGetter(getter);
         

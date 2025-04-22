@@ -11,6 +11,16 @@ public class WeaverOptions
 
     [Option('o', "output", Required = true, HelpText = "DLL output directory.")]
     public required string OutputDirectory { get; set; }
+    
+    public WeaverOptions(IEnumerable<string> assemblyPaths, string outputDirectory)
+    {
+        AssemblyPaths = assemblyPaths;
+        OutputDirectory = outputDirectory;
+    }
+    
+    public WeaverOptions() : this([], string.Empty)
+    {
+    }
 
     private static void PrintHelp(ParserResult<WeaverOptions> result)
     {
@@ -19,7 +29,7 @@ public class WeaverOptions
             return;
         }
         
-        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+        string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly()!.Location);
         Console.Error.WriteLine($"Usage: {name}");
         Console.Error.WriteLine("Commands: ");
         

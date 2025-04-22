@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.Utilities;
@@ -8,17 +7,17 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class PropertyMetaData : BaseMetaData
 {
-    public PropertyFlags PropertyFlags { get; set; }
-    public NativeDataType PropertyDataType { get; set; }
-    public string RepNotifyFunctionName { get; set; }
-    public LifetimeCondition LifetimeCondition { get; set; }
-    public string BlueprintSetter { get; set; }
-    public string BlueprintGetter { get; set; }
+    public PropertyFlags PropertyFlags { get; set; } = PropertyFlags.None;
+    public NativeDataType PropertyDataType { get; set; } = null!;
+    public string RepNotifyFunctionName { get; set; } = string.Empty;
+    public LifetimeCondition LifetimeCondition { get; set; } = LifetimeCondition.None;
+    public string BlueprintSetter { get; set; } = string.Empty;
+    public string BlueprintGetter { get; set; } = string.Empty;
 
     // Non-serialized for JSON
-    public FieldDefinition PropertyOffsetField;
+    public FieldDefinition? PropertyOffsetField;
     public FieldDefinition? NativePropertyField;
-    public readonly MemberReference MemberRef;
+    public readonly MemberReference? MemberRef;
     public bool IsOutParameter => (PropertyFlags & PropertyFlags.OutParm) == PropertyFlags.OutParm;
     public bool IsReferenceParameter => (PropertyFlags & PropertyFlags.ReferenceParm) == PropertyFlags.ReferenceParm;
     public bool IsReturnParameter => (PropertyFlags & PropertyFlags.ReturnParm) == PropertyFlags.ReturnParm;
@@ -27,7 +26,7 @@ public class PropertyMetaData : BaseMetaData
     
     private PropertyMetaData(MemberReference memberRef) : base(memberRef, PropertyUtilities.UPropertyAttribute)
     {
-        
+
     }
 
     private PropertyMetaData(TypeReference typeRef, string paramName, ParameterType modifier) : this(typeRef)
@@ -199,24 +198,15 @@ public class PropertyMetaData : BaseMetaData
     {
         processor.Append(loadNativeType);
         processor.Emit(OpCodes.Ldstr, Name);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetNativePropertyFromNameMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetNativePropertyFromNameMethod);
         processor.Append(setPropertyPointer);
     }
     
     public void InitializePropertyOffsets(ILProcessor processor, Instruction loadNativeType)
     {
         processor.Append(loadNativeType);
-        processor.Emit(OpCodes.Call, WeaverImporter.GetPropertyOffset);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetPropertyOffset);
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
-    }
-    
-    public PropertyDefinition FindPropertyDefinition(TypeDefinition type)
-    {
-        PropertyDefinition[] definitions = (from propDef in type.Properties
-            where propDef.Name == Name
-            select propDef).ToArray();
-
-        return definitions.Length > 0 ? definitions[0] : null;
     }
     
     public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
