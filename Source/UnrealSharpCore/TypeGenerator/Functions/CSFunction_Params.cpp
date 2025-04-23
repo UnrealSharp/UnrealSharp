@@ -60,6 +60,10 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			FunctionParameter->CopyCompleteValue(ArgumentData.GetData() + FunctionParameter->GetOffset_ForInternal(), ValueAddress);
 		}
 	}
+	else
+	{
+		OutParameters = Stack.OutParms;
+	}
 	
 	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentBuffer, RESULT_PARAM))
 	{
