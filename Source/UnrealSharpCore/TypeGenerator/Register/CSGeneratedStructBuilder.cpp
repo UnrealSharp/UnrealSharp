@@ -53,6 +53,8 @@ void FCSGeneratedStructBuilder::PurgeStruct()
 	Field->PropertiesSize = 0;
 	Field->MinAlignment = 0;
 	Field->RefLink = nullptr;
+#if WITH_EDITORONLY_DATA
 	Field->PrimaryStruct = nullptr;
 	Field->EditorData = nullptr;
+#endif
 }

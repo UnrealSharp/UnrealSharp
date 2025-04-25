@@ -14,7 +14,9 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	{
 		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
 		{
+#if WITH_EDITORONLY_DATA
 			ManagedStruct->ManagedReferences.AddReference(OwningClass);
+#endif
 		}
 	}
 	
