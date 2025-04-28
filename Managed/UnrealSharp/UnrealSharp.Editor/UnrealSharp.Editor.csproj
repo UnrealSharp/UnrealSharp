@@ -29,7 +29,4 @@
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.13.9" ExcludeAssets="runtime" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Include="..\..\Shared\DotNetUtilities.cs" Link="..\..\Shared\DotNetUtilities.cs" />
-    </ItemGroup>
 </Project>
