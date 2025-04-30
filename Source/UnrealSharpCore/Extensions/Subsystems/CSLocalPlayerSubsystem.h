@@ -7,7 +7,7 @@
 #include "CSLocalPlayerSubsystem.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
-class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem
+class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem, public FTickableGameObject
 {
 	GENERATED_BODY()
 
@@ -45,8 +45,43 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem
 	}
 	// End
 
+	// FTickableGameObject Begin
+
+	virtual void Tick(float DeltaTime) override
+	{
+		K2_Tick(DeltaTime);
+	}
+
+	virtual ETickableTickType GetTickableTickType() const override
+	{
+		return ETickableTickType::Conditional;
+	}
+
+	virtual bool IsTickable() const override
+	{
+		return bIsTickable;
+	}
+
+	virtual TStatId GetStatId() const override
+	{
+		RETURN_QUICK_DECLARE_CYCLE_STAT(UCSLocalPlayerSubsystem, STATGROUP_Tickables);
+	}
+
+	// End
+
 	UFUNCTION(meta = (ScriptMethod))
 	ULocalPlayer* K2_GetLocalPlayer() const;
+
+public:
+
+	UPROPERTY(EditAnywhere, Category = "Managed Subsystems")
+	bool bIsTickable;
+
+	UFUNCTION(BlueprintCallable, Category = "Managed Subsystems")
+	void SetIsTickable(bool bInIsTickable)
+	{
+		bIsTickable = bInIsTickable;
+	}
 
 protected:
 
@@ -61,5 +96,7 @@ protected:
   
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"), Category = "Managed Subsystems")
 	void K2_Deinitialize();
-	
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"), Category = "Managed Subsystems")
+	void K2_Tick(float DeltaTime);
 };

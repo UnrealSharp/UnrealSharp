@@ -7,7 +7,7 @@
 #include "CSEngineSubsystem.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
-class UCSEngineSubsystem : public UEngineSubsystem
+class UCSEngineSubsystem : public UEngineSubsystem, public FTickableGameObject
 {
 	GENERATED_BODY()
 
@@ -37,6 +37,41 @@ class UCSEngineSubsystem : public UEngineSubsystem
 
 	// End
 
+	// FTickableGameObject Begin
+
+	virtual void Tick(float DeltaTime) override
+	{
+		K2_Tick(DeltaTime);
+	}
+
+	virtual ETickableTickType GetTickableTickType() const override
+	{
+		return ETickableTickType::Conditional;
+	}
+
+	virtual bool IsTickable() const override
+	{
+		return bIsTickable;
+	}
+
+	virtual TStatId GetStatId() const override
+	{
+		RETURN_QUICK_DECLARE_CYCLE_STAT(UCSEngineSubsystem, STATGROUP_Tickables);
+	}
+
+	// End
+
+public:
+
+	UPROPERTY(EditAnywhere, Category = "Managed Subsystems")
+	bool bIsTickable;
+
+	UFUNCTION(BlueprintCallable, Category = "Managed Subsystems")
+	void SetIsTickable(bool bInIsTickable)
+	{
+		bIsTickable = bInIsTickable;
+	}
+
 protected:
 
 	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
@@ -47,5 +82,8 @@ protected:
   
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"), Category = "Managed Subsystems")
 	void K2_Deinitialize();
-	
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"), Category = "Managed Subsystems")
+	void K2_Tick(float DeltaTime);	
+
 };
