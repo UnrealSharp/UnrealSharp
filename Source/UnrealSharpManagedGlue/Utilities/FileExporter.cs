@@ -50,7 +50,7 @@ public static class FileExporter
             File.WriteAllText(absoluteFilePath, text);
             ChangedFiles.Add(absoluteFilePath);
             
-            if (package.IsPackagePartOfEngine())
+            if (package.IsPartOfEngine())
             {
                 CSharpExporter.HasModifiedEngineGlue = true; 
             }
@@ -75,7 +75,7 @@ public static class FileExporter
             throw new Exception("Package is null");
         }
 
-        string rootPath = package.IsPackagePartOfEngine() ? Program.EngineGluePath : Program.ProjectGluePath;
+        string rootPath = package.IsPartOfEngine() ? Program.EngineGluePath : Program.ProjectGluePath;
         return Path.Combine(rootPath, package.GetShortName());
     }
     

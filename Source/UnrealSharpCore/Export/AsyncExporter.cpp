@@ -1,6 +1,5 @@
 ﻿#include "AsyncExporter.h"
-#include "UnrealSharpCore/CSManager.h"
-#include "CSManagedCallbacksCache.h"
+#include "CSManagedDelegate.h"
 
 void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
 {
@@ -8,19 +7,16 @@ void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Typ
 	
 	AsyncTask(Thread, [WeakWorldContextObject, DelegateHandle]()
 	{
-		FGCHandle Handle(DelegateHandle, GCHandleType::StrongHandle);
+		FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle, GCHandleType::StrongHandle);
 		
 		if (!WeakWorldContextObject.IsValid())
 		{
-			Handle.Dispose();
+			ManagedDelegate.Dispose();
 			return;
 		}
 
 		UObject* WorldContextObject = WeakWorldContextObject.Get();
-		UCSManager::Get().SetCurrentWorldContext(WorldContextObject);
-		
-		FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(Handle.GetHandle());
-		Handle.Dispose();
+		ManagedDelegate.Invoke(WorldContextObject);
 	});
 }
 

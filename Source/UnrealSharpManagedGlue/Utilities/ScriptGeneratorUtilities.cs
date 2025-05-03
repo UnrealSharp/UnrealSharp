@@ -174,11 +174,6 @@ public static class ScriptGeneratorUtilities
         }
     }
     
-    public static bool IsPackagePartOfEngine(this UhtPackage package)
-    {
-        return package.IsPartOfEngine() || package.GetModule() == Program.Factory.PluginModule;
-    }
-    
     public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         List<UhtFunction> exportedFunctions = new();
@@ -220,7 +215,7 @@ public static class ScriptGeneratorUtilities
                     continue;
                 }
                 
-                if (structToConvertProperty.Package.IsPackagePartOfEngine() != function.Package.IsPackagePartOfEngine())
+                if (structToConvertProperty.Package.IsPartOfEngine() != function.Package.IsPartOfEngine())
                 {
                     // For auto-casts to work, they both need to be in the same generated assembly. 
                     // Currently not supported, as we separate engine and project generated assemblies.

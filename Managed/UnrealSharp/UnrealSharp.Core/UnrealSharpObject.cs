@@ -43,7 +43,8 @@ public class UnrealSharpObject : IDisposable
         get
         {
             IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
-            return GCHandleUtilities.GetObjectFromHandlePtr<UnrealSharpObject>(worldContextObject)!;
+            IntPtr handle = FCSManagerExporter.CallFindManagedObject(worldContextObject);
+            return GCHandleUtilities.GetObjectFromHandlePtr<UnrealSharpObject>(handle)!;
         }
     }
     

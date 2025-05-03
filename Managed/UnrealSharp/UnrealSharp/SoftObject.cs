@@ -7,6 +7,7 @@ using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
+using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp;
 
@@ -71,11 +72,27 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// Loads the object asynchronously.
     /// </summary>
     /// <param name="onLoaded"> The callback to call when the object is loaded. </param>
-    public void LoadAsync(OnSoftObjectLoaded onLoaded)
+    public async Task<T> LoadAsync()
     {
-        UCSAsyncLoadSoftObjectPtr asyncLoadSoftObjectPtr = UCSAsyncLoadSoftObjectPtr.AsyncLoadSoftObjectPtr(SoftObjectPath);
-        asyncLoadSoftObjectPtr.OnSuccess += onLoaded;
-        asyncLoadSoftObjectPtr.Activate();
+        if (IsNull)
+        {
+            throw new Exception($"SoftObjectPath is null: {SoftObjectPath}");
+        }
+        
+        if (IsValid)
+        {
+            return Get()!;
+        }
+        
+        IList<TSoftObjectPtr<T>> objectsToLoad = [this];
+        List<T> loadedObjects = await objectsToLoad.LoadAsync();
+        
+        if (loadedObjects.Count == 0)
+        {
+            throw new Exception($"Failed to load {SoftObjectPath}");
+        }
+        
+        return loadedObjects[0];
     }
     
     private T? Get()
@@ -87,18 +104,32 @@ public struct TSoftObjectPtr<T> where T : UObject
 
 public static class SoftObjectPtrExtensions
 {
-    public static void LoadAsync<T>(this IList<TSoftObjectPtr<T>> softObjectPtr, OnSoftObjectListLoaded onLoaded) where T : UObject
+    public static async Task<List<T>> LoadAsync<T>(this IList<TSoftObjectPtr<T>> softObjectPtr) where T : UObject
     {
         List<FSoftObjectPath> objectsToLoad = new List<FSoftObjectPath>(softObjectPtr.Count);
-        
-        foreach (var ptr in softObjectPtr)
+
+        foreach (TSoftObjectPtr<T> ptr in softObjectPtr)
         {
             objectsToLoad.Add(ptr.SoftObjectPath);
         }
         
-        UCSAsyncLoadSoftObjectPtrList asyncLoader = UCSAsyncLoadSoftObjectPtrList.AsyncLoadSoftObjectPtrList(objectsToLoad);
-        asyncLoader.OnSuccess += onLoaded;
-        asyncLoader.Activate();
+        UCSAsyncLoadSoftPtr asyncLoader = UCSAsyncLoadSoftPtr.LoadAsyncSoftPtr(objectsToLoad);
+        IReadOnlyList<FSoftObjectPath> loadedPaths = await asyncLoader.LoadTask;
+        List<UObject> loadedObjects = new List<UObject>(loadedPaths.Count);
+        
+        foreach (FSoftObjectPath path in loadedPaths)
+        {
+            UObject? foundObject = path.ResolveObject();
+            
+            if (foundObject == null)
+            {
+                continue;
+            }
+            
+            loadedObjects.Add(foundObject);
+        }
+
+        return loadedObjects.Cast<T>().ToList();
     }
 }
 

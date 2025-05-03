@@ -125,6 +125,16 @@ public struct TSubclassOf<T>
 
         return new TSubclassOf<TChildClass>(NativeClass);
     }
+    
+    /// <summary>
+    /// Cast the class to a subclass of the specified type.
+    /// </summary>
+    /// <typeparam name="TChildClass">The type to cast the class to.</typeparam>
+    /// <returns> The subclass of the specified type.</returns>
+    public TSubclassOf<TChildClass> Cast<TChildClass>()
+    {
+        return As<TChildClass>();
+    }
 
     /// <summary>
     /// Check if the class is a subclass of the specified type.

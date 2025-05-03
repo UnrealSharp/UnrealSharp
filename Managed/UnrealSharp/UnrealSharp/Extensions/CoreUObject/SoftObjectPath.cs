@@ -1,5 +1,6 @@
 using UnrealSharp.Attributes;
 using UnrealSharp.Core.Attributes;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -38,12 +39,7 @@ public partial struct FSoftObjectPath
     
     public UObject? ResolveObject()
     {
-        if (AssetPath.IsNull())
-        {
-            return default;
-        }
-
-        return default;
+        return UCSSoftObjectPathExtensions.ResolveObject(this);
     }
     
     public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)

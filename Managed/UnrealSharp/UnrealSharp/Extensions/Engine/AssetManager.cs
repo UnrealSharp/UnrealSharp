@@ -1,144 +1,182 @@
 ﻿using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
+using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp.Engine;
 
 public partial class UAssetManager
 {
     /// <summary>
-    /// Gets the AssetManager singleton of the specified type
+    ///     Gets the AssetManager singleton of the specified type
     /// </summary>
     public static T Get<T>() where T : UAssetManager
     {
         IntPtr handle = UAssetManagerExporter.CallGetAssetManager();
-        
+
         if (handle == IntPtr.Zero)
         {
             throw new Exception("Failed to get AssetManager singleton");
         }
-        
+
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
-    
+
     /// <summary>
-    /// Gets the AssetManager singleton
+    ///     Gets the AssetManager singleton
     /// </summary>
     public static UAssetManager Get()
     {
         return Get<UAssetManager>();
     }
-    
+
     /// <summary>
-    /// Load a primary asset object into memory, this will cause it to stay loaded until it is explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded object to verify it is the correct type.
-    /// If LoadBundles is specified, those bundles are loaded along with the asset.
+    ///     Loads a primary asset by its FPrimaryAssetId and returns it as a UObject.
+    ///     Optionally, you can provide a list of bundles to load alongside the asset.
+    ///     This method calls the generic LoadPrimaryAsset<T> method with UObject as the type.
     /// </summary>
     /// <param name="primaryAsset">The primary asset to load</param>
-    /// <param name="bundles">The bundles to load along with the asset</param>
-    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
-    public void LoadPrimaryAsset(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetLoaded onLoaded)
+    /// <param name="bundles">The bundles to load along with the asset (optional)</param>
+    /// <returns>The loaded UObject</returns>
+    public async Task<UObject> LoadPrimaryAsset(FPrimaryAssetId primaryAsset, IList<FName>? bundles = null)
     {
-        UAsyncActionLoadPrimaryAsset loadPrimaryAsset = UAsyncActionLoadPrimaryAsset.AsyncLoadPrimaryAsset(primaryAsset, bundles);
-        loadPrimaryAsset.Completed += onLoaded;
-        loadPrimaryAsset.Activate();
+        return await LoadPrimaryAsset<UObject>(primaryAsset, bundles);
     }
-    
+
     /// <summary>
-    /// Load a primary asset object into memory, this will cause it to stay loaded until it is explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded object to verify it is the correct type.
-    /// If LoadBundles is specified, those bundles are loaded along with the asset.
+    ///     Loads a primary asset of a specified type (T) by its FPrimaryAssetId.
+    ///     Optionally, you can provide a list of bundles to load alongside the asset.
+    ///     If the asset cannot be loaded or is not of the expected type, an exception will be thrown.
     /// </summary>
     /// <param name="primaryAsset">The primary asset to load</param>
-    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
-    public void LoadPrimaryAsset(FPrimaryAssetId primaryAsset, OnPrimaryAssetLoaded onLoaded)
+    /// <param name="bundles">The bundles to load along with the asset (optional)</param>
+    /// <typeparam name="T">The type of the asset to load</typeparam>
+    /// <returns>The loaded asset of type T</returns>
+    public async Task<T> LoadPrimaryAsset<T>(FPrimaryAssetId primaryAsset, IList<FName>? bundles = null) where T : UObject
     {
-        LoadPrimaryAsset(primaryAsset, new List<FName>(), onLoaded);
+        IList<T> assets = await LoadPrimaryAssets<T>(new List<FPrimaryAssetId> { primaryAsset }, bundles);
+        
+        if (assets.Count == 0)
+        {
+            throw new Exception($"Failed to load {primaryAsset}");
+        }
+
+        return assets[0];
     }
-    
+
     /// <summary>
-    /// Load a list of primary asset objects into memory, this will cause them to stay loaded until explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested assets found at completion.
-    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    ///     Loads multiple primary assets by their FPrimaryAssetId list and returns them as UObjects.
+    ///     Optionally, you can provide a list of bundles to load alongside the assets.
     /// </summary>
-    /// <param name="primaryAssets">The primary assets to load</param>
-    /// <param name="bundles">The bundles to load along with the assets</param>
-    /// <param name="onLoaded">The callback to execute when the assets are loaded</param>
-    public void LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetListLoaded onLoaded)
+    /// <param name="primaryAssets">A list of primary assets to load</param>
+    /// <param name="bundles">The bundles to load along with the assets (optional)</param>
+    /// <returns>A list of loaded UObjects</returns>
+    public async Task<IList<UObject>> LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null)
     {
-        UAsyncActionLoadPrimaryAssetList loadPrimaryAssets = UAsyncActionLoadPrimaryAssetList.AsyncLoadPrimaryAssetList(primaryAssets, bundles);
-        loadPrimaryAssets.Completed += onLoaded;
-        loadPrimaryAssets.Activate();
+        return await LoadPrimaryAssets<UObject>(primaryAssets, bundles);
     }
-    
+
     /// <summary>
-    /// Load a list of primary asset objects into memory, this will cause them to stay loaded until explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested assets found at completion.
-    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    ///     Loads multiple primary assets of a specified type (T) by their FPrimaryAssetId list.
+    ///     Optionally, you can provide a list of bundles to load alongside the assets.
+    ///     If the assets cannot be loaded or are not of the expected type, an exception will be thrown.
     /// </summary>
-    /// <param name="primaryAssets">The primary assets to load</param>
-    /// <param name="onLoaded">The callback to execute when the assets are loaded</param>
-    public void LoadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets, OnPrimaryAssetListLoaded onLoaded)
+    /// <param name="primaryAssets">A list of primary assets to load</param>
+    /// <param name="bundles">The bundles to load along with the assets (optional)</param>
+    /// <typeparam name="T">The type of the assets to load</typeparam>
+    /// <returns>A list of loaded assets of type T</returns>
+    public async Task<IList<T>> LoadPrimaryAssets<T>(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null) where T : UObject
     {
-        LoadPrimaryAssets(primaryAssets, new List<FName>(), onLoaded);
+        IList<UObject> loadedAssets = await LoadAssetsInternal<T>(primaryAssets, bundles);
+        return loadedAssets.Cast<T>().ToList();
     }
-    
+
     /// <summary>
-    /// Load a primary asset class  into memory, this will cause it to stay loaded until it is explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded class to verify it is the correct type.
-    /// If LoadBundles is specified, those bundles are loaded along with the asset.
-    /// </summary>
-    /// <param name="primaryAsset">The primary asset to load</param>
-    /// <param name="bundles">The bundles to load along with the asset</param>
-    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
-    public void LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, IList<FName> bundles, OnPrimaryAssetClassLoaded onLoaded)
-    {
-        UAsyncActionLoadPrimaryAssetClass loadPrimaryAssetClass = UAsyncActionLoadPrimaryAssetClass.AsyncLoadPrimaryAssetClass(primaryAsset, bundles);
-        loadPrimaryAssetClass.Completed += onLoaded;
-        loadPrimaryAssetClass.Activate();
-    }
-    
-    /// <summary>
-    /// Load a primary asset class  into memory, this will cause it to stay loaded until it is explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, you should cast the Loaded class to verify it is the correct type.
-    /// If LoadBundles is specified, those bundles are loaded along with the asset.
+    ///     Loads a primary asset class by its FPrimaryAssetId and returns it as a TSubclassOf
+    ///     <UObject>
+    ///         .
+    ///         Optionally, you can provide a list of bundles to load alongside the asset.
+    ///         This method calls the generic LoadPrimaryAssetClass<T> method with UObject as the type.
     /// </summary>
     /// <param name="primaryAsset">The primary asset to load</param>
-    /// <param name="onLoaded">The callback to execute when the asset is loaded</param>
-    public void LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, OnPrimaryAssetClassLoaded onLoaded)
+    /// <param name="bundles">The bundles to load along with the asset (optional)</param>
+    /// <returns>The loaded TSubclassOf<UObject> asset class</returns>
+    public async Task<TSubclassOf<UObject>> LoadPrimaryAssetClass(FPrimaryAssetId primaryAsset, IList<FName>? bundles = null)
     {
-        LoadPrimaryAssetClass(primaryAsset, new List<FName>(), onLoaded);
+        return await LoadPrimaryAssetClass<UObject>(primaryAsset, bundles);
     }
-    
+
     /// <summary>
-    /// Load a list of primary asset classes into memory, this will cause them to stay loaded until explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested classes found at completion.
-    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    ///     Loads a primary asset class of a specified type (T) by its FPrimaryAssetId.
+    ///     Optionally, you can provide a list of bundles to load alongside the asset.
+    ///     If the asset class cannot be loaded or is not of the expected type, an exception will be thrown.
     /// </summary>
-    /// <param name="primaryAssets">The primary assets to load</param>
-    /// <param name="bundles">The bundles to load along with the assets</param>
-    /// <param name="onLoaded">The callback to execute when the classes are loaded</param>
-    public void LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, IList<FName> bundles, OnPrimaryAssetClassListLoaded onLoaded)
+    /// <param name="primaryAsset">The primary asset to load</param>
+    /// <param name="bundles">The bundles to load along with the asset (optional)</param>
+    /// <typeparam name="T">The type of the asset class to load</typeparam>
+    /// <returns>The loaded TSubclassOf<T> asset class</returns>
+    public async Task<TSubclassOf<T>> LoadPrimaryAssetClass<T>(FPrimaryAssetId primaryAsset, IList<FName>? bundles = null) where T : UObject
     {
-        UAsyncActionLoadPrimaryAssetClassList loadPrimaryAssetClasses = UAsyncActionLoadPrimaryAssetClassList.AsyncLoadPrimaryAssetClassList(primaryAssets, bundles);
-        loadPrimaryAssetClasses.Completed += onLoaded;
-        loadPrimaryAssetClasses.Activate();
+        IList<TSubclassOf<T>> assets = await LoadPrimaryAssetClasses<T>(new List<FPrimaryAssetId> { primaryAsset }, bundles);
+
+        if (assets.Count == 0)
+        {
+            throw new Exception($"Failed to load {primaryAsset}");
+        }
+
+        return assets[0];
     }
-    
+
     /// <summary>
-    /// Load a list of primary asset classes into memory, this will cause them to stay loaded until explicitly unloaded.
-    /// The completed event will happen when the load succeeds or fails, and the Loaded list will contain all of the requested classes found at completion.
-    /// If LoadBundles is specified, those bundles are loaded along with the assets.
+    ///     Loads multiple primary asset classes by their FPrimaryAssetId list and returns them as TSubclassOf.
     /// </summary>
-    /// <param name="primaryAssets">The primary assets to load</param>
-    /// <param name="onLoaded">The callback to execute when the classes are loaded</param>
-    public void LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, OnPrimaryAssetClassListLoaded onLoaded)
+    /// <param name="primaryAssets">A list of primary assets to load</param>
+    /// <param name="bundles">The bundles to load along with the assets (optional)</param>
+    /// <returns>A list of loaded TSubclassOf<UObject> asset classes</returns>
+    public async Task<IList<TSubclassOf<UObject>>> LoadPrimaryAssetClasses(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null)
     {
-        LoadPrimaryAssetClasses(primaryAssets, new List<FName>(), onLoaded);
+        return await LoadPrimaryAssetClasses<UObject>(primaryAssets, bundles);
     }
-    
+
     /// <summary>
-    /// Returns the Object associated with a Primary Asset Id, this will only return a valid object if it is in memory, it will not load it
+    ///     Loads multiple primary asset classes of a specified type (T) by their FPrimaryAssetId list.
+    ///     Optionally, you can provide a list of bundles to load alongside the assets.
+    ///     If the assets cannot be loaded or are not of the expected type, an exception will be thrown.
+    /// </summary>
+    /// <param name="primaryAssets">A list of primary assets to load</param>
+    /// <param name="bundles">The bundles to load along with the assets (optional)</param>
+    /// <typeparam name="T">The type of the asset classes to load</typeparam>
+    /// <returns>A list of loaded asset classes of type T</returns>
+    public async Task<IList<TSubclassOf<T>>> LoadPrimaryAssetClasses<T>(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null) where T : UObject
+    {
+        IList<UObject> loadedAssets = await LoadAssetsInternal<T>(primaryAssets, bundles);
+        return loadedAssets.Select(asset => new TSubclassOf<T>(asset.NativeObject)).ToList();
+    }
+
+    async Task<IList<UObject>> LoadAssetsInternal<T>(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null) where T : UObject
+    {
+        UCSAsyncLoadPrimaryDataAssets loadPrimaryAssets = UCSAsyncLoadPrimaryDataAssets.LoadAsyncPrimaryDataAssets(primaryAssets, bundles);
+        IList<FPrimaryAssetId> loadedAssetIds = await loadPrimaryAssets.LoadTask;
+
+        List<UObject> loadedObjects = new List<UObject>(loadedAssetIds.Count);
+        foreach (FPrimaryAssetId assetId in loadedAssetIds)
+        {
+            UObject? foundObject = SystemLibrary.GetObject(assetId);
+
+            if (foundObject is not T castedObject)
+            {
+                throw new Exception($"Failed to load asset {assetId} as {typeof(T)}");
+            }
+
+            loadedObjects.Add(castedObject);
+        }
+
+        return loadedObjects;
+    }
+
+    /// <summary>
+    ///     Returns the Object associated with a Primary Asset Id, this will only return a valid object if it is in memory, it
+    ///     will not load it
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <returns>The object associated with the Primary Asset Id, or null if it is not loaded</returns>
@@ -146,20 +184,22 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetObject(primaryAssetId);
     }
-    
+
     /// <summary>
-    /// Returns the Object associated with a Primary Asset Id, this will only return a valid object if it is in memory, it will not load it
+    ///     Returns the Object associated with a Primary Asset Id, this will only return a valid object if it is in memory, it
+    ///     will not load it
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <typeparam name="T">The type of object to return</typeparam>
     public T? GetPrimaryAssetObject<T>(FPrimaryAssetId primaryAssetId) where T : UObject
     {
-        UObject foundObject = SystemLibrary.GetObject(primaryAssetId);
+        var foundObject = SystemLibrary.GetObject(primaryAssetId);
         return foundObject as T;
     }
-    
+
     /// <summary>
-    /// Returns the Blueprint Class associated with a Primary Asset Id, this will only return a valid object if it is in memory, it will not load it
+    ///     Returns the Blueprint Class associated with a Primary Asset Id, this will only return a valid object if it is in
+    ///     memory, it will not load it
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <returns>The Blueprint Class associated with the Primary Asset Id, or null if it is not loaded</returns>
@@ -167,9 +207,9 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetClass(primaryAssetId);
     }
-    
+
     /// <summary>
-    /// Returns the Object Id associated with a Primary Asset Id, this works even if the asset is not loaded
+    ///     Returns the Object Id associated with a Primary Asset Id, this works even if the asset is not loaded
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <returns>The Object Id associated with the Primary Asset Id</returns>
@@ -177,9 +217,9 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetSoftObjectReference(primaryAssetId);
     }
-    
+
     /// <summary>
-    /// Returns the Blueprint Class Id associated with a Primary Asset Id, this works even if the asset is not loaded
+    ///     Returns the Blueprint Class Id associated with a Primary Asset Id, this works even if the asset is not loaded
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <returns>The Blueprint Class Id associated with the Primary Asset Id</returns>
@@ -187,9 +227,9 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetSoftClassReference(primaryAssetId);
     }
-    
+
     /// <summary>
-    /// Returns the Primary Asset Id for an Object, this can return an invalid one if not registered
+    ///     Returns the Primary Asset Id for an Object, this can return an invalid one if not registered
     /// </summary>
     /// <param name="obj">The object to get the Primary Asset Id for</param>
     /// <returns>The Primary Asset Id for the object</returns>
@@ -199,7 +239,7 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    /// Returns the Primary Asset Id for a Class, this can return an invalid one if not registered
+    ///     Returns the Primary Asset Id for a Class, this can return an invalid one if not registered
     /// </summary>
     /// <param name="class">The class to get the Primary Asset Id for</param>
     /// <returns>The Primary Asset Id for the class</returns>
@@ -207,9 +247,9 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetPrimaryAssetIdFromClass(@class);
     }
-    
+
     /// <summary>
-    /// Returns the Primary Asset Id for a Soft Object Reference, this can return an invalid one if not registered
+    ///     Returns the Primary Asset Id for a Soft Object Reference, this can return an invalid one if not registered
     /// </summary>
     /// <param name="softObjectReference">The soft object reference to get the Primary Asset Id for</param>
     /// <returns>The Primary Asset Id for the soft object reference</returns>
@@ -217,9 +257,9 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetPrimaryAssetIdFromSoftObjectReference(softObjectReference);
     }
-    
+
     /// <summary>
-    /// Returns list of PrimaryAssetIds for a PrimaryAssetType
+    ///     Returns list of PrimaryAssetIds for a PrimaryAssetType
     /// </summary>
     /// <param name="assetType">The type of primary asset to get the list for</param>
     /// <param name="outPrimaryAssetIds">The list of primary asset ids</param>
@@ -227,9 +267,9 @@ public partial class UAssetManager
     {
         SystemLibrary.GetPrimaryAssetIdList(assetType, out outPrimaryAssetIds);
     }
-    
+
     /// <summary>
-    /// Unloads a primary asset, which allows it to be garbage collected if nothing else is referencing it
+    ///     Unloads a primary asset, which allows it to be garbage collected if nothing else is referencing it
     /// </summary>
     /// <param name="primaryAsset">The primary asset to unload</param>
     /// <returns>True if the asset was successfully unloaded</returns>
@@ -237,9 +277,9 @@ public partial class UAssetManager
     {
         SystemLibrary.Unload(primaryAsset);
     }
-    
+
     /// <summary>
-    /// Unloads a primary asset, which allows it to be garbage collected if nothing else is referencing it
+    ///     Unloads a primary asset, which allows it to be garbage collected if nothing else is referencing it
     /// </summary>
     /// <param name="primaryAssets">The primary assets to unload</param>
     public void UnloadPrimaryAssets(IList<FPrimaryAssetId> primaryAssets)
@@ -248,8 +288,9 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    /// Returns the list of loaded bundles for a given Primary Asset. This will return false if the asset is not loaded at all.
-    /// If ForceCurrentState is true it will return the current state even if a load is in process
+    ///     Returns the list of loaded bundles for a given Primary Asset. This will return false if the asset is not loaded at
+    ///     all.
+    ///     If ForceCurrentState is true it will return the current state even if a load is in process
     /// </summary>
     /// <param name="primaryAssetId">The primary asset to get the bundle state for</param>
     /// <param name="bForceCurrentState">Whether to force the current state</param>

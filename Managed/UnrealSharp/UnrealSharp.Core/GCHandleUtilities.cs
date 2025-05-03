@@ -16,6 +16,11 @@ public static class GCHandleUtilities
         StrongRefsByAssembly.TryRemove(alc, out _);
     }
 
+    public static GCHandle AllocateStrongPointer(object value, object allocator)
+    {
+        return AllocateStrongPointer(value, allocator.GetType().Assembly);
+    }
+    
     public static GCHandle AllocateStrongPointer(object value, Assembly alc)
     {
         AssemblyLoadContext? assemblyLoadContext = AssemblyLoadContext.GetLoadContext(alc);
@@ -24,9 +29,14 @@ public static class GCHandleUtilities
         {
             throw new InvalidOperationException("AssemblyLoadContext is null.");
         }
-        
+
+        return AllocateStrongPointer(value, assemblyLoadContext);
+    }
+
+    public static GCHandle AllocateStrongPointer(object value, AssemblyLoadContext loadContext)
+    {
         GCHandle weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
-        ConcurrentDictionary<GCHandle, object> strongReferences = StrongRefsByAssembly.GetOrAdd(assemblyLoadContext, alcInstance =>
+        ConcurrentDictionary<GCHandle, object> strongReferences = StrongRefsByAssembly.GetOrAdd(loadContext, alcInstance =>
         {
             alcInstance.Unloading += OnAlcUnloading;
             return new ConcurrentDictionary<GCHandle, object>();
