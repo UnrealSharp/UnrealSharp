@@ -1,11 +1,8 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
-using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpAsync;
 
@@ -36,12 +33,12 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// </summary>
     /// <returns> True if the object is loaded. </returns>
     public bool IsValid => SoftObjectPtr.Get() != null;
-    
+
     /// <summary>
     /// Does this soft object point to a valid object path?
     /// </summary>
     /// <returns> True if the path points to a valid object</returns>
-    public bool IsNull => SoftObjectPath.IsNull();
+    public bool IsNull => SoftObjectPath.Null;
     
     public TSoftObjectPtr(UObject obj)
     {
@@ -51,6 +48,11 @@ public struct TSoftObjectPtr<T> where T : UObject
     internal TSoftObjectPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> persistentObjectPtr)
     {
         SoftObjectPtr = new FPersistentObjectPtr(persistentObjectPtr);
+    }
+    
+    internal TSoftObjectPtr(FPersistentObjectPtr persistentObjectPtr)
+    {
+        SoftObjectPtr = persistentObjectPtr;
     }
 
     public override string ToString()
@@ -66,6 +68,19 @@ public struct TSoftObjectPtr<T> where T : UObject
     {
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+    }
+
+    /// <summary>
+    /// Casts this SoftObject to another class.
+    /// </summary>
+    public TSoftObjectPtr<T2> Cast<T2>() where T2 : UObject
+    {
+        if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
+        {
+            return new TSoftObjectPtr<T2>(SoftObjectPtr);
+        }
+
+        throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");
     }
     
     /// <summary>
@@ -117,7 +132,7 @@ public static class SoftObjectPtrExtensions
         
         foreach (FSoftObjectPath path in loadedPaths)
         {
-            if (path.ResolveObject() is T resolved)
+            if (path.Object is T resolved)
             {
                 result.Add(resolved);
             }

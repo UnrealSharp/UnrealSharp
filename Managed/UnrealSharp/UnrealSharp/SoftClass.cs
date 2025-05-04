@@ -40,7 +40,7 @@ public struct TSoftClassPtr<T> where T : UObject
     /// Checks if this soft class points to a valid class path.
     /// </summary>
     /// <returns> True if the path points to a valid class. </returns>
-    public bool IsNull => SoftObjectPath.IsNull();
+    public bool IsNull => SoftObjectPath.Null;
 
     public TSoftClassPtr(UObject obj)
     {
@@ -65,6 +65,19 @@ public struct TSoftClassPtr<T> where T : UObject
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
         UClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
         return new TSubclassOf<T>(loadedClass);
+    }
+    
+    /// <summary>
+    /// Casts this SoftClass to another class.
+    /// </summary>
+    public TSoftClassPtr<T> Cast<T2>() where T2 : UObject
+    {
+        if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
+        {
+            return new TSoftClassPtr<T>(this);
+        }
+
+        throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");
     }
 
     /// <summary>
@@ -132,7 +145,7 @@ public static class SoftClassPtrExtensions
         List<TSubclassOf<T>> loadedClasses = new(loadedPaths.Count);
         foreach (FSoftObjectPath path in loadedPaths)
         {
-            UObject? resolved = path.ResolveObject();
+            UObject? resolved = path.Object;
             
             if (resolved != null)
             {
