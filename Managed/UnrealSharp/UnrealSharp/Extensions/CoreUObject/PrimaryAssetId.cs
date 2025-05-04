@@ -10,34 +10,15 @@ public partial struct FPrimaryAssetId
         PrimaryAssetName = name;
     }
     
-    public bool IsValid()
-    {
-        return !PrimaryAssetType.Name.IsNone && !PrimaryAssetName.IsNone;
-    }
+    /// <summary>
+    /// Is this a valid primary asset ID?
+    /// </summary>
+    /// <returns></returns>
+    public bool Valid => PrimaryAssetType.Valid && !PrimaryAssetName.IsNone;
     
     public override string ToString()
     {
         return $"{PrimaryAssetType.Name.ToString()}:{PrimaryAssetName.ToString()}";
-    }
-
-    public async Task<T> LoadAsyncAsset<T>(List<FName>? bundles = null) where T : UObject
-    {
-        return await UAssetManager.Get().LoadPrimaryAsset<T>(this, bundles);
-    }
-    
-    public async Task<UObject> LoadAsyncAsset(List<FName>? bundles = null)
-    {
-        return await UAssetManager.Get().LoadPrimaryAsset(this, bundles);
-    }
-    
-    public async Task<TSubclassOf<UObject>> LoadAsyncAssetClass(List<FName>? bundles = null)
-    {
-        return await UAssetManager.Get().LoadPrimaryAssetClass(this, bundles);
-    }
-    
-    public async Task<TSubclassOf<T>> LoadAsyncAssetClass<T>(List<FName>? bundles = null) where T : UObject
-    {
-        return await UAssetManager.Get().LoadPrimaryAssetClass<T>(this, bundles);
     }
     
     /// <summary>
@@ -49,4 +30,39 @@ public partial struct FPrimaryAssetId
     /// Gets the asset class associated with this primary asset ID.
     /// </summary>
     public TSubclassOf<UObject>? AssetClass => UAssetManager.Get().GetPrimaryAssetObjectClass(this);
+}
+
+public static class FPrimaryAssetIdExtensions
+{
+    /// <summary>
+    /// Asynchronously loads the asset as UObject.
+    /// </summary>
+    public static async Task<UObject> LoadAssetAsync(this FPrimaryAssetId assetId, List<FName>? bundles = null)
+    {
+        return await UAssetManager.Get().LoadPrimaryAsset(assetId, bundles);
+    }
+
+    /// <summary>
+    /// Asynchronously loads the asset as type T.
+    /// </summary>
+    public static async Task<T> LoadAssetAsync<T>(this FPrimaryAssetId assetId, List<FName>? bundles = null) where T : UObject
+    {
+        return await UAssetManager.Get().LoadPrimaryAsset<T>(assetId, bundles);
+    }
+
+    /// <summary>
+    /// Asynchronously loads the asset class as base UObject.
+    /// </summary>
+    public static async Task<TSubclassOf<UObject>> LoadAssetClassAsync(this FPrimaryAssetId assetId, List<FName>? bundles = null)
+    {
+        return await UAssetManager.Get().LoadPrimaryAssetClass(assetId, bundles);
+    }
+
+    /// <summary>
+    /// Asynchronously loads the asset class as type T.
+    /// </summary>
+    public static async Task<TSubclassOf<T>> LoadAssetClassAsync<T>(this FPrimaryAssetId assetId, List<FName>? bundles = null) where T : UObject
+    {
+        return await UAssetManager.Get().LoadPrimaryAssetClass<T>(assetId, bundles);
+    }
 }

@@ -6,7 +6,7 @@
 #include "CSAsyncActionBase.h"
 #include "CSAsyncLoadPrimaryDataAssets.generated.h"
 
-UCLASS()
+UCLASS(meta = (Internal))
 class UCSAsyncLoadPrimaryDataAssets : public UCSAsyncActionBase
 {
 	GENERATED_BODY()

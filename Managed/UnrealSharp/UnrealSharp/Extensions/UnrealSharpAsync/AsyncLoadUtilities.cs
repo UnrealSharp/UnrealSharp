@@ -11,82 +11,75 @@ internal static class AsyncLoadUtilities
         {
             IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
             IntPtr worldContextHandle = FCSManagerExporter.CallFindManagedObject(worldContextObject);
-            UObject worldContext = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(worldContextHandle)!;
-            return worldContext;
+            return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(worldContextHandle)!;
         }
     }
 }
 
 internal partial class UCSAsyncLoadSoftPtr
 {
-    private List<FSoftObjectPath> _softObjectPaths = new();
-    private readonly Action _onLoadedCompleted;
+    public Task<IReadOnlyList<FSoftObjectPath>> LoadTask => _tcs.Task;
 
-    private readonly TaskCompletionSource<IReadOnlyList<FSoftObjectPath>> _loadAsyncCompletionSource = new();
-    public Task<IReadOnlyList<FSoftObjectPath>> LoadTask => _loadAsyncCompletionSource.Task;
+    private List<FSoftObjectPath> _loadedPaths = null!;
+    private readonly TaskCompletionSource<IReadOnlyList<FSoftObjectPath>> _tcs = new();
+    private readonly Action _onAsyncCompleted;
 
     internal UCSAsyncLoadSoftPtr()
     {
-        _onLoadedCompleted = OnLoadedCompleted;
-    }
-    
-    internal static UCSAsyncLoadSoftPtr LoadAsyncSoftPtr(FSoftObjectPath softObjectPath)
-    {
-        List<FSoftObjectPath> softObjectPaths = new() { softObjectPath };
-        return LoadAsyncSoftPtr(softObjectPaths);
-    }
-    
-    internal static UCSAsyncLoadSoftPtr LoadAsyncSoftPtr(List<FSoftObjectPath> softObjectPath)
-    {
-        UCSAsyncLoadSoftPtr asyncLoadSoftPtr = NewObject<UCSAsyncLoadSoftPtr>(AsyncLoadUtilities.WorldContextObject);
-        NativeAsyncUtilities.InitializeAsyncAction(asyncLoadSoftPtr, asyncLoadSoftPtr._onLoadedCompleted);
-        
-        asyncLoadSoftPtr._softObjectPaths = softObjectPath;
-        asyncLoadSoftPtr.LoadSoftObjectPaths(softObjectPath);
-        
-        return asyncLoadSoftPtr;
+        _onAsyncCompleted = OnAsyncCompleted;
     }
 
-    void OnLoadedCompleted()
+    internal static async Task<IReadOnlyList<FSoftObjectPath>> LoadAsync(FSoftObjectPath softObjectPath) =>
+        await LoadAsync([softObjectPath]);
+
+    internal static async Task<IReadOnlyList<FSoftObjectPath>> LoadAsync(List<FSoftObjectPath> softObjectPaths)
     {
-        _loadAsyncCompletionSource.SetResult(_softObjectPaths);
+        UCSAsyncLoadSoftPtr loader = NewObject<UCSAsyncLoadSoftPtr>(AsyncLoadUtilities.WorldContextObject);
+        loader._loadedPaths = softObjectPaths;
+
+        NativeAsyncUtilities.InitializeAsyncAction(loader, loader._onAsyncCompleted);
+
+        loader.LoadSoftObjectPaths(softObjectPaths);
+        return await loader._tcs.Task.ConfigureWithUnrealContext();
+    }
+
+    private void OnAsyncCompleted()
+    {
+        _tcs.TrySetResult(_loadedPaths);
     }
 }
 
-public partial class UCSAsyncLoadPrimaryDataAssets
+internal partial class UCSAsyncLoadPrimaryDataAssets
 {
-    private IList<FPrimaryAssetId> _primaryAssetIds;
-    private readonly Action _onLoadedCompleted;
-    
-    private readonly TaskCompletionSource<IList<FPrimaryAssetId>> _loadAsyncCompletionSource = new();
-    public Task<IList<FPrimaryAssetId>> LoadTask => _loadAsyncCompletionSource.Task;
-    
+    public Task<IList<FPrimaryAssetId>> LoadTask => _tcs.Task;
+
+    private IList<FPrimaryAssetId> _loadedIds = null!;
+    private readonly TaskCompletionSource<IList<FPrimaryAssetId>> _tcs = new();
+    private readonly Action _onAsyncCompleted;
+
     internal UCSAsyncLoadPrimaryDataAssets()
     {
-        _onLoadedCompleted = OnLoadedCompleted;
+        _onAsyncCompleted = OnAsyncCompleted;
     }
-    
-    internal static UCSAsyncLoadPrimaryDataAssets LoadAsyncPrimaryDataAssets(FPrimaryAssetId primaryAssetId, IList<FName>? assetBundles = null)
+
+    internal static async Task<IList<FPrimaryAssetId>> LoadAsync(FPrimaryAssetId primaryAssetId, IList<FName>? assetBundles = null)
+        => await LoadAsync(new List<FPrimaryAssetId> { primaryAssetId }, assetBundles);
+
+    internal static async Task<IList<FPrimaryAssetId>> LoadAsync(IList<FPrimaryAssetId> primaryAssetIds, IList<FName>? assetBundles = null)
     {
-        List<FPrimaryAssetId> primaryAssetIds = new() { primaryAssetId };
-        return LoadAsyncPrimaryDataAssets(primaryAssetIds);
+        UCSAsyncLoadPrimaryDataAssets loader = NewObject<UCSAsyncLoadPrimaryDataAssets>(AsyncLoadUtilities.WorldContextObject);
+        loader._loadedIds = primaryAssetIds;
+
+        NativeAsyncUtilities.InitializeAsyncAction(loader, loader._onAsyncCompleted);
+
+        IList<FName> bundles = assetBundles ?? new List<FName>();
+        loader.LoadPrimaryDataAssets(primaryAssetIds, bundles);
+
+        return await loader._tcs.Task.ConfigureWithUnrealContext();
     }
-    
-    internal static UCSAsyncLoadPrimaryDataAssets LoadAsyncPrimaryDataAssets(IList<FPrimaryAssetId> primaryAssetIds, IList<FName>? assetBundles = null)
+
+    private void OnAsyncCompleted()
     {
-        UCSAsyncLoadPrimaryDataAssets asyncLoadPrimaryDataAssets = NewObject<UCSAsyncLoadPrimaryDataAssets>(AsyncLoadUtilities.WorldContextObject);
-        NativeAsyncUtilities.InitializeAsyncAction(asyncLoadPrimaryDataAssets, asyncLoadPrimaryDataAssets._onLoadedCompleted);
-        
-        asyncLoadPrimaryDataAssets._primaryAssetIds = primaryAssetIds;
-        
-        IList<FName> assetBundlesToLoad = assetBundles ?? new List<FName>();
-        asyncLoadPrimaryDataAssets.LoadPrimaryDataAssets(primaryAssetIds, assetBundlesToLoad);
-        
-        return asyncLoadPrimaryDataAssets;
-    }
-    
-    void OnLoadedCompleted()
-    {
-        _loadAsyncCompletionSource.SetResult(_primaryAssetIds);
+        _tcs.TrySetResult(_loadedIds);
     }
 }

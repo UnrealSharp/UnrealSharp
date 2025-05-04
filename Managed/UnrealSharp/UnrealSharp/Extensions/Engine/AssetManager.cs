@@ -153,22 +153,21 @@ public partial class UAssetManager
         return loadedAssets.Select(asset => new TSubclassOf<T>(asset.NativeObject)).ToList();
     }
 
-    async Task<IList<UObject>> LoadAssetsInternal<T>(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null) where T : UObject
+    private async Task<IList<UObject>> LoadAssetsInternal<T>(IList<FPrimaryAssetId> primaryAssets, IList<FName>? bundles = null) where T : UObject
     {
-        UCSAsyncLoadPrimaryDataAssets loadPrimaryAssets = UCSAsyncLoadPrimaryDataAssets.LoadAsyncPrimaryDataAssets(primaryAssets, bundles);
-        IList<FPrimaryAssetId> loadedAssetIds = await loadPrimaryAssets.LoadTask;
+        IList<FPrimaryAssetId> loadedAssets = await UCSAsyncLoadPrimaryDataAssets.LoadAsync(primaryAssets, bundles);
 
-        List<UObject> loadedObjects = new List<UObject>(loadedAssetIds.Count);
-        foreach (FPrimaryAssetId assetId in loadedAssetIds)
+        List<UObject> loadedObjects = new(loadedAssets.Count);
+        foreach (FPrimaryAssetId assetId in loadedAssets)
         {
-            UObject? foundObject = SystemLibrary.GetObject(assetId);
+            UObject? loaded = SystemLibrary.GetObject(assetId);
 
-            if (foundObject is not T castedObject)
+            if (loaded is not T typedObject)
             {
-                throw new Exception($"Failed to load asset {assetId} as {typeof(T)}");
+                throw new InvalidCastException($"Asset '{assetId}' could not be cast to '{typeof(T).Name}' or was not found.");
             }
 
-            loadedObjects.Add(castedObject);
+            loadedObjects.Add(typedObject);
         }
 
         return loadedObjects;

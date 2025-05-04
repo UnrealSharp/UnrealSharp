@@ -119,34 +119,28 @@ public struct TSoftClassPtr<T> where T : UObject
 
 public static class SoftClassPtrExtensions
 {
-    public static async Task<List<TSubclassOf<T>>> LoadAsync<T>(this IList<TSoftClassPtr<T>> softObjectPtr) where T : UObject
+    public static async Task<List<TSubclassOf<T>>> LoadAsync<T>(this IList<TSoftClassPtr<T>> softClassPtrs) where T : UObject
     {
-        List<FSoftObjectPath> objectsToLoad = new List<FSoftObjectPath>(softObjectPtr.Count);
-
-        foreach (TSoftClassPtr<T> ptr in softObjectPtr)
+        List<FSoftObjectPath> softObjectPaths = new(softClassPtrs.Count);
+        foreach (var ptr in softClassPtrs)
         {
-            objectsToLoad.Add(ptr.SoftObjectPath);
+            softObjectPaths.Add(ptr.SoftObjectPath);
         }
-        
-        UCSAsyncLoadSoftPtr asyncLoader = UCSAsyncLoadSoftPtr.LoadAsyncSoftPtr(objectsToLoad);
-        IReadOnlyList<FSoftObjectPath> loadedPaths = await asyncLoader.LoadTask;
 
-        List<TSubclassOf<T>> loadedObjects = new List<TSubclassOf<T>>(loadedPaths.Count);
-        
+        IReadOnlyList<FSoftObjectPath> loadedPaths = await UCSAsyncLoadSoftPtr.LoadAsync(softObjectPaths);
+
+        List<TSubclassOf<T>> loadedClasses = new(loadedPaths.Count);
         foreach (FSoftObjectPath path in loadedPaths)
         {
-            UObject? foundObject = path.ResolveObject();
+            UObject? resolved = path.ResolveObject();
             
-            if (foundObject == null)
+            if (resolved != null)
             {
-                continue;
+                loadedClasses.Add(new TSubclassOf<T>(resolved.NativeObject));
             }
-            
-            TSubclassOf<T> loadedClass = new TSubclassOf<T>(foundObject.NativeObject);
-            loadedObjects.Add(loadedClass);
         }
 
-        return loadedObjects;
+        return loadedClasses;
     }
 }
 

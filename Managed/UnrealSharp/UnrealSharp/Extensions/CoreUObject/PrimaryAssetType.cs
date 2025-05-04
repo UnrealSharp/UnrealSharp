@@ -19,10 +19,7 @@ public partial struct FPrimaryAssetType
         return new FPrimaryAssetType(new FName(type));
     }
     
-    public bool IsValid()
-    {
-        return !Name.IsNone;
-    }
+    public bool Valid => !Name.IsNone;
     
     public override string ToString()
     {
@@ -40,36 +37,39 @@ public partial struct FPrimaryAssetType
             return types;
         }
     }
-    
+}
+
+public static class FPrimaryAssetTypeExtensions
+{
     /// <summary>
-    /// Loads all primary assets of this type.
+    /// Loads all primary assets of the given type as UObject.
     /// </summary>
-    public async Task<IList<T>> LoadAssetListAsync<T>(IList<FName>? assetBundles = null) where T : UObject
+    public static async Task<IList<UObject>> LoadAssetsAsync(this FPrimaryAssetType assetType, IList<FName>? bundles = null)
     {
-       return await UAssetManager.Get().LoadPrimaryAssets<T>(PrimaryAssetList, assetBundles);
+        return await UAssetManager.Get().LoadPrimaryAssets<UObject>(assetType.PrimaryAssetList, bundles);
     }
-    
+
     /// <summary>
-    /// Loads all primary assets of this type.
+    /// Loads all primary assets of the given type.
     /// </summary>
-    public async Task<IList<UObject>> LoadAssetListAsync(IList<FName>? assetBundles = null)
+    public static async Task<IList<T>> LoadAssetsAsync<T>(this FPrimaryAssetType assetType, IList<FName>? bundles = null) where T : UObject
     {
-        return await UAssetManager.Get().LoadPrimaryAssets<UObject>(PrimaryAssetList, assetBundles);
+        return await UAssetManager.Get().LoadPrimaryAssets<T>(assetType.PrimaryAssetList, bundles);
     }
-    
+
     /// <summary>
-    /// Loads all primary asset classes of this type.
+    /// Loads all primary asset classes of the given type.
     /// </summary>
-    public async Task<IList<TSubclassOf<T>>> LoadClassListAsync<T>(IList<FName>? assetBundles = null) where T : UObject
+    public static async Task<IList<TSubclassOf<UObject>>> LoadAssetClassesAsync(this FPrimaryAssetType assetType, IList<FName>? bundles = null)
     {
-        return await UAssetManager.Get().LoadPrimaryAssetClasses<T>(PrimaryAssetList, assetBundles);
+        return await UAssetManager.Get().LoadPrimaryAssetClasses<UObject>(assetType.PrimaryAssetList, bundles);
     }
-    
+
     /// <summary>
-    /// Loads all primary asset classes of this type.
+    /// Loads all primary asset classes of the given type.
     /// </summary>
-    public async Task<IList<TSubclassOf<UObject>>> LoadClassListAsync(IList<FName>? assetBundles = null)
+    public static async Task<IList<TSubclassOf<T>>> LoadAssetClassesAsync<T>(this FPrimaryAssetType assetType, IList<FName>? bundles = null) where T : UObject
     {
-        return await UAssetManager.Get().LoadPrimaryAssetClasses<UObject>(PrimaryAssetList, assetBundles);
+        return await UAssetManager.Get().LoadPrimaryAssetClasses<T>(assetType.PrimaryAssetList, bundles);
     }
 }
