@@ -43,6 +43,11 @@
 			"Name": "UnrealSharpBinds",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnrealSharpAsync",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"SupportedTargetPlatforms": [

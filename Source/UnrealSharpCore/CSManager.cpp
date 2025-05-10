@@ -159,6 +159,17 @@ void UCSManager::Initialize()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
+
+	
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+
+	// Compile the C# project for any changes done outside the editor.
+	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	{
+		Initialize();
+		return;
+	}
 #endif
 
 	// Initialize the C# runtime.
@@ -441,6 +452,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
 
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
+	
 	if (UCSClass* FirstManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class))
 	{
 		// Fast access to the owning assembly for managed classes.
@@ -448,11 +461,12 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 	}
 
 	Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
+	FCSFieldName ClassName = FCSFieldName(Class);
 
 	// Slow path for native classes.
 	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& Assembly : LoadedAssemblies)
 	{
-		TSharedPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(Class);
+		TSharedPtr<FGCHandle> TypeHandle = Assembly.Value->TryFindTypeHandle(ClassName);
 		if (TypeHandle.IsValid() && !TypeHandle->IsNull())
 		{
 			return Assembly.Value;
@@ -464,6 +478,8 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class) const
 
 FGCHandle UCSManager::FindManagedObject(UObject* Object) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindManagedObject);
+	
 	if (!IsValid(Object))
 	{
 		return FGCHandle();

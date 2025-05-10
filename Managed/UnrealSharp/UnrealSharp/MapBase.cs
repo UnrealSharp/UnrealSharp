@@ -401,7 +401,6 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 public class MapMarshaller<TKey, TValue>
 {
     private readonly IntPtr _nativeProperty;
-    private TMap<TKey, TValue>? _mapWrapper;
     private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
     private readonly MarshallingDelegates<TKey>.ToNative _keyToNative;
     private readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
@@ -417,25 +416,25 @@ public class MapMarshaller<TKey, TValue>
         _valueFromNative = valueFromNative;
         _valueToNative = valueToNative;
     }
+    
+    public TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
+    {
+        return new TMap<TKey, TValue>(_nativeProperty, nativeBuffer, _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
+    }
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value)
     {
-        _mapWrapper.Clear();
+        TMap<TKey, TValue> wrapper = MakeWrapper(nativeBuffer);
         
         foreach (KeyValuePair<TKey, TValue> pair in value)
         {
-            _mapWrapper!.Add(pair.Key, pair.Value);
+            wrapper.Add(pair.Key, pair.Value);
         }
     }
     
     public TMap<TKey, TValue> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (_mapWrapper == null)
-        {
-            _mapWrapper = new TMap<TKey, TValue>(_nativeProperty, nativeBuffer, 
-                _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
-        }
-        return _mapWrapper;
+        return MakeWrapper(nativeBuffer);
     }
 }
 

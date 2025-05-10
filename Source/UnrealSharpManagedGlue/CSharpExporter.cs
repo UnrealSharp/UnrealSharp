@@ -132,6 +132,11 @@ public static class CSharpExporter
 
     private static void ExportPackage(UhtPackage package)
     {
+        if (!package.ShouldExport())
+        {
+            return;
+        }
+        
         if (!Program.BuildingEditor && package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly))
         {
             return;
@@ -235,12 +240,12 @@ public static class CSharpExporter
     
     private static void ExportType(UhtType type)
     {
-        bool isManualExport = PropertyTranslatorManager.BlittableTypes.Contains(type.SourceName);
-
-        if (type.HasMetadata("NotGeneratorValid"))
+        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine))
         {
             return;
         }
+        
+        bool isManualExport = PropertyTranslatorManager.BlittableTypes.Contains(type.SourceName);
         
         if (type is UhtClass classObj)
         {

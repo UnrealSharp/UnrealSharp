@@ -96,7 +96,9 @@ public static class PluginLoader
         try
         {
             LogUnrealSharpPlugins.Log($"Unloading plugin {assemblyName}...");
+            
             pluginToUnload.Unload();
+            _loadedPlugins.Remove(pluginToUnload);
 
             int startTimeMs = Environment.TickCount;
             bool takingTooLong = false;
@@ -124,8 +126,6 @@ public static class PluginLoader
                     throw new InvalidOperationException($"Failed to unload {assemblyName}. Possible causes: Strong GC handles, running threads, etc.");
                 }
             }
-
-            _loadedPlugins.Remove(pluginToUnload);
 
             LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully!");
             return true;

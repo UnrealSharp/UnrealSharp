@@ -34,14 +34,7 @@ public partial struct FTopLevelAssetPath
     {
         return !(a == b);
     }
-    
-    public bool IsValid()
-    {
-        return !PackageName.IsNone;
-    }
-    
-    public bool IsNull()
-    {
-        return AssetName.IsNone;
-    }
+
+    public bool Valid => PackageName.IsNone;
+    public bool Null => PackageName.IsNone;
 }

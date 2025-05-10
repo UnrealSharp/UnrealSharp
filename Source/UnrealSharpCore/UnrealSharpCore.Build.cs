@@ -51,6 +51,7 @@ public class UnrealSharpCore : ModuleRules
 			);
 
         PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
 
         IncludeDotNetHeaders();
 
