@@ -55,6 +55,11 @@ public struct TSoftClassPtr<T> where T : UObject
     {
         TPersistentObjectPtrExporter.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
     }
+    
+    internal TSoftClassPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> data)
+    {
+        SoftObjectPtr = new FPersistentObjectPtr(data);
+    }
 
     /// <summary>
     /// Tries to load the class synchronously. Returns null if the class is not loaded.
@@ -79,42 +84,10 @@ public struct TSoftClassPtr<T> where T : UObject
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");
     }
-
-    /// <summary>
-    /// Loads the class asynchronously.
-    /// </summary>
-    public async Task<TSubclassOf<T>> LoadAsync()
-    {
-        if (IsNull)
-        {
-            throw new Exception($"SoftClassPtr is null: {SoftObjectPath}");
-        }
-        
-        if (IsValid)
-        {
-            return Class;
-        }
-        
-        List<TSoftClassPtr<T>> loadedClasses = new List<TSoftClassPtr<T>> { this };
-        List<TSubclassOf<T>> loadedObjects = await loadedClasses.LoadAsync();
-        
-        if (loadedObjects.Count == 0)
-        {
-            throw new Exception($"Failed to load {SoftObjectPath}.");
-        }
-        
-        return loadedObjects[0];
-    }
-
-
+    
     public override string ToString()
     {
         return SoftObjectPath.ToString();
-    }
-
-    internal TSoftClassPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> data)
-    {
-        SoftObjectPtr = new FPersistentObjectPtr(data);
     }
 
     private TSubclassOf<T> GetClass()
@@ -132,25 +105,44 @@ public struct TSoftClassPtr<T> where T : UObject
 
 public static class SoftClassPtrExtensions
 {
+    public static async Task<TSubclassOf<T>> LoadAsync<T>(this TSoftClassPtr<T> softClassPtr) where T : UObject
+    {
+        if (softClassPtr.IsNull)
+        {
+            throw new Exception($"SoftClassPtr is null: {softClassPtr}");
+        }
+        
+        if (softClassPtr.IsValid)
+        {
+            return softClassPtr.Class;
+        }
+        
+        List<FSoftObjectPath> softObjectPaths = [softClassPtr.SoftObjectPath];
+        IList<UObject> loadedPaths = await softObjectPaths.LoadAsync();
+        
+        if (loadedPaths.Count == 0)
+        {
+            throw new Exception($"Failed to load or cast asset at '{softClassPtr}' to '{typeof(T).Name}'");
+        }
+
+        return new TSubclassOf<T>(loadedPaths[0].NativeObject);
+    }
+    
     public static async Task<List<TSubclassOf<T>>> LoadAsync<T>(this IList<TSoftClassPtr<T>> softClassPtrs) where T : UObject
     {
         List<FSoftObjectPath> softObjectPaths = new(softClassPtrs.Count);
-        foreach (var ptr in softClassPtrs)
+        foreach (TSoftClassPtr<T> ptr in softClassPtrs)
         {
             softObjectPaths.Add(ptr.SoftObjectPath);
         }
 
-        IReadOnlyList<FSoftObjectPath> loadedPaths = await UCSAsyncLoadSoftPtr.LoadAsync(softObjectPaths);
-
+        IList<UObject> loadedPaths = await softObjectPaths.LoadAsync();
         List<TSubclassOf<T>> loadedClasses = new(loadedPaths.Count);
-        foreach (FSoftObjectPath path in loadedPaths)
+        
+        foreach (UObject loadedPath in loadedPaths)
         {
-            UObject? resolved = path.Object;
-            
-            if (resolved != null)
-            {
-                loadedClasses.Add(new TSubclassOf<T>(resolved.NativeObject));
-            }
+            TSubclassOf<T> loadedClass = new TSubclassOf<T>(loadedPath.NativeObject);
+            loadedClasses.Add(loadedClass);
         }
 
         return loadedClasses;

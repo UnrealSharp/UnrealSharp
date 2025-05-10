@@ -28,10 +28,15 @@ enum HotReloadStatus
 
 struct FCSManagedUnrealSharpEditorCallbacks
 {
-    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr) {}
+    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr), ForceManagedGC(nullptr)
+    {
+    }
 
     using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, void*, ECSLoggerVerbosity, void*, bool);
+    using FForceManagedGC = void(__stdcall*)();
+    
     FBuildProject Build;
+    FForceManagedGC ForceManagedGC;
 };
 
 
@@ -120,7 +125,7 @@ private:
     void OnCollisionProfileLoaded(UCollisionProfile* Profile);
     void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
-    void OnPIEEnded(bool IsSimulating);
+    void OnPIEShutdown(bool IsSimulating);
 
     void WaitUpdateAssetTypes();
 

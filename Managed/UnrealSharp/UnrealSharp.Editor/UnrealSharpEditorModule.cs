@@ -17,10 +17,12 @@ namespace UnrealSharp.Editor;
 public unsafe struct FManagedUnrealSharpEditorCallbacks
 {
     public delegate* unmanaged<char*, char*, char*, UnmanagedArray*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
+    public delegate* unmanaged<void> ForceManagedGC;
 
     public FManagedUnrealSharpEditorCallbacks()
     {
         BuildProjects = &ManagedUnrealSharpEditorCallbacks.Build;
+        ForceManagedGC = &ManagedUnrealSharpEditorCallbacks.ForceManagedGC;
     }
 }
 
@@ -147,6 +149,14 @@ public static class ManagedUnrealSharpEditorCallbacks
         };
 
         Program.Weave(weaverOptions);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void ForceManagedGC()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
     }
 }
 

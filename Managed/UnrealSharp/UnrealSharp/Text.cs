@@ -9,16 +9,16 @@ namespace UnrealSharp;
 [StructLayout(LayoutKind.Sequential)]
 public struct FTextData
 {
-    public IntPtr ObjectPointer;
+    public FSharedPtr ObjectPointer;
     public uint Flags;
 }
 
 [Binding]
-public struct FText
+public class FText
 {
     internal FTextData Data;
-    
-    public bool Empty => Data.ObjectPointer == IntPtr.Zero;
+
+    public bool Empty => !Data.ObjectPointer.Valid;
     public static FText None = new();
     
     public FText()
@@ -39,6 +39,17 @@ public struct FText
     internal FText(FTextData nativeInstance)
     {
         Data = nativeInstance;
+        Data.ObjectPointer.AddRef();
+    }
+    
+    ~FText()
+    {
+        if (Empty)
+        {
+            return;
+        }
+        
+        Data.ObjectPointer.Release();
     }
 
     /// <inheritdoc />
@@ -58,6 +69,11 @@ public struct FText
     /// <inheritdoc />
     public override string ToString()
     {
+        if (Empty)
+        {
+            return string.Empty;
+        }
+        
         unsafe
         {
             return new string(FTextExporter.CallToString(ref Data));
@@ -89,7 +105,13 @@ public static class TextMarshaller
 { 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, FText obj)
     {
-        BlittableMarshaller<FTextData>.ToNative(nativeBuffer, arrayIndex, obj.Data);
+        unsafe
+        {
+            FTextData* to = (FTextData*)(nativeBuffer + arrayIndex * sizeof(FTextData));
+            to->ObjectPointer.Release();
+            *to = obj.Data;
+            to->ObjectPointer.AddRef();
+        }
     }
     public static FText FromNative(IntPtr nativeBuffer, int arrayIndex)
     {

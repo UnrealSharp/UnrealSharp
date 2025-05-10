@@ -70,7 +70,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
 	Manager->OnNewEnumEvent().AddRaw(this, &FUnrealSharpEditorModule::OnEnumRebuilt);
 
-	FEditorDelegates::EndPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEEnded);
+	FEditorDelegates::ShutdownPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEShutdown);
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
@@ -115,8 +115,6 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	UCSManager& CSharpManager = UCSManager::Get();
 	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
-
-	StartHotReload(true, false);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -899,22 +897,21 @@ void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object,
 		FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetTypes));
 }
 
-void FUnrealSharpEditorModule::OnPIEEnded(bool IsSimulating)
+void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
 {
-	if (!bHasQueuedHotReload)
+	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
+	ManagedUnrealSharpEditorCallbacks.ForceManagedGC();
+	
+	if (bHasQueuedHotReload)
 	{
-		return;
+		bHasQueuedHotReload = false;
+		StartHotReload();
 	}
-
-	bHasQueuedHotReload = false;
-	StartHotReload();
 }
 
-bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements,
-                                                const FString& Path)
+bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)
 {
-	const FString FullFileName = FCSProcHelper::GetPluginDirectory() / TEXT("Templates") / TemplateName + TEXT(
-		".cs.template");
+	const FString FullFileName = FCSProcHelper::GetPluginDirectory() / TEXT("Templates") / TemplateName + TEXT(".cs.template");
 
 	FString OutTemplate;
 	if (FFileHelper::LoadFileToString(OutTemplate, *FullFileName))

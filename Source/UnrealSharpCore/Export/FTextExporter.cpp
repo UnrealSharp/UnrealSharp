@@ -18,7 +18,6 @@ void UFTextExporter::FromString(FText* Text, const char* String)
 	}
 
 	*Text = Text->FromString(String);
-	check(true);
 }
 
 void UFTextExporter::FromName(FText* Text, FName Name)
@@ -38,5 +37,6 @@ void UFTextExporter::CreateEmptyText(FText* Text)
 		return;
 	}
 
-	Text->GetEmpty();
+	*Text = FText::GetEmpty();
 }
+
