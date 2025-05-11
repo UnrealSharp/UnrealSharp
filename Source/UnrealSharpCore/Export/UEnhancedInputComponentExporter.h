@@ -17,6 +17,9 @@ class UNREALSHARPCORE_API UUEnhancedInputComponentExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void BindAction(UEnhancedInputComponent* InputComponent, UInputAction* InputAction, ETriggerEvent TriggerEvent, UObject* Object, const FName FunctionName);
+	static bool BindAction(UEnhancedInputComponent* InputComponent, UInputAction* InputAction, ETriggerEvent TriggerEvent, UObject* Object, const FName FunctionName, uint32* OutHandle);
+
+	UNREALSHARP_FUNCTION()
+	static bool RemoveBindingByHandle(UEnhancedInputComponent* InputComponent, const uint32 Handle);
 	
 };
