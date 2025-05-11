@@ -26,7 +26,9 @@ public class UnrealSharpCompiler : ModuleRules
                 "BlueprintGraph",
                 "UnrealEd",
                 "DeveloperSettings", 
-                "UnrealSharpEditor"
+                "UnrealSharpEditor", 
+                "AIModule", 
+                "StateTreeModule"
             }
         );
     }

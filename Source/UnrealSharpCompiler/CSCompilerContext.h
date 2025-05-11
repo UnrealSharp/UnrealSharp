@@ -33,6 +33,8 @@ private:
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
 	void ApplyMetaData();
 
+	static bool NeedsToFakeNativeClass(UClass* Class);
+
 	void CreateDummyBlueprintVariables(const TArray<FCSPropertyMetaData>& Properties) const;
 };
 

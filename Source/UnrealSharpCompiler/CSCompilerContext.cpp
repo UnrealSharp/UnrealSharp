@@ -2,6 +2,8 @@
 
 #include "BlueprintActionDatabase.h"
 #include "ISettingsModule.h"
+#include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
+#include "Blueprint/StateTreeTaskBlueprintBase.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "TypeGenerator/CSBlueprint.h"
@@ -25,20 +27,35 @@ FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResults
 
 void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
-	// The skeleton class shouldn't be using the managed constructor
-	if (FCSGeneratedClassBuilder::IsManagedType(Class))
+	bool bIsSkeletonClass = FCSGeneratedClassBuilder::IsSkeletonType(Class);
+	
+	if (!bIsSkeletonClass)
 	{
+		// The skeleton class shouldn't be using the managed constructor since it's not tied to an assembly
 		Class->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
 	}
 
 	Super::FinishCompilingClass(Class);
 
 	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->TypeMetaData;
+
+	// Super call overrides the class flags, so we need to set after that
 	Class->ClassFlags |= TypeMetaData->ClassFlags;
+	
+	if (NeedsToFakeNativeClass(Class) && !bIsSkeletonClass)
+	{
+		// There are systems in Unreal (BehaviorTree, StateTree) which uses the AssetRegistry to find BP classes, since our C# classes are not assets,
+		// we need to fake that they're native classes in editor in order to be able to find them. 
+
+		// The functions that are used to find classes are:
+		// FGraphNodeClassHelper::BuildClassGraph()
+		// FStateTreeNodeClassCache::CacheClasses()
+		Class->ClassFlags |= CLASS_Native;
+		Class->SetMetaData(MD_NativeEditorOnly, TEXT("true"));
+	}
 	
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 	TryInitializeAsDeveloperSettings(Class);
-
 	ApplyMetaData();
 }
 
@@ -226,6 +243,25 @@ void FCSCompilerContext::ApplyMetaData()
 	}
 
 	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, NewClass);
+}
+
+bool FCSCompilerContext::NeedsToFakeNativeClass(UClass* Class)
+{
+	static TArray ParentClasses =
+	{
+		UBTTask_BlueprintBase::StaticClass(),
+		UStateTreeTaskBlueprintBase::StaticClass(),
+	};
+
+	for (UClass* ParentClass  : ParentClasses)
+	{
+		if (Class->IsChildOf(ParentClass))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyMetaData>& Properties) const
