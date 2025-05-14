@@ -4,6 +4,10 @@
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
+
 enum ECSLoggerVerbosity : uint8;
 class UCSInterface;
 class UCSEnum;

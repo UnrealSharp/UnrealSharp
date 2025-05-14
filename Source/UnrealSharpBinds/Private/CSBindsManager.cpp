@@ -20,7 +20,11 @@ void FCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCS
 	ExportedFunctions.Add(ExportedFunction);
 }
 
-void* FCSBindsManager::GetBoundFunction(TCHAR* InOuterName, TCHAR* InFunctionName, int32 ManagedFunctionSize)
+#if PLATFORM_WINDOWS
+void* FCSBindsManager::GetBoundFunction(const TCHAR* InOuterName, const TCHAR* InFunctionName, int32 ManagedFunctionSize)
+#else
+void* FCSBindsManager::GetBoundFunction(const char* InOuterName, const char* InFunctionName, int32 ManagedFunctionSize)
+#endif
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSBindsManager::GetBoundFunction);
 	
@@ -29,7 +33,7 @@ void* FCSBindsManager::GetBoundFunction(TCHAR* InOuterName, TCHAR* InFunctionNam
 	FName ManagedFunctionName = FName(InFunctionName);
 	
 	TArray<FCSExportedFunction>* ExportedFunctions = Instance->ExportedFunctionsMap.Find(ManagedOuterName);
-	
+
 	if (!ExportedFunctions)
 	{
 		UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: No exported functions found for %s"), InOuterName);

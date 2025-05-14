@@ -2,6 +2,7 @@
 
 struct FCSDefaultComponentMetaData;
 struct FCSPropertyMetaData;
+class USCS_Node;
 
 class FCSSimpleConstructionScriptBuilder
 {

@@ -13,8 +13,13 @@ public:
 	static FCSBindsManager* Get();
 	
 	UNREALSHARPBINDS_API static void RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction);
-	UNREALSHARPBINDS_API static void* GetBoundFunction(TCHAR* OuterName, TCHAR* FunctionName, int32 ManagedFunctionSize);
-	
+
+#if PLATFORM_WINDOWS
+	UNREALSHARPBINDS_API static void* GetBoundFunction(const TCHAR* InOuterName, const TCHAR* InFunctionName, int32 ManagedFunctionSize);
+#else
+	UNREALSHARPBINDS_API static void* GetBoundFunction(const char* InOuterName, const char* InFunctionName, int32 ManagedFunctionSize);
+#endif
+
 private:
 	FCSBindsManager() = default;
 	static FCSBindsManager* BindsManagerInstance;
