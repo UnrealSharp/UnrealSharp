@@ -5,6 +5,10 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wextern-initializer"
+#endif
+
 namespace ReflectionHelper
 {
 	extern inline FName Records = FName(TEXT("Records"));

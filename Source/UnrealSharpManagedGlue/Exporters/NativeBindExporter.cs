@@ -136,7 +136,7 @@ public static class NativeBindExporter
                 {
                     string functionReference = $"{topType.SourceName}::{method.MethodName}";
                     builder.AppendLine($"const FCSExportedFunction {typeName}::UnrealSharpBind_{method.MethodName}");
-                    builder.Append($" = FCSExportedFunction(\"{topType.EngineName}\", \"{method.MethodName}\", &{functionReference}, GetFunctionSize({functionReference}));");
+                    builder.Append($" = FCSExportedFunction(\"{topType.EngineName}\", \"{method.MethodName}\", (void*)&{functionReference}, GetFunctionSize({functionReference}));");
                 }
                 
                 builder.AppendLine();
