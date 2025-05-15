@@ -37,13 +37,12 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 	if (NativeFunction->HasAllFunctionFlags(FUNC_Net))
 	{
 		int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
-		if ((FunctionCallspace & FunctionCallspace::Remote) == 0)
+		if ((FunctionCallspace & FunctionCallspace::Remote))
 		{
+			NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
 			return;
 		}
-
-		NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
-		if ((FunctionCallspace & FunctionCallspace::Local) == 0)
+		else if ((FunctionCallspace & FunctionCallspace::Absorbed))
 		{
 			return;
 		}
