@@ -236,6 +236,11 @@ bool FCSSimpleConstructionScriptBuilder::TryFindParentNodeAndComponent(FName Par
 #else
 		CurrentSCS = CurrentGeneratedClass->SimpleConstructionScript;
 #endif
+
+		if (!IsValid(CurrentSCS))
+		{
+			continue;
+		}
 		
 		USCS_Node* FoundNode = CurrentSCS->FindSCSNode(ParentComponentName);
 		if (!IsValid(FoundNode))
