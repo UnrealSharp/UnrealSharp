@@ -7,14 +7,48 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null)
+    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null, bool includeSuper = false)
     {
-        return FindTypeByName(functionName, classObj.Functions, customCompare);
+        while (classObj != null)
+        {
+            UhtFunction? function = FindTypeByName(functionName, classObj.Functions, customCompare);
+            
+            if (function != null)
+            {
+                return function;
+            }
+
+            if (!includeSuper)
+            {
+                break;
+            }
+
+            classObj = classObj.SuperClass;
+        }
+        
+        return null;
     }
     
-    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null)
+    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null, bool includeSuper = false)
     {
-        return FindTypeByName(propertyName, classObj.Properties, customCompare);
+        while (classObj != null)
+        {
+            UhtProperty? property = FindTypeByName(propertyName, classObj.Properties, customCompare);
+            
+            if (property != null)
+            {
+                return property;
+            }
+
+            if (!includeSuper)
+            {
+                break;
+            }
+
+            classObj = classObj.SuperClass;
+        }
+        
+        return null;
     }
     
     private static T? FindTypeByName<T>(string typeName, IEnumerable<T> types, Func<T, string, bool>? customCompare = null) where T : UhtType

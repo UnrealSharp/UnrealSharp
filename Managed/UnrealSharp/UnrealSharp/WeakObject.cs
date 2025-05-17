@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
@@ -31,6 +30,11 @@ public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObjec
     public TWeakObjectPtr(T obj)
     { 
         FWeakObjectPtrExporter.CallSetObject(ref Data, obj?.NativeObject ?? IntPtr.Zero);
+    }
+
+    internal TWeakObjectPtr(IntPtr nativePtr)
+    {
+        FWeakObjectPtrExporter.CallSetObject(ref Data, nativePtr);
     }
     
     internal TWeakObjectPtr(WeakObjectData data)
