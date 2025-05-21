@@ -138,10 +138,13 @@ namespace UnrealSharp
 
         public UnrealSynchronizationContext(NamedThread thread)
         {
-            _thread = thread;
+            if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid)
+            {
+                throw new InvalidOperationException("World context object is not valid.");
+            }
             
-            IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
-            _worldContext = new TWeakObjectPtr<UObject>(worldContextObject);
+            _thread = thread;
+            _worldContext = new TWeakObjectPtr<UObject>(worldContext.World);
         }
 
         public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));

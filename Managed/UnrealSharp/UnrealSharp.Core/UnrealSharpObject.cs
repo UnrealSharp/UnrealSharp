@@ -35,19 +35,6 @@ public class UnrealSharpObject : IDisposable
     /// </summary>
     public IntPtr NativeObject { get; private set; }
     
-    /// <summary>
-    /// Current world context object for this frame.
-    /// </summary>
-    internal static UnrealSharpObject WorldContextObject
-    {
-        get
-        {
-            IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
-            IntPtr handle = FCSManagerExporter.CallFindManagedObject(worldContextObject);
-            return GCHandleUtilities.GetObjectFromHandlePtr<UnrealSharpObject>(handle)!;
-        }
-    }
-    
     /// <inheritdoc />
     public virtual void Dispose()
     {
