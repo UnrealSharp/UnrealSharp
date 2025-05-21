@@ -364,6 +364,12 @@ UClass* FCSAssembly::FindClass(const FCSFieldName& FieldName) const
 	{
 		Class = TryFindField<UClass>(FieldName);
 	}
+
+	if (!Class)
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find class: {0}", *FieldName.GetName());
+		return nullptr;
+	}
 	
 	return Class;
 }
@@ -380,7 +386,12 @@ UScriptStruct* FCSAssembly::FindStruct(const FCSFieldName& StructName) const
 		Struct = TryFindField<UScriptStruct>(StructName);
 	}
 
-	check(Struct);
+	if (!Struct)
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find struct: {0}", *StructName.GetName());
+		return nullptr;
+	}
+	
 	return Struct;
 }
 
@@ -396,7 +407,12 @@ UEnum* FCSAssembly::FindEnum(const FCSFieldName& EnumName) const
 		Enum = TryFindField<UEnum>(EnumName);
 	}
 
-	check(Enum);
+	if (!Enum)
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find enum: {0}", *EnumName.GetName());
+		return nullptr;
+	}
+	
 	return Enum;
 }
 
@@ -412,7 +428,12 @@ UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 		Interface = TryFindField<UClass>(InterfaceName);
 	}
 
-	check(Interface);
+	if (!Interface)
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find interface: {0}", *InterfaceName.GetName());
+		return nullptr;
+	}
+	
 	return Interface;
 }
 

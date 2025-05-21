@@ -3,24 +3,26 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
 
-[StructLayout(LayoutKind.Sequential)]
 public partial struct FRandomStream
 {
+	public int InitialSeed { get; private set; }
+	public uint Seed { get; private set; }
+	
 	public FRandomStream(int initialSeed)
 	{
 		InitialSeed = initialSeed;
-		Seed = initialSeed;
+		Seed = (uint) initialSeed;
 	}
 	
 	public void Initialize(int initialSeed)
 	{
 		InitialSeed = initialSeed;
-		Seed = initialSeed;
+		Seed = (uint) initialSeed;
 	}
 	
 	public void Reset()
 	{
-		Seed = InitialSeed;
+		Seed = (uint) InitialSeed;
 	}
 	
 	public static bool operator ==(FRandomStream a, FRandomStream b)

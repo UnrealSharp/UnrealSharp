@@ -81,6 +81,7 @@ public static class PropertyTranslatorManager
         
         AddBlittableCustomStructPropertyTranslator("FTimerHandle", "UnrealSharp.Engine.FTimerHandle");
         AddBlittableCustomStructPropertyTranslator("FInputActionValue", "UnrealSharp.EnhancedInput.FInputActionValue");
+        AddBlittableCustomStructPropertyTranslator("FRandomStream", "UnrealSharp.CoreUObject.FRandomStream");
         
         AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
         AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());

@@ -35,7 +35,7 @@ public partial class UObject
     /// <summary>
     /// Whether the object has been destroyed.
     /// </summary>
-    public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject);
+    public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject).ToManagedBool();
 
     /// <summary>
     /// The unique ID of the object... These are reused so it is only unique while the object is alive.
@@ -86,7 +86,7 @@ public partial class UObject
 
     public static implicit operator bool(UObject Object)
     {
-        return Object != null && UObjectExporter.CallNativeIsValid(Object.NativeObject);
+        return Object != null && UObjectExporter.CallNativeIsValid(Object.NativeObject).ToManagedBool();
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public partial class UObject
         IntPtr handle = UClassExporter.CallGetDefaultFromInstance(obj.NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
-    
+
     /// <summary>
     /// Spawns an actor of the specified type.
     /// </summary>

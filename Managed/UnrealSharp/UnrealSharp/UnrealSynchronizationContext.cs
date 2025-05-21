@@ -134,12 +134,14 @@ namespace UnrealSharp
         public static NamedThread CurrentThread => (NamedThread)AsyncExporter.CallGetCurrentNamedThread();
 
         private readonly NamedThread _thread;
-        private readonly nint _worldContext;
+        private readonly TWeakObjectPtr<UObject> _worldContext;
 
         public UnrealSynchronizationContext(NamedThread thread)
         {
             _thread = thread;
-            _worldContext = FCSManagerExporter.CallGetCurrentWorldContext();
+            
+            IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
+            _worldContext = new TWeakObjectPtr<UObject>(worldContextObject);
         }
 
         public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));
@@ -168,13 +170,17 @@ namespace UnrealSharp
             manualResetEventInstance.Wait();
         }
 
-        internal static void RunOnThread(nint worldContextObject, NamedThread thread, Action callback)
+        internal static void RunOnThread(TWeakObjectPtr<UObject> worldContextObject, NamedThread thread, Action callback)
         {
+            if (!worldContextObject.IsValid() || worldContextObject.IsStale())
+            {
+                return;
+            }
+            
             GCHandle callbackHandle = GCHandle.Alloc(callback);
-            AsyncExporter.CallRunOnThread(worldContextObject, (int) thread, GCHandle.ToIntPtr(callbackHandle));
+            IntPtr nativeObject = worldContextObject.Object!.NativeObject;
+            
+            AsyncExporter.CallRunOnThread(nativeObject, (int) thread, GCHandle.ToIntPtr(callbackHandle));
         }
-
-        public static void RunOnThread(UObject worldContextObject, NamedThread thread, Action callback)
-            => RunOnThread(worldContextObject.NativeObject, thread, callback);
     }
 }

@@ -7,28 +7,39 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class ClassUtilities
 {
-    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null)
+    public static UhtFunction? FindFunctionByName(this UhtClass classObj, string functionName, Func<UhtFunction, string, bool>? customCompare = null, bool includeSuper = false)
+        => FindTypeInHierarchy(classObj, c => c.Functions, functionName, customCompare, includeSuper);
+
+    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null, bool includeSuper = false)
+        => FindTypeInHierarchy(classObj, c => c.Properties, propertyName, customCompare, includeSuper);
+
+    private static T? FindTypeInHierarchy<T>(UhtClass? classObj, Func<UhtClass, IEnumerable<T>> selector,
+        string typeName, Func<T, string, bool>? customCompare, bool includeSuper) where T : UhtType
     {
-        return FindTypeByName(functionName, classObj.Functions, customCompare);
+        for (UhtClass? current = classObj; current != null; current = includeSuper ? current.SuperClass : null)
+        {
+            T? match = FindTypeByName(typeName, selector(current), customCompare);
+
+            if (match != null)
+            {
+                return match;
+            }
+
+            if (!includeSuper)
+            {
+                break;
+            }
+        }
+
+        return null;
     }
-    
-    public static UhtProperty? FindPropertyByName(this UhtClass classObj, string propertyName, Func<UhtProperty, string, bool>? customCompare = null)
-    {
-        return FindTypeByName(propertyName, classObj.Properties, customCompare);
-    }
-    
+
     private static T? FindTypeByName<T>(string typeName, IEnumerable<T> types, Func<T, string, bool>? customCompare = null) where T : UhtType
     {
         foreach (var type in types)
         {
-            if (customCompare != null && customCompare(type, typeName))
-            {
-                return type;
-            }
-            
-            if (type.SourceName == typeName
-                || (type.SourceName.Length == typeName.Length 
-                    && type.SourceName.Contains(typeName, StringComparison.InvariantCultureIgnoreCase)))
+            if ((customCompare != null && customCompare(type, typeName)) ||
+                string.Equals(type.SourceName, typeName, StringComparison.InvariantCultureIgnoreCase))
             {
                 return type;
             }
@@ -43,10 +54,10 @@ public static class ClassUtilities
         {
             return null;
         }
-            
+
         return thisInterface.AlternateObject as UhtClass;
     }
-    
+
     public static bool HasAnyFlags(this UhtClass classObj, EClassFlags flags)
     {
         return (classObj.ClassFlags & flags) != 0;
