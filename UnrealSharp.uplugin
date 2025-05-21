@@ -58,6 +58,10 @@
 		{
 			"Name": "EnhancedInput",
 			"Enabled": true
+		},
+		{
+			"Name": "StateTree",
+			"Enabled": true
 		}
 	],
 	"SupportURL": "https://discord.gg/QHb8VjNptE"
