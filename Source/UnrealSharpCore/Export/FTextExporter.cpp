@@ -27,7 +27,7 @@ void UFTextExporter::FromName(FText* Text, FName Name)
 		return;
 	}
 
-	Text->FromName(Name);
+	*Text = Text->FromName(Name);
 }
 
 void UFTextExporter::CreateEmptyText(FText* Text)

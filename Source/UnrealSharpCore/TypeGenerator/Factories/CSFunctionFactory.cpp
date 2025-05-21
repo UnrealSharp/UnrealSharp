@@ -82,7 +82,12 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 	}
 
 #if WITH_EDITOR
+
+#if ENGINE_MAJOR_VERSION * 100 + ENGINE_MINOR_VERSION < 506
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
+#else
+	FMetaData::CopyMetadata(ParentFunction, NewFunction);
+#endif
 
 	// Override the Blueprint function. But don't let Blueprint display this overridden function.
 	NewFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
