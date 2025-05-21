@@ -230,7 +230,7 @@ public static class ScriptGeneratorUtilities
 
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
             }
-            else if (!TryMakeGetterSetterPair(function, classObj, getterSetterPairs))
+            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs))
             {
                 functions.Add(function);
             }
@@ -281,13 +281,13 @@ public static class ScriptGeneratorUtilities
         return interfaces;
     }
 
-    public static bool TryMakeGetterSetterPair(UhtFunction function, UhtClass classObj,
+    public static bool TryMakeFunctionGetterSetterPair(UhtFunction function, UhtClass classObj,
         Dictionary<string, GetterSetterPair> getterSetterPairs)
     {
         string scriptName = function.GetFunctionName();
-
         bool isGetter = CheckIfGetter(scriptName, function);
         bool isSetter = CheckIfSetter(scriptName, function);
+
         if (!isGetter && !isSetter)
         {
             return false;
@@ -297,20 +297,22 @@ public static class ScriptGeneratorUtilities
         propertyName = NameMapper.EscapeKeywords(propertyName);
 
         UhtFunction? sameNameFunction = classObj.FindFunctionByName(propertyName);
+
         if (sameNameFunction != null && sameNameFunction != function)
         {
             return false;
         }
 
-        bool ComparePropertyName(UhtProperty arg1, string arg2)
+        bool ComparePropertyName(UhtProperty prop, string name)
         {
-            return arg1.SourceName == arg2 || arg1.GetPropertyName() == arg2;
+            return prop.SourceName == name || prop.GetPropertyName() == name;
         }
 
         UhtProperty? classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
-        UhtProperty firstProperty = function.ReturnProperty != null ? function.ReturnProperty : function.Properties.First();
+        UhtProperty firstProperty = function.ReturnProperty ?? function.Properties.First();
 
-        if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() || classProperty.HasAnySetter()))
+        if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() ||
+                                      classProperty.HasAnySetter()))
         {
             return false;
         }
@@ -320,72 +322,54 @@ public static class ScriptGeneratorUtilities
             pair = new GetterSetterPair(propertyName);
             getterSetterPairs[propertyName] = pair;
         }
-        
+
         if (pair.Accessors.Count == 2)
         {
-            // Both getter and setter are already set, so we can skip this function.
             return true;
         }
 
-        bool IsOutParm(UhtProperty property)
-        {
-            return property.HasAllFlags(EPropertyFlags.OutParm) && !property.HasAllFlags(EPropertyFlags.ConstParm);
-        }
-
-        bool isOutParm = function.Properties.Any(IsOutParm);
-        
-        void SetSetter(UhtFunction setterFunction)
-        {
-            pair.Setter = setterFunction;
-            pair.SetterExporter = GetterSetterFunctionExporter.Create(setterFunction, firstProperty, GetterSetterMode.Set,
-                EFunctionProtectionMode.UseUFunctionProtection);
-        }
-        
-        void SetGetter(UhtFunction getterFunction)
-        {
-            pair.Getter = getterFunction;
-            pair.GetterExporter = GetterSetterFunctionExporter.Create(getterFunction, firstProperty, GetterSetterMode.Get,
-                EFunctionProtectionMode.UseUFunctionProtection);
-        }
+        bool isOutParm = function.Properties.Any(p =>
+            p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
 
         if (function.ReturnProperty != null || isOutParm)
         {
-            SetGetter(function);
-            
+            pair.Getter = function;
+            pair.GetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Get,
+                EFunctionProtectionMode.UseUFunctionProtection);
+
             UhtFunction? setter = classObj.FindFunctionByName("Set" + propertyName, null, true);
-            
             if (setter != null && CheckIfSetter(setter))
             {
-                SetSetter(setter);
+                pair.Setter = setter;
+                pair.SetterExporter = GetterSetterFunctionExporter.Create(setter, firstProperty, GetterSetterMode.Set,
+                    EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
         else
         {
-            SetSetter(function);
-            
+            pair.Setter = function;
+            pair.SetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Set,
+                EFunctionProtectionMode.UseUFunctionProtection);
+
             UhtFunction? getter = classObj.FindFunctionByName("Get" + propertyName, null, true);
             if (getter != null && CheckIfGetter(getter))
             {
-                SetGetter(getter);
+                pair.Getter = getter;
+                pair.GetterExporter = GetterSetterFunctionExporter.Create(getter, firstProperty, GetterSetterMode.Get,
+                    EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
 
         pair.Property = firstProperty;
-
         getterSetterPairs[propertyName] = pair;
         return true;
     }
 
     static bool CheckIfGetter(string scriptName, UhtFunction function)
     {
-        if (!scriptName.StartsWith("Get"))
-        {
-            return false;
-        }
-        
-        return CheckIfGetter(function);
+        return scriptName.StartsWith("Get") && CheckIfGetter(function);
     }
-    
+
     static bool CheckIfGetter(UhtFunction function)
     {
         int childrenCount = function.Children.Count;
@@ -399,12 +383,7 @@ public static class ScriptGeneratorUtilities
 
     static bool CheckIfSetter(string scriptName, UhtFunction function)
     {
-        if (!scriptName.StartsWith("Set"))
-        {
-            return false;
-        }
-
-        return CheckIfSetter(function);
+        return scriptName.StartsWith("Set") && CheckIfSetter(function);
     }
 
     static bool CheckIfSetter(UhtFunction function)
