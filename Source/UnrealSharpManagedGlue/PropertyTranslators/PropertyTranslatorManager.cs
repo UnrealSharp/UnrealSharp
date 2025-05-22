@@ -16,6 +16,7 @@ public static class PropertyTranslatorManager
         BlittableTypes.Add("ETriggerEvent");
         
         NativelyCopyableTypes.Add("FMoverDataCollection");
+        NativelyCopyableTypes.Add("FPaintContext");
 
         EnumPropertyTranslator enumPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
