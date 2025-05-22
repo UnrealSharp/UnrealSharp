@@ -552,7 +552,9 @@ public class FunctionExporter
             {
                 returnAssignment = $"{paramType} returnValue = ";
             }
-            else if (!parameter.HasAnyFlags(EPropertyFlags.ConstParm) && parameter.HasAnyFlags(EPropertyFlags.OutParm))
+            else if (!parameter.HasAnyFlags(EPropertyFlags.ConstParm)
+                    && !parameter.HasAnyFlags(EPropertyFlags.ReferenceParm)
+                    && parameter.HasAnyFlags(EPropertyFlags.OutParm))
             {
                 builder.AppendLine($"{paramType} {parameter.SourceName} = default;");
             }
