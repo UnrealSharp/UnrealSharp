@@ -14,7 +14,15 @@ bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void*
 {
 	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
 	{
-		return CppStructOps->Copy(Dest, Src, 1);
+		if (CppStructOps->HasCopy())
+		{
+			return CppStructOps->Copy(Dest, Src, 1);
+		}
+		else
+		{
+			FMemory::Memcpy(Dest, Src, CppStructOps->GetSize());
+			return true;
+		}
 	}
 	
 	return false;
