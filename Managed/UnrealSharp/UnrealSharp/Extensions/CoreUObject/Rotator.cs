@@ -76,7 +76,7 @@ public partial struct FRotator
     // Convert the rotator into a vector facing in its direction.
     public FVector ToVector()
     {
-        return FVectorExporter.CallFromRotator(out this);
+        return FVectorExporter.CallFromRotator(this);
     }
 
     public static FRotator operator + (FRotator lhs, FRotator rhs)
