@@ -54,13 +54,12 @@ public:
 	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
 	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 	
-	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class) const;
-	TSharedPtr<FCSAssembly> FindOwningAssembly(const UObject* Object) const;
+	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class);
 	
 	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const;
 	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName);
 	
-	FGCHandle FindManagedObject(UObject* Object) const;
+	FGCHandle FindManagedObject(UObject* Object);
 
 	void SetCurrentWorldContext(UObject* WorldContext);
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
@@ -117,6 +116,7 @@ private:
 	UPROPERTY()
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 	
+	TMap<uint32, TSharedPtr<FCSAssembly>> NativeClassToAssemblyMap;
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;

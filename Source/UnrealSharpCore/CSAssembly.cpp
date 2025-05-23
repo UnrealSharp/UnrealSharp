@@ -305,10 +305,12 @@ TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
 
 TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(const FCSFieldName& ClassName)
 {
-	TSharedPtr<FCSharpClassInfo> FoundClassInfo = Classes.FindRef(ClassName);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::FindOrAddClassInfo);
+	
+	TSharedPtr<FCSharpClassInfo>& ClassInfo = Classes.FindOrAdd(ClassName);
 
 	// Native classes are populated on the go when they are needed for managed code execution.
-	if (!FoundClassInfo.IsValid())
+	if (!ClassInfo.IsValid())
 	{
 		UClass* Class = TryFindField<UClass>(ClassName);
 
@@ -326,11 +328,10 @@ TSharedPtr<FCSharpClassInfo> FCSAssembly::FindOrAddClassInfo(const FCSFieldName&
 			return nullptr;
 		}
 		
-		FoundClassInfo = MakeShared<FCSharpClassInfo>(Class, SharedThis(this), TypeHandle);
-		Classes.Add(ClassName, FoundClassInfo);
+		ClassInfo = MakeShared<FCSharpClassInfo>(Class, SharedThis(this), TypeHandle);
 	}
 
-	return FoundClassInfo;
+	return ClassInfo;
 }
 
 TSharedPtr<FCSharpClassInfo> FCSAssembly::FindClassInfo(const FCSFieldName& ClassName) const
@@ -446,15 +447,17 @@ TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObject(UObject* Object)
 		RemoveManagedObject(Object);
 		return nullptr;
 	}
+
+	uint32 ObjectID = Object->GetUniqueID();
+	TSharedPtr<FGCHandle>& Handle = ManagedObjectHandles.FindOrAddByHash(ObjectID, ObjectID);
 	
-	if (TSharedPtr<FGCHandle> FoundHandle = ManagedObjectHandles.FindRef(Object->GetUniqueID()))
+	if (Handle.IsValid())
 	{
-		return FoundHandle;
+		return Handle;
 	}
 
 	// Only managed/native classes have a C# counterpart.
 	UClass* Class = FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(Object->GetClass());
-	
 	TSharedPtr<FCSharpClassInfo> ClassInfo = FindOrAddClassInfo(Class);
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
@@ -468,11 +471,9 @@ TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObject(UObject* Object)
 		return nullptr;
 	}
 
-	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(NewManagedObject);
-	ManagedObjectHandles.Add(Object->GetUniqueID(), AllocatedHandle);
-	AllocatedManagedHandles.Add(AllocatedHandle);
-	
-	return AllocatedHandle;
+	Handle = MakeShared<FGCHandle>(NewManagedObject);
+	AllocatedManagedHandles.Add(Handle);
+	return Handle;
 }
 
 void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSharpClassInfo* NewClass)
@@ -485,8 +486,10 @@ void FCSAssembly::RemoveManagedObject(const UObjectBase* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::RemoveManagedObject);
 	
+	uint32 ObjectID = Object->GetUniqueID();
 	TSharedPtr<FGCHandle> ObjectHandle;
-	if (ManagedObjectHandles.RemoveAndCopyValue(Object->GetUniqueID(), ObjectHandle))
+	
+	if (ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID, ObjectID, ObjectHandle))
 	{
 		FGCHandleIntPtr AssemblyHandle = ManagedAssemblyHandle->GetHandle();
 		ObjectHandle->Dispose(AssemblyHandle);

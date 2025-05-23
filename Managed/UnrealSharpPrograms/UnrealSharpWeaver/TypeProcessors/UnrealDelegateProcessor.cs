@@ -1,7 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using System.Collections.Generic;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.Utilities;
@@ -30,7 +29,7 @@ public static class UnrealDelegateProcessor
             
             FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
-            WriteInvokerMethod(invokerMethod, functionMetaData);
+            WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
         }
     }
@@ -94,22 +93,27 @@ public static class UnrealDelegateProcessor
             
             FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
-            WriteInvokerMethod(invokerMethod, functionMetaData);
+            WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
         }
     }
 
-    public static void WriteInvokerMethod(MethodReference invokerMethod, FunctionMetaData functionMetaData)
+    public static void WriteInvokerMethod(TypeDefinition delegateType, MethodReference invokerMethod, FunctionMetaData functionMetaData)
     {
+        GenericInstanceType baseGenericDelegateType = (GenericInstanceType)delegateType.BaseType;
+        TypeReference processDelegateType = baseGenericDelegateType.GenericArguments[0];
+        
+        MethodReference processDelegateBase = delegateType.FindMethod("ProcessDelegate")!;
+        MethodReference declaredType = FunctionProcessor.MakeMethodDeclaringTypeGeneric(processDelegateBase.Resolve().GetBaseMethod(),
+                processDelegateType.ImportType()).ImportMethod();
+        
         MethodDefinition invokerMethodDefinition = invokerMethod.Resolve();
         ILProcessor invokerMethodProcessor = invokerMethodDefinition.Body.GetILProcessor();
-        Instruction CallBase = invokerMethodProcessor.Body.Instructions[3];
         invokerMethodProcessor.Body.Instructions.Clear();
 
         if (functionMetaData.Parameters.Length > 0)
         {
-            functionMetaData.FunctionPointerField = invokerMethodDefinition.DeclaringType.AddField("SignatureFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
-            
+            functionMetaData.FunctionPointerField = delegateType.AddField("SignatureFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
             List<Instruction> allCleanupInstructions = [];
 
             for (int i = 0; i < functionMetaData.Parameters.Length; ++i)
@@ -142,7 +146,7 @@ public static class UnrealDelegateProcessor
             invokerMethodProcessor.Emit(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero);
         }
         
-        invokerMethodProcessor.Append(CallBase);
+        invokerMethodProcessor.Emit(OpCodes.Callvirt, declaredType);
         invokerMethodDefinition.FinalizeMethod();
     }
     

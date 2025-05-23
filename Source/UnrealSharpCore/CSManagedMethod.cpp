@@ -9,6 +9,8 @@ bool FCSManagedMethod::IsValid() const
 
 bool FCSManagedMethod::Invoke(const FGCHandle& ObjectHandle, uint8* ArgumentBuffer, void* ReturnValue, FString& ExceptionMessage) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSManagedMethod::Invoke);
+	
 #if WITH_EDITOR
 	if (GCompilingBlueprint && (!MethodHandle.IsValid() || !MethodHandle->IsNull()))
 	{

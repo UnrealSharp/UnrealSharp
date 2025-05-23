@@ -12,8 +12,6 @@ public class FunctionMetaData : BaseMetaData
     public PropertyMetaData? ReturnValue { get; set; }
     public EFunctionFlags FunctionFlags { get; set; }
     
-    const EFunctionFlags RpcFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
-    
     // Non-serialized for JSON
     public readonly MethodDefinition MethodDef;
     public FunctionRewriteInfo RewriteInfo;
@@ -21,15 +19,18 @@ public class FunctionMetaData : BaseMetaData
     public bool IsBlueprintEvent => FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintNativeEvent);
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
-    public bool IsRpc => FunctionFlags.HasAnyFlags(RpcFlags);
+    public bool IsRpc => FunctionFlags.HasAnyFlags(Utilities.MethodUtilities.RpcFlags);
     private bool _shouldBeRemoved;
     // End non-serialized
 
     private const string CallInEditorName = "CallInEditor";
 
-    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false) : base(method, Utilities.MethodUtilities.UFunctionAttribute)
+    public FunctionMetaData(MethodDefinition method, bool onlyCollectMetaData = false, EFunctionFlags functionFlags = EFunctionFlags.None) 
+        : base(method, Utilities.MethodUtilities.UFunctionAttribute)
     {
         MethodDef = method;
+        FunctionFlags = functionFlags;
+        
         bool hasOutParams = false;
         
         if (!method.ReturnsVoid())
@@ -85,54 +86,12 @@ public class FunctionMetaData : BaseMetaData
             }
         }
         
-        EFunctionFlags flags = (EFunctionFlags) GetFlags(method, "FunctionFlagsMapAttribute");
-
+        FunctionFlags |= MethodDef.GetFunctionFlags();
+        
         if (hasOutParams)
         {
-            flags |= EFunctionFlags.HasOutParms;
+            FunctionFlags |= EFunctionFlags.HasOutParms;
         }
-
-        if (method.IsPublic)
-        {
-            flags |= EFunctionFlags.Public;
-        }
-        else if (method.IsFamily)
-        {
-            flags |= EFunctionFlags.Protected;
-        }
-        else
-        {
-            flags |= EFunctionFlags.Private;
-        }
-
-        if (method.IsStatic)
-        {
-            flags |= EFunctionFlags.Static;
-        }
-        
-        if (flags.HasAnyFlags(RpcFlags))
-        {
-            flags |= EFunctionFlags.Net;
-            
-            if (!method.ReturnsVoid())
-            {
-                throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
-            }
-            
-            if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
-            {
-                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
-            }
-        }
-        
-        // This represents both BlueprintNativeEvent and BlueprintImplementableEvent
-        if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
-        {
-            flags |= EFunctionFlags.Event;
-        }
-        
-        // Native is needed to bind the function pointer of the UFunction to our own invoke in UE.
-        FunctionFlags = flags | EFunctionFlags.Native;
         
         if (onlyCollectMetaData)
         {
@@ -243,6 +202,11 @@ public class FunctionMetaData : BaseMetaData
 
     public static bool IsInterfaceFunction(MethodDefinition method)
     {
+        return TryGetInterfaceFunction(method) != null;
+    }
+    
+    public static MethodDefinition? TryGetInterfaceFunction(MethodDefinition method)
+    {
         foreach (var typeInterface in method.DeclaringType.Interfaces)
         {
             var interfaceType = typeInterface.InterfaceType.Resolve();
@@ -252,15 +216,16 @@ public class FunctionMetaData : BaseMetaData
                 continue; 
             }
 
-            foreach (var interfaceMethod in interfaceType.Methods)
+            foreach (MethodDefinition? interfaceMethod in interfaceType.Methods)
             {
                 if (interfaceMethod.Name == method.Name)
                 {
-                    return true;
+                    return interfaceMethod;
                 }
             }
         }
-        return false;
+        
+        return null;
     }
     
     public static bool IsBlueprintCallable(MethodDefinition method)
@@ -279,7 +244,7 @@ public class FunctionMetaData : BaseMetaData
     
     public void EmitFunctionParamOffsets(ILProcessor processor, Instruction loadFunctionPointer)
     {
-        foreach (var paramRewriteInfo in RewriteInfo.FunctionParams)
+        foreach (FunctionParamRewriteInfo paramRewriteInfo in RewriteInfo.FunctionParams)
         {
             FieldDefinition? offsetField = paramRewriteInfo.OffsetField;
             if (offsetField == null)

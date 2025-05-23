@@ -51,7 +51,6 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 		// FGraphNodeClassHelper::BuildClassGraph()
 		// FStateTreeNodeClassCache::CacheClasses()
 		Class->ClassFlags |= CLASS_Native;
-		Class->SetMetaData(MD_NativeEditorOnly, TEXT("true"));
 	}
 	
 	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);

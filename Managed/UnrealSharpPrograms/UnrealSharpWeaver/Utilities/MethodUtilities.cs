@@ -1,11 +1,13 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using UnrealSharpWeaver.MetaData;
 
 namespace UnrealSharpWeaver.Utilities;
 
 public static class MethodUtilities
 {
+    public static readonly EFunctionFlags RpcFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
     public static readonly string UFunctionAttribute = "UFunctionAttribute";
     
     /// <param name="name">name the method copy will have</param>
@@ -59,6 +61,53 @@ public static class MethodUtilities
     {
         return method.CustomAttributes.FindAttributeByType("System.Runtime.CompilerServices", "CompilerGeneratedAttribute") != null;
     }
+
+    public static EFunctionFlags GetFunctionFlags(this MethodDefinition method)
+    {
+        EFunctionFlags flags = (EFunctionFlags) BaseMetaData.GetFlags(method, "FunctionFlagsMapAttribute");
+
+        if (method.IsPublic)
+        {
+            flags |= EFunctionFlags.Public;
+        }
+        else if (method.IsFamily)
+        {
+            flags |= EFunctionFlags.Protected;
+        }
+        else
+        {
+            flags |= EFunctionFlags.Private;
+        }
+
+        if (method.IsStatic)
+        {
+            flags |= EFunctionFlags.Static;
+        }
+        
+        if (flags.HasAnyFlags(RpcFlags))
+        {
+            flags |= EFunctionFlags.Net;
+            
+            if (!method.ReturnsVoid())
+            {
+                throw new InvalidUnrealFunctionException(method, "RPCs can't have return values.");
+            }
+            
+            if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
+            {
+                throw new InvalidUnrealFunctionException(method, "BlueprintEvents methods cannot be replicated!");
+            }
+        }
+        
+        // This represents both BlueprintNativeEvent and BlueprintImplementableEvent
+        if (flags.HasFlag(EFunctionFlags.BlueprintNativeEvent))
+        {
+            flags |= EFunctionFlags.Event;
+        }
+        
+        // Native is needed to bind the function pointer of the UFunction to our own invoke in UE.
+        return flags | EFunctionFlags.Native;
+    }
     
     public static void OptimizeMethod(this MethodDefinition method)
     {
@@ -67,13 +116,9 @@ public static class MethodUtilities
             return;
         }
         
-        if (method.Body.Variables.Count > 0)
-        {
-            method.Body.InitLocals = true;
-        }
-        
         method.Body.Optimize();
         method.Body.SimplifyMacros();
+        method.Body.InitLocals = true;
     }
     
     public static void RemoveReturnInstruction(this MethodDefinition method)

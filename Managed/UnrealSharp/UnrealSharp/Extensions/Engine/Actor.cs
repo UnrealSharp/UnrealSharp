@@ -149,6 +149,22 @@ public partial class AActor
     }
     
     /// <summary>
+    /// Set the Actor's rotation instantly to the specified rotation.
+    /// </summary>
+    public bool SetActorRotation(FRotator newRotation)
+    {
+        return SetActorRotation(newRotation, false);
+    }
+    
+    /// <summary>
+    /// Set the Actors transform to the specified one.
+    /// </summary>
+    public bool SetActorTransform(FTransform newTransform)
+    {
+        return SetActorTransform(newTransform, false, out _, false);
+    }
+    
+    /// <summary>
     /// Move the actor instantly to the specified location and rotation.
     /// </summary>
     public bool SetActorLocationRotation(FVector newLocation, FRotator newRotation)

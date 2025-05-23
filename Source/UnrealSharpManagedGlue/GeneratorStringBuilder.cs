@@ -206,19 +206,23 @@ public class GeneratorStringBuilder : IDisposable
     
     public void AppendStackAlloc(string sizeVariableName)
     {
-        AppendLine($"byte* ParamsBufferAllocation = stackalloc byte[{sizeVariableName}];");
-        AppendLine("nint ParamsBuffer = (nint) ParamsBufferAllocation;");
+        AppendLine($"byte* paramsBufferAllocation = stackalloc byte[{sizeVariableName}];");
+        AppendLine("nint paramsBuffer = (nint) paramsBufferAllocation;");
     }
 
-    public void AppendStackAllocFunction(string sizeVariableName, string structName)
+    public void AppendStackAllocFunction(string sizeVariableName, string structName, bool appendInitializer = true)
     {
         AppendStackAlloc(sizeVariableName);
-        AppendLine($"{ExporterCallbacks.UFunctionCallbacks}.CallInitializeFunctionParams({structName}, ParamsBuffer);");
+        
+        if (appendInitializer)
+        {
+            AppendLine($"{ExporterCallbacks.UFunctionCallbacks}.CallInitializeFunctionParams({structName}, paramsBuffer);");
+        }
     }
 
     public void AppendStackAllocProperty(string sizeVariableName, string sourcePropertyName)
     {
         AppendStackAlloc(sizeVariableName);
-        AppendLine($"{ExporterCallbacks.FPropertyCallbacks}.CallInitializeValue({sourcePropertyName}, ParamsBuffer);");
+        AppendLine($"{ExporterCallbacks.FPropertyCallbacks}.CallInitializeValue({sourcePropertyName}, paramsBuffer);");
     }
 }

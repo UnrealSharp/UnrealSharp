@@ -248,13 +248,16 @@ void FCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TShared
 	}
 }
 
+bool IsNativeClass(UClass* Class)
+{
+	return Class->GetClass() == UClass::StaticClass();
+}
+
 UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
 {
-	if (Class->HasAnyClassFlags(CLASS_Native)
-#if WITH_EDITOR
-		&& !Class->HasMetaData(MD_NativeEditorOnly)
-#endif
-		)
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstManagedClass);
+	
+	if (IsNativeClass(Class))
 	{
 		return nullptr;
 	}
@@ -262,26 +265,38 @@ UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
 	while (Class && !IsManagedType(Class))
 	{
 		Class = Class->GetSuperClass();
+
+		if (IsNativeClass(Class))
+		{
+			// We've already reached a native class, so we can stop searching.
+			return nullptr;
+		}
 	}
 	
-	return Cast<UCSClass>(Class);
+	return (UCSClass*) Class;
 }
 
 UClass* FCSGeneratedClassBuilder::GetFirstNativeClass(UClass* Class)
 {
-	while (!Class->HasAnyClassFlags(CLASS_Native) || IsManagedType(Class))
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNativeClass);
+	
+	while (!IsNativeClass(Class))
 	{
 		Class = Class->GetSuperClass();
 	}
+	
 	return Class;
 }
 
 UClass* FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(UClass* Class)
 {
-	while (Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint) && !IsManagedType(Class))
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNonBlueprintClass);
+	
+	while (Class->GetClass() == UBlueprintGeneratedClass::StaticClass())
 	{
 		Class = Class->GetSuperClass();
 	}
+	
 	return Class;
 }
 

@@ -16,13 +16,14 @@ public class ClassMetaData : TypeReferenceMetadata
     public ClassFlags ClassFlags { get; set; }
     
     // Non-serialized for JSON
-    public bool HasProperties => Properties != null && Properties.Count > 0;
-    private readonly TypeDefinition ClassDefinition;
+    public bool HasProperties => Properties.Count > 0;
+    private readonly TypeDefinition _classDefinition;
     // End non-serialized
     
     public ClassMetaData(TypeDefinition type) : base(type, TypeDefinitionUtilities.UClassAttribute)
     {
-        ClassDefinition = type;
+        _classDefinition = type;
+        
         Properties = [];
         Functions = [];
         VirtualFunctions = [];
@@ -54,7 +55,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void AddConfigCategory()
     {
-        CustomAttribute uClassAttribute = ClassDefinition.GetUClass()!;
+        CustomAttribute uClassAttribute = _classDefinition.GetUClass()!;
         CustomAttributeArgument? configCategoryProperty = uClassAttribute.FindAttributeField(nameof(ConfigCategory));
         if (configCategoryProperty != null)
         {
@@ -64,14 +65,14 @@ public class ClassMetaData : TypeReferenceMetadata
 
     private void PopulateProperties()
     {
-        if (ClassDefinition.Properties.Count == 0)
+        if (_classDefinition.Properties.Count == 0)
         {
             return;
         }
         
         Properties = [];
         
-        foreach (PropertyDefinition property in ClassDefinition.Properties)
+        foreach (PropertyDefinition property in _classDefinition.Properties)
         {
             CustomAttribute? uPropertyAttribute = property.GetUProperty();
 
@@ -92,7 +93,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
     void PopulateFunctions()
     {
-        if (ClassDefinition.Methods.Count == 0)
+        if (_classDefinition.Methods.Count == 0)
         {
             return;
         }
@@ -100,9 +101,9 @@ public class ClassMetaData : TypeReferenceMetadata
         Functions = [];
         VirtualFunctions = [];
         
-        for (var i = ClassDefinition.Methods.Count - 1; i >= 0; i--)
+        for (var i = _classDefinition.Methods.Count - 1; i >= 0; i--)
         {
-            MethodDefinition method = ClassDefinition.Methods[i];
+            MethodDefinition method = _classDefinition.Methods[i];
 
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
@@ -130,9 +131,16 @@ public class ClassMetaData : TypeReferenceMetadata
                 Functions.Add(functionMetaData);
             }
             
-            if (isBlueprintOverride || (isInterfaceFunction && method.GetBaseMethod().DeclaringType == ClassDefinition))
+            if (isBlueprintOverride || isInterfaceFunction && method.GetBaseMethod().DeclaringType == _classDefinition)
             {
-                VirtualFunctions.Add(new FunctionMetaData(method));
+                EFunctionFlags functionFlags = EFunctionFlags.None;
+                if (isInterfaceFunction)
+                {
+                    MethodDefinition interfaceFunction = FunctionMetaData.TryGetInterfaceFunction(method)!;
+                    functionFlags = interfaceFunction.GetFunctionFlags();
+                }
+                
+                VirtualFunctions.Add(new FunctionMetaData(method, false, functionFlags));
             }
         }
     }
@@ -144,14 +152,14 @@ public class ClassMetaData : TypeReferenceMetadata
     
     void PopulateInterfaces()
     {
-        if (ClassDefinition.Interfaces.Count == 0)
+        if (_classDefinition.Interfaces.Count == 0)
         {
             return;
         }
         
         Interfaces = [];
         
-        foreach (InterfaceImplementation? typeInterface in ClassDefinition.Interfaces)
+        foreach (InterfaceImplementation? typeInterface in _classDefinition.Interfaces)
         {
             TypeDefinition interfaceType = typeInterface.InterfaceType.Resolve();
 
