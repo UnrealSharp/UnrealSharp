@@ -1,22 +1,19 @@
 ﻿#include "AsyncExporter.h"
 #include "CSManagedDelegate.h"
 
-void UAsyncExporter::RunOnThread(UObject* WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
+void UAsyncExporter::RunOnThread(TWeakObjectPtr<UObject> WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
 {
-	TWeakObjectPtr<UObject> WeakWorldContextObject(WorldContextObject);
-	
-	AsyncTask(Thread, [WeakWorldContextObject, DelegateHandle]()
+	AsyncTask(Thread, [WorldContextObject, DelegateHandle]()
 	{
 		FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle, GCHandleType::StrongHandle);
 		
-		if (!WeakWorldContextObject.IsValid())
+		if (!WorldContextObject.IsValid())
 		{
 			ManagedDelegate.Dispose();
 			return;
 		}
-
-		UObject* WorldContextObject = WeakWorldContextObject.Get();
-		ManagedDelegate.Invoke(WorldContextObject);
+		
+		ManagedDelegate.Invoke(WorldContextObject.Get());
 	});
 }
 

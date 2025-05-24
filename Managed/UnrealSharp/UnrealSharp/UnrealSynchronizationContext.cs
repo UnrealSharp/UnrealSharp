@@ -66,30 +66,18 @@ namespace UnrealSharp
         public static Task ConfigureWithUnrealContext(this Task task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
         {
             SynchronizationContext? previousContext = SynchronizationContext.Current;
-            var unrealContext = new UnrealSynchronizationContext(thread);
+            UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread, task);
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
-            return task.ContinueWith((Task t, object? state) =>
+            return task.ContinueWith(t =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (throwOnCancel && t.IsCanceled)
                 {
-                    SynchronizationContext newPreviousContext = (SynchronizationContext) state!;
-                    try
-                    {
-                        if (t.IsCanceled && throwOnCancel)
-                        {
-                            throw new TaskCanceledException();
-                        }
-                        
-                        t.GetAwaiter().GetResult();
-                    }
-                    finally
-                    {
-                        SynchronizationContext.SetSynchronizationContext(newPreviousContext);
-                    }
-                },
-                previousContext,
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+                    throw new TaskCanceledException();
+                }
+            });
         }
 
         public static Task ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false) 
@@ -98,30 +86,20 @@ namespace UnrealSharp
         public static Task<T> ConfigureWithUnrealContext<T>(this Task<T> task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
         {
             SynchronizationContext? previousContext = SynchronizationContext.Current;
-            UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread);
+            UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread, task);
             SynchronizationContext.SetSynchronizationContext(unrealContext);
 
-            return task.ContinueWith((t, state) =>
+            return task.ContinueWith(t =>
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+
+                if (throwOnCancel && t.IsCanceled)
                 {
-                    SynchronizationContext newPreviousContext = (SynchronizationContext) state!;
-                    try
-                    {
-                        if (t.IsCanceled && throwOnCancel)
-                        {
-                            throw new TaskCanceledException();
-                        }
-                        
-                        return t.GetAwaiter().GetResult();
-                    }
-                    finally
-                    {
-                        SynchronizationContext.SetSynchronizationContext(newPreviousContext);
-                    }
-                },
-                previousContext,
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+                    throw new TaskCanceledException();
+                }
+
+                return t.Result;
+            });
         }
 
         public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread,
@@ -132,11 +110,12 @@ namespace UnrealSharp
     public sealed class UnrealSynchronizationContext : SynchronizationContext
     {
         public static NamedThread CurrentThread => (NamedThread)AsyncExporter.CallGetCurrentNamedThread();
-
+        
         private readonly NamedThread _thread;
         private readonly TWeakObjectPtr<UObject> _worldContext;
+        private IDisposable? _task;
 
-        public UnrealSynchronizationContext(NamedThread thread)
+        public UnrealSynchronizationContext(NamedThread thread, IDisposable task)
         {
             if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid)
             {
@@ -145,10 +124,10 @@ namespace UnrealSharp
             
             _thread = thread;
             _worldContext = new TWeakObjectPtr<UObject>(worldContext.World);
+            _task = task;
         }
 
         public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));
-
         public override void Send(SendOrPostCallback d, object? state)
         {
             if (CurrentThread == _thread)
@@ -173,17 +152,16 @@ namespace UnrealSharp
             manualResetEventInstance.Wait();
         }
 
-        internal static void RunOnThread(TWeakObjectPtr<UObject> worldContextObject, NamedThread thread, Action callback)
+        void RunOnThread(TWeakObjectPtr<UObject> worldContextObject, NamedThread thread, Action callback)
         {
-            if (!worldContextObject.IsValid() || worldContextObject.IsStale())
+            if (worldContextObject.IsValid())
             {
-                return;
+                GCHandle callbackHandle = GCHandle.Alloc(callback);
+                AsyncExporter.CallRunOnThread(worldContextObject.Data, (int) thread, GCHandle.ToIntPtr(callbackHandle));
             }
             
-            GCHandle callbackHandle = GCHandle.Alloc(callback);
-            IntPtr nativeObject = worldContextObject.Object!.NativeObject;
-            
-            AsyncExporter.CallRunOnThread(nativeObject, (int) thread, GCHandle.ToIntPtr(callbackHandle));
+            _task!.Dispose();
+            _task = null;
         }
     }
 }
