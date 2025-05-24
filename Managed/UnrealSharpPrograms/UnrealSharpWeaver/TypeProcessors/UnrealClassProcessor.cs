@@ -82,13 +82,13 @@ public static class UnrealClassProcessor
         {
             ConstructorBuilder.InitializeFields(staticConstructor, metadata.Properties, loadNativeClassField);
         }
-
-        foreach (var function in metadata.Functions)
+        
+        foreach (FunctionMetaData function in metadata.Functions)
         {
             EmitFunctionGlueToStaticCtor(function, processor, loadNativeClassField, staticConstructor);
         }
 
-        foreach (var virtualFunction in metadata.VirtualFunctions)
+        foreach (FunctionMetaData virtualFunction in metadata.VirtualFunctions)
         {
             if (!FunctionMetaData.IsInterfaceFunction(virtualFunction.MethodDef))
             {
@@ -97,29 +97,36 @@ public static class UnrealClassProcessor
             
             EmitFunctionGlueToStaticCtor(virtualFunction, processor, loadNativeClassField, staticConstructor);
         }
-
+        
         staticConstructor.FinalizeMethod();
     }
 
     static void EmitFunctionGlueToStaticCtor(FunctionMetaData function, ILProcessor processor, Instruction loadNativeClassField, MethodDefinition staticConstructor)
     {
-        if (!function.HasParameters)
+        try
         {
-            return;
+            if (!function.HasParameters)
+            {
+                return;
+            }
+            
+            VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
+            Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
+            
+            function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
+            function.EmitFunctionParamOffsets(processor, loadNativePointer);
+            function.EmitFunctionParamSize(processor, loadNativePointer);
+            function.EmitParamNativeProperty(processor, loadNativePointer);
+            
+            foreach (var param in function.Parameters)
+            {
+                param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
+            }
         }
-            
-        VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
-        Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
-        Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
-            
-        function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
-        function.EmitFunctionParamOffsets(processor, loadNativePointer);
-        function.EmitFunctionParamSize(processor, loadNativePointer);
-        function.EmitParamNativeProperty(processor, loadNativePointer);
-            
-        foreach (var param in function.Parameters)
+        catch (Exception e)
         {
-            param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
+            throw new Exception($"Failed to emit function glue for {function.Name}", e);
         }
     }
 }

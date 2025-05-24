@@ -72,6 +72,8 @@ public class FunctionExporter
     protected OverloadMode _overloadMode = OverloadMode.AllowOverloads;
     protected EFunctionProtectionMode _protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
     protected EBlueprintVisibility _blueprintVisibility = EBlueprintVisibility.Call;
+
+    protected bool BlittableFunction;
     
     public string Modifiers { get; private set; } = "";
     
@@ -137,12 +139,19 @@ public class FunctionExporter
         _blueprintVisibility = blueprintVisibility;
 
         _parameterTranslators = new List<PropertyTranslator>(_function.Children.Count);
-
+        
+        bool isBlittable = true;
         foreach (UhtProperty parameter in _function.Properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
             _parameterTranslators.Add(translator);
+
+            if (!translator.IsBlittable && isBlittable)
+            {
+                isBlittable = false;
+            }
         }
+        BlittableFunction = isBlittable;
 
         _hasGenericTypeSupport = _function.HasGenericTypeSupport();
 
@@ -160,7 +169,7 @@ public class FunctionExporter
         {
             if (_function.HasParametersOrReturnValue())
             {
-                _customInvoke = "ProcessDelegate(ParamsBuffer);";
+                _customInvoke = "ProcessDelegate(paramsBuffer);";
             }
             else
             {
@@ -832,7 +841,9 @@ public class FunctionExporter
             }
             else
             {
-                builder.AppendStackAllocFunction($"{_function.SourceName}_ParamsSize", nativeFunctionIntPtr);
+                builder.AppendStackAllocFunction($"{_function.SourceName}_ParamsSize", 
+                    nativeFunctionIntPtr, 
+                    !BlittableFunction);
             }
 
             ForEachParameter((translator, parameter) =>
@@ -855,7 +866,7 @@ public class FunctionExporter
                             offsetName += $"<{string.Join(", ", _customStructParamTypes.GetRange(0, precedingCustomStructParams))}>()";
                         }
                     }
-                    translator.ExportToNative(builder, parameter, parameter.SourceName, "ParamsBuffer", offsetName, propertyName);
+                    translator.ExportToNative(builder, parameter, parameter.SourceName, "paramsBuffer", offsetName, propertyName);
                 }
             });
             
@@ -864,7 +875,7 @@ public class FunctionExporter
             if (string.IsNullOrEmpty(_customInvoke))
             {
                 string invokedFunctionIntPtr = _hasCustomStructParamSupport ? "Specialization" : nativeFunctionIntPtr;
-                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {invokedFunctionIntPtr}, ParamsBuffer);");
+                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {invokedFunctionIntPtr}, paramsBuffer);");
             }
             else
             {
@@ -909,7 +920,7 @@ public class FunctionExporter
                         parameter,
                         parameter.SourceName,
                         $"{marshalDestination} =",
-                        "ParamsBuffer",
+                        "paramsBuffer",
                         offsetName,
                         true,
                         parameter.HasAllFlags(EPropertyFlags.ReferenceParm) &&

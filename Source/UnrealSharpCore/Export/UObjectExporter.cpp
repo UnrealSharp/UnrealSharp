@@ -31,31 +31,35 @@ void UUObjectExporter::NativeGetName(UObject* Object, FName* OutName)
 
 void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UUObjectExporter::InvokeNativeFunction);
+	
 	FFrame NewStack(NativeObject, NativeFunction, Params, nullptr, NativeFunction->ChildProperties);
 	NewStack.CurrentNativeFunction = NativeFunction;
-	
+
 	if (NativeFunction->HasAllFunctionFlags(FUNC_Net))
 	{
 		int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
-		if ((FunctionCallspace & FunctionCallspace::Remote))
+		
+		if (FunctionCallspace & FunctionCallspace::Remote)
 		{
 			NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
 			return;
 		}
-		else if ((FunctionCallspace & FunctionCallspace::Absorbed))
+		
+		if (FunctionCallspace & FunctionCallspace::Absorbed)
 		{
 			return;
 		}
 	}
 	
-	if (NativeFunction->HasAnyFunctionFlags(FUNC_HasOutParms))
+	if (NativeFunction->HasAllFunctionFlags(FUNC_HasOutParms))
 	{
 		FOutParmRec** LastOut = &NewStack.OutParms;
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
 		{
 			FProperty* Property = *PropIt;
 			
-			if (!Property->HasAnyPropertyFlags(CPF_OutParm))
+			if (!Property->HasAllPropertyFlags(CPF_OutParm))
 			{
 				continue;
 			}

@@ -10,6 +10,7 @@ public class StructPropertyTranslator : SimpleTypePropertyTranslator
     }
     
     public override bool ExportDefaultParameter => false;
+    public override bool IsBlittable => false;
 
     public override string GetManagedType(UhtProperty property)
     {

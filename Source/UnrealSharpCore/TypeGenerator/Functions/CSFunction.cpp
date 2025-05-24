@@ -58,19 +58,10 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 
 bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL)
 {
-	UCSManager& Manager = UCSManager::Get();
-
-	// If we invoke static methods the ObjectToInvokeOn is the CDO, which doesn't have a valid world to use.
-	// So we use the current object from the stack.
-	bool bIsTemplate = ObjectToInvokeOn->IsTemplate();
-	Manager.SetCurrentWorldContext(bIsTemplate ? Stack.Object : ObjectToInvokeOn);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunctionBase::InvokeManagedEvent);
+	Stack.Code += !!Stack.Code;
 	
-	if (Stack.Code)
-	{
-		++Stack.Code;
-	}
-	
-	FGCHandle ManagedObjectHandle = Manager.FindManagedObject(ObjectToInvokeOn);
+	UCSManager::Get().SetCurrentWorldContext(Stack.Object);
 
 #if WITH_EDITOR
 	if (!Function->MethodHandle.IsValid() && !Function->TryUpdateMethodHandle())
@@ -78,6 +69,8 @@ bool UCSFunctionBase::InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stac
 		return false;
 	}
 #endif
+
+	FGCHandle ManagedObjectHandle = UCSManager::Get().FindManagedObject(ObjectToInvokeOn);
 	
 	FString ExceptionMessage;
 	const bool bSuccess = Function->MethodHandle.Invoke(ManagedObjectHandle, ArgumentBuffer, RESULT_PARAM, ExceptionMessage);

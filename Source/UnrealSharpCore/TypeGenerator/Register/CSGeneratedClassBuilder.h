@@ -4,10 +4,6 @@
 #include "TypeGenerator/CSClass.h"
 #include "MetaData/CSClassMetaData.h"
 
-#if WITH_EDITORONLY_DATA
-const FName MD_NativeEditorOnly = TEXT("Native_EditorOnly");
-#endif
-
 class UNREALSHARPCORE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>
 {
 	

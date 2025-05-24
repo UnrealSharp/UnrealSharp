@@ -1,7 +1,10 @@
+using System.Runtime.CompilerServices;
+
 namespace UnrealSharp.Core.Marshallers;
 
 public static class BlittableMarshaller<T>
 { 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         unsafe
@@ -10,6 +13,7 @@ public static class BlittableMarshaller<T>
         }
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, int size)
     {
         unsafe
@@ -18,6 +22,7 @@ public static class BlittableMarshaller<T>
         }
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
@@ -26,6 +31,7 @@ public static class BlittableMarshaller<T>
         }
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex, int size)
     {
         unsafe

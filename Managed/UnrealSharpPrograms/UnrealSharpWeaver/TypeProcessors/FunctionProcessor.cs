@@ -33,7 +33,7 @@ public static class FunctionProcessor
             AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (function.IsBlueprintEvent || function.IsRpc || FunctionMetaData.IsInterfaceFunction(function.MethodDef))
+        if (function.IsBlueprintEvent || function.IsRpc)
         {
             function.FunctionPointerField = classDefinition.AddField($"{function.Name}_NativeFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Private);
             RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
@@ -447,15 +447,12 @@ public static class FunctionProcessor
         out Instruction loadArgumentBuffer, 
         List<Instruction> allCleanupInstructions)
     {
-        // byte* ptr = stackalloc byte[TestFunction_ParamsSize];
-        //IL_002b: ldsfld int32 UnrealSharp.MyActorClass::TestFunction_ParamsSize
-        //IL_0030: conv.i4
-        //IL_0031: localloc
-        //IL_0033: stloc 0
+        VariableDefinition argumentsBuffer = methodDef.AddLocalVariable(new PointerType(WeaverImporter.Instance.ByteTypeRef));
+        methodDef.Body.Variables.Add(argumentsBuffer);
+        
         processor.Emit(OpCodes.Ldsfld, paramsSizeField);
         processor.Emit(OpCodes.Conv_I4);
         processor.Emit(OpCodes.Localloc);
-        VariableDefinition argumentsBuffer = methodDef.AddLocalVariable(new PointerType(WeaverImporter.Instance.ByteTypeRef));
         processor.Emit(OpCodes.Stloc, argumentsBuffer);
 
         // nint num = (nint) ptr;

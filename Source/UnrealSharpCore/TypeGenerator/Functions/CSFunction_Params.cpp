@@ -2,7 +2,7 @@
 
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSFunction_Params::InvokeManagedMethod_Params ") + Stack.CurrentNativeFunction->GetName()));
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params);
 	
 	UCSFunctionBase* Function = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
 	FOutParmRec* OutParameters = nullptr;
@@ -12,6 +12,8 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	// If we're calling this from BP, we need to copy the parameters to a new buffer
 	if (Stack.Code)
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params::CopyParametersToBuffer);
+		
 		int LocalStructSize = Function->GetStructureSize();
 		TArrayView<uint8> ArgumentData((uint8*)FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize)), LocalStructSize);
 		ArgumentBuffer = ArgumentData.GetData();

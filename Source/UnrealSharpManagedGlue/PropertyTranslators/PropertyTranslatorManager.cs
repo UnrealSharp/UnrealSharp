@@ -69,16 +69,21 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         
-        AddBlittableCustomStructPropertyTranslator("FVector2f", "UnrealSharp.CoreUObject.FVector2f");
-        AddBlittableCustomStructPropertyTranslator("FVector3f", "UnrealSharp.CoreUObject.FVector3f");
+        AddBlittableCustomStructPropertyTranslator("FVector", "UnrealSharp.CoreUObject.FVector");
+        AddBlittableCustomStructPropertyTranslator("FVector2D", "UnrealSharp.CoreUObject.FVector2D");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize10", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize100", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector_NetQuantizeNormal", "UnrealSharp.CoreUObject.FVector");
+        
+        AddBlittableCustomStructPropertyTranslator("FVector2f", "UnrealSharp.CoreUObject.FVector2f");
+        AddBlittableCustomStructPropertyTranslator("FVector3f", "UnrealSharp.CoreUObject.FVector3f");
         AddBlittableCustomStructPropertyTranslator("FVector4f", "UnrealSharp.CoreUObject.FVector4f");
+        
         AddBlittableCustomStructPropertyTranslator("FQuatf4", "UnrealSharp.CoreUObject.FVector4f");
-        AddBlittableCustomStructPropertyTranslator("FMatrix44f", "UnrealSharp.CoreUObject.FMatrix44f");
         AddBlittableCustomStructPropertyTranslator("FRotator", "UnrealSharp.CoreUObject.FRotator");
+        
+        AddBlittableCustomStructPropertyTranslator("FMatrix44f", "UnrealSharp.CoreUObject.FMatrix44f");
         AddBlittableCustomStructPropertyTranslator("FTransform", "UnrealSharp.CoreUObject.FTransform");
         
         AddBlittableCustomStructPropertyTranslator("FTimerHandle", "UnrealSharp.Engine.FTimerHandle");
