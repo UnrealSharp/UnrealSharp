@@ -1,8 +1,9 @@
 ﻿namespace UnrealSharpBuildTool.Actions;
 
-public class GenerateSolution : BuildToolAction
+public static class GenerateSolutionAction
 {
-    public override bool RunAction()
+    [Action("Generate Solution", "Generates a solution file for the current project.")]
+    public static void GenerateSolution()
     {
         BuildToolProcess generateSln = new BuildToolProcess();
         
@@ -28,7 +29,6 @@ public class GenerateSolution : BuildToolAction
             existingProjectsList.Add(relativePath);
         }
         
-        GenerateProject.AddProjectToSln(existingProjectsList);
-        return true;
+        ProjectGeneration.GenerateProject.AddProjectToSln(existingProjectsList);
     }
 }

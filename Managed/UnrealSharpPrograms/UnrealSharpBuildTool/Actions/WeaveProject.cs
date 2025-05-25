@@ -1,16 +1,22 @@
-﻿namespace UnrealSharpBuildTool.Actions;
+﻿using CommandLine;
 
-public class WeaveProject : BuildToolAction
+namespace UnrealSharpBuildTool.Actions;
+
+public static class Weaving
 {
-    readonly string _outputDirectory;
-    
-    public WeaveProject(string outputDirectory = "")
+    public struct WeaveParameters
     {
-        _outputDirectory = string.IsNullOrEmpty(outputDirectory) ? Program.GetOutputPath() : outputDirectory;
+        [Option('o', "outputDirectory", Required = false, HelpText = "Output directory for the weaved files. Will default to ProjectRoot/Binaries/Managed if not specified.")]
+        public string OutputDirectory { get; set; }
+        
+        [Option("weaverPath", Required = false, HelpText = "Path to the weaver tool. If not specified, the default path will be used.")]
+        public TargetConfiguration BuildConfig { get; set; }
     }
     
-    public override bool RunAction()
+    [Action("WeaveProject", "Weaves the project files with the weaver tool.")]
+    public static void WeaveProject(WeaveParameters parameters)
     {
+        string outputPath = string.IsNullOrEmpty(parameters.OutputDirectory) ? Program.GetOutputPath() : parameters.OutputDirectory;
         string weaverPath = Program.GetWeaver();
         
         if (!File.Exists(weaverPath))
@@ -19,16 +25,11 @@ public class WeaveProject : BuildToolAction
         }
 
         DirectoryInfo scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
-        return Weave(scriptRootDirInfo, weaverPath);
-    }
-    
-    private bool Weave(DirectoryInfo scriptFolder, string weaverPath)
-    {
-        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(scriptFolder);
+        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(scriptRootDirInfo);
         if (allProjectFiles.Count == 0)
         {
             Console.WriteLine("No project files found. Skipping weaving...");
-            return true;
+            return;
         }
         
         BuildToolProcess weaveProcess = new BuildToolProcess();
@@ -41,7 +42,7 @@ public class WeaveProject : BuildToolAction
             weaveProcess.StartInfo.ArgumentList.Add("-p");
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
             string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin", 
-                Program.GetBuildConfiguration(), Program.GetVersion(), csProjName + ".dll");
+                parameters.BuildConfig.ToString(), Program.GetVersion(), csProjName + ".dll");
             
             weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
             foundValidProject = true;
@@ -50,13 +51,12 @@ public class WeaveProject : BuildToolAction
         if (!foundValidProject)
         {
             Console.WriteLine("No valid project found to weave. Skipping weaving...");
-            return true;
+            return;
         }
 
         // Add path to the output folder for the weaver.
         weaveProcess.StartInfo.ArgumentList.Add("-o");
-        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(_outputDirectory)}");
-        
-        return weaveProcess.StartBuildToolProcess();
+        weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
+        weaveProcess.StartBuildToolProcess();
     }
 }

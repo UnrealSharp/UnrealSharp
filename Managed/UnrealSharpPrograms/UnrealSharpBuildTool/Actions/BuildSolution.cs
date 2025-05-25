@@ -1,30 +1,33 @@
 ﻿using System.Collections.ObjectModel;
+using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class BuildSolution : BuildToolAction
+public static class BuildSolutionAction
 {
-    private readonly BuildConfig _buildConfig;
-    private readonly string _folder;
-    private readonly Collection<string>? _extraArguments;
-    
-    public BuildSolution(string folder, Collection<string>? extraArguments = null, BuildConfig buildConfig = BuildConfig.Debug)
+    public struct BuildSolutionParameters
     {
-        _folder = Program.FixPath(folder);
-        _buildConfig = buildConfig;
-        _extraArguments = extraArguments;
+        [Option("BuildConfig", Required = true, HelpText = "The build configuration to use (Debug, Release, or Publish).")]
+        public TargetConfiguration BuildConfig { get; set; }
+        
+        [Option("Folder", Required = true, HelpText = "The folder containing the solution file to build.")]
+        public string Folder { get; set; }
+        
+        [Option("ExtraArguments", HelpText = "Additional arguments to pass to the build tool.")]
+        public Collection<string> ExtraArguments { get; set; }
     }
     
-    public override bool RunAction()
+    [Action("BuildSolution", "Builds the solution file in the specified folder.")]
+    public static void BuildSolution(BuildSolutionParameters parameters)
     {
-        if (!Directory.Exists(_folder))
+        if (!Directory.Exists(parameters.Folder))
         {
-            throw new Exception($"Couldn't find the solution file at \"{_folder}\"");
+            throw new Exception($"Couldn't find the solution file at \"{parameters.Folder}\"");
         }
         
         BuildToolProcess buildSolutionProcess = new BuildToolProcess();
         
-        if (_buildConfig == BuildConfig.Publish)
+        if (parameters.BuildConfig == TargetConfiguration.Publish)
         {
             buildSolutionProcess.StartInfo.ArgumentList.Add("publish");
         }
@@ -33,19 +36,11 @@ public class BuildSolution : BuildToolAction
             buildSolutionProcess.StartInfo.ArgumentList.Add("build");
         }
         
-        buildSolutionProcess.StartInfo.ArgumentList.Add($"{_folder}");
+        buildSolutionProcess.StartInfo.ArgumentList.Add($"{parameters.Folder}");
         
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
-        buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(_buildConfig));
+        buildSolutionProcess.StartInfo.ArgumentList.Add(parameters.BuildConfig.ToString().ToLowerInvariant());
         
-        if (_extraArguments != null)
-        {
-            foreach (var argument in _extraArguments)
-            {
-                buildSolutionProcess.StartInfo.ArgumentList.Add(argument);
-            }
-        }
-
-        return buildSolutionProcess.StartBuildToolProcess();
+        buildSolutionProcess.StartBuildToolProcess();
     }
 }

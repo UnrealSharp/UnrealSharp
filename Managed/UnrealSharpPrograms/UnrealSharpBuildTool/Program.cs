@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Diagnostics;
+using CommandLine;
 using Newtonsoft.Json;
 using UnrealSharpBuildTool.Actions;
 
@@ -12,7 +13,8 @@ public static class Program
     {
         try
         {
-            Console.WriteLine(">>> UnrealSharpBuildTool");
+            Console.WriteLine("Running UnrealSharpBuildTool...");
+            
             Parser parser = new Parser(with => with.HelpWriter = null);
             ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
             
@@ -31,15 +33,16 @@ public static class Program
                 
                 throw new Exception($"Invalid arguments. Errors: {errors}");
             }
-        
+            
             BuildToolOptions = result.Value;
             
-            if (!BuildToolAction.InitializeAction())
-            {
-                throw new Exception("Failed to initialize action.");
-            }
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            ActionManager.RunAction(result.Value.Action, result.Value.ActionArgs);
+            stopwatch.Stop();
             
-            Console.WriteLine($"UnrealSharpBuildTool executed {BuildToolOptions.Action.ToString()} action successfully.");
+            Console.WriteLine($"UnrealSharpBuildTool executed {BuildToolOptions.Action} action successfully.");
+            Console.WriteLine($"Execution time: {stopwatch.Elapsed.TotalSeconds} seconds");
         }
         catch (Exception exception)
         {
@@ -50,16 +53,6 @@ public static class Program
         return 0;
     }
     
-    public static string TryGetArgument(string argument)
-    {
-        return BuildToolOptions.TryGetArgument(argument);
-    }
-    
-    public static bool HasArgument(string argument)
-    {
-        return BuildToolOptions.HasArgument(argument);
-    }
-    
     public static string GetSolutionFile()
     {
         return Path.Combine(GetScriptFolder(), BuildToolOptions.ProjectName + ".sln");
@@ -68,34 +61,6 @@ public static class Program
     public static string GetUProjectFilePath()
     {
         return Path.Combine(BuildToolOptions.ProjectDirectory, BuildToolOptions.ProjectName + ".uproject");
-    }
-    
-    public static string GetBuildConfiguration()
-    {
-        string buildConfig = TryGetArgument("BuildConfig");
-        if (string.IsNullOrEmpty(buildConfig))
-        {
-            buildConfig = "Debug";
-        }
-        return buildConfig;
-    }
-    
-    public static BuildConfig GetBuildConfig()
-    {
-        string buildConfig = GetBuildConfiguration();
-        Enum.TryParse(buildConfig, out BuildConfig config);
-        return config;
-    }
-    
-    public static string GetBuildConfiguration(BuildConfig buildConfig)
-    {
-        return buildConfig switch
-        {
-            BuildConfig.Debug => "Debug",
-            BuildConfig.Release => "Release",
-            BuildConfig.Publish => "Release",
-            _ => "Release"
-        };
     }
     
     public static string GetScriptFolder()

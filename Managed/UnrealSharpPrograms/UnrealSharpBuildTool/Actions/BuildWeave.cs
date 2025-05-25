@@ -1,14 +1,21 @@
 ﻿namespace UnrealSharpBuildTool.Actions;
 
-public class BuildWeave : BuildToolAction
+public static class BuildWeaveAction
 {
-    public override bool RunAction()
+    [Action("BuildWeave", "Builds the solution and weaves the projects")]
+    public static void BuildWeave()
     {
-        BuildSolution buildSolution = new BuildUserSolution();
-        WeaveProject weaveProject = new WeaveProject();
-        return buildSolution.RunAction() && weaveProject.RunAction() && AddLaunchSettings();
+        BuildSolutionAction.BuildSolutionParameters buildSolutionAction = new BuildSolutionAction.BuildSolutionParameters();
+        buildSolutionAction.Folder = Program.GetScriptFolder();
+        BuildSolutionAction.BuildSolution(buildSolutionAction);
+        
+        Weaving.WeaveParameters weaveParameters = new Weaving.WeaveParameters();
+        Weaving.WeaveProject(weaveParameters);
+
+        AddLaunchSettings();
     } 
-    bool AddLaunchSettings()
+    
+    static void AddLaunchSettings()
     {
         List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetScriptFolder()));
 
@@ -18,20 +25,23 @@ public class BuildWeave : BuildToolAction
             {
                 continue;
             }
+            
             string csProjectPath = Path.Combine(Program.GetScriptFolder(), projectFile.Directory.Name);
             string propertiesDirectoryPath = Path.Combine(csProjectPath, "Properties");
             string launchSettingsPath = Path.Combine(propertiesDirectoryPath, "launchSettings.json");
+            
             if (!Directory.Exists(propertiesDirectoryPath))
             {
                 Directory.CreateDirectory(propertiesDirectoryPath);
             }
+            
             if (File.Exists(launchSettingsPath))
             {
-                return true;
+                return;
             }
+            
             Program.CreateOrUpdateLaunchSettings(launchSettingsPath);
         }
-        return true;
     }
     
 }

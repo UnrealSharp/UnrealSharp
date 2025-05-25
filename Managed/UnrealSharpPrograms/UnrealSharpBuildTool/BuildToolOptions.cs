@@ -4,29 +4,13 @@ using CommandLine.Text;
 
 namespace UnrealSharpBuildTool;
 
-public enum BuildAction : int
-{
-    Build,
-    Clean,
-    GenerateProject,
-    Rebuild,
-    Weave,
-    PackageProject,
-    GenerateSolution,
-    BuildWeave,
-}
-
-public enum BuildConfig : int
-{
-    Debug,
-    Release,
-    Publish,
-}
-
 public class BuildToolOptions
 {
-    [Option("Action", Required = true, HelpText = "The action the build tool should process. Possible values: Build, Clean, GenerateProject, Rebuild, Weave, PackageProject, GenerateSolution, BuildWeave.")]
-    public BuildAction Action { get; set; }
+    [Option('a', "Action", Required = true, HelpText = "The action the build tool should process")]
+    public string Action { get; set; }
+    
+    [Option("ActionArgs", Required = false, HelpText = "Additional arguments to pass to the action. Use the format 'key=value'.")]
+    public IEnumerable<string> ActionArgs { get; set; } = new List<string>();
     
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
     public string DotNetPath { get; set; } = string.Empty;
@@ -42,36 +26,6 @@ public class BuildToolOptions
     
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; } = string.Empty;
-    
-    [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments for the build tool.")]
-    public IEnumerable<string> AdditionalArgs { get; set; } = new List<string>();
-    
-    public string TryGetArgument(string argument)
-    {
-        foreach (var arg in AdditionalArgs)
-        {
-            if (!arg.StartsWith(argument))
-            {
-                continue;
-            }
-            
-            return arg.Substring(argument.Length + 1);
-        }
-        
-        return string.Empty;
-    }
-    
-    public bool HasArgument(string argument)
-    {
-        foreach (var arg in AdditionalArgs)
-        {
-            if (arg.StartsWith(argument))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public static void PrintHelp(ParserResult<BuildToolOptions> result)
     {
@@ -79,7 +33,9 @@ public class BuildToolOptions
         Console.Error.WriteLine($"Usage: {name} [options]");
         Console.Error.WriteLine("Options:");
 
-        var helpText = HelpText.AutoBuild(result, h => h, e => e);
+        HelpText? helpText = HelpText.AutoBuild(result, h => h, e => e);
         Console.WriteLine(helpText);
+        
+        ActionManager.PrintActions();
     }
 }
