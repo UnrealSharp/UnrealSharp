@@ -11,6 +11,12 @@ public static class Weaving
         
         [Option("weaverPath", Required = false, HelpText = "Path to the weaver tool. If not specified, the default path will be used.")]
         public TargetConfiguration BuildConfig { get; set; }
+        
+        [Option("AssemblyPaths", Required = false, HelpText = "List of assembly paths to weave. If not specified, all assemblies in the project will be used.")]
+        public IEnumerable<string> AssemblyPaths { get; set; }
+        
+        [Option("CopyDependencies", Required = false, Default = true, HelpText = "If true, copies dependencies to the output directory. Defaults to true.")]
+        public bool CopyDependencies { get; set; }
     }
     
     [Action("WeaveProject", "Weaves the project files with the weaver tool.")]
@@ -37,15 +43,32 @@ public static class Weaving
         weaveProcess.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
         
         bool foundValidProject = false;
-        foreach (FileInfo projectFile in allProjectFiles)
+        if (parameters.AssemblyPaths.Any())
         {
-            weaveProcess.StartInfo.ArgumentList.Add("-p");
-            string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
-            string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin", 
-                parameters.BuildConfig.ToString(), Program.GetVersion(), csProjName + ".dll");
+            foreach (string assemblyPath in parameters.AssemblyPaths)
+            {
+                if (!File.Exists(assemblyPath))
+                {
+                    throw new Exception($"Assembly path '{assemblyPath}' does not exist.");
+                }
+                
+                weaveProcess.StartInfo.ArgumentList.Add("-p");
+                weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
+                foundValidProject = true;
+            }
+        }
+        else
+        {
+            foreach (FileInfo projectFile in allProjectFiles)
+            {
+                weaveProcess.StartInfo.ArgumentList.Add("-p");
+                string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
+                string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin", 
+                    parameters.BuildConfig.ToString(), Program.GetVersion(), csProjName + ".dll");
             
-            weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
-            foundValidProject = true;
+                weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
+                foundValidProject = true;
+            } 
         }
         
         if (!foundValidProject)
@@ -57,6 +80,12 @@ public static class Weaving
         // Add path to the output folder for the weaver.
         weaveProcess.StartInfo.ArgumentList.Add("-o");
         weaveProcess.StartInfo.ArgumentList.Add($"{Program.FixPath(outputPath)}");
+        
+        if (parameters.CopyDependencies)
+        {
+            weaveProcess.StartInfo.ArgumentList.Add("--copy-dependencies");
+        }
+        
         weaveProcess.StartBuildToolProcess();
     }
 }

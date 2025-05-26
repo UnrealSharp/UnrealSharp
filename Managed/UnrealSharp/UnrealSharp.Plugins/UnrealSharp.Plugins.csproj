@@ -5,14 +5,18 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <OutputPath>../../../Binaries/Managed</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	    <NoWarn>$(NoWarn);1570;0649;0169;0108;0109</NoWarn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+    </PropertyGroup>
+
     <ItemGroup>
-      <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
-      <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
+        <PackageReference Include="Microsoft.Build.Locator" Version="1.9.1" Condition=" '!$(DefineAdditionalConstants.Contains(PACKAGE))' " />
+        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
+        <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
         
         <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
             <OutputItemType>Analyzer</OutputItemType>
@@ -20,10 +24,6 @@
         </ProjectReference>
         
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
-        
-        <PackageReference Include="Microsoft.Build.Locator">
-            <Version>1.9.1</Version>
-        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

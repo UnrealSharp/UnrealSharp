@@ -12,6 +12,9 @@ public class WeaverOptions
     [Option('o', "output", Required = true, HelpText = "DLL output directory.")]
     public required string OutputDirectory { get; set; }
     
+    [Option("copy-dependencies", Required = false, HelpText = "If true, copies dependencies to the output directory. Defaults to true.")]
+    public bool CopyDependencies { get; set; }
+    
     public WeaverOptions(IEnumerable<string> assemblyPaths, string outputDirectory)
     {
         AssemblyPaths = assemblyPaths;

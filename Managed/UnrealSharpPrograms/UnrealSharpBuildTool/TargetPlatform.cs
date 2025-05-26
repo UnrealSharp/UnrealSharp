@@ -26,5 +26,4 @@ public enum TargetConfiguration
 {
     Debug,
     Release,
-    Publish,
 }

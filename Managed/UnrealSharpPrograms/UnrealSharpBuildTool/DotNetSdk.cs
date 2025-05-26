@@ -4,6 +4,13 @@ public static class DotNetSdk
 {
     public static string GetIdentifier(TargetPlatform platform, TargetArchitecture architecture)
     {
+        string platformString = GetTargetPlatform(platform);
+        string architectureString = GetTargetArchitecture(architecture);
+        return $"{platformString}-{architectureString}";
+    }
+
+    public static string GetTargetPlatform(this TargetPlatform platform)
+    {
         string result;
         switch (platform)
         {
@@ -36,16 +43,24 @@ public static class DotNetSdk
                 break;
             default: throw new ArgumentOutOfRangeException(nameof(platform), platform, "Unsupported platform");
         }
+        
+        return result;
+    }
+    
+    public static string GetTargetArchitecture(this TargetArchitecture architecture)
+    {
+        string result;
         switch (architecture)
         {
             case TargetArchitecture.x64:
-                result += "-x64";
+                result = "x64";
                 break;
             case TargetArchitecture.ARM64:
-                result += "-arm64";
+                result = "arm64";
                 break;
             default: throw new ArgumentOutOfRangeException(nameof(architecture), architecture, "Unsupported architecture");
         }
+        
         return result;
     }
 }

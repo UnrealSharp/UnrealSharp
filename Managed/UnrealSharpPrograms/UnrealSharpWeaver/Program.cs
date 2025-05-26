@@ -323,9 +323,12 @@ public static class Program
         
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
         StartProcessingAssembly(assembly, assemblyMetaData);
-        
-        string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
-        CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
+
+        if (WeaverOptions.CopyDependencies)
+        {
+            string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
+            CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
+        }
 
         Task.WaitAll(cleanupTask);
         assembly.Write(assemblyOutputPath, new WriterParameters
@@ -420,7 +423,10 @@ public static class Program
     private static void RecursiveFileCopy(DirectoryInfo sourceDirectory, DirectoryInfo destinationDirectory)
     {
         // Early out of our search if the last updated timestamps match
-        if (sourceDirectory.LastWriteTimeUtc == destinationDirectory.LastWriteTimeUtc) return;
+        if (sourceDirectory.LastWriteTimeUtc == destinationDirectory.LastWriteTimeUtc)
+        {
+            return;
+        }
 
         if (!destinationDirectory.Exists)
         {
@@ -443,6 +449,12 @@ public static class Program
 
         foreach (DirectoryInfo subSourceDirectory in sourceDirectory.GetDirectories())
         {
+            if (subSourceDirectory.FullName == destinationDirectory.FullName)
+            {
+                // Skip copying the directory if it's the same as the destination
+                continue;
+            }
+            
             string subDestinationDirectoryPath = Path.Combine(destinationDirectory.FullName, subSourceDirectory.Name);
             DirectoryInfo subDestinationDirectory = new DirectoryInfo(subDestinationDirectoryPath);
 

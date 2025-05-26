@@ -7,6 +7,7 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <Nullable>enable</Nullable>
 	    <NoWarn>$(NoWarn);1570;0649;0169;0108;0109</NoWarn>
+        <IsPublishable>false</IsPublishable>
     </PropertyGroup>
 
     <ItemGroup>

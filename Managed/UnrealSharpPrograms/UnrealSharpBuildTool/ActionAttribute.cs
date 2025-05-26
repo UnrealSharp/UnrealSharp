@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using CommandLine;
 
@@ -92,7 +93,7 @@ public static class ActionManager
                 continue;
             }
                     
-            if (memberType.IsValueType && !memberType.IsPrimitive)
+            if (IsStructOrClass(memberType))
             {
                 object? value = Activator.CreateInstance(memberType);
                 
@@ -106,21 +107,69 @@ public static class ActionManager
             }
             else
             {
-                string? optionValue = args.FirstOrDefault(arg => arg.StartsWith($"{optionAttribute.LongName}=", StringComparison.OrdinalIgnoreCase) || arg.StartsWith($"{optionAttribute.ShortName}=", StringComparison.OrdinalIgnoreCase));
+                IEnumerable<string> optionValue = args.Where(arg => 
+                    arg.StartsWith($"{optionAttribute.LongName}=", StringComparison.OrdinalIgnoreCase) || 
+                    arg.StartsWith($"{optionAttribute.ShortName}=", StringComparison.OrdinalIgnoreCase)
+                );
+
+                bool hasValue = optionValue.Any();
                 
-                if (optionValue == null && optionAttribute.Required)
+                if (!hasValue && optionAttribute.Required)
                 {
                     throw new ArgumentException($"Required option '{optionAttribute.LongName}' is missing for action option {member.DeclaringType!.Name}.{member.Name}.");
                 }
-                        
-                if (optionValue == null)
+                            
+                if (!hasValue)
                 {
                     continue;
                 }
                 
-                string value = optionValue.Split('=')[1];
-                object convertedValue = Convert.ChangeType(value, member.PropertyType);
-                member.SetValue(instance, convertedValue);
+                string value = optionValue.First().Split('=')[1];
+
+                if (memberType.IsArray)
+                {
+                    string[] values = value.Split(',');
+                    Array array = Array.CreateInstance(memberType.GetElementType()!, values.Length);
+
+                    for (int i = 0; i < values.Length; i++)
+                    {
+                        object convertedValue;
+                        string itemValue = values[i].Trim();
+                        if (memberType.GetElementType()!.IsEnum)
+                        {
+                            if (!Enum.TryParse(memberType.GetElementType()!, itemValue, true, out object? enumValue))
+                            {
+                                throw new ArgumentException($"Invalid value '{itemValue}' for enum type '{memberType.Name}' in action option {member.DeclaringType!.Name}.{member.Name}.");
+                            }
+                            convertedValue = enumValue!;
+                        }
+                        else
+                        {
+                            convertedValue = Convert.ChangeType(itemValue, memberType.GetElementType());
+                        }
+                        array.SetValue(convertedValue, i);
+                    }
+
+                    member.SetValue(instance, array);
+                }
+                else
+                {
+                    object convertedValue;
+                    if (memberType.IsEnum)
+                    {
+                        if (!Enum.TryParse(memberType, value, true, out object? outValue))
+                        {
+                            throw new ArgumentException($"Invalid value '{value}' for enum type '{memberType.Name}' in action option {member.DeclaringType!.Name}.{member.Name}.");
+                        }
+                        convertedValue = outValue!;
+                    }
+                    else
+                    {
+                        convertedValue = Convert.ChangeType(value, member.PropertyType);
+                    }
+
+                    member.SetValue(instance, convertedValue);
+                }
             }
         }
     }
@@ -173,10 +222,7 @@ public static class ActionManager
                 string shortName = string.IsNullOrEmpty(option.ShortName) ? string.Empty : $" ({option.ShortName})";
                 Console.WriteLine($"{new string(' ', indentLevel * 2)}--{option.LongName}{shortName}: {option.HelpText} (Required: {option.Required})");
                 
-                if ((property.PropertyType.IsClass || property.PropertyType.IsValueType) &&
-                    property.PropertyType != typeof(string) &&
-                    !property.PropertyType.IsPrimitive &&
-                    !property.PropertyType.IsEnum)
+                if (IsStructOrClass(property.PropertyType))
                 {
                     RecursivePrintOptions(property.PropertyType, indentLevel + 1);
                 }
@@ -184,5 +230,10 @@ public static class ActionManager
         }
         
         Console.WriteLine("========================================");
+    }
+    
+    static bool IsStructOrClass(Type type)
+    {
+        return (type.IsClass || type.IsValueType) && type != typeof(string) && !type.IsPrimitive && !type.IsEnum;
     }
 }

@@ -6,7 +6,7 @@ public static class BuildWeaveAction
     public static void BuildWeave()
     {
         BuildSolutionAction.BuildSolutionParameters buildSolutionAction = new BuildSolutionAction.BuildSolutionParameters();
-        buildSolutionAction.Folder = Program.GetScriptFolder();
+        buildSolutionAction.Folders = [Program.GetScriptFolder()];
         BuildSolutionAction.BuildSolution(buildSolutionAction);
         
         Weaving.WeaveParameters weaveParameters = new Weaving.WeaveParameters();

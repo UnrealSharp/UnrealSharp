@@ -108,6 +108,17 @@ public static class Program
         return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed");
     }
     
+    public static string IntermediateDirectory => Path.Combine(BuildToolOptions.PluginDirectory, "Intermediate");
+    public static string IntermediateBuildDirectory => Path.Combine(BuildToolOptions.PluginDirectory, "Intermediate", "Build");
+    
+    public static string GetIntermediateBuildPathForPlatform(TargetArchitecture architecture, TargetPlatform configuration, TargetConfiguration targetConfiguration)
+    {
+        string architectureString = architecture.GetTargetArchitecture();
+        string platformString = configuration.GetTargetPlatform();
+        string buildConfigString = targetConfiguration.ToString().ToLowerInvariant();
+        return Path.Combine(IntermediateBuildDirectory, architectureString, platformString, buildConfigString);
+    }
+    
     public static string GetVersion()
     {
         Version currentVersion = Environment.Version;
