@@ -1,10 +1,12 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
+using UnrealSharp.CoreUObject;
 using UnrealSharp.Editor.Interop;
 using UnrealSharp.Engine.Core.Modules;
 using UnrealSharp.Shared;
@@ -18,11 +20,13 @@ public unsafe struct FManagedUnrealSharpEditorCallbacks
 {
     public delegate* unmanaged<char*, char*, char*, UnmanagedArray*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
     public delegate* unmanaged<void> ForceManagedGC;
+    public delegate* unmanaged<char*, IntPtr, NativeBool> OpenSolution;
 
     public FManagedUnrealSharpEditorCallbacks()
     {
         BuildProjects = &ManagedUnrealSharpEditorCallbacks.Build;
         ForceManagedGC = &ManagedUnrealSharpEditorCallbacks.ForceManagedGC;
+        OpenSolution = &ManagedUnrealSharpEditorCallbacks.OpenSolution;
     }
 }
 
@@ -157,6 +161,54 @@ public static class ManagedUnrealSharpEditorCallbacks
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
         GC.WaitForPendingFinalizers();
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+    }
+
+    [UnmanagedCallersOnly]
+    public static unsafe NativeBool OpenSolution(char* solutionPath, IntPtr exceptionBuffer)
+    {
+        try
+        {
+            string solutionFilePath = new (solutionPath);
+
+            if (!File.Exists(solutionFilePath))
+            {
+                throw new FileNotFoundException($"Solution not found at path \"{solutionFilePath}\"");
+            }
+
+            ProcessStartInfo? startInfo = null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                startInfo = new ProcessStartInfo("cmd.exe", $"/c start \"\" \"{solutionFilePath}\"");
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                startInfo = new ProcessStartInfo("open", solutionFilePath);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                startInfo = new ProcessStartInfo("xdg-open", solutionFilePath);
+            }
+
+            if (startInfo == null)
+            {
+                throw new PlatformNotSupportedException("Unsupported platform.");
+            }
+
+            startInfo.WorkingDirectory = Path.GetDirectoryName(solutionFilePath);
+            startInfo.Environment["MsBuildExtensionPath"] = null;
+            startInfo.Environment["MSBUILD_EXE_PATH"] = null;
+            startInfo.Environment["MsBuildSDKsPath"] = null;
+
+            Process.Start(startInfo);
+        }
+        catch (Exception exception)
+        {
+            StringMarshaller.ToNative(exceptionBuffer, 0, exception.Message);
+            return NativeBool.False;
+        }
+
+        return NativeBool.True;
     }
 }
 
