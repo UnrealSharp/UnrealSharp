@@ -572,8 +572,12 @@ void FUnrealSharpEditorModule::OpenSolution()
 		OnRegenerateSolution();
 	}
 
-	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *SolutionPath);
-	FPlatformProcess::CreateProc(TEXT("cmd.exe"), *OpenSolutionArgs, true, true, false, nullptr, 0, nullptr, nullptr);
+	FString ExceptionMessage;
+	if (!ManagedUnrealSharpEditorCallbacks.OpenSolution(*SolutionPath, &ExceptionMessage))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
+		return;
+	}
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
@@ -715,9 +719,9 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands->MapAction(FCSCommands::Get().ReloadManagedCode,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
+	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
+	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings,

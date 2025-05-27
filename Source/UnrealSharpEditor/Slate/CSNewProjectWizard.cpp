@@ -148,7 +148,7 @@ void SCSNewProjectDialog::OnFinish()
 	Arguments.Add(TEXT("NewProjectPath"), ProjectPath);
 	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments);
 	
-	FUnrealSharpEditorModule::OpenSolution();
+	FUnrealSharpEditorModule::Get().OpenSolution();
 	CloseWindow();
 }
 
