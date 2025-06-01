@@ -160,14 +160,28 @@ public partial class UAssetManager
         List<UObject> loadedObjects = new(loadedAssets.Count);
         foreach (FPrimaryAssetId assetId in loadedAssets)
         {
-            UObject? loaded = SystemLibrary.GetObject(assetId);
-
-            if (loaded is not T typedObject)
+            if (assetId.AssetClass.Value.Valid)
             {
-                throw new InvalidCastException($"Asset '{assetId}' could not be cast to '{typeof(T).Name}' or was not found.");
-            }
+                var loaded = SystemLibrary.GetClass(assetId);
 
-            loadedObjects.Add(typedObject);
+                if (!loaded.IsChildOf(typeof(T)))
+                {
+                     throw new InvalidCastException($"Asset '{assetId}' could not be cast to '{typeof(T).Name}' or was not found.");
+                }
+                
+                loadedObjects.Add(loaded);
+            }
+            else if (assetId.Asset)
+            {
+                var loaded = SystemLibrary.GetObject(assetId);
+                
+                if (loaded is not T typedObject)
+                {
+                    throw new InvalidCastException($"Asset '{assetId}' could not be cast to '{typeof(T).Name}' or was not found.");
+                }
+                
+                loadedObjects.Add(typedObject);
+            }
         }
 
         return loadedObjects;
