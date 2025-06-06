@@ -91,6 +91,8 @@ private:
     void OnRegenerateSolution();
     void OnOpenSolution();
     static void OnPackageProject();
+    static void OnMergeManagedSlnAndNativeSln();
+
     static void OnOpenSettings();
     static void OnOpenDocumentation();
     static void OnReportBug();
