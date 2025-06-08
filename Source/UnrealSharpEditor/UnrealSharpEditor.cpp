@@ -333,6 +333,75 @@ void FUnrealSharpEditorModule::OnPackageProject()
 	PackageProject();
 }
 
+void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
+{
+	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
+
+	if (!FPaths::FileExists(NativeSolutionPath))
+	{
+		FString DialogText = FString::Printf(TEXT("Failed to load native solution %s"), *NativeSolutionPath);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	if (!FPaths::FileExists(ManagedSolutionPath))
+	{
+		FString DialogText = FString::Printf(TEXT("Failed to load managed solution %s"), *ManagedSolutionPath);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	TArray<FString> NativeSlnFileLines;
+	FFileHelper::LoadFileToStringArray(NativeSlnFileLines, *NativeSolutionPath);
+
+	int32 LastEndProjectIdx = 0;
+
+	for (int32 idx = 0; idx < NativeSlnFileLines.Num(); ++idx)
+	{
+		FString Line = NativeSlnFileLines[idx];
+		Line.ReplaceInline(TEXT("\n"), TEXT(""));
+		if (Line == TEXT("EndProject"))
+		{
+			LastEndProjectIdx = idx;
+		}
+	}
+
+	TArray<FString> ManagedSlnFileLines;
+	FFileHelper::LoadFileToStringArray(ManagedSlnFileLines, *ManagedSolutionPath);
+
+	TArray<FString> ManagedProjectLines;
+
+	for (int32 idx = 0; idx < ManagedSlnFileLines.Num(); ++idx)
+	{
+		FString Line = ManagedSlnFileLines[idx];
+		Line.ReplaceInline(TEXT("\n"), TEXT(""));
+		if (Line.StartsWith(TEXT("Project(\"{")) || Line.StartsWith(TEXT("EndProject")))
+		{
+			ManagedProjectLines.Add(Line);
+		}
+	}
+
+	for (int32 idx = 0; idx < ManagedProjectLines.Num(); ++idx)
+	{
+		FString Line = ManagedProjectLines[idx];
+		if (Line.StartsWith(TEXT("Project(\"{")) && Line.Contains(TEXT(".csproj")))
+		{
+			TArray<FString> ProjectStrParts;
+			Line.ParseIntoArray(ProjectStrParts, TEXT(", "));
+			if(ProjectStrParts.Num() == 3 && ProjectStrParts[1].Contains(TEXT(".csproj")))
+			{
+				ProjectStrParts[1] = FString("\"Script\\") + ProjectStrParts[1].Mid(1);
+				Line = FString::Join(ProjectStrParts, TEXT(", "));
+			}
+		}
+		NativeSlnFileLines.Insert(Line, LastEndProjectIdx + 1 + idx);
+	}
+
+	FString MixedSlnPath = NativeSolutionPath.LeftChop(4) + FString(".Mixed.sln");
+	FFileHelper::SaveStringArrayToFile(NativeSlnFileLines, *MixedSlnPath);
+}
+
 void FUnrealSharpEditorModule::OnOpenSettings()
 {
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer(
@@ -628,6 +697,9 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	MenuBuilder.AddMenuEntry(CSCommands.RegenerateSolution, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 	                         FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
 
+	MenuBuilder.AddMenuEntry(CSCommands.MergeManagedSlnAndNativeSln, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+							 FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
+
 	MenuBuilder.EndSection();
 
 	// Package
@@ -722,6 +794,8 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().MergeManagedSlnAndNativeSln,
+								   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings,
