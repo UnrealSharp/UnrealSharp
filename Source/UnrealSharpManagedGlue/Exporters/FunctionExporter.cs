@@ -19,7 +19,6 @@ public enum EFunctionProtectionMode
 {
     UseUFunctionProtection,
     OverrideWithInternal,
-    OverrideWithProtected,
 }
 
 public struct ExtensionMethod
@@ -185,7 +184,7 @@ public class FunctionExporter
 		
             if (_function.IsInterfaceFunction())
             {
-                Modifiers = "public ";
+                Modifiers = ScriptGeneratorUtilities.PublicKeyword;
             }
 
             _invokeFunction = $"{ExporterCallbacks.UObjectCallbacks}.CallInvokeNativeFunction";
@@ -450,10 +449,6 @@ public class FunctionExporter
             overloadMode = OverloadMode.SuppressOverloads;
             blueprintVisibility = EBlueprintVisibility.Event;
         }
-        else if (functionType == FunctionType.InternalWhitelisted)
-        {
-            protectionMode = EFunctionProtectionMode.OverrideWithProtected;
-        }
         else if (functionType == FunctionType.GetterSetter)
         {
             protectionMode = EFunctionProtectionMode.OverrideWithInternal;
@@ -648,7 +643,7 @@ public class FunctionExporter
 
         FunctionExporter exporter = new FunctionExporter(function);
         exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
-        exporter.ExportSignature(builder, "public ");
+        exporter.ExportSignature(builder, ScriptGeneratorUtilities.PublicKeyword);
         builder.Append(";");
         
         builder.TryEndWithEditor(function);
@@ -1095,22 +1090,19 @@ public class FunctionExporter
             case EFunctionProtectionMode.UseUFunctionProtection:
                 if (_function.HasAnyFlags(EFunctionFlags.Public | EFunctionFlags.BlueprintCallable))
                 {
-                    Modifiers = "public ";
+                    Modifiers = ScriptGeneratorUtilities.PublicKeyword;
                 }
                 else if (_function.HasAllFlags(EFunctionFlags.Protected) || _function.HasMetadata("BlueprintProtected"))
                 {
-                    Modifiers = "protected ";
+                    Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
                 }
                 else
                 {
-                    Modifiers = "private ";
+                    Modifiers = ScriptGeneratorUtilities.PrivateKeyword;
                 }
                 break;
             case EFunctionProtectionMode.OverrideWithInternal:
                 Modifiers = "internal ";
-                break;
-            case EFunctionProtectionMode.OverrideWithProtected:
-                Modifiers = "protected ";
                 break;
         }
     }

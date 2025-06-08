@@ -82,6 +82,10 @@ public static class ScriptGeneratorUtilities
     public const string AttributeNamespace = "UnrealSharp.Attributes";
     public const string CoreAttributeNamespace = "UnrealSharp.Core.Attributes";
     public const string InteropServicesNamespace = "System.Runtime.InteropServices";
+    
+    public const string PublicKeyword = "public ";
+    public const string PrivateKeyword = "private ";
+    public const string ProtectedKeyword = "protected ";
 
     public static string TryGetPluginDefine(string key)
     {
