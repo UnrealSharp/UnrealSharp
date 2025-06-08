@@ -336,7 +336,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 {
 	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
-	static FString NamagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
 
 	if (!FPaths::FileExists(NativeSolutionPath))
 	{
@@ -345,9 +345,9 @@ void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 		return;
 	}
 
-	if (!FPaths::FileExists(NamagedSolutionPath))
+	if (!FPaths::FileExists(ManagedSolutionPath))
 	{
-		FString DialogText = FString::Printf(TEXT("Failed to load managed solution %s"), *NamagedSolutionPath);
+		FString DialogText = FString::Printf(TEXT("Failed to load managed solution %s"), *ManagedSolutionPath);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
@@ -368,7 +368,7 @@ void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 	}
 
 	TArray<FString> ManagedSlnFileLines;
-	FFileHelper::LoadFileToStringArray(ManagedSlnFileLines, *NamagedSolutionPath);
+	FFileHelper::LoadFileToStringArray(ManagedSlnFileLines, *ManagedSolutionPath);
 
 	TArray<FString> ManagedProjectLines;
 
