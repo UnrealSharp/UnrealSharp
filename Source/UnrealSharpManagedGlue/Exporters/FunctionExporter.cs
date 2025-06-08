@@ -1093,7 +1093,7 @@ public class FunctionExporter
         switch (_protectionMode)
         {
             case EFunctionProtectionMode.UseUFunctionProtection:
-                if (_function.HasAllFlags(EFunctionFlags.Public))
+                if (_function.HasAnyFlags(EFunctionFlags.Public | EFunctionFlags.BlueprintCallable))
                 {
                     Modifiers = "public ";
                 }
@@ -1103,7 +1103,7 @@ public class FunctionExporter
                 }
                 else
                 {
-                    Modifiers = "public ";
+                    Modifiers = "private ";
                 }
                 break;
             case EFunctionProtectionMode.OverrideWithInternal:
