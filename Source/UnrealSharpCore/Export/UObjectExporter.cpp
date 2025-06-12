@@ -93,7 +93,7 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 
 void UUObjectExporter::InvokeNativeStaticFunction(const UClass* NativeClass, UFunction* NativeFunction, uint8* Params)
 {
-	InvokeNativeFunction(NativeClass->ClassDefaultObject, NativeFunction, Params);
+	InvokeNativeFunction(NativeClass->GetDefaultObject(), NativeFunction, Params);
 }
 
 bool UUObjectExporter::NativeIsValid(UObject* Object)
