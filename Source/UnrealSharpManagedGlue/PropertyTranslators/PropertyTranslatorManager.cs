@@ -52,20 +52,17 @@ public static class PropertyTranslatorManager
         
         WorldContextObjectPropertyTranslator worldContextObjectPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtObjectPropertyBase), worldContextObjectPropertyTranslator);
-        AddPropertyTranslator(typeof(UhtObjectPtrProperty), worldContextObjectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtObjectProperty), worldContextObjectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), worldContextObjectPropertyTranslator);
         
         ObjectPropertyTranslator objectPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtObjectPropertyBase), objectPropertyTranslator);
-        AddPropertyTranslator(typeof(UhtObjectPtrProperty), objectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtObjectProperty), objectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), objectPropertyTranslator);
         
         AddPropertyTranslator(typeof(UhtInterfaceProperty), new InterfacePropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         

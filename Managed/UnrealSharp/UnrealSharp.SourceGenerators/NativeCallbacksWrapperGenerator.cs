@@ -32,15 +32,15 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
 
         Compilation compilation = context.Compilation;
         
-        foreach (var classInfo in receiver.ClassesWithNativeCallbacks)
+        foreach (ClassInfo classInfo in receiver.ClassesWithNativeCallbacks)
         {
             var model = compilation.GetSemanticModel(classInfo.ClassDeclaration.SyntaxTree);
             var sourceBuilder = new StringBuilder();
 
             HashSet<string> namespaces = [];
-            foreach (var delegateInfo in classInfo.Delegates)
+            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
             {
-                foreach (var parameter in delegateInfo.Parameters)
+                foreach (var parameter in delegateInfo.ParametersAndReturnValue)
                 {
                     var typeInfo = model.GetTypeInfo(parameter.Type);
                     var typeSymbol = typeInfo.Type;
@@ -62,7 +62,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             sourceBuilder.AppendLine("#nullable disable");
             sourceBuilder.AppendLine();
 
-            foreach (var ns in namespaces)
+            foreach (string? ns in namespaces)
             {
                 sourceBuilder.AppendLine($"using {ns};");
             }
@@ -72,20 +72,88 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
             sourceBuilder.AppendLine("{");
             sourceBuilder.AppendLine($"    public static unsafe partial class {classInfo.Name}");
             sourceBuilder.AppendLine("    {");
-
-            foreach (var delegateInfo in classInfo.Delegates)
+            
+            sourceBuilder.AppendLine("        static " + classInfo.Name + "()");
+            sourceBuilder.AppendLine("        {");
+            
+            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
             {
-                int lastIndex = delegateInfo.Parameters.Count - 1;
-                DelegateParameterInfo returnValueType = delegateInfo.Parameters[lastIndex];
+                string delegateName = delegateInfo.Name;
                 
-                // Remove return value. We don't need it anymore.
-                delegateInfo.Parameters.RemoveAt(lastIndex);
-                
-                sourceBuilder.Append($"        public static {returnValueType.Type.ToString()} Call{delegateInfo.Name}(");
+                string totalSizeDelegateName = delegateName + "TotalSize";
+                if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
+                {
+                    sourceBuilder.AppendLine($"                 int {totalSizeDelegateName} = 0;");
+                }
+                else
+                {
+                    sourceBuilder.Append($"                 int {totalSizeDelegateName} = ");
 
-                // Handle parameters
+                    void AppendSizeOf(DelegateParameterInfo param)
+                    {
+                        string typeFullName = model.GetTypeInfo(param.Type).Type.ToDisplayString();
+        
+                        if (param.IsOutParameter || param.IsRefParameter)
+                        {
+                            typeFullName += "*";
+                        }
+        
+                        sourceBuilder.Append($"sizeof({typeFullName})");
+                    }
+                    
+                    List<DelegateParameterInfo> parameters = delegateInfo.ParametersAndReturnValue;
+                    
+                    for (int i = 0; i < parameters.Count; i++)
+                    {
+                        AppendSizeOf(parameters[i]);
+
+                        if (i != parameters.Count - 1)
+                        {
+                            sourceBuilder.Append(" + ");
+                        }
+                    }
+    
+                    sourceBuilder.AppendLine(";");
+                }
+                
+                string funcPtrName = delegateName + "FuncPtr";
+                sourceBuilder.AppendLine($"                 IntPtr {funcPtrName} = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", {totalSizeDelegateName});");
+                sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
+                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
+                {
+                    string prefix = "";
+
+                    if (p.IsOutParameter)
+                    {
+                        prefix = "out ";
+                    }
+                    else if (p.IsRefParameter)
+                    {
+                        prefix = "ref ";
+                    }
+
+                    return prefix + model.GetTypeInfo(p.Type).Type.ToDisplayString();
+                })));
+                
+                if (delegateInfo.Parameters.Count > 0)
+                {
+                    sourceBuilder.Append(", ");
+                }
+                
+                sourceBuilder.Append(model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type.ToDisplayString());
+                
+                sourceBuilder.Append($">){funcPtrName};");
+                sourceBuilder.AppendLine();
+            }
+            
+            sourceBuilder.AppendLine("        }");
+
+            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
+            {
+                sourceBuilder.AppendLine($"        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
+                sourceBuilder.Append($"        public static {delegateInfo.ReturnValue.Type.ToString()} Call{delegateInfo.Name}(");
+                
                 bool firstParameter = true;
-
                 foreach (DelegateParameterInfo parameter in delegateInfo.Parameters)
                 {
                     if (!firstParameter)
@@ -114,81 +182,7 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
 
                 string delegateName = delegateInfo.Name;
                 
-                sourceBuilder.AppendLine($"             if ({delegateName} == null)");
-                sourceBuilder.AppendLine("             {");
-
-                if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
-                {
-                    sourceBuilder.AppendLine("                 int totalSize = 0;");
-                }
-                else
-                {
-                    sourceBuilder.Append("                 int totalSize = ");
-
-                    void AppendSizeOf(DelegateParameterInfo param)
-                    {
-                        string typeFullName = model.GetTypeInfo(param.Type).Type.ToDisplayString();
-                        
-                        if (param.IsOutParameter || param.IsRefParameter)
-                        {
-                            typeFullName += "*";
-                        }
-                        
-                        sourceBuilder.Append($"sizeof({typeFullName})");
-                    }
-                    
-                    for (int i = 0; i < delegateInfo.Parameters.Count; i++)
-                    {
-                        AppendSizeOf(delegateInfo.Parameters[i]);
-
-                        if (i != delegateInfo.Parameters.Count - 1)
-                        {
-                            sourceBuilder.Append(" + ");
-                        }
-                    }
-                    
-                    if (delegateInfo.HasReturnValue)
-                    {
-                        sourceBuilder.Append(" + ");
-                        AppendSizeOf(returnValueType);
-                    }
-                    
-                    sourceBuilder.AppendLine(";");
-                }
-                
-                
-                sourceBuilder.AppendLine($"                 IntPtr funcPtr = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", totalSize);");
-                sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
-                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
-                {
-                    string prefix = "";
-
-                    if (p.IsOutParameter)
-                    {
-                        prefix = "out ";
-                    }
-                    else if (p.IsRefParameter)
-                    {
-                        prefix = "ref ";
-                    }
-
-                    return prefix + model.GetTypeInfo(p.Type).Type.ToDisplayString();
-                })));
-
-                if (delegateInfo.Parameters.Count > 0)
-                {
-                    sourceBuilder.Append(", ");
-                }
-
-                sourceBuilder.Append(model.GetTypeInfo(returnValueType.Type).Type.ToDisplayString());
-                sourceBuilder.Append(">)funcPtr;");
-                sourceBuilder.AppendLine();
-                
-                sourceBuilder.AppendLine("             }");
-                sourceBuilder.AppendLine();
-
-                // Method body
-                if (returnValueType.Type.ToString() != "void")
+                if (delegateInfo.ReturnValue.Type.ToString() != "void")
                 {
                     sourceBuilder.Append($"            return {delegateName}(");
                 }
@@ -271,9 +265,8 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
             Namespace = namespaceName,
             Delegates = new List<DelegateInfo>()
         };
-
-        // Find all delegate members in the class
-        foreach (var member in classDeclaration.Members)
+        
+        foreach (MemberDeclarationSyntax member in classDeclaration.Members)
         {
             if (member is not FieldDeclarationSyntax fieldDeclaration ||
                 fieldDeclaration.Declaration.Type is not FunctionPointerTypeSyntax functionPointerTypeSyntax)
@@ -286,31 +279,31 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
                 Name = fieldDeclaration.Declaration.Variables.First().Identifier.ValueText,
                 Parameters = new List<DelegateParameterInfo>()
             };
-
-            // Iterate through each parameter in the function pointer type syntax
+            
             char paramName = 'a';
             
             for (int i = 0; i < functionPointerTypeSyntax.ParameterList.Parameters.Count; i++)
             {
                 FunctionPointerParameterSyntax param = functionPointerTypeSyntax.ParameterList.Parameters[i];
                 
-                bool isReturnParameter = i == functionPointerTypeSyntax.ParameterList.Parameters.Count - 1;
-                if (isReturnParameter && param.Type.ToString() != "void")
+                DelegateParameterInfo parameter = new DelegateParameterInfo
                 {
-                    delegateInfo.HasReturnValue = true;
-                }
-                
-                // Create a new parameter info object
-                var parameter = new DelegateParameterInfo
-                {
-                    // Check if the parameter has the 'out' modifier
                     Name = paramName.ToString(),
                     IsOutParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.OutKeyword)),
                     IsRefParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.RefKeyword)),
                     Type = param.Type,
                 };
-                            
-                delegateInfo.Parameters.Add(parameter);
+                         
+                bool isReturnParameter = i == functionPointerTypeSyntax.ParameterList.Parameters.Count - 1;
+                if (isReturnParameter)
+                {
+                    delegateInfo.ReturnValue = parameter;
+                }
+                else
+                {
+                    delegateInfo.Parameters.Add(parameter);
+                }
+                
                 paramName++;
             }
 
@@ -333,7 +326,23 @@ internal struct DelegateInfo
 {
     public string Name;
     public List<DelegateParameterInfo> Parameters;
-    public bool HasReturnValue;
+    public List<DelegateParameterInfo> ParametersAndReturnValue
+    {
+        get
+        {
+            List<DelegateParameterInfo> allParameters = new List<DelegateParameterInfo>(Parameters);
+            
+            if (ReturnValue.Type.ToString() != "void")
+            {
+                allParameters.Add(ReturnValue);
+            }
+            
+            return allParameters;
+        }
+    }
+
+    public bool HasReturnValue => ReturnValue.Type.ToString() != "void";
+    public DelegateParameterInfo ReturnValue;
 }
 
 public struct DelegateParameterInfo

@@ -11,9 +11,9 @@ bool UFMulticastDelegatePropertyExporter::IsBound(FMulticastScriptDelegate* Dele
 	return Delegate->IsBound();
 }
 
-void UFMulticastDelegatePropertyExporter::ToString(FMulticastScriptDelegate* Delegate, FString& OutString)
+void UFMulticastDelegatePropertyExporter::ToString(FMulticastScriptDelegate* Delegate, FString* OutString)
 {
-	OutString = Delegate->ToString<UObject>();
+	*OutString = Delegate->ToString<UObject>();
 }
 
 void UFMulticastDelegatePropertyExporter::RemoveDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)

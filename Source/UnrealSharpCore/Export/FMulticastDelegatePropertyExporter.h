@@ -32,7 +32,7 @@ public:
 	static bool IsBound(FMulticastScriptDelegate* Delegate);
 
 	UNREALSHARP_FUNCTION()
-	static void ToString(FMulticastScriptDelegate* Delegate, FString& OutString);
+	static void ToString(FMulticastScriptDelegate* Delegate, FString* OutString);
 	
 	UNREALSHARP_FUNCTION()
 	static void RemoveDelegate(FMulticastDelegateProperty* DelegateProperty, FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName);
