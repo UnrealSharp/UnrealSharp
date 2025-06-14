@@ -4,7 +4,6 @@ void FCSDelegateMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonO
 {
 	FCSUnrealType::SerializeFromJson(JsonObject);
 	SignatureFunction.SerializeFromJson(JsonObject->GetObjectField(TEXT("Signature")));
-	SignatureFunction.Name = "";
 }
 
 bool FCSDelegateMetaData::IsEqual(const TSharedPtr<FCSUnrealType> Other) const

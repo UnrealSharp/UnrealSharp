@@ -30,8 +30,9 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
         }
         
         TypeReference foundType = GetWrapperType(delegateType);
-        MethodReference? initializeDelegateMethod = foundType.Resolve().FindMethod(UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
+        
+        MethodReference initializeDelegateMethod = UnrealDelegateProcessor.FindOrCreateInitializeDelegate(foundType.Resolve());
         processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }
 

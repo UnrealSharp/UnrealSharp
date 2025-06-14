@@ -22,7 +22,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 	return NewFunction;
 }
 
-FProperty* FCSFunctionFactory::CreateProperty(UCSFunctionBase* Function, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyMetaData);
 
@@ -39,23 +39,32 @@ FProperty* FCSFunctionFactory::CreateProperty(UCSFunctionBase* Function, const F
 	return NewParam;
 }
 
-UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
+void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData)
 {
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
-
 	// Check if this function has a return value or is just void, otherwise skip.
 	if (FunctionMetaData.ReturnValue.Type != nullptr)
 	{
-		CreateProperty(NewFunction, FunctionMetaData.ReturnValue);
+		CreateParameter(Function, FunctionMetaData.ReturnValue);
 	}
 
 	// Create the function's parameters and assign them.
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
 	for (int32 i = FunctionMetaData.Parameters.Num(); i-- > 0; )
 	{
-		CreateProperty(NewFunction, FunctionMetaData.Parameters[i]);
+		CreateParameter(Function, FunctionMetaData.Parameters[i]);
 	}
-	
+}
+
+UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
+{
+	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
+
+	if (!NewFunction)
+	{
+		return nullptr;
+	}
+
+	CreateParameters(NewFunction, FunctionMetaData);
 	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
 }

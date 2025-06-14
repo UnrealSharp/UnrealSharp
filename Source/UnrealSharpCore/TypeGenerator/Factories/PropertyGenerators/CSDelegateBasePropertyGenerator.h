@@ -10,4 +10,6 @@ UCLASS(Abstract)
 class UNREALSHARPCORE_API UCSDelegateBasePropertyGenerator : public UCSPropertyGenerator
 {
 	GENERATED_BODY()
+protected:
+	static UDelegateFunction* CreateSignatureFunction(const FCSPropertyMetaData& PropertyMetaData);
 };

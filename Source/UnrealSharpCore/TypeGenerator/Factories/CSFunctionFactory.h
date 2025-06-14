@@ -27,9 +27,7 @@ public:
 		UStruct* ParentFunction = nullptr);
 
 	static void FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function);
-
-private:
-
-	static FProperty* CreateProperty(UCSFunctionBase* Function, const FCSPropertyMetaData& PropertyMetaData);
 	
+	static FProperty* CreateParameter(UFunction* Function, const FCSPropertyMetaData& PropertyMetaData);
+	static void CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData);
 };

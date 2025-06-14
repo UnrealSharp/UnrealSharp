@@ -37,11 +37,9 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
                 throw new Exception($"{delegateType.FullName} is exposed to Unreal Engine, and must have a void return type.");
             }
 
-            Signature = new FunctionMetaData(method)
+            Signature = new FunctionMetaData(method, true)
             {
-                // Don't give a name to the delegate function, it'll cause a name collision with other delegates in the same class.
-                // Let Unreal Engine handle the name generation.
-                Name = "",
+                Name = delegateTypeDefinition.FullName,
                 FunctionFlags = EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate
             };
 
