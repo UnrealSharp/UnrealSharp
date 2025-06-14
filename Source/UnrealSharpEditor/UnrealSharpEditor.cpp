@@ -1319,8 +1319,6 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 		{
 			return;
 		}
-
-		bool bIsModified = false;
 		
 		TArray<UK2Node*> AllNodes;
 		FBlueprintEditorUtils::GetAllNodesOfClass<UK2Node>(Blueprint, AllNodes);
@@ -1330,36 +1328,22 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 			if (IsNodeAffectedByReload(Node))
 			{
 				Node->ReconstructNode();
-				bIsModified = true;
-			}
-		}
-		
-		if (!bIsModified)
-		{
-			for (const FBPVariableDescription& Var : Blueprint->NewVariables)
-			{
-				if (IsPinAffectedByReload(Var.VarType))
-				{
-					bIsModified = true;
-					break;
-				}
 			}
 		}
 
-		if (bIsModified)
-		{
-			AffectedBlueprints.Add(Blueprint);
-		}
+		AffectedBlueprints.Add(Blueprint);
 	}
 
 	for (UBlueprint* Blueprint : AffectedBlueprints)
 	{
-		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 	}
 
 	RebuiltStructs.Reset();
 	RebuiltClasses.Reset();
 	RebuiltEnums.Reset();
+
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 }
 
 FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const
