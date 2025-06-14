@@ -389,50 +389,63 @@ public static class TypeDefinitionUtilities
 
             default:
 
-                if (typeRef.IsGenericInstance)
+                if (typeRef.IsGenericInstance || typeRef.IsByReference)
                 {
-                    GenericInstanceType GenericType = (GenericInstanceType)typeRef;
-                    var GenericTypeName = GenericType.Name;
-                    TypeReference innerType = GenericType.GenericArguments[0];
-                    
-                    if (GenericTypeName.Contains("TArray`1") || GenericTypeName.Contains("List`1"))
+                    GenericInstanceType? instanceType = null;
+                    if (typeRef is GenericInstanceType genericInstanceType)
                     {
-                        return new NativeDataArrayType(typeRef, arrayDim, innerType);
+                        instanceType = genericInstanceType;
+                    }
+                    if (typeRef is ByReferenceType byReferenceType)
+                    {
+                        instanceType = byReferenceType.ElementType as GenericInstanceType;
+                        typeRef = byReferenceType.ElementType;
                     }
 
-                    if (GenericTypeName.Contains("TNativeArray`1") || GenericTypeName.Contains("ReadOnlySpan`1"))
+                    if (instanceType != null)
                     {
-                        return new NativeDataNativeArrayType(typeRef, arrayDim, innerType);
-                    }
+                        TypeReference[] genericArguments = instanceType.GenericArguments.ToArray();
+                        string? genericTypeName = instanceType.ElementType.Name;
+                        
+                        if (genericTypeName.Contains("TArray`1") || genericTypeName.Contains("List`1"))
+                        {
+                            return new NativeDataArrayType(typeRef, arrayDim, genericArguments[0]);
+                        }
 
-                    if (GenericTypeName.Contains("TMap`2") || GenericTypeName.Contains("Dictionary`2"))
-                    {
-                        return new NativeDataMapType(typeRef, arrayDim, innerType, GenericType.GenericArguments[1]);
-                    }
-                    
-                    if (GenericTypeName.Contains("TSet`1") || GenericTypeName.Contains("HashSet`1"))
-                    {
-                        return new NativeDataSetType(typeRef, arrayDim, innerType);
-                    }
+                        if (genericTypeName.Contains("TNativeArray`1") || genericTypeName.Contains("ReadOnlySpan`1"))
+                        {
+                            return new NativeDataNativeArrayType(typeRef, arrayDim, genericArguments[0]);
+                        }
 
-                    if (GenericTypeName.Contains("TSubclassOf`1"))
-                    {
-                        return new NativeDataClassType(typeRef, innerType, arrayDim);
-                    }
+                        if (genericTypeName.Contains("TMap`2") || genericTypeName.Contains("Dictionary`2"))
+                        {
+                            return new NativeDataMapType(typeRef, arrayDim, genericArguments[0], genericArguments[1]);
+                        }
+                        
+                        if (genericTypeName.Contains("TSet`1") || genericTypeName.Contains("HashSet`1"))
+                        {
+                            return new NativeDataSetType(typeRef, arrayDim, genericArguments[0]);
+                        }
 
-                    if (GenericTypeName.Contains("TWeakObjectPtr`1"))
-                    {
-                        return new NativeDataWeakObjectType(typeRef, innerType, arrayDim);
-                    }
+                        if (genericTypeName.Contains("TSubclassOf`1"))
+                        {
+                            return new NativeDataClassType(typeRef, genericArguments[0], arrayDim);
+                        }
 
-                    if (GenericTypeName.Contains("TSoftObjectPtr`1"))
-                    {
-                        return new NativeDataSoftObjectType(typeRef, innerType, arrayDim);
-                    }
+                        if (genericTypeName.Contains("TWeakObjectPtr`1"))
+                        {
+                            return new NativeDataWeakObjectType(typeRef, genericArguments[0], arrayDim);
+                        }
 
-                    if (GenericTypeName.Contains("TSoftClassPtr`1"))
-                    {
-                        return new NativeDataSoftClassType(typeRef, innerType, arrayDim);
+                        if (genericTypeName.Contains("TSoftObjectPtr`1"))
+                        {
+                            return new NativeDataSoftObjectType(typeRef, genericArguments[0], arrayDim);
+                        }
+
+                        if (genericTypeName.Contains("TSoftClassPtr`1"))
+                        {
+                            return new NativeDataSoftClassType(typeRef, genericArguments[0], arrayDim);
+                        }
                     }
                 }
 
