@@ -97,8 +97,7 @@ private:
 	void Initialize();
 	static void Shutdown();
 
-	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
-	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
+	load_assembly_and_get_function_pointer_fn InitializeNativeHost() const;
 	
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
