@@ -9,7 +9,7 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 
 	if (!Field->GetInterfaceInfo().IsValid())
 	{
-		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
 		Field->SetInterfaceInfo(InterfaceInfo);
 	}
 	

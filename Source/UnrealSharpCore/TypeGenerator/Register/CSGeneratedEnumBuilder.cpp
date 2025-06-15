@@ -8,7 +8,7 @@ void FCSGeneratedEnumBuilder::RebuildType()
 
 	if (!Field->GetEnumInfo().IsValid())
 	{
-		TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
 		Field->SetEnumInfo(EnumInfo);
 	}
 	

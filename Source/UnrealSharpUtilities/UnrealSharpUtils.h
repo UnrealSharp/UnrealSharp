@@ -13,6 +13,8 @@ namespace FUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API bool IsStandalonePIE();
 
+	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
+
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)
 	{

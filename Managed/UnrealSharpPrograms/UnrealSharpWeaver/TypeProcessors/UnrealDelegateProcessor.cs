@@ -11,7 +11,21 @@ public static class UnrealDelegateProcessor
 {
     public static readonly string InitializeUnrealDelegate = "InitializeUnrealDelegate";
     
-    public static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions)
+    public static void ProcessDelegates(List<TypeDefinition> delegates, List<TypeDefinition> multicastDelegates, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
+    {
+        int totalDelegateCount = multicastDelegates.Count + delegates.Count;
+        if (totalDelegateCount <= 0)
+        {
+            return;
+        }
+            
+        delegateMetaData.Capacity = totalDelegateCount;
+        
+        ProcessMulticastDelegates(multicastDelegates, delegateMetaData);
+        ProcessSingleDelegates(delegates, assembly, delegateMetaData);
+    }
+    
+    private static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions, List<DelegateMetaData> delegateMetaData)
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
@@ -22,19 +36,25 @@ public static class UnrealDelegateProcessor
                 throw new Exception("Could not find Invoker method in delegate extension type");
             }
             
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            DelegateMetaData newDelegate = new DelegateMetaData(functionMetaData, 
+                type, 
+                "UMulticastDelegate", 
+                EFunctionFlags.MulticastDelegate);
+            
+            delegateMetaData.Add(newDelegate);
+            
             if (invokerMethod.Parameters.Count == 0)
             {
                 continue;
             }
-            
-            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
         }
     }
     
-    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
+    private static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
     {
         if (delegateExtensions.Count == 0)
         {
@@ -85,12 +105,16 @@ public static class UnrealDelegateProcessor
                 throw new Exception("Could not find Invoker method in delegate type");
             }
             
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            DelegateMetaData newDelegate = new DelegateMetaData(functionMetaData, 
+                type, 
+                "USingleDelegate");
+            delegateMetaData.Add(newDelegate);
+            
             if (invokerMethod.Parameters.Count == 0)
             {
                 continue;
             }
-            
-            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);

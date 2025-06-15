@@ -9,7 +9,7 @@ UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
 	FCSFieldName FieldName(InClassName, InNamespace);
 	
-	TSharedPtr<FCSharpClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(FieldName);
+	TSharedPtr<FCSClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(FieldName);
 	return ClassInfo->Field;
 }
 

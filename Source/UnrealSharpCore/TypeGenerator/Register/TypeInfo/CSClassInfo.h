@@ -4,10 +4,10 @@
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 
-struct UNREALSHARPCORE_API FCSharpClassInfo : TCSharpTypeInfo<FCSClassMetaData, UClass, FCSGeneratedClassBuilder>
+struct UNREALSHARPCORE_API FCSClassInfo : TCSTypeInfo<FCSClassMetaData, UClass, FCSGeneratedClassBuilder>
 {
-	FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
-	FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
+	FCSClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
+	FCSClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
 
 	// TCharpTypeInfo interface implementation
 	virtual UClass* InitializeBuilder() override;

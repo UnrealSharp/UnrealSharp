@@ -25,7 +25,7 @@ void FCSGeneratedClassBuilder::RebuildType()
 {
 	if (!Field->GetClassInfo().IsValid())
 	{
-		TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
 		Field->SetClassInfo(ClassInfo);
 	}
 

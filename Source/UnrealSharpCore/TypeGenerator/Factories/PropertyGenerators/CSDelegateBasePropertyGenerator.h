@@ -11,5 +11,7 @@ class UNREALSHARPCORE_API UCSDelegateBasePropertyGenerator : public UCSPropertyG
 {
 	GENERATED_BODY()
 protected:
-	static UDelegateFunction* CreateSignatureFunction(const FCSPropertyMetaData& PropertyMetaData);
+	// UCSPropertyGenerator interface
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
+	// End of UCSPropertyGenerator interface
 };

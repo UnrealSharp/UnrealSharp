@@ -6,8 +6,13 @@ using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
-public class NativeDataDelegateType(TypeReference typeRef) : NativeDataBaseDelegateType(typeRef, "SingleDelegateMarshaller`1", PropertyType.Delegate)
+public class NativeDataDelegateType : NativeDataBaseDelegateType
 {
+    public NativeDataDelegateType(TypeReference type) : base(type, "SingleDelegateMarshaller`1", PropertyType.Delegate)
+    {
+
+    }
+    
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata, Instruction loadNativePointer, Instruction setNativePointer)
     {
         if (!Signature.HasParameters)

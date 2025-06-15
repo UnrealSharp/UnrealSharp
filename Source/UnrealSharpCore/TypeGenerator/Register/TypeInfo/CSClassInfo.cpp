@@ -1,19 +1,19 @@
 ﻿#include "CSClassInfo.h"
 #include "CSAssembly.h"
 
-FCSharpClassInfo::FCSharpClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly)
+FCSClassInfo::FCSClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSTypeInfo(MetaData, InOwningAssembly)
 {
 	ManagedTypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 }
 
-FCSharpClassInfo::FCSharpClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
+FCSClassInfo::FCSClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
 {
 	Field = InField;
 	OwningAssembly = InOwningAssembly;
 	ManagedTypeHandle = InTypeHandle;
 }
 
-UClass* FCSharpClassInfo::InitializeBuilder()
+UClass* FCSClassInfo::InitializeBuilder()
 {
 	if (Field && Field->HasAllClassFlags(CLASS_Native))
 	{
@@ -31,10 +31,10 @@ UClass* FCSharpClassInfo::InitializeBuilder()
 		}
 	}
 
-	return TCSharpTypeInfo::InitializeBuilder();
+	return TCSTypeInfo::InitializeBuilder();
 }
 
-TSharedPtr<FGCHandle> FCSharpClassInfo::GetManagedTypeHandle()
+TSharedPtr<FGCHandle> FCSClassInfo::GetManagedTypeHandle()
 {
 #if WITH_EDITOR
 	if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())

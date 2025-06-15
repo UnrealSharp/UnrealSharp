@@ -5,7 +5,7 @@ void UCSScriptStruct::RecreateDefaults()
 	DefaultStructInstance.Recreate(this);
 }
 
-void UCSScriptStruct::SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo)
+void UCSScriptStruct::SetStructInfo(const TSharedPtr<FCSStructInfo>& InStructInfo)
 {
 	StructInfo = InStructInfo;
 }

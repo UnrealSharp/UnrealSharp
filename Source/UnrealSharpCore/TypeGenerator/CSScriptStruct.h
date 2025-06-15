@@ -9,7 +9,7 @@
 
 #include "CSScriptStruct.generated.h"
 
-struct FCSharpStructInfo;
+struct FCSStructInfo;
 
 UCLASS(MinimalAPI)
 class UCSScriptStruct : public UUserDefinedStruct
@@ -18,10 +18,10 @@ class UCSScriptStruct : public UUserDefinedStruct
 
 public:
 
-	UNREALSHARPCORE_API TSharedPtr<FCSharpStructInfo> GetStructInfo() const { return StructInfo; }
+	UNREALSHARPCORE_API TSharedPtr<FCSStructInfo> GetStructInfo() const { return StructInfo; }
 
 	void RecreateDefaults();
-	void SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo);
+	void SetStructInfo(const TSharedPtr<FCSStructInfo>& InStructInfo);
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
@@ -29,5 +29,5 @@ public:
 #endif
 
 private:
-	TSharedPtr<FCSharpStructInfo> StructInfo;
+	TSharedPtr<FCSStructInfo> StructInfo;
 };

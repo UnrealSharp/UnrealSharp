@@ -62,13 +62,10 @@ public:
 		false,
 		Field);
 	}
-	
 
 protected:
-	
 	TSharedPtr<const TMetaData> TypeMetaData;
 	TField* Field;
 	TSharedPtr<struct FCSAssembly> OwningAssembly;
-	
 };
 

@@ -5,7 +5,7 @@
 #include "Engine/UserDefinedEnum.h"
 #include "CSEnum.generated.h"
 
-struct FCSharpEnumInfo;
+struct FCSEnumInfo;
 
 UCLASS(MinimalAPI)
 class UCSEnum : public UUserDefinedEnum
@@ -18,8 +18,8 @@ public:
 	virtual FString GenerateFullEnumName(const TCHAR* InEnumName) const override;
 	// End of UEnum interface
 
-	void SetEnumInfo(const TSharedPtr<FCSharpEnumInfo>& InEnumInfo);
-	TSharedPtr<FCSharpEnumInfo> GetEnumInfo() const { return EnumInfo; }
+	void SetEnumInfo(const TSharedPtr<FCSEnumInfo>& InEnumInfo);
+	TSharedPtr<FCSEnumInfo> GetEnumInfo() const { return EnumInfo; }
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
@@ -27,5 +27,5 @@ public:
 #endif
 
 private:
-	TSharedPtr<FCSharpEnumInfo> EnumInfo;
+	TSharedPtr<FCSEnumInfo> EnumInfo;
 };

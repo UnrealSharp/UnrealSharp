@@ -6,7 +6,7 @@
 
 struct FGCHandle;
 struct FCSAssembly;
-struct FCSharpClassInfo;
+struct FCSClassInfo;
 
 UCLASS()
 class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass
@@ -14,12 +14,12 @@ class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass
 	GENERATED_BODY()
 public:
 	
-	TSharedPtr<FCSharpClassInfo> GetClassInfo() const;
+	TSharedPtr<FCSClassInfo> GetClassInfo() const;
 	TSharedPtr<const FGCHandle> GetClassHandle() const;
 	TSharedPtr<FCSAssembly> GetOwningAssembly() const;
 
-	void SetClassInfo(const TSharedPtr<FCSharpClassInfo>& InClassMetaData);
+	void SetClassInfo(const TSharedPtr<FCSClassInfo>& InClassMetaData);
 
 private:
-	TSharedPtr<FCSharpClassInfo> ClassInfo;
+	TSharedPtr<FCSClassInfo> ClassInfo;
 };

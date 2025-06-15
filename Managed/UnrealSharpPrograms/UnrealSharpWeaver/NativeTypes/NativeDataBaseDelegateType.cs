@@ -6,8 +6,9 @@ namespace UnrealSharpWeaver.NativeTypes;
 
 public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
 {
-    public FunctionMetaData Signature { get; set; }
+    public TypeReferenceMetadata UnrealDelegateType { get; set; }
     
+    public MethodDefinition Signature;
     public TypeReference fieldType;
     public TypeReference delegateType;
     public TypeReference wrapperType;
@@ -23,6 +24,9 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
         fieldType = typeRef;
         delegateType = GetDelegateType(typeRef);
         wrapperType = GetWrapperType(delegateType);
+
+        UnrealDelegateType = new TypeReferenceMetadata(wrapperType);
+        UnrealDelegateType.Name = DelegateUtilities.GetUnrealDelegateName(wrapperType);
         
         TypeDefinition delegateTypeDefinition = delegateType.Resolve();
         foreach (MethodDefinition method in delegateTypeDefinition.Methods)
@@ -37,12 +41,7 @@ public abstract class NativeDataBaseDelegateType : NativeDataSimpleType
                 throw new Exception($"{delegateType.FullName} is exposed to Unreal Engine, and must have a void return type.");
             }
 
-            Signature = new FunctionMetaData(method, true)
-            {
-                Name = delegateTypeDefinition.FullName,
-                FunctionFlags = EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate
-            };
-
+            Signature = method;
             return;
         }
         

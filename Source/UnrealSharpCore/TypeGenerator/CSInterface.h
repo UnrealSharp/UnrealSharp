@@ -3,15 +3,15 @@
 #include "CoreMinimal.h"
 #include "CSInterface.generated.h"
 
-struct FCSharpInterfaceInfo;
+struct FCSInterfaceInfo;
 
 UCLASS(MinimalAPI)
 class UCSInterface : public UClass
 {
 	GENERATED_BODY()
 public:
-	void SetInterfaceInfo(const TSharedPtr<FCSharpInterfaceInfo>& InInterfaceInfo);
-	TSharedPtr<FCSharpInterfaceInfo> GetInterfaceInfo() const { return InterfaceInfo; }
+	void SetInterfaceInfo(const TSharedPtr<FCSInterfaceInfo>& InInterfaceInfo);
+	TSharedPtr<FCSInterfaceInfo> GetInterfaceInfo() const { return InterfaceInfo; }
 private:
-	TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo;
+	TSharedPtr<FCSInterfaceInfo> InterfaceInfo;
 };

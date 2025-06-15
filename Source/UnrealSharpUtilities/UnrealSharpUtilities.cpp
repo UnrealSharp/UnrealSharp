@@ -2,6 +2,8 @@
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpUtilitiesModule"
 
+DEFINE_LOG_CATEGORY(LogUnrealSharpUtilities);
+
 void FUnrealSharpUtilitiesModule::StartupModule()
 {
     

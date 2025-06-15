@@ -54,6 +54,8 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 	
 	if (NativeFunction->HasAllFunctionFlags(FUNC_HasOutParms))
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UUObjectExporter::InvokeNativeFunction::SetupOutParms);
+		
 		FOutParmRec** LastOut = &NewStack.OutParms;
 		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
 		{
@@ -88,6 +90,8 @@ void UUObjectExporter::InvokeNativeFunction(UObject* NativeObject, UFunction* Na
 
 	const bool bHasReturnParam = NativeFunction->ReturnValueOffset != MAX_uint16;
 	uint8* ReturnValueAddress = bHasReturnParam ? Params + NativeFunction->ReturnValueOffset : nullptr;
+
+	TRACE_CPUPROFILER_EVENT_SCOPE(UUObjectExporter::InvokeNativeFunction::Invoke);
 	NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
 }
 
