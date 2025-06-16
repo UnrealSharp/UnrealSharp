@@ -56,8 +56,20 @@ public:
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class);
 	
-	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const;
-	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName);
+	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const 
+	{
+		return LoadedAssemblies.FindRef(AssemblyName);
+	}
+	
+	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName)
+	{
+		if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
+		{
+			return Assembly;
+		}
+	
+		return LoadUserAssemblyByName(AssemblyName);
+	}
 	
 	FGCHandle FindManagedObject(UObject* Object);
 

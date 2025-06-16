@@ -24,8 +24,3 @@ void FCSManagedDelegate::Invoke(UObject* WorldContextObject, bool bDispose)
 		Dispose();
 	}
 }
-
-void FCSManagedDelegate::Dispose()
-{
-	CallbackHandle.Dispose();
-}

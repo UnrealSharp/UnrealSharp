@@ -37,7 +37,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	bool IsLoading() const { return bIsLoading; }
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class);
+	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class) { return TryFindTypeHandle(FCSFieldName(Class)); }
 
 	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
@@ -45,11 +45,10 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class);
 	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
 	
-	TSharedPtr<FCSClassInfo> FindClassInfo(const FCSFieldName& ClassName) const;
-
-	TSharedPtr<FCSStructInfo> FindStructInfo(const FCSFieldName& StructName) const;
-	TSharedPtr<FCSEnumInfo> FindEnumInfo(const FCSFieldName& EnumName) const;
-	TSharedPtr<FCSInterfaceInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const;
+	TSharedPtr<FCSClassInfo> FindClassInfo(const FCSFieldName& ClassName) const { return Classes.FindRef(ClassName); }
+	TSharedPtr<FCSStructInfo> FindStructInfo(const FCSFieldName& StructName) const { return Structs.FindRef(StructName); }
+	TSharedPtr<FCSEnumInfo> FindEnumInfo(const FCSFieldName& EnumName) const { return Enums.FindRef(EnumName); }
+	TSharedPtr<FCSInterfaceInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const { return Interfaces.FindRef(InterfaceName); }
 	
 	UClass* FindClass(const FCSFieldName& FieldName) const;
 	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
@@ -67,15 +66,33 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
 
 private:
-
-	bool bIsLoading = false;
 	
 	bool ProcessMetadata();
-
 	void BuildUnrealTypes();
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
-	void OnEnginePreExit();
+
+	template<typename Field, typename InfoType>
+	Field* FindFieldFromInfo(const FCSFieldName& EnumName, const TMap<FCSFieldName, TSharedPtr<InfoType>>& Map) const
+	{
+		Field* FoundField;
+		if (TSharedPtr<InfoType> InfoPtr = Map.FindRef(EnumName))
+		{
+			FoundField = InfoPtr->InitializeBuilder();
+		}
+		else
+		{
+			FoundField = TryFindField<Field>(EnumName);
+		}
+
+		if (!FoundField)
+		{
+			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find field: {0}", *EnumName.GetName());
+			return nullptr;
+		}
+	
+		return FoundField;
+	}
 
 	template<typename T>
 	T* TryFindField(const FCSFieldName FieldName) const
@@ -100,8 +117,10 @@ private:
 	}
 
 	// UObjectArray listener interface
-	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
-	virtual void OnUObjectArrayShutdown() override;
+	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override { RemoveManagedObject(Object); }
+	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectDeleteListener(this); }
+
+	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
 	// End of interface
 
 	// All Unreal types that are defined in this assembly.
@@ -128,4 +147,6 @@ private:
 	
 	FString AssemblyPath;
 	FName AssemblyName;
+
+	bool bIsLoading = false;
 };

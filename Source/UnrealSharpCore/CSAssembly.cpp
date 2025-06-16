@@ -15,6 +15,7 @@
 #include "TypeGenerator/Register/TypeInfo/CSEnumInfo.h"
 #include "TypeGenerator/Register/TypeInfo/CSInterfaceInfo.h"
 #include "TypeGenerator/Register/TypeInfo/CSStructInfo.h"
+#include "Utils/CSClassUtilities.h"
 
 FCSAssembly::FCSAssembly(const FString& InAssemblyPath)
 {
@@ -260,11 +261,6 @@ TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 	return AllocatedHandle;
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::TryFindTypeHandle(UClass* Class)
-{
-	return TryFindTypeHandle(FCSFieldName(Class));
-}
-
 FCSManagedMethod FCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName)
 {
 	if (!TypeHandle.IsValid())
@@ -301,7 +297,7 @@ FCSManagedMethod FCSAssembly::GetManagedMethod(const UCSClass* Class, const FStr
 
 TSharedPtr<FCSClassInfo> FCSAssembly::FindOrAddClassInfo(UClass* Class)
 {
-	if (UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class))
+	if (UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
 	{
 		return ManagedClass->GetClassInfo();
 	}
@@ -341,129 +337,29 @@ TSharedPtr<FCSClassInfo> FCSAssembly::FindOrAddClassInfo(const FCSFieldName& Cla
 	return ClassInfo;
 }
 
-TSharedPtr<FCSClassInfo> FCSAssembly::FindClassInfo(const FCSFieldName& ClassName) const
-{
-	return Classes.FindRef(ClassName);
-}
-
-TSharedPtr<FCSStructInfo> FCSAssembly::FindStructInfo(const FCSFieldName& StructName) const
-{
-	return Structs.FindRef(StructName);
-}
-
-TSharedPtr<FCSEnumInfo> FCSAssembly::FindEnumInfo(const FCSFieldName& EnumName) const
-{
-	return Enums.FindRef(EnumName);
-}
-
-TSharedPtr<FCSInterfaceInfo> FCSAssembly::FindInterfaceInfo(const FCSFieldName& InterfaceName) const
-{
-	return Interfaces.FindRef(InterfaceName);
-}
-
 UClass* FCSAssembly::FindClass(const FCSFieldName& FieldName) const
 {
-	UClass* Class;
-	if (TSharedPtr<FCSClassInfo> ClassInfo = Classes.FindRef(FieldName))
-	{
-		Class = ClassInfo->InitializeBuilder();
-	}
-	else
-	{
-		Class = TryFindField<UClass>(FieldName);
-	}
-
-	if (!Class)
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find class: {0}", *FieldName.GetName());
-		return nullptr;
-	}
-	
-	return Class;
+	return FindFieldFromInfo<UClass, FCSClassInfo>(FieldName, Classes);
 }
 
 UScriptStruct* FCSAssembly::FindStruct(const FCSFieldName& StructName) const
 {
-	UScriptStruct* Struct;
-	if (TSharedPtr<FCSStructInfo> StructInfo = Structs.FindRef(StructName))
-	{
-		Struct = StructInfo->InitializeBuilder();
-	}
-	else
-	{
-		Struct = TryFindField<UScriptStruct>(StructName);
-	}
-
-	if (!Struct)
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find struct: {0}", *StructName.GetName());
-		return nullptr;
-	}
-	
-	return Struct;
+	return FindFieldFromInfo<UScriptStruct, FCSStructInfo>(StructName, Structs);
 }
 
 UEnum* FCSAssembly::FindEnum(const FCSFieldName& EnumName) const
 {
-	UEnum* Enum;
-	if (TSharedPtr<FCSEnumInfo> EnumInfo = Enums.FindRef(EnumName))
-	{
-		Enum = EnumInfo->InitializeBuilder();
-	}
-	else
-	{
-		Enum = TryFindField<UEnum>(EnumName);
-	}
-
-	if (!Enum)
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find enum: {0}", *EnumName.GetName());
-		return nullptr;
-	}
-	
-	return Enum;
+	return FindFieldFromInfo<UEnum, FCSEnumInfo>(EnumName, Enums);
 }
 
 UClass* FCSAssembly::FindInterface(const FCSFieldName& InterfaceName) const
 {
-	UClass* Interface;
-	if (TSharedPtr<FCSInterfaceInfo> InterfaceInfo = Interfaces.FindRef(InterfaceName))
-	{
-		Interface = InterfaceInfo->InitializeBuilder();
-	}
-	else
-	{
-		Interface = TryFindField<UClass>(InterfaceName);
-	}
-
-	if (!Interface)
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find interface: {0}", *InterfaceName.GetName());
-		return nullptr;
-	}
-	
-	return Interface;
+	return FindFieldFromInfo<UClass, FCSInterfaceInfo>(InterfaceName, Interfaces);
 }
 
 UDelegateFunction* FCSAssembly::FindDelegate(const FCSFieldName& DelegateName) const
 {
-	UDelegateFunction* Delegate;
-	if (TSharedPtr<FCSDelegateInfo> DelegateInfo = Delegates.FindRef(DelegateName))
-	{
-		Delegate = DelegateInfo->InitializeBuilder();
-	}
-	else
-	{
-		Delegate = TryFindField<UDelegateFunction>(DelegateName);
-	}
-
-	if (!Delegate)
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find delegate: {0}", *DelegateName.GetName());
-		return nullptr;
-	}
-	
-	return Delegate;
+	return FindFieldFromInfo<UDelegateFunction, FCSDelegateInfo>(DelegateName, Delegates);
 }
 
 TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObject(UObject* Object)
@@ -487,7 +383,7 @@ TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObject(UObject* Object)
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateManagedObject);
 	
 	// Only managed/native classes have a C# counterpart.
-	UClass* Class = FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(Object->GetClass());
+	UClass* Class = FCSClassUtilities::GetFirstNonBlueprintClass(Object->GetClass());
 	TSharedPtr<FCSClassInfo> ClassInfo = FindOrAddClassInfo(Class);
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
@@ -558,21 +454,6 @@ void FCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InMod
 		UCSManager::Get().OnProcessedPendingClassesEvent().Broadcast();
 	}
 #endif
-}
-
-void FCSAssembly::OnEnginePreExit()
-{
-	GUObjectArray.RemoveUObjectDeleteListener(this);
-}
-
-void FCSAssembly::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
-{
-	RemoveManagedObject(Object);
-}
-
-void FCSAssembly::OnUObjectArrayShutdown()
-{
-	GUObjectArray.RemoveUObjectDeleteListener(this);
 }
 
 template<typename T>

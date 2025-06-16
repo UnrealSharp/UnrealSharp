@@ -1,5 +1,6 @@
 ﻿#include "CSClassInfo.h"
 #include "CSAssembly.h"
+#include "Utils/CSClassUtilities.h"
 
 FCSClassInfo::FCSClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSTypeInfo(MetaData, InOwningAssembly)
 {
@@ -40,7 +41,7 @@ TSharedPtr<FGCHandle> FCSClassInfo::GetManagedTypeHandle()
 	if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
 	{
 		// Lazy load the type handle in editor. Gets null during hot reload.
-		if (FCSGeneratedClassBuilder::IsManagedType(Field))
+		if (FCSClassUtilities::IsManagedType(Field))
 		{
 			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
 		}

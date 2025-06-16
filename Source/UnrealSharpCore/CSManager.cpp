@@ -16,6 +16,7 @@
 #include "CSNamespace.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
+#include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
 	#define PLATFORM_STRING(string) string
@@ -411,33 +412,17 @@ TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName Assembl
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-TSharedPtr<FCSAssembly> UCSManager::FindAssembly(const FName AssemblyName) const
-{
-	TSharedPtr<FCSAssembly> Assembly = LoadedAssemblies.FindRef(AssemblyName);
-	return Assembly;
-}
-
-TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
-{
-	if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
-	{
-		return Assembly;
-	}
-	
-	return LoadUserAssemblyByName(AssemblyName);
-}
-
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
 	
-	if (UCSClass* FirstManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class))
+	if (UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
 	{
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetOwningAssembly();
 	}
 	
-	Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
+	Class = FCSClassUtilities::GetFirstNativeClass(Class);
 	
 	uint32 ClassID = Class->GetUniqueID();
 	TSharedPtr<FCSAssembly>& Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);

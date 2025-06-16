@@ -15,7 +15,7 @@ struct UNREALSHARPCORE_API FCSManagedDelegate
 	}
 	
 	void Invoke(UObject* WorldContextObject = nullptr, bool bDispose = true);
-	void Dispose();
+	void Dispose() { CallbackHandle.Dispose(); }
 
 private:
 	FGCHandle CallbackHandle;

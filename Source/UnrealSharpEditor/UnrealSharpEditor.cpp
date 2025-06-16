@@ -33,6 +33,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
+#include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -444,7 +445,7 @@ void FUnrealSharpEditorModule::RepairComponents()
 		UBlueprint* LoadedBlueprint = Cast<
 			UBlueprint>(StaticLoadObject(Asset.GetClass(), nullptr, *AssetPath, nullptr));
 		UClass* GeneratedClass = LoadedBlueprint->GeneratedClass;
-		UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(GeneratedClass);
+		UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(GeneratedClass);
 
 		if (!ManagedClass)
 		{
@@ -482,7 +483,7 @@ void FUnrealSharpEditorModule::RepairComponents()
 		{
 			FObjectProperty* Property = *PropertyIt;
 
-			if (!FCSGeneratedClassBuilder::IsManagedType(Property->GetOwnerClass()))
+			if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
 			{
 				break;
 			}
@@ -1315,7 +1316,7 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
-		if (!IsValid(Blueprint->GeneratedClass) || FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedType(Blueprint->GeneratedClass))
 		{
 			return;
 		}

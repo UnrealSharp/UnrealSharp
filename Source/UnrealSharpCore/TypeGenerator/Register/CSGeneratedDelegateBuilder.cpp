@@ -17,8 +17,3 @@ void FCSGeneratedDelegateBuilder::RebuildType()
 	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 }
-
-void FCSGeneratedDelegateBuilder::UpdateType()
-{
-	
-}

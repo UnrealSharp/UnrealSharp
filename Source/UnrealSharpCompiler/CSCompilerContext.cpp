@@ -18,6 +18,7 @@
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
+#include "Utils/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions):
 	FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -27,7 +28,7 @@ FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResults
 
 void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
-	bool bIsSkeletonClass = FCSGeneratedClassBuilder::IsSkeletonType(Class);
+	bool bIsSkeletonClass = FCSClassUtilities::IsSkeletonType(Class);
 	
 	if (!bIsSkeletonClass)
 	{
