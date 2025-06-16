@@ -173,15 +173,24 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
 {
 	FTickFunction* TickFunction;
+	FTickFunction* ParentTickFunction;
 	if (AActor* Actor = Cast<AActor>(DefaultObject))
 	{
 		TickFunction = &Actor->PrimaryActorTick;
+		ParentTickFunction = &Class->GetSuperClass()->GetDefaultObject<AActor>()->PrimaryActorTick;
 	}
-	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
+	else if (UActorComponent* Component = Cast<UActorComponent>(DefaultObject))
 	{
-		TickFunction = &ActorComponent->PrimaryComponentTick;
+		TickFunction = &Component->PrimaryComponentTick;
+		ParentTickFunction = &Class->GetSuperClass()->GetDefaultObject<UActorComponent>()->PrimaryComponentTick;
 	}
 	else
+	{
+		return;
+	}
+	
+	TickFunction->bCanEverTick = ParentTickFunction->bCanEverTick;
+	if (TickFunction->bCanEverTick)
 	{
 		return;
 	}
