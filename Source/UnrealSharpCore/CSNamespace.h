@@ -36,9 +36,9 @@ struct FCSNamespace
 		return Namespace == Other.Namespace;
 	}
 
-	friend uint32 GetTypeHash(const FCSNamespace& Namespace)
+	friend uint32 GetTypeHash(const FCSNamespace& InNamespace)
 	{
-		return GetTypeHash(Namespace.Namespace);
+		return GetTypeHash(InNamespace.Namespace);
 	}
 
 private:
