@@ -37,7 +37,7 @@ struct FGCHandle
 	const FGCHandleIntPtr& GetHandle() const { return Handle; }
 	uint8* GetPointer() const { return Handle.IntPtr; };
 	
-	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr());
+	UNREALSHARPCORE_API void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr());
 
 	void operator = (const FGCHandle& Other)
 	{

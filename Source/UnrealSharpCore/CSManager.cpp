@@ -26,6 +26,10 @@
 	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wdangling-assignment"
+#endif
+
 UCSManager* UCSManager::Instance = nullptr;
 
 UCSManager& UCSManager::GetOrCreate()
