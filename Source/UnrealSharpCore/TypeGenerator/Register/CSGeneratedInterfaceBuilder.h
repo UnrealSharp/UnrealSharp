@@ -16,4 +16,7 @@ public:
 	virtual void UpdateType() override;
 #endif
 	// End of implementation
+
+private:
+	void RegisterFunctionsToLoader();
 };

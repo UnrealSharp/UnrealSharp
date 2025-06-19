@@ -61,9 +61,12 @@ public class WeaverImporter
     public MethodReference GetNativeFunctionFromClassAndNameMethod = null!;
     public MethodReference GetNativeFunctionParamsSizeMethod = null!;
     public MethodReference GetNativeStructSizeMethod = null!;
-    public MethodReference InvokeNativeFunctionMethod = null!;
     public MethodReference GetSignatureFunction = null!;
     public MethodReference InitializeStructMethod = null!;
+    
+    public MethodReference InvokeNativeFunctionMethod = null!;
+    public MethodReference InvokeNativeNetFunction = null!;
+    public MethodReference InvokeNativeFunctionOutParms = null!;
 
     public MethodReference GeneratedTypeCtor = null!;
     
@@ -123,6 +126,8 @@ public class WeaverImporter
         GetNativeStructSizeMethod = FindExporterMethod(UScriptStructCallbacks, "CallGetNativeStructSize");
         
         InvokeNativeFunctionMethod = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunction");
+        InvokeNativeNetFunction = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeNetFunction");
+        InvokeNativeFunctionOutParms = FindExporterMethod(UObjectCallbacks, "CallInvokeNativeFunctionOutParms");
         
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
         

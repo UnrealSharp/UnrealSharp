@@ -15,8 +15,6 @@ public:
 
 	static UCSClass* GetFirstManagedClass(UClass* Class)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstManagedClass);
-	
 		if (IsNativeClass(Class))
 		{
 			return nullptr;
@@ -38,8 +36,6 @@ public:
 	
 	static UClass* GetFirstNativeClass(UClass* Class)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNativeClass);
-	
 		while (!IsNativeClass(Class))
 		{
 			Class = Class->GetSuperClass();
@@ -50,8 +46,6 @@ public:
 
 	static UClass* GetFirstNonBlueprintClass(UClass* Class)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNonBlueprintClass);
-	
 		while (Class->GetClass() == UBlueprintGeneratedClass::StaticClass())
 		{
 			Class = Class->GetSuperClass();

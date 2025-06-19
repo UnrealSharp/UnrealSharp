@@ -5,12 +5,12 @@
 struct UNREALSHARPCORE_API FCSFieldName
 {
 	FCSFieldName() = default;
-	FCSFieldName(FName Name, FName Namespace);
+	FCSFieldName(FName Name, FName Namespace) : Name(Name), Namespace(Namespace) {}
 	FCSFieldName(UClass* Class);
 
 	FName GetFName() const { return Name; }
 	FString GetName() const { return Name.ToString(); }
-
+	
 	bool IsValid() const { return Name != NAME_None; }
 	
 	FCSNamespace GetNamespace() const { return Namespace; }
@@ -31,7 +31,6 @@ struct UNREALSHARPCORE_API FCSFieldName
 	{
 		return GetTypeHash(Field.Name) ^ GetTypeHash(Field.Namespace);
 	}
-
 private:
 	FName Name;
 	FCSNamespace Namespace;

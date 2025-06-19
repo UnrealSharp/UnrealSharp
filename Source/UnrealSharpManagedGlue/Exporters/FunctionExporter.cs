@@ -157,11 +157,11 @@ public class FunctionExporter
         _hasCustomStructParamSupport = _function.HasCustomStructParamSupport();
 
         DetermineProtectionMode();
+        _invokeFunction = DetermineInvokeFunction();
 
         if (_function.HasAllFlags(EFunctionFlags.Static))
         {
             Modifiers += "static ";
-            _invokeFunction = $"{ExporterCallbacks.UObjectCallbacks}.CallInvokeNativeStaticFunction";
             _invokeFirstArgument = "NativeClassPtr";
         }
         else if (_function.HasAllFlags(EFunctionFlags.Delegate))
@@ -186,8 +186,7 @@ public class FunctionExporter
             {
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
             }
-
-            _invokeFunction = $"{ExporterCallbacks.UObjectCallbacks}.CallInvokeNativeFunction";
+            
             _invokeFirstArgument = "NativeObject";
         }
 
@@ -257,11 +256,7 @@ public class FunctionExporter
             else
             {
                 string cppDefaultValue = translator.GetCppDefaultValue(_function, parameter);
-
                 bool isGenericClassParam = _hasGenericTypeSupport && parameter.IsGenericType() && parameter is UhtClassProperty;
-
-                bool isCustomStructParam = _hasCustomStructParamSupport && parameter.IsCustomStructureType() &&
-                                           parameter is UhtIntProperty;
 
                 if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
                 {
@@ -565,7 +560,7 @@ public class FunctionExporter
             else
             {
                 string assignmentOrReturn = $"{paramType} {parameter.SourceName} = ";
-                string offsetName = $"{function.SourceName}_{parameter.SourceName}_Offset";
+                string offsetName = parameter.GetOffsetVariableName();
                 translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer", offsetName, false, false);
             }
         }
@@ -583,7 +578,7 @@ public class FunctionExporter
             if (!parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm) && parameter.HasAnyFlags(EPropertyFlags.OutParm))
             {
                 PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
-                string offsetName = $"{function.SourceName}_{parameter.SourceName}_Offset";
+                string offsetName = parameter.GetOffsetVariableName();
                 translator.ExportToNative(builder, parameter, parameter.SourceName, "buffer", offsetName, parameter.SourceName);
             }
         }
@@ -818,7 +813,7 @@ public class FunctionExporter
         {
             if (string.IsNullOrEmpty(_customInvoke))
             {
-                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {nativeFunctionIntPtr}, IntPtr.Zero);");
+                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {nativeFunctionIntPtr}, {ScriptGeneratorUtilities.IntPtrZero}, {ScriptGeneratorUtilities.IntPtrZero});");
             }
             else
             {
@@ -852,15 +847,7 @@ public class FunctionExporter
                 
                 if (parameter.HasAllFlags(EPropertyFlags.ReferenceParm) || !parameter.HasAllFlags(EPropertyFlags.OutParm))
                 {
-                    string offsetName = $"{_function.SourceName}_{parameter.SourceName}_Offset";
-                    if (_function.HasCustomStructParamSupport())
-                    {
-                        int precedingCustomStructParams = parameter.GetPrecedingCustomStructParams();
-                        if (precedingCustomStructParams > 0)
-                        {
-                            offsetName += $"<{string.Join(", ", _customStructParamTypes.GetRange(0, precedingCustomStructParams))}>()";
-                        }
-                    }
+                    string offsetName = TryAddPrecedingCustomStructParams(parameter, parameter.GetOffsetVariableName());
                     translator.ExportToNative(builder, parameter, parameter.SourceName, "paramsBuffer", offsetName, propertyName);
                 }
             });
@@ -870,7 +857,12 @@ public class FunctionExporter
             if (string.IsNullOrEmpty(_customInvoke))
             {
                 string invokedFunctionIntPtr = _hasCustomStructParamSupport ? "Specialization" : nativeFunctionIntPtr;
-                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {invokedFunctionIntPtr}, paramsBuffer);");
+                
+                string returnValueAddressStr = _function.ReturnProperty != null
+                    ? $"paramsBuffer + {TryAddPrecedingCustomStructParams(_function.ReturnProperty, _function.ReturnProperty.GetOffsetVariableName())}"
+                    : ScriptGeneratorUtilities.IntPtrZero;
+                
+                builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {invokedFunctionIntPtr}, paramsBuffer, {returnValueAddressStr});");
             }
             else
             {
@@ -900,16 +892,8 @@ public class FunctionExporter
                     {
                         marshalDestination = MakeOutMarshalDestination(parameter, translator, builder);
                     }
-                    
-                    string offsetName = $"{_function.SourceName}_{parameter.SourceName}_Offset";
-                    if (_function.HasCustomStructParamSupport())
-                    {
-                        int precedingCustomStructParams = parameter.GetPrecedingCustomStructParams();
-                        if (precedingCustomStructParams > 0)
-                        {
-                            offsetName += $"<{string.Join(", ", _customStructParamTypes.GetRange(0, precedingCustomStructParams))}>()";
-                        }
-                    }
+
+                    string offsetName = TryAddPrecedingCustomStructParams(parameter, parameter.GetOffsetVariableName());
 
                     translator.ExportFromNative(builder,
                         parameter,
@@ -1105,5 +1089,43 @@ public class FunctionExporter
                 Modifiers = "internal ";
                 break;
         }
+    }
+
+    string DetermineInvokeFunction()
+    {
+        string invokeFunction = ExporterCallbacks.UObjectCallbacks;
+        
+        if (_function.HasAllFlags(EFunctionFlags.Static))
+        {
+            return invokeFunction + ".CallInvokeNativeStaticFunction";
+        }
+        
+        if (_function.HasAllFlags(EFunctionFlags.Net))
+        {
+            return invokeFunction + ".CallInvokeNativeNetFunction";
+        }
+        
+        if (_function.HasAllFlags(EFunctionFlags.HasOutParms) || _function.HasReturnProperty)
+        {
+            return invokeFunction + ".CallInvokeNativeFunctionOutParms";
+        } 
+        
+        return invokeFunction + ".CallInvokeNativeFunction";
+    }
+    
+    public string TryAddPrecedingCustomStructParams(UhtProperty parameter, string name)
+    {
+        if (!_hasCustomStructParamSupport)
+        {
+            return name;
+        }
+        
+        int precedingCustomStructParams = parameter.GetPrecedingCustomStructParams();
+        if (precedingCustomStructParams > 0)
+        {
+            return name + $"<{string.Join(", ", _customStructParamTypes.GetRange(0, precedingCustomStructParams))}>()";
+        }
+        
+        return name;
     }
 }

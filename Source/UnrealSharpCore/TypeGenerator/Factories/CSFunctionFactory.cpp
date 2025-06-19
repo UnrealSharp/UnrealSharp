@@ -3,7 +3,6 @@
 #include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
-#include "TypeGenerator/Functions/CSFunction_NoParams.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
@@ -111,13 +110,13 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Function->Next = Outer->Children;
 	Outer->Children = Function;
 	
-	// Mark the function as Native as we want the "UClass::InvokeManagedEvent" to always be called on C# UFunctions.
+	// Mark the function as Native as we want the "UClass::InvokeManagedMethod" to always be called on C# UFunctions.
 	Function->FunctionFlags |= FUNC_Native;
 	Function->StaticLink(true);
 	
 	if (Function->NumParms == 0)
 	{
-		Outer->AddNativeFunction(*Function->GetName(), &UCSFunction_NoParams::InvokeManagedMethod_NoParams);
+		Outer->AddNativeFunction(*Function->GetName(), &UCSFunctionBase::InvokeManagedMethod);
 	}
 	else
 	{

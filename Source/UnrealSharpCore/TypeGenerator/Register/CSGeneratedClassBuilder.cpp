@@ -11,6 +11,7 @@
 #include "Engine/Blueprint.h"
 #include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
 #include "TypeGenerator/CSSkeletonClass.h"
+#include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -24,10 +25,10 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
-	if (!Field->GetClassInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
 		TSharedPtr<FCSClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
-		Field->SetClassInfo(ClassInfo);
+		Field->SetTypeInfo(ClassInfo);
 	}
 
 	UClass* CurrentSuperClass = Field->GetSuperClass();
@@ -167,8 +168,8 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	TSharedPtr<FCSAssembly> OwningAssembly = FirstManagedClass->GetOwningAssembly();
-	OwningAssembly->FindOrCreateManagedObject(ObjectInitializer.GetObj());
+	TSharedPtr<FCSAssembly> OwningAssembly = FirstManagedClass->GetTypeInfo()->OwningAssembly;
+	OwningAssembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)

@@ -9,7 +9,7 @@ struct UNREALSHARPCORE_API FCSManagedDelegate
 		
 	}
 
-	FCSManagedDelegate() : CallbackHandle()
+	FCSManagedDelegate()
 	{
 		
 	}

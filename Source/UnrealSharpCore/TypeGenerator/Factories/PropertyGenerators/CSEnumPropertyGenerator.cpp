@@ -12,15 +12,15 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindAssembly(EnumPropertyMetaData->InnerProperty.AssemblyName);
 	UEnum* Enum = Assembly->FindEnum(EnumPropertyMetaData->InnerProperty.FieldName);
 
+#if WITH_EDITOR
 	if (UCSEnum* ManagedEnum = Cast<UCSEnum>(Enum))
 	{
 		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
 		{
-#if WITH_EDITORONLY_DATA
 			ManagedEnum->ManagedReferences.AddReference(OwningClass);
-#endif
 		}
 	}
+#endif
 	
 	FByteProperty* UnderlyingProp = new FByteProperty(NewProperty, "UnderlyingType", RF_Public);
 	

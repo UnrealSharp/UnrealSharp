@@ -79,7 +79,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
+	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetTypeInfo();
 	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
@@ -168,7 +168,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 void FCSCompilerContext::GenerateFunctions() const
 {
 	UCSClass* MainClass = GetMainClass();
-	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetClassInfo()->TypeMetaData;
+	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetTypeInfo()->TypeMetaData;
 
 	if (TypeMetaData->VirtualFunctions.IsEmpty() && TypeMetaData->Functions.IsEmpty())
 	{
@@ -186,7 +186,7 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 
 TSharedPtr<const FCSClassInfo> FCSCompilerContext::GetClassInfo() const
 {
-	return GetMainClass()->GetClassInfo();
+	return GetMainClass()->GetTypeInfo();
 }
 
 bool FCSCompilerContext::IsDeveloperSettings() const

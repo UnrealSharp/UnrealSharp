@@ -5,5 +5,5 @@
 void* UGEngineExporter::GetEngineSubsystem(UClass* SubsystemClass)
 {
 	UEngineSubsystem* EngineSubsystem = GEngine->GetEngineSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(EngineSubsystem).GetPointer();
+	return UCSManager::Get().FindManagedObject(EngineSubsystem);
 }

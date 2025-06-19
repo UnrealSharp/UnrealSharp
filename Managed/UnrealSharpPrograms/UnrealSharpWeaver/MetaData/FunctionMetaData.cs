@@ -20,6 +20,7 @@ public class FunctionMetaData : BaseMetaData
     public bool HasParameters => Parameters.Length > 0 || HasReturnValue;
     public bool HasReturnValue => ReturnValue != null;
     public bool IsRpc => FunctionFlags.HasAnyFlags(Utilities.MethodUtilities.RpcFlags);
+    public bool HasOutParams => FunctionFlags.HasAnyFlags(EFunctionFlags.HasOutParms);
     private bool _shouldBeRemoved;
     // End non-serialized
 

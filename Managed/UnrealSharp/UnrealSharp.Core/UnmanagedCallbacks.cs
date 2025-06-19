@@ -135,15 +135,15 @@ public static class UnmanagedCallbacks
         try
         {
             IntPtr? methodHandle = GCHandleUtilities.GetObjectFromHandlePtr<IntPtr>(methodHandlePtr);
-            object? managdObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
+            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
             
-            if (methodHandle == null || managdObject == null)
+            if (methodHandle == null || managedObject == null)
             {
                 throw new Exception("Invalid method or target handle");
             }
             
             delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodHandle;
-            methodPtr(managdObject, argumentsBuffer, returnValueBuffer);
+            methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
             return 0;
         }
         catch (Exception ex)

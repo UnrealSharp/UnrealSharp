@@ -13,10 +13,10 @@ void FCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
 
-	if (!Field->GetStructInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
 		TSharedPtr<FCSStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
-		Field->SetStructInfo(StructInfo);
+		Field->SetTypeInfo(StructInfo);
 	}
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);

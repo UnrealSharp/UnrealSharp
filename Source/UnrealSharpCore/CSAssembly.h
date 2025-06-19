@@ -4,6 +4,7 @@
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
+#include "Utils/CSClassUtilities.h"
 
 #if !defined(_WIN32)
 #define __stdcall
@@ -21,7 +22,7 @@ struct FCSStructInfo;
  * Represents a managed assembly.
  * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the C# assembly.
  */
-struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObjectDeleteListener
+struct FCSAssembly final : TSharedFromThis<FCSAssembly>
 {
 	explicit FCSAssembly(const FString& AssemblyPath);
 
@@ -37,12 +38,19 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	bool IsLoading() const { return bIsLoading; }
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	TSharedPtr<FGCHandle> TryFindTypeHandle(UClass* Class) { return TryFindTypeHandle(FCSFieldName(Class)); }
-
-	FCSManagedMethod GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
-	FCSManagedMethod GetManagedMethod(const UCSClass* Class, const FString& MethodName);
+	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	
-	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class);
+	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class)
+	{
+		if (UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
+		{
+			return ManagedClass->GetTypeInfo();
+		}
+	
+		FCSFieldName FieldName(Class);
+		return FindOrAddClassInfo(FieldName);
+	}
+	
 	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
 	
 	TSharedPtr<FCSClassInfo> FindClassInfo(const FCSFieldName& ClassName) const { return Classes.FindRef(ClassName); }
@@ -57,13 +65,12 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>, FUObjectArray::FUObject
 	UDelegateFunction* FindDelegate(const FCSFieldName& DelegateName) const;
 
 	// Creates a C# counterpart for the given UObject.
-	TSharedPtr<FGCHandle> FindOrCreateManagedObject(UObject* Object);
-
-	// Removes the C# counterpart for the given UObject, if it exists.
-	void RemoveManagedObject(const UObjectBase* Object);
+	TSharedPtr<FGCHandle> CreateManagedObject(UObject* Object);
 
 	// Add a class that is waiting for its parent class to be loaded before it can be created.
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
+
+	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return ManagedAssemblyHandle; }
 
 private:
 	
@@ -116,13 +123,6 @@ private:
 		return FindObject<T>(Package, *FieldName.GetName());
 	}
 
-	// UObjectArray listener interface
-	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override { RemoveManagedObject(Object); }
-	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectDeleteListener(this); }
-
-	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
-	// End of interface
-
 	// All Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FCSClassInfo>> Classes;
 	TMap<FCSFieldName, TSharedPtr<FCSStructInfo>> Structs;
@@ -135,9 +135,6 @@ private:
 
 	// Handles to all UClasses types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
-
-	// Handles to all active UObjects that has a C# counterpart.
-	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
 	TMap<FCSTypeReferenceMetaData, TSet<FCSClassInfo*>> PendingClasses;

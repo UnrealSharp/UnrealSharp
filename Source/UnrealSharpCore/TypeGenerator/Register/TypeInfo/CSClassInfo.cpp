@@ -35,23 +35,3 @@ UClass* FCSClassInfo::InitializeBuilder()
 	return TCSTypeInfo::InitializeBuilder();
 }
 
-TSharedPtr<FGCHandle> FCSClassInfo::GetManagedTypeHandle()
-{
-#if WITH_EDITOR
-	if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
-	{
-		// Lazy load the type handle in editor. Gets null during hot reload.
-		if (FCSClassUtilities::IsManagedType(Field))
-		{
-			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
-		}
-		else
-		{
-			ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(Field);
-		}
-		ensureMsgf(ManagedTypeHandle.IsValid(), TEXT("Failed to find managed type handle for %s"), *TypeMetaData->FieldName.GetName());
-	}
-#endif
-	return ManagedTypeHandle;
-}
-

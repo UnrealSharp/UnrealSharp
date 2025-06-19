@@ -86,6 +86,8 @@ public static class ScriptGeneratorUtilities
     public const string PublicKeyword = "public ";
     public const string PrivateKeyword = "private ";
     public const string ProtectedKeyword = "protected ";
+    
+    public const string IntPtrZero = "IntPtr.Zero";
 
     public static string TryGetPluginDefine(string key)
     {

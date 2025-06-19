@@ -220,6 +220,11 @@ public static class PropertyUtilities
     {
         return $"{property.SourceName}_NativeProperty";
     }
+    
+    public static string GetOffsetVariableName(this UhtProperty property)
+    {
+        return $"{property.Outer!.SourceName}_{property.SourceName}_Offset";
+    }
 
     public static string GetProtection(this UhtProperty property)
     {

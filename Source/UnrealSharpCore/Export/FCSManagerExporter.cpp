@@ -3,13 +3,12 @@
 
 void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 {
-	return UCSManager::Get().FindManagedObject(Object).GetPointer();
+	return UCSManager::Get().FindManagedObject(Object);
 }
 
 void* UFCSManagerExporter::GetCurrentWorldContext()
 {
-	UObject* WorldContext = UCSManager::Get().GetCurrentWorldContext();
-	return WorldContext;
+	return UCSManager::Get().GetCurrentWorldContext();
 }
 
 void* UFCSManagerExporter::GetCurrentWorldPtr()

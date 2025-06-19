@@ -8,16 +8,16 @@ struct FCSSpawnActorParameters
 	GENERATED_BODY()
 	
 	UPROPERTY()
-	AActor* Owner;
+	AActor* Owner = nullptr;
 
 	UPROPERTY()
-	APawn* Instigator;
+	APawn* Instigator = nullptr;
 
 	UPROPERTY()
-	AActor* Template;
+	AActor* Template = nullptr;
 
 	UPROPERTY()
-	ESpawnActorCollisionHandlingMethod SpawnMethod;
+	ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod::Undefined;
 };
 
 UCLASS(meta = (Internal))
@@ -39,8 +39,6 @@ public:
 
 	UFUNCTION(meta = (ScriptMethod))
 	static FURL WorldURL(const UObject* WorldContextObject);
-
-	
 private:
 	static AActor* SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction);
 };
