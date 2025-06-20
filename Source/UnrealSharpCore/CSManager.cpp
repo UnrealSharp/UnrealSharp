@@ -279,21 +279,22 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	
 	TSharedPtr<FGCHandle> Handle;
 	uint32 ObjectID = Object->GetUniqueID();
-	if (ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID, ObjectID, Handle))
+	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID, ObjectID, Handle))
 	{
-		TSharedPtr<FCSAssembly> Assembly = FindOwningAssembly(Object->GetClass());
-
-		if (!Assembly.IsValid())
-		{
-			FString ObjectName = Object->GetFName().ToString();
-			FString ClassName = Object->GetClass()->GetFName().ToString();
-			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to find owning assembly for object %s with class %s. Will cause managed memory leak."), *ObjectName, *ClassName);
-			return;
-		}
-		
-		TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
-		Handle->Dispose(AssemblyHandle->GetHandle());
+		return;
 	}
+
+	TSharedPtr<FCSAssembly> Assembly = FindOwningAssembly(Object->GetClass());
+	if (!Assembly.IsValid())
+	{
+		FString ObjectName = Object->GetFName().ToString();
+		FString ClassName = Object->GetClass()->GetFName().ToString();
+		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to find owning assembly for object %s with class %s. Will cause managed memory leak."), *ObjectName, *ClassName);
+		return;
+	}
+		
+	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
+	Handle->Dispose(AssemblyHandle->GetHandle());
 }
 
 load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const
