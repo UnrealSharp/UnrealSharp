@@ -82,10 +82,7 @@ internal unsafe struct ScriptMapHelper
     /// <param name="slack">used to presize the array for a subsequent add, to avoid reallocation.</param>
     public void EmptyValues(int slack = 0)
     {
-        if (slack != 0)
-        {
-            FScriptMapHelperExporter.CallEmptyValues(_mapProperty.Property, MapAddress);
-        }
+        FScriptMapHelperExporter.CallEmptyValues(_mapProperty.Property, MapAddress);
     }
 
     /// <summary>
