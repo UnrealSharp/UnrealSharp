@@ -19,7 +19,7 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 [Sample Defense Game](https://github.com/UnrealSharp/UnrealSharp-SampleDefenseGame), project made for Mini Jam 174.
 
 ## Prerequisites
-- Unreal Engine 5.3 - 5.5
+- Unreal Engine 5.3 - 5.6
 - .NET 9.0+
 
 ## Frequently Asked Questions
