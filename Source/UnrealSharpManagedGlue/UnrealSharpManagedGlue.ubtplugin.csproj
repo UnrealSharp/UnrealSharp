@@ -4,10 +4,6 @@
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
     
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
     
@@ -45,5 +41,45 @@
     <ItemGroup>
         <Compile Include="..\..\Managed\Shared\DotNetUtilities.cs" Link="..\..\..\Managed\Shared\DotNetUtilities.cs" />
     </ItemGroup>
+
+    <Target Name="UpdateProjectConstants" BeforeTargets="PrepareForBuild" Condition="Exists('$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj')">
+        <AddUnrealConstants
+                UE5RulesPath="$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj"
+                ProjectConstants="$(DefineConstants)">
+            <Output TaskParameter="Result" PropertyName="DefineConstants" />
+        </AddUnrealConstants>
+    </Target>
+
+    <UsingTask TaskName="AddUnrealConstants"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <UE5RulesPath ParameterType="System.String" Required="true"/>
+            <ProjectConstants ParameterType="System.String" Required="true"/>
+            <Result ParameterType="System.String" Output="true"/>
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.Xml" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var document = new XmlDocument();
+                    document.Load(UE5RulesPath);
+                    
+                    var constantsNode = document.DocumentElement.SelectSingleNode("/Project/PropertyGroup/DefineConstants");
+                    var constantsString = constantsNode?.InnerText;
+                    if(string.IsNullOrWhiteSpace(constantsString)) 
+                    {
+                        Result = ProjectConstants;
+                        return true;
+                    }
+                    
+                    //removing first element "$(DefineConstants)"
+                    var unrealConstants = constantsString.Split(';').Skip(1);
+                    
+                    Result = ProjectConstants + ";" + string.Join(";", unrealConstants);
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
     
 </Project>
