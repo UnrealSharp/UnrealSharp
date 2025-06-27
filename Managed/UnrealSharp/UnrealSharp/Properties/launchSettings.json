@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "UnrealSharp": {
-      "commandName": "Executable",
-      "executablePath": "C:/Program Files/Epic Games/UE_5.5/Engine/Binaries\\Win64\\UnrealEditor.exe",
-      "commandLineArgs": "\"C:\\dev\\UnrealPluginTestbed\\UnrealPluginTestbed.uproject\""
-    }
-  }
-}
