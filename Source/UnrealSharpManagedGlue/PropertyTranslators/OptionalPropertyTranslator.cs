@@ -153,19 +153,19 @@ public class OptionalPropertyTranslator : PropertyTranslator
         
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"TOptional<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"LanguageExt.Option<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
         if (property.Outer is UhtProperty outerProperty && outerProperty.IsGenericType())
         {
-            return "OptionalMarshaller<DOT>";
+            return "OptionMarshaller<DOT>";
         }
 
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"OptionalMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"OptionMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
     
     public override string ExportMarshallerDelegates(UhtProperty property)

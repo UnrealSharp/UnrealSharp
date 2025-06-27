@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
+using LanguageExt;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
 
@@ -18,6 +19,7 @@ public static class PluginLoader
         SharedAssemblies.Add(typeof(NativeBinds).Assembly);
         SharedAssemblies.Add(typeof(UnrealSharpObject).Assembly);
         SharedAssemblies.Add(typeof(UnrealSharpModule).Assembly);
+        SharedAssemblies.Add(typeof(Option<>).Assembly);
     }
 
     public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible)
