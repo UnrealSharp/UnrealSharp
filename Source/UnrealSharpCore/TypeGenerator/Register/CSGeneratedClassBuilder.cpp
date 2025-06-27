@@ -44,6 +44,9 @@ void FCSGeneratedClassBuilder::RebuildType()
 	}
 	
 	Field->SetSuperStruct(CurrentSuperClass);
+
+	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
+	Field->NumReplicatedProperties = 0;
 	
 #if WITH_EDITOR
 	if (FUnrealSharpUtils::IsStandalonePIE())
