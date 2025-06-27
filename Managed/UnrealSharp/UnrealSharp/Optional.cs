@@ -66,7 +66,7 @@ public class OptionalMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T
         {
             if (obj.IsSet)
             {
-                var result = FOptionalPropertyExporter.CallGetValuePointerForReplace(nativeProperty, nativeBuffer);
+                var result = FOptionalPropertyExporter.CallMarkSetAndGetInitializedValuePointerToReplace(nativeProperty, nativeBuffer);
                 toNative(result, 0, obj.GetOrDefault()!);
             }
             else
