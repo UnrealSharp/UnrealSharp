@@ -11,7 +11,8 @@
  * 
  */
 UCLASS()
-class UNREALSHARPCORE_API UFOptionalPropertyExporter : public UObject {
+class UNREALSHARPCORE_API UFOptionalPropertyExporter : public UObject
+{
 	GENERATED_BODY()
 	
 public:

@@ -8,7 +8,8 @@
 
 struct FCSContainerBaseMetaData;
 
-FProperty* UCSOptionalPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) {
+FProperty* UCSOptionalPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+{
 	FOptionalProperty* NewProperty = static_cast<FOptionalProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
 	TSharedPtr<FCSContainerBaseMetaData> OptionalPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
 	NewProperty->SetValueProperty(FCSPropertyFactory::CreateProperty(Outer, OptionalPropertyMetaData->InnerProperty));
@@ -16,6 +17,7 @@ FProperty* UCSOptionalPropertyGenerator::CreateProperty(UField* Outer, const FCS
 	return NewProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSOptionalPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType) {
+TSharedPtr<FCSUnrealType> UCSOptionalPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+{
 	return MakeShared<FCSContainerBaseMetaData>();
 }

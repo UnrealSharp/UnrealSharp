@@ -11,7 +11,8 @@
  * 
  */
 UCLASS()
-class UNREALSHARPCORE_API UCSOptionalPropertyGenerator : public UCSPropertyGenerator {
+class UNREALSHARPCORE_API UCSOptionalPropertyGenerator : public UCSPropertyGenerator
+{
 	GENERATED_BODY()
 
 protected:
