@@ -157,7 +157,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	{
 		FProperty* Property = *PropertyIt;
 
-		if (Property->GetOwnerClass() == FirstNativeClass)
+		if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
 		{
 			// We don't want to initialize properties that are not from a managed class
 			break;
