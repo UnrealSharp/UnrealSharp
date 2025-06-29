@@ -8,6 +8,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	FOutParmRec* OutParameters = nullptr;
 	FOutParmRec** LastOut = &OutParameters;
 	uint8* ArgumentBuffer = Stack.Locals;
+	uint8* LocalsCache = Stack.Locals;
 
 	// If we're calling this from BP, we need to copy the parameters to a new buffer
 	if (Stack.Code)
@@ -82,4 +83,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	{
 		Function->DestroyStruct(ArgumentBuffer);
 	}
+
+	// Restore the local pointer so we are still pointing to the right location
+	Stack.Locals = LocalsCache;
 }
