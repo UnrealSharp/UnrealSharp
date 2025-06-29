@@ -9,6 +9,12 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
+
+	if (NewFunction->HasAllFunctionFlags(FUNC_BlueprintPure))
+	{
+		NewFunction->FunctionFlags |= FUNC_BlueprintCallable;
+	}
+	
 	NewFunction->SetSuperStruct(ParentFunction);
 	
 	if (!NewFunction->TryUpdateMethodHandle())

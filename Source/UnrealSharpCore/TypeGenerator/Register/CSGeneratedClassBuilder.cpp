@@ -44,6 +44,9 @@ void FCSGeneratedClassBuilder::RebuildType()
 	}
 	
 	Field->SetSuperStruct(CurrentSuperClass);
+
+	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
+	Field->NumReplicatedProperties = 0;
 	
 #if WITH_EDITOR
 	if (FUnrealSharpUtils::IsStandalonePIE())
@@ -154,7 +157,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	{
 		FProperty* Property = *PropertyIt;
 
-		if (Property->GetOwnerClass() == FirstNativeClass)
+		if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
 		{
 			// We don't want to initialize properties that are not from a managed class
 			break;
