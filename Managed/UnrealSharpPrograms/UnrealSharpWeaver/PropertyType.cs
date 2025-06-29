@@ -43,6 +43,7 @@ public enum PropertyType
     Array,
     Map,
     Set,
+    Optional,
         
     String,
     Name,

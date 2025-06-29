@@ -44,6 +44,7 @@ enum class ECSPropertyType : uint8
 	Array,
 	Map,
 	Set,
+    Optional,
         
 	String,
 	Name,

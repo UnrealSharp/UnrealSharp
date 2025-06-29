@@ -103,6 +103,8 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
         
+        AddPropertyTranslator(typeof(UhtOptionalProperty), new OptionalPropertyTranslator());
+        
         // Manually exported properties
         InclusionLists.BanProperty("UWorld", "GameState");
         InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
