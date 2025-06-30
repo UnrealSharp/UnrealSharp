@@ -29,3 +29,26 @@ void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldC
 	UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
 	return UCSManager::Get().FindManagedObject(WorldSubsystem);
 }
+
+void* UUWorldExporter::GetNetMode(UObject* WorldContextObject)
+{
+	if (!IsValid(WorldContextObject))
+	{
+		return nullptr;
+	}
+	switch (WorldContextObject->GetWorld()->GetNetMode())
+	{
+		case NM_Standalone:
+			return (void*)(intptr_t)0; // NM_Standalone
+		case NM_ListenServer:
+			return (void*)(intptr_t)1; // NM_ListenServer
+		case NM_Client:
+			return (void*)(intptr_t)2; // NM_Client
+		case NM_DedicatedServer:
+			return (void*)(intptr_t)3; // NM_DedicatedServer
+		case NM_MAX:
+			return (void*)(intptr_t)4; // NM_MAX
+		default:
+			return (void*)(intptr_t)0; // NM_Standalone
+	};
+}
