@@ -40,7 +40,7 @@ public static class UnrealInterfaceProcessor
     
     public static void MakeToNativeMethod(TypeDefinition interfaceType, TypeDefinition structMarshallerClass, FieldDefinition nativePointerField)
     {
-        MethodDefinition toNativeMarshallerMethod = interfaceType.AddMethod("ToNative", 
+        MethodDefinition toNativeMarshallerMethod = structMarshallerClass.AddMethod("ToNative", 
             WeaverImporter.Instance.VoidTypeRef,
             MethodAttributes.Public | MethodAttributes.Static, WeaverImporter.Instance.IntPtrType, WeaverImporter.Instance.Int32TypeRef, interfaceType);
         
