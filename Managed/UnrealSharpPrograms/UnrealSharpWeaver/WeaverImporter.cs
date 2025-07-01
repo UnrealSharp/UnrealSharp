@@ -30,6 +30,8 @@ public class WeaverImporter
     public static readonly string UObjectCallbacks = "UObjectExporter";
     public static readonly string UScriptStructCallbacks = "UScriptStructExporter";
     public static readonly string UFunctionCallbacks = "UFunctionExporter";
+    public MethodReference? UFunctionAttributeConstructor => UnrealSharpAssembly.FindType("UFunctionAttribute", "UnrealSharp.Attributes")?.FindMethod(".ctor");
+    public MethodReference? BlueprintInternalUseAttributeConstructor => UnrealSharpAssembly.FindType("BlueprintInternalUseOnlyAttribute", "UnrealSharp.Attributes.MetaTags")?.FindMethod(".ctor");
     public static readonly string MulticastDelegatePropertyCallbacks = "FMulticastDelegatePropertyExporter";
     public static readonly string UStructCallbacks = "UStructExporter";
     
@@ -51,6 +53,7 @@ public class WeaverImporter
     public TypeDefinition IInterfaceType = null!;
     public MethodReference GetNativeFunctionFromInstanceAndNameMethod = null!;
     public TypeReference Int32TypeRef = null!;
+    public TypeReference UInt64TypeRef = null!;
     public TypeReference VoidTypeRef = null!;
     public TypeReference ByteTypeRef = null!;
     public MethodReference GetNativeClassFromNameMethod = null!;
@@ -96,6 +99,7 @@ public class WeaverImporter
         TypeSystem typeSystem = UserAssembly.MainModule.TypeSystem;
         
         Int32TypeRef = typeSystem.Int32;
+        UInt64TypeRef = typeSystem.UInt64;
         VoidTypeRef = typeSystem.Void;
         ByteTypeRef = typeSystem.Byte;
         

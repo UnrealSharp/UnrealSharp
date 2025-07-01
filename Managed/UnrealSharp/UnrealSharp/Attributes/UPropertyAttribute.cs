@@ -128,4 +128,6 @@ public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None)
     public string BlueprintGetter = "";
     
     public int ArrayDim = 1;
+
+    public string? BackingField;
 }
