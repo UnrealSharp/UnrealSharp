@@ -29,3 +29,12 @@ void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldC
 	UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
 	return UCSManager::Get().FindManagedObject(WorldSubsystem);
 }
+
+void* UUWorldExporter::GetNetMode(UObject* WorldContextObject)
+{
+	if (!IsValid(WorldContextObject))
+	{
+		return nullptr;
+	}
+	return (void*)WorldContextObject->GetWorld()->GetNetMode();
+}
