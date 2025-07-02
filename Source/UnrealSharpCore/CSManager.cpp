@@ -488,3 +488,25 @@ FGCHandle UCSManager::FindManagedObject(UObject* Object)
 
 	return *FoundHandle;
 }
+
+FGCHandle UCSManager::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass) {
+	if (!Object->GetClass()->ImplementsInterface(InterfaceClass)) {
+		return FGCHandle::Null();
+	}
+
+	// No existing handle found, we need to create a new managed object.
+	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(InterfaceClass);
+	if (!OwningAssembly.IsValid())
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *InterfaceClass->GetName());
+		return FGCHandle::Null();
+	}
+	
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedObjectWrapper(Object, InterfaceClass);
+	if (!FoundHandle.IsValid())
+	{
+		return FGCHandle::Null();
+	}
+
+	return *FoundHandle;
+}

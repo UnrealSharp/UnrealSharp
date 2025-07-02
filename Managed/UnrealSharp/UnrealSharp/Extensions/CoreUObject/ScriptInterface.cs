@@ -17,6 +17,14 @@ internal struct FScriptInterface
     internal IntPtr InterfacePointer;
 }
 
+public interface IScriptInterface
+{
+    public UObject Object { get; }
+    
+}
+
+
+
 public static class ScriptInterfaceMarshaller<T> where T : class
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, IntPtr nativeInterfaceClassPtr)
@@ -30,19 +38,41 @@ public static class ScriptInterfaceMarshaller<T> where T : class
             {
                 objectPointer = unrealObject.NativeObject;
             }
+            else if (obj is IScriptInterface scriptInterfaceObject)
+            {
+                objectPointer = scriptInterfaceObject.Object.NativeObject;
+            }
 
             scriptInterface->ObjectPointer = objectPointer;
-            scriptInterface->InterfacePointer = nativeInterfaceClassPtr;
+            scriptInterface->InterfacePointer = objectPointer;
         }
     }
     
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public static T? FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
         {
             FScriptInterface* scriptInterface = (FScriptInterface*)(nativeBuffer + arrayIndex * sizeof(FScriptInterface));
             IntPtr handle = FCSManagerExporter.CallFindManagedObject(scriptInterface->ObjectPointer);
-            return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+            var uobject = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
+            if (uobject == null)
+            {
+                return null;
+            }
+            
+            var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, typeof(T).FullName, typeof(T).FullName, typeof(T).FullName);
+            GCHandle wrapperGcHandle = GCHandle.FromIntPtr(wrapperHandle);
+            if (!wrapperGcHandle.IsAllocated)
+            {
+                return null;
+            }
+
+            if (wrapperGcHandle.Target is T typedWrapper)
+            {
+                return typedWrapper;
+            }
+			
+			return null;
         }
     }
 }

@@ -6,6 +6,7 @@ namespace UnrealSharp.Core;
 public unsafe struct ManagedCallbacks
 {
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> ScriptManagerBridge_CreateManagedObject;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> ScriptManagerBridge_CreateNewManagedObjectWrapper;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, int> ScriptManagerBridge_InvokeManagedMethod;
     public delegate* unmanaged<IntPtr, void> ScriptManagerBridge_InvokeDelegate;
     public delegate* unmanaged<IntPtr, char*, IntPtr> ScriptManagerBridge_LookupManagedMethod;
@@ -17,6 +18,7 @@ public unsafe struct ManagedCallbacks
         *(ManagedCallbacks*)outManagedCallbacks = new ManagedCallbacks
         {
             ScriptManagerBridge_CreateManagedObject = &UnmanagedCallbacks.CreateNewManagedObject,
+            ScriptManagerBridge_CreateNewManagedObjectWrapper = &UnmanagedCallbacks.CreateNewManagedObjectWrapper,
             ScriptManagerBridge_InvokeManagedMethod = &UnmanagedCallbacks.InvokeManagedMethod,
             ScriptManagerBridge_InvokeDelegate = &UnmanagedCallbacks.InvokeDelegate,
             ScriptManagerBridge_LookupManagedMethod = &UnmanagedCallbacks.LookupManagedMethod,

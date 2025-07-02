@@ -33,6 +33,51 @@ public static class UnmanagedCallbacks
 
         return IntPtr.Zero;
     }
+
+    [UnmanagedCallersOnly]
+    public static IntPtr CreateNewManagedObjectWrapper(IntPtr managedObjectHandle, IntPtr typeHandlePtr)
+    {
+        try
+        {
+            if (managedObjectHandle == IntPtr.Zero)
+            {
+                throw new ArgumentNullException(nameof(managedObjectHandle));
+            }
+            
+            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
+            
+            if (type is null)
+            {
+                throw new InvalidOperationException("The provided type handle does not point to a valid type.");
+            }
+            
+            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
+            if (managedObject is null)
+            {
+                throw new InvalidOperationException("The provided managed object handle does not point to a valid object.");
+            }
+
+            MethodInfo? wrapMethod = type.GetMethod("Wrap", BindingFlags.Public | BindingFlags.Static);
+            if (wrapMethod is null)
+            {
+                throw new InvalidOperationException("The provided type does not have a static Wrap method.");
+            }
+            
+            object? createdObject = wrapMethod.Invoke(null, [managedObject]);
+            if (createdObject is null)
+            {
+                throw new InvalidOperationException("The Wrap method did not return a valid object.");
+            }
+
+            return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject, createdObject.GetType().Assembly));
+        }
+        catch (Exception ex)
+        {
+            LogUnrealSharpCore.LogError($"Failed to create new managed object: {ex.Message}");
+        }
+
+        return IntPtr.Zero;
+    }
     
     [UnmanagedCallersOnly]
     public static unsafe IntPtr LookupManagedMethod(IntPtr typeHandlePtr, char* methodName)

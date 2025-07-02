@@ -73,6 +73,7 @@ public class WeaverImporter
     public TypeDefinition UObjectDefinition = null!;
     public TypeDefinition UActorComponentDefinition = null!;
     
+    public TypeDefinition ScriptInterfaceWrapper = null!;
     public TypeDefinition ScriptInterfaceMarshaller = null!;
     
     public MethodReference BlittableTypeConstructor = null!;
@@ -142,6 +143,7 @@ public class WeaverImporter
         TypeReference generatedType = UnrealSharpCoreAssembly.FindType(GeneratedTypeAttribute, UnrealSharpCoreAttributesNamespace)!;
         GeneratedTypeCtor = generatedType.FindMethod(".ctor")!;
         
+        ScriptInterfaceWrapper = UnrealSharpAssembly.FindType("IScriptInterface", CoreUObjectNamespace)!.Resolve();
         ScriptInterfaceMarshaller = UnrealSharpAssembly.FindType("ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
     }
 
