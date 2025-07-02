@@ -59,8 +59,14 @@ public static class ScriptInterfaceMarshaller<T> where T : class
             {
                 return null;
             }
+
+            var nativeClass = typeof(T).TryGetNativeClass();
+            if (nativeClass == IntPtr.Zero)
+            {
+                return null;
+            }
             
-            var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, typeof(T).FullName, typeof(T).FullName, typeof(T).FullName);
+            var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, nativeClass);
             GCHandle wrapperGcHandle = GCHandle.FromIntPtr(wrapperHandle);
             if (!wrapperGcHandle.IsAllocated)
             {

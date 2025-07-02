@@ -25,9 +25,10 @@ public static class UnrealInterfaceProcessor
     public static void CreateInterfaceWrapper(TypeDefinition interfaceType)
     {
         TypeDefinition interfaceWrapperClass = WeaverImporter.Instance.UserAssembly.CreateNewClass(interfaceType.Namespace, interfaceType.GetWrapperClassName(), 
-            TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic);
+            TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
         interfaceWrapperClass.Interfaces.Add(new InterfaceImplementation(interfaceType));
-        interfaceWrapperClass.Interfaces.Add(new InterfaceImplementation(WeaverImporter.Instance.ScriptInterfaceWrapper));
+        var importedIScriptInterface = interfaceType.Module.ImportReference(WeaverImporter.Instance.ScriptInterfaceWrapper);
+        interfaceWrapperClass.Interfaces.Add(new InterfaceImplementation(importedIScriptInterface));
 
         // Add interface method implementations
         // For regular interface methods without implementation, throw InvalidOperationException
@@ -63,7 +64,7 @@ public static class UnrealInterfaceProcessor
             // Create method in the wrapper class
             MethodDefinition implementedMethod = new MethodDefinition(
                 method.Name,
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual,
+                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final,
                 method.ReturnType);
 
             // Copy method parameters
@@ -83,23 +84,24 @@ public static class UnrealInterfaceProcessor
                 continue;
             }
             
-            var newProperty = new PropertyDefinition(property.Name, property.Attributes, property.PropertyType);
+            var newProperty = new PropertyDefinition(property.Name, PropertyAttributes.None, property.PropertyType);
+            interfaceWrapperClass.Properties.Add(newProperty);
             if (property.GetMethod != null)
             {
-                var newGetMethod = new MethodDefinition($"get_{property.Name}", property.GetMethod.Attributes, property.GetMethod.ReturnType);
+                var newGetMethod = new MethodDefinition($"get_{property.Name}", property.GetMethod.Attributes & ~MethodAttributes.Abstract | MethodAttributes.Final, property.GetMethod.ReturnType);
                 newProperty.GetMethod = newGetMethod;
                 interfaceWrapperClass.Methods.Add(newGetMethod);
             }
             
             if (property.SetMethod != null)
             {
-                var newSetMethod = new MethodDefinition($"set{property.Name}", property.SetMethod.Attributes, WeaverImporter.Instance.VoidTypeRef);
+                var newSetMethod = new MethodDefinition($"set{property.Name}", property.SetMethod.Attributes & ~MethodAttributes.Abstract | MethodAttributes.Final, WeaverImporter.Instance.VoidTypeRef);
                 newSetMethod.Parameters.Add(new ParameterDefinition("value", ParameterAttributes.None, property.PropertyType));
                 newProperty.SetMethod = newSetMethod;
                 interfaceWrapperClass.Methods.Add(newSetMethod);
             }
         }
-
+        
         var originalMethods = interfaceWrapperClass.Methods.ToImmutableArray();
         foreach (var newMethod in originalMethods)
         {
@@ -115,17 +117,20 @@ public static class UnrealInterfaceProcessor
             else
             {
                 // For methods with return value, load default value and return
-                ilProcessor.Emit(OpCodes.Ldnull);  // For reference types
                 if (newMethod.ReturnType.IsValueType)
                 {
                     ilProcessor.Emit(OpCodes.Initobj, newMethod.ReturnType);  // For value types
                 }
+                else
+                {
+                    ilProcessor.Emit(OpCodes.Ldnull);  // For reference types
+                }
                 ilProcessor.Emit(OpCodes.Ret);
             }
-
-            var metaData = new FunctionMetaData(newMethod, true, EFunctionFlags.BlueprintNativeEvent);
-            metaData.RewriteFunction();
-        }
+            
+           var metaData = new FunctionMetaData(newMethod, true, EFunctionFlags.BlueprintNativeEvent);
+           metaData.RewriteFunction();
+       }
 
         TypeReference importedUObjectType = CreateObjectBackingCode(interfaceType, interfaceWrapperClass);
         MethodDefinition wrapMethodDefinition = interfaceType.AddMethod("Wrap", interfaceType, 
@@ -133,14 +138,26 @@ public static class UnrealInterfaceProcessor
         
         ILProcessor processor = wrapMethodDefinition.Body.GetILProcessor();
 
-        // Load the UObject parameter
-        processor.Emit(OpCodes.Ldarg_0);
+        // Create a constructor for the wrapper class that takes a UObject parameter
+        MethodDefinition constructorMethod = ConstructorBuilder.CreateConstructor(interfaceWrapperClass, MethodAttributes.Public, importedUObjectType);
+        ILProcessor constructorProcessor = constructorMethod.Body.GetILProcessor();
 
-        // Use the 'as' operator to cast to the interface type
-        processor.Emit(OpCodes.Isinst, interfaceType);
+        // Call base constructor
+        constructorProcessor.Emit(OpCodes.Ldarg_0);
+        MethodReference objectCtorRef = interfaceWrapperClass.Module.ImportReference(typeof(object).GetConstructor(Type.EmptyTypes));
+        constructorProcessor.Emit(OpCodes.Call, objectCtorRef);
 
-        // Return the interface reference
-        processor.Emit(OpCodes.Ret);
+        // Store UObject parameter in the backing field
+        FieldDefinition objectBackingField = interfaceWrapperClass.Fields.First(f => f.Name == "<Object>k__BackingField");
+        constructorProcessor.Emit(OpCodes.Ldarg_0);
+        constructorProcessor.Emit(OpCodes.Ldarg_1);
+        constructorProcessor.Emit(OpCodes.Stfld, objectBackingField);
+        constructorProcessor.Emit(OpCodes.Ret);
+
+        // In the Wrap method, create an instance of the wrapper class
+        processor.Emit(OpCodes.Ldarg_0); // Load UObject parameter
+        processor.Emit(OpCodes.Newobj, constructorMethod); // Create new wrapper instance with UObject parameter
+        processor.Emit(OpCodes.Ret); // Return the wrapper instance
 
         wrapMethodDefinition.OptimizeMethod();
     }
@@ -160,7 +177,7 @@ public static class UnrealInterfaceProcessor
 
         // 3. Create getter method
         MethodDefinition objectGetter = new MethodDefinition("get_Object", 
-            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.CompilerControlled, 
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final, 
             importedUObjectType);
         interfaceWrapperClass.Methods.Add(objectGetter);
 

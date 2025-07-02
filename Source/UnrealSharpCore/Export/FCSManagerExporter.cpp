@@ -8,8 +8,7 @@ void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 	return UCSManager::Get().FindManagedObject(Object);
 }
 
-void* UFCSManagerExporter::FindOrCreateManagedInterfaceWrapper(UObject* Object, const char* InAssemblyName, const char* InNamespace, const char* InClassName) {
-	UClass* NativeClass = UUCoreUObjectExporter::GetNativeClassFromName(InAssemblyName, InNamespace, InClassName);
+void* UFCSManagerExporter::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* NativeClass) {
 	return UCSManager::Get().FindOrCreateManagedObjectWrapper(Object, NativeClass);
 }
 

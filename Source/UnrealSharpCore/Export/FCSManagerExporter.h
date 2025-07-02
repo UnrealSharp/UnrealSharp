@@ -17,7 +17,7 @@ public:
 	static void* FindManagedObject(UObject* Object);
 
 	UNREALSHARP_FUNCTION()
-	static void* FindOrCreateManagedInterfaceWrapper(UObject* Object, const char* InAssemblyName, const char* InNamespace, const char* InClassName);
+	static void* FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* NativeClass);
 
 	UNREALSHARP_FUNCTION()
 	static void* GetCurrentWorldContext();
