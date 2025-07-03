@@ -102,13 +102,13 @@ public class FunctionMetaData : BaseMetaData
         RewriteFunction();
     }
     
-    public void RewriteFunction()
+    public void RewriteFunction(bool forceOverwriteBody = false)
     {
         TypeDefinition baseType = MethodDef.GetOriginalBaseMethod().DeclaringType;
         if (baseType == MethodDef.DeclaringType)
         {
             RewriteInfo = new FunctionRewriteInfo(this);
-            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDef.DeclaringType);
+            FunctionProcessor.PrepareFunctionForRewrite(this, MethodDef.DeclaringType, forceOverwriteBody);
         }
         else
         {

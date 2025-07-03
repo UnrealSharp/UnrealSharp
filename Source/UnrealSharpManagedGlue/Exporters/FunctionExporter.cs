@@ -798,22 +798,25 @@ public class FunctionExporter
         
         ExportSignature(builder, Modifiers);
         builder.OpenBrace();
-        builder.BeginUnsafeBlock();
         
-        ExportInvoke(builder);
+        if (Throwing)
+        {
+            builder.AppendLine($"throw new InvalidOperationException(\"Function {_function.EngineName} cannot be called on a Blueprint-only implementer\");");
+        }
+        else
+        {
+            
+            builder.BeginUnsafeBlock();
+            ExportInvoke(builder);
+            builder.EndUnsafeBlock();
+        }
         
         builder.CloseBrace();
-        builder.EndUnsafeBlock();
         builder.AppendLine();
     }
 
     public virtual void ExportInvoke(GeneratorStringBuilder builder)
     {
-        if (Throwing)
-        {
-            builder.AppendLine($"throw new InvalidOperationException(\"Method {_function.EngineName} failed as it is not implementatble in Blueprints\");");
-            return;
-        }
         string nativeFunctionIntPtr = $"{_function.SourceName}_NativeFunction";
 
         if (BlueprintEvent)

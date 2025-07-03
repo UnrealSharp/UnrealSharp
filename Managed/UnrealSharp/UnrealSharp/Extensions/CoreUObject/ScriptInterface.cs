@@ -27,7 +27,7 @@ public interface IScriptInterface
 
 public static class ScriptInterfaceMarshaller<T> where T : class
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, IntPtr nativeInterfaceClassPtr)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
         unsafe
         {
