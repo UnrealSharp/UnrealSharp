@@ -54,6 +54,7 @@ public class WeaverImporter
     public TypeReference VoidTypeRef = null!;
     public TypeReference ByteTypeRef = null!;
     public MethodReference GetNativeClassFromNameMethod = null!;
+    public MethodReference GetNativeInterfaceFromNameMethod = null!;
     public MethodReference GetNativeStructFromNameMethod = null!;
     public MethodReference GetPropertyOffsetFromNameMethod = null!;
     public MethodReference GetPropertyOffset = null!;
@@ -115,6 +116,7 @@ public class WeaverImporter
         
         GetNativeStructFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeStructFromName");
         GetNativeClassFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeClassFromName");
+        GetNativeInterfaceFromNameMethod = FindExporterMethod(CoreUObjectCallbacks, "CallGetNativeInterfaceFromName");
         
         GetPropertyOffsetFromNameMethod = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffsetFromName");
         GetPropertyOffset = FindExporterMethod(FPropertyCallbacks, "CallGetPropertyOffset");

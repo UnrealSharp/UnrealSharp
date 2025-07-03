@@ -297,6 +297,17 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 		
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
 	Handle->Dispose(AssemblyHandle->GetHandle());
+
+	auto FoundHandles = ManagedInterfaceWrappers.Find(ObjectID);
+	if (FoundHandles == nullptr) {
+		return;
+	}
+
+	for (auto &[Key, Value] : *FoundHandles) {
+		Value->Dispose(AssemblyHandle->GetHandle());
+	}
+	FoundHandles->Empty();
+	ManagedInterfaceWrappers.Remove(ObjectID);
 }
 
 load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const

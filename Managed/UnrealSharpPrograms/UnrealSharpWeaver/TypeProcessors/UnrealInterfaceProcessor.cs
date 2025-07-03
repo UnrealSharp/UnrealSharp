@@ -24,8 +24,10 @@ public static class UnrealInterfaceProcessor
 
     public static void CreateInterfaceWrapper(TypeDefinition interfaceType)
     {
+        var unrealSharpObject = interfaceType.Module.ImportReference(WeaverImporter.Instance.UnrealSharpObjectType);
         TypeDefinition interfaceWrapperClass = WeaverImporter.Instance.UserAssembly.CreateNewClass(interfaceType.Namespace, interfaceType.GetWrapperClassName(), 
-            TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
+            TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit,
+            unrealSharpObject);
         interfaceWrapperClass.Interfaces.Add(new InterfaceImplementation(interfaceType));
         var importedIScriptInterface = interfaceType.Module.ImportReference(WeaverImporter.Instance.ScriptInterfaceWrapper);
         interfaceWrapperClass.Interfaces.Add(new InterfaceImplementation(importedIScriptInterface));
@@ -103,6 +105,7 @@ public static class UnrealInterfaceProcessor
         }
         
         var originalMethods = interfaceWrapperClass.Methods.ToImmutableArray();
+        var functionMetadata = new List<FunctionMetaData>();
         foreach (var newMethod in originalMethods)
         {
             // Add method body
@@ -128,11 +131,24 @@ public static class UnrealInterfaceProcessor
                 ilProcessor.Emit(OpCodes.Ret);
             }
             
-           var metaData = new FunctionMetaData(newMethod, true, EFunctionFlags.BlueprintNativeEvent);
-           metaData.RewriteFunction();
+           var metaData = new FunctionMetaData(newMethod, false, EFunctionFlags.BlueprintNativeEvent);
+           functionMetadata.Add(metaData);
        }
 
-        TypeReference importedUObjectType = CreateObjectBackingCode(interfaceType, interfaceWrapperClass);
+        var (importedUObjectType, nativeObjectGetter) = CreateObjectBackingCode(interfaceType, interfaceWrapperClass);
+        foreach (Instruction instruction in interfaceWrapperClass.Methods
+                     .Where(method => method.Name != "get_NativeObject")
+                     .SelectMany(method => method.Body.Instructions, (method, instruction) => (method, instruction))
+                     .Where(t => t.instruction.OpCode == OpCodes.Call)
+                     .Select(t => (t, methodRef: t.instruction.Operand as MethodReference))
+                     .Where(t => t.methodRef?.FullName == WeaverImporter.Instance.NativeObjectGetter.FullName)
+                     .Select(t => t.t.instruction))
+        {
+            instruction.Operand = nativeObjectGetter;
+        }
+        
+        GenerateStaticConstructor(interfaceType, interfaceWrapperClass, functionMetadata);
+
         MethodDefinition wrapMethodDefinition = interfaceType.AddMethod("Wrap", interfaceType, 
             MethodAttributes.Public | MethodAttributes.Static, importedUObjectType);
         
@@ -161,7 +177,30 @@ public static class UnrealInterfaceProcessor
 
         wrapMethodDefinition.OptimizeMethod();
     }
-    private static TypeReference CreateObjectBackingCode(TypeDefinition interfaceType, TypeDefinition interfaceWrapperClass)
+    private static void GenerateStaticConstructor(TypeDefinition interfaceType, TypeDefinition interfaceWrapperClass, List<FunctionMetaData> functionMetadata)
+    {
+        FieldDefinition nativePointerField = interfaceWrapperClass.AddField("NativeInterfaceClassPtr", 
+            WeaverImporter.Instance.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
+        
+        string interfaceName = interfaceType.GetEngineName();
+        const bool finalizeMethod = true;
+        
+        ConstructorBuilder.CreateTypeInitializer(interfaceWrapperClass, Instruction.Create(OpCodes.Stsfld, nativePointerField), 
+            [Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeInterfaceFromNameMethod)], interfaceName, finalizeMethod);
+        
+        MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(interfaceWrapperClass);
+        ILProcessor constructorProcessor = staticConstructor.Body.GetILProcessor();
+        Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativePointerField);
+
+        foreach (var function in functionMetadata)
+        {
+            EmitFunctionGlueToStaticCtor(function, constructorProcessor, loadNativeClassField, staticConstructor);
+        }
+        
+        constructorProcessor.Emit(OpCodes.Ret);
+        staticConstructor.OptimizeMethod();
+    }
+    private static (TypeReference, MethodDefinition) CreateObjectBackingCode(TypeDefinition interfaceType, TypeDefinition interfaceWrapperClass)
     {
         // Import UObject type into the current module to ensure proper IL generation
         TypeReference importedUObjectType = interfaceType.Module.ImportReference(WeaverImporter.Instance.UObjectDefinition);
@@ -219,7 +258,7 @@ public static class UnrealInterfaceProcessor
         getterProcessor.Emit(OpCodes.Call, WeaverImporter.Instance.NativeObjectGetter);
         getterProcessor.Emit(OpCodes.Ret);
         nativeObjectGetter.OptimizeMethod();
-        return importedUObjectType;
+        return (importedUObjectType, nativeObjectGetter);
     }
 
     public static void CreateInterfaceMarshaller(TypeDefinition interfaceType)
@@ -234,7 +273,7 @@ public static class UnrealInterfaceProcessor
         const bool finalizeMethod = true;
         
         ConstructorBuilder.CreateTypeInitializer(structMarshallerClass, Instruction.Create(OpCodes.Stsfld, nativePointerField), 
-            [Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeClassFromNameMethod)], interfaceName, finalizeMethod);
+            [Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeInterfaceFromNameMethod)], interfaceName, finalizeMethod);
         
         MakeToNativeMethod(interfaceType, structMarshallerClass, nativePointerField);
         MakeFromNativeMethod(interfaceType, structMarshallerClass, nativePointerField);
@@ -275,5 +314,34 @@ public static class UnrealInterfaceProcessor
         fromNativeMarshallerProcessor.Emit(OpCodes.Call, fromNativeMethod);
         fromNativeMarshallerProcessor.Emit(OpCodes.Ret);
         fromNativeMarshallerMethod.OptimizeMethod();
+    }
+    
+    static void EmitFunctionGlueToStaticCtor(FunctionMetaData function, ILProcessor processor, Instruction loadNativeClassField, MethodDefinition staticConstructor)
+    {
+        try
+        {
+            if (!function.HasParameters)
+            {
+                return;
+            }
+            
+            VariableDefinition variableDefinition = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
+            Instruction loadNativePointer = Instruction.Create(OpCodes.Ldloc, variableDefinition);
+            Instruction storeNativePointer = Instruction.Create(OpCodes.Stloc, variableDefinition);
+            
+            function.EmitFunctionPointers(processor, loadNativeClassField, Instruction.Create(OpCodes.Stloc, variableDefinition));
+            function.EmitFunctionParamOffsets(processor, loadNativePointer);
+            function.EmitFunctionParamSize(processor, loadNativePointer);
+            function.EmitParamNativeProperty(processor, loadNativePointer);
+            
+            foreach (var param in function.Parameters)
+            {
+                param.PropertyDataType.WritePostInitialization(processor, param, loadNativePointer, storeNativePointer);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new Exception($"Failed to emit function glue for {function.Name}", e);
+        }
     }
 }
