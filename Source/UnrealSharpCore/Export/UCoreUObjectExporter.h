@@ -15,5 +15,8 @@ public:
 	static UClass* GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName);
 
 	UNREALSHARP_FUNCTION()
+	static UClass* GetNativeInterfaceFromName(const char* InAssemblyName, const char* InNamespace, const char* InInterfaceName);
+	
+	UNREALSHARP_FUNCTION()
 	static UScriptStruct* GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName);
 };

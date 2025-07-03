@@ -13,8 +13,10 @@
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
 #include "Logging/StructuredLog.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "TypeGenerator/Register/TypeInfo/CSInterfaceInfo.h"
 #include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
@@ -417,7 +419,11 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetTypeInfo()->OwningAssembly;
 	}
-	
+
+	if (UCSInterface* FirstManagedInterface = Cast<UCSInterface>(Class)) {
+		return FirstManagedInterface->GetTypeInfo()->OwningAssembly;
+	}
+
 	Class = FCSClassUtilities::GetFirstNativeClass(Class);
 	
 	uint32 ClassID = Class->GetUniqueID();

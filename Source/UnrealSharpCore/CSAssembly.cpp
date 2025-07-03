@@ -362,13 +362,9 @@ TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateManagedObjectWrapper);
 
-	if (!Object->GetClass()->ImplementsInterface(Class)) {
-		// This should never happen. Potential issues: IL errors, typehandle is invalid.
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Object {0} must be of a class that implements {1}", *Object->GetName(), *Class->GetName());
-		return nullptr;
-	}
-	TSharedPtr<FCSClassInfo> ClassInfo = FindOrAddClassInfo(Class);
-	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
+	auto InterfaceClass = Cast<UCSInterface>(Class);
+	FCSFieldName FieldName = InterfaceClass != nullptr ? InterfaceClass->GetTypeInfo()->TypeMetaData->FieldName : FCSFieldName(Class);
+	auto TypeHandle = InterfaceClass->GetTypeInfo()->OwningAssembly->TryFindTypeHandle(FieldName);
 	
 	uint32 ObjectID = Object->GetUniqueID();
 	auto &TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);
@@ -377,7 +373,11 @@ TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObjectWrapper(UObject* Obj
 		return *Existing;
 	}
 
-	FGCHandle NewManagedObjectWrapper = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObjectWrapper(Object, TypeHandle->GetPointer());
+	auto ObjectHandle = UCSManager::Get().ManagedObjectHandles.Find(ObjectID);
+	if (ObjectHandle == nullptr) {
+		return nullptr;
+	}
+	FGCHandle NewManagedObjectWrapper = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObjectWrapper((*ObjectHandle)->GetPointer(), TypeHandle->GetPointer());
 	NewManagedObjectWrapper.Type = GCHandleType::StrongHandle;
 
 	if (NewManagedObjectWrapper.IsNull())

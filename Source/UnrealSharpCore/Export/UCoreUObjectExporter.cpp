@@ -10,7 +10,17 @@ UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName
 	FCSFieldName FieldName(InClassName, InNamespace);
 	
 	TSharedPtr<FCSClassInfo> ClassInfo = Assembly->FindOrAddClassInfo(FieldName);
+	if (ClassInfo == nullptr) {
+		return nullptr;
+	}
 	return ClassInfo->Field;
+}
+
+UClass* UUCoreUObjectExporter::GetNativeInterfaceFromName(const char* InAssemblyName, const char* InNamespace,
+	const char* InInterfaceName) {
+	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+	FCSFieldName FieldName(InInterfaceName, InNamespace);
+	return Assembly->FindInterface(FieldName);
 }
 
 UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName)

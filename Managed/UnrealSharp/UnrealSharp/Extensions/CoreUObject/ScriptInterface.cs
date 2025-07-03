@@ -60,7 +60,7 @@ public static class ScriptInterfaceMarshaller<T> where T : class
                 return null;
             }
 
-            var nativeClass = typeof(T).TryGetNativeClass();
+            var nativeClass = typeof(T).TryGetNativeInterface();
             if (nativeClass == IntPtr.Zero)
             {
                 return null;
