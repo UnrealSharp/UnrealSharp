@@ -12,7 +12,7 @@ public class UEnumAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UEnumIsByteEnumRule = new(
-        id: "UEnumIsByteEnumAnalyzer", 
+        id: "US0002", 
         title: "UnrealSharp UEnumIsByteEnum Analyzer", 
         messageFormat: "{0} is a UEnum, which should have a underlying type of byte", 
         RuleCategory.Category, 

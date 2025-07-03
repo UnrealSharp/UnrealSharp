@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -127,6 +128,24 @@ public static class AnalyzerStatics
         var namespaceName = symbol.ContainingNamespace.ToString();
         return namespaceName.Equals(ContainerNamespace, StringComparison.InvariantCultureIgnoreCase) &&
                ContainerInterfaces.Contains(symbol.Name);
+    }
+    
+    public static string GenerateUniqueMethodName(ClassDeclarationSyntax containingClass, string suffix)
+    {
+        int counter = 1;
+        ImmutableHashSet<string> existingNames = containingClass.Members
+            .OfType<MethodDeclarationSyntax>()
+            .Select(m => m.Identifier.ValueText)
+            .ToImmutableHashSet();
+
+        string methodName;
+        do
+        {
+            methodName = $"Generated_{suffix}_{counter++}";
+        } 
+        while (existingNames.Contains(methodName));
+
+        return methodName;
     }
     
 }
