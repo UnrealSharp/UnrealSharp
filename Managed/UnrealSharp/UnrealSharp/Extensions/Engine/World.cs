@@ -1,4 +1,6 @@
-﻿using UnrealSharp.UnrealSharpCore;
+﻿using UnrealSharp.Interop;
+using UnrealSharp.UnrealEd;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.Engine;
 
@@ -47,4 +49,6 @@ public partial class UWorld
     /// <typeparam name="T">The type of the game state.</typeparam>
     /// <returns>The game state of this world as the specified type.</returns>
     public T GameStateAs<T>() where T : AGameStateBase => (T) GameState;
+
+    public ENetMode GetNetMode() => (ENetMode)(int)UWorldExporter.CallGetNetMode(NativeObject);
 }

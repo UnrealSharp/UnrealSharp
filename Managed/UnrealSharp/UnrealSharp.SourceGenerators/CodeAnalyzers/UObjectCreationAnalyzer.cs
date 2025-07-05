@@ -17,7 +17,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UObjectCreationRule = new(
-        id: "UObjectCreationAnalyzer", 
+        id: "US0011", 
         title: "UnrealSharp UObject creation Analyzer", 
         messageFormat: "{0} is a UObject, which should be created by calling the method NewObject<T>()", 
         RuleCategory.Category, 
@@ -27,7 +27,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
         );
     
     private static readonly DiagnosticDescriptor AActorCreationRule = new(
-        id: "AActorCreationAnalyzer", 
+        id: "US0010", 
         title: "UnrealSharp AActor creation Analyzer", 
         messageFormat: "{0} is a AActor, which should be created by calling the method SpawnActor<T>()", 
         RuleCategory.Category, 
@@ -37,7 +37,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UUserWidgetCreationRule = new(
-        id: "UUserWidgetCreationAnalyzer", 
+        id: "US0009", 
         title: "UnrealSharp UUserWidget creation Analyzer", 
         messageFormat: "{0} is a UUserWidget, which should be created by calling the method CreateWidget<T>()", 
         RuleCategory.Category, 
@@ -47,7 +47,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UActorComponentCreationRule = new(
-        id: "UActorComponentCreationAnalyzer", 
+        id: "US0008", 
         title: "UnrealSharp UActorComponent creation Analyzer", 
         messageFormat: "{0} is a UActorComponent, which should be created by calling the method AddComponentByClass<T>()", 
         RuleCategory.Category, 
@@ -57,7 +57,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor USceneComponentCreationRule = new(
-        id: "USceneComponentCreationAnalyzer", 
+        id: "US0007", 
         title: "UnrealSharp USceneComponent creation Analyzer", 
         messageFormat: "{0} is a USceneComponent, which should be created by calling the method AddComponentByClass<T>()", 
         RuleCategory.Category, 

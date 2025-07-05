@@ -21,4 +21,7 @@ public:
 
 	UNREALSHARP_FUNCTION()
 	static void* GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject);
+
+	UNREALSHARP_FUNCTION()
+	static void* GetNetMode(UObject* WorldContextObject);
 };

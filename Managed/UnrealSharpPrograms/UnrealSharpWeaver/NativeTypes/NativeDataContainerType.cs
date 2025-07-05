@@ -23,6 +23,9 @@ public class NativeDataContainerType : NativeDataType
 
     private MethodReference? _copyDestructInstance;
     
+    protected virtual AssemblyDefinition MarshallerAssembly => WeaverImporter.Instance.UnrealSharpAssembly;
+    protected virtual string MarshallerNamespace => WeaverImporter.UnrealSharpNamespace;
+    
     protected TypeReference[] ContainerMarshallerTypeParameters { get; set; } = [];
     
     public NativeDataContainerType(TypeReference typeRef, int containerDim, PropertyType propertyType, TypeReference value) : base(typeRef, containerDim, propertyType)
@@ -78,7 +81,7 @@ public class NativeDataContainerType : NativeDataType
         if (outer is MethodDefinition method)
         {
             prefix = method.Name + "_" + prefix;
-            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.Instance.UnrealSharpAssembly.FindType(GetCopyContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
+            TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetCopyContainerMarshallerName(), MarshallerNamespace)!;
             
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
             
@@ -89,7 +92,7 @@ public class NativeDataContainerType : NativeDataType
         }
         else
         {
-            TypeReference genericCopyMarshallerTypeRef = WeaverImporter.Instance.UnrealSharpAssembly.FindType(GetContainerMarshallerName(), WeaverImporter.UnrealSharpNamespace)!;
+            TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetContainerMarshallerName(), MarshallerNamespace)!;
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
 
             if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition)

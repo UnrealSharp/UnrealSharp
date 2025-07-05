@@ -78,19 +78,17 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
 
     private async Task<Document> ConvertPropertyToFieldAsync(Document document, PropertyDeclarationSyntax propertyDeclaration, CancellationToken cancellationToken)
     {
-        var variableDeclaration = SyntaxFactory.VariableDeclaration(propertyDeclaration.Type)
+        VariableDeclarationSyntax variableDeclaration = SyntaxFactory.VariableDeclaration(propertyDeclaration.Type)
             .AddVariables(SyntaxFactory.VariableDeclarator(propertyDeclaration.Identifier));
 
-        var fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration)
+        FieldDeclarationSyntax fieldDeclaration = SyntaxFactory.FieldDeclaration(variableDeclaration)
             .WithModifiers(propertyDeclaration.Modifiers)
             .WithAttributeLists(propertyDeclaration.AttributeLists)
             .WithTriviaFrom(propertyDeclaration);
-
-        // Preserve the leading and trailing trivia of the property declaration
-        var leadingTrivia = propertyDeclaration.GetLeadingTrivia();
-        var trailingTrivia = propertyDeclaration.GetTrailingTrivia();
-
-        // Ensure there is no blank line between the attribute and the field
+        
+        SyntaxTriviaList leadingTrivia = propertyDeclaration.GetLeadingTrivia();
+        SyntaxTriviaList trailingTrivia = propertyDeclaration.GetTrailingTrivia();
+        
         if (leadingTrivia.Any(t => t.IsKind(SyntaxKind.EndOfLineTrivia)))
         {
             var newLeadingTrivia = leadingTrivia.Where(t => !t.IsKind(SyntaxKind.EndOfLineTrivia));
@@ -99,27 +97,25 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
 
         fieldDeclaration = fieldDeclaration.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia);
 
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var newRoot = root.ReplaceNode(propertyDeclaration, fieldDeclaration);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        SyntaxNode? newRoot = root.ReplaceNode(propertyDeclaration, fieldDeclaration);
 
         return document.WithSyntaxRoot(newRoot);
     }
     
     private async Task<Document> ConvertFieldToPropertyAsync(Document document, VariableDeclaratorSyntax fieldDeclaration, CancellationToken cancellationToken)
     {
-        var parentFieldDeclaration = fieldDeclaration.Parent as VariableDeclarationSyntax;
-        if (parentFieldDeclaration == null)
+        if (fieldDeclaration.Parent is not VariableDeclarationSyntax parentFieldDeclaration)
         {
             return document;
         }
 
-        var fieldDecl = parentFieldDeclaration.Parent as FieldDeclarationSyntax;
-        if (fieldDecl == null)
+        if (parentFieldDeclaration.Parent is not FieldDeclarationSyntax fieldDecl)
         {
             return document;
         }
 
-        var propertyDeclaration = SyntaxFactory.PropertyDeclaration(parentFieldDeclaration.Type, fieldDeclaration.Identifier)
+        PropertyDeclarationSyntax propertyDeclaration = SyntaxFactory.PropertyDeclaration(parentFieldDeclaration.Type, fieldDeclaration.Identifier)
             .AddModifiers(fieldDecl.Modifiers.ToArray())
             .WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(new[]
             {
@@ -131,8 +127,8 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
             .WithTriviaFrom(fieldDecl)
             .WithAttributeLists(fieldDecl.AttributeLists);
 
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var newRoot = root.ReplaceNode(fieldDecl, propertyDeclaration);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        SyntaxNode? newRoot = root.ReplaceNode(fieldDecl, propertyDeclaration);
 
         return document.WithSyntaxRoot(newRoot);
     }

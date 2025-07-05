@@ -13,7 +13,7 @@ public class UInterfaceAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UInterfacePropertyTypeRule = new(
-        id: "UInterfaceUPropertyTypeAnalyzer", 
+        id: "US0003", 
         title: "UnrealSharp UInterface UProperty Analyzer", 
         messageFormat: "{0} is a UProperty with Interface type, which should has UInterface attribute", 
         RuleCategory.Category, 
@@ -23,7 +23,7 @@ public class UInterfaceAnalyzer : DiagnosticAnalyzer
     );
     
     private static readonly DiagnosticDescriptor UInterfaceFunctionParameterTypeRule = new(
-        id: "UInterfaceUFunctionParameterTypeAnalyzer", 
+        id: "US0004", 
         title: "UnrealSharp UInterface function parameter Analyzer", 
         messageFormat: "{0} is UFunction parameter with Interface type, which should has UInterface attribute", 
         RuleCategory.Category, 

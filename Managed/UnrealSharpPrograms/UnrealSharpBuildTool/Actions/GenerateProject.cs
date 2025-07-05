@@ -117,6 +117,7 @@ public class GenerateProject : BuildToolAction
             
             AppendProperties(csprojDocument);
             
+            AppendPackageReference(csprojDocument, newItemGroup, "LanguageExt.Core", "4.4.9");
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp.Core", GetPathToBinaries());
             
@@ -186,6 +187,14 @@ public class GenerateProject : BuildToolAction
         XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
         sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
         itemGroup.AppendChild(sourceGeneratorReference);
+    }
+
+    private void AppendPackageReference(XmlDocument doc, XmlElement itemGroup, string packageName, string packageVersion)
+    {
+        XmlElement packageReference = doc.CreateElement("PackageReference");
+        packageReference.SetAttribute("Include", packageName);
+        packageReference.SetAttribute("Version", packageVersion);
+        itemGroup.AppendChild(packageReference);
     }
     
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)

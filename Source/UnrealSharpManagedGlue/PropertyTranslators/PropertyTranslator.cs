@@ -58,7 +58,7 @@ public abstract class PropertyTranslator
     public abstract string ExportMarshallerDelegates(UhtProperty property);
     
     // Get the null value for this property
-    public abstract string GetNullValue(UhtProperty property);
+    public virtual string GetNullValue(UhtProperty property) => $"default({GetManagedType(property)})";
     
     public virtual void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {

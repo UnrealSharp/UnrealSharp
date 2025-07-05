@@ -8,7 +8,7 @@ public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
     public BlittableTypePropertyTranslator(Type propertyType, string managedType) : base(propertyType, managedType)
     {
     }
-    public override bool ExportDefaultParameter => false;
+    public override bool ExportDefaultParameter => true;
 
     public override string GetMarshaller(UhtProperty property)
     {

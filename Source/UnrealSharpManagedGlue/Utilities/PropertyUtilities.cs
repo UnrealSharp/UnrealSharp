@@ -139,7 +139,7 @@ public static class PropertyUtilities
     
     public static bool IsEditDefaultsOnly(this UhtProperty property)
     {
-        return property.HasAllFlags(EPropertyFlags.DisableEditOnInstance | EPropertyFlags.Edit);
+        return property.HasAllFlags(EPropertyFlags.Edit) && property.IsReadOnly();
     }
     
     public static bool IsEditAnywhere(this UhtProperty property)

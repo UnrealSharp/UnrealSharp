@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.Utilities;
@@ -20,7 +20,31 @@ public static class UnrealStructProcessor
         var structHandlingOrder = new List<TypeDefinition>();
         var structMetadata = new Dictionary<TypeDefinition, StructMetaData>();
 
-        foreach (var unrealStruct in structs.Where(unrealStruct => !pushedStructs.Contains(unrealStruct)))
+        var sortedStructs = structs.ToList();
+        sortedStructs.Sort((a, b) =>
+        {
+            var aMetadata = new StructMetaData(a);
+            var bMetadata = new StructMetaData(b);
+
+            foreach (var Field in aMetadata.Fields)
+            {
+                if (Field.PropertyDataType.CSharpType.FullName.Contains(bMetadata.TypeRef.FullName))
+                {
+                    return 1;
+                }
+            }
+
+            foreach (var Field in bMetadata.Fields)
+            {
+                if (Field.PropertyDataType.CSharpType.FullName.Contains(aMetadata.TypeRef.Name))
+                {
+                    return -1;
+                }
+            }
+            return 0;
+        });
+
+        foreach (var unrealStruct in sortedStructs.Where(unrealStruct => !pushedStructs.Contains(unrealStruct)))
         {
             structStack.Push(unrealStruct);
             pushedStructs.Add(unrealStruct);
@@ -47,10 +71,9 @@ public static class UnrealStructProcessor
                 }
             }
         }
-        
         assemblyMetadata.StructMetaData = structMetadata.Values.ToList();
         
-        foreach (var currentStruct in structHandlingOrder) 
+        foreach (var currentStruct in structHandlingOrder)
         {
             ProcessStruct(currentStruct, structMetadata[currentStruct]);
         }

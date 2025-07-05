@@ -23,8 +23,8 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
         context.RegisterSymbolAction(AnalyzeClassFields, SymbolKind.Field);
     }
     
-    public const string StructAnalyzerId = "StructFieldAnalyzer";
-    public const string ClassAnalyzerId = "ClassFieldAnalyzer";
+    public const string StructAnalyzerId = "US0005";
+    public const string ClassAnalyzerId = "US0006";
     private static readonly LocalizableString StructAnalyzerTitle = "UnrealSharp Struct Field Analyzer";
     private static readonly LocalizableString ClassAnalyzerTitle = "UnrealSharp Class Field Analyzer";
     private static readonly LocalizableString StructAnalyzerMessageFormat = "{0} is a UProperty and a property, which is not allowed in structs. UProperties in structs must be fields.";

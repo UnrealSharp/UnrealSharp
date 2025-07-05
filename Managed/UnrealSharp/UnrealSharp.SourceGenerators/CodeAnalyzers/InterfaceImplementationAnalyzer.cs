@@ -9,7 +9,7 @@ namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
 public class UFunctionConflictAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor Rule = new(
-        "AN0003",
+        "US0012",
         "Conflicting UFunction Attribute",
         "Method '{0}' in class '{1}' should not have a UFunction attribute because it is already defined in the interface '{2}'",
         "Usage",
