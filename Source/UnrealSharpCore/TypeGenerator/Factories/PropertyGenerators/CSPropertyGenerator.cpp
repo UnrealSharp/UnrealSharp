@@ -3,6 +3,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Functions/CSFunction.h"
+#include "TypeGenerator/Properties/PropertyGeneratorManager.h"
 
 #if WITH_EDITOR
 #include "Kismet2/BlueprintEditorUtils.h"
@@ -84,10 +85,8 @@ FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMet
 	{
 		FieldClass = GetPropertyClass();
 	}
-	
-	FProperty* NewProperty = static_cast<FProperty*>(FieldClass->Construct(Outer, PropertyName, RF_Public));
-	NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
-	return NewProperty;
+
+	return FPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyName, PropertyMetaData);
 }
 
 UClass* UCSPropertyGenerator::TryFindingOwningClass(UField* Outer)

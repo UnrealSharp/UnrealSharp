@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using System.Text.Json.Serialization;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using UnrealSharpWeaver.NativeTypes;
 using UnrealSharpWeaver.Utilities;
@@ -13,6 +14,10 @@ public class PropertyMetaData : BaseMetaData
     public LifetimeCondition LifetimeCondition { get; set; } = LifetimeCondition.None;
     public string BlueprintSetter { get; set; } = string.Empty;
     public string BlueprintGetter { get; set; } = string.Empty;
+    public string? BackingField { get; set; } = null;
+    public bool HasCustomAccessors { get; set; } = false;
+    [JsonIgnore]
+    public PropertyDefinition? GeneratedAccessorProperty { get; set; } = null;
 
     // Non-serialized for JSON
     public FieldDefinition? PropertyOffsetField;
@@ -70,14 +75,31 @@ public class PropertyMetaData : BaseMetaData
             throw new InvalidPropertyException(property, "Unreal properties must have a default get method");
         }
         
-        if (!getter.MethodIsCompilerGenerated())
-        {
-            throw new InvalidPropertyException(property, "Getter can not have a body for Unreal properties");
-        }
+        // Check if we have custom accessors
+        bool hasCustomGetter = !getter.MethodIsCompilerGenerated();
+        bool hasCustomSetter = setter != null && !setter.MethodIsCompilerGenerated();
 
-        if (setter != null && !getter.MethodIsCompilerGenerated())
+        HasCustomAccessors = hasCustomGetter || hasCustomSetter;
+
+        // Allow custom getter/setter implementations
+        if (!HasCustomAccessors)
         {
-            throw new InvalidPropertyException(property, "Setter can not have a body for Unreal properties");
+            // Only throw exception if not a custom accessor
+            if (!getter.MethodIsCompilerGenerated())
+            {
+                throw new InvalidPropertyException(property, "Getter can not have a body for Unreal properties unless it's a custom accessor");
+            }
+
+            if (setter != null && !setter.MethodIsCompilerGenerated())
+            {
+                throw new InvalidPropertyException(property, "Setter can not have a body for Unreal properties unless it's a custom accessor");
+            }
+        }
+        else
+        {
+            // Register custom accessors as UFunctions if they have BlueprintGetter/Setter specified
+            RegisterPropertyAccessorAsUFunction(property.GetMethod, true);
+            RegisterPropertyAccessorAsUFunction(property.SetMethod, false);
         }
         
         if (getter.IsPrivate && PropertyFlags.HasFlag(PropertyFlags.BlueprintVisible))
@@ -192,6 +214,12 @@ public class PropertyMetaData : BaseMetaData
         }
         
         PropertyFlags = flags;
+
+        CustomAttributeArgument? backingFieldArgument = upropertyAttribute.FindAttributeField("BackingField");
+        if (backingFieldArgument.HasValue)
+        {
+            BackingField = (string) backingFieldArgument.Value.Value;
+        }
     }
     
     public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, Instruction setPropertyPointer)
@@ -212,5 +240,55 @@ public class PropertyMetaData : BaseMetaData
     public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
     {
         return new PropertyMetaData(typeRef, paramName, modifier);
+    }
+    
+    private void RegisterPropertyAccessorAsUFunction(MethodDefinition accessorMethod, bool isGetter)
+    {
+        if (accessorMethod == null)
+        {
+            return;
+        }
+
+        // Set the appropriate blueprint accessor name based on getter or setter
+        if (isGetter)
+        {
+            BlueprintGetter = accessorMethod.Name;
+        }
+        else
+        {
+            BlueprintSetter = accessorMethod.Name;
+        }
+
+        // Add UFunction attribute if not already present
+        if (!accessorMethod.IsUFunction())
+        {
+            var ufunctionCtor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(
+                WeaverImporter.Instance.UFunctionAttributeConstructor);
+
+            // Create constructor arguments array
+            var ctorArgs = new[]
+            {
+                // First argument - FunctionFlags (combine BlueprintCallable with BlueprintPure for getters)
+                new CustomAttributeArgument(
+                    WeaverImporter.Instance.UInt64TypeRef,
+                    (ulong)(isGetter 
+                        ? EFunctionFlags.BlueprintCallable | EFunctionFlags.BlueprintPure 
+                        : EFunctionFlags.BlueprintCallable))
+            };
+
+            var ufunctionAttribute = new CustomAttribute(ufunctionCtor)
+            {
+                ConstructorArguments = { ctorArgs[0] }
+            };
+
+            accessorMethod.CustomAttributes.Add(ufunctionAttribute);
+            
+            var blueprintInternalUseOnlyCtor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(
+                WeaverImporter.Instance.BlueprintInternalUseAttributeConstructor);
+            accessorMethod.CustomAttributes.Add(new CustomAttribute(blueprintInternalUseOnlyCtor));
+        }
+
+        // Make the method public to be accessible from Blueprint
+        accessorMethod.Attributes = (accessorMethod.Attributes & ~MethodAttributes.MemberAccessMask) | MethodAttributes.Public;
     }
 }

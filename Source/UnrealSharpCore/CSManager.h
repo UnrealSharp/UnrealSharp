@@ -80,7 +80,7 @@ public:
 		return LoadUserAssemblyByName(AssemblyName);
 	}
 	
-	FGCHandle FindManagedObject(UObject* Object);
+	FGCHandle FindManagedObject(const UObject* Object);
 
 	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
