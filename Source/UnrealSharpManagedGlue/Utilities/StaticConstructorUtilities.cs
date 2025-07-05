@@ -171,26 +171,26 @@ public static class StaticConstructorUtilities
     {
         foreach (UhtFunction function in overrides)
         {
-            if (!function.HasParametersOrReturnValue())
-            {
-                continue;
-            }
-            
             generatorStringBuilder.TryAddWithEditor(function);
             string functionName = function.SourceName;
             
-            generatorStringBuilder.AppendLine($"IntPtr {functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
-            generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+            string intPtrDeclaration = function.IsBlueprintImplementableEvent() ? "IntPtr " : "";
+            generatorStringBuilder.AppendLine($"{intPtrDeclaration}{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             
-            foreach (UhtType parameter in function.Children)
+            if (function.HasParametersOrReturnValue())
             {
-                if (parameter is not UhtProperty property)
+                generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+            
+                foreach (UhtType parameter in function.Children)
                 {
-                    continue;
-                }
+                    if (parameter is not UhtProperty property)
+                    {
+                        continue;
+                    }
                 
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-                translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
+                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                    translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
+                }
             }
             
             generatorStringBuilder.TryEndWithEditor(function);

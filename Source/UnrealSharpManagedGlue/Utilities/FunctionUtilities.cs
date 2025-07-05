@@ -293,4 +293,14 @@ public static class FunctionUtilities
         if (paramCount == 1) return new List<string> { "CSP" };
         return Enumerable.Range(0, paramCount).ToList().ConvertAll(i => $"CSP{i}");
     }
+
+    public static bool IsBlueprintNativeEvent(this UhtFunction function)
+    {
+        return function.HasAllFlags(EFunctionFlags.BlueprintEvent | EFunctionFlags.Native);
+    }
+
+    public static bool IsBlueprintImplementableEvent(this UhtFunction function)
+    {
+        return function.HasAllFlags(EFunctionFlags.BlueprintEvent) && !function.HasAllFlags(EFunctionFlags.Native);
+    }
 }
