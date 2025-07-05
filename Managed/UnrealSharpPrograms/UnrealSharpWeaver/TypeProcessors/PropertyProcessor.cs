@@ -69,7 +69,7 @@ public static class PropertyProcessor
     
     private static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)> strippedFields)
     {
-        foreach (MethodDefinition? method in type.GetMethods())
+        foreach (MethodDefinition? method in type.GetConstructors().Append(type.GetMethods()))
         {
             if (!method.HasBody)
             {
