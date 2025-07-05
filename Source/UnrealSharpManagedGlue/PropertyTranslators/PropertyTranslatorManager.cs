@@ -74,6 +74,7 @@ public static class PropertyTranslatorManager
 #endif
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtFieldPathProperty), new FieldPathPropertyTranslator());
         
         AddBlittableCustomStructPropertyTranslator("FVector", "UnrealSharp.CoreUObject.FVector");
         AddBlittableCustomStructPropertyTranslator("FVector2D", "UnrealSharp.CoreUObject.FVector2D");
