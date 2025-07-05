@@ -88,3 +88,14 @@ void UUFunctionExporter::InitializeFunctionParams(UFunction* NativeFunction, voi
 	}
 }
 
+bool UUFunctionExporter::HasBlueprintEventBeenImplemented(const UFunction* NativeFunction)
+{
+	if (!IsValid(NativeFunction))
+	{
+		return false;
+	}
+
+	UClass* FunctionOwner = NativeFunction->GetOwnerClass();
+	return FunctionOwner->GetClass() != UClass::StaticClass();
+}
+
