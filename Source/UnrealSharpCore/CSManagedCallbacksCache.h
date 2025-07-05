@@ -15,6 +15,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 	struct FManagedCallbacks
 	{
 		using ManagedCallbacks_CreateNewManagedObject = FGCHandleIntPtr(__stdcall*)(void*, void*);
+		using ManagedCallbacks_CreateNewManagedObjectWrapper = FGCHandleIntPtr(__stdcall*)(void*, void*);
 		using ManagedCallbacks_InvokeManagedEvent = int(__stdcall*)(void*, void*, void*, void*, void*);
 		using ManagedCallbacks_InvokeDelegate = int(__stdcall*)(FGCHandleIntPtr);
 		using ManagedCallbacks_LookupMethod = uint8*(__stdcall*)(void*, const TCHAR*);
@@ -22,6 +23,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		using ManagedCallbacks_Dispose = void(__stdcall*)(FGCHandleIntPtr, FGCHandleIntPtr);
 		
 		ManagedCallbacks_CreateNewManagedObject CreateNewManagedObject;
+		ManagedCallbacks_CreateNewManagedObjectWrapper CreateNewManagedObjectWrapper;
 		ManagedCallbacks_InvokeManagedEvent InvokeManagedMethod;
 		ManagedCallbacks_InvokeDelegate InvokeDelegate;
 		ManagedCallbacks_LookupMethod LookupManagedMethod;

@@ -531,6 +531,11 @@ public static class TypeDefinitionUtilities
         }
     }
     
+    public static string GetWrapperClassName(this TypeReference typeRef)
+    {
+        return typeRef.Name + "Wrapper";
+    }
+    
     public static string GetMarshallerClassName(this TypeReference typeRef)
     {
         return typeRef.Name + "Marshaller";

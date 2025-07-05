@@ -13,8 +13,10 @@
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
 #include "Logging/StructuredLog.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "TypeGenerator/Register/TypeInfo/CSInterfaceInfo.h"
 #include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
@@ -295,6 +297,17 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 		
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
 	Handle->Dispose(AssemblyHandle->GetHandle());
+
+	auto FoundHandles = ManagedInterfaceWrappers.Find(ObjectID);
+	if (FoundHandles == nullptr) {
+		return;
+	}
+
+	for (auto &[Key, Value] : *FoundHandles) {
+		Value->Dispose(AssemblyHandle->GetHandle());
+	}
+	FoundHandles->Empty();
+	ManagedInterfaceWrappers.Remove(ObjectID);
 }
 
 load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const
@@ -417,7 +430,11 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 		// Fast access to the owning assembly for managed classes.
 		return FirstManagedClass->GetTypeInfo()->OwningAssembly;
 	}
-	
+
+	if (UCSInterface* FirstManagedInterface = Cast<UCSInterface>(Class)) {
+		return FirstManagedInterface->GetTypeInfo()->OwningAssembly;
+	}
+
 	Class = FCSClassUtilities::GetFirstNativeClass(Class);
 	
 	uint32 ClassID = Class->GetUniqueID();
@@ -481,6 +498,28 @@ FGCHandle UCSManager::FindManagedObject(UObject* Object)
 	}
 	
 	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->CreateManagedObject(Object);
+	if (!FoundHandle.IsValid())
+	{
+		return FGCHandle::Null();
+	}
+
+	return *FoundHandle;
+}
+
+FGCHandle UCSManager::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass) {
+	if (!Object->GetClass()->ImplementsInterface(InterfaceClass)) {
+		return FGCHandle::Null();
+	}
+
+	// No existing handle found, we need to create a new managed object.
+	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(InterfaceClass);
+	if (!OwningAssembly.IsValid())
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *InterfaceClass->GetName());
+		return FGCHandle::Null();
+	}
+	
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedObjectWrapper(Object, InterfaceClass);
 	if (!FoundHandle.IsValid())
 	{
 		return FGCHandle::Null();

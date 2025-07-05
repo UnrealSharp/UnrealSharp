@@ -35,6 +35,7 @@ public enum FunctionType
     ExtensionOnAnotherClass,
     InternalWhitelisted,
     GetterSetter,
+    Throwing
 };
 
 public enum OverloadMode
@@ -48,6 +49,7 @@ public enum EBlueprintVisibility
     Call,
     Event,
     GetterSetter,
+    Throwing
 };
 
 public struct FunctionOverload
@@ -79,6 +81,7 @@ public class FunctionExporter
     protected bool BlueprintEvent => _function.HasAllFlags(EFunctionFlags.BlueprintEvent);
     protected bool BlueprintNativeEvent => _function.IsBlueprintNativeEvent();
     protected bool BlueprintImplementableEvent => _function.IsBlueprintImplementableEvent();
+    protected bool Throwing => _blueprintVisibility == EBlueprintVisibility.Throwing;
     
     protected string _invokeFunction = "";
     protected string _invokeFirstArgument = "";
@@ -456,11 +459,18 @@ public class FunctionExporter
             overloadMode = OverloadMode.SuppressOverloads;
             blueprintVisibility = EBlueprintVisibility.GetterSetter;
         }
+        else if (functionType == FunctionType.Throwing)
+        {
+            blueprintVisibility = EBlueprintVisibility.Throwing;
+        }
         
         builder.TryAddWithEditor(function);
         FunctionExporter exporter = new FunctionExporter(function);
         exporter.Initialize(overloadMode, protectionMode, blueprintVisibility);
-        exporter.ExportFunctionVariables(builder);
+        if (functionType != FunctionType.Throwing)
+        {
+            exporter.ExportFunctionVariables(builder);
+        }
         exporter.ExportOverloads(builder);
         exporter.ExportFunction(builder);
 
@@ -810,8 +820,12 @@ public class FunctionExporter
         ExportSignature(builder, Modifiers);
         
         builder.OpenBrace();
-
-        if (BlueprintEvent)
+        
+        if (Throwing)
+        {
+            builder.AppendLine($"throw new InvalidOperationException(\"Function {_function.EngineName} cannot be called on a Blueprint-only implementer\");");
+        }
+        else if (BlueprintEvent)
         {
             builder.AppendLine($"if ({InstanceFunctionPtr} == IntPtr.Zero)");
             builder.OpenBrace();
