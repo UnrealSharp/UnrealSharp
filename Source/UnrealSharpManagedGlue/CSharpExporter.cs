@@ -34,14 +34,18 @@ public static class CSharpExporter
         if (!HasChangedGeneratorSourceRecently())
         {
             // The source for this generator hasn't changed, so we don't need to re-export the whole API.
-            DeserializeModuleData();
+            bool bLoadCache = DeserializeModuleData();
+            
+            if(bLoadCache)
+            {
+                Console.WriteLine("Managed Glue Generator has not changed its source, using cached data...");
+                return;
+            }
         }
-        else
-        {
-            // Just in case the source has changed, we need to clean the old files
-            Console.WriteLine("Managed Glue Generator has changed its source, cleaning old files...");
-            FileExporter.CleanModuleFolders();
-        }
+
+        // Just in case the source has changed, we need to clean the old files
+        Console.WriteLine("Managed Glue Generator has changed its source, cleaning old files...");
+        FileExporter.CleanModuleFolders();
         
         Console.WriteLine("Exporting C++ to C#...");
         
@@ -73,18 +77,18 @@ public static class CSharpExporter
         SerializeModuleData();
     }
     
-    static void DeserializeModuleData()
+    static bool DeserializeModuleData()
     {
         if (!Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
         {
-            return;
+            return false;
         }
         
         string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
         
         if (!File.Exists(outputPath))
         {
-            return;
+            return false;
         }
         
         using FileStream fileStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -94,6 +98,8 @@ public static class CSharpExporter
         {
             _modulesWriteInfo = new Dictionary<string, ModuleFolders?>(jsonValue!);
         }
+
+        return _modulesWriteInfo.Count > 0;
     }
 	
     static void SerializeModuleData()
