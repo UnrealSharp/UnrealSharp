@@ -21,15 +21,15 @@ public:
 	static uint32 GetUnsignedInt(FRandomStream* RandomStream);
 
 	UNREALSHARP_FUNCTION()
-	static void GetUnitVector(FRandomStream* RandomStream, FVector& OutVector);
+	static FVector GetUnitVector(FRandomStream* RandomStream);
 
 	UNREALSHARP_FUNCTION()
 	static int RandRange(FRandomStream* RandomStream, int32 Min, int32 Max);
 
 	UNREALSHARP_FUNCTION()
-	static void VRandCone(FRandomStream* RandomStream, FVector Dir, FVector& OutVector, float ConeHalfAngleRad);
+	static FVector VRandCone(FRandomStream* RandomStream, FVector Dir, float ConeHalfAngleRad);
 
 	UNREALSHARP_FUNCTION()
-	static void VRandCone2(FRandomStream* RandomStream, FVector Dir, FVector& OutVector, float HorizontalConeHalfAngleRad, float VerticalConeHalfAngleRad);
+	static FVector VRandCone2(FRandomStream* RandomStream, FVector Dir, float HorizontalConeHalfAngleRad, float VerticalConeHalfAngleRad);
 	
 };
