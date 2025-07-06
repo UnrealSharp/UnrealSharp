@@ -62,9 +62,9 @@ public static class PropertyProcessor
     
     private static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)> strippedFields)
     {
-        foreach (MethodDefinition? constructor in type.GetConstructors().ToList())
+        foreach (MethodDefinition? method in type.GetConstructors())
         {
-            if (!constructor.HasBody)
+            if (!method.HasBody)
             {
                 continue;
             }
@@ -73,7 +73,7 @@ public static class PropertyProcessor
             var alteredInstructions = new List<Instruction>();
             var deferredInstructions = new List<Instruction>();
 
-            foreach (Instruction? instr in constructor.Body.Instructions)
+            foreach (Instruction? instr in method.Body.Instructions)
             {
                 alteredInstructions.Add(instr);
 
@@ -93,11 +93,10 @@ public static class PropertyProcessor
                 {
                     continue;
                 }
-
-                // for now, we only handle simple stores
+                
                 if (instr.OpCode != OpCodes.Stfld)
                 {
-                    throw new UnableToFixPropertyBackingReferenceException(constructor, prop.def, instr.OpCode);
+                    throw new UnableToFixPropertyBackingReferenceException(method, prop.def, instr.OpCode);
                 }
 
                 MethodDefinition? setMethod = prop.def.SetMethod;
@@ -112,11 +111,26 @@ public static class PropertyProcessor
                     setMethod.Parameters.Add(new ParameterDefinition(prop.def.PropertyType));
                     type.Methods.Add(setMethod);
                     
-                    Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
-                    prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
+                    // If this is a property with custom accessors, we need to use the generated property
+                    if (prop.meta.HasCustomAccessors && prop.meta.GeneratedAccessorProperty != null)
+                    {
+                        // Use the generated accessor's set method
+                        setMethod = prop.meta.GeneratedAccessorProperty.SetMethod;
+                    }
+                    else
+                    {
+                        // Standard property handling
+                        Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
+                        prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
+                    }
                 }
 
-                var newInstr = Instruction.Create((setMethod.IsReuseSlot && setMethod.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, setMethod);
+                // Determine which setter to call based on whether we have custom accessors
+                var methodToCall = (prop.meta.HasCustomAccessors && prop.meta.GeneratedAccessorProperty != null) 
+                    ? prop.meta.GeneratedAccessorProperty.SetMethod 
+                    : setMethod;
+
+                var newInstr = Instruction.Create((methodToCall.IsReuseSlot && methodToCall.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, methodToCall);
                 newInstr.Offset = instr.Offset;
                 alteredInstructions[alteredInstructions.Count - 1] = newInstr;
 
@@ -135,44 +149,44 @@ public static class PropertyProcessor
                 }
 
                 var ldconst = alteredInstructions[^2];
-                
+
                 if (!IsLdconst(ldconst))
                 {
                     throw new UnsupportedPropertyInitializerException(prop.def);
                 }
-                
+
                 CopyLastElements(alteredInstructions, deferredInstructions, 3);
             }
 
             //add back the instructions and fix up their offsets
-            constructor.Body.Instructions.Clear();
+            method.Body.Instructions.Clear();
             int offset = 0;
             foreach (var instr in alteredInstructions)
             {
                 int oldOffset = instr.Offset;
                 instr.Offset = offset;
-                constructor.Body.Instructions.Add(instr);
+                method.Body.Instructions.Add(instr);
 
                 //fix up the sequence point offsets too
-                if (constructor.DebugInformation == null || oldOffset == offset)
+                if (method.DebugInformation == null || oldOffset == offset)
                 {
                     continue;
                 }
-                
+
                 //this only uses the offset so doesn't matter that we replaced the instruction
-                var seqPoint = constructor.DebugInformation?.GetSequencePoint(instr);
+                var seqPoint = method.DebugInformation?.GetSequencePoint(instr);
                 if (seqPoint == null)
                 {
                     continue;
                 }
-                
-                if (constructor.DebugInformation == null)
+
+                if (method.DebugInformation == null)
                 {
                     continue;
                 }
-                
-                constructor.DebugInformation.SequencePoints.Remove(seqPoint);
-                constructor.DebugInformation.SequencePoints.Add(
+
+                method.DebugInformation.SequencePoints.Remove(seqPoint);
+                method.DebugInformation.SequencePoints.Add(
                     new SequencePoint(instr, seqPoint.Document)
                     {
                         StartLine = seqPoint.StartLine,
