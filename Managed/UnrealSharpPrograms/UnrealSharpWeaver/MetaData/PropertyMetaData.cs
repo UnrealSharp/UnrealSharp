@@ -14,7 +14,6 @@ public class PropertyMetaData : BaseMetaData
     public LifetimeCondition LifetimeCondition { get; set; } = LifetimeCondition.None;
     public string BlueprintSetter { get; set; } = string.Empty;
     public string BlueprintGetter { get; set; } = string.Empty;
-    public string? BackingField { get; set; } = null;
     public bool HasCustomAccessors { get; set; } = false;
     [JsonIgnore]
     public PropertyDefinition? GeneratedAccessorProperty { get; set; } = null;
@@ -214,12 +213,6 @@ public class PropertyMetaData : BaseMetaData
         }
         
         PropertyFlags = flags;
-
-        CustomAttributeArgument? backingFieldArgument = upropertyAttribute.FindAttributeField("BackingField");
-        if (backingFieldArgument.HasValue)
-        {
-            BackingField = (string) backingFieldArgument.Value.Value;
-        }
     }
     
     public void InitializePropertyPointers(ILProcessor processor, Instruction loadNativeType, Instruction setPropertyPointer)

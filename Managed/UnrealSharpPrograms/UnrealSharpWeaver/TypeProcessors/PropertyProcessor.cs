@@ -19,6 +19,11 @@ public static class PropertyProcessor
 
         foreach (PropertyMetaData prop in properties)
         {
+            if (prop.HasCustomAccessors)
+            {
+                continue;
+            }
+            
             FieldDefinition offsetField = AddOffsetField(type, prop, WeaverImporter.Instance.Int32TypeRef);
             FieldDefinition? nativePropertyField = AddNativePropertyField(type, prop, WeaverImporter.Instance.IntPtrType);
             
@@ -41,24 +46,12 @@ public static class PropertyProcessor
             
             if (prop.MemberRef.Resolve() is PropertyDefinition propertyRef)
             {
-                if (prop.HasCustomAccessors)
-                {
-                    // For custom accessors, create a private property with marshalling code
-                    string backingFieldName = RemovePropertyBackingField(type, prop);
-                    PropertyDefinition privateProperty = CreatePrivateAccessorProperty(type, prop, propertyRef, loadBuffer, nativePropertyField);
-                    prop.GeneratedAccessorProperty = privateProperty;
+                // Standard property handling
+                prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, loadBuffer, nativePropertyField);
+                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
 
-                    removedBackingFields.Add(backingFieldName, (prop, privateProperty, offsetField, nativePropertyField));
-                }
-                else
-                {
-                    // Standard property handling
-                    prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, loadBuffer, nativePropertyField);
-                    prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
-
-                    string backingFieldName = RemovePropertyBackingField(type, prop);
-                    removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
-                }
+                string backingFieldName = RemovePropertyBackingField(type, prop);
+                removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
             }
             
             prop.PropertyOffsetField = offsetField;
@@ -69,23 +62,22 @@ public static class PropertyProcessor
     
     private static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)> strippedFields)
     {
-        foreach (MethodDefinition? method in type.GetConstructors().Append(type.GetMethods()))
+        foreach (MethodDefinition? constructor in type.GetConstructors().ToList())
         {
-            if (!method.HasBody)
+            if (!constructor.HasBody)
             {
                 continue;
             }
 
-            bool isConstructor = method.IsConstructor;
             bool baseCallFound = false;
             var alteredInstructions = new List<Instruction>();
             var deferredInstructions = new List<Instruction>();
 
-            foreach (Instruction? instr in method.Body.Instructions)
+            foreach (Instruction? instr in constructor.Body.Instructions)
             {
                 alteredInstructions.Add(instr);
 
-                if (isConstructor && instr.Operand is MethodReference baseCtor && baseCtor.Name == ".ctor")
+                if (instr.Operand is MethodReference baseCtor && baseCtor.Name == ".ctor")
                 {
                     baseCallFound = true;
                     alteredInstructions.AddRange(deferredInstructions);
@@ -102,16 +94,10 @@ public static class PropertyProcessor
                     continue;
                 }
 
-                // Handle both loads (Ldfld) and stores (Stfld)
-                if (instr.OpCode == OpCodes.Ldfld)
-                {
-                    ReplaceFieldLoadWithPropertyGetter(prop, instr, alteredInstructions);
-                    continue;
-                }
-                
+                // for now, we only handle simple stores
                 if (instr.OpCode != OpCodes.Stfld)
                 {
-                    throw new UnableToFixPropertyBackingReferenceException(method, prop.def, instr.OpCode);
+                    throw new UnableToFixPropertyBackingReferenceException(constructor, prop.def, instr.OpCode);
                 }
 
                 MethodDefinition? setMethod = prop.def.SetMethod;
@@ -126,86 +112,67 @@ public static class PropertyProcessor
                     setMethod.Parameters.Add(new ParameterDefinition(prop.def.PropertyType));
                     type.Methods.Add(setMethod);
                     
-                    // If this is a property with custom accessors, we need to use the generated property
-                    if (prop.meta.HasCustomAccessors && prop.meta.GeneratedAccessorProperty != null)
-                    {
-                        // Use the generated accessor's set method
-                        setMethod = prop.meta.GeneratedAccessorProperty.SetMethod;
-                    }
-                    else
-                    {
-                        // Standard property handling
-                        Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
-                        prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
-                    }
+                    Instruction[] loadBuffer = NativeDataType.GetArgumentBufferInstructions(null, prop.offsetField);
+                    prop.meta.PropertyDataType.WriteSetter(type, prop.def.SetMethod, loadBuffer, prop.nativePropertyField);
                 }
 
-                // Determine which setter to call based on whether we have custom accessors
-                var methodToCall = (prop.meta.HasCustomAccessors && prop.meta.GeneratedAccessorProperty != null) 
-                    ? prop.meta.GeneratedAccessorProperty.SetMethod 
-                    : setMethod;
-
-                var newInstr = Instruction.Create((methodToCall.IsReuseSlot && methodToCall.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, methodToCall);
+                var newInstr = Instruction.Create((setMethod.IsReuseSlot && setMethod.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, setMethod);
                 newInstr.Offset = instr.Offset;
                 alteredInstructions[alteredInstructions.Count - 1] = newInstr;
 
-                // Only perform constructor-specific operations for constructors
-                if (isConstructor)
+                // now the hairy bit. initializers happen _before_ the base ctor call, so the NativeObject is not yet set, and they fail
+                //we need to relocate these to after the base ctor call
+                if (baseCallFound)
                 {
-                    // now the hairy bit. initializers happen _before_ the base ctor call, so the NativeObject is not yet set, and they fail
-                    //we need to relocate these to after the base ctor call
-                    if (baseCallFound)
-                    {
-                        // if they're after the base ctor call it's fine
-                        continue;
-                    }
-
-                    //handle the simple pattern `ldarg0; ldconst*; call set_*`
-                    if (alteredInstructions[^3].OpCode != OpCodes.Ldarg_0)
-                    {
-                        throw new UnsupportedPropertyInitializerException(prop.def); 
-                    }
-
-                    var ldconst = alteredInstructions[^2];
-
-                    if (!IsLdconst(ldconst))
-                    {
-                        throw new UnsupportedPropertyInitializerException(prop.def);
-                    }
-
-                    CopyLastElements(alteredInstructions, deferredInstructions, 3);
+                    // if they're after the base ctor call it's fine
+                    continue;
                 }
+
+                //handle the simple pattern `ldarg0; ldconst*; call set_*`
+                if (alteredInstructions[^3].OpCode != OpCodes.Ldarg_0)
+                {
+                    throw new UnsupportedPropertyInitializerException(prop.def); 
+                }
+
+                var ldconst = alteredInstructions[^2];
+                
+                if (!IsLdconst(ldconst))
+                {
+                    throw new UnsupportedPropertyInitializerException(prop.def);
+                }
+                
+                CopyLastElements(alteredInstructions, deferredInstructions, 3);
             }
 
             //add back the instructions and fix up their offsets
-            method.Body.Instructions.Clear();
+            constructor.Body.Instructions.Clear();
             int offset = 0;
             foreach (var instr in alteredInstructions)
             {
                 int oldOffset = instr.Offset;
                 instr.Offset = offset;
-                method.Body.Instructions.Add(instr);
+                constructor.Body.Instructions.Add(instr);
 
                 //fix up the sequence point offsets too
-                if (method.DebugInformation == null || oldOffset == offset)
+                if (constructor.DebugInformation == null || oldOffset == offset)
                 {
                     continue;
                 }
-
+                
                 //this only uses the offset so doesn't matter that we replaced the instruction
-                var seqPoint = method.DebugInformation?.GetSequencePoint(instr);
+                var seqPoint = constructor.DebugInformation?.GetSequencePoint(instr);
                 if (seqPoint == null)
                 {
                     continue;
                 }
-
-                if (method.DebugInformation == null)
+                
+                if (constructor.DebugInformation == null)
                 {
                     continue;
                 }
-
-                method.DebugInformation.SequencePoints.Remove(seqPoint);
-                method.DebugInformation.SequencePoints.Add(
+                
+                constructor.DebugInformation.SequencePoints.Remove(seqPoint);
+                constructor.DebugInformation.SequencePoints.Add(
                     new SequencePoint(instr, seqPoint.Document)
                     {
                         StartLine = seqPoint.StartLine,
@@ -216,24 +183,10 @@ public static class PropertyProcessor
             }
         }
     }
-    private static void ReplaceFieldLoadWithPropertyGetter((PropertyMetaData meta, PropertyDefinition def, FieldDefinition offsetField, FieldDefinition? nativePropertyField) prop, Instruction instr, List<Instruction> alteredInstructions)
-    {
-        // Replace field load with property getter call
-        MethodDefinition? getMethod = prop.def.GetMethod;
-
-        // Determine which getter to call based on whether we have custom accessors
-        var methodToCall = (prop.meta.HasCustomAccessors && prop.meta.GeneratedAccessorProperty != null)
-            ? prop.meta.GeneratedAccessorProperty.GetMethod
-            : getMethod;
-
-        var newInstr = Instruction.Create((methodToCall.IsReuseSlot && methodToCall.IsVirtual) ? OpCodes.Callvirt : OpCodes.Call, methodToCall);
-        newInstr.Offset = instr.Offset;
-        alteredInstructions[alteredInstructions.Count - 1] = newInstr;
-    }
 
     private static string RemovePropertyBackingField(TypeDefinition type, PropertyMetaData prop)
     {
-        string backingFieldName = prop.BackingField ?? $"<{prop.Name}>k__BackingField";
+        string backingFieldName = $"<{prop.Name}>k__BackingField";
 
         for (var i = 0; i < type.Fields.Count; i++)
         {
@@ -285,26 +238,5 @@ public static class PropertyProcessor
         {
             from.RemoveAt(i);
         }
-    }
-
-    private static PropertyDefinition CreatePrivateAccessorProperty(TypeDefinition type, PropertyMetaData prop, PropertyDefinition originalProperty, Instruction[] loadBuffer, FieldDefinition? nativePropertyField)
-    {
-        // Create a new private property with the same type for marshalling
-        string privatePropertyName = $"<{prop.Name}>k__MarshallingProperty";
-        PropertyDefinition privateProperty = new PropertyDefinition(privatePropertyName, PropertyAttributes.None, originalProperty.PropertyType);
-        privateProperty.GetMethod = new MethodDefinition($"get_{privatePropertyName}", MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.HideBySig, originalProperty.PropertyType);
-        privateProperty.SetMethod = new MethodDefinition($"set_{privatePropertyName}", MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.HideBySig, WeaverImporter.Instance.VoidTypeRef);
-        privateProperty.SetMethod.Parameters.Add(new ParameterDefinition("value", ParameterAttributes.None, originalProperty.PropertyType));
-
-        // Add the methods and property to the type
-        type.Methods.Add(privateProperty.GetMethod);
-        type.Methods.Add(privateProperty.SetMethod);
-        type.Properties.Add(privateProperty);
-
-        // Generate the getter and setter implementations
-        prop.PropertyDataType.WriteGetter(type, privateProperty.GetMethod, loadBuffer, nativePropertyField);
-        prop.PropertyDataType.WriteSetter(type, privateProperty.SetMethod, loadBuffer, nativePropertyField);
-
-        return privateProperty;
     }
 }
