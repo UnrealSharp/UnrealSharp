@@ -9,6 +9,7 @@
 #include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
 #include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
+#include "Utils/CSClassUtilities.h"
 
 void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyMetaData>& PropertyMetaDatas)
 {
@@ -99,7 +100,7 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		else
 		{
 			// If we can't find a node, it's defined in a native parent class and don't have a node for it.
-			UClass* NativeParent = FCSGeneratedClassBuilder::GetFirstNativeClass(Outer);
+			UClass* NativeParent = FCSClassUtilities::GetFirstNativeClass(Outer);
 			if (FObjectProperty* Property = CastField<FObjectProperty>(NativeParent->FindPropertyByName(AttachToComponentName)))
 			{
 				UActorComponent* Component = Cast<UActorComponent>(Property->GetObjectPropertyValue_InContainer(NativeParent->GetDefaultObject()));

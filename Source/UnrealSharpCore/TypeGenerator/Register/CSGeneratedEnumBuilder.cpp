@@ -6,10 +6,10 @@ void FCSGeneratedEnumBuilder::RebuildType()
 {
 	PurgeEnum();
 
-	if (!Field->GetEnumInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSharpEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
-		Field->SetEnumInfo(EnumInfo);
+		TSharedPtr<FCSEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
+		Field->SetTypeInfo(EnumInfo);
 	}
 	
 	const int32 NumItems = TypeMetaData->Items.Num();

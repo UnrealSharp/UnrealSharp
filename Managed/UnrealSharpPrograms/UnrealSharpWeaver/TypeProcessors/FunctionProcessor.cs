@@ -327,7 +327,18 @@ public static class FunctionProcessor
             processor.Emit(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero);
         }
 
-        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InvokeNativeFunctionMethod);
+        if (hasReturnValue)
+        {
+            processor.Emit(OpCodes.Ldloc, argumentsBufferPtr);
+            processor.Emit(OpCodes.Ldsfld, metadata.ReturnValue!.PropertyOffsetField);
+            processor.Emit(OpCodes.Call, WeaverImporter.Instance.IntPtrAdd);
+        }
+        else
+        {
+            processor.Emit(OpCodes.Ldsfld, WeaverImporter.Instance.IntPtrZero);
+        }
+        
+        processor.Emit(OpCodes.Call, DetermineInvokeFunction(metadata));
 
         foreach (Instruction instruction in allCleanupInstructions)
         {
@@ -495,6 +506,21 @@ public static class FunctionProcessor
                 allCleanupInstructions.AddRange(cleanupInstructions);
             }
         }
+    }
+
+    static MethodReference DetermineInvokeFunction(FunctionMetaData functionMetaData)
+    {
+        if (functionMetaData.IsRpc)
+        {
+            return WeaverImporter.Instance.InvokeNativeNetFunction;
+        }
+
+        if (functionMetaData.HasOutParams)
+        {
+            return WeaverImporter.Instance.InvokeNativeFunctionOutParms;
+        }
+
+        return WeaverImporter.Instance.InvokeNativeFunctionMethod;
     }
     
 }

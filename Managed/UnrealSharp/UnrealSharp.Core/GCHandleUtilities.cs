@@ -73,20 +73,26 @@ public static class GCHandleUtilities
 
         handle.Free();
     }
-    
-    public static object? GetObjectFromHandlePtr(IntPtr handle)
-    {
-        if (handle == IntPtr.Zero)
-        {
-            return null;
-        }
-        
-        GCHandle subObjectGcHandle = GCHandle.FromIntPtr(handle);
-        return subObjectGcHandle.IsAllocated ? subObjectGcHandle.Target : null;
-    }
         
     public static T? GetObjectFromHandlePtr<T>(IntPtr handle)
     {
-        return (T?) GetObjectFromHandlePtr(handle);
+        if (handle == IntPtr.Zero)
+        {
+            return default;
+        }
+        
+        GCHandle subObjectGcHandle = GCHandle.FromIntPtr(handle);
+        if (!subObjectGcHandle.IsAllocated)
+        {
+            return default;
+        }
+        
+        object? subObject = subObjectGcHandle.Target;
+        if (subObject is T typedObject)
+        {
+            return typedObject;
+        }
+
+        return default;
     }
 }

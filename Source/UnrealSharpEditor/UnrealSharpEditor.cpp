@@ -33,6 +33,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
+#include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -333,6 +334,75 @@ void FUnrealSharpEditorModule::OnPackageProject()
 	PackageProject();
 }
 
+void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
+{
+	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
+
+	if (!FPaths::FileExists(NativeSolutionPath))
+	{
+		FString DialogText = FString::Printf(TEXT("Failed to load native solution %s"), *NativeSolutionPath);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	if (!FPaths::FileExists(ManagedSolutionPath))
+	{
+		FString DialogText = FString::Printf(TEXT("Failed to load managed solution %s"), *ManagedSolutionPath);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return;
+	}
+
+	TArray<FString> NativeSlnFileLines;
+	FFileHelper::LoadFileToStringArray(NativeSlnFileLines, *NativeSolutionPath);
+
+	int32 LastEndProjectIdx = 0;
+
+	for (int32 idx = 0; idx < NativeSlnFileLines.Num(); ++idx)
+	{
+		FString Line = NativeSlnFileLines[idx];
+		Line.ReplaceInline(TEXT("\n"), TEXT(""));
+		if (Line == TEXT("EndProject"))
+		{
+			LastEndProjectIdx = idx;
+		}
+	}
+
+	TArray<FString> ManagedSlnFileLines;
+	FFileHelper::LoadFileToStringArray(ManagedSlnFileLines, *ManagedSolutionPath);
+
+	TArray<FString> ManagedProjectLines;
+
+	for (int32 idx = 0; idx < ManagedSlnFileLines.Num(); ++idx)
+	{
+		FString Line = ManagedSlnFileLines[idx];
+		Line.ReplaceInline(TEXT("\n"), TEXT(""));
+		if (Line.StartsWith(TEXT("Project(\"{")) || Line.StartsWith(TEXT("EndProject")))
+		{
+			ManagedProjectLines.Add(Line);
+		}
+	}
+
+	for (int32 idx = 0; idx < ManagedProjectLines.Num(); ++idx)
+	{
+		FString Line = ManagedProjectLines[idx];
+		if (Line.StartsWith(TEXT("Project(\"{")) && Line.Contains(TEXT(".csproj")))
+		{
+			TArray<FString> ProjectStrParts;
+			Line.ParseIntoArray(ProjectStrParts, TEXT(", "));
+			if(ProjectStrParts.Num() == 3 && ProjectStrParts[1].Contains(TEXT(".csproj")))
+			{
+				ProjectStrParts[1] = FString("\"Script\\") + ProjectStrParts[1].Mid(1);
+				Line = FString::Join(ProjectStrParts, TEXT(", "));
+			}
+		}
+		NativeSlnFileLines.Insert(Line, LastEndProjectIdx + 1 + idx);
+	}
+
+	FString MixedSlnPath = NativeSolutionPath.LeftChop(4) + FString(".Mixed.sln");
+	FFileHelper::SaveStringArrayToFile(NativeSlnFileLines, *MixedSlnPath);
+}
+
 void FUnrealSharpEditorModule::OnOpenSettings()
 {
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer(
@@ -375,7 +445,7 @@ void FUnrealSharpEditorModule::RepairComponents()
 		UBlueprint* LoadedBlueprint = Cast<
 			UBlueprint>(StaticLoadObject(Asset.GetClass(), nullptr, *AssetPath, nullptr));
 		UClass* GeneratedClass = LoadedBlueprint->GeneratedClass;
-		UCSClass* ManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(GeneratedClass);
+		UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(GeneratedClass);
 
 		if (!ManagedClass)
 		{
@@ -413,7 +483,7 @@ void FUnrealSharpEditorModule::RepairComponents()
 		{
 			FObjectProperty* Property = *PropertyIt;
 
-			if (!FCSGeneratedClassBuilder::IsManagedType(Property->GetOwnerClass()))
+			if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
 			{
 				break;
 			}
@@ -572,8 +642,12 @@ void FUnrealSharpEditorModule::OpenSolution()
 		OnRegenerateSolution();
 	}
 
-	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *SolutionPath);
-	FPlatformProcess::CreateProc(TEXT("cmd.exe"), *OpenSolutionArgs, true, true, false, nullptr, 0, nullptr, nullptr);
+	FString ExceptionMessage;
+	if (!ManagedUnrealSharpEditorCallbacks.OpenSolution(*SolutionPath, &ExceptionMessage))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
+		return;
+	}
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
@@ -623,6 +697,9 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 
 	MenuBuilder.AddMenuEntry(CSCommands.RegenerateSolution, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 	                         FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
+
+	MenuBuilder.AddMenuEntry(CSCommands.MergeManagedSlnAndNativeSln, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+							 FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
 
 	MenuBuilder.EndSection();
 
@@ -715,9 +792,11 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands->MapAction(FCSCommands::Get().ReloadManagedCode,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRegenerateSolution));
+	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSolution));
+	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
+	UnrealSharpCommands->MapAction(FCSCommands::Get().MergeManagedSlnAndNativeSln,
+								   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
 	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings,
@@ -1237,12 +1316,10 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
-		if (!IsValid(Blueprint->GeneratedClass) || FCSGeneratedClassBuilder::IsManagedType(Blueprint->GeneratedClass))
+		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedType(Blueprint->GeneratedClass))
 		{
 			return;
 		}
-
-		bool bIsModified = false;
 		
 		TArray<UK2Node*> AllNodes;
 		FBlueprintEditorUtils::GetAllNodesOfClass<UK2Node>(Blueprint, AllNodes);
@@ -1252,36 +1329,22 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 			if (IsNodeAffectedByReload(Node))
 			{
 				Node->ReconstructNode();
-				bIsModified = true;
-			}
-		}
-		
-		if (!bIsModified)
-		{
-			for (const FBPVariableDescription& Var : Blueprint->NewVariables)
-			{
-				if (IsPinAffectedByReload(Var.VarType))
-				{
-					bIsModified = true;
-					break;
-				}
 			}
 		}
 
-		if (bIsModified)
-		{
-			AffectedBlueprints.Add(Blueprint);
-		}
+		AffectedBlueprints.Add(Blueprint);
 	}
 
 	for (UBlueprint* Blueprint : AffectedBlueprints)
 	{
-		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 	}
 
 	RebuiltStructs.Reset();
 	RebuiltClasses.Reset();
 	RebuiltEnums.Reset();
+
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 }
 
 FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const

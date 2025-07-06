@@ -3,13 +3,18 @@
 #include "UnrealSharpCore.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
-#include "TypeGenerator/Functions/CSFunction_NoParams.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
+
+	if (NewFunction->HasAllFunctionFlags(FUNC_BlueprintPure))
+	{
+		NewFunction->FunctionFlags |= FUNC_BlueprintCallable;
+	}
+	
 	NewFunction->SetSuperStruct(ParentFunction);
 	
 	if (!NewFunction->TryUpdateMethodHandle())
@@ -22,7 +27,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& 
 	return NewFunction;
 }
 
-FProperty* FCSFunctionFactory::CreateProperty(UCSFunctionBase* Function, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyMetaData);
 
@@ -39,23 +44,32 @@ FProperty* FCSFunctionFactory::CreateProperty(UCSFunctionBase* Function, const F
 	return NewParam;
 }
 
-UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
+void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData)
 {
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
-
 	// Check if this function has a return value or is just void, otherwise skip.
 	if (FunctionMetaData.ReturnValue.Type != nullptr)
 	{
-		CreateProperty(NewFunction, FunctionMetaData.ReturnValue);
+		CreateParameter(Function, FunctionMetaData.ReturnValue);
 	}
 
 	// Create the function's parameters and assign them.
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
 	for (int32 i = FunctionMetaData.Parameters.Num(); i-- > 0; )
 	{
-		CreateProperty(NewFunction, FunctionMetaData.Parameters[i]);
+		CreateParameter(Function, FunctionMetaData.Parameters[i]);
 	}
-	
+}
+
+UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
+{
+	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
+
+	if (!NewFunction)
+	{
+		return nullptr;
+	}
+
+	CreateParameters(NewFunction, FunctionMetaData);
 	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
 }
@@ -102,13 +116,13 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Function->Next = Outer->Children;
 	Outer->Children = Function;
 	
-	// Mark the function as Native as we want the "UClass::InvokeManagedEvent" to always be called on C# UFunctions.
+	// Mark the function as Native as we want the "UClass::InvokeManagedMethod" to always be called on C# UFunctions.
 	Function->FunctionFlags |= FUNC_Native;
 	Function->StaticLink(true);
 	
 	if (Function->NumParms == 0)
 	{
-		Outer->AddNativeFunction(*Function->GetName(), &UCSFunction_NoParams::InvokeManagedMethod_NoParams);
+		Outer->AddNativeFunction(*Function->GetName(), &UCSFunctionBase::InvokeManagedMethod);
 	}
 	else
 	{

@@ -1,16 +1,6 @@
 #include "CSNamespace.h"
 #include "CSManager.h"
 
-FCSNamespace::FCSNamespace(FName InNamespace): Namespace(InNamespace)
-{
-		
-}
-
-FCSNamespace FCSNamespace::Invalid()
-{
-	return FCSNamespace();
-}
-
 FString FCSNamespace::GetLastNamespace() const
 {
 	FString NamespaceString = Namespace.ToString();
@@ -41,16 +31,5 @@ bool FCSNamespace::GetParentNamespace(FCSNamespace& OutParent) const
 
 UPackage* FCSNamespace::GetPackage() const
 {
-	return UCSManager::Get().FindManagedPackage(*this);
-}
-
-UPackage* FCSNamespace::TryGetAsNativePackage() const
-{
-	FString NativePackageName = FString::Printf(TEXT("/Script/%s"), *GetLastNamespace());
-	return FindPackage(nullptr, *NativePackageName);
-}
-
-FName FCSNamespace::GetPackageName() const
-{
-	return *FString::Printf(TEXT("/Script/%s"), *Namespace.ToString());
+	return UCSManager::Get().FindOrAddManagedPackage(*this);
 }

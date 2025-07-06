@@ -14,7 +14,6 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
     protected MethodReference? ToNative;
     protected MethodReference? FromNative;
     
-    
     private bool _isReference;
     private AssemblyDefinition? _assembly;
     

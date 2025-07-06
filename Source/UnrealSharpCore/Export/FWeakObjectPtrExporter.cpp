@@ -14,7 +14,7 @@ void* UFWeakObjectPtrExporter::GetObject(TWeakObjectPtr<UObject> WeakObjectPtr)
 	}
 
 	UObject* Object = WeakObjectPtr.Get();
-	return UCSManager::Get().FindManagedObject(Object).GetPointer();
+	return UCSManager::Get().FindManagedObject(Object);
 }
 
 bool UFWeakObjectPtrExporter::IsValid(TWeakObjectPtr<UObject> WeakObjectPtr)

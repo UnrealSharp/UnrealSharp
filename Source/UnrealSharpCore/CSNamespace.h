@@ -2,7 +2,10 @@
 
 struct FCSNamespace
 {
-	FCSNamespace(FName InNamespace = NAME_None);
+	FCSNamespace(FName InNamespace = NAME_None) : Namespace(InNamespace)
+	{
+		
+	}
 
 	// Get the namespace as a FName
 	FName GetFName() const { return Namespace; }
@@ -17,20 +20,25 @@ struct FCSNamespace
 	bool IsValid() const { return Namespace != NAME_None; }
 
 	UPackage* GetPackage() const;
-	UPackage* TryGetAsNativePackage() const;
-	
-	FName GetPackageName() const;
 
-	static FCSNamespace Invalid();
+	UPackage* TryGetAsNativePackage() const
+	{
+		FString NativePackageName = FString::Printf(TEXT("/Script/%s"), *GetLastNamespace());
+		return FindPackage(nullptr, *NativePackageName);
+	}
+	
+	FName GetPackageName() const { return *FString::Printf(TEXT("/Script/%s"), *Namespace.ToString()); }
+
+	static FCSNamespace Invalid() { return FCSNamespace(); }
 
 	bool operator == (const FCSNamespace& Other) const
 	{
 		return Namespace == Other.Namespace;
 	}
 
-	friend uint32 GetTypeHash(const FCSNamespace& Namespace)
+	friend uint32 GetTypeHash(const FCSNamespace& InNamespace)
 	{
-		return GetTypeHash(Namespace.Namespace);
+		return GetTypeHash(InNamespace.Namespace);
 	}
 
 private:

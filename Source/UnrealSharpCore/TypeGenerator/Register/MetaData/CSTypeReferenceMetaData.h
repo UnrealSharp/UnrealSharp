@@ -18,6 +18,7 @@ struct FCSTypeReferenceMetaData
 	UScriptStruct* GetOwningStruct() const;
 	UEnum* GetOwningEnum() const;
 	UClass* GetOwningInterface() const;
+	UDelegateFunction* GetOwningDelegate() const;
 	UPackage* GetOwningPackage() const;
 
 	TMap<FString, FString> MetaData;

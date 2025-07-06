@@ -18,6 +18,7 @@ public:
 	TSharedPtr<FUICommandInfo> ReloadManagedCode;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
+	TSharedPtr<FUICommandInfo> MergeManagedSlnAndNativeSln;
 	TSharedPtr<FUICommandInfo> PackageProject;
 	TSharedPtr<FUICommandInfo> OpenSettings;
 	TSharedPtr<FUICommandInfo> OpenDocumentation;

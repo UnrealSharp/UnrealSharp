@@ -34,17 +34,26 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FCSInterfaceEvent, UCSInterface*);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UCSEnum*);
 
 UCLASS()
-class UNREALSHARPCORE_API UCSManager : public UObject
+class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
 {
 	GENERATED_BODY()
 public:
 	
-	static UCSManager& GetOrCreate();
-	static UCSManager& Get();
+	static UCSManager& GetOrCreate()
+	{
+		if (!Instance)
+		{
+			Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
+		}
+
+		return *Instance;
+	}
+	
+	static UCSManager& Get() { return *Instance; }
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
-	UPackage* GetGlobalUnrealSharpPackage() const { return GlobalUnrealSharpPackage; }
-	UPackage* FindManagedPackage(FCSNamespace Namespace);
+	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
+	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
 	
 	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
@@ -56,12 +65,24 @@ public:
 	
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class);
 	
-	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const;
-	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName);
+	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const 
+	{
+		return LoadedAssemblies.FindRef(AssemblyName);
+	}
+	
+	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName)
+	{
+		if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
+		{
+			return Assembly;
+		}
+	
+		return LoadUserAssemblyByName(AssemblyName);
+	}
 	
 	FGCHandle FindManagedObject(UObject* Object);
 
-	void SetCurrentWorldContext(UObject* WorldContext);
+	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
 	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
@@ -83,41 +104,57 @@ public:
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 #endif
 	
-	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const;
+	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
+	{
+		for (UPackage* Package : AllPackages)
+		{
+			Callback(Package);
+		}
+	}
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
-	bool IsManagedPackage(const UPackage* Package) const;
-	bool IsManagedField(const UObject* Field) const;
+	
+	bool IsManagedPackage(const UPackage* Package) const { 	return AllPackages.Contains(Package); }
+	bool IsManagedField(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 
 	bool IsLoadingAnyAssembly() const;
 
 private:
 
+	friend FCSAssembly;
 	friend FUnrealSharpCoreModule;
 
 	void Initialize();
-	static void Shutdown();
+	static void Shutdown() { Instance = nullptr; }
 
-	load_assembly_and_get_function_pointer_fn InitializeHostfxr() const;
-	load_assembly_and_get_function_pointer_fn InitializeHostfxrSelfContained() const;
+	load_assembly_and_get_function_pointer_fn InitializeNativeHost() const;
 	
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
-
 	bool LoadAllUserAssemblies();
+
+	// UObjectArray listener interface
+	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
+	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectDeleteListener(this); }
+	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
+	// End of interface
 
 	static UCSManager* Instance;
 
 	UPROPERTY()
-	TObjectPtr<UPackage> GlobalUnrealSharpPackage;
+	TArray<TObjectPtr<UPackage>> AllPackages;
 
 	UPROPERTY()
-	TSet<TObjectPtr<UPackage>> AllPackages;
- 
-	UPROPERTY()
-	TWeakObjectPtr<UObject> CurrentWorldContext;
+	TObjectPtr<UPackage> GlobalManagedPackage;
+
+	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
+	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 	
+	// Map to cache assemblies that native classes are associated with, for quick lookup.
 	TMap<uint32, TSharedPtr<FCSAssembly>> NativeClassToAssemblyMap;
+	
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
+	
+	TWeakObjectPtr<UObject> CurrentWorldContext;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;

@@ -4,8 +4,8 @@
 #include "TypeGenerator/Register/CSGeneratedEnumBuilder.h"
 #include "TypeGenerator/Register/MetaData/CSEnumMetaData.h"
 
-struct UNREALSHARPCORE_API FCSharpEnumInfo : TCSharpTypeInfo<FCSEnumMetaData, UCSEnum, FCSGeneratedEnumBuilder>
+struct UNREALSHARPCORE_API FCSEnumInfo : TCSTypeInfo<FCSEnumMetaData, UCSEnum, FCSGeneratedEnumBuilder>
 {
-	FCSharpEnumInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSharpTypeInfo(MetaData, InOwningAssembly) {}
-	FCSharpEnumInfo() {};
+	FCSEnumInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSTypeInfo(MetaData, InOwningAssembly) {}
+	FCSEnumInfo() {};
 };

@@ -2,7 +2,7 @@
 #include "KismetCompiler.h"
 
 struct FCSPropertyMetaData;
-struct FCSharpClassInfo;
+struct FCSClassInfo;
 class UCSClass;
 class UCSBlueprint;
 
@@ -23,10 +23,10 @@ public:
 protected:
 	typedef FKismetCompilerContext Super;
 private:
-	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSharpClassInfo>& ClassInfo) const;
+	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const;
 	void GenerateFunctions() const;
 	UCSClass* GetMainClass() const;
-	TSharedPtr<const FCSharpClassInfo> GetClassInfo() const;
+	TSharedPtr<const FCSClassInfo> GetClassInfo() const;
 
 	bool IsDeveloperSettings() const;
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;

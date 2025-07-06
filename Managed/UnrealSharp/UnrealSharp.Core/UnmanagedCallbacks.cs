@@ -17,11 +17,11 @@ public static class UnmanagedCallbacks
                 throw new ArgumentNullException(nameof(nativeObject));
             }
             
-            GCHandle handle = GCHandle.FromIntPtr(typeHandlePtr);
+            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
             
-            if (!handle.IsAllocated || handle.Target is not Type type)
+            if (type == null)
             {
-                throw new Exception("Invalid type handle");
+                throw new InvalidOperationException("The provided type handle does not point to a valid type.");
             }
 
             return UnrealSharpObject.Create(type, nativeObject);
@@ -31,7 +31,7 @@ public static class UnmanagedCallbacks
             LogUnrealSharpCore.LogError($"Failed to create new managed object: {ex.Message}");
         }
 
-        return default;
+        return IntPtr.Zero;
     }
     
     [UnmanagedCallersOnly]
@@ -39,16 +39,16 @@ public static class UnmanagedCallbacks
     {
         try
         {
-            string methodNameString = new string(methodName);
-            GCHandle typeHandle = GCHandle.FromIntPtr(typeHandlePtr);
+            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
             
-            if (typeHandle.Target is not Type type)
+            if (type == null)
             {
                 throw new Exception("Invalid type handle");
             }
             
-            var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var currentType = type;
+            string methodNameString = new string(methodName);
+            BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+            Type? currentType = type;
             
             while (currentType != null)
             {
@@ -64,14 +64,14 @@ public static class UnmanagedCallbacks
                 currentType = currentType.BaseType;
             }
 
-            return default;
+            return IntPtr.Zero;
         }
         catch (Exception e)
         {
             LogUnrealSharpCore.LogError($"Exception while trying to look up managed method: {e.Message}");
         }
 
-        return default;
+        return IntPtr.Zero;
     }
     
     [UnmanagedCallersOnly]
@@ -80,8 +80,7 @@ public static class UnmanagedCallbacks
         try
         {
             string fullTypeNameString = new string(fullTypeName);
-            GCHandle handle = GCHandle.FromIntPtr(assemblyHandle);
-            Assembly? loadedAssembly = handle.Target as Assembly;
+            Assembly? loadedAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Assembly>(assemblyHandle);
 
             if (loadedAssembly == null)
             {
@@ -135,15 +134,15 @@ public static class UnmanagedCallbacks
         try
         {
             IntPtr? methodHandle = GCHandleUtilities.GetObjectFromHandlePtr<IntPtr>(methodHandlePtr);
-            object? managdObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
+            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
             
-            if (methodHandle == null || managdObject == null)
+            if (methodHandle == null || managedObject == null)
             {
                 throw new Exception("Invalid method or target handle");
             }
             
             delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodHandle;
-            methodPtr(managdObject, argumentsBuffer, returnValueBuffer);
+            methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
             return 0;
         }
         catch (Exception ex)

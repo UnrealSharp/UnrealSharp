@@ -4,6 +4,9 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
+#include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "Utils/CSClassUtilities.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wextern-initializer"
@@ -37,7 +40,7 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 		return nullptr;
 	}
 
-	UBlueprintGeneratedClass* CurrentClass = Cast<UBlueprintGeneratedClass>(Actor->GetClass());
+	UBlueprintGeneratedClass* CurrentClass = FCSClassUtilities::GetFirstManagedClass(Actor->GetClass());
 	while (IsValid(CurrentClass))
 	{
 		if (USimpleConstructionScript* SCS = CurrentClass->SimpleConstructionScript)

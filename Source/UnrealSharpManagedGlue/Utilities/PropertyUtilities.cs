@@ -129,13 +129,27 @@ public static class PropertyUtilities
     
     public static bool IsReadWrite(this UhtProperty property)
     {
-        bool isReadOnly = property.HasAllFlags(EPropertyFlags.BlueprintReadOnly);
-        return !isReadOnly && (property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter());
+        return !property.IsReadOnly() && (property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintAssignable) || property.HasAnySetter());
+    }
+    
+    public static bool IsReadOnly(this UhtProperty property)
+    {
+        return property.HasAllFlags(EPropertyFlags.BlueprintReadOnly);
     }
     
     public static bool IsEditDefaultsOnly(this UhtProperty property)
     {
-        return property.HasAllFlags(EPropertyFlags.BlueprintReadOnly | EPropertyFlags.Edit);
+        return property.HasAllFlags(EPropertyFlags.Edit) && property.IsReadOnly();
+    }
+    
+    public static bool IsEditAnywhere(this UhtProperty property)
+    {
+        return property.HasAllFlags(EPropertyFlags.Edit);
+    }
+    
+    public static bool IsEditInstanceOnly(this UhtProperty property)
+    {
+        return property.HasAllFlags(EPropertyFlags.Edit | EPropertyFlags.DisableEditOnTemplate);
     }
     
     public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)
@@ -206,25 +220,30 @@ public static class PropertyUtilities
     {
         return $"{property.SourceName}_NativeProperty";
     }
+    
+    public static string GetOffsetVariableName(this UhtProperty property)
+    {
+        return $"{property.Outer!.SourceName}_{property.SourceName}_Offset";
+    }
 
     public static string GetProtection(this UhtProperty property)
     {
         UhtClass? classObj = property.Outer as UhtClass;
         bool isClassOwner = classObj != null;
 
-        if (isClassOwner && property.HasAnyGetterOrSetter())
+        if (isClassOwner)
         {
             UhtFunction? getter = property.GetBlueprintGetter();
             UhtFunction? setter = property.GetBlueprintSetter();
 
             if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public)) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Public)))
             {
-                return "public ";
+                return ScriptGeneratorUtilities.PublicKeyword;
             }
 
             if ((getter != null && getter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected)) || (setter != null && setter.FunctionFlags.HasAnyFlags(EFunctionFlags.Protected)))
             {
-                return "protected ";
+                return ScriptGeneratorUtilities.ProtectedKeyword;
             }
         }
 
@@ -232,16 +251,20 @@ public static class PropertyUtilities
             (property.HasAllFlags(EPropertyFlags.NativeAccessSpecifierPrivate) && property.HasMetaData("AllowPrivateAccess")) ||
             (!isClassOwner && property.HasAllFlags(EPropertyFlags.Protected)))
         {
-            return "public ";
+            return ScriptGeneratorUtilities.PublicKeyword;
         }
-        else if (isClassOwner && property.HasAllFlags(EPropertyFlags.Protected))
+
+        if (isClassOwner && property.HasAllFlags(EPropertyFlags.Protected))
         {
-            return "protected ";
+            return ScriptGeneratorUtilities.ProtectedKeyword;
         }
-        else
+        
+        if (property.HasAllFlags(EPropertyFlags.Edit))
         {
-            return "private ";
+            return ScriptGeneratorUtilities.PublicKeyword;
         }
+
+        return ScriptGeneratorUtilities.PrivateKeyword;
     }
 
     public static bool DeterminesOutputType(this UhtProperty property)

@@ -82,7 +82,7 @@ public struct TSubclassOf<T>
                 throw new InvalidOperationException("Invalid class handle.");
             }
 
-            object? obj = GCHandleUtilities.GetObjectFromHandlePtr(classHandle);
+            object? obj = GCHandleUtilities.GetObjectFromHandlePtr<object>(classHandle);
         
             if (obj == null)
             {
@@ -120,7 +120,7 @@ public struct TSubclassOf<T>
     {
         if (!IsChildOf(typeof(TChildClass)))
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"Cannot cast to {typeof(TChildClass).Name}. The class is not a subclass of {typeof(TChildClass).Name}.");
         }
 
         return new TSubclassOf<TChildClass>(NativeClass);

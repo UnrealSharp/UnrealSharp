@@ -6,28 +6,21 @@
 #include "Engine/UserDefinedStruct.h"
 #endif
 #include "ManagedReferencesCollection.h"
+#include "Utils/CSMacros.h"
 
 #include "CSScriptStruct.generated.h"
-
-struct FCSharpStructInfo;
 
 UCLASS(MinimalAPI)
 class UCSScriptStruct : public UUserDefinedStruct
 {
 	GENERATED_BODY()
-
+	DECLARE_CSHARP_TYPE_FUNCTIONS(FCSStructInfo);
 public:
-
-	UNREALSHARPCORE_API TSharedPtr<FCSharpStructInfo> GetStructInfo() const { return StructInfo; }
-
-	void RecreateDefaults();
-	void SetStructInfo(const TSharedPtr<FCSharpStructInfo>& InStructInfo);
+	
+	void RecreateDefaults() { DefaultStructInstance.Recreate(this); }
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
 	FCSManagedReferencesCollection ManagedReferences;
 #endif
-
-private:
-	TSharedPtr<FCSharpStructInfo> StructInfo;
 };

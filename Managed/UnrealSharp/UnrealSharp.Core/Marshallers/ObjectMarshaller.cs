@@ -15,7 +15,13 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         IntPtr uObjectPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
+        
+        if (uObjectPointer == IntPtr.Zero)
+        {
+            return null!;
+        }
+        
         IntPtr handle = FCSManagerExporter.CallFindManagedObject(uObjectPointer);
-        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 }

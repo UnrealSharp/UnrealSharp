@@ -409,9 +409,8 @@ public static class Program
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
-            UnrealDelegateProcessor.ProcessMulticastDelegates(multicastDelegates);
-            UnrealDelegateProcessor.ProcessSingleDelegates(delegates, userAssembly);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
+            UnrealDelegateProcessor.ProcessDelegates(delegates, multicastDelegates, userAssembly, metadata.DelegateMetaData);
         }
         catch (Exception ex)
         {

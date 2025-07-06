@@ -1,22 +1,24 @@
 ﻿#include "CSClass.h"
-#include "Register/TypeInfo/CSClassInfo.h"
+#include "UnrealSharpCore.h"
 
-TSharedPtr<FCSharpClassInfo> UCSClass::GetClassInfo() const
+#if WITH_EDITOR
+void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 {
-	return ClassInfo;
+	Super::PostDuplicate(bDuplicateForPIE);
+	
+	UBlueprint* Blueprint = Cast<UBlueprint>(ClassGeneratedBy);
+	if (!IsValid(Blueprint))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("PostDuplicate called on a class without a valid Blueprint: %s"), *GetName());
+		return;
+	}
+	
+	UCSClass* ManagedClass = Cast<UCSClass>(Blueprint->GeneratedClass);
+	if (!IsValid(ManagedClass))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("PostDuplicate called on a class that is not a UCSClass: %s"), *GetName());
+	}
+	
+	TypeInfo = ManagedClass->GetTypeInfo();
 }
-
-TSharedPtr<const FGCHandle> UCSClass::GetClassHandle() const
-{
-	return ClassInfo->GetManagedTypeHandle();
-}
-
-TSharedPtr<FCSAssembly> UCSClass::GetOwningAssembly() const
-{
-	return ClassInfo->OwningAssembly;
-}
-
-void UCSClass::SetClassInfo(const TSharedPtr<FCSharpClassInfo>& InClassMetaData)
-{
-	ClassInfo = InClassMetaData;
-}
+#endif

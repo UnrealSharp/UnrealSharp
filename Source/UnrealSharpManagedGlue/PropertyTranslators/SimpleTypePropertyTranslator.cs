@@ -105,11 +105,9 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		string foundCSharpType = translator.GetManagedType(paramProperty);
 		builder.AppendLine($"{foundCSharpType} {variableName} = new {foundCSharpType}");
 		builder.OpenBrace();
-
-		bool isFloat = true;
+		
 		if (structName == "Color")
 		{
-			isFloat = false;
 			(fieldInitializers[0], fieldInitializers[2]) = (fieldInitializers[2], fieldInitializers[0]);
 		}
 		
@@ -117,6 +115,11 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		for (int i = 0; i < fieldCount; i++)
 		{
 			UhtProperty property = (UhtProperty) structProperty.ScriptStruct.Children[i];
+			PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(property)!;
+			
+			string managedType = propertyTranslator.GetManagedType(property);
+			bool isFloat = managedType is "float" or "double";
+			
 			string scriptName = property.SourceName;
 			string fieldInitializer = fieldInitializers[i];
 

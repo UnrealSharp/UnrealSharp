@@ -26,6 +26,11 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
         return base.CanExport(property);
     }
 
+    public override string GetNullValue(UhtProperty property)
+    {
+        return "null";
+    }
+
     public override string GetManagedType(UhtProperty property)
     {
         if (property.IsGenericType()) return "DOT";

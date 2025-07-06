@@ -5,5 +5,5 @@
 void* UUAssetManagerExporter::GetAssetManager()
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
-	return UCSManager::Get().FindManagedObject(&AssetManager).GetPointer();
+	return UCSManager::Get().FindManagedObject(&AssetManager);
 }

@@ -7,16 +7,17 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 {
 	Field->PurgeClass(true);
 
-	if (!Field->GetInterfaceInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSharpInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
-		Field->SetInterfaceInfo(InterfaceInfo);
+		TSharedPtr<FCSInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
+		Field->SetTypeInfo(InterfaceInfo);
 	}
 	
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
 	
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
+	RegisterFunctionsToLoader();
 
 	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
 	
@@ -36,3 +37,19 @@ void FCSGeneratedInterfaceBuilder::UpdateType()
 	UCSManager::Get().OnInterfaceReloadedEvent().Broadcast(Field);
 }
 #endif
+
+void FCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader()
+{
+	for (TFieldIterator<UFunction> It(Field, EFieldIterationFlags::None); It; ++It)
+	{
+		UFunction* Function = *It;
+		
+		NotifyRegistrationEvent(*Function->GetOutermost()->GetName(),
+		*Function->GetName(),
+		ENotifyRegistrationType::NRT_Struct,
+		ENotifyRegistrationPhase::NRP_Finished,
+		nullptr,
+		false,
+		Function);
+	}
+}

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "CSManagedCallbacksCache.h"
 
 enum class GCHandleType : char
 {
@@ -31,18 +32,36 @@ struct FGCHandle
 	FGCHandleIntPtr Handle;
 	GCHandleType Type = GCHandleType::Null;
 
+	static FGCHandle Null() { return FGCHandle(nullptr, GCHandleType::Null); }
+
 	bool IsNull() const { return !Handle.IntPtr; }
 	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
 	
-	const FGCHandleIntPtr& GetHandle() const { return Handle; }
+	FGCHandleIntPtr GetHandle() const { return Handle; }
 	uint8* GetPointer() const { return Handle.IntPtr; };
 	
-	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr());
+	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr())
+	{
+		if (!Handle.IntPtr || Type == GCHandleType::Null)
+		{
+			return;
+		}
+
+		FCSManagedCallbacks::ManagedCallbacks.Dispose(Handle, AssemblyHandle);
+	
+		Handle.IntPtr = nullptr;
+		Type = GCHandleType::Null;
+	}
 
 	void operator = (const FGCHandle& Other)
 	{
 		Handle = Other.Handle;
 		Type = Other.Type;
+	}
+	
+	operator void*() const
+	{
+		return Handle.IntPtr;
 	}
 
 	FGCHandle(){}

@@ -1,5 +1,7 @@
 ﻿#include "UnrealSharpUtils.h"
 
+#include "UnrealSharpUtilities.h"
+
 FName FUnrealSharpUtils::GetNamespace(const UObject* Object)
 {
 	FName PackageName = GetModuleName(Object);
@@ -29,4 +31,21 @@ bool FUnrealSharpUtils::IsStandalonePIE()
 #else
 		return false;
 #endif
+}
+
+void FUnrealSharpUtils::PurgeStruct(UStruct* Struct)
+{
+	if (!IsValid(Struct))
+	{
+		UE_LOG(LogUnrealSharpUtilities, Warning, TEXT("Tried to purge an invalid struct: %s"), *GetNameSafe(Struct));
+		return;
+	}
+	
+	Struct->PropertyLink = nullptr;
+	Struct->DestructorLink = nullptr;
+	Struct->ChildProperties = nullptr;
+	Struct->Children = nullptr;
+	Struct->PropertiesSize = 0;
+	Struct->MinAlignment = 0;
+	Struct->RefLink = nullptr;
 }

@@ -3,7 +3,6 @@
 #include "CSAssembly.h"
 #include "UnrealSharpCore.h"
 #include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "UObject/Object.h"
@@ -11,11 +10,12 @@
 #include "Engine/Blueprint.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include <vector>
-
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
+#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
 	#define PLATFORM_STRING(string) string
@@ -25,29 +25,13 @@
 	#define PLATFORM_STRING(string) TCHAR_TO_ANSI(string)
 #endif
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wdangling-assignment"
+#endif
+
 UCSManager* UCSManager::Instance = nullptr;
 
-UCSManager& UCSManager::GetOrCreate()
-{
-	if (!Instance)
-	{
-		Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
-	}
-
-	return *Instance;
-}
-
-UCSManager& UCSManager::Get()
-{
-	return *Instance;
-}
-
-void UCSManager::Shutdown()
-{
-	Instance = nullptr;
-}
-
-UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
+UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace Namespace)
 {
 	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
 	{
@@ -92,14 +76,6 @@ UPackage* UCSManager::FindManagedPackage(const FCSNamespace Namespace)
 	return ParentPackage;
 }
 
-void UCSManager::ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
-{
-	for (UPackage* Package : AllPackages)
-	{
-		Callback(Package);
-	}
-}
-
 void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) const
 {
 	for (UPackage* Package : AllPackages)
@@ -110,16 +86,6 @@ void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) 
 			return true;
 		}, false);
 	}
-}
-
-bool UCSManager::IsManagedPackage(const UPackage* Package) const
-{
-	return AllPackages.Contains(Package);
-}
-
-bool UCSManager::IsManagedField(const UObject* Field) const
-{
-	return IsManagedPackage(Field->GetOutermost());
 }
 
 bool UCSManager::IsLoadingAnyAssembly() const
@@ -159,7 +125,6 @@ void UCSManager::Initialize()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
 	
 	TArray<FString> ProjectPaths;
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
@@ -172,13 +137,21 @@ void UCSManager::Initialize()
 	}
 #endif
 
+	GUObjectArray.AddUObjectDeleteListener(this);
+
+#if WITH_EDITOR
+	// Remove this listener when the engine is shutting down.
+	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
+	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
+#endif
+
 	// Initialize the C# runtime.
 	if (!InitializeDotNetRuntime())
 	{
 		return;
 	}
 
-	GlobalUnrealSharpPackage = FindManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
+	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
 
 	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
 	FCSPropertyFactory::Initialize();
@@ -194,30 +167,21 @@ bool UCSManager::InitializeDotNetRuntime()
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load Runtime Host"));
 		return false;
 	}
-	
-	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer;
-	
-#if WITH_EDITOR
-	LoadAssemblyAndGetFunctionPointer = InitializeHostfxr();
-#else
-	LoadAssemblyAndGetFunctionPointer = InitializeHostfxrSelfContained();
-#endif
-	
+
+	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer = InitializeNativeHost();
 	if (!LoadAssemblyAndGetFunctionPointer)
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize Runtime Host"));
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to initialize Runtime Host. Check logs for more details."));
 		return false;
 	}
-
-	// Load assembly and get function pointer.
-	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
 	
 	const FString EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
 	const FString EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
 	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpPluginsPath());
 	const FString UserWorkingDirectory = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUserAssemblyDirectory());
-
+	
+	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
 	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
 		PLATFORM_STRING(*EntryPointClassName),
 		PLATFORM_STRING(*EntryPointFunctionName),
@@ -309,31 +273,92 @@ bool UCSManager::LoadAllUserAssemblies()
 	return true;
 }
 
-load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxr() const
+void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::NotifyUObjectDeleted);
+	
+	TSharedPtr<FGCHandle> Handle;
+	uint32 ObjectID = Object->GetUniqueID();
+	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID, ObjectID, Handle))
+	{
+		return;
+	}
+
+	TSharedPtr<FCSAssembly> Assembly = FindOwningAssembly(Object->GetClass());
+	if (!Assembly.IsValid())
+	{
+		FString ObjectName = Object->GetFName().ToString();
+		FString ClassName = Object->GetClass()->GetFName().ToString();
+		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to find owning assembly for object %s with class %s. Will cause managed memory leak."), *ObjectName, *ClassName);
+		return;
+	}
+		
+	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
+	Handle->Dispose(AssemblyHandle->GetHandle());
+}
+
+load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const
+{
+#if WITH_EDITOR
+	FString DotNetPath = FCSProcHelper::GetDotNetDirectory();
+#else
+	FString DotNetPath = FCSProcHelper::GetPluginAssembliesPath();
+#endif
+
+	if (!FPaths::DirectoryExists(DotNetPath))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Dotnet directory does not exist at: %s"), *DotNetPath);
+		return nullptr;
+	}
+	
+	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
+	if (!FPaths::FileExists(RuntimeHostPath))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Runtime host path does not exist at: %s"), *RuntimeHostPath);
+		return nullptr;
+	}
+
+	UE_LOG(LogUnrealSharp, Log, TEXT("DotNetPath: %s"), *DotNetPath);
+	UE_LOG(LogUnrealSharp, Log, TEXT("RuntimeHostPath: %s"), *RuntimeHostPath);
+
+	hostfxr_initialize_parameters InitializeParameters;
+	InitializeParameters.dotnet_root = PLATFORM_STRING(*DotNetPath);
+	InitializeParameters.host_path = PLATFORM_STRING(*RuntimeHostPath);
+	InitializeParameters.size = sizeof(hostfxr_initialize_parameters);
+
 	hostfxr_handle HostFXR_Handle = nullptr;
-	FString RuntimeConfigPath =  FCSProcHelper::GetRuntimeConfigPath();
+	int32 ErrorCode = 0;
+#if WITH_EDITOR
+	FString RuntimeConfigPath = FCSProcHelper::GetRuntimeConfigPath();
 
 	if (!FPaths::FileExists(RuntimeConfigPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("No runtime config found"));
 		return nullptr;
 	}
-
-	FString DotNetPath = FCSProcHelper::GetDotNetDirectory();
-	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
-
-	UE_LOG(LogUnrealSharp, Log, TEXT("DotNetPath: %s"), *DotNetPath);
-	UE_LOG(LogUnrealSharp, Log, TEXT("RuntimeHostPath: %s"), *RuntimeHostPath);
-
 #if defined(_WIN32)
-	hostfxr_initialize_parameters InitializeParameters;
-	InitializeParameters.dotnet_root = PLATFORM_STRING(*DotNetPath);
-	InitializeParameters.host_path = PLATFORM_STRING(*RuntimeHostPath);
-	
-	int32 ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), &InitializeParameters, &HostFXR_Handle);
+	ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), &InitializeParameters, &HostFXR_Handle);
 #else
-	int32 ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), nullptr, &HostFXR_Handle);
+	ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), nullptr, &HostFXR_Handle);
+#endif
+	
+#else
+	FString PluginAssemblyPath = FCSProcHelper::GetUnrealSharpPluginsPath();
+	
+	if (!FPaths::FileExists(PluginAssemblyPath))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("UnrealSharp.Plugins.dll does not exist at: %s"), *PluginAssemblyPath);
+		return nullptr;
+	}
+	
+	std::vector Args { PLATFORM_STRING(*PluginAssemblyPath) };
+	
+#if defined(_WIN32)
+	ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
+#else
+	ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), const_cast<const char**>(Args.data()), &InitializeParameters, &HostFXR_Handle);
+#endif
+	
 #endif
 	
 	if (ErrorCode != 0)
@@ -344,61 +369,15 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxr() const
 
 	void* LoadAssemblyAndGetFunctionPointer = nullptr;
 	ErrorCode = Hostfxr_Get_Runtime_Delegate(HostFXR_Handle, hdt_load_assembly_and_get_function_pointer, &LoadAssemblyAndGetFunctionPointer);
-
 	Hostfxr_Close(HostFXR_Handle);
 
-	if (ErrorCode != 0 || LoadAssemblyAndGetFunctionPointer == nullptr)
+	if (ErrorCode != 0 || !LoadAssemblyAndGetFunctionPointer)
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("hostfxr_get_runtime_delegate failed with code: %d"), ErrorCode);
 		return nullptr;
 	}
 
-#if defined(_WIN32)
-	return static_cast<load_assembly_and_get_function_pointer_fn>(LoadAssemblyAndGetFunctionPointer);
-#else
 	return (load_assembly_and_get_function_pointer_fn)LoadAssemblyAndGetFunctionPointer;
-#endif
-}
-
-load_assembly_and_get_function_pointer_fn UCSManager::InitializeHostfxrSelfContained() const
-{
-	FString MainAssemblyPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpPluginsPath());
-	std::vector Args { PLATFORM_STRING(*MainAssemblyPath) };
-	
-	hostfxr_handle HostFXR_Handle = nullptr;
-	FString DotNetPath = FCSProcHelper::GetPluginAssembliesPath();
-	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
-
-	hostfxr_initialize_parameters InitializeParameters;
-	InitializeParameters.dotnet_root = PLATFORM_STRING(*DotNetPath);
-	InitializeParameters.host_path = PLATFORM_STRING(*RuntimeHostPath);
-	
-#if defined(_WIN32)
-	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
-#else
-	int ReturnCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), const_cast<const char**>(Args.data()), &InitializeParameters, &HostFXR_Handle);
-#endif
-	
-	if (ReturnCode != 0 || HostFXR_Handle == nullptr)
-	{
-		Hostfxr_Close(HostFXR_Handle);
-	}
-
-	void* Load_Assembly_And_Get_Function_Pointer = nullptr;
-	ReturnCode = Hostfxr_Get_Runtime_Delegate(HostFXR_Handle, hdt_load_assembly_and_get_function_pointer, &Load_Assembly_And_Get_Function_Pointer);
-	
-	if (ReturnCode != 0 || Load_Assembly_And_Get_Function_Pointer == nullptr)
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("hostfxr_get_runtime_delegate failed with code: %d"), ReturnCode);
-	}
-
-	Hostfxr_Close(HostFXR_Handle);
-
-#if defined(_WIN32)
-	return static_cast<load_assembly_and_get_function_pointer_fn>(Load_Assembly_And_Get_Function_Pointer);
-#else
-	return (load_assembly_and_get_function_pointer_fn)Load_Assembly_And_Get_Function_Pointer;
-#endif
 }
 
 TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
@@ -429,33 +408,17 @@ TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName Assembl
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-TSharedPtr<FCSAssembly> UCSManager::FindAssembly(const FName AssemblyName) const
-{
-	TSharedPtr<FCSAssembly> Assembly = LoadedAssemblies.FindRef(AssemblyName);
-	return Assembly;
-}
-
-TSharedPtr<FCSAssembly> UCSManager::FindOrLoadAssembly(const FName AssemblyName)
-{
-	if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
-	{
-		return Assembly;
-	}
-	
-	return LoadUserAssemblyByName(AssemblyName);
-}
-
 TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
 	
-	if (UCSClass* FirstManagedClass = FCSGeneratedClassBuilder::GetFirstManagedClass(Class))
+	if (UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
 	{
 		// Fast access to the owning assembly for managed classes.
-		return FirstManagedClass->GetOwningAssembly();
+		return FirstManagedClass->GetTypeInfo()->OwningAssembly;
 	}
 	
-	Class = FCSGeneratedClassBuilder::GetFirstNativeClass(Class);
+	Class = FCSClassUtilities::GetFirstNativeClass(Class);
 	
 	uint32 ClassID = Class->GetUniqueID();
 	TSharedPtr<FCSAssembly>& Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
@@ -487,43 +450,41 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 FGCHandle UCSManager::FindManagedObject(UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindManagedObject);
-	
+
 	if (!IsValid(Object))
 	{
-		return FGCHandle();
+		return FGCHandle::Null();
 	}
-	
+
+	uint32 ObjectID = Object->GetUniqueID();
+	if (TSharedPtr<FGCHandle>* FoundHandle = ManagedObjectHandles.FindByHash(ObjectID, ObjectID))
+	{
+#if WITH_EDITOR
+		// During full hot reload only the managed objects are GCd as we reload the assemblies.
+		// So the C# counterpart can be invalid even if the handle can be found, so we need to create a new one.
+		TSharedPtr<FGCHandle> HandlePtr = *FoundHandle;
+		if (HandlePtr.IsValid() && !HandlePtr->IsNull())
+		{
+			return *HandlePtr;
+		}
+#else
+		return **FoundHandle;
+#endif
+	}
+
+	// No existing handle found, we need to create a new managed object.
 	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(Object->GetClass());
 	if (!OwningAssembly.IsValid())
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *Object->GetName());
-		return FGCHandle();
+		return FGCHandle::Null();
 	}
 	
-	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedObject(Object);
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->CreateManagedObject(Object);
 	if (!FoundHandle.IsValid())
 	{
-		return FGCHandle();
+		return FGCHandle::Null();
 	}
 
 	return *FoundHandle;
-}
-
-void UCSManager::SetCurrentWorldContext(UObject* WorldContext)
-{
-	if (!IsValid(WorldContext))
-	{
-		CurrentWorldContext.Reset();
-		return;
-	}
-
-	UWorld* World = WorldContext->GetWorld();
-
-	if (!IsValid(World))
-	{
-		// Keep the current world context if the new one is invalid.
-		return;
-	}
-	
-	CurrentWorldContext = WorldContext;
 }

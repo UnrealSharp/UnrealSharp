@@ -4,10 +4,11 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params);
 	
-	UCSFunctionBase* Function = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
+	UFunction* Function = Stack.CurrentNativeFunction;
 	FOutParmRec* OutParameters = nullptr;
 	FOutParmRec** LastOut = &OutParameters;
 	uint8* ArgumentBuffer = Stack.Locals;
+	uint8* LocalsCache = Stack.Locals;
 
 	// If we're calling this from BP, we need to copy the parameters to a new buffer
 	if (Stack.Code)
@@ -61,16 +62,15 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			
 			FunctionParameter->CopyCompleteValue(ArgumentData.GetData() + FunctionParameter->GetOffset_ForInternal(), ValueAddress);
 		}
+
+		Stack.Locals = ArgumentBuffer;
 	}
 	else
 	{
 		OutParameters = Stack.OutParms;
 	}
 	
-	if (!InvokeManagedEvent(ObjectToInvokeOn, Stack, Function, ArgumentBuffer, RESULT_PARAM))
-	{
-		return;
-	}
+	InvokeManagedMethod(ObjectToInvokeOn, Stack, RESULT_PARAM);
 	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
@@ -83,12 +83,7 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	{
 		Function->DestroyStruct(ArgumentBuffer);
 	}
-}
 
-bool UCSFunction_Params::IsOutParameter(const FProperty* InParam)
-{
-	const bool bIsParam = InParam->HasAnyPropertyFlags(CPF_Parm);
-	const bool bIsReturnParam = InParam->HasAnyPropertyFlags(CPF_ReturnParm);
-	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
-	return bIsParam && !bIsReturnParam && bIsOutParam;
+	// Restore the local pointer so we are still pointing to the right location
+	Stack.Locals = LocalsCache;
 }

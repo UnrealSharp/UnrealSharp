@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CSManagedMethod.h"
+#include "CSManagedGCHandle.h"
 #include "CSFunction.generated.h"
 
+struct FGCHandle;
 class UCSClass;
 
 UCLASS()
@@ -11,24 +12,21 @@ class UCSFunctionBase : public UFunction
 {
 	GENERATED_BODY()
 public:
-
-	UCSFunctionBase() : MethodHandle(nullptr) {}
-
 	// UFunction interface
 	virtual void Bind() override;
 	// End of UFunction interface
 
 	// Tries to update the method handle to the function pointer in C#.
 	bool TryUpdateMethodHandle();
+	
+	bool IsOwnedByManagedClass() const;
 
-	// Gets the owning managed class of this function.
-	UCSClass* GetOwningManagedClass() const;
+	bool HasValidMethodHandle() const
+	{
+		return MethodHandle.IsValid() && !MethodHandle->IsNull();
+	}
 
-	// Checks if this function is owned by a generated class.
-	bool IsOwnedByGeneratedClass() const;
-
-protected:
-	static bool InvokeManagedEvent(UObject* ObjectToInvokeOn, FFrame& Stack, UCSFunctionBase* Function, uint8* ArgumentBuffer, RESULT_DECL);
+	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
 private:
-	FCSManagedMethod MethodHandle;
+	TSharedPtr<FGCHandle> MethodHandle = nullptr;
 };

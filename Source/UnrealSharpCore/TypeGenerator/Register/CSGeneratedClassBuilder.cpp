@@ -11,10 +11,12 @@
 #include "Engine/Blueprint.h"
 #include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
 #include "TypeGenerator/CSSkeletonClass.h"
+#include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
+#include "Utils/CSClassUtilities.h"
 
 FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly): TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly)
 {
@@ -23,10 +25,10 @@ FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMeta
 
 void FCSGeneratedClassBuilder::RebuildType()
 {
-	if (!Field->GetClassInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSharpClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
-		Field->SetClassInfo(ClassInfo);
+		TSharedPtr<FCSClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
+		Field->SetTypeInfo(ClassInfo);
 	}
 
 	UClass* CurrentSuperClass = Field->GetSuperClass();
@@ -42,6 +44,9 @@ void FCSGeneratedClassBuilder::RebuildType()
 	}
 	
 	Field->SetSuperStruct(CurrentSuperClass);
+
+	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
+	Field->NumReplicatedProperties = 0;
 	
 #if WITH_EDITOR
 	if (FUnrealSharpUtils::IsStandalonePIE())
@@ -141,8 +146,8 @@ FName FCSGeneratedClassBuilder::GetFieldName() const
 
 void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
-	UCSClass* FirstManagedClass = GetFirstManagedClass(ObjectInitializer.GetClass());
-	UClass* FirstNativeClass = GetFirstNativeClass(FirstManagedClass);
+	UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(ObjectInitializer.GetClass());
+	UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(FirstManagedClass);
 	
 	//Execute the native class' constructor first.
 	FirstNativeClass->ClassConstructor(ObjectInitializer);
@@ -152,7 +157,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	{
 		FProperty* Property = *PropertyIt;
 
-		if (Property->GetOwnerClass() == FirstNativeClass)
+		if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
 		{
 			// We don't want to initialize properties that are not from a managed class
 			break;
@@ -166,22 +171,31 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	TSharedPtr<FCSAssembly> OwningAssembly = FirstManagedClass->GetOwningAssembly();
-	OwningAssembly->FindOrCreateManagedObject(ObjectInitializer.GetObj());
+	TSharedPtr<FCSAssembly> OwningAssembly = FirstManagedClass->GetTypeInfo()->OwningAssembly;
+	OwningAssembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 
 void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
 {
 	FTickFunction* TickFunction;
+	FTickFunction* ParentTickFunction;
 	if (AActor* Actor = Cast<AActor>(DefaultObject))
 	{
 		TickFunction = &Actor->PrimaryActorTick;
+		ParentTickFunction = &Class->GetSuperClass()->GetDefaultObject<AActor>()->PrimaryActorTick;
 	}
-	else if (UActorComponent* ActorComponent = Cast<UActorComponent>(DefaultObject))
+	else if (UActorComponent* Component = Cast<UActorComponent>(DefaultObject))
 	{
-		TickFunction = &ActorComponent->PrimaryComponentTick;
+		TickFunction = &Component->PrimaryComponentTick;
+		ParentTickFunction = &Class->GetSuperClass()->GetDefaultObject<UActorComponent>()->PrimaryComponentTick;
 	}
 	else
+	{
+		return;
+	}
+	
+	TickFunction->bCanEverTick = ParentTickFunction->bCanEverTick;
+	if (TickFunction->bCanEverTick)
 	{
 		return;
 	}
@@ -246,66 +260,4 @@ void FCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TShared
 	{
 		ManagedClass->ClassConfigName = TypeMetaData->ClassConfigName;
 	}
-}
-
-bool IsNativeClass(UClass* Class)
-{
-	return Class->GetClass() == UClass::StaticClass();
-}
-
-UCSClass* FCSGeneratedClassBuilder::GetFirstManagedClass(UClass* Class)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstManagedClass);
-	
-	if (IsNativeClass(Class))
-	{
-		return nullptr;
-	}
-	
-	while (Class && !IsManagedType(Class))
-	{
-		Class = Class->GetSuperClass();
-
-		if (IsNativeClass(Class))
-		{
-			// We've already reached a native class, so we can stop searching.
-			return nullptr;
-		}
-	}
-	
-	return (UCSClass*) Class;
-}
-
-UClass* FCSGeneratedClassBuilder::GetFirstNativeClass(UClass* Class)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNativeClass);
-	
-	while (!IsNativeClass(Class))
-	{
-		Class = Class->GetSuperClass();
-	}
-	
-	return Class;
-}
-
-UClass* FCSGeneratedClassBuilder::GetFirstNonBlueprintClass(UClass* Class)
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSGeneratedClassBuilder::GetFirstNonBlueprintClass);
-	
-	while (Class->GetClass() == UBlueprintGeneratedClass::StaticClass())
-	{
-		Class = Class->GetSuperClass();
-	}
-	
-	return Class;
-}
-
-bool FCSGeneratedClassBuilder::IsManagedType(const UClass* Class)
-{
-	return Class->GetClass() == UCSClass::StaticClass();
-}
-
-bool FCSGeneratedClassBuilder::IsSkeletonType(const UClass* Class)
-{
-	return Class->GetClass() == UCSSkeletonClass::StaticClass();
 }

@@ -3,6 +3,7 @@
 #include "CSManager.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 #if WITH_EDITOR
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
@@ -12,10 +13,10 @@ void FCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
 
-	if (!Field->GetStructInfo().IsValid())
+	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSharpStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
-		Field->SetStructInfo(StructInfo);
+		TSharedPtr<FCSStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
+		Field->SetTypeInfo(StructInfo);
 	}
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
@@ -46,13 +47,7 @@ void FCSGeneratedStructBuilder::UpdateType()
 
 void FCSGeneratedStructBuilder::PurgeStruct()
 {
-	Field->PropertyLink = nullptr;
-	Field->DestructorLink = nullptr;
-	Field->ChildProperties = nullptr;
-	Field->Children = nullptr;
-	Field->PropertiesSize = 0;
-	Field->MinAlignment = 0;
-	Field->RefLink = nullptr;
+	FUnrealSharpUtils::PurgeStruct(Field);
 #if WITH_EDITORONLY_DATA
 	Field->PrimaryStruct = nullptr;
 	Field->EditorData = nullptr;

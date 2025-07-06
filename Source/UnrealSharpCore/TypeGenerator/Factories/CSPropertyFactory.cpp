@@ -5,7 +5,7 @@
 #include "UObject/UnrealType.h"
 #include "UObject/Class.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
-#include "TypeGenerator/Register/MetaData/CSDelegateMetaData.h"
+#include "TypeGenerator/Register/MetaData/CSDelegatePropertyMetaData.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 TArray<TObjectPtr<UCSPropertyGenerator>> FCSPropertyFactory::PropertyGenerators;

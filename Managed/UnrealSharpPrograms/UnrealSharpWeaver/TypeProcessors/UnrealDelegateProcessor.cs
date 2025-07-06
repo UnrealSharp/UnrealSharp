@@ -9,9 +9,23 @@ namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class UnrealDelegateProcessor
 {
-    public static string InitializeUnrealDelegate = nameof(InitializeUnrealDelegate);
+    public static readonly string InitializeUnrealDelegate = "InitializeUnrealDelegate";
     
-    public static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions)
+    public static void ProcessDelegates(List<TypeDefinition> delegates, List<TypeDefinition> multicastDelegates, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
+    {
+        int totalDelegateCount = multicastDelegates.Count + delegates.Count;
+        if (totalDelegateCount <= 0)
+        {
+            return;
+        }
+            
+        delegateMetaData.Capacity = totalDelegateCount;
+        
+        ProcessMulticastDelegates(multicastDelegates, delegateMetaData);
+        ProcessSingleDelegates(delegates, assembly, delegateMetaData);
+    }
+    
+    private static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions, List<DelegateMetaData> delegateMetaData)
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
@@ -22,31 +36,36 @@ public static class UnrealDelegateProcessor
                 throw new Exception("Could not find Invoker method in delegate extension type");
             }
             
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            DelegateMetaData newDelegate = new DelegateMetaData(functionMetaData, 
+                type, 
+                "UMulticastDelegate", 
+                EFunctionFlags.MulticastDelegate);
+            
+            delegateMetaData.Add(newDelegate);
+            
             if (invokerMethod.Parameters.Count == 0)
             {
                 continue;
             }
-            
-            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
         }
     }
     
-    public static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly)
+    private static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
     {
+        if (delegateExtensions.Count == 0)
+        {
+            return;
+        }
+        
         TypeReference delegateDataStruct = WeaverImporter.Instance.UnrealSharpAssembly.FindType("DelegateData", WeaverImporter.UnrealSharpNamespace)!;
         TypeReference blittableMarshaller = WeaverImporter.Instance.UnrealSharpCoreAssembly.FindGenericType(WeaverImporter.UnrealSharpCoreMarshallers, "BlittableMarshaller`1", [delegateDataStruct])!;
         
-        MethodReference? blittabletoNativeMethod = blittableMarshaller.Resolve().FindMethod("ToNative");
-        MethodReference? blittablefromNativeMethod = blittableMarshaller.Resolve().FindMethod("FromNative");
-        
-        if (blittabletoNativeMethod == null || blittablefromNativeMethod == null)
-        {
-            throw new Exception("Could not find ToNative or FromNative method in BlittableMarshaller");
-        }
-        
+        MethodReference blittabletoNativeMethod = blittableMarshaller.Resolve().FindMethod("ToNative")!;
+        MethodReference blittablefromNativeMethod = blittableMarshaller.Resolve().FindMethod("FromNative")!;
         blittabletoNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittabletoNativeMethod, [delegateDataStruct]);
         blittablefromNativeMethod = FunctionProcessor.MakeMethodDeclaringTypeGeneric(blittablefromNativeMethod, [delegateDataStruct]);
         
@@ -86,12 +105,16 @@ public static class UnrealDelegateProcessor
                 throw new Exception("Could not find Invoker method in delegate type");
             }
             
+            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
+            DelegateMetaData newDelegate = new DelegateMetaData(functionMetaData, 
+                type, 
+                "USingleDelegate");
+            delegateMetaData.Add(newDelegate);
+            
             if (invokerMethod.Parameters.Count == 0)
             {
                 continue;
             }
-            
-            FunctionMetaData functionMetaData = new FunctionMetaData(invokerMethod.Resolve());
             
             WriteInvokerMethod(type, invokerMethod, functionMetaData);
             ProcessInitialize(type, functionMetaData);
@@ -149,14 +172,24 @@ public static class UnrealDelegateProcessor
         invokerMethodProcessor.Emit(OpCodes.Callvirt, declaredType);
         invokerMethodDefinition.FinalizeMethod();
     }
+
+    public static MethodReference FindOrCreateInitializeDelegate(TypeDefinition delegateType)
+    {
+        MethodReference? initializeDelegate = delegateType.FindMethod(InitializeUnrealDelegate, false);
+        
+        if (initializeDelegate == null)
+        {
+            initializeDelegate = delegateType.AddMethod(InitializeUnrealDelegate, 
+                WeaverImporter.Instance.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static, WeaverImporter.Instance.IntPtrType);
+        }
+        
+        return initializeDelegate.ImportMethod();
+    }
     
     static void ProcessInitialize(TypeDefinition type, FunctionMetaData functionMetaData)
     {
-        MethodDefinition initializeDelegate = type.AddMethod(InitializeUnrealDelegate, 
-            WeaverImporter.Instance.VoidTypeRef, MethodAttributes.Public | MethodAttributes.Static,
-            [WeaverImporter.Instance.IntPtrType]);
-
-        var processor = initializeDelegate.Body.GetILProcessor();
+        MethodDefinition initializeMethod = FindOrCreateInitializeDelegate(type).Resolve();
+        ILProcessor? processor = initializeMethod.Body.GetILProcessor();
         
         processor.Emit(OpCodes.Ldarg_0);
         processor.Emit(OpCodes.Call, WeaverImporter.Instance.GetSignatureFunction);
@@ -167,6 +200,6 @@ public static class UnrealDelegateProcessor
         functionMetaData.EmitFunctionParamSize(processor, loadFunctionPointer);
         functionMetaData.EmitParamNativeProperty(processor, loadFunctionPointer);
         
-        initializeDelegate.FinalizeMethod();
+        initializeMethod.FinalizeMethod();
     }
 }

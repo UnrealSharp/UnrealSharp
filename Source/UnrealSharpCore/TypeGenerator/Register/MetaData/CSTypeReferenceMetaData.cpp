@@ -43,6 +43,12 @@ UClass* FCSTypeReferenceMetaData::GetOwningInterface() const
 	return Assembly->FindInterface(FieldName);
 }
 
+UDelegateFunction* FCSTypeReferenceMetaData::GetOwningDelegate() const
+{
+	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
+	return Assembly->FindDelegate(FieldName);
+}
+
 UPackage* FCSTypeReferenceMetaData::GetOwningPackage() const
 {
 	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();

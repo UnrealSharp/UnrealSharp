@@ -18,16 +18,8 @@ public:
 #endif
 	virtual FName GetFieldName() const override;
 	// End of implementation
-
-	static UCSClass* GetFirstManagedClass(UClass* Class);
-	static UClass* GetFirstNativeClass(UClass* Class);
-	static UClass* GetFirstNonBlueprintClass(UClass* Class);
-
-	static bool IsManagedType(const UClass* Class);
-	static bool IsSkeletonType(const UClass* Class);
 	
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
-	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceMetaData>& Interfaces);
 	static void TryRegisterSubsystem(UClass* ManagedClass);
 	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData);

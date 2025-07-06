@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "CSUnrealType.h"
+#include "CSTypeReferenceMetaData.h"
 #include "CSFunctionMetaData.h"
 
-struct FCSDelegateMetaData : FCSUnrealType
+struct FCSDelegateMetaData : public FCSTypeReferenceMetaData
 {
 	virtual ~FCSDelegateMetaData() = default;
 
@@ -11,6 +11,15 @@ struct FCSDelegateMetaData : FCSUnrealType
 
 	//FTypeMetaData interface implementation
 	virtual void SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject) override;
-	virtual bool IsEqual(TSharedPtr<FCSUnrealType> Other) const override;
 	//End of implementation
+
+	bool operator ==(const FCSDelegateMetaData& Other) const
+	{
+		if (!FCSTypeReferenceMetaData::operator==(Other))
+		{
+			return false;
+		}
+
+		return SignatureFunction == Other.SignatureFunction;
+	}
 };

@@ -18,17 +18,17 @@ enum ETypeState : uint8
 };
 
 template<typename TMetaData, typename TField, typename TTypeBuilder>
-struct UNREALSHARPCORE_API TCSharpTypeInfo
+struct UNREALSHARPCORE_API TCSTypeInfo
 {
-	virtual ~TCSharpTypeInfo() = default;
+	virtual ~TCSTypeInfo() = default;
 
-	TCSharpTypeInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : Field(nullptr), OwningAssembly(InOwningAssembly)
+	TCSTypeInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : Field(nullptr), OwningAssembly(InOwningAssembly)
 	{
 		TypeMetaData = MakeShared<TMetaData>();
 		TypeMetaData->SerializeFromJson(MetaData->AsObject());
 	}
 
-	TCSharpTypeInfo() : Field(nullptr)
+	TCSTypeInfo() : Field(nullptr)
 	{
 		
 	}

@@ -39,10 +39,8 @@ void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* 
 		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object. ClassName: {0}", *FieldName.GetName());
 		return nullptr;
 	}
-
-	UObject* DefaultObject = Class->GetDefaultObject();
-	TSharedPtr<FGCHandle> Handle = Assembly->FindOrCreateManagedObject(DefaultObject);
-	return Handle.IsValid() ? Handle->GetPointer() : nullptr;
+	
+	return UCSManager::Get().FindManagedObject(Class->GetDefaultObject());
 }
 
 void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
@@ -62,5 +60,5 @@ void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
 		CDO = Object->GetClass()->GetDefaultObject();
 	}
 	
-	return UCSManager::Get().FindManagedObject(CDO).GetPointer();
+	return UCSManager::Get().FindManagedObject(CDO);
 }

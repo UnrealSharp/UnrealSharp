@@ -48,6 +48,7 @@ public static class MethodUtilities
     {
         var variable = new VariableDefinition(typeReference);
         method.Body.Variables.Add(variable);
+        method.Body.InitLocals = true;
         return variable;
     }
     
@@ -118,7 +119,6 @@ public static class MethodUtilities
         
         method.Body.Optimize();
         method.Body.SimplifyMacros();
-        method.Body.InitLocals = true;
     }
     
     public static void RemoveReturnInstruction(this MethodDefinition method)

@@ -18,6 +18,7 @@
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
+#include "Utils/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions):
 	FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -27,7 +28,7 @@ FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResults
 
 void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
-	bool bIsSkeletonClass = FCSGeneratedClassBuilder::IsSkeletonType(Class);
+	bool bIsSkeletonClass = FCSClassUtilities::IsSkeletonType(Class);
 	
 	if (!bIsSkeletonClass)
 	{
@@ -78,7 +79,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<FCSharpClassInfo> ClassInfo = GetMainClass()->GetClassInfo();
+	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetTypeInfo();
 	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
@@ -125,7 +126,7 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 	FCSGeneratedClassBuilder::ImplementInterfaces(Class, TypeMetaData->Interfaces);
 }
 
-void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSharpClassInfo>& ClassInfo) const
+void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const
 {
 	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
 	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
@@ -167,7 +168,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 void FCSCompilerContext::GenerateFunctions() const
 {
 	UCSClass* MainClass = GetMainClass();
-	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetClassInfo()->TypeMetaData;
+	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetTypeInfo()->TypeMetaData;
 
 	if (TypeMetaData->VirtualFunctions.IsEmpty() && TypeMetaData->Functions.IsEmpty())
 	{
@@ -183,9 +184,9 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 	return CastChecked<UCSClass>(Blueprint->GeneratedClass);
 }
 
-TSharedPtr<const FCSharpClassInfo> FCSCompilerContext::GetClassInfo() const
+TSharedPtr<const FCSClassInfo> FCSCompilerContext::GetClassInfo() const
 {
-	return GetMainClass()->GetClassInfo();
+	return GetMainClass()->GetTypeInfo();
 }
 
 bool FCSCompilerContext::IsDeveloperSettings() const
@@ -225,7 +226,7 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 
 void FCSCompilerContext::ApplyMetaData()
 {
-	TSharedPtr<const FCSharpClassInfo> ClassInfo = GetClassInfo();
+	TSharedPtr<const FCSClassInfo> ClassInfo = GetClassInfo();
 	TSharedPtr<const FCSClassMetaData> TypeMetaData = ClassInfo->TypeMetaData;
 		
 	static FString DisplayNameKey = TEXT("DisplayName");

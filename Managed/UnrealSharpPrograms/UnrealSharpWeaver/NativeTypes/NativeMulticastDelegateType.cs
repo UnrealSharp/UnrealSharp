@@ -24,14 +24,15 @@ class NativeDataMulticastDelegate : NativeDataBaseDelegateType
     public override void WritePostInitialization(ILProcessor processor, PropertyMetaData propertyMetadata,
         Instruction loadNativePointer, Instruction setNativePointer)
     {
-        if (Signature.Parameters.Length == 0)
+        if (!Signature.HasParameters)
         {
             return;
         }
         
         TypeReference foundType = GetWrapperType(delegateType);
-        MethodReference? initializeDelegateMethod = foundType.Resolve().FindMethod(UnrealDelegateProcessor.InitializeUnrealDelegate);
         processor.Append(loadNativePointer);
+        
+        MethodReference initializeDelegateMethod = UnrealDelegateProcessor.FindOrCreateInitializeDelegate(foundType.Resolve());
         processor.Emit(OpCodes.Call, initializeDelegateMethod);
     }
 
