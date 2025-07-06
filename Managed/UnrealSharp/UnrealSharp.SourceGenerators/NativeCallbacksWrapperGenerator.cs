@@ -95,10 +95,12 @@ public class NativeCallbacksWrapperGenerator : ISourceGenerator
         
                         if (param.IsOutParameter || param.IsRefParameter)
                         {
-                            typeFullName += "*";
+                            sourceBuilder.Append($"IntPtr.Size");
                         }
-        
-                        sourceBuilder.Append($"sizeof({typeFullName})");
+                        else
+                        {
+                            sourceBuilder.Append($"sizeof({typeFullName})");
+                        }
                     }
                     
                     List<DelegateParameterInfo> parameters = delegateInfo.ParametersAndReturnValue;
