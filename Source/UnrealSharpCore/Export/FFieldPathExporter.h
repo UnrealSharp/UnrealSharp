@@ -7,11 +7,9 @@
 #include "UObject/Object.h"
 #include "FFieldPathExporter.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class UNREALSHARPCORE_API UFFieldPathExporter : public UObject {
+class UNREALSHARPCORE_API UFFieldPathExporter : public UObject
+{
 	GENERATED_BODY()
 
 public:

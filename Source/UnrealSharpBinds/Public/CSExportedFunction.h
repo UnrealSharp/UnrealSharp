@@ -5,7 +5,8 @@
  * @tparam T The type we want the size of
  */
 template <typename T>
-struct TArgSize {
+struct TArgSize
+{
 	constexpr static size_t Size = sizeof(T);
 };
 
@@ -14,7 +15,8 @@ struct TArgSize {
  * @tparam T The type we want the size of
  */
 template <typename T>
-struct TArgSize<T&> {
+struct TArgSize<T&>
+{
 	constexpr static size_t Size = sizeof(T*);
 };
 
