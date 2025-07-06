@@ -410,9 +410,7 @@ public abstract class PropertyTranslator
     
     private void AppendInvoke(GeneratorStringBuilder builder, FunctionExporter exportedFunction)
     {
-        builder.BeginUnsafeBlock();
         exportedFunction.ExportInvoke(builder);
-        builder.EndUnsafeBlock();
     }
 
     public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
