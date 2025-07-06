@@ -143,8 +143,10 @@ public class UnrealSharpCore : ModuleRules
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");
 		
 		process.StartInfo.ArgumentList.Add($"-p:PublishDir=\"{_managedBinariesPath}\"");
-		
-		process.Start();
+
+        Console.WriteLine($"Start publish solution: {projectRootDirectory}");
+
+        process.Start();
 		process.WaitForExit();
 		
 		if (process.ExitCode != 0)
