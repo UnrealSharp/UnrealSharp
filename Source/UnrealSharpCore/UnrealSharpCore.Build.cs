@@ -133,8 +133,10 @@ public class UnrealSharpCore : ModuleRules
 		{
 			throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
 		}
-		
-		string dotnetPath = FindDotNetExecutable();
+
+        Console.WriteLine($"Start publish solution: {projectRootDirectory}");
+
+        string dotnetPath = FindDotNetExecutable();
 		
 		Process process = new Process();
 		process.StartInfo.FileName = dotnetPath;

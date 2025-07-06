@@ -111,7 +111,7 @@ public static class CSharpExporter
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
         
-        if (!File.Exists(timestampFilePath))
+        if (!File.Exists(timestampFilePath) || !Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
         {
             return true;
         }
