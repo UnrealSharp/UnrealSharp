@@ -191,4 +191,14 @@ public static class UnmanagedCallbacks
         Assembly? foundAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Assembly>(assemblyHandle);
         GCHandleUtilities.Free(foundHandle, foundAssembly);
     }
+
+    [UnmanagedCallersOnly]
+    public static void FreeHandle(IntPtr handle)
+    {
+        GCHandle foundHandle = GCHandle.FromIntPtr(handle);
+        if (foundHandle.IsAllocated)
+        {
+            foundHandle.Free();
+        }
+    }
 }

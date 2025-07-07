@@ -53,6 +53,7 @@ public class WeaverImporter
     public TypeReference Int32TypeRef = null!;
     public TypeReference VoidTypeRef = null!;
     public TypeReference ByteTypeRef = null!;
+    public TypeReference ManagedObjectHandle = null!;
     public MethodReference GetNativeClassFromNameMethod = null!;
     public MethodReference GetNativeStructFromNameMethod = null!;
     public MethodReference GetPropertyOffsetFromNameMethod = null!;
@@ -143,6 +144,8 @@ public class WeaverImporter
         GeneratedTypeCtor = generatedType.FindMethod(".ctor")!;
         
         ScriptInterfaceMarshaller = UnrealSharpAssembly.FindType("ScriptInterfaceMarshaller`1", CoreUObjectNamespace)!.Resolve();
+        
+        ManagedObjectHandle = UnrealSharpAssembly.FindType("FSharedGCHandle", "UnrealSharp.UnrealSharpCore")!.Resolve();
     }
 
     private static MethodReference FindBindingsStaticMethod(string findNamespace, string findClass, string findMethod)
