@@ -94,6 +94,26 @@ public static class TypeDefinitionUtilities
         return type.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpCoreAttributesNamespace, BlittableTypeAttribute);
     }
     
+    public static bool IsUnmanagedType(this TypeReference typeRef)
+    {
+        var typeDef = typeRef.Resolve();
+    
+        // Must be a value type
+        if (!typeDef.IsValueType)
+            return false;
+
+        // Primitive types and enums are unmanaged
+        if (typeDef.IsPrimitive || typeDef.IsEnum)
+            return true;
+
+        // For structs, recursively check all fields
+        return typeDef.Fields
+            .Where(f => !f.IsStatic)
+            .Select(f => f.FieldType.Resolve())
+            .All(IsUnmanagedType);
+    }
+
+    
     public static CustomAttribute? GetUInterface(this TypeDefinition type)
     {
         return type.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, UInterfaceAttribute);
@@ -519,7 +539,7 @@ public static class TypeDefinitionUtilities
                 
                 if (structAttribute == null)
                 {
-                    return new NativeDataManagedObjectType(typeRef, arrayDim);
+                    return typeDef.IsUnmanagedType() ? new NativeDataUnmanagedType(typeDef, arrayDim) : new NativeDataManagedObjectType(typeRef, arrayDim);
                 }
                 
                 return typeDef.GetBlittableType() != null ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, typeDef.GetMarshallerClassName(), arrayDim);

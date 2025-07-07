@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
 #include "CSManagedGCHandle.h"
+#include "CSUnmanagedDataStore.h"
 #include "UObject/Object.h"
 #include "ManagedHandleExporter.generated.h"
 
@@ -21,4 +22,10 @@ public:
 
     UNREALSHARP_FUNCTION()
     static FGCHandleIntPtr LoadManagedHandle(const FSharedGCHandle& Source);
+
+    UNREALSHARP_FUNCTION()
+    static void StoreUnmanagedMemory(const void* Source, FUnmanagedDataStore& Destination, const int32 Size);
+
+    UNREALSHARP_FUNCTION()
+    static void LoadUnmanagedMemory(const FUnmanagedDataStore& Source, void* Destination, const int32 Size);
 };
