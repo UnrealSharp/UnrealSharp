@@ -9,6 +9,7 @@ public static class PropertyTranslatorManager
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
     public static readonly List<string> BlittableTypes = new();
     public static readonly List<string> NativelyCopyableTypes = new();
+    public static readonly List<string> NativelyDestructibleTypes = new();
     
     static PropertyTranslatorManager()
     {
@@ -18,6 +19,11 @@ public static class PropertyTranslatorManager
         NativelyCopyableTypes.Add("FMoverDataCollection");
         NativelyCopyableTypes.Add("FPaintContext");
         NativelyCopyableTypes.Add("FGeometry");
+        
+        NativelyDestructibleTypes.Add("FGameplayEffectSpecHandle");
+        NativelyDestructibleTypes.Add("FGameplayTagChangedEventWrapperSpecHandle");
+        NativelyDestructibleTypes.Add("FGameplayTargetDataFilterHandle");
+        NativelyDestructibleTypes.Add("FGameplayAbilitySpec");
         
         EnumPropertyTranslator enumPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);

@@ -25,4 +25,9 @@ public static class StructUtilities
     {
         return PropertyTranslatorManager.NativelyCopyableTypes.Contains(structObj.SourceName);
     }
+    
+    public static bool IsStructNativelyDestructible(this UhtStruct structObj)
+    {
+        return PropertyTranslatorManager.NativelyDestructibleTypes.Contains(structObj.SourceName);
+    }
 }

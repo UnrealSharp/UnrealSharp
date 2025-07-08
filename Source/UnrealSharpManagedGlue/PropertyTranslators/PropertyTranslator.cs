@@ -413,7 +413,7 @@ public abstract class PropertyTranslator
         exportedFunction.ExportInvoke(builder);
     }
 
-    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
+    public void ExportMirrorProperty(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
     {
         string propertyScriptName = property.GetPropertyName();
         
@@ -428,7 +428,74 @@ public abstract class PropertyTranslator
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
         builder.AppendTooltip(property);
-        builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        if (structObj.IsStructNativelyCopyable())
+        {
+            
+            builder.AppendLine($"{protection}{managedType} {propertyScriptName}");
+            builder.OpenBrace();
+            builder.AppendLine("get");
+            builder.OpenBrace();
+            builder.AppendLine("unsafe");
+            builder.OpenBrace();
+            builder.AppendLine("if (Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.CloseBrace();
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+            ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);
+            builder.CloseBrace();
+            builder.CloseBrace();
+            builder.CloseBrace();
+            
+            builder.AppendLine("set");
+            builder.OpenBrace();
+            builder.AppendLine("unsafe");
+            builder.AppendLine("if (Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.CloseBrace();
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value");
+            builder.CloseBrace();
+            builder.CloseBrace();
+            builder.CloseBrace();
+            builder.CloseBrace();
+        }
+        else if (structObj.IsStructNativelyDestructible())
+        {
+            builder.AppendLine($"{protection}{managedType} {propertyScriptName}");
+            builder.OpenBrace();
+            builder.AppendLine("get");
+            builder.OpenBrace();
+            builder.AppendLine("unsafe");
+            builder.OpenBrace();
+            builder.AppendLine("if (NativeHandle is null)");
+            builder.OpenBrace();
+            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+            builder.CloseBrace();
+            ExportFromNative(builder, property, property.SourceName, "return", "NativeHandle.NativeStructPtr", $"{property.SourceName}_Offset", false, false);
+            builder.CloseBrace();
+            builder.CloseBrace();
+            
+            builder.AppendLine("set");
+            builder.OpenBrace();
+            builder.AppendLine("unsafe");
+            builder.OpenBrace();
+            builder.AppendLine("if (NativeHandle is null)");
+            builder.OpenBrace();
+            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+            builder.CloseBrace();
+            ExportToNative(builder, property, property.SourceName, "NativeHandle.NativeStructPtr", $"{property.SourceName}_Offset", "value");
+            builder.CloseBrace();
+            builder.CloseBrace();
+            builder.CloseBrace();
+        }
+        else
+        {
+            builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        }
         builder.AppendLine();
     }
     

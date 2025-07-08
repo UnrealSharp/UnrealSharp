@@ -6,7 +6,20 @@ namespace UnrealSharp;
 
 public class NativeStructHandle(IntPtr nativeScriptStruct) : SafeHandle(IntPtr.Zero, true)
 {
-    public IntPtr NativeStructPtr { get; private set; } = UScriptStructExporter.CallAllocateNativeStruct(nativeScriptStruct);
+    private IntPtr _nativeStructPtr = UScriptStructExporter.CallAllocateNativeStruct(nativeScriptStruct);
+
+    public IntPtr NativeStructPtr
+    {
+        get
+        {
+            if (_nativeStructPtr == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Native struct handle is invalid");
+            }
+            
+            return _nativeStructPtr;
+        }
+    }
 
     public override bool IsInvalid => NativeStructPtr == IntPtr.Zero;
 
@@ -15,7 +28,7 @@ public class NativeStructHandle(IntPtr nativeScriptStruct) : SafeHandle(IntPtr.Z
         if (NativeStructPtr == IntPtr.Zero) return true;
         
         UScriptStructExporter.CallDeallocateNativeStruct(nativeScriptStruct, NativeStructPtr);
-        NativeStructPtr = IntPtr.Zero;
+        _nativeStructPtr = IntPtr.Zero;
 
         return true;
     }
