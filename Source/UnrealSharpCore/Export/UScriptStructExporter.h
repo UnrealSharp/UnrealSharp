@@ -12,9 +12,15 @@ public:
 	UNREALSHARP_FUNCTION()
 	static int GetNativeStructSize(const UScriptStruct* ScriptStruct);
 
+    UNREALSHARP_FUNCTION()
+    static void* AllocateNativeStruct(const UScriptStruct* ScriptStruct);
+
 	UNREALSHARP_FUNCTION()
 	static bool NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest);
 	
 	UNREALSHARP_FUNCTION()
 	static bool NativeDestroy(const UScriptStruct* ScriptStruct, void* Struct);
+
+    UNREALSHARP_FUNCTION()
+    static void DeallocateNativeStruct(const UScriptStruct* ScriptStruct, void* Struct);
 };

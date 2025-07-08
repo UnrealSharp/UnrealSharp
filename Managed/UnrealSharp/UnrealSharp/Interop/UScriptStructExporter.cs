@@ -6,8 +6,12 @@ namespace UnrealSharp.Interop;
 public static unsafe partial class UScriptStructExporter
 {
     public static delegate* unmanaged<IntPtr, int> GetNativeStructSize;
+    
+    public static delegate* unmanaged<IntPtr, IntPtr> AllocateNativeStruct;
 
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, bool> NativeCopy;
     
     public static delegate* unmanaged<IntPtr, IntPtr, bool> NativeDestroy;
+    
+    public static delegate* unmanaged<IntPtr, IntPtr, void> DeallocateNativeStruct;
 }
