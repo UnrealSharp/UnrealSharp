@@ -62,11 +62,15 @@ public static class StructExporter
 
         if (isCopyable)
         {
-            stringBuilder.AppendLine("private byte[] Allocation;");
-        }
-        else if (isDestructible)
-        {
-            stringBuilder.AppendLine("private NativeStructHandle NativeHandle;");
+            if (isDestructible)
+            {
+                stringBuilder.AppendLine("private NativeStructHandle NativeHandle;");
+                stringBuilder.AppendLine("private byte[] Allocation => NativeHandle?.NativeStructPtr;");
+            }
+            else
+            {
+                stringBuilder.AppendLine("private byte[] Allocation;");
+            }
         }
         
         // For manual exports we just want to generate attributes
@@ -175,19 +179,16 @@ public static class StructExporter
 
         if (structObj.IsStructNativelyCopyable())
         {
-            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.AppendLine(structObj.IsStructNativelyDestructible()
+                ? "NativeHandle = new NativeStructHandle(NativeClassPtr);"
+                : "Allocation = new byte[NativeDataSize];");
+
             builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
             builder.OpenBrace();
             builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, InNativeStruct, (nint) AllocationPointer);");
             builder.CloseBrace();
         }
-        else if (structObj.IsStructNativelyDestructible())
-        {
-            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
-            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, InNativeStruct, (nint) NativeHandle.NativeStructPtr);");
-        }
-
-        if (!structObj.IsStructNativelyCopyable() && !structObj.IsStructNativelyDestructible())
+        else
         {
             foreach (UhtProperty property in properties)
             {
@@ -216,23 +217,16 @@ public static class StructExporter
         {
             builder.AppendLine("if (Allocation is null)");
             builder.OpenBrace();
-            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+            builder.AppendLine(structObj.IsStructNativelyDestructible()
+                ? "NativeHandle = new NativeStructHandle(NativeClassPtr);"
+                : "Allocation = new byte[NativeDataSize];");
             builder.CloseBrace();
             builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
             builder.OpenBrace();
             builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, (nint) AllocationPointer, buffer);");
             builder.CloseBrace();
         }
-        else if (structObj.IsStructNativelyDestructible())
-        {
-            builder.AppendLine("if (NativeHandle is null)");
-            builder.OpenBrace();
-            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
-            builder.CloseBrace();
-            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, (nint) NativeHandle.NativeStructPtr, buffer);");
-        }
-
-        if (!structObj.IsStructNativelyCopyable() && !structObj.IsStructNativelyDestructible())
+        else
         {
             foreach (UhtProperty property in properties)
             {

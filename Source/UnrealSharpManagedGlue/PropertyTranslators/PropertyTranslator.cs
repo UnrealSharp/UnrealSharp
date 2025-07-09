@@ -435,60 +435,12 @@ public abstract class PropertyTranslator
             builder.OpenBrace();
             builder.AppendLine("get");
             builder.OpenBrace();
-            builder.AppendLine("unsafe");
-            builder.OpenBrace();
-            builder.AppendLine("if (Allocation is null)");
-            builder.OpenBrace();
-            builder.AppendLine("Allocation = new byte[NativeDataSize];");
-            builder.CloseBrace();
-            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
-            builder.OpenBrace();
-            ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);
-            builder.CloseBrace();
-            builder.CloseBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, true);
             builder.CloseBrace();
             
             builder.AppendLine("set");
             builder.OpenBrace();
-            builder.AppendLine("unsafe");
-            builder.AppendLine("if (Allocation is null)");
-            builder.OpenBrace();
-            builder.AppendLine("Allocation = new byte[NativeDataSize];");
-            builder.CloseBrace();
-            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
-            builder.OpenBrace();
-            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value");
-            builder.CloseBrace();
-            builder.CloseBrace();
-            builder.CloseBrace();
-            builder.CloseBrace();
-        }
-        else if (structObj.IsStructNativelyDestructible())
-        {
-            builder.AppendLine($"{protection}{managedType} {propertyScriptName}");
-            builder.OpenBrace();
-            builder.AppendLine("get");
-            builder.OpenBrace();
-            builder.AppendLine("unsafe");
-            builder.OpenBrace();
-            builder.AppendLine("if (NativeHandle is null)");
-            builder.OpenBrace();
-            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
-            builder.CloseBrace();
-            ExportFromNative(builder, property, property.SourceName, "return", "NativeHandle.NativeStructPtr", $"{property.SourceName}_Offset", false, false);
-            builder.CloseBrace();
-            builder.CloseBrace();
-            
-            builder.AppendLine("set");
-            builder.OpenBrace();
-            builder.AppendLine("unsafe");
-            builder.OpenBrace();
-            builder.AppendLine("if (NativeHandle is null)");
-            builder.OpenBrace();
-            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
-            builder.CloseBrace();
-            ExportToNative(builder, property, property.SourceName, "NativeHandle.NativeStructPtr", $"{property.SourceName}_Offset", "value");
-            builder.CloseBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, false);
             builder.CloseBrace();
             builder.CloseBrace();
         }
@@ -498,7 +450,31 @@ public abstract class PropertyTranslator
         }
         builder.AppendLine();
     }
-    
+
+    private void GenerateMirrorPropertyBody(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool isGetter)
+    {
+        builder.BeginUnsafeBlock();
+        builder.AppendLine("if (Allocation is null)");
+        builder.OpenBrace();
+        builder.AppendLine(structObj.IsStructNativelyDestructible()
+            ? "NativeHandle = new NativeStructHandle(NativeClassPtr);"
+            : "Allocation = new byte[NativeDataSize];");
+
+        builder.CloseBrace();
+        builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+        builder.OpenBrace();
+        if (isGetter)
+        {
+            ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);
+        }
+        else
+        {
+            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value");
+        }
+        builder.CloseBrace();
+        builder.CloseBrace();
+    }
+
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {
         string metaDataKey = $"CPP_Default_{parameter.SourceName}";

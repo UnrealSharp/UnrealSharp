@@ -4,15 +4,29 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-public class NativeStructHandle(IntPtr nativeScriptStruct) : SafeHandle(IntPtr.Zero, true)
+public class NativeStructHandle : SafeHandle
 {
-    private IntPtr _nativeStructPtr = UScriptStructExporter.CallAllocateNativeStruct(nativeScriptStruct);
+    private byte[]? _nativeStructPtr;
+    private readonly IntPtr _nativeScriptStruct;
 
-    public IntPtr NativeStructPtr
+    public NativeStructHandle(IntPtr nativeScriptStruct) : base(IntPtr.Zero, true)
+    {
+        unsafe
+        {
+            _nativeStructPtr = new byte[UScriptStructExporter.CallGetNativeStructSize(nativeScriptStruct)];
+            _nativeScriptStruct = nativeScriptStruct;
+            fixed (byte* structPtr = _nativeStructPtr)
+            {
+                UStructExporter.CallInitializeStruct(nativeScriptStruct, (IntPtr) structPtr);
+            }
+        }
+    }
+
+    public byte[] NativeStructPtr
     {
         get
         {
-            if (_nativeStructPtr == IntPtr.Zero)
+            if (_nativeStructPtr is null)
             {
                 throw new InvalidOperationException("Native struct handle is invalid");
             }
@@ -21,15 +35,21 @@ public class NativeStructHandle(IntPtr nativeScriptStruct) : SafeHandle(IntPtr.Z
         }
     }
 
-    public override bool IsInvalid => NativeStructPtr == IntPtr.Zero;
+    public override bool IsInvalid => _nativeStructPtr is null;
 
     protected override bool ReleaseHandle()
     {
-        if (NativeStructPtr == IntPtr.Zero) return true;
+        unsafe
+        {
+            if (_nativeStructPtr is null) return true;
         
-        UScriptStructExporter.CallDeallocateNativeStruct(nativeScriptStruct, NativeStructPtr);
-        _nativeStructPtr = IntPtr.Zero;
+            fixed (byte* structPtr = _nativeStructPtr)
+            {
+                UScriptStructExporter.CallNativeDestroy(_nativeScriptStruct, (IntPtr) structPtr);
+            }
+            _nativeStructPtr = null;
 
-        return true;
+            return true;
+        }
     }
 }
