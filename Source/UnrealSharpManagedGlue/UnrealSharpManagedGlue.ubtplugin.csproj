@@ -5,6 +5,7 @@
     
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -18,11 +19,23 @@
         <Configurations>Debug;Release;Development</Configurations>
         <DebugType>pdbonly</DebugType>
         <Nullable>enable</Nullable>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND '$(PackAsTool)' != 'true'">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     </PropertyGroup>
     
     <ItemGroup>
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetDependencyTargetPaths">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGCppAst)\lib\net8.0\CppAst.dll" IncludeRuntimeDependency="true" />
+        </ItemGroup>
+    </Target>
+    
     <ItemGroup>
         <Reference Include="EpicGames.Build">
             <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\EpicGames.Build.dll</HintPath>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using EpicGames.Core;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.Model;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -28,6 +30,7 @@ public static class CSharpExporter
     private static readonly List<string> ExportedDelegates = new();
     private static readonly Dictionary<string, DateTime> CachedDirectoryTimes = new();
     private static Dictionary<string, ModuleFolders?> _modulesWriteInfo = new();
+    private static readonly HashSet<string> PluginDirs = [];
     
     public static void StartExport()
     {
@@ -245,7 +248,7 @@ public static class CSharpExporter
             return;
         }
         
-        bool isManualExport = PropertyTranslatorManager.BlittableTypes.Contains(type.SourceName);
+        bool isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(type.SourceName);
         
         if (type is UhtClass classObj)
         {

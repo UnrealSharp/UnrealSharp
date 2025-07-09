@@ -1,29 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.Model;
 
 namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    public static readonly List<string> BlittableTypes = new();
-    public static readonly List<string> NativelyCopyableTypes = new();
-    public static readonly List<string> NativelyDestructibleTypes = new();
+    
+    public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
     static PropertyTranslatorManager()
     {
-        BlittableTypes.Add("EStreamingSourcePriority");
-        BlittableTypes.Add("ETriggerEvent");
+        var projectDirectory = Program.Factory.Session.ProjectDirectory;
+        var configDirectory = Path.Combine(projectDirectory!, "Config", "UnrealSharpTypes.json");
         
-        NativelyCopyableTypes.Add("FMoverDataCollection");
-        NativelyCopyableTypes.Add("FPaintContext");
-        NativelyCopyableTypes.Add("FGeometry");
+        var pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
+        var pluginDirInfo = new DirectoryInfo(pluginDirectory);
         
-        NativelyDestructibleTypes.Add("FGameplayEffectSpecHandle");
-        NativelyDestructibleTypes.Add("FGameplayTagChangedEventWrapperSpecHandle");
-        NativelyDestructibleTypes.Add("FGameplayTargetDataFilterHandle");
-        NativelyDestructibleTypes.Add("FGameplayAbilitySpec");
+        foreach (var pluginFile in pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+                     .Select(x => x.DirectoryName!)
+                     .Select(x => Path.Combine(x, "Config", "UnrealSharpTypes.json"))
+                     .Concat([configDirectory])
+                     .Where(File.Exists))
+        {
+            using var fileStream = File.OpenRead(pluginFile);
+            var manifest = JsonSerializer.Deserialize<TypeTranslationManifest>(fileStream);
+            AddTranslationManifest(manifest!);
+        }
         
         EnumPropertyTranslator enumPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
@@ -81,28 +89,17 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtFieldPathProperty), new FieldPathPropertyTranslator());
-        
-        AddBlittableCustomStructPropertyTranslator("FVector", "UnrealSharp.CoreUObject.FVector");
-        AddBlittableCustomStructPropertyTranslator("FVector2D", "UnrealSharp.CoreUObject.FVector2D");
-        AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize", "UnrealSharp.CoreUObject.FVector");
-        AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize10", "UnrealSharp.CoreUObject.FVector");
-        AddBlittableCustomStructPropertyTranslator("FVector_NetQuantize100", "UnrealSharp.CoreUObject.FVector");
-        AddBlittableCustomStructPropertyTranslator("FVector_NetQuantizeNormal", "UnrealSharp.CoreUObject.FVector");
-        
-        AddBlittableCustomStructPropertyTranslator("FVector2f", "UnrealSharp.CoreUObject.FVector2f");
-        AddBlittableCustomStructPropertyTranslator("FVector3f", "UnrealSharp.CoreUObject.FVector3f");
-        AddBlittableCustomStructPropertyTranslator("FVector4f", "UnrealSharp.CoreUObject.FVector4f");
-        
-        AddBlittableCustomStructPropertyTranslator("FQuatf4", "UnrealSharp.CoreUObject.FVector4f");
-        AddBlittableCustomStructPropertyTranslator("FRotator", "UnrealSharp.CoreUObject.FRotator");
-        
-        AddBlittableCustomStructPropertyTranslator("FMatrix44f", "UnrealSharp.CoreUObject.FMatrix44f");
-        AddBlittableCustomStructPropertyTranslator("FTransform", "UnrealSharp.CoreUObject.FTransform");
-        
-        AddBlittableCustomStructPropertyTranslator("FTimerHandle", "UnrealSharp.Engine.FTimerHandle");
-        AddBlittableCustomStructPropertyTranslator("FInputActionValue", "UnrealSharp.EnhancedInput.FInputActionValue");
-        AddBlittableCustomStructPropertyTranslator("FRandomStream", "UnrealSharp.CoreUObject.FRandomStream");
-        
+
+        foreach (var (nativeName, managedType) in SpecialTypeInfo.Structs.BlittableTypes.Values)
+        {
+            if (managedType is null)
+            {
+                continue;
+            }
+
+            AddBlittableCustomStructPropertyTranslator(nativeName, managedType);
+        }
+
         AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
         AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSetProperty), new SetPropertyTranslator());
@@ -115,6 +112,36 @@ public static class PropertyTranslatorManager
         // Manually exported properties
         InclusionLists.BanProperty("UWorld", "GameState");
         InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
+    }
+
+    public static void AddTranslationManifest(TypeTranslationManifest manifest)
+    {
+        foreach (var structInfo in manifest.Structs.BlittableTypes)
+        {
+            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
+            {
+                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+            }
+            
+            if (!SpecialTypeInfo.Structs.BlittableTypes.TryAdd(structInfo.Name, structInfo))
+            {
+                throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+            }
+        }
+
+        foreach (var structInfo in manifest.Structs.NativelyTranslatableTypes)
+        {
+            if (SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structInfo.Name))
+            {
+                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+            }
+
+            if (!SpecialTypeInfo.Structs.NativelyCopyableTypes.TryAdd(structInfo.Name, structInfo))
+            {
+                throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+            }
+
+        }
     }
     
     public static PropertyTranslator? GetTranslator(UhtProperty property)
@@ -160,6 +187,5 @@ public static class PropertyTranslatorManager
     private static void AddBlittableCustomStructPropertyTranslator(string nativeName, string managedType)
     {
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
-        BlittableTypes.Add(nativeName);
     }
 }
