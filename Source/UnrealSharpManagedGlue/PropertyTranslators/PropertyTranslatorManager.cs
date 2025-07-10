@@ -130,13 +130,8 @@ public static class PropertyTranslatorManager
         {
             if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
             {
-                if (structInfo.ManagedType is null)
-                {
-                    throw new InvalidOperationException(
-                        $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
-                }
-
-                continue;
+                throw new InvalidOperationException(
+                    $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
             }
             
             if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out var existing))
@@ -161,15 +156,10 @@ public static class PropertyTranslatorManager
                 continue;
             }
             
-            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out var blittableStructInfo))
+            if (SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structInfo.Name))
             {
-                if (blittableStructInfo.ManagedType is null)
-                {
-                    throw new InvalidOperationException(
-                        $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
-                }
-
-                continue;
+                throw new InvalidOperationException(
+                    $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
             }
 
             SpecialTypeInfo.Structs.NativelyCopyableTypes.Add(structInfo.Name, structInfo);
