@@ -24,6 +24,7 @@ class ModuleFolders
 public static class CSharpExporter
 {
     const string ModuleDataFileName = "UnrealSharpModuleData.json";
+    private const string SpecialtypesJson = "SpecialTypes.json";
     public static bool HasModifiedEngineGlue;
     
     private static readonly List<Task> Tasks = new();
@@ -74,6 +75,10 @@ public static class CSharpExporter
         WaitForTasks();
         
         SerializeModuleData();
+        
+        string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
+        OutputTypeRules(typeInfoFilePath);
     }
     
     static void DeserializeModuleData()
@@ -113,14 +118,38 @@ public static class CSharpExporter
         
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
         
-        if (!File.Exists(timestampFilePath) || !Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        {
+            return true;
+        }
+
+        if (TypeRulesChanged(typeInfoFilePath))
         {
             return true;
         }
         
         DateTime savedTimestampUtc = File.GetLastWriteTimeUtc(timestampFilePath);
         return executingAssemblyLastWriteTime > savedTimestampUtc;
+    }
+
+    static bool TypeRulesChanged(string typeInfoFilePath)
+    {
+        using var fs = new FileStream(typeInfoFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var rules = JsonSerializer.Deserialize<SpecialTypeInfo>(fs);
+        if (rules == null)
+        {
+            return true;
+        }
+        
+        return !rules.Equals(PropertyTranslatorManager.SpecialTypeInfo);
+    }
+
+    static void OutputTypeRules(string typeInfoFilePath)
+    {
+        using var fs = new FileStream(typeInfoFilePath, FileMode.Create, FileAccess.Write);
+        JsonSerializer.Serialize(fs, PropertyTranslatorManager.SpecialTypeInfo);
     }
 
     private static void WaitForTasks()
