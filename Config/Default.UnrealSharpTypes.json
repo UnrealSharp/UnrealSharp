@@ -84,6 +84,14 @@
             {
                 "Name": "FGeometry",
                 "HasDestructor": false
+            },
+            {
+                "Name": "FGameplayEffectSpec",
+                "HasDestructor": true
+            },
+            {
+                "Name": "FGameplayEffectSpecHandle",
+                "HasDestructor": true
             }
         ]
     }

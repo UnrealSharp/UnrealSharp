@@ -57,7 +57,15 @@ public static class StructExporter
         stringBuilder.AppendLine(attributeBuilder.ToString());
 
         string structName = structObj.GetStructName();
-        stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: isBlittable || !isManualExport ? new List<string>{$"MarshalledStruct<{structName}>"} : null);
+        List<string>? csInterfaces = null;
+        if (isBlittable || !isManualExport) {
+            csInterfaces = [$"MarshalledStruct<{structName}>"];
+            
+            if (isDestructible) {
+                csInterfaces.Add("IDisposable");
+            }
+        }
+        stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: csInterfaces);
 
         if (isCopyable)
         {
@@ -105,6 +113,15 @@ public static class StructExporter
             
             stringBuilder.AppendLine();
             ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
+            
+            if (isDestructible) 
+            {
+                stringBuilder.AppendLine();
+                stringBuilder.AppendLine("public void Dispose()");
+                stringBuilder.OpenBrace();
+                stringBuilder.AppendLine("NativeHandle?.Dispose();");
+                stringBuilder.CloseBrace();
+            }
         }
         
         stringBuilder.CloseBrace();
