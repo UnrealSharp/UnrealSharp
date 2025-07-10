@@ -10,13 +10,6 @@ int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruc
 	return ScriptStruct->GetStructureSize();
 }
 
-void* UUScriptStructExporter::AllocateNativeStruct(const UScriptStruct* ScriptStruct)
-{
-    void* Struct = FMemory::Malloc(GetNativeStructSize(ScriptStruct));
-    ScriptStruct->InitializeStruct(Struct);
-    return Struct;
-}
-
 bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest)
 {
 	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
@@ -47,11 +40,5 @@ bool UUScriptStructExporter::NativeDestroy(const UScriptStruct* ScriptStruct, vo
 	}
 	
 	return false;
-}
-
-void UUScriptStructExporter::DeallocateNativeStruct(const UScriptStruct* ScriptStruct, void* Struct)
-{
-    verify(NativeDestroy(ScriptStruct, Struct));
-    FMemory::Free(Struct);
 }
 
