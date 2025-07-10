@@ -17,20 +17,30 @@ public static class PropertyTranslatorManager
     static PropertyTranslatorManager()
     {
         var projectDirectory = Program.Factory.Session.ProjectDirectory;
-        var configDirectory = Path.Combine(projectDirectory!, "Config", "UnrealSharpTypes.json");
+        var configDirectory = Path.Combine(projectDirectory!, "Config");
         
         var pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
         var pluginDirInfo = new DirectoryInfo(pluginDirectory);
-        
-        foreach (var pluginFile in pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
-                     .Select(x => x.DirectoryName!)
-                     .Select(x => Path.Combine(x, "Config", "UnrealSharpTypes.json"))
-                     .Concat([configDirectory])
-                     .Where(File.Exists))
+
+        var files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+            .Select(x => x.DirectoryName!)
+            .Select(x => Path.Combine(x, "Config"))
+            .Concat([configDirectory])
+            .Select(x => new DirectoryInfo(x))
+            .SelectMany(x => x.GetFiles("*.UnrealSharpTypes.json", SearchOption.AllDirectories))
+            .Select(x => x.FullName);
+        foreach (var pluginFile in files)
         {
             using var fileStream = File.OpenRead(pluginFile);
-            var manifest = JsonSerializer.Deserialize<TypeTranslationManifest>(fileStream);
-            AddTranslationManifest(manifest!);
+            try
+            {
+                var manifest = JsonSerializer.Deserialize<TypeTranslationManifest>(fileStream);
+                AddTranslationManifest(manifest!);
+            }
+            catch (JsonException e)
+            {
+                Console.WriteLine($"Error reading {pluginFile}: {e.Message}");
+            }
         }
         
         EnumPropertyTranslator enumPropertyTranslator = new();
@@ -120,27 +130,49 @@ public static class PropertyTranslatorManager
         {
             if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
             {
-                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                if (structInfo.ManagedType is null)
+                {
+                    throw new InvalidOperationException(
+                        $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                }
+
+                continue;
             }
             
-            if (!SpecialTypeInfo.Structs.BlittableTypes.TryAdd(structInfo.Name, structInfo))
+            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out var existing))
             {
-                throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+                if (structInfo.ManagedType is not null && existing.ManagedType is not null &&
+                    structInfo.ManagedType != existing.ManagedType)
+                {
+                    throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+                }
+            }
+            else
+            {
+                SpecialTypeInfo.Structs.BlittableTypes.Add(structInfo.Name, structInfo);
             }
         }
 
         foreach (var structInfo in manifest.Structs.NativelyTranslatableTypes)
         {
-            if (SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structInfo.Name))
+            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structInfo.Name, out var existing))
             {
-                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                SpecialTypeInfo.Structs.NativelyCopyableTypes[structInfo.Name] = existing with { HasDestructor = existing.HasDestructor || structInfo.HasDestructor };
+                continue;
+            }
+            
+            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out var blittableStructInfo))
+            {
+                if (blittableStructInfo.ManagedType is null)
+                {
+                    throw new InvalidOperationException(
+                        $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                }
+
+                continue;
             }
 
-            if (!SpecialTypeInfo.Structs.NativelyCopyableTypes.TryAdd(structInfo.Name, structInfo))
-            {
-                throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
-            }
-
+            SpecialTypeInfo.Structs.NativelyCopyableTypes.Add(structInfo.Name, structInfo);
         }
     }
     

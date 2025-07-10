@@ -282,6 +282,7 @@ public static class CSharpExporter
         }
         else if (type is UhtScriptStruct structObj)
         {
+            isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
         else if (type.EngineType == UhtEngineType.Delegate)

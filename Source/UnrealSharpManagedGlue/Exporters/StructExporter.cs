@@ -57,7 +57,6 @@ public static class StructExporter
         stringBuilder.AppendLine(attributeBuilder.ToString());
 
         string structName = structObj.GetStructName();
-        
         stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: isBlittable || !isManualExport ? new List<string>{$"MarshalledStruct<{structName}>"} : null);
 
         if (isCopyable)
@@ -81,19 +80,7 @@ public static class StructExporter
             ExportStructProperties(structObj, stringBuilder, exportedProperties, isBlittable, reservedNames);
         }
 
-        if (!isManualExport)
-        {
-            stringBuilder.AppendLine();
-            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, 
-                new List<UhtFunction>(), 
-                new Dictionary<string, GetterSetterPair>(), 
-                new Dictionary<UhtProperty, GetterSetterPair>(),
-                new List<UhtFunction>());
-            
-            stringBuilder.AppendLine();
-            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
-        }
-        else if (isBlittable)
+        if (isBlittable)
         {
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, 
                 new List<UhtProperty>(), 
@@ -106,6 +93,18 @@ public static class StructExporter
             stringBuilder.AppendLine($"public static {structName} FromNative(IntPtr buffer) => BlittableMarshaller<{structName}>.FromNative(buffer, 0);");
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"public void ToNative(IntPtr buffer) => BlittableMarshaller<{structName}>.ToNative(buffer, 0, this);");
+        }
+        else if (!isManualExport)
+        {
+            stringBuilder.AppendLine();
+            StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, exportedProperties, 
+                new List<UhtFunction>(), 
+                new Dictionary<string, GetterSetterPair>(), 
+                new Dictionary<UhtProperty, GetterSetterPair>(),
+                new List<UhtFunction>());
+            
+            stringBuilder.AppendLine();
+            ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
         }
         
         stringBuilder.CloseBrace();

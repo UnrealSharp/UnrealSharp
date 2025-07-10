@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
+#include "Model/StructLayoutInfo.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wignored-attributes"
@@ -141,6 +142,12 @@ private:
     void ProcessAssetIds();
     void ProcessAssetTypes();
     void ProcessTraceTypeQuery();
+
+    static void ExportSpecialStructInfo();
+    static void ExportStructData(FStringView ModuleName, const FStructLayoutInfo& Info);
+    static TMap<FString, FStructLayoutInfo> ProcessStructInfo();
+    static TPair<int32, int32> GetStructExpectedSize(const UScriptStruct* Struct);
+    static bool IsStructBlittable(const UScriptStruct* Struct);
     
     void OnStructRebuilt(UCSScriptStruct* NewStruct);
     void OnClassRebuilt(UCSClass* NewClass);

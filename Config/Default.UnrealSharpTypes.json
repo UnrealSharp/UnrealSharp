@@ -84,22 +84,6 @@
             {
                 "Name": "FGeometry",
                 "HasDestructor": false
-            },
-            {
-                "Name": "FGameplayEffectSpecHandle",
-                "HasDestructor": true
-            },
-            {
-                "Name": "FGameplayTagChangedEventWrapperSpecHandle",
-                "HasDestructor": true
-            },
-            {
-                "Name": "FGameplayTargetDataFilterHandle",
-                "HasDestructor": true
-            },
-            {
-                "Name": "FGameplayAbilitySpec",
-                "HasDestructor": true
             }
         ]
     }
