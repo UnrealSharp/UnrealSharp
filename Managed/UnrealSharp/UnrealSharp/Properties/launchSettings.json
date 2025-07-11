@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "UnrealSharp": {
+      "commandName": "Executable",
+      "executablePath": "C:/Program Files/Epic Games/UE_5.6/Engine/Binaries\\Win64\\UnrealEditor.exe",
+      "commandLineArgs": "\"D:\\dev\\TurnBasedFramework\\TurnBasedFramework.uproject\""
+    }
+  }
+}

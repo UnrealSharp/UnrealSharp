@@ -1,5 +1,4 @@
-﻿using EpicGames.Core;
-using EpicGames.UHT.Types;
+﻿using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
@@ -8,7 +7,7 @@ public static class StructUtilities
 {
     public static bool IsStructBlittable(this UhtStruct structObj)
     {
-        if (PropertyTranslatorManager.BlittableTypes.Contains(structObj.SourceName))
+        if (PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structObj.SourceName))
         {
             return true;
         }
@@ -23,6 +22,11 @@ public static class StructUtilities
 
     public static bool IsStructNativelyCopyable(this UhtStruct structObj)
     {
-        return PropertyTranslatorManager.NativelyCopyableTypes.Contains(structObj.SourceName);
+        return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structObj.SourceName);
+    }
+    
+    public static bool IsStructNativelyDestructible(this UhtStruct structObj)
+    {
+        return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structObj.SourceName, out var info) && info.HasDestructor;
     }
 }

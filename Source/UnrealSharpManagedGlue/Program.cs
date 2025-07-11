@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using EpicGames.Core;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Types;
@@ -32,8 +33,8 @@ public static class Program
 	    CppFilters = new[] { "*.generated.cs" }, HeaderFilters = new[] { "*.generated.cs" },
 	    OtherFilters = new[] { "*.generated.cs" })]
 	private static void Main(IUhtExportFactory factory)
-	{
-	    Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
+    {
+        Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
 	    
 	    InitializeStatics();

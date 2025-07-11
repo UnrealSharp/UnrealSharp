@@ -14,4 +14,7 @@ public:
 
 	UNREALSHARP_FUNCTION()
 	static bool NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest);
+	
+	UNREALSHARP_FUNCTION()
+	static bool NativeDestroy(const UScriptStruct* ScriptStruct, void* Struct);
 };

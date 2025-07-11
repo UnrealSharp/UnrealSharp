@@ -28,3 +28,17 @@ bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void*
 	return false;
 }
 
+bool UUScriptStructExporter::NativeDestroy(const UScriptStruct* ScriptStruct, void* Struct) {
+    if (const auto CppStructOps = ScriptStruct->GetCppStructOps(); CppStructOps != nullptr)
+	{
+		if (CppStructOps->HasDestructor())
+		{
+			CppStructOps->Destruct(Struct);
+		}
+
+        return true;
+	}
+	
+	return false;
+}
+
