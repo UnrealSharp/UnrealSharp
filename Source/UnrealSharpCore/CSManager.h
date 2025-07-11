@@ -118,6 +118,8 @@ public:
 
 	bool IsLoadingAnyAssembly() const;
 
+	void AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> SubsystemClass);
+
 private:
 
 	friend FCSAssembly;
@@ -138,6 +140,9 @@ private:
 	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
 	// End of interface
 
+	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
+	void TryInitializeDynamicSubsystems();
+
 	static UCSManager* Instance;
 
 	UPROPERTY()
@@ -145,6 +150,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UPackage> GlobalManagedPackage;
+
+	UPROPERTY(Transient)
+	TArray<TSubclassOf<UDynamicSubsystem>> PendingDynamicSubsystemClasses;
 
 	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;

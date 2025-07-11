@@ -45,7 +45,7 @@ public static class PackageUtilities
     
     public static bool ShouldExport(this UhtPackage package)
     {
-        bool foundDefine = package.GetModule().TryGetDefine(SkipGlueGenerationDefine, out int skipGlueGeneration);
-        return !foundDefine || skipGlueGeneration == 0;
+        bool foundDefine = package.GetModule().PublicDefines.Contains(SkipGlueGenerationDefine);
+        return !foundDefine;
     }
 }

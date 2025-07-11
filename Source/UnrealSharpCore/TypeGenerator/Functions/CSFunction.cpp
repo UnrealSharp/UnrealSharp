@@ -2,7 +2,6 @@
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "CSUnrealSharpSettings.h"
-#include "UnrealSharpCore.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
@@ -71,12 +70,6 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	UCSFunctionBase* ManagedFunction = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
 	
 #if WITH_EDITOR
-	if (GCompilingBlueprint)
-	{
-		// Full reload is in progress. Ignore the call for now.
-		return;
-	}
-
 	// Full reload causes the method pointers to become invalid, lazy rebind them, if needed.
 	if (!ManagedFunction->HasValidMethodHandle() && !ManagedFunction->TryUpdateMethodHandle())
 	{

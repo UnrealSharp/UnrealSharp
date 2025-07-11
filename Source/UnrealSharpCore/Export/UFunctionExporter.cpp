@@ -1,5 +1,6 @@
 ﻿#include "UFunctionExporter.h"
 #include "UnrealSharpCore.h"
+#include "Utils/CSClassUtilities.h"
 
 uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 {
@@ -96,6 +97,6 @@ bool UUFunctionExporter::HasBlueprintEventBeenImplemented(const UFunction* Nativ
 	}
 
 	UClass* FunctionOwner = NativeFunction->GetOwnerClass();
-	return FunctionOwner->GetClass() != UClass::StaticClass();
+	return !FCSClassUtilities::IsNativeClass(FunctionOwner);
 }
 

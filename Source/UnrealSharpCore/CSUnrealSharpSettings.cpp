@@ -1,5 +1,10 @@
 #include "CSUnrealSharpSettings.h"
 
+UCSUnrealSharpSettings::UCSUnrealSharpSettings()
+{
+	CategoryName = "Plugins";
+}
+
 #if WITH_EDITOR
 void UCSUnrealSharpSettings::PreEditChange(FProperty* PropertyAboutToChange)
 {
