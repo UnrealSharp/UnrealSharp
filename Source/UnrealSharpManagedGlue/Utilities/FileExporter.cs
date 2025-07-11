@@ -100,13 +100,15 @@ public static class FileExporter
             return;
         }
         
+        HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
+
         // TODO: Move runtime glue to a separate csproj. So we can fully clean the ProjectGlue folder.
         // Below is a temporary solution to not delete runtime glue that can cause compilation errors on editor startup,
         // and avoid having to restore nuget packages.
         string[] directories = Directory.GetDirectories(path);
         foreach (string directory in directories)
         {
-            if (IsIntermediateDirectory(directory))
+            if (IsIntermediateDirectory(directory) || ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
             {
                 continue;
             }
@@ -114,7 +116,23 @@ public static class FileExporter
             Directory.Delete(directory, true);
         }
     }
-    
+    private static HashSet<string> GetIgnoredDirectories(string path)
+    {
+        string glueignoreFileName = Path.Combine(path, ".glueignore");
+        if (!File.Exists(glueignoreFileName)) return [];
+        
+        HashSet<string> ignoredDirectories = [];
+        using StreamReader fileInput = File.OpenText(glueignoreFileName);
+        while (!fileInput.EndOfStream)
+        {
+            string? line = fileInput.ReadLine();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+                
+            ignoredDirectories.Add(line.Trim());
+        }
+        return ignoredDirectories;
+    }
+
     private static void CleanFilesInDirectories(string path, bool recursive = false)
     {
         if (!Directory.Exists(path))
@@ -123,9 +141,15 @@ public static class FileExporter
         }
         
         string[] directories = Directory.GetDirectories(path);
+        HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
         
         foreach (var directory in directories)
         {
+            if (ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
+            {
+                continue;
+            }
+            
             string moduleName = Path.GetFileName(directory);
             if (!CSharpExporter.HasBeenExported(moduleName))
             {
