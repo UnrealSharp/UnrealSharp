@@ -65,7 +65,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>
 	UDelegateFunction* FindDelegate(const FCSFieldName& DelegateName) const;
 
 	// Creates a C# counterpart for the given UObject.
-	TSharedPtr<FGCHandle> CreateManagedObject(UObject* Object);
+	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
 
 	// Add a class that is waiting for its parent class to be loaded before it can be created.
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
