@@ -1,10 +1,10 @@
-﻿#include "CSCommands.h"
+﻿#include "CSUnrealSharpEditorCommands.h"
 
 #include "CSStyle.h"
 
 #define LOCTEXT_NAMESPACE "FCSCommandsModule"
 
-FCSCommands::FCSCommands() : TCommands<FCSCommands>(
+FCSUnrealSharpEditorCommands::FCSUnrealSharpEditorCommands() : TCommands<FCSUnrealSharpEditorCommands>(
 	TEXT("CSCommands"),
 	NSLOCTEXT("Contexts", "UnrealSharpCommands", "UnrealSharp"),
 	NAME_None,
@@ -13,7 +13,7 @@ FCSCommands::FCSCommands() : TCommands<FCSCommands>(
 	
 }
 
-void FCSCommands::RegisterCommands()
+void FCSUnrealSharpEditorCommands::RegisterCommands()
 {
 	UI_COMMAND(CreateNewProject, "Create C# Project", "Create a new C# project with all necessary dependencies and initial setup", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(CompileManagedCode, "Force Compile C#", "Trigger a hot reload to recompile the project's C# code", EUserInterfaceActionType::Button, FInputChord(EKeys::F10, EModifierKey::Control | EModifierKey::Alt));

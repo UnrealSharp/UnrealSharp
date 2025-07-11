@@ -49,6 +49,8 @@ class UNREALSHARPEDITOR_API UCSUnrealSharpEditorSettings : public UDeveloperSett
 	GENERATED_BODY()
 
 public:
+
+	UCSUnrealSharpEditorSettings();
 	
 	// Whether Hot Reload should automatically start on script save, gaining Editor focus, or not at all.
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Hot Reload")

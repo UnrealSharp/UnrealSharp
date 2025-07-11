@@ -48,8 +48,6 @@ struct FCSManagedUnrealSharpEditorCallbacks
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 
-DECLARE_MULTICAST_DELEGATE(FOnRefreshRuntimeGlue);
-
 class FUnrealSharpEditorModule : public IModuleInterface
 {
 public:
@@ -69,9 +67,8 @@ public:
     bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
     bool HasHotReloadFailed() const { return bHotReloadFailed; }
 
-    FOnRefreshRuntimeGlue& OnRefreshRuntimeGlueEvent() { return OnRefreshRuntimeGlueDelegate; }
+    FUICommandList& GetUnrealSharpCommands() const { return *UnrealSharpCommands; }
     
-    void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
     void OpenSolution();
 
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
@@ -96,8 +93,7 @@ private:
     static void OnOpenSettings();
     static void OnOpenDocumentation();
     static void OnReportBug();
-    
-    void OnRefreshRuntimeGlue();
+    static void OnRefreshRuntimeGlue();
 
     static void OnRepairComponents();
     
@@ -115,32 +111,8 @@ private:
     
     void RegisterCommands();
     void RegisterMenu();
-    void RegisterGameplayTags();
-    void TryRegisterAssetTypes();
-    void RegisterCollisionProfile();
-
-    void OnAssetSearchRootAdded(const FString& RootPath);
-    void OnCompletedInitialScan();
-
-    bool IsRegisteredAssetType(const FAssetData& AssetData);
-    bool IsRegisteredAssetType(UClass* Class);
-    
-    void OnAssetRemoved(const FAssetData& AssetData);
-    void OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath);
-    void OnInMemoryAssetCreated(UObject* Object);
-    void OnInMemoryAssetDeleted(UObject* Object);
-
-    void OnCollisionProfileLoaded(UCollisionProfile* Profile);
-    void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
     void OnPIEShutdown(bool IsSimulating);
-
-    void WaitUpdateAssetTypes();
-
-    void ProcessGameplayTags();
-    void ProcessAssetIds();
-    void ProcessAssetTypes();
-    void ProcessTraceTypeQuery();
     
     void OnStructRebuilt(UCSScriptStruct* NewStruct);
     void OnClassRebuilt(UCSClass* NewClass);
@@ -148,8 +120,6 @@ private:
 
     bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
     bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
-
-    void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
     
     void RefreshAffectedBlueprints();
 
@@ -162,10 +132,6 @@ private:
     HotReloadStatus HotReloadStatus = Inactive;
     bool bHotReloadFailed = false;
     bool bHasQueuedHotReload = false;
-
-    bool bHasRegisteredAssetTypes = false;
-
-    FOnRefreshRuntimeGlue OnRefreshRuntimeGlueDelegate;
 
     TSharedPtr<FCSAssembly> EditorAssembly;
     FTickerDelegate TickDelegate;

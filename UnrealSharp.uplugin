@@ -48,6 +48,11 @@
 			"Name": "UnrealSharpAsync",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnrealSharpRuntimeGlue",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
 		}
 	],
 	"SupportedTargetPlatforms": [
