@@ -5,7 +5,9 @@
 class UNREALSHARPCORE_API FCSClassUtilities
 {
 public:
-	static bool IsManagedType(const UClass* Class) { return Class->GetClass() == UCSClass::StaticClass(); }
+	static bool IsManagedType(const UClass* Class) {
+		return Class->GetClass() == UCSClass::StaticClass();
+	}
 	static bool IsSkeletonType(const UClass* Class) { return Class->GetClass() == UCSSkeletonClass::StaticClass(); }
 	static bool IsNativeClass(UClass* Class){ return Class->GetClass() == UClass::StaticClass(); }
 
