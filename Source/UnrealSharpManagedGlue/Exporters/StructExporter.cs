@@ -238,6 +238,8 @@ public static class StructExporter
                 builder.AppendLine("if (NativeHandle is null)");
                 builder.OpenBrace();
                 builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+                builder.CloseBrace();
+                builder.AppendLine();
                 builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
                 builder.OpenBrace();
                 builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
@@ -247,12 +249,13 @@ public static class StructExporter
                 builder.AppendLine("if (Allocation is null)");
                 builder.OpenBrace();
                 builder.AppendLine("Allocation = new byte[NativeDataSize];");
+                builder.AppendLine();
+                builder.CloseBrace();
                 builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
                 builder.OpenBrace();
             }
             
-            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, buffer, (nint) AllocationPointer);");
-            builder.CloseBrace();
+            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, (nint) AllocationPointer, buffer);");
             builder.CloseBrace();
         }
         else
