@@ -182,14 +182,27 @@ public static class StructExporter
     public static void ExportMirrorStructMarshalling(GeneratorStringBuilder builder, UhtScriptStruct structObj, List<UhtProperty> properties)
     {
         string structName = structObj.GetStructName();
+        bool isCopyable = structObj.IsStructNativelyCopyable();
+        bool isDestructible = structObj.IsStructNativelyDestructible();
+        if (isCopyable)
+        {
+            builder.AppendLine();
+            builder.AppendLine($"public {structName}()");
+            builder.OpenBrace();
+            builder.AppendLine(isDestructible
+                ? "NativeHandle = new NativeStructHandle(NativeClassPtr);"
+                : "Allocation = new byte[NativeDataSize];");
+            builder.CloseBrace();
+        }
+
         builder.AppendLine();
         builder.AppendLine($"public {structName}(IntPtr InNativeStruct)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
 
-        if (structObj.IsStructNativelyCopyable())
+        if (isCopyable)
         {
-            if (structObj.IsStructNativelyDestructible())
+            if (isDestructible)
             {
                 builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
                 builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
