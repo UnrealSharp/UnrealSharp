@@ -453,16 +453,36 @@ public abstract class PropertyTranslator
 
     private void GenerateMirrorPropertyBody(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool isGetter)
     {
+        bool isDestructible = structObj.IsStructNativelyDestructible();
         builder.BeginUnsafeBlock();
-        builder.AppendLine("if (Allocation is null)");
-        builder.OpenBrace();
-        builder.AppendLine(structObj.IsStructNativelyDestructible()
-            ? "NativeHandle = new NativeStructHandle(NativeClassPtr);"
-            : "Allocation = new byte[NativeDataSize];");
+        if (isDestructible)
+        {
+            builder.AppendLine("if (NativeHandle is null)");
+            builder.OpenBrace();
+            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("if (Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+        }
 
         builder.CloseBrace();
-        builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
-        builder.OpenBrace();
+        builder.AppendLine();
+
+        if (isDestructible)
+        {
+            builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
+            builder.OpenBrace();
+            builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+        }
+
         if (isGetter)
         {
             ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);

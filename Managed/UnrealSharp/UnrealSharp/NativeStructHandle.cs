@@ -1,55 +1,40 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-public class NativeStructHandle : SafeHandle
+[InlineArray(64)]
+public struct NativeStructHandleData
 {
-    private byte[]? _nativeStructPtr;
-    private readonly IntPtr _nativeScriptStruct;
+    private byte _data;
+}
 
-    public NativeStructHandle(IntPtr nativeScriptStruct) : base(IntPtr.Zero, true)
+public sealed class NativeStructHandle : IDisposable
+{
+    private NativeStructHandleData _nativeStructHandleData;
+    private IntPtr _nativeScriptStruct;
+
+    public NativeStructHandle(IntPtr nativeScriptStruct)
     {
-        unsafe
-        {
-            _nativeStructPtr = new byte[UScriptStructExporter.CallGetNativeStructSize(nativeScriptStruct)];
-            _nativeScriptStruct = nativeScriptStruct;
-            fixed (byte* structPtr = _nativeStructPtr)
-            {
-                UStructExporter.CallInitializeStruct(nativeScriptStruct, (IntPtr) structPtr);
-            }
-        }
+        UScriptStructExporter.CallAllocateNativeStruct(ref _nativeStructHandleData, nativeScriptStruct);
+        _nativeScriptStruct = nativeScriptStruct;
+    }
+    
+    public ref NativeStructHandleData Data => ref _nativeStructHandleData;
+
+    ~NativeStructHandle()
+    {
+        Dispose();
     }
 
-    public byte[] NativeStructPtr
+    public void Dispose()
     {
-        get
-        {
-            if (_nativeStructPtr is null)
-            {
-                throw new InvalidOperationException("Native struct handle is invalid");
-            }
-            
-            return _nativeStructPtr;
-        }
-    }
-
-    public override bool IsInvalid => _nativeStructPtr is null;
-
-    protected override bool ReleaseHandle()
-    {
-        unsafe
-        {
-            if (_nativeStructPtr is null) return true;
+        if (_nativeScriptStruct == IntPtr.Zero) return;
         
-            fixed (byte* structPtr = _nativeStructPtr)
-            {
-                UScriptStructExporter.CallNativeDestroy(_nativeScriptStruct, (IntPtr) structPtr);
-            }
-            _nativeStructPtr = null;
-
-            return true;
-        }
+        UScriptStructExporter.CallDeallocateNativeStruct(ref _nativeStructHandleData, _nativeScriptStruct);
+        _nativeScriptStruct = IntPtr.Zero;
+        GC.SuppressFinalize(this);
     }
 }
