@@ -11,6 +11,8 @@ class UNREALSHARPCORE_API UCSUnrealSharpSettings : public UDeveloperSettings
 	
 public:
 
+	UCSUnrealSharpSettings();
+
 #if WITH_EDITOR
 	// UObject interface
 	virtual void PreEditChange(FProperty* PropertyAboutToChange) override;

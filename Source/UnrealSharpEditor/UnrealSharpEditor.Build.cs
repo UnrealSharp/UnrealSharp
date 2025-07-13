@@ -39,8 +39,11 @@ public class UnrealSharpEditor : ModuleRules
                 "KismetCompiler", 
                 "BlueprintEditorLibrary",
                 "SubobjectDataInterface",
-                "AssetTools",
+                "AssetTools", 
+                "UnrealSharpRuntimeGlue",
             }
         );
+        
+        PublicDefinitions.Add("SkipGlueGeneration");
     }
 }

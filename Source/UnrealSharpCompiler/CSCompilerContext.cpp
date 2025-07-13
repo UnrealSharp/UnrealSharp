@@ -68,7 +68,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 	UCSClass* Class = GetMainClass();
 	if (Class == NewClass)
 	{
-		FCSGeneratedClassBuilder::TryRegisterSubsystem(Class);
+		FCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(Class);
 		
 		if (GEditor)
 		{

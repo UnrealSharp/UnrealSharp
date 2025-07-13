@@ -1,8 +1,8 @@
 ﻿using UnrealBuildTool;
 
-public class UnrealSharpProcHelper : ModuleRules
+public class UnrealSharpRuntimeGlue : ModuleRules
 {
-    public UnrealSharpProcHelper(ReadOnlyTargetRules Target) : base(Target)
+    public UnrealSharpRuntimeGlue(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -19,9 +19,11 @@ public class UnrealSharpProcHelper : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
+                "UnrealSharpProcHelper",
                 "SlateCore", 
-                "Projects",
-                "Json"
+                "DeveloperSettings",
+                "UnrealEd",
+                "GameplayTags"
             }
         );
         
