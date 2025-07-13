@@ -95,4 +95,6 @@ public abstract class TStrongObjectPtr : IEquatable<TStrongObjectPtr>, IDisposab
 public sealed class TStrongObjectPtr<T>(T? obj = null) : TStrongObjectPtr(obj) where T : UObject
 {
     public new T? Value => (T?) base.Value;
+    
+    public static implicit operator TStrongObjectPtr<T>(T? obj) => new(obj);
 }
