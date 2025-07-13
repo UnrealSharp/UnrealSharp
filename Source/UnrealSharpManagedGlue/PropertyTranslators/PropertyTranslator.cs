@@ -413,7 +413,7 @@ public abstract class PropertyTranslator
         exportedFunction.ExportInvoke(builder);
     }
 
-    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
+    public void ExportMirrorProperty(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
     {
         string propertyScriptName = property.GetPropertyName();
         
@@ -428,10 +428,73 @@ public abstract class PropertyTranslator
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
         builder.AppendTooltip(property);
-        builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        if (structObj.IsStructNativelyCopyable())
+        {
+            
+            builder.AppendLine($"{protection}{managedType} {propertyScriptName}");
+            builder.OpenBrace();
+            builder.AppendLine("get");
+            builder.OpenBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, true);
+            builder.CloseBrace();
+            
+            builder.AppendLine("set");
+            builder.OpenBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, false);
+            builder.CloseBrace();
+            builder.CloseBrace();
+        }
+        else
+        {
+            builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        }
         builder.AppendLine();
     }
-    
+
+    private void GenerateMirrorPropertyBody(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool isGetter)
+    {
+        bool isDestructible = structObj.IsStructNativelyDestructible();
+        builder.BeginUnsafeBlock();
+        if (isDestructible)
+        {
+            builder.AppendLine("if (NativeHandle is null)");
+            builder.OpenBrace();
+            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("if (Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+        }
+
+        builder.CloseBrace();
+        builder.AppendLine();
+
+        if (isDestructible)
+        {
+            builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
+            builder.OpenBrace();
+            builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+        }
+
+        if (isGetter)
+        {
+            ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);
+        }
+        else
+        {
+            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value");
+        }
+        builder.CloseBrace();
+        builder.CloseBrace();
+    }
+
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {
         string metaDataKey = $"CPP_Default_{parameter.SourceName}";

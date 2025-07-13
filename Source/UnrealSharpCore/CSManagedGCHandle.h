@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "CSManagedCallbacksCache.h"
+#include "CSManagedGCHandle.generated.h"
 
 enum class GCHandleType : char
 {
@@ -78,3 +79,46 @@ struct FGCHandle
 	}
 };
 
+struct FScopedGCHandle
+{
+    
+    FGCHandleIntPtr Handle;
+
+    explicit FScopedGCHandle(FGCHandleIntPtr InHandle) : Handle(InHandle) {}
+
+    FScopedGCHandle(const FScopedGCHandle&) = delete;
+    FScopedGCHandle(FScopedGCHandle&&) = delete;
+
+    ~FScopedGCHandle()
+    {
+        if (Handle.IntPtr != nullptr) 
+        {
+            FCSManagedCallbacks::ManagedCallbacks.FreeHandle(Handle);
+        }
+    }
+    
+    FScopedGCHandle& operator=(const FScopedGCHandle&) = delete;
+    FScopedGCHandle& operator=(FScopedGCHandle&&) = delete;
+};
+
+USTRUCT()
+struct FSharedGCHandle
+{
+    GENERATED_BODY()
+
+    FSharedGCHandle() = default;
+    explicit FSharedGCHandle(FGCHandleIntPtr InHandle) : Handle(MakeShared<FScopedGCHandle>(InHandle)) {}
+
+    FGCHandleIntPtr GetHandle() const
+    {
+        if (Handle == nullptr) 
+        {
+            return FGCHandleIntPtr();
+        }
+        
+        return Handle->Handle;
+    }
+    
+private:
+    TSharedPtr<FScopedGCHandle> Handle;
+};
