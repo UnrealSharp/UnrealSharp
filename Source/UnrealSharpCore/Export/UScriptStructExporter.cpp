@@ -2,7 +2,7 @@
 
 int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruct)
 {
-	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
+	if (const UScriptStruct::ICppStructOps* CppStructOps = ScriptStruct->GetCppStructOps(); CppStructOps != nullptr)
 	{
 		return CppStructOps->GetSize();
 	}
@@ -12,7 +12,7 @@ int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruc
 
 bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void* Src, void* Dest)
 {
-	if (const auto CppStructOps = ScriptStruct->GetCppStructOps())
+	if (UScriptStruct::ICppStructOps* CppStructOps = ScriptStruct->GetCppStructOps(); CppStructOps != nullptr)
 	{
 		if (CppStructOps->HasCopy())
 		{
@@ -28,7 +28,7 @@ bool UUScriptStructExporter::NativeCopy(const UScriptStruct* ScriptStruct, void*
 
 bool UUScriptStructExporter::NativeDestroy(const UScriptStruct* ScriptStruct, void* Struct)
 {
-    if (const auto CppStructOps = ScriptStruct->GetCppStructOps(); CppStructOps != nullptr)
+    if (UScriptStruct::ICppStructOps* CppStructOps = ScriptStruct->GetCppStructOps(); CppStructOps != nullptr)
 	{
 		if (CppStructOps->HasDestructor())
 		{

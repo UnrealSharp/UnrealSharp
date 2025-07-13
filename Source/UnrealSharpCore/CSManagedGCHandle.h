@@ -91,7 +91,8 @@ struct FScopedGCHandle
 
     ~FScopedGCHandle()
     {
-        if (Handle.IntPtr != nullptr) {
+        if (Handle.IntPtr != nullptr) 
+        {
             FCSManagedCallbacks::ManagedCallbacks.FreeHandle(Handle);
         }
     }
@@ -110,7 +111,8 @@ struct FSharedGCHandle
 
     FGCHandleIntPtr GetHandle() const
     {
-        if (Handle == nullptr) {
+        if (Handle == nullptr) 
+        {
             return FGCHandleIntPtr();
         }
         

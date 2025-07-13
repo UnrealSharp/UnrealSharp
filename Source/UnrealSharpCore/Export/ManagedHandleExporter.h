@@ -13,7 +13,8 @@
  * 
  */
 UCLASS()
-class UNREALSHARPCORE_API UManagedHandleExporter : public UObject {
+class UNREALSHARPCORE_API UManagedHandleExporter : public UObject 
+{
     GENERATED_BODY()
 
 public:

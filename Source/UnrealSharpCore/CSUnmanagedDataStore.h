@@ -14,7 +14,8 @@ private:
     static constexpr size_t SmallStorageSize = 56;
     using FSmallStorage = std::array<std::byte, SmallStorageSize>;
 
-    struct FLargeStorageDeleter {
+    struct FLargeStorageDeleter 
+    {
         void operator()(void* Ptr) const
         {
             FMemory::Free(Ptr);

@@ -4,7 +4,8 @@
 #include "CSBindsManager.h"
 #include "UScriptStructExporter.generated.h"
 
-union FNativeStructData {
+union FNativeStructData
+{
     std::array<std::byte, 64> SmallStorage;
     void* LargeStorage;
 };
