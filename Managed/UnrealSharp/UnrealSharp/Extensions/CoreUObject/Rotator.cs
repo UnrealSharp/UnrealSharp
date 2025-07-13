@@ -8,17 +8,17 @@ public partial struct FRotator
     /// <summary>
     /// Pitch (degrees) around Y axis
     /// </summary>
-    public double Pitch { get; set; }
+    public double Pitch;
     
     /// <summary>
     /// Yaw (degrees) around Z axis
     /// </summary>
-    public double Yaw { get; set; }
+    public double Yaw;
     
     /// <summary>
     /// Roll (degrees) around X axis
     /// </summary>
-    public double Roll { get; set; }
+    public double Roll;
     
     public static readonly FRotator ZeroRotator = new(0, 0, 0);
 

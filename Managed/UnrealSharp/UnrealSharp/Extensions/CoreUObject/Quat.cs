@@ -108,17 +108,18 @@ public partial struct FQuat
     /// <returns>The normalized Quat.</returns>
     public static FQuat Normalize(FQuat value)
     {
+        FQuat ans;
+
         double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z + value.W * value.W;
 
         double invNorm = 1.0 / Math.Sqrt(ls);
-        
-        return new FQuat
-        {
-            X = value.X * invNorm,
-            Y = value.Y * invNorm,
-            Z = value.Z * invNorm,
-            W = value.W * invNorm
-        };;
+
+        ans.X = value.X * invNorm;
+        ans.Y = value.Y * invNorm;
+        ans.Z = value.Z * invNorm;
+        ans.W = value.W * invNorm;
+
+        return ans;
     }
 
     /// <summary>
@@ -128,13 +129,14 @@ public partial struct FQuat
     /// <returns>A new Quat that is the conjugate of the specified one.</returns>
     public static FQuat Conjugate(FQuat value)
     {
-         return  new FQuat
-        {
-            X = -value.X,
-            Y = -value.Y,
-            Z = -value.Z,
-            W = value.W
-        };
+        FQuat ans;
+
+        ans.X = -value.X;
+        ans.Y = -value.Y;
+        ans.Z = -value.Z;
+        ans.W = value.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -148,16 +150,17 @@ public partial struct FQuat
         // q   = ( -------------   ------------- )
         //       (  a^2 + |v|^2  ,  a^2 + |v|^2  )
 
+        FQuat ans;
+
         double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z + value.W * value.W;
         double invNorm = 1.0 / ls;
-        
-        return new FQuat
-        {
-            X = -value.X * invNorm,
-            Y = -value.Y * invNorm,
-            Z = -value.Z * invNorm,
-            W = value.W * invNorm
-        };
+
+        ans.X = -value.X * invNorm;
+        ans.Y = -value.Y * invNorm;
+        ans.Z = -value.Z * invNorm;
+        ans.W = value.W * invNorm;
+
+        return ans;
     }
 
     /// <summary>
@@ -169,18 +172,18 @@ public partial struct FQuat
     /// <returns>The created Quat.</returns>
     public static FQuat CreateFromAxisAngle(FVector axis, double angle)
     {
+        FQuat ans;
+
         double halfAngle = angle * 0.5;
         double s = Math.Sin(halfAngle);
         double c = Math.Cos(halfAngle);
 
-        
-        return new FQuat
-        {
-            X = axis.X * s,
-            Y = axis.Y * s,
-            Z = axis.Z * s,
-            W = c
-        };
+        ans.X = axis.X * s;
+        ans.Y = axis.Y * s;
+        ans.Z = axis.Z * s;
+        ans.W = c;
+
+        return ans;
     }
 
     /// <summary>
@@ -206,13 +209,14 @@ public partial struct FQuat
         var sy = Math.Sin(halfYaw);
         var cy = Math.Cos(halfYaw);
 
-       return new FQuat
-       {
-            X = cy * sp * cr + sy * cp * sr,
-            Y = sy * cp * cr - cy * sp * sr,
-            Z = cy * cp * sr - sy * sp * cr,
-            W = cy * cp * cr + sy * sp * sr
-        };
+        FQuat result;
+
+        result.X = cy * sp * cr + sy * cp * sr;
+        result.Y = sy * cp * cr - cy * sp * sr;
+        result.Z = cy * cp * sr - sy * sp * cr;
+        result.W = cy * cp * cr + sy * sp * sr;
+
+        return result;
     }
 
     /// <summary>
@@ -272,13 +276,14 @@ public partial struct FQuat
                 : Math.Sin(t * omega) * invSinOmega;
         }
 
-        return new FQuat
-        {
-            X = s1 * Quat1.X + s2 * Quat2.X,
-            Y = s1 * Quat1.Y + s2 * Quat2.Y,
-            Z = s1 * Quat1.Z + s2 * Quat2.Z,
-            W = s1 * Quat1.W + s2 * Quat2.W
-        };
+        FQuat ans;
+
+        ans.X = s1 * Quat1.X + s2 * Quat2.X;
+        ans.Y = s1 * Quat1.Y + s2 * Quat2.Y;
+        ans.Z = s1 * Quat1.Z + s2 * Quat2.Z;
+        ans.W = s1 * Quat1.W + s2 * Quat2.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -333,6 +338,8 @@ public partial struct FQuat
     /// <returns>A new Quat representing the concatenation of the value1 rotation followed by the value2 rotation.</returns>
     public static FQuat Concatenate(FQuat value1, FQuat value2)
     {
+        FQuat ans;
+
         // Concatenate rotation is actually q2 * q1 instead of q1 * q2.
         // So that's why value2 goes q1 and value1 goes q2.
         double q1x = value2.X;
@@ -351,14 +358,13 @@ public partial struct FQuat
         double cz = q1x * q2y - q1y * q2x;
 
         double dot = q1x * q2x + q1y * q2y + q1z * q2z;
-        
-        return new FQuat
-        {
-            X = q1x * q2w + q2x * q1w + cx,
-            Y = q1y * q2w + q2y * q1w + cy,
-            Z = q1z * q2w + q2z * q1w + cz,
-            W = q1w * q2w - dot
-        };
+
+        ans.X = q1x * q2w + q2x * q1w + cx;
+        ans.Y = q1y * q2w + q2y * q1w + cy;
+        ans.Z = q1z * q2w + q2z * q1w + cz;
+        ans.W = q1w * q2w - dot;
+
+        return ans;
     }
 
     /// <summary>
@@ -368,13 +374,14 @@ public partial struct FQuat
     /// <returns>The negated Quat.</returns>
     public static FQuat Negate(FQuat value)
     {
-        return new FQuat
-        {
-            X = -value.X,
-            Y = -value.Y,
-            Z = -value.Z,
-            W = -value.W
-        };
+        FQuat ans;
+
+        ans.X = -value.X;
+        ans.Y = -value.Y;
+        ans.Z = -value.Z;
+        ans.W = -value.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -385,13 +392,14 @@ public partial struct FQuat
     /// <returns>The result of adding the Quats.</returns>
     public static FQuat Add(FQuat value1, FQuat value2)
     {
-        return new FQuat
-        {
-            X = value1.X + value2.X,
-            Y = value1.Y + value2.Y,
-            Z = value1.Z + value2.Z,
-            W = value1.W + value2.W
-        };
+        FQuat ans;
+
+        ans.X = value1.X + value2.X;
+        ans.Y = value1.Y + value2.Y;
+        ans.Z = value1.Z + value2.Z;
+        ans.W = value1.W + value2.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -402,13 +410,14 @@ public partial struct FQuat
     /// <returns>The result of the subtraction.</returns>
     public static FQuat Subtract(FQuat value1, FQuat value2)
     {
-        return new FQuat
-        {
-            X = value1.X - value2.X,
-            Y = value1.Y - value2.Y,
-            Z = value1.Z - value2.Z,
-            W = value1.W - value2.W
-        };
+        FQuat ans;
+
+        ans.X = value1.X - value2.X;
+        ans.Y = value1.Y - value2.Y;
+        ans.Z = value1.Z - value2.Z;
+        ans.W = value1.W - value2.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -419,6 +428,8 @@ public partial struct FQuat
     /// <returns>The result of the multiplication.</returns>
     public static FQuat Multiply(FQuat value1, FQuat value2)
     {
+        FQuat ans;
+
         double q1x = value1.X;
         double q1y = value1.Y;
         double q1z = value1.Z;
@@ -436,13 +447,12 @@ public partial struct FQuat
 
         double dot = q1x * q2x + q1y * q2y + q1z * q2z;
 
-        return new FQuat
-        {
-            X = q1x * q2w + q2x * q1w + cx,
-            Y = q1y * q2w + q2y * q1w + cy,
-            Z = q1z * q2w + q2z * q1w + cz,
-            W = q1w * q2w - dot
-        };
+        ans.X = q1x * q2w + q2x * q1w + cx;
+        ans.Y = q1y * q2w + q2y * q1w + cy;
+        ans.Z = q1z * q2w + q2z * q1w + cz;
+        ans.W = q1w * q2w - dot;
+
+        return ans;
     }
 
     /// <summary>
@@ -453,13 +463,14 @@ public partial struct FQuat
     /// <returns>The result of the multiplication.</returns>
     public static FQuat Multiply(FQuat value1, double value2)
     {
-        return new FQuat
-        {
-            X = value1.X * value2,
-            Y = value1.Y * value2,
-            Z = value1.Z * value2,
-            W = value1.W * value2
-        };
+        FQuat ans;
+
+        ans.X = value1.X * value2;
+        ans.Y = value1.Y * value2;
+        ans.Z = value1.Z * value2;
+        ans.W = value1.W * value2;
+
+        return ans;
     }
 
     /// <summary>
@@ -470,6 +481,8 @@ public partial struct FQuat
     /// <returns>The result of the division.</returns>
     public static FQuat Divide(FQuat value1, FQuat value2)
     {
+        FQuat ans;
+
         double q1x = value1.X;
         double q1y = value1.Y;
         double q1z = value1.Z;
@@ -495,14 +508,13 @@ public partial struct FQuat
         double cz = q1x * q2y - q1y * q2x;
 
         double dot = q1x * q2x + q1y * q2y + q1z * q2z;
-        
-        return new FQuat
-        {
-            X = q1x * q2w + q2x * q1w + cx,
-            Y = q1y * q2w + q2y * q1w + cy,
-            Z = q1z * q2w + q2z * q1w + cz,
-            W = q1w * q2w - dot
-        };
+
+        ans.X = q1x * q2w + q2x * q1w + cx;
+        ans.Y = q1y * q2w + q2y * q1w + cy;
+        ans.Z = q1z * q2w + q2z * q1w + cz;
+        ans.W = q1w * q2w - dot;
+
+        return ans;
     }
 
     /// <summary>
@@ -512,13 +524,14 @@ public partial struct FQuat
     /// <returns>The negated Quat.</returns>
     public static FQuat operator -(FQuat value)
     {
-        return new FQuat
-        {
-            X = -value.X,
-            Y = -value.Y,
-            Z = -value.Z,
-            W = -value.W
-        };
+        FQuat ans;
+
+        ans.X = -value.X;
+        ans.Y = -value.Y;
+        ans.Z = -value.Z;
+        ans.W = -value.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -529,13 +542,14 @@ public partial struct FQuat
     /// <returns>The result of adding the Quats.</returns>
     public static FQuat operator +(FQuat value1, FQuat value2)
     {
-        return new FQuat
-        {
-            X = value1.X + value2.X,
-            Y = value1.Y + value2.Y,
-            Z = value1.Z + value2.Z,
-            W = value1.W + value2.W
-        };
+        FQuat ans;
+
+        ans.X = value1.X + value2.X;
+        ans.Y = value1.Y + value2.Y;
+        ans.Z = value1.Z + value2.Z;
+        ans.W = value1.W + value2.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -546,13 +560,14 @@ public partial struct FQuat
     /// <returns>The result of the subtraction.</returns>
     public static FQuat operator -(FQuat value1, FQuat value2)
     {
-        return new FQuat
-        {
-            X = value1.X - value2.X,
-            Y = value1.Y - value2.Y,
-            Z = value1.Z - value2.Z,
-            W = value1.W - value2.W
-        };
+        FQuat ans;
+
+        ans.X = value1.X - value2.X;
+        ans.Y = value1.Y - value2.Y;
+        ans.Z = value1.Z - value2.Z;
+        ans.W = value1.W - value2.W;
+
+        return ans;
     }
 
     /// <summary>
@@ -563,6 +578,8 @@ public partial struct FQuat
     /// <returns>The result of the multiplication.</returns>
     public static FQuat operator *(FQuat value1, FQuat value2)
     {
+        FQuat ans;
+
         double q1x = value1.X;
         double q1y = value1.Y;
         double q1z = value1.Z;
@@ -579,14 +596,13 @@ public partial struct FQuat
         double cz = q1x * q2y - q1y * q2x;
 
         double dot = q1x * q2x + q1y * q2y + q1z * q2z;
-        
-        return new FQuat
-        {
-            X = q1x * q2w + q2x * q1w + cx,
-            Y = q1y * q2w + q2y * q1w + cy,
-            Z = q1z * q2w + q2z * q1w + cz,
-            W = q1w * q2w - dot
-        };
+
+        ans.X = q1x * q2w + q2x * q1w + cx;
+        ans.Y = q1y * q2w + q2y * q1w + cy;
+        ans.Z = q1z * q2w + q2z * q1w + cz;
+        ans.W = q1w * q2w - dot;
+
+        return ans;
     }
 
     /// <summary>
@@ -597,13 +613,14 @@ public partial struct FQuat
     /// <returns>The result of the multiplication.</returns>
     public static FQuat operator *(FQuat value1, double value2)
     {
-        return new FQuat
-        {
-            X = value1.X * value2,
-            Y = value1.Y * value2,
-            Z = value1.Z * value2,
-            W = value1.W * value2
-        };
+        FQuat ans;
+
+        ans.X = value1.X * value2;
+        ans.Y = value1.Y * value2;
+        ans.Z = value1.Z * value2;
+        ans.W = value1.W * value2;
+
+        return ans;
     }
 
     /// <summary>
@@ -614,6 +631,8 @@ public partial struct FQuat
     /// <returns>The result of the division.</returns>
     public static FQuat operator /(FQuat value1, FQuat value2)
     {
+        FQuat ans;
+
         double q1x = value1.X;
         double q1y = value1.Y;
         double q1z = value1.Z;
@@ -639,14 +658,13 @@ public partial struct FQuat
         double cz = q1x * q2y - q1y * q2x;
 
         double dot = q1x * q2x + q1y * q2y + q1z * q2z;
-        
-        return new FQuat
-        {
-            X = q1x * q2w + q2x * q1w + cx,
-            Y = q1y * q2w + q2y * q1w + cy,
-            Z = q1z * q2w + q2z * q1w + cz,
-            W = q1w * q2w - dot
-        };
+
+        ans.X = q1x * q2w + q2x * q1w + cx;
+        ans.Y = q1y * q2w + q2y * q1w + cy;
+        ans.Z = q1z * q2w + q2z * q1w + cz;
+        ans.W = q1w * q2w - dot;
+
+        return ans;
     }
 
     /// <summary>
