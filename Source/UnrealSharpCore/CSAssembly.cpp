@@ -359,6 +359,47 @@ TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 	return Handle;
 }
 
+TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateManagedObjectWrapper);
+
+	UCSInterface* InterfaceClass = Cast<UCSInterface>(Class);
+	FCSFieldName FieldName = InterfaceClass != nullptr ? InterfaceClass->GetTypeInfo()->TypeMetaData->FieldName : FCSFieldName(Class);
+	TSharedPtr<FGCHandle> TypeHandle = InterfaceClass->GetTypeInfo()->OwningAssembly->TryFindTypeHandle(FieldName);
+	
+	uint32 ObjectID = Object->GetUniqueID();
+    TMap<uint32, TSharedPtr<FGCHandle>>& TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);
+	uint32 TypeId = Class->GetUniqueID();
+	if (TSharedPtr<FGCHandle>* Existing = TypeMap.Find(TypeId); Existing != nullptr)
+	{
+		return *Existing;
+	}
+
+    TSharedPtr<FGCHandle>* ObjectHandle = UCSManager::Get().ManagedObjectHandles.Find(ObjectID);
+	if (ObjectHandle == nullptr)
+	{
+		return nullptr;
+	}
+    
+	FGCHandle NewManagedObjectWrapper = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObjectWrapper((*ObjectHandle)->GetPointer(), TypeHandle->GetPointer());
+	NewManagedObjectWrapper.Type = GCHandleType::StrongHandle;
+
+	if (NewManagedObjectWrapper.IsNull())
+	{
+		// This should never happen. Potential issues: IL errors, typehandle is invalid.
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", *Object->GetName());
+		return nullptr;
+	}
+
+	TSharedPtr<FGCHandle> Handle = MakeShared<FGCHandle>(NewManagedObjectWrapper);
+	AllocatedManagedHandles.Add(Handle);
+
+
+	TypeMap.AddByHash(TypeId, TypeId, Handle);
+
+	return Handle;
+}
+
 void FCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass)
 {
 	TSet<FCSClassInfo*>& PendingClass = PendingClasses.FindOrAdd(ParentClass);

@@ -9,7 +9,7 @@ namespace UnrealSharpWeaver.TypeProcessors;
 
 public static class FunctionProcessor
 {
-    public static void PrepareFunctionForRewrite(FunctionMetaData function, TypeDefinition classDefinition)
+    public static void PrepareFunctionForRewrite(FunctionMetaData function, TypeDefinition classDefinition, bool forceOverwriteBody = false)
     {
         FieldDefinition? paramsSizeField = null;
 
@@ -33,10 +33,10 @@ public static class FunctionProcessor
             AddNativePropertyField(classDefinition, function.ReturnValue, function, index, function.RewriteInfo.FunctionParams);
         }
         
-        if (function.IsBlueprintEvent || function.IsRpc)
+        if (forceOverwriteBody || function.IsBlueprintEvent || function.IsRpc)
         {
             function.FunctionPointerField = classDefinition.AddField($"{function.Name}_NativeFunction", WeaverImporter.Instance.IntPtrType, FieldAttributes.Private);
-            RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams);
+            RewriteMethodAsUFunctionInvoke(classDefinition, function, paramsSizeField, function.RewriteInfo.FunctionParams, forceOverwriteBody);
         }
         else if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintCallable))
         {
@@ -265,11 +265,28 @@ public static class FunctionProcessor
         invokerFunction.FinalizeMethod();
     }
 
-    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos)
+    private static void PrepareForRawEventInvoker(TypeDefinition type, FunctionMetaData func)
     {
-        if (func.MethodDef.Body != null)
+        
+        foreach (PropertyMetaData param in func.Parameters)
+        {
+            param.PropertyDataType.PrepareForRewrite(type, param, func);
+        }
+
+        if (func.ReturnValue == null) return;
+        NativeDataType nativeReturnType = func.ReturnValue.PropertyDataType;
+        nativeReturnType.PrepareForRewrite(type, func.ReturnValue, func);
+    }
+    
+    public static void RewriteMethodAsUFunctionInvoke(TypeDefinition type, FunctionMetaData func, FieldDefinition? paramsSizeField, FunctionParamRewriteInfo[] paramRewriteInfos, bool forceOverwriteBody = false)
+    {
+        if (!forceOverwriteBody && func.MethodDef.Body != null)
         {
             MakeManagedMethodInvoker(type, func, MakeImplementationMethod(func), paramRewriteInfos);
+        }
+        else
+        {
+            PrepareForRawEventInvoker(type, func);
         }
         
         RewriteOriginalFunctionToInvokeNative(type, func, func.MethodDef, paramsSizeField, paramRewriteInfos);
