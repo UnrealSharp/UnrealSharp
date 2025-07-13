@@ -6,9 +6,9 @@ namespace UnrealSharp.CoreUObject;
 
 public partial struct FVector
 {
-    public double X;
-    public double Y;
-    public double Z;
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Z { get; set; }
     
     public FVector(double x, double y, double z)
     {

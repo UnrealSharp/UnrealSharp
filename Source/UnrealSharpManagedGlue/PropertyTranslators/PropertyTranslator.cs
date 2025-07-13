@@ -428,7 +428,7 @@ public abstract class PropertyTranslator
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
         builder.AppendTooltip(property);
-        builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        builder.AppendLine($"{protection}{managedType} {propertyScriptName} {{ get; set; }}");
         builder.AppendLine();
     }
     

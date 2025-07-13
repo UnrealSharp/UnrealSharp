@@ -7,8 +7,8 @@ namespace UnrealSharp.CoreUObject;
 
 public partial struct FVector2D
 {
-    public double X;
-    public double Y;
+    public double X { get; set; }
+    public double Y { get; set; }
     
     public FVector2D(double x, double y)
     {

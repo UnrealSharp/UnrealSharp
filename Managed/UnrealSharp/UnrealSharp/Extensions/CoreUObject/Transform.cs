@@ -18,10 +18,10 @@ public partial struct FTransform
         Scale = scale;
     }
     
-    public FQuat Rotation;
-    public FVector Location;
+    public FQuat Rotation { get; set; }
+    public FVector Location { get; set; }
     private double u0;
-    public FVector Scale;
+    public FVector Scale { get; set; }
     private double u1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
