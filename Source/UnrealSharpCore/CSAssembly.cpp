@@ -359,24 +359,28 @@ TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
 	return Handle;
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class) {
+TSharedPtr<FGCHandle> FCSAssembly::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class)
+{
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateManagedObjectWrapper);
 
-	auto InterfaceClass = Cast<UCSInterface>(Class);
+	UCSInterface* InterfaceClass = Cast<UCSInterface>(Class);
 	FCSFieldName FieldName = InterfaceClass != nullptr ? InterfaceClass->GetTypeInfo()->TypeMetaData->FieldName : FCSFieldName(Class);
-	auto TypeHandle = InterfaceClass->GetTypeInfo()->OwningAssembly->TryFindTypeHandle(FieldName);
+	TSharedPtr<FGCHandle> TypeHandle = InterfaceClass->GetTypeInfo()->OwningAssembly->TryFindTypeHandle(FieldName);
 	
 	uint32 ObjectID = Object->GetUniqueID();
-	auto &TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);
+    TMap<uint32, TSharedPtr<FGCHandle>>& TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);
 	uint32 TypeId = Class->GetUniqueID();
-	if (auto Existing = TypeMap.Find(TypeId); Existing != nullptr) {
+	if (TSharedPtr<FGCHandle>* Existing = TypeMap.Find(TypeId); Existing != nullptr)
+	{
 		return *Existing;
 	}
 
-	auto ObjectHandle = UCSManager::Get().ManagedObjectHandles.Find(ObjectID);
-	if (ObjectHandle == nullptr) {
+    TSharedPtr<FGCHandle>* ObjectHandle = UCSManager::Get().ManagedObjectHandles.Find(ObjectID);
+	if (ObjectHandle == nullptr)
+	{
 		return nullptr;
 	}
+    
 	FGCHandle NewManagedObjectWrapper = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObjectWrapper((*ObjectHandle)->GetPointer(), TypeHandle->GetPointer());
 	NewManagedObjectWrapper.Type = GCHandleType::StrongHandle;
 

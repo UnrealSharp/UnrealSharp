@@ -298,12 +298,14 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
 	Handle->Dispose(AssemblyHandle->GetHandle());
 
-	auto FoundHandles = ManagedInterfaceWrappers.Find(ObjectID);
-	if (FoundHandles == nullptr) {
+    TMap<uint32, TSharedPtr<FGCHandle>>* FoundHandles = ManagedInterfaceWrappers.Find(ObjectID);
+	if (FoundHandles == nullptr)
+	{
 		return;
 	}
 
-	for (auto &[Key, Value] : *FoundHandles) {
+	for (auto &[Key, Value] : *FoundHandles)
+	{
 		Value->Dispose(AssemblyHandle->GetHandle());
 	}
 	FoundHandles->Empty();
@@ -506,8 +508,10 @@ FGCHandle UCSManager::FindManagedObject(UObject* Object)
 	return *FoundHandle;
 }
 
-FGCHandle UCSManager::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass) {
-	if (!Object->GetClass()->ImplementsInterface(InterfaceClass)) {
+FGCHandle UCSManager::FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass)
+{
+	if (!Object->GetClass()->ImplementsInterface(InterfaceClass))
+	{
 		return FGCHandle::Null();
 	}
 
