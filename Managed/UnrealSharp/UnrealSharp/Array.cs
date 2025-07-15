@@ -11,7 +11,7 @@ namespace UnrealSharp;
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
 [Binding]
-public class TArray<T> : UnrealArrayBase<T>, IList<T>
+public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
 {
     /// <inheritdoc />
     public bool IsReadOnly => false;
