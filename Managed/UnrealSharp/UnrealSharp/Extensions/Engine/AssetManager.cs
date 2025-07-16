@@ -236,7 +236,7 @@ public partial class UAssetManager
     /// </summary>
     /// <param name="primaryAssetId">The Primary Asset Id to get the object for</param>
     /// <returns>The Blueprint Class Id associated with the Primary Asset Id</returns>
-    public TSoftClassPtr<UClass> GetSoftClassReferenceFromPrimaryAssetId(FPrimaryAssetId primaryAssetId)
+    public TSoftClassPtr<UObject> GetSoftClassReferenceFromPrimaryAssetId(FPrimaryAssetId primaryAssetId)
     {
         return SystemLibrary.GetSoftClassReference(primaryAssetId);
     }
