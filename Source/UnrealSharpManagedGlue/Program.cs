@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Types;
@@ -13,59 +14,61 @@ namespace UnrealSharpScriptGenerator;
 
 [UnrealHeaderTool]
 public static class Program
-{ 
+{
 	public static IUhtExportFactory Factory { get; private set; } = null!;
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
-	
-	public static string EngineGluePath = "";
-	public static string ProjectGluePath = "";
 
-	public static bool BuildingEditor;
-	public static UhtClass BlueprintFunctionLibrary = null!;
-	
-	public static string PluginDirectory = "";
-	public static string ManagedBinariesPath = "";
-	public static string ManagedPath = "";
-	public static string ScriptFolder = "";
-	
-	[UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
+    public static string EngineGluePath { get; private set; } = "";
+    public static string ProjectGluePath { get; private set; } = "";
+    public static string PluginsPath { get; private set; } = "";
+
+    public static bool BuildingEditor { get; private set; }
+    public static UhtClass BlueprintFunctionLibrary { get; private set; } = null!;
+
+    public static string PluginDirectory { get; private set; } = "";
+    public static string ManagedBinariesPath { get; private set; } = "";
+    public static string ManagedPath { get; private set; } = "";
+    public static string ScriptFolder { get; private set; } = "";
+    public static ImmutableArray<PluginDirInfo> PluginDirs { get; private set; }
+
+    [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
 	    ModuleName = "UnrealSharpCore",
-	    CppFilters = new[] { "*.generated.cs" }, HeaderFilters = new[] { "*.generated.cs" },
-	    OtherFilters = new[] { "*.generated.cs" })]
+	    CppFilters = ["*.generated.cs"], HeaderFilters = ["*.generated.cs"],
+	    OtherFilters = ["*.generated.cs"])]
 	private static void Main(IUhtExportFactory factory)
     {
         Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
 	    Factory = factory;
-	    
+
 	    InitializeStatics();
 
 	    UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
 	    if (foundType is not UhtClass blueprintFunctionLibrary)
 	    {
-	        throw new Exception("Failed to find UBlueprintFunctionLibrary class.");
+	        throw new InvalidOperationException("Failed to find UBlueprintFunctionLibrary class.");
 	    }
-	    
+
 	    BlueprintFunctionLibrary = blueprintFunctionLibrary;
-	    
+
 	    try
 	    {
 	        Stopwatch stopwatch = new Stopwatch();
 	        stopwatch.Start();
-	        
+
 	        CSharpExporter.StartExport();
-	        
+
 	        FileExporter.CleanOldExportedFiles();
-	        
+
 	        Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 	        stopwatch.Stop();
-	        
+
 	        if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
 	        {
 	            Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
 	            UnrealSharp.Shared.DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
 	        }
-	        
-	        TryCreateGlueProject();
+
+	        TryCreateGlueProjects();
 	    }
 	    catch (Exception ex)
 	    {
@@ -77,50 +80,68 @@ public static class Program
 	        Console.ResetColor();
 	    }
 	}
-	
-	static void InitializeStatics()
+
+    private static void InitializeStatics()
 	{
 		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
-		
+
 		DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
 		ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
-		
+        PluginsPath = Path.Combine(unrealSharpDirectory.FullName, "Plugins");
+
 		EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
 		ProjectGluePath = Path.Combine(ScriptFolder, "ProjectGlue");
-		
+
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
-		
+
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
-		
+
 		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
+
+        var pluginsDir = new DirectoryInfo(PluginsPath);
+        PluginDirs = [
+            ..pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
+                .Select(x => new PluginDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
+                .Where(x => x.PluginName != "UnrealSharp")
+        ];
 	}
 
-	static void TryCreateGlueProject()
-	{
-		string csprojPath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
+    private static void TryCreateGlueProjects()
+    {
+        TryCreateGlueProject(Path.Combine(ProjectGluePath, "ProjectGlue.csproj"),
+            Factory.Session.ProjectDirectory!,
+            Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!);
+        foreach (var pluginDir in PluginDirs)
+        {
+            TryCreateGlueProject(pluginDir.GlueProjectPath,
+                pluginDir.PluginDirectory,
+                pluginDir.PluginName);
+        }
+    }
 
-		if (File.Exists(csprojPath))
-		{
-			return;
-		}
+    private static void TryCreateGlueProject(string csprojPath, string projectDirectory,
+                                             string projectName)
+    {
+        if (File.Exists(csprojPath))
+        {
+            return;
+        }
 
-		Dictionary<string, string> arguments = new Dictionary<string, string>
-		{
-			{ "NewProjectName", "ProjectGlue" },
-			{ "NewProjectPath", $"\"{ProjectGluePath}\""},
-			{ "SkipIncludeProjectGlue", "true" }
-		};
+        Dictionary<string, string> arguments = new Dictionary<string, string>
+        {
+            { "NewProjectName", Path.GetFileNameWithoutExtension(csprojPath) },
+            { "NewProjectPath", $"\"{Path.GetDirectoryName(csprojPath)}\""},
+            { "SkipIncludeProjectGlue", "true" }
+        };
 
-		string engineDirectory = Factory.Session.EngineDirectory!;
-		string projectDirectory = Factory.Session.ProjectDirectory!;
-		string projectName = Path.GetFileNameWithoutExtension(Program.Factory.Session.ProjectFile)!;
-		
-		
-		UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath, 
-			projectName, 
-			PluginDirectory, 
-			projectDirectory, 
-			engineDirectory, 
-			arguments);
-	}
+        string engineDirectory = Factory.Session.EngineDirectory!;
+
+
+        UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
+            projectName,
+            PluginDirectory,
+            projectDirectory,
+            engineDirectory,
+            arguments);
+    }
 }
