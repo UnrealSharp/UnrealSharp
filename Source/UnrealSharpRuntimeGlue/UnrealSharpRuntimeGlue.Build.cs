@@ -20,13 +20,13 @@ public class UnrealSharpRuntimeGlue : ModuleRules
                 "Engine",
                 "Slate",
                 "UnrealSharpProcHelper",
-                "SlateCore", 
+                "SlateCore",
                 "DeveloperSettings",
                 "UnrealEd",
                 "GameplayTags"
             }
         );
-        
+
         PublicDefinitions.Add("SkipGlueGeneration");
     }
 }

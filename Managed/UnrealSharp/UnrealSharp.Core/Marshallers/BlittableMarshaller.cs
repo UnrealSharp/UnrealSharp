@@ -2,8 +2,8 @@ using System.Runtime.CompilerServices;
 
 namespace UnrealSharp.Core.Marshallers;
 
-public static class BlittableMarshaller<T>
-{ 
+public static class BlittableMarshaller<T> where T : unmanaged, allows ref struct
+{
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
@@ -12,7 +12,7 @@ public static class BlittableMarshaller<T>
             ToNative(nativeBuffer, arrayIndex, obj, sizeof(T));
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, int size)
     {
@@ -21,7 +21,7 @@ public static class BlittableMarshaller<T>
             *(T*)(nativeBuffer + arrayIndex * size) = obj;
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
@@ -30,7 +30,7 @@ public static class BlittableMarshaller<T>
             return FromNative(nativeBuffer, arrayIndex, sizeof(T));
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex, int size)
     {

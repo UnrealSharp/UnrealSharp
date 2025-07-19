@@ -70,6 +70,10 @@
             {
                 "Name": "FRandomStream",
                 "ManagedType": "UnrealSharp.CoreUObject.FRandomStream"
+            },
+            {
+                "Name": "FSubsystemCollectionBaseRef",
+                "ManagedType": "UnrealSharp.UnrealSharpCore.FSubsystemCollectionBaseRef"
             }
         ],
         "NativelyTranslatableTypes": [
