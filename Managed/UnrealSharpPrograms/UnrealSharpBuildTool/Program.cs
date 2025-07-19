@@ -191,6 +191,45 @@ public static class Program
 
     public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
     {
+        return folder.GetDirectories("Script")
+                .SelectMany(GetProjectsInDirectory)
+                .Concat(folder.GetDirectories("Plugins")
+                        .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                        .Select(x => x.Directory)
+                        .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                        .Where(x => x is not null)
+                        .SelectMany(GetProjectsInDirectory!))
+                .ToList();
+    }
+
+    public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
+    {
+        var result = new Dictionary<string, List<FileInfo>>();
+        var scriptsFolder = folder.GetDirectories("Script").FirstOrDefault();
+        if (scriptsFolder is not null)
+        {
+            result.Add(GetOutputPathForDirectory(scriptsFolder), GetProjectsInDirectory(scriptsFolder).ToList());
+        }
+
+        foreach (var pluginFolder in folder.GetDirectories("Plugins")
+                         .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                         .Select(x => x.Directory)
+                         .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                         .Where(x => x is not null))
+        {
+            result.Add(GetOutputPathForDirectory(pluginFolder!), GetProjectsInDirectory(pluginFolder!).ToList());
+        }
+
+        return result;
+    }
+
+    private static string GetOutputPathForDirectory(DirectoryInfo directory)
+    {
+        return Path.Combine(directory.Parent!.FullName, "Binaries", "Managed");
+    }
+
+    private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
+    {
         FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
         FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
         List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);

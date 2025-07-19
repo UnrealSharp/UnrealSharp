@@ -18,13 +18,14 @@ public class WeaveProject : BuildToolAction
             throw new Exception("Couldn't find the weaver");
         }
 
-        DirectoryInfo scriptRootDirInfo = new DirectoryInfo(Program.GetScriptFolder());
+        DirectoryInfo scriptRootDirInfo = new DirectoryInfo(Program.GetProjectDirectory());
         return Weave(scriptRootDirInfo, weaverPath);
     }
 
     private bool Weave(DirectoryInfo scriptFolder, string weaverPath)
     {
-        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(scriptFolder);
+        var projectFiles = Program.GetProjectFilesByDirectory(scriptFolder);
+        var allProjectFiles = projectFiles.Values.SelectMany(x => x).ToList();
         if (allProjectFiles.Count == 0)
         {
             Console.WriteLine("No project files found. Skipping weaving...");
@@ -36,14 +37,16 @@ public class WeaveProject : BuildToolAction
         weaveProcess.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
 
         bool foundValidProject = false;
-        foreach (FileInfo projectFile in allProjectFiles)
+        foreach ((string pluginPath, FileInfo projectFile) in projectFiles
+                         .SelectMany(x => x.Value
+                                 .Select(y => (x.Key, y))))
         {
             weaveProcess.StartInfo.ArgumentList.Add("-p");
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
             string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin",
                 Program.GetBuildConfiguration(), Program.GetVersion(), csProjName + ".dll");
 
-            weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
+            weaveProcess.StartInfo.ArgumentList.Add($"{assemblyPath};{pluginPath}");
             foundValidProject = true;
         }
 

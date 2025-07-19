@@ -7,13 +7,15 @@ using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver;
 
+public record struct AssemblyInfo(AssemblyDefinition Assembly, string OutputPath);
+
 public static class Program
 {
     public static WeaverOptions WeaverOptions { get; private set; } = null!;
 
     public static void Weave(WeaverOptions weaverOptions)
     {
-        try 
+        try
         {
             WeaverOptions = weaverOptions;
             LoadBindingsAssembly();
@@ -27,7 +29,7 @@ public static class Program
 
     public static int Main(string[] args)
     {
-        try 
+        try
         {
             WeaverOptions = WeaverOptions.ParseArguments(args);
             LoadBindingsAssembly();
@@ -46,20 +48,20 @@ public static class Program
         DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
 
         List<string> searchPaths = new();
-        foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
+        foreach (var (assemblyPath, _) in WeaverOptions.AssemblyPaths.Select(StripQuotes).Select(GetAssemblyPaths))
         {
-            string? directory = Path.GetDirectoryName(StripQuotes(assemblyPath));
-            
+            string? directory = Path.GetDirectoryName(assemblyPath);
+
             if (string.IsNullOrEmpty(directory) || searchPaths.Contains(directory))
             {
                 continue;
             }
-            
+
             if (!Directory.Exists(directory))
             {
                 throw new InvalidOperationException("Could not determine directory for assembly path.");
             }
-            
+
             resolver.AddSearchDirectory(directory);
             searchPaths.Add(directory);
         }
@@ -70,28 +72,29 @@ public static class Program
     private static void ProcessUserAssemblies()
     {
         DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
-        
+
         if (!outputDirInfo.Exists)
         {
             outputDirInfo.Create();
         }
-        
+
         DefaultAssemblyResolver resolver = GetAssemblyResolver();
-        List<AssemblyDefinition> userAssemblies = LoadUserAssemblies(resolver);
-        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
-        
+        List<AssemblyInfo> userAssemblies = LoadUserAssemblies(resolver);
+        ICollection<AssemblyInfo> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
+
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
-        ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
+        ProcessOrderedUserAssemblies(orderedUserAssemblies);
     }
-    
-    private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
+
+    private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyInfo> orderedAssemblies, DirectoryInfo outputDirectory)
     {
         UnrealSharpMetadata unrealSharpMetadata = new UnrealSharpMetadata
         {
             AssemblyLoadingOrder = orderedAssemblies
+                .Select(x => x.Assembly)
                 .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
         };
-        
+
         string metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
         {
             WriteIndented = false,
@@ -100,21 +103,21 @@ public static class Program
         string fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
         File.WriteAllText(fileName, metaDataContent);
     }
-    
-    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
+
+    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyInfo> assemblies)
     {
         Exception? exception = null;
 
-        foreach (AssemblyDefinition assembly in assemblies)
+        foreach (var (assembly, output) in assemblies)
         {
             if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName)
             {
                 continue;
             }
-            
+
             try
             {
-                string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
+                string outputPath = Path.Combine(output, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, outputPath);
                 WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
@@ -125,7 +128,7 @@ public static class Program
             }
         }
 
-        foreach (AssemblyDefinition assembly in assemblies)
+        foreach (var (assembly, _) in assemblies)
         {
             assembly.Dispose();
         }
@@ -136,20 +139,20 @@ public static class Program
         }
     }
 
-    private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
+    private static ICollection<AssemblyInfo> OrderUserAssembliesByReferences(ICollection<AssemblyInfo> assemblies)
     {
         HashSet<string> assemblyNames = new HashSet<string>();
-        
-        foreach (AssemblyDefinition assembly in assemblies)
+
+        foreach (var (assembly, _) in assemblies)
         {
             assemblyNames.Add(assembly.FullName);
         }
 
-        List<AssemblyDefinition> result = new List<AssemblyDefinition>(assemblies.Count);
-        HashSet<AssemblyDefinition> remaining = new HashSet<AssemblyDefinition>(assemblies);
+        List<AssemblyInfo> result = new List<AssemblyInfo>(assemblies.Count);
+        HashSet<AssemblyInfo> remaining = new HashSet<AssemblyInfo>(assemblies);
 
         // Add assemblies with no references first between the user assemblies.
-        foreach (AssemblyDefinition assembly in assemblies)
+        foreach (var (assembly, output) in assemblies)
         {
             bool hasReferenceToUserAssembly = false;
             foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
@@ -158,7 +161,7 @@ public static class Program
                 {
                     continue;
                 }
-                
+
                 hasReferenceToUserAssembly = true;
                 break;
             }
@@ -167,35 +170,35 @@ public static class Program
             {
                 continue;
             }
-            
-            result.Add(assembly);
-            remaining.Remove(assembly);
+
+            result.Add(new AssemblyInfo(assembly, output));
+            remaining.Remove(new AssemblyInfo(assembly, output));
         }
-        
+
         do
         {
             bool added = false;
 
-            foreach (AssemblyDefinition assembly in assemblies)
+            foreach (var (assembly, output) in assemblies)
             {
-                if (!remaining.Contains(assembly))
+                if (!remaining.Contains(new AssemblyInfo(assembly, output)))
                 {
                     continue;
                 }
-                
+
                 bool allResolved = true;
                 foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
                 {
                     if (assemblyNames.Contains(reference.FullName))
                     {
                         bool found = false;
-                        foreach (AssemblyDefinition addedAssembly in result)
+                        foreach (var (addedAssembly, _) in result)
                         {
                             if (addedAssembly.FullName != reference.FullName)
                             {
                                 continue;
                             }
-                            
+
                             found = true;
                             break;
                         }
@@ -204,7 +207,7 @@ public static class Program
                         {
                             continue;
                         }
-                        
+
                         allResolved = false;
                         break;
                     }
@@ -214,22 +217,22 @@ public static class Program
                 {
                     continue;
                 }
-                
-                result.Add(assembly);
-                remaining.Remove(assembly);
+
+                result.Add(new AssemblyInfo(assembly, output));
+                remaining.Remove(new AssemblyInfo(assembly, output));
                 added = true;
             }
-            
+
             if (added || remaining.Count <= 0)
             {
                 continue;
             }
-            
-            foreach (AssemblyDefinition asm in remaining)
+
+            foreach (var (asm, output) in remaining)
             {
-                result.Add(asm);
+                result.Add(new AssemblyInfo(asm, output));
             }
-            
+
             break;
 
         } while (remaining.Count > 0);
@@ -242,7 +245,7 @@ public static class Program
         return WeaverImporter.Instance.AssemblyResolver;
     }
 
-    private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
+    private static List<AssemblyInfo> LoadUserAssemblies(IAssemblyResolver resolver)
     {
         ReaderParameters readerParams = new ReaderParameters
         {
@@ -250,23 +253,23 @@ public static class Program
             ReadSymbols = true,
             SymbolReaderProvider = new PdbReaderProvider(),
         };
-        
-        List<AssemblyDefinition> result = new List<AssemblyDefinition>();
-        
-        foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
+
+        var result = new List<AssemblyInfo>();
+
+        foreach (var (assemblyPath, outputPath) in WeaverOptions.AssemblyPaths.Select(StripQuotes).Select(GetAssemblyPaths))
         {
             if (!File.Exists(assemblyPath))
             {
                 throw new FileNotFoundException($"Could not find assembly at: {assemblyPath}");
             }
-            
+
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(assemblyPath, readerParams);
-            result.Add(assembly);
+            result.Add(new AssemblyInfo(assembly, outputPath));
         }
 
         return result;
     }
-    
+
     private static string StripQuotes(string value)
     {
         if (value.StartsWith('\"') && value.EndsWith('\"'))
@@ -276,18 +279,29 @@ public static class Program
 
         return value;
     }
-    
+
+    private static (string AssemblyPath, string OutputPath) GetAssemblyPaths(string assemblyPath)
+    {
+        var components = assemblyPath.Split(";", StringSplitOptions.RemoveEmptyEntries);
+        if (components.Length != 2)
+        {
+            throw new InvalidOperationException("Invalid assembly path. Expected format: AssemblyPath;OutputPath");
+        }
+
+        return (components[0], components[1]);
+    }
+
     static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
     {
         void CleanOldFilesAndMoveExistingFiles()
         {
             var pdbOutputFile = new FileInfo(Path.ChangeExtension(assemblyOutputPath, ".pdb"));
-            
+
             if (!pdbOutputFile.Exists)
             {
                 return;
             }
-            
+
             var tmpDirectory = Path.Join(Path.GetTempPath(), assembly.Name.Name);
             if (Path.GetPathRoot(tmpDirectory) != Path.GetPathRoot(pdbOutputFile.FullName)) //if the temp directory is on a different drive, move will not work as desired if file is locked since it does a copy for drive boundaries
             {
@@ -313,17 +327,17 @@ public static class Program
                 //no action needed
             }
 
-            //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy). 
+            //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy).
             var tmpDestFileName = Path.Join(tmpDirectory, Path.GetFileName(Path.ChangeExtension(Path.GetTempFileName(), ".pdb")));
             File.Move(pdbOutputFile.FullName, tmpDestFileName);
         }
 
         Task cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
         WeaverImporter.Instance.ImportCommonTypes(assembly);
-        
+
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
         StartProcessingAssembly(assembly, assemblyMetaData);
-        
+
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
         CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
 
@@ -332,10 +346,10 @@ public static class Program
         {
             SymbolWriterProvider = new PdbWriterProvider(),
         });
-        
+
         WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
     }
-    
+
     private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
     {
         string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
@@ -357,7 +371,7 @@ public static class Program
             List<TypeDefinition> interfaces = [];
             List<TypeDefinition> multicastDelegates = [];
             List<TypeDefinition> delegates = [];
-            
+
             try
             {
                 void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
@@ -365,7 +379,7 @@ public static class Program
                     typeDefinitions.Add(typeDefinition);
                     typeDefinition.AddGeneratedTypeAttribute();
                 }
-                
+
                 foreach (ModuleDefinition? module in userAssembly.Modules)
                 {
                     foreach (TypeDefinition? type in module.Types)
@@ -402,7 +416,7 @@ public static class Program
                 Console.Error.WriteLine($"Error enumerating types: {ex.Message}");
                 throw;
             }
-            
+
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
