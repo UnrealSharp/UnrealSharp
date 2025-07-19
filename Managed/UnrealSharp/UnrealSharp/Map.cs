@@ -5,7 +5,7 @@ using UnrealSharp.Core.Marshallers;
 namespace UnrealSharp;
 
 [Binding]
-public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>
+public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
 {
     public TMap(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative keyToNative,
@@ -24,10 +24,14 @@ public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValu
     public bool IsReadOnly => false;
 
     public KeyEnumerator Keys => new(this);
-
+    
+    IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => new KeyEnumerator(this);
+    
     ICollection<TKey> IDictionary<TKey, TValue>.Keys => new KeyEnumerator(this);
 
     public ValueCollection Values => new(this);
+    
+    IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => new ValueCollection(this);
 
     ICollection<TValue> IDictionary<TKey, TValue>.Values => new ValueCollection(this);
 
