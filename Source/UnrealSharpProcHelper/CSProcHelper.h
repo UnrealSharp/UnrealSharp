@@ -25,16 +25,16 @@ enum class EDotNetBuildConfiguration : uint64
 class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
 public:
-	
+
 	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
 	static bool InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
-	
+
 	static FString GetRuntimeConfigPath();
-	
+
 	static FString GetPluginAssembliesPath();
-	
+
 	static FString GetUnrealSharpPluginsPath();
-	
+
 	static FString GetUnrealSharpBuildToolPath();
 
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
@@ -51,6 +51,9 @@ public:
 
 	// Gets all the project paths in the /Scripts directory.
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);
+
+    // Checks if the project at this path can actually be reloaded. This is mainly used to skip of Roslyn analyzers since we don't want to reload them.
+    static bool IsProjectReloadable(FStringView ProjectPath);
 
 	// Path to the .NET runtime root. Only really works in editor, since players don't have the .NET runtime.
 	static FString GetDotNetDirectory();
@@ -84,5 +87,5 @@ public:
 
 	// Path to the C# solution file.
 	static FString GetPathToSolution();
-	
+
 };
