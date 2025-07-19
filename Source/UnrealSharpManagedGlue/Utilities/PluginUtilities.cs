@@ -23,11 +23,13 @@ public static class PluginUtilities
         dependencies = package.GetHeaderFiles()
                 .SelectMany(x => x.ReferencedHeadersLocked)
                 .SelectMany(x => x.GetPackages())
+                .Where(x => !x.IsPartOfEngine())
+                .Where(x => x.IsPlugin())
                 .Select(x => x.GetPluginDirectory())
                 .Select(x => x.PluginName)
                 .Where(x => x != pluginName)
                 .ToHashSet();
-        PluginDependencies.Add(package.SourceName, dependencies);
+        PluginDependencies.Add(pluginName, dependencies);
         return dependencies;
     }
 
@@ -62,7 +64,7 @@ public static class PluginUtilities
     {
         if (!PluginDependencies.TryGetValue(pluginName, out HashSet<string>? dependencies))
         {
-            throw new InvalidOperationException($"Could not find plugin dependencies for {pluginName}");
+            return [];
         }
 
         return dependencies

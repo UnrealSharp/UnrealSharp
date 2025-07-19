@@ -108,14 +108,20 @@ public static class Program
 
     private static void TryCreateGlueProjects()
     {
-        TryCreateGlueProject(Path.Combine(ProjectGluePath, "ProjectGlue.csproj"),
-            Factory.Session.ProjectDirectory!,
-            Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!);
+        var projectGluePath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
+        var projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
+        TryCreateGlueProject(projectGluePath, Factory.Session.ProjectDirectory!,  projectName);
         foreach (var pluginDir in PluginDirs)
         {
-            TryCreateGlueProject(pluginDir.GlueProjectPath,
-                pluginDir.PluginDirectory,
-                pluginDir.PluginName);
+            TryCreateGlueProject(pluginDir.GlueProjectPath, pluginDir.PluginDirectory, pluginDir.PluginName);
+        }
+
+        AddPluginDependencies(projectGluePath, Factory.Session.ProjectDirectory!, projectName,
+                PluginUtilities.GetProjectDependencyPaths());
+        foreach (var pluginDir in PluginDirs)
+        {
+            AddPluginDependencies(pluginDir.GlueProjectPath, pluginDir.PluginDirectory, pluginDir.PluginName,
+                    PluginUtilities.GetPluginDependencyPaths(pluginDir.PluginName));
         }
     }
 
@@ -143,5 +149,21 @@ public static class Program
             projectDirectory,
             engineDirectory,
             arguments);
+    }
+
+    private static void AddPluginDependencies(string projectPath, string projectDirectory,
+                                              string projectName, IEnumerable<string> projectPaths)
+    {
+        string engineDirectory = Factory.Session.EngineDirectory!;
+
+        var arguments = Enumerable.Repeat(new KeyValuePair<string, string>("ProjectPath", projectPath), 1)
+                .Concat(projectPaths.Select(x => new KeyValuePair<string, string>("Dependency", x)));
+
+        UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
+                projectName,
+                PluginDirectory,
+                projectDirectory,
+                engineDirectory,
+                arguments);
     }
 }
