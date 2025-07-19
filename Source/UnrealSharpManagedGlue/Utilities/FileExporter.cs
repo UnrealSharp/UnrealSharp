@@ -10,7 +10,8 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public record struct PluginDirInfo(string PluginName, string PluginDirectory)
 {
-    public string GlueProjectDir => Path.Combine(PluginDirectory, "Script", GlueProjectName);
+    public string PluginScriptDir = Path.Combine(PluginDirectory, "Script");
+    public string GlueProjectDir => Path.Combine(PluginScriptDir, GlueProjectName);
 
     public string GlueProjectName => $"{PluginName}.PluginGlue";
 

@@ -174,7 +174,7 @@ public static class Program
         var projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
         string engineDirectory = Factory.Session.EngineDirectory!;
 
-        var arguments = PluginDirs.Select(x => new KeyValuePair<string, string>("PluginProject", x.GlueProjectPath));
+        var arguments = PluginDirs.Select(x => new KeyValuePair<string, string>("PluginPath", x.PluginScriptDir));
 
         UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectSolution", ManagedBinariesPath,
                 projectName,

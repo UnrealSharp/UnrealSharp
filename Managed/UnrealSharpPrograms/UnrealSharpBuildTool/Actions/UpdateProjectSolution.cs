@@ -9,12 +9,21 @@ public partial class UpdateProjectSolution : BuildToolAction
 
     public override bool RunAction()
     {
-        _pluginProjects = Program.GetArguments("PluginProject")
-                .Select(x => GenerateProject.GetRelativePath(Program.GetScriptFolder(), x))
+        _pluginProjects = Program.GetArguments("PluginPath")
+                .SelectMany(GetPluginProjects)
                 .ToImmutableList();
         var exisingProjects = GetExistingProjects().ToHashSet();
         GenerateProject.AddProjectToSln(_pluginProjects.Except(exisingProjects).ToList());
         return true;
+    }
+
+    private static IEnumerable<string> GetPluginProjects(string pluginPath)
+    {
+        var scriptFolder = Program.GetScriptFolder();
+        var directoryInfo = new DirectoryInfo(pluginPath);
+        return directoryInfo.EnumerateFiles("*.csproj", SearchOption.AllDirectories)
+                .Select(x => x.FullName)
+                .Select(x => GenerateProject.GetRelativePath(scriptFolder, x));
     }
 
     private IEnumerable<string> GetExistingProjects()
