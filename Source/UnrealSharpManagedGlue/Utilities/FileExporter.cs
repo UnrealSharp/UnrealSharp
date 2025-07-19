@@ -25,7 +25,6 @@ public static class FileExporter
 
     private static readonly List<string> ChangedFiles = new();
     private static readonly List<string> UnchangedFiles = new();
-    private static readonly Dictionary<string, PluginDirInfo> PluginDirs = new();
 
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
@@ -100,35 +99,8 @@ public static class FileExporter
             return Program.ProjectGluePath;
         }
 
-        var (pluginName, pluginDirectory) = GetPluginDirectory(package);
+        var (pluginName, pluginDirectory) = package.GetPluginDirectory();
         return Path.Combine(pluginDirectory, "Script", $"{pluginName}.PluginGlue");
-    }
-
-    public static PluginDirInfo GetPluginDirectory(UhtPackage package)
-    {
-        if (PluginDirs.TryGetValue(package.SourceName, out var pluginDirectory))
-        {
-            return pluginDirectory;
-        }
-
-        var currentDirectory = new DirectoryInfo(package.GetModule().BaseDirectory);
-        while (currentDirectory is not null)
-        {
-            var pluginFile = currentDirectory.GetFiles("*.uplugin", SearchOption.TopDirectoryOnly)
-                .SingleOrDefault();
-            if (pluginFile is not null)
-            {
-
-                var info = new PluginDirInfo(Path.GetFileNameWithoutExtension(pluginFile.Name),
-                    currentDirectory.FullName);
-                PluginDirs.Add(package.SourceName, info);
-                return info;
-            }
-
-            currentDirectory = currentDirectory.Parent;
-        }
-
-        throw new InvalidOperationException($"Could not find plugin directory for {package.SourceName}");
     }
 
     public static void CleanOldExportedFiles()

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
@@ -56,5 +57,14 @@ public static class PackageUtilities
     {
         bool foundDefine = package.GetModule().PublicDefines.Contains(SkipGlueGenerationDefine);
         return !foundDefine;
+    }
+
+    public static IReadOnlyCollection<UhtHeaderFile> GetHeaderFiles(this UhtPackage package)
+    {
+        #if UE_5_5_OR_LATER
+        return package.Module.Headers;
+        #else
+        return package.Headers;
+        #endif
     }
 }
