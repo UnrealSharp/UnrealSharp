@@ -101,6 +101,7 @@ public static class Program
         var pluginsDir = new DirectoryInfo(PluginsPath);
         PluginDirs = [
             ..pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
+                .Where(x => x.Directory!.GetDirectories("Source").Length != 0)
                 .Select(x => new PluginDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
                 .Where(x => x.PluginName != "UnrealSharp")
         ];
