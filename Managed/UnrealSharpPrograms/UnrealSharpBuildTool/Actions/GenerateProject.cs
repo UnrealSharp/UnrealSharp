@@ -33,7 +33,7 @@ public class GenerateProject : BuildToolAction
         _projectPath = Path.Combine(_projectFolder, csProjFileName);
 
         string version = Program.GetVersion();
-        BuildToolProcess generateProjectProcess = new BuildToolProcess();
+        using BuildToolProcess generateProjectProcess = new BuildToolProcess();
 
         // Create a class library.
         generateProjectProcess.StartInfo.ArgumentList.Add("new");
@@ -89,7 +89,7 @@ public class GenerateProject : BuildToolAction
 
     public static void AddProjectToSln(List<string> relativePaths)
     {
-        BuildToolProcess addProjectToSln = new BuildToolProcess();
+        using BuildToolProcess addProjectToSln = new BuildToolProcess();
         addProjectToSln.StartInfo.ArgumentList.Add("sln");
         addProjectToSln.StartInfo.ArgumentList.Add("add");
 

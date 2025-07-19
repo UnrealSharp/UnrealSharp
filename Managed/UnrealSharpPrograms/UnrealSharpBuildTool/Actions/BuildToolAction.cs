@@ -14,6 +14,7 @@ public abstract class BuildToolAction
             BuildAction.Weave => new WeaveProject(),
             BuildAction.PackageProject => new PackageProject(),
             BuildAction.GenerateSolution => new GenerateSolution(),
+            BuildAction.UpdateProjectSolution => new UpdateProjectSolution(),
             BuildAction.BuildWeave => new BuildWeave(),
             _ => throw new Exception($"Can't find build action with name \"{Program.BuildToolOptions.Action}\"")
         };

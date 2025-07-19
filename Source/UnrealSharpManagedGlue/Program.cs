@@ -123,6 +123,8 @@ public static class Program
             AddPluginDependencies(pluginDir.GlueProjectPath, pluginDir.PluginDirectory, pluginDir.PluginName,
                     PluginUtilities.GetPluginDependencyPaths(pluginDir.PluginName));
         }
+
+        UpdateSolutionProjects();
     }
 
     private static void TryCreateGlueProject(string csprojPath, string projectDirectory,
@@ -136,7 +138,6 @@ public static class Program
         Dictionary<string, string> arguments = new Dictionary<string, string>
         {
             { "NewProjectName", Path.GetFileNameWithoutExtension(csprojPath) },
-            { "NewProjectPath", $"\"{Path.GetDirectoryName(csprojPath)}\""},
             { "SkipIncludeProjectGlue", "true" }
         };
 
@@ -160,6 +161,22 @@ public static class Program
                 .Concat(projectPaths.Select(x => new KeyValuePair<string, string>("Dependency", x)));
 
         UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
+                projectName,
+                PluginDirectory,
+                projectDirectory,
+                engineDirectory,
+                arguments);
+    }
+
+    private static void UpdateSolutionProjects()
+    {
+        var projectDirectory = Factory.Session.ProjectDirectory!;
+        var projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
+        string engineDirectory = Factory.Session.EngineDirectory!;
+
+        var arguments = PluginDirs.Select(x => new KeyValuePair<string, string>("PluginProject", x.GlueProjectPath));
+
+        UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectSolution", ManagedBinariesPath,
                 projectName,
                 PluginDirectory,
                 projectDirectory,

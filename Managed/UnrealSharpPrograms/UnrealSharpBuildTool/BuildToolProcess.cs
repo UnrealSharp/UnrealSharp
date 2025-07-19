@@ -5,6 +5,10 @@ namespace UnrealSharpBuildTool;
 
 public class BuildToolProcess : Process
 {
+
+    public string Output { get; private set; } = string.Empty;
+    public string Error { get; private set; } = string.Empty;
+
     public BuildToolProcess(string? fileName = null)
     {
         if (fileName == null)
@@ -18,7 +22,7 @@ public class BuildToolProcess : Process
                 fileName = Program.BuildToolOptions.DotNetPath;
             }
         }
-        
+
         StartInfo.FileName = fileName;
         StartInfo.RedirectStandardOutput = true;
         StartInfo.RedirectStandardError = true;
@@ -32,7 +36,7 @@ public class BuildToolProcess : Process
         string arguments = string.Join(" ", StartInfo.ArgumentList);
         Console.WriteLine($"Command: {command} {arguments}");
     }
-    
+
     public bool StartBuildToolProcess()
     {
         try
@@ -41,7 +45,7 @@ public class BuildToolProcess : Process
             {
                 throw new Exception("Failed to start process");
             }
-            
+
             WriteOutProcess();
 
             StringBuilder output = new();
@@ -52,17 +56,18 @@ public class BuildToolProcess : Process
                     output.AppendLine(args.Data);
                 }
             };
-            
+
             // To avoid deadlocks, use an asynchronous read operation on at least one of the streams.
             BeginOutputReadLine();
 
-            string error = StandardError.ReadToEnd();
-            
+            Error = StandardError.ReadToEnd();
+
             WaitForExit();
+            Output = output.ToString();
 
             if (ExitCode != 0)
             {
-                throw new Exception($"Error in executing build command {StartInfo.Arguments}: {Environment.NewLine + error + Environment.NewLine + output}");
+                throw new Exception($"Error in executing build command {StartInfo.Arguments}: {Environment.NewLine + Error + Environment.NewLine + output}");
             }
         }
         catch (Exception ex)
