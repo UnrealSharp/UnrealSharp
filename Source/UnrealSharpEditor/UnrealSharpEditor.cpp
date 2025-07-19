@@ -84,18 +84,18 @@ void FUnrealSharpEditorModule::StartupModule()
 			SuggestProjectSetup();
 		});
 	}
-	
+
 	// Make managed types not available for edit in the editor
 	{
 		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
 		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
-	
+
 		Manager->ForEachManagedPackage([&AssetToolsRef](const UPackage* Package)
 		{
 			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
 		});
 	}
-	
+
 	FCSStyle::Initialize();
 
 	RegisterCommands();
@@ -133,7 +133,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		FPaths::NormalizeFilename(NormalizedFileName);
 
 		// Skip ProjectGlue files
-		if (NormalizedFileName.Contains(TEXT("ProjectGlue")))
+		if (NormalizedFileName.Contains(TEXT("ProjectGlue")) || NormalizedFileName.Contains("PluginGlue"))
 		{
 			continue;
 		}
@@ -208,7 +208,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	FString BuildConfiguration = Settings->GetBuildConfigurationString();
 	ECSLoggerVerbosity LogVerbosity = Settings->LogVerbosity;
-	
+
 	FString ExceptionMessage;
 	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, &AllProjects, LogVerbosity, &ExceptionMessage, bRebuild))
 	{
@@ -277,7 +277,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
 	bDirtyGlue = false;
-	
+
 	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }
 
@@ -820,7 +820,7 @@ void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
 {
 	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
 	ManagedUnrealSharpEditorCallbacks.ForceManagedGC();
-	
+
 	if (bHasQueuedHotReload)
 	{
 		bHasQueuedHotReload = false;
@@ -960,7 +960,7 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 		{
 			return;
 		}
-		
+
 		TArray<UK2Node*> AllNodes;
 		FBlueprintEditorUtils::GetAllNodesOfClass<UK2Node>(Blueprint, AllNodes);
 

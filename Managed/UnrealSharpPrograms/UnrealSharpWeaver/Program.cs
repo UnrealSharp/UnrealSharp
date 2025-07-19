@@ -110,7 +110,7 @@ public static class Program
 
         foreach (var (assembly, output) in assemblies)
         {
-            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName)
+            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName || assembly.Name.Name.EndsWith("PluginGlue"))
             {
                 continue;
             }
