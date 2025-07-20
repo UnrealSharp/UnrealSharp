@@ -278,7 +278,7 @@ bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
     {
         if (Node->GetTag() == TEXT("PropertyGroup"))
         {
-            if (const FXmlNode* RoslynComponentNode = Node->FindChildNode(TEXT("IsRoslynComponent"));
+            if (const FXmlNode* RoslynComponentNode = Node->FindChildNode(TEXT("ExcludeFromWeaver"));
                 RoslynComponentNode &&
                 RoslynComponentNode->GetContent().Equals(TEXT("true"), ESearchCase::IgnoreCase))
             {
