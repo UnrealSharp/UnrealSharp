@@ -240,7 +240,7 @@ public class GenerateProject : BuildToolAction
         string providedGlueName = Program.TryGetArgument("GlueProjectName");
         string glueProjectName = string.IsNullOrEmpty(providedGlueName) ? "ProjectGlue" : providedGlueName;
         string scriptFolder = string.IsNullOrEmpty(_pluginPath) ? Program.GetScriptFolder() : Path.Combine(_pluginPath, "Script");
-        string generatedGluePath = Path.Combine(Program.GetScriptFolder(), glueProjectName, $"{glueProjectName}.csproj");
+        string generatedGluePath = Path.Combine(scriptFolder, glueProjectName, $"{glueProjectName}.csproj");
         AddDependency(doc, itemGroup, generatedGluePath);
     }
 

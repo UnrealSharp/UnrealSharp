@@ -228,7 +228,7 @@ void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, 
     for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
     {
         const FString PluginFilePath = Plugin->GetBaseDir();
-        if (!FPaths::IsUnderDirectory(PluginFilePath, GetPluginsDirectory()))
+        if (!FPaths::IsUnderDirectory(PluginFilePath, GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
         {
             continue;
         }
