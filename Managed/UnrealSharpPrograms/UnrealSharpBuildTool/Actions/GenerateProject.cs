@@ -7,19 +7,21 @@ public class GenerateProject : BuildToolAction
 {
     private string _projectPath = string.Empty;
     private string _projectFolder = string.Empty;
+    private string _pluginPath = string.Empty;
 
     public override bool RunAction()
     {
-        string folder = Program.TryGetArgument("NewProjectFolder");
-        string pluginPath = Program.TryGetArgument("PluginPath");
+
+        string folder = Path.GetFullPath(Program.TryGetArgument("NewProjectFolder"));
+        _pluginPath = Path.GetFullPath(Program.TryGetArgument("PluginPath"));
 
         if (string.IsNullOrEmpty(folder))
         {
             folder = Program.GetScriptFolder();
         }
-        else if (!string.IsNullOrEmpty(pluginPath))
+        else if (!string.IsNullOrEmpty(_pluginPath))
         {
-            if (!folder.Contains(Path.Join(pluginPath, "Script")))
+            if (!folder.Contains(Path.Combine(_pluginPath, "Script")))
             {
                 throw new InvalidOperationException("The project folder must be inside the Script folder.");
             }
@@ -237,6 +239,7 @@ public class GenerateProject : BuildToolAction
     {
         string providedGlueName = Program.TryGetArgument("GlueProjectName");
         string glueProjectName = string.IsNullOrEmpty(providedGlueName) ? "ProjectGlue" : providedGlueName;
+        string scriptFolder = string.IsNullOrEmpty(_pluginPath) ? Program.GetScriptFolder() : Path.Combine(_pluginPath, "Script");
         string generatedGluePath = Path.Combine(Program.GetScriptFolder(), glueProjectName, $"{glueProjectName}.csproj");
         AddDependency(doc, itemGroup, generatedGluePath);
     }

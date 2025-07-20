@@ -72,4 +72,12 @@ public class BuildToolOptions
         var helpText = HelpText.AutoBuild(result, h => h, e => e);
         Console.WriteLine(helpText);
     }
+
+    public void NormalizePaths()
+    {
+        ProjectDirectory = Path.GetFullPath(ProjectDirectory);
+        PluginDirectory = Path.GetFullPath(PluginDirectory);
+        EngineDirectory = Path.GetFullPath(EngineDirectory);
+        DotNetPath = Path.GetFullPath(DotNetPath);
+    }
 }

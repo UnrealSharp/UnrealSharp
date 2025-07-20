@@ -8,6 +8,7 @@
 #include "CSUnrealSharpEditorSettings.h"
 #include "DesktopPlatformModule.h"
 #include "IDirectoryWatcher.h"
+#include "IPluginBrowser.h"
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
@@ -16,13 +17,16 @@
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Engine/AssetManager.h"
 #include "Engine/InheritableComponentHandler.h"
+#include "Features/IPluginsEditorFeature.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
+#include "Interfaces/IPluginManager.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Logging/StructuredLog.h"
 #include "Misc/ScopedSlowTask.h"
+#include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
@@ -100,6 +104,7 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	RegisterCommands();
 	RegisterMenu();
+    RegisterPluginTemplates();
 
 	UCSManager& CSharpManager = UCSManager::Get();
 	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
@@ -110,6 +115,7 @@ void FUnrealSharpEditorModule::ShutdownModule()
 	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
+    UnregisterPluginTemplates();
 }
 
 void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
@@ -815,6 +821,39 @@ void FUnrealSharpEditorModule::RegisterMenu()
 
 	Section.AddEntry(Entry);
 }
+
+void FUnrealSharpEditorModule::RegisterPluginTemplates()
+{
+    IPluginBrowser& PluginBrowser = IPluginBrowser::Get();
+    const FString PluginBaseDir = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
+
+    const FText BlankTemplateName = LOCTEXT("UnrealSharp_BlankLabel", "C++/C# Joint");
+	const FText CSharpOnlyTemplateName = LOCTEXT("UnrealSharp_CSharpOnlyLabel", "C# Only");
+
+	const FText BlankDescription = LOCTEXT("UnrealSharp_BlankTemplateDesc", "Create a blank plugin with a minimal amount of C++ and C# code.");
+	const FText CSharpOnlyDescription = LOCTEXT("UnrealSharp_CSharpOnlyTemplateDesc", "Create a blank plugin that can only contain content and C# scripts.");
+
+    const TSharedRef<FPluginTemplateDescription> BlankTemplate = MakeShared<FCSPluginTemplateDescription>(BlankTemplateName, BlankDescription,
+        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default, false, true);
+    const TSharedRef<FPluginTemplateDescription> CSharpOnlyTemplate = MakeShared<FCSPluginTemplateDescription>(CSharpOnlyTemplateName, CSharpOnlyDescription,
+        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default, false, false);
+
+    PluginBrowser.RegisterPluginTemplate(BlankTemplate);
+    PluginBrowser.RegisterPluginTemplate(CSharpOnlyTemplate);
+
+    PluginTemplates.Add(BlankTemplate);
+    PluginTemplates.Add(CSharpOnlyTemplate);
+}
+
+void FUnrealSharpEditorModule::UnregisterPluginTemplates()
+{
+    IPluginBrowser& PluginBrowser = IPluginBrowser::Get();
+    for (const TSharedRef<FPluginTemplateDescription>& Template : PluginTemplates)
+    {
+        PluginBrowser.UnregisterPluginTemplate(Template);
+    }
+}
+
 
 void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
 {
