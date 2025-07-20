@@ -14,7 +14,6 @@ public enum BuildAction : int
     Weave,
     PackageProject,
     GenerateSolution,
-    UpdateProjectSolution,
     BuildWeave,
 }
 

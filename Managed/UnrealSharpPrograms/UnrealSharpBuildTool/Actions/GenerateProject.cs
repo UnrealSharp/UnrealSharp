@@ -11,10 +11,18 @@ public class GenerateProject : BuildToolAction
     public override bool RunAction()
     {
         string folder = Program.TryGetArgument("NewProjectFolder");
+        string pluginPath = Program.TryGetArgument("PluginPath");
 
         if (string.IsNullOrEmpty(folder))
         {
             folder = Program.GetScriptFolder();
+        }
+        else if (!string.IsNullOrEmpty(pluginPath))
+        {
+            if (!folder.Contains(Path.Join(pluginPath, "Script")))
+            {
+                throw new InvalidOperationException("The project folder must be inside the Script folder.");
+            }
         }
         else if (!folder.Contains(Program.GetScriptFolder()))
         {
@@ -89,17 +97,40 @@ public class GenerateProject : BuildToolAction
 
     public static void AddProjectToSln(List<string> relativePaths)
     {
-        using BuildToolProcess addProjectToSln = new BuildToolProcess();
-        addProjectToSln.StartInfo.ArgumentList.Add("sln");
-        addProjectToSln.StartInfo.ArgumentList.Add("add");
-
-        foreach (string relativePath in relativePaths)
+        foreach (var projects in GroupPathsBySolutionFolder(relativePaths))
         {
-            addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
-        }
+            using BuildToolProcess addProjectToSln = new BuildToolProcess();
+            addProjectToSln.StartInfo.ArgumentList.Add("sln");
+            addProjectToSln.StartInfo.ArgumentList.Add("add");
 
-        addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
-        addProjectToSln.StartBuildToolProcess();
+            foreach (string relativePath in projects)
+            {
+                addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
+            }
+
+            addProjectToSln.StartInfo.ArgumentList.Add("-s");
+            addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
+
+            addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+            addProjectToSln.StartBuildToolProcess();
+        }
+    }
+
+    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(List<string> relativePaths)
+    {
+        return relativePaths.GroupBy(GetPathRelativeToProject)!;
+    }
+
+    private static string GetPathRelativeToProject(string path)
+    {
+        var fullPath = Path.GetFullPath(path, Program.GetScriptFolder());
+        var relativePath = Path.GetRelativePath(Program.GetProjectDirectory(), fullPath);
+        var projectDirName = Path.GetDirectoryName(relativePath)!;
+
+        // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
+        // be in the directory for the plugin itself.
+        var containingDirName = Path.GetDirectoryName(projectDirName)!;
+        return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 
     private void ModifyCSProjFile()
@@ -126,6 +157,11 @@ public class GenerateProject : BuildToolAction
             if (!Program.HasArgument("SkipIncludeProjectGlue"))
             {
                 AppendGeneratedCode(csprojDocument, newItemGroup);
+            }
+
+            foreach (var dependency in Program.GetArguments("Dependency"))
+            {
+                AddDependency(csprojDocument, newItemGroup, dependency);
             }
 
             csprojDocument.Save(_projectPath);
@@ -199,8 +235,15 @@ public class GenerateProject : BuildToolAction
 
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
-        string generatedGluePath = Path.Combine(Program.GetScriptFolder(), "ProjectGlue", "ProjectGlue.csproj");
-        string relativePath = GetRelativePath(_projectFolder, generatedGluePath);
+        string providedGlueName = Program.TryGetArgument("GlueProjectName");
+        string glueProjectName = string.IsNullOrEmpty(providedGlueName) ? "ProjectGlue" : providedGlueName;
+        string generatedGluePath = Path.Combine(Program.GetScriptFolder(), glueProjectName, $"{glueProjectName}.csproj");
+        AddDependency(doc, itemGroup, generatedGluePath);
+    }
+
+    private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)
+    {
+        string relativePath = GetRelativePath(_projectFolder, dependency);
 
         XmlElement generatedCode = doc.CreateElement("ProjectReference");
         generatedCode.SetAttribute("Include", relativePath);

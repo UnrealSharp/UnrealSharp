@@ -19,16 +19,28 @@ public class GenerateSolution : BuildToolAction
         generateSln.StartInfo.ArgumentList.Add("--force");
         generateSln.StartBuildToolProcess();
 
-        string[] existingProjects = Directory.GetFiles(Program.GetScriptFolder(), "*.csproj", SearchOption.AllDirectories);
-        List<string> existingProjectsList = new List<string>(existingProjects.Length);
-
-        foreach (string project in existingProjects)
-        {
-            string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), project);
-            existingProjectsList.Add(relativePath);
-        }
+        List<string> existingProjectsList = GetExistingProjects()
+                .Select(x => Path.GetRelativePath(Program.GetScriptFolder(), x))
+                .ToList();
 
         GenerateProject.AddProjectToSln(existingProjectsList);
         return true;
+    }
+
+    private static IEnumerable<string> GetExistingProjects()
+    {
+        var scriptsDirectory = new DirectoryInfo(Program.GetScriptFolder());
+        var pluginsDirectory = new DirectoryInfo(Program.GetPluginsFolder());
+        return FindCSharpProjects(scriptsDirectory)
+                .Concat(pluginsDirectory.EnumerateFiles("*.uplugin", SearchOption.AllDirectories)
+                        .Select(x => x.Directory)
+                        .SelectMany(x => x!.EnumerateDirectories("Script"))
+                        .SelectMany(FindCSharpProjects))
+                .Select(x => x.FullName);
+    }
+
+    private static IEnumerable<FileInfo> FindCSharpProjects(DirectoryInfo directoryInfo)
+    {
+        return directoryInfo.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
     }
 }
