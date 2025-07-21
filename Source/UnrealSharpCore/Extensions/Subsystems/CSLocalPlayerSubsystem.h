@@ -70,9 +70,6 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem, public FTickableGa
 
 	// End
 
-	UFUNCTION(meta = (ScriptMethod))
-	ULocalPlayer* K2_GetLocalPlayer() const;
-
 public:
 
 	UPROPERTY(EditAnywhere, Category = "Managed Subsystems")
@@ -100,4 +97,7 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"), Category = "Managed Subsystems")
 	void K2_Tick(float DeltaTime);
+
+	UFUNCTION(meta = (ScriptMethod))
+	ULocalPlayer* K2_GetLocalPlayer() const;
 };
