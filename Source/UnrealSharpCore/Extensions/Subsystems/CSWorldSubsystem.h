@@ -8,6 +8,35 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "CSWorldSubsystem.generated.h"
 
+UENUM(BlueprintType)
+enum class ECSWorldType : uint8
+{
+    /** An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels */
+    None = EWorldType::None,
+
+    /** The game world */
+    Game = EWorldType::Game,
+
+    /** A world being edited in the editor */
+    Editor = EWorldType::Editor,
+
+    /** A Play In Editor world */
+    PIE = EWorldType::PIE,
+
+    /** A preview world for an editor tool */
+    EditorPreview = EWorldType::EditorPreview,
+
+    /** A preview world for a game */
+    GamePreview = EWorldType::GamePreview,
+
+    /** A minimal RPC world for a game */
+    GameRPC = EWorldType::GameRPC,
+
+    /** An editor world that was loaded but not currently being edited in the level editor */
+    Inactive = EWorldType::Inactive,
+};
+
+
 UCLASS(Blueprintable, BlueprintType, Abstract)
 class UCSWorldSubsystem : public UTickableWorldSubsystem
 #if ENGINE_MINOR_VERSION >= 5
@@ -41,6 +70,16 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
 		}
 
 		return K2_ShouldCreateSubsystem();
+	}
+
+    virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override
+	{
+	    if (!Super::DoesSupportWorldType(WorldType))
+	    {
+	        return false;
+	    }
+
+	    return K2_DoesSupportWorldType(static_cast<ECSWorldType>(WorldType));
 	}
 
 	virtual void BeginDestroy() override;
@@ -115,6 +154,9 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
 	bool K2_ShouldCreateSubsystem() const;
+
+    UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "DoesSupportWorldType"), Category = "Managed Subsystems")
+    bool K2_DoesSupportWorldType(const ECSWorldType WorldType) const;
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")
 	void K2_Initialize(FSubsystemCollectionBaseRef Collection);
