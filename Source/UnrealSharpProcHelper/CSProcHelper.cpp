@@ -220,46 +220,15 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 
 void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeProjectGlue)
 {
-    TArray<FString> AbsoluteFolderPaths = { GetUserAssemblyDirectory() };
-
-    IPluginManager& PluginManager = IPluginManager::Get();
-    TArray<TSharedRef<IPlugin>> EnabledPlugins = PluginManager.GetEnabledPlugins();
-
-    for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
-    {
-        const FString PluginFilePath = Plugin->GetBaseDir();
-        if (!FPaths::IsUnderDirectory(PluginFilePath, GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
-        {
-            continue;
-        }
-
-
-        FString ScriptDirectory = FPaths::Combine(PluginFilePath, "Binaries", "Managed");
-        AbsoluteFolderPaths.Add(ScriptDirectory);
-    }
+	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 
 	TArray<FString> ProjectNames;
 	GetProjectNamesByLoadOrder(ProjectNames, bIncludeProjectGlue);
 
 	for (const FString& ProjectName : ProjectNames)
 	{
-	    bool bFound = false;
-	    for (const FString& AbsoluteFolderPath : AbsoluteFolderPaths)
-	    {
-            if (const FString AssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".dll"));
-                FPaths::FileExists(AssemblyPath))
-	        {
-	            AssemblyPaths.Add(AssemblyPath);
-	            bFound = true;
-	            break;
-	        }
-	    }
-
-	    if (!bFound)
-	    {
-	        UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("Failed to find assembly for project %s"), *ProjectName);
-	        FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString::Printf(TEXT("Failed to find assembly for project %s"), *ProjectName)));
-	    }
+		const FString AssemblyPath = FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".dll"));
+		AssemblyPaths.Add(AssemblyPath);
 	}
 }
 

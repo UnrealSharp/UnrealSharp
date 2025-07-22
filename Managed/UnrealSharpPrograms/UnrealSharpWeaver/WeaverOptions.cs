@@ -15,6 +15,7 @@ public class WeaverOptions
     public WeaverOptions(IEnumerable<string> assemblyPaths, string outputDirectory)
     {
         AssemblyPaths = assemblyPaths;
+        OutputDirectory = outputDirectory;
     }
 
     public WeaverOptions() : this([], string.Empty)

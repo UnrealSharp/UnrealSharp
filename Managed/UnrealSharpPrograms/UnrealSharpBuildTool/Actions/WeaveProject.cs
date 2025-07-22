@@ -37,16 +37,14 @@ public class WeaveProject : BuildToolAction
         weaveProcess.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
 
         bool foundValidProject = false;
-        foreach ((string pluginPath, FileInfo projectFile) in projectFiles
-                         .SelectMany(x => x.Value
-                                 .Select(y => (x.Key, y))))
+        foreach (FileInfo projectFile in allProjectFiles)
         {
             weaveProcess.StartInfo.ArgumentList.Add("-p");
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
             string assemblyPath = Path.Combine(projectFile.DirectoryName!, "bin",
                 Program.GetBuildConfiguration(), Program.GetVersion(), csProjName + ".dll");
 
-            weaveProcess.StartInfo.ArgumentList.Add($"{assemblyPath};{pluginPath}");
+            weaveProcess.StartInfo.ArgumentList.Add(assemblyPath);
             foundValidProject = true;
         }
 

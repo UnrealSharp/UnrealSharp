@@ -7,8 +7,6 @@ using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver;
 
-public record struct AssemblyInfo(AssemblyDefinition Assembly, string OutputPath);
-
 public static class Program
 {
     public static WeaverOptions WeaverOptions { get; private set; } = null!;
@@ -48,9 +46,9 @@ public static class Program
         DefaultAssemblyResolver resolver = new DefaultAssemblyResolver();
 
         List<string> searchPaths = new();
-        foreach (var (assemblyPath, _) in WeaverOptions.AssemblyPaths.Select(StripQuotes).Select(GetAssemblyPaths))
+        foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
         {
-            string? directory = Path.GetDirectoryName(assemblyPath);
+            string? directory = Path.GetDirectoryName(StripQuotes(assemblyPath));
 
             if (string.IsNullOrEmpty(directory) || searchPaths.Contains(directory))
             {
@@ -79,19 +77,18 @@ public static class Program
         }
 
         DefaultAssemblyResolver resolver = GetAssemblyResolver();
-        List<AssemblyInfo> userAssemblies = LoadUserAssemblies(resolver);
-        ICollection<AssemblyInfo> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
+        List<AssemblyDefinition> userAssemblies = LoadUserAssemblies(resolver);
+        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
 
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
-        ProcessOrderedUserAssemblies(orderedUserAssemblies);
+        ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
     }
 
-    private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyInfo> orderedAssemblies, DirectoryInfo outputDirectory)
+    private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
     {
         UnrealSharpMetadata unrealSharpMetadata = new UnrealSharpMetadata
         {
             AssemblyLoadingOrder = orderedAssemblies
-                .Select(x => x.Assembly)
                 .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
         };
 
@@ -104,11 +101,11 @@ public static class Program
         File.WriteAllText(fileName, metaDataContent);
     }
 
-    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyInfo> assemblies)
+    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
     {
         Exception? exception = null;
 
-        foreach (var (assembly, output) in assemblies)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
             if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName || assembly.Name.Name.EndsWith("PluginGlue"))
             {
@@ -117,7 +114,7 @@ public static class Program
 
             try
             {
-                string outputPath = Path.Combine(output, Path.GetFileName(assembly.MainModule.FileName));
+                string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, outputPath);
                 WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
@@ -128,7 +125,7 @@ public static class Program
             }
         }
 
-        foreach (var (assembly, _) in assemblies)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
             assembly.Dispose();
         }
@@ -139,20 +136,20 @@ public static class Program
         }
     }
 
-    private static ICollection<AssemblyInfo> OrderUserAssembliesByReferences(ICollection<AssemblyInfo> assemblies)
+    private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
     {
         HashSet<string> assemblyNames = new HashSet<string>();
 
-        foreach (var (assembly, _) in assemblies)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
             assemblyNames.Add(assembly.FullName);
         }
 
-        List<AssemblyInfo> result = new List<AssemblyInfo>(assemblies.Count);
-        HashSet<AssemblyInfo> remaining = new HashSet<AssemblyInfo>(assemblies);
+        List<AssemblyDefinition> result = new List<AssemblyDefinition>(assemblies.Count);
+        HashSet<AssemblyDefinition> remaining = new HashSet<AssemblyDefinition>(assemblies);
 
         // Add assemblies with no references first between the user assemblies.
-        foreach (var (assembly, output) in assemblies)
+        foreach (AssemblyDefinition assembly in assemblies)
         {
             bool hasReferenceToUserAssembly = false;
             foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
@@ -171,17 +168,17 @@ public static class Program
                 continue;
             }
 
-            result.Add(new AssemblyInfo(assembly, output));
-            remaining.Remove(new AssemblyInfo(assembly, output));
+            result.Add(assembly);
+            remaining.Remove(assembly);
         }
 
         do
         {
             bool added = false;
 
-            foreach (var (assembly, output) in assemblies)
+            foreach (AssemblyDefinition assembly in assemblies)
             {
-                if (!remaining.Contains(new AssemblyInfo(assembly, output)))
+                if (!remaining.Contains(assembly))
                 {
                     continue;
                 }
@@ -192,7 +189,7 @@ public static class Program
                     if (assemblyNames.Contains(reference.FullName))
                     {
                         bool found = false;
-                        foreach (var (addedAssembly, _) in result)
+                        foreach (AssemblyDefinition addedAssembly in result)
                         {
                             if (addedAssembly.FullName != reference.FullName)
                             {
@@ -218,8 +215,8 @@ public static class Program
                     continue;
                 }
 
-                result.Add(new AssemblyInfo(assembly, output));
-                remaining.Remove(new AssemblyInfo(assembly, output));
+                result.Add(assembly);
+                remaining.Remove(assembly);
                 added = true;
             }
 
@@ -228,9 +225,9 @@ public static class Program
                 continue;
             }
 
-            foreach (var (asm, output) in remaining)
+            foreach (AssemblyDefinition asm in remaining)
             {
-                result.Add(new AssemblyInfo(asm, output));
+                result.Add(asm);
             }
 
             break;
@@ -245,7 +242,7 @@ public static class Program
         return WeaverImporter.Instance.AssemblyResolver;
     }
 
-    private static List<AssemblyInfo> LoadUserAssemblies(IAssemblyResolver resolver)
+    private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
     {
         ReaderParameters readerParams = new ReaderParameters
         {
@@ -254,9 +251,9 @@ public static class Program
             SymbolReaderProvider = new PdbReaderProvider(),
         };
 
-        var result = new List<AssemblyInfo>();
+        List<AssemblyDefinition> result = new List<AssemblyDefinition>();
 
-        foreach (var (assemblyPath, outputPath) in WeaverOptions.AssemblyPaths.Select(StripQuotes).Select(GetAssemblyPaths))
+        foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
         {
             if (!File.Exists(assemblyPath))
             {
@@ -264,7 +261,7 @@ public static class Program
             }
 
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(assemblyPath, readerParams);
-            result.Add(new AssemblyInfo(assembly, outputPath));
+            result.Add(assembly);
         }
 
         return result;
@@ -278,17 +275,6 @@ public static class Program
         }
 
         return value;
-    }
-
-    private static (string AssemblyPath, string OutputPath) GetAssemblyPaths(string assemblyPath)
-    {
-        var components = assemblyPath.Split(";", StringSplitOptions.RemoveEmptyEntries);
-        if (components.Length != 2)
-        {
-            throw new InvalidOperationException("Invalid assembly path. Expected format: AssemblyPath;OutputPath");
-        }
-
-        return (components[0], components[1]);
     }
 
     static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
