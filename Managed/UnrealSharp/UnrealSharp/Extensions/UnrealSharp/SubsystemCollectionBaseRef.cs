@@ -10,7 +10,8 @@ public readonly ref partial struct FSubsystemCollectionBaseRef
 
     public T? InitializeDependency<T>(TSubclassOf<T> subsystemClass) where T : USubsystem
     {
-        IntPtr handle = FSubsystemCollectionBaseRefExporter.CallInitializeDependency(_collectionRef, subsystemClass.NativeClass);
+        IntPtr obj = FSubsystemCollectionBaseRefExporter.CallInitializeDependency(_collectionRef, subsystemClass.NativeClass);
+        IntPtr handle = FCSManagerExporter.CallFindManagedObject(obj);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
 
