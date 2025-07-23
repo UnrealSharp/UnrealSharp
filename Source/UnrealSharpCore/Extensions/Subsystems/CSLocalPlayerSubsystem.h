@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SubsystemCollectionBaseRef.h"
 #include "Subsystems/LocalPlayerSubsystem.h"
 #include "CSLocalPlayerSubsystem.generated.h"
 
@@ -12,26 +13,26 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem, public FTickableGa
 	GENERATED_BODY()
 
 	// USubsystem Begin
-	
+
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override
 	{
 		Super::Initialize(Collection);
-		K2_Initialize();
+		K2_Initialize(Collection);
 	}
-  
+
 	virtual void Deinitialize() override
 	{
 		Super::Deinitialize();
 		K2_Deinitialize();
 	}
-  
+
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
 	{
 		if (!Super::ShouldCreateSubsystem(Outer))
 		{
 			return false;
 		}
-  
+
 		return K2_ShouldCreateSubsystem();
 	}
 
@@ -69,9 +70,6 @@ class UCSLocalPlayerSubsystem : public ULocalPlayerSubsystem, public FTickableGa
 
 	// End
 
-	UFUNCTION(meta = (ScriptMethod))
-	ULocalPlayer* K2_GetLocalPlayer() const;
-
 public:
 
 	UPROPERTY(EditAnywhere, Category = "Managed Subsystems")
@@ -90,13 +88,16 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
 	bool K2_ShouldCreateSubsystem() const;
-  
+
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")
-	void K2_Initialize();
-  
+	void K2_Initialize(FSubsystemCollectionBaseRef Collection);
+
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"), Category = "Managed Subsystems")
 	void K2_Deinitialize();
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"), Category = "Managed Subsystems")
 	void K2_Tick(float DeltaTime);
+
+	UFUNCTION(meta = (ScriptMethod))
+	ULocalPlayer* K2_GetLocalPlayer() const;
 };

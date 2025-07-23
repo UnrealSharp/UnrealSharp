@@ -21,17 +21,17 @@ public partial class UObject
             {
                 return FName.None;
             }
-            
+
             UObjectExporter.CallNativeGetName(NativeObject, out FName objectName);
             return objectName;
         }
     }
-    
+
     /// <summary>
     /// Whether the object is valid. UObjects can be valid but pending kill.
     /// </summary>
     public bool IsValid => !IsDestroyed;
-    
+
     /// <summary>
     /// Whether the object has been destroyed.
     /// </summary>
@@ -53,15 +53,15 @@ public partial class UObject
             {
                 throw new InvalidOperationException("Object is not valid.");
             }
-            
+
             IntPtr worldPtr = UObjectExporter.CallGetWorld_Internal(NativeObject);
             UWorld? foundWorld = GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
-            
+
             if (foundWorld == null)
             {
                 throw new InvalidOperationException("World is not valid.");
             }
-            
+
             return foundWorld;
         }
     }
@@ -112,10 +112,10 @@ public partial class UObject
                 A = 1.0f
             };
         }
-        
+
         UCSSystemExtensions.PrintStringInternal(message, printToScreen, printToConsole, color, duration, key);
     }
-    
+
     /// <summary>
     /// Prints a message to the console.
     /// </summary>
@@ -124,7 +124,7 @@ public partial class UObject
     {
         PrintString(message, printToScreen: false);
     }
-    
+
     /// <summary>
     /// Creates a new object of the specified type.
     /// </summary>
@@ -140,14 +140,14 @@ public partial class UObject
         {
             classType = new TSubclassOf<T>();
         }
-        
+
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
 
         if (outer == null || outer.NativeObject == IntPtr.Zero)
         {
             outer = GetTransientPackage();
         }
-        
+
         IntPtr handle = UObjectExporter.CallCreateNewObject(outer.NativeObject, classType.NativeClass, nativeTemplate);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
@@ -161,7 +161,7 @@ public partial class UObject
         IntPtr handle = UObjectExporter.CallGetTransientPackage();
         return GCHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle)!;
     }
-    
+
     /// <summary>
     /// Get the default object of the specified type.
     /// </summary>
@@ -172,7 +172,7 @@ public partial class UObject
         IntPtr nativeClass = typeof(T).TryGetNativeClassDefaults();
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
     }
-    
+
     /// <summary>
     /// Get the default object of the specified type.
     /// </summary>
@@ -195,10 +195,10 @@ public partial class UObject
     /// <param name="owner"> The owner of the actor. </param>
     /// <typeparam name="T"> The type of the actor to spawn. </typeparam>
     /// <returns> The spawned actor. </returns>
-    public static T SpawnActor<T>(TSubclassOf<T> actorType = default, 
+    public static T SpawnActor<T>(TSubclassOf<T> actorType = default,
         FTransform spawnTransform = default,
-        ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined, 
-        APawn? instigator = null, 
+        ESpawnActorCollisionHandlingMethod spawnMethod = ESpawnActorCollisionHandlingMethod.Undefined,
+        APawn? instigator = null,
         AActor? owner = null) where T : AActor
     {
         FCSSpawnActorParameters actorSpawnParameters = new FCSSpawnActorParameters
@@ -207,7 +207,7 @@ public partial class UObject
             Owner = owner,
             SpawnMethod = spawnMethod,
         };
-        
+
         return SpawnActor(spawnTransform, actorType, actorSpawnParameters);
     }
 
@@ -237,23 +237,45 @@ public partial class UObject
     public static T SpawnActorDeferred<T>(FTransform spawnTransform, TSubclassOf<T> actorType, FCSSpawnActorParameters spawnParameters, Action<T>? initializeActor = null, Action<T>? initializeComponents = null) where T : AActor
     {
         T spawnedActor = (T) UCSWorldExtensions.SpawnActorDeferred(new TSubclassOf<AActor>(actorType), spawnTransform, spawnParameters);
-        
+
         if (initializeActor != null)
         {
             initializeActor(spawnedActor);
         }
-        
+
         UCSWorldExtensions.ExecuteConstruction(spawnedActor, spawnTransform);
-        
+
         if (initializeComponents != null)
         {
             initializeComponents(spawnedActor);
         }
-        
+
         UCSWorldExtensions.PostActorConstruction(spawnedActor);
         return spawnedActor;
     }
-    
+
+    /// <summary>
+    /// Gets the world subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
+    /// <returns> The world subsystem of the specified type. </returns>
+    public T GetWorldSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UWorldSubsystem
+    {
+        IntPtr handle = UWorldExporter.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+    }
+
+    /// <summary>
+    /// Gets the world subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <returns> The world subsystem of the specified type. </returns>
+    public UWorldSubsystem GetWorldSubsystem(Type subsystemClass)
+    {
+        return GetWorldSubsystem(new TSubclassOf<UWorldSubsystem>(subsystemClass));
+    }
+
     /// <summary>
     /// Gets the world subsystem of the specified type.
     /// </summary>
@@ -261,11 +283,31 @@ public partial class UObject
     /// <returns> The world subsystem of the specified type. </returns>
     public T GetWorldSubsystem<T>() where T : UWorldSubsystem
     {
-        var subsystemClass = new TSubclassOf<T>(typeof(T));
-        IntPtr handle = UWorldExporter.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
+        return GetWorldSubsystem(new TSubclassOf<T>(typeof(T)));
+    }
+
+    /// <summary>
+    /// Gets the game instance subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
+    /// <returns> The game instance subsystem of the specified type. </returns>
+    public T GetGameInstanceSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UGameInstanceSubsystem
+    {
+        IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
-    
+
+    /// <summary>
+    /// Gets the game instance subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <returns> The game instance subsystem of the specified type. </returns>
+    public UGameInstanceSubsystem GetGameInstanceSubsystem(Type subsystemClass)
+    {
+        return GetGameInstanceSubsystem(new TSubclassOf<UGameInstanceSubsystem>(subsystemClass));
+    }
+
     /// <summary>
     /// Gets the game instance subsystem of the specified type.
     /// </summary>
@@ -273,9 +315,7 @@ public partial class UObject
     /// <returns> The game instance subsystem of the specified type. </returns>
     public T GetGameInstanceSubsystem<T>() where T : UGameInstanceSubsystem
     {
-        var subsystemClass = new TSubclassOf<T>(typeof(T));
-        IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
-        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GetGameInstanceSubsystem(new TSubclassOf<T>(typeof(T)));
     }
 
 #if WITH_EDITOR
@@ -284,39 +324,97 @@ public partial class UObject
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T GetEditorSubsystem<T>() where T : EditorSubsystem.UEditorSubsystem
+    public static T GetEditorSubsystem<T>(TSubclassOf<T> subsystemClass) where T : EditorSubsystem.UEditorSubsystem
     {
-        var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEditorExporter.CallGetEditorSubsystem(subsystemClass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
+
+    public static EditorSubsystem.UEditorSubsystem GetEditorSubsystem(Type subsystemClass)
+    {
+        return GetEditorSubsystem(new TSubclassOf<EditorSubsystem.UEditorSubsystem>(subsystemClass));
+    }
+
+    /// <summary>
+    /// Gets the editor subsystem of the specified type.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static T GetEditorSubsystem<T>() where T : EditorSubsystem.UEditorSubsystem
+    {
+        return GetEditorSubsystem<T>(new TSubclassOf<T>(typeof(T)));
+    }
 #endif
-    
+
+    /// <summary>
+    /// Gets the engine subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
+    /// <returns> The engine subsystem of the specified type. </returns>
+    public static T GetEngineSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UEngineSubsystem
+    {
+        IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+    }
+
+    /// <summary>
+    /// Gets the engine subsystem of the specified type.
+    /// </summary>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <returns> The engine subsystem of the specified type. </returns>
+    public static UEngineSubsystem GetEngineSubsystem(Type subsystemClass)
+    {
+        return GetEngineSubsystem(new TSubclassOf<UEngineSubsystem>(subsystemClass));
+    }
+
     /// <summary>
     /// Gets the engine subsystem of the specified type.
     /// </summary>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The engine subsystem of the specified type. </returns>
-    public T GetEngineSubsystem<T>() where T : UEngineSubsystem
+    public static T GetEngineSubsystem<T>() where T : UEngineSubsystem
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
         IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
-    
+
+    /// <summary>
+    /// Gets the local player subsystem of the specified type.
+    /// </summary>
+    /// <param name="playerController"> The player controller to get the subsystem from. </param>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
+    /// <returns> The local player subsystem of the specified type. </returns>
+    public static T GetLocalPlayerSubsystem<T>(APlayerController playerController, TSubclassOf<T> subsystemClass) where T : ULocalPlayerSubsystem
+    {
+        IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+    }
+
+    /// <summary>
+    /// Gets the local player subsystem of the specified type.
+    /// </summary>
+    /// <param name="playerController"> The player controller to get the subsystem from. </param>
+    /// <param name="subsystemClass"> The type of the subsystem to get. </param>
+    /// <returns> The local player subsystem of the specified type. </returns>
+    public static ULocalPlayerSubsystem GetLocalPlayerSubsystem(APlayerController playerController, Type subsystemClass)
+    {
+        return GetLocalPlayerSubsystem(playerController, new TSubclassOf<ULocalPlayerSubsystem>(subsystemClass));
+    }
+
     /// <summary>
     /// Gets the local player subsystem of the specified type.
     /// </summary>
     /// <param name="playerController"> The player controller to get the subsystem from. </param>
     /// <typeparam name="T"> The type of the subsystem to get. </typeparam>
     /// <returns> The local player subsystem of the specified type. </returns>
-    public T GetLocalPlayerSubsystem<T>(APlayerController playerController) where T : ULocalPlayerSubsystem
+    public static T GetLocalPlayerSubsystem<T>(APlayerController playerController) where T : ULocalPlayerSubsystem
     {
-        var subsystemClass = new TSubclassOf<T>(typeof(T));
-        IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
-        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+        return GetLocalPlayerSubsystem(playerController, new TSubclassOf<T>(typeof(T)));
     }
-    
+
     /// <summary>
     /// Creates a widget of the specified type.
     /// </summary>
@@ -328,27 +426,27 @@ public partial class UObject
     {
         return UCSUserWidgetExtensions.CreateWidget(widgetClass, owningController);
     }
-    
+
     /// <summary>
     /// Marks the object as garbage.
     /// </summary>
     public void MarkAsGarbage() => UCSObjectExtensions.MarkAsGarbage(this);
-    
+
     /// <summary>
     /// Gets the class of the object.
     /// </summary>
     public UClass Class => UCSObjectExtensions.GetClass(this);
-    
+
     /// <summary>
     /// Determines whether the object is a template / class default object.
     /// </summary>
     public bool IsTemplate => UCSObjectExtensions.IsTemplate(this);
-    
+
     /// <summary>
     /// Gets the current world settings for this object.
     /// </summary>
     public AWorldSettings WorldSettings => UCSObjectExtensions.GetWorldSettings(this);
-    
+
     /// <summary>
     /// Gets the world settings as the specified type.
     /// </summary>
@@ -366,22 +464,22 @@ internal static class ReflectionHelper
     internal static string GetEngineName(this Type type)
     {
         Attribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
-        
+
         if (generatedTypeAttribute is null)
         {
             return type.Name;
         }
-            
+
         FieldInfo? field = generatedTypeAttribute.GetType().GetField("EngineName");
-        
+
         if (field == null)
         {
             throw new InvalidOperationException($"The EngineName field was not found in the {nameof(GeneratedTypeAttribute)}.");
         }
-            
+
         return (string) field.GetValue(generatedTypeAttribute)!;
     }
-    
+
     internal static IntPtr TryGetNativeClass(this Type type)
     {
         return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
