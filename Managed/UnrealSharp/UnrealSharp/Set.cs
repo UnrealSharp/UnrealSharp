@@ -7,7 +7,7 @@ using UnrealSharp.Interop.Properties;
 namespace UnrealSharp;
 
 [Binding]
-public class TSet<T> : TSetBase<T>, ISet<T>
+public class TSet<T> : TSetBase<T>, ISet<T>, IReadOnlySet<T>
 {
     public TSet(IntPtr setProperty, IntPtr address,
         MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative)

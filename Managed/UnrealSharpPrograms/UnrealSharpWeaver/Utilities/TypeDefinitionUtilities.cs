@@ -94,6 +94,26 @@ public static class TypeDefinitionUtilities
         return type.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpCoreAttributesNamespace, BlittableTypeAttribute);
     }
     
+    public static bool IsUnmanagedType(this TypeReference typeRef)
+    {
+        var typeDef = typeRef.Resolve();
+    
+        // Must be a value type
+        if (!typeDef.IsValueType)
+            return false;
+
+        // Primitive types and enums are unmanaged
+        if (typeDef.IsPrimitive || typeDef.IsEnum)
+            return true;
+
+        // For structs, recursively check all fields
+        return typeDef.Fields
+            .Where(f => !f.IsStatic)
+            .Select(f => f.FieldType.Resolve())
+            .All(IsUnmanagedType);
+    }
+
+    
     public static CustomAttribute? GetUInterface(this TypeDefinition type)
     {
         return type.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, UInterfaceAttribute);
@@ -454,7 +474,7 @@ public static class TypeDefinitionUtilities
                     }
                 }
 
-                if (typeDef.IsEnum)
+                if (typeDef.IsEnum && typeDef.IsUEnum())
                 {
                     CustomAttribute? enumAttribute = typeDef.GetUEnum();
                 
@@ -472,14 +492,9 @@ public static class TypeDefinitionUtilities
                     return new NativeDataEnumType(typeDef, arrayDim);
                 }
 
-                if (typeDef.IsInterface)
+                if (typeDef.IsInterface && typeDef.IsUInterface())
                 {
                     return new NativeDataInterfaceType(typeRef, typeDef.Name + "Marshaller");
-                }
-
-                if (!typeDef.IsClass)
-                {
-                    throw new InvalidPropertyException(propertyName, sequencePoint, "No Unreal type for " + typeRef.FullName);
                 }
                 
                 if (typeDef.FullName == "UnrealSharp.FText")
@@ -524,7 +539,7 @@ public static class TypeDefinitionUtilities
                 
                 if (structAttribute == null)
                 {
-                    throw new Exception("Structs must have a UStruct attribute if exposed to Unreal Engine: " + typeDef.FullName);
+                    return typeDef.IsUnmanagedType() ? new NativeDataUnmanagedType(typeDef, arrayDim) : new NativeDataManagedObjectType(typeRef, arrayDim);
                 }
                 
                 return typeDef.GetBlittableType() != null ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, typeDef.GetMarshallerClassName(), arrayDim);

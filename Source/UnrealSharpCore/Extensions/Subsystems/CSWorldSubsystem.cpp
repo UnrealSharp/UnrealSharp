@@ -26,3 +26,8 @@ bool UCSWorldSubsystem::GetIsInitialized() const
 {
 	return IsInitialized();
 }
+
+bool UCSWorldSubsystem::K2_DoesSupportWorldType_Implementation(const ECSWorldType WorldType) const
+{
+    return true;
+}

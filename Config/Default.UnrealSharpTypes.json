@@ -1,0 +1,102 @@
+{
+    "Structs": {
+        "BlittableTypes": [
+            {
+                "Name": "EStreamingSourcePriority"
+            },
+            {
+                "Name": "ETriggerEvent"
+            },
+            {
+                "Name": "FVector",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+            },
+            {
+                "Name": "FVector2D",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector2D"
+            },
+            {
+                "Name": "FVector_NetQuantize",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+            },
+            {
+                "Name": "FVector_NetQuantize10",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+            },
+            {
+                "Name": "FVector_NetQuantize100",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+            },
+            {
+                "Name": "FVector_NetQuantizeNormal",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector"
+            },
+            {
+                "Name": "FVector2f",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector2f"
+            },
+            {
+                "Name": "FVector3f",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector3f"
+            },
+            {
+                "Name": "FVector4f",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector4f"
+            },
+            {
+                "Name": "FQuatf4",
+                "ManagedType": "UnrealSharp.CoreUObject.FVector4f"
+            },
+            {
+                "Name": "FRotator",
+                "ManagedType": "UnrealSharp.CoreUObject.FRotator"
+            },
+            {
+                "Name": "FMatrix44f",
+                "ManagedType": "UnrealSharp.CoreUObject.FMatrix44f"
+            },
+            {
+                "Name": "FTransform",
+                "ManagedType": "UnrealSharp.CoreUObject.FTransform"
+            },
+            {
+                "Name": "FTimerHandle",
+                "ManagedType": "UnrealSharp.Engine.FTimerHandle"
+            },
+            {
+                "Name": "FInputActionValue",
+                "ManagedType": "UnrealSharp.EnhancedInput.FInputActionValue"
+            },
+            {
+                "Name": "FRandomStream",
+                "ManagedType": "UnrealSharp.CoreUObject.FRandomStream"
+            },
+            {
+                "Name": "FSubsystemCollectionBaseRef",
+                "ManagedType": "UnrealSharp.UnrealSharpCore.FSubsystemCollectionBaseRef"
+            }
+        ],
+        "NativelyTranslatableTypes": [
+            {
+                "Name": "FMoverDataCollection",
+                "HasDestructor": false
+            },
+            {
+                "Name": "FPaintContext",
+                "HasDestructor": false
+            },
+            {
+                "Name": "FGeometry",
+                "HasDestructor": false
+            },
+            {
+                "Name": "FGameplayEffectSpec",
+                "HasDestructor": true
+            },
+            {
+                "Name": "FGameplayEffectSpecHandle",
+                "HasDestructor": true
+            }
+        ]
+    }
+}
