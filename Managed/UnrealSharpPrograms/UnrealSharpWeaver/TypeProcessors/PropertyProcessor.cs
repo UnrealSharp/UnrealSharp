@@ -48,8 +48,10 @@ public static class PropertyProcessor
             {
                 // Standard property handling
                 prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, loadBuffer, nativePropertyField);
-                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
-
+                if (propertyRef.SetMethod is not null) {
+                  prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
+                }
+                
                 string backingFieldName = RemovePropertyBackingField(type, prop);
                 removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
             }
