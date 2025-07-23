@@ -41,8 +41,10 @@ public static class PropertyProcessor
             if (prop.MemberRef.Resolve() is PropertyDefinition propertyRef)
             {
                 prop.PropertyDataType.WriteGetter(type, propertyRef.GetMethod, loadBuffer, nativePropertyField);
-                prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
-
+                if (propertyRef.SetMethod is not null) {
+                  prop.PropertyDataType.WriteSetter(type, propertyRef.SetMethod, loadBuffer, nativePropertyField);
+                }
+                
                 string backingFieldName = RemovePropertyBackingField(type, prop);
                 removedBackingFields.Add(backingFieldName, (prop, propertyRef, offsetField, nativePropertyField));
             }
