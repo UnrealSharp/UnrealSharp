@@ -165,7 +165,7 @@ public class MapPropertyTranslator : PropertyTranslator
        string keyType = keyTranslator.GetManagedType(mapProperty.KeyProperty);
        string valueType = valueTranslator.GetManagedType(mapProperty.ValueProperty);
        
-       string marshallerType = $"MapCopyMarshaller<{keyType}, {valueType}>";
+       string marshallerType = GetWrapperType(property, keyType, valueType);
        string keyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
        string valueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
        
@@ -174,6 +174,14 @@ public class MapPropertyTranslator : PropertyTranslator
        builder.AppendLine($"{marshaller}.ToNative({nativePropertyName}_NativeBuffer, 0, {source});");
     }
 
+    private string GetWrapperType(UhtProperty property, string keyType, string valueType)
+    {
+        bool isStructProperty = property.IsOuter<UhtScriptStruct>();
+        bool isParameter = property.IsOuter<UhtFunction>() || (property.Getter is not null && property.Setter is not null);
+        string containerType = isStructProperty || isParameter ? "MapCopyMarshaller" : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? "MapReadOnlyMarshaller" : "MapMarshaller";
+        return $"{containerType}<{keyType}, {valueType}>";
+    }
+    
     public override string GetMarshaller(UhtProperty property)
     {
         throw new System.NotImplementedException();
