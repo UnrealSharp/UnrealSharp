@@ -18,7 +18,7 @@ public class GenerateProject : BuildToolAction
 
         if (string.IsNullOrEmpty(folder))
         {
-            folder = Program.GetScriptFolder();
+            folder = Path.GetFullPath(Program.GetScriptFolder());
         }
         else if (!string.IsNullOrEmpty(_pluginPath))
         {
@@ -27,7 +27,7 @@ public class GenerateProject : BuildToolAction
                 throw new InvalidOperationException("The project folder must be inside the Script folder.");
             }
         }
-        else if (!folder.Contains(Program.GetScriptFolder()))
+        else if (!folder.Contains(Path.GetFullPath(Program.GetScriptFolder())))
         {
             throw new InvalidOperationException("The project folder must be inside the Script folder.");
         }
