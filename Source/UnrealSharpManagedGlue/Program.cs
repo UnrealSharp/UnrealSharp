@@ -134,7 +134,7 @@ public static class Program
         Dictionary<string, string> arguments = new Dictionary<string, string>
         {
             { "NewProjectName", Path.GetFileNameWithoutExtension(csprojPath) },
-            { "NewProjectFolder", projectDirectory},
+            { "NewProjectFolder", Path.GetDirectoryName(projectDirectory)!},
             { "SkipIncludeProjectGlue", "true" }
         };
 

@@ -13,7 +13,8 @@ public class GenerateProject : BuildToolAction
     {
 
         string folder = Path.GetFullPath(Program.TryGetArgument("NewProjectFolder"));
-        _pluginPath = Path.GetFullPath(Program.TryGetArgument("PluginPath"));
+        var pluginPathArg = Program.TryGetArgument("PluginPath");
+        _pluginPath = string.IsNullOrEmpty(pluginPathArg) ? string.Empty : Path.GetFullPath(pluginPathArg);
 
         if (string.IsNullOrEmpty(folder))
         {
