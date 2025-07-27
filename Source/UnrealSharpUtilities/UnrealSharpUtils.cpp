@@ -40,7 +40,13 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 		UE_LOG(LogUnrealSharpUtilities, Warning, TEXT("Tried to purge an invalid struct: %s"), *GetNameSafe(Struct));
 		return;
 	}
-	
+
+    UPackage* Owner = Struct->GetOutermost();
+    if (TMap<FName, FString>* MetaData = Owner->GetMetaData().GetMapForObject(Struct); MetaData != nullptr)
+    {
+        MetaData->Empty();
+    }
+
 	Struct->PropertyLink = nullptr;
 	Struct->DestructorLink = nullptr;
 	Struct->ChildProperties = nullptr;

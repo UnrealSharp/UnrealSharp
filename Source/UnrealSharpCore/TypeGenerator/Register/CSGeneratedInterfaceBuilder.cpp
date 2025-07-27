@@ -15,6 +15,7 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 	
 	Field->SetSuperStruct(UInterface::StaticClass());
 	Field->ClassFlags |= CLASS_Interface;
+    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 	RegisterFunctionsToLoader();

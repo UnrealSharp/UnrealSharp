@@ -43,6 +43,7 @@ void FCSGeneratedClassBuilder::RebuildType()
 	}
 	
 	Field->SetSuperStruct(CurrentSuperClass);
+    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 
 	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
 	Field->NumReplicatedProperties = 0;
