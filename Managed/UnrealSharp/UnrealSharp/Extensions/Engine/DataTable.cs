@@ -6,7 +6,7 @@ namespace UnrealSharp.Engine;
 
 public partial class UDataTable
 {
-    #if WITH_EDITOR
+    #if !PACKAGE
     /// <summary>
     /// Gets the table as a CSV string.
     /// </summary>
