@@ -10,7 +10,6 @@
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
 #include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
-#include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
@@ -75,6 +74,8 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 {
 	CreateBlueprint(SuperClass);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
+
+	TryUnregisterDynamicSubsystem(Field);
 }
 
 void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
@@ -132,7 +133,7 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 	Field->UpdateCustomPropertyListForPostConstruction();
 
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
-	TryRegisterSubsystem(Field);
+	TryRegisterDynamicSubsystem(Field);
 }
 
 FName FCSGeneratedClassBuilder::GetFieldName() const
@@ -238,16 +239,25 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 	}
 }
 
-void FCSGeneratedClassBuilder::TryRegisterSubsystem(UClass* ManagedClass)
+void FCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(UClass* ManagedClass)
 {
-	if (ManagedClass->IsChildOf<UEngineSubsystem>()
-	#if WITH_EDITOR
-	|| ManagedClass->IsChildOf<UEditorSubsystem>()
-	#endif
-	)
+	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
 	{
-		FSubsystemCollectionBase::ActivateExternalSubsystem(ManagedClass);
+		return;
 	}
+
+	UCSManager::Get().AddDynamicSubsystemClass(ManagedClass);
+}
+
+void FCSGeneratedClassBuilder::TryUnregisterDynamicSubsystem(UClass* ManagedClass)
+{
+	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
+	{
+		return;
+	}
+
+	// Remove lingering subsystems from hot reload.
+	FSubsystemCollectionBase::DeactivateExternalSubsystem(ManagedClass);
 }
 
 void FCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData)

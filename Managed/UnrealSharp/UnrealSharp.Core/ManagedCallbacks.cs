@@ -12,6 +12,7 @@ public unsafe struct ManagedCallbacks
     public delegate* unmanaged<IntPtr, char*, IntPtr> ScriptManagerBridge_LookupManagedMethod;
     public delegate* unmanaged<IntPtr, char*, IntPtr> ScriptManagedBridge_LookupManagedType;
     public delegate* unmanaged<IntPtr, IntPtr, void> ScriptManagedBridge_Dispose;
+    public delegate* unmanaged<IntPtr, void> ScriptManagedBridge_FreeHandle;
 
     public static void Initialize(IntPtr outManagedCallbacks)
     {
@@ -24,6 +25,7 @@ public unsafe struct ManagedCallbacks
             ScriptManagerBridge_LookupManagedMethod = &UnmanagedCallbacks.LookupManagedMethod,
             ScriptManagedBridge_LookupManagedType = &UnmanagedCallbacks.LookupManagedType,
             ScriptManagedBridge_Dispose = &UnmanagedCallbacks.Dispose,
+            ScriptManagedBridge_FreeHandle = &UnmanagedCallbacks.FreeHandle,
         };
     }
 }

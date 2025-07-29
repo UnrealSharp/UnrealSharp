@@ -1,5 +1,10 @@
 ﻿#include "CSUnrealSharpEditorSettings.h"
 
+UCSUnrealSharpEditorSettings::UCSUnrealSharpEditorSettings()
+{
+	CategoryName = "Plugins";
+}
+
 FString UCSUnrealSharpEditorSettings::GetBuildConfigurationString() const
 {
 	return StaticEnum<ECSBuildConfiguration>()->GetNameStringByValue(BuildConfiguration);

@@ -4,6 +4,7 @@
 #define __stdcall
 #endif
 
+struct FScopedGCHandle;
 struct FInvokeManagedMethodData;
 struct FGCHandleIntPtr;
 struct FGCHandle;
@@ -21,6 +22,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		using ManagedCallbacks_LookupMethod = uint8*(__stdcall*)(void*, const TCHAR*);
 		using ManagedCallbacks_LookupType = uint8*(__stdcall*)(uint8*, const TCHAR*);
 		using ManagedCallbacks_Dispose = void(__stdcall*)(FGCHandleIntPtr, FGCHandleIntPtr);
+		using ManagedCallbacks_FreeHandle = void(__stdcall*)(FGCHandleIntPtr);
 		
 		ManagedCallbacks_CreateNewManagedObject CreateNewManagedObject;
 		ManagedCallbacks_CreateNewManagedObjectWrapper CreateNewManagedObjectWrapper;
@@ -33,7 +35,10 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		
 		//Only call these from GCHandles.
 		friend FGCHandle;
+	    friend FScopedGCHandle;
 		ManagedCallbacks_Dispose Dispose;
+		ManagedCallbacks_FreeHandle FreeHandle;
+	    
 		
 	};
 	

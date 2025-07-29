@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using EpicGames.Core;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealSharpScriptGenerator.Exporters;
+using UnrealSharpScriptGenerator.Model;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -22,12 +24,14 @@ class ModuleFolders
 public static class CSharpExporter
 {
     const string ModuleDataFileName = "UnrealSharpModuleData.json";
+    private const string SpecialtypesJson = "SpecialTypes.json";
     public static bool HasModifiedEngineGlue;
     
     private static readonly List<Task> Tasks = new();
     private static readonly List<string> ExportedDelegates = new();
     private static readonly Dictionary<string, DateTime> CachedDirectoryTimes = new();
     private static Dictionary<string, ModuleFolders?> _modulesWriteInfo = new();
+    private static readonly HashSet<string> PluginDirs = [];
     
     public static void StartExport()
     {
@@ -71,6 +75,10 @@ public static class CSharpExporter
         WaitForTasks();
         
         SerializeModuleData();
+        
+        string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
+        OutputTypeRules(typeInfoFilePath);
     }
     
     static void DeserializeModuleData()
@@ -110,14 +118,38 @@ public static class CSharpExporter
         
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
         
-        if (!File.Exists(timestampFilePath))
+        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        {
+            return true;
+        }
+
+        if (TypeRulesChanged(typeInfoFilePath))
         {
             return true;
         }
         
         DateTime savedTimestampUtc = File.GetLastWriteTimeUtc(timestampFilePath);
         return executingAssemblyLastWriteTime > savedTimestampUtc;
+    }
+
+    static bool TypeRulesChanged(string typeInfoFilePath)
+    {
+        using var fs = new FileStream(typeInfoFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var rules = JsonSerializer.Deserialize<SpecialTypeInfo>(fs);
+        if (rules == null)
+        {
+            return true;
+        }
+        
+        return !rules.Equals(PropertyTranslatorManager.SpecialTypeInfo);
+    }
+
+    static void OutputTypeRules(string typeInfoFilePath)
+    {
+        using var fs = new FileStream(typeInfoFilePath, FileMode.Create, FileAccess.Write);
+        JsonSerializer.Serialize(fs, PropertyTranslatorManager.SpecialTypeInfo);
     }
 
     private static void WaitForTasks()
@@ -245,7 +277,7 @@ public static class CSharpExporter
             return;
         }
         
-        bool isManualExport = PropertyTranslatorManager.BlittableTypes.Contains(type.SourceName);
+        bool isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(type.SourceName);
         
         if (type is UhtClass classObj)
         {
@@ -279,6 +311,7 @@ public static class CSharpExporter
         }
         else if (type is UhtScriptStruct structObj)
         {
+            isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
         else if (type.EngineType == UhtEngineType.Delegate)

@@ -2,22 +2,19 @@
 #include "AssetToolsModule.h"
 #include "BlueprintCompilationManager.h"
 #include "BlueprintEditorLibrary.h"
-#include "CSCommands.h"
-#include "CSScriptBuilder.h"
+#include "CSUnrealSharpEditorCommands.h"
 #include "DirectoryWatcherModule.h"
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "DesktopPlatformModule.h"
-#include "GameplayTagsModule.h"
-#include "GameplayTagsSettings.h"
 #include "IDirectoryWatcher.h"
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
 #include "SubobjectDataSubsystem.h"
+#include "UnrealSharpRuntimeGlue.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Engine/AssetManager.h"
-#include "Engine/AssetManagerSettings.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -33,6 +30,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
+#include "UObject/UnrealTypePrivate.h"
 #include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
@@ -102,17 +100,6 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	RegisterCommands();
 	RegisterMenu();
-	RegisterGameplayTags();
-	RegisterCollisionProfile();
-
-	if (UAssetManager::IsInitialized())
-	{
-		TryRegisterAssetTypes();
-	}
-	else
-	{
-		FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpEditorModule::OnModulesChanged);
-	}
 
 	UCSManager& CSharpManager = UCSManager::Get();
 	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
@@ -419,6 +406,13 @@ void FUnrealSharpEditorModule::OnReportBug()
 	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
+void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
+{
+	FUnrealSharpRuntimeGlueModule& RuntimeGlueModule = FModuleManager::LoadModuleChecked<FUnrealSharpRuntimeGlueModule>(
+		"UnrealSharpRuntimeGlue");
+	RuntimeGlueModule.ForceRefreshRuntimeGlue();
+}
+
 void FUnrealSharpEditorModule::RepairComponents()
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(
@@ -556,18 +550,6 @@ void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorCom
 	Target->PostLoad();
 }
 
-
-void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
-{
-	ProcessAssetIds();
-	ProcessGameplayTags();
-	ProcessAssetTypes();
-	ProcessTraceTypeQuery();
-
-	// Let external modules act on the runtime glue refresh, if they want to.
-	OnRefreshRuntimeGlueDelegate.Broadcast();
-}
-
 void FUnrealSharpEditorModule::OnRepairComponents()
 {
 	RepairComponents();
@@ -672,7 +654,7 @@ FString FUnrealSharpEditorModule::SelectArchiveDirectory()
 
 TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 {
-	const FCSCommands& CSCommands = FCSCommands::Get();
+	const FCSUnrealSharpEditorCommands& CSCommands = FCSUnrealSharpEditorCommands::Get();
 	FMenuBuilder MenuBuilder(true, UnrealSharpCommands);
 
 	// Build
@@ -783,31 +765,31 @@ bool FUnrealSharpEditorModule::Tick(float DeltaTime)
 
 void FUnrealSharpEditorModule::RegisterCommands()
 {
-	FCSCommands::Register();
+	FCSUnrealSharpEditorCommands::Register();
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
-	UnrealSharpCommands->MapAction(FCSCommands::Get().CreateNewProject,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().CreateNewProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().CompileManagedCode,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().CompileManagedCode,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().ReloadManagedCode,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().ReloadManagedCode,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().RegenerateSolution,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RegenerateSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSolution,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().MergeManagedSlnAndNativeSln,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().MergeManagedSlnAndNativeSln,
 								   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().PackageProject,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().PackageProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenSettings,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenSettings,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSettings));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().OpenDocumentation,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenDocumentation,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenDocumentation));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().ReportBug,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().ReportBug,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().RefreshRuntimeGlue,
-	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRefreshRuntimeGlue));
-	UnrealSharpCommands->MapAction(FCSCommands::Get().RepairComponents,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RefreshRuntimeGlue,
+							   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRefreshRuntimeGlue));
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RepairComponents,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRepairComponents));
 
 	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
@@ -832,148 +814,6 @@ void FUnrealSharpEditorModule::RegisterMenu()
 		}));
 
 	Section.AddEntry(Entry);
-}
-
-void FUnrealSharpEditorModule::RegisterGameplayTags()
-{
-	IGameplayTagsModule::OnTagSettingsChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
-	IGameplayTagsModule::OnGameplayTagTreeChanged.AddRaw(this, &FUnrealSharpEditorModule::ProcessGameplayTags);
-	ProcessGameplayTags();
-}
-
-void FUnrealSharpEditorModule::TryRegisterAssetTypes()
-{
-	if (bHasRegisteredAssetTypes || !UAssetManager::IsInitialized())
-	{
-		return;
-	}
-
-	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
-		FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnCompletedInitialScan));
-	bHasRegisteredAssetTypes = true;
-}
-
-void FUnrealSharpEditorModule::RegisterCollisionProfile()
-{
-	UCollisionProfile* CollisionProfile = UCollisionProfile::Get();
-	CollisionProfile->OnLoadProfileConfig.AddRaw(this, &FUnrealSharpEditorModule::OnCollisionProfileLoaded);
-	ProcessTraceTypeQuery();
-}
-
-void FUnrealSharpEditorModule::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName,
-                                               const FString& Suffix)
-{
-	const FString Path = FPaths::Combine(FCSProcHelper::GetProjectGlueFolderPath(), FileName + Suffix);
-
-	FString CurrentRuntimeGlue;
-	FFileHelper::LoadFileToString(CurrentRuntimeGlue, *Path);
-
-	if (CurrentRuntimeGlue == ScriptBuilder.ToString())
-	{
-		// No changes, return
-		return;
-	}
-
-	if (!FFileHelper::SaveStringToFile(ScriptBuilder.ToString(), *Path))
-	{
-		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s"), *FileName);
-	}
-
-	bDirtyGlue = true;
-}
-
-void FUnrealSharpEditorModule::OnCompletedInitialScan()
-{
-	IAssetRegistry& AssetRegistry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
-	AssetRegistry.OnAssetRemoved().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRemoved);
-	AssetRegistry.OnAssetRenamed().AddRaw(this, &FUnrealSharpEditorModule::OnAssetRenamed);
-	AssetRegistry.OnInMemoryAssetCreated().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetCreated);
-	AssetRegistry.OnInMemoryAssetDeleted().AddRaw(this, &FUnrealSharpEditorModule::OnInMemoryAssetDeleted);
-
-	UAssetManager::Get().Register_OnAddedAssetSearchRoot(
-		FOnAddedAssetSearchRoot::FDelegate::CreateRaw(this, &FUnrealSharpEditorModule::OnAssetSearchRootAdded));
-
-	UAssetManagerSettings* Settings = UAssetManagerSettings::StaticClass()->GetDefaultObject<UAssetManagerSettings>();
-	Settings->OnSettingChanged().AddRaw(this, &FUnrealSharpEditorModule::OnAssetManagerSettingsChanged);
-
-	ProcessAssetIds();
-}
-
-bool FUnrealSharpEditorModule::IsRegisteredAssetType(const FAssetData& AssetData)
-{
-	return IsRegisteredAssetType(AssetData.GetClass());
-}
-
-bool FUnrealSharpEditorModule::IsRegisteredAssetType(UClass* Class)
-{
-	if (!IsValid(Class))
-	{
-		return false;
-	}
-
-	UAssetManager& AssetManager = UAssetManager::Get();
-	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
-
-	bool bIsPrimaryAsset = false;
-	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
-	{
-		if (Class->IsChildOf(PrimaryAssetType.GetAssetBaseClass().Get()))
-		{
-			bIsPrimaryAsset = true;
-			break;
-		}
-	}
-	return bIsPrimaryAsset;
-}
-
-void FUnrealSharpEditorModule::OnAssetRemoved(const FAssetData& AssetData)
-{
-	if (!IsRegisteredAssetType(AssetData))
-	{
-		return;
-	}
-	WaitUpdateAssetTypes();
-}
-
-void FUnrealSharpEditorModule::OnAssetRenamed(const FAssetData& AssetData, const FString& OldObjectPath)
-{
-	if (!IsRegisteredAssetType(AssetData))
-	{
-		return;
-	}
-	WaitUpdateAssetTypes();
-}
-
-void FUnrealSharpEditorModule::OnInMemoryAssetCreated(UObject* Object)
-{
-	if (!IsRegisteredAssetType(Object))
-	{
-		return;
-	}
-	WaitUpdateAssetTypes();
-}
-
-void FUnrealSharpEditorModule::OnInMemoryAssetDeleted(UObject* Object)
-{
-	if (!IsRegisteredAssetType(Object))
-	{
-		return;
-	}
-	WaitUpdateAssetTypes();
-}
-
-void FUnrealSharpEditorModule::OnCollisionProfileLoaded(UCollisionProfile* Profile)
-{
-	GEditor->GetTimerManager()->SetTimerForNextTick(
-		FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessTraceTypeQuery));
-}
-
-void FUnrealSharpEditorModule::OnAssetManagerSettingsChanged(UObject* Object,
-                                                             FPropertyChangedEvent& PropertyChangedEvent)
-{
-	WaitUpdateAssetTypes();
-	GEditor->GetTimerManager()->SetTimerForNextTick(
-		FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetTypes));
 }
 
 void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
@@ -1011,196 +851,6 @@ bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMa
 	}
 
 	return false;
-}
-
-void FUnrealSharpEditorModule::WaitUpdateAssetTypes()
-{
-	GEditor->GetTimerManager()->SetTimerForNextTick(
-		FTimerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::ProcessAssetIds));
-}
-
-void FUnrealSharpEditorModule::OnAssetSearchRootAdded(const FString& RootPath)
-{
-	WaitUpdateAssetTypes();
-}
-
-void FUnrealSharpEditorModule::ProcessGameplayTags()
-{
-	TArray<const FGameplayTagSource*> Sources;
-	UGameplayTagsManager& GameplayTagsManager = UGameplayTagsManager::Get();
-
-	const int32 NumValues = StaticEnum<EGameplayTagSourceType>()->NumEnums();
-	for (int32 Index = 0; Index < NumValues; Index++)
-	{
-		EGameplayTagSourceType SourceType = static_cast<EGameplayTagSourceType>(Index);
-		GameplayTagsManager.FindTagSourcesWithType(SourceType, Sources);
-	}
-
-	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
-	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.GameplayTags;"));
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public static class GameplayTags"));
-	ScriptBuilder.OpenBrace();
-
-	TArray<FName> TagNames;
-	auto GenerateGameplayTag = [&ScriptBuilder, &TagNames](const FGameplayTagTableRow& RowTag)
-	{
-		if (TagNames.Contains(RowTag.Tag))
-		{
-			return;
-		}
-
-		const FString TagName = RowTag.Tag.ToString();
-		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
-		ScriptBuilder.AppendLine(
-			FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));
-		TagNames.Add(RowTag.Tag);
-	};
-
-	for (const FGameplayTagSource* Source : Sources)
-	{
-		if (Source->SourceTagList)
-		{
-			for (const FGameplayTagTableRow& RowTag : Source->SourceTagList->GameplayTagList)
-			{
-				GenerateGameplayTag(RowTag);
-			}
-		}
-
-		if (Source->SourceRestrictedTagList)
-		{
-			for (const FGameplayTagTableRow& RowTag : Source->SourceRestrictedTagList->RestrictedGameplayTagList)
-			{
-				GenerateGameplayTag(RowTag);
-			}
-		}
-	}
-
-	ScriptBuilder.CloseBrace();
-	SaveRuntimeGlue(ScriptBuilder, TEXT("GameplayTags"));
-}
-
-FString ReplaceSpecialCharacters(const FString& Input)
-{
-	FString ModifiedString = Input;
-	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
-	FRegexMatcher Matcher(Pattern, ModifiedString);
-
-	while (Matcher.FindNext())
-	{
-		int32 MatchStart = Matcher.GetMatchBeginning();
-		int32 MatchEnd = Matcher.GetMatchEnding();
-		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
-		Matcher = FRegexMatcher(Pattern, ModifiedString);
-	}
-
-	return ModifiedString;
-}
-
-void FUnrealSharpEditorModule::ProcessAssetIds()
-{
-	UAssetManager& AssetManager = UAssetManager::Get();
-	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
-
-	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.CoreUObject;"));
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public static class AssetIds"));
-	ScriptBuilder.OpenBrace();
-
-	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
-	{
-		TArray<FPrimaryAssetId> PrimaryAssetIdList;
-		AssetManager.GetPrimaryAssetIdList(PrimaryAssetType.PrimaryAssetType, PrimaryAssetIdList);
-		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
-		{
-			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.
-				ToString();
-			AssetName = ReplaceSpecialCharacters(AssetName);
-
-			ScriptBuilder.AppendLine(FString::Printf(
-				TEXT("public static readonly FPrimaryAssetId %s = new(\"%s\", \"%s\");"),
-				*AssetName, *AssetType.PrimaryAssetType.GetName().ToString(), *AssetType.PrimaryAssetName.ToString()));
-		}
-	}
-
-	ScriptBuilder.CloseBrace();
-	SaveRuntimeGlue(ScriptBuilder, TEXT("AssetIds"));
-}
-
-void FUnrealSharpEditorModule::ProcessAssetTypes()
-{
-	UAssetManager& AssetManager = UAssetManager::Get();
-	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
-
-	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.CoreUObject;"));
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public static class AssetTypes"));
-	ScriptBuilder.OpenBrace();
-
-	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
-	{
-		FString AssetTypeName = ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
-
-		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetType %s = new(\"%s\");"),
-		                                         *AssetTypeName, *PrimaryAssetType.PrimaryAssetType.ToString()));
-	}
-
-	ScriptBuilder.CloseBrace();
-	SaveRuntimeGlue(ScriptBuilder, TEXT("AssetTypes"));
-}
-
-void FUnrealSharpEditorModule::ProcessTraceTypeQuery()
-{
-	// Initialize CollisionProfile in-case it's not loaded yet
-	UCollisionProfile::Get();
-
-	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.Engine;"));
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public enum ETraceChannel"));
-	ScriptBuilder.OpenBrace();
-
-	// Hardcoded values for Visibility and Camera. See CollisionProfile.cpp:356
-	{
-		ScriptBuilder.AppendLine(TEXT("Visibility = 0,"));
-		ScriptBuilder.AppendLine(TEXT("Camera = 1,"));
-	}
-
-	UEnum* TraceTypeQueryEnum = StaticEnum<ETraceTypeQuery>();
-	constexpr int32 NumChannels = TraceTypeQuery_MAX;
-	constexpr int32 StartIndex = 2;
-
-	for (int i = StartIndex; i < NumChannels; i++)
-	{
-		if (TraceTypeQueryEnum->HasMetaData(TEXT("Hidden"), i) || i == NumChannels - 1)
-		{
-			continue;
-		}
-
-		FString ChannelName = TraceTypeQueryEnum->GetMetaData(TEXT("ScriptName"), i);
-		ChannelName.RemoveFromStart(TEXT("ECC_"));
-		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ChannelName, i));
-	}
-
-	ScriptBuilder.CloseBrace();
-
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public static class TraceChannelStatics"));
-	ScriptBuilder.OpenBrace();
-
-	ScriptBuilder.AppendLine(TEXT("public static ETraceTypeQuery ToQuery(this ETraceChannel traceTypeQueryHelper)"));
-	ScriptBuilder.OpenBrace();
-	ScriptBuilder.AppendLine(TEXT("return (ETraceTypeQuery)traceTypeQueryHelper;"));
-	ScriptBuilder.CloseBrace();
-
-	ScriptBuilder.CloseBrace();
-
-	SaveRuntimeGlue(ScriptBuilder, TEXT("TraceChannel"));
 }
 
 void FUnrealSharpEditorModule::OnStructRebuilt(UCSScriptStruct* NewStruct)
@@ -1292,16 +942,6 @@ bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
 	}
 
 	return false;
-}
-
-void FUnrealSharpEditorModule::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
-{
-	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
-	{
-		return;
-	}
-
-	TryRegisterAssetTypes();
 }
 
 void FUnrealSharpEditorModule::RefreshAffectedBlueprints()

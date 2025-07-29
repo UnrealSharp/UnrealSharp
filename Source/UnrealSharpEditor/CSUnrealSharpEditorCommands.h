@@ -1,13 +1,9 @@
 ﻿#pragma once
 
-class CSCommands
-{
-};
-
-class FCSCommands : public TCommands<FCSCommands>
+class FCSUnrealSharpEditorCommands : public TCommands<FCSUnrealSharpEditorCommands>
 {
 public:
-	FCSCommands();
+	FCSUnrealSharpEditorCommands();
 
 	// TCommands<> interface
 	virtual void RegisterCommands() override;

@@ -19,10 +19,13 @@ public class UnrealSharpProcHelper : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore", 
+                "SlateCore",
                 "Projects",
-                "Json"
+                "Json",
+                "XmlParser",
             }
         );
+
+        PublicDefinitions.Add("SkipGlueGeneration");
     }
 }

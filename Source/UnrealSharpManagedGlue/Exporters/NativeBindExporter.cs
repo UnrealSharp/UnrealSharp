@@ -54,6 +54,13 @@ public static class NativeBindExporter
         return ParseUnrealSharpBind(topScope, actionScope, ref token);
     }
     
+    [UhtSpecifier(Extends = UhtTableNames.Function, ValueType = UhtSpecifierValueType.Legacy)]
+    private static void ScriptCallableSpecifier(UhtSpecifierContext specifierContext)
+    {
+        UhtFunction function = (UhtFunction)specifierContext.Type;
+        function.MetaData.Add("ScriptCallable", "");
+    }
+    
     private static UhtParseResult ParseUnrealSharpBind(UhtParsingScope topScope, UhtParsingScope actionScope, ref UhtToken token)
     {
         UhtHeaderFile headerFile = topScope.ScopeType.HeaderFile;

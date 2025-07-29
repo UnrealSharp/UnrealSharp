@@ -21,26 +21,29 @@ public class UnrealSharpEditor : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore",
-                "EditorSubsystem", 
+                "EditorSubsystem",
                 "UnrealSharpCore",
-                "UnrealEd", 
+                "UnrealEd",
                 "UnrealSharpProcHelper",
                 "BlueprintGraph",
                 "ToolMenus",
                 "EditorFramework",
                 "InputCore",
-                "AppFramework", 
-                "EditorStyle", 
+                "AppFramework",
+                "EditorStyle",
                 "Projects",
                 "GameplayTags",
                 "DeveloperSettings",
                 "UnrealSharpBlueprint",
                 "Kismet",
-                "KismetCompiler", 
+                "KismetCompiler",
                 "BlueprintEditorLibrary",
                 "SubobjectDataInterface",
                 "AssetTools",
+                "UnrealSharpRuntimeGlue",
             }
         );
+
+        PublicDefinitions.Add("SkipGlueGeneration");
     }
 }
