@@ -1,5 +1,8 @@
 ﻿#include "CSProcHelper.h"
 #include "UnrealSharpProcHelper.h"
+#include "XmlFile.h"
+#include "XmlNode.h"
+#include "XmlNode.h"
 #include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Interfaces/IPluginManager.h"
@@ -42,7 +45,7 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	{
 		Output += FPlatformProcess::ReadPipe(ReadPipe);
 	}
-	
+
 	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
 	FPlatformProcess::CloseProc(ProcHandle);
 	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
@@ -183,7 +186,7 @@ FString FCSProcHelper::GetUnrealSharpMetadataPath()
 void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeProjectGlue)
 {
 	const FString ProjectMetadataPath = GetUnrealSharpMetadataPath();
-	
+
 	if (!FPaths::FileExists(ProjectMetadataPath))
 	{
 		// Can be null at the start of the project.
@@ -207,12 +210,12 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 	for (const TSharedPtr<FJsonValue>& OrderEntry : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
 	{
 		FString ProjectName = OrderEntry->AsString();
-		
+
 		if (!bIncludeProjectGlue && ProjectName == TEXT("ProjectGlue"))
 		{
 			continue;
 		}
-		
+
 		UserProjectNames.Add(OrderEntry->AsString());
 	}
 }
@@ -221,7 +224,7 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeProjectGlue)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
-	
+
 	TArray<FString> ProjectNames;
 	GetProjectNamesByLoadOrder(ProjectNames, bIncludeProjectGlue);
 
@@ -242,21 +245,49 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncl
 		false,
 		false);
 
-	if (bIncludeProjectGlue)
-	{
-		return;
-	}
-	
 	for (int32 i = ProjectPaths.Num() - 1; i >= 0; i--)
 	{
-		if (!ProjectPaths[i].EndsWith("ProjectGlue.csproj"))
+		if (IsProjectReloadable(ProjectPaths[i]) && (bIncludeProjectGlue || !ProjectPaths[i].EndsWith("ProjectGlue.csproj")))
 		{
 			continue;
 		}
 
 		ProjectPaths.RemoveAt(i);
-		return;
 	}
+}
+
+bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
+{
+    FXmlFile ProjectFile(ProjectPath.GetData());
+    if (!ProjectFile.IsValid())
+    {
+        UE_LOG(LogUnrealSharpProcHelper, Warning, TEXT("Failed to parse project file as XML: %s"),
+            ProjectPath.GetData());
+        return true;
+    }
+
+    const FXmlNode* RootNode = ProjectFile.GetRootNode();
+    if (!RootNode)
+    {
+        return true;
+    }
+
+    // Look through all PropertyGroup elements
+    for (const TArray<FXmlNode*>& ProjectNodes = RootNode->GetChildrenNodes();
+        const FXmlNode* Node : ProjectNodes)
+    {
+        if (Node->GetTag() == TEXT("PropertyGroup"))
+        {
+            if (const FXmlNode* RoslynComponentNode = Node->FindChildNode(TEXT("ExcludeFromWeaver"));
+                RoslynComponentNode &&
+                RoslynComponentNode->GetContent().Equals(TEXT("true"), ESearchCase::IgnoreCase))
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
