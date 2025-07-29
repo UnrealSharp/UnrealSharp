@@ -1,28 +1,25 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
 struct FCSPropertyMetaData;
 
-class ICSPropertyInitializer {
+class ICSPropertyInitializer
+{
 public:
 	virtual ~ICSPropertyInitializer() = default;
 	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyMetaData& PropertyMetaData) const = 0;
 };
 
-
-/**
- * 
- */
-class UNREALSHARPCORE_API FPropertyGeneratorManager {
-	
+class UNREALSHARPCORE_API FPropertyGeneratorManager
+{
 	FPropertyGeneratorManager();
 	~FPropertyGeneratorManager() = default;
-	
-	struct FPropertyManagerDeleter {
-		void operator()(FPropertyGeneratorManager* Manager) const {
+
+	struct FPropertyManagerDeleter
+	{
+		void operator()(FPropertyGeneratorManager* Manager) const
+		{
 			delete Manager;
 		}
 	};
@@ -30,7 +27,8 @@ class UNREALSHARPCORE_API FPropertyGeneratorManager {
 	using FPtr = TUniquePtr<FPropertyGeneratorManager, FPropertyManagerDeleter>;
 
 public:
-	FORCEINLINE static const FPropertyGeneratorManager& Get() {
+	static const FPropertyGeneratorManager& Get()
+	{
 		checkf(Instance != nullptr, TEXT("Property generator manager not initialized"))
 		return *Instance;
 	}
