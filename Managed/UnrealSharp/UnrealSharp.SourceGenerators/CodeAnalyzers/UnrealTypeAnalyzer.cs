@@ -10,7 +10,6 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         PrefixRule, 
-        StructRule, 
         ClassRule
         );
 
@@ -19,7 +18,6 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSymbolAction(AnalyzeType, SymbolKind.NamedType);
-        context.RegisterSymbolAction(AnalyzeStructFields, SymbolKind.Property);
         context.RegisterSymbolAction(AnalyzeClassFields, SymbolKind.Field);
     }
     
@@ -27,12 +25,10 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
     public const string ClassAnalyzerId = "US0006";
     private static readonly LocalizableString StructAnalyzerTitle = "UnrealSharp Struct Field Analyzer";
     private static readonly LocalizableString ClassAnalyzerTitle = "UnrealSharp Class Field Analyzer";
-    private static readonly LocalizableString StructAnalyzerMessageFormat = "{0} is a UProperty and a property, which is not allowed in structs. UProperties in structs must be fields.";
     private static readonly LocalizableString ClassAnalyzerMessageFormat = "{0} is a UProperty and a field, which is not allowed in classes. UProperties in classes must be properties.";
     private static readonly LocalizableString StructAnalyzerDescription = "Ensures UProperties in structs are fields.";
     private static readonly LocalizableString ClassAnalyzerDescription = "Ensures UProperties in classes are properties.";
-
-    private static readonly DiagnosticDescriptor StructRule = new(StructAnalyzerId, StructAnalyzerTitle, StructAnalyzerMessageFormat, RuleCategory.Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: StructAnalyzerDescription);
+    
     private static readonly DiagnosticDescriptor ClassRule = new(ClassAnalyzerId, ClassAnalyzerTitle, ClassAnalyzerMessageFormat, RuleCategory.Category, DiagnosticSeverity.Error, isEnabledByDefault: true, description: ClassAnalyzerDescription);
 
     private static void AnalyzeFields(SymbolAnalysisContext context, TypeKind typeKind, string requiredAttribute, DiagnosticDescriptor rule)
@@ -52,14 +48,6 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
 
         var diagnostic = Diagnostic.Create(rule, symbol.Locations[0], symbol.Name);
         context.ReportDiagnostic(diagnostic);
-    }
-
-    private static void AnalyzeStructFields(SymbolAnalysisContext context)
-    {
-        if (context.Symbol is IPropertySymbol)
-        {
-            AnalyzeFields(context, TypeKind.Struct, AnalyzerStatics.UStructAttribute, StructRule);
-        }
     }
 
     private static void AnalyzeClassFields(SymbolAnalysisContext context)

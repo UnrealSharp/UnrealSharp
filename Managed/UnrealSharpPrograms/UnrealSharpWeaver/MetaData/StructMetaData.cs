@@ -1,10 +1,11 @@
-﻿using Mono.Cecil;
+﻿using System.Text.RegularExpressions;
+using Mono.Cecil;
 using UnrealSharpWeaver.Utilities;
 using PropertyUtilities = UnrealSharpWeaver.Utilities.PropertyUtilities;
 
 namespace UnrealSharpWeaver.MetaData;
 
-public class StructMetaData : TypeReferenceMetadata
+public partial class StructMetaData : TypeReferenceMetadata
 {
     public List<PropertyMetaData> Fields { get; set; }
     public StructFlags StructFlags { get; set; }
@@ -15,14 +16,11 @@ public class StructMetaData : TypeReferenceMetadata
     
     public StructMetaData(TypeDefinition structDefinition) : base(structDefinition, TypeDefinitionUtilities.UStructAttribute)
     {
-        if (structDefinition.Properties.Count > 0)
-        {
-            throw new InvalidUnrealStructException(structDefinition, "UStructs don't support properties, use fields instead with UProperty attribute");
-        }
-        
         Fields = new List<PropertyMetaData>();
         IsBlittableStruct = true;
         
+
+        var backingFieldRegex = BackingFieldRegex();
         foreach (var field in structDefinition.Fields)
         {
             if (field.IsStatic)
@@ -37,6 +35,15 @@ public class StructMetaData : TypeReferenceMetadata
             }
             
             PropertyMetaData property = new PropertyMetaData(field);
+            
+            // If we match against a backing property field use the property name instead.
+            var backingFieldMatch = backingFieldRegex.Match(field.Name);
+            if (backingFieldMatch.Success)
+            {
+                string propertyName = backingFieldMatch.Groups[1].Value;
+                property.Name = propertyName;
+                
+            }
 
             if (property.IsInstancedReference)
             {
@@ -79,4 +86,7 @@ public class StructMetaData : TypeReferenceMetadata
         
         TryAddMetaData("BlueprintType", true);
     }
+
+    [GeneratedRegex("<([a-zA-Z$_][a-zA-Z0-9$_]*)>k__BackingField")]
+    private static partial Regex BackingFieldRegex();
 }
