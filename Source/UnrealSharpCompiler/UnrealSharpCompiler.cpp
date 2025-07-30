@@ -79,9 +79,16 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		for (int32 i = 0; i < Blueprints.Num(); ++i)
 		{
 			UBlueprint* Blueprint = Blueprints[i];
+
+			if (!Blueprint)
+			{
+				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint is null, skipping compilation.");
+				continue;
+			}
+			
 			if (!IsValid(Blueprint))
 			{
-				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint {0} is invalid, skipping compilation.", *Blueprint->GetName());
+				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
 				continue;
 			}
 
