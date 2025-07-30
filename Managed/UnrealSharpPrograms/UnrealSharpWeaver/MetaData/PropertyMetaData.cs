@@ -230,9 +230,13 @@ public class PropertyMetaData : BaseMetaData
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
     }
     
-    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
+    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None, ParameterDefinition? parameterDefinition = null)
     {
-        return new PropertyMetaData(typeRef, paramName, modifier);
+        var metadata = new PropertyMetaData(typeRef, paramName, modifier);
+        if (parameterDefinition is null) return metadata;
+        metadata.AddMetaData(parameterDefinition);
+        metadata.AddMetaTagsNamespace(parameterDefinition);
+        return metadata;
     }
     
     private void RegisterPropertyAccessorAsUFunction(MethodDefinition accessorMethod, bool isGetter)
