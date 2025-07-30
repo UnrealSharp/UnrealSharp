@@ -10,6 +10,8 @@ class UCSEnum;
 class UCSScriptStruct;
 class FCSBlueprintCompiler;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpCompiler, Log, All);
+
 class FUnrealSharpCompilerModule : public IModuleInterface
 {
 public:

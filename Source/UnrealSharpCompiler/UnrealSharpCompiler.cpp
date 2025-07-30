@@ -14,6 +14,8 @@
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
+DEFINE_LOG_CATEGORY(LogUnrealSharpCompiler);
+
 void FUnrealSharpCompilerModule::StartupModule()
 {
 	UCSManager& CSManager = UCSManager::GetOrCreate();
@@ -82,13 +84,13 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 
 			if (!Blueprint)
 			{
-				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint is null, skipping compilation.");
+				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint is null, skipping compilation.");
 				continue;
 			}
 			
 			if (!IsValid(Blueprint))
 			{
-				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
+				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
 				continue;
 			}
 
