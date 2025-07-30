@@ -1,5 +1,6 @@
 ﻿#include "UnrealSharpCompiler.h"
 
+#include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
@@ -8,6 +9,7 @@
 #include "TypeGenerator/CSBlueprint.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/CSScriptStruct.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
@@ -27,6 +29,7 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
+	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
 	
 	CSManager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
@@ -135,6 +138,16 @@ void FUnrealSharpCompilerModule::OnNewStruct(UCSScriptStruct* NewStruct)
 void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 {
 	AddManagedReferences(NewEnum->ManagedReferences);
+}
+
+void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
+{
+	if (!IsValid(GEditor))
+	{
+		return;
+	}
+	
+	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
 }
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FName& AssemblyName)

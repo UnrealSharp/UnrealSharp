@@ -4,6 +4,7 @@
 #include "CSBlueprintCompiler.h"
 #include "Modules/ModuleManager.h"
 
+class UCSInterface;
 struct FCSManagedReferencesCollection;
 class UCSEnum;
 class UCSScriptStruct;
@@ -19,6 +20,7 @@ private:
     void OnNewClass(UCSClass* NewClass);
     void OnNewStruct(UCSScriptStruct* NewStruct);
     void OnNewEnum(UCSEnum* NewEnum);
+    void OnNewInterface(UCSInterface* NewInterface);
     
     void OnManagedAssemblyLoaded(const FName& AssemblyName);
     void RecompileAndReinstanceBlueprints();
