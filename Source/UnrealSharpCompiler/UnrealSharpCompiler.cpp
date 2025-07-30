@@ -69,15 +69,22 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		return;
 	}
 	
-	auto QueueAndCompile = [this](TArray<UBlueprint*>& Blueprints)
+	auto CompileBlueprints = [this](TArray<UBlueprint*>& Blueprints)
 	{
 		if (Blueprints.IsEmpty())
 		{
 			return;
 		}
 		
-		for (UBlueprint* Blueprint : Blueprints)
+		for (int32 i = 0; i < Blueprints.Num(); ++i)
 		{
+			UBlueprint* Blueprint = Blueprints[i];
+			if (!IsValid(Blueprint))
+			{
+				UE_LOGFMT(LogUnrealSharp, Error, "Blueprint {0} is invalid, skipping compilation.", *Blueprint->GetName());
+				continue;
+			}
+
 			FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 		}
 		
@@ -85,8 +92,8 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	};
 
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
-	QueueAndCompile(ManagedComponentsToCompile);
-	QueueAndCompile(ManagedClassesToCompile);
+	CompileBlueprints(ManagedComponentsToCompile);
+	CompileBlueprints(ManagedClassesToCompile);
 
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
