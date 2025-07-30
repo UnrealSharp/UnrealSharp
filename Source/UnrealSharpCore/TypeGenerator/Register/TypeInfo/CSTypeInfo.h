@@ -61,6 +61,9 @@ struct UNREALSHARPCORE_API TCSTypeInfo
 		{
 			State = CurrentlyBuilding;
 			TypeBuilder.RebuildType();
+#if WITH_EDITOR
+			FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
+#endif
         }
 #if WITH_EDITOR
         else if (State == NeedUpdate)

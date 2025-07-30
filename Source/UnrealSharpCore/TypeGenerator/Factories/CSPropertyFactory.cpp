@@ -18,7 +18,7 @@ void FCSPropertyFactory::Initialize()
 	}
 	
 	TArray<UCSPropertyGenerator*> FoundPropertyGeneratorClasses;
-	FUnrealSharpUtils::GetAllCDOsOfClass<UCSPropertyGenerator>(FoundPropertyGeneratorClasses);
+	FCSUnrealSharpUtils::GetAllCDOsOfClass<UCSPropertyGenerator>(FoundPropertyGeneratorClasses);
 	
 	PropertyGenerators.Reserve(FoundPropertyGeneratorClasses.Num());
 	
