@@ -88,6 +88,11 @@ public static class ConstructorBuilder
         ILProcessor processor = staticConstructor.Body.GetILProcessor();
         foreach (var property in fields)
         {
+            if (property.HasCustomAccessors) 
+            {
+                continue;
+            }
+            
             Instruction loadNativeProperty;
             Instruction setNativeProperty;
             if (property.NativePropertyField == null)

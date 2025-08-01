@@ -3,6 +3,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Functions/CSFunction.h"
+#include "TypeGenerator/Properties/PropertyGeneratorManager.h"
 
 #if WITH_EDITOR
 #include "Kismet2/BlueprintEditorUtils.h"
@@ -35,19 +36,6 @@ TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyTy
 {
 	PURE_VIRTUAL();
 	return nullptr;
-}
-
-FGuid UCSPropertyGenerator::ConstructGUIDFromName(const FName& Name)
-{
-	return ConstructGUIDFromString(Name.ToString());
-}
-
-FGuid UCSPropertyGenerator::ConstructGUIDFromString(const FString& Name)
-{
-	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);
-	uint32 HashBuffer[5];
-	FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer));
-	return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]); 
 }
 
 bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
@@ -84,10 +72,8 @@ FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMet
 	{
 		FieldClass = GetPropertyClass();
 	}
-	
-	FProperty* NewProperty = static_cast<FProperty*>(FieldClass->Construct(Outer, PropertyName, RF_Public));
-	NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
-	return NewProperty;
+
+	return FPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyName, PropertyMetaData);
 }
 
 UClass* UCSPropertyGenerator::TryFindingOwningClass(UField* Outer)

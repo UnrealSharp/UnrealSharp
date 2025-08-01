@@ -80,7 +80,7 @@ public:
 		return LoadUserAssemblyByName(AssemblyName);
 	}
 	
-	FGCHandle FindManagedObject(UObject* Object);
+	FGCHandle FindManagedObject(const UObject* Object);
 
 	FGCHandle FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass);
 

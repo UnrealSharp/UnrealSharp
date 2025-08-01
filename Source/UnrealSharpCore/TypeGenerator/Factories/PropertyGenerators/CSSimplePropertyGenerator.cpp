@@ -4,7 +4,6 @@ UCSSimplePropertyGenerator::UCSSimplePropertyGenerator(FObjectInitializer const&
 {
 	TypeToFieldClass =
 	{
-		{ ECSPropertyType::Bool, FBoolProperty::StaticClass() },
 		{ ECSPropertyType::Int8, FInt8Property::StaticClass() },
 		{ ECSPropertyType::Int16, FInt16Property::StaticClass() },
 		{ ECSPropertyType::Int, FIntProperty::StaticClass() },

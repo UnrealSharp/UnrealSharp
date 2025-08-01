@@ -48,7 +48,7 @@ void FCSGeneratedClassBuilder::RebuildType()
 	Field->NumReplicatedProperties = 0;
 	
 #if WITH_EDITOR
-	if (FUnrealSharpUtils::IsStandalonePIE())
+	if (FCSUnrealSharpUtils::IsStandalonePIE())
 	{
 		// Since the BP-compiler is not present in standalone, we just do a normal class creation like in a packaged game.
 		// Some things still reference the Blueprint in standalone, so we need to create it.

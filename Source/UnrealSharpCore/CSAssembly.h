@@ -65,7 +65,7 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>
 	UDelegateFunction* FindDelegate(const FCSFieldName& DelegateName) const;
 
 	// Creates a C# counterpart for the given UObject.
-	TSharedPtr<FGCHandle> CreateManagedObject(UObject* Object);
+	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
 
 	TSharedPtr<FGCHandle> FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class);
 
