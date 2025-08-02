@@ -1,0 +1,9 @@
+﻿{
+  "profiles": {
+    "UBT": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\Epic Games\\UE_5.6\\Engine\\Binaries\\DotNET\\UnrealBuildTool\\UnrealBuildTool.exe",
+      "commandLineArgs": "-Mode=UnrealHeaderTool \"-Target=TurnBasedFrameworkEditor Win64 Development -Project=\\\"D:\\dev\\TurnBasedFramework\\TurnBasedFramework.uproject\\\"\""
+    }
+  }
+}

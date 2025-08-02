@@ -1,7 +1,7 @@
 ﻿namespace UnrealSharpBuildTool.Actions;
 
 public abstract class BuildToolAction
-{ 
+{
     public static bool InitializeAction()
     {
         BuildToolAction buildToolAction = Program.BuildToolOptions.Action switch
@@ -9,6 +9,7 @@ public abstract class BuildToolAction
             BuildAction.Build => new BuildUserSolution(),
             BuildAction.Clean => new CleanSolution(),
             BuildAction.GenerateProject => new GenerateProject(),
+            BuildAction.UpdateProjectDependencies => new UpdateProjectDependencies(),
             BuildAction.Rebuild => new RebuildSolution(),
             BuildAction.Weave => new WeaveProject(),
             BuildAction.PackageProject => new PackageProject(),

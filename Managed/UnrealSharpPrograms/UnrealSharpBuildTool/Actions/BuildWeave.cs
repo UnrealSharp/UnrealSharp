@@ -7,10 +7,10 @@ public class BuildWeave : BuildToolAction
         BuildSolution buildSolution = new BuildUserSolution();
         WeaveProject weaveProject = new WeaveProject();
         return buildSolution.RunAction() && weaveProject.RunAction() && AddLaunchSettings();
-    } 
+    }
     bool AddLaunchSettings()
     {
-        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetScriptFolder()));
+        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetProjectDirectory()));
 
         foreach (FileInfo projectFile in allProjectFiles)
         {
@@ -33,5 +33,5 @@ public class BuildWeave : BuildToolAction
         }
         return true;
     }
-    
+
 }

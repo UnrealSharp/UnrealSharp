@@ -71,10 +71,12 @@ public:
 	static FString GetGeneratedClassesDirectory();
 
 	// Path to the current project's script directory
-	static FString& GetScriptFolderDirectory();
+	static const FString& GetScriptFolderDirectory();
+
+    static const FString& GetPluginsDirectory();
 
 	// Path to the current project's glue directory
-	static FString& GetProjectGlueFolderPath();
+	static const FString& GetProjectGlueFolderPath();
 
 	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();

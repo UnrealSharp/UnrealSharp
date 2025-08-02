@@ -55,10 +55,6 @@
         <Compile Include="..\..\Managed\Shared\DotNetUtilities.cs" Link="..\..\..\Managed\Shared\DotNetUtilities.cs" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Properties\" />
-    </ItemGroup>
-
     <Target Name="UpdateProjectConstants" BeforeTargets="PrepareForBuild" Condition="Exists('$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj')">
         <AddUnrealConstants
                 UE5RulesPath="$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj"

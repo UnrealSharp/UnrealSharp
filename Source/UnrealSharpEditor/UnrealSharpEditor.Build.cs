@@ -41,6 +41,7 @@ public class UnrealSharpEditor : ModuleRules
                 "SubobjectDataInterface",
                 "AssetTools",
                 "UnrealSharpRuntimeGlue",
+                "PluginBrowser",
             }
         );
 
