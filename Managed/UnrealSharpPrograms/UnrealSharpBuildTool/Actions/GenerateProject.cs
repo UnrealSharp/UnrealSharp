@@ -169,7 +169,7 @@ public class GenerateProject : BuildToolAction
                 AppendGeneratedCode(csprojDocument, newItemGroup);
             }
 
-            foreach (var dependency in Program.GetArguments("Dependency"))
+            foreach (string dependency in Program.GetArguments("Dependency"))
             {
                 AddDependency(csprojDocument, newItemGroup, dependency);
             }

@@ -223,7 +223,7 @@ Standard Error: {standardError}";
 	    {
 		    arguments.Add("--AdditionalArgs");
 
-		    foreach (var argument in additionalArguments)
+		    foreach (KeyValuePair<string, string> argument in additionalArguments)
 		    {
 			    arguments.Add($"{argument.Key}={argument.Value}");
 		    }

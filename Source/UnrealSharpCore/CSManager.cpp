@@ -271,7 +271,7 @@ bool UCSManager::LoadRuntimeHost()
 bool UCSManager::LoadAllUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
+	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths);
 
 	if (UserAssemblyPaths.IsEmpty())
 	{
@@ -280,11 +280,7 @@ bool UCSManager::LoadAllUserAssemblies()
 
 	for (const FString& UserAssemblyPath : UserAssemblyPaths)
 	{
-		if (!LoadAssemblyByPath(UserAssemblyPath))
-		{
-			UE_LOG(LogUnrealSharp, Error, TEXT("Failed to load plugin %s!"), *UserAssemblyPath);
-			return false;
-		}
+		LoadAssemblyByPath(UserAssemblyPath);
 	}
 
 	OnAssembliesLoaded.Broadcast();

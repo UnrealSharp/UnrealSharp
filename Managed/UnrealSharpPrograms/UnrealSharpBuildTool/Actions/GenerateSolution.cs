@@ -41,6 +41,7 @@ public class GenerateSolution : BuildToolAction
 
     private static IEnumerable<FileInfo> FindCSharpProjects(DirectoryInfo directoryInfo)
     {
-        return directoryInfo.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
+        IEnumerable<FileInfo> files = directoryInfo.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
+        return files;
     }
 }

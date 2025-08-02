@@ -8,6 +8,7 @@ using EpicGames.Core;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
+using UnrealSharp.Shared;
 using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
@@ -98,7 +99,8 @@ public static class Program
 
 		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
 
-        var pluginsDir = new DirectoryInfo(PluginsPath);
+        DirectoryInfo pluginsDir = new DirectoryInfo(PluginsPath);
+        
         PluginDirs = [
             ..pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
                 .Where(x => x.Directory!.GetDirectories("Source").Length != 0)
@@ -109,20 +111,18 @@ public static class Program
 
     private static void TryCreateGlueProjects()
     {
-        var projectGluePath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
-        var projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
-        TryCreateGlueProject(projectGluePath,  projectName, PluginUtilities.GetProjectDependencyPaths());
-        foreach (var pluginDir in PluginDirs)
+        string projectGluePath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
+        string projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
+        TryCreateGlueProject(projectGluePath,  projectName, PluginUtilities.GetProjectDependencyPaths(), Factory.Session.ProjectDirectory);
+        
+        foreach (PluginDirInfo pluginDir in PluginDirs)
         {
-            TryCreateGlueProject(pluginDir.GlueProjectPath, pluginDir.PluginName,
-                    PluginUtilities.GetPluginDependencyPaths(pluginDir.PluginName));
+            TryCreateGlueProject(pluginDir.GlueProjectPath, pluginDir.PluginName, PluginUtilities.GetPluginDependencyPaths(pluginDir.PluginName), 
+	            pluginDir.PluginDirectory);
         }
     }
 
-    private static void TryCreateGlueProject(string csprojPath,
-                                             string projectName,
-                                             IEnumerable<string> dependencyPaths,
-                                             string? pluginPath = null)
+    private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string> dependencyPaths, string projectRoot)
     {
         if (File.Exists(csprojPath))
         {
@@ -130,32 +130,21 @@ public static class Program
             return;
         }
 
-        var projectDirectory = Path.GetDirectoryName(csprojPath)!;
-        Dictionary<string, string> arguments = new Dictionary<string, string>
+        string projectDirectory = Path.GetDirectoryName(csprojPath)!;
+        List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
         {
-            { "NewProjectName", Path.GetFileNameWithoutExtension(csprojPath) },
-            { "NewProjectFolder", Path.GetDirectoryName(projectDirectory)!},
-            { "SkipIncludeProjectGlue", "true" }
+            new("NewProjectName", Path.GetFileNameWithoutExtension(csprojPath)),
+            new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
+            new("SkipIncludeProjectGlue", "true")
         };
 
-        if (pluginPath is not null)
-        {
-            arguments.Add("PluginPath", pluginPath);
-        }
-
-        foreach (var pluginDir in PluginDirs)
-        {
-            arguments.Add("Dependency", pluginDir.GlueProjectPath);
-        }
-
-        string engineDirectory = Factory.Session.EngineDirectory!;
-
-
-        UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
+        arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
+        
+        DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
             projectName,
             PluginDirectory,
             Factory.Session.ProjectDirectory!,
-            engineDirectory,
+            Factory.Session.EngineDirectory!,
             arguments);
     }
 
@@ -163,10 +152,10 @@ public static class Program
     {
         string engineDirectory = Factory.Session.EngineDirectory!;
 
-        var arguments = Enumerable.Repeat(new KeyValuePair<string, string>("ProjectPath", projectPath), 1)
+        IEnumerable<KeyValuePair<string, string>> arguments = Enumerable.Repeat(new KeyValuePair<string, string>("ProjectPath", projectPath), 1)
                 .Concat(projectPaths.Select(x => new KeyValuePair<string, string>("Dependency", x)));
 
-        UnrealSharp.Shared.DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
+        DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
                 projectName,
                 PluginDirectory,
                 Factory.Session.ProjectDirectory!,
