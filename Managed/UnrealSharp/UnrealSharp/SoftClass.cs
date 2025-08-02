@@ -75,11 +75,11 @@ public struct TSoftClassPtr<T> where T : UObject
     /// <summary>
     /// Casts this SoftClass to another class.
     /// </summary>
-    public TSoftClassPtr<T> Cast<T2>() where T2 : UObject
+    public TSoftClassPtr<T2> Cast<T2>() where T2 : UObject
     {
         if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
         {
-            return new TSoftClassPtr<T>(this);
+            return new TSoftClassPtr<T2>(Class);
         }
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");
