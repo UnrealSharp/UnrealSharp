@@ -7,29 +7,36 @@ public class GenerateProject : BuildToolAction
 {
     private string _projectPath = string.Empty;
     private string _projectFolder = string.Empty;
-    private string _pluginPath = string.Empty;
+    private string _projectRoot = string.Empty;
+    
+    bool ContainsUPluginOrUProjectFile(string folder)
+    {
+        string[] files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
+        
+        foreach (string file in files)
+        {
+            if (file.EndsWith(".uplugin", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".uproject", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public override bool RunAction()
     {
-
-        string folder = Path.GetFullPath(Program.TryGetArgument("NewProjectFolder"));
-        var pluginPathArg = Program.TryGetArgument("PluginPath");
-        _pluginPath = string.IsNullOrEmpty(pluginPathArg) ? string.Empty : Path.GetFullPath(pluginPathArg);
-
-        if (string.IsNullOrEmpty(folder))
+        string folder = Program.TryGetArgument("NewProjectFolder");
+        _projectRoot = Program.TryGetArgument("ProjectRoot");
+        
+        if (!ContainsUPluginOrUProjectFile(_projectRoot))
         {
-            folder = Path.GetFullPath(Program.GetScriptFolder());
+            throw new InvalidOperationException("Project folder must contain a .uplugin or .uproject file.");
         }
-        else if (!string.IsNullOrEmpty(_pluginPath))
+        
+        if (folder == _projectRoot)
         {
-            if (!folder.Contains(Path.Combine(_pluginPath, "Script")))
-            {
-                throw new InvalidOperationException("The project folder must be inside the Script folder.");
-            }
-        }
-        else if (!folder.Contains(Path.GetFullPath(Program.GetScriptFolder())))
-        {
-            throw new InvalidOperationException("The project folder must be inside the Script folder.");
+            folder = Path.Combine(folder, "Script");
         }
 
         string projectName = Program.TryGetArgument("NewProjectName");
@@ -100,7 +107,7 @@ public class GenerateProject : BuildToolAction
 
     public static void AddProjectToSln(List<string> relativePaths)
     {
-        foreach (var projects in GroupPathsBySolutionFolder(relativePaths))
+        foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
         {
             using BuildToolProcess addProjectToSln = new BuildToolProcess();
             addProjectToSln.StartInfo.ArgumentList.Add("sln");
@@ -240,7 +247,7 @@ public class GenerateProject : BuildToolAction
     {
         string providedGlueName = Program.TryGetArgument("GlueProjectName");
         string glueProjectName = string.IsNullOrEmpty(providedGlueName) ? "ProjectGlue" : providedGlueName;
-        string scriptFolder = string.IsNullOrEmpty(_pluginPath) ? Program.GetScriptFolder() : Path.Combine(_pluginPath, "Script");
+        string scriptFolder = string.IsNullOrEmpty(_projectRoot) ? Program.GetScriptFolder() : Path.Combine(_projectRoot, "Script");
         string generatedGluePath = Path.Combine(scriptFolder, glueProjectName, $"{glueProjectName}.csproj");
         AddDependency(doc, itemGroup, generatedGluePath);
     }

@@ -210,7 +210,8 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncl
 		false);
 
     TArray<FString> PluginFilePaths;
-    IPluginManager::Get().FindPluginsUnderDirectory(GetPluginsDirectory(), PluginFilePaths);
+    IPluginManager::Get().FindPluginsUnderDirectory(FPaths::ProjectPluginsDir(), PluginFilePaths);
+	
     for (const FString& PluginFilePath : PluginFilePaths)
     {
         FString ScriptDirectory = FPaths::GetPath(PluginFilePath) / "Script";

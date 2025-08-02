@@ -11,25 +11,24 @@
 void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
     static FName ProjectDestination(TEXT("<ProjectDestination>"));
-
 	const FString ScriptPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetScriptFolderDirectory());
-	SuggestedProjectName = InArgs._SuggestedProjectName.Get(FString());
 
-    ProjectDestinations.Add(MakeShared<FProjectDestination>(ProjectDestination, LOCTEXT("ThisProject_Name", "<Project>"), ScriptPath, 0));
+	FText ProjectDestinationName = FText::FromString(FString::Printf(TEXT("%s (This Project)"), FApp::GetProjectName()));
+    ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, ScriptPath, 0));
+	
     IPluginManager& PluginManager = IPluginManager::Get();
     TArray<TSharedRef<IPlugin>> EnabledPlugins = PluginManager.GetEnabledPlugins();
 
     for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
     {
-        const FString PluginFilePath = Plugin->GetBaseDir();
+        const FString PluginFilePath = FPaths::ConvertRelativePathToFull(Plugin->GetBaseDir());
         if (!FPaths::IsUnderDirectory(PluginFilePath, FCSProcHelper::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
         {
             continue;
         }
-
-
+    	
         FString ScriptDirectory = PluginFilePath / "Script";
-        ProjectDestinations.Add(MakeShared<FProjectDestination>(FName(Plugin->GetName()),
+        ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
             FText::FromString(Plugin->GetFriendlyName()), ScriptDirectory, ProjectDestinations.Num(), Plugin));
     }
     SelectedProjectDestinationIndex = 0;
@@ -67,7 +66,6 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 					.FillWidth(1)
 					[
 						SAssignNew(NameTextBox, SEditableTextBox)
-						.Text(FText::FromString(SuggestedProjectName))
 					]
 				]
 				+ SVerticalBox::Slot()
@@ -85,7 +83,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 					+ SHorizontalBox::Slot()
 					.FillWidth(1)
 					[
-						SAssignNew(ProjectDestinationComboBox, SComboBox<TSharedRef<FProjectDestination>>)
+						SAssignNew(ProjectDestinationComboBox, SComboBox<TSharedRef<FCSProjectDestination>>)
 					    .OptionsSource(&ProjectDestinations)
 					    .InitiallySelectedItem(ProjectDestinations[SelectedProjectDestinationIndex])
 					    .OnSelectionChanged(this, &SCSNewProjectDialog::OnProjectDestinationChanged)
@@ -141,7 +139,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 	];
 }
 
-void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FProjectDestination> NewProjectDestination, ESelectInfo::Type)
+void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDestination> NewProjectDestination, ESelectInfo::Type)
 {
     if (NewProjectDestination == nullptr)
     {
@@ -153,7 +151,7 @@ void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FProjectDestina
     PathTextBox->SetText(FText::FromString(NewProjectDestination->GetPath()));
 }
 
-TSharedRef<SWidget> SCSNewProjectDialog::OnGenerateProjectDestinationWidget(TSharedRef<FProjectDestination> Destination)
+TSharedRef<SWidget> SCSNewProjectDialog::OnGenerateProjectDestinationWidget(TSharedRef<FCSProjectDestination> Destination)
 {
     return SNew(STextBlock)
         .Text(Destination->GetDisplayName());
@@ -206,6 +204,21 @@ void SCSNewProjectDialog::OnCancel()
 	CloseWindow();
 }
 
+FString MakeQuotedPath(const FString& Path)
+{
+	if (Path.IsEmpty())
+	{
+		return TEXT("");
+	}
+
+	if (Path.StartsWith(TEXT("\"")) && Path.EndsWith(TEXT("\"")))
+	{
+		return Path;
+	}
+
+	return FString::Printf(TEXT("\"%s\""), *Path);
+}
+
 void SCSNewProjectDialog::OnFinish()
 {
 	TMap<FString, FString> Arguments;
@@ -215,28 +228,47 @@ void SCSNewProjectDialog::OnFinish()
 	TMap<FString, FString> SolutionArguments;
 	SolutionArguments.Add(TEXT("MODULENAME"), ModuleName);
 
-	FString ModuleFilePath = ProjectPath / ModuleName / ModuleName + ".cs";
+	FString ModuleFilePath = FPaths::Combine(ProjectPath, ModuleName, ModuleName + ".cs");
 	FUnrealSharpEditorModule::FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
 
 	Arguments.Add(TEXT("NewProjectName"), ModuleName);
-	Arguments.Add(TEXT("NewProjectFolder"), ProjectPath);
+	Arguments.Add(TEXT("NewProjectFolder"), MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectPath)));
 
-    const TSharedRef<FProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
-    if (const TSharedPtr<IPlugin>& Plugin = Destination->GetPlugin(); Plugin != nullptr)
+	FString ProjectRoot;
+    if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex))
     {
-        Arguments.Add(TEXT("PluginPath"), Plugin->GetBaseDir());
+    	const TSharedRef<FCSProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
+    	const TSharedPtr<IPlugin>& Plugin = Destination->GetPlugin();
+    	
         const FString& GlueProjectName = Arguments.Add(TEXT("GlueProjectName"), FString::Printf(TEXT("%s.PluginGlue"), *Plugin->GetName()));
-
         const FString GlueProjectLocation = FPaths::Combine(Destination->GetPath(), GlueProjectName, FString::Printf(TEXT("%s.csproj"), *GlueProjectName));
+
+    	ProjectRoot = Plugin->GetBaseDir();
+    	
         if (!FPaths::FileExists(GlueProjectLocation))
         {
             Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
         }
     }
+    else
+    {
+    	ProjectRoot = FPaths::ProjectDir();
+    }
 
-	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments);
+	ProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
+	Arguments.Add(TEXT("ProjectRoot"), MakeQuotedPath(ProjectRoot));
 
-	FUnrealSharpEditorModule::Get().OpenSolution();
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
+	{
+		FString ErrorMessage = FString::Printf(TEXT("Failed to create C# project %s at %s. Check the output log for more details."), *ModuleName, *ProjectPath);
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
+		return;
+	}
+
+	FUnrealSharpEditorModule& UnrealSharpEditor = FUnrealSharpEditorModule::Get();
+	UnrealSharpEditor.OpenSolution();
+	UnrealSharpEditor.AddDirectoryToWatch(FPaths::Combine(ProjectRoot, TEXT("Script")));
+	
 	CloseWindow();
 }
 

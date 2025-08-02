@@ -34,7 +34,6 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
-#include "UObject/UnrealTypePrivate.h"
 #include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
@@ -51,22 +50,14 @@ void FUnrealSharpEditorModule::StartupModule()
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
-	FString FullScriptPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / "Script");
-	if (!FPaths::DirectoryExists(FullScriptPath))
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+
+	for (const FString& ProjectPath : ProjectPaths)
 	{
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*FullScriptPath);
+		FString Path = FPaths::GetPath(ProjectPath);
+		AddDirectoryToWatch(Path);
 	}
-
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(
-		"DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	FDelegateHandle Handle;
-
-	//Bind to directory watcher to look for changes in C# code.
-	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
-		FullScriptPath,
-		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
-		Handle);
 
 	Manager = &UCSManager::GetOrCreate();
 	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
@@ -77,9 +68,6 @@ void FUnrealSharpEditorModule::StartupModule()
 
 	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
 	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-
-	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 
 	if (ProjectPaths.IsEmpty())
 	{
@@ -728,16 +716,14 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	return MenuBuilder.MakeWidget();
 }
 
-void FUnrealSharpEditorModule::OpenNewProjectDialog(const FString& SuggestedProjectName)
+void FUnrealSharpEditorModule::OpenNewProjectDialog()
 {
 	TSharedRef<SWindow> AddCodeWindow = SNew(SWindow)
 		.Title(LOCTEXT("CreateNewProject", "New C# Project"))
 		.SizingRule(ESizingRule::Autosized)
 		.SupportsMinimize(false);
 
-	TSharedRef<SCSNewProjectDialog> NewProjectDialog = SNew(SCSNewProjectDialog)
-		.SuggestedProjectName(SuggestedProjectName);
-
+	TSharedRef<SCSNewProjectDialog> NewProjectDialog = SNew(SCSNewProjectDialog);
 	AddCodeWindow->SetContent(NewProjectDialog);
 
 	FSlateApplication::Get().AddWindow(AddCodeWindow);
@@ -752,9 +738,8 @@ void FUnrealSharpEditorModule::SuggestProjectSetup()
 	{
 		return;
 	}
-
-	FString SuggestedProjectName = FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-	OpenNewProjectDialog(SuggestedProjectName);
+	
+	OpenNewProjectDialog();
 }
 
 bool FUnrealSharpEditorModule::Tick(float DeltaTime)
@@ -872,24 +857,25 @@ bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMa
 	const FString FullFileName = FCSProcHelper::GetPluginDirectory() / TEXT("Templates") / TemplateName + TEXT(".cs.template");
 
 	FString OutTemplate;
-	if (FFileHelper::LoadFileToString(OutTemplate, *FullFileName))
+	if (!FFileHelper::LoadFileToString(OutTemplate, *FullFileName))
 	{
-		for (const TPair<FString, FString>& Replacement : Replacements)
-		{
-			FString ReplacementKey = TEXT("%") + Replacement.Key + TEXT("%");
-			OutTemplate = OutTemplate.Replace(*ReplacementKey, *Replacement.Value);
-		}
-
-		if (!FFileHelper::SaveStringToFile(OutTemplate, *Path))
-		{
-			UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s when trying to create a template"), *Path);
-			return false;
-		}
-
-		return true;
+		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to load template file %s"), *FullFileName);
+		return false;
 	}
 
-	return false;
+	for (const TPair<FString, FString>& Replacement : Replacements)
+	{
+		FString ReplacementKey = TEXT("%") + Replacement.Key + TEXT("%");
+		OutTemplate = OutTemplate.Replace(*ReplacementKey, *Replacement.Value);
+	}
+
+	if (!FFileHelper::SaveStringToFile(OutTemplate, *Path))
+	{
+		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s when trying to create a template"), *Path);
+		return false;
+	}
+
+	return true;
 }
 
 void FUnrealSharpEditorModule::OnStructRebuilt(UCSScriptStruct* NewStruct)
@@ -981,6 +967,33 @@ bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
 	}
 
 	return false;
+}
+
+void FUnrealSharpEditorModule::AddDirectoryToWatch(const FString& Directory)
+{
+	if (WatchingDirectories.Contains(Directory))
+	{
+		// Already watching this directory.
+		return;
+	}
+	
+	if (!FPaths::DirectoryExists(Directory))
+	{
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*Directory);
+	}
+
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(
+		"DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDelegateHandle Handle;
+
+	//Bind to directory watcher to look for changes in C# code.
+	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+		Directory,
+		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
+		Handle);
+
+	WatchingDirectories.Add(Directory);
 }
 
 void FUnrealSharpEditorModule::RefreshAffectedBlueprints()

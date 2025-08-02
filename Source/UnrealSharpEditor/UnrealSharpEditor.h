@@ -72,6 +72,9 @@ public:
 
     void OpenSolution();
 
+    void AddDirectoryToWatch(const FString& Directory);
+
+
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
 
     static void RepairComponents();
@@ -104,7 +107,7 @@ private:
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
 
-    static void OpenNewProjectDialog(const FString& SuggestedProjectName = FString());
+    static void OpenNewProjectDialog();
 
     static void SuggestProjectSetup();
 
@@ -125,7 +128,7 @@ private:
 
     bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
     bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
-
+    
     void RefreshAffectedBlueprints();
 
     FSlateIcon GetMenuIcon() const;
@@ -150,4 +153,6 @@ private:
 
     UCSManager* Manager = nullptr;
     bool bDirtyGlue = false;
+
+    TArray<FString> WatchingDirectories;
 };
