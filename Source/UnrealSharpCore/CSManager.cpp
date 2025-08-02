@@ -513,7 +513,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 	return Assembly;
 }
 
-FGCHandle UCSManager::FindManagedObject(UObject* Object)
+FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindManagedObject);
 

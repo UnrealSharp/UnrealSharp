@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
-namespace FUnrealSharpUtils
+namespace FCSUnrealSharpUtils
 {
 	UNREALSHARPUTILITIES_API FName GetNamespace(const UObject* Object);
 	UNREALSHARPUTILITIES_API FName GetNamespace(FName PackageName);
@@ -14,6 +14,9 @@ namespace FUnrealSharpUtils
 	UNREALSHARPUTILITIES_API bool IsStandalonePIE();
 
 	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
+
+	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
+	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromName(const FName& Name);
 
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)

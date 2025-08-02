@@ -152,7 +152,7 @@ USCS_Node* FCSSimpleConstructionScriptBuilder::CreateNode(USimpleConstructionScr
 	USCS_Node* NewNode = NewObject<USCS_Node>(SimpleConstructionScript, MakeUniqueObjectName(SimpleConstructionScript, USCS_Node::StaticClass()));
 	NewNode->SetFlags(RF_Transient);
 	NewNode->SetVariableName(NewComponentVariableName, false);
-	NewNode->VariableGuid = UCSPropertyGenerator::ConstructGUIDFromName(NewComponentVariableName);
+	NewNode->VariableGuid = FCSUnrealSharpUtils::ConstructGUIDFromName(NewComponentVariableName);
 	
 	UpdateTemplateComponent(NewNode, GeneratedClass, NewComponentClass, NewComponentVariableName);
 
@@ -225,7 +225,7 @@ bool FCSSimpleConstructionScriptBuilder::TryFindParentNodeAndComponent(FName Par
 
 		USimpleConstructionScript* CurrentSCS;
 #if WITH_EDITOR
-		if (FUnrealSharpUtils::IsStandalonePIE())
+		if (FCSUnrealSharpUtils::IsStandalonePIE())
 		{
 			CurrentSCS = CurrentGeneratedClass->SimpleConstructionScript;
 		}

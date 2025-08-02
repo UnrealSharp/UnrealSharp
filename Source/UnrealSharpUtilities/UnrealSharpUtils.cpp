@@ -2,29 +2,29 @@
 
 #include "UnrealSharpUtilities.h"
 
-FName FUnrealSharpUtils::GetNamespace(const UObject* Object)
+FName FCSUnrealSharpUtils::GetNamespace(const UObject* Object)
 {
 	FName PackageName = GetModuleName(Object);
 	return GetNamespace(PackageName);
 }
 
-FName FUnrealSharpUtils::GetNamespace(const FName PackageName)
+FName FCSUnrealSharpUtils::GetNamespace(const FName PackageName)
 {
 	return *FString::Printf(TEXT("%s.%s"), TEXT("UnrealSharp"), *PackageName.ToString());
 }
 
-FName FUnrealSharpUtils::GetNativeFullName(const UField* Object)
+FName FCSUnrealSharpUtils::GetNativeFullName(const UField* Object)
 {
 	FName Namespace = GetNamespace(Object);
 	return *FString::Printf(TEXT("%s.%s"), *Namespace.ToString(), *Object->GetName());
 }
 
-FName FUnrealSharpUtils::GetModuleName(const UObject* Object)
+FName FCSUnrealSharpUtils::GetModuleName(const UObject* Object)
 {
 	return FPackageName::GetShortFName(Object->GetPackage()->GetFName());
 }
 
-bool FUnrealSharpUtils::IsStandalonePIE()
+bool FCSUnrealSharpUtils::IsStandalonePIE()
 {
 #if WITH_EDITOR
 	return !GIsEditor;
@@ -33,7 +33,7 @@ bool FUnrealSharpUtils::IsStandalonePIE()
 #endif
 }
 
-void FUnrealSharpUtils::PurgeStruct(UStruct* Struct)
+void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 {
 	if (!IsValid(Struct))
 	{
@@ -48,4 +48,17 @@ void FUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 	Struct->PropertiesSize = 0;
 	Struct->MinAlignment = 0;
 	Struct->RefLink = nullptr;
+}
+
+FGuid FCSUnrealSharpUtils::ConstructGUIDFromName(const FName& Name)
+{
+	return ConstructGUIDFromString(Name.ToString());
+}
+
+FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
+{
+	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);
+	uint32 HashBuffer[5];
+	FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer));
+	return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]); 
 }
