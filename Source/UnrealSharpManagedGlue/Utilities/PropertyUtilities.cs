@@ -159,8 +159,13 @@ public static class PropertyUtilities
             return null;
         }
         
-        UhtFunction? TryFindFunction(string name)
+        UhtFunction? TryFindFunction(string? name)
         {
+            if (name is null)
+            {
+                return null;
+            }
+            
             UhtFunction? function = classObj.FindFunctionByName(name, (uhtFunction, typeName) =>
             {
                 if (uhtFunction.SourceName == typeName
@@ -187,8 +192,8 @@ public static class PropertyUtilities
 
             return null;
         }
-
-        string accessorName = property.GetMetaData(accessorType == GetterSetterMode.Get ? "BlueprintGetter" : "BlueprintSetter");
+        
+        string? accessorName = accessorType == GetterSetterMode.Get ? property.Getter : property.Setter;
         UhtFunction? function = TryFindFunction(accessorName);
         if (function != null)
         {
