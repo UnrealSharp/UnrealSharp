@@ -209,14 +209,15 @@ public static class Program
 
     public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
     {
-        var result = new Dictionary<string, List<FileInfo>>();
-        var scriptsFolder = folder.GetDirectories("Script").FirstOrDefault();
+        Dictionary<string, List<FileInfo>> result = new Dictionary<string, List<FileInfo>>();
+        DirectoryInfo? scriptsFolder = folder.GetDirectories("Script").FirstOrDefault();
+        
         if (scriptsFolder is not null)
         {
             result.Add(GetOutputPathForDirectory(scriptsFolder), GetProjectsInDirectory(scriptsFolder).ToList());
         }
 
-        foreach (var pluginFolder in folder.GetDirectories("Plugins")
+        foreach (DirectoryInfo? pluginFolder in folder.GetDirectories("Plugins")
                          .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
                          .Select(x => x.Directory)
                          .Select(x => x!.GetDirectories("Script").FirstOrDefault())

@@ -12,7 +12,6 @@
 #include <vector>
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
-#include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"

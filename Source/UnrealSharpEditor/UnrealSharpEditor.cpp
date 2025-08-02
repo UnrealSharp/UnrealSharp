@@ -973,7 +973,6 @@ void FUnrealSharpEditorModule::AddDirectoryToWatch(const FString& Directory)
 {
 	if (WatchingDirectories.Contains(Directory))
 	{
-		// Already watching this directory.
 		return;
 	}
 	
@@ -982,13 +981,10 @@ void FUnrealSharpEditorModule::AddDirectoryToWatch(const FString& Directory)
 		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*Directory);
 	}
 
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(
-		"DirectoryWatcher");
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	
 	FDelegateHandle Handle;
-
-	//Bind to directory watcher to look for changes in C# code.
-	DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(
 		Directory,
 		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
 		Handle);

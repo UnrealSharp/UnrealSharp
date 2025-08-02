@@ -145,8 +145,6 @@ private:
 
 	static UCSManager* Instance;
 
-    TArray<TSharedRef<IPlugin>> UserPlugins;
-
 	UPROPERTY()
 	TArray<TObjectPtr<UPackage>> AllPackages;
 

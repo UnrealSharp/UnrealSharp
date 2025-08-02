@@ -24,8 +24,9 @@ public class WeaveProject : BuildToolAction
 
     private bool Weave(DirectoryInfo scriptFolder, string weaverPath)
     {
-        var projectFiles = Program.GetProjectFilesByDirectory(scriptFolder);
-        var allProjectFiles = projectFiles.Values.SelectMany(x => x).ToList();
+        Dictionary<string, List<FileInfo>> projectFiles = Program.GetProjectFilesByDirectory(scriptFolder);
+        List<FileInfo> allProjectFiles = projectFiles.Values.SelectMany(x => x).ToList();
+        
         if (allProjectFiles.Count == 0)
         {
             Console.WriteLine("No project files found. Skipping weaving...");
