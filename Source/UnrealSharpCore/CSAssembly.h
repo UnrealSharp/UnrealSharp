@@ -67,6 +67,8 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
 
+	TSharedPtr<FGCHandle> FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class);
+
 	// Add a class that is waiting for its parent class to be loaded before it can be created.
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
 

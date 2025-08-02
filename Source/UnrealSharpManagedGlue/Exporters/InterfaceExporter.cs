@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
@@ -24,6 +25,11 @@ public static class InterfaceExporter
         
         stringBuilder.AppendLine(attributeBuilder.ToString());
         stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"static {interfaceName} Wrap(UnrealSharp.CoreUObject.UObject obj)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {interfaceName}Wrapper(obj);");
+        stringBuilder.CloseBrace();
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
@@ -40,15 +46,30 @@ public static class InterfaceExporter
         ExportInterfaceFunctions(stringBuilder, exportedOverrides);
         
         stringBuilder.CloseBrace();
+        
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"internal sealed class {interfaceName}Wrapper : {interfaceName}, UnrealSharp.CoreUObject.IScriptInterface");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine("public UnrealSharp.CoreUObject.UObject Object { get; }");
+        stringBuilder.AppendLine("private IntPtr NativeObject => Object.NativeObject;");
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"internal {interfaceName}Wrapper(UnrealSharp.CoreUObject.UObject obj)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine("Object = obj;");
+        stringBuilder.CloseBrace();
+        
+        ExportWrapperFunctions(stringBuilder, exportedFunctions);
+        ExportWrapperFunctions(stringBuilder, exportedOverrides);
+        
+        stringBuilder.CloseBrace();
+        
 
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"static readonly IntPtr NativeInterfaceClassPtr = UCoreUObjectExporter.CallGetNativeClassFromName({interfaceObj.ExportGetAssemblyName()}, \"{interfaceObj.GetNamespace()}\", \"{interfaceObj.EngineName}\");");
-        stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {interfaceName} obj)");
         stringBuilder.OpenBrace();
-        stringBuilder.AppendLine($"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.ToNative(nativeBuffer, arrayIndex, obj, NativeInterfaceClassPtr);");
+        stringBuilder.AppendLine($"UnrealSharp.CoreUObject.ScriptInterfaceMarshaller<{interfaceName}>.ToNative(nativeBuffer, arrayIndex, obj);");
         stringBuilder.CloseBrace();
         stringBuilder.AppendLine();
 
@@ -66,6 +87,21 @@ public static class InterfaceExporter
         foreach (UhtFunction function in exportedFunctions)
         {
             FunctionExporter.ExportInterfaceFunction(stringBuilder, function);
+        }
+    }
+    
+    static void ExportWrapperFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)
+    {
+        foreach (UhtFunction function in exportedFunctions)
+        {
+            if (function.FunctionFlags.HasFlag(EFunctionFlags.BlueprintEvent))
+            {
+                FunctionExporter.ExportFunction(stringBuilder, function, FunctionType.BlueprintEvent);
+            }
+            else
+            {
+                FunctionExporter.ExportFunction(stringBuilder, function, FunctionType.Throwing);
+            }
         }
     }
 }

@@ -82,6 +82,8 @@ public:
 	
 	FGCHandle FindManagedObject(const UObject* Object);
 
+	FGCHandle FindOrCreateManagedObjectWrapper(UObject* Object, UClass* InterfaceClass);
+
 	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
@@ -156,6 +158,10 @@ private:
 
 	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
+
+	// Handles all active UObjects that have interface wrappers in C#. The primary key is the unique ID of the UObject.
+	// The second key is the unique ID of the interface class.
+	TMap<uint32, TMap<uint32, TSharedPtr<FGCHandle>>> ManagedInterfaceWrappers;
 	
 	// Map to cache assemblies that native classes are associated with, for quick lookup.
 	TMap<uint32, TSharedPtr<FCSAssembly>> NativeClassToAssemblyMap;
