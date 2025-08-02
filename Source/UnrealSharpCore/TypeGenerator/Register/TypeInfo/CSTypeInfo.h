@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#if WITH_EDITOR
+#include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
+#endif
+
 struct FCSAssembly;
 
 enum ETypeState : uint8
