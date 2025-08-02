@@ -38,6 +38,8 @@ public class BuildSolution : BuildToolAction
         buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
         buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(_buildConfig));
         
+        buildSolutionProcess.StartInfo.WorkingDirectory = _folder;
+        
         if (_extraArguments != null)
         {
             foreach (var argument in _extraArguments)

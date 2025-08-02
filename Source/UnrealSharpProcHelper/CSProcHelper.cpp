@@ -2,7 +2,6 @@
 #include "UnrealSharpProcHelper.h"
 #include "XmlFile.h"
 #include "XmlNode.h"
-#include "XmlNode.h"
 #include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Interfaces/IPluginManager.h"
@@ -12,43 +11,10 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 {
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
-
-	constexpr bool bLaunchDetached = false;
-	constexpr bool bLaunchHidden = true;
-	constexpr bool bLaunchReallyHidden = bLaunchHidden;
-
-	void* ReadPipe;
-	void* WritePipe;
-	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
-
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath,
-														  *Arguments,
-														  bLaunchDetached,
-														  bLaunchHidden,
-														  bLaunchReallyHidden,
-														  NULL, 0,
-														  *WorkingDirectory,
-														  WritePipe,
-														  ReadPipe);
 
-	if (!ProcHandle.IsValid())
-	{
-		FString DialogText = FString::Printf(TEXT("%s failed to launch!"), *ProgramName);
-		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s"), *DialogText);
-
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return false;
-	}
-
-	while (FPlatformProcess::IsProcRunning(ProcHandle))
-	{
-		Output += FPlatformProcess::ReadPipe(ReadPipe);
-	}
-
-	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
-	FPlatformProcess::CloseProc(ProcHandle);
-	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
+	FString ErrorMessage;
+	FPlatformProcess::ExecProcess(*ProgramPath, *Arguments, &OutReturnCode, &Output, &ErrorMessage, *WorkingDirectory);
 
 	if (OutReturnCode != 0)
 	{
@@ -62,7 +28,6 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	double EndTime = FPlatformTime::Seconds();
 	double ElapsedTime = EndTime - StartTime;
 	UE_LOG(LogUnrealSharpProcHelper, Log, TEXT("%s with args (%s) took %f seconds to execute."), *ProgramName, *Arguments, ElapsedTime);
-
 	return true;
 }
 
@@ -72,7 +37,6 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const
 	FString DotNetPath = GetDotNetExecutablePath();
 
 	FString Args;
-	Args += FString::Printf(TEXT("\"%s\""), *GetUnrealSharpBuildToolPath());
 	Args += FString::Printf(TEXT(" --Action %s"), *BuildAction);
 	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
 	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
@@ -92,7 +56,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const
 	int32 ReturnCode = 0;
 	FString Output;
 	FString WorkingDirectory = GetPluginAssembliesPath();
-	return InvokeCommand(DotNetPath, Args, ReturnCode, Output, &WorkingDirectory);
+	return InvokeCommand(GetUnrealSharpBuildToolPath(), Args, ReturnCode, Output, &WorkingDirectory);
 }
 
 FString FCSProcHelper::GetLatestHostFxrPath()
@@ -292,7 +256,7 @@ bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
-	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.dll");
+	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.exe");
 }
 
 FString FCSProcHelper::GetDotNetDirectory()
