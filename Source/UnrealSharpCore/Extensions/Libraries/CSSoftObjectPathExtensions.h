@@ -6,7 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSSoftObjectPathExtensions.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSSoftObjectPathExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

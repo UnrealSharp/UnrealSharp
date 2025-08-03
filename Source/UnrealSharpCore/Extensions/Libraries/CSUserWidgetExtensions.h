@@ -6,7 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSUserWidgetExtensions.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSUserWidgetExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
