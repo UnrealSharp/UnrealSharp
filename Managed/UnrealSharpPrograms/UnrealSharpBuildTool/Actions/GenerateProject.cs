@@ -79,11 +79,14 @@ public class GenerateProject : BuildToolAction
             File.Delete(myClassFile);
         }
 
-        string slnPath = Program.GetSolutionFile();
-        if (!File.Exists(slnPath))
+        if (!Program.HasArgument("SkipSolutionGeneration"))
         {
-            GenerateSolution generateSolution = new GenerateSolution();
-            generateSolution.RunAction();
+            string slnPath = Program.GetSolutionFile();
+            if (!File.Exists(slnPath))
+            {
+                GenerateSolution generateSolution = new GenerateSolution();
+                generateSolution.RunAction();
+            }
         }
 
         if (Program.HasArgument("SkipUSharpProjSetup"))

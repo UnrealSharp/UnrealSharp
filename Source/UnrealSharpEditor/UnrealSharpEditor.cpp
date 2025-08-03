@@ -216,7 +216,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	bool bUnloadFailed = false;
 
 	TArray<FString> ProjectsByLoadOrder;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, bDirtyGlue);
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder);
 
 	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
 	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
@@ -270,7 +270,6 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
-	bDirtyGlue = false;
 
 	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }

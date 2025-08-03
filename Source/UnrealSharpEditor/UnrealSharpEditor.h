@@ -157,7 +157,5 @@ private:
     TSet<UCSEnum*> RebuiltEnums;
 
     UCSManager* Manager = nullptr;
-    bool bDirtyGlue = false;
-
     TArray<FString> WatchingDirectories;
 };

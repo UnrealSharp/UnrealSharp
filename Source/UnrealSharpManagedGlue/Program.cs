@@ -154,7 +154,8 @@ public static class Program
         {
             new("NewProjectName", Path.GetFileNameWithoutExtension(csprojPath)),
             new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-            new("SkipIncludeProjectGlue", "true")
+            new("SkipIncludeProjectGlue", "true"),
+	        new("SkipSolutionGeneration", "true"),
         };
 
         arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
