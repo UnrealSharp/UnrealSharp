@@ -61,7 +61,7 @@ public class SetReadOnlyMarshaller<T>
     {
         if (_readonlySetWrapper == null)
         {
-            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative, _elementToNative);
+            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, nativeBuffer, _elementFromNative, _elementToNative);
         }
         
         return _readonlySetWrapper;
@@ -74,6 +74,6 @@ public class SetReadOnlyMarshaller<T>
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyCollection<T> value)
     {
-        SetMarshaller<T>.ToNativeInternal(_property.ValueAddress(nativeBuffer), arrayIndex, value, _helper, _elementToNative);
+        SetMarshaller<T>.ToNativeInternal(nativeBuffer, arrayIndex, value, _helper, _elementToNative);
     }
 }
