@@ -5,7 +5,7 @@ namespace UnrealSharp;
 
 public class TSetReadOnly<T> : TSetBase<T>, IReadOnlySet<T>
 {
-    public TSetReadOnly(IntPtr nativeProperty, IntPtr address, MarshallingDelegates<T>.FromNative fromNative) : base(nativeProperty, address, fromNative, null)
+    public TSetReadOnly(IntPtr nativeProperty, IntPtr address, MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative) : base(nativeProperty, address, fromNative, toNative)
     {
     }
 
@@ -61,7 +61,7 @@ public class SetReadOnlyMarshaller<T>
     {
         if (_readonlySetWrapper == null)
         {
-            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative);
+            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative, _elementToNative);
         }
         
         return _readonlySetWrapper;
