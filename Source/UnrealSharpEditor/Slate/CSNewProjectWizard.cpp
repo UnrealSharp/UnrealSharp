@@ -1,4 +1,6 @@
 ﻿#include "CSNewProjectWizard.h"
+
+#include "CSManager.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
 #include "Interfaces/IPluginManager.h"
@@ -14,7 +16,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 	const FString ScriptPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetScriptFolderDirectory());
 
 	FText ProjectDestinationName = FText::FromString(FString::Printf(TEXT("%s (This Project)"), FApp::GetProjectName()));
-    ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, ScriptPath, 0));
+    ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, FApp::GetProjectName(), ScriptPath, 0));
 	
     IPluginManager& PluginManager = IPluginManager::Get();
     TArray<TSharedRef<IPlugin>> EnabledPlugins = PluginManager.GetEnabledPlugins();
@@ -29,7 +31,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
     	
         FString ScriptDirectory = PluginFilePath / "Script";
         ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
-            FText::FromString(Plugin->GetFriendlyName()), ScriptDirectory, ProjectDestinations.Num(), Plugin));
+            FText::FromString(Plugin->GetFriendlyName()), Plugin->GetName(), ScriptDirectory, ProjectDestinations.Num(), Plugin));
     }
     SelectedProjectDestinationIndex = 0;
 
@@ -137,6 +139,8 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 			]
 		]
 	];
+
+	OnProjectDestinationChanged(ProjectDestinations[SelectedProjectDestinationIndex], ESelectInfo::Direct);
 }
 
 void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDestination> NewProjectDestination, ESelectInfo::Type)
@@ -149,6 +153,9 @@ void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDesti
 
     SelectedProjectDestinationIndex = NewProjectDestination->GetIndex();
     PathTextBox->SetText(FText::FromString(NewProjectDestination->GetPath()));
+	
+	FString ManagedName = TEXT("Managed") + NewProjectDestination->GetName();
+	NameTextBox->SetText(FText::FromString(ManagedName));
 }
 
 TSharedRef<SWidget> SCSNewProjectDialog::OnGenerateProjectDestinationWidget(TSharedRef<FCSProjectDestination> Destination)
@@ -223,16 +230,18 @@ void SCSNewProjectDialog::OnFinish()
 {
 	TMap<FString, FString> Arguments;
 	FString ModuleName = NameTextBox->GetText().ToString();
-	FString ProjectPath = PathTextBox->GetText().ToString();
+	FString ProjectParentFolder = PathTextBox->GetText().ToString();
 
 	TMap<FString, FString> SolutionArguments;
 	SolutionArguments.Add(TEXT("MODULENAME"), ModuleName);
 
-	FString ModuleFilePath = FPaths::Combine(ProjectPath, ModuleName, ModuleName + ".cs");
+	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
+	FString ModuleFilePath = FPaths::Combine(ProjectFolder, ModuleName + ".cs");
+	
 	FUnrealSharpEditorModule::FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
 
 	Arguments.Add(TEXT("NewProjectName"), ModuleName);
-	Arguments.Add(TEXT("NewProjectFolder"), MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectPath)));
+	Arguments.Add(TEXT("NewProjectFolder"), MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 
 	FString ProjectRoot;
     if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex))
@@ -260,14 +269,23 @@ void SCSNewProjectDialog::OnFinish()
 
 	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
 	{
-		FString ErrorMessage = FString::Printf(TEXT("Failed to create C# project %s at %s. Check the output log for more details."), *ModuleName, *ProjectPath);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage));
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project %s in %s", *ModuleName, *ProjectParentFolder);
 		return;
 	}
 
 	FUnrealSharpEditorModule& UnrealSharpEditor = FUnrealSharpEditorModule::Get();
 	UnrealSharpEditor.OpenSolution();
 	UnrealSharpEditor.AddDirectoryToWatch(FPaths::Combine(ProjectRoot, TEXT("Script")));
+
+	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
+
+	if (!FPaths::FileExists(CsProjPath))
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to find .csproj %s in %s", *ModuleName, *ProjectParentFolder);
+		return;
+	}
+	
+	UnrealSharpEditor.GetManagedUnrealSharpEditorCallbacks().AddProjectToCollection(*CsProjPath);
 	
 	CloseWindow();
 }

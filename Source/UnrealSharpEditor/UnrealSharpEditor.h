@@ -37,13 +37,15 @@ struct FCSManagedUnrealSharpEditorCallbacks
     {
     }
 
-    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, void*, ECSLoggerVerbosity, void*, bool);
+    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, ECSLoggerVerbosity, void*, bool);
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
+    using FAddProjectToCollection = void(__stdcall*)(const TCHAR*);
 
     FBuildProject Build;
     FForceManagedGC ForceManagedGC;
     FOpenSolution OpenSolution;
+    FAddProjectToCollection AddProjectToCollection;
 };
 
 
@@ -71,10 +73,13 @@ public:
     FUICommandList& GetUnrealSharpCommands() const { return *UnrealSharpCommands; }
 
     void OpenSolution();
-
     void AddDirectoryToWatch(const FString& Directory);
 
-
+    FCSManagedUnrealSharpEditorCallbacks& GetManagedUnrealSharpEditorCallbacks()
+    {
+        return ManagedUnrealSharpEditorCallbacks;
+    }
+    
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
 
     static void RepairComponents();

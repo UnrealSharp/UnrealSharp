@@ -2,11 +2,12 @@
 
 struct FCSProjectDestination
 {
-    FCSProjectDestination(const FName InKey, FText InDisplayName, FString InPath, const int32 Index, TSharedPtr<IPlugin> Plugin = nullptr) :
-        Key(InKey), DisplayName(MoveTemp(InDisplayName)), Path(MoveTemp(InPath)), Index(Index), Plugin(MoveTemp(Plugin)) {}
+    FCSProjectDestination(const FName InKey, FText InDisplayName, FString InName, FString InPath, const int32 Index, TSharedPtr<IPlugin> Plugin = nullptr) :
+        Key(InKey), DisplayName(MoveTemp(InDisplayName)), Name(MoveTemp(InName)), Path(MoveTemp(InPath)), Index(Index), Plugin(MoveTemp(Plugin)) {}
 
     FName GetKey() const { return Key; }
     const FText& GetDisplayName() const { return DisplayName; }
+	const FString& GetName() const { return Name; }
     const FString& GetPath() const { return Path; }
     int32 GetIndex() const { return Index; }
     const TSharedPtr<IPlugin>& GetPlugin() const { return Plugin; }
@@ -14,6 +15,7 @@ struct FCSProjectDestination
 private:
     FName Key;
     FText DisplayName;
+	FString Name;
     FString Path;
     int32 Index;
     TSharedPtr<IPlugin> Plugin;
