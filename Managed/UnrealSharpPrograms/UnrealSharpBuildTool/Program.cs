@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using CommandLine;
+﻿using CommandLine;
 using Newtonsoft.Json;
 using UnrealSharpBuildTool.Actions;
 
@@ -56,6 +55,11 @@ public static class Program
         return BuildToolOptions.TryGetArgument(argument);
     }
 
+    public static IEnumerable<string> GetArguments(string argument)
+    {
+        return BuildToolOptions.GetArguments(argument);
+    }
+
     public static bool HasArgument(string argument)
     {
         return BuildToolOptions.HasArgument(argument);
@@ -102,6 +106,11 @@ public static class Program
     public static string GetScriptFolder()
     {
         return Path.Combine(BuildToolOptions.ProjectDirectory, "Script");
+    }
+
+    public static string GetPluginsFolder()
+    {
+        return Path.Combine(BuildToolOptions.ProjectDirectory, "Plugins");
     }
 
     public static string GetProjectDirectory()
@@ -187,25 +196,51 @@ public static class Program
 
     public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
     {
-        FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
-        FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
-        List<FileInfo> allProjectFiles = new(csprojFiles.Length + fsprojFiles.Length);
-        allProjectFiles.AddRange(csprojFiles.Where(IsWeavableProject));
-        allProjectFiles.AddRange(fsprojFiles.Where(IsWeavableProject));
-        return allProjectFiles;
+        return folder.GetDirectories("Script")
+                .SelectMany(GetProjectsInDirectory)
+                .Concat(folder.GetDirectories("Plugins")
+                        .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                        .Select(x => x.Directory)
+                        .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                        .Where(x => x is not null)
+                        .SelectMany(GetProjectsInDirectory!))
+                .ToList();
     }
 
-    private static bool IsWeavableProject(FileInfo projectFile)
+    public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
     {
-        // We need to be able to filter out certain non-production projects.
-        // The main target of this is source generators and analyzers which users
-        // may want to leverage as part of their solution and can't be weaved because
-        // they have to use netstandard2.0.
-        XDocument doc = XDocument.Load(projectFile.FullName);
-        return !doc.Descendants()
-            .Where(element => element.Name.LocalName == "PropertyGroup")
-            .SelectMany(element => element.Elements())
-            .Any(element => element.Name.LocalName == "ExcludeFromWeaver" &&
-                            element.Value.Equals("true", StringComparison.OrdinalIgnoreCase));
+        Dictionary<string, List<FileInfo>> result = new Dictionary<string, List<FileInfo>>();
+        DirectoryInfo? scriptsFolder = folder.GetDirectories("Script").FirstOrDefault();
+        
+        if (scriptsFolder is not null)
+        {
+            result.Add(GetOutputPathForDirectory(scriptsFolder), GetProjectsInDirectory(scriptsFolder).ToList());
+        }
+
+        foreach (DirectoryInfo? pluginFolder in folder.GetDirectories("Plugins")
+                         .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                         .Select(x => x.Directory)
+                         .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                         .Where(x => x is not null))
+        {
+            result.Add(GetOutputPathForDirectory(pluginFolder!), GetProjectsInDirectory(pluginFolder!).ToList());
+        }
+
+        return result;
+    }
+
+    private static string GetOutputPathForDirectory(DirectoryInfo directory)
+    {
+        return Path.Combine(directory.Parent!.FullName, "Binaries", "Managed");
+    }
+
+    private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
+    {
+        FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
+        FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
+        List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
+        allProjectFiles.AddRange(csprojFiles);
+        allProjectFiles.AddRange(fsprojFiles);
+        return allProjectFiles;
     }
 }
