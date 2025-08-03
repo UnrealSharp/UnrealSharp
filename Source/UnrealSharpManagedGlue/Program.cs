@@ -66,10 +66,11 @@ public static class Program
 	        if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
 	        {
 	            Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
-	            UnrealSharp.Shared.DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
+	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
 	        }
 
 	        TryCreateGlueProjects();
+	        CopyGlobalJson();
 	    }
 	    catch (Exception ex)
 	    {
@@ -121,6 +122,18 @@ public static class Program
 	            pluginDir.PluginDirectory);
         }
     }
+    
+    private static void CopyGlobalJson()
+	{
+		string globalJsonPath = Path.Combine(ManagedPath, "global.json");
+		if (!File.Exists(globalJsonPath))
+		{
+			throw new FileNotFoundException("global.json not found in Managed directory.", globalJsonPath);
+		}
+		
+		string destinationPath = Path.Combine(Factory.Session.ProjectDirectory!, "global.json");
+		File.Copy(globalJsonPath, destinationPath);
+	}
 
     private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string> dependencyPaths, string projectRoot)
     {
