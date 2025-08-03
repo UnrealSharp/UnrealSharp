@@ -6,12 +6,12 @@ using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
-public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
     private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
-    private readonly MarshallingDelegates<TKey>.ToNative? _keyToNative;
+    private readonly MarshallingDelegates<TKey>.ToNative _keyToNative;
     private readonly MarshallingDelegates<TValue>.FromNative _valueFromNative;
-    private readonly MarshallingDelegates<TValue>.ToNative? _valueToNative;
+    private readonly MarshallingDelegates<TValue>.ToNative _valueToNative;
 
     private readonly NativeProperty _nativeProperty;
     private ScriptMapHelper _helper;
@@ -22,8 +22,8 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     public int Count => _helper.Num();
 
     public MapBase(IntPtr mapProperty, IntPtr address,
-        MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative? keyToNative,
-        MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative? valueToNative)
+        MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative keyToNative,
+        MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative valueToNative)
     {
         _nativeProperty = new NativeProperty(mapProperty);
         _keyProperty = new NativeProperty(FMapPropertyExporter.CallGetKey(mapProperty));
@@ -376,7 +376,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 
             public TValue Current => map.GetAt(index).Value;
 
-            object IEnumerator.Current => Current;
+            object? IEnumerator.Current => Current;
 
             public void Dispose()
             {
@@ -492,7 +492,7 @@ public class MapReadOnlyMarshaller<TKey, TValue>
 }
 
 // Used for function parameters / return results to copy to/from native memory
-public class MapCopyMarshaller<TKey, TValue>
+public class MapCopyMarshaller<TKey, TValue> where TKey : notnull
 {
     private ScriptMapHelper _helper;
     private readonly MarshallingDelegates<TKey>.FromNative _keyFromNative;
@@ -557,8 +557,7 @@ public class MapCopyMarshaller<TKey, TValue>
             return;
         }
 
-        Dictionary<TKey, TValue> dictionary = value as Dictionary<TKey, TValue>;
-        if (dictionary != null)
+        if (value is Dictionary<TKey, TValue> dictionary)
         {
             foreach (KeyValuePair<TKey, TValue> pair in dictionary)
             {
@@ -568,8 +567,7 @@ public class MapCopyMarshaller<TKey, TValue>
             return;
         }
 
-        MapBase<TKey, TValue> mapBase = value as MapBase<TKey, TValue>;
-        if (mapBase != null)
+        if (value is MapBase<TKey, TValue> mapBase)
         {
             foreach (KeyValuePair<TKey, TValue> pair in mapBase)
             {
