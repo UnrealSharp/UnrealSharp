@@ -475,9 +475,19 @@ public class MapReadOnlyMarshaller<TKey, TValue>
         return _readOnlyMapWrapper;
     }
 
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyDictionary<TKey, TValue> value)
+    public TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
     {
-        throw new NotImplementedException("Read-only TMap cannot write to native memory.");
+        return new TMap<TKey, TValue>(_nativeProperty, nativeBuffer, _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
+    }
+
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyDictionary<TKey, TValue> value)
+    {
+        TMap<TKey, TValue> wrapper = MakeWrapper(nativeBuffer);
+
+        foreach (KeyValuePair<TKey, TValue> pair in value)
+        {
+            wrapper.Add(pair.Key, pair.Value);
+        }
     }
 }
 

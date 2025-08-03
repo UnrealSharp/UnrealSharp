@@ -23,7 +23,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
     public readonly string InterfaceName;
 
     public override bool IsBlittable => false;
-    public override bool SupportsSetter => false;
+    public override bool SupportsSetter => true;
     public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)
@@ -58,6 +58,18 @@ public class ContainerPropertyTranslator : PropertyTranslator
 
         builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}({propertyManagedName}_NativeProperty, {marshallingDelegates});");
         builder.AppendLine($"return {propertyManagedName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0);");
+    }
+
+    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
+    {
+        UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty)property;
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
+
+        string wrapperType = GetWrapperType(property);
+        string marshallingDelegates = translator.ExportMarshallerDelegates(containerProperty.ValueProperty);
+
+        builder.AppendLine($"{propertyManagedName}_Marshaller ??= new {wrapperType}({propertyManagedName}_NativeProperty, {marshallingDelegates});");
+        builder.AppendLine($"{propertyManagedName}_Marshaller.ToNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), value);");
     }
 
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
