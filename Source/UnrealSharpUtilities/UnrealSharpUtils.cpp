@@ -55,6 +55,21 @@ FGuid FCSUnrealSharpUtils::ConstructGUIDFromName(const FName& Name)
 	return ConstructGUIDFromString(Name.ToString());
 }
 
+FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
+{
+	if (Path.IsEmpty())
+	{
+		return TEXT("");
+	}
+
+	if (Path.StartsWith(TEXT("\"")) && Path.EndsWith(TEXT("\"")))
+	{
+		return Path;
+	}
+
+	return FString::Printf(TEXT("\"%s\""), *Path);
+}
+
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 {
 	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);

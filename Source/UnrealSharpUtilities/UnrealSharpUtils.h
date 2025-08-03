@@ -18,6 +18,8 @@ namespace FCSUnrealSharpUtils
 	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
 	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromName(const FName& Name);
 
+	UNREALSHARPUTILITIES_API FString MakeQuotedPath(const FString& Path);
+
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)
 	{

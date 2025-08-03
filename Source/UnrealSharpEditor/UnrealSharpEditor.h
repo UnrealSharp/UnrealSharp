@@ -75,6 +75,8 @@ public:
     void OpenSolution();
     void AddDirectoryToWatch(const FString& Directory);
 
+    void AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& Arguments = {});
+
     FCSManagedUnrealSharpEditorCallbacks& GetManagedUnrealSharpEditorCallbacks()
     {
         return ManagedUnrealSharpEditorCallbacks;
@@ -137,8 +139,6 @@ private:
     void RefreshAffectedBlueprints();
 
     FSlateIcon GetMenuIcon() const;
-
-    static FString QuotePath(const FString& Path);
 
     FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
 

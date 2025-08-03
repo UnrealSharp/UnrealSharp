@@ -34,6 +34,7 @@
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
@@ -577,7 +578,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	Progress.MakeDialog();
 
 	TMap<FString, FString> Arguments;
-	Arguments.Add("ArchiveDirectory", QuotePath(ArchiveDirectory));
+	Arguments.Add("ArchiveDirectory", FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
 	Arguments.Add("BuildConfig", "Release");
 	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
 
@@ -851,6 +852,44 @@ void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
 	}
 }
 
+void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& ExtraArguments)
+{
+	TMap<FString, FString> Arguments = ExtraArguments;
+
+	TMap<FString, FString> SolutionArguments;
+	SolutionArguments.Add(TEXT("MODULENAME"), ModuleName);
+
+	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
+	FString ModuleFilePath = FPaths::Combine(ProjectFolder, ModuleName + ".cs");
+	
+	FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
+
+	Arguments.Add(TEXT("NewProjectName"), ModuleName);
+	Arguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	
+	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
+	Arguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
+
+	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project %s in %s", *ModuleName, *ProjectParentFolder);
+		return;
+	}
+	
+	OpenSolution();
+	AddDirectoryToWatch(FPaths::Combine(FullProjectRoot, TEXT("Script")));
+
+	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
+
+	if (!FPaths::FileExists(CsProjPath))
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to find .csproj %s in %s", *ModuleName, *ProjectParentFolder);
+		return;
+	}
+	
+	GetManagedUnrealSharpEditorCallbacks().AddProjectToCollection(*CsProjPath);
+}
+
 bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)
 {
 	const FString FullFileName = FCSProcHelper::GetPluginDirectory() / TEXT("Templates") / TemplateName + TEXT(".cs.template");
@@ -1046,11 +1085,6 @@ FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const
 	}
 
 	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
-}
-
-FString FUnrealSharpEditorModule::QuotePath(const FString& Path)
-{
-	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
 #undef LOCTEXT_NAMESPACE
