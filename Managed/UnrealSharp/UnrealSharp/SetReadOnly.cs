@@ -74,6 +74,6 @@ public class SetReadOnlyMarshaller<T>
 
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyCollection<T> value)
     {
-        SetMarshaller<T>.ToNativeInternal(nativeBuffer, arrayIndex, value, _helper, _elementToNative);
+        SetMarshaller<T>.ToNativeInternal(_property.ValueAddress(nativeBuffer), arrayIndex, value, _helper, _elementToNative);
     }
 }
