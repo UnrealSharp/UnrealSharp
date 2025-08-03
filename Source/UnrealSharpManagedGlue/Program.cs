@@ -132,6 +132,12 @@ public static class Program
 		}
 		
 		string destinationPath = Path.Combine(Factory.Session.ProjectDirectory!, "global.json");
+		
+		if (File.Exists(destinationPath))
+		{
+			File.Delete(destinationPath);
+		}
+		
 		File.Copy(globalJsonPath, destinationPath);
 	}
 
