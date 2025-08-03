@@ -8,13 +8,13 @@ struct FCSSpawnActorParameters
 	GENERATED_BODY()
 	
 	UPROPERTY()
-	AActor* Owner = nullptr;
+	TObjectPtr<AActor> Owner = nullptr;
 
 	UPROPERTY()
-	APawn* Instigator = nullptr;
+	TObjectPtr<APawn> Instigator = nullptr;
 
 	UPROPERTY()
-	AActor* Template = nullptr;
+	TObjectPtr<AActor> Template = nullptr;
 
 	UPROPERTY()
 	ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod::Undefined;
