@@ -29,8 +29,6 @@ public class GenerateProject : BuildToolAction
         string folder = Program.TryGetArgument("NewProjectFolder");
         _projectRoot = Program.TryGetArgument("ProjectRoot");
         
-        string slnPathg = Program.GetSolutionFile();
-        
         if (!ContainsUPluginOrUProjectFile(_projectRoot))
         {
             throw new InvalidOperationException("Project folder must contain a .uplugin or .uproject file.");
