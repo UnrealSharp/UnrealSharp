@@ -128,7 +128,7 @@ void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData
 		FPaths::NormalizeFilename(NormalizedFileName);
 
 		// Skip ProjectGlue files
-		if (NormalizedFileName.Contains(TEXT("ProjectGlue")) || NormalizedFileName.Contains("PluginGlue"))
+		if (NormalizedFileName.Contains("Glue"))
 		{
 			continue;
 		}

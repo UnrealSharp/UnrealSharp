@@ -175,7 +175,7 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 	{
 		FString ProjectName = OrderEntry->AsString();
 
-		if (!bIncludeProjectGlue && (ProjectName == TEXT("ProjectGlue") || ProjectName.EndsWith(TEXT("PluginGlue"))))
+		if (!bIncludeProjectGlue && ProjectName.EndsWith(TEXT(".Glue")))
 		{
 			continue;
 		}
@@ -225,7 +225,7 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncl
 
 	for (int32 i = ProjectPaths.Num() - 1; i >= 0; i--)
 	{
-		if (bIncludeProjectGlue || (!ProjectPaths[i].EndsWith("ProjectGlue.csproj") && !ProjectPaths[i].EndsWith("PluginGlue.csproj")))
+		if (bIncludeProjectGlue || !ProjectPaths[i].EndsWith("Glue.csproj"))
 		{
 			continue;
 		}
@@ -351,7 +351,7 @@ const FString& FCSProcHelper::GetPluginsDirectory()
 
 const FString& FCSProcHelper::GetProjectGlueFolderPath()
 {
-	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / "ProjectGlue";
+	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / FApp::GetProjectName() + TEXT(".Glue");
 	return ProjectGlueFolderPath;
 }
 

@@ -167,13 +167,13 @@ public static class Program
         string executablePath = string.Empty;
         if (OperatingSystem.IsWindows())
         {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
         }
-        string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
+        string commandLineArgs = FixPath(GetUProjectFilePath());
 
         // Create a new profile if it doesn't exist
         if (root.Profiles == null)
@@ -188,7 +188,7 @@ public static class Program
             CommandLineArgs = $"\"{commandLineArgs}\"",
         };
 
-        string newJsonString = JsonConvert.SerializeObject(root, Newtonsoft.Json.Formatting.Indented);
+        string newJsonString = JsonConvert.SerializeObject(root, Formatting.Indented);
         StreamWriter writer = File.CreateText(launchSettingsPath);
         writer.Write(newJsonString);
         writer.Close();

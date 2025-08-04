@@ -63,7 +63,22 @@ public static class Program
             resolver.AddSearchDirectory(directory);
             searchPaths.Add(directory);
         }
-
+        
+        List<AssemblyDefinition> bindingsAssemblies = new List<AssemblyDefinition>(WeaverOptions.AssemblyPaths.Count());
+        foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
+        {
+            string assemblyFileName = Path.GetFileNameWithoutExtension(assemblyPath);
+            AssemblyDefinition assembly = resolver.Resolve(new AssemblyNameReference(assemblyFileName, null));
+            
+            if (assembly == null)
+            {
+                throw new FileNotFoundException($"Could not find assembly: {assemblyFileName}");
+            }
+            
+            bindingsAssemblies.Add(assembly);
+        }
+        
+        WeaverImporter.Instance.AllProjectAssemblies = bindingsAssemblies;
         WeaverImporter.Instance.AssemblyResolver = resolver;
     }
 
@@ -107,7 +122,7 @@ public static class Program
 
         foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName || assembly.Name.Name.EndsWith("PluginGlue"))
+            if (assembly.Name.Name.EndsWith(".Glue"))
             {
                 continue;
             }

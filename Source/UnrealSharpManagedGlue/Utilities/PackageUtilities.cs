@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 

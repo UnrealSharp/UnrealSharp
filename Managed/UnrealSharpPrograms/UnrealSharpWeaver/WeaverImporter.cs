@@ -43,7 +43,7 @@ public class WeaverImporter
     
     public AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
     public AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
-    public AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
+    public List<AssemblyDefinition> AllProjectAssemblies = [];
     
     public MethodReference NativeObjectGetter = null!;
     public TypeDefinition IntPtrType = null!;

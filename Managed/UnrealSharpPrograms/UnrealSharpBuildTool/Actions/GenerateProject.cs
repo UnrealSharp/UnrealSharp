@@ -29,6 +29,8 @@ public class GenerateProject : BuildToolAction
         string folder = Program.TryGetArgument("NewProjectFolder");
         _projectRoot = Program.TryGetArgument("ProjectRoot");
         
+        string slnPathg = Program.GetSolutionFile();
+        
         if (!ContainsUPluginOrUProjectFile(_projectRoot))
         {
             throw new InvalidOperationException("Project folder must contain a .uplugin or .uproject file.");
@@ -79,14 +81,11 @@ public class GenerateProject : BuildToolAction
             File.Delete(myClassFile);
         }
 
-        if (!Program.HasArgument("SkipSolutionGeneration"))
+        string slnPath = Program.GetSolutionFile();
+        if (!File.Exists(slnPath))
         {
-            string slnPath = Program.GetSolutionFile();
-            if (!File.Exists(slnPath))
-            {
-                GenerateSolution generateSolution = new GenerateSolution();
-                generateSolution.RunAction();
-            }
+            GenerateSolution generateSolution = new GenerateSolution();
+            generateSolution.RunAction();
         }
 
         if (Program.HasArgument("SkipUSharpProjSetup"))
@@ -249,9 +248,8 @@ public class GenerateProject : BuildToolAction
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
         string providedGlueName = Program.TryGetArgument("GlueProjectName");
-        string glueProjectName = string.IsNullOrEmpty(providedGlueName) ? "ProjectGlue" : providedGlueName;
         string scriptFolder = string.IsNullOrEmpty(_projectRoot) ? Program.GetScriptFolder() : Path.Combine(_projectRoot, "Script");
-        string generatedGluePath = Path.Combine(scriptFolder, glueProjectName, $"{glueProjectName}.csproj");
+        string generatedGluePath = Path.Combine(scriptFolder, providedGlueName, $"{providedGlueName}.csproj");
         AddDependency(doc, itemGroup, generatedGluePath);
     }
 
