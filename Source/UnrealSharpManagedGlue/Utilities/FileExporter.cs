@@ -133,6 +133,7 @@ public static class FileExporter
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
             CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory);
+            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory_LEGACY);
         }
     }
     
