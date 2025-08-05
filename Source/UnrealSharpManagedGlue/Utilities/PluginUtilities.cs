@@ -9,7 +9,6 @@ namespace UnrealSharpScriptGenerator.Utilities;
 public static class PluginUtilities
 {
     public static readonly Dictionary<UhtPackage, ProjectDirInfo> PluginInfo = new();
-    public static readonly Dictionary<string, HashSet<string>> ProjectDependencies = new();
 
     public static ProjectDirInfo FindOrAddProjectInfo(this UhtPackage package)
     {

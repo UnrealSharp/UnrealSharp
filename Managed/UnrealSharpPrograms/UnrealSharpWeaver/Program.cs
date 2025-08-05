@@ -64,21 +64,6 @@ public static class Program
             searchPaths.Add(directory);
         }
         
-        List<AssemblyDefinition> bindingsAssemblies = new List<AssemblyDefinition>(WeaverOptions.AssemblyPaths.Count());
-        foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
-        {
-            string assemblyFileName = Path.GetFileNameWithoutExtension(assemblyPath);
-            AssemblyDefinition assembly = resolver.Resolve(new AssemblyNameReference(assemblyFileName, null));
-            
-            if (assembly == null)
-            {
-                throw new FileNotFoundException($"Could not find assembly: {assemblyFileName}");
-            }
-            
-            bindingsAssemblies.Add(assembly);
-        }
-        
-        WeaverImporter.Instance.AllProjectAssemblies = bindingsAssemblies;
         WeaverImporter.Instance.AssemblyResolver = resolver;
     }
 
@@ -92,11 +77,12 @@ public static class Program
         }
 
         DefaultAssemblyResolver resolver = GetAssemblyResolver();
-        List<AssemblyDefinition> userAssemblies = LoadUserAssemblies(resolver);
-        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
+        List<AssemblyDefinition> assembliesToProcess = LoadInputAssemblies(resolver);
+        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderInputAssembliesByReferences(assembliesToProcess);
+        WeaverImporter.Instance.AllProjectAssemblies = assembliesToProcess;
 
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
-        ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
+        ProcessOrderedAssemblies(orderedUserAssemblies, outputDirInfo);
     }
 
     private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
@@ -116,7 +102,7 @@ public static class Program
         File.WriteAllText(fileName, metaDataContent);
     }
 
-    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
+    private static void ProcessOrderedAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
     {
         Exception? exception = null;
 
@@ -151,7 +137,7 @@ public static class Program
         }
     }
 
-    private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
+    private static ICollection<AssemblyDefinition> OrderInputAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
     {
         HashSet<string> assemblyNames = new HashSet<string>();
 
@@ -257,7 +243,7 @@ public static class Program
         return WeaverImporter.Instance.AssemblyResolver;
     }
 
-    private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
+    private static List<AssemblyDefinition> LoadInputAssemblies(IAssemblyResolver resolver)
     {
         ReaderParameters readerParams = new ReaderParameters
         {
