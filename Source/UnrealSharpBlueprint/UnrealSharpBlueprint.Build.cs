@@ -22,5 +22,7 @@ public class UnrealSharpBlueprint : ModuleRules
                 "BlueprintGraph"
             }
         );
+
+        PublicDefinitions.Add("SkipGlueGeneration");
     }
 }

@@ -192,7 +192,7 @@ public class GeneratorStringBuilder : IDisposable
         }
 
         string accessSpecifier = "public";
-        if (type != null && type.HasMetadata("Internal"))
+        if (type != null && type.HasMetadata("InternalType"))
         {
             accessSpecifier = "internal";
         }

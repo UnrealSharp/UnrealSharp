@@ -331,7 +331,7 @@ UDelegateFunction* FCSAssembly::FindDelegate(const FCSFieldName& DelegateName) c
 	return FindFieldFromInfo<UDelegateFunction, FCSDelegateInfo>(DelegateName, Delegates);
 }
 
-TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(UObject* Object)
+TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(const UObject* Object)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssembly::CreateManagedObject);
 

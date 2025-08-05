@@ -18,6 +18,7 @@
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions):
@@ -88,7 +89,7 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 	FCSPropertyFactory::CreateAndAssignProperties(NewClass, Properties, [this](const FProperty* NewProperty)
 	{
 		FName PropertyName = NewProperty->GetFName();
-		FGuid PropertyGuid = UCSPropertyGenerator::ConstructGUIDFromName(PropertyName);
+		FGuid PropertyGuid = FCSUnrealSharpUtils::ConstructGUIDFromName(PropertyName);
 		NewClass->PropertyGuids.Add(PropertyName, PropertyGuid);
 	});
 

@@ -1,5 +1,6 @@
 ﻿#include "UnrealSharpCompiler.h"
 
+#include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
@@ -8,9 +9,12 @@
 #include "TypeGenerator/CSBlueprint.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/CSScriptStruct.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
+
+DEFINE_LOG_CATEGORY(LogUnrealSharpCompiler);
 
 void FUnrealSharpCompilerModule::StartupModule()
 {
@@ -27,6 +31,7 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
+	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
 	
 	CSManager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
@@ -66,15 +71,29 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		return;
 	}
 	
-	auto QueueAndCompile = [this](TArray<UBlueprint*>& Blueprints)
+	auto CompileBlueprints = [this](TArray<UBlueprint*>& Blueprints)
 	{
 		if (Blueprints.IsEmpty())
 		{
 			return;
 		}
 		
-		for (UBlueprint* Blueprint : Blueprints)
+		for (int32 i = 0; i < Blueprints.Num(); ++i)
 		{
+			UBlueprint* Blueprint = Blueprints[i];
+
+			if (!Blueprint)
+			{
+				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint is null, skipping compilation.");
+				continue;
+			}
+			
+			if (!IsValid(Blueprint))
+			{
+				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
+				continue;
+			}
+
 			FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 		}
 		
@@ -82,8 +101,8 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	};
 
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
-	QueueAndCompile(ManagedComponentsToCompile);
-	QueueAndCompile(ManagedClassesToCompile);
+	CompileBlueprints(ManagedComponentsToCompile);
+	CompileBlueprints(ManagedClassesToCompile);
 
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
@@ -135,6 +154,16 @@ void FUnrealSharpCompilerModule::OnNewStruct(UCSScriptStruct* NewStruct)
 void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 {
 	AddManagedReferences(NewEnum->ManagedReferences);
+}
+
+void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
+{
+	if (!IsValid(GEditor))
+	{
+		return;
+	}
+	
+	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
 }
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FName& AssemblyName)

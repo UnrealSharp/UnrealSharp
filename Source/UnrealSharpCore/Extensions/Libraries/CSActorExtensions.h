@@ -7,7 +7,7 @@
 struct FComponentOverrideRecord;
 struct FComponentKey;
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSActorExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

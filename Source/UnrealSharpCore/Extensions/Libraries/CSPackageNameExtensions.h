@@ -6,7 +6,7 @@
 
 class UMovementComponent;
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSPackageNameExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

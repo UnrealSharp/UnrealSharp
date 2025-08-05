@@ -6,5 +6,5 @@ FCSFieldName::FCSFieldName(UClass* Class)
 {
 	const UClass* NativeClass = FCSClassUtilities::GetFirstNativeClass(Class);
 	Name = NativeClass->GetFName();
-	Namespace = FUnrealSharpUtils::GetNamespace(NativeClass);
+	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeClass);
 }

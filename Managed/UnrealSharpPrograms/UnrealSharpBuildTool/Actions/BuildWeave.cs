@@ -7,17 +7,19 @@ public class BuildWeave : BuildToolAction
         BuildSolution buildSolution = new BuildUserSolution();
         WeaveProject weaveProject = new WeaveProject();
         return buildSolution.RunAction() && weaveProject.RunAction() && AddLaunchSettings();
-    } 
+    }
+    
     bool AddLaunchSettings()
     {
-        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetScriptFolder()));
+        List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetProjectDirectory()));
 
         foreach (FileInfo projectFile in allProjectFiles)
         {
-            if (projectFile.Directory!.Name == "ProjectGlue")
+            if (projectFile.Directory!.Name.EndsWith(".Glue"))
             {
                 continue;
             }
+            
             string csProjectPath = Path.Combine(Program.GetScriptFolder(), projectFile.Directory.Name);
             string propertiesDirectoryPath = Path.Combine(csProjectPath, "Properties");
             string launchSettingsPath = Path.Combine(propertiesDirectoryPath, "launchSettings.json");
@@ -33,5 +35,5 @@ public class BuildWeave : BuildToolAction
         }
         return true;
     }
-    
+
 }

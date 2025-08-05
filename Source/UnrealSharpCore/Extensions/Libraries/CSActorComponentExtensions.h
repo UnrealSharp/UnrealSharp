@@ -4,7 +4,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSActorComponentExtensions.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSActorComponentExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

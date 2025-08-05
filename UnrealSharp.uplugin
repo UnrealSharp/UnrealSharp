@@ -67,7 +67,11 @@
 		{
 			"Name": "StateTree",
 			"Enabled": true
-		}
+		},
+        {
+            "Name": "PluginBrowser",
+            "Enabled": true
+        }
 	],
 	"SupportURL": "https://discord.gg/QHb8VjNptE"
 }

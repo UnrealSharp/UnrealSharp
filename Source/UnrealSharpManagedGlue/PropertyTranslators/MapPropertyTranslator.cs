@@ -15,7 +15,7 @@ public class MapPropertyTranslator : PropertyTranslator
     }
     
     public override bool IsBlittable => false;
-    public override bool SupportsSetter => false;
+    public override bool SupportsSetter => true;
     public override bool CacheProperty => true;
 
     public override bool CanExport(UhtProperty property)
@@ -105,6 +105,21 @@ public class MapPropertyTranslator : PropertyTranslator
 
         builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}({property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
         builder.AppendLine($"return {property.SourceName}_Marshaller.FromNative(IntPtr.Add(NativeObject, {property.SourceName}_Offset), 0);");
+    }
+
+    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
+    {
+        UhtMapProperty mapProperty = (UhtMapProperty)property;
+        PropertyTranslator keyTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.KeyProperty)!;
+        PropertyTranslator valueTranslator = PropertyTranslatorManager.GetTranslator(mapProperty.ValueProperty)!;
+
+        string keyMarshallingDelegates = keyTranslator.ExportMarshallerDelegates(mapProperty.KeyProperty);
+        string valueMarshallingDelegates = valueTranslator.ExportMarshallerDelegates(mapProperty.ValueProperty);
+
+        string marshaller = GetMarshaller(mapProperty);
+
+        builder.AppendLine($"{property.SourceName}_Marshaller ??= new {marshaller}({property.SourceName}_NativeProperty, {keyMarshallingDelegates}, {valueMarshallingDelegates});");
+        builder.AppendLine($"{property.SourceName}_Marshaller.ToNative(IntPtr.Add(NativeObject, {property.SourceName}_Offset), 0, value);");
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string assignmentOrReturn,

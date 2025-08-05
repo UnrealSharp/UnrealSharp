@@ -4,7 +4,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSDataTableExtensions.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSDataTableExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

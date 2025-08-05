@@ -5,7 +5,7 @@
 
 void FCSGeneratedDelegateBuilder::RebuildType()
 {
-	FUnrealSharpUtils::PurgeStruct(Field);
+	FCSUnrealSharpUtils::PurgeStruct(Field);
 	Field->ParmsSize = 0;
 	Field->ReturnValueOffset = 0;
 	Field->NumParms = 0;

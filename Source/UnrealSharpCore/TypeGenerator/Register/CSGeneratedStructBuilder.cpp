@@ -24,12 +24,13 @@ void FCSGeneratedStructBuilder::RebuildType()
 	Field->Status = UDSS_UpToDate;
 	if (!Field->Guid.IsValid())
 	{
-		Field->Guid = FGuid::NewGuid();
+		Field->Guid = FCSUnrealSharpUtils::ConstructGUIDFromString(Field->GetName());
 	}
 	
 	Field->Bind();
 	Field->StaticLink(true);
 	Field->RecreateDefaults();
+	Field->UpdateStructFlags();
 	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 
@@ -47,7 +48,7 @@ void FCSGeneratedStructBuilder::UpdateType()
 
 void FCSGeneratedStructBuilder::PurgeStruct()
 {
-	FUnrealSharpUtils::PurgeStruct(Field);
+	FCSUnrealSharpUtils::PurgeStruct(Field);
 #if WITH_EDITORONLY_DATA
 	Field->PrimaryStruct = nullptr;
 	Field->EditorData = nullptr;
