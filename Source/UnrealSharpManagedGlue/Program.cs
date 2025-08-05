@@ -20,8 +20,9 @@ public static class Program
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
 
     public static string EngineGluePath { get; private set; } = "";
-    public static string ProjectGluePath { get; private set; } = "";
     public static string PluginsPath { get; private set; } = "";
+    public static string ProjectGluePath_LEGACY { get; private set; } = "";
+    public static string ProjectName => Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile!);
 
     public static bool BuildingEditor { get; private set; }
     public static UhtClass BlueprintFunctionLibrary { get; private set; } = null!;
@@ -30,7 +31,7 @@ public static class Program
     public static string ManagedBinariesPath { get; private set; } = "";
     public static string ManagedPath { get; private set; } = "";
     public static string ScriptFolder { get; private set; } = "";
-    public static ImmutableArray<PluginDirInfo> PluginDirs { get; private set; }
+    public static ImmutableArray<ProjectDirInfo> PluginDirs { get; private set; }
 
     [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
 	    ModuleName = "UnrealSharpCore",
@@ -69,7 +70,7 @@ public static class Program
 	            DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
 	        }
 
-	        TryCreateGlueProjects();
+	        CreateGlueProjects();
 	        CopyGlobalJson();
 	    }
 	    catch (Exception ex)
@@ -90,9 +91,9 @@ public static class Program
 		DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
 		ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
         PluginsPath = Path.Combine(unrealSharpDirectory.FullName, "Plugins");
+        ProjectGluePath_LEGACY = Path.Combine(ScriptFolder, "ProjectGlue");
 
 		EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
-		ProjectGluePath = Path.Combine(ScriptFolder, "ProjectGlue");
 
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 
@@ -105,81 +106,83 @@ public static class Program
         PluginDirs = [
             ..pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
                 .Where(x => x.Directory!.GetDirectories("Source").Length != 0)
-                .Select(x => new PluginDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
-                .Where(x => x.PluginName != "UnrealSharp")
+                .Select(x => new ProjectDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
+                .Where(x => x.GlueProjectName != "UnrealSharp")
         ];
 	}
-
-    private static void TryCreateGlueProjects()
+    
+    private static void CreateGlueProjects()
     {
-        string projectGluePath = Path.Combine(ProjectGluePath, "ProjectGlue.csproj");
-        string projectName = Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile)!;
-        TryCreateGlueProject(projectGluePath,  projectName, PluginUtilities.GetProjectDependencyPaths(), Factory.Session.ProjectDirectory);
-        
-        foreach (PluginDirInfo pluginDir in PluginDirs)
+        foreach (KeyValuePair<UhtPackage, ProjectDirInfo> pluginInfo in PluginUtilities.PluginInfo)
         {
-            TryCreateGlueProject(pluginDir.GlueProjectPath, pluginDir.PluginName, PluginUtilities.GetPluginDependencyPaths(pluginDir.PluginName), 
-	            pluginDir.PluginDirectory);
+	        ProjectDirInfo pluginDir = pluginInfo.Value;
+            TryCreateGlueProject(pluginDir.GlueCsProjPath, pluginDir.GlueProjectName, pluginDir.Dependencies, pluginDir.ProjectRoot);
         }
+    }
+
+    private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
+    {
+        if (!File.Exists(csprojPath))
+        {
+	        string projectDirectory = Path.GetDirectoryName(csprojPath)!;
+	        List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
+	        {
+		        new("NewProjectName", projectName),
+		        new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
+		        new("SkipIncludeProjectGlue", "true"),
+		        new("SkipSolutionGeneration", "true"),
+	        };
+
+	        arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
+	        DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
+		        ProjectName,
+		        PluginDirectory,
+		        Factory.Session.ProjectDirectory!,
+		        Factory.Session.EngineDirectory!,
+		        arguments);
+        }
+        
+        AddPluginDependencies(csprojPath, dependencyPaths);
     }
     
     private static void CopyGlobalJson()
-	{
-		string globalJsonPath = Path.Combine(ManagedPath, "global.json");
-		if (!File.Exists(globalJsonPath))
-		{
-			throw new FileNotFoundException("global.json not found in Managed directory.", globalJsonPath);
-		}
-		
-		string destinationPath = Path.Combine(Factory.Session.ProjectDirectory!, "global.json");
-		
-		if (File.Exists(destinationPath))
-		{
-			File.Delete(destinationPath);
-		}
-		
-		File.Copy(globalJsonPath, destinationPath);
-	}
-
-    private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string> dependencyPaths, string projectRoot)
     {
-        if (File.Exists(csprojPath))
-        {
-            AddPluginDependencies(csprojPath, projectName, dependencyPaths);
-            return;
-        }
-
-        string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-        List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
-        {
-            new("NewProjectName", Path.GetFileNameWithoutExtension(csprojPath)),
-            new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-            new("SkipIncludeProjectGlue", "true"),
-	        new("SkipSolutionGeneration", "true"),
-        };
-
-        arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
-        
-        DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
-            projectName,
-            PluginDirectory,
-            Factory.Session.ProjectDirectory!,
-            Factory.Session.EngineDirectory!,
-            arguments);
+	    string globalJsonPath = Path.Combine(ManagedPath, "global.json");
+	    if (!File.Exists(globalJsonPath))
+	    {
+		    throw new FileNotFoundException("global.json not found in Managed directory.", globalJsonPath);
+	    }
+		
+	    string destinationPath = Path.Combine(Factory.Session.ProjectDirectory!, "global.json");
+		
+	    if (File.Exists(destinationPath))
+	    {
+		    File.Delete(destinationPath);
+	    }
+		
+	    File.Copy(globalJsonPath, destinationPath);
     }
 
-    private static void AddPluginDependencies(string projectPath, string projectName, IEnumerable<string> projectPaths)
+    private static void AddPluginDependencies(string projectPath, IEnumerable<string>? projectPaths)
     {
-        string engineDirectory = Factory.Session.EngineDirectory!;
+	    List<KeyValuePair<string, string>> arguments = new()
+	    {
+		    new KeyValuePair<string, string>("ProjectPath", projectPath),
+	    };
 
-        IEnumerable<KeyValuePair<string, string>> arguments = Enumerable.Repeat(new KeyValuePair<string, string>("ProjectPath", projectPath), 1)
-                .Concat(projectPaths.Select(x => new KeyValuePair<string, string>("Dependency", x)));
-
-        DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
-                projectName,
-                PluginDirectory,
-                Factory.Session.ProjectDirectory!,
-                engineDirectory,
-                arguments);
+	    if (projectPaths != null)
+	    {
+		    foreach (string path in projectPaths)
+		    {
+			    arguments.Add(new KeyValuePair<string, string>("Dependency", path));
+		    }
+	    }
+	    
+	    DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
+		    ProjectName,
+		    PluginDirectory,
+		    Factory.Session.ProjectDirectory!,
+		    Factory.Session.EngineDirectory!,
+		    arguments);
     }
 }

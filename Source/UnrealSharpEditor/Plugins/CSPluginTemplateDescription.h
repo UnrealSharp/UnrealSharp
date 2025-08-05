@@ -13,8 +13,8 @@ class UNREALSHARPEDITOR_API FCSPluginTemplateDescription final : public FPluginT
 public:
     FCSPluginTemplateDescription(FText InName, FText InDescription, FString InOnDiskPath, const bool InCanContainContent,
         const EHostType::Type InModuleDescriptorType, const ELoadingPhase::Type InLoadingPhase = ELoadingPhase::Default,
-        const bool InSupportsContentOnlyProjects = true, const bool InRequiresPluginGlue = true) : FPluginTemplateDescription(MoveTemp(InName), MoveTemp(InDescription),
-            MoveTemp(InOnDiskPath), InCanContainContent, InModuleDescriptorType, InLoadingPhase, InSupportsContentOnlyProjects), bRequiresPluginGlue(InRequiresPluginGlue)
+        const bool InSupportsContentOnlyProjects = true, const bool InRequiresGlue = true) : FPluginTemplateDescription(MoveTemp(InName), MoveTemp(InDescription),
+            MoveTemp(InOnDiskPath), InCanContainContent, InModuleDescriptorType, InLoadingPhase, InSupportsContentOnlyProjects), bRequiresGlue(InRequiresGlue)
     {
     }
 
@@ -23,5 +23,5 @@ public:
 private:
     static void CreateCodeModule(const FString& ModuleName, const FString& ProjectPath, const FString& GlueProjectName, const FString& PluginPath, bool bIncludeGlueProject);
 
-    bool bRequiresPluginGlue;
+    bool bRequiresGlue;
 };

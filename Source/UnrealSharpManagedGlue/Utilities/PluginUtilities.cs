@@ -8,72 +8,67 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class PluginUtilities
 {
-    private const string ProjectGlueName = "<ProjectGlue>";
-    private static readonly Dictionary<string, PluginDirInfo> PluginDirs = new();
-    private static readonly Dictionary<string, HashSet<string>> PluginDependencies = new();
+    public static readonly Dictionary<UhtPackage, ProjectDirInfo> PluginInfo = new();
 
-    public static HashSet<string> GetPackageDependencies(this UhtPackage package)
+    public static ProjectDirInfo FindOrAddProjectInfo(this UhtPackage package)
     {
-        var pluginName = package.IsPlugin() ? package.GetPluginDirectory().PluginName : ProjectGlueName;
-        if (PluginDependencies.TryGetValue(pluginName, out HashSet<string>? dependencies))
+        if (PluginInfo.TryGetValue(package, out ProjectDirInfo plugin))
         {
-            return dependencies;
+            return plugin;
         }
+        
+        string baseDirectory = package.GetModule().BaseDirectory;
+        DirectoryInfo? currentDirectory = new DirectoryInfo(baseDirectory);
 
-        dependencies = package.GetHeaderFiles()
-                .SelectMany(x => x.ReferencedHeadersLocked)
-                .SelectMany(x => x.GetPackages())
-                .Where(x => !x.IsPartOfEngine())
-                .Where(x => x.IsPlugin())
-                .Select(x => x.GetPluginDirectory())
-                .Select(x => x.PluginName)
-                .Where(x => x != pluginName)
-                .ToHashSet();
-        PluginDependencies.Add(pluginName, dependencies);
-        return dependencies;
-    }
-
-    public static PluginDirInfo GetPluginDirectory(this UhtPackage package)
-    {
-        if (PluginDirs.TryGetValue(package.SourceName, out var pluginDirectory))
-        {
-            return pluginDirectory;
-        }
-
-        var currentDirectory = new DirectoryInfo(package.GetModule().BaseDirectory);
+        FileInfo? projectFile = null;
         while (currentDirectory is not null)
         {
-            var pluginFile = currentDirectory.GetFiles("*.uplugin", SearchOption.TopDirectoryOnly)
-                    .SingleOrDefault();
-            if (pluginFile is not null)
+            FileInfo[] foundFiles = currentDirectory.GetFiles("*.*", SearchOption.TopDirectoryOnly);
+            projectFile = foundFiles.FirstOrDefault(f => f.Extension.Equals(".uplugin", StringComparison.OrdinalIgnoreCase) || 
+                                                         f.Extension.Equals(".uproject", StringComparison.OrdinalIgnoreCase));
+            
+            if (projectFile is not null)
             {
-
-                var info = new PluginDirInfo(Path.GetFileNameWithoutExtension(pluginFile.Name),
-                        currentDirectory.FullName);
-                PluginDirs.Add(package.SourceName, info);
-                return info;
+                break;
             }
 
             currentDirectory = currentDirectory.Parent;
         }
-
-        throw new InvalidOperationException($"Could not find plugin directory for {package.SourceName}");
-    }
-
-    public static IEnumerable<string> GetPluginDependencyPaths(string pluginName)
-    {
-        if (!PluginDependencies.TryGetValue(pluginName, out HashSet<string>? dependencies))
+        
+        if (projectFile is null)
         {
-            return [];
+            throw new InvalidOperationException($"Could not find .uplugin or .uproject file for package {package.SourceName} in {baseDirectory}");
         }
-
-        return dependencies
-                .Select(x => PluginDirs[x])
-                .Select(x => x.GlueProjectPath);
-    }
-
-    public static IEnumerable<string> GetProjectDependencyPaths()
-    {
-        return GetPluginDependencyPaths(ProjectGlueName);
+        
+        HashSet<string> dependencies = new HashSet<string>();
+        ProjectDirInfo info = new ProjectDirInfo(Path.GetFileNameWithoutExtension(projectFile.Name), currentDirectory!.FullName, dependencies);
+        PluginInfo.Add(package, info);
+        
+        foreach (UhtHeaderFile header in package.GetHeaderFiles())
+        {
+            HashSet<UhtHeaderFile> referencedHeaders = header.References.ReferencedHeaders;
+            referencedHeaders.UnionWith(header.ReferencedHeadersNoLock);
+            
+            foreach (UhtHeaderFile refHeader in referencedHeaders)
+            {
+                foreach (UhtPackage refPackage in refHeader.GetPackages())
+                {
+                    if (refPackage.IsPartOfEngine() || refPackage == package)
+                    {
+                        continue;
+                    }
+                    
+                    ProjectDirInfo projectInfo = refPackage.FindOrAddProjectInfo();
+                    if (info.GlueCsProjPath == projectInfo.GlueCsProjPath)
+                    {
+                        continue;
+                    }
+                    
+                    dependencies.Add(projectInfo.GlueCsProjPath);
+                }
+            }
+        }
+        
+        return info;
     }
 }

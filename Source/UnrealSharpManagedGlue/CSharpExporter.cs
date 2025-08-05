@@ -82,7 +82,7 @@ public static class CSharpExporter
 
     static void DeserializeModuleData()
     {
-        if (!Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        if (!Directory.Exists(Program.EngineGluePath))
         {
             return;
         }
@@ -119,7 +119,7 @@ public static class CSharpExporter
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
         string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
 
-        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(Program.EngineGluePath) || !Directory.Exists(Program.ProjectGluePath))
+        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(Program.EngineGluePath))
         {
             return true;
         }
@@ -175,7 +175,7 @@ public static class CSharpExporter
 
         if (!package.IsPartOfEngine())
         {
-            package.GetPackageDependencies();
+            package.FindOrAddProjectInfo();
         }
 
         string packageName = package.GetShortName();

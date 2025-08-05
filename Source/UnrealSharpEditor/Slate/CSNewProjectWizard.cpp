@@ -218,25 +218,35 @@ void SCSNewProjectDialog::OnFinish()
 	FString ProjectParentFolder = PathTextBox->GetText().ToString();
 
 	FString ProjectRoot;
+	FString GlueProjectLocation;
+	FString GlueProjectName;
+
+	auto MakeGlueNameAndLocation = [](FString& GlueLocation, FString& GlueName, const FString& PluginName, const FString& CsProjFolder)
+	{
+		GlueName = FString::Printf(TEXT("%s.Glue"), *PluginName);
+		GlueLocation = FPaths::Combine(CsProjFolder, FString::Printf(TEXT("%s.csproj"), *GlueName));
+	};
+	
     if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex) && SelectedProjectDestinationIndex > 0)
     {
     	const TSharedRef<FCSProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
     	const TSharedPtr<IPlugin>& Plugin = Destination->GetPlugin();
-    	
-        const FString& GlueProjectName = Arguments.Add(TEXT("GlueProjectName"), FString::Printf(TEXT("%s.PluginGlue"), *Plugin->GetName()));
-        const FString GlueProjectLocation = FPaths::Combine(Destination->GetPath(), GlueProjectName, FString::Printf(TEXT("%s.csproj"), *GlueProjectName));
 
     	ProjectRoot = Plugin->GetBaseDir();
-    	
-        if (!FPaths::FileExists(GlueProjectLocation))
-        {
-            Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
-        }
+    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, Plugin->GetName(), FPaths::Combine(Destination->GetPath(), GlueProjectName));
     }
     else
     {
     	ProjectRoot = FPaths::ProjectDir();
+    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, FApp::GetProjectName(), FCSProcHelper::GetProjectGlueFolderPath());
     }
+
+	if (!FPaths::FileExists(GlueProjectLocation))
+	{
+		Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
+	}
+
+	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);
 	CloseWindow();

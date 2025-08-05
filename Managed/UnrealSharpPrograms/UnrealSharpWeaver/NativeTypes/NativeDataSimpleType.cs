@@ -32,22 +32,30 @@ public abstract class NativeDataSimpleType(TypeReference typeRef, string marshal
         var isGenericMarshaller = marshallerName.Contains('`');
 
         TypeReference[] typeParams = GetTypeParams();
-        
-        AssemblyUtilities.ForEachAssembly(definition =>
+
+        bool FindMarshaller(AssemblyDefinition assembly)
         {
             TypeReference? foundMarshaller = isGenericMarshaller
-                ? definition.FindGenericType("", marshallerName, typeParams, false) 
-                : GetTypeInAssembly(definition);
-            
-            if (foundMarshaller is not null)
+                ? assembly.FindGenericType("", marshallerName, typeParams, false) 
+                : GetTypeInAssembly(assembly);
+
+            if (foundMarshaller is null)
             {
-                MarshallerClass = foundMarshaller;
-                _assembly = definition;
-                return false;
+                return true;
             }
             
-            return true;
-        });
+            MarshallerClass = foundMarshaller;
+            _assembly = assembly;
+            return false;
+
+        }
+
+        FindMarshaller(CSharpType.Module.Assembly);
+
+        if (MarshallerClass is null || _assembly is null)
+        {
+            AssemblyUtilities.ForEachAssembly(FindMarshaller);
+        }
         
         if (MarshallerClass is null)
         {
