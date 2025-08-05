@@ -105,6 +105,19 @@ public class ClassMetaData : TypeReferenceMetadata
         {
             MethodDefinition method = _classDefinition.Methods[i];
 
+            if (method.HasParameters)
+            {
+                var paramNameSet = new HashSet<string>();
+                var uniqueNum = 0;
+                foreach (var param in method.Parameters)
+                {
+                    if (!paramNameSet.Add(param.Name))
+                    {
+                        param.Name = $"{param.Name}_{uniqueNum++}";
+                    }
+                }
+            }
+
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
                 FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
