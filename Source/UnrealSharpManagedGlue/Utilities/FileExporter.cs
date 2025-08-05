@@ -1,23 +1,36 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
-public record struct PluginDirInfo(string PluginName, string PluginDirectory)
+public readonly struct ProjectDirInfo
 {
-    public string PluginScriptDir = Path.Combine(PluginDirectory, "Script");
-    public string GlueProjectDir => Path.Combine(PluginScriptDir, GlueProjectName);
+    private readonly string _projectName;
+    private readonly string _projectDirectory;
+    public HashSet<string>? Dependencies { get; }
 
-    public string GlueProjectName => $"{PluginName}.PluginGlue";
-
+    public ProjectDirInfo(string projectName, string projectDirectory, HashSet<string>? dependencies = null)
+    {
+        _projectName = projectName;
+        _projectDirectory = projectDirectory;
+        Dependencies = dependencies;
+    }
+    
+    public string GlueProjectName => $"{_projectName}.Glue";
+    public string GlueProjectName_LEGACY => $"{_projectName}.PluginGlue";
     public string GlueProjectFile => $"{GlueProjectName}.csproj";
-
-    public string GlueProjectPath => Path.Combine(GlueProjectDir, GlueProjectFile);
+    
+    public string ScriptDirectory => Path.Combine(_projectDirectory, "Script");
+    
+    public string GlueCsProjPath => Path.Combine(GlueProjectDirectory, GlueProjectFile);
+    
+    public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
+    public string GlueProjectDirectory_LEGACY => Path.Combine(ScriptDirectory, GlueProjectName_LEGACY);
+    
+    public string ProjectRoot => _projectDirectory;
 }
 
 public static class FileExporter
@@ -95,37 +108,35 @@ public static class FileExporter
 
     public static string GetLocalGluePath(UhtPackage package)
     {
-        if (!package.IsPlugin())
-        {
-            return Program.ProjectGluePath;
-        }
-
-        var (pluginName, pluginDirectory) = package.GetPluginDirectory();
-        return Path.Combine(pluginDirectory, "Script", $"{pluginName}.PluginGlue");
+        ProjectDirInfo projectDirInfo = package.FindOrAddProjectInfo();
+        return projectDirInfo.GlueProjectDirectory;
     }
 
     public static void CleanOldExportedFiles()
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
         CleanFilesInDirectories(Program.EngineGluePath);
-        CleanFilesInDirectories(Program.ProjectGluePath, true);
-        foreach (var pluginDirectory in Program.PluginDirs)
+        CleanFilesInDirectories(Program.ProjectGluePath_LEGACY, true);
+        
+        foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
-            CleanFilesInDirectories(pluginDirectory.GlueProjectDir, true);
+            CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory, true);
+            CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory_LEGACY, true);
         }
     }
 
     public static void CleanModuleFolders()
     {
         CleanGeneratedFolder(Program.EngineGluePath);
-        CleanGeneratedFolder(Program.ProjectGluePath);
-        foreach (var pluginDirectory in Program.PluginDirs)
+        CleanGeneratedFolder(Program.ProjectGluePath_LEGACY);
+        
+        foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
-            CleanGeneratedFolder(pluginDirectory.GlueProjectDir);
+            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory);
+            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory_LEGACY);
         }
     }
-
-
+    
     public static void CleanGeneratedFolder(string path)
     {
         if (!Directory.Exists(path))

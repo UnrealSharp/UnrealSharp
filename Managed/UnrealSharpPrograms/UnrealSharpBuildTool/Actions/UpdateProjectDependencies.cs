@@ -8,6 +8,7 @@ public class UpdateProjectDependencies : BuildToolAction
     private string _projectPath = string.Empty;
     private string _projectFolder = string.Empty;
     private ImmutableList<string> _dependencies = ImmutableList<string>.Empty;
+    private HashSet<string> _existingDependencies = new HashSet<string>();
 
     public override bool RunAction()
     {
@@ -26,25 +27,28 @@ public class UpdateProjectDependencies : BuildToolAction
     {
         try
         {
-            var csprojDocument = new XmlDocument();
+            XmlDocument csprojDocument = new XmlDocument();
             csprojDocument.Load(_projectPath);
 
-            var itemGroups = csprojDocument.SelectNodes("//ItemGroup")!;
+            XmlNodeList itemGroups = csprojDocument.SelectNodes("//ItemGroup")!;
 
-            var existingDependencies = itemGroups
+            _existingDependencies = itemGroups
                     .OfType<XmlElement>()
+                    .Where(x => x.Name == "ItemGroup")
+                    .SelectMany(x => x.ChildNodes.OfType<XmlElement>())
                     .Where(x => x.Name == "ProjectReference")
                     .Select(x => x.GetAttribute("Include"))
                     .ToHashSet();
 
-            var newItemGroup = itemGroups.OfType<XmlElement>().FirstOrDefault();
+            XmlElement? newItemGroup = itemGroups.OfType<XmlElement>().FirstOrDefault();
+            
             if (newItemGroup is null)
             {
                 newItemGroup = csprojDocument.CreateElement("ItemGroup");
                 csprojDocument.DocumentElement!.AppendChild(newItemGroup);
             }
 
-            foreach (var dependency in _dependencies.Except(existingDependencies))
+            foreach (string dependency in _dependencies)
             {
                 AddDependency(csprojDocument, newItemGroup, dependency);
             }
@@ -60,6 +64,11 @@ public class UpdateProjectDependencies : BuildToolAction
     private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)
     {
         string relativePath = GenerateProject.GetRelativePath(_projectFolder, dependency);
+        
+        if (_existingDependencies.Contains(relativePath))
+        {
+            return;
+        }
 
         XmlElement generatedCode = doc.CreateElement("ProjectReference");
         generatedCode.SetAttribute("Include", relativePath);
