@@ -318,7 +318,7 @@ public partial class UObject
         return GetGameInstanceSubsystem(new TSubclassOf<T>(typeof(T)));
     }
 
-#if !PACKAGE
+#if WITH_EDITOR
     /// <summary>
     /// Gets the editor subsystem of the specified type.
     /// </summary>

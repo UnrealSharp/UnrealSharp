@@ -102,7 +102,7 @@ public class GeneratorStringBuilder : IDisposable
     
     public void BeginWithEditorPreproccesorBlock()
     {
-        BeginPreproccesorBlock("!PACKAGE");
+        BeginPreproccesorBlock("WITH_EDITOR");
     }
     
     public void TryAddWithEditor(UhtProperty property)

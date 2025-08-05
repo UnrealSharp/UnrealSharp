@@ -21,7 +21,7 @@ public static class Main
     {
         try
         {
-            #if !PACKAGE
+            #if WITH_EDITOR
             string dotnetSdk = DotNetUtilities.GetLatestDotNetSdkPath();
             MSBuildLocator.RegisterMSBuildPath(dotnetSdk);
             #endif
