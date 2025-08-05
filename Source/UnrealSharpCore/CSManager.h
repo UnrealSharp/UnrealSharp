@@ -18,7 +18,7 @@ struct FCSManagedPluginCallbacks
 {
 	using LoadPluginCallback = FGCHandleIntPtr(__stdcall*)(const TCHAR*, bool);
 	using UnloadPluginCallback = bool(__stdcall*)(const TCHAR*);
-	
+
 	LoadPluginCallback LoadPlugin = nullptr;
 	UnloadPluginCallback UnloadPlugin = nullptr;
 };
@@ -38,7 +38,7 @@ class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUO
 {
 	GENERATED_BODY()
 public:
-	
+
 	static UCSManager& GetOrCreate()
 	{
 		if (!Instance)
@@ -48,13 +48,13 @@ public:
 
 		return *Instance;
 	}
-	
+
 	static UCSManager& Get() { return *Instance; }
 
 	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
 	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
 	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
-	
+
 	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
 	// Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
@@ -62,21 +62,21 @@ public:
 
 	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
 	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
-	
+
 	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class);
-	
-	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const 
+
+	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const
 	{
 		return LoadedAssemblies.FindRef(AssemblyName);
 	}
-	
+
 	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName)
 	{
 		if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
 		{
 			return Assembly;
 		}
-	
+
 		return LoadUserAssemblyByName(AssemblyName);
 	}
 	
@@ -100,10 +100,10 @@ public:
 	FCSClassEvent& OnClassReloadedEvent() { return OnClassReloaded; }
 	FCSStructEvent& OnStructReloadedEvent() { return OnStructReloaded; }
 	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
-		
+
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 #endif
-	
+
 	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
 	{
 		for (UPackage* Package : AllPackages)
@@ -112,7 +112,7 @@ public:
 		}
 	}
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
-	
+
 	bool IsManagedPackage(const UPackage* Package) const { 	return AllPackages.Contains(Package); }
 	bool IsManagedField(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 
@@ -129,7 +129,7 @@ private:
 	static void Shutdown() { Instance = nullptr; }
 
 	load_assembly_and_get_function_pointer_fn InitializeNativeHost() const;
-	
+
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
 	bool LoadAllUserAssemblies();
@@ -159,9 +159,9 @@ private:
 	
 	// Map to cache assemblies that native classes are associated with, for quick lookup.
 	TMap<uint32, TSharedPtr<FCSAssembly>> NativeClassToAssemblyMap;
-	
+
 	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
-	
+
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
@@ -180,9 +180,9 @@ private:
 
 	FSimpleMulticastDelegate OnProcessedPendingClasses;
 #endif
-	
+
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
-	
+
 	//.NET Core Host API
 	hostfxr_initialize_for_dotnet_command_line_fn Hostfxr_Initialize_For_Dotnet_Command_Line = nullptr;
 	hostfxr_initialize_for_runtime_config_fn Hostfxr_Initialize_For_Runtime_Config = nullptr;
