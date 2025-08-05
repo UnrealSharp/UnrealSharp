@@ -11,12 +11,12 @@ void FCSPluginTemplateDescription::OnPluginCreated(const TSharedPtr<IPlugin> New
     const FString ProjectPath = NewPlugin->GetBaseDir() / "Script";
     const FString GlueProjectName = FString::Printf(TEXT("%s.Glue"), *NewPlugin->GetName());
 
-    if (bRequiresPluginGlue)
+    if (bRequiresGlue)
     {
         CreateCodeModule(GlueProjectName, ProjectPath, GlueProjectName, NewPlugin->GetBaseDir(), false);
     }
     
-    CreateCodeModule(ModuleName, ProjectPath, GlueProjectName, NewPlugin->GetBaseDir(), bRequiresPluginGlue);
+    CreateCodeModule(ModuleName, ProjectPath, GlueProjectName, NewPlugin->GetBaseDir(), bRequiresGlue);
 }
 
 void FCSPluginTemplateDescription::CreateCodeModule(const FString& ModuleName, const FString& ProjectPath,
