@@ -148,7 +148,7 @@ public static class UnrealStructProcessor
     private static void CreateStructMarshaller(TypeDefinition structTypeDefinition, FieldDefinition nativeStructSizeField, MethodDefinition toNativeMethod, MethodDefinition structConstructor)
     {
         // Create a marshaller class for the struct.
-        TypeDefinition structMarshallerClass = WeaverImporter.Instance.UserAssembly.CreateNewClass(structTypeDefinition.Namespace, structTypeDefinition.GetMarshallerClassName(), 
+        TypeDefinition structMarshallerClass = WeaverImporter.Instance.CurrentWeavingAssembly.CreateNewClass(structTypeDefinition.Namespace, structTypeDefinition.GetMarshallerClassName(), 
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
             
         AddToNativeMarshallingMethod(structMarshallerClass, structTypeDefinition, nativeStructSizeField, toNativeMethod);

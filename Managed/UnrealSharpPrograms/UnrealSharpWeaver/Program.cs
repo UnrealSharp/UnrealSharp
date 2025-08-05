@@ -117,7 +117,6 @@ public static class Program
             {
                 string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, outputPath);
-                WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
             catch (Exception ex)
             {
