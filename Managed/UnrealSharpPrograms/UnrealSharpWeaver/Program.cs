@@ -108,7 +108,7 @@ public static class Program
 
         foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.Name.EndsWith(".Glue"))
+            if (assembly.Name.Name.EndsWith("Glue"))
             {
                 continue;
             }
