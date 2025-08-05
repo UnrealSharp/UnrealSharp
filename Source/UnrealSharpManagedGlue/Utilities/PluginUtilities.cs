@@ -9,6 +9,7 @@ namespace UnrealSharpScriptGenerator.Utilities;
 public static class PluginUtilities
 {
     public static readonly Dictionary<UhtPackage, ProjectDirInfo> PluginInfo = new();
+    public static readonly Dictionary<string, HashSet<string>> ProjectDependencies = new();
 
     public static ProjectDirInfo FindOrAddProjectInfo(this UhtPackage package)
     {
@@ -41,6 +42,9 @@ public static class PluginUtilities
         }
         
         HashSet<string> dependencies = new HashSet<string>();
+        ProjectDirInfo info = new ProjectDirInfo(Path.GetFileNameWithoutExtension(projectFile.Name), currentDirectory!.FullName, dependencies);
+        PluginInfo.Add(package, info);
+        
         foreach (UhtHeaderFile header in package.GetHeaderFiles())
         {
             HashSet<UhtHeaderFile> referencedHeaders = header.References.ReferencedHeaders;
@@ -56,13 +60,15 @@ public static class PluginUtilities
                     }
                     
                     ProjectDirInfo projectInfo = refPackage.FindOrAddProjectInfo();
+                    if (info.GlueCsProjPath == projectInfo.GlueCsProjPath)
+                    {
+                        continue;
+                    }
+                    
                     dependencies.Add(projectInfo.GlueCsProjPath);
                 }
             }
         }
-        
-        ProjectDirInfo info = new ProjectDirInfo(Path.GetFileNameWithoutExtension(projectFile.Name), currentDirectory!.FullName, dependencies);
-        PluginInfo.Add(package, info);
         
         return info;
     }
