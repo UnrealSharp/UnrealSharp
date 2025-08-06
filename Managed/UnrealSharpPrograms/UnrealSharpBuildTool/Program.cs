@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Xml.Linq;
+using CommandLine;
 using Newtonsoft.Json;
 using UnrealSharpBuildTool.Actions;
 
@@ -236,11 +237,22 @@ public static class Program
 
     private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
     {
-        FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
-        FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
-        List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
-        allProjectFiles.AddRange(csprojFiles);
-        allProjectFiles.AddRange(fsprojFiles);
-        return allProjectFiles;
+        var csprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
+        var fsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
+        return csprojFiles.Concat(fsprojFiles).Where(IsWeavableProject);
+    }
+
+    private static bool IsWeavableProject(FileInfo projectFile)
+    {
+        // We need to be able to filter out certain non-production projects.
+        // The main target of this is source generators and analyzers which users
+        // may want to leverage as part of their solution and can't be weaved because
+        // they have to use netstandard2.0.
+        XDocument doc = XDocument.Load(projectFile.FullName);
+        return !doc.Descendants()
+            .Where(element => element.Name.LocalName == "PropertyGroup")
+            .SelectMany(element => element.Elements())
+            .Any(element => element.Name.LocalName == "ExcludeFromWeaver" &&
+                            element.Value.Equals("true", StringComparison.OrdinalIgnoreCase));
     }
 }
