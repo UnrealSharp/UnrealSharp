@@ -63,7 +63,7 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
         _worldToValue.Remove(world);
     }
 
-#if !PACKAGE
+#if WITH_EDITOR
     protected override void OnAlcUnloading(AssemblyLoadContext alc)
     {
         base.OnAlcUnloading(alc);

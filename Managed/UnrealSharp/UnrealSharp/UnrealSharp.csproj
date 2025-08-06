@@ -13,7 +13,9 @@
     </PropertyGroup>
 
 	<PropertyGroup>
-		<DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+        <DefineConstants>WITH_EDITOR</DefineConstants>
+        <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
+        <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
 	</PropertyGroup>
 
     <ItemGroup>

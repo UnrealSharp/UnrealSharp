@@ -193,7 +193,7 @@ public static class PropertyUtilities
             return null;
         }
         
-        string? accessorName = accessorType == GetterSetterMode.Get ? property.Getter : property.Setter;
+        string accessorName = GetAccessorName(property, accessorType);
         UhtFunction? function = TryFindFunction(accessorName);
         if (function != null)
         {
@@ -219,6 +219,13 @@ public static class PropertyUtilities
         }
 
         return null;
+    }
+
+    private static string GetAccessorName(UhtProperty property, GetterSetterMode accessorType)
+    {
+        return accessorType == GetterSetterMode.Get
+            ? property.Getter ?? property.GetMetaData("BlueprintGetter")
+            : property.Setter ?? property.GetMetaData("BlueprintSetter");
     }
 
     public static string GetNativePropertyName(this UhtProperty property)
