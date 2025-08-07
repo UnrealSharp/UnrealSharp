@@ -26,7 +26,4 @@ public partial struct FInputEvent
     public bool AreCapsLocked => UCSInputEventExtensions.AreCapsLocked(this);
 
     public uint UserIndex => UCSInputEventExtensions.GetUserIndex(this);
-
-    public ulong EventTimestamp => UCSInputEventExtensions.GetEventTimestamp(this);
-    public double MillisecondsSinceEvent => UCSInputEventExtensions.GetMillisecondsSinceEvent(this);
 }
