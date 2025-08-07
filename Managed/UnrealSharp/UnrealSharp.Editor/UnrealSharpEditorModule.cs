@@ -6,7 +6,6 @@ using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
-using UnrealSharp.CoreUObject;
 using UnrealSharp.Editor.Interop;
 using UnrealSharp.Engine.Core.Modules;
 using UnrealSharp.Shared;

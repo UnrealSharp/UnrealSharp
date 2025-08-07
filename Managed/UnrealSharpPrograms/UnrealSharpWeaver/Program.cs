@@ -117,7 +117,6 @@ public static class Program
             {
                 string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, outputPath);
-                WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
             catch (Exception ex)
             {
@@ -140,7 +139,7 @@ public static class Program
     private static ICollection<AssemblyDefinition> OrderInputAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
     {
         HashSet<string> assemblyNames = new HashSet<string>();
-
+        
         foreach (AssemblyDefinition assembly in assemblies)
         {
             assemblyNames.Add(assembly.FullName);
@@ -159,7 +158,7 @@ public static class Program
                 {
                     continue;
                 }
-
+                
                 hasReferenceToUserAssembly = true;
                 break;
             }
@@ -168,11 +167,11 @@ public static class Program
             {
                 continue;
             }
-
+            
             result.Add(assembly);
             remaining.Remove(assembly);
         }
-
+        
         do
         {
             bool added = false;
@@ -183,7 +182,7 @@ public static class Program
                 {
                     continue;
                 }
-
+                
                 bool allResolved = true;
                 foreach (AssemblyNameReference? reference in assembly.MainModule.AssemblyReferences)
                 {
@@ -196,7 +195,7 @@ public static class Program
                             {
                                 continue;
                             }
-
+                            
                             found = true;
                             break;
                         }
@@ -205,7 +204,7 @@ public static class Program
                         {
                             continue;
                         }
-
+                        
                         allResolved = false;
                         break;
                     }
@@ -215,22 +214,22 @@ public static class Program
                 {
                     continue;
                 }
-
+                
                 result.Add(assembly);
                 remaining.Remove(assembly);
                 added = true;
             }
-
+            
             if (added || remaining.Count <= 0)
             {
                 continue;
             }
-
+            
             foreach (AssemblyDefinition asm in remaining)
             {
                 result.Add(asm);
             }
-
+            
             break;
 
         } while (remaining.Count > 0);
