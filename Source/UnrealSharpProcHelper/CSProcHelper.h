@@ -44,10 +44,10 @@ public:
 	static FString GetUnrealSharpMetadataPath();
 
 	// Gets the project names in the order they should be loaded.
-	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeProjectGlue = false);
+	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeGlue = false);
 
 	// Same as GetProjectNamesByLoadOrder, but returns the paths to the assemblies instead.
-	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeProjectGlue = false);
+	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeGlue = false);
 
 	// Gets all the project paths in the /Scripts directory.
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);

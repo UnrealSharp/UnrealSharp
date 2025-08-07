@@ -271,13 +271,13 @@ bool UCSManager::LoadRuntimeHost()
 bool UCSManager::LoadAllUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths);
+	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
 
 	if (UserAssemblyPaths.IsEmpty())
 	{
 		return true;
 	}
-
+	
 	for (const FString& UserAssemblyPath : UserAssemblyPaths)
 	{
 		LoadAssemblyByPath(UserAssemblyPath);

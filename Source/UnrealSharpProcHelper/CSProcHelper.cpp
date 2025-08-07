@@ -147,7 +147,7 @@ FString FCSProcHelper::GetUnrealSharpMetadataPath()
 	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.assemblyloadorder.json");
 }
 
-void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeProjectGlue)
+void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeGlue)
 {
 	const FString ProjectMetadataPath = GetUnrealSharpMetadataPath();
 
@@ -175,7 +175,7 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 	{
 		FString ProjectName = OrderEntry->AsString();
 
-		if (!bIncludeProjectGlue && ProjectName.EndsWith(TEXT(".Glue")))
+		if (!bIncludeGlue && ProjectName.EndsWith(TEXT("Glue")))
 		{
 			continue;
 		}
@@ -185,12 +185,12 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 }
 
 
-void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeProjectGlue)
+void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeGlue)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 
 	TArray<FString> ProjectNames;
-	GetProjectNamesByLoadOrder(ProjectNames, bIncludeProjectGlue);
+	GetProjectNamesByLoadOrder(ProjectNames, bIncludeGlue);
 
 	for (const FString& ProjectName : ProjectNames)
 	{

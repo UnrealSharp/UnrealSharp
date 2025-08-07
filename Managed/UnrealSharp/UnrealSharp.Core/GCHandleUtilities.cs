@@ -65,7 +65,7 @@ public static class GCHandleUtilities
                 throw new InvalidOperationException("AssemblyLoadContext is null.");
             }
             
-            if (StrongRefsByAssembly.TryGetValue(assemblyLoadContext, out var strongReferences))
+            if (StrongRefsByAssembly.TryGetValue(assemblyLoadContext, out ConcurrentDictionary<GCHandle, object>? strongReferences))
             {
                 strongReferences.TryRemove(handle, out _);
             }

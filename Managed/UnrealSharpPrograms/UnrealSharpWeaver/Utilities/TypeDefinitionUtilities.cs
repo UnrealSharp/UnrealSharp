@@ -124,8 +124,8 @@ public static class TypeDefinitionUtilities
         CustomAttribute attribute = new CustomAttribute(WeaverImporter.Instance.GeneratedTypeCtor);
         string typeName = type.Name.Substring(1);
         string fullTypeName = type.Namespace + "." + typeName;
-        attribute.ConstructorArguments.Add(new CustomAttributeArgument(WeaverImporter.Instance.UserAssembly.MainModule.TypeSystem.String, typeName));
-        attribute.ConstructorArguments.Add(new CustomAttributeArgument(WeaverImporter.Instance.UserAssembly.MainModule.TypeSystem.String, fullTypeName));
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.TypeSystem.String, typeName));
+        attribute.ConstructorArguments.Add(new CustomAttributeArgument(WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.TypeSystem.String, fullTypeName));
         
         type.CustomAttributes.Add(attribute);
     }
@@ -168,7 +168,7 @@ public static class TypeDefinitionUtilities
                 continue;
             }
 
-            return WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(nestedType);
+            return WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(nestedType);
         }
         
         throw new Exception($"{typeName} not found in {typeDef}.");
@@ -176,7 +176,7 @@ public static class TypeDefinitionUtilities
     
     public static MethodDefinition AddMethod(this TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
     {
-        returnType ??= WeaverImporter.Instance.UserAssembly.MainModule.TypeSystem.Void;
+        returnType ??= WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.TypeSystem.Void;
         
         var method = new MethodDefinition(name, attributes, returnType);
         
@@ -233,7 +233,7 @@ public static class TypeDefinitionUtilities
                 continue;
             }
 
-            return WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(field);
+            return WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(field);
         }
         
         throw new Exception($"{fieldName} not found in {typeDef}.");
@@ -266,7 +266,7 @@ public static class TypeDefinitionUtilities
     
     public static TypeReference ImportType(this TypeReference type)
     {
-        return WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(type);
+        return WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(type);
     }
     
     public static bool HasMethod(this TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)

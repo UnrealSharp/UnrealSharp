@@ -138,7 +138,7 @@ public class NativeDataContainerType : NativeDataType
         }
 
         MethodDefinition? constructor = _containerMarshallerType.Resolve().GetConstructors().Single();
-        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
+        processor.Emit(OpCodes.Newobj, FunctionProcessor.MakeMethodDeclaringTypeGeneric(WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(constructor), ContainerMarshallerTypeParameters));
         processor.Emit(OpCodes.Stfld, _containerMarshallerField);
 
         // Store the branch destination

@@ -207,9 +207,9 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	FString ExceptionMessage;
 	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
 	{
-		HotReloadStatus = Inactive;
+	 	HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
+	 	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
 		return;
 	}
 
@@ -217,8 +217,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	bool bUnloadFailed = false;
 
 	TArray<FString> ProjectsByLoadOrder;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder);
-
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, true);
+	
 	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
 	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
 	// Good info: https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability

@@ -22,7 +22,7 @@ public static class UnrealInterfaceProcessor
 
     public static void CreateInterfaceMarshaller(TypeDefinition interfaceType)
     {
-        TypeDefinition structMarshallerClass = WeaverImporter.Instance.UserAssembly.CreateNewClass(interfaceType.Namespace, interfaceType.GetMarshallerClassName(), 
+        TypeDefinition structMarshallerClass = WeaverImporter.Instance.CurrentWeavingAssembly.CreateNewClass(interfaceType.Namespace, interfaceType.GetMarshallerClassName(), 
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.BeforeFieldInit);
         
         FieldDefinition nativePointerField = structMarshallerClass.AddField("NativeInterfaceClassPtr", 

@@ -134,9 +134,9 @@ class NativeDataStringType(TypeReference typeRef, int arrayDim) : NativeDataType
 
     private static bool IsInitialized()
     {
-        if (ReferenceEquals(_userAssembly, WeaverImporter.Instance.UserAssembly)) return true;
+        if (ReferenceEquals(_userAssembly, WeaverImporter.Instance.CurrentWeavingAssembly)) return true;
         
-        _userAssembly = WeaverImporter.Instance.UserAssembly;
+        _userAssembly = WeaverImporter.Instance.CurrentWeavingAssembly;
         return false;
     }
 }

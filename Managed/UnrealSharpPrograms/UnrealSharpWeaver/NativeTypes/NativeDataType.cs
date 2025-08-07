@@ -174,11 +174,11 @@ public abstract class NativeDataType
     protected void EmitDelegate(ILProcessor processor, TypeReference delegateType, MethodReference method)
     {
         processor.Emit(OpCodes.Ldnull);
-        method = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(method);
+        method = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(method);
         processor.Emit(OpCodes.Ldftn, method);
         MethodReference ctor = (from constructor in delegateType.Resolve().GetConstructors() where constructor.Parameters.Count == 2 select constructor).First().Resolve();
         ctor = FunctionProcessor.MakeMethodDeclaringTypeGeneric(ctor, CSharpType);
-        ctor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(ctor);
+        ctor = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(ctor);
         processor.Emit(OpCodes.Newobj, ctor);
     }
 
