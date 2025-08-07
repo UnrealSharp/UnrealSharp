@@ -11,7 +11,7 @@ namespace UnrealSharp;
 public struct FFieldPathUnsafe
 {
     internal IntPtr ResolvedField;
-#if !PACKAGE
+#if WITH_EDITOR
     internal IntPtr InitialFieldClass;
     internal int FieldPathSerialNumber;
 #endif

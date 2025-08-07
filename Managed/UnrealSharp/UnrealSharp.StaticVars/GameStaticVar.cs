@@ -13,7 +13,7 @@ namespace UnrealSharp.StaticVars;
 /// <typeparam name="T">The type of the static variable</typeparam>
 public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
 {
-#if !PACKAGE
+#if WITH_EDITOR
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onPieStartEndHandle;
     
