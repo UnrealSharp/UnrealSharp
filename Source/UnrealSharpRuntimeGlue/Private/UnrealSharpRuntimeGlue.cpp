@@ -1,7 +1,7 @@
 ﻿#include "UnrealSharpRuntimeGlue.h"
-
 #include "CSGlueGenerator.h"
 #include "CSRuntimeGlueSettings.h"
+#include "Logging/StructuredLog.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpRuntimeGlueModule"
 

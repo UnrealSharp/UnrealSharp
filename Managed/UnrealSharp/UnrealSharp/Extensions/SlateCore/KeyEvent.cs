@@ -39,7 +39,4 @@ public partial struct FKeyEvent
     public bool AreCapsLocked => UCSKeyEventExtensions.AreCapsLocked(this);
 
     public uint UserIndex => UCSKeyEventExtensions.GetUserIndex(this);
-
-    public ulong EventTimestamp => UCSKeyEventExtensions.GetEventTimestamp(this);
-    public double MillisecondsSinceEvent => UCSKeyEventExtensions.GetMillisecondsSinceEvent(this);
 }

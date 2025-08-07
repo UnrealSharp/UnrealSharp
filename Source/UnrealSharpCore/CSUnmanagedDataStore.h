@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <array>
+
 #include "CoreMinimal.h"
 #include "CSUnmanagedDataStore.generated.h"
 

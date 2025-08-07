@@ -68,10 +68,4 @@ public:
 
 	UFUNCTION(meta=(ScriptMethod))
 	static uint32 GetUserIndex(const FKeyEvent& KeyEvent) { return KeyEvent.GetUserIndex(); }
-
-	UFUNCTION(meta=(ScriptMethod))
-	static uint64 GetEventTimestamp(const FKeyEvent& KeyEvent) { return KeyEvent.GetEventTimestamp(); }
-
-	UFUNCTION(meta=(ScriptMethod))
-	static double GetMillisecondsSinceEvent(const FKeyEvent& KeyEvent) { return KeyEvent.GetMillisecondsSinceEvent(); }
 };
