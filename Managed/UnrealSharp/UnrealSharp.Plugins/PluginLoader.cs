@@ -14,7 +14,7 @@ public static class PluginLoader
         {
             AssemblyName assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(assemblyPath));
 
-            foreach (var loadedPlugin in LoadedPlugins)
+            foreach (Plugin loadedPlugin in LoadedPlugins)
             {
                 if (!loadedPlugin.IsLoadContextAlive)
                 {
