@@ -109,7 +109,6 @@ public static class PluginLoader
                 }
                 else if (elapsedTimeMs >= 1000)
                 {
-                    Debugger.Break();
                     throw new InvalidOperationException($"Failed to unload {assemblyName}. Possible causes: Strong GC handles, running threads, etc.");
                 }
             }
