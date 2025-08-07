@@ -33,7 +33,7 @@ enum HotReloadStatus
 
 struct FCSManagedUnrealSharpEditorCallbacks
 {
-    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr), ForceManagedGC(nullptr)
+    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr), ForceManagedGC(nullptr), OpenSolution(nullptr), AddProjectToCollection(nullptr)
     {
     }
 
@@ -107,18 +107,13 @@ private:
     static void OnRefreshRuntimeGlue();
 
     static void OnRepairComponents();
-
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
-
     static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
 
     static void OpenNewProjectDialog();
-
     static void SuggestProjectSetup();
-
-    static void SuggestCreateScriptsForPlugin();
 
     bool Tick(float DeltaTime);
 
