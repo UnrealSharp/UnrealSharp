@@ -7,6 +7,7 @@ struct FCSInterfaceMetaData : FCSTypeReferenceMetaData
 {
 	virtual ~FCSInterfaceMetaData() = default;
 
+	FCSTypeReferenceMetaData ParentInterface;
 	TArray<FCSFunctionMetaData> Functions;
 	
 	//FTypeMetaData interface implementation

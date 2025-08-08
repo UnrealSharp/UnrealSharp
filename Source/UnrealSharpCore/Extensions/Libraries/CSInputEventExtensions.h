@@ -5,7 +5,7 @@
 #include "CSInputEventExtensions.generated.h"
 
 UCLASS(meta = (InternalType))
-class UNREALSHARPCORE_API UCSInputEventExtensions : public UBlueprintFunctionLibrary
+class UCSInputEventExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:

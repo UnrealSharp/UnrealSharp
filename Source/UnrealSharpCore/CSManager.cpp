@@ -151,15 +151,13 @@ void UCSManager::Initialize()
 		Initialize();
 		return;
 	}
-#endif
 
-	GUObjectArray.AddUObjectDeleteListener(this);
-
-#if WITH_EDITOR
 	// Remove this listener when the engine is shutting down.
 	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
 	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 #endif
+
+	GUObjectArray.AddUObjectDeleteListener(this);
 
 	// Initialize the C# runtime.
 	if (!InitializeDotNetRuntime())

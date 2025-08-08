@@ -11,7 +11,7 @@ class UCSSkeletonClass : public UBlueprintGeneratedClass
 {
 	GENERATED_BODY()
 public:
-	UNREALSHARPCORE_API void SetGeneratedClass(UCSClass* InGeneratedClass);
+	UNREALSHARPCORE_API void SetGeneratedClass(UCSClass* InGeneratedClass) { GeneratedClass = InGeneratedClass; }
 	UNREALSHARPCORE_API UCSClass* GetGeneratedClass() const { return GeneratedClass; }
 private:
 	UPROPERTY()
