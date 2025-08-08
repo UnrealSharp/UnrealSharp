@@ -5,7 +5,7 @@
 #include "CSKeyEventExtensions.generated.h"
 
 UCLASS(meta = (InternalType))
-class UNREALSHARPCORE_API UCSKeyEventExtensions : public UBlueprintFunctionLibrary
+class UCSKeyEventExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:

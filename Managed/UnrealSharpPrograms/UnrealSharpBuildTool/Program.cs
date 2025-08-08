@@ -33,10 +33,10 @@ public static class Program
             }
 
             BuildToolOptions = result.Value;
-
+            
             if (!BuildToolAction.InitializeAction())
             {
-                throw new Exception("Failed to initialize action.");
+                return 1;
             }
 
             Console.WriteLine($"UnrealSharpBuildTool executed {BuildToolOptions.Action.ToString()} action successfully.");

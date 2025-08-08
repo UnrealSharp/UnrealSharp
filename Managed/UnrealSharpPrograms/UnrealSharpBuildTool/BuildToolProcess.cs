@@ -32,42 +32,41 @@ public class BuildToolProcess : Process
     
     public bool StartBuildToolProcess()
     {
-        try
+        StringBuilder output = new StringBuilder();
+        OutputDataReceived += (sender, e) =>
         {
-            OutputDataReceived += (sender, e) =>
+            if (e.Data != null)
             {
-                if (e.Data != null)
-                {
-                    Console.Out.WriteLine(e.Data);
-                }
-            };
-            
-            ErrorDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    Console.Error.WriteLine(e.Data);
-                }
-            };
-            
-            if (!Start())
-            {
-                throw new Exception("Failed to start process");
+                output.AppendLine(e.Data);
             }
+        };
             
-            BeginErrorReadLine();
-            BeginOutputReadLine();
-            WaitForExit();
-
-            if (ExitCode != 0)
+        ErrorDataReceived += (sender, e) =>
+        {
+            if (e.Data != null)
             {
-                throw new Exception($"Process exited with code {ExitCode}");
+                output.AppendLine(e.Data);
             }
+        };
+            
+        if (!Start())
+        {
+            throw new Exception("Failed to start process");
         }
-        catch (Exception ex)
+            
+        BeginErrorReadLine();
+        BeginOutputReadLine();
+        WaitForExit();
+
+        if (ExitCode != 0)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            return false;
+            string errorMessage = output.ToString();
+            if (string.IsNullOrEmpty(errorMessage))
+            {
+                errorMessage = "BuildTool process exited with non-zero exit code, but no output was captured.";
+            }
+            
+            throw new Exception($"BuildTool process failed with exit code {ExitCode}:\n{errorMessage}");
         }
 
         return true;

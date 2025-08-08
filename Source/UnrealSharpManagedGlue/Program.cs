@@ -39,7 +39,7 @@ public static class Program
 	    OtherFilters = ["*.generated.cs"])]
 	private static void Main(IUhtExportFactory factory)
     {
-        Console.WriteLine("Initializing UnrealSharpScriptGenerator...");
+        Console.WriteLine("Initializing C# Glue Generator...");
 	    Factory = factory;
 
 	    InitializeStatics();
@@ -58,11 +58,10 @@ public static class Program
 	        stopwatch.Start();
 
 	        CSharpExporter.StartExport();
-
 	        FileExporter.CleanOldExportedFiles();
 
-	        Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 	        stopwatch.Stop();
+	        Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
 	        if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
 	        {
@@ -134,20 +133,30 @@ public static class Program
 	        };
 
 	        arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
-	        DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
-		        ProjectName,
-		        PluginDirectory,
-		        Factory.Session.ProjectDirectory!,
-		        Factory.Session.EngineDirectory!,
-		        arguments);
+	        if (!DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
+		            ProjectName,
+		            PluginDirectory,
+		            Factory.Session.ProjectDirectory!,
+		            Factory.Session.EngineDirectory!,
+		            arguments))
+	        {
+		        throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
+	        }
+	        
+	        Console.WriteLine($"Successfully created project file: {projectName}");
+        }
+        else
+        {
+	        Console.WriteLine($"Project file already exists: {projectName}. Skipping creation.");
         }
         
-        AddPluginDependencies(csprojPath, dependencyPaths);
+        AddPluginDependencies(projectName, csprojPath, dependencyPaths);
     }
     
     private static void CopyGlobalJson()
     {
 	    string globalJsonPath = Path.Combine(ManagedPath, "global.json");
+	    
 	    if (!File.Exists(globalJsonPath))
 	    {
 		    throw new FileNotFoundException("global.json not found in Managed directory.", globalJsonPath);
@@ -163,26 +172,31 @@ public static class Program
 	    File.Copy(globalJsonPath, destinationPath);
     }
 
-    private static void AddPluginDependencies(string projectPath, IEnumerable<string>? projectPaths)
+    private static void AddPluginDependencies(string projectName, string projectPath, IEnumerable<string>? dependencies)
     {
 	    List<KeyValuePair<string, string>> arguments = new()
 	    {
 		    new KeyValuePair<string, string>("ProjectPath", projectPath),
 	    };
 
-	    if (projectPaths != null)
+	    if (dependencies != null)
 	    {
-		    foreach (string path in projectPaths)
+		    foreach (string path in dependencies)
 		    {
 			    arguments.Add(new KeyValuePair<string, string>("Dependency", path));
 		    }
 	    }
+
+	    if (!DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
+		        ProjectName,
+		        PluginDirectory,
+		        Factory.Session.ProjectDirectory!,
+		        Factory.Session.EngineDirectory!,
+		        arguments))
+	    {
+		    throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
+	    }
 	    
-	    DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
-		    ProjectName,
-		    PluginDirectory,
-		    Factory.Session.ProjectDirectory!,
-		    Factory.Session.EngineDirectory!,
-		    arguments);
+	    Console.WriteLine($"Updated project dependencies for {projectName}");
     }
 }
