@@ -9,7 +9,7 @@ namespace UnrealSharp;
 [UStruct, StructLayout(LayoutKind.Sequential)]
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
-#if PACKAGE
+#if !WITH_EDITOR
     private uint ComparisonIndex;
     private uint Number;
 #else

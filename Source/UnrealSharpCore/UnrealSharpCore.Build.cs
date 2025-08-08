@@ -46,7 +46,8 @@ public class UnrealSharpCore : ModuleRules
 				"GameplayTags", 
 				"AIModule",
 				"UnrealSharpBinds",
-				"FieldNotification"
+				"FieldNotification",
+				"InputCore",
 			}
 			);
 

@@ -190,7 +190,5 @@ private:
 	hostfxr_close_fn Hostfxr_Close = nullptr;
 
 	void* RuntimeHost = nullptr;
-	void* UnrealSharpLibraryDLL = nullptr;
-	void* UserScriptsDLL = nullptr;
 	//End
 };

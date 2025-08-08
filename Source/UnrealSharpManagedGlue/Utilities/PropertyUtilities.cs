@@ -159,8 +159,13 @@ public static class PropertyUtilities
             return null;
         }
         
-        UhtFunction? TryFindFunction(string name)
+        UhtFunction? TryFindFunction(string? name)
         {
+            if (name is null)
+            {
+                return null;
+            }
+            
             UhtFunction? function = classObj.FindFunctionByName(name, (uhtFunction, typeName) =>
             {
                 if (uhtFunction.SourceName == typeName
@@ -187,8 +192,8 @@ public static class PropertyUtilities
 
             return null;
         }
-
-        string accessorName = property.GetMetaData(accessorType == GetterSetterMode.Get ? "BlueprintGetter" : "BlueprintSetter");
+        
+        string accessorName = GetAccessorName(property, accessorType);
         UhtFunction? function = TryFindFunction(accessorName);
         if (function != null)
         {
@@ -214,6 +219,13 @@ public static class PropertyUtilities
         }
 
         return null;
+    }
+
+    private static string GetAccessorName(UhtProperty property, GetterSetterMode accessorType)
+    {
+        return accessorType == GetterSetterMode.Get
+            ? property.Getter ?? property.GetMetaData("BlueprintGetter")
+            : property.Setter ?? property.GetMetaData("BlueprintSetter");
     }
 
     public static string GetNativePropertyName(this UhtProperty property)

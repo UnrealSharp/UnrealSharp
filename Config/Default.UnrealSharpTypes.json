@@ -96,6 +96,18 @@
             {
                 "Name": "FGameplayEffectSpecHandle",
                 "HasDestructor": true
+            },
+            {
+                "Name": "FKeyEvent",
+                "HasDestructor": false
+            },
+            {
+                "Name": "FInputEvent",
+                "HasDestructor": false
+            },
+            {
+                "Name": "FKey",
+                "HasDestructor": false
             }
         ]
     }

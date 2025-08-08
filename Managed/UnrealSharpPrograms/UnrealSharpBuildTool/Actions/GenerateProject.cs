@@ -157,6 +157,7 @@ public class GenerateProject : BuildToolAction
             }
 
             AppendProperties(csprojDocument);
+            AppendConstantDefines(csprojDocument);
 
             AppendPackageReference(csprojDocument, newItemGroup, "LanguageExt.Core", "4.4.9");
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
@@ -182,7 +183,7 @@ public class GenerateProject : BuildToolAction
         }
     }
 
-    void AddProperty(string name, string value, XmlDocument doc, XmlNode propertyGroup)
+    private void AddProperty(string name, string value, XmlDocument doc, XmlNode propertyGroup)
     {
         XmlNode? newProperty = propertyGroup.SelectSingleNode(name);
 
@@ -207,6 +208,28 @@ public class GenerateProject : BuildToolAction
         AddProperty("CopyLocalLockFileAssembliesName", "true", doc, propertyGroup);
         AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
         AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
+    }
+    
+    private void AddConstDefine(string value, XmlDocument doc, XmlNode propertyGroup, string? condition = null)
+    {
+        var newProperty = doc.CreateElement("DefineConstants");
+        propertyGroup.AppendChild(newProperty);
+        newProperty.InnerText = value;
+        if (condition is not null)
+        {
+            newProperty.SetAttribute("Condition", condition);
+        }
+    }
+    
+    private void AppendConstantDefines(XmlDocument doc)
+    {
+        var propertyGroup = doc.CreateElement("PropertyGroup");
+
+        AddConstDefine("WITH_EDITOR", doc, propertyGroup);
+        AddConstDefine("$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))", doc, propertyGroup, 
+            "'$(DisableWithEditor)' == 'true'");
+        AddConstDefine("$(DefineConstants);$(DefineAdditionalConstants)", doc, propertyGroup, 
+            "'$(DefineAdditionalConstants)' != ''");
     }
 
     private string GetPathToBinaries()

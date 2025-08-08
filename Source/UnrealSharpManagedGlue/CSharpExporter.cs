@@ -42,7 +42,7 @@ public static class CSharpExporter
         else
         {
             // Just in case the source has changed, we need to clean the old files
-            Console.WriteLine("Managed Glue Generator has changed its source, cleaning old files...");
+            Console.WriteLine("Detected new source since last export, cleaning old files...");
             FileExporter.CleanModuleFolders();
         }
 

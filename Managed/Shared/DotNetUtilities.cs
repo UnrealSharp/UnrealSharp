@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace UnrealSharp.Shared;
 
@@ -115,7 +116,7 @@ public static class DotNetUtilities
 	    InvokeDotNet(arguments, projectRootDirectory);
     }
 
-    public static void InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
+    public static bool InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
     {
 	    string dotnetPath = FindDotNetExecutable();
 
@@ -145,42 +146,59 @@ public static class DotNetUtilities
 		    startInfo.Environment["MSBuildSDKsPath"] = $@"{latestDotNetSdkPath}\Sdks";
 	    }
 
-	    using (Process process = new Process())
+	    using Process process = new Process();
+	    process.StartInfo = startInfo;
+
+	    try
 	    {
-		    process.StartInfo = startInfo;
-
-		    try
+		    StringBuilder outputBuilder = new StringBuilder();
+		    process.OutputDataReceived += (sender, e) =>
 		    {
-			   process.Start();
-		    }
-		    catch (Exception ex)
+			    if (e.Data != null)
+			    {
+				    outputBuilder.AppendLine(e.Data);
+			    }
+		    };
+            
+		    process.ErrorDataReceived += (sender, e) =>
 		    {
-			    throw new Exception($"Failed to start process '{dotnetPath}' with arguments: {process.StartInfo.Arguments}", ex);
+			    if (e.Data != null)
+			    {
+				    outputBuilder.AppendLine(e.Data);
+			    }
+		    };
+            
+		    if (!process.Start())
+		    {
+			    throw new Exception("Failed to start process");
 		    }
-
-		    var standardOutput = process.StandardOutput.ReadToEnd();
-		    var standardError = process.StandardError.ReadToEnd();
-
+            
+		    process.BeginErrorReadLine();
+		    process.BeginOutputReadLine();
 		    process.WaitForExit();
 
-		    if (process.ExitCode == 0)
+		    if (process.ExitCode != 0)
 		    {
-			    return;
+			    string errorMessage = outputBuilder.ToString();
+			    
+			    if (string.IsNullOrEmpty(errorMessage))
+			    {
+				    errorMessage = "Process exited with non-zero exit code but no output was captured.";
+			    }
+			    
+			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}");
 		    }
-
-		    string errorDetails = $@"
-Failed to invoke dotnet command:
-Executable: {dotnetPath}
-Arguments: {process.StartInfo.Arguments}
-Exit Code: {process.ExitCode}
-Standard Output: {standardOutput}
-Standard Error: {standardError}";
-
-		    throw new Exception(errorDetails);
 	    }
+	    catch (Exception ex)
+	    {
+		    Console.WriteLine($"An error occurred: {ex.Message}");
+		    return false;
+	    }
+	    
+	    return true;
     }
 
-    public static void InvokeUSharpBuildTool(string action,
+    public static bool InvokeUSharpBuildTool(string action,
 	    string managedBinariesPath,
 	    string projectName,
 	    string pluginDirectory,
@@ -229,6 +247,6 @@ Standard Error: {standardError}";
 		    }
 	    }
 
-	    InvokeDotNet(arguments);
+	    return InvokeDotNet(arguments);
     }
 }

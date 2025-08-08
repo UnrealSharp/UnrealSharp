@@ -5,6 +5,7 @@ namespace UnrealSharpWeaver.MetaData;
 
 public class InterfaceMetaData : TypeReferenceMetadata
 { 
+    public TypeReferenceMetadata ParentInterface { get; set; }
     public List<FunctionMetaData> Functions { get; set; }
     
     // Non-serialized for JSON
@@ -14,6 +15,22 @@ public class InterfaceMetaData : TypeReferenceMetadata
     public InterfaceMetaData(TypeDefinition typeDefinition) : base(typeDefinition, TypeDefinitionUtilities.UInterfaceAttribute)
     {
         Functions = [];
+        
+        if (typeDefinition.HasInterfaces)
+        {
+            foreach (InterfaceImplementation? interfaceType in typeDefinition.Interfaces)
+            {
+                TypeDefinition interfaceDef = interfaceType.InterfaceType.Resolve();
+                if (!interfaceDef.IsUInterface())
+                {
+                    continue;
+                }
+                
+                ParentInterface = new TypeReferenceMetadata(interfaceDef);
+                break;
+            }
+        }
+
         
         foreach (var method in typeDefinition.Methods)
         {
