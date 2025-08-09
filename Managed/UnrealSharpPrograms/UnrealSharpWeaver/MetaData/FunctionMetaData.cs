@@ -74,7 +74,7 @@ public class FunctionMetaData : BaseMetaData
                 modifier = ParameterType.Ref;
             }
 
-            Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier);
+            Parameters[i] = PropertyMetaData.FromTypeReference(paramType, param.Name, modifier, param);
 
             if (param.HasConstant)
             {

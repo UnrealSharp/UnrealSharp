@@ -14,6 +14,7 @@ void FCSGeneratedDelegateBuilder::RebuildType()
 	Field->FunctionFlags = SignatureFunctionMetaData.FunctionFlags;
 	FCSFunctionFactory::CreateParameters(Field, SignatureFunctionMetaData);
 	Field->StaticLink(true);
+    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
 }

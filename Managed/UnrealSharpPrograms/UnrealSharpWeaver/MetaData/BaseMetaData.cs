@@ -204,8 +204,13 @@ public class BaseMetaData
 
     private void AddMetaData()
     {
+        AddMetaData(MemberDefinition);
+    }
+
+    protected void AddMetaData(ICustomAttributeProvider provider)
+    {
         //[UMetaData("key","value")]
-        List<CustomAttribute> metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributes();
+        List<CustomAttribute> metaDataAttributes = provider.CustomAttributes.FindMetaDataAttributes();
         foreach (var attrib in metaDataAttributes)
         {
             switch (attrib.ConstructorArguments.Count)
@@ -224,8 +229,13 @@ public class BaseMetaData
 
     private void AddMetaTagsNamespace() 
     {
+        AddMetaTagsNamespace(MemberDefinition);
+    }
+    
+    protected void AddMetaTagsNamespace(ICustomAttributeProvider provider) 
+    {
         //Specific MetaData Tags - all attributes in the UnrealSharp.Attributes.MetaTags Namespace
-        List<CustomAttribute> metaDataAttributes = MemberDefinition.CustomAttributes.FindMetaDataAttributesByNamespace();
+        List<CustomAttribute> metaDataAttributes = provider.CustomAttributes.FindMetaDataAttributesByNamespace();
         foreach (var attrib in metaDataAttributes)
         {
             var key = attrib.AttributeType.Name.Replace("Attribute", "");

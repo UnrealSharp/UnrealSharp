@@ -1,6 +1,7 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
 
 #include "CSManager.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 void FCSGeneratedEnumBuilder::RebuildType()
 {
@@ -43,4 +44,5 @@ void FCSGeneratedEnumBuilder::UpdateType()
 void FCSGeneratedEnumBuilder::PurgeEnum() const
 {
 	Field->DisplayNameMap.Empty();
+	FCSUnrealSharpUtils::PurgeMetaData(Field);
 }
