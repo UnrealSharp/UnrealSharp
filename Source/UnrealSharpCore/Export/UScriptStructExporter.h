@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <array>
+
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
 #include "UScriptStructExporter.generated.h"

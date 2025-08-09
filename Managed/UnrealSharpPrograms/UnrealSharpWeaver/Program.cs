@@ -13,7 +13,7 @@ public static class Program
 
     public static void Weave(WeaverOptions weaverOptions)
     {
-        try 
+        try
         {
             WeaverOptions = weaverOptions;
             LoadBindingsAssembly();
@@ -27,7 +27,7 @@ public static class Program
 
     public static int Main(string[] args)
     {
-        try 
+        try
         {
             WeaverOptions = WeaverOptions.ParseArguments(args);
             LoadBindingsAssembly();
@@ -49,41 +49,42 @@ public static class Program
         foreach (string assemblyPath in WeaverOptions.AssemblyPaths)
         {
             string? directory = Path.GetDirectoryName(StripQuotes(assemblyPath));
-            
+
             if (string.IsNullOrEmpty(directory) || searchPaths.Contains(directory))
             {
                 continue;
             }
-            
+
             if (!Directory.Exists(directory))
             {
                 throw new InvalidOperationException("Could not determine directory for assembly path.");
             }
-            
+
             resolver.AddSearchDirectory(directory);
             searchPaths.Add(directory);
         }
-
+        
         WeaverImporter.Instance.AssemblyResolver = resolver;
     }
 
     private static void ProcessUserAssemblies()
     {
         DirectoryInfo outputDirInfo = new DirectoryInfo(StripQuotes(WeaverOptions.OutputDirectory));
-        
+
         if (!outputDirInfo.Exists)
         {
             outputDirInfo.Create();
         }
-        
+
         DefaultAssemblyResolver resolver = GetAssemblyResolver();
-        List<AssemblyDefinition> userAssemblies = LoadUserAssemblies(resolver);
-        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderUserAssembliesByReferences(userAssemblies);
-        
+        List<AssemblyDefinition> assembliesToProcess = LoadInputAssemblies(resolver);
+        ICollection<AssemblyDefinition> orderedUserAssemblies = OrderInputAssembliesByReferences(assembliesToProcess);
+        WeaverImporter.Instance.AllProjectAssemblies = assembliesToProcess;
+
         WriteUnrealSharpMetadataFile(orderedUserAssemblies, outputDirInfo);
-        ProcessOrderedUserAssemblies(orderedUserAssemblies, outputDirInfo);
+        ProcessOrderedAssemblies(orderedUserAssemblies, outputDirInfo);
     }
-    
+
     private static void WriteUnrealSharpMetadataFile(ICollection<AssemblyDefinition> orderedAssemblies, DirectoryInfo outputDirectory)
     {
         UnrealSharpMetadata unrealSharpMetadata = new UnrealSharpMetadata
@@ -91,7 +92,7 @@ public static class Program
             AssemblyLoadingOrder = orderedAssemblies
                 .Select(x => Path.GetFileNameWithoutExtension(x.MainModule.FileName)).ToList(),
         };
-        
+
         string metaDataContent = JsonSerializer.Serialize(unrealSharpMetadata, new JsonSerializerOptions
         {
             WriteIndented = false,
@@ -100,23 +101,22 @@ public static class Program
         string fileName = Path.Combine(outputDirectory.FullName, "UnrealSharp.assemblyloadorder.json");
         File.WriteAllText(fileName, metaDataContent);
     }
-    
-    private static void ProcessOrderedUserAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
+
+    private static void ProcessOrderedAssemblies(ICollection<AssemblyDefinition> assemblies, DirectoryInfo outputDirectory)
     {
         Exception? exception = null;
 
         foreach (AssemblyDefinition assembly in assemblies)
         {
-            if (assembly.Name.FullName == WeaverImporter.Instance.ProjectGlueAssembly.FullName)
+            if (assembly.Name.Name.EndsWith("Glue"))
             {
                 continue;
             }
-            
+
             try
             {
                 string outputPath = Path.Combine(outputDirectory.FullName, Path.GetFileName(assembly.MainModule.FileName));
                 StartWeavingAssembly(assembly, outputPath);
-                WeaverImporter.Instance.WeavedAssemblies.Add(assembly);
             }
             catch (Exception ex)
             {
@@ -136,7 +136,7 @@ public static class Program
         }
     }
 
-    private static ICollection<AssemblyDefinition> OrderUserAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
+    private static ICollection<AssemblyDefinition> OrderInputAssembliesByReferences(ICollection<AssemblyDefinition> assemblies)
     {
         HashSet<string> assemblyNames = new HashSet<string>();
         
@@ -242,7 +242,7 @@ public static class Program
         return WeaverImporter.Instance.AssemblyResolver;
     }
 
-    private static List<AssemblyDefinition> LoadUserAssemblies(IAssemblyResolver resolver)
+    private static List<AssemblyDefinition> LoadInputAssemblies(IAssemblyResolver resolver)
     {
         ReaderParameters readerParams = new ReaderParameters
         {
@@ -250,23 +250,23 @@ public static class Program
             ReadSymbols = true,
             SymbolReaderProvider = new PdbReaderProvider(),
         };
-        
+
         List<AssemblyDefinition> result = new List<AssemblyDefinition>();
-        
+
         foreach (var assemblyPath in WeaverOptions.AssemblyPaths.Select(StripQuotes))
         {
             if (!File.Exists(assemblyPath))
             {
                 throw new FileNotFoundException($"Could not find assembly at: {assemblyPath}");
             }
-            
+
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(assemblyPath, readerParams);
             result.Add(assembly);
         }
 
         return result;
     }
-    
+
     private static string StripQuotes(string value)
     {
         if (value.StartsWith('\"') && value.EndsWith('\"'))
@@ -276,18 +276,18 @@ public static class Program
 
         return value;
     }
-    
+
     static void StartWeavingAssembly(AssemblyDefinition assembly, string assemblyOutputPath)
     {
         void CleanOldFilesAndMoveExistingFiles()
         {
             var pdbOutputFile = new FileInfo(Path.ChangeExtension(assemblyOutputPath, ".pdb"));
-            
+
             if (!pdbOutputFile.Exists)
             {
                 return;
             }
-            
+
             var tmpDirectory = Path.Join(Path.GetTempPath(), assembly.Name.Name);
             if (Path.GetPathRoot(tmpDirectory) != Path.GetPathRoot(pdbOutputFile.FullName)) //if the temp directory is on a different drive, move will not work as desired if file is locked since it does a copy for drive boundaries
             {
@@ -313,17 +313,17 @@ public static class Program
                 //no action needed
             }
 
-            //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy). 
+            //move the file to an temp folder to prevent write locks in case a debugger is attached to UE which locks the pdb for writes (common strategy).
             var tmpDestFileName = Path.Join(tmpDirectory, Path.GetFileName(Path.ChangeExtension(Path.GetTempFileName(), ".pdb")));
             File.Move(pdbOutputFile.FullName, tmpDestFileName);
         }
 
         Task cleanupTask = Task.Run(CleanOldFilesAndMoveExistingFiles);
         WeaverImporter.Instance.ImportCommonTypes(assembly);
-        
+
         ApiMetaData assemblyMetaData = new ApiMetaData(assembly.Name.Name);
         StartProcessingAssembly(assembly, assemblyMetaData);
-        
+
         string sourcePath = Path.GetDirectoryName(assembly.MainModule.FileName)!;
         CopyAssemblyDependencies(assemblyOutputPath, sourcePath);
 
@@ -332,10 +332,10 @@ public static class Program
         {
             SymbolWriterProvider = new PdbWriterProvider(),
         });
-        
+
         WriteAssemblyMetaDataFile(assemblyMetaData, assemblyOutputPath);
     }
-    
+
     private static void WriteAssemblyMetaDataFile(ApiMetaData metadata, string outputPath)
     {
         string metaDataContent = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
@@ -357,7 +357,7 @@ public static class Program
             List<TypeDefinition> interfaces = [];
             List<TypeDefinition> multicastDelegates = [];
             List<TypeDefinition> delegates = [];
-            
+
             try
             {
                 void RegisterType(List<TypeDefinition> typeDefinitions, TypeDefinition typeDefinition)
@@ -365,7 +365,7 @@ public static class Program
                     typeDefinitions.Add(typeDefinition);
                     typeDefinition.AddGeneratedTypeAttribute();
                 }
-                
+
                 foreach (ModuleDefinition? module in userAssembly.Modules)
                 {
                     foreach (TypeDefinition? type in module.Types)
@@ -402,7 +402,7 @@ public static class Program
                 Console.Error.WriteLine($"Error enumerating types: {ex.Message}");
                 throw;
             }
-            
+
             UnrealEnumProcessor.ProcessEnums(enums, metadata);
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);

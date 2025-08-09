@@ -20,7 +20,8 @@ void FCSGeneratedStructBuilder::RebuildType()
 	}
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
-		
+    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
+    
 	Field->Status = UDSS_UpToDate;
 	if (!Field->Guid.IsValid())
 	{

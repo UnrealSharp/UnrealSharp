@@ -6,7 +6,6 @@ using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
-using UnrealSharp.CoreUObject;
 using UnrealSharp.Editor.Interop;
 using UnrealSharp.Engine.Core.Modules;
 using UnrealSharp.Shared;
@@ -18,15 +17,17 @@ namespace UnrealSharp.Editor;
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct FManagedUnrealSharpEditorCallbacks
 {
-    public delegate* unmanaged<char*, char*, char*, UnmanagedArray*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
+    public delegate* unmanaged<char*, char*, char*, LoggerVerbosity, IntPtr, NativeBool, NativeBool> BuildProjects;
     public delegate* unmanaged<void> ForceManagedGC;
     public delegate* unmanaged<char*, IntPtr, NativeBool> OpenSolution;
+    public delegate* unmanaged<char*, void> AddProjectToCollection;
 
     public FManagedUnrealSharpEditorCallbacks()
     {
         BuildProjects = &ManagedUnrealSharpEditorCallbacks.Build;
         ForceManagedGC = &ManagedUnrealSharpEditorCallbacks.ForceManagedGC;
         OpenSolution = &ManagedUnrealSharpEditorCallbacks.OpenSolution;
+        AddProjectToCollection = &ManagedUnrealSharpEditorCallbacks.AddProjectToCollection;
     }
 }
 
@@ -77,7 +78,6 @@ public static class ManagedUnrealSharpEditorCallbacks
     public static unsafe NativeBool Build(char* solutionPath,
         char* outputPath,
         char* buildConfiguration,
-        UnmanagedArray* projectPaths,
         LoggerVerbosity loggerVerbosity,
         IntPtr exceptionBuffer,
         NativeBool buildSolution)
@@ -85,15 +85,6 @@ public static class ManagedUnrealSharpEditorCallbacks
         try
         {
             string buildConfigurationString = new string(buildConfiguration);
-            
-            if (projectPaths->ArrayNum > ProjectCollection.Count - 1)
-            {
-                // New projects has been added, so we need to load them.
-                projectPaths->ForEachWithMarshaller<string>(StringMarshaller.FromNative, projectPath =>
-                {
-                    ProjectCollection.LoadProject(projectPath);
-                });
-            }
 
             if (buildSolution == NativeBool.True)
             {
@@ -209,6 +200,17 @@ public static class ManagedUnrealSharpEditorCallbacks
         }
 
         return NativeBool.True;
+    }
+    
+    [UnmanagedCallersOnly]
+    public static unsafe void AddProjectToCollection(char* projectPath)
+    {
+        string projectPathString = new string(projectPath);
+        
+        if (ProjectCollection.LoadedProjects.All(p => p.FullPath != projectPathString))
+        {
+            ProjectCollection.LoadProject(projectPathString);
+        }
     }
 }
 

@@ -8,6 +8,8 @@ namespace FCSUnrealSharpUtils
 	UNREALSHARPUTILITIES_API FName GetNamespace(const UObject* Object);
 	UNREALSHARPUTILITIES_API FName GetNamespace(FName PackageName);
 	UNREALSHARPUTILITIES_API FName GetNativeFullName(const UField* Object);
+
+	UNREALSHARPUTILITIES_API void PurgeMetaData(const UObject* Object);
 	
 	UNREALSHARPUTILITIES_API FName GetModuleName(const UObject* Object);
 
@@ -17,6 +19,8 @@ namespace FCSUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
 	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromName(const FName& Name);
+
+	UNREALSHARPUTILITIES_API FString MakeQuotedPath(const FString& Path);
 
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)

@@ -1,5 +1,6 @@
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
+using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
@@ -15,21 +16,31 @@ public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
     public T this[int index] => Get(index);
 }
 
-public class ArrayReadOnlyMarshaller<T>
+public class ArrayReadOnlyMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
-    private readonly IntPtr _nativeProperty;
     private TArrayReadOnly<T>? _readOnlyWrapper;
-    private readonly MarshallingDelegates<T>.FromNative _innerTypeFromNative;
 
-    public ArrayReadOnlyMarshaller(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    public void ToNative(IntPtr nativeBuffer, IReadOnlyList<T> obj)
     {
-        _nativeProperty = nativeProperty;
-        _innerTypeFromNative = fromNative;
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyList<T> obj)
-    {
-        throw new NotImplementedException("Copying UnrealArrays from managed memory to native memory is unsupported.");
+        unsafe
+        {
+            UnmanagedArray* mirror = (UnmanagedArray*)nativeBuffer;
+            if (mirror->ArrayNum == obj.Count)
+            {
+                for (int i = 0; i < obj.Count; ++i)
+                {
+                    toNative(mirror->Data, i, obj[i]);
+                }
+            }
+            else
+            {
+                FArrayPropertyExporter.CallResizeArray(nativeProperty, mirror, obj.Count);
+                for (int i = 0; i < obj.Count; ++i)
+                {
+                    toNative(mirror->Data, i, obj[i]);
+                }
+            }
+        }
     }
 
     public TArrayReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
@@ -38,7 +49,7 @@ public class ArrayReadOnlyMarshaller<T>
         {
             unsafe
             {
-                _readOnlyWrapper = new TArrayReadOnly<T>(_nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), null, _innerTypeFromNative);
+                _readOnlyWrapper = new TArrayReadOnly<T>(nativeProperty, nativeBuffer + arrayIndex * sizeof(UnmanagedArray), toNative, fromNative);
             }
         }
         return _readOnlyWrapper;

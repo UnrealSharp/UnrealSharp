@@ -10,15 +10,15 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	
 	StructProperty->Struct = StructPropertyMetaData->TypeRef.GetOwningStruct();
 
+#if WITH_EDITOR
 	if (UCSScriptStruct* ManagedStruct = Cast<UCSScriptStruct>(StructProperty->Struct))
 	{
 		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
 		{
-#if WITH_EDITORONLY_DATA
 			ManagedStruct->ManagedReferences.AddReference(OwningClass);
-#endif
 		}
 	}
+#endif
 	
 	ensureAlways(StructProperty->Struct);
 	return StructProperty;

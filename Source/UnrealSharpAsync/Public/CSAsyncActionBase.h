@@ -25,7 +25,7 @@ protected:
 	FCSManagedDelegate ManagedCallback;
 };
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UUCSAsyncBaseExporter : public UObject
 {
 	GENERATED_BODY()

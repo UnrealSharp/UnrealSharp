@@ -19,6 +19,21 @@ FName FCSUnrealSharpUtils::GetNativeFullName(const UField* Object)
 	return *FString::Printf(TEXT("%s.%s"), *Namespace.ToString(), *Object->GetName());
 }
 
+void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		UE_LOGFMT(LogUnrealSharpUtilities, Error, "Tried to purge metadata of an invalid object");
+		return;
+	}
+
+	UPackage* Owner = Object->GetOutermost();
+	if (TMap<FName, FString>* MetaData = Owner->GetMetaData().GetMapForObject(Object))
+	{
+		MetaData->Empty();
+	}
+}
+
 FName FCSUnrealSharpUtils::GetModuleName(const UObject* Object)
 {
 	return FPackageName::GetShortFName(Object->GetPackage()->GetFName());
@@ -40,7 +55,9 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 		UE_LOG(LogUnrealSharpUtilities, Warning, TEXT("Tried to purge an invalid struct: %s"), *GetNameSafe(Struct));
 		return;
 	}
-	
+
+	PurgeMetaData(Struct);
+
 	Struct->PropertyLink = nullptr;
 	Struct->DestructorLink = nullptr;
 	Struct->ChildProperties = nullptr;
@@ -53,6 +70,21 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromName(const FName& Name)
 {
 	return ConstructGUIDFromString(Name.ToString());
+}
+
+FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
+{
+	if (Path.IsEmpty())
+	{
+		return TEXT("");
+	}
+
+	if (Path.StartsWith(TEXT("\"")) && Path.EndsWith(TEXT("\"")))
+	{
+		return Path;
+	}
+
+	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)

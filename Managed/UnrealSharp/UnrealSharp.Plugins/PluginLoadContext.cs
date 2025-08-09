@@ -1,5 +1,8 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
+using LanguageExt;
+using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
@@ -9,9 +12,34 @@ public class PluginLoadContext : AssemblyLoadContext
     {
         _resolver = resolver;
     }
-    
+
     private readonly AssemblyDependencyResolver _resolver;
+    private static readonly Dictionary<string, WeakReference<Assembly>> LoadedAssemblies = new();
     
+    static PluginLoadContext()
+    {
+        AddAssembly(typeof(PluginLoader).Assembly);
+        AddAssembly(typeof(NativeBinds).Assembly);
+        AddAssembly(typeof(UnrealSharpObject).Assembly);
+        AddAssembly(typeof(UnrealSharpModule).Assembly);
+        AddAssembly(typeof(Option<>).Assembly);
+    }
+    
+    private static void AddAssembly(Assembly assembly)
+    {
+        LoadedAssemblies[assembly.GetName().Name!] = new WeakReference<Assembly>(assembly);
+    }
+    
+    public static void RemoveAssemblyFromCache(string assemblyName)
+    {
+        if (string.IsNullOrEmpty(assemblyName))
+        {
+            return;
+        }
+        
+        LoadedAssemblies.Remove(assemblyName);
+    }
+
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         if (string.IsNullOrEmpty(assemblyName.Name))
@@ -19,26 +47,9 @@ public class PluginLoadContext : AssemblyLoadContext
             return null;
         }
         
-        foreach (Assembly sharedAssembly in PluginLoader.SharedAssemblies)
+        if (LoadedAssemblies.TryGetValue(assemblyName.Name, out WeakReference<Assembly>? weakRef) && weakRef.TryGetTarget(out Assembly? cachedAssembly))
         {
-            if (sharedAssembly.GetName().Name == assemblyName.Name)
-            {
-                return Main.MainLoadContext.LoadFromAssemblyName(assemblyName);
-            }
-        }
-        
-        foreach (var loadedPlugin in PluginLoader.LoadedPlugins)
-        {
-            if (!loadedPlugin.IsAssemblyAlive || loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly)
-            {
-                continue;
-            }
-            
-            string loadedAssemblyName = assembly.GetName().Name;
-            if (loadedAssemblyName == assemblyName.Name)
-            {
-                return assembly;
-            }
+            return cachedAssembly;
         }
 
         string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
@@ -51,13 +62,19 @@ public class PluginLoadContext : AssemblyLoadContext
         using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
 
+        Assembly? loadedAssembly;
         if (!File.Exists(pdbPath))
         {
-            return LoadFromStream(assemblyFile);
+            loadedAssembly = LoadFromStream(assemblyFile);
         }
-
-        using var pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return LoadFromStream(assemblyFile, pdbFile);
+        else
+        {
+            using var pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            loadedAssembly = LoadFromStream(assemblyFile, pdbFile);
+        }
+        
+        LoadedAssemblies[assemblyName.Name] = new WeakReference<Assembly>(loadedAssembly);
+        return loadedAssembly;
     }
 
     protected override nint LoadUnmanagedDll(string unmanagedDllName)

@@ -12,9 +12,17 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 		TSharedPtr<FCSInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
 		Field->SetTypeInfo(InterfaceInfo);
 	}
+
+	UClass* ParentInterface = UInterface::StaticClass();
+	if (TypeMetaData->ParentInterface.IsValid())
+	{
+		ParentInterface = TypeMetaData->ParentInterface.GetOwningInterface();
+	}
 	
-	Field->SetSuperStruct(UInterface::StaticClass());
+	Field->SetSuperStruct(ParentInterface);
+	
 	Field->ClassFlags |= CLASS_Interface;
+    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 	RegisterFunctionsToLoader();

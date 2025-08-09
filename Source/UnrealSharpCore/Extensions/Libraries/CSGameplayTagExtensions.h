@@ -6,7 +6,7 @@
 
 struct FGameplayTag;
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSGameplayTagExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Loader;
+﻿using System.Runtime.InteropServices;
 using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
@@ -11,17 +9,13 @@ namespace UnrealSharp.Plugins;
 public static class Main
 {
     internal static DllImportResolver _dllImportResolver = null!;
-    
-    public static readonly AssemblyLoadContext MainLoadContext =
-        AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ??
-        AssemblyLoadContext.Default;
 
     [UnmanagedCallersOnly]
     private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
     {
         try
         {
-            #if !PACKAGE
+            #if WITH_EDITOR
             string dotnetSdk = DotNetUtilities.GetLatestDotNetSdkPath();
             MSBuildLocator.RegisterMSBuildPath(dotnetSdk);
             #endif

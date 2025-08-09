@@ -230,9 +230,13 @@ public class PropertyMetaData : BaseMetaData
         processor.Emit(OpCodes.Stsfld, PropertyOffsetField);
     }
     
-    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None)
+    public static PropertyMetaData FromTypeReference(TypeReference typeRef, string paramName, ParameterType modifier = ParameterType.None, ParameterDefinition? parameterDefinition = null)
     {
-        return new PropertyMetaData(typeRef, paramName, modifier);
+        var metadata = new PropertyMetaData(typeRef, paramName, modifier);
+        if (parameterDefinition is null) return metadata;
+        metadata.AddMetaData(parameterDefinition);
+        metadata.AddMetaTagsNamespace(parameterDefinition);
+        return metadata;
     }
     
     private void RegisterPropertyAccessorAsUFunction(MethodDefinition accessorMethod, bool isGetter)
@@ -255,7 +259,7 @@ public class PropertyMetaData : BaseMetaData
         // Add UFunction attribute if not already present
         if (!accessorMethod.IsUFunction())
         {
-            var ufunctionCtor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(
+            var ufunctionCtor = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(
                 WeaverImporter.Instance.UFunctionAttributeConstructor);
 
             // Create constructor arguments array
@@ -276,7 +280,7 @@ public class PropertyMetaData : BaseMetaData
 
             accessorMethod.CustomAttributes.Add(ufunctionAttribute);
             
-            var blueprintInternalUseOnlyCtor = WeaverImporter.Instance.UserAssembly.MainModule.ImportReference(
+            var blueprintInternalUseOnlyCtor = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(
                 WeaverImporter.Instance.BlueprintInternalUseAttributeConstructor);
             accessorMethod.CustomAttributes.Add(new CustomAttribute(blueprintInternalUseOnlyCtor));
         }

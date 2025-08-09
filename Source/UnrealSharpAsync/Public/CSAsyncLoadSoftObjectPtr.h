@@ -4,7 +4,7 @@
 #include "CSAsyncActionBase.h"
 #include "CSAsyncLoadSoftObjectPtr.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSAsyncLoadSoftPtr : public UCSAsyncActionBase
 {
 	GENERATED_BODY()

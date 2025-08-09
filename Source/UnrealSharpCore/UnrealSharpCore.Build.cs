@@ -46,7 +46,8 @@ public class UnrealSharpCore : ModuleRules
 				"GameplayTags", 
 				"AIModule",
 				"UnrealSharpBinds",
-				"FieldNotification"
+				"FieldNotification",
+				"InputCore",
 			}
 			);
 
@@ -140,6 +141,7 @@ public class UnrealSharpCore : ModuleRules
 		
 		Process process = new Process();
 		process.StartInfo.FileName = dotnetPath;
+		process.StartInfo.WorkingDirectory = projectRootDirectory;
 		
 		process.StartInfo.ArgumentList.Add("publish");
 		process.StartInfo.ArgumentList.Add($"\"{projectRootDirectory}\"");

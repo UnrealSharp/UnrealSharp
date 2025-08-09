@@ -160,8 +160,13 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
 public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
     private TArray<T>? _arrayWrapper;
-    
+
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IList<T> obj)
+    {
+        ToNative(nativeBuffer, obj);
+    }
+
+    public void ToNative(IntPtr nativeBuffer, IList<T> obj)
     {
         unsafe
         {

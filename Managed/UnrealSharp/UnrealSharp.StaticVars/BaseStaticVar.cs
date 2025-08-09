@@ -14,7 +14,7 @@ public class FBaseStaticVar<T>
         set => _value = value;
     }
     
-#if !PACKAGE
+#if WITH_EDITOR
     public FBaseStaticVar()
     {
         AssemblyLoadContext alc = AssemblyLoadContext.GetLoadContext(GetType().Assembly)!;

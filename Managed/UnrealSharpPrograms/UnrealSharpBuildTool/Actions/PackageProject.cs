@@ -22,7 +22,7 @@ public class PackageProject : BuildToolAction
             "--self-contained",
             "--runtime",
             "win-x64",
-			"-p:DefineAdditionalConstants=PACKAGE",
+			"-p:DisableWithEditor=true",
             $"-p:PublishDir=\"{binariesPath}\""
         ];
 

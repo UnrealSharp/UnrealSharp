@@ -44,10 +44,10 @@ public:
 	static FString GetUnrealSharpMetadataPath();
 
 	// Gets the project names in the order they should be loaded.
-	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeProjectGlue = false);
+	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeGlue = false);
 
 	// Same as GetProjectNamesByLoadOrder, but returns the paths to the assemblies instead.
-	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeProjectGlue = false);
+	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeGlue = false);
 
 	// Gets all the project paths in the /Scripts directory.
 	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);
@@ -71,10 +71,12 @@ public:
 	static FString GetGeneratedClassesDirectory();
 
 	// Path to the current project's script directory
-	static FString& GetScriptFolderDirectory();
+	static const FString& GetScriptFolderDirectory();
+
+    static const FString& GetPluginsDirectory();
 
 	// Path to the current project's glue directory
-	static FString& GetProjectGlueFolderPath();
+	static const FString& GetProjectGlueFolderPath();
 
 	// Get the name of the current managed version of the project
 	static FString GetUserManagedProjectName();

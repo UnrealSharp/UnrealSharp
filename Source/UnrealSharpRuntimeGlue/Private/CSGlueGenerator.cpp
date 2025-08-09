@@ -1,5 +1,6 @@
 ﻿#include "CSGlueGenerator.h"
 #include "UnrealSharpRuntimeGlue.h"
+#include "Logging/StructuredLog.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 
 void UCSGlueGenerator::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)

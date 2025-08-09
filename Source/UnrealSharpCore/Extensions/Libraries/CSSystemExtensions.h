@@ -4,7 +4,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSSystemExtensions.generated.h"
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UCSSystemExtensions : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()

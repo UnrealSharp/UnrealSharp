@@ -38,12 +38,11 @@ public class WeaverImporter
     public MethodReference? UFunctionAttributeConstructor => UnrealSharpAssembly.FindType("UFunctionAttribute", "UnrealSharp.Attributes")?.FindMethod(".ctor");
     public MethodReference? BlueprintInternalUseAttributeConstructor => UnrealSharpAssembly.FindType("BlueprintInternalUseOnlyAttribute", "UnrealSharp.Attributes.MetaTags")?.FindMethod(".ctor");
     
-    public AssemblyDefinition UserAssembly = null!;
-    public readonly ICollection<AssemblyDefinition> WeavedAssemblies = [];
-    
     public AssemblyDefinition UnrealSharpAssembly => FindAssembly(UnrealSharpNamespace);
     public AssemblyDefinition UnrealSharpCoreAssembly => FindAssembly(UnrealSharpNamespace + ".Core");
-    public AssemblyDefinition ProjectGlueAssembly => FindAssembly("ProjectGlue");
+    
+    public AssemblyDefinition CurrentWeavingAssembly = null!;
+    public List<AssemblyDefinition> AllProjectAssemblies = [];
     
     public MethodReference NativeObjectGetter = null!;
     public TypeDefinition IntPtrType = null!;
@@ -89,6 +88,18 @@ public class WeaverImporter
     
     public static void Shutdown()
     {
+        if (_instance == null)
+        {
+            return;
+        }
+        
+        foreach (AssemblyDefinition assembly in _instance.AllProjectAssemblies)
+        {
+            assembly.Dispose();
+        }
+        
+        _instance.AllProjectAssemblies = [];
+        _instance.CurrentWeavingAssembly = null!;
         _instance = null;
     }
     
@@ -99,9 +110,9 @@ public class WeaverImporter
 
     public void ImportCommonTypes(AssemblyDefinition userAssembly)
     {
-        UserAssembly = userAssembly;
+        CurrentWeavingAssembly = userAssembly;
         
-        TypeSystem typeSystem = UserAssembly.MainModule.TypeSystem;
+        TypeSystem typeSystem = CurrentWeavingAssembly.MainModule.TypeSystem;
         
         Int32TypeRef = typeSystem.Int32;
         UInt64TypeRef = typeSystem.UInt64;
@@ -174,7 +185,7 @@ public class WeaverImporter
                 {
                     if (method.IsStatic && method.Name == findMethod)
                     {
-                        return Instance.UserAssembly.MainModule.ImportReference(method);
+                        return Instance.CurrentWeavingAssembly.MainModule.ImportReference(method);
                     }
                 }
             }

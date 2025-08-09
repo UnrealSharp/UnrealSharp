@@ -1,6 +1,7 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
 
 #include "CSManager.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 void FCSGeneratedEnumBuilder::RebuildType()
 {
@@ -25,7 +26,7 @@ void FCSGeneratedEnumBuilder::RebuildType()
 		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}
 	
-	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
+	Field->SetEnums(Entries, UEnum::ECppForm::EnumClass);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
 
 #if WITH_EDITOR
@@ -43,4 +44,5 @@ void FCSGeneratedEnumBuilder::UpdateType()
 void FCSGeneratedEnumBuilder::PurgeEnum() const
 {
 	Field->DisplayNameMap.Empty();
+	FCSUnrealSharpUtils::PurgeMetaData(Field);
 }

@@ -20,6 +20,7 @@ struct FCSTypeReferenceMetaData
 	UClass* GetOwningInterface() const;
 	UDelegateFunction* GetOwningDelegate() const;
 	UPackage* GetOwningPackage() const;
+	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }
 
 	TMap<FString, FString> MetaData;
 	
