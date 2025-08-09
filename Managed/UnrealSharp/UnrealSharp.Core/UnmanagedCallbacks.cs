@@ -196,9 +196,13 @@ public static class UnmanagedCallbacks
     public static void FreeHandle(IntPtr handle)
     {
         GCHandle foundHandle = GCHandle.FromIntPtr(handle);
-        if (foundHandle.IsAllocated)
+        if (!foundHandle.IsAllocated) return;
+        
+        if (foundHandle.Target is IDisposable disposable)
         {
-            foundHandle.Free();
+            disposable.Dispose();
         }
+            
+        foundHandle.Free();
     }
 }
