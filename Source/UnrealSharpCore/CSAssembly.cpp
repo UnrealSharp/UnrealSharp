@@ -207,7 +207,7 @@ bool FCSAssembly::UnloadAssembly()
 	AllocatedManagedHandles.Reset();
 
 	// Don't need the assembly handle anymore, we use the path to unload the assembly.
-	ManagedAssemblyHandle->Dispose();
+	ManagedAssemblyHandle->Dispose(ManagedAssemblyHandle->GetHandle());
 	ManagedAssemblyHandle.Reset();
 
 	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);

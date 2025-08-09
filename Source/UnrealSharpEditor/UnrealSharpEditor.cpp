@@ -207,9 +207,9 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	FString ExceptionMessage;
 	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
 	{
-		HotReloadStatus = Inactive;
+	 	HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
+	 	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
 		return;
 	}
 
@@ -217,8 +217,8 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	bool bUnloadFailed = false;
 
 	TArray<FString> ProjectsByLoadOrder;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder);
-
+	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, true);
+	
 	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
 	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
 	// Good info: https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
@@ -817,11 +817,12 @@ void FUnrealSharpEditorModule::RegisterPluginTemplates()
 
 	const FText BlankDescription = LOCTEXT("UnrealSharp_BlankTemplateDesc", "Create a blank plugin with a minimal amount of C++ and C# code.");
 	const FText CSharpOnlyDescription = LOCTEXT("UnrealSharp_CSharpOnlyTemplateDesc", "Create a blank plugin that can only contain content and C# scripts.");
-
+	
     const TSharedRef<FPluginTemplateDescription> BlankTemplate = MakeShared<FCSPluginTemplateDescription>(BlankTemplateName, BlankDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default, false, true);
+        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default, true);
+	
     const TSharedRef<FPluginTemplateDescription> CSharpOnlyTemplate = MakeShared<FCSPluginTemplateDescription>(CSharpOnlyTemplateName, CSharpOnlyDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default, false, false);
+        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default, false);
 
     PluginBrowser.RegisterPluginTemplate(BlankTemplate);
     PluginBrowser.RegisterPluginTemplate(CSharpOnlyTemplate);

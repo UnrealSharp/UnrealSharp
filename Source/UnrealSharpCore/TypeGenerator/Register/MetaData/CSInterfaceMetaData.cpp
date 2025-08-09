@@ -6,4 +6,5 @@ void FCSInterfaceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& Json
 {
 	FCSTypeReferenceMetaData::SerializeFromJson(JsonObject);
 	FCSMetaDataUtils::SerializeFunctions(JsonObject->GetArrayField(TEXT("Functions")), Functions);
+	ParentInterface.SerializeFromJson(JsonObject->GetObjectField(TEXT("ParentInterface")));
 }
