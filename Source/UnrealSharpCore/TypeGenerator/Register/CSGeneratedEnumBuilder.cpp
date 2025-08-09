@@ -26,7 +26,7 @@ void FCSGeneratedEnumBuilder::RebuildType()
 		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}
 	
-	Field->SetEnums(Entries, UEnum::ECppForm::Namespaced);
+	Field->SetEnums(Entries, UEnum::ECppForm::EnumClass);
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
 
 #if WITH_EDITOR
