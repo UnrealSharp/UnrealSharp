@@ -25,7 +25,7 @@ public static class PropertyTranslatorManager
         var files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
-            .Concat([configDirectory])
+            .Concat(new List<string> { configDirectory })
             .Select(x => new DirectoryInfo(x))
             .Where(x => x.Exists)
             .SelectMany(x => x.GetFiles("*.UnrealSharpTypes.json", SearchOption.AllDirectories))
