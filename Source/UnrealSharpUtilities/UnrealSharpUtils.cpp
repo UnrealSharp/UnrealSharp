@@ -29,7 +29,7 @@ void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 	}
 
 	UPackage* Owner = Object->GetOutermost();
-#if ENGINE_MINOR_VERSION >= 5
+#if ENGINE_MINOR_VERSION >= 6
 	if (TMap<FName, FString>* MetaData = Owner->GetMetaData().GetMapForObject(Object))
 #else
 	if (TMap<FName, FString>* MetaData = Owner->GetMetaData()->GetMapForObject(Object))
