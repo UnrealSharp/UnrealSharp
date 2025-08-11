@@ -53,5 +53,10 @@ void* UFOptionalPropertyExporter::GetValuePointerForReadOrReplaceIfSet(FOptional
 
 int32 UFOptionalPropertyExporter::CalcSize(FOptionalProperty* OptionalProperty)
 {
+#if ENGINE_MINOR_VERSION >= 5
+	// Do we really need this? StaticLink should do this.
 	return OptionalProperty->CalcSize();
+#else
+	return OptionalProperty->GetSize();
+#endif
 }

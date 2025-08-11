@@ -162,11 +162,14 @@ public static class FileExporter
     }
     private static HashSet<string> GetIgnoredDirectories(string path)
     {
-        string glueignoreFileName = Path.Combine(path, ".glueignore");
-        if (!File.Exists(glueignoreFileName)) return [];
+        string glueIgnoreFileName = Path.Combine(path, ".glueignore");
+        if (!File.Exists(glueIgnoreFileName))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
 
-        HashSet<string> ignoredDirectories = [];
-        using StreamReader fileInput = File.OpenText(glueignoreFileName);
+        HashSet<string> ignoredDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using StreamReader fileInput = File.OpenText(glueIgnoreFileName);
         while (!fileInput.EndOfStream)
         {
             string? line = fileInput.ReadLine();
