@@ -6,9 +6,9 @@ namespace UnrealSharpScriptGenerator.Model;
 
 public record struct SpecialStructInfo
 {
-    public required Dictionary<string, BlittableStructInfo> BlittableTypes { get; init; }
+    public Dictionary<string, BlittableStructInfo> BlittableTypes { get; init; }
     
-    public required Dictionary<string, NativelyTranslatableStructInfo> NativelyCopyableTypes { get; init; }
+    public Dictionary<string, NativelyTranslatableStructInfo> NativelyCopyableTypes { get; init; }
 
     public bool Equals(SpecialStructInfo other)
     {
@@ -46,8 +46,8 @@ public record SpecialTypeInfo
 {
     public SpecialStructInfo Structs { get; init; } = new()
     {
-        BlittableTypes = [],
-        NativelyCopyableTypes = []
+        BlittableTypes = new Dictionary<string, BlittableStructInfo>(),
+        NativelyCopyableTypes = new Dictionary<string, NativelyTranslatableStructInfo>()
     };
 
     public virtual bool Equals(SpecialTypeInfo? other)

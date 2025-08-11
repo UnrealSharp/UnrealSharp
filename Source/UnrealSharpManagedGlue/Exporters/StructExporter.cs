@@ -58,10 +58,12 @@ public static class StructExporter
 
         string structName = structObj.GetStructName();
         List<string>? csInterfaces = null;
-        if (isBlittable || !isManualExport) {
-            csInterfaces = [$"MarshalledStruct<{structName}>"];
+        if (isBlittable || !isManualExport) 
+        { 
+            csInterfaces = new List<string> { $"MarshalledStruct<{structName}>" };
             
-            if (isDestructible) {
+            if (isDestructible) 
+            {
                 csInterfaces.Add("IDisposable");
             }
         }
