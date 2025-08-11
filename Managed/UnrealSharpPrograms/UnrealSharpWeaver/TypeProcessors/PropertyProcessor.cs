@@ -240,7 +240,7 @@ public static class PropertyProcessor
 
     public static bool IsLdconst(Instruction ldconst)
     {
-        return ldconst.OpCode.Op1 == 0xff && ldconst.OpCode.Op2 >= 0x15 && ldconst.OpCode.Op2 <= 0x23;
+        return ldconst.OpCode.Op1 == 0xff && ldconst.OpCode.Op2 >= 0x14 && ldconst.OpCode.Op2 <= 0x23;
     }
 
     public static void CopyLastElements(List<Instruction> from, List<Instruction> to, int count)
