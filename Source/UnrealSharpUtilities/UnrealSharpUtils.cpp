@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpUtils.h"
-
 #include "UnrealSharpUtilities.h"
+
 
 FName FCSUnrealSharpUtils::GetNamespace(const UObject* Object)
 {
@@ -23,12 +23,12 @@ void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 {
 	if (!IsValid(Object))
 	{
-		UE_LOGFMT(LogUnrealSharpUtilities, Error, "Tried to purge metadata of an invalid object");
+		UE_LOG(LogUnrealSharpUtilities, Error, TEXT("Tried to purge metadata of an invalid object"));
 		return;
 	}
 
 	UPackage* Owner = Object->GetOutermost();
-	if (TMap<FName, FString>* MetaData = Owner->GetMetaData().GetMapForObject(Object))
+	if (TMap<FName, FString>* MetaData = Owner->GetMetaData()->GetMapForObject(Object))
 	{
 		MetaData->Empty();
 	}
