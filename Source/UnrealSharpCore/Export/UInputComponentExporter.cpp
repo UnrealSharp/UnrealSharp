@@ -25,14 +25,13 @@ void UUInputComponentExporter::BindActionKeySignature(UInputComponent* InputComp
 		return;
 	}
 
-	FInputActionHandlerSignature Handler;
+	FInputActionHandlerDynamicSignature Handler;
 	Handler.BindUFunction(Object, FunctionName);
 
 	FInputActionBinding Binding(ActionName, KeyEvent);
 	Binding.ActionDelegate = Handler;
 	Binding.bConsumeInput = bConsumeInput;
 	Binding.bExecuteWhenPaused = bExecuteWhenPaused;
-	
 	InputComponent->AddActionBinding(Binding);
 }
 
