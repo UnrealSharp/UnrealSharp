@@ -16,6 +16,7 @@ public class PackageProject : BuildToolAction
         string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
         string binariesPath = Program.GetOutputPath(rootProjectPath);
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
+        string bindingsOutputPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
         
         Collection<string> extraArguments =
         [
@@ -23,7 +24,8 @@ public class PackageProject : BuildToolAction
             "--runtime",
             "win-x64",
 			"-p:DisableWithEditor=true",
-            $"-p:PublishDir=\"{binariesPath}\""
+            $"-p:PublishDir=\"{binariesPath}\"",
+            $"-p:OutputPath=\"{bindingsOutputPath}\"",
         ];
 
         BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);

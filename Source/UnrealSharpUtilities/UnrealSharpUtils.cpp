@@ -22,6 +22,7 @@ FName FCSUnrealSharpUtils::GetNativeFullName(const UField* Object)
 
 void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 {
+#if WITH_METADATA
 	if (!IsValid(Object))
 	{
 		UE_LOGFMT(LogUnrealSharpUtilities, Error, "Tried to purge metadata of an invalid object");
@@ -37,6 +38,7 @@ void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 	{
 		MetaData->Empty();
 	}
+#endif
 }
 
 FName FCSUnrealSharpUtils::GetModuleName(const UObject* Object)

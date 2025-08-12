@@ -3,7 +3,6 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using UnrealSharpWeaver.MetaData;
 using UnrealSharpWeaver.NativeTypes;
-using UnrealSharpWeaver.Utilities;
 
 namespace UnrealSharpWeaver.TypeProcessors;
 
@@ -64,7 +63,7 @@ public static class PropertyProcessor
     
     private static void RemoveBackingFieldReferences(TypeDefinition type, Dictionary<string, (PropertyMetaData, PropertyDefinition, FieldDefinition, FieldDefinition?)> strippedFields)
     {
-        foreach (MethodDefinition? method in type.GetConstructors())
+        foreach (MethodDefinition? method in type.GetConstructors().ToArray())
         {
             if (!method.HasBody)
             {
@@ -158,6 +157,14 @@ public static class PropertyProcessor
                 }
 
                 CopyLastElements(alteredInstructions, deferredInstructions, 3);
+
+                // we should skip the initialization if the value is null, as it will be set to null by default,
+                // and we don't want to call the setter because in this case it will marshal a null value to the native side
+                // which will cause issues for types like TArray, TMap, etc.
+                if (ldconst.OpCode == OpCodes.Ldnull)
+                {
+                    deferredInstructions.RemoveRange(deferredInstructions.Count - 3, 3);
+                }
             }
 
             //add back the instructions and fix up their offsets

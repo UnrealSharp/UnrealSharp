@@ -340,13 +340,14 @@ TSharedPtr<FGCHandle> FCSAssembly::CreateManagedObject(const UObject* Object)
 	TSharedPtr<FCSClassInfo> ClassInfo = FindOrAddClassInfo(Class);
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 
-	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer());
+	TCHAR* Error = nullptr;
+	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer(), &Error);
 	NewManagedObject.Type = GCHandleType::StrongHandle;
 
 	if (NewManagedObject.IsNull())
 	{
 		// This should never happen. Potential issues: IL errors, typehandle is invalid.
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", *Object->GetName());
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}:\n{1}", *Object->GetName(), Error);
 		return nullptr;
 	}
 
