@@ -11,7 +11,7 @@ public static class NativeBinds
             throw new Exception("NativeBinds.InitializeNativeBinds called twice");
         }
 
-        _getBoundFunction = (delegate* unmanaged[Cdecl]<char*, char*, int, nint>)bindsCallbacks;
+        _getBoundFunction = (delegate* unmanaged[Cdecl]<char*, char*, int, IntPtr>)bindsCallbacks;
     }
 
     public unsafe static IntPtr TryGetBoundFunction(string outerName, string functionName, int functionSize)
