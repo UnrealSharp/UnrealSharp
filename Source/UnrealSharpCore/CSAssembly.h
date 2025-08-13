@@ -5,26 +5,26 @@
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
 #include "Utils/CSClassUtilities.h"
+#include "CSAssembly.generated.h"
 
 #if !defined(_WIN32)
 #define __stdcall
 #endif
 
-struct FCSDelegateInfo;
+struct FCSClassInfo;
 struct FCSManagedMethod;
 class UCSClass;
-struct FCSClassInfo;
-struct FCSInterfaceInfo;
-struct FCSEnumInfo;
-struct FCSStructInfo;
 
 /**
  * Represents a managed assembly.
  * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the C# assembly.
  */
-struct FCSAssembly final : TSharedFromThis<FCSAssembly>
+UCLASS()
+class UCSAssembly : public UObject
 {
-	explicit FCSAssembly(const FString& AssemblyPath);
+	GENERATED_BODY()
+public:
+	void SetAssemblyPath(const FStringView InAssemblyPath);
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
@@ -40,23 +40,14 @@ struct FCSAssembly final : TSharedFromThis<FCSAssembly>
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 	
-	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class)
-	{
-		if (UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
-		{
-			return ManagedClass->GetTypeInfo();
-		}
-	
-		FCSFieldName FieldName(Class);
-		return FindOrAddClassInfo(FieldName);
-	}
-	
+	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class);
+
 	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
 	
 	TSharedPtr<FCSClassInfo> FindClassInfo(const FCSFieldName& ClassName) const { return Classes.FindRef(ClassName); }
-	TSharedPtr<FCSStructInfo> FindStructInfo(const FCSFieldName& StructName) const { return Structs.FindRef(StructName); }
-	TSharedPtr<FCSEnumInfo> FindEnumInfo(const FCSFieldName& EnumName) const { return Enums.FindRef(EnumName); }
-	TSharedPtr<FCSInterfaceInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const { return Interfaces.FindRef(InterfaceName); }
+	TSharedPtr<FCSManagedTypeInfo> FindStructInfo(const FCSFieldName& StructName) const { return Structs.FindRef(StructName); }
+	TSharedPtr<FCSManagedTypeInfo> FindEnumInfo(const FCSFieldName& EnumName) const { return Enums.FindRef(EnumName); }
+	TSharedPtr<FCSManagedTypeInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const { return Interfaces.FindRef(InterfaceName); }
 	
 	UClass* FindClass(const FCSFieldName& FieldName) const;
 	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
@@ -84,7 +75,7 @@ private:
 	template<typename Field, typename InfoType>
 	Field* FindFieldFromInfo(const FCSFieldName& EnumName, const TMap<FCSFieldName, TSharedPtr<InfoType>>& Map) const
 	{
-		Field* FoundField;
+		UField* FoundField;
 		if (TSharedPtr<InfoType> InfoPtr = Map.FindRef(EnumName))
 		{
 			FoundField = InfoPtr->InitializeBuilder();
@@ -100,7 +91,7 @@ private:
 			return nullptr;
 		}
 	
-		return FoundField;
+		return CastChecked<Field>(FoundField);
 	}
 
 	template<typename T>
@@ -127,10 +118,10 @@ private:
 
 	// All Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FCSClassInfo>> Classes;
-	TMap<FCSFieldName, TSharedPtr<FCSStructInfo>> Structs;
-	TMap<FCSFieldName, TSharedPtr<FCSEnumInfo>> Enums;
-	TMap<FCSFieldName, TSharedPtr<FCSInterfaceInfo>> Interfaces;
-	TMap<FCSFieldName, TSharedPtr<FCSDelegateInfo>> Delegates;
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Structs;
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Enums;
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Interfaces;
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Delegates;
 	
 	// All handles allocated by this assembly. Handles to types, methods, objects.
 	TArray<TSharedPtr<FGCHandle>> AllocatedManagedHandles;

@@ -1,6 +1,7 @@
 ﻿#include "CSGeneratedStructBuilder.h"
 
 #include "CSManager.h"
+#include "MetaData/CSStructMetaData.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
@@ -9,13 +10,15 @@
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 #endif
 
-void FCSGeneratedStructBuilder::RebuildType()
+DEFINE_BUILDER_TYPE(UCSGeneratedStructBuilder, UCSScriptStruct, FCSStructMetaData)
+
+void UCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
 
 	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSManagedTypeInfo> StructInfo = GetOwningAssembly()->FindStructInfo(TypeMetaData->FieldName);
 		Field->SetTypeInfo(StructInfo);
 	}
 	
@@ -40,14 +43,19 @@ void FCSGeneratedStructBuilder::RebuildType()
 #endif
 }
 
+UClass* UCSGeneratedStructBuilder::GetFieldType() const
+{
+	return UCSScriptStruct::StaticClass();
+}
+
 #if WITH_EDITOR
-void FCSGeneratedStructBuilder::UpdateType()
+void UCSGeneratedStructBuilder::UpdateType()
 {
 	UCSManager::Get().OnStructReloadedEvent().Broadcast(Field);
 }
 #endif
 
-void FCSGeneratedStructBuilder::PurgeStruct()
+void UCSGeneratedStructBuilder::PurgeStruct()
 {
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 #if WITH_EDITORONLY_DATA

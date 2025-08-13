@@ -227,9 +227,9 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
 	{
 		const FString& ProjectName = ProjectsByLoadOrder[i];
-		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
+		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (Assembly.IsValid() && !Assembly->UnloadAssembly())
+		if (IsValid(Assembly) && !Assembly->UnloadAssembly())
 		{
 			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
 			bUnloadFailed = true;
@@ -253,9 +253,9 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	// Load all assemblies again in the correct order.
 	for (const FString& ProjectName : ProjectsByLoadOrder)
 	{
-		TSharedPtr<FCSAssembly> Assembly = CSharpManager.FindAssembly(*ProjectName);
+		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (Assembly.IsValid())
+		if (!IsValid(Assembly))
 		{
 			Assembly->LoadAssembly();
 		}
@@ -471,7 +471,7 @@ void FUnrealSharpEditorModule::RepairComponents()
 		{
 			FObjectProperty* Property = *PropertyIt;
 
-			if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
+			if (!FCSClassUtilities::IsManagedClass(Property->GetOwnerClass()))
 			{
 				break;
 			}
@@ -935,7 +935,7 @@ void FUnrealSharpEditorModule::OnEnumRebuilt(UCSEnum* NewEnum)
 bool FUnrealSharpEditorModule::IsPinAffectedByReload(const FEdGraphPinType& PinType) const
 {
 	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
-	if (!IsValid(PinSubCategoryObject) || !Manager->IsManagedField(PinSubCategoryObject))
+	if (!IsValid(PinSubCategoryObject) || !Manager->IsManagedType(PinSubCategoryObject))
 	{
 		return false;
 	}
@@ -973,7 +973,7 @@ bool FUnrealSharpEditorModule::IsPinAffectedByReload(const FEdGraphPinType& PinT
 	if (PinType.IsMap() && PinType.PinValueType.TerminalSubCategoryObject.IsValid())
 	{
 		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
-		if (IsValid(MapValueType) && Manager->IsManagedField(MapValueType))
+		if (IsValid(MapValueType) && Manager->IsManagedType(MapValueType))
 		{
 			return IsPinTypeRebuilt(MapValueType);
 		}
@@ -1043,7 +1043,7 @@ void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
-		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedType(Blueprint->GeneratedClass))
+		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedClass(Blueprint->GeneratedClass))
 		{
 			return;
 		}

@@ -1,5 +1,4 @@
 ﻿#include "CSGeneratedClassBuilder.h"
-
 #include "CSAssembly.h"
 #include "CSGeneratedInterfaceBuilder.h"
 #include "CSManager.h"
@@ -9,7 +8,6 @@
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
-#include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
 #include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
@@ -17,16 +15,13 @@
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
-FCSGeneratedClassBuilder::FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly): TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly)
-{
-	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
-}
+DEFINE_BUILDER_TYPE(UCSGeneratedClassBuilder, UCSClass, FCSClassMetaData)
 
-void FCSGeneratedClassBuilder::RebuildType()
+void UCSGeneratedClassBuilder::RebuildType()
 {
 	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSClassInfo> ClassInfo = OwningAssembly->FindClassInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSClassInfo> ClassInfo = GetOwningAssembly()->FindClassInfo(TypeMetaData->FieldName);
 		Field->SetTypeInfo(ClassInfo);
 	}
 
@@ -66,12 +61,12 @@ void FCSGeneratedClassBuilder::RebuildType()
 }
 
 #if WITH_EDITOR
-void FCSGeneratedClassBuilder::UpdateType()
+void UCSGeneratedClassBuilder::UpdateType()
 {
 	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
 }
 
-void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 {
 	CreateBlueprint(SuperClass);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
@@ -79,7 +74,7 @@ void FCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
 	TryUnregisterDynamicSubsystem(Field);
 }
 
-void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 {
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
@@ -96,7 +91,7 @@ void FCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 }
 #endif
 
-void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 {
 	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
 
@@ -120,7 +115,7 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
 
 	//Finalize class
-	Field->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
+	Field->ClassConstructor = &UCSGeneratedClassBuilder::ManagedObjectConstructor;
 
 	Field->Bind();
 	Field->StaticLink(true);
@@ -137,16 +132,21 @@ void FCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 	TryRegisterDynamicSubsystem(Field);
 }
 
-FName FCSGeneratedClassBuilder::GetFieldName() const
+FName UCSGeneratedClassBuilder::GetFieldName() const
 {
 	// Blueprint classes have a _C suffix
-	FString FieldName = TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>::GetFieldName().ToString();
+	FString FieldName = Super::GetFieldName().ToString();
 	FieldName += TEXT("_C");
 	
 	return *FieldName;
 }
 
-void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
+UClass* UCSGeneratedClassBuilder::GetFieldType() const
+{
+	return UCSClass::StaticClass();
+}
+
+void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
 {
 	UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(ObjectInitializer.GetClass());
 	UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(FirstManagedClass);
@@ -159,7 +159,7 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	{
 		FProperty* Property = *PropertyIt;
 
-		if (!FCSClassUtilities::IsManagedType(Property->GetOwnerClass()))
+		if (!FCSClassUtilities::IsManagedClass(Property->GetOwnerClass()))
 		{
 			// We don't want to initialize properties that are not from a managed class
 			break;
@@ -173,11 +173,11 @@ void FCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	TSharedPtr<FCSAssembly> OwningAssembly = FirstManagedClass->GetTypeInfo()->OwningAssembly;
-	OwningAssembly->CreateManagedObject(ObjectInitializer.GetObj());
+	UCSAssembly* Assembly = FirstManagedClass->GetTypeInfo<FCSClassInfo>()->GetOwningAssembly();
+	Assembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 
-void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
+void UCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
 {
 	FTickFunction* TickFunction;
 	FTickFunction* ParentTickFunction;
@@ -219,7 +219,7 @@ void FCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, 
 	TickFunction->bStartWithTickEnabled = bCanTick;
 }
 
-void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceMetaData>& Interfaces)
+void UCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceMetaData>& Interfaces)
 {
 	for (const FCSTypeReferenceMetaData& InterfaceData : Interfaces)
 	{
@@ -240,7 +240,7 @@ void FCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 	}
 }
 
-void FCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(UClass* ManagedClass)
+void UCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(UClass* ManagedClass)
 {
 	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
 	{
@@ -250,7 +250,7 @@ void FCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(UClass* ManagedClass)
 	UCSManager::Get().AddDynamicSubsystemClass(ManagedClass);
 }
 
-void FCSGeneratedClassBuilder::TryUnregisterDynamicSubsystem(UClass* ManagedClass)
+void UCSGeneratedClassBuilder::TryUnregisterDynamicSubsystem(UClass* ManagedClass)
 {
 	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
 	{
@@ -261,7 +261,7 @@ void FCSGeneratedClassBuilder::TryUnregisterDynamicSubsystem(UClass* ManagedClas
 	FSubsystemCollectionBase::DeactivateExternalSubsystem(ManagedClass);
 }
 
-void FCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData)
+void UCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData)
 {
 	if (TypeMetaData->ClassConfigName.IsNone())
 	{

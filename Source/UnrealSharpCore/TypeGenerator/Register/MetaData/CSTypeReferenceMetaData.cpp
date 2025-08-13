@@ -7,52 +7,41 @@ FCSTypeReferenceMetaData::FCSTypeReferenceMetaData(): FieldName(NAME_None, NAME_
 {
 }
 
-TSharedPtr<FCSAssembly> FCSTypeReferenceMetaData::GetOwningAssemblyChecked() const
+UCSAssembly* FCSTypeReferenceMetaData::GetOwningAssemblyChecked() const
 {
-	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-	check(Assembly.IsValid());
+	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
+	check(::IsValid(Assembly));
 	return Assembly;
 }
 
 UClass* FCSTypeReferenceMetaData::GetOwningClass() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindClass(FieldName);
+	return GetOwningAssemblyChecked()->FindClass(FieldName);
 }
 
 UScriptStruct* FCSTypeReferenceMetaData::GetOwningStruct() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindStruct(FieldName);
+	return GetOwningAssemblyChecked()->FindStruct(FieldName);
 }
 
 UEnum* FCSTypeReferenceMetaData::GetOwningEnum() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindEnum(FieldName);
+	return GetOwningAssemblyChecked()->FindEnum(FieldName);
 }
 
 UClass* FCSTypeReferenceMetaData::GetOwningInterface() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	if (!Assembly.IsValid())
-	{
-		return nullptr;
-	}
-
-	return Assembly->FindInterface(FieldName);
+	return GetOwningAssemblyChecked()->FindInterface(FieldName);
 }
 
 UDelegateFunction* FCSTypeReferenceMetaData::GetOwningDelegate() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindDelegate(FieldName);
+	return GetOwningAssemblyChecked()->FindDelegate(FieldName);
 }
 
 UPackage* FCSTypeReferenceMetaData::GetOwningPackage() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->GetPackage(FieldName.GetNamespace());
+	return GetOwningAssemblyChecked()->GetPackage(FieldName.GetNamespace());
 }
 
 void FCSTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)

@@ -1,22 +1,22 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "TypeGenerator/CSClass.h"
-#include "MetaData/CSClassMetaData.h"
+#include "MetaData/CSTypeReferenceMetaData.h"
+#include "CSGeneratedClassBuilder.generated.h"
 
-class UNREALSHARPCORE_API FCSGeneratedClassBuilder : public TCSGeneratedTypeBuilder<FCSClassMetaData, UCSClass>
+UCLASS()
+class UNREALSHARPCORE_API UCSGeneratedClassBuilder : public UCSGeneratedTypeBuilder
 {
-	
+	GENERATED_BODY()
+	DECLARE_BUILDER_TYPE(UCSClass, FCSClassMetaData)
 public:
-
-	FCSGeneratedClassBuilder(const TSharedPtr<FCSClassMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly);
-
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
 #if WITH_EDITOR
 	virtual void UpdateType() override;
 #endif
 	virtual FName GetFieldName() const override;
+	virtual UClass* GetFieldType() const override;
 	// End of implementation
 	
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);

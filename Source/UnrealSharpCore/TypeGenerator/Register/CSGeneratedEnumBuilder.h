@@ -1,18 +1,18 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "MetaData/CSEnumMetaData.h"
-#include "TypeGenerator/CSEnum.h"
+#include "CSGeneratedEnumBuilder.generated.h"
 
-class UNREALSHARPCORE_API FCSGeneratedEnumBuilder : public TCSGeneratedTypeBuilder<FCSEnumMetaData, UCSEnum>
+UCLASS()
+class UNREALSHARPCORE_API UCSGeneratedEnumBuilder : public UCSGeneratedTypeBuilder
 {
-	
+	GENERATED_BODY()
+ 	DECLARE_BUILDER_TYPE(UCSEnum, FCSEnumMetaData)
 public:
 	
-	FCSGeneratedEnumBuilder(const TSharedPtr<FCSEnumMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly) { }
-
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
+	virtual UClass* GetFieldType() const override;
 #if WITH_EDITOR
 	virtual void UpdateType() override;
 #endif

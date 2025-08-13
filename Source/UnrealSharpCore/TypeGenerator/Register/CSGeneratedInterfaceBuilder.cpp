@@ -1,15 +1,20 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
 
 #include "CSManager.h"
+#include "CSMetaDataUtils.h"
+#include "MetaData/CSInterfaceMetaData.h"
+#include "TypeGenerator/CSInterface.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
-void FCSGeneratedInterfaceBuilder::RebuildType()
+DEFINE_BUILDER_TYPE(UCSGeneratedInterfaceBuilder, UCSInterface, FCSInterfaceMetaData)
+
+void UCSGeneratedInterfaceBuilder::RebuildType()
 {
 	Field->PurgeClass(true);
 
 	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSManagedTypeInfo> InterfaceInfo = GetOwningAssembly()->FindInterfaceInfo(TypeMetaData->FieldName);
 		Field->SetTypeInfo(InterfaceInfo);
 	}
 
@@ -39,14 +44,19 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 #endif
 }
 
+UClass* UCSGeneratedInterfaceBuilder::GetFieldType() const
+{
+	return UCSInterface::StaticClass();
+}
+
 #if WITH_EDITOR
-void FCSGeneratedInterfaceBuilder::UpdateType()
+void UCSGeneratedInterfaceBuilder::UpdateType()
 {
 	UCSManager::Get().OnInterfaceReloadedEvent().Broadcast(Field);
 }
 #endif
 
-void FCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader()
+void UCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader()
 {
 	for (TFieldIterator<UFunction> It(Field, EFieldIterationFlags::None); It; ++It)
 	{

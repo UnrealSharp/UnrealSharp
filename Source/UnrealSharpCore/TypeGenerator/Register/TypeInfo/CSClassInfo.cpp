@@ -1,37 +1,43 @@
-﻿#include "CSClassInfo.h"
-#include "CSAssembly.h"
-#include "Utils/CSClassUtilities.h"
+#include "CSClassInfo.h"
 
-FCSClassInfo::FCSClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSTypeInfo(MetaData, InOwningAssembly)
+#include "CSAssembly.h"
+#include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
+
+FCSClassInfo::FCSClassInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InClass)
+: FCSManagedTypeInfo(MetaData, InOwningAssembly, InClass)
 {
-	ManagedTypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
+	
 }
 
-FCSClassInfo::FCSClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
+FCSClassInfo::FCSClassInfo(UClass* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle)
+: FCSManagedTypeInfo(nullptr, InOwningAssembly, UCSClass::StaticClass())
 {
 	Field = InField;
 	OwningAssembly = InOwningAssembly;
-	ManagedTypeHandle = InTypeHandle;
+	ManagedTypeHandle = TypeHandle;
 }
 
-UClass* FCSClassInfo::InitializeBuilder()
+UField* FCSClassInfo::InitializeBuilder()
 {
-	if (Field && Field->HasAllClassFlags(CLASS_Native))
+	UClass* Class = GetField<UClass>();
+	
+	if (Class && Class->HasAllClassFlags(CLASS_Native))
 	{
 		return Field;
 	}
 
-	if (!IsValid(Field) || !IsValid(Field->GetSuperClass()))
+	if (!IsValid(Class) || !IsValid(Class->GetSuperClass()))
 	{
-		UClass* ParentClass = TypeMetaData->ParentClass.GetOwningClass();
+		TSharedPtr<const FCSClassMetaData> ClassMetaData = GetTypeMetaData<FCSClassMetaData>();
+		UClass* ParentClass = ClassMetaData->ParentClass.GetOwningClass();
 
 		if (!ParentClass)
 		{
-			OwningAssembly->AddPendingClass(TypeMetaData->ParentClass, this);
+			OwningAssembly->AddPendingClass(ClassMetaData->ParentClass, this);
 			return nullptr;
 		}
 	}
 
-	return TCSTypeInfo::InitializeBuilder();
+	return FCSManagedTypeInfo::InitializeBuilder();
 }
-

@@ -1,15 +1,18 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
-
 #include "CSManager.h"
+#include "MetaData/CSEnumMetaData.h"
+#include "TypeGenerator/CSEnum.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
-void FCSGeneratedEnumBuilder::RebuildType()
+DEFINE_BUILDER_TYPE(UCSGeneratedEnumBuilder, UCSEnum, FCSEnumMetaData)
+
+void UCSGeneratedEnumBuilder::RebuildType()
 {
 	PurgeEnum();
 
 	if (!Field->HasTypeInfo())
 	{
-		TSharedPtr<FCSEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
+		TSharedPtr<FCSManagedTypeInfo> EnumInfo = GetOwningAssembly()->FindEnumInfo(TypeMetaData->FieldName);
 		Field->SetTypeInfo(EnumInfo);
 	}
 	
@@ -34,14 +37,19 @@ void FCSGeneratedEnumBuilder::RebuildType()
 #endif
 }
 
+UClass* UCSGeneratedEnumBuilder::GetFieldType() const
+{
+	return UCSEnum::StaticClass();
+}
+
 #if WITH_EDITOR
-void FCSGeneratedEnumBuilder::UpdateType()
+void UCSGeneratedEnumBuilder::UpdateType()
 {
 	UCSManager::Get().OnEnumReloadedEvent().Broadcast(Field);
 }
 #endif
 
-void FCSGeneratedEnumBuilder::PurgeEnum() const
+void UCSGeneratedEnumBuilder::PurgeEnum() const
 {
 	Field->DisplayNameMap.Empty();
 	FCSUnrealSharpUtils::PurgeMetaData(Field);

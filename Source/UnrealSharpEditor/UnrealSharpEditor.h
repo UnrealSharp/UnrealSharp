@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #endif
 
+class UCSAssembly;
 struct FPluginTemplateDescription;
 enum ECSLoggerVerbosity : uint8;
 class UCSInterface;
@@ -15,7 +16,6 @@ class UCSEnum;
 class UCSClass;
 class UCSScriptStruct;
 class UCSManager;
-struct FCSAssembly;
 class IAssetTools;
 class FCSScriptBuilder;
 
@@ -141,7 +141,7 @@ private:
     bool bHotReloadFailed = false;
     bool bHasQueuedHotReload = false;
 
-    TSharedPtr<FCSAssembly> EditorAssembly;
+    UCSAssembly* EditorAssembly;
     FTickerDelegate TickDelegate;
     FTSTicker::FDelegateHandle TickDelegateHandle;
     TSharedPtr<FUICommandList> UnrealSharpCommands;

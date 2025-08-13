@@ -1,9 +1,14 @@
 ﻿#include "CSGeneratedDelegateBuilder.h"
 
+#include "CSMetaDataUtils.h"
+#include "MetaData/CSDelegateMetaData.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
+#include "TypeInfo/CSManagedTypeInfo.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
-void FCSGeneratedDelegateBuilder::RebuildType()
+DEFINE_BUILDER_TYPE(UCSGeneratedDelegateBuilder, UDelegateFunction, FCSDelegateMetaData)
+
+void UCSGeneratedDelegateBuilder::RebuildType()
 {
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 	Field->ParmsSize = 0;
@@ -17,4 +22,9 @@ void FCSGeneratedDelegateBuilder::RebuildType()
     FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
+}
+
+UClass* UCSGeneratedDelegateBuilder::GetFieldType() const
+{
+	return UDelegateFunction::StaticClass();
 }

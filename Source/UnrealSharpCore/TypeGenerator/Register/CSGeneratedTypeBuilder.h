@@ -1,71 +1,76 @@
 ﻿#pragma once
 
-#include "CSMetaDataUtils.h"
-#include "CSAssembly.h"
-#include "UObject/Class.h"
-#include "UObject/Field.h"
+#include "CSGeneratedTypeBuilder.generated.h"
 
-template<typename TMetaData, class TField>
-class TCSGeneratedTypeBuilder
+struct FCSManagedTypeInfo;
+class UCSAssembly;
+
+#define DECLARE_BUILDER_TYPE(TypeClass, MetaDataType) \
+virtual void InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo) override; \
+class TypeClass* Field; \
+TSharedPtr<const struct MetaDataType> TypeMetaData; \
+
+#define DEFINE_BUILDER_TYPE(ThisClass, TypeClass, MetaDataType) \
+void ThisClass::InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo) \
+{ \
+	Super::InitializeTypeBuilder(InManagedTypeInfo); \
+	Field = GetField<TypeClass>(); \
+	TypeMetaData = ManagedTypeInfo->GetTypeMetaData<MetaDataType>(); \
+}
+
+UCLASS(Abstract)
+class UCSGeneratedTypeBuilder : public UObject
 {
+	GENERATED_BODY()
 public:
-	
-	virtual ~TCSGeneratedTypeBuilder() = default;
-	
-	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TypeMetaData(InTypeMetaData), Field(nullptr), OwningAssembly(InOwningAssembly)
+
+	virtual void InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo)
 	{
+		ManagedTypeInfo = InManagedTypeInfo;
+		FieldToBuild = CreateType();
 	}
 
-	TCSGeneratedTypeBuilder(TSharedPtr<TMetaData> InTypeMetaData, TField* InField) : TypeMetaData(InTypeMetaData), Field(InField)
-	{
-	}
-
-	TCSGeneratedTypeBuilder() : Field(nullptr)
-	{
-		
-	}
-
-	TField* CreateType()
-	{
-		UPackage* Package = OwningAssembly->GetPackage(TypeMetaData->FieldName.GetNamespace());
-		FName FieldName = GetFieldName();
-
-#if WITH_EDITOR
-		Field = FindObject<TField>(Package, *FieldName.ToString());
-		if (!Field)
-#endif
-		{
-			Field = NewObject<TField>(Package, TField::StaticClass(), FieldName, RF_Public | RF_Standalone);
-		}
-		
-		return Field;
-	}
+	UField* CreateType();
 
 	// Start TCSGeneratedTypeBuilder interface
-	virtual void RebuildType() = 0;
+	virtual void RebuildType() { };
 #if WITH_EDITOR
-	virtual void UpdateType() = 0;
+	virtual void UpdateType() { };
 #endif
-	virtual FName GetFieldName() const
-	{
-		return FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
-	}
+	virtual FName GetFieldName() const;
+	virtual UClass* GetFieldType() const { return nullptr; }
 	// End of interface
+
+	UCSAssembly* GetOwningAssembly() const;
+
+	template<typename TField = UField>
+	TField* GetField() const
+	{
+		static_assert(TIsDerivedFrom<TField, UField>::Value, "T must be a UField-derived type.");
+		return static_cast<TField*>(FieldToBuild);
+	}
+	
+	template<typename TMetaData = FCSTypeReferenceMetaData>
+	TSharedPtr<TMetaData> GetTypeMetaData() const
+	{
+		return ManagedTypeInfo->template GetTypeMetaData<TMetaData>();
+	}
 
 	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)
 	{
-		NotifyRegistrationEvent(*Field->GetOutermost()->GetName(),
-		*Field->GetName(),
+		NotifyRegistrationEvent(*FieldToBuild->GetOutermost()->GetName(),
+		*FieldToBuild->GetName(),
 		RegistrationType,
 		ENotifyRegistrationPhase::NRP_Finished,
 		nullptr,
 		false,
-		Field);
+		FieldToBuild);
 	}
 
 protected:
-	TSharedPtr<const TMetaData> TypeMetaData;
-	TField* Field;
-	TSharedPtr<struct FCSAssembly> OwningAssembly;
+	UPROPERTY(Transient)
+	UField* FieldToBuild;
+	
+	TSharedPtr<const FCSManagedTypeInfo> ManagedTypeInfo;
 };
 
