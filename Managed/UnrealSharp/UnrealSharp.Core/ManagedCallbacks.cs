@@ -4,8 +4,8 @@ namespace UnrealSharp.Core;
 
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct ManagedCallbacks
-{
-    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> ScriptManagerBridge_CreateManagedObject;
+{   
+    public delegate* unmanaged<IntPtr, IntPtr, char**, IntPtr> ScriptManagerBridge_CreateManagedObject;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> ScriptManagerBridge_CreateNewManagedObjectWrapper;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, int> ScriptManagerBridge_InvokeManagedMethod;
     public delegate* unmanaged<IntPtr, void> ScriptManagerBridge_InvokeDelegate;

@@ -34,9 +34,7 @@ public static class Program
     public static ImmutableArray<ProjectDirInfo> PluginDirs { get; private set; }
 
     [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default,
-	    ModuleName = "UnrealSharpCore",
-	    CppFilters = ["*.generated.cs"], HeaderFilters = ["*.generated.cs"],
-	    OtherFilters = ["*.generated.cs"])]
+	    ModuleName = "UnrealSharpCore")]
 	private static void Main(IUhtExportFactory factory)
     {
         Console.WriteLine("Initializing C# Glue Generator...");
@@ -101,13 +99,12 @@ public static class Program
 		BuildingEditor = ScriptGeneratorUtilities.TryGetPluginDefine("BUILDING_EDITOR") == "1";
 
         DirectoryInfo pluginsDir = new DirectoryInfo(PluginsPath);
-        
-        PluginDirs = [
-            ..pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
-                .Where(x => x.Directory!.GetDirectories("Source").Length != 0)
-                .Select(x => new ProjectDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
-                .Where(x => x.GlueProjectName != "UnrealSharp")
-        ];
+
+        PluginDirs = pluginsDir.GetFiles("*.uplugin", SearchOption.AllDirectories)
+		        .Where(x => x.Directory!.GetDirectories("Source").Length != 0)
+		        .Select(x => new ProjectDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
+		        .Where(x => x.GlueProjectName != "UnrealSharp")
+		        .ToImmutableArray();
 	}
     
     private static void CreateGlueProjects()

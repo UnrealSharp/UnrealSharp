@@ -8,7 +8,7 @@ namespace UnrealSharp.Core;
 public static class UnmanagedCallbacks
 {
     [UnmanagedCallersOnly]
-    public static IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandlePtr)
+    public static unsafe IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandlePtr, char** error)
     {
         try
         {
@@ -29,6 +29,7 @@ public static class UnmanagedCallbacks
         catch (Exception ex)
         {
             LogUnrealSharpCore.LogError($"Failed to create new managed object: {ex.Message}");
+            *error = (char*)Marshal.StringToHGlobalUni(ex.ToString());
         }
 
         return IntPtr.Zero;
@@ -241,9 +242,13 @@ public static class UnmanagedCallbacks
     public static void FreeHandle(IntPtr handle)
     {
         GCHandle foundHandle = GCHandle.FromIntPtr(handle);
-        if (foundHandle.IsAllocated)
+        if (!foundHandle.IsAllocated) return;
+        
+        if (foundHandle.Target is IDisposable disposable)
         {
-            foundHandle.Free();
+            disposable.Dispose();
         }
+            
+        foundHandle.Free();
     }
 }
