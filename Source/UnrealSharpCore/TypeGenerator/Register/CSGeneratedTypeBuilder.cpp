@@ -1,14 +1,14 @@
-#include "CSGeneratedClassBuilder.h"
+#include "CSGeneratedTypeBuilder.h"
 #include "CSAssembly.h"
+#include "CSManager.h"
 #include "CSMetaDataUtils.h"
 #include "TypeInfo/CSManagedTypeInfo.h"
 
 UField* UCSGeneratedTypeBuilder::CreateType()
 {
-	UCSAssembly* OwningAssembly = GetOwningAssembly();
 	TSharedPtr<const FCSTypeReferenceMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSTypeReferenceMetaData>();
 	
-	UPackage* Package = OwningAssembly->GetPackage(TypeMetaData->FieldName.GetNamespace());
+	UPackage* Package =  UCSManager::Get().GetPackage(TypeMetaData->FieldName.GetNamespace());
 	FName FieldName = GetFieldName();
 
 #if WITH_EDITOR
@@ -25,6 +25,11 @@ UField* UCSGeneratedTypeBuilder::CreateType()
 		}
 		
 		FieldToBuild = NewObject<UField>(Package, FieldType, FieldName, RF_Public | RF_Standalone);
+	}
+
+	if (ICSManagedTypeInterface* ManagedTypeInterface = Cast<ICSManagedTypeInterface>(FieldToBuild))
+	{
+		ManagedTypeInterface->SetTypeInfo(ManagedTypeInfo);
 	}
 		
 	return FieldToBuild;

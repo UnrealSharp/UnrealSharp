@@ -2,10 +2,17 @@
 
 #include "CSManagedTypeInfo.h"
 
-struct UNREALSHARPCORE_API FCSClassInfo : FCSManagedTypeInfo
+struct UNREALSHARPCORE_API FCSClassInfo final : FCSManagedTypeInfo
 {
-	FCSClassInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InClass);
-	FCSClassInfo(UClass* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
+	FCSClassInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InClass)
+		: FCSManagedTypeInfo(MetaData, InOwningAssembly, InClass)
+	{
+	}
+
+	FCSClassInfo(UField* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle)
+		: FCSManagedTypeInfo(InField, InOwningAssembly, TypeHandle)
+	{
+	}
 
 	// FCSManagedTypeInfo interface implementation
 	virtual UField* InitializeBuilder() override;

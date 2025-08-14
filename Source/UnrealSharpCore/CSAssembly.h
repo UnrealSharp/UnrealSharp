@@ -30,8 +30,6 @@ public:
 	UNREALSHARPCORE_API bool UnloadAssembly();
 	UNREALSHARPCORE_API bool IsValidAssembly() const { return ManagedAssemblyHandle.IsValid() && !ManagedAssemblyHandle->IsNull(); }
 
-	static UPackage* GetPackage(const FCSNamespace Namespace);
-
 	FName GetAssemblyName() const { return AssemblyName; }
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
@@ -39,26 +37,91 @@ public:
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
-	
-	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(UClass* Class);
 
-	TSharedPtr<FCSClassInfo> FindOrAddClassInfo(const FCSFieldName& ClassName);
+	template<typename T = FCSManagedTypeInfo>
+	TSharedPtr<T> FindOrAddTypeInfo(UClass* Field)
+	{
+		if (ICSManagedTypeInterface* ManagedClass = FCSClassUtilities::GetManagedType(Field))
+		{
+			return ManagedClass->GetManagedTypeInfo<T>();
+		}	
 	
-	TSharedPtr<FCSClassInfo> FindClassInfo(const FCSFieldName& ClassName) const { return Classes.FindRef(ClassName); }
-	TSharedPtr<FCSManagedTypeInfo> FindStructInfo(const FCSFieldName& StructName) const { return Structs.FindRef(StructName); }
-	TSharedPtr<FCSManagedTypeInfo> FindEnumInfo(const FCSFieldName& EnumName) const { return Enums.FindRef(EnumName); }
-	TSharedPtr<FCSManagedTypeInfo> FindInterfaceInfo(const FCSFieldName& InterfaceName) const { return Interfaces.FindRef(InterfaceName); }
-	
-	UClass* FindClass(const FCSFieldName& FieldName) const;
-	UScriptStruct* FindStruct(const FCSFieldName& StructName) const;
-	UEnum* FindEnum(const FCSFieldName& EnumName) const;
-	UClass* FindInterface(const FCSFieldName& InterfaceName) const;
-	UDelegateFunction* FindDelegate(const FCSFieldName& DelegateName) const;
+		FCSFieldName FieldName(Field);
+		return FindOrAddTypeInfo<T>(FieldName);
+	}
+
+	template<typename T = FCSManagedTypeInfo>
+	TSharedPtr<T> FindOrAddTypeInfo(const FCSFieldName& ClassName)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindOrAddClassInfo);
+
+		TSharedPtr<FCSManagedTypeInfo>& TypeInfo = AllTypes.FindOrAdd(ClassName);
+
+		// Native types are populated on the go when they are needed for managed code execution.
+		if (!TypeInfo.IsValid())
+		{
+			UField* Field = TryFindField(ClassName);
+
+			if (!IsValid(Field))
+			{
+				UE_LOGFMT(LogUnrealSharp, Error, "Failed to find native class: {0}", *ClassName.GetName());
+				return nullptr;
+			}
+
+			TSharedPtr<FGCHandle> TypeHandle = TryFindTypeHandle(Field);
+
+			if (!TypeHandle.IsValid())
+			{
+				UE_LOGFMT(LogUnrealSharp, Error, "Failed to find type handle for native class: {0}", *ClassName.GetName());
+				return nullptr;
+			}
+
+			TypeInfo = MakeShared<FCSManagedTypeInfo>(Field, this, TypeHandle);
+		}
+
+		if constexpr (std::is_same_v<T, FCSManagedTypeInfo>)
+		{
+			return TypeInfo;
+		}
+		else
+		{
+			return StaticCastSharedPtr<T>(TypeInfo);
+		}
+	}
+
+	template<typename T = FCSManagedTypeInfo>
+	TSharedPtr<T> FindTypeInfo(const FCSFieldName& FieldName) const
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindClassInfo);
+		static_assert(TIsDerivedFrom<T, FCSManagedTypeInfo>::Value, "T must be a FCSManagedTypeInfo-derived type.");
+
+		const TSharedPtr<FCSManagedTypeInfo>* TypeInfo = AllTypes.Find(FieldName);
+		if (TypeInfo && TypeInfo->IsValid())
+		{
+			return StaticCastSharedPtr<T>(*TypeInfo);
+		}
+
+		return nullptr;
+	}
+
+	template<typename T = UField>
+	T* FindType(const FCSFieldName& FieldName) const
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindType);
+		static_assert(TIsDerivedFrom<T, UField>::Value, "T must be a UField-derived type.");
+
+		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
+		if (TypeInfo.IsValid())
+		{
+			return Cast<T>(TypeInfo->InitializeBuilder());
+		}
+
+		return TryFindField<T>(FieldName);
+	}
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
-
-	TSharedPtr<FGCHandle> FindOrCreateManagedObjectWrapper(UObject* Object, UClass* Class);
+	TSharedPtr<FGCHandle> FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
 	// Add a class that is waiting for its parent class to be loaded before it can be created.
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
@@ -72,29 +135,7 @@ private:
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 
-	template<typename Field, typename InfoType>
-	Field* FindFieldFromInfo(const FCSFieldName& EnumName, const TMap<FCSFieldName, TSharedPtr<InfoType>>& Map) const
-	{
-		UField* FoundField;
-		if (TSharedPtr<InfoType> InfoPtr = Map.FindRef(EnumName))
-		{
-			FoundField = InfoPtr->InitializeBuilder();
-		}
-		else
-		{
-			FoundField = TryFindField<Field>(EnumName);
-		}
-
-		if (!FoundField)
-		{
-			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find field: {0}", *EnumName.GetName());
-			return nullptr;
-		}
-	
-		return CastChecked<Field>(FoundField);
-	}
-
-	template<typename T>
+	template<typename T = UField>
 	T* TryFindField(const FCSFieldName FieldName) const
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::TryFindField);
@@ -117,16 +158,12 @@ private:
 	}
 
 	// All Unreal types that are defined in this assembly.
-	TMap<FCSFieldName, TSharedPtr<FCSClassInfo>> Classes;
-	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Structs;
-	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Enums;
-	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Interfaces;
-	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> Delegates;
+	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> AllTypes;
 	
 	// All handles allocated by this assembly. Handles to types, methods, objects.
 	TArray<TSharedPtr<FGCHandle>> AllocatedManagedHandles;
 
-	// Handles to all UClasses types that are defined in this assembly.
+	// Handles to all allocated UTypes (UClass/UStruct, etc) that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
@@ -134,8 +171,11 @@ private:
 
 	// Handle to the Assembly object in C#.
 	TSharedPtr<FGCHandle> ManagedAssemblyHandle;
-	
+
+	// Full path to the assembly file.
 	FString AssemblyPath;
+
+	// Assembly file name without the path.
 	FName AssemblyName;
 
 	bool bIsLoading = false;

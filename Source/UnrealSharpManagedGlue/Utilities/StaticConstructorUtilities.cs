@@ -14,7 +14,7 @@ public static class StaticConstructorUtilities
         Dictionary<string, GetterSetterPair> exportedGetterSetters,
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties,
         List<UhtFunction> overrides,
-        bool isBlittable = false)
+        bool isBlittable = false, string? customStaticConstructorName = null)
     {
         UhtClass? classObj = structObj as UhtClass;
         UhtScriptStruct? scriptStructObj = structObj as UhtScriptStruct;
@@ -88,7 +88,8 @@ public static class StaticConstructorUtilities
             }
         }
         
-        generatorStringBuilder.AppendLine($"static {structName}()");
+        string staticCtorName = customStaticConstructorName != null ? customStaticConstructorName : structName;
+        generatorStringBuilder.AppendLine($"static {staticCtorName}()");
         generatorStringBuilder.OpenBrace();
         
         string type = classObj != null ? "Class" : "Struct";

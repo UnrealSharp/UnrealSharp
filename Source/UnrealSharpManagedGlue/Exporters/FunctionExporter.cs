@@ -35,7 +35,6 @@ public enum FunctionType
     ExtensionOnAnotherClass,
     InternalWhitelisted,
     GetterSetter,
-    Throwing
 };
 
 public enum OverloadMode
@@ -459,18 +458,11 @@ public class FunctionExporter
             overloadMode = OverloadMode.SuppressOverloads;
             blueprintVisibility = EBlueprintVisibility.GetterSetter;
         }
-        else if (functionType == FunctionType.Throwing)
-        {
-            blueprintVisibility = EBlueprintVisibility.Throwing;
-        }
         
         builder.TryAddWithEditor(function);
         FunctionExporter exporter = new FunctionExporter(function);
         exporter.Initialize(overloadMode, protectionMode, blueprintVisibility);
-        if (functionType != FunctionType.Throwing)
-        {
-            exporter.ExportFunctionVariables(builder);
-        }
+        exporter.ExportFunctionVariables(builder);
         exporter.ExportOverloads(builder);
         exporter.ExportFunction(builder);
 
@@ -825,6 +817,7 @@ public class FunctionExporter
         {
             builder.AppendLine($"throw new InvalidOperationException(\"Function {_function.EngineName} cannot be called on a Blueprint-only implementer\");");
         }
+        
         else if (BlueprintEvent)
         {
             builder.AppendLine($"if ({InstanceFunctionPtr} == IntPtr.Zero)");

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 
 class UNREALSHARPCORE_API FCSClassUtilities
@@ -27,6 +28,25 @@ public:
 		return (UCSClass*) Class;
 	}
 	
+	static ICSManagedTypeInterface* GetManagedType(UClass* Class)
+	{
+		for (UClass* It = Class; It; It = It->GetSuperClass())
+		{
+			if (ICSManagedTypeInterface* Managed = Cast<ICSManagedTypeInterface>(It))
+			{
+				return Managed;
+			}
+			
+			if (IsNativeClass(It))
+			{
+				return nullptr;
+			}
+		}
+		
+		return nullptr;
+	}
+
+	
 	static UClass* GetFirstNativeClass(UClass* Class)
 	{
 		while (!IsNativeClass(Class))
@@ -39,7 +59,7 @@ public:
 
 	static UClass* GetFirstNonBlueprintClass(UClass* Class)
 	{
-		while (Class->GetClass() == UBlueprintGeneratedClass::StaticClass())
+		while (Class->GetClass() != UClass::StaticClass() && Class->GetClass() != UCSClass::StaticClass())
 		{
 			Class = Class->GetSuperClass();
 		}

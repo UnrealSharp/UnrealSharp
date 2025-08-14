@@ -1,5 +1,4 @@
 ﻿#include "CSTypeReferenceMetaData.h"
-
 #include "CSManager.h"
 #include "TypeGenerator/Register/CSMetaDataUtils.h"
 
@@ -16,32 +15,32 @@ UCSAssembly* FCSTypeReferenceMetaData::GetOwningAssemblyChecked() const
 
 UClass* FCSTypeReferenceMetaData::GetOwningClass() const
 {
-	return GetOwningAssemblyChecked()->FindClass(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UClass>(FieldName);
 }
 
 UScriptStruct* FCSTypeReferenceMetaData::GetOwningStruct() const
 {
-	return GetOwningAssemblyChecked()->FindStruct(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UScriptStruct>(FieldName);
 }
 
 UEnum* FCSTypeReferenceMetaData::GetOwningEnum() const
 {
-	return GetOwningAssemblyChecked()->FindEnum(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UEnum>(FieldName);
 }
 
 UClass* FCSTypeReferenceMetaData::GetOwningInterface() const
 {
-	return GetOwningAssemblyChecked()->FindInterface(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UClass>(FieldName);
 }
 
 UDelegateFunction* FCSTypeReferenceMetaData::GetOwningDelegate() const
 {
-	return GetOwningAssemblyChecked()->FindDelegate(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UDelegateFunction>(FieldName);
 }
 
 UPackage* FCSTypeReferenceMetaData::GetOwningPackage() const
 {
-	return GetOwningAssemblyChecked()->GetPackage(FieldName.GetNamespace());
+	return UCSManager::Get().GetPackage(FieldName.GetNamespace());
 }
 
 void FCSTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)

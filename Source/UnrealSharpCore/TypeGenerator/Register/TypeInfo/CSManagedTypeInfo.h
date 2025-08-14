@@ -24,6 +24,7 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 	virtual ~FCSManagedTypeInfo() = default;
 	
 	FCSManagedTypeInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InClass);
+	FCSManagedTypeInfo(UField* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
 
 #if WITH_EDITOR
 	TSharedPtr<FGCHandle> GetManagedTypeHandle();

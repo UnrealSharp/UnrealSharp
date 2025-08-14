@@ -27,8 +27,8 @@ public:
 		return ManagedTypeInfo.IsValid();
 	}
 
-	template<typename TTypeInfo>
-	TSharedPtr<TTypeInfo> GetTypeInfo() const
+	template<typename TTypeInfo = FCSManagedTypeInfo>
+	TSharedPtr<TTypeInfo> GetManagedTypeInfo() const
 	{
 		ensureMsgf(ManagedTypeInfo.IsValid(), TEXT("ManagedTypeInfo is not set. Call SetTypeMetaData() first."));
 		return StaticCastSharedPtr<TTypeInfo>(ManagedTypeInfo);
@@ -38,11 +38,6 @@ public:
 	TSharedPtr<TMetaData> GetTypeMetaData() const
 	{
 		return ManagedTypeInfo->GetTypeMetaData<TMetaData>();
-	}
-
-	TSharedPtr<FCSManagedTypeInfo> GetManagedTypeInfo() const
-	{
-		return ManagedTypeInfo;
 	}
 
 	UCSAssembly* GetOwningAssembly() const

@@ -12,12 +12,6 @@ void UCSGeneratedInterfaceBuilder::RebuildType()
 {
 	Field->PurgeClass(true);
 
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSManagedTypeInfo> InterfaceInfo = GetOwningAssembly()->FindInterfaceInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(InterfaceInfo);
-	}
-
 	UClass* ParentInterface = UInterface::StaticClass();
 	if (TypeMetaData->ParentInterface.IsValid())
 	{

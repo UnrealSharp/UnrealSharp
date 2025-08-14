@@ -12,6 +12,7 @@
 #include <vector>
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
+#include "CSUnrealSharpSettings.h"
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
@@ -88,6 +89,21 @@ void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) 
 			return true;
 		}, false);
 	}
+}
+
+UPackage* UCSManager::GetPackage(const FCSNamespace Namespace)
+{
+	UPackage* FoundPackage;
+	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())
+	{
+		FoundPackage = FindOrAddManagedPackage(Namespace);
+	}
+	else
+	{
+		FoundPackage = GetGlobalManagedPackage();
+	}
+
+	return FoundPackage;
 }
 
 bool UCSManager::IsLoadingAnyAssembly() const
@@ -506,8 +522,8 @@ UCSAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool
 UCSAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
-
-	if (ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Class))
+	
+	if (ICSManagedTypeInterface* ManagedType = FCSClassUtilities::GetManagedType(Class))
 	{
 		// Fast access to the owning assembly for managed types.
 		return ManagedType->GetOwningAssembly();
@@ -574,13 +590,7 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 		return FGCHandle::Null();
 	}
 
-	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->CreateManagedObject(Object);
-	if (!FoundHandle.IsValid())
-	{
-		return FGCHandle::Null();
-	}
-
-	return *FoundHandle;
+	return *OwningAssembly->CreateManagedObject(Object);
 }
 
 FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass)
@@ -598,7 +608,7 @@ FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClas
 		return FGCHandle::Null();
 	}
 	
-	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedObjectWrapper(Object, InterfaceClass);
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedInterfaceWrapper(Object, InterfaceClass);
 	if (!FoundHandle.IsValid())
 	{
 		return FGCHandle::Null();

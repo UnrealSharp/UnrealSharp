@@ -31,7 +31,7 @@ void UCSTypeBuilderManager::Initialize()
 	}
 }
 
-UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& ManagedTypeInfo)
+UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo)
 {
 	UClass* TypeClass = ManagedTypeInfo->GetFieldClass();
 

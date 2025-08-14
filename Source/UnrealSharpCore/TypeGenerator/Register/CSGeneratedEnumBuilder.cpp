@@ -9,12 +9,6 @@ DEFINE_BUILDER_TYPE(UCSGeneratedEnumBuilder, UCSEnum, FCSEnumMetaData)
 void UCSGeneratedEnumBuilder::RebuildType()
 {
 	PurgeEnum();
-
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSManagedTypeInfo> EnumInfo = GetOwningAssembly()->FindEnumInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(EnumInfo);
-	}
 	
 	const int32 NumItems = TypeMetaData->Items.Num();
     

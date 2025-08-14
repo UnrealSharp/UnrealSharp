@@ -255,7 +255,7 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 	{
 		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (!IsValid(Assembly))
+		if (IsValid(Assembly))
 		{
 			Assembly->LoadAssembly();
 		}

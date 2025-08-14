@@ -116,6 +116,8 @@ public:
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
 
 	bool IsManagedPackage(const UPackage* Package) const { 	return AllPackages.Contains(Package); }
+	UPackage* GetPackage(const FCSNamespace Namespace);
+
 	bool IsManagedType(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 
 	bool IsLoadingAnyAssembly() const;

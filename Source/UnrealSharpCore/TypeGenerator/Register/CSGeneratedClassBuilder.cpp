@@ -8,6 +8,7 @@
 #include "UnrealSharpCore/TypeGenerator/CSBlueprint.h"
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
+#include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
 #include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
@@ -17,14 +18,13 @@
 
 DEFINE_BUILDER_TYPE(UCSGeneratedClassBuilder, UCSClass, FCSClassMetaData)
 
+UCSGeneratedClassBuilder::UCSGeneratedClassBuilder()
+{
+	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
+}
+
 void UCSGeneratedClassBuilder::RebuildType()
 {
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSClassInfo> ClassInfo = GetOwningAssembly()->FindClassInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(ClassInfo);
-	}
-
 	UClass* CurrentSuperClass = Field->GetSuperClass();
 	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
 	{
@@ -173,7 +173,7 @@ void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	UCSAssembly* Assembly = FirstManagedClass->GetTypeInfo<FCSClassInfo>()->GetOwningAssembly();
+	UCSAssembly* Assembly = FirstManagedClass->GetManagedTypeInfo<FCSClassInfo>()->GetOwningAssembly();
 	Assembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 

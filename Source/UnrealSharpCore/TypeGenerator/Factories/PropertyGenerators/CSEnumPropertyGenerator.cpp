@@ -10,7 +10,7 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	const TSharedPtr<FCSEnumPropertyMetaData> EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSEnumPropertyMetaData>();
 
 	UCSAssembly* Assembly = UCSManager::Get().FindAssembly(EnumPropertyMetaData->InnerProperty.AssemblyName);
-	UEnum* Enum = Assembly->FindEnum(EnumPropertyMetaData->InnerProperty.FieldName);
+	UEnum* Enum = Assembly->FindType<UEnum>(EnumPropertyMetaData->InnerProperty.FieldName);
 
 #if WITH_EDITOR
 	if (UCSEnum* ManagedEnum = Cast<UCSEnum>(Enum))

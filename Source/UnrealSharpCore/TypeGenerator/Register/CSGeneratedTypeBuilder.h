@@ -2,16 +2,17 @@
 
 #include "CSGeneratedTypeBuilder.generated.h"
 
+struct FCSTypeReferenceMetaData;
 struct FCSManagedTypeInfo;
 class UCSAssembly;
 
 #define DECLARE_BUILDER_TYPE(TypeClass, MetaDataType) \
-virtual void InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo) override; \
+virtual void InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo) override; \
 class TypeClass* Field; \
 TSharedPtr<const struct MetaDataType> TypeMetaData; \
 
 #define DEFINE_BUILDER_TYPE(ThisClass, TypeClass, MetaDataType) \
-void ThisClass::InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo) \
+void ThisClass::InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo) \
 { \
 	Super::InitializeTypeBuilder(InManagedTypeInfo); \
 	Field = GetField<TypeClass>(); \
@@ -24,7 +25,7 @@ class UCSGeneratedTypeBuilder : public UObject
 	GENERATED_BODY()
 public:
 
-	virtual void InitializeTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& InManagedTypeInfo)
+	virtual void InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo)
 	{
 		ManagedTypeInfo = InManagedTypeInfo;
 		FieldToBuild = CreateType();
@@ -71,6 +72,6 @@ protected:
 	UPROPERTY(Transient)
 	UField* FieldToBuild;
 	
-	TSharedPtr<const FCSManagedTypeInfo> ManagedTypeInfo;
+	TSharedPtr<FCSManagedTypeInfo> ManagedTypeInfo;
 };
 

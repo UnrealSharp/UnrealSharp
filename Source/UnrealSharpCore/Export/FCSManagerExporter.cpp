@@ -1,6 +1,4 @@
 ﻿#include "FCSManagerExporter.h"
-
-#include "UCoreUObjectExporter.h"
 #include "UnrealSharpCore/CSManager.h"
 
 void* UFCSManagerExporter::FindManagedObject(UObject* Object)

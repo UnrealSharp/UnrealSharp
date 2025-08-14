@@ -10,6 +10,8 @@ class UNREALSHARPCORE_API UCSGeneratedClassBuilder : public UCSGeneratedTypeBuil
 	GENERATED_BODY()
 	DECLARE_BUILDER_TYPE(UCSClass, FCSClassMetaData)
 public:
+	UCSGeneratedClassBuilder();
+	
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType() override;
 #if WITH_EDITOR

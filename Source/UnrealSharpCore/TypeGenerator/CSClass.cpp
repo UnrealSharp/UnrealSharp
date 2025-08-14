@@ -20,6 +20,6 @@ void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 		UE_LOG(LogUnrealSharp, Error, TEXT("PostDuplicate called on a class that is not a UCSClass: %s"), *GetName());
 	}
 	
-	SetTypeInfo(ManagedClass->GetTypeInfo<FCSClassInfo>());
+	SetTypeInfo(ManagedClass->GetManagedTypeInfo<FCSClassInfo>());
 }
 #endif

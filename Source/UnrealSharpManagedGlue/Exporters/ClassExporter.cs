@@ -88,7 +88,7 @@ public static class ClassExporter
         }
     }
     
-    static void ExportGetSetProperties(GeneratorStringBuilder builder, Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties)
+    public static void ExportGetSetProperties(GeneratorStringBuilder builder, Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties)
     {
         Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters = new();
         foreach (KeyValuePair<UhtProperty, GetterSetterPair> pair in getSetBackedProperties)
@@ -122,7 +122,7 @@ public static class ClassExporter
         }
     }
 
-    static void ExportCustomProperties(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    public static void ExportCustomProperties(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> exportedGetterSetters)
     {
         foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
         {

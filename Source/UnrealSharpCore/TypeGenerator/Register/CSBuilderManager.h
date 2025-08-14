@@ -14,7 +14,7 @@ class UCSTypeBuilderManager : public UObject
 public:
 	
 	void Initialize();
-	UCSGeneratedTypeBuilder* BorrowTypeBuilder(const TSharedPtr<const FCSManagedTypeInfo>& ManagedTypeInfo);
+	UCSGeneratedTypeBuilder* BorrowTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo);
 
 private:
 	UPROPERTY(Transient)

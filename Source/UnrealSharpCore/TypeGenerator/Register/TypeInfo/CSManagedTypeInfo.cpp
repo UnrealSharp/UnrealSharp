@@ -11,6 +11,15 @@ FCSManagedTypeInfo::FCSManagedTypeInfo(const TSharedPtr<FCSTypeReferenceMetaData
 
 }
 
+FCSManagedTypeInfo::FCSManagedTypeInfo(UField* InField, UCSAssembly* InOwningAssembly,
+	const TSharedPtr<FGCHandle>& TypeHandle) : FieldClass(nullptr)
+{
+	Field = InField;
+	OwningAssembly = InOwningAssembly;
+	ManagedTypeHandle = TypeHandle;
+	State = UpToDate;
+}
+
 #if WITH_EDITOR
 TSharedPtr<FGCHandle> FCSManagedTypeInfo::GetManagedTypeHandle()
 {

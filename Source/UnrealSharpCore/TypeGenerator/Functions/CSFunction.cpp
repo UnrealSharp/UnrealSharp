@@ -45,7 +45,7 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 	UCSAssembly* Assembly = ManagedClass->GetOwningAssembly();
 	
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
-	TSharedPtr<FCSClassInfo> ClassInfo = ManagedClass->GetTypeInfo<FCSClassInfo>();
+	TSharedPtr<FCSClassInfo> ClassInfo = ManagedClass->GetManagedTypeInfo<FCSClassInfo>();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
 	MethodHandle = Assembly->GetManagedMethod(TypeHandle, InvokeMethodName);

@@ -57,13 +57,26 @@ public static class InterfaceExporter
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine("Object = obj;");
         stringBuilder.CloseBrace();
+
+        if (interfaceObj.SourceName.Contains("EnhancedInput"))
+        {
+            Console.WriteLine("Warning: Exporting IEnhancedInputSubsystemInterface may cause issues with Enhanced Input. Please check the generated code.");
+        }
+
+        StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, interfaceObj,
+            new List<UhtProperty>(),
+            exportedFunctions,
+            exportedGetterSetters,
+            new Dictionary<UhtProperty, GetterSetterPair>(),
+            exportedOverrides, 
+            false, interfaceName + "Wrapper");
         
+        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters);
         ExportWrapperFunctions(stringBuilder, exportedFunctions);
         ExportWrapperFunctions(stringBuilder, exportedOverrides);
         
         stringBuilder.CloseBrace();
         
-
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"public static class {interfaceName}Marshaller");
         stringBuilder.OpenBrace();
@@ -94,14 +107,11 @@ public static class InterfaceExporter
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            if (function.FunctionFlags.HasFlag(EFunctionFlags.BlueprintEvent))
-            {
-                FunctionExporter.ExportFunction(stringBuilder, function, FunctionType.BlueprintEvent);
-            }
-            else
-            {
-                FunctionExporter.ExportFunction(stringBuilder, function, FunctionType.Throwing);
-            }
+            FunctionType functionType = function.FunctionFlags.HasFlag(EFunctionFlags.BlueprintEvent) 
+                ? FunctionType.BlueprintEvent 
+                : FunctionType.Normal;
+            
+            FunctionExporter.ExportFunction(stringBuilder, function, functionType);
         }
     }
 }

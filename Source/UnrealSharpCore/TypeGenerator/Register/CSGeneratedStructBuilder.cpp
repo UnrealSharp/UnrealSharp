@@ -15,12 +15,6 @@ DEFINE_BUILDER_TYPE(UCSGeneratedStructBuilder, UCSScriptStruct, FCSStructMetaDat
 void UCSGeneratedStructBuilder::RebuildType()
 {
 	PurgeStruct();
-
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSManagedTypeInfo> StructInfo = GetOwningAssembly()->FindStructInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(StructInfo);
-	}
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
     FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
