@@ -8,8 +8,8 @@ public record struct NativelyTranslatableStructInfo(string Name, bool HasDestruc
 
 public struct StructTranslationInfo
 {
-    public required ImmutableArray<BlittableStructInfo> BlittableTypes { get; init; }
-    public required ImmutableArray<NativelyTranslatableStructInfo> NativelyTranslatableTypes { get; init; }
+    public ImmutableArray<BlittableStructInfo> BlittableTypes { get; init; }
+    public ImmutableArray<NativelyTranslatableStructInfo> NativelyTranslatableTypes { get; init; }
 }
 
 public record TypeTranslationManifest

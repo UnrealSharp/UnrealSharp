@@ -1,13 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+    
     <Import Project="UnrealSharpManagedGlue.ubtplugin.csproj.props" Condition="Exists('UnrealSharpManagedGlue.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
-    
+
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <UE5RulesProjPath>$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj</UE5RulesProjPath>
     </PropertyGroup>
-    
+
+    <Target Name="ImportUE5RulesDefineConstants"
+            BeforeTargets="CoreCompile"
+            Condition="Exists('$(UE5RulesProjPath)')">
+
+        <XmlPeek XmlInputPath="$(UE5RulesProjPath)"
+                 Query="//Project/PropertyGroup/DefineConstants/text()">
+            <Output TaskParameter="Result" ItemName="UE5Rules_DefineConstants" />
+        </XmlPeek>
+
+        <PropertyGroup>
+            <DefineConstantsJoined>$([System.String]::Join(';', %(UE5Rules_DefineConstants.Identity)))</DefineConstantsJoined>
+            
+            <DefineConstants Condition="'$(DefineConstants)' != '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstants);$(DefineConstantsJoined)
+            </DefineConstants>
+            
+            <DefineConstants Condition="'$(DefineConstants)' == '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstantsJoined)
+            </DefineConstants>
+            
+        </PropertyGroup>
+    </Target>
+
+    <PropertyGroup Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == ''">
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
         <OutputType>Library</OutputType>
@@ -19,6 +49,7 @@
         <Configurations>Debug;Release;Development</Configurations>
         <DebugType>pdbonly</DebugType>
         <Nullable>enable</Nullable>
+
         <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND '$(PackAsTool)' != 'true'">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     </PropertyGroup>
     
@@ -54,45 +85,5 @@
     <ItemGroup>
         <Compile Include="..\..\Managed\Shared\DotNetUtilities.cs" Link="..\..\..\Managed\Shared\DotNetUtilities.cs" />
     </ItemGroup>
-
-    <Target Name="UpdateProjectConstants" BeforeTargets="PrepareForBuild" Condition="Exists('$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj')">
-        <AddUnrealConstants
-                UE5RulesPath="$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj"
-                ProjectConstants="$(DefineConstants)">
-            <Output TaskParameter="Result" PropertyName="DefineConstants" />
-        </AddUnrealConstants>
-    </Target>
-
-    <UsingTask TaskName="AddUnrealConstants"
-               TaskFactory="RoslynCodeTaskFactory"
-               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <UE5RulesPath ParameterType="System.String" Required="true"/>
-            <ProjectConstants ParameterType="System.String" Required="true"/>
-            <Result ParameterType="System.String" Output="true"/>
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System.Xml" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                    var document = new XmlDocument();
-                    document.Load(UE5RulesPath);
-                    
-                    var constantsNode = document.DocumentElement.SelectSingleNode("/Project/PropertyGroup/DefineConstants");
-                    var constantsString = constantsNode?.InnerText;
-                    if(string.IsNullOrWhiteSpace(constantsString)) 
-                    {
-                        Result = ProjectConstants;
-                        return true;
-                    }
-                    
-                    //removing first element "$(DefineConstants)"
-                    var unrealConstants = constantsString.Split(';').Skip(1);
-                    
-                    Result = ProjectConstants + ";" + string.Join(";", unrealConstants);
-                ]]>
-            </Code>
-        </Task>
-    </UsingTask>
     
 </Project>

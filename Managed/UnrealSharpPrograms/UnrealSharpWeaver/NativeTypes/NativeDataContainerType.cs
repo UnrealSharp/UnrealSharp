@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -164,7 +164,10 @@ public class NativeDataContainerType : NativeDataType
     public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
         FieldDefinition? fieldDefinition)
     {
-        
+        ILProcessor processor = BeginSimpleSetter(setter);
+        Instruction loadValue = processor.Create(OpCodes.Ldarg_1);
+        WriteMarshalToNative(processor, type, loadBufferPtr, processor.Create(OpCodes.Ldc_I4_0), loadValue);
+        setter.FinalizeMethod();
     }
 
     public override void WriteLoad(ILProcessor processor, TypeDefinition type, Instruction loadBufferInstruction,

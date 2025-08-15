@@ -1,6 +1,7 @@
 ﻿#include "UnrealSharpUtils.h"
 
 #include "UnrealSharpUtilities.h"
+#include "Logging/StructuredLog.h"
 
 FName FCSUnrealSharpUtils::GetNamespace(const UObject* Object)
 {
@@ -21,6 +22,7 @@ FName FCSUnrealSharpUtils::GetNativeFullName(const UField* Object)
 
 void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 {
+#if WITH_METADATA
 	if (!IsValid(Object))
 	{
 		UE_LOGFMT(LogUnrealSharpUtilities, Error, "Tried to purge metadata of an invalid object");
@@ -28,10 +30,15 @@ void FCSUnrealSharpUtils::PurgeMetaData(const UObject* Object)
 	}
 
 	UPackage* Owner = Object->GetOutermost();
+#if ENGINE_MINOR_VERSION >= 6
 	if (TMap<FName, FString>* MetaData = Owner->GetMetaData().GetMapForObject(Object))
+#else
+	if (TMap<FName, FString>* MetaData = Owner->GetMetaData()->GetMapForObject(Object))
+#endif
 	{
 		MetaData->Empty();
 	}
+#endif
 }
 
 FName FCSUnrealSharpUtils::GetModuleName(const UObject* Object)

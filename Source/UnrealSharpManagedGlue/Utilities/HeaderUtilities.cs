@@ -11,7 +11,7 @@ public static class HeaderUtilities
         #if UE_5_5_OR_LATER
         return header.Module.Packages;
         #else
-        return [header.Package];
+        return new [] { header.Package };
         #endif
     }
 }

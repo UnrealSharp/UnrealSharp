@@ -66,7 +66,9 @@ public static class PackageUtilities
         #if UE_5_5_OR_LATER
         return package.Module.Headers;
         #else
-        return package.Headers;
+        return package.Children
+            .OfType<UhtHeaderFile>()
+            .ToList();
         #endif
     }
 }

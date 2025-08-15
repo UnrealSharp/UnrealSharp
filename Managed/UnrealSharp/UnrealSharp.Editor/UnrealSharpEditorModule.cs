@@ -128,7 +128,8 @@ public static class ManagedUnrealSharpEditorCallbacks
     static unsafe void Weave(char* outputPath, string buildConfiguration)
     {
         List<string> assemblyPaths = new();
-        foreach (Project? projectFile in ProjectCollection.LoadedProjects)
+        foreach (Project? projectFile in ProjectCollection.LoadedProjects
+                     .Where(p => p.GetPropertyValue("ExcludeFromWeaver") != "true"))
         {
             string projectName = Path.GetFileNameWithoutExtension(projectFile.FullPath);
             string assemblyPath = Path.Combine(projectFile.DirectoryPath, "bin",
