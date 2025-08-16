@@ -311,8 +311,7 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::NotifyUObjectDeleted);
 
 	TSharedPtr<FGCHandle> Handle;
-	uint32 ObjectID = Object->GetUniqueID();
-	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID, ObjectID, Handle))
+	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(Index, Index, Handle))
 	{
 		return;
 	}
@@ -329,7 +328,7 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
 	Handle->Dispose(AssemblyHandle->GetHandle());
 
-    TMap<uint32, TSharedPtr<FGCHandle>>* FoundHandles = ManagedInterfaceWrappers.FindByHash(ObjectID, ObjectID);
+    TMap<uint32, TSharedPtr<FGCHandle>>* FoundHandles = ManagedInterfaceWrappers.FindByHash(Index, Index);
 	if (FoundHandles == nullptr)
 	{
 		return;
@@ -341,7 +340,7 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	}
 	
 	FoundHandles->Empty();
-	ManagedInterfaceWrappers.Remove(ObjectID);
+	ManagedInterfaceWrappers.Remove(Index);
 }
 
 void UCSManager::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
