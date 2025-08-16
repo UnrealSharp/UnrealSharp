@@ -30,9 +30,9 @@ void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr
 	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
 	{
 		UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
-		if (UClass* const* RedirectedClass = RedirectClasses.Find(SuperClass))
+		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
 		{
-			SuperClass = *RedirectedClass;
+			SuperClass = RedirectedClass->Get();
 		}
 
 		CurrentSuperClass = SuperClass;

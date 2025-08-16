@@ -35,5 +35,5 @@ private:
 #endif
 	static void CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 	
-	TMap<UClass*, UClass*> RedirectClasses;
+	TMap<TObjectKey<UClass>, TWeakObjectPtr<UClass>> RedirectClasses;
 };
