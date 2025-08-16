@@ -123,7 +123,6 @@ public:
 private:
 	
 	bool ProcessTypeMetadata();
-	void BuildUnrealTypes();
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 
