@@ -10,12 +10,7 @@ UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName
 	FCSFieldName FieldName(InClassName, InNamespace);
 	
 	TSharedPtr<FCSClassInfo> ClassInfo = Assembly->FindOrAddTypeInfo<FCSClassInfo>(FieldName);
-	if (ClassInfo == nullptr)
-	{
-		return nullptr;
-	}
-	
-	return ClassInfo->GetField<UClass>();
+	return ClassInfo->GetFieldChecked<UClass>();
 }
 
 UClass* UUCoreUObjectExporter::GetNativeInterfaceFromName(const char* InAssemblyName, const char* InNamespace, const char* InInterfaceName)

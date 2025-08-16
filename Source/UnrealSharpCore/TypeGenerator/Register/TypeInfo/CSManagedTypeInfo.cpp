@@ -19,12 +19,12 @@ FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwnin
 	Field = TStrongObjectPtr(NativeField);
 	OwningAssembly = InOwningAssembly;
 	ManagedTypeHandle = FindTypeHandle();
-	State = UpToDate;
+	StructureState = UpToDate;
 }
 
-UField* FCSManagedTypeInfo::StartBuildingType()
+UField* FCSManagedTypeInfo::StartBuildingManagedType()
 {
-	if (State == HasChangedStructure)
+	if (StructureState == HasChangedStructure)
 	{
 		UCSTypeBuilderManager* BuilderManager = UCSManager::Get().GetTypeBuilderManager();
 		TSharedPtr<FCSManagedTypeInfo> ThisTypeInfo = SharedThis(this);
@@ -32,9 +32,8 @@ UField* FCSManagedTypeInfo::StartBuildingType()
 		const UCSGeneratedTypeBuilder* TypeBuilder = BuilderManager->BorrowTypeBuilder(ThisTypeInfo);
 		
 		Field = TStrongObjectPtr(TypeBuilder->CreateType(ThisTypeInfo));
-		State = CurrentlyBuilding;
 		TypeBuilder->RebuildType(Field.Get(), ThisTypeInfo);
-		State = UpToDate;
+		StructureState = UpToDate;
 	}
 	
 	ensureMsgf(Field.IsValid(), TEXT("Field is not valid for type: %s. This should never happen."), *GetFieldClass()->GetName());

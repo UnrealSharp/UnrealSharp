@@ -105,7 +105,7 @@ public:
 		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
 		if (TypeInfo.IsValid())
 		{
-			return Cast<T>(TypeInfo->StartBuildingType());
+			return Cast<T>(TypeInfo->StartBuildingManagedType());
 		}
 
 		return TryFindField<T>(FieldName);

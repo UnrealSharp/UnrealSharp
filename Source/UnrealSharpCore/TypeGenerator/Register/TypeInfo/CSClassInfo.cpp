@@ -2,20 +2,19 @@
 #include "CSAssembly.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 
-UField* FCSClassInfo::StartBuildingType()
+UField* FCSClassInfo::StartBuildingManagedType()
 {
-	UClass* Class = GetField<UClass>();
-	if (!IsValid(Class) || !IsValid(Class->GetSuperClass()))
+	if (!Field.IsValid())
 	{
 		TSharedPtr<const FCSClassMetaData> ClassMetaData = GetTypeMetaData<FCSClassMetaData>();
 		UClass* ParentClass = ClassMetaData->ParentClass.GetOwningClass();
 
-		if (!ParentClass)
+		if (!IsValid(ParentClass))
 		{
 			OwningAssembly->AddPendingClass(ClassMetaData->ParentClass, this);
 			return nullptr;
 		}
 	}
 
-	return FCSManagedTypeInfo::StartBuildingType();
+	return FCSManagedTypeInfo::StartBuildingManagedType();
 }

@@ -5,11 +5,10 @@ class UCSAssembly;
 struct FGCHandle;
 struct FCSTypeReferenceMetaData;
 
-enum ETypeState : uint8
+enum ECSStructureState : uint8
 {
 	UpToDate,
 	HasChangedStructure,
-	CurrentlyBuilding,
 };
 
 struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeInfo>
@@ -32,10 +31,9 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 	}
 	
 	template<typename TField = UField>
-	TField* GetField() const
+	TField* GetFieldChecked() const
 	{
-		static_assert(TIsDerivedFrom<TField, UField>::Value, "T must be a UField-derived type.");
-		return static_cast<TField*>(Field.Get());
+		return CastChecked<TField>(Field.Get());
 	}
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>
@@ -47,22 +45,22 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 
 	UCSAssembly* GetOwningAssembly() const { return OwningAssembly.Get(); }
 
-	void SetState(ETypeState NewState) { State = NewState; }
-	ETypeState GetState() const { return State; }
+	void SetStructureState(ECSStructureState NewState) { StructureState = NewState; }
+	ECSStructureState GetStructureState() const { return StructureState; }
 
 	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
 
 	UClass* GetFieldClass() const { return FieldClass.Get(); }
 
 	bool IsNativeType() const { return !TypeMetaData.IsValid(); }
-	
-	// FCSManagedTypeInfo interface
-	virtual UField* StartBuildingType();
-	// End
 
 protected:
 
 	friend UCSAssembly;
+
+	// FCSManagedTypeInfo interface
+	virtual UField* StartBuildingManagedType();
+	// End
 
 	// Pointer to the native field of this type.
 	TStrongObjectPtr<UField> Field;
@@ -74,8 +72,8 @@ protected:
 	// The metadata for this type (properties, functions et.c.)
 	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData;
 
-	// Current state of the type, mainly used for hot reloading
-	ETypeState State = ETypeState::HasChangedStructure;
+	// Current state of the structure of this type. This changes when new UProperties/UFunctions/metadata are added or removed.
+	ECSStructureState StructureState = HasChangedStructure;
 
 	// Handle to the managed type in the C# assembly.
 	TSharedPtr<FGCHandle> ManagedTypeHandle;

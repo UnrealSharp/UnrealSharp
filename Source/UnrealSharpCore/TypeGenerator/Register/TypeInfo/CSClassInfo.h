@@ -15,6 +15,6 @@ struct UNREALSHARPCORE_API FCSClassInfo final : FCSManagedTypeInfo
 	}
 
 	// FCSManagedTypeInfo interface implementation
-	virtual UField* StartBuildingType() override;
+	virtual UField* StartBuildingManagedType() override;
 	// End of implementation
 };

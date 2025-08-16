@@ -66,7 +66,7 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 	{
 		for (const TPair<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>>& NameToTypeInfo : AllTypes)
 		{
-			NameToTypeInfo.Value->StartBuildingType();
+			NameToTypeInfo.Value->StartBuildingManagedType();
 		}
 	}
 
@@ -96,11 +96,11 @@ void RegisterMetaData(UCSAssembly* OwningAssembly, const TSharedPtr<FJsonValue>&
 		MetaDataType NewMeta;
 		NewMeta.SerializeFromJson(MetaDataObject);
 
-		if (ExistingValue->GetState() == HasChangedStructure || NewMeta != *ExistingValue->GetTypeMetaData<MetaDataType>())
+		if (ExistingValue->GetStructureState() == HasChangedStructure || NewMeta != *ExistingValue->GetTypeMetaData<MetaDataType>())
 		{
 			TSharedPtr<MetaDataType> MetaDataPtr = MakeShared<MetaDataType>(NewMeta);
 			ExistingValue->SetTypeMetaData(MetaDataPtr);
-			ExistingValue->SetState(HasChangedStructure);
+			ExistingValue->SetStructureState(HasChangedStructure);
 			
 			if (OnRebuild)
 			{
@@ -176,7 +176,7 @@ bool UCSAssembly::ProcessTypeMetadata()
          {
              // Structure has been changed. We must trigger full reload on all managed classes that derive from this class.
              TArray<UClass*> DerivedClasses;
-             GetDerivedClasses(ClassInfo->GetField<UClass>(), DerivedClasses);
+             GetDerivedClasses(ClassInfo->GetFieldChecked<UClass>(), DerivedClasses);
 
              for (UClass* DerivedClass : DerivedClasses)
              {
@@ -187,7 +187,7 @@ bool UCSAssembly::ProcessTypeMetadata()
 
                  UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
                  TSharedPtr<FCSClassInfo> ChildClassInfo = ManagedClass->GetManagedTypeInfo<FCSClassInfo>();
-                 ChildClassInfo->SetState(HasChangedStructure);
+                 ChildClassInfo->SetStructureState(HasChangedStructure);
              }
          });
 	}
@@ -365,7 +365,7 @@ void UCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InMod
 
 		for (FCSClassInfo* PendingClass : Itr.Value())
 		{
-			PendingClass->StartBuildingType();
+			PendingClass->StartBuildingManagedType();
 		}
 
 		Itr.RemoveCurrent();
