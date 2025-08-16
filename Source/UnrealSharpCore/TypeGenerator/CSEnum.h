@@ -1,16 +1,15 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "CSManagedTypeInterface.h"
 #include "ManagedReferencesCollection.h"
 #include "Engine/UserDefinedEnum.h"
-#include "Utils/CSMacros.h"
 #include "CSEnum.generated.h"
 
 UCLASS(MinimalAPI)
-class UCSEnum : public UUserDefinedEnum
+class UCSEnum : public UUserDefinedEnum, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
-	DECLARE_CSHARP_TYPE_FUNCTIONS(FCSEnumInfo)
 public:
 	
 	// UEnum interface

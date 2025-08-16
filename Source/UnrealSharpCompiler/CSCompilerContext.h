@@ -1,6 +1,7 @@
 #pragma once
 #include "KismetCompiler.h"
 
+struct FCSClassMetaData;
 struct FCSPropertyMetaData;
 struct FCSClassInfo;
 class UCSClass;
@@ -26,7 +27,9 @@ private:
 	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const;
 	void GenerateFunctions() const;
 	UCSClass* GetMainClass() const;
+	
 	TSharedPtr<const FCSClassInfo> GetClassInfo() const;
+	TSharedPtr<const FCSClassMetaData> GetTypeMetaData() const;
 
 	bool IsDeveloperSettings() const;
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;

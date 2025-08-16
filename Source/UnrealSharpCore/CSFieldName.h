@@ -6,7 +6,7 @@ struct UNREALSHARPCORE_API FCSFieldName
 {
 	FCSFieldName() = default;
 	FCSFieldName(FName Name, FName Namespace) : Name(Name), Namespace(Namespace) {}
-	FCSFieldName(UClass* Class);
+	FCSFieldName(UField* Field);
 
 	FName GetFName() const { return Name; }
 	FString GetName() const { return Name.ToString(); }

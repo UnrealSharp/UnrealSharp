@@ -26,11 +26,8 @@ public class AttributeBuilder
         AddAttribute("GeneratedType");
         AddArgument($"\"{type.EngineName}\"");
         
-        if (type.EngineType is UhtEngineType.Enum or UhtEngineType.ScriptStruct or UhtEngineType.Class)
-        {
-            string fullName = type.GetNamespace() + "." + type.EngineName;
-            AddArgument($"\"{fullName}\"");
-        }
+        string fullName = type.GetNamespace() + "." + type.EngineName;
+        AddArgument($"\"{fullName}\"");
     }
     
     public void AddIsBlittableAttribute()

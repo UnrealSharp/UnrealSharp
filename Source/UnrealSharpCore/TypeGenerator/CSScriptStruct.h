@@ -6,15 +6,13 @@
 #include "Engine/UserDefinedStruct.h"
 #endif
 #include "ManagedReferencesCollection.h"
-#include "Utils/CSMacros.h"
-
+#include "CSManagedTypeInterface.h"
 #include "CSScriptStruct.generated.h"
 
 UCLASS(MinimalAPI)
-class UCSScriptStruct : public UUserDefinedStruct
+class UCSScriptStruct : public UUserDefinedStruct, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
-	DECLARE_CSHARP_TYPE_FUNCTIONS(FCSStructInfo);
 public:
 	
 	void RecreateDefaults() { DefaultStructInstance.Recreate(this); }

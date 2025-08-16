@@ -1,10 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "FOptionalPropertyExporter.h"
-
+﻿#include "FOptionalPropertyExporter.h"
 #include "UObject/PropertyOptional.h"
-
 
 bool UFOptionalPropertyExporter::IsSet(FOptionalProperty* OptionalProperty, const void* ScriptValue)
 {

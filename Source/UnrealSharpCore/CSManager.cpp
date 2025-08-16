@@ -12,8 +12,11 @@
 #include <vector>
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
+#include "CSUnrealSharpSettings.h"
 #include "Logging/StructuredLog.h"
+#include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
+#include "TypeGenerator/Register/CSBuilderManager.h"
 #include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "Utils/CSClassUtilities.h"
 
@@ -88,12 +91,27 @@ void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) 
 	}
 }
 
+UPackage* UCSManager::GetPackage(const FCSNamespace Namespace)
+{
+	UPackage* FoundPackage;
+	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())
+	{
+		FoundPackage = FindOrAddManagedPackage(Namespace);
+	}
+	else
+	{
+		FoundPackage = GetGlobalManagedPackage();
+	}
+
+	return FoundPackage;
+}
+
 bool UCSManager::IsLoadingAnyAssembly() const
 {
-	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& LoadedAssembly : LoadedAssemblies)
+	for (const TPair<FName, TObjectPtr<UCSAssembly>>& LoadedAssembly : LoadedAssemblies)
 	{
-		TSharedPtr<FCSAssembly> AssemblyPtr = LoadedAssembly.Value;
-		if (AssemblyPtr.IsValid() && AssemblyPtr->IsLoading())
+		UCSAssembly* AssemblyPtr = LoadedAssembly.Value;
+		if (IsValid(AssemblyPtr) && AssemblyPtr->IsLoading())
 		{
 			return true;
 		}
@@ -156,6 +174,9 @@ void UCSManager::Initialize()
 	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
 	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 #endif
+
+	TypeBuilderManager = NewObject<UCSTypeBuilderManager>(this);
+	TypeBuilderManager->Initialize();
 
 	GUObjectArray.AddUObjectDeleteListener(this);
 
@@ -296,8 +317,8 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 		return;
 	}
 
-	TSharedPtr<FCSAssembly> Assembly = FindOwningAssembly(Object->GetClass());
-	if (!Assembly.IsValid())
+	UCSAssembly* Assembly = FindOwningAssembly(Object->GetClass());
+	if (!IsValid(Assembly))
 	{
 		FString ObjectName = Object->GetFName().ToString();
 		FString ClassName = Object->GetClass()->GetFName().ToString();
@@ -307,6 +328,20 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 
 	TSharedPtr<const FGCHandle> AssemblyHandle = Assembly->GetManagedAssemblyHandle();
 	Handle->Dispose(AssemblyHandle->GetHandle());
+
+    TMap<uint32, TSharedPtr<FGCHandle>>* FoundHandles = ManagedInterfaceWrappers.FindByHash(ObjectID, ObjectID);
+	if (FoundHandles == nullptr)
+	{
+		return;
+	}
+
+	for (auto &[Key, Value] : *FoundHandles)
+	{
+		Value->Dispose(AssemblyHandle->GetHandle());
+	}
+	
+	FoundHandles->Empty();
+	ManagedInterfaceWrappers.Remove(ObjectID);
 }
 
 void UCSManager::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
@@ -439,9 +474,26 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() con
 	return (load_assembly_and_get_function_pointer_fn)LoadAssemblyAndGetFunctionPointer;
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
+UCSAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
 {
-	TSharedPtr<FCSAssembly> NewAssembly = MakeShared<FCSAssembly>(AssemblyPath);
+	if (!FPaths::FileExists(AssemblyPath))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Assembly path does not exist: %s"), *AssemblyPath);
+		return nullptr;
+	}
+
+	FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
+	UCSAssembly* ExistingAssembly = FindAssembly(FName(*AssemblyName));
+	
+	if (IsValid(ExistingAssembly) && ExistingAssembly->IsValidAssembly())
+	{
+		UE_LOGFMT(LogUnrealSharp, Display, "Assembly {AssemblyName} is already loaded.", *AssemblyName);
+		return ExistingAssembly;
+	}
+	
+	UCSAssembly* NewAssembly = NewObject<UCSAssembly>(this, *AssemblyName);
+	NewAssembly->SetAssemblyPath(AssemblyPath);
+	
 	LoadedAssemblies.Add(NewAssembly->GetAssemblyName(), NewAssembly);
 
 	if (!NewAssembly->LoadAssembly(bIsCollectible))
@@ -451,38 +503,37 @@ TSharedPtr<FCSAssembly> UCSManager::LoadAssemblyByPath(const FString& AssemblyPa
 
 	OnManagedAssemblyLoaded.Broadcast(NewAssembly->GetAssemblyName());
 
-	UE_LOG(LogUnrealSharp, Display, TEXT("Successfully loaded AssemblyHandle with path %s."), *AssemblyPath);
+	UE_LOGFMT(LogUnrealSharp, Display, "Successfully loaded AssemblyHandle with path {AssemblyPath}.", *AssemblyPath);
 	return NewAssembly;
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible)
+UCSAssembly* UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
 	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetUserAssemblyDirectory(), AssemblyName.ToString() + ".dll");
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-TSharedPtr<FCSAssembly> UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible)
+UCSAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
 	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetPluginAssembliesPath(), AssemblyName.ToString() + ".dll");
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
-TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
+UCSAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
-
-	if (UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(Class))
-	{
-		// Fast access to the owning assembly for managed classes.
-		return FirstManagedClass->GetTypeInfo()->OwningAssembly;
-	}
 	
+	if (ICSManagedTypeInterface* ManagedType = FCSClassUtilities::GetManagedType(Class))
+	{
+		// Fast access to the owning assembly for managed types.
+		return ManagedType->GetOwningAssembly();
+	}
+
 	Class = FCSClassUtilities::GetFirstNativeClass(Class);
-
 	uint32 ClassID = Class->GetUniqueID();
-	TSharedPtr<FCSAssembly>& Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
+	TObjectPtr<UCSAssembly> Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
 
-	if (Assembly.IsValid())
+	if (IsValid(Assembly))
 	{
 		return Assembly;
 	}
@@ -490,7 +541,7 @@ TSharedPtr<FCSAssembly> UCSManager::FindOwningAssembly(UClass* Class)
 	// Slow path for native classes. This runs once per new native class.
 	FCSFieldName ClassName = FCSFieldName(Class);
 
-	for (const TTuple<FName, TSharedPtr<FCSAssembly>>& LoadedAssembly : LoadedAssemblies)
+	for (TPair<FName, TObjectPtr<UCSAssembly>>& LoadedAssembly : LoadedAssemblies)
 	{
 		TSharedPtr<FGCHandle> TypeHandle = LoadedAssembly.Value->TryFindTypeHandle(ClassName);
 
@@ -532,14 +583,32 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 	}
 
 	// No existing handle found, we need to create a new managed object.
-	TSharedPtr<FCSAssembly> OwningAssembly = FindOwningAssembly(Object->GetClass());
-	if (!OwningAssembly.IsValid())
+	UCSAssembly* OwningAssembly = FindOwningAssembly(Object->GetClass());
+	if (!IsValid(OwningAssembly))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *Object->GetName());
 		return FGCHandle::Null();
 	}
 
-	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->CreateManagedObject(Object);
+	return *OwningAssembly->CreateManagedObject(Object);
+}
+
+FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass)
+{
+	if (!Object->GetClass()->ImplementsInterface(InterfaceClass))
+	{
+		return FGCHandle::Null();
+	}
+
+	// No existing handle found, we need to create a new managed object.
+	UCSAssembly* OwningAssembly = FindOwningAssembly(InterfaceClass);
+	if (!IsValid(OwningAssembly))
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *InterfaceClass->GetName());
+		return FGCHandle::Null();
+	}
+	
+	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->FindOrCreateManagedInterfaceWrapper(Object, InterfaceClass);
 	if (!FoundHandle.IsValid())
 	{
 		return FGCHandle::Null();

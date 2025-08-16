@@ -2,7 +2,7 @@
 
 #include "CSFieldName.h"
 
-struct FCSAssembly;
+class UCSAssembly;
 
 struct FCSTypeReferenceMetaData
 {
@@ -12,7 +12,7 @@ struct FCSTypeReferenceMetaData
 	FCSFieldName FieldName;
 	FName AssemblyName;
 
-	TSharedPtr<FCSAssembly> GetOwningAssemblyChecked() const;
+	UCSAssembly* GetOwningAssemblyChecked() const;
 	
 	UClass* GetOwningClass() const;
 	UScriptStruct* GetOwningStruct() const;
