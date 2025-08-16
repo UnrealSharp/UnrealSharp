@@ -26,8 +26,7 @@ void UCSTypeBuilderManager::Initialize()
 		}
 
 		UCSGeneratedTypeBuilder* NewBuilder = NewObject<UCSGeneratedTypeBuilder>(this, Builder->GetClass(), NAME_None, RF_Transient | RF_Public);
-		uint32 TypeClassID = Builder->GetFieldType()->GetUniqueID();
-		TypeBuilders.AddByHash(TypeClassID, TypeClassID, NewBuilder);
+		TypeBuilders.Add(NewBuilder);
 	}
 }
 
@@ -40,11 +39,15 @@ const UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TS
 		UE_LOG(LogUnrealSharp, Warning, TEXT("Invalid type class for managed type info"));
 		return nullptr;
 	}
-
-	uint32 TypeClassID = TypeClass->GetUniqueID();
-	if (TObjectPtr<UCSGeneratedTypeBuilder>* ExistingBuilder = TypeBuilders.FindByHash(TypeClassID, TypeClassID))
+	
+	for (UCSGeneratedTypeBuilder* Builder : TypeBuilders)
 	{
-		return *ExistingBuilder;
+		if (Builder->GetFieldType() != TypeClass)
+		{
+			continue;
+		}
+
+		return Builder;
 	}
 
 	UE_LOG(LogUnrealSharp, Warning, TEXT("No type builder found for class: %s"), *TypeClass->GetName());

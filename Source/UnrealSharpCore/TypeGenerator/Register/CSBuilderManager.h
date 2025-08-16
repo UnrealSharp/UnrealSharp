@@ -7,6 +7,7 @@
 struct FCSManagedTypeInfo;
 class UCSGeneratedTypeBuilder;
 
+
 UCLASS()
 class UCSTypeBuilderManager : public UObject
 {
@@ -18,5 +19,5 @@ public:
 
 private:
 	UPROPERTY(Transient)
-	TMap<uint32, TObjectPtr<UCSGeneratedTypeBuilder>> TypeBuilders;
+	TArray<TObjectPtr<UCSGeneratedTypeBuilder>> TypeBuilders;
 };
