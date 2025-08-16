@@ -24,7 +24,7 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 		if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
 		{
 			// Lazy load the type handle in editor if it is not already set.
-			return FindTypeHandle();
+			ManagedTypeHandle = FindTypeHandle();
 		}
 #endif
 		return ManagedTypeHandle;
