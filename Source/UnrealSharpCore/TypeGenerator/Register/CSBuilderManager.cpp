@@ -31,7 +31,7 @@ void UCSTypeBuilderManager::Initialize()
 	}
 }
 
-UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo)
+const UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo)
 {
 	UClass* TypeClass = ManagedTypeInfo->GetFieldClass();
 
@@ -44,9 +44,6 @@ UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedP
 	uint32 TypeClassID = TypeClass->GetUniqueID();
 	if (TObjectPtr<UCSGeneratedTypeBuilder>* ExistingBuilder = TypeBuilders.FindByHash(TypeClassID, TypeClassID))
 	{
-		UCSGeneratedTypeBuilder* Builder = *ExistingBuilder;
-		Builder->InitializeTypeBuilder(ManagedTypeInfo);
-		
 		return *ExistingBuilder;
 	}
 

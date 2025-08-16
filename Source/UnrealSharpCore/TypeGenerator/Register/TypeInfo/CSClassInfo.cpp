@@ -1,17 +1,10 @@
 #include "CSClassInfo.h"
 #include "CSAssembly.h"
-#include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 
-UField* FCSClassInfo::InitializeBuilder()
+UField* FCSClassInfo::StartBuildingType()
 {
 	UClass* Class = GetField<UClass>();
-	
-	if (Class && Class->HasAllClassFlags(CLASS_Native))
-	{
-		return Field;
-	}
-
 	if (!IsValid(Class) || !IsValid(Class->GetSuperClass()))
 	{
 		TSharedPtr<const FCSClassMetaData> ClassMetaData = GetTypeMetaData<FCSClassMetaData>();
@@ -24,5 +17,5 @@ UField* FCSClassInfo::InitializeBuilder()
 		}
 	}
 
-	return FCSManagedTypeInfo::InitializeBuilder();
+	return FCSManagedTypeInfo::StartBuildingType();
 }

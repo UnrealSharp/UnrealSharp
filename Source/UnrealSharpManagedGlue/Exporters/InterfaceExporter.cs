@@ -58,11 +58,6 @@ public static class InterfaceExporter
         stringBuilder.AppendLine("Object = obj;");
         stringBuilder.CloseBrace();
 
-        if (interfaceObj.SourceName.Contains("EnhancedInput"))
-        {
-            Console.WriteLine("Warning: Exporting IEnhancedInputSubsystemInterface may cause issues with Enhanced Input. Please check the generated code.");
-        }
-
         StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, interfaceObj,
             new List<UhtProperty>(),
             exportedFunctions,

@@ -2,73 +2,57 @@
 #include "CSManager.h"
 #include "TypeGenerator/Register/CSBuilderManager.h"
 #include "TypeGenerator/Register/CSGeneratedTypeBuilder.h"
-#include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
 
 FCSManagedTypeInfo::FCSManagedTypeInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData,
-	UCSAssembly* InOwningAssembly, UClass* InClass): Field(nullptr), FieldClass(InClass), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
+	UCSAssembly* InOwningAssembly, UClass* InTypeClass): Field(nullptr), FieldClass(InTypeClass), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
 {
-
+	// TODO: Not great, but does the job for now.
+	if (FieldClass.Get() != UDelegateFunction::StaticClass())
+	{
+		ManagedTypeHandle = FindTypeHandle();
+	}
 }
 
-FCSManagedTypeInfo::FCSManagedTypeInfo(UField* InField, UCSAssembly* InOwningAssembly,
-	const TSharedPtr<FGCHandle>& TypeHandle) : FieldClass(nullptr)
+FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly) : FieldClass(nullptr)
 {
-	Field = InField;
+	Field = TStrongObjectPtr(NativeField);
 	OwningAssembly = InOwningAssembly;
-	ManagedTypeHandle = TypeHandle;
+	ManagedTypeHandle = FindTypeHandle();
 	State = UpToDate;
 }
 
-#if WITH_EDITOR
-TSharedPtr<FGCHandle> FCSManagedTypeInfo::GetManagedTypeHandle()
+UField* FCSManagedTypeInfo::StartBuildingType()
 {
-	if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
+	if (State == HasChangedStructure)
 	{
-		// Lazy load the type handle in editor. Gets null during hot reload.
-		FCSFieldName FieldName = UCSManager::Get().IsManagedType(Field) ? TypeMetaData->FieldName : FCSFieldName(Field);
-		ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(FieldName);
-
-		if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
-		{
-			UE_LOGFMT(LogUnrealSharp, Error, "Failed to find type handle for class: {0}", *FieldName.GetFullName().ToString());
-			return nullptr;
-		}
+		UCSTypeBuilderManager* BuilderManager = UCSManager::Get().GetTypeBuilderManager();
+		TSharedPtr<FCSManagedTypeInfo> ThisTypeInfo = SharedThis(this);
+		
+		const UCSGeneratedTypeBuilder* TypeBuilder = BuilderManager->BorrowTypeBuilder(ThisTypeInfo);
+		
+		Field = TStrongObjectPtr(TypeBuilder->CreateType(ThisTypeInfo));
+		State = CurrentlyBuilding;
+		TypeBuilder->RebuildType(Field.Get(), ThisTypeInfo);
+		State = UpToDate;
 	}
-	return ManagedTypeHandle;
+	
+	ensureMsgf(Field.IsValid(), TEXT("Field is not valid for type: %s. This should never happen."), *GetFieldClass()->GetName());
+	return Field.Get();
 }
-#endif
 
-UField* FCSManagedTypeInfo::InitializeBuilder()
+TSharedPtr<FGCHandle> FCSManagedTypeInfo::FindTypeHandle() const
 {
-	if (Field && (State == UpToDate || State == CurrentlyBuilding))
-	{
-		// No need to rebuild or update
-		return Field;
-	}
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSManagedTypeInfo::FindTypeHandle);
 	
-	UCSTypeBuilderManager* BuilderManager = UCSManager::Get().GetTypeBuilderManager();
-	UCSGeneratedTypeBuilder* TypeBuilder = BuilderManager->BorrowTypeBuilder(SharedThis(this));
-	
-	Field = TypeBuilder->CreateType();
-		
-	if (State == NeedRebuild)
+	FCSFieldName FieldName = IsNativeType() ? FCSFieldName(Field.Get()) : TypeMetaData->FieldName;
+	TSharedPtr<FGCHandle> TypeHandle = OwningAssembly->TryFindTypeHandle(FieldName);
+
+	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
 	{
-		State = CurrentlyBuilding;
-		TypeBuilder->RebuildType();
-		
-#if WITH_EDITOR
-		FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
-#endif
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find type handle for class: {0}", *FieldName.GetFullName().ToString());
+		return nullptr;
 	}
-#if WITH_EDITOR
-	else if (State == NeedUpdate)
-	{
-		State = CurrentlyBuilding;
-		TypeBuilder->UpdateType();
-	}
-#endif
-	
-	State = UpToDate;
-	return Field;
+
+	return TypeHandle;
 }

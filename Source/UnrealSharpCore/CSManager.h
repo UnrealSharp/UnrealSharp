@@ -98,11 +98,6 @@ public:
 	FCSInterfaceEvent& OnNewInterfaceEvent() { return OnNewInterface; }
 	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
 
-	FCSInterfaceEvent& OnInterfaceReloadedEvent() { return OnInterfaceReloaded; }
-	FCSClassEvent& OnClassReloadedEvent() { return OnClassReloaded; }
-	FCSStructEvent& OnStructReloadedEvent() { return OnStructReloaded; }
-	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
-
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 #endif
 
@@ -187,11 +182,6 @@ private:
 	FCSStructEvent OnNewStruct;
 	FCSInterfaceEvent OnNewInterface;
 	FCSEnumEvent OnNewEnum;
-
-	FCSClassEvent OnClassReloaded;
-	FCSStructEvent OnStructReloaded;
-	FCSInterfaceEvent OnInterfaceReloaded;
-	FCSEnumEvent OnEnumReloaded;
 
 	FSimpleMulticastDelegate OnProcessedPendingClasses;
 #endif

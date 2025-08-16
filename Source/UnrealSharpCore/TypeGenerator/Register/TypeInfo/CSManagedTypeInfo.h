@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "CSManagedGCHandle.h"
 
 class UCSAssembly;
 struct FGCHandle;
@@ -6,16 +7,8 @@ struct FCSTypeReferenceMetaData;
 
 enum ETypeState : uint8
 {
-	// The type is up to date. No need to rebuild or update.
 	UpToDate,
-
-	// The type needs to be rebuilt. The structure has changed.
-	NeedRebuild,
-
-	// The type just needs to be updated. New method ptr et.c.
-	NeedUpdate,
-
-	// This type is currently being built. Used to prevent circular dependencies.
+	HasChangedStructure,
 	CurrentlyBuilding,
 };
 
@@ -23,23 +16,26 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 {
 	virtual ~FCSManagedTypeInfo() = default;
 	
-	FCSManagedTypeInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InClass);
-	FCSManagedTypeInfo(UField* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle);
-
-#if WITH_EDITOR
-	TSharedPtr<FGCHandle> GetManagedTypeHandle();
-#else
+	FCSManagedTypeInfo(const TSharedPtr<FCSTypeReferenceMetaData>& MetaData, UCSAssembly* InOwningAssembly, UClass* InTypeClass);
+	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
+	
 	TSharedPtr<FGCHandle> GetManagedTypeHandle()
 	{
+#if WITH_EDITOR
+		if (!ManagedTypeHandle.IsValid() || ManagedTypeHandle->IsNull())
+		{
+			// Lazy load the type handle in editor if it is not already set.
+			return FindTypeHandle();
+		}
+#endif
 		return ManagedTypeHandle;
 	}
-#endif
 	
 	template<typename TField = UField>
 	TField* GetField() const
 	{
 		static_assert(TIsDerivedFrom<TField, UField>::Value, "T must be a UField-derived type.");
-		return static_cast<TField*>(Field);
+		return static_cast<TField*>(Field.Get());
 	}
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>
@@ -56,10 +52,12 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 
 	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
 
-	UClass* GetFieldClass() const { return FieldClass; }
+	UClass* GetFieldClass() const { return FieldClass.Get(); }
+
+	bool IsNativeType() const { return !TypeMetaData.IsValid(); }
 	
 	// FCSManagedTypeInfo interface
-	virtual UField* InitializeBuilder();
+	virtual UField* StartBuildingType();
 	// End
 
 protected:
@@ -67,18 +65,21 @@ protected:
 	friend UCSAssembly;
 
 	// Pointer to the native field of this type.
-	UField* Field;
-	UClass* FieldClass;
+	TStrongObjectPtr<UField> Field;
+	TStrongObjectPtr<UClass> FieldClass;
 
-	// The managed assembly that has this type
+	// The managed assembly that owns this type.
 	TWeakObjectPtr<UCSAssembly> OwningAssembly;
 	
 	// The metadata for this type (properties, functions et.c.)
 	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData;
 
-	// Current state of the type
-	ETypeState State = ETypeState::NeedRebuild;
+	// Current state of the type, mainly used for hot reloading
+	ETypeState State = ETypeState::HasChangedStructure;
 
 	// Handle to the managed type in the C# assembly.
 	TSharedPtr<FGCHandle> ManagedTypeHandle;
+
+private:
+	TSharedPtr<FGCHandle> FindTypeHandle() const;
 };

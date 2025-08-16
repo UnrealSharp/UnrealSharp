@@ -68,15 +68,7 @@ public:
 				return nullptr;
 			}
 
-			TSharedPtr<FGCHandle> TypeHandle = TryFindTypeHandle(Field);
-
-			if (!TypeHandle.IsValid())
-			{
-				UE_LOGFMT(LogUnrealSharp, Error, "Failed to find type handle for native class: {0}", *ClassName.GetName());
-				return nullptr;
-			}
-
-			TypeInfo = MakeShared<FCSManagedTypeInfo>(Field, this, TypeHandle);
+			TypeInfo = MakeShared<FCSManagedTypeInfo>(Field, this);
 		}
 
 		if constexpr (std::is_same_v<T, FCSManagedTypeInfo>)
@@ -113,7 +105,7 @@ public:
 		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
 		if (TypeInfo.IsValid())
 		{
-			return Cast<T>(TypeInfo->InitializeBuilder());
+			return Cast<T>(TypeInfo->StartBuildingType());
 		}
 
 		return TryFindField<T>(FieldName);
@@ -130,7 +122,7 @@ public:
 
 private:
 	
-	bool ProcessMetadata();
+	bool ProcessTypeMetadata();
 	void BuildUnrealTypes();
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);

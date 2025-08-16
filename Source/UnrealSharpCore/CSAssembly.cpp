@@ -62,9 +62,12 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 	ManagedAssemblyHandle = MakeShared<FGCHandle>(NewHandle);
 	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSAssembly::OnModulesChanged);
 
-	if (ProcessMetadata())
+	if (ProcessTypeMetadata())
 	{
-		BuildUnrealTypes();
+		for (const TPair<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>>& NameToTypeInfo : AllTypes)
+		{
+			NameToTypeInfo.Value->StartBuildingType();
+		}
 	}
 
 	bIsLoading = false;
@@ -93,20 +96,16 @@ void RegisterMetaData(UCSAssembly* OwningAssembly, const TSharedPtr<FJsonValue>&
 		MetaDataType NewMeta;
 		NewMeta.SerializeFromJson(MetaDataObject);
 
-		if (ExistingValue->GetState() == NeedRebuild || NewMeta != *ExistingValue->GetTypeMetaData<MetaDataType>())
+		if (ExistingValue->GetState() == HasChangedStructure || NewMeta != *ExistingValue->GetTypeMetaData<MetaDataType>())
 		{
 			TSharedPtr<MetaDataType> MetaDataPtr = MakeShared<MetaDataType>(NewMeta);
 			ExistingValue->SetTypeMetaData(MetaDataPtr);
-			ExistingValue->SetState(NeedRebuild);
+			ExistingValue->SetState(HasChangedStructure);
 			
 			if (OnRebuild)
 			{
 				OnRebuild(ExistingValue);
 			}
-		}
-		else
-		{
-			ExistingValue->SetState(NeedUpdate);
 		}
 	}
 	else
@@ -119,9 +118,9 @@ void RegisterMetaData(UCSAssembly* OwningAssembly, const TSharedPtr<FJsonValue>&
 	}
 }
 
-bool UCSAssembly::ProcessMetadata()
+bool UCSAssembly::ProcessTypeMetadata()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::ProcessMetadata);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::ProcessTypeMetadata);
 
 	const FString MetadataPath = FPaths::ChangeExtension(AssemblyPath, "metadata.json");
 	if (!FPaths::FileExists(MetadataPath))
@@ -188,7 +187,7 @@ bool UCSAssembly::ProcessMetadata()
 
                  UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
                  TSharedPtr<FCSClassInfo> ChildClassInfo = ManagedClass->GetManagedTypeInfo<FCSClassInfo>();
-                 ChildClassInfo->SetState(NeedRebuild);
+                 ChildClassInfo->SetState(HasChangedStructure);
              }
          });
 	}
@@ -366,7 +365,7 @@ void UCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InMod
 
 		for (FCSClassInfo* PendingClass : Itr.Value())
 		{
-			PendingClass->InitializeBuilder();
+			PendingClass->StartBuildingType();
 		}
 
 		Itr.RemoveCurrent();
@@ -378,19 +377,4 @@ void UCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InMod
 		UCSManager::Get().OnProcessedPendingClassesEvent().Broadcast();
 	}
 #endif
-}
-
-template <typename T>
-void InitializeBuilders(TMap<FCSFieldName, T>& Map)
-{
-	for (auto It = Map.CreateIterator(); It; ++It)
-	{
-		It->Value->InitializeBuilder();
-	}
-}
-
-void UCSAssembly::BuildUnrealTypes()
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::BuildUnrealTypes);
-	InitializeBuilders(AllTypes);
 }

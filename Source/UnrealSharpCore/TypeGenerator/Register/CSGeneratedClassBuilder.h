@@ -4,20 +4,19 @@
 #include "MetaData/CSTypeReferenceMetaData.h"
 #include "CSGeneratedClassBuilder.generated.h"
 
+struct FCSClassMetaData;
+class UCSClass;
+
 UCLASS()
 class UNREALSHARPCORE_API UCSGeneratedClassBuilder : public UCSGeneratedTypeBuilder
 {
 	GENERATED_BODY()
-	DECLARE_BUILDER_TYPE(UCSClass, FCSClassMetaData)
 public:
 	UCSGeneratedClassBuilder();
 	
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void RebuildType() override;
-#if WITH_EDITOR
-	virtual void UpdateType() override;
-#endif
-	virtual FName GetFieldName() const override;
+	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
+	virtual FString GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
 	virtual UClass* GetFieldType() const override;
 	// End of implementation
 	
@@ -31,10 +30,10 @@ public:
 
 private:
 #if WITH_EDITOR
-	void CreateBlueprint(UClass* SuperClass);
-	void CreateClassEditor(UClass* SuperClass);
+	static void CreateBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
+	static void CreateClassEditor(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 #endif
-	void CreateClass(UClass* SuperClass);
+	static void CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 	
 	TMap<UClass*, UClass*> RedirectClasses;
 };

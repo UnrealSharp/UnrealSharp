@@ -9,12 +9,12 @@ struct UNREALSHARPCORE_API FCSClassInfo final : FCSManagedTypeInfo
 	{
 	}
 
-	FCSClassInfo(UField* InField, UCSAssembly* InOwningAssembly, const TSharedPtr<FGCHandle>& TypeHandle)
-		: FCSManagedTypeInfo(InField, InOwningAssembly, TypeHandle)
+	FCSClassInfo(UField* InField, UCSAssembly* InOwningAssembly)
+		: FCSManagedTypeInfo(InField, InOwningAssembly)
 	{
 	}
 
 	// FCSManagedTypeInfo interface implementation
-	virtual UField* InitializeBuilder() override;
+	virtual UField* StartBuildingType() override;
 	// End of implementation
 };

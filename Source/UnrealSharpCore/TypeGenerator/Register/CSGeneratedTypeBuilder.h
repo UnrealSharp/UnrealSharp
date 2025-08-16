@@ -6,72 +6,29 @@ struct FCSTypeReferenceMetaData;
 struct FCSManagedTypeInfo;
 class UCSAssembly;
 
-#define DECLARE_BUILDER_TYPE(TypeClass, MetaDataType) \
-virtual void InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo) override; \
-class TypeClass* Field; \
-TSharedPtr<const struct MetaDataType> TypeMetaData; \
-
-#define DEFINE_BUILDER_TYPE(ThisClass, TypeClass, MetaDataType) \
-void ThisClass::InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo) \
-{ \
-	Super::InitializeTypeBuilder(InManagedTypeInfo); \
-	Field = GetField<TypeClass>(); \
-	TypeMetaData = ManagedTypeInfo->GetTypeMetaData<MetaDataType>(); \
-}
-
 UCLASS(Abstract)
 class UCSGeneratedTypeBuilder : public UObject
 {
 	GENERATED_BODY()
 public:
 
-	virtual void InitializeTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& InManagedTypeInfo)
-	{
-		ManagedTypeInfo = InManagedTypeInfo;
-		FieldToBuild = CreateType();
-	}
-
-	UField* CreateType();
+	UField* CreateType(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const;
 
 	// Start TCSGeneratedTypeBuilder interface
-	virtual void RebuildType() { };
-#if WITH_EDITOR
-	virtual void UpdateType() { };
-#endif
-	virtual FName GetFieldName() const;
+	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const { }              
+	virtual FString GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const;
 	virtual UClass* GetFieldType() const { return nullptr; }
 	// End of interface
 
-	UCSAssembly* GetOwningAssembly() const;
-
-	template<typename TField = UField>
-	TField* GetField() const
+	static void RegisterFieldToLoader(UField* Field, ENotifyRegistrationType RegistrationType)
 	{
-		static_assert(TIsDerivedFrom<TField, UField>::Value, "T must be a UField-derived type.");
-		return static_cast<TField*>(FieldToBuild);
-	}
-	
-	template<typename TMetaData = FCSTypeReferenceMetaData>
-	TSharedPtr<TMetaData> GetTypeMetaData() const
-	{
-		return ManagedTypeInfo->template GetTypeMetaData<TMetaData>();
-	}
-
-	void RegisterFieldToLoader(ENotifyRegistrationType RegistrationType)
-	{
-		NotifyRegistrationEvent(*FieldToBuild->GetOutermost()->GetName(),
-		*FieldToBuild->GetName(),
+		NotifyRegistrationEvent(*Field->GetOutermost()->GetName(),
+		*Field->GetName(),
 		RegistrationType,
 		ENotifyRegistrationPhase::NRP_Finished,
 		nullptr,
 		false,
-		FieldToBuild);
+		Field);
 	}
-
-protected:
-	UPROPERTY(Transient)
-	UField* FieldToBuild;
-	
-	TSharedPtr<FCSManagedTypeInfo> ManagedTypeInfo;
 };
 

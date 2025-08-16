@@ -16,20 +16,21 @@
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
-DEFINE_BUILDER_TYPE(UCSGeneratedClassBuilder, UCSClass, FCSClassMetaData)
-
 UCSGeneratedClassBuilder::UCSGeneratedClassBuilder()
 {
 	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
 }
 
-void UCSGeneratedClassBuilder::RebuildType()
+void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
+	UCSClass* Field = CastChecked<UCSClass>(TypeToBuild);
+	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassMetaData>();
+	
 	UClass* CurrentSuperClass = Field->GetSuperClass();
 	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
 	{
 		UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
-		if (UClass** RedirectedClass = RedirectClasses.Find(SuperClass))
+		if (UClass* const* RedirectedClass = RedirectClasses.Find(SuperClass))
 		{
 			SuperClass = *RedirectedClass;
 		}
@@ -48,41 +49,35 @@ void UCSGeneratedClassBuilder::RebuildType()
 	{
 		// Since the BP-compiler is not present in standalone, we just do a normal class creation like in a packaged game.
 		// Some things still reference the Blueprint in standalone, so we need to create it.
-		CreateBlueprint(CurrentSuperClass);
-		CreateClass(CurrentSuperClass);
+		CreateBlueprint(TypeMetaData, Field, CurrentSuperClass);
+		CreateClass(TypeMetaData, Field, CurrentSuperClass);
 	}
 	else
 	{
-		CreateClassEditor(CurrentSuperClass);
+		CreateClassEditor(TypeMetaData, Field, CurrentSuperClass);
 	}
 #else
-	CreateClass(CurrentSuperClass);
+	CreateClass(TypeMetaData, Field, CurrentSuperClass);
 #endif
 }
 
 #if WITH_EDITOR
-void UCSGeneratedClassBuilder::UpdateType()
+void UCSGeneratedClassBuilder::CreateClassEditor(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
-	UCSManager::Get().OnClassReloadedEvent().Broadcast(Field);
-}
-
-void UCSGeneratedClassBuilder::CreateClassEditor(UClass* SuperClass)
-{
-	CreateBlueprint(SuperClass);
+	CreateBlueprint(TypeMetaData, Field, SuperClass);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 
 	TryUnregisterDynamicSubsystem(Field);
 }
 
-void UCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
 	{
 		UPackage* Package = TypeMetaData->GetOwningPackage();
-		FName BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
-		
-		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName.ToString(), RF_Public | RF_Standalone);
+		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
+		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
 		Blueprint->ParentClass = SuperClass;
 		
@@ -91,7 +86,7 @@ void UCSGeneratedClassBuilder::CreateBlueprint(UClass* SuperClass)
 }
 #endif
 
-void UCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
 	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
 
@@ -128,16 +123,15 @@ void UCSGeneratedClassBuilder::CreateClass(UClass* SuperClass)
 	Field->SetUpRuntimeReplicationData();
 	Field->UpdateCustomPropertyListForPostConstruction();
 
-	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Class);
+	RegisterFieldToLoader(Field, ENotifyRegistrationType::NRT_Class);
 	TryRegisterDynamicSubsystem(Field);
 }
 
-FName UCSGeneratedClassBuilder::GetFieldName() const
+FString UCSGeneratedClassBuilder::GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	// Blueprint classes have a _C suffix
-	FString FieldName = Super::GetFieldName().ToString();
+	FString FieldName = Super::GetFieldName(ManagedTypeInfo);
 	FieldName += TEXT("_C");
-	
 	return *FieldName;
 }
 
