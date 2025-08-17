@@ -1,3 +1,4 @@
+﻿using System.Reflection;
 using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
@@ -38,7 +39,7 @@ public partial class UDataTable
     {
         Type type = typeof(T);
         
-        if (type.GetCustomAttributes(typeof(UStructAttribute), false).Length == 0)
+        if (!IsUStruct<T>())
         {
             throw new Exception($"The type {type.Name} must be a UStruct.");
         }
@@ -59,7 +60,7 @@ public partial class UDataTable
         value = null;
         Type type = typeof(T);
         
-        if (type.GetCustomAttributes(typeof(UStructAttribute), false).Length == 0)
+        if (!IsUStruct<T>())
         {
             throw new Exception($"The type {type.Name} must be a UStruct.");
         }
@@ -137,6 +138,6 @@ public partial class UDataTable
     
     public static bool IsUStruct<T>() where T : struct
     {
-        return typeof(T).GetCustomAttributes(typeof(UStructAttribute), false).Length > 0;
+        return typeof(T).GetCustomAttributes<UStructAttribute>(false).Any();
     }
 }

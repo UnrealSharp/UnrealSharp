@@ -1,9 +1,11 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
@@ -47,7 +49,7 @@ public static class AnalyzerStatics
     {
         foreach (var attribute in symbol.GetAttributes())
         {
-            if (attribute.AttributeClass.Name == attributeName)
+            if (attribute.AttributeClass?.Name == attributeName)
             {
                 return true;
             }
@@ -87,7 +89,7 @@ public static class AnalyzerStatics
 
     public static bool InheritsFrom(INamedTypeSymbol symbol, string baseTypeName)
     {
-        INamedTypeSymbol currentSymbol = symbol;
+        INamedTypeSymbol? currentSymbol = symbol;
 
         while (currentSymbol != null)
         {
@@ -147,5 +149,22 @@ public static class AnalyzerStatics
 
         return methodName;
     }
-    
+
+    public static string GetFullNamespace(this CSharpSyntaxNode declaration)
+    {
+        var namespaceNode = declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
+        var namespaceBuilder = new StringBuilder();
+        if (namespaceNode != null)
+        {
+            namespaceBuilder.Append(namespaceNode.Name.ToString());
+            var currentNamespace = namespaceNode.Parent as BaseNamespaceDeclarationSyntax;
+            while (currentNamespace != null)
+            {
+                namespaceBuilder.Insert(0, $"{currentNamespace.Name}.");
+                currentNamespace = currentNamespace.Parent as BaseNamespaceDeclarationSyntax;
+            }
+        }
+
+        return namespaceBuilder.ToString();
+    }
 }
