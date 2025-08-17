@@ -18,7 +18,8 @@ public class DelegateWrapperGenerator : IIncrementalGenerator
         public bool GenerateInvoker { get; }
         public DelegateType DelegateType { get; }
         public string BaseTypeName { get; }
-        public DelegateGenerationInfo(string namespaceName, string delegateName, INamedTypeSymbol delegateSymbol, bool generateInvoker, DelegateType delegateType, string baseTypeName)
+        public bool NullableAwareable { get; }
+        public DelegateGenerationInfo(string namespaceName, string delegateName, INamedTypeSymbol delegateSymbol, bool generateInvoker, DelegateType delegateType, string baseTypeName, bool nullableAwareable)
         {
             NamespaceName = namespaceName;
             DelegateName = delegateName;
@@ -26,6 +27,8 @@ public class DelegateWrapperGenerator : IIncrementalGenerator
             GenerateInvoker = generateInvoker;
             DelegateType = delegateType;
             BaseTypeName = baseTypeName;
+            NullableAwareable = nullableAwareable;
+
         }
     }
 
@@ -126,13 +129,21 @@ public class DelegateWrapperGenerator : IIncrementalGenerator
 
         string namespaceName = symbol.ContainingNamespace?.ToDisplayString() ?? "Global";
 
-        return new DelegateGenerationInfo(namespaceName, delegateName, delegateSymbol, generateInvoker, delegateType, baseTypeName);
+        return new DelegateGenerationInfo(namespaceName, delegateName, delegateSymbol, generateInvoker, delegateType, baseTypeName,
+            context.SemanticModel.GetNullableContext(context.Node.Span.Start).HasFlag(NullableContext.AnnotationsEnabled));
     }
 
     private static void Generate(SourceProductionContext context, DelegateGenerationInfo info)
     {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("#nullable disable");
+        if (info.NullableAwareable)
+        {
+            stringBuilder.AppendLine("#nullable enable");
+        }
+        else
+        {
+            stringBuilder.AppendLine("#nullable disable");
+        }
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("using UnrealSharp;");
         stringBuilder.AppendLine("using UnrealSharp.Interop;");

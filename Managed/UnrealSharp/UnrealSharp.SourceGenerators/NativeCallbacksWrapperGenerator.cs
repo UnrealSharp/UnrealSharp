@@ -20,7 +20,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
     {
         var classDeclarations = context.SyntaxProvider.CreateSyntaxProvider(
                 static (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0,
-                static (syntaxContext, _) => GetClassInfoOrNull((ClassDeclarationSyntax)syntaxContext.Node));
+                static (syntaxContext, _) => GetClassInfoOrNull(syntaxContext));
 
         var classAndCompilation = classDeclarations.Combine(context.CompilationProvider);
 
@@ -63,7 +63,15 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             }
         }
 
-        sourceBuilder.AppendLine("#nullable disable");
+        if (classInfo.NullableAwareable)
+        {
+            sourceBuilder.AppendLine("#nullable enable");
+        }
+        else
+        {
+            sourceBuilder.AppendLine("#nullable disable");
+        }
+        sourceBuilder.AppendLine("#pragma warning disable CS8500, CS0414");
         sourceBuilder.AppendLine();
 
         foreach (string? ns in namespaces)
@@ -88,15 +96,15 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             string totalSizeDelegateName = delegateName + "TotalSize";
             if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
             {
-                sourceBuilder.AppendLine($"                 int {totalSizeDelegateName} = 0;");
+                sourceBuilder.AppendLine($"             int {totalSizeDelegateName} = 0;");
             }
             else
             {
-                sourceBuilder.Append($"                 int {totalSizeDelegateName} = ");
+                sourceBuilder.Append($"             int {totalSizeDelegateName} = ");
 
                 void AppendSizeOf(DelegateParameterInfo param)
                 {
-                    string typeFullName = model.GetTypeInfo(param.Type).Type?.ToDisplayString() ?? param.Type.ToString();
+                    string typeFullName = model.GetTypeInfo(param.Type).Type?.ToString() ?? param.Type.ToString();
 
                     if (param.IsOutParameter || param.IsRefParameter)
                     {
@@ -124,12 +132,12 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             }
 
             string funcPtrName = delegateName + "FuncPtr";
-            sourceBuilder.AppendLine($"                 IntPtr {funcPtrName} = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", {totalSizeDelegateName});");
-            sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
+            sourceBuilder.AppendLine($"             IntPtr {funcPtrName} = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", {totalSizeDelegateName});");
+            sourceBuilder.Append($"             {delegateName} = (delegate* unmanaged<");
             sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
             {
                 string prefix = p.IsOutParameter ? "out " : p.IsRefParameter ? "ref " : string.Empty;
-                return prefix + model.GetTypeInfo(p.Type).Type?.ToDisplayString() ?? p.Type.ToString();
+                return prefix + (model.GetTypeInfo(p.Type).Type?.ToString() ?? p.Type.ToString());
             })));
 
             if (delegateInfo.Parameters.Count > 0)
@@ -137,7 +145,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
                 sourceBuilder.Append(", ");
             }
 
-            sourceBuilder.Append(model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type?.ToDisplayString() ?? delegateInfo.ReturnValue.Type.ToString());
+            sourceBuilder.Append(model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type?.ToString() ?? delegateInfo.ReturnValue.Type.ToString());
 
             sourceBuilder.Append($">){funcPtrName};");
             sourceBuilder.AppendLine();
@@ -147,8 +155,9 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
 
         foreach (DelegateInfo delegateInfo in classInfo.Delegates)
         {
+            string returnTypeFullName = model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type?.ToString() ?? delegateInfo.ReturnValue.Type.ToString();
             sourceBuilder.AppendLine($"        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
-            sourceBuilder.Append($"        public static {delegateInfo.ReturnValue.Type.ToString()} Call{delegateInfo.Name}(");
+            sourceBuilder.Append($"        public static {returnTypeFullName} Call{delegateInfo.Name}(");
 
             bool firstParameter = true;
             foreach (DelegateParameterInfo parameter in delegateInfo.Parameters)
@@ -170,7 +179,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
                     sourceBuilder.Append("ref ");
                 }
 
-                string typeFullName = model.GetTypeInfo(parameter.Type).Type?.ToDisplayString() ?? parameter.Type.ToString();
+                string typeFullName = model.GetTypeInfo(parameter.Type).Type?.ToString() ?? parameter.Type.ToString();
                 sourceBuilder.Append($"{typeFullName} {parameter.Name}");
             }
 
@@ -205,8 +214,13 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
         context.AddSource($"{classInfo.Name}.generated.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
 
-    private static ClassInfo? GetClassInfoOrNull(ClassDeclarationSyntax classDeclaration)
+    private static ClassInfo? GetClassInfoOrNull(GeneratorSyntaxContext context)
     {
+        if (context.Node is not ClassDeclarationSyntax classDeclaration)
+        {
+            return null;
+        }
+
         // Check attribute (support both NativeCallbacks and NativeCallbacksAttribute)
         bool hasNativeCallbacksAttribute = classDeclaration.AttributeLists
             .SelectMany(a => a.Attributes)
@@ -229,7 +243,8 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             ClassDeclaration = classDeclaration,
             Name = classDeclaration.Identifier.ValueText,
             Namespace = namespaceName,
-            Delegates = new List<DelegateInfo>()
+            Delegates = new List<DelegateInfo>(),
+            NullableAwareable = context.SemanticModel.GetNullableContext(context.Node.Span.Start).HasFlag(NullableContext.AnnotationsEnabled)
         };
 
         foreach (MemberDeclarationSyntax member in classDeclaration.Members)
@@ -286,6 +301,7 @@ internal struct ClassInfo
     public string Name;
     public string Namespace;
     public List<DelegateInfo> Delegates;
+    public bool NullableAwareable;
 }
 
 internal struct DelegateInfo

@@ -8,13 +8,14 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
-internal readonly struct AsyncMethodInfo(ClassDeclarationSyntax parentClass, MethodDeclarationSyntax method, string @namespace, TypeSyntax? returnType, IReadOnlyDictionary<string, string> metadata)
+internal readonly struct AsyncMethodInfo(ClassDeclarationSyntax parentClass, MethodDeclarationSyntax method, string @namespace, TypeSyntax? returnType, IReadOnlyDictionary<string, string> metadata, bool nullableAwareable)
 {
     public readonly ClassDeclarationSyntax ParentClass = parentClass;
     public readonly MethodDeclarationSyntax Method = method;
     public readonly string Namespace = @namespace;
     public readonly TypeSyntax? ReturnType = returnType;
     public readonly IReadOnlyDictionary<string, string> Metadata = metadata;
+    public readonly bool NullableAwareable = nullableAwareable;
 }
 
 [Generator]
@@ -77,7 +78,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
         }
 
-        var returnTypeName = asyncMethodInfo.ReturnType != null ? model.GetTypeInfo(asyncMethodInfo.ReturnType).Type?.Name : null;
+        var returnTypeName = asyncMethodInfo.ReturnType != null ? model.GetTypeInfo(asyncMethodInfo.ReturnType).Type?.ToString() : null;
         var actionClassName = $"{asyncMethodInfo.ParentClass.Identifier.Text}{method.Identifier.Text}Action";
         var actionBaseClassName = cancellationTokenParameter != null ? "UCSCancellableAsyncAction" : "UCSBlueprintAsyncActionBase";
         var delegateName = $"{actionClassName}Delegate";
@@ -102,7 +103,16 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         }
 
         var sourceBuilder = new StringBuilder();
-        sourceBuilder.AppendLine("#nullable disable");
+        var nullableAnnotation = "?";
+        if (asyncMethodInfo.NullableAwareable)
+        {
+            sourceBuilder.AppendLine("#nullable enable");
+        }
+        else
+        {
+            sourceBuilder.AppendLine("#nullable disable");
+            nullableAnnotation = "";
+        }
         sourceBuilder.AppendLine();
         foreach (var ns in namespaces)
         {
@@ -116,25 +126,25 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine();
         if (asyncMethodInfo.ReturnType != null)
         {
-            sourceBuilder.AppendLine($"public delegate void {delegateName}({returnTypeName} Result, string Exception);");
+            sourceBuilder.AppendLine($"public delegate void {delegateName}({returnTypeName} Result, string{nullableAnnotation} Exception);");
         }
         else
         {
-            sourceBuilder.AppendLine($"public delegate void {delegateName}(string Exception);");
+            sourceBuilder.AppendLine($"public delegate void {delegateName}(string{nullableAnnotation} Exception);");
         }
         sourceBuilder.AppendLine();
         sourceBuilder.AppendLine($"public class U{delegateName} : MulticastDelegate<{delegateName}>");
         sourceBuilder.AppendLine("{");
         if (asyncMethodInfo.ReturnType != null)
         {
-            sourceBuilder.AppendLine($"    protected void Invoker({returnTypeName} Result, string Exception)");
+            sourceBuilder.AppendLine($"    protected void Invoker({returnTypeName} Result, string{nullableAnnotation} Exception)");
             sourceBuilder.AppendLine("    {");
             sourceBuilder.AppendLine("        ProcessDelegate(IntPtr.Zero);");
             sourceBuilder.AppendLine("    }");
         }
         else
         {
-            sourceBuilder.AppendLine("    protected void Invoker(string Exception)");
+            sourceBuilder.AppendLine($"    protected void Invoker(string{nullableAnnotation} Exception)");
             sourceBuilder.AppendLine("    {");
             sourceBuilder.AppendLine("        ProcessDelegate(IntPtr.Zero);");
             sourceBuilder.AppendLine("    }");
@@ -149,22 +159,22 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine("[UClass]");
         sourceBuilder.AppendLine($"public class {actionClassName} : {actionBaseClassName}");
         sourceBuilder.AppendLine("{");
-        sourceBuilder.AppendLine($"    private {taskTypeName}? task;");
+        sourceBuilder.AppendLine($"    private {taskTypeName}{nullableAnnotation} task;");
         if (cancellationTokenParameter != null)
         {
             sourceBuilder.AppendLine("    private readonly CancellationTokenSource cancellationTokenSource = new();");
-            sourceBuilder.AppendLine($"    private Func<CancellationToken, {taskTypeName}>? asyncDelegate;");
+            sourceBuilder.AppendLine($"    private Func<CancellationToken, {taskTypeName}>{nullableAnnotation} asyncDelegate;");
         }
         else
         {
-            sourceBuilder.AppendLine($"    private Func<{taskTypeName}>? asyncDelegate;");
+            sourceBuilder.AppendLine($"    private Func<{taskTypeName}>{nullableAnnotation} asyncDelegate;");
         }
         sourceBuilder.AppendLine();
         sourceBuilder.AppendLine($"    [UProperty(PropertyFlags.BlueprintAssignable)]");
-        sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}> Completed {{ get; set; }}");
+        sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}>{nullableAnnotation} Completed {{ get; set; }}");
         sourceBuilder.AppendLine();
         sourceBuilder.AppendLine($"    [UProperty(PropertyFlags.BlueprintAssignable)]");
-        sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}> Failed {{ get; set; }}");
+        sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}>{nullableAnnotation} Failed {{ get; set; }}");
         sourceBuilder.AppendLine();
         sourceBuilder.AppendLine($"    [UFunction(FunctionFlags.BlueprintCallable), {metadataAttributeList}]");
         if (isStatic)
@@ -250,22 +260,22 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine($"        {{");
         if (asyncMethodInfo.ReturnType != null)
         {
-            sourceBuilder.AppendLine($"            Failed.InnerDelegate.Invoke(default, t.Exception?.ToString() ?? \"Faulted without exception\");");
+            sourceBuilder.AppendLine($"            Failed?.InnerDelegate.Invoke(default, t.Exception?.ToString() ?? \"Faulted without exception\");");
         }
         else
         {
-            sourceBuilder.AppendLine($"            Failed.InnerDelegate.Invoke(t.Exception?.ToString() ?? \"Faulted without exception\");");
+            sourceBuilder.AppendLine($"            Failed?.InnerDelegate.Invoke(t.Exception?.ToString() ?? \"Faulted without exception\");");
         }
         sourceBuilder.AppendLine($"        }}");
         sourceBuilder.AppendLine($"        else");
         sourceBuilder.AppendLine($"        {{");
         if (asyncMethodInfo.ReturnType != null)
         {
-            sourceBuilder.AppendLine($"            Completed.InnerDelegate.Invoke(t.Result, null);");
+            sourceBuilder.AppendLine($"            Completed?.InnerDelegate.Invoke(t.Result, null);");
         }
         else
         {
-            sourceBuilder.AppendLine($"            Completed.InnerDelegate.Invoke(null);");
+            sourceBuilder.AppendLine($"            Completed?.InnerDelegate.Invoke(null);");
         }
         sourceBuilder.AppendLine($"        }}");
         sourceBuilder.AppendLine($"    }}");
@@ -331,6 +341,6 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             metadata[key] = value;
         }
 
-        return new AsyncMethodInfo(classDeclaration, methodDeclaration, namespaceName, returnType, metadata);
+        return new AsyncMethodInfo(classDeclaration, methodDeclaration, namespaceName, returnType, metadata, context.SemanticModel.GetNullableContext(context.Node.Span.Start).HasFlag(NullableContext.AnnotationsEnabled));
     }
 }
