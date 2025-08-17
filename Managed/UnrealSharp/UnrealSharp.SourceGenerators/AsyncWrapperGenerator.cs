@@ -104,6 +104,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
 
         var sourceBuilder = new StringBuilder();
         var nullableAnnotation = "?";
+        var nullableSuppression = "!";
         if (asyncMethodInfo.NullableAwareable)
         {
             sourceBuilder.AppendLine("#nullable enable");
@@ -112,6 +113,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         {
             sourceBuilder.AppendLine("#nullable disable");
             nullableAnnotation = "";
+            nullableSuppression = "";
         }
         sourceBuilder.AppendLine();
         foreach (var ns in namespaces)
@@ -260,7 +262,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine($"        {{");
         if (asyncMethodInfo.ReturnType != null)
         {
-            sourceBuilder.AppendLine($"            Failed?.InnerDelegate.Invoke(default, t.Exception?.ToString() ?? \"Faulted without exception\");");
+            sourceBuilder.AppendLine($"            Failed?.InnerDelegate.Invoke(default{nullableSuppression}, t.Exception?.ToString() ?? \"Faulted without exception\");");
         }
         else
         {
