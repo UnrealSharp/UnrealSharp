@@ -104,7 +104,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
 
                 void AppendSizeOf(DelegateParameterInfo param)
                 {
-                    string typeFullName = model.GetTypeInfo(param.Type).Type?.ToString() ?? param.Type.ToString();
+                    string typeFullName = param.Type.GetAnnotatedTypeName(model) ?? param.Type.ToString();
 
                     if (param.IsOutParameter || param.IsRefParameter)
                     {
@@ -137,7 +137,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
             {
                 string prefix = p.IsOutParameter ? "out " : p.IsRefParameter ? "ref " : string.Empty;
-                return prefix + (model.GetTypeInfo(p.Type).Type?.ToString() ?? p.Type.ToString());
+                return prefix + (p.Type.GetAnnotatedTypeName(model) ?? p.Type.ToString());
             })));
 
             if (delegateInfo.Parameters.Count > 0)
@@ -145,7 +145,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
                 sourceBuilder.Append(", ");
             }
 
-            sourceBuilder.Append(model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type?.ToString() ?? delegateInfo.ReturnValue.Type.ToString());
+            sourceBuilder.Append(delegateInfo.ReturnValue.Type.GetAnnotatedTypeName(model) ?? delegateInfo.ReturnValue.Type.ToString());
 
             sourceBuilder.Append($">){funcPtrName};");
             sourceBuilder.AppendLine();
@@ -155,7 +155,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
 
         foreach (DelegateInfo delegateInfo in classInfo.Delegates)
         {
-            string returnTypeFullName = model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type?.ToString() ?? delegateInfo.ReturnValue.Type.ToString();
+            string returnTypeFullName = delegateInfo.ReturnValue.Type.GetAnnotatedTypeName(model) ?? delegateInfo.ReturnValue.Type.ToString();
             sourceBuilder.AppendLine($"        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
             sourceBuilder.Append($"        public static {returnTypeFullName} Call{delegateInfo.Name}(");
 
@@ -179,7 +179,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
                     sourceBuilder.Append("ref ");
                 }
 
-                string typeFullName = model.GetTypeInfo(parameter.Type).Type?.ToString() ?? parameter.Type.ToString();
+                string typeFullName = parameter.Type.GetAnnotatedTypeName(model) ?? parameter.Type.ToString();
                 sourceBuilder.Append($"{typeFullName} {parameter.Name}");
             }
 

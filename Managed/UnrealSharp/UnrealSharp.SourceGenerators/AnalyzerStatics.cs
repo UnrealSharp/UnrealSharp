@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Operations;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace UnrealSharp.SourceGenerators;
@@ -166,5 +167,17 @@ public static class AnalyzerStatics
         }
 
         return namespaceBuilder.ToString();
+    }
+
+    public static string? GetAnnotatedTypeName(this TypeSyntax? type, SemanticModel model)
+    {
+        if (type is null)
+        {
+            return null;
+        }
+
+        var typeInfo = model.GetTypeInfo(type).Type;
+        return type is NullableTypeSyntax ?
+            typeInfo?.WithNullableAnnotation(NullableAnnotation.Annotated).ToString() : typeInfo?.ToString();
     }
 }

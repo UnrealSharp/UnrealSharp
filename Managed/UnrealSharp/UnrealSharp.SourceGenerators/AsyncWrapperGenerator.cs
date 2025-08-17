@@ -78,7 +78,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
         }
 
-        var returnTypeName = asyncMethodInfo.ReturnType != null ? model.GetTypeInfo(asyncMethodInfo.ReturnType).Type?.ToString() : null;
+        var returnTypeName = asyncMethodInfo.ReturnType.GetAnnotatedTypeName(model);
         var actionClassName = $"{asyncMethodInfo.ParentClass.Identifier.Text}{method.Identifier.Text}Action";
         var actionBaseClassName = cancellationTokenParameter != null ? "UCSCancellableAsyncAction" : "UCSBlueprintAsyncActionBase";
         var delegateName = $"{actionClassName}Delegate";
