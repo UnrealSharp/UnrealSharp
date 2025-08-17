@@ -3,6 +3,12 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
+#define UE_VERSION_VAL(Major, Minor) ((Major) * 10000 + (Minor))
+#define UE_CURRENT_VERSION UE_VERSION_VAL(ENGINE_MAJOR_VERSION, ENGINE_MINOR_VERSION)
+#define UE_VERSION_BEFORE(Major, Minor) (UE_CURRENT_VERSION < UE_VERSION_VAL(Major, Minor))
+#define UE_VERSION_SINCE(Major, Minor)  (UE_CURRENT_VERSION >= UE_VERSION_VAL(Major, Minor))
+#define UE_VERSION_EQUAL(Major, Minor)  (UE_CURRENT_VERSION == UE_VERSION_VAL(Major, Minor))
+
 namespace FCSUnrealSharpUtils
 {
 	UNREALSHARPUTILITIES_API FName GetNamespace(const UObject* Object);

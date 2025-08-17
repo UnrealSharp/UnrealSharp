@@ -14,11 +14,14 @@ public partial struct FGameplayTag
     }
     
     public FGameplayTag(string tagName) : this(new FName(tagName)) {}
-    
+
     /// <summary>
     /// Returns empty GameplayTag
     /// </summary>
-    public static FGameplayTag None => new(FName.None);
+    public static FGameplayTag None => new()
+    {
+        TagName = FName.None
+    };
     
     /// <summary>
     /// Check if this tag is exactly the same as TagToCheck
@@ -35,6 +38,12 @@ public partial struct FGameplayTag
     /// </summary>
     /// <returns>True if tag is valid</returns>
     public bool IsValid => TagName.IsValid;
+
+    /// <summary>
+    /// Parses the tag name and returns the name of the leaf.
+    /// For example, calling this on x.y.z would return the z component.
+    /// </summary>
+    public FName LeafName => this.GetTagLeafName();
     
     public bool Equals(FGameplayTag other)
     {

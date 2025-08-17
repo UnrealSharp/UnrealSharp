@@ -1,12 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utils/CSMacros.h"
+#include "CSManagedTypeInterface.h"
 #include "CSInterface.generated.h"
 
 UCLASS(MinimalAPI)
-class UCSInterface : public UClass
+class UCSInterface : public UClass, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
-	DECLARE_CSHARP_TYPE_FUNCTIONS(FCSInterfaceInfo)
 };

@@ -1,15 +1,10 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
 #include "UObject/Object.h"
 #include "FOptionalPropertyExporter.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class UNREALSHARPCORE_API UFOptionalPropertyExporter : public UObject
 {

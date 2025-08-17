@@ -1,18 +1,15 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "MetaData/CSDelegateMetaData.h"
+#include "CSGeneratedDelegateBuilder.generated.h"
 
-class UNREALSHARPCORE_API FCSGeneratedDelegateBuilder : public TCSGeneratedTypeBuilder<FCSDelegateMetaData, UDelegateFunction>
+UCLASS()
+class UNREALSHARPCORE_API UCSGeneratedDelegateBuilder : public UCSGeneratedTypeBuilder
 {
+	GENERATED_BODY()
 public:
-	FCSGeneratedDelegateBuilder(const TSharedPtr<FCSDelegateMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly)
-	: TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly) { }
-
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void RebuildType() override;
-#if WITH_EDITOR
-	virtual void UpdateType() override {}
-#endif
+	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
+	virtual UClass* GetFieldType() const override;
 	// End of implementation
 };

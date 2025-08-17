@@ -42,10 +42,10 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 	}
 	
 	UCSClass* ManagedClass = static_cast<UCSClass*>(GetOwnerClass());
-	TSharedPtr<FCSAssembly> Assembly = ManagedClass->GetTypeInfo()->OwningAssembly;
+	UCSAssembly* Assembly = ManagedClass->GetOwningAssembly();
 	
 	const FString InvokeMethodName = FString::Printf(TEXT("Invoke_%s"), *GetName());
-	TSharedPtr<FCSClassInfo> ClassInfo = ManagedClass->GetTypeInfo();
+	TSharedPtr<FCSClassInfo> ClassInfo = ManagedClass->GetManagedTypeInfo<FCSClassInfo>();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
 	MethodHandle = Assembly->GetManagedMethod(TypeHandle, InvokeMethodName);
@@ -55,7 +55,7 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 bool UCSFunctionBase::IsOwnedByManagedClass() const
 {
 #if WITH_EDITOR
-	return FCSClassUtilities::IsManagedType(GetOwnerClass());
+	return FCSClassUtilities::IsManagedClass(GetOwnerClass());
 #else
 		return true;
 #endif

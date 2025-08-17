@@ -25,3 +25,23 @@ FGameplayTag UCSGameplayTagExtensions::RequestGameplayTag(const FName TagName)
 {
 	return FGameplayTag::RequestGameplayTag(TagName);
 }
+
+FName UCSGameplayTagExtensions::GetTagLeafName(const FGameplayTag Tag)
+{
+    return Tag.GetTagLeafName();
+}
+
+FGameplayTag UCSGameplayTagExtensions::RequestDirectParent(const FGameplayTag Tag)
+{
+    return Tag.RequestDirectParent();
+}
+
+FGameplayTagContainer UCSGameplayTagExtensions::GetGameplayTagParents(const FGameplayTag Tag)
+{
+    return Tag.GetGameplayTagParents();
+}
+
+FGameplayTagContainer UCSGameplayTagExtensions::GetSingleTagContainer(const FGameplayTag Tag)
+{
+    return Tag.GetSingleTagContainer();
+}

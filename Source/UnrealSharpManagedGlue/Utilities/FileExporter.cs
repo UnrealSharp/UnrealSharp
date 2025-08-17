@@ -26,6 +26,8 @@ public readonly struct ProjectDirInfo
     public string ScriptDirectory => Path.Combine(_projectDirectory, "Script");
     
     public string GlueCsProjPath => Path.Combine(GlueProjectDirectory, GlueProjectFile);
+
+    public bool IsUProject => _projectDirectory.EndsWith(".uproject", StringComparison.OrdinalIgnoreCase);
     
     public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
     public string GlueProjectDirectory_LEGACY => Path.Combine(ScriptDirectory, GlueProjectName_LEGACY);

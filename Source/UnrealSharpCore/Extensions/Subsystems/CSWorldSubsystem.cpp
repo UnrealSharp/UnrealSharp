@@ -8,7 +8,7 @@ bool UCSWorldSubsystem::K2_ShouldCreateSubsystem_Implementation() const
 
 void UCSWorldSubsystem::BeginDestroy()
 {
-#if ENGINE_MINOR_VERSION >= 5
+#if UE_VERSION >= 5
 #if WITH_EDITOR
 	// Edge case in reinstancing world subsystems. Can't call Super as it leads to an ensure, but we do the same thing.
 	if (CSSubsystemUtils::IsReinstancingClass(GetClass()))

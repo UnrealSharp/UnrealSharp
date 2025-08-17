@@ -1,5 +1,4 @@
 ﻿#include "CSTypeReferenceMetaData.h"
-
 #include "CSManager.h"
 #include "TypeGenerator/Register/CSMetaDataUtils.h"
 
@@ -7,52 +6,41 @@ FCSTypeReferenceMetaData::FCSTypeReferenceMetaData(): FieldName(NAME_None, NAME_
 {
 }
 
-TSharedPtr<FCSAssembly> FCSTypeReferenceMetaData::GetOwningAssemblyChecked() const
+UCSAssembly* FCSTypeReferenceMetaData::GetOwningAssemblyChecked() const
 {
-	TSharedPtr<FCSAssembly> Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-	check(Assembly.IsValid());
+	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
+	check(::IsValid(Assembly));
 	return Assembly;
 }
 
 UClass* FCSTypeReferenceMetaData::GetOwningClass() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindClass(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UClass>(FieldName);
 }
 
 UScriptStruct* FCSTypeReferenceMetaData::GetOwningStruct() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindStruct(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UScriptStruct>(FieldName);
 }
 
 UEnum* FCSTypeReferenceMetaData::GetOwningEnum() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindEnum(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UEnum>(FieldName);
 }
 
 UClass* FCSTypeReferenceMetaData::GetOwningInterface() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	if (!Assembly.IsValid())
-	{
-		return nullptr;
-	}
-
-	return Assembly->FindInterface(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UClass>(FieldName);
 }
 
 UDelegateFunction* FCSTypeReferenceMetaData::GetOwningDelegate() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->FindDelegate(FieldName);
+	return GetOwningAssemblyChecked()->FindType<UDelegateFunction>(FieldName);
 }
 
 UPackage* FCSTypeReferenceMetaData::GetOwningPackage() const
 {
-	TSharedPtr<FCSAssembly> Assembly = GetOwningAssemblyChecked();
-	return Assembly->GetPackage(FieldName.GetNamespace());
+	return UCSManager::Get().GetPackage(FieldName.GetNamespace());
 }
 
 void FCSTypeReferenceMetaData::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject)

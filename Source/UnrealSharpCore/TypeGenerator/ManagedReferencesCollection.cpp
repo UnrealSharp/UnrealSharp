@@ -12,7 +12,7 @@ void FCSManagedReferencesCollection::AddReference(UStruct* Struct)
 		return;
 	}
 	
-	if (!UCSManager::Get().IsManagedField(Struct))
+	if (!UCSManager::Get().IsManagedType(Struct))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Struct {0} is not a managed type", *GetNameSafe(Struct));
 		return;
