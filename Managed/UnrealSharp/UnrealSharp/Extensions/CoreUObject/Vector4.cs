@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -338,7 +338,7 @@ public partial struct FVector4
     /// <param name="obj">The Object to compare against.</param>
     /// <returns>True if the Object is equal to this Vector4; False otherwise.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is not FVector4)
         {

@@ -97,7 +97,6 @@ public partial class UObject
     /// <param name="color"> The color of the message. </param>
     /// <param name="printToScreen"> Whether to print the message to the screen. </param>
     /// <param name="printToConsole"> Whether to print the message to the console. </param>
-    /// <param name="key"> Whether to print the message to the console. </param>
     /// <param name="key"> If a non-empty key is provided, the message will replace any existing on-screen messages with the same key. </param>
     public static void PrintString(string message = "Hello", float duration = 2.0f, FLinearColor color = default, bool printToScreen = true, bool printToConsole = true, string key = "")
     {

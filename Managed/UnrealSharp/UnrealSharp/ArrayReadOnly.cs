@@ -1,4 +1,4 @@
-using UnrealSharp.Core;
+﻿using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
 
@@ -6,7 +6,6 @@ namespace UnrealSharp;
 
 public class TArrayReadOnly<T> : UnrealArrayBase<T>, IReadOnlyList<T>
 {
-    [CLSCompliant(false)]
     public TArrayReadOnly(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {

@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -11,7 +11,7 @@ public partial struct FTopLevelAssetPath
         AssetName = assetName;
     }
     
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is FTopLevelAssetPath other)
         {
