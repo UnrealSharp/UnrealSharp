@@ -6,6 +6,11 @@ void* UFCSManagerExporter::FindManagedObject(UObject* Object)
 	return UCSManager::Get().FindManagedObject(Object);
 }
 
+void* UFCSManagerExporter::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* NativeClass)
+{
+	return UCSManager::Get().FindOrCreateManagedInterfaceWrapper(Object, NativeClass);
+}
+
 void* UFCSManagerExporter::GetCurrentWorldContext()
 {
 	return UCSManager::Get().GetCurrentWorldContext();

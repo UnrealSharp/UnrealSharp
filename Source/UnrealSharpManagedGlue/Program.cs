@@ -107,14 +107,30 @@ public static class Program
 		        .ToImmutableArray();
 	}
     
-    private static void CreateGlueProjects()
-    {
-        foreach (KeyValuePair<UhtPackage, ProjectDirInfo> pluginInfo in PluginUtilities.PluginInfo)
-        {
-	        ProjectDirInfo pluginDir = pluginInfo.Value;
-            TryCreateGlueProject(pluginDir.GlueCsProjPath, pluginDir.GlueProjectName, pluginDir.Dependencies, pluginDir.ProjectRoot);
-        }
-    }
+	private static void CreateGlueProjects()
+	{
+		bool hasProjectGlue = false;
+		foreach (ProjectDirInfo pluginDir in PluginUtilities.PluginInfo.Values)
+		{
+			if (pluginDir.IsUProject)
+			{
+				hasProjectGlue = true;
+			}
+			
+			TryCreateGlueProject(pluginDir.GlueCsProjPath, pluginDir.GlueProjectName, pluginDir.Dependencies, pluginDir.ProjectRoot);
+		}
+
+		if (!hasProjectGlue)
+		{
+			UhtSession session = Factory.Session;
+			string projectRoot = session.ProjectDirectory!;
+			string baseName = Path.GetFileNameWithoutExtension(session.ProjectFile!);
+			string projectName = baseName + ".Glue";
+			string csprojPath = Path.Join(projectRoot, "Script", projectName, projectName + ".csproj");
+
+			TryCreateGlueProject(csprojPath, projectName, null, projectRoot);
+		}
+	}
 
     private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
     {

@@ -4,6 +4,7 @@
 #include "UnrealSharpCore/TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Functions/CSFunction_Params.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
@@ -97,7 +98,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 
 #if WITH_EDITOR
 
-#if ENGINE_MAJOR_VERSION * 100 + ENGINE_MINOR_VERSION < 506
+#if UE_VERSION_BEFORE(5, 6)
 	UMetaData::CopyMetadata(ParentFunction, NewFunction);
 #else
 	FMetaData::CopyMetadata(ParentFunction, NewFunction);

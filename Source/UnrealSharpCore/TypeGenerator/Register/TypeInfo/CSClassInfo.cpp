@@ -1,37 +1,20 @@
-﻿#include "CSClassInfo.h"
+#include "CSClassInfo.h"
 #include "CSAssembly.h"
-#include "Utils/CSClassUtilities.h"
+#include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 
-FCSClassInfo::FCSClassInfo(const TSharedPtr<FJsonValue>& MetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSTypeInfo(MetaData, InOwningAssembly)
+UField* FCSClassInfo::StartBuildingManagedType()
 {
-	ManagedTypeHandle = InOwningAssembly->TryFindTypeHandle(TypeMetaData->FieldName);
-}
-
-FCSClassInfo::FCSClassInfo(UClass* InField, const TSharedPtr<FCSAssembly>& InOwningAssembly, const TSharedPtr<FGCHandle>& InTypeHandle)
-{
-	Field = InField;
-	OwningAssembly = InOwningAssembly;
-	ManagedTypeHandle = InTypeHandle;
-}
-
-UClass* FCSClassInfo::InitializeBuilder()
-{
-	if (Field && Field->HasAllClassFlags(CLASS_Native))
+	if (!Field.IsValid())
 	{
-		return Field;
-	}
+		TSharedPtr<const FCSClassMetaData> ClassMetaData = GetTypeMetaData<FCSClassMetaData>();
+		UClass* ParentClass = ClassMetaData->ParentClass.GetOwningClass();
 
-	if (!IsValid(Field) || !IsValid(Field->GetSuperClass()))
-	{
-		UClass* ParentClass = TypeMetaData->ParentClass.GetOwningClass();
-
-		if (!ParentClass)
+		if (!IsValid(ParentClass))
 		{
-			OwningAssembly->AddPendingClass(TypeMetaData->ParentClass, this);
+			OwningAssembly->AddPendingClass(ClassMetaData->ParentClass, this);
 			return nullptr;
 		}
 	}
 
-	return TCSTypeInfo::InitializeBuilder();
+	return FCSManagedTypeInfo::StartBuildingManagedType();
 }
-

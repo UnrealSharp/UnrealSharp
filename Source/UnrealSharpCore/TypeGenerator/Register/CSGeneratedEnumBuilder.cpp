@@ -1,17 +1,15 @@
 ﻿#include "CSGeneratedEnumBuilder.h"
-
 #include "CSManager.h"
+#include "MetaData/CSEnumMetaData.h"
+#include "TypeGenerator/CSEnum.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
-void FCSGeneratedEnumBuilder::RebuildType()
+void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	PurgeEnum();
-
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSEnumInfo> EnumInfo = OwningAssembly->FindEnumInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(EnumInfo);
-	}
+	UCSEnum* Field = CastChecked<UCSEnum>(TypeToBuild);
+	TSharedPtr<FCSEnumMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSEnumMetaData>();
+	
+	PurgeEnum(Field);
 	
 	const int32 NumItems = TypeMetaData->Items.Num();
     
@@ -27,21 +25,19 @@ void FCSGeneratedEnumBuilder::RebuildType()
 	}
 	
 	Field->SetEnums(Entries, UEnum::ECppForm::EnumClass);
-	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Enum);
+	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Enum);
 
 #if WITH_EDITOR
 	UCSManager::Get().OnNewEnumEvent().Broadcast(Field);
 #endif
 }
 
-#if WITH_EDITOR
-void FCSGeneratedEnumBuilder::UpdateType()
+UClass* UCSGeneratedEnumBuilder::GetFieldType() const
 {
-	UCSManager::Get().OnEnumReloadedEvent().Broadcast(Field);
+	return UCSEnum::StaticClass();
 }
-#endif
 
-void FCSGeneratedEnumBuilder::PurgeEnum() const
+void UCSGeneratedEnumBuilder::PurgeEnum(UCSEnum* Field)
 {
 	Field->DisplayNameMap.Empty();
 	FCSUnrealSharpUtils::PurgeMetaData(Field);

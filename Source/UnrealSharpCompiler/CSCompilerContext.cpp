@@ -34,12 +34,12 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	if (!bIsSkeletonClass)
 	{
 		// The skeleton class shouldn't be using the managed constructor since it's not tied to an assembly
-		Class->ClassConstructor = &FCSGeneratedClassBuilder::ManagedObjectConstructor;
+		Class->ClassConstructor = &UCSGeneratedClassBuilder::ManagedObjectConstructor;
 	}
 
 	Super::FinishCompilingClass(Class);
 
-	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->TypeMetaData;
+	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->GetTypeMetaData<FCSClassMetaData>();
 
 	// Super call overrides the class flags, so we need to set after that
 	Class->ClassFlags |= TypeMetaData->ClassFlags;
@@ -55,7 +55,7 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 		Class->ClassFlags |= CLASS_Native;
 	}
 	
-	FCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
+	UCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 	TryInitializeAsDeveloperSettings(Class);
 	ApplyMetaData();
 }
@@ -64,12 +64,12 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 {
 	FKismetCompilerContext::OnPostCDOCompiled(Context);
 	
-	FCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
+	UCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 	
 	UCSClass* Class = GetMainClass();
 	if (Class == NewClass)
 	{
-		FCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(Class);
+		UCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(Class);
 		
 		if (GEditor)
 		{
@@ -80,8 +80,8 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetTypeInfo();
-	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
+	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetManagedTypeInfo<FCSClassInfo>();
+	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->GetTypeMetaData<FCSClassMetaData>()->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
 	TryValidateSimpleConstructionScript(ClassInfo);
@@ -123,13 +123,12 @@ void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 
 void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 {
-	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->TypeMetaData;
-	FCSGeneratedClassBuilder::ImplementInterfaces(Class, TypeMetaData->Interfaces);
+	UCSGeneratedClassBuilder::ImplementInterfaces(Class, GetTypeMetaData()->Interfaces);
 }
 
 void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const
 {
-	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->TypeMetaData->Properties;
+	const TArray<FCSPropertyMetaData>& Properties = GetTypeMetaData()->Properties;
 	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
 	
 	if (!Blueprint->SimpleConstructionScript)
@@ -168,8 +167,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 
 void FCSCompilerContext::GenerateFunctions() const
 {
-	UCSClass* MainClass = GetMainClass();
-	TSharedPtr<FCSClassMetaData> TypeMetaData = MainClass->GetTypeInfo()->TypeMetaData;
+	TSharedPtr<const FCSClassMetaData> TypeMetaData = GetTypeMetaData();
 
 	if (TypeMetaData->VirtualFunctions.IsEmpty() && TypeMetaData->Functions.IsEmpty())
 	{
@@ -187,7 +185,12 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 
 TSharedPtr<const FCSClassInfo> FCSCompilerContext::GetClassInfo() const
 {
-	return GetMainClass()->GetTypeInfo();
+	return GetMainClass()->GetManagedTypeInfo<FCSClassInfo>();
+}
+
+TSharedPtr<const FCSClassMetaData> FCSCompilerContext::GetTypeMetaData() const
+{
+	return GetClassInfo()->GetTypeMetaData<FCSClassMetaData>();
 }
 
 bool FCSCompilerContext::IsDeveloperSettings() const
@@ -227,8 +230,7 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 
 void FCSCompilerContext::ApplyMetaData()
 {
-	TSharedPtr<const FCSClassInfo> ClassInfo = GetClassInfo();
-	TSharedPtr<const FCSClassMetaData> TypeMetaData = ClassInfo->TypeMetaData;
+	TSharedPtr<const FCSClassMetaData> TypeMetaData = GetTypeMetaData();
 		
 	static FString DisplayNameKey = TEXT("DisplayName");
 	if (!NewClass->HasMetaData(*DisplayNameKey))

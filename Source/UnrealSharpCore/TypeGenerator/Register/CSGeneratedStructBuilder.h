@@ -1,22 +1,19 @@
 ﻿#pragma once
 
 #include "CSGeneratedTypeBuilder.h"
-#include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
-#include "MetaData/CSStructMetaData.h"
+#include "CSGeneratedStructBuilder.generated.h"
 
-class UNREALSHARPCORE_API FCSGeneratedStructBuilder : public TCSGeneratedTypeBuilder<FCSStructMetaData, UCSScriptStruct>
+class UCSScriptStruct;
+
+UCLASS()
+class UNREALSHARPCORE_API UCSGeneratedStructBuilder : public UCSGeneratedTypeBuilder
 {
+	GENERATED_BODY()
 public:
-	
-	FCSGeneratedStructBuilder(const TSharedPtr<FCSStructMetaData>& InTypeMetaData, const TSharedPtr<FCSAssembly>& InOwningAssembly) : TCSGeneratedTypeBuilder(InTypeMetaData, InOwningAssembly) {}
-
 	// TCSGeneratedTypeBuilder interface implementation
-	virtual void RebuildType() override;
-#if WITH_EDITOR
-	virtual void UpdateType() override;
-#endif
+	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
+	virtual UClass* GetFieldType() const override;
 	// End of implementation
-
 private:
-	void PurgeStruct();
+	static void PurgeStruct(UCSScriptStruct* Field);
 };

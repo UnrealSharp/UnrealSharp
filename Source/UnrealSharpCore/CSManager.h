@@ -6,6 +6,7 @@
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
+class UCSTypeBuilderManager;
 class UCSInterface;
 class UCSEnum;
 class UCSScriptStruct;
@@ -55,24 +56,24 @@ public:
 	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
 	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
 
-	TSharedPtr<FCSAssembly> LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
+	UCSAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
 	// Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-	TSharedPtr<FCSAssembly> LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+	UCSAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
 	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-	TSharedPtr<FCSAssembly> LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+	UCSAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
-	TSharedPtr<FCSAssembly> FindOwningAssembly(UClass* Class);
+	UCSAssembly* FindOwningAssembly(UClass* Class);
 
-	TSharedPtr<FCSAssembly> FindAssembly(FName AssemblyName) const
+	UCSAssembly* FindAssembly(FName AssemblyName) const
 	{
 		return LoadedAssemblies.FindRef(AssemblyName);
 	}
 
-	TSharedPtr<FCSAssembly> FindOrLoadAssembly(FName AssemblyName)
+	UCSAssembly* FindOrLoadAssembly(FName AssemblyName)
 	{
-		if (TSharedPtr<FCSAssembly> Assembly = FindAssembly(AssemblyName))
+		if (UCSAssembly* Assembly = FindAssembly(AssemblyName))
 		{
 			return Assembly;
 		}
@@ -81,6 +82,7 @@ public:
 	}
 	
 	FGCHandle FindManagedObject(const UObject* Object);
+	FGCHandle FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
 	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
 	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
@@ -96,11 +98,6 @@ public:
 	FCSInterfaceEvent& OnNewInterfaceEvent() { return OnNewInterface; }
 	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
 
-	FCSInterfaceEvent& OnInterfaceReloadedEvent() { return OnInterfaceReloaded; }
-	FCSClassEvent& OnClassReloadedEvent() { return OnClassReloaded; }
-	FCSStructEvent& OnStructReloadedEvent() { return OnStructReloaded; }
-	FCSEnumEvent& OnEnumReloadedEvent() { return OnEnumReloaded; }
-
 	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 #endif
 
@@ -114,15 +111,19 @@ public:
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
 
 	bool IsManagedPackage(const UPackage* Package) const { 	return AllPackages.Contains(Package); }
-	bool IsManagedField(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
+	UPackage* GetPackage(const FCSNamespace Namespace);
+
+	bool IsManagedType(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 
 	bool IsLoadingAnyAssembly() const;
 
 	void AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> SubsystemClass);
 
+	UCSTypeBuilderManager* GetTypeBuilderManager() const { return TypeBuilderManager; }
+
 private:
 
-	friend FCSAssembly;
+	friend UCSAssembly;
 	friend FUnrealSharpCoreModule;
 
 	void Initialize();
@@ -154,13 +155,22 @@ private:
 	UPROPERTY(Transient)
 	TArray<TSubclassOf<UDynamicSubsystem>> PendingDynamicSubsystemClasses;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UCSTypeBuilderManager> TypeBuilderManager;
+
 	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
+
+	// Handles all active UObjects that have interface wrappers in C#. The primary key is the unique ID of the UObject.
+	// The second key is the unique ID of the interface class.
+	TMap<uint32, TMap<uint32, TSharedPtr<FGCHandle>>> ManagedInterfaceWrappers;
 	
 	// Map to cache assemblies that native classes are associated with, for quick lookup.
-	TMap<uint32, TSharedPtr<FCSAssembly>> NativeClassToAssemblyMap;
+	UPROPERTY()
+	TMap<uint32, TObjectPtr<UCSAssembly>> NativeClassToAssemblyMap;
 
-	TMap<FName, TSharedPtr<FCSAssembly>> LoadedAssemblies;
+	UPROPERTY()
+	TMap<FName, TObjectPtr<UCSAssembly>> LoadedAssemblies;
 
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 
@@ -172,11 +182,6 @@ private:
 	FCSStructEvent OnNewStruct;
 	FCSInterfaceEvent OnNewInterface;
 	FCSEnumEvent OnNewEnum;
-
-	FCSClassEvent OnClassReloaded;
-	FCSStructEvent OnStructReloaded;
-	FCSInterfaceEvent OnInterfaceReloaded;
-	FCSEnumEvent OnEnumReloaded;
 
 	FSimpleMulticastDelegate OnProcessedPendingClasses;
 #endif

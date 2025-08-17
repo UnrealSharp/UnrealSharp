@@ -36,7 +36,7 @@ void FCSMetaDataUtils::SerializeProperty(const TSharedPtr<FJsonObject>& Property
 	PropertiesMetaData.SerializeFromJson(PropertyMetaData);
 }
 
-FName FCSMetaDataUtils::GetAdjustedFieldName(const FCSFieldName& FieldName)
+FString FCSMetaDataUtils::GetAdjustedFieldName(const FCSFieldName& FieldName)
 {
 	FString Name;
 	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())

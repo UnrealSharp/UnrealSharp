@@ -1,17 +1,16 @@
 ﻿#include "CSGeneratedInterfaceBuilder.h"
-
 #include "CSManager.h"
+#include "CSMetaDataUtils.h"
+#include "MetaData/CSInterfaceMetaData.h"
+#include "TypeGenerator/CSInterface.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
-void FCSGeneratedInterfaceBuilder::RebuildType()
+void UCSGeneratedInterfaceBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
+	UCSInterface* Field = CastChecked<UCSInterface>(TypeToBuild);
+	TSharedPtr<FCSInterfaceMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSInterfaceMetaData>();
+	
 	Field->PurgeClass(true);
-
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSInterfaceInfo> InterfaceInfo = OwningAssembly->FindInterfaceInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(InterfaceInfo);
-	}
 
 	UClass* ParentInterface = UInterface::StaticClass();
 	if (TypeMetaData->ParentInterface.IsValid())
@@ -25,7 +24,7 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
     FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
-	RegisterFunctionsToLoader();
+	RegisterFunctionsToLoader(Field);
 
 	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
 	
@@ -39,14 +38,12 @@ void FCSGeneratedInterfaceBuilder::RebuildType()
 #endif
 }
 
-#if WITH_EDITOR
-void FCSGeneratedInterfaceBuilder::UpdateType()
+UClass* UCSGeneratedInterfaceBuilder::GetFieldType() const
 {
-	UCSManager::Get().OnInterfaceReloadedEvent().Broadcast(Field);
+	return UCSInterface::StaticClass();
 }
-#endif
 
-void FCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader()
+void UCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader(UCSInterface* Field)
 {
 	for (TFieldIterator<UFunction> It(Field, EFieldIterationFlags::None); It; ++It)
 	{

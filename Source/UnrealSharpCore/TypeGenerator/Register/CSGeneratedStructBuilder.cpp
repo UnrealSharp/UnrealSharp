@@ -1,6 +1,6 @@
 ﻿#include "CSGeneratedStructBuilder.h"
-
 #include "CSManager.h"
+#include "MetaData/CSStructMetaData.h"
 #include "UnrealSharpCore/TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
@@ -9,15 +9,12 @@
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 #endif
 
-void FCSGeneratedStructBuilder::RebuildType()
+void UCSGeneratedStructBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	PurgeStruct();
-
-	if (!Field->HasTypeInfo())
-	{
-		TSharedPtr<FCSStructInfo> StructInfo = OwningAssembly->FindStructInfo(TypeMetaData->FieldName);
-		Field->SetTypeInfo(StructInfo);
-	}
+	UCSScriptStruct* Field = CastChecked<UCSScriptStruct>(TypeToBuild);
+	TSharedPtr<FCSStructMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSStructMetaData>();
+	
+	PurgeStruct(Field);
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
     FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
@@ -33,21 +30,19 @@ void FCSGeneratedStructBuilder::RebuildType()
 	Field->RecreateDefaults();
 	Field->UpdateStructFlags();
 	
-	RegisterFieldToLoader(ENotifyRegistrationType::NRT_Struct);
+	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Struct);
 
 #if WITH_EDITOR
 	UCSManager::Get().OnNewStructEvent().Broadcast(Field);
 #endif
 }
 
-#if WITH_EDITOR
-void FCSGeneratedStructBuilder::UpdateType()
+UClass* UCSGeneratedStructBuilder::GetFieldType() const
 {
-	UCSManager::Get().OnStructReloadedEvent().Broadcast(Field);
+	return UCSScriptStruct::StaticClass();
 }
-#endif
 
-void FCSGeneratedStructBuilder::PurgeStruct()
+void UCSGeneratedStructBuilder::PurgeStruct(UCSScriptStruct* Field)
 {
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 #if WITH_EDITORONLY_DATA

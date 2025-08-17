@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSGameplayTagExtensions.generated.h"
 
@@ -62,5 +63,42 @@ public:
 	 */
 	UFUNCTION(meta=(ScriptMethod))
 	static FGameplayTag RequestGameplayTag(const FName TagName);
+
+    /**
+     * Parses the tag name and returns the name of the leaf.
+     * For example, calling this on x.y.z would return the z component.
+     *
+     * @param Tag The gameplay tag to call on
+     * @return The leaf tag for the passed tag
+     */
+    UFUNCTION(meta=(ExtensionMethod, ScriptMethod))
+    static FName GetTagLeafName(const FGameplayTag Tag);
+
+    /**
+     * Returns direct parent GameplayTag of this GameplayTag, calling on x.y will return x
+     * @param Tag The gameplay tag to call on
+     * @return The tags direct parent
+     */
+    UFUNCTION(meta=(ExtensionMethod, ScriptMethod))
+    static FGameplayTag RequestDirectParent(const FGameplayTag Tag);
+
+    /**
+     * Returns a new tag container that includes this tag and all parent tags as explicitly added tags. For example,
+     * calling this on x.y.z would return a tag container with x.y.z, x.y, and x
+     * 
+     * @param Tag The gameplay tag to call on
+     * @return The collection of all tag parents
+     */
+    UFUNCTION(meta=(ExtensionMethod, ScriptMethod))
+    static FGameplayTagContainer GetGameplayTagParents(const FGameplayTag Tag);
+
+    /**
+     * Returns a GameplayTagContainer containing only this tag.
+     * 
+     * @param Tag The gameplay tag to call on
+     * @return A GameplayTagContainer containing only this tag.
+     */
+    UFUNCTION(meta=(ExtensionMethod, ScriptMethod))
+    static FGameplayTagContainer GetSingleTagContainer(const FGameplayTag Tag);
 	
 };
