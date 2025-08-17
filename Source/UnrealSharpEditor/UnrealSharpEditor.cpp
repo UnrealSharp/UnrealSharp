@@ -199,13 +199,17 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 
 	FString SolutionPath = FCSProcHelper::GetPathToSolution();
 	FString OutputPath = FCSProcHelper::GetUserAssemblyDirectory();
+	FString IntermediatePath = FCSProcHelper::GetHotReloadStagingDirectory();
+    
+    IFileManager& FileManager = IFileManager::Get();
+    FileManager.DeleteDirectory(*IntermediatePath, false, true);
 
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	FString BuildConfiguration = Settings->GetBuildConfigurationString();
 	ECSLoggerVerbosity LogVerbosity = Settings->LogVerbosity;
 
 	FString ExceptionMessage;
-	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
+	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *IntermediatePath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
 	{
 	 	HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
@@ -249,6 +253,17 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
 
 		return;
 	}
+
+    // Copy all binaries from the hot reload path into the output path
+    TArray<FString> AssemblyPaths;
+    FileManager.FindFiles(AssemblyPaths, *IntermediatePath, TEXT(""));
+
+    for (const FString& AssemblyPath : AssemblyPaths)
+    {
+        FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
+        FString OutputAssemblyPath = OutputPath / AssemblyName;
+        FileManager.Copy(*AssemblyPath, *OutputAssemblyPath, true);
+    }
 
 	// Load all assemblies again in the correct order.
 	for (const FString& ProjectName : ProjectsByLoadOrder)
