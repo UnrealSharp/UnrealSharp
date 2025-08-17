@@ -258,11 +258,11 @@ void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerW
     TArray<FString> AssemblyPaths;
     FileManager.FindFiles(AssemblyPaths, *IntermediatePath, TEXT(""));
 
-    for (const FString& AssemblyPath : AssemblyPaths)
+    for (const FString& AssemblyName : AssemblyPaths)
     {
-        FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
+        FString AssemblyPath = IntermediatePath / AssemblyName;
         FString OutputAssemblyPath = OutputPath / AssemblyName;
-        FileManager.Copy(*AssemblyPath, *OutputAssemblyPath, true);
+        FileManager.Copy(*OutputAssemblyPath, *AssemblyPath, true);
     }
 
 	// Load all assemblies again in the correct order.
