@@ -49,6 +49,10 @@ public static class ScriptInterfaceExtensions
         }
             
         var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, nativeClass);
+		if(wrapperHandle == IntPtr.Zero)
+        {
+            return null;
+        }
         GCHandle wrapperGcHandle = GCHandle.FromIntPtr(wrapperHandle);
         if (!wrapperGcHandle.IsAllocated)
         {
