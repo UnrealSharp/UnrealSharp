@@ -66,6 +66,13 @@ public class AsyncWrapperGenerator : ISourceGenerator
                 }
 
                 namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
+                
+                namespaces.UnionWith(parameter.AttributeLists.SelectMany(a => a.Attributes)
+                    .Select(a => model.GetTypeInfo(a).Type)
+                    .Where(type => type is not null)
+                    .Where(type => type!.ContainingNamespace is not null)
+                    .Select(type => type!.ContainingNamespace.ToDisplayString()));
+
             }
 
             sourceBuilder.AppendLine("#nullable disable");
