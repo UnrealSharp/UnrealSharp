@@ -670,6 +670,67 @@ public class FunctionExporter
         }
     }
     
+    public void ExportExtensionMethodOverloads(GeneratorStringBuilder builder)
+    {
+        foreach (FunctionOverload overload in _overloads)
+        {
+            builder.AppendLine();
+            ExportDeprecation(builder);
+
+            string returnType = "void";
+            string returnStatement = "";
+            if (_function.ReturnProperty != null)
+            {
+                returnType = ReturnValueTranslator!.GetManagedType(_function.ReturnProperty);
+                returnStatement = "return ";
+            }
+
+            List<string> genericTypes = new List<string>();
+            List<string> genericConstraints = new List<string>();
+            if (_hasGenericTypeSupport)
+            {
+                genericTypes.Add("DOT");
+                genericConstraints.Add(_function.GetGenericTypeConstraint());
+            }
+
+            if (_hasCustomStructParamSupport)
+            {
+                genericTypes.AddRange(_customStructParamTypes);
+                genericConstraints.AddRange(_customStructParamTypes.ConvertAll(paramType => $"MarshalledStruct<{paramType}>"));
+            }
+
+            string genericTypeString = string.Join(", ", genericTypes);
+
+            if (genericTypes.Count > 0)
+            {
+                builder.AppendLine($"{Modifiers}{returnType} {_functionName}<{genericTypeString}>(this {overload.ParamStringApiWithDefaults})");
+                builder.Indent();
+                foreach (var (genericType, constraint) in genericTypes.Zip(genericConstraints))
+                    builder.AppendLine($"where {genericType} : {constraint}");
+                builder.UnIndent();
+            }
+            else
+            {
+                builder.AppendLine($"{Modifiers}{returnType} {_functionName}(this {overload.ParamStringApiWithDefaults})");
+            }
+
+            builder.OpenBrace();
+            overload.Translator?.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, _function, overload.Parameter);
+
+            UhtClass functionOwner = (UhtClass) _function.Outer!;
+            string fullClassName = functionOwner.GetFullManagedName();
+            if (genericTypes.Count > 0)
+            {
+                builder.AppendLine($"{returnStatement}{fullClassName}.{_functionName}<{genericTypeString}>({overload.ParamsStringCall});");
+            }
+            else
+            {
+                builder.AppendLine($"{returnStatement}{fullClassName}.{_functionName}({overload.ParamsStringCall});");
+            }
+            builder.CloseBrace();
+        }
+    }
+    
     public void ExportExtensionMethod(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
@@ -684,7 +745,35 @@ public class FunctionExporter
         
         string functionNameToUse = _function.IsAutocast() ? _function.GetBlueprintAutocastName() : _functionName;
         
-        builder.AppendLine($"{Modifiers}{returnManagedType} {functionNameToUse}({_paramStringApiWithDefaults})");
+        List<string> genericTypes = new List<string>();
+        List<string> genericConstraints = new List<string>();
+        if (_hasGenericTypeSupport)
+        {
+            genericTypes.Add("DOT");
+            genericConstraints.Add(_function.GetGenericTypeConstraint());
+        }
+
+        if (_hasCustomStructParamSupport)
+        {
+            genericTypes.AddRange(_customStructParamTypes);
+            genericConstraints.AddRange(_customStructParamTypes.ConvertAll(paramType => $"MarshalledStruct<{paramType}>"));
+        }
+
+        string genericTypeString = string.Join(", ", genericTypes);
+
+        if (genericTypes.Count > 0)
+        {
+            builder.AppendLine($"{Modifiers}{returnManagedType} {functionNameToUse}<{genericTypeString}>({_paramStringApiWithDefaults})");
+            builder.Indent();
+            foreach (var (genericType, constraint) in genericTypes.Zip(genericConstraints))
+                builder.AppendLine($"where {genericType} : {constraint}");
+            builder.UnIndent();
+        }
+        else
+        {
+            builder.AppendLine($"{Modifiers}{returnManagedType} {functionNameToUse}({_paramStringApiWithDefaults})");
+        }
+        
         builder.OpenBrace();
         string returnStatement = _function.ReturnProperty != null ? "return " : "";
         UhtClass functionOwner = (UhtClass) _function.Outer!;
