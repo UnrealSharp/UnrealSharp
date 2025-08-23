@@ -703,7 +703,11 @@ public class FunctionExporter
 
             if (genericTypes.Count > 0)
             {
-                builder.AppendLine($"{Modifiers}{returnType} {_functionName}<{genericTypeString}>(this {overload.ParamStringApiWithDefaults})");
+                PropertyTranslator translator = _parameterTranslators[0];
+                string paramType = _classBeingExtended != null
+                    ? _classBeingExtended.GetFullManagedName()
+                    : translator.GetManagedType(_selfParameter!);
+                builder.AppendLine($"{Modifiers}{returnType} {_functionName}<{genericTypeString}>(this {paramType} {_selfParameter!.GetParameterName()}, {overload.ParamStringApiWithDefaults})");
                 builder.Indent();
                 foreach (var (genericType, constraint) in genericTypes.Zip(genericConstraints))
                     builder.AppendLine($"where {genericType} : {constraint}");
