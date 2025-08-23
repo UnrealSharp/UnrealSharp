@@ -20,11 +20,7 @@ void FCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCS
 	ExportedFunctions.Add(ExportedFunction);
 }
 
-#if PLATFORM_WINDOWS
 void* FCSBindsManager::GetBoundFunction(const TCHAR* InOuterName, const TCHAR* InFunctionName, int32 ManagedFunctionSize)
-#else
-void* FCSBindsManager::GetBoundFunction(const char* InOuterName, const char* InFunctionName, int32 ManagedFunctionSize)
-#endif
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSBindsManager::GetBoundFunction);
 	
@@ -36,7 +32,7 @@ void* FCSBindsManager::GetBoundFunction(const char* InOuterName, const char* InF
 
 	if (!ExportedFunctions)
 	{
-		UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: No exported functions found for %s"), *ManagedOuterName.ToString());
+		UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: No exported functions found for %s"), InOuterName);
 		return nullptr;
 	}
 
@@ -49,7 +45,7 @@ void* FCSBindsManager::GetBoundFunction(const char* InOuterName, const char* InF
 			
 		if (NativeFunction.Size != ManagedFunctionSize)
 		{
-			UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: Function size mismatch for %s::%s."), *ManagedOuterName.ToString(), *ManagedFunctionName.ToString());
+			UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: Function size mismatch for %s::%s."), InOuterName, InFunctionName);
 			return nullptr;
 		}
 			

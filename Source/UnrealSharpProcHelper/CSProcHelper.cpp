@@ -270,7 +270,11 @@ bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
 
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
+#if PLATFORM_WINDOWS
 	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.exe");
+#else
+	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool");
+#endif
 }
 
 FString FCSProcHelper::GetDotNetDirectory()
