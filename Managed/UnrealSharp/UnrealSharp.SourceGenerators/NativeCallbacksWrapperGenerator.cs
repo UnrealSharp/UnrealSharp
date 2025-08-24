@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -11,263 +11,242 @@ namespace UnrealSharp.SourceGenerators;
 public struct ParameterInfo
 {
     public DelegateParameterInfo Parameter { get; set; }
-    
 }
 
 [Generator]
-public class NativeCallbacksWrapperGenerator : ISourceGenerator
+public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Register a syntax receiver that will be created for each compilation
-        context.RegisterForSyntaxNotifications(() => new NativeCallbacksSyntaxReceiver());
+        var classDeclarations = context.SyntaxProvider.CreateSyntaxProvider(
+                static (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0,
+                static (syntaxContext, _) => GetClassInfoOrNull(syntaxContext));
+
+        var classAndCompilation = classDeclarations.Combine(context.CompilationProvider);
+
+        context.RegisterSourceOutput(classAndCompilation, (spc, pair) =>
+        {
+            var maybeClassInfo = pair.Left; // ClassInfo?
+            var compilation = pair.Right;
+            if (!maybeClassInfo.HasValue)
+            {
+                return;
+            }
+            GenerateForClass(spc, compilation, maybeClassInfo.Value);
+        });
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private static void GenerateForClass(SourceProductionContext context, Compilation compilation, ClassInfo classInfo)
     {
-        if (context.SyntaxReceiver is not NativeCallbacksSyntaxReceiver receiver)
+        var model = compilation.GetSemanticModel(classInfo.ClassDeclaration.SyntaxTree);
+        var sourceBuilder = new StringBuilder();
+
+        HashSet<string> namespaces = [];
+        foreach (DelegateInfo delegateInfo in classInfo.Delegates)
         {
-            return;
+            foreach (var parameter in delegateInfo.ParametersAndReturnValue)
+            {
+                var typeInfo = model.GetTypeInfo(parameter.Type);
+                var typeSymbol = typeInfo.Type;
+
+                if (typeSymbol == null || typeSymbol.ContainingNamespace == null)
+                {
+                    continue;
+                }
+
+                if (typeSymbol is INamedTypeSymbol nts && nts.IsGenericType)
+                {
+                    namespaces.UnionWith(nts.TypeArguments.Where(t => t.ContainingNamespace != null).Select(t => t.ContainingNamespace!.ToDisplayString()));
+                }
+
+                namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
+            }
         }
 
-        Compilation compilation = context.Compilation;
-        
-        foreach (ClassInfo classInfo in receiver.ClassesWithNativeCallbacks)
+        if (classInfo.NullableAwareable)
         {
-            var model = compilation.GetSemanticModel(classInfo.ClassDeclaration.SyntaxTree);
-            var sourceBuilder = new StringBuilder();
-
-            HashSet<string> namespaces = [];
-            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
-            {
-                foreach (var parameter in delegateInfo.ParametersAndReturnValue)
-                {
-                    var typeInfo = model.GetTypeInfo(parameter.Type);
-                    var typeSymbol = typeInfo.Type;
-                    
-                    if (typeSymbol == null || typeSymbol.ContainingNamespace == null)
-                    {
-                        continue;
-                    }
-
-                    if (typeSymbol is INamedTypeSymbol nts && nts.IsGenericType)
-                    {
-                        namespaces.UnionWith(nts.TypeArguments.Select(t => t.ContainingNamespace.ToDisplayString()));
-                    }
-
-                    namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
-                }
-            }
-
+            sourceBuilder.AppendLine("#nullable enable");
+        }
+        else
+        {
             sourceBuilder.AppendLine("#nullable disable");
-            sourceBuilder.AppendLine();
+        }
+        sourceBuilder.AppendLine("#pragma warning disable CS8500, CS0414");
+        sourceBuilder.AppendLine();
 
-            foreach (string? ns in namespaces)
+        foreach (string? ns in namespaces)
+        {
+            if (string.IsNullOrWhiteSpace(ns)) continue;
+            sourceBuilder.AppendLine($"using {ns};");
+        }
+
+        sourceBuilder.AppendLine();
+        sourceBuilder.AppendLine($"namespace {classInfo.Namespace}");
+        sourceBuilder.AppendLine("{");
+        sourceBuilder.AppendLine($"    public static unsafe partial class {classInfo.Name}");
+        sourceBuilder.AppendLine("    {");
+
+        sourceBuilder.AppendLine("        static " + classInfo.Name + "()");
+        sourceBuilder.AppendLine("        {");
+
+        foreach (DelegateInfo delegateInfo in classInfo.Delegates)
+        {
+            string delegateName = delegateInfo.Name;
+
+            string totalSizeDelegateName = delegateName + "TotalSize";
+            if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
             {
-                sourceBuilder.AppendLine($"using {ns};");
+                sourceBuilder.AppendLine($"             int {totalSizeDelegateName} = 0;");
             }
-            
-            sourceBuilder.AppendLine();
-            sourceBuilder.AppendLine($"namespace {classInfo.Namespace}");
-            sourceBuilder.AppendLine("{");
-            sourceBuilder.AppendLine($"    public static unsafe partial class {classInfo.Name}");
-            sourceBuilder.AppendLine("    {");
-            
-            sourceBuilder.AppendLine("        static " + classInfo.Name + "()");
-            sourceBuilder.AppendLine("        {");
-            
-            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
+            else
             {
-                string delegateName = delegateInfo.Name;
-                
-                string totalSizeDelegateName = delegateName + "TotalSize";
-                if (!delegateInfo.HasReturnValue && delegateInfo.Parameters.Count == 0)
+                sourceBuilder.Append($"             int {totalSizeDelegateName} = ");
+
+                void AppendSizeOf(DelegateParameterInfo param)
                 {
-                    sourceBuilder.AppendLine($"                 int {totalSizeDelegateName} = 0;");
+                    string typeFullName = param.Type.GetAnnotatedTypeName(model) ?? param.Type.ToString();
+
+                    if (param.IsOutParameter || param.IsRefParameter)
+                    {
+                        sourceBuilder.Append($"IntPtr.Size");
+                    }
+                    else
+                    {
+                        sourceBuilder.Append($"sizeof({typeFullName})");
+                    }
                 }
-                else
+
+                List<DelegateParameterInfo> parameters = delegateInfo.ParametersAndReturnValue;
+
+                for (int i = 0; i < parameters.Count; i++)
                 {
-                    sourceBuilder.Append($"                 int {totalSizeDelegateName} = ");
+                    AppendSizeOf(parameters[i]);
 
-                    void AppendSizeOf(DelegateParameterInfo param)
+                    if (i != parameters.Count - 1)
                     {
-                        string typeFullName = model.GetTypeInfo(param.Type).Type.ToDisplayString();
-        
-                        if (param.IsOutParameter || param.IsRefParameter)
-                        {
-                            sourceBuilder.Append($"IntPtr.Size");
-                        }
-                        else
-                        {
-                            sourceBuilder.Append($"sizeof({typeFullName})");
-                        }
+                        sourceBuilder.Append(" + ");
                     }
-                    
-                    List<DelegateParameterInfo> parameters = delegateInfo.ParametersAndReturnValue;
-                    
-                    for (int i = 0; i < parameters.Count; i++)
-                    {
-                        AppendSizeOf(parameters[i]);
-
-                        if (i != parameters.Count - 1)
-                        {
-                            sourceBuilder.Append(" + ");
-                        }
-                    }
-    
-                    sourceBuilder.AppendLine(";");
                 }
-                
-                string funcPtrName = delegateName + "FuncPtr";
-                sourceBuilder.AppendLine($"                 IntPtr {funcPtrName} = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", {totalSizeDelegateName});");
-                sourceBuilder.Append($"                 {delegateName} = (delegate* unmanaged<");
-                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
-                {
-                    string prefix = "";
 
-                    if (p.IsOutParameter)
-                    {
-                        prefix = "out ";
-                    }
-                    else if (p.IsRefParameter)
-                    {
-                        prefix = "ref ";
-                    }
+                sourceBuilder.AppendLine(";");
+            }
 
-                    return prefix + model.GetTypeInfo(p.Type).Type.ToDisplayString();
-                })));
-                
-                if (delegateInfo.Parameters.Count > 0)
+            string funcPtrName = delegateName + "FuncPtr";
+            sourceBuilder.AppendLine($"             IntPtr {funcPtrName} = UnrealSharp.Binds.NativeBinds.TryGetBoundFunction(\"{classInfo.Name}\", \"{delegateInfo.Name}\", {totalSizeDelegateName});");
+            sourceBuilder.Append($"             {delegateName} = (delegate* unmanaged<");
+            sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
+            {
+                string prefix = p.IsOutParameter ? "out " : p.IsRefParameter ? "ref " : string.Empty;
+                return prefix + (p.Type.GetAnnotatedTypeName(model) ?? p.Type.ToString());
+            })));
+
+            if (delegateInfo.Parameters.Count > 0)
+            {
+                sourceBuilder.Append(", ");
+            }
+
+            sourceBuilder.Append(delegateInfo.ReturnValue.Type.GetAnnotatedTypeName(model) ?? delegateInfo.ReturnValue.Type.ToString());
+
+            sourceBuilder.Append($">){funcPtrName};");
+            sourceBuilder.AppendLine();
+        }
+
+        sourceBuilder.AppendLine("        }");
+
+        foreach (DelegateInfo delegateInfo in classInfo.Delegates)
+        {
+            string returnTypeFullName = delegateInfo.ReturnValue.Type.GetAnnotatedTypeName(model) ?? delegateInfo.ReturnValue.Type.ToString();
+            sourceBuilder.AppendLine($"        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
+            sourceBuilder.Append($"        public static {returnTypeFullName} Call{delegateInfo.Name}(");
+
+            bool firstParameter = true;
+            foreach (DelegateParameterInfo parameter in delegateInfo.Parameters)
+            {
+                if (!firstParameter)
                 {
                     sourceBuilder.Append(", ");
                 }
-                
-                sourceBuilder.Append(model.GetTypeInfo(delegateInfo.ReturnValue.Type).Type.ToDisplayString());
-                
-                sourceBuilder.Append($">){funcPtrName};");
-                sourceBuilder.AppendLine();
-            }
-            
-            sourceBuilder.AppendLine("        }");
 
-            foreach (DelegateInfo delegateInfo in classInfo.Delegates)
+                firstParameter = false;
+
+                if (parameter.IsOutParameter)
+                {
+                    sourceBuilder.Append("out ");
+                }
+
+                if (parameter.IsRefParameter)
+                {
+                    sourceBuilder.Append("ref ");
+                }
+
+                string typeFullName = parameter.Type.GetAnnotatedTypeName(model) ?? parameter.Type.ToString();
+                sourceBuilder.Append($"{typeFullName} {parameter.Name}");
+            }
+
+            sourceBuilder.AppendLine(")");
+            sourceBuilder.AppendLine("        {");
+
+            string delegateName = delegateInfo.Name;
+
+            if (delegateInfo.ReturnValue.Type.ToString() != "void")
             {
-                sourceBuilder.AppendLine($"        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]");
-                sourceBuilder.Append($"        public static {delegateInfo.ReturnValue.Type.ToString()} Call{delegateInfo.Name}(");
-                
-                bool firstParameter = true;
-                foreach (DelegateParameterInfo parameter in delegateInfo.Parameters)
-                {
-                    if (!firstParameter)
-                    {
-                        sourceBuilder.Append(", ");
-                    }
-
-                    firstParameter = false;
-
-                    if (parameter.IsOutParameter)
-                    {
-                        sourceBuilder.Append("out ");
-                    }
-                    
-                    if (parameter.IsRefParameter)
-                    {
-                        sourceBuilder.Append("ref ");
-                    }
-                    
-                    string typeFullName = model.GetTypeInfo(parameter.Type).Type.ToDisplayString();
-                    sourceBuilder.Append($"{typeFullName} {parameter.Name}");
-                }
-
-                sourceBuilder.AppendLine(")");
-                sourceBuilder.AppendLine("        {");
-
-                string delegateName = delegateInfo.Name;
-                
-                if (delegateInfo.ReturnValue.Type.ToString() != "void")
-                {
-                    sourceBuilder.Append($"            return {delegateName}(");
-                }
-                else
-                {
-                    sourceBuilder.Append($"            {delegateName}(");
-                }
-
-                sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
-                {
-                    string prefix = "";
-                    
-                    if (p.IsOutParameter)
-                    {
-                        prefix = "out ";
-                    }
-                    else if (p.IsRefParameter)
-                    {
-                        prefix = "ref ";
-                    }
-
-                    return prefix + p.Name;
-                })));
-
-                sourceBuilder.AppendLine(");");
-                sourceBuilder.AppendLine("        }");
+                sourceBuilder.Append($"            return {delegateName}(");
             }
-            
-            // End class definition
-            sourceBuilder.AppendLine("    }");
-            sourceBuilder.AppendLine("}");
+            else
+            {
+                sourceBuilder.Append($"            {delegateName}(");
+            }
 
-            context.AddSource($"{classInfo.Name}.generated.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+            sourceBuilder.Append(string.Join(", ", delegateInfo.Parameters.Select(p =>
+            {
+                string prefix = p.IsOutParameter ? "out " : p.IsRefParameter ? "ref " : string.Empty;
+                return prefix + p.Name;
+            })));
+
+            sourceBuilder.AppendLine(");");
+            sourceBuilder.AppendLine("        }");
         }
+
+        // End class definition
+        sourceBuilder.AppendLine("    }");
+        sourceBuilder.AppendLine("}");
+
+        context.AddSource($"{classInfo.Name}.generated.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
-}
 
-internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
-{
-    public List<ClassInfo> ClassesWithNativeCallbacks { get; } = new();
-
-    public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+    private static ClassInfo? GetClassInfoOrNull(GeneratorSyntaxContext context)
     {
-        if (syntaxNode is not ClassDeclarationSyntax classDeclaration)
+        if (context.Node is not ClassDeclarationSyntax classDeclaration)
         {
-            return;
+            return null;
         }
-        
+
+        // Check attribute (support both NativeCallbacks and NativeCallbacksAttribute)
         bool hasNativeCallbacksAttribute = classDeclaration.AttributeLists
             .SelectMany(a => a.Attributes)
-            .Any(a => a.Name.ToString() == "NativeCallbacks");
+            .Any(a => a.Name.ToString() is "NativeCallbacks" or "NativeCallbacksAttribute");
 
         if (!hasNativeCallbacksAttribute)
         {
-            return;
-        }
-            
-        string namespaceName = null;
-        SyntaxNode currentNode = classDeclaration.Parent;
-        while (currentNode != null)
-        {
-            if (currentNode is FileScopedNamespaceDeclarationSyntax namespaceDeclaration)
-            {
-                namespaceName = namespaceDeclaration.Name.ToString();
-                break;
-            }
-            
-            currentNode = currentNode.Parent;
+            return null;
         }
 
-        if (namespaceName == null)
+        string namespaceName = classDeclaration.GetFullNamespace();
+
+        if (string.IsNullOrEmpty(namespaceName))
         {
-            return;
+            return null;
         }
-                
+
         var classInfo = new ClassInfo
         {
             ClassDeclaration = classDeclaration,
             Name = classDeclaration.Identifier.ValueText,
             Namespace = namespaceName,
-            Delegates = new List<DelegateInfo>()
+            Delegates = new List<DelegateInfo>(),
+            NullableAwareable = context.SemanticModel.GetNullableContext(context.Node.Span.Start).HasFlag(NullableContext.AnnotationsEnabled)
         };
-        
+
         foreach (MemberDeclarationSyntax member in classDeclaration.Members)
         {
             if (member is not FieldDeclarationSyntax fieldDeclaration ||
@@ -275,19 +254,19 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
             {
                 continue;
             }
-            
+
             var delegateInfo = new DelegateInfo
             {
                 Name = fieldDeclaration.Declaration.Variables.First().Identifier.ValueText,
                 Parameters = new List<DelegateParameterInfo>()
             };
-            
+
             char paramName = 'a';
-            
+
             for (int i = 0; i < functionPointerTypeSyntax.ParameterList.Parameters.Count; i++)
             {
                 FunctionPointerParameterSyntax param = functionPointerTypeSyntax.ParameterList.Parameters[i];
-                
+
                 DelegateParameterInfo parameter = new DelegateParameterInfo
                 {
                     Name = paramName.ToString(),
@@ -295,7 +274,7 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
                     IsRefParameter = param.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.RefKeyword)),
                     Type = param.Type,
                 };
-                         
+
                 bool isReturnParameter = i == functionPointerTypeSyntax.ParameterList.Parameters.Count - 1;
                 if (isReturnParameter)
                 {
@@ -305,14 +284,14 @@ internal class NativeCallbacksSyntaxReceiver : ISyntaxReceiver
                 {
                     delegateInfo.Parameters.Add(parameter);
                 }
-                
+
                 paramName++;
             }
 
             classInfo.Delegates.Add(delegateInfo);
         }
-                
-        ClassesWithNativeCallbacks.Add(classInfo);
+
+        return classInfo;
     }
 }
 
@@ -322,6 +301,7 @@ internal struct ClassInfo
     public string Name;
     public string Namespace;
     public List<DelegateInfo> Delegates;
+    public bool NullableAwareable;
 }
 
 internal struct DelegateInfo
@@ -333,12 +313,12 @@ internal struct DelegateInfo
         get
         {
             List<DelegateParameterInfo> allParameters = new List<DelegateParameterInfo>(Parameters);
-            
+
             if (ReturnValue.Type.ToString() != "void")
             {
                 allParameters.Add(ReturnValue);
             }
-            
+
             return allParameters;
         }
     }

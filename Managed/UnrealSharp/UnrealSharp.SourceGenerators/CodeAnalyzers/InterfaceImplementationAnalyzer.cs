@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -39,7 +39,7 @@ public class UFunctionConflictAnalyzer : DiagnosticAnalyzer
             foreach (IMethodSymbol? interfaceMethod in typeSymbol.GetMembers().OfType<IMethodSymbol>())
             {
                 ISymbol? implementation = methodSymbol.ContainingType.FindImplementationForInterfaceMember(interfaceMethod);
-                if (implementation?.Equals(methodSymbol) == true)
+                if (SymbolEqualityComparer.Default.Equals(implementation, methodSymbol))
                 {
                     CheckForUFunctionConflict(context, methodSymbol, interfaceMethod);
                 }

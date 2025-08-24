@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -78,7 +78,7 @@ public partial struct FLinearColor : IEquatable<FLinearColor>
         return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
     }
     
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FLinearColor other && Equals(other);
     }

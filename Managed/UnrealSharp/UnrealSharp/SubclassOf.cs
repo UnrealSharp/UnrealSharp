@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
@@ -173,7 +173,7 @@ public struct TSubclassOf<T>
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is TSubclassOf<T> other && NativeClass == other.NativeClass;
     }

@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace UnrealSharp.Core;
 
@@ -25,7 +25,7 @@ public struct FDelegateHandle : IEquatable<FDelegateHandle>
         return !a.Equals(b);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FDelegateHandle handle && Equals(handle);
     }
