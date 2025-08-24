@@ -55,7 +55,7 @@ public struct FFieldPath : IEquatable<FFieldPath>
         return FFieldPathExporter.CallFieldPathsEqual(ref PathUnsafe, ref other.PathUnsafe).ToManagedBool();
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FFieldPath path && Equals(path);
     }

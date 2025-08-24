@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -72,7 +72,7 @@ public partial struct FVector2D
     /// <param name="obj">The Object to compare against.</param>
     /// <returns>True if the Object is equal to this FVector2D; False otherwise.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FVector2D FVector2D && Equals(FVector2D);
     }

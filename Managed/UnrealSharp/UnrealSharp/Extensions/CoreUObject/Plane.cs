@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace UnrealSharp.CoreUObject;
@@ -248,7 +248,7 @@ public partial struct FPlane
     /// <param name="obj">The Object to compare against.</param>
     /// <returns>True if the Object is equal to this FPlane; False otherwise.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is FPlane)
         {

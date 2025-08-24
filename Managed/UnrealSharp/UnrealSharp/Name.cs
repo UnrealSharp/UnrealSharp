@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
@@ -97,7 +97,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         return this == other;
     }
     
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is FName name)
         {

@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -56,7 +56,7 @@ public partial struct FTransform
         return Rotation.Equals(other.Rotation) && Location.Equals(other.Location) && Scale.Equals(other.Scale);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is FTransform other && Equals(other);
     }

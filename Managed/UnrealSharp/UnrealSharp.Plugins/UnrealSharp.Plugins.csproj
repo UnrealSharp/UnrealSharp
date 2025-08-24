@@ -27,9 +27,7 @@
         
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
         
-        <PackageReference Include="Microsoft.Build.Locator">
-            <Version>1.9.1</Version>
-        </PackageReference>
+        <PackageReference Include="Microsoft.Build.Locator" />
     </ItemGroup>
 
     <ItemGroup>
