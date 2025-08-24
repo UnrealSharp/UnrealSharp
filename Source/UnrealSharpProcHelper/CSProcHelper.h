@@ -40,6 +40,9 @@ public:
 	// Path to the directory where we store the user's assembly after it has been processed by the weaver.
 	static FString GetUserAssemblyDirectory();
 
+    // Path to the directory where we place binaries that have been processed by the weaver during hot reload
+    static FString GetHotReloadStagingDirectory();
+
 	// Path to file with UnrealSharp metadata
 	static FString GetUnrealSharpMetadataPath();
 

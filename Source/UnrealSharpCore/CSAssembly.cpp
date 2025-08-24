@@ -220,6 +220,7 @@ bool UCSAssembly::UnloadAssembly()
 	ManagedAssemblyHandle->Dispose(ManagedAssemblyHandle->GetHandle());
 	ManagedAssemblyHandle.Reset();
 
+    UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(AssemblyName);
 	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
 }
 

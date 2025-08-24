@@ -142,6 +142,11 @@ FString FCSProcHelper::GetUserAssemblyDirectory()
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed"));
 }
 
+FString FCSProcHelper::GetHotReloadStagingDirectory()
+{
+    return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Intermediate", "Managed", "HotReload"));
+}
+
 FString FCSProcHelper::GetUnrealSharpMetadataPath()
 {
 	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.assemblyloadorder.json");
