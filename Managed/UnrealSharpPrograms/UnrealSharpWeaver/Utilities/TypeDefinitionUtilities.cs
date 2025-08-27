@@ -187,6 +187,26 @@ public static class TypeDefinitionUtilities
         type.Methods.Add(method);
         return method;
     }
+    
+    public static MethodDefinition GetOrAddMethod(this TypeDefinition type, string name, TypeReference? returnType, MethodAttributes attributes = MethodAttributes.Private, params TypeReference[] parameterTypes)
+    {
+        returnType ??= WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.TypeSystem.Void;
+     
+        var existingMethod = FindMethod(type, name, throwIfNotFound: false, parameterTypes);
+        if (existingMethod is not null)
+        {
+            return existingMethod.Resolve();
+        }
+        
+        var method = new MethodDefinition(name, attributes, returnType);
+        
+        foreach (var parameterType in parameterTypes)
+        {
+            method.Parameters.Add(new ParameterDefinition(parameterType));
+        }
+        type.Methods.Add(method);
+        return method;
+    }
 
     private static readonly MethodAttributes MethodAttributes = MethodAttributes.Public | MethodAttributes.Static;
     
@@ -573,5 +593,18 @@ public static class TypeDefinitionUtilities
             "System.Double" => PropertyType.Double,
             _ => throw new NotImplementedException()
         };
+    }
+
+    public static void AddMarshalledStructInterface(this TypeDefinition typeDefinition)
+    {
+        var marshalledStructRef = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(
+            WeaverImporter.Instance.MarshalledStructReference);
+        var instancedInterface = marshalledStructRef.MakeGenericInstanceType(typeDefinition);
+        ArgumentNullException.ThrowIfNull(instancedInterface);
+
+        if (typeDefinition.Interfaces.All(i => i.InterfaceType.FullName != instancedInterface.FullName))
+        {
+            typeDefinition.Interfaces.Add(new InterfaceImplementation(instancedInterface));
+        }
     }
 }

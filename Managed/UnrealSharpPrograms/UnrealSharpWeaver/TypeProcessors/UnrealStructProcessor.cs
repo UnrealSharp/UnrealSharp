@@ -82,6 +82,8 @@ public static class UnrealStructProcessor
     private static void ProcessStruct(TypeDefinition structTypeDefinition, StructMetaData metadata)
     {
         MethodReference? foundConstructor = structTypeDefinition.FindMethod(".ctor", false, WeaverImporter.Instance.IntPtrType);
+
+        structTypeDefinition.AddMarshalledStructInterface();
         
         if (foundConstructor != null)
         {
@@ -93,7 +95,7 @@ public static class UnrealStructProcessor
         PropertyProcessor.ProcessClassMembers(ref propertyOffsetsToInitialize, ref propertyPointersToInitialize, structTypeDefinition, metadata.Fields);
 
         MethodDefinition structConstructor = ConstructorBuilder.CreateConstructor(structTypeDefinition, MethodAttributes.Public, WeaverImporter.Instance.IntPtrType);
-        var toNativeMethod = FunctionProcessor.CreateMethod(structTypeDefinition, "ToNative", MethodAttributes.Public, null, [WeaverImporter.Instance.IntPtrType]);
+        var toNativeMethod = structTypeDefinition.GetOrAddMethod("ToNative",  null, MethodAttributes.Public | MethodAttributes.Virtual, WeaverImporter.Instance.IntPtrType);
         
         ILProcessor constructorBody = structConstructor.Body.GetILProcessor();
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();
@@ -119,29 +121,42 @@ public static class UnrealStructProcessor
         structConstructor.FinalizeMethod();
         toNativeMethod.FinalizeMethod();
         
+        var fromNativeMethod = structTypeDefinition.GetOrAddMethod("FromNative", structTypeDefinition, MethodAttributes.Public | MethodAttributes.Static, [WeaverImporter.Instance.IntPtrType]);
+        ILProcessor fromNativeBody = fromNativeMethod.Body.GetILProcessor();
+        fromNativeBody.Emit(OpCodes.Ldarg_0);
+        fromNativeBody.Emit(OpCodes.Newobj, structConstructor);
+        
+        fromNativeMethod.FinalizeMethod();
+
+        
         // Field to cache the native size of the struct.
+        FieldDefinition nativeClassField = structTypeDefinition.AddField("NativeClassPtr", WeaverImporter.Instance.IntPtrType, FieldAttributes.Public | FieldAttributes.Static);
         FieldDefinition nativeStructSizeField = structTypeDefinition.AddField("NativeDataSize", WeaverImporter.Instance.Int32TypeRef, FieldAttributes.Public | FieldAttributes.Static);
+        
+        var getNativeClassPtrMethod = structTypeDefinition.GetOrAddMethod("GetNativeClassPtr", WeaverImporter.Instance.IntPtrType, MethodAttributes.Public | MethodAttributes.Static);
+        getNativeClassPtrMethod.Body.GetILProcessor().Emit(OpCodes.Ldsfld, nativeClassField);
+        getNativeClassPtrMethod.FinalizeMethod();
+        
+        var getNativeStructSizeMethod = structTypeDefinition.GetOrAddMethod("GetNativeDataSize", WeaverImporter.Instance.Int32TypeRef, MethodAttributes.Public | MethodAttributes.Static);
+        getNativeStructSizeMethod.Body.GetILProcessor().Emit(OpCodes.Ldsfld, nativeStructSizeField);
+        getNativeStructSizeMethod.FinalizeMethod();
+        
         Instruction callGetNativeStructFromNameMethod = Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeStructFromNameMethod);
+        Instruction setNativeClassField = Instruction.Create(OpCodes.Stsfld, nativeClassField);
+        Instruction loadNativeClassField = Instruction.Create(OpCodes.Ldsfld, nativeClassField);
         Instruction callGetNativeStructSizeMethod = Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeStructSizeMethod);
         Instruction setNativeStructSizeField = Instruction.Create(OpCodes.Stsfld, nativeStructSizeField);
-        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, setNativeStructSizeField, [callGetNativeStructFromNameMethod, callGetNativeStructSizeMethod]);
+        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, setNativeStructSizeField, [callGetNativeStructFromNameMethod, setNativeClassField, loadNativeClassField, callGetNativeStructSizeMethod]);
         
         CreateStructMarshaller(structTypeDefinition, nativeStructSizeField, toNativeMethod, structConstructor);
-        CreateStructStaticConstructor(metadata, structTypeDefinition);
+        CreateStructStaticConstructor(metadata, structTypeDefinition, nativeClassField);
     }
 
-    private static void CreateStructStaticConstructor(StructMetaData metadata, TypeDefinition structTypeDefinition)
+    private static void CreateStructStaticConstructor(StructMetaData metadata, TypeDefinition structTypeDefinition, FieldDefinition nativeStructClass)
     {
         MethodDefinition staticConstructor = ConstructorBuilder.MakeStaticConstructor(structTypeDefinition);
         
-        // Create a field to cache the native struct class.
-        // nint a = UCoreUObjectExporter.CallGetNativeStructFromName("MyStruct");
-        VariableDefinition nativeStructClass = staticConstructor.AddLocalVariable(WeaverImporter.Instance.IntPtrType);
-        Instruction callGetNativeStructFromNameMethod = Instruction.Create(OpCodes.Call, WeaverImporter.Instance.GetNativeStructFromNameMethod);
-        Instruction setNativeStruct = Instruction.Create(OpCodes.Stloc, nativeStructClass);
-        ConstructorBuilder.CreateTypeInitializer(structTypeDefinition, setNativeStruct, [callGetNativeStructFromNameMethod]);
-        
-        ConstructorBuilder.InitializeFields(staticConstructor, [.. metadata.Fields], Instruction.Create(OpCodes.Ldloc, nativeStructClass));
+        ConstructorBuilder.InitializeFields(staticConstructor, [.. metadata.Fields], Instruction.Create(OpCodes.Ldsfld, nativeStructClass));
         staticConstructor.FinalizeMethod();
     }
 

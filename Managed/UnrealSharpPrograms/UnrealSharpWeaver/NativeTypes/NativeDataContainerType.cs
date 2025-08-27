@@ -25,6 +25,8 @@ public class NativeDataContainerType : NativeDataType
     
     protected virtual AssemblyDefinition MarshallerAssembly => WeaverImporter.Instance.UnrealSharpAssembly;
     protected virtual string MarshallerNamespace => WeaverImporter.UnrealSharpNamespace;
+
+    protected virtual bool AllowsSetter => false;
     
     protected TypeReference[] ContainerMarshallerTypeParameters { get; set; } = [];
     
@@ -95,7 +97,7 @@ public class NativeDataContainerType : NativeDataType
             TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetContainerMarshallerName(), MarshallerNamespace)!;
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
 
-            if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition)
+            if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition && !AllowsSetter)
             {
                 typeDefinition.Methods.Remove(propertyDefinition.SetMethod);
                 propertyDefinition.SetMethod = null;

@@ -1,4 +1,5 @@
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace UnrealSharpWeaver.NativeTypes;
 
@@ -18,5 +19,11 @@ class NativeDataArrayType(TypeReference typeRef, int containerDim, TypeReference
     public override string GetContainerWrapperType()
     {
         return "System.Collections.Generic.IList`1";
+    }
+
+    public override void WriteSetter(TypeDefinition type, MethodDefinition setter, Instruction[] loadBufferPtr,
+                                     FieldDefinition? fieldDefinition)
+    {
+        base.WriteSetter(type, setter, loadBufferPtr, fieldDefinition);
     }
 }
