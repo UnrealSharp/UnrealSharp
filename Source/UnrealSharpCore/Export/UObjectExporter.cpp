@@ -128,6 +128,11 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 	return UCSManager::Get().FindManagedObject(World);
 }
 
+bool UUObjectExporter::IsA(const UObject* Object, UClass* Class)
+{
+    return Object->IsA(Class);
+}
+
 uint32 UUObjectExporter::GetUniqueID(UObject* Object)
 {
 	return Object->GetUniqueID();

@@ -15,5 +15,6 @@ public static unsafe partial class UObjectExporter
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, void> InvokeNativeNetFunction;
     public static delegate* unmanaged<IntPtr, NativeBool> NativeIsValid;
     public static delegate* unmanaged<IntPtr, IntPtr> GetWorld_Internal;
+    public static delegate* unmanaged<IntPtr, IntPtr, NativeBool> IsA;
     public static delegate* unmanaged<IntPtr, int> GetUniqueID;
 }
