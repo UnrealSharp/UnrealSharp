@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Tooltip;
@@ -14,11 +15,19 @@ public static class StructExporter
         GeneratorStringBuilder stringBuilder = new();
         List<UhtProperty> exportedProperties = new();
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
-        if (structObj.SuperStruct != null)
+        List<UhtStruct> inheritanceHierarchy = new();
+        UhtStruct? currentStruct = structObj;
+        while (currentStruct is not null)
         {
-            ScriptGeneratorUtilities.GetExportedProperties(structObj.SuperStruct, exportedProperties, getSetBackedProperties);
+            inheritanceHierarchy.Add(currentStruct);
+            currentStruct = currentStruct.SuperStruct;
         }
-        ScriptGeneratorUtilities.GetExportedProperties(structObj, exportedProperties, getSetBackedProperties);
+
+        inheritanceHierarchy.Reverse();
+        foreach (UhtStruct inheritance in inheritanceHierarchy)
+        {
+            ScriptGeneratorUtilities.GetExportedProperties(inheritance, exportedProperties, getSetBackedProperties);
+        }
         
         // Check there are not properties with the same name, remove otherwise
         List<string> propertyNames = new();
