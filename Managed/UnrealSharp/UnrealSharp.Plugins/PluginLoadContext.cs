@@ -58,21 +58,8 @@ public class PluginLoadContext : AssemblyLoadContext
         {
             return null;
         }
-
-        using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
-
-        Assembly? loadedAssembly;
-        if (!File.Exists(pdbPath))
-        {
-            loadedAssembly = LoadFromStream(assemblyFile);
-        }
-        else
-        {
-            using var pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            loadedAssembly = LoadFromStream(assemblyFile, pdbFile);
-        }
         
+        Assembly loadedAssembly = LoadFromAssemblyPath(assemblyPath);
         LoadedAssemblies[assemblyName.Name] = new WeakReference<Assembly>(loadedAssembly);
         return loadedAssembly;
     }
