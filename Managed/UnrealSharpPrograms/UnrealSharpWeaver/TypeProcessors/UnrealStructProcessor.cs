@@ -95,7 +95,7 @@ public static class UnrealStructProcessor
         PropertyProcessor.ProcessClassMembers(ref propertyOffsetsToInitialize, ref propertyPointersToInitialize, structTypeDefinition, metadata.Fields);
 
         MethodDefinition structConstructor = ConstructorBuilder.CreateConstructor(structTypeDefinition, MethodAttributes.Public, WeaverImporter.Instance.IntPtrType);
-        var toNativeMethod = structTypeDefinition.GetOrAddMethod("ToNative",  null, MethodAttributes.Public | MethodAttributes.Virtual, WeaverImporter.Instance.IntPtrType);
+        var toNativeMethod = structTypeDefinition.GetOrAddMethod("ToNative",  null, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, WeaverImporter.Instance.IntPtrType);
         
         ILProcessor constructorBody = structConstructor.Body.GetILProcessor();
         ILProcessor toNativeBody = toNativeMethod.Body.GetILProcessor();
