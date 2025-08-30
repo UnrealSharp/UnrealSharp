@@ -33,6 +33,7 @@
 
     <PropertyGroup>
         <_TargetFrameworkToUse>net8.0</_TargetFrameworkToUse>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <Target Name="SetTargetFramework"
