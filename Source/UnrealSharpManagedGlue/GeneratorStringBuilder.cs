@@ -148,8 +148,12 @@ public class GeneratorStringBuilder : IDisposable
         CloseBrace();
     }
     
-    public void GenerateTypeSkeleton(string typeNameSpace, bool blittable = false)
+    public void GenerateTypeSkeleton(string typeNameSpace, bool blittable = false, bool nullableEnabled = false)
     {
+        if (nullableEnabled)
+        {
+            AppendLine("#nullable enable");
+        }
         DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.CoreAttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);

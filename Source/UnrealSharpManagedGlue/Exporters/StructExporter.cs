@@ -46,12 +46,13 @@ public static class StructExporter
             }
         }
 
+        bool nullableEnabled = structObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         bool isBlittable = structObj.IsStructBlittable();
         bool isCopyable = structObj.IsStructNativelyCopyable();
         bool isDestructible = structObj.IsStructNativelyDestructible();
 
         string typeNameSpace = structObj.GetNamespace();
-        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable);
+        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable, nullableEnabled);
                 
         stringBuilder.AppendTooltip(structObj);
         

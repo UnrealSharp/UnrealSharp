@@ -33,10 +33,11 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        if (property.IsGenericType()) return "DOT";
+        string nullableAnnotation = property.HasMetadata("Nullable") ? "?" : "";
+        if (property.IsGenericType()) return $"DOT{nullableAnnotation}";
 
         UhtObjectProperty objectProperty = (UhtObjectProperty)property;
-        return objectProperty.Class.GetFullManagedName();
+        return $"{objectProperty.Class.GetFullManagedName()}{nullableAnnotation}";
     }
 
     public override string GetMarshaller(UhtProperty property)
