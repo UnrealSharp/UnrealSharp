@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
 
@@ -95,6 +96,11 @@ public static class FileExporter
         string directory = GetDirectoryPath(type.Package);
         string filePath = GetFilePath(type.EngineName, directory);
         UnchangedFiles.Add(filePath);
+
+        if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
+        {
+            UnchangedFiles.Add(GetFilePath($"{type.EngineName}_Extensions", directory));
+        }
     }
 
     public static string GetDirectoryPath(UhtPackage package)
