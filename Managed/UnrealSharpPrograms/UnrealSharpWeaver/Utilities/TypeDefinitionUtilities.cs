@@ -1,8 +1,16 @@
+using System.Reflection.Metadata;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Mono.Collections.Generic;
 using UnrealSharpWeaver.NativeTypes;
+using CustomAttribute = Mono.Cecil.CustomAttribute;
+using FieldDefinition = Mono.Cecil.FieldDefinition;
+using InterfaceImplementation = Mono.Cecil.InterfaceImplementation;
+using MethodDefinition = Mono.Cecil.MethodDefinition;
+using PropertyDefinition = Mono.Cecil.PropertyDefinition;
+using SequencePoint = Mono.Cecil.Cil.SequencePoint;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
+using TypeReference = Mono.Cecil.TypeReference;
 
 namespace UnrealSharpWeaver.Utilities;
 
@@ -297,7 +305,43 @@ public static class TypeDefinitionUtilities
     public static MethodReference? FindMethod(this TypeReference typeReference, string methodName,
         bool throwIfNotFound = true, params TypeReference[] parameterTypes)
     {
-        return FindMethod(typeReference.Resolve(), methodName, throwIfNotFound, parameterTypes);
+        var method = FindMethod(typeReference.Resolve(), methodName, throwIfNotFound, parameterTypes);
+        if (method is null) return null;
+        
+        // If the declaring type is generic instance, we need to create a new method reference
+        if (typeReference is GenericInstanceType genericInstance)
+        {
+            // Create new method reference on the generic instance
+            var newMethod = new MethodReference(method.Name, method.ReturnType, genericInstance)
+            {
+                HasThis = method.HasThis,
+                ExplicitThis = method.ExplicitThis,
+                CallingConvention = method.CallingConvention
+            };
+
+            // Copy the parameters
+            foreach (var parameter in method.Parameters)
+            {
+                newMethod.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+            }
+
+            // If the method itself is generic, handle its generic parameters
+            if (method.HasGenericParameters)
+            {
+                var genericInstanceMethod = new GenericInstanceMethod(newMethod);
+                foreach (var genericParam in method.GenericParameters)
+                {
+                    // Map the generic parameter to the concrete type from the declaring type
+                    var concreteType = genericInstance.GenericArguments[genericParam.Position];
+                    genericInstanceMethod.GenericArguments.Add(concreteType);
+                }
+                return genericInstanceMethod;
+            }
+
+            return newMethod;
+        }
+
+        return method;
     }
 
     public static MethodReference? FindMethod(this TypeDefinition typeDef, string methodName, bool throwIfNotFound = true, params TypeReference[] parameterTypes)
@@ -595,7 +639,7 @@ public static class TypeDefinitionUtilities
         };
     }
 
-    public static void AddMarshalledStructInterface(this TypeDefinition typeDefinition)
+    public static GenericInstanceType AddMarshalledStructInterface(this TypeDefinition typeDefinition)
     {
         var marshalledStructRef = WeaverImporter.Instance.CurrentWeavingAssembly.MainModule.ImportReference(
             WeaverImporter.Instance.MarshalledStructReference);
@@ -606,5 +650,7 @@ public static class TypeDefinitionUtilities
         {
             typeDefinition.Interfaces.Add(new InterfaceImplementation(instancedInterface));
         }
+        
+        return instancedInterface;
     }
 }
