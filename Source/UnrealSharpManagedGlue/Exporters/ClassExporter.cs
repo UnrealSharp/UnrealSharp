@@ -54,7 +54,7 @@ public static class ClassExporter
             superClassName = "UnrealSharp.Core.UnrealSharpObject";
         }
         
-        stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, true, interfaces);
+        stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, nativeInterfaces: interfaces);
         
         // For manual exports we just want to generate attributes
         if (!isManualExport)
