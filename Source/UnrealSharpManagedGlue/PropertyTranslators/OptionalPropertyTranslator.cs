@@ -20,14 +20,7 @@ public class OptionalPropertyTranslator : PropertyTranslator
         if (property.IsGenericType()) return;
 
         string wrapperType = GetMarshaller(property);
-        if (property.IsOuter<UhtScriptStruct>())
-        {
-            builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
-        }
-        else
-        {
-            builder.AppendLine($"{wrapperType} {propertyEngineName}_Marshaller = null;");
-        }
+        builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
     }
     
     public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
