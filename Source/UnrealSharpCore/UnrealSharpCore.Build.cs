@@ -24,30 +24,33 @@ public class UnrealSharpCore : ModuleRules
 			new string[]
 			{
 				"Core",
+				"Engine",
+				"GameplayAbilities",
 			}
 			);
-		
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"CoreUObject",
 				"Engine",
 				"Slate",
-				"SlateCore", 
-				"Boost", 
+				"SlateCore",
+				"Boost",
 				"XmlParser",
-				"Json", 
+				"Json",
 				"Projects",
-				"UMG", 
-				"DeveloperSettings", 
-				"UnrealSharpProcHelper", 
-				"EnhancedInput", 
+				"UMG",
+				"DeveloperSettings",
+				"UnrealSharpProcHelper",
+				"EnhancedInput",
 				"UnrealSharpUtilities",
-				"GameplayTags", 
+				"GameplayTags",
 				"AIModule",
 				"UnrealSharpBinds",
 				"FieldNotification",
 				"InputCore",
+				"GameplayAbilities",
 			}
 			);
 

@@ -1,6 +1,7 @@
 ﻿#include "CSRuntimeGlueSettings.h"
 #include "DefaultGenerators/CSAssetManagerGlueGenerator.h"
 #include "DefaultGenerators/CSGameplayTagsGlueGenerator.h"
+#include "DefaultGenerators/CSGameplayAttributesGlueGenerator.h"
 #include "DefaultGenerators/CSTraceTypeQueryGlueGenerator.h"
 
 UCSRuntimeGlueSettings::UCSRuntimeGlueSettings()
@@ -10,4 +11,5 @@ UCSRuntimeGlueSettings::UCSRuntimeGlueSettings()
 	Generators.Add(UCSAssetManagerGlueGenerator::StaticClass());
 	Generators.Add(UCSTraceTypeQueryGlueGenerator::StaticClass());
 	Generators.Add(UCSGameplayTagsGlueGenerator::StaticClass());
+	Generators.Add(UCSGameplayAttributesGlueGenerator::StaticClass());
 }
