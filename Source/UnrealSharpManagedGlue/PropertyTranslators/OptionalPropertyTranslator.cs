@@ -104,6 +104,28 @@ public class OptionalPropertyTranslator : PropertyTranslator
         }
     }
     
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+                                                       string paramName)
+    {
+        var optionalProperty = (UhtOptionalProperty)property;
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
+        
+        // Blittable types, booleans, and enums are all trivially destructible, and thus don't need a cleanup.
+        if (translator.IsBlittable || optionalProperty.ValueProperty is UhtBoolProperty or UhtEnumProperty)
+        {
+            return;       
+        }
+        
+        string nativeMethodName = "";
+        if (property.Outer is UhtFunction function)
+        {
+            nativeMethodName = function.SourceName + "_";
+        }
+        
+        string marshaller = $"{nativeMethodName}{paramName}_Marshaller";
+        builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
+    }
+    
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
