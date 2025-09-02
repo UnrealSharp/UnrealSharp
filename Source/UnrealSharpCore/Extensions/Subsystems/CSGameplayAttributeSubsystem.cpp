@@ -1,26 +1,26 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "GameplayAttributeSubsystem.h"
+#include "CSGameplayAttributeSubsystem.h"
 
-void UGameplayAttributeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+void UCSGameplayAttributeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 	CacheAllGameplayAttributes();
 }
 
-UGameplayAttributeSubsystem* UGameplayAttributeSubsystem::Get()
+UCSGameplayAttributeSubsystem* UCSGameplayAttributeSubsystem::Get()
 {
 	if (GEngine)
 	{
-		return GEngine->GetEngineSubsystem<UGameplayAttributeSubsystem>();
+		return GEngine->GetEngineSubsystem<UCSGameplayAttributeSubsystem>();
 	}
 	return nullptr;
 }
 
-FGameplayAttribute UGameplayAttributeSubsystem::FindGameplayAttributeByName(const FString& AttributeSetClassName, const FString& PropertyName)
+FGameplayAttribute UCSGameplayAttributeSubsystem::FindGameplayAttributeByName(const FString& AttributeSetClassName, const FString& PropertyName)
 {
-	UGameplayAttributeSubsystem* Subsystem = Get();
+	UCSGameplayAttributeSubsystem* Subsystem = Get();
 	if (!Subsystem)
 	{
 		return FGameplayAttribute(); // Invalid attribute
@@ -35,7 +35,7 @@ FGameplayAttribute UGameplayAttributeSubsystem::FindGameplayAttributeByName(cons
 	return FGameplayAttribute(); // Invalid attribute
 }
 
-void UGameplayAttributeSubsystem::GetCachedAttributeNamesForClass(const FString& AttributeSetClassName, TArray<FString>& OutAttributeNames) const
+void UCSGameplayAttributeSubsystem::GetCachedAttributeNamesForClass(const FString& AttributeSetClassName, TArray<FString>& OutAttributeNames) const
 {
 	OutAttributeNames.Empty();
 
@@ -52,7 +52,7 @@ void UGameplayAttributeSubsystem::GetCachedAttributeNamesForClass(const FString&
 	}
 }
 
-void UGameplayAttributeSubsystem::CacheAllGameplayAttributes()
+void UCSGameplayAttributeSubsystem::CacheAllGameplayAttributes()
 {
 	CachedAttributes.Empty();
 
@@ -88,7 +88,7 @@ void UGameplayAttributeSubsystem::CacheAllGameplayAttributes()
 	UE_LOG(LogTemp, Log, TEXT("GameplayAttributeSubsystem: Cached %d gameplay attributes"), CachedAttributes.Num());
 }
 
-void UGameplayAttributeSubsystem::GetAllAttributeProperties(UClass* AttributeSetClass, TArray<FProperty*>& OutProperties)
+void UCSGameplayAttributeSubsystem::GetAllAttributeProperties(UClass* AttributeSetClass, TArray<FProperty*>& OutProperties)
 {
 	if (!AttributeSetClass)
 	{

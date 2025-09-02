@@ -1,7 +1,7 @@
 #include "DefaultGenerators/CSGameplayAttributesGlueGenerator.h"
 #include "CSScriptBuilder.h"
 #include "AttributeSet.h"
-#include "Extensions/Subsystems/GameplayAttributeSubsystem.h"
+#include "Extensions/Subsystems/CSGameplayAttributeSubsystem.h"
 
 void UCSGameplayAttributesGlueGenerator::Initialize()
 {
@@ -13,7 +13,7 @@ ProcessGameplayAttributes();
 void UCSGameplayAttributesGlueGenerator::ProcessGameplayAttributes()
 {
 // Ensure the subsystem is initialized and has cached attributes
-UGameplayAttributeSubsystem* AttributeSubsystem = UGameplayAttributeSubsystem::Get();
+UCSGameplayAttributeSubsystem* AttributeSubsystem = UCSGameplayAttributeSubsystem::Get();
 if (!AttributeSubsystem)
 {
 	UE_LOG(LogTemp, Error, TEXT("CSGameplayAttributesGlueGenerator: Failed to get GameplayAttributeSubsystem"));
@@ -87,7 +87,7 @@ OutAttributeSetClasses.Sort([](const UClass& A, const UClass& B)
 UE_LOG(LogTemp, Log, TEXT("CSGameplayAttributesGlueGenerator: Total AttributeSet classes found: %d"), OutAttributeSetClasses.Num());
 }
 
-void UCSGameplayAttributesGlueGenerator::GenerateAttributesForClass(UClass* AttributeSetClass, FCSScriptBuilder& ScriptBuilder, UGameplayAttributeSubsystem* AttributeSubsystem)
+void UCSGameplayAttributesGlueGenerator::GenerateAttributesForClass(UClass* AttributeSetClass, FCSScriptBuilder& ScriptBuilder, UCSGameplayAttributeSubsystem* AttributeSubsystem)
 {
 if (!AttributeSetClass || !AttributeSubsystem)
 {
@@ -126,7 +126,7 @@ for (const FString& PropertyName : AttributeNames)
 	ScriptBuilder.AppendLine(FString::Printf(TEXT("if (_%s == null)"), *FullVariableName));
 	ScriptBuilder.OpenBrace();
 	// Resolve FGameplayAttribute by native class/property name to avoid requiring managed AttributeSet types
-	ScriptBuilder.AppendLine(FString::Printf(TEXT("_%s = UGameplayAttributeSubsystem.FindGameplayAttributeByName(\"%s\", \"%s\");"),
+	ScriptBuilder.AppendLine(FString::Printf(TEXT("_%s = UCSGameplayAttributeSubsystem.FindGameplayAttributeByName(\"%s\", \"%s\");"),
 		*FullVariableName, *AttributeSetClass->GetName(), *PropertyName));
 	ScriptBuilder.CloseBrace();
 	ScriptBuilder.AppendLine(FString::Printf(TEXT("return _%s ?? new FGameplayAttribute();"), *FullVariableName));

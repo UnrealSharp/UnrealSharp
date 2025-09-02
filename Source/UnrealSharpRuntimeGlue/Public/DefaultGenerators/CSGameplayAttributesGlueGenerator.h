@@ -2,10 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "CSGlueGenerator.h"
-#include "Extensions/Subsystems/GameplayAttributeSubsystem.h"
+#include "Extensions/Subsystems/CSGameplayAttributeSubsystem.h"
 #include "CSGameplayAttributesGlueGenerator.generated.h"
-
-class UCSGameplayAttributeSubsystem;
 
 UCLASS(DisplayName="Gameplay Attributes Glue Generator", NotBlueprintable, NotBlueprintType)
 class UNREALSHARPRUNTIMEGLUE_API UCSGameplayAttributesGlueGenerator : public UCSGlueGenerator
@@ -35,7 +33,7 @@ private:
 	 * @param ScriptBuilder The script builder to append code to
 	 * @param AttributeSubsystem The gameplay attribute subsystem for cached lookups
 	 */
-	void GenerateAttributesForClass(UClass* AttributeSetClass, class FCSScriptBuilder& ScriptBuilder, UGameplayAttributeSubsystem* AttributeSubsystem);
+	void GenerateAttributesForClass(UClass* AttributeSetClass, class FCSScriptBuilder& ScriptBuilder, UCSGameplayAttributeSubsystem* AttributeSubsystem);
 
 	/**
 	 * Convert a property name to a valid C# variable name

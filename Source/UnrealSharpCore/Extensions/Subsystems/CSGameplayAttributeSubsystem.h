@@ -5,13 +5,10 @@
 #include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
 #include "AttributeSet.h"
-#include "GameplayAttributeSubsystem.generated.h"
+#include "CSGameplayAttributeSubsystem.generated.h"
 
-/**
- * 
- */
-UCLASS()
-class UNREALSHARPCORE_API UGameplayAttributeSubsystem : public UEngineSubsystem
+UCLASS(BlueprintType)
+class UNREALSHARPCORE_API UCSGameplayAttributeSubsystem : public UEngineSubsystem
 {
 	GENERATED_BODY()
 
@@ -21,7 +18,7 @@ public:
 	void GetCachedAttributeNamesForClass(const FString& AttributeSetClassName, TArray<FString>& OutAttributeNames) const;
 
 	UFUNCTION(BlueprintCallable)
-	static UGameplayAttributeSubsystem* Get();
+	static UCSGameplayAttributeSubsystem* Get();
 
 	UFUNCTION(BlueprintCallable, meta=(ScriptMethod))
 	static FGameplayAttribute FindGameplayAttributeByName(const FString& AttributeSetClassName, const FString& PropertyName);
