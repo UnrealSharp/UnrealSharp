@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -43,6 +46,7 @@ public static class InterfaceExporter
         
         ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
         
+        ExportInterfaceProperties(stringBuilder, exportedGetterSetters);
         ExportInterfaceFunctions(stringBuilder, exportedFunctions);
         ExportInterfaceFunctions(stringBuilder, exportedOverrides);
         
@@ -89,6 +93,61 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         
         FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
+    }
+
+    static void ExportInterfaceProperties(GeneratorStringBuilder stringBuilder,
+                                          Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    {
+        foreach (var (_, getterSetterPair) in exportedGetterSetters)
+        {
+            if (getterSetterPair.Property is null)
+            {
+                throw new InvalidDataException("Properties should have a UProperty associated with them.");
+            }
+            
+            UhtFunction firstAccessor = getterSetterPair.Accessors.First();
+            UhtProperty firstProperty = getterSetterPair.Property;
+            string propertyName = getterSetterPair.PropertyName;
+            
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            stringBuilder.TryAddWithEditor(firstAccessor);
+            string protection = firstProperty.GetProtection();
+            stringBuilder.AppendTooltip(firstProperty);
+        
+            string managedType = translator.GetManagedType(firstProperty);
+            stringBuilder.AppendLine($"{protection}{managedType} {propertyName}");
+            stringBuilder.OpenBrace();
+
+            if (getterSetterPair.Getter is not null)
+            {
+                AppendPropertyFunctionDeclaration(stringBuilder, getterSetterPair.Getter);
+                stringBuilder.AppendLine("get;");
+            }
+
+            if (getterSetterPair.Setter is not null)
+            {
+                AppendPropertyFunctionDeclaration(stringBuilder, getterSetterPair.Setter);
+                stringBuilder.AppendLine("set;");
+            }
+        
+            stringBuilder.CloseBrace();
+            stringBuilder.TryEndWithEditor(firstAccessor);
+        }
+    }
+
+    private static void AppendPropertyFunctionDeclaration(GeneratorStringBuilder stringBuilder, UhtFunction function)
+    {
+        AttributeBuilder attributeBuilder = new AttributeBuilder(function);
+        
+        if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
+        {
+            attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
+        }
+        
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+        attributeBuilder.Finish();
+        
+        stringBuilder.AppendLine(attributeBuilder.ToString());
     }
     
     static void ExportInterfaceFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)
