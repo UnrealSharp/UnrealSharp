@@ -349,7 +349,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
 
         var metadataAttributes = methodDeclaration.AttributeLists
             .SelectMany(a => a.Attributes)
-            .Where(a => a.Name.ToString() == "UMetaData");
+            .Where(a => a.Name.ToString() == "UMetaData" || a.GetFullNamespace() == "UnrealSharp.Attributes.MetaData");
 
         Dictionary<string, string> metadata = new();
         foreach (var metadataAttribute in metadataAttributes)
