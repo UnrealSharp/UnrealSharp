@@ -50,7 +50,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
 
     protected override void ExportReturnStatement(GeneratorStringBuilder builder)
     {
-        if (_function.ReturnProperty != null && _function.ReturnProperty.IsSameType(_propertyGetterSetter))
+        if (Function.ReturnProperty != null && Function.ReturnProperty.IsSameType(_propertyGetterSetter))
         {
             string castOperation = _propertyGetterSetter.HasAllFlags(EPropertyFlags.BlueprintReadOnly) 
                 ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;

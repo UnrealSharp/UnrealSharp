@@ -65,10 +65,10 @@ public class FunctionExporter
 {
     protected static readonly ConcurrentDictionary<UhtPackage, List<ExtensionMethod>> ExtensionMethods = new();
     
-    protected readonly UhtFunction _function;
+    public UhtFunction Function { get; }
     protected string _functionName = null!;
     protected List<PropertyTranslator> _parameterTranslators = null!;
-    protected PropertyTranslator? ReturnValueTranslator => _function.ReturnProperty != null ? _parameterTranslators.Last() : null;
+    protected PropertyTranslator? ReturnValueTranslator => Function.ReturnProperty != null ? _parameterTranslators.Last() : null;
     protected OverloadMode _overloadMode = OverloadMode.AllowOverloads;
     protected EFunctionProtectionMode _protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
     protected EBlueprintVisibility _blueprintVisibility = EBlueprintVisibility.Call;
@@ -77,9 +77,9 @@ public class FunctionExporter
     
     public string Modifiers { get; private set; } = "";
 
-    protected bool BlueprintEvent => _function.HasAllFlags(EFunctionFlags.BlueprintEvent);
-    protected bool BlueprintNativeEvent => _function.IsBlueprintNativeEvent();
-    protected bool BlueprintImplementableEvent => _function.IsBlueprintImplementableEvent();
+    protected bool BlueprintEvent => Function.HasAllFlags(EFunctionFlags.BlueprintEvent);
+    protected bool BlueprintNativeEvent => Function.IsBlueprintNativeEvent();
+    protected bool BlueprintImplementableEvent => Function.IsBlueprintImplementableEvent();
     protected bool Throwing => _blueprintVisibility == EBlueprintVisibility.Throwing;
     
     protected string _invokeFunction = "";
@@ -100,19 +100,19 @@ public class FunctionExporter
 
     protected readonly List<FunctionOverload> _overloads = new();
     
-    public string NativeFunctionIntPtr => $"{_function.SourceName}_NativeFunction";
-    public string InstanceFunctionPtr => $"{_function.SourceName}_InstanceFunction";
+    public string NativeFunctionIntPtr => $"{Function.SourceName}_NativeFunction";
+    public string InstanceFunctionPtr => $"{Function.SourceName}_InstanceFunction";
     
     public FunctionExporter(ExtensionMethod extensionMethod)
     {
         _selfParameter = extensionMethod.SelfParameter;
-        _function = extensionMethod.Function;
+        Function = extensionMethod.Function;
         _classBeingExtended = extensionMethod.Class;
     }
 
     public FunctionExporter(UhtFunction function) 
     {
-        _function = function;
+        Function = function;
     }
     
     string GetRefQualifier(UhtProperty parameter)
@@ -138,17 +138,17 @@ public class FunctionExporter
     public void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility, bool withGenerics = false)
     {
         _functionName = protectionMode != EFunctionProtectionMode.OverrideWithInternal
-            ? _function.GetFunctionName()
-            : _function.SourceName;
+            ? Function.GetFunctionName()
+            : Function.SourceName;
         
         _overloadMode = overloadMode;
         _protectionMode = protectionMode;
         _blueprintVisibility = blueprintVisibility;
 
-        _parameterTranslators = new List<PropertyTranslator>(_function.Children.Count);
+        _parameterTranslators = new List<PropertyTranslator>(Function.Children.Count);
         
         bool isBlittable = true;
-        foreach (UhtProperty parameter in _function.Properties)
+        foreach (UhtProperty parameter in Function.Properties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(parameter)!;
             _parameterTranslators.Add(translator);
@@ -160,21 +160,21 @@ public class FunctionExporter
         }
         BlittableFunction = isBlittable;
 
-        _hasGenericTypeSupport = _function.HasGenericTypeSupport();
+        _hasGenericTypeSupport = Function.HasGenericTypeSupport();
 
-        _hasCustomStructParamSupport = _function.HasCustomStructParamSupport();
+        _hasCustomStructParamSupport = Function.HasCustomStructParamSupport();
 
         DetermineProtectionMode();
         _invokeFunction = DetermineInvokeFunction();
 
-        if (_function.HasAllFlags(EFunctionFlags.Static))
+        if (Function.HasAllFlags(EFunctionFlags.Static))
         {
             Modifiers += "static ";
             _invokeFirstArgument = "NativeClassPtr";
         }
-        else if (_function.HasAllFlags(EFunctionFlags.Delegate))
+        else if (Function.HasAllFlags(EFunctionFlags.Delegate))
         {
-            if (_function.HasParametersOrReturnValue())
+            if (Function.HasParametersOrReturnValue())
             {
                 _customInvoke = "ProcessDelegate(paramsBuffer);";
             }
@@ -190,7 +190,7 @@ public class FunctionExporter
                 Modifiers += "virtual ";
             }
 		
-            if (_function.IsInterfaceFunction())
+            if (Function.IsInterfaceFunction())
             {
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
             }
@@ -219,11 +219,11 @@ public class FunctionExporter
 
         bool hasGenericClassParam = false;
 
-        _customStructParamTypes = _function.GetCustomStructParamTypes();
+        _customStructParamTypes = Function.GetCustomStructParamTypes();
         
-        for (int i = 0; i < _function.Children.Count; i++)
+        for (int i = 0; i < Function.Children.Count; i++)
         {
-            UhtProperty parameter = (UhtProperty) _function.Children[i];
+            UhtProperty parameter = (UhtProperty) Function.Children[i];
             if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
             {
                 continue;
@@ -263,7 +263,7 @@ public class FunctionExporter
             }
             else
             {
-                string cppDefaultValue = translator.GetCppDefaultValue(_function, parameter);
+                string cppDefaultValue = translator.GetCppDefaultValue(Function, parameter);
                 bool isGenericClassParam = _hasGenericTypeSupport && parameter.IsGenericType() && parameter is UhtClassProperty;
 
                 if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
@@ -303,7 +303,7 @@ public class FunctionExporter
                     }
                     else if (translator.ExportDefaultParameter)
                     {
-                        csharpDefaultValue = translator.ConvertCPPDefaultValue(cppDefaultValue, _function, parameter);
+                        csharpDefaultValue = translator.ConvertCPPDefaultValue(cppDefaultValue, Function, parameter);
                     }
                     
                     if (!string.IsNullOrEmpty(csharpDefaultValue))
@@ -436,7 +436,7 @@ public class FunctionExporter
         }
     }
     
-    public static FunctionExporter ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType)
+    public static FunctionExporter ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType, HashSet<string>? exportedFunctions = null)
     {
         EFunctionProtectionMode protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
         OverloadMode overloadMode = OverloadMode.AllowOverloads;
@@ -462,7 +462,11 @@ public class FunctionExporter
         builder.TryAddWithEditor(function);
         FunctionExporter exporter = new FunctionExporter(function);
         exporter.Initialize(overloadMode, protectionMode, blueprintVisibility);
-        exporter.ExportFunctionVariables(builder);
+        if (exportedFunctions is null || !exportedFunctions.Contains(function.SourceName))
+        {
+            exporter.ExportFunctionVariables(builder);
+        }
+
         exporter.ExportOverloads(builder);
         exporter.ExportFunction(builder);
 
@@ -471,7 +475,7 @@ public class FunctionExporter
         return exporter;
     }
     
-    public static void ExportOverridableFunction(GeneratorStringBuilder builder, UhtFunction function)
+    public static void ExportOverridableFunction(GeneratorStringBuilder builder, UhtFunction function, HashSet<string>? exportedFunctions = null)
     {
         builder.TryAddWithEditor(function);
         
@@ -515,7 +519,7 @@ public class FunctionExporter
             paramsCallString = paramsCallString.Substring(0, paramsCallString.Length - 2);
         }
         
-        FunctionExporter exportFunction = ExportFunction(builder, function, FunctionType.BlueprintEvent);
+        FunctionExporter exportFunction = ExportFunction(builder, function, FunctionType.BlueprintEvent, exportedFunctions);
         
         string returnType = function.ReturnProperty != null
             ? PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!.GetManagedType(function.ReturnProperty)
@@ -662,9 +666,9 @@ public class FunctionExporter
     
     public void ForEachParameter(Action<PropertyTranslator, UhtProperty> action)
     {
-        for (int i = 0; i < _function.Children.Count; i++)
+        for (int i = 0; i < Function.Children.Count; i++)
         {
-            UhtProperty parameter = (UhtProperty) _function.Children[i];
+            UhtProperty parameter = (UhtProperty) Function.Children[i];
             PropertyTranslator translator = _parameterTranslators[i];
             action(translator, parameter);
         }
@@ -679,9 +683,9 @@ public class FunctionExporter
 
             string returnType = "void";
             string returnStatement = "";
-            if (_function.ReturnProperty != null)
+            if (Function.ReturnProperty != null)
             {
-                returnType = ReturnValueTranslator!.GetManagedType(_function.ReturnProperty);
+                returnType = ReturnValueTranslator!.GetManagedType(Function.ReturnProperty);
                 returnStatement = "return ";
             }
 
@@ -690,7 +694,7 @@ public class FunctionExporter
             if (_hasGenericTypeSupport)
             {
                 genericTypes.Add("DOT");
-                genericConstraints.Add(_function.GetGenericTypeConstraint());
+                genericConstraints.Add(Function.GetGenericTypeConstraint());
             }
 
             if (_hasCustomStructParamSupport)
@@ -719,9 +723,9 @@ public class FunctionExporter
             }
 
             builder.OpenBrace();
-            overload.Translator?.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, _function, overload.Parameter);
+            overload.Translator?.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, Function, overload.Parameter);
 
-            UhtClass functionOwner = (UhtClass) _function.Outer!;
+            UhtClass functionOwner = (UhtClass) Function.Outer!;
             string fullClassName = functionOwner.GetFullManagedName();
             if (genericTypes.Count > 0)
             {
@@ -738,23 +742,23 @@ public class FunctionExporter
     public void ExportExtensionMethod(GeneratorStringBuilder builder)
     {
         builder.AppendLine();
-        builder.AppendTooltip(_function);
+        builder.AppendTooltip(Function);
         ExportDeprecation(builder);
 
         string returnManagedType = "void";
         if (ReturnValueTranslator != null)
         {
-            returnManagedType = ReturnValueTranslator.GetManagedType(_function.ReturnProperty!);
+            returnManagedType = ReturnValueTranslator.GetManagedType(Function.ReturnProperty!);
         }
         
-        string functionNameToUse = _function.IsAutocast() ? _function.GetBlueprintAutocastName() : _functionName;
+        string functionNameToUse = Function.IsAutocast() ? Function.GetBlueprintAutocastName() : _functionName;
         
         List<string> genericTypes = new List<string>();
         List<string> genericConstraints = new List<string>();
         if (_hasGenericTypeSupport)
         {
             genericTypes.Add("DOT");
-            genericConstraints.Add(_function.GetGenericTypeConstraint());
+            genericConstraints.Add(Function.GetGenericTypeConstraint());
         }
 
         if (_hasCustomStructParamSupport)
@@ -779,8 +783,8 @@ public class FunctionExporter
         }
         
         builder.OpenBrace();
-        string returnStatement = _function.ReturnProperty != null ? "return " : "";
-        UhtClass functionOwner = (UhtClass) _function.Outer!;
+        string returnStatement = Function.ReturnProperty != null ? "return " : "";
+        UhtClass functionOwner = (UhtClass) Function.Outer!;
 
         string fullClassName = functionOwner.GetFullManagedName();
         builder.AppendLine($"{returnStatement}{fullClassName}.{_functionName}({_paramsStringCall});");
@@ -789,7 +793,7 @@ public class FunctionExporter
 
     public void ExportFunctionVariables(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"// {_function.SourceName}");
+        builder.AppendLine($"// {Function.SourceName}");
 
         if (!BlueprintImplementableEvent)
         {
@@ -801,19 +805,19 @@ public class FunctionExporter
             builder.AppendLine($"IntPtr {InstanceFunctionPtr};");
         }
         
-        if (_function.HasParametersOrReturnValue())
+        if (Function.HasParametersOrReturnValue())
         {
             if (_hasCustomStructParamSupport)
             {
                 string genericTypes = string.Join(", ", _customStructParamTypes);
-                builder.AppendLine($"static int {_function.SourceName}_NativeParamsSize;");
-                builder.AppendLine($"static int {_function.SourceName}_ParamsSize<{genericTypes}>()");
+                builder.AppendLine($"static int {Function.SourceName}_NativeParamsSize;");
+                builder.AppendLine($"static int {Function.SourceName}_ParamsSize<{genericTypes}>()");
                 builder.Indent();
                 foreach (string genericType in _customStructParamTypes)
                 {
                     builder.AppendLine($"where {genericType}: MarshalledStruct<{genericType}>");
                 }
-                List<string> variableNames = new List<string>{$"{_function.SourceName}_NativeParamsSize"};
+                List<string> variableNames = new List<string>{$"{Function.SourceName}_NativeParamsSize"};
                 int customStructureParamIndex = 0;
                 ForEachParameter((translator, parameter) =>
                 {
@@ -823,17 +827,17 @@ public class FunctionExporter
                 });
                 builder.AppendLine($"=> {string.Join(" + ", variableNames)};");
                 builder.UnIndent();
-                builder.AppendLine($"static IntPtr[] {_function.SourceName}_CustomStructureNativeProperties;");
+                builder.AppendLine($"static IntPtr[] {Function.SourceName}_CustomStructureNativeProperties;");
             }
             else
             {
-                builder.AppendLine($"static int {_function.SourceName}_ParamsSize;");
+                builder.AppendLine($"static int {Function.SourceName}_ParamsSize;");
             }
         }
         
         ForEachParameter((translator, parameter) =>
         {
-            translator.ExportParameterVariables(builder, _function, _function.SourceName, parameter, parameter.SourceName);
+            translator.ExportParameterVariables(builder, Function, Function.SourceName, parameter, parameter.SourceName);
         });
     }
 
@@ -846,9 +850,9 @@ public class FunctionExporter
 
             string returnType = "void";
             string returnStatement = "";
-            if (_function.ReturnProperty != null)
+            if (Function.ReturnProperty != null)
             {
-                returnType = ReturnValueTranslator!.GetManagedType(_function.ReturnProperty);
+                returnType = ReturnValueTranslator!.GetManagedType(Function.ReturnProperty);
                 returnStatement = "return ";
             }
 
@@ -857,7 +861,7 @@ public class FunctionExporter
             if (_hasGenericTypeSupport)
             {
                 genericTypes.Add("DOT");
-                genericConstraints.Add(_function.GetGenericTypeConstraint());
+                genericConstraints.Add(Function.GetGenericTypeConstraint());
             }
 
             if (_hasCustomStructParamSupport)
@@ -882,7 +886,7 @@ public class FunctionExporter
             }
 
             builder.OpenBrace();
-            overload.Translator?.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, _function, overload.Parameter);
+            overload.Translator?.ExportCppDefaultParameterAsLocalVariable(builder, overload.CSharpParamName, overload.CppDefaultValue, Function, overload.Parameter);
 
             if (genericTypes.Count > 0)
             {
@@ -908,21 +912,21 @@ public class FunctionExporter
         
         if (Throwing)
         {
-            builder.AppendLine($"throw new InvalidOperationException(\"Function {_function.EngineName} cannot be called on a Blueprint-only implementer\");");
+            builder.AppendLine($"throw new InvalidOperationException(\"Function {Function.EngineName} cannot be called on a Blueprint-only implementer\");");
         }
         
         else if (BlueprintEvent)
         {
             builder.AppendLine($"if ({InstanceFunctionPtr} == IntPtr.Zero)");
             builder.OpenBrace();
-            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{_function.EngineName}\");");
+            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{Function.EngineName}\");");
             builder.CloseBrace();
 
             if (BlueprintImplementableEvent)
             {
                 builder.AppendLine($"if (!{ExporterCallbacks.UFunctionCallbacks}.IsFunctionImplemented({InstanceFunctionPtr}))");
                 builder.OpenBrace();
-                builder.AppendLine($"throw new System.NotImplementedException(\"Tried calling {_function.Outer!.EngineName}.{_functionName} which is not implemented in C# or Blueprint!\");");
+                builder.AppendLine($"throw new System.NotImplementedException(\"Tried calling {Function.Outer!.EngineName}.{_functionName} which is not implemented in C# or Blueprint!\");");
                 builder.CloseBrace();
             }
             
@@ -942,7 +946,7 @@ public class FunctionExporter
         builder.BeginUnsafeBlock();
         string nativeFunctionIntPtr = string.IsNullOrEmpty(functionPtr) ? NativeFunctionIntPtr : functionPtr;
         
-        if (!_function.HasParametersOrReturnValue())
+        if (!Function.HasParametersOrReturnValue())
         {
             if (string.IsNullOrEmpty(_customInvoke))
             {
@@ -958,13 +962,13 @@ public class FunctionExporter
             if (_hasCustomStructParamSupport)
             {
                 string genericTypes = string.Join(", ", _customStructParamTypes);
-                builder.AppendLine($"IntPtr Specialization = {_function.SourceName}_GetSpecialization<{genericTypes}>();");
-                builder.AppendStackAllocFunction($"{_function.SourceName}_ParamsSize<{genericTypes}>()",
+                builder.AppendLine($"IntPtr Specialization = {Function.SourceName}_GetSpecialization<{genericTypes}>();");
+                builder.AppendStackAllocFunction($"{Function.SourceName}_ParamsSize<{genericTypes}>()",
                     "Specialization");
             }
             else
             {
-                builder.AppendStackAllocFunction($"{_function.SourceName}_ParamsSize", 
+                builder.AppendStackAllocFunction($"{Function.SourceName}_ParamsSize", 
                     nativeFunctionIntPtr, 
                     !BlittableFunction);
             }
@@ -991,8 +995,8 @@ public class FunctionExporter
             {
                 string invokedFunctionIntPtr = _hasCustomStructParamSupport ? "Specialization" : nativeFunctionIntPtr;
                 
-                string returnValueAddressStr = _function.ReturnProperty != null
-                    ? $"paramsBuffer + {TryAddPrecedingCustomStructParams(_function.ReturnProperty, _function.ReturnProperty.GetOffsetVariableName())}"
+                string returnValueAddressStr = Function.ReturnProperty != null
+                    ? $"paramsBuffer + {TryAddPrecedingCustomStructParams(Function.ReturnProperty, Function.ReturnProperty.GetOffsetVariableName())}"
                     : ScriptGeneratorUtilities.IntPtrZero;
                 
                 builder.AppendLine($"{_invokeFunction}({_invokeFirstArgument}, {invokedFunctionIntPtr}, paramsBuffer, {returnValueAddressStr});");
@@ -1002,7 +1006,7 @@ public class FunctionExporter
                 builder.AppendLine(_customInvoke);
             }
 
-            if (_function.ReturnProperty != null || _function.HasOutParams())
+            if (Function.ReturnProperty != null || Function.HasOutParams())
             {
                 builder.AppendLine();
 
@@ -1062,7 +1066,7 @@ public class FunctionExporter
     
     protected virtual void ExportReturnStatement(GeneratorStringBuilder builder)
     {
-        if (_function.ReturnProperty != null)
+        if (Function.ReturnProperty != null)
         {
             builder.AppendLine("return returnValue;");
         }
@@ -1070,31 +1074,31 @@ public class FunctionExporter
 
     void ExportSignature(GeneratorStringBuilder builder, string protection)
     {
-        builder.AppendTooltip(_function);
+        builder.AppendTooltip(Function);
 
-        AttributeBuilder attributeBuilder = new AttributeBuilder(_function);
+        AttributeBuilder attributeBuilder = new AttributeBuilder(Function);
         
         if (BlueprintEvent)
         {
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
         
-        attributeBuilder.AddGeneratedTypeAttribute(_function);
+        attributeBuilder.AddGeneratedTypeAttribute(Function);
 
         if (_hasGenericTypeSupport)
         {
-            if (_function.HasMetadata("DeterminesOutputType"))
+            if (Function.HasMetadata("DeterminesOutputType"))
             {
                 attributeBuilder.AddAttribute("UMetaData");
                 attributeBuilder.AddArgument($"\"DeterminesOutputType\"");
-                attributeBuilder.AddArgument($"\"{_function.GetMetadata("DeterminesOutputType")}\"");
+                attributeBuilder.AddArgument($"\"{Function.GetMetadata("DeterminesOutputType")}\"");
             }
 
-            if (_function.HasMetadata("DynamicOutputParam"))
+            if (Function.HasMetadata("DynamicOutputParam"))
             {
                 attributeBuilder.AddAttribute("UMetaData");
                 attributeBuilder.AddArgument($"\"DynamicOutputParam\"");
-                attributeBuilder.AddArgument($"\"{_function.GetMetadata("DynamicOutputParam")}\"");
+                attributeBuilder.AddArgument($"\"{Function.GetMetadata("DynamicOutputParam")}\"");
             }
         }
 
@@ -1102,14 +1106,14 @@ public class FunctionExporter
         {
             attributeBuilder.AddAttribute("UMetaData");
             attributeBuilder.AddArgument($"\"CustomStructureParam\"");
-            attributeBuilder.AddArgument($"\"{_function.GetMetadata("CustomStructureParam")}\"");
+            attributeBuilder.AddArgument($"\"{Function.GetMetadata("CustomStructureParam")}\"");
         }
 
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
 
-        string returnType = _function.ReturnProperty != null
-            ? ReturnValueTranslator!.GetManagedType(_function.ReturnProperty)
+        string returnType = Function.ReturnProperty != null
+            ? ReturnValueTranslator!.GetManagedType(Function.ReturnProperty)
             : "void";
 
         List<string> genericTypes = new List<string>();
@@ -1117,7 +1121,7 @@ public class FunctionExporter
         if (_hasGenericTypeSupport)
         {
             genericTypes.Add("DOT");
-            genericConstraints.Add(_function.GetGenericTypeConstraint());
+            genericConstraints.Add(Function.GetGenericTypeConstraint());
         }
 
         if (_hasCustomStructParamSupport)
@@ -1143,9 +1147,9 @@ public class FunctionExporter
 
     void ExportDeprecation(GeneratorStringBuilder builder)
     {
-        if (_function.HasMetadata("DeprecatedFunction"))
+        if (Function.HasMetadata("DeprecatedFunction"))
         {
-            string deprecationMessage = _function.GetMetadata("DeprecationMessage");
+            string deprecationMessage = Function.GetMetadata("DeprecationMessage");
             if (deprecationMessage.Length == 0)
             {
                 deprecationMessage = "This function is deprecated.";
@@ -1155,7 +1159,7 @@ public class FunctionExporter
                 // Remove nested quotes
                 deprecationMessage = deprecationMessage.Replace("\"", "");
             }
-            builder.AppendLine($"[Obsolete(\"{_function.SourceName} is deprecated: {deprecationMessage}\")]");
+            builder.AppendLine($"[Obsolete(\"{Function.SourceName} is deprecated: {deprecationMessage}\")]");
         }
     }
 
@@ -1167,8 +1171,8 @@ public class FunctionExporter
             string dictionaryKey = customStructureParamCount == 1
                 ? "IntPtr"
                 : $"({string.Join(", ", Enumerable.Repeat("IntPtr", customStructureParamCount))})";
-            builder.AppendLine($"static Dictionary<{dictionaryKey}, IntPtr> {_function.SourceName}_Specializations = new Dictionary<{dictionaryKey}, IntPtr>();");
-            builder.AppendLine($"static IntPtr {_function.SourceName}_GetSpecialization<{string.Join(", ", _customStructParamTypes)}>()");
+            builder.AppendLine($"static Dictionary<{dictionaryKey}, IntPtr> {Function.SourceName}_Specializations = new Dictionary<{dictionaryKey}, IntPtr>();");
+            builder.AppendLine($"static IntPtr {Function.SourceName}_GetSpecialization<{string.Join(", ", _customStructParamTypes)}>()");
             builder.Indent();
             foreach (string customStructParamType in _customStructParamTypes)
             {
@@ -1181,19 +1185,19 @@ public class FunctionExporter
                 $"{customStructParamType}.GetNativeClassPtr()");
             string specializationKeyInitializer = nativeClassPtrs.Count == 1 ? nativeClassPtrs[0] : $"({string.Join(", ", nativeClassPtrs)})";
             builder.AppendLine($"{dictionaryKey} specializationKey = {specializationKeyInitializer};");
-            builder.AppendLine($"if(!{_function.SourceName}_Specializations.TryGetValue(specializationKey, out specializationNativeFunction))");
+            builder.AppendLine($"if(!{Function.SourceName}_Specializations.TryGetValue(specializationKey, out specializationNativeFunction))");
             builder.OpenBrace();
             builder.BeginUnsafeBlock();
             string customStructBufferInitializationList = customStructureParamCount == 1 ? "specializationKey" : string.Join(", ", Enumerable.Range(1, customStructureParamCount).ToList().ConvertAll(i => $"specializationKey.Item{i}"));
             builder.AppendLine($"IntPtr* customStructBufferAllocation = stackalloc IntPtr[]{{{customStructBufferInitializationList}}};");
             builder.AppendLine("IntPtr customStructBuffer = (IntPtr) customStructBufferAllocation;");
-            string nativeFunctionIntPtr = $"{_function.SourceName}_NativeFunction";
-            string customStructNativePropertiesIntPtr = $"{_function.SourceName}_CustomStructureNativeProperties";
+            string nativeFunctionIntPtr = $"{Function.SourceName}_NativeFunction";
+            string customStructNativePropertiesIntPtr = $"{Function.SourceName}_CustomStructureNativeProperties";
             builder.AppendLine($"fixed(nint* nativePropertyBuffer = {customStructNativePropertiesIntPtr})");
             builder.OpenBrace();
             builder.AppendLine($"specializationNativeFunction = {ExporterCallbacks.UFunctionCallbacks}.CallCreateNativeFunctionCustomStructSpecialization({nativeFunctionIntPtr}, (nint) nativePropertyBuffer, customStructBuffer);");
             builder.CloseBrace();
-            builder.AppendLine($"{_function.SourceName}_Specializations.Add(specializationKey, specializationNativeFunction);");
+            builder.AppendLine($"{Function.SourceName}_Specializations.Add(specializationKey, specializationNativeFunction);");
             builder.EndUnsafeBlock();
             builder.CloseBrace();
             builder.AppendLine("return specializationNativeFunction;");
@@ -1206,11 +1210,11 @@ public class FunctionExporter
         switch (_protectionMode)
         {
             case EFunctionProtectionMode.UseUFunctionProtection:
-                if (_function.HasAnyFlags(EFunctionFlags.Public | EFunctionFlags.BlueprintCallable))
+                if (Function.HasAnyFlags(EFunctionFlags.Public | EFunctionFlags.BlueprintCallable))
                 {
                     Modifiers = ScriptGeneratorUtilities.PublicKeyword;
                 }
-                else if (_function.HasAllFlags(EFunctionFlags.Protected) || _function.HasMetadata("BlueprintProtected"))
+                else if (Function.HasAllFlags(EFunctionFlags.Protected) || Function.HasMetadata("BlueprintProtected"))
                 {
                     Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
                 }
@@ -1229,17 +1233,17 @@ public class FunctionExporter
     {
         string invokeFunction = ExporterCallbacks.UObjectCallbacks;
         
-        if (_function.HasAllFlags(EFunctionFlags.Static))
+        if (Function.HasAllFlags(EFunctionFlags.Static))
         {
             return invokeFunction + ".CallInvokeNativeStaticFunction";
         }
         
-        if (_function.HasAllFlags(EFunctionFlags.Net))
+        if (Function.HasAllFlags(EFunctionFlags.Net))
         {
             return invokeFunction + ".CallInvokeNativeNetFunction";
         }
         
-        if (_function.HasAllFlags(EFunctionFlags.HasOutParms) || _function.HasReturnProperty)
+        if (Function.HasAllFlags(EFunctionFlags.HasOutParms) || Function.HasReturnProperty)
         {
             return invokeFunction + ".CallInvokeNativeFunctionOutParms";
         } 

@@ -38,13 +38,14 @@ public static class InterfaceExporter
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
+        Dictionary<string, GetterSetterPair> getSetOverrides = new();
 
         if (interfaceObj.AlternateObject is UhtClass alternateObject)
         {
-            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters);
+            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         }
         
-        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
+        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         
         ExportInterfaceProperties(stringBuilder, exportedGetterSetters);
         ExportInterfaceFunctions(stringBuilder, exportedFunctions);
@@ -71,7 +72,7 @@ public static class InterfaceExporter
             exportedOverrides, 
             false, interfaceName + "Wrapper");
         
-        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters);
+        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters, [], []);
         ExportWrapperFunctions(stringBuilder, exportedFunctions);
         ExportWrapperFunctions(stringBuilder, exportedOverrides);
         
@@ -115,7 +116,7 @@ public static class InterfaceExporter
             stringBuilder.AppendTooltip(firstProperty);
         
             string managedType = translator.GetManagedType(firstProperty);
-            stringBuilder.AppendLine($"{protection}{managedType} {propertyName}");
+            stringBuilder.AppendLine($"{managedType} {propertyName}");
             stringBuilder.OpenBrace();
 
             if (getterSetterPair.Getter is not null)
