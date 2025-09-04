@@ -18,7 +18,6 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     protected readonly IntPtr NativeUnrealProperty;
     protected UnmanagedArray* NativeBuffer { get; }
 
-    [CLSCompliant(false)]
     public TNativeArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer)
     {
         NativeUnrealProperty = nativeUnrealProperty;

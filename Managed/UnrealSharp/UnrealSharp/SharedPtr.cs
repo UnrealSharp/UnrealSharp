@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using UnrealSharp.Binds;
 
 namespace UnrealSharp;
@@ -31,7 +31,18 @@ public struct FSharedPtr
             IRefCountedObjectExporter.CallRelease(ReferenceController);
         }
     }
-    
+
+    public override bool Equals(object? obj)
+    {
+        return obj is FSharedPtr ptr &&
+               ReferenceController == ptr.ReferenceController;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ReferenceController);
+    }
+
     public uint RefCount => IRefCountedObjectExporter.CallGetRefCount(ReferenceController);
     public bool Valid => ReferenceController != IntPtr.Zero;
 

@@ -89,7 +89,7 @@ public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObjec
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is TWeakObjectPtr<T> other)
         {

@@ -71,6 +71,6 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
 
     public override void Clear()
     {
-        FMulticastDelegatePropertyExporter.CallClearDelegate(NativeDelegate, NativeProperty);
+        FMulticastDelegatePropertyExporter.CallClearDelegate(NativeProperty, NativeDelegate);
     }
 }

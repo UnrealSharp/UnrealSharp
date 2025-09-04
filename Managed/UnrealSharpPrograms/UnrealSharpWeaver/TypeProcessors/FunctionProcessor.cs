@@ -185,7 +185,7 @@ public static class FunctionProcessor
             
             param.PropertyDataType.PrepareForRewrite(type, param, methodToCall);
 
-            if (param.PropertyFlags.HasFlag(PropertyFlags.OutParm))
+            if (param.PropertyFlags.HasFlag(PropertyFlags.OutParm) && !param.PropertyFlags.HasFlag(PropertyFlags.ReferenceParm))
             {
                 continue;
             }

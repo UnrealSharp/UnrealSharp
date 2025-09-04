@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
 
@@ -695,7 +695,7 @@ public partial struct FQuat
     /// </summary>
     /// <param name="obj">The Object to compare against.</param>
     /// <returns>True if the Object is equal to this Quat; False otherwise.</returns>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is FQuat quat)
         {

@@ -5,7 +5,7 @@ using UnrealSharp.Core.Marshallers;
 namespace UnrealSharp;
 
 [Binding]
-public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
+public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
 {
     public TMap(IntPtr mapProperty, IntPtr address,
         MarshallingDelegates<TKey>.FromNative keyFromNative, MarshallingDelegates<TKey>.ToNative keyToNative,
