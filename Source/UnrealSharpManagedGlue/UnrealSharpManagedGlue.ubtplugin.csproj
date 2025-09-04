@@ -7,21 +7,34 @@
         <UE5RulesProjPath>$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj</UE5RulesProjPath>
     </PropertyGroup>
 
-  <Target Name="ImportUE5RulesDefineConstants" BeforeTargets="PrepareForBuild" Condition="Exists('$(UE5RulesProjPath)')">
+    <Target Name="ImportUE5RulesDefineConstants"
+            BeforeTargets="CoreCompile"
+            Condition="Exists('$(UE5RulesProjPath)')">
 
-    <XmlPeek XmlInputPath="$(UE5RulesProjPath)"
-             Query="//Project/PropertyGroup/DefineConstants/text()">
+        <XmlPeek XmlInputPath="$(UE5RulesProjPath)"
+                 Query="//Project/PropertyGroup/DefineConstants/text()">
+            <Output TaskParameter="Result" ItemName="UE5Rules_DefineConstants" />
+        </XmlPeek>
 
-      <Output TaskParameter="Result" PropertyName="UE5Rules_DefineConstants" />
-    </XmlPeek>
+        <PropertyGroup>
+            <DefineConstantsJoined>$([System.String]::Join(';', %(UE5Rules_DefineConstants.Identity)))</DefineConstantsJoined>
+            
+            <DefineConstants Condition="'$(DefineConstants)' != '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstants);$(DefineConstantsJoined)
+            </DefineConstants>
+            
+            <DefineConstants Condition="'$(DefineConstants)' == '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstantsJoined)
+            </DefineConstants>
+            
+        </PropertyGroup>
+    </Target>
 
-    <PropertyGroup>
-      <DefineConstants>$(DefineConstants);$(UE5Rules_DefineConstants)</DefineConstants>
+    <PropertyGroup Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
-  </Target>
-
-    <PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == ''">
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
