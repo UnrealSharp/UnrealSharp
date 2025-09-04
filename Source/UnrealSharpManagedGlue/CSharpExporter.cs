@@ -276,7 +276,8 @@ public static class CSharpExporter
 
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine))
+        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine) 
+            || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
         {
             return;
         }

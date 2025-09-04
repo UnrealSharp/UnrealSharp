@@ -1,5 +1,8 @@
 {
     "Structs": {
+        "CustomTypes": [ 
+            "FInstancedStruct" 
+        ],
         "BlittableTypes": [
             {
                 "Name": "EStreamingSourcePriority"
@@ -108,10 +111,6 @@
             {
                 "Name": "FKey",
                 "HasDestructor": false
-            },
-            {
-                "Name": "FInstancedStruct",
-                "HasDestructor": true
             }
         ]
     }
