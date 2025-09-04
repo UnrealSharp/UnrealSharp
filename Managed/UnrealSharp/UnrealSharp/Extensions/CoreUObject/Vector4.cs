@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -91,16 +91,6 @@ public partial struct FVector4
         array[index + 1] = Y;
         array[index + 2] = Z;
         array[index + 3] = W;
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Vector4 is equal to this Vector4 instance.
-    /// </summary>
-    /// <param name="other">The Vector4 to compare this instance to.</param>
-    /// <returns>True if the other Vector4 is equal to this instance; False otherwise.</returns>
-    public bool Equals(FVector4 other)
-    {
-        return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
     }
 
     /// <summary>
@@ -274,29 +264,6 @@ public partial struct FVector4
         return Zero - value;
     }
 
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are equal; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(FVector4 left, FVector4 right)
-    {
-        return left.Equals(right);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are not equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are not equal; False if they are equal.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(FVector4 left, FVector4 right)
-    {
-        return !(left == right);
-    }
     #endregion Public static operators
     /// <summary>
     /// Returns the vector (0,0,0,0).
@@ -322,31 +289,6 @@ public partial struct FVector4
     /// Returns the vector (0,0,0,1).
     /// </summary>
     public static FVector4 UnitW { get { return new FVector4(0.0, 0.0, 0.0, 1.0); } }
-
-    /// <summary>
-    /// Returns the hash code for this instance.
-    /// </summary>
-    /// <returns>The hash code.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z, W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this Vector4 instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this Vector4; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object? obj)
-    {
-        if (obj is not FVector4)
-        {
-            return false;
-        }
-
-        return Equals((FVector4)obj);
-    }
 
     /// <summary>
     /// Returns a String representing this Vector4 instance.

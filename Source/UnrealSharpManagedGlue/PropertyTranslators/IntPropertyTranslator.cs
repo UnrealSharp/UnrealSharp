@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class IntPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public IntPropertyTranslator() : base(typeof(UhtIntProperty), "int")
+    public IntPropertyTranslator() : base(typeof(UhtIntProperty), "int", PropertyKind.Int)
     {
     }
 

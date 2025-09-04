@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -33,31 +33,6 @@ public partial struct FVector
     
     public static implicit operator System.Numerics.Vector3(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z);
     public static implicit operator FVector(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
-
-    /// <summary>
-    /// Returns the hash code for this instance.
-    /// </summary>
-    /// <returns>The hash code.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this Vector instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this Vector; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object? obj)
-    {
-        if (!(obj is FVector vector))
-        {
-            return false;  
-        }
-
-        return Equals(vector);
-    }
 
     /// <summary>
     /// Returns a String representing this Vector instance.
@@ -404,16 +379,6 @@ public partial struct FVector
     public static float Dot(FVector left, FVector right)
     {
         return (float)(left.X * right.X + left.Y * right.Y + left.Z * right.Z);
-    }
-    
-    public static bool operator == (FVector left, FVector right)
-    {
-        return left.X == right.X && left.Y == right.Y && left.Z == right.Z;
-    }
-
-    public static bool operator !=(FVector left, FVector right)
-    {
-        return !(left == right);
     }
     
     public static FVector operator +(FVector left, FVector right)

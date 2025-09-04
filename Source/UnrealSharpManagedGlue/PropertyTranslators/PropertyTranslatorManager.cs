@@ -11,7 +11,9 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-    
+    private static readonly HashSet<Type> RegisteredPrimitives = new();
+    private static readonly HashSet<Type> RegisteredNumerics = new();
+
     public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
     static PropertyTranslatorManager()
@@ -48,15 +50,15 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
         AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyTranslator);
         
-        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte");
-        AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short");
-        AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long");
-        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort");
-        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint");
-        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong");
-        AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double");
-        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
-        AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
+        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte", PropertyKind.Byte);
+        AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short", PropertyKind.Short);
+        AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long", PropertyKind.Long);
+        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort", PropertyKind.Short);
+        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint", PropertyKind.Int);
+        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong", PropertyKind.Long);
+        AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double", PropertyKind.Double);
+        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte", PropertyKind.Byte);
+        AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double", PropertyKind.Double);
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
         AddPropertyTranslator(typeof(UhtIntProperty), new IntPropertyTranslator());
 
@@ -66,7 +68,7 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtMulticastInlineDelegateProperty), multicastDelegatePropertyTranslator);
         AddPropertyTranslator(typeof(UhtDelegateProperty), new SinglecastDelegatePropertyTranslator());
         
-        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
+        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte", PropertyKind.Byte);
         
         AddPropertyTranslator(typeof(UhtBoolProperty), new BoolPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStrProperty), new StringPropertyTranslator());
@@ -123,6 +125,24 @@ public static class PropertyTranslatorManager
         // Manually exported properties
         InclusionLists.BanProperty("UWorld", "GameState");
         InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
+
+        // Some reason == equality differs from .Equals
+        InclusionLists.BanEquality("FRandomStream");
+
+        // Renamed variables X/Y/Z to Pitch/Yaw/Roll
+        InclusionLists.BanEquality("FRotator");
+
+        // Fields not generating correctly
+        InclusionLists.BanEquality("FVector3f");
+        InclusionLists.BanEquality("FVector2f");
+        InclusionLists.BanEquality("FVector4f");
+        InclusionLists.BanEquality("FVector_NetQuantize");
+        InclusionLists.BanEquality("FVector_NetQuantize10");
+        InclusionLists.BanEquality("FVector_NetQuantize100");
+        InclusionLists.BanEquality("FVector_NetQuantizeNormal");
+
+        // Doesn't have any fields
+        InclusionLists.BanEquality("FSubsystemCollectionBaseRef");
     }
 
     public static void AddTranslationManifest(TypeTranslationManifest manifest)
@@ -185,15 +205,15 @@ public static class PropertyTranslatorManager
         return null;
     }
     
-    public static void AddBlittablePropertyTranslator(Type propertyType, string managedType)
+    public static void AddBlittablePropertyTranslator(Type propertyType, string managedType, PropertyKind propertyKind = PropertyKind.Unknown)
     {
         if (RegisteredTranslators.TryGetValue(propertyType, out var translators))
         {
-            translators!.Add(new BlittableTypePropertyTranslator(propertyType, managedType));
+            translators!.Add(new BlittableTypePropertyTranslator(propertyType, managedType, propertyKind));
             return;
         }
         
-        RegisteredTranslators.Add(propertyType, new List<PropertyTranslator> {new BlittableTypePropertyTranslator(propertyType, managedType)});
+        RegisteredTranslators.Add(propertyType, new List<PropertyTranslator> {new BlittableTypePropertyTranslator(propertyType, managedType, propertyKind) });
     }
 
     private static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)

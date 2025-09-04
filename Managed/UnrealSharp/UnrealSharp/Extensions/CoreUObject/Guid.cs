@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FGuid : IEquatable<FGuid>
+public partial struct FGuid
 {
     public FGuid(Guid guid)
     {
@@ -31,33 +31,5 @@ public partial struct FGuid : IEquatable<FGuid>
     public static implicit operator FGuid(Guid guid)
     {
         return new FGuid(guid);
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is FGuid guid && Equals(guid);
-    }
-
-    public bool Equals(FGuid other)
-    {
-        return A == other.A &&
-               B == other.B &&
-               C == other.C &&
-               D == other.D;
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(A, B, C, D);
-    }
-
-    public static bool operator ==(FGuid left, FGuid right)
-    {
-        return left.Equals(right);
-    }
-
-    public static bool operator !=(FGuid left, FGuid right)
-    {
-        return !(left == right);
     }
 }

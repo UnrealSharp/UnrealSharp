@@ -5,9 +5,11 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class BlittableTypePropertyTranslator : SimpleTypePropertyTranslator
 {
-    public BlittableTypePropertyTranslator(Type propertyType, string managedType) : base(propertyType, managedType)
+    public BlittableTypePropertyTranslator(Type propertyType, string managedType, PropertyKind propertyKind) :
+        base(propertyType, managedType, propertyKind)
     {
     }
+
     public override bool ExportDefaultParameter => true;
 
     public override string GetMarshaller(UhtProperty property)

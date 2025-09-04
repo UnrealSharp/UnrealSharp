@@ -8,7 +8,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public BlittableStructPropertyTranslator() : base(typeof(UhtStructProperty), "")
+    public BlittableStructPropertyTranslator() : base(typeof(UhtStructProperty), "", PropertyKind.Unknown)
     {
     }
     

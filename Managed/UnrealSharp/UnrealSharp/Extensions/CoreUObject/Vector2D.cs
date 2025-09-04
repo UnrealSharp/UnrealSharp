@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -56,27 +56,7 @@ public partial struct FVector2D
     /// Returns the vector (0,1).
     /// </summary>
     public static FVector2D UnitY => new(0.0, 1.0);
-
-    /// <summary>
-    /// Returns the hash code for this instance.
-    /// </summary>
-    /// <returns>The hash code.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this FVector2D instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this FVector2D; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object? obj)
-    {
-        return obj is FVector2D FVector2D && Equals(FVector2D);
-    }
-    
+   
     /// <summary>
     /// Returns a String representing this FVector2D instance.
     /// </summary>
@@ -147,11 +127,11 @@ public partial struct FVector2D
     public static double Distance(FVector2D value1, FVector2D value2)
     {
         double dx = value1.X - value2.X;
-            double dy = value1.Y - value2.Y;
+        double dy = value1.Y - value2.Y;
 
-            double ls = dx * dx + dy * dy;
+        double ls = dx * dx + dy * dy;
 
-            return Math.Sqrt(ls);
+        return Math.Sqrt(ls);
     }
 
     /// <summary>
@@ -350,16 +330,6 @@ public partial struct FVector2D
         array[index] = X;
         array[index + 1] = Y;
     }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given FVector2D is equal to this FVector2D instance.
-    /// </summary>
-    /// <param name="other">The FVector2D to compare this instance to.</param>
-    /// <returns>True if the other FVector2D is equal to this instance; False otherwise.</returns>
-    public bool Equals(FVector2D other)
-    {
-        return X == other.X && Y == other.Y;
-    }
     
     /// <summary>
     /// Returns the dot product of two vectors.
@@ -547,29 +517,5 @@ public partial struct FVector2D
     public static FVector2D operator -(FVector2D value)
     {
         return Zero - value;
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are equal; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(FVector2D left, FVector2D right)
-    {
-        return left.Equals(right);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are not equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are not equal; False if they are equal.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(FVector2D left, FVector2D right)
-    {
-        return !(left == right);
     }
 }
