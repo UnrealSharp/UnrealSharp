@@ -108,6 +108,10 @@
             {
                 "Name": "FKey",
                 "HasDestructor": false
+            },
+            {
+                "Name": "FInstancedStruct",
+                "HasDestructor": true
             }
         ]
     }
