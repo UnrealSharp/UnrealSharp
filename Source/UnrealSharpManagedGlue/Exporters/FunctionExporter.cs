@@ -264,7 +264,7 @@ public class FunctionExporter
             else
             {
                 string cppDefaultValue = translator.GetCppDefaultValue(Function, parameter);
-                bool isGenericClassParam = _hasGenericTypeSupport && parameter.IsGenericType() && parameter is UhtClassProperty;
+                bool isGenericClassParam = _hasGenericTypeSupport && parameter.IsGenericType() && !parameter.HasAnyFlags(EPropertyFlags.OutParm) && parameter is UhtClassProperty;
 
                 if (cppDefaultValue == "()" && parameter is UhtStructProperty structProperty)
                 {
