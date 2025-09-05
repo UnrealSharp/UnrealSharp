@@ -395,42 +395,6 @@ public partial struct FVector2D
     }
 
     /// <summary>
-    /// Adds two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The summed vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector2D operator +(FVector2D left, FVector2D right)
-    {
-        return new FVector2D(left.X + right.X, left.Y + right.Y);
-    }
-
-    /// <summary>
-    /// Subtracts the second vector from the first.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The difference vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector2D operator -(FVector2D left, FVector2D right)
-    {
-        return new FVector2D(left.X - right.X, left.Y - right.Y);
-    }
-
-    /// <summary>
-    /// Multiplies two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The product vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector2D operator *(FVector2D left, FVector2D right)
-    {
-        return new FVector2D(left.X * right.X, left.Y * right.Y);
-    }
-
-    /// <summary>
     /// Multiplies a vector by the given scalar.
     /// </summary>
     /// <param name="left">The scalar value.</param>
@@ -464,18 +428,6 @@ public partial struct FVector2D
     public static FVector2D operator *(FVector2D left, float right)
     {
         return left * new FVector2D(right, right);
-    }
-
-    /// <summary>
-    /// Divides the first vector by the second.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The vector resulting from the division.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector2D operator /(FVector2D left, FVector2D right)
-    {
-        return new FVector2D(left.X / right.X, left.Y / right.Y);
     }
 
     /// <summary>

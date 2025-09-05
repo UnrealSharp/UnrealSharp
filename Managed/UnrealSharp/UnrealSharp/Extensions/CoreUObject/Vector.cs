@@ -380,27 +380,11 @@ public partial struct FVector
     {
         return (float)(left.X * right.X + left.Y * right.Y + left.Z * right.Z);
     }
-    
-    public static FVector operator +(FVector left, FVector right)
-    {
-        return new FVector(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
-    }
-    
-    public static FVector operator -(FVector left, FVector right)
-    {
-        return new FVector(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
-    }
-    
     public static FVector operator -(FVector value)
     {
         return new FVector(-value.X, -value.Y, -value.Z);
     }
-    
-    public static FVector operator *(FVector left, FVector right)
-    {
-        return new FVector(left.X * right.X, left.Y * right.Y, left.Z * right.Z);
-    }
-    
+        
     public static FVector operator *(FVector left, double right)
     {
         return new FVector(left.X * right, left.Y * right, left.Z * right);
@@ -419,11 +403,6 @@ public partial struct FVector
     public static FVector operator *(float left, FVector right)
     {
         return right * left;
-    }
-    
-    public static FVector operator /(FVector left, FVector right)
-    {
-        return new FVector(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
     }
     
     public static FVector operator /(FVector left, double right)
@@ -447,12 +426,7 @@ public partial struct FVector
     {
         return new FVector(left / right.X, left / right.Y, left / right.Z);
     }
-    
-    public static FVector operator %(FVector left, FVector right)
-    {
-        return new FVector(left.X % right.X, left.Y % right.Y, left.Z % right.Z);
-    }
-    
+        
     public static FVector operator %(FVector left, double right)
     {
         return new FVector(left.X % right, left.Y % right, left.Z % right);

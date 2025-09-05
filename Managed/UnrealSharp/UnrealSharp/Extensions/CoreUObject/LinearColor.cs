@@ -22,22 +22,7 @@ public partial struct FLinearColor
         return new FLinearColor(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
     }
     
-    
-    public static FLinearColor operator *(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R * b.R, a.G * b.G, a.B * b.B, a.A * b.A);
-    }
-    
-    public static FLinearColor operator +(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R + b.R, a.G + b.G, a.B + b.B, a.A + b.A);
-    }
-    
-    public static FLinearColor operator -(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R - b.R, a.G - b.G, a.B - b.B, a.A - b.A);
-    }
-    
+        
     public static FLinearColor operator *(FLinearColor a, float b)
     {
         return new FLinearColor(a.R * b, a.G * b, a.B * b, a.A * b);

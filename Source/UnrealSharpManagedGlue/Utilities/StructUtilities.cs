@@ -38,6 +38,11 @@ public static class StructUtilities
             return false;
         }
 
+        if (exportedProperties.Count == 0)
+        {
+            return false;
+        }
+
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
@@ -48,6 +53,34 @@ public static class StructUtilities
             }
         }
 
+        return true;
+    }
+
+    public static bool CanSupportArithmetic(this UhtStruct structObj, List<UhtProperty> exportedProperties)
+    {
+        if (InclusionLists.HasBannedEquality(structObj))
+        {
+            return false;
+        }
+
+        if (InclusionLists.HasBannedArithmetic(structObj))
+        {
+            return false;
+        }
+
+        if (exportedProperties.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (UhtProperty property in exportedProperties)
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            if (!translator.IsNumeric)
+            {
+                return false;
+            }
+        }
         return true;
     }
 }
