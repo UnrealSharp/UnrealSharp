@@ -164,42 +164,6 @@ public partial struct FVector4
 
     #region Public static operators
     /// <summary>
-    /// Adds two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The summed vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator +(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X + right.X, left.Y + right.Y, left.Z + right.Z, left.W + right.W);
-    }
-
-    /// <summary>
-    /// Subtracts the second vector from the first.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The difference vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator -(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
-    }
-
-    /// <summary>
-    /// Multiplies two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The product vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator *(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
-    }
-
-    /// <summary>
     /// Multiplies a vector by the given scalar.
     /// </summary>
     /// <param name="left">The source vector.</param>
@@ -221,18 +185,6 @@ public partial struct FVector4
     public static FVector4 operator *(double left, FVector4 right)
     {
         return new FVector4(left) * right;
-    }
-
-    /// <summary>
-    /// Divides the first vector by the second.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The vector resulting from the division.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator /(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
     }
 
     /// <summary>

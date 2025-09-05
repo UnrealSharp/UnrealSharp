@@ -50,12 +50,12 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
         AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyTranslator);
         
-        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte", PropertyKind.Byte);
+        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte", PropertyKind.SByte);
         AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short", PropertyKind.Short);
         AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long", PropertyKind.Long);
-        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort", PropertyKind.Short);
-        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint", PropertyKind.Int);
-        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong", PropertyKind.Long);
+        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort", PropertyKind.UShort);
+        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint", PropertyKind.UInt);
+        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong", PropertyKind.ULong);
         AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double", PropertyKind.Double);
         AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte", PropertyKind.Byte);
         AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double", PropertyKind.Double);
@@ -143,6 +143,9 @@ public static class PropertyTranslatorManager
 
         // Doesn't have any fields
         InclusionLists.BanEquality("FSubsystemCollectionBaseRef");
+
+        // Custom arithmetic needed
+        InclusionLists.BanArithmetic("FQuat");
     }
 
     public static void AddTranslationManifest(TypeTranslationManifest manifest)

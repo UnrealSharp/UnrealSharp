@@ -135,6 +135,11 @@ public static class StructExporter
             ExportStructEquality(structObj, structName, stringBuilder, exportedProperties);
         }
 
+        if (structObj.CanSupportArithmetic(exportedProperties))
+        {
+            ExportStructArithmetic(structObj, structName, stringBuilder, exportedProperties);
+        }
+
         stringBuilder.CloseBrace();
 
         if (!isBlittable && !isManualExport)
@@ -233,7 +238,133 @@ public static class StructExporter
         stringBuilder.CloseBrace();
     }
 
+    public static void ExportStructArithmetic(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    {
+        // Addition operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator +({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
 
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Add);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Subtraction operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator -({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Subtract);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Multiplication operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator *({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Multiply);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Division operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator /({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Divide);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Modulo operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator %({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Modulo);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+    }
 
     public static void ExportStructProperties(UhtStruct structObj, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets, List<string> reservedNames)
     {
