@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class StringPropertyTranslator : PropertyTranslator
 {
-    public StringPropertyTranslator() : base(EPropertyUsageFlags.Any)
+    public StringPropertyTranslator() : base(EPropertyUsageFlags.Any, PropertyKind.String)
     {
     }
     

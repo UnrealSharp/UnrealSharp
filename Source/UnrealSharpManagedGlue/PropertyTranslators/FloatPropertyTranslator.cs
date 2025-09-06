@@ -4,7 +4,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class FloatPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public FloatPropertyTranslator() : base(typeof(UhtFloatProperty), "float")
+    public FloatPropertyTranslator() : base(typeof(UhtFloatProperty), "float", PropertyKind.Float)
     {
     }
 

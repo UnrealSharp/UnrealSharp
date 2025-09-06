@@ -1,6 +1,7 @@
-﻿using System;
+﻿using EpicGames.UHT.Types;
+using System;
 using System.Collections.Generic;
-using EpicGames.UHT.Types;
+using System.Text;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
@@ -52,6 +53,7 @@ public static class StructExporter
         bool isBlittable = structObj.IsStructBlittable();
         bool isCopyable = structObj.IsStructNativelyCopyable();
         bool isDestructible = structObj.IsStructNativelyDestructible();
+        bool isEquatable = structObj.IsStructEquatable(exportedProperties);
 
         string typeNameSpace = structObj.GetNamespace();
         stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable, nullableEnabled);
@@ -70,6 +72,7 @@ public static class StructExporter
 
         string structName = structObj.GetStructName();
         List<string>? csInterfaces = null;
+
         if (isBlittable || !isManualExport) 
         { 
             csInterfaces = new List<string> { $"MarshalledStruct<{structName}>" };
@@ -78,6 +81,12 @@ public static class StructExporter
             {
                 csInterfaces.Add("IDisposable");
             }
+        }
+
+        if (isEquatable)
+        {
+            // If null create the list and add the interface
+            (csInterfaces ??= new()).Add($"IEquatable<{structName}>");
         }
 
         stringBuilder.DeclareType(structObj, isRecordStruct ? "record struct" : "struct", structName, csInterfaces: csInterfaces, 
@@ -133,9 +142,19 @@ public static class StructExporter
                 stringBuilder.CloseBrace();
             }
         }
-        
+
+        if (isEquatable)
+        {
+            ExportStructEquality(structObj, structName, stringBuilder, exportedProperties);
+        }
+
+        if (structObj.CanSupportArithmetic(exportedProperties))
+        {
+            ExportStructArithmetic(structObj, structName, stringBuilder, exportedProperties);
+        }
+
         stringBuilder.CloseBrace();
-        
+
         if (!isBlittable && !isManualExport)
         {
             ExportStructMarshaller(stringBuilder, structObj);
@@ -144,7 +163,222 @@ public static class StructExporter
         
         FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
-    
+
+    public static void ExportStructEquality(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    {
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public override bool Equals(object? obj)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return obj is {structName} other && Equals(other);");
+        stringBuilder.CloseBrace();
+        
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public bool Equals({structName} other)");
+        stringBuilder.OpenBrace();
+        if (exportedProperties.Count == 0)
+        {
+            stringBuilder.AppendLine("return true;");
+        }
+        else
+        {
+            StringBuilder equalitySb = new StringBuilder();
+            for (int i = 0; i < exportedProperties.Count; i++)
+            {
+                UhtProperty property = exportedProperties[i];
+                string scriptName = property.GetPropertyName();
+                equalitySb.Append($"this.{scriptName} == other.{scriptName}");
+                if (i < exportedProperties.Count - 1)
+                {
+                    equalitySb.Append(" && ");
+                }
+            }
+            stringBuilder.AppendLine($"return {equalitySb};");
+        }
+        stringBuilder.CloseBrace();
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine("public override int GetHashCode()");
+        stringBuilder.OpenBrace();
+        if (exportedProperties.Count == 0)
+        {
+            stringBuilder.AppendLine("return 0;");
+        }
+        // More accurate hashcode equality
+        else if (exportedProperties.Count <= 8)
+        {
+            StringBuilder hashSb = new StringBuilder();
+            for (int i = 0; i < exportedProperties.Count; i++)
+            {
+                UhtProperty property = exportedProperties[i];
+                string scriptName = property.GetPropertyName();
+                hashSb.Append($"{scriptName}");
+                if (i < exportedProperties.Count - 1)
+                {
+                    hashSb.Append(", ");
+                }
+            }
+
+            stringBuilder.AppendLine($"return HashCode.Combine({hashSb});");
+        }
+        // Fallback to xor for more than 8 properties as HashCode.Combine only supports up to 8 parameters
+        else
+        {
+            StringBuilder hashSb = new StringBuilder();
+            for (int i = 0; i < exportedProperties.Count; i++)
+            {
+                UhtProperty property = exportedProperties[i];
+                string scriptName = property.GetPropertyName();
+                hashSb.Append($"{scriptName}.GetHashCode()");
+                if (i < exportedProperties.Count - 1)
+                {
+                    hashSb.Append(" ^ ");
+                }
+            }
+
+            stringBuilder.AppendLine($"return {hashSb};");
+        }
+        stringBuilder.CloseBrace();
+
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static bool operator ==({structName} left, {structName} right)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine("return left.Equals(right);");
+        stringBuilder.CloseBrace();
+
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static bool operator !=({structName} left, {structName} right)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine("return !(left == right);");
+        stringBuilder.CloseBrace();
+    }
+
+    public static void ExportStructArithmetic(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    {
+        // Addition operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator +({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Add);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Subtraction operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator -({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Subtract);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Multiplication operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator *({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Multiply);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Division operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator /({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Divide);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+
+        // Modulo operator
+        stringBuilder.AppendLine();
+        stringBuilder.AppendLine($"public static {structName} operator %({structName} lhs, {structName} rhs)");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine($"return new {structName}");
+        stringBuilder.OpenBrace();
+        stringBuilder.AppendLine();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Modulo);
+
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+                stringBuilder.AppendLine();
+            }
+        }
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("};");
+        stringBuilder.CloseBrace();
+    }
+	
     public static void ExportStructProperties(UhtStruct structObj, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets, List<string> reservedNames, bool isReadOnly, bool useProperties)
     {
         foreach (UhtProperty property in exportedProperties)

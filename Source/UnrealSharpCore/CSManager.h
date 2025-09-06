@@ -27,6 +27,7 @@ struct FCSManagedPluginCallbacks
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks::FManagedCallbacks*);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyUnloaded, const FName&);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UCSClass*);
@@ -37,59 +38,60 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UCSEnum*);
 UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
 
-	static UCSManager& GetOrCreate()
-	{
-		if (!Instance)
-		{
-			Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
-		}
+    static UCSManager& GetOrCreate()
+    {
+        if (!Instance)
+        {
+            Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
+        }
 
-		return *Instance;
-	}
+        return *Instance;
+    }
 
-	static UCSManager& Get() { return *Instance; }
+    static UCSManager& Get() { return *Instance; }
 
-	// The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
-	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
-	UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
+    // The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
+    UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
+    UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
 
-	UCSAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
+    UCSAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
-	// Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-	UCSAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    // Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
+    UCSAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
-	// Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-	UCSAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    // Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
+    UCSAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
-	UCSAssembly* FindOwningAssembly(UClass* Class);
+    UCSAssembly* FindOwningAssembly(UClass* Class);
 
-	UCSAssembly* FindAssembly(FName AssemblyName) const
-	{
-		return LoadedAssemblies.FindRef(AssemblyName);
-	}
+    UCSAssembly* FindAssembly(FName AssemblyName) const
+    {
+        return LoadedAssemblies.FindRef(AssemblyName);
+    }
 
-	UCSAssembly* FindOrLoadAssembly(FName AssemblyName)
-	{
-		if (UCSAssembly* Assembly = FindAssembly(AssemblyName))
-		{
-			return Assembly;
-		}
+    UCSAssembly* FindOrLoadAssembly(FName AssemblyName)
+    {
+        if (UCSAssembly* Assembly = FindAssembly(AssemblyName))
+        {
+            return Assembly;
+        }
 
-		return LoadUserAssemblyByName(AssemblyName);
-	}
+        return LoadUserAssemblyByName(AssemblyName);
+    }
 	
-	FGCHandle FindManagedObject(const UObject* Object);
-	FGCHandle FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
+    FGCHandle FindManagedObject(const UObject* Object);
+    FGCHandle FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
-	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
+    void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
+    UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
-	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
+    const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
 
-	FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
+    FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
+    FOnManagedAssemblyUnloaded& OnManagedAssemblyUnloadedEvent() { return OnManagedAssemblyUnloaded; }
 	FOnAssembliesReloaded& OnAssembliesLoadedEvent() { return OnAssembliesLoaded; }
 
 #if WITH_EDITOR
@@ -175,6 +177,7 @@ private:
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
+    FOnManagedAssemblyUnloaded OnManagedAssemblyUnloaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
 
 #if WITH_EDITORONLY_DATA
