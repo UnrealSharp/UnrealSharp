@@ -84,9 +84,9 @@ public static class Program
     {
         PluginDirectory = ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
 
-        DirectoryInfo unrealSharpDirectory = Directory.GetParent(PluginDirectory)!.Parent!;
-        ScriptFolder = Path.Combine(unrealSharpDirectory.FullName, "Script");
-        PluginsPath = Path.Combine(unrealSharpDirectory.FullName, "Plugins");
+        string projectDirectory = Factory.Session.ProjectDirectory!;
+		ScriptFolder = Path.Combine(projectDirectory, "Script");
+        PluginsPath = Path.Combine(projectDirectory, "Plugins");
         ProjectGluePath_LEGACY = Path.Combine(ScriptFolder, "ProjectGlue");
 
         EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
