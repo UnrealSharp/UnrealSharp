@@ -84,21 +84,9 @@ public static class Program
     {
         PluginDirectory = ScriptGeneratorUtilities.TryGetPluginDefine("PLUGIN_PATH");
 
-        DirectoryInfo projectDirectory = Directory.GetParent(PluginDirectory)!;
-		// Traverse up the directory tree until we find the "Plugins" directory
-		while (projectDirectory.Name != "Plugins")
-		{
-			if (projectDirectory.Parent == null)
-			{
-				throw new InvalidOperationException("Failed to locate project directory from plugin path.");
-			}
-			projectDirectory = projectDirectory.Parent;
-		}
-		// Now go up one more level to get to the project root
-		projectDirectory = projectDirectory.Parent!;
-
-		ScriptFolder = Path.Combine(projectDirectory.FullName, "Script");
-        PluginsPath = Path.Combine(projectDirectory.FullName, "Plugins");
+        string projectDirectory = Factory.Session.ProjectDirectory!;
+		ScriptFolder = Path.Combine(projectDirectory, "Script");
+        PluginsPath = Path.Combine(projectDirectory, "Plugins");
         ProjectGluePath_LEGACY = Path.Combine(ScriptFolder, "ProjectGlue");
 
         EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
