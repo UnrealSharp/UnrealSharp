@@ -8,7 +8,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     private const string OffSetPostfix = "_Offset";
     private const string FieldMaskPostfix = "_FieldMask";
     
-    public BoolPropertyTranslator() : base(typeof(UhtBoolProperty), "bool")
+    public BoolPropertyTranslator() : base(typeof(UhtBoolProperty), "bool", PropertyKind.Bool)
     {
     }
 

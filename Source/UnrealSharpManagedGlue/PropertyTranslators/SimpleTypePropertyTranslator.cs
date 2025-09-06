@@ -8,11 +8,12 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 public class SimpleTypePropertyTranslator : PropertyTranslator
 {
     public override bool IsBlittable => true;
-    
+
     private readonly Type _propertyType;
     protected readonly string ManagedType;
 
-    protected SimpleTypePropertyTranslator(Type propertyType, string managedType = "") : base(EPropertyUsageFlags.Any)
+    protected SimpleTypePropertyTranslator(Type propertyType, string managedType = "", PropertyKind propertyKind = PropertyKind.Unknown) 
+		: base(EPropertyUsageFlags.Any, propertyKind)
     {
         _propertyType = propertyType;
         ManagedType = managedType;

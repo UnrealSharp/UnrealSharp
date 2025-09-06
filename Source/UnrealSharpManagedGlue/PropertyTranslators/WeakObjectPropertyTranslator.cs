@@ -7,7 +7,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public WeakObjectPropertyTranslator() : base(typeof(UhtWeakObjectPtrProperty), "TWeakObjectPtr")
+    public WeakObjectPropertyTranslator() : base(typeof(UhtWeakObjectPtrProperty), "TWeakObjectPtr", PropertyKind.Unknown)
     {
     }
     

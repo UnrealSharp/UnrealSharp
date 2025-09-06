@@ -1,8 +1,10 @@
-﻿using System;
+﻿using EpicGames.Core;
+using EpicGames.UHT.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using EpicGames.Core;
-using EpicGames.UHT.Types;
+using System.Text;
+using System.Xml.Linq;
 using UnrealSharpScriptGenerator.Exporters;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
@@ -11,6 +13,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public abstract class PropertyTranslator
 {
+    private readonly PropertyKind _propertyKind;
     private readonly EPropertyUsageFlags _supportedPropertyUsage;
     protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property
                                                                    | EPropertyUsageFlags.StructProperty
@@ -22,20 +25,48 @@ public abstract class PropertyTranslator
     public bool IsSupportedAsReturnValue() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
     public bool IsSupportedAsInner() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
     public bool IsSupportedAsStructProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
-    
+    public PropertyKind PropertyKind => _propertyKind;
+
+    public bool IsPrimitive => _propertyKind == PropertyKind.SByte ||
+        _propertyKind == PropertyKind.Byte ||
+        _propertyKind == PropertyKind.Short||
+        _propertyKind == PropertyKind.UShort ||
+        _propertyKind == PropertyKind.Int ||
+        _propertyKind == PropertyKind.UInt ||
+        _propertyKind == PropertyKind.Long ||
+        _propertyKind == PropertyKind.ULong ||
+        _propertyKind == PropertyKind.Float ||
+        _propertyKind == PropertyKind.Double ||
+        _propertyKind == PropertyKind.Bool ||
+        _propertyKind == PropertyKind.String ||
+        _propertyKind == PropertyKind.Enum;
+
+    public bool IsNumeric => _propertyKind == PropertyKind.Byte ||
+        _propertyKind == PropertyKind.SByte ||
+        _propertyKind == PropertyKind.Short ||
+        _propertyKind == PropertyKind.UShort ||
+        _propertyKind == PropertyKind.Int ||
+        _propertyKind == PropertyKind.UInt ||
+        _propertyKind == PropertyKind.Long ||
+        _propertyKind == PropertyKind.ULong ||
+        _propertyKind == PropertyKind.Float ||
+        _propertyKind == PropertyKind.Double;
+
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
-    
+
     // Should this property be declared as a parameter in the function signature? 
     // A property can support being a parameter but not be declared as one, such as WorldContextObjectPropertyTranslator
     public virtual bool ShouldBeDeclaredAsParameter => true;
     
-    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
+    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage, 
+        PropertyKind propertyKind = PropertyKind.Unknown)
     {
         _supportedPropertyUsage = supportedPropertyUsage;
+        _propertyKind = propertyKind;
     }
     
     // Can we export this property?
@@ -206,6 +237,11 @@ public abstract class PropertyTranslator
     // Convert a C++ default value to a C# default value
     // Example: "0.0f" for a float property
     public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
+
+    public void ExportConstructor()
+    {
+
+    }
 
     public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, string propertyName, UhtProperty property)
     {
@@ -509,5 +545,26 @@ public abstract class PropertyTranslator
     protected string GetNativePropertyField(string propertyName)
     {
         return $"{propertyName}_NativeProperty";
+    }
+
+    public virtual void ExportPropertyArithmetic(GeneratorStringBuilder stringBuilder, UhtProperty property, ArithmeticKind arithmeticKind)
+    {
+        string scriptName = property.GetScriptName();
+
+        static string Bin(string op, string lhs, string rhs) => $"{lhs} {op} {rhs}";
+
+        string rhsExpr = arithmeticKind switch
+        {
+            ArithmeticKind.Add => Bin("+", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Subtract => Bin("-", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Multiply => Bin("*", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Divide => Bin("/", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Modulo => Bin("%", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            _ => throw new NotSupportedException($"Arithmetic kind {arithmeticKind} not supported.")
+        };
+
+        string managedType = GetManagedType(property);
+
+        stringBuilder.Append($"{scriptName} = ({managedType})({rhsExpr})");
     }
 }

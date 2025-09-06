@@ -1,4 +1,5 @@
 ﻿using EpicGames.UHT.Types;
+using System.Collections.Generic;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
@@ -28,5 +29,58 @@ public static class StructUtilities
     public static bool IsStructNativelyDestructible(this UhtStruct structObj)
     {
         return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structObj.SourceName, out var info) && info.HasDestructor;
+    }
+
+    public static bool IsStructEquatable(this UhtStruct structObj, List<UhtProperty> exportedProperties)
+    {
+        if (InclusionLists.HasBannedEquality(structObj))
+        {
+            return false;
+        }
+
+        if (exportedProperties.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (UhtProperty property in exportedProperties)
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            if (!translator.IsPrimitive)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static bool CanSupportArithmetic(this UhtStruct structObj, List<UhtProperty> exportedProperties)
+    {
+        if (InclusionLists.HasBannedEquality(structObj))
+        {
+            return false;
+        }
+
+        if (InclusionLists.HasBannedArithmetic(structObj))
+        {
+            return false;
+        }
+
+        if (exportedProperties.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (UhtProperty property in exportedProperties)
+        {
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            if (!translator.IsNumeric)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

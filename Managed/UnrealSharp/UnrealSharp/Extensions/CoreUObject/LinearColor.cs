@@ -1,8 +1,8 @@
-﻿using System.Drawing;
+using System.Drawing;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FLinearColor : IEquatable<FLinearColor>
+public partial struct FLinearColor
 {
     public FLinearColor(float r, float g, float b, float a = 1)
     {
@@ -22,22 +22,7 @@ public partial struct FLinearColor : IEquatable<FLinearColor>
         return new FLinearColor(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
     }
     
-    
-    public static FLinearColor operator *(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R * b.R, a.G * b.G, a.B * b.B, a.A * b.A);
-    }
-    
-    public static FLinearColor operator +(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R + b.R, a.G + b.G, a.B + b.B, a.A + b.A);
-    }
-    
-    public static FLinearColor operator -(FLinearColor a, FLinearColor b)
-    {
-        return new FLinearColor(a.R - b.R, a.G - b.G, a.B - b.B, a.A - b.A);
-    }
-    
+        
     public static FLinearColor operator *(FLinearColor a, float b)
     {
         return new FLinearColor(a.R * b, a.G * b, a.B * b, a.A * b);
@@ -58,31 +43,11 @@ public partial struct FLinearColor : IEquatable<FLinearColor>
         return new FLinearColor(a.R - b, a.G - b, a.B - b, a.A - b);
     }
     
-    public static bool operator ==(FLinearColor a, FLinearColor b)
-    {
-        return a.Equals(b);
-    }
-
-    public static bool operator !=(FLinearColor a, FLinearColor b)
-    {
-        return !(a == b);
-    }
-
     public bool IsZero()
     {
         return R == 0 && G == 0 && B == 0 && A == 0;
     }
     
-    public bool Equals(FLinearColor other)
-    {
-        return R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        return obj is FLinearColor other && Equals(other);
-    }
-
     public override string ToString()
     {
         return $"R={R}, G={G}, B={B}, A={A}";
