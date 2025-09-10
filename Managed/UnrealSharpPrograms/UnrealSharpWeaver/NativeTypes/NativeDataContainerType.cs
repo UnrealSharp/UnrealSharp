@@ -92,6 +92,13 @@ public class NativeDataContainerType : NativeDataType
             
             fieldAttributes |= FieldAttributes.Static;
         }
+        else if (outer is FieldDefinition)
+        {
+            TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetCopyContainerMarshallerName(), MarshallerNamespace)!;
+            _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
+            
+            fieldAttributes |= FieldAttributes.Static;
+        }
         else
         {
             TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetContainerMarshallerName(), MarshallerNamespace)!;
