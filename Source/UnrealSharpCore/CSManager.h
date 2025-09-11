@@ -67,6 +67,8 @@ public:
 
     UCSAssembly* FindOwningAssembly(UClass* Class);
 
+    UCSAssembly* FindOwningAssembly(UScriptStruct* Struct);
+
     UCSAssembly* FindAssembly(FName AssemblyName) const
     {
         return LoadedAssemblies.FindRef(AssemblyName);
@@ -145,6 +147,8 @@ private:
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void TryInitializeDynamicSubsystems();
+
+    UCSAssembly* FindOwningAssemblySlow(UField* Field);
 
 	static UCSManager* Instance;
 

@@ -14,6 +14,7 @@
 #include "CSNamespace.h"
 #include "CSUnrealSharpSettings.h"
 #include "Logging/StructuredLog.h"
+#include "StructUtils/UserDefinedStruct.h"
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSBuilderManager.h"
@@ -536,24 +537,55 @@ UCSAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 	{
 		return Assembly;
 	}
+    
+    return FindOwningAssemblySlow(Class);
+}
 
-	// Slow path for native classes. This runs once per new native class.
-	FCSFieldName ClassName = FCSFieldName(Class);
+UCSAssembly * UCSManager::FindOwningAssembly(UScriptStruct* Struct)
+{
+    TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
+	
+    if (const ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Struct); ManagedType != nullptr)
+    {
+        // Fast access to the owning assembly for managed types.
+        return ManagedType->GetOwningAssembly();
+    }
 
-	for (TPair<FName, TObjectPtr<UCSAssembly>>& LoadedAssembly : LoadedAssemblies)
-	{
-		TSharedPtr<FGCHandle> TypeHandle = LoadedAssembly.Value->TryFindTypeHandle(ClassName);
+    if (const UUserDefinedStruct* UserStruct = Cast<UUserDefinedStruct>(Struct); UserStruct != nullptr)
+    {
+        // This is a Blueprint Struct and we can't use it
+        return nullptr;
+    }
+    
+    uint32 ClassID = Struct->GetUniqueID();
+    TObjectPtr<UCSAssembly> Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
 
-		if (!TypeHandle.IsValid() || TypeHandle->IsNull())
-		{
-			continue;
-		}
+    if (IsValid(Assembly))
+    {
+        return Assembly;
+    }
 
-		Assembly = LoadedAssembly.Value;
-		break;
-	}
+    return FindOwningAssemblySlow(Struct);
+}
 
-	return Assembly;
+
+
+UCSAssembly * UCSManager::FindOwningAssemblySlow(UField *Field)
+{
+    // Slow path for native classes. This runs once per new native class.
+    const FCSFieldName ClassName = FCSFieldName(Field);
+
+    for (TPair<FName, TObjectPtr<UCSAssembly>>& LoadedAssembly : LoadedAssemblies)
+    {
+        if (TSharedPtr<FGCHandle> TypeHandle = LoadedAssembly.Value->TryFindTypeHandle(ClassName); !TypeHandle.IsValid() || TypeHandle->IsNull())
+        {
+            continue;
+        }
+
+        return LoadedAssembly.Value;
+    }
+
+    return nullptr;
 }
 
 FGCHandle UCSManager::FindManagedObject(const UObject* Object)
