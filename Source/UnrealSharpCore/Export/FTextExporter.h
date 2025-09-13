@@ -11,9 +11,15 @@ class UNREALSHARPCORE_API UFTextExporter : public UObject
 public:
 	UNREALSHARP_FUNCTION()
 	static const TCHAR* ToString(FText* Text);
+
+    UNREALSHARP_FUNCTION()
+    static void ToStringView(FText* Text, const TCHAR*& OutString, int32& OutLength);
 	
 	UNREALSHARP_FUNCTION()
 	static void FromString(FText* Text, const char* String);
+    
+    UNREALSHARP_FUNCTION()
+    static void FromStringView(FText* Text, const TCHAR* String, int32 Length);
 
 	UNREALSHARP_FUNCTION()
 	static void FromName(FText* Text, FName Name);

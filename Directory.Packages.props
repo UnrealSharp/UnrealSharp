@@ -14,5 +14,6 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.13.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.9.1" />
+    <PackageVersion Include="PolySharp" Version="1.15.0" />
   </ItemGroup>
 </Project>

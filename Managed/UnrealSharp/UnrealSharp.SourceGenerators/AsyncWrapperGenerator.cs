@@ -8,15 +8,14 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
-internal readonly struct AsyncMethodInfo(ClassDeclarationSyntax parentClass, MethodDeclarationSyntax method, string @namespace, TypeSyntax? returnType, IReadOnlyDictionary<string, string> metadata, bool nullableAwareable)
-{
-    public readonly ClassDeclarationSyntax ParentClass = parentClass;
-    public readonly MethodDeclarationSyntax Method = method;
-    public readonly string Namespace = @namespace;
-    public readonly TypeSyntax? ReturnType = returnType;
-    public readonly IReadOnlyDictionary<string, string> Metadata = metadata;
-    public readonly bool NullableAwareable = nullableAwareable;
-}
+internal readonly record struct AsyncMethodInfo(
+    ClassDeclarationSyntax ParentClass,
+    MethodDeclarationSyntax Method,
+    string Namespace,
+    TypeSyntax? ReturnType,
+    IReadOnlyDictionary<string, string> Metadata,
+    bool NullableAwareable,
+    bool ReturnsValueTask = false);
 
 [Generator]
 public class AsyncWrapperGenerator : IIncrementalGenerator
@@ -75,8 +74,15 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
                 namespaces.UnionWith(nts.TypeArguments.Select(t => t.ContainingNamespace.ToDisplayString()));
             }
 
-            namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
-        }
+                namespaces.Add(typeSymbol.ContainingNamespace.ToDisplayString());
+                
+                namespaces.UnionWith(parameter.AttributeLists.SelectMany(a => a.Attributes)
+                    .Select(a => model.GetTypeInfo(a).Type)
+                    .Where(type => type is not null)
+                    .Where(type => type!.ContainingNamespace is not null)
+                    .Select(type => type!.ContainingNamespace.ToDisplayString()));
+
+            }
 
         var returnTypeName = asyncMethodInfo.ReturnType.GetAnnotatedTypeName(model);
         var actionClassName = $"{asyncMethodInfo.ParentClass.Identifier.Text}{method.Identifier.Text}Action";
@@ -179,18 +185,20 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine($"    public TMulticastDelegate<{delegateName}>{nullableAnnotation} Failed {{ get; set; }}");
         sourceBuilder.AppendLine();
         sourceBuilder.AppendLine($"    [UFunction(FunctionFlags.BlueprintCallable), {metadataAttributeList}]");
+        string conversion = asyncMethodInfo.ReturnsValueTask ? ".AsTask()" : "";
         if (isStatic)
         {
             sourceBuilder.AppendLine($"    public static {actionClassName} {method.Identifier.Text}({paramDeclListNoCancellationToken})");
             sourceBuilder.AppendLine($"    {{");
             sourceBuilder.AppendLine($"        var action = NewObject<{actionClassName}>(GetTransientPackage());");
+            
             if (cancellationTokenParameter != null)
             {
-                sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => {asyncMethodInfo.ParentClass.Identifier.Text}.{method.Identifier.Text}({paramNameList});");
+                sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => {asyncMethodInfo.ParentClass.Identifier.Text}.{method.Identifier.Text}({paramNameList}){conversion};");
             }
             else
             {
-                sourceBuilder.AppendLine($"        action.asyncDelegate = () => {asyncMethodInfo.ParentClass.Identifier.Text}.{method.Identifier.Text}({paramNameList});");
+                sourceBuilder.AppendLine($"        action.asyncDelegate = () => {asyncMethodInfo.ParentClass.Identifier.Text}.{method.Identifier.Text}({paramNameList}){conversion};");
             }
             sourceBuilder.AppendLine($"        return action;");
             sourceBuilder.AppendLine($"    }}");
@@ -209,11 +217,11 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             sourceBuilder.AppendLine($"        var action = NewObject<{actionClassName}>(Target);");
             if (cancellationTokenParameter != null)
             {
-                sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => Target.{method.Identifier.Text}({paramNameList});");
+                sourceBuilder.AppendLine($"        action.asyncDelegate = (cancellationToken) => Target.{method.Identifier.Text}({paramNameList}){conversion};");
             }
             else
             {
-                sourceBuilder.AppendLine($"        action.asyncDelegate = () => Target.{method.Identifier.Text}({paramNameList});");
+                sourceBuilder.AppendLine($"        action.asyncDelegate = () => Target.{method.Identifier.Text}({paramNameList}){conversion};");
             }
             sourceBuilder.AppendLine($"        return action;");
             sourceBuilder.AppendLine($"    }}");
@@ -305,20 +313,32 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             return null;
         }
 
-        TypeSyntax? returnType = null;
-        if (methodDeclaration.ReturnType is IdentifierNameSyntax identifierName && identifierName.Identifier.ValueText == "Task")
+        TypeSyntax? returnType;
+        bool returnsValueTask;
+        switch (methodDeclaration.ReturnType)
         {
-            // Method returns non-generic task, e.g. without return value
-            returnType = null;
-        }
-        else if (methodDeclaration.ReturnType is GenericNameSyntax genericName && genericName.Identifier.ValueText == "Task")
-        {
-            // Method returns generic task, e.g. with return value
-            returnType = genericName.TypeArgumentList.Arguments.Single();
-        }
-        else
-        {
-            return null;
+            case IdentifierNameSyntax { Identifier.ValueText: "Task" }:
+                // Method returns non-generic task, e.g. without return value
+                returnType = null;
+                returnsValueTask = false;
+                break;
+            case GenericNameSyntax { Identifier.ValueText: "Task" } genericTask:
+                // Method returns generic task, e.g. with return value
+                returnType = genericTask.TypeArgumentList.Arguments.Single();
+                returnsValueTask = false;
+                break;
+            case IdentifierNameSyntax { Identifier.ValueText: "ValueTask" }:
+                // Method returns non-generic task, e.g. without return value
+                returnType = null;
+                returnsValueTask = true;
+                break;
+            case GenericNameSyntax { Identifier.ValueText: "ValueTask" } genericValueTask:
+                // Method returns generic task, e.g. with return value
+                returnType = genericValueTask.TypeArgumentList.Arguments.Single();
+                returnsValueTask = true;
+                break;
+            default:
+                return null;
         }
 
         string namespaceName = methodDeclaration.GetFullNamespace();
@@ -329,7 +349,7 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
 
         var metadataAttributes = methodDeclaration.AttributeLists
             .SelectMany(a => a.Attributes)
-            .Where(a => a.Name.ToString() == "UMetaData");
+            .Where(a => a.Name.ToString() == "UMetaData" || a.GetFullNamespace() == "UnrealSharp.Attributes.MetaData");
 
         Dictionary<string, string> metadata = new();
         foreach (var metadataAttribute in metadataAttributes)
@@ -343,6 +363,9 @@ public class AsyncWrapperGenerator : IIncrementalGenerator
             metadata[key] = value;
         }
 
-        return new AsyncMethodInfo(classDeclaration, methodDeclaration, namespaceName, returnType, metadata, context.SemanticModel.GetNullableContext(context.Node.Span.Start).HasFlag(NullableContext.AnnotationsEnabled));
+        return new AsyncMethodInfo(classDeclaration, methodDeclaration, namespaceName, returnType, metadata, 
+            context.SemanticModel
+                .GetNullableContext(context.Node.Span.Start)
+                .HasFlag(NullableContext.AnnotationsEnabled), returnsValueTask);
     }
 }

@@ -15,7 +15,7 @@ public:
 	static void NameToString(FName Name, FString* OutString);
 
 	UNREALSHARP_FUNCTION()
-	static void StringToName(FName* Name, const UTF16CHAR* String);
+	static void StringToName(FName* Name, const UTF16CHAR* String, int32 Length);
 	
 	UNREALSHARP_FUNCTION()
 	static bool IsValid(FName Name);

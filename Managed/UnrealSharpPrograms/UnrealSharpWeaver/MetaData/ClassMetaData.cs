@@ -120,7 +120,7 @@ public class ClassMetaData : TypeReferenceMetadata
 
             if (FunctionMetaData.IsAsyncUFunction(method))
             {
-                FunctionProcessor.RewriteMethodAsAsyncUFunctionImplementation(method);
+                method.CustomAttributes.Clear();
                 continue;
             }
             

@@ -66,6 +66,16 @@ public partial class UObject
         }
     }
 
+    public bool IsA<T>(TSubclassOf<T> classType) where T : UObject
+    {
+        return UObjectExporter.CallIsA(NativeObject, classType.NativeClass).ToManagedBool();
+    }
+
+    public bool IsA(UClass classType)
+    {
+        return UObjectExporter.CallIsA(NativeObject, classType.NativeObject).ToManagedBool();
+    }
+
     /// <inheritdoc />
     public override string ToString()
     {

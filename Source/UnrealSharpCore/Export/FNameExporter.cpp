@@ -5,9 +5,9 @@ void UFNameExporter::NameToString(FName Name, FString* OutString)
 	Name.ToString(*OutString);
 }
 
-void UFNameExporter::StringToName(FName* Name, const UTF16CHAR* String)
+void UFNameExporter::StringToName(FName* Name, const UTF16CHAR* String, int32 Length)
 {
-	*Name = FName(String);
+	*Name = FName(TStringView(String, Length));
 }
 
 bool UFNameExporter::IsValid(FName Name)

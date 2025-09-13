@@ -184,7 +184,9 @@ public static class ScriptGeneratorUtilities
     }
 
     public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions,
-        List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
+                                            List<UhtFunction> overridableFunctions,
+                                            Dictionary<string, GetterSetterPair> getterSetterPairs,
+                                            Dictionary<string, GetterSetterPair> getSetOverrides)
     {
         List<UhtFunction> exportedFunctions = new();
 
@@ -236,7 +238,7 @@ public static class ScriptGeneratorUtilities
 
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
             }
-            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs))
+            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs, false))
             {
                 functions.Add(function);
             }
@@ -255,7 +257,8 @@ public static class ScriptGeneratorUtilities
 
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (HasFunction(exportedFunctions, function) || !CanExportFunction(function))
+                if (TryMakeFunctionGetterSetterPair(function, interfaceClass, getSetOverrides, true) 
+                    || HasFunction(exportedFunctions, function) || !CanExportFunction(function))
                 {
                     continue;
                 }
@@ -288,7 +291,7 @@ public static class ScriptGeneratorUtilities
     }
 
     public static bool TryMakeFunctionGetterSetterPair(UhtFunction function, UhtClass classObj,
-        Dictionary<string, GetterSetterPair> getterSetterPairs)
+        Dictionary<string, GetterSetterPair> getterSetterPairs, bool ignoreMatchingProperty)
     {
         string scriptName = function.GetFunctionName();
         bool isGetter = CheckIfGetter(scriptName, function);
@@ -314,7 +317,7 @@ public static class ScriptGeneratorUtilities
             return prop.SourceName == name || prop.GetPropertyName() == name;
         }
 
-        UhtProperty? classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
+        UhtProperty? classProperty = !ignoreMatchingProperty ? classObj.FindPropertyByName(propertyName, ComparePropertyName) : null;
         UhtProperty firstProperty = function.ReturnProperty ?? function.Properties.First();
 
         if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() ||
@@ -384,7 +387,8 @@ public static class ScriptGeneratorUtilities
         bool hasSingleOutParam = !hasNoParameters && childrenCount == 1 && function.HasOutParams();
         bool hasWorldContextPassParam =
             childrenCount == 2 && function.Properties.Any(property => property.IsWorldContextParameter());
-        return hasReturnProperty && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
+        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
+        return hasReturnProperty && isNotBlueprintEvent && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
     }
 
     static bool CheckIfSetter(string scriptName, UhtFunction function)
@@ -395,8 +399,11 @@ public static class ScriptGeneratorUtilities
     static bool CheckIfSetter(UhtFunction function)
     {
         bool hasSingleParameter = function.Properties.Count() == 1;
-        bool isNotOutOrReferenceParam = function.HasParameters && !function.Properties.First()
-            .HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm);
-        return hasSingleParameter && isNotOutOrReferenceParam;
+        var property = function.Properties.FirstOrDefault();
+        bool isNotOutOrReferenceParam = function.HasParameters && property is not null 
+                                                               && (!property.HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm) 
+                                                                   || property.HasAllFlags(EPropertyFlags.ConstParm));
+        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
+        return hasSingleParameter && isNotBlueprintEvent && isNotOutOrReferenceParam;
     }
 }
