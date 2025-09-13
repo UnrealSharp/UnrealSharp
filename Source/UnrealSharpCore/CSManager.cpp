@@ -13,6 +13,7 @@
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
 #include "CSUnrealSharpSettings.h"
+#include "Engine/UserDefinedEnum.h"
 #include "Logging/StructuredLog.h"
 #include "StructUtils/UserDefinedStruct.h"
 #include "TypeGenerator/CSInterface.h"
@@ -568,6 +569,32 @@ UCSAssembly * UCSManager::FindOwningAssembly(UScriptStruct* Struct)
     return FindOwningAssemblySlow(Struct);
 }
 
+UCSAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssembly);
+	
+	if (const ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Enum); ManagedType != nullptr)
+	{
+		// Fast access to the owning assembly for managed types.
+		return ManagedType->GetOwningAssembly();
+	}
+
+	if (const UUserDefinedEnum* UserEnum = Cast<UUserDefinedStruct>(Enum); UserEnum != nullptr)
+	{
+		// This is a Blueprint Enum and we can't use it
+		return nullptr;
+	}
+    
+	uint32 ClassID = Enum->GetUniqueID();
+	TObjectPtr<UCSAssembly> Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
+
+	if (IsValid(Assembly))
+	{
+		return Assembly;
+	}
+
+	return FindOwningAssemblySlow(Enum);
+}
 
 
 UCSAssembly * UCSManager::FindOwningAssemblySlow(UField *Field)

@@ -69,6 +69,8 @@ public:
 
     UCSAssembly* FindOwningAssembly(UScriptStruct* Struct);
 
+    UCSAssembly* FindOwningAssembly(UEnum* Enum);
+
     UCSAssembly* FindAssembly(FName AssemblyName) const
     {
         return LoadedAssemblies.FindRef(AssemblyName);
