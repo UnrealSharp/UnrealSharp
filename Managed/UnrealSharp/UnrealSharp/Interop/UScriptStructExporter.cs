@@ -16,4 +16,6 @@ public static unsafe partial class UScriptStructExporter
     public static delegate* unmanaged<ref NativeStructHandleData, IntPtr, void> DeallocateNativeStruct;
     
     public static delegate* unmanaged<NativeStructHandleData*, IntPtr, IntPtr> GetStructLocation;
+    
+    public static delegate* unmanaged<IntPtr, IntPtr> GetManagedStructType;
 }

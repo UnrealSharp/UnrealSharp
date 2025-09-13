@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
+#include "CSManagedGCHandle.h"
+
 #include "UScriptStructExporter.generated.h"
 
 union FNativeStructData
@@ -34,4 +36,7 @@ public:
 
     UNREALSHARP_FUNCTION()
     static void* GetStructLocation(FNativeStructData& Data, const UScriptStruct* ScriptStruct);
+
+    UNREALSHARP_FUNCTION()
+    static FGCHandleIntPtr GetManagedStructType(UScriptStruct* ScriptStruct);
 };

@@ -35,7 +35,8 @@ public static class ConstructorBuilder
     
     public static MethodDefinition CreateConstructor(TypeDefinition typeDefinition, MethodAttributes attributes, params TypeReference[] parameterTypes)
     {
-        MethodDefinition? constructor = typeDefinition.GetConstructors().FirstOrDefault(ctor => ctor.Parameters.Count == parameterTypes.Length);
+        MethodDefinition? constructor = typeDefinition.GetConstructors()
+            .FirstOrDefault(ctor => ctor.Parameters.Count == parameterTypes.Length && ctor.Parameters[0].ParameterType == parameterTypes[0]);
         
         if (constructor == null)
         {
