@@ -11,6 +11,8 @@ internal class NativeDataOptionalType(TypeReference propertyTypeRef, TypeReferen
         protected override AssemblyDefinition MarshallerAssembly => WeaverImporter.Instance.UnrealSharpCoreAssembly;
         protected override string MarshallerNamespace => WeaverImporter.UnrealSharpCoreMarshallers;
         
+        protected override bool AllowsSetter => true;
+        
     public override string GetContainerMarshallerName()
     {
         return "OptionMarshaller`1";

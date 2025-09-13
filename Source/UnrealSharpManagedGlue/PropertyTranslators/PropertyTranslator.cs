@@ -449,7 +449,7 @@ public abstract class PropertyTranslator
         exportedFunction.ExportInvoke(builder);
     }
 
-    public void ExportMirrorProperty(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
+    public void ExportMirrorProperty(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames, bool isReadOnly, bool useProperties)
     {
         string propertyScriptName = property.GetPropertyName();
         
@@ -463,26 +463,33 @@ public abstract class PropertyTranslator
         
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
+        string required = property.HasMetadata("Required") ? "required " : "";;
         builder.AppendTooltip(property);
         if (structObj.IsStructNativelyCopyable())
         {
             
-            builder.AppendLine($"{protection}{managedType} {propertyScriptName}");
+            builder.AppendLine($"{protection}{required}{managedType} {propertyScriptName}");
             builder.OpenBrace();
             builder.AppendLine("get");
             builder.OpenBrace();
             GenerateMirrorPropertyBody(structObj, builder, property, true);
             builder.CloseBrace();
             
-            builder.AppendLine("set");
+            builder.AppendLine(isReadOnly ? "init" : "set");
             builder.OpenBrace();
             GenerateMirrorPropertyBody(structObj, builder, property, false);
             builder.CloseBrace();
             builder.CloseBrace();
         }
+        else if (useProperties)
+        {
+            string setter = isReadOnly ? "init;" : "set;";
+            builder.AppendLine($"{protection}{required}{managedType} {propertyScriptName} {{ get; {setter} }}");
+        }
         else
         {
-            builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+            string @readonly = isReadOnly ? "readonly " : "";
+            builder.AppendLine($"{protection}{required}{@readonly}{managedType} {propertyScriptName};");
         }
         builder.AppendLine();
     }

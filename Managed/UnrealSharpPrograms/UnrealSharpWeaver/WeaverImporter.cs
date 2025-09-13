@@ -56,6 +56,9 @@ public class WeaverImporter
     public TypeReference UInt64TypeRef = null!;
     public TypeReference VoidTypeRef = null!;
     public TypeReference ByteTypeRef = null!;
+    
+    public TypeReference MarshalledStructReference = null!;
+    
     public MethodReference GetNativeClassFromNameMethod = null!;
     public MethodReference GetNativeInterfaceFromNameMethod = null!;
     public MethodReference GetNativeStructFromNameMethod = null!;
@@ -126,6 +129,8 @@ public class WeaverImporter
 
         UnrealSharpObjectType = UnrealSharpCoreAssembly.FindType(UnrealSharpObject, UnrealSharpCoreNamespace)!;
         IInterfaceType = UnrealSharpAssembly.FindType("IInterface", CoreUObjectNamespace)!.Resolve();
+        
+        MarshalledStructReference = UnrealSharpCoreAssembly.FindType("MarshalledStruct`1", "UnrealSharp")!.Resolve();
         
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = unrealSharpObjectType.FindMethod("get_NativeObject")!;

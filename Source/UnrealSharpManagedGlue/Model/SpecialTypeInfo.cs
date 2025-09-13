@@ -6,6 +6,8 @@ namespace UnrealSharpScriptGenerator.Model;
 
 public record struct SpecialStructInfo
 {
+    public HashSet<string> SkippedTypes { get; init; }
+    
     public Dictionary<string, BlittableStructInfo> BlittableTypes { get; init; }
     
     public Dictionary<string, NativelyTranslatableStructInfo> NativelyCopyableTypes { get; init; }
@@ -46,6 +48,7 @@ public record SpecialTypeInfo
 {
     public SpecialStructInfo Structs { get; init; } = new()
     {
+        SkippedTypes = [],
         BlittableTypes = new Dictionary<string, BlittableStructInfo>(),
         NativelyCopyableTypes = new Dictionary<string, NativelyTranslatableStructInfo>()
     };

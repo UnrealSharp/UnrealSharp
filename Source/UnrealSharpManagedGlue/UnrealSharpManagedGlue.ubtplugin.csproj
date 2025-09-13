@@ -26,17 +26,25 @@
             <DefineConstants Condition="'$(DefineConstants)' == '' and '$(DefineConstantsJoined)' != ''">
                 $(DefineConstantsJoined)
             </DefineConstants>
-            
+
+            <DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(DefineConstants), '\s+', ''))</DefineConstants>
         </PropertyGroup>
     </Target>
 
-    <PropertyGroup Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">
-        <TargetFramework>net6.0</TargetFramework>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(TargetFramework)' == ''">
+    <PropertyGroup>
+        <_TargetFrameworkToUse>net8.0</_TargetFrameworkToUse>
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
+
+    <Target Name="SetTargetFramework"
+            AfterTargets="ImportUE5RulesDefineConstants"
+            BeforeTargets="CoreCompile">
+        <PropertyGroup>
+            <_TargetFrameworkToUse Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">net6.0</_TargetFrameworkToUse>
+            <TargetFramework>$(_TargetFrameworkToUse)</TargetFramework>
+        </PropertyGroup>
+    </Target>
+
 
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>

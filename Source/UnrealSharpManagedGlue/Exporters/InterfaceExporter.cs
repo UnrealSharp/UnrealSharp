@@ -13,10 +13,11 @@ public static class InterfaceExporter
     {
         GeneratorStringBuilder stringBuilder = new();
         
+        bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
         string typeNamespace = interfaceObj.GetNamespace();
         
-        stringBuilder.GenerateTypeSkeleton(typeNamespace);
+        stringBuilder.GenerateTypeSkeleton(typeNamespace, nullableEnabled: nullableEnabled);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);

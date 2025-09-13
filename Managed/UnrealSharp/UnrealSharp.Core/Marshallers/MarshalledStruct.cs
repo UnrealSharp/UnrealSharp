@@ -1,4 +1,6 @@
-﻿namespace UnrealSharp;
+﻿using System.Diagnostics.Contracts;
+
+namespace UnrealSharp;
 
 public interface MarshalledStruct<Self> where Self : MarshalledStruct<Self>, allows ref struct
 {
