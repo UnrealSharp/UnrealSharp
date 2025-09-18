@@ -31,9 +31,23 @@ public partial struct FTransform
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector InverseTransformPosition(FVector v)
+    {
+        FQuat inverseRotation = FQuat.Inverse(Rotation);
+        return inverseRotation.RotateVector(v - Location) / Scale;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public FVector TransformPositionNoScale(FVector v)
     {
         return Rotation.RotateVector(v) + Location;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector InverseTransformPositionNoScale(FVector v)
+    {
+        FQuat inverseRotation = FQuat.Inverse(Rotation);
+        return inverseRotation.RotateVector(v - Location);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -43,9 +57,23 @@ public partial struct FTransform
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector InverseTransformVector(FVector v)
+    {
+        FQuat inverseRotation = FQuat.Inverse(Rotation);
+        return inverseRotation.RotateVector(v) / Scale;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public FVector TransformVectorNoScale(FVector v)
     {
         return Rotation.RotateVector(v);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public FVector InverseTransformVectorNoScale(FVector v)
+    {
+        FQuat inverseRotation = FQuat.Inverse(Rotation);
+        return inverseRotation.RotateVector(v);
     }
 
     public static readonly FTransform ZeroTransform = new(FQuat.Identity, FVector.Zero, FVector.Zero);
