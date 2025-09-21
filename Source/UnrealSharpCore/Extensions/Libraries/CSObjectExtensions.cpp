@@ -39,3 +39,14 @@ UClass* UCSObjectExtensions::K2_GetClass(const UObject* Object)
 
 	return Object->GetClass();
 }
+
+UObject* UCSObjectExtensions::GetOuter(const UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		return nullptr;
+	}
+
+	return Object->GetOuter();
+}
+
