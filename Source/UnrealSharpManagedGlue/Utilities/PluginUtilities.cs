@@ -16,11 +16,11 @@ public static class PluginUtilities
 
     static PluginUtilities()
     {
-        var projectDirectory = Program.Factory.Session.ProjectDirectory;
-        var pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
-        var pluginDirInfo = new DirectoryInfo(pluginDirectory);
+        string? projectDirectory = Program.Factory.Session.ProjectDirectory;
+        string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
+        DirectoryInfo pluginDirInfo = new DirectoryInfo(pluginDirectory);
         
-        var files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+        IEnumerable<(string DirectoryName, string FullName)> files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
             .Select(x => x.DirectoryName!)
             .Select(x => (DirectoryName: x, ConfigPath: Path.Combine(x, "Config")))
             .Select(x => (x.DirectoryName, ConfigDir: new DirectoryInfo(x.ConfigPath)))
@@ -29,13 +29,13 @@ public static class PluginUtilities
                 (x, y) => (x.DirectoryName, FileInfo: y))
             .Select(x => (x.DirectoryName, x.FileInfo.FullName));
         
-        foreach (var (pluginDir, pluginFile) in files)
+        foreach ((string pluginDir, string pluginFile) in files)
         {
-            using var fileStream = File.OpenRead(pluginFile);
+            using FileStream fileStream = File.OpenRead(pluginFile);
             try
             {
-                var manifest = JsonSerializer.Deserialize<List<string>>(fileStream);
-                foreach (var module in manifest!)
+                List<string>? manifest = JsonSerializer.Deserialize<List<string>>(fileStream);
+                foreach (string module in manifest!)
                 {
                     ExtractedEngineModules.Add($"/Script/{module}", pluginDir);
                 }
@@ -58,7 +58,7 @@ public static class PluginUtilities
         HashSet<string> dependencies = [];
         if (package.IsPartOfEngine())
         {
-            if (ExtractedEngineModules.TryGetValue(package.SourceName, out var pluginPath))
+            if (ExtractedEngineModules.TryGetValue(package.SourceName, out string? pluginPath))
             {
                 DirectoryInfo pluginDir = new(pluginPath);
                 info = new ProjectDirInfo(pluginDir.Name, pluginPath, dependencies);
@@ -116,7 +116,7 @@ public static class PluginUtilities
 
                     if (refPackage.IsPartOfEngine())
                     {
-                        if (!ExtractedEngineModules.TryGetValue(refPackage.SourceName, out var pluginPath))
+                        if (!ExtractedEngineModules.TryGetValue(refPackage.SourceName, out string? pluginPath))
                         {
                             continue;
                         }
