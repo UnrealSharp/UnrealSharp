@@ -49,6 +49,12 @@ void UCSTraceTypeQueryGlueGenerator::ProcessTraceTypeQuery()
 
 		FString ChannelName = TraceTypeQueryEnum->GetMetaData(TEXT("ScriptName"), i);
 		ChannelName.RemoveFromStart(TEXT("ECC_"));
+
+		if (ChannelName.Len() > 0 && FChar::IsDigit(ChannelName[0]))
+		{
+			ChannelName = TEXT("_") + ChannelName;
+		}
+
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ChannelName, i));
 	}
 
