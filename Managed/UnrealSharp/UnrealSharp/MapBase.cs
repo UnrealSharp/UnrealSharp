@@ -425,7 +425,8 @@ public class MapMarshaller<TKey, TValue> where TKey : notnull
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IDictionary<TKey, TValue> value)
     {
         TMap<TKey, TValue> wrapper = MakeWrapper(nativeBuffer);
-        
+
+        wrapper.Clear();
         foreach (KeyValuePair<TKey, TValue> pair in value)
         {
             wrapper.Add(pair.Key, pair.Value);
@@ -484,6 +485,7 @@ public class MapReadOnlyMarshaller<TKey, TValue> where TKey : notnull
     {
         TMap<TKey, TValue> wrapper = MakeWrapper(nativeBuffer);
 
+        wrapper.Clear();
         foreach (KeyValuePair<TKey, TValue> pair in value)
         {
             wrapper.Add(pair.Key, pair.Value);
