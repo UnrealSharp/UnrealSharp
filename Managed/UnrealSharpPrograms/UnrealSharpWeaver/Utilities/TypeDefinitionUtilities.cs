@@ -531,7 +531,7 @@ public static class TypeDefinitionUtilities
                             return new NativeDataSoftClassType(typeRef, genericArguments[0], arrayDim);
                         }
 
-                        if (genericTypeName.Contains("Option`1"))
+                        if (genericTypeName.Contains("TOptional`1"))
                         {
                             return new NativeDataOptionalType(typeRef, genericArguments[0], arrayDim);
                         }

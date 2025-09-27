@@ -15,11 +15,11 @@ internal class NativeDataOptionalType(TypeReference propertyTypeRef, TypeReferen
         
     public override string GetContainerMarshallerName()
     {
-        return "OptionMarshaller`1";
+        return "OptionalMarshaller`1";
     }
 
     public override string GetCopyContainerMarshallerName()
     {
-        return "OptionMarshaller`1";
+        return "OptionalMarshaller`1";
     }
 }
