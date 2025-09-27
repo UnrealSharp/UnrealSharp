@@ -8,14 +8,23 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
-internal readonly record struct AsyncMethodInfo(
-    ClassDeclarationSyntax ParentClass,
-    MethodDeclarationSyntax Method,
-    string Namespace,
-    TypeSyntax? ReturnType,
-    IReadOnlyDictionary<string, string> Metadata,
-    bool NullableAwareable,
-    bool ReturnsValueTask = false);
+internal readonly struct AsyncMethodInfo(
+    ClassDeclarationSyntax parentClass,
+    MethodDeclarationSyntax method,
+    string ns,
+    TypeSyntax? returnType,
+    IReadOnlyDictionary<string, string> metadata,
+    bool nullableAwareable,
+    bool returnsValueTask = false)
+{
+    public ClassDeclarationSyntax ParentClass { get; } = parentClass;
+    public MethodDeclarationSyntax Method { get; } = method;
+    public string Namespace { get; } = ns;
+    public TypeSyntax? ReturnType { get; } = returnType;
+    public IReadOnlyDictionary<string, string> Metadata { get; } = metadata;
+    public bool NullableAwareable { get; } = nullableAwareable;
+    public bool ReturnsValueTask { get; } = returnsValueTask;
+}
 
 [Generator]
 public class AsyncWrapperGenerator : IIncrementalGenerator
