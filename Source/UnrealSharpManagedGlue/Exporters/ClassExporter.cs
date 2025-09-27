@@ -20,10 +20,11 @@ public static class ClassExporter
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
+        Dictionary<string, GetterSetterPair> getSetOverrides = new();
         
         ScriptGeneratorUtilities.GetExportedFunctions(classObj, exportedFunctions, 
             exportedOverrides, 
-            exportedGetterSetters);
+            exportedGetterSetters, getSetOverrides);
         
         List<UhtProperty> exportedProperties = new List<UhtProperty>();
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
@@ -66,12 +67,15 @@ public static class ClassExporter
                 getSetBackedProperties,
                 exportedOverrides);
             
-            ExportClassProperties(stringBuilder, exportedProperties);
-            ExportGetSetProperties(stringBuilder, getSetBackedProperties);
-            ExportCustomProperties(stringBuilder, exportedGetterSetters);
+            HashSet<string> exportedPropertyNames = new();
+            HashSet<string> exportedFunctionNames = new();
+            ExportClassProperties(stringBuilder, exportedProperties, exportedPropertyNames);
+            ExportGetSetProperties(stringBuilder, getSetBackedProperties, exportedPropertyNames, exportedFunctionNames);
+            ExportCustomProperties(stringBuilder, exportedGetterSetters, exportedPropertyNames, exportedFunctionNames);
             
-            ExportClassFunctions(classObj, stringBuilder, exportedFunctions);
-            ExportOverrides(stringBuilder, exportedOverrides);
+            ExportClassFunctions(classObj, stringBuilder, exportedFunctions, exportedFunctionNames);
+            ExportGetSetOverrides(stringBuilder, getSetOverrides, exportedPropertyNames, exportedFunctionNames);
+            ExportOverrides(stringBuilder, exportedOverrides, exportedFunctionNames);
             stringBuilder.AppendLine();
         }
 
@@ -80,16 +84,20 @@ public static class ClassExporter
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
 
-    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties)
+    static void ExportClassProperties(GeneratorStringBuilder generatorStringBuilder, List<UhtProperty> exportedProperties, HashSet<string> exportedPropertyNames)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
             translator.ExportProperty(generatorStringBuilder, property);
+            exportedPropertyNames.Add(property.SourceName);
         }
     }
     
-    public static void ExportGetSetProperties(GeneratorStringBuilder builder, Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties)
+    public static void ExportGetSetProperties(GeneratorStringBuilder builder, 
+                                              Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties, 
+                                              HashSet<string> exportedPropertyNames,
+                                              HashSet<string> exportedFunctionNames)
     {
         Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters = new();
         foreach (KeyValuePair<UhtProperty, GetterSetterPair> pair in getSetBackedProperties)
@@ -97,19 +105,55 @@ public static class ClassExporter
             UhtProperty property = pair.Key;
             GetterSetterPair getterSetterPair = pair.Value;
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportGetSetProperty(builder, getterSetterPair, property, exportedGetterSetters);
+            translator.ExportGetSetProperty(builder, getterSetterPair, property, exportedGetterSetters, exportedFunctionNames);
+            
+            exportedPropertyNames.Add(getterSetterPair.PropertyName);
+            foreach (UhtFunction function in getterSetterPair.Accessors)
+            {
+                exportedFunctionNames.Add(function.SourceName);
+            }
+        }
+    }
+
+    private static void ExportGetSetOverrides(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> getSetBackedProperties, 
+                                              HashSet<string> exportedPropertyNames, HashSet<string> exportedFunctionNames)
+    {
+        foreach (KeyValuePair<string, GetterSetterPair> pair in getSetBackedProperties)
+        {
+            if (pair.Value.Property == null)
+            {
+                throw new InvalidDataException($"Property '{pair.Value.PropertyName}' does not have a UProperty");
+            }
+            
+            UhtFunction firstAccessor = pair.Value.Accessors.First();
+            UhtProperty firstProperty = pair.Value.Property;
+            string propertyName = pair.Value.PropertyName;
+            
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            builder.TryAddWithEditor(firstAccessor);
+            translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty, 
+                exportedPropertyNames.Contains(propertyName), exportedFunctionNames);
+            builder.TryEndWithEditor(firstAccessor);
+            
+            exportedPropertyNames.Add(propertyName);
+            foreach (UhtFunction function in pair.Value.Accessors)
+            {
+                exportedFunctionNames.Add(function.SourceName);
+            }
         }
     }
     
-    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides)
+    static void ExportOverrides(GeneratorStringBuilder builder, List<UhtFunction> exportedOverrides, HashSet<string> exportedFunctionNames)
     {
         foreach (UhtFunction function in exportedOverrides)
         {
-            FunctionExporter.ExportOverridableFunction(builder, function);
+            FunctionExporter.ExportOverridableFunction(builder, function, exportedFunctionNames);
+            exportedFunctionNames.Add(function.SourceName);
         }
     }
     
-    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions)
+    static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions,
+                                     HashSet<string> exportedFunctionNames)
     {
         bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
@@ -119,11 +163,15 @@ public static class ClassExporter
                 FunctionExporter.TryAddExtensionMethod(function);
             }
             
-            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal);
+            FunctionExporter.ExportFunction(builder, function, FunctionType.Normal, exportedFunctionNames);
+            exportedFunctionNames.Add(function.SourceName);
         }
     }
 
-    public static void ExportCustomProperties(GeneratorStringBuilder builder, Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    public static void ExportCustomProperties(GeneratorStringBuilder builder, 
+                                              Dictionary<string, GetterSetterPair> exportedGetterSetters, 
+                                              HashSet<string> exportedPropertyNames,
+                                              HashSet<string> exportedFunctionNames)
     {
         foreach (KeyValuePair<string, GetterSetterPair> pair in exportedGetterSetters)
         {
@@ -138,8 +186,14 @@ public static class ClassExporter
             
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
             builder.TryAddWithEditor(firstAccessor);
-            translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty);
+            translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty, exportedFunctionNames: exportedFunctionNames);
             builder.TryEndWithEditor(firstAccessor);
+            
+            exportedPropertyNames.Add(propertyName);
+            foreach (UhtFunction function in pair.Value.Accessors)
+            {
+                exportedFunctionNames.Add(function.SourceName);
+            }
         }
     }
 }

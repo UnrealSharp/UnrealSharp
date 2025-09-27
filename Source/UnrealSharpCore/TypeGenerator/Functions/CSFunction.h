@@ -27,6 +27,7 @@ public:
 	}
 
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
+	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL, UObject* WorldContextObject);
 private:
 	TSharedPtr<FGCHandle> MethodHandle = nullptr;
 };

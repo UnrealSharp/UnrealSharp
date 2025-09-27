@@ -44,6 +44,7 @@ public static class ExtensionsClassExporter
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
             exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+            exporter.ExportExtensionMethodOverloads(stringBuilder);
             exporter.ExportExtensionMethod(stringBuilder);
         }
         
