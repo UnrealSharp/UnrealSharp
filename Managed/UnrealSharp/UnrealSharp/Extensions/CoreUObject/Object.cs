@@ -191,28 +191,75 @@ public partial class UObject
     /// <param name="path">Asset path of the class (e.g., "/Game/Path/To/MyClass.MyClass").</param>
     /// <param name="outer">Optional outer object.</param>
     /// <returns>A TSubclassOf wrapping the loaded class.</returns>
+    /// <exception cref="ArgumentException">Thrown if the path is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the class cannot be loaded or the native class cannot be found.</exception>
     public static TSubclassOf<T> StaticLoadClass<T>(string path, UObject? outer = null) where T : UObject
     {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path cannot be null or empty.", nameof(path));
+        }
+
         IntPtr basePtr = typeof(T).TryGetNativeClass();
+        if (basePtr == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
+        }
+
         IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr handle = UObjectExporter.CallStaticLoadClass(basePtr, outerPtr, path);
-        UClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
+
+        if (handle == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to load class from path: {path}. The class may not exist or the path is incorrect.");
+        }
+
+        UClass? loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
+        if (loadedClass == null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve managed object for loaded class: {path}");
+        }
+
         return new TSubclassOf<T>(loadedClass);
     }
     
     /// <summary>
     /// Loads an object by path.
     /// </summary>
-    /// <typeparam name="T">The base UObject type the class must inherit from.</typeparam>
+    /// <typeparam name="T">The base UObject type the object must inherit from.</typeparam>
     /// <param name="path"> Asset path of the object (e.g., "/Game/Path/To/MyObject.MyObject"). </param>
     /// <param name="outer"> Optional outer object. </param>
-    /// <returns></returns>
-    public static T StaticLoadObject<T>(string path, UObject? outer) where T : UObject
+    /// <returns>The loaded object of type T.</returns>
+    /// <exception cref="ArgumentException">Thrown if the path is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the object cannot be loaded or the native class cannot be found.</exception>
+    public static T StaticLoadObject<T>(string path, UObject? outer = null) where T : UObject
     {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path cannot be null or empty.", nameof(path));
+        }
+
         IntPtr basePtr = typeof(T).TryGetNativeClass();
+        if (basePtr == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
+        }
+
         IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
         IntPtr handle = UObjectExporter.CallStaticLoadObject(basePtr, outerPtr, path);
-        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+
+        if (handle == IntPtr.Zero)
+        {
+            throw new InvalidOperationException($"Failed to load object from path: {path}. The object may not exist or the path is incorrect.");
+        }
+
+        T? loadedObject = GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
+        if (loadedObject == null)
+        {
+            throw new InvalidOperationException($"Failed to retrieve managed object for loaded object: {path}");
+        }
+
+        return loadedObject;
     }
 
     /// <summary>
