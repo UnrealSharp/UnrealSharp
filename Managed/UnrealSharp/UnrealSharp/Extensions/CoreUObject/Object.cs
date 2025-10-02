@@ -185,6 +185,37 @@ public partial class UObject
     }
 
     /// <summary>
+    /// Loads a class of type T by path.
+    /// </summary>
+    /// <typeparam name="T">The base UObject type the class must inherit from.</typeparam>
+    /// <param name="path">Asset path of the class (e.g., "/Game/Path/To/MyClass.MyClass").</param>
+    /// <param name="outer">Optional outer object.</param>
+    /// <returns>A TSubclassOf wrapping the loaded class.</returns>
+    public static TSubclassOf<T> StaticLoadClass<T>(string path, UObject? outer = null) where T : UObject
+    {
+        IntPtr basePtr = typeof(T).TryGetNativeClass();
+        IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
+        IntPtr handle = UObjectExporter.CallStaticLoadClass(basePtr, outerPtr, path);
+        UClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
+        return new TSubclassOf<T>(loadedClass);
+    }
+    
+    /// <summary>
+    /// Loads an object by path.
+    /// </summary>
+    /// <typeparam name="T">The base UObject type the class must inherit from.</typeparam>
+    /// <param name="path"> Asset path of the object (e.g., "/Game/Path/To/MyObject.MyObject"). </param>
+    /// <param name="outer"> Optional outer object. </param>
+    /// <returns></returns>
+    public static T StaticLoadObject<T>(string path, UObject? outer) where T : UObject
+    {
+        IntPtr basePtr = typeof(T).TryGetNativeClass();
+        IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
+        IntPtr handle = UObjectExporter.CallStaticLoadObject(basePtr, outerPtr, path);
+        return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
+    }
+
+    /// <summary>
     /// Spawns an actor of the specified type.
     /// </summary>
     /// <param name="actorType"> The type of the actor to spawn. </param>
