@@ -5,6 +5,7 @@ using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;
 using UnrealSharp.UnrealSharpCore;
+using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -222,7 +223,7 @@ public partial class UObject
 
         return new TSubclassOf<T>(loadedClass);
     }
-    
+
     /// <summary>
     /// Loads an object by path.
     /// </summary>
@@ -261,6 +262,102 @@ public partial class UObject
 
         return loadedObject;
     }
+
+    /// <summary>
+    /// Loads a class of type T by path asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The base UObject type the class must inherit from.</typeparam>
+    /// <param name="path">Asset path of the class (e.g., "/Game/Path/To/MyClass.MyClass").</param>
+    /// <returns>A Task that resolves to a TSubclassOf wrapping the loaded class.</returns>
+    /// <exception cref="ArgumentException">Thrown if the path is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the class cannot be loaded or is not compatible with type T.</exception>
+    public static async Task<TSubclassOf<T>> AsyncStaticLoadClass<T>(string path) where T : UObject
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path cannot be null or empty.", nameof(path));
+        }
+
+        FSoftObjectPath softObjectPath = ParseAssetPath(path);
+        UObject loadedObject = await softObjectPath.LoadAsync<UObject>();
+
+        if (loadedObject is not UClass loadedClass)
+        {
+            throw new InvalidOperationException($"Loaded object at path '{path}' is not a UClass. Got type: {loadedObject?.GetType().Name ?? "null"}");
+        }
+        
+        TSubclassOf<T> result = new TSubclassOf<T>(loadedClass);
+        if (!result.Valid)
+        {
+            throw new InvalidOperationException($"Loaded class at path '{path}' is not compatible with type {typeof(T).Name}.");
+        }
+
+        return result;
+    }
+    
+    /// <summary>
+    /// Loads an object of type T by path asynchronously.
+    /// </summary>
+    /// <typeparam name="T">The base UObject type the object must inherit from.</typeparam>
+    /// <param name="path">Asset path of the object (e.g., "/Game/Path/To/MyObject.MyObject").</param>
+    /// <returns>A Task that resolves to the loaded object of type T.</returns>
+    /// <exception cref="ArgumentException">Thrown if the path is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the object cannot be loaded or cast to type T.</exception>
+    public static async Task<T> AsyncStaticLoadObject<T>(string path) where T : UObject
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException("Path cannot be null or empty.", nameof(path));
+        }
+
+        FSoftObjectPath softObjectPath = ParseAssetPath(path);
+        T loadedObject = await softObjectPath.LoadAsync<T>();
+        if (loadedObject == null)
+        {
+            throw new InvalidOperationException($"Failed to load object from path: {path}. The object may not exist or the path is incorrect.");
+        }
+
+        return loadedObject;
+    }
+    
+    /// <summary>
+    /// Helper method to parse asset path string into FSoftObjectPath.
+    /// </summary>
+    /// <param name="path">Asset path string (e.g., "/Game/Path/To/Asset.Asset").</param>
+    /// <returns>FSoftObjectPath structure.</returns>
+    private static FSoftObjectPath ParseAssetPath(string path)
+    {
+        // Split the path to extract package and asset names
+        // Format: /Game/Path/To/Asset.Asset or /Game/Path/To/Asset
+        string packageName = path;
+        string assetName = path;
+
+        int lastDotIndex = path.LastIndexOf('.');
+        if (lastDotIndex > 0)
+        {
+            packageName = path.Substring(0, lastDotIndex);
+            assetName = path.Substring(lastDotIndex + 1);
+        }
+        else
+        {
+            // If no dot, extract the last part after the last slash
+            int lastSlashIndex = path.LastIndexOf('/');
+            if (lastSlashIndex >= 0 && lastSlashIndex < path.Length - 1)
+            {
+                assetName = path.Substring(lastSlashIndex + 1);
+            }
+        }
+
+        return new FSoftObjectPath
+        {
+            AssetPath = new FTopLevelAssetPath
+            {
+                PackageName = packageName,
+                AssetName = assetName
+            }
+        };
+    }
+
 
     /// <summary>
     /// Spawns an actor of the specified type.
