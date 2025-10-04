@@ -609,6 +609,8 @@ UCSAssembly * UCSManager::FindOwningAssemblySlow(UField *Field)
             continue;
         }
 
+        NativeClassToAssemblyMap.Add(Field->GetUniqueID(), LoadedAssembly.Value);
+
         return LoadedAssembly.Value;
     }
 
