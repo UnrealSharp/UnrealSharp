@@ -111,6 +111,8 @@ public static class Program
         bool hasProjectGlue = false;
         foreach (ProjectDirInfo pluginDir in PluginUtilities.PluginInfo.Values)
         {
+            if (pluginDir.IsPartOfEngine) continue;
+            
             if (pluginDir.IsUProject)
             {
                 hasProjectGlue = true;

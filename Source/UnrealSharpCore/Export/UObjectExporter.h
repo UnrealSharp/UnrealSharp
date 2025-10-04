@@ -46,4 +46,10 @@ public:
 	UNREALSHARP_FUNCTION()
 	static uint32 GetUniqueID(UObject* Object);
 
+	UNREALSHARP_FUNCTION()
+	static void* StaticLoadClass(UClass* BaseClass, UObject* InOuter, const char* Name);
+
+	UNREALSHARP_FUNCTION()
+	static void* StaticLoadObject(UClass* BaseClass, UObject* InOuter, const char* Name);
+
 };
