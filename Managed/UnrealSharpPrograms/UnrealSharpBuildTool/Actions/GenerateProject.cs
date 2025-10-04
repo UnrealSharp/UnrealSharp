@@ -159,7 +159,6 @@ public class GenerateProject : BuildToolAction
             AppendProperties(csprojDocument);
             AppendConstantDefines(csprojDocument);
 
-            AppendPackageReference(csprojDocument, newItemGroup, "LanguageExt.Core", "4.4.9");
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
             AppendReference(csprojDocument, newItemGroup, "UnrealSharp.Core", GetPathToBinaries());
 
