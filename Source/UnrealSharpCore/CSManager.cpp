@@ -579,7 +579,7 @@ UCSAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
 		return ManagedType->GetOwningAssembly();
 	}
 
-	if (const UUserDefinedEnum* UserEnum = Cast<UUserDefinedStruct>(Enum); UserEnum != nullptr)
+	if (const UUserDefinedEnum* UserEnum = Cast<UUserDefinedEnum>(Enum); UserEnum != nullptr)
 	{
 		// This is a Blueprint Enum and we can't use it
 		return nullptr;
