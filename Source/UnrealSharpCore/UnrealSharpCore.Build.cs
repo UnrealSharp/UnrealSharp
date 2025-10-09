@@ -125,7 +125,14 @@ public class UnrealSharpCore : ModuleRules
 			}
 		}
 
-		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
+		string DefaultDotNET = @"C:\Program Files\dotnet\dotnet.exe";
+        if (OperatingSystem.IsWindows() && File.Exists(DefaultDotNET))
+		{
+            Console.WriteLine($"Fallback to default DotNET: {DefaultDotNET}");
+            return DefaultDotNET;
+        }
+
+        throw new Exception($"Couldn't find {dotnetExe} in PATH!");
 	}
 
 	void PublishSolution(string projectRootDirectory)
