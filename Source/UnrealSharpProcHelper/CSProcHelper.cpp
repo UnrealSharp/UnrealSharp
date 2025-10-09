@@ -305,15 +305,24 @@ FString FCSProcHelper::GetDotNetDirectory()
 
 		return Path;
 	}
+
+#if PLATFORM_WINDOWS
+	PathDotnet = "C:\\Program Files\\dotnet";
+	if (FPaths::DirectoryExists(PathDotnet))
+	{
+		return PathDotnet;
+	}
+#endif
+
 	return "";
 }
 
 FString FCSProcHelper::GetDotNetExecutablePath()
 {
 #if defined(_WIN32)
-	return GetDotNetDirectory() + "dotnet.exe";
+	return FPaths::Combine(GetDotNetDirectory(), "dotnet.exe");
 #else
-	return GetDotNetDirectory() + "dotnet";
+	return FPaths::Combine(GetDotNetDirectory(), "dotnet");
 #endif
 }
 
