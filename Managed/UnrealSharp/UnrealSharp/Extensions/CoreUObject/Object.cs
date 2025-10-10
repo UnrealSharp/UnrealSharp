@@ -348,14 +348,14 @@ public partial class UObject
             }
         }
 
-        return new FSoftObjectPath
+        FSoftObjectPath RetValue = new FSoftObjectPath();
+        RetValue.SetPath(new FTopLevelAssetPath
         {
-            AssetPath = new FTopLevelAssetPath
-            {
-                PackageName = packageName,
-                AssetName = assetName
-            }
-        };
+            PackageName = packageName,
+            AssetName = assetName
+        });
+
+        return RetValue;
     }
 
 

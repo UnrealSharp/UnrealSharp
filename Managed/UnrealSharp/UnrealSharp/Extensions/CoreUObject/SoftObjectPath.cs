@@ -27,7 +27,10 @@ public partial struct FSoftObjectPath
     {
         return AssetPath.GetHashCode();
     }
-
+    public void SetPath(FTopLevelAssetPath InPath)
+    {
+        AssetPath = InPath;
+    }
     public bool Valid => AssetPath.Valid;
 
     public bool Null => AssetPath.Null;
