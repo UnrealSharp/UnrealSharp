@@ -56,7 +56,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
                 ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;
             builder.AppendLine($"return {castOperation}returnValue;");
         }
-        else if (_function.ReturnProperty != null)
+        else if (Function.ReturnProperty != null)
         {
             // Types differ (e.g., getter returns FText, property bound as string). Still return and rely on
             // available implicit/user-defined conversions on the managed types (FText -> string, etc.).
