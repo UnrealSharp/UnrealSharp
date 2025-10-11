@@ -1,29 +1,21 @@
 ﻿#include "UCoreUObjectExporter.h"
 #include "CSAssembly.h"
 #include "CSManager.h"
-#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 
-UClass* UUCoreUObjectExporter::GetNativeClassFromName(const char* InAssemblyName, const char* InNamespace, const char* InClassName)
+UStruct* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* InNamespace, const char* InTypeName)
 {
-	// This gets called by the static constructor of the class, so we can cache the class info of native classes here.
+	// This gets called by the static constructor of the type, so we can cache the type info of native classes here.
 	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
-	FCSFieldName FieldName(InClassName, InNamespace);
+	FCSFieldName FieldName(InTypeName, InNamespace);
+	TSharedPtr<FCSManagedTypeInfo> TypeInfo = Assembly->FindOrAddTypeInfo(FieldName);
+
+	UStruct* Field = TypeInfo->GetFieldChecked<UStruct>();
 	
-	TSharedPtr<FCSClassInfo> ClassInfo = Assembly->FindOrAddTypeInfo<FCSClassInfo>(FieldName);
-	return ClassInfo->GetFieldChecked<UClass>();
-}
+	if (!IsValid(Field))
+	{
+		UE_LOGFMT(LogUnrealSharp, BreakOnLog, "Failed to find type: {0}.{1} in assembly {2}", InNamespace, InTypeName, InAssemblyName);
+		return nullptr;
+	}
 
-UClass* UUCoreUObjectExporter::GetNativeInterfaceFromName(const char* InAssemblyName, const char* InNamespace, const char* InInterfaceName)
-{
-	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
-	FCSFieldName FieldName(InInterfaceName, InNamespace);
-	return Assembly->FindType<UClass>(FieldName);
-}
-
-UScriptStruct* UUCoreUObjectExporter::GetNativeStructFromName(const char* InAssemblyName, const char* InNamespace, const char* InStructName)
-{
-	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
-	FCSFieldName FieldName(InStructName, InNamespace);
-	UScriptStruct* ScriptStruct = Assembly->FindType<UScriptStruct>(FieldName);
-	return ScriptStruct;
+	return Field;
 }

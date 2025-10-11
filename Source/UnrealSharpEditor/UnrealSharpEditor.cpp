@@ -1,13 +1,9 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
-#include "BlueprintCompilationManager.h"
-#include "BlueprintEditorLibrary.h"
+#include "CSHotReloadSubsystem.h"
 #include "CSUnrealSharpEditorCommands.h"
-#include "DirectoryWatcherModule.h"
 #include "CSStyle.h"
-#include "CSUnrealSharpEditorSettings.h"
 #include "DesktopPlatformModule.h"
-#include "IDirectoryWatcher.h"
 #include "IPluginBrowser.h"
 #include "ISettingsModule.h"
 #include "LevelEditor.h"
@@ -15,27 +11,19 @@
 #include "SubobjectDataSubsystem.h"
 #include "UnrealSharpRuntimeGlue.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
-#include "Engine/AssetManager.h"
-#include "Engine/InheritableComponentHandler.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "UnrealSharpCore/CSManager.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/DebuggerCommands.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/LowLevelTestAdapter.h"
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
-#include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/CSEnum.h"
-#include "TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
-#include "Utils/CSClassUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -48,28 +36,13 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 
 void FUnrealSharpEditorModule::StartupModule()
 {
+	Manager = &UCSManager::GetOrCreate();
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
 	TArray<FString> ProjectPaths;
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
-
-	for (const FString& ProjectPath : ProjectPaths)
-	{
-		FString Path = FPaths::GetPath(ProjectPath);
-		AddDirectoryToWatch(Path);
-	}
-
-	Manager = &UCSManager::GetOrCreate();
-	Manager->OnNewStructEvent().AddRaw(this, &FUnrealSharpEditorModule::OnStructRebuilt);
-	Manager->OnNewClassEvent().AddRaw(this, &FUnrealSharpEditorModule::OnClassRebuilt);
-	Manager->OnNewEnumEvent().AddRaw(this, &FUnrealSharpEditorModule::OnEnumRebuilt);
-
-	FEditorDelegates::ShutdownPIE.AddRaw(this, &FUnrealSharpEditorModule::OnPIEShutdown);
-
-	TickDelegate = FTickerDelegate::CreateRaw(this, &FUnrealSharpEditorModule::Tick);
-	TickDelegateHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
-
+	
 	if (ProjectPaths.IsEmpty())
 	{
 		IMainFrameModule::Get().OnMainFrameCreationFinished().AddLambda([this](TSharedPtr<SWindow>, bool)
@@ -101,178 +74,9 @@ void FUnrealSharpEditorModule::StartupModule()
 
 void FUnrealSharpEditorModule::ShutdownModule()
 {
-	FTSTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
 	UToolMenus::UnRegisterStartupCallback(this);
 	UToolMenus::UnregisterOwner(this);
     UnregisterPluginTemplates();
-}
-
-void FUnrealSharpEditorModule::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
-{
-	if (IsHotReloading())
-	{
-		return;
-	}
-
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-
-	if (FPlayWorldCommandCallbacks::IsInPIE() && Settings->AutomaticHotReloading == OnScriptSave)
-	{
-		bHasQueuedHotReload = true;
-		return;
-	}
-
-	for (const FFileChangeData& ChangedFile : ChangedFiles)
-	{
-		FString NormalizedFileName = ChangedFile.Filename;
-		FPaths::NormalizeFilename(NormalizedFileName);
-
-		// Skip ProjectGlue files
-		if (NormalizedFileName.Contains("Glue"))
-		{
-			continue;
-		}
-
-		// Skip generated files in bin and obj folders
-		if (NormalizedFileName.Contains(TEXT("/obj/")))
-		{
-			continue;
-		}
-
-		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") &&
-			NormalizedFileName.Contains(TEXT("/bin/")))
-		{
-			// A module changed, initiate the reload and return
-			StartHotReload(false);
-			return;
-		}
-
-		// Check if the file is a .cs file and not in the bin directory
-		FString Extension = FPaths::GetExtension(NormalizedFileName);
-		if (Extension != "cs" || NormalizedFileName.Contains(TEXT("/bin/")))
-		{
-			continue;
-		}
-
-		// Return on the first .cs file we encounter so we can reload.
-		if (Settings->AutomaticHotReloading != OnScriptSave)
-		{
-			HotReloadStatus = PendingReload;
-		}
-		else
-		{
-			StartHotReload(true);
-		}
-
-		return;
-	}
-}
-
-void FUnrealSharpEditorModule::StartHotReload(bool bRebuild, bool bPromptPlayerWithNewProject)
-{
-	if (HotReloadStatus == FailedToUnload)
-	{
-		// If we failed to unload an assembly, we can't hot reload until the editor is restarted.
-		bHotReloadFailed = true;
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Hot reload is disabled until the editor is restarted.");
-		return;
-	}
-
-	TArray<FString> AllProjects;
-	FCSProcHelper::GetAllProjectPaths(AllProjects);
-
-	if (AllProjects.IsEmpty())
-	{
-		if (bPromptPlayerWithNewProject)
-		{
-			SuggestProjectSetup();
-		}
-
-		return;
-	}
-
-	HotReloadStatus = Active;
-	double StartTime = FPlatformTime::Seconds();
-
-	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Reloading C#..."));
-	Progress.MakeDialog();
-
-	FString SolutionPath = FCSProcHelper::GetPathToSolution();
-	FString OutputPath = FCSProcHelper::GetUserAssemblyDirectory();
-
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	FString BuildConfiguration = Settings->GetBuildConfigurationString();
-	ECSLoggerVerbosity LogVerbosity = Settings->LogVerbosity;
-
-	FString ExceptionMessage;
-	if (!ManagedUnrealSharpEditorCallbacks.Build(*SolutionPath, *OutputPath, *BuildConfiguration, LogVerbosity, &ExceptionMessage, bRebuild))
-	{
-	 	HotReloadStatus = Inactive;
-		bHotReloadFailed = true;
-	 	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Building C# Project Failed")));
-		return;
-	}
-
-	UCSManager& CSharpManager = UCSManager::Get();
-	bool bUnloadFailed = false;
-
-	TArray<FString> ProjectsByLoadOrder;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, true);
-	
-	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
-	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
-	// Good info: https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
-	// Note: An assembly is only referenced if any of its types are referenced in code.
-	// Otherwise optimized out, so ProjectGlue can be unloaded first if it's not used.
-	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
-	{
-		const FString& ProjectName = ProjectsByLoadOrder[i];
-		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
-
-		if (IsValid(Assembly) && !Assembly->UnloadAssembly())
-		{
-			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
-			bUnloadFailed = true;
-			break;
-		}
-	}
-
-	if (bUnloadFailed)
-	{
-		HotReloadStatus = FailedToUnload;
-		bHotReloadFailed = true;
-
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HotReloadFailure",
-		                                              "One or more assemblies failed to unload. Hot reload will be disabled until the editor restarts.\n\n"
-		                                              "Possible causes: Strong GC handles, running threads, etc."),
-		                     FText::FromString(TEXT("Hot Reload Failed")));
-
-		return;
-	}
-
-	// Load all assemblies again in the correct order.
-	for (const FString& ProjectName : ProjectsByLoadOrder)
-	{
-		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
-
-		if (IsValid(Assembly))
-		{
-			Assembly->LoadAssembly();
-		}
-		else
-		{
-			// If the assembly is not loaded. It's a new project, and we need to load it.
-			CSharpManager.LoadUserAssemblyByName(*ProjectName);
-		}
-	}
-
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload", "Refreshing Affected Blueprints..."));
-	RefreshAffectedBlueprints();
-
-	HotReloadStatus = Inactive;
-	bHotReloadFailed = false;
-
-	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }
 
 void FUnrealSharpEditorModule::InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks)
@@ -287,12 +91,12 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
-	Get().StartHotReload();
+	UCSHotReloadSubsystem::Get()->StartHotReload();
 }
 
 void FUnrealSharpEditorModule::OnReloadManagedCode()
 {
-	Get().StartHotReload(false);
+	UCSHotReloadSubsystem::Get()->StartHotReload();
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
@@ -405,148 +209,6 @@ void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
 	FUnrealSharpRuntimeGlueModule& RuntimeGlueModule = FModuleManager::LoadModuleChecked<FUnrealSharpRuntimeGlueModule>(
 		"UnrealSharpRuntimeGlue");
 	RuntimeGlueModule.ForceRefreshRuntimeGlue();
-}
-
-void FUnrealSharpEditorModule::RepairComponents()
-{
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(
-		AssetRegistryConstants::ModuleName);
-	AssetRegistryModule.Get().SearchAllAssets(/*bSynchronousSearch =*/true);
-
-	TArray<FAssetData> OutAssetData;
-	AssetRegistryModule.Get().GetAssetsByClass(UBlueprint::StaticClass()->GetClassPathName(), OutAssetData, true);
-
-	FScopedSlowTask Progress(OutAssetData.Num());
-	Progress.MakeDialog();
-
-	USubobjectDataSubsystem* SubobjectDataSubsystem = GEngine->GetEngineSubsystem<USubobjectDataSubsystem>();
-
-	for (FAssetData const& Asset : OutAssetData)
-	{
-		const FString AssetPath = Asset.GetObjectPathString();
-
-		if (!AssetPath.Contains(TEXT("/Game/")))
-		{
-			continue;
-		}
-
-		UBlueprint* LoadedBlueprint = Cast<
-			UBlueprint>(StaticLoadObject(Asset.GetClass(), nullptr, *AssetPath, nullptr));
-		UClass* GeneratedClass = LoadedBlueprint->GeneratedClass;
-		UCSClass* ManagedClass = FCSClassUtilities::GetFirstManagedClass(GeneratedClass);
-
-		if (!ManagedClass)
-		{
-			continue;
-		}
-
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Fixing up Blueprint: %s"), *AssetPath)));
-
-		AActor* ActorCDO = Cast<AActor>(GeneratedClass->GetDefaultObject(false));
-		if (!ActorCDO)
-		{
-			continue;
-		}
-
-		TArray<FSubobjectDataHandle> SubobjectData;
-		SubobjectDataSubsystem->K2_GatherSubobjectDataForBlueprint(LoadedBlueprint, SubobjectData);
-
-		UInheritableComponentHandler* InheritableComponentHandler = LoadedBlueprint->
-			GetInheritableComponentHandler(false);
-
-		if (!InheritableComponentHandler)
-		{
-			continue;
-		}
-
-		TArray<UObject*> Subobjects;
-		ActorCDO->GetDefaultSubobjects(Subobjects);
-
-		TArray<UObject*> MatchingInstances;
-		GetObjectsOfClass(LoadedBlueprint->GeneratedClass, MatchingInstances, true, RF_ClassDefaultObject,
-		                  EInternalObjectFlags::Garbage);
-
-		for (TFieldIterator<FObjectProperty> PropertyIt(ManagedClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++
-		     PropertyIt)
-		{
-			FObjectProperty* Property = *PropertyIt;
-
-			if (!FCSClassUtilities::IsManagedClass(Property->GetOwnerClass()))
-			{
-				break;
-			}
-
-			UActorComponent* OldComponentArchetype = Cast<UActorComponent>(
-				Property->GetObjectPropertyValue_InContainer(ActorCDO));
-
-			if (!OldComponentArchetype || !Subobjects.Contains(OldComponentArchetype))
-			{
-				continue;
-			}
-
-			Property->SetObjectPropertyValue_InContainer(ActorCDO, nullptr);
-
-			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(OldComponentArchetype->GetFName());
-
-			if (!ComponentKey.IsValid())
-			{
-				continue;
-			}
-
-			UActorComponent* NewArchetype = InheritableComponentHandler->GetOverridenComponentTemplate(ComponentKey);
-			CopyProperties(OldComponentArchetype, NewArchetype);
-			FBlueprintEditorUtils::MarkBlueprintAsModified(LoadedBlueprint, Property);
-
-			for (UObject* Instance : MatchingInstances)
-			{
-				AActor* ActorInstance = static_cast<AActor*>(Instance);
-				TArray<TObjectPtr<UActorComponent>>& Components = ActorInstance->BlueprintCreatedComponents;
-
-				for (TObjectPtr<UActorComponent>& Component : Components)
-				{
-					if (Component->GetName() == OldComponentArchetype->GetName())
-					{
-						CopyProperties(OldComponentArchetype, Component);
-					}
-				}
-			}
-		}
-
-		UBlueprintEditorLibrary::CompileBlueprint(LoadedBlueprint);
-	}
-}
-
-void FUnrealSharpEditorModule::CopyProperties(UActorComponent* Source, UActorComponent* Target)
-{
-	UClass* SourceClass = Source->GetClass();
-	UClass* TargetClass = Target->GetClass();
-
-	if (SourceClass != TargetClass)
-	{
-		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Source and Target classes are not the same."));
-		return;
-	}
-
-	for (TFieldIterator<FProperty> PropertyIt(SourceClass, EFieldIteratorFlags::IncludeSuper); PropertyIt; ++PropertyIt)
-	{
-		FProperty* Property = *PropertyIt;
-
-		if (!Property->HasAnyPropertyFlags(CPF_BlueprintVisible | CPF_Edit))
-		{
-			continue;
-		}
-
-		FString Data;
-		Property->ExportTextItem_InContainer(Data, Source, nullptr, nullptr, PPF_None);
-		Property->ImportText_InContainer(*Data, Target, Target, 0);
-	}
-
-	Target->PostLoad();
-}
-
-void FUnrealSharpEditorModule::OnRepairComponents()
-{
-	RepairComponents();
 }
 
 void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirectory)
@@ -742,18 +404,6 @@ void FUnrealSharpEditorModule::SuggestProjectSetup()
 	OpenNewProjectDialog();
 }
 
-bool FUnrealSharpEditorModule::Tick(float DeltaTime)
-{
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() &&
-		FApp::HasFocus())
-	{
-		StartHotReload();
-	}
-
-	return true;
-}
-
 void FUnrealSharpEditorModule::RegisterCommands()
 {
 	FCSUnrealSharpEditorCommands::Register();
@@ -780,8 +430,6 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
 	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RefreshRuntimeGlue,
 							   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRefreshRuntimeGlue));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RepairComponents,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRepairComponents));
 
 	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
 	const TSharedRef<FUICommandList> Commands = LevelEditorModule.GetGlobalLevelEditorActions();
@@ -801,7 +449,7 @@ void FUnrealSharpEditorModule::RegisterMenu()
 		LOCTEXT("UnrealSharp_Tooltip", "List of all UnrealSharp actions"),
 		TAttribute<FSlateIcon>::CreateLambda([this]()
 		{
-			return GetMenuIcon();
+			return UCSHotReloadSubsystem::Get()->GetMenuIcon();
 		}));
 
 	Section.AddEntry(Entry);
@@ -840,19 +488,6 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
     }
 }
 
-
-void FUnrealSharpEditorModule::OnPIEShutdown(bool IsSimulating)
-{
-	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
-	ManagedUnrealSharpEditorCallbacks.ForceManagedGC();
-
-	if (bHasQueuedHotReload)
-	{
-		bHasQueuedHotReload = false;
-		StartHotReload();
-	}
-}
-
 void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& ExtraArguments)
 {
 	TMap<FString, FString> Arguments = ExtraArguments;
@@ -878,17 +513,7 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	}
 	
 	OpenSolution();
-	AddDirectoryToWatch(FPaths::Combine(FullProjectRoot, TEXT("Script")));
-
-	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
-
-	if (!FPaths::FileExists(CsProjPath))
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to find .csproj %s in %s", *ModuleName, *ProjectParentFolder);
-		return;
-	}
-	
-	GetManagedUnrealSharpEditorCallbacks().AddProjectToCollection(*CsProjPath);
+	UCSHotReloadSubsystem::Get()->AddDirectoryToWatch(FPaths::Combine(FullProjectRoot, TEXT("Script")));
 }
 
 bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)
@@ -915,177 +540,6 @@ bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMa
 	}
 
 	return true;
-}
-
-void FUnrealSharpEditorModule::OnStructRebuilt(UCSScriptStruct* NewStruct)
-{
-	RebuiltStructs.Add(NewStruct);
-}
-
-void FUnrealSharpEditorModule::OnClassRebuilt(UCSClass* NewClass)
-{
-	RebuiltClasses.Add(NewClass);
-}
-
-void FUnrealSharpEditorModule::OnEnumRebuilt(UCSEnum* NewEnum)
-{
-	RebuiltEnums.Add(NewEnum);
-}
-
-bool FUnrealSharpEditorModule::IsPinAffectedByReload(const FEdGraphPinType& PinType) const
-{
-	UObject* PinSubCategoryObject = PinType.PinSubCategoryObject.Get();
-	if (!IsValid(PinSubCategoryObject) || !Manager->IsManagedType(PinSubCategoryObject))
-	{
-		return false;
-	}
-
-	auto IsPinTypeRebuilt = [this](UObject* PinSubCategoryObject) -> bool
-	{
-		if (UCSClass* Class = Cast<UCSClass>(PinSubCategoryObject))
-		{
-			return RebuiltClasses.Contains(Class);
-		}
-
-		if (UCSEnum* Enum = Cast<UCSEnum>(PinSubCategoryObject))
-		{
-			return RebuiltEnums.Contains(Enum);
-		}
-
-		if (UCSScriptStruct* Struct = Cast<UCSScriptStruct>(PinSubCategoryObject))
-		{
-			return RebuiltStructs.Contains(Struct);
-		}
-
-		if (UCSEnum* Enum = Cast<UCSEnum>(PinSubCategoryObject))
-		{
-			return RebuiltEnums.Contains(Enum);
-		}
-
-		return false;
-	};
-
-	if (!IsPinTypeRebuilt(PinSubCategoryObject))
-	{
-		return false;
-	}
-
-	if (PinType.IsMap() && PinType.PinValueType.TerminalSubCategoryObject.IsValid())
-	{
-		UObject* MapValueType = PinType.PinValueType.TerminalSubCategoryObject.Get();
-		if (IsValid(MapValueType) && Manager->IsManagedType(MapValueType))
-		{
-			return IsPinTypeRebuilt(MapValueType);
-		}
-	}
-
-	return false;
-}
-
-bool FUnrealSharpEditorModule::IsNodeAffectedByReload(UEdGraphNode* Node) const
-{
-	if (UK2Node_EditablePinBase* EditableNode = Cast<UK2Node_EditablePinBase>(Node))
-	{
-		for (const TSharedPtr<FUserPinInfo>& Pin : EditableNode->UserDefinedPins)
-		{
-			if (IsPinAffectedByReload(Pin->PinType))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	for (UEdGraphPin* Pin : Node->Pins)
-	{
-		if (IsPinAffectedByReload(Pin->PinType))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void FUnrealSharpEditorModule::AddDirectoryToWatch(const FString& Directory)
-{
-	if (WatchingDirectories.Contains(Directory))
-	{
-		return;
-	}
-	
-	if (!FPaths::DirectoryExists(Directory))
-	{
-		FPlatformFileManager::Get().GetPlatformFile().CreateDirectory(*Directory);
-	}
-
-	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-	
-	FDelegateHandle Handle;
-	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(
-		Directory,
-		IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnrealSharpEditorModule::OnCSharpCodeModified),
-		Handle);
-
-	WatchingDirectories.Add(Directory);
-}
-
-void FUnrealSharpEditorModule::RefreshAffectedBlueprints()
-{
-	if (RebuiltStructs.IsEmpty() && RebuiltClasses.IsEmpty() && RebuiltEnums.IsEmpty())
-	{
-		// Early out if nothing has changed its structure.
-		return;
-	}
-
-	TArray<UBlueprint*> AffectedBlueprints;
-	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
-	{
-		UBlueprint* Blueprint = *BlueprintIt;
-		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedClass(Blueprint->GeneratedClass))
-		{
-			return;
-		}
-
-		TArray<UK2Node*> AllNodes;
-		FBlueprintEditorUtils::GetAllNodesOfClass<UK2Node>(Blueprint, AllNodes);
-
-		for (UK2Node* Node : AllNodes)
-		{
-			if (IsNodeAffectedByReload(Node))
-			{
-				Node->ReconstructNode();
-			}
-		}
-
-		AffectedBlueprints.Add(Blueprint);
-	}
-
-	for (UBlueprint* Blueprint : AffectedBlueprints)
-	{
-		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
-	}
-
-	RebuiltStructs.Reset();
-	RebuiltClasses.Reset();
-	RebuiltEnums.Reset();
-
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
-}
-
-FSlateIcon FUnrealSharpEditorModule::GetMenuIcon() const
-{
-	if (HasHotReloadFailed())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Fail");
-	}
-	if (HasPendingHotReloadChanges())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Modified");
-	}
-
-	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
 #undef LOCTEXT_NAMESPACE

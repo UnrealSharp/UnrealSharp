@@ -54,29 +54,4 @@ public enum PropertyFlags : ulong
     NativeAccessSpecifierProtected = 0x0020000000000000,
     NativeAccessSpecifierPrivate = 0x0040000000000000,
     SkipSerialization = 0x0080000000000000,
-
-    /* Combination flags */
-
-    NativeAccessSpecifiers = NativeAccessSpecifierPublic | NativeAccessSpecifierProtected | NativeAccessSpecifierPrivate,
-
-    ParmFlags = Parm | OutParm | ReturnParm | ReferenceParm | ConstParm,
-    PropagateToArrayInner = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper,
-    PropagateToMapValue = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
-    PropagateToMapKey = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
-    PropagateToSetElement = ExportObject | PersistentInstance | InstancedReference | ContainsInstancedReference | Config | EditConst | Deprecated | EditorOnly | AutoWeak | UObjectWrapper | Edit,
-
-    /** the flags that should never be set on interface properties */
-    InterfaceClearMask = ExportObject | InstancedReference | ContainsInstancedReference,
-
-    /** all the properties that can be stripped for final release console builds */
-    DevelopmentAssets = EditorOnly,
-
-    /** all the properties that should never be loaded or saved */
-    ComputedFlags = IsPlainOldData | NoDestructor | ZeroConstructor | HasGetValueTypeHash,
-
-    EditDefaultsOnly = Edit | BlueprintVisible | DisableEditOnInstance,
-    EditInstanceOnly = Edit | BlueprintVisible,
-    EditAnywhere = Edit | BlueprintVisible | BlueprintReadOnly,
-
-    AllFlags = 0xFFFFFFFFFFFFFFFF
 }

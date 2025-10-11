@@ -121,7 +121,7 @@ FString FCSProcHelper::GetPathToSolution()
 FString FCSProcHelper::GetPluginAssembliesPath()
 {
 #if WITH_EDITOR
-	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed");
+	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed", DOTNET_DISPLAY_NAME);
 #else
 	return GetUserAssemblyDirectory();
 #endif
@@ -139,12 +139,12 @@ FString FCSProcHelper::GetRuntimeConfigPath()
 
 FString FCSProcHelper::GetUserAssemblyDirectory()
 {
-	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed"));
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed", "net9.0"));
 }
 
 FString FCSProcHelper::GetUnrealSharpMetadataPath()
 {
-	return FPaths::Combine(GetUserAssemblyDirectory(), "UnrealSharp.assemblyloadorder.json");
+	return FPaths::Combine(GetUserAssemblyDirectory(), "AssemblyLoadOrder.json");
 }
 
 void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeGlue)
@@ -171,11 +171,18 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 		return;
 	}
 
-	for (const TSharedPtr<FJsonValue>& OrderEntry : JsonObject->GetArrayField(TEXT("AssemblyLoadingOrder")))
+	const TArray<TSharedPtr<FJsonValue>>* LoadOrderArray;
+	if (!JsonObject->TryGetArrayField(TEXT("LoadOrder"), LoadOrderArray))
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Failed to find LoadOrder array in UnrealSharp metadata at: %s"), *ProjectMetadataPath);
+		return;
+	}
+
+	for (const TSharedPtr<FJsonValue>& OrderEntry : *LoadOrderArray)
 	{
 		FString ProjectName = OrderEntry->AsString();
 
-		if (!bIncludeGlue && ProjectName.EndsWith(TEXT("Glue")))
+		if (!bIncludeGlue && ProjectName.EndsWith(TEXT(".Glue")))
 		{
 			continue;
 		}

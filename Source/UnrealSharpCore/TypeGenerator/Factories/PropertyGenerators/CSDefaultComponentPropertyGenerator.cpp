@@ -1,7 +1,6 @@
 #include "CSDefaultComponentPropertyGenerator.h"
 #include "CSObjectPropertyGenerator.h"
-#include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
-#include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
+#include "MetaData/CSDefaultComponentMetaData.h"
 
 TSharedPtr<FCSUnrealType> UCSDefaultComponentPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {

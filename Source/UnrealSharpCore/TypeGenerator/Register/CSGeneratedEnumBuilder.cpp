@@ -6,7 +6,7 @@
 
 void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	UCSEnum* Field = CastChecked<UCSEnum>(TypeToBuild);
+	UCSEnum* Field = static_cast<UCSEnum*>(TypeToBuild);
 	TSharedPtr<FCSEnumMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSEnumMetaData>();
 	
 	PurgeEnum(Field);
@@ -39,6 +39,6 @@ UClass* UCSGeneratedEnumBuilder::GetFieldType() const
 
 void UCSGeneratedEnumBuilder::PurgeEnum(UCSEnum* Field)
 {
-	Field->DisplayNameMap.Empty();
+	Field->DisplayNameMap.Reset();
 	FCSUnrealSharpUtils::PurgeMetaData(Field);
 }

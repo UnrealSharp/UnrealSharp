@@ -185,11 +185,6 @@ public class FunctionExporter
         }
         else
         {
-            if (BlueprintEvent)
-            {
-                Modifiers += "virtual ";
-            }
-		
             if (_function.IsInterfaceFunction())
             {
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
@@ -521,8 +516,11 @@ public class FunctionExporter
             ? PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!.GetManagedType(function.ReturnProperty)
             : "void";
         
-        builder.AppendLine("// Hide implementation function from Intellisense");
-        builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
+        AttributeBuilder attributeBuilder = new AttributeBuilder(function);
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+        attributeBuilder.Finish();
+        builder.AppendLine(attributeBuilder.ToString());
+        
         builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         
         builder.OpenBrace();

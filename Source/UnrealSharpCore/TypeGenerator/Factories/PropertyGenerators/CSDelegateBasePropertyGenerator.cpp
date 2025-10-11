@@ -1,11 +1,10 @@
 #include "CSDelegateBasePropertyGenerator.h"
-#include "TypeGenerator/Factories/CSFunctionFactory.h"
-#include "TypeGenerator/Register/MetaData/CSDelegatePropertyMetaData.h"
+#include "MetaData/FCSFieldTypePropertyMetaData.h"
 
 FProperty* UCSDelegateBasePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FDelegateProperty* NewProperty = static_cast<FDelegateProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
-	TSharedPtr<FCSDelegatePropertyMetaData> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FCSDelegatePropertyMetaData>();
-	NewProperty->SignatureFunction = DelegateMetaData->Delegate.GetOwningDelegate();
+	TSharedPtr<FCSFieldTypePropertyMetaData> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	NewProperty->SignatureFunction = DelegateMetaData->InnerType.GetAsDelegate();
 	return NewProperty;
 }

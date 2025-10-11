@@ -2,7 +2,7 @@ namespace UnrealSharp.Core.Marshallers;
 
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T? obj)
     {
         IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;
 

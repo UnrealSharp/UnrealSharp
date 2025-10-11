@@ -1,6 +1,6 @@
 ﻿#include "CSClass.h"
 #include "UnrealSharpCore.h"
-#include "Register/TypeInfo/CSClassInfo.h"
+#include "TypeInfo/CSClassInfo.h"
 
 #if WITH_EDITOR
 void UCSClass::PostDuplicate(bool bDuplicateForPIE)

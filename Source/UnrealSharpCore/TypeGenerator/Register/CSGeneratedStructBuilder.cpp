@@ -11,13 +11,12 @@
 
 void UCSGeneratedStructBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	UCSScriptStruct* Field = CastChecked<UCSScriptStruct>(TypeToBuild);
+	UCSScriptStruct* Field = static_cast<UCSScriptStruct*>(TypeToBuild);
 	TSharedPtr<FCSStructMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSStructMetaData>();
 	
 	PurgeStruct(Field);
 	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
-    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
     
 	Field->Status = UDSS_UpToDate;
 	if (!Field->Guid.IsValid())

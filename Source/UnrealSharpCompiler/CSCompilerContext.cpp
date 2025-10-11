@@ -11,12 +11,10 @@
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
-#include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
-#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
+#include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
@@ -145,7 +143,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<co
 		}
 		
 		USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
-		USCS_Node* Node = SCS->FindSCSNode(Property.Name);
+		USCS_Node* Node = SCS->FindSCSNode(Property.GetName());
 		Nodes.Add(Node);
 	}
 
@@ -274,8 +272,8 @@ void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyM
 	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
 	{
 		FBPVariableDescription VariableDescription;
-		VariableDescription.FriendlyName = PropertyMetaData.Name.ToString();
-		VariableDescription.VarName = PropertyMetaData.Name;
+		VariableDescription.FriendlyName = PropertyMetaData.GetName().ToString();
+		VariableDescription.VarName = PropertyMetaData.GetName();
 
 		for (const TTuple<FString, FString>& MetaData : PropertyMetaData.MetaData)
 		{

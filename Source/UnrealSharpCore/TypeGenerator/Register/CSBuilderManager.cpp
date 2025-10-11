@@ -30,10 +30,8 @@ void UCSTypeBuilderManager::Initialize()
 	}
 }
 
-const UCSGeneratedTypeBuilder* UCSTypeBuilderManager::BorrowTypeBuilder(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo)
+const UCSGeneratedTypeBuilder* UCSTypeBuilderManager::GetTypeBuilder(UClass* TypeClass)
 {
-	UClass* TypeClass = ManagedTypeInfo->GetFieldClass();
-
 	if (!IsValid(TypeClass))
 	{
 		UE_LOG(LogUnrealSharp, Warning, TEXT("Invalid type class for managed type info"));

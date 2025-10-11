@@ -24,6 +24,7 @@ public class PackageProject : BuildToolAction
             "--runtime",
             "win-x64",
 			"-p:DisableWithEditor=true",
+            "-p:GenerateDocumentationFile=false",
             $"-p:PublishDir=\"{binariesPath}\"",
             $"-p:OutputPath=\"{bindingsOutputPath}\"",
         ];
@@ -31,12 +32,11 @@ public class PackageProject : BuildToolAction
         BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);
         buildBindings.RunAction();
         
-        BuildUserSolution buildUserSolution = new BuildUserSolution(null, BuildConfig.Publish);
+        BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
         buildUserSolution.RunAction();
-        
-        WeaveProject weaveProject = new WeaveProject(binariesPath);
-        weaveProject.RunAction();
-        
+
+        BuildEmitLoadOrder.EmitLoadOrder(binariesPath);
+
         return true;
     }
 }

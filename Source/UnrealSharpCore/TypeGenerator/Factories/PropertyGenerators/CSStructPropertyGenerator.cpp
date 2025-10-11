@@ -1,14 +1,13 @@
 #include "CSStructPropertyGenerator.h"
-
 #include "TypeGenerator/CSScriptStruct.h"
-#include "TypeGenerator/Register/MetaData/CSStructPropertyMetaData.h"
+#include "MetaData/FCSFieldTypePropertyMetaData.h"
 
 FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FStructProperty* StructProperty = static_cast<FStructProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
-	TSharedPtr<FCSStructPropertyMetaData> StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSStructPropertyMetaData>();
+	TSharedPtr<FCSFieldTypePropertyMetaData> StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
 	
-	StructProperty->Struct = StructPropertyMetaData->TypeRef.GetOwningStruct();
+	StructProperty->Struct = StructPropertyMetaData->InnerType.GetAsStruct();
 
 #if WITH_EDITOR
 	if (UCSScriptStruct* ManagedStruct = Cast<UCSScriptStruct>(StructProperty->Struct))
@@ -20,11 +19,10 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	}
 #endif
 	
-	ensureAlways(StructProperty->Struct);
 	return StructProperty;
 }
 
 TSharedPtr<FCSUnrealType> UCSStructPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSStructPropertyMetaData>();
+	return MakeShared<FCSFieldTypePropertyMetaData>();
 }

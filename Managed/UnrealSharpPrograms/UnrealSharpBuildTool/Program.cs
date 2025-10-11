@@ -141,7 +141,7 @@ public static class Program
             rootDir = BuildToolOptions.ProjectDirectory;
         }
 
-        return Path.Combine(rootDir, "Binaries", "Managed");
+        return Path.Combine(rootDir, "Binaries", "Managed", GetVersion());
     }
 
     public static string GetWeaver()
@@ -151,7 +151,7 @@ public static class Program
 
     public static string GetManagedBinariesDirectory()
     {
-        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed");
+        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed", GetVersion());
     }
 
     public static string GetVersion()

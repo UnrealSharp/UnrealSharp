@@ -2,7 +2,6 @@
 #include "CSManagedGCHandle.h"
 #include "CSAssembly.h"
 #include "UnrealSharpCore.h"
-#include "TypeGenerator/CSClass.h"
 #include "Misc/Paths.h"
 #include "Misc/App.h"
 #include "UObject/Object.h"
@@ -17,7 +16,6 @@
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSBuilderManager.h"
-#include "TypeGenerator/Register/TypeInfo/CSClassInfo.h"
 #include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
@@ -164,7 +162,7 @@ void UCSManager::Initialize()
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_WEAVE))
+	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER))
 	{
 		Initialize();
 		return;
@@ -491,7 +489,7 @@ UCSAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bI
 	}
 	
 	UCSAssembly* NewAssembly = NewObject<UCSAssembly>(this, *AssemblyName);
-	NewAssembly->SetAssemblyPath(AssemblyPath);
+	NewAssembly->InitializeAssembly(AssemblyPath);
 	
 	LoadedAssemblies.Add(NewAssembly->GetAssemblyName(), NewAssembly);
 

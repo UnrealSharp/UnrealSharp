@@ -21,7 +21,6 @@ internal struct FScriptInterface
 public interface IScriptInterface
 {
     public UObject Object { get; }
-    
 }
 
 public static class ScriptInterfaceExtensions 

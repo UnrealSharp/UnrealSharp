@@ -9,21 +9,8 @@
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
-	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
-
-	if (NewFunction->HasAllFunctionFlags(FUNC_BlueprintPure))
-	{
-		NewFunction->FunctionFlags |= FUNC_BlueprintCallable;
-	}
-	
+	NewFunction->FunctionFlags = FunctionMetaData.Flags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-	
-	if (!NewFunction->TryUpdateMethodHandle())
-	{
-		// If we can't find the method handle, we can't create the function. This is a fatal error.
-		return nullptr;
-	}
-	
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;
 }
@@ -47,23 +34,29 @@ FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPro
 
 void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData)
 {
-	// Check if this function has a return value or is just void, otherwise skip.
-	if (FunctionMetaData.ReturnValue.Type != nullptr)
+	if (const FCSPropertyMetaData* ReturnValueMetaData = FunctionMetaData.TryGetReturnValue())
 	{
-		CreateParameter(Function, FunctionMetaData.ReturnValue);
+		CreateParameter(Function, *ReturnValueMetaData);
 	}
 
 	// Create the function's parameters and assign them.
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
-	for (int32 i = FunctionMetaData.Parameters.Num(); i-- > 0; )
+	for (int32 i = FunctionMetaData.Properties.Num(); i-- > 0; )
 	{
-		CreateParameter(Function, FunctionMetaData.Parameters[i]);
+		if (FunctionMetaData.Properties[i].Flags & CPF_ReturnParm)
+		{
+			continue;
+		}
+		
+		CreateParameter(Function, FunctionMetaData.Properties[i]);
 	}
 }
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
 {
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.Name, FunctionMetaData);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateFunctionFromMetaData);
+	
+	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.FieldName.GetFName(), FunctionMetaData);
 
 	if (!NewFunction)
 	{
@@ -77,7 +70,11 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, c
 
 UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction)
 {
-	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & (FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure | FUNC_HasOutParms);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateOverriddenFunction);
+	
+	constexpr EFunctionFlags InheritFlags = FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure | FUNC_HasOutParms;
+	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & InheritFlags;
+	
 	UCSFunctionBase* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionMetaData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
@@ -117,8 +114,9 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Function->Next = Outer->Children;
 	Outer->Children = Function;
 	
-	// Mark the function as Native as we want the "UClass::InvokeManagedMethod" to always be called on C# UFunctions.
+	// Mark the function as Native so we can override with InvokeManagedMethod/InvokeManagedMethod_Params and call into C#
 	Function->FunctionFlags |= FUNC_Native;
+	
 	Function->StaticLink(true);
 	
 	if (Function->NumParms == 0)
@@ -132,10 +130,17 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	
 	Function->Bind();
 	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
+
+	if (!Function->TryUpdateMethodHandle())
+	{
+		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to find managed method for function: %s"), *Function->GetName());
+	}
 }
 
 void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::GetOverriddenFunctions);
+	
 	TMap<FName, UFunction*> NameToFunctionMap;
 	TMap<FName, UFunction*> InterfaceFunctionMap;
 	
@@ -161,7 +166,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	// The BP compiler purges the interfaces from the UClass pre-compilation, so we need to get them from the metadata instead.
 	for (const FCSTypeReferenceMetaData& InterfaceInfo : ClassMetaData->Interfaces)
 	{
-		if (UClass* Interface = InterfaceInfo.GetOwningInterface())
+		if (UClass* Interface = InterfaceInfo.GetAsInterface())
 		{
 			IterateInterfaceFunctions(Interface);
 		}
@@ -177,7 +182,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 #endif
 	
-	for (const FName& VirtualFunction : ClassMetaData->VirtualFunctions)
+	for (FName VirtualFunction : ClassMetaData->VirtualFunctions)
 	{
 		if (UFunction* Function = NameToFunctionMap.FindRef(VirtualFunction))
 		{

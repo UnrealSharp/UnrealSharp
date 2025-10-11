@@ -103,8 +103,6 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(ManagedClassesToCompile);
-
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollection& Collection)

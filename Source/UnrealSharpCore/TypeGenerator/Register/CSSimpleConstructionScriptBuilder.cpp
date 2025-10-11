@@ -1,13 +1,10 @@
 ﻿#include "CSSimpleConstructionScriptBuilder.h"
-
-#include "CSGeneratedClassBuilder.h"
 #include "UnrealSharpCore.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
-#include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
-#include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
-#include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
+#include "MetaData/CSDefaultComponentMetaData.h"
+#include "MetaData/CSPropertyMetaData.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
@@ -36,13 +33,13 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		}
 	
 		TSharedPtr<FCSDefaultComponentMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSDefaultComponentMetaData>();
-		UClass* Class = ObjectMetaData->InnerType.GetOwningClass();
+		UClass* Class = ObjectMetaData->InnerType.GetAsClass();
 
-		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.Name);
+		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyMetaData.GetName());
 	
 		if (!IsValid(Node))
 		{
-			Node = CreateNode(CurrentSCS, Outer, Class, PropertyMetaData.Name);
+			Node = CreateNode(CurrentSCS, Outer, Class, PropertyMetaData.GetName());
 
 			if (IsRootNode(ObjectMetaData, Node))
 			{
@@ -52,7 +49,7 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 		else if (Class != Node->ComponentClass)
 		{
 			UpdateChildren(Outer, Node);
-			UpdateTemplateComponent(Node, Outer, Class, PropertyMetaData.Name);
+			UpdateTemplateComponent(Node, Outer, Class, PropertyMetaData.GetName());
 		}
 		
 		if (Node->IsRootNode())

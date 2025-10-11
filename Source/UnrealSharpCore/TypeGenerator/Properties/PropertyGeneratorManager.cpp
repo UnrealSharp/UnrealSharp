@@ -2,7 +2,7 @@
 #include <array>
 #include "CSGetterSetterProperty.h"
 #include "UnrealSharpCore.h"
-#include "TypeGenerator/Register/MetaData/CSPropertyMetaData.h"
+#include "MetaData/CSPropertyMetaData.h"
 #include <UObject/PropertyOptional.h>
 
 static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
@@ -39,7 +39,7 @@ public:
 			NewProperty = new T(Outer, PropertyName, RF_Public);
 		}
 		
-		NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
+		NewProperty->PropertyFlags = PropertyMetaData.Flags;
 		return NewProperty;
 	}
 };

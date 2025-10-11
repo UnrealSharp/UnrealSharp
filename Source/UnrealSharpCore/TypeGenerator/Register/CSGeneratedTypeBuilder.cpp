@@ -16,15 +16,7 @@ UField* UCSGeneratedTypeBuilder::CreateType(const TSharedPtr<FCSManagedTypeInfo>
 	if (!IsValid(FieldToBuild))
 #endif
 	{
-		UClass* FieldType = GetFieldType();
-
-		if (!IsValid(FieldType))
-		{
-			UE_LOGFMT(LogUnrealSharp, Fatal, "Field type is not set for {0}.", *FieldName);
-			return nullptr;
-		}
-		
-		FieldToBuild = NewObject<UField>(Package, FieldType, *FieldName, RF_Public | RF_Standalone);
+		FieldToBuild = NewObject<UField>(Package, GetFieldType(), *FieldName, RF_Public | RF_Standalone);
 	}
 
 	if (ICSManagedTypeInterface* ManagedTypeInterface = Cast<ICSManagedTypeInterface>(FieldToBuild))
@@ -41,5 +33,6 @@ UField* UCSGeneratedTypeBuilder::CreateType(const TSharedPtr<FCSManagedTypeInfo>
 
 FString UCSGeneratedTypeBuilder::GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	return FCSMetaDataUtils::GetAdjustedFieldName(ManagedTypeInfo->GetTypeMetaData<FCSTypeReferenceMetaData>()->FieldName);
+	TSharedPtr<FCSTypeReferenceMetaData> MetaData = ManagedTypeInfo->GetTypeMetaData();
+	return FCSMetaDataUtils::GetAdjustedFieldName(MetaData->FieldName);
 }

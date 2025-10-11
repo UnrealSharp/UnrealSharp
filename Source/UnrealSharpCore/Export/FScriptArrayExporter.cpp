@@ -10,6 +10,11 @@ bool UFScriptArrayExporter::IsValidIndex(FScriptArray* Instance, int32 i)
 	return Instance->IsValidIndex(i);
 }
 
+void UFScriptArrayExporter::Add(FScriptArray* Instance, int32 Count, int32 NumBytesPerElement, uint32 AlignmentOfElement)
+{
+	Instance->Add(Count, NumBytesPerElement, AlignmentOfElement);
+}
+
 int UFScriptArrayExporter::Num(FScriptArray* Instance)
 {
 	return Instance->Num();

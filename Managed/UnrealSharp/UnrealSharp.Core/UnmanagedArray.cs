@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using UnrealSharp.Core;
 using UnrealSharp.Core.Interop;
 using UnrealSharp.Core.Marshallers;
 
@@ -60,6 +62,27 @@ public struct UnmanagedArray
         {
             T item = resolver(Data, i);
             action(item);
+        }
+    }
+    
+    public void ToNativeWithMarshaller<T>(Action<IntPtr, int, T> toNative, List<T> list, int size = 0)
+    {
+        if (list.Count == 0)
+        {
+            return;
+        }
+        
+        unsafe
+        {
+            fixed (UnmanagedArray* ptr = &this)
+            {
+                FScriptArrayExporter.CallAdd(ptr, list.Count, size, list.Count);
+            }
+            
+            for (int i = 0; i < list.Count; i++)
+            {
+                toNative(Data, i, list[i]);
+            }
         }
     }
 }

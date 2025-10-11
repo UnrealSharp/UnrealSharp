@@ -53,6 +53,9 @@ public:
 
     static UCSManager& Get() { return *Instance; }
 
+	UFUNCTION(meta = (ScriptMethod))
+	static UCSManager* K2_GetManager() { return Instance; }
+
     // The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
     UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
     UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
@@ -67,11 +70,13 @@ public:
 
     UCSAssembly* FindOwningAssembly(UClass* Class);
 
+	UFUNCTION(meta = (ScriptMethod))
     UCSAssembly* FindAssembly(FName AssemblyName) const
     {
         return LoadedAssemblies.FindRef(AssemblyName);
     }
 
+	UFUNCTION(meta = (ScriptMethod))
     UCSAssembly* FindOrLoadAssembly(FName AssemblyName)
     {
         if (UCSAssembly* Assembly = FindAssembly(AssemblyName))
@@ -80,6 +85,14 @@ public:
         }
 
         return LoadUserAssemblyByName(AssemblyName);
+    }
+
+	UFUNCTION(meta = (ScriptMethod))
+	void GetAllLoadedAssemblies(TArray<UCSAssembly*>& Assemblies) const
+    {
+    	TArray<TObjectPtr<UCSAssembly>> FoundAssemblies;
+	    LoadedAssemblies.GenerateValueArray(FoundAssemblies);
+    	Assemblies.Append(FoundAssemblies);
     }
 	
     FGCHandle FindManagedObject(const UObject* Object);

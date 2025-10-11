@@ -1,25 +1,23 @@
 ﻿#include "CSGeneratedDelegateBuilder.h"
-#include "CSMetaDataUtils.h"
-#include "MetaData/CSDelegateMetaData.h"
 #include "TypeGenerator/Factories/CSFunctionFactory.h"
 #include "TypeInfo/CSManagedTypeInfo.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 void UCSGeneratedDelegateBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	UDelegateFunction* Field = CastChecked<UDelegateFunction>(TypeToBuild);
-	TSharedPtr<FCSDelegateMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSDelegateMetaData>();
+	UDelegateFunction* Field = static_cast<UDelegateFunction*>(TypeToBuild);
+	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassBaseMetaData>();
 	
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 	Field->ParmsSize = 0;
 	Field->ReturnValueOffset = 0;
 	Field->NumParms = 0;
 	
-	const FCSFunctionMetaData& SignatureFunctionMetaData = TypeMetaData->SignatureFunction;
-	Field->FunctionFlags = SignatureFunctionMetaData.FunctionFlags;
+	const FCSFunctionMetaData& SignatureFunctionMetaData = TypeMetaData->Functions[0];
+	Field->FunctionFlags = SignatureFunctionMetaData.Flags;
+	
 	FCSFunctionFactory::CreateParameters(Field, SignatureFunctionMetaData);
 	Field->StaticLink(true);
-    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 	
 	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Struct);
 }

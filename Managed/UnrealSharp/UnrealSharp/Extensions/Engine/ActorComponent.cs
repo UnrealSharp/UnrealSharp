@@ -11,7 +11,7 @@ public partial class UActorComponent
     /// </summary>
     /// <param name="subObject">The subobject to replicate. Use UCSReplicatedObject if you don't have a native alternative.</param>
     /// <param name="netCondition">The condition under which the subobject should be replicated.</param>
-    public void AddReplicatedSubObject(UObject subObject, ELifetimeCondition netCondition = ELifetimeCondition.COND_None)
+    public void AddReplicatedSubObject(UObject subObject, CoreUObject.ELifetimeCondition netCondition = CoreUObject.ELifetimeCondition.COND_None)
     {
         UCSActorComponentExtensions.AddReplicatedSubObject(this, subObject, netCondition);
     }

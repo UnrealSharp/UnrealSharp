@@ -10,7 +10,7 @@ public class UnrealSharpEditor : ModuleRules
             new string[]
             {
                 "Core",
-                "UnrealSharpBinds"
+                "UnrealSharpBinds",
             }
         );
 
@@ -42,7 +42,7 @@ public class UnrealSharpEditor : ModuleRules
                 "AssetTools",
                 "UnrealSharpRuntimeGlue",
                 "PluginBrowser", 
-                "UnrealSharpUtilities",
+                "UnrealSharpUtilities"
             }
         );
 

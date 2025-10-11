@@ -25,7 +25,7 @@ public class PluginLoadContext : AssemblyLoadContext
         AddAssembly(typeof(Option<>).Assembly);
     }
     
-    private static void AddAssembly(Assembly assembly)
+    public static void AddAssembly(Assembly assembly)
     {
         LoadedAssemblies[assembly.GetName().Name!] = new WeakReference<Assembly>(assembly);
     }
@@ -65,7 +65,7 @@ public class PluginLoadContext : AssemblyLoadContext
         Assembly? loadedAssembly;
         if (!File.Exists(pdbPath))
         {
-            loadedAssembly = LoadFromStream(assemblyFile);
+            loadedAssembly = LoadFromAssemblyPath(assemblyPath);
         }
         else
         {

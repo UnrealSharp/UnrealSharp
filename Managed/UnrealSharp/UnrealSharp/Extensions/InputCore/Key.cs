@@ -1,3 +1,4 @@
+using UnrealSharp.Core;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.InputCore;

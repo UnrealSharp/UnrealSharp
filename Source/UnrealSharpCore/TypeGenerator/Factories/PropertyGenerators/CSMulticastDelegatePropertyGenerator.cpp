@@ -1,9 +1,8 @@
 #include "CSMulticastDelegatePropertyGenerator.h"
-
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Register/MetaData/CSDelegatePropertyMetaData.h"
+#include "MetaData/FCSFieldTypePropertyMetaData.h"
 
 TSharedPtr<FCSUnrealType> UCSMulticastDelegatePropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSDelegatePropertyMetaData>();
+	return MakeShared<FCSFieldTypePropertyMetaData>();
 }

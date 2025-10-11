@@ -2,6 +2,7 @@
 
 void UCSCancellableAsyncAction::Activate()
 {
+	Super::Activate();
 	ReceiveActivate();
 }
 
@@ -13,4 +14,5 @@ void UCSCancellableAsyncAction::Cancel()
 	}
 
 	ReceiveCancel();
+	Super::Cancel();
 }

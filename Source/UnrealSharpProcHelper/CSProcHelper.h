@@ -1,12 +1,8 @@
 ﻿#pragma once
 
-const FString BUILD_ACTION_BUILD = TEXT("Build");
-const FString BUILD_ACTION_CLEAN = TEXT("Clean");
 const FString BUILD_ACTION_GENERATE_PROJECT = TEXT("GenerateProject");
 const FString BUILD_ACTION_GENERATE_SOLUTION = TEXT("GenerateSolution");
-const FString BUILD_ACTION_REBUILD = TEXT("Rebuild");
-const FString BUILD_ACTION_WEAVE = TEXT("Weave");
-const FString BUILD_ACTION_BUILD_WEAVE = TEXT("BuildWeave");
+const FString BUILD_ACTION_BUILD_EMIT_LOAD_ORDER = TEXT("BuildEmitLoadOrder");
 const FString BUILD_ACTION_PACKAGE_PROJECT = TEXT("PackageProject");
 
 UENUM()
@@ -20,7 +16,13 @@ enum class EDotNetBuildConfiguration : uint64
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
 #define HOSTFXR_LINUX "libhostfxr.so"
-#define DOTNET_MAJOR_VERSION "9.0.0"
+
+#define STRINGIFY_IMPL(x) #x
+#define STRINGIFY(x) STRINGIFY_IMPL(x)
+
+#define DOTNET_MAJOR_VERSION_INT 9
+#define DOTNET_MAJOR_VERSION STRINGIFY(DOTNET_MAJOR_VERSION_INT) ".0.0"
+#define DOTNET_DISPLAY_NAME "net" STRINGIFY(DOTNET_MAJOR_VERSION_INT) ".0"
 
 class UNREALSHARPPROCHELPER_API FCSProcHelper final
 {
@@ -28,6 +30,24 @@ public:
 
 	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
 	static bool InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
+	
+	static bool InvokeDotNet(const FString& Arguments, const FString* InWorkingDirectory = nullptr)
+	{
+		FString Output;
+		int32 OutReturnCode = 0;
+		return InvokeCommand(GetDotNetExecutablePath(), Arguments, OutReturnCode, Output, InWorkingDirectory);
+	}
+	
+	static bool InvokeDotNetBuild(const FString& RootFolder, const FString& AdditionalArguments = FString())
+	{
+		FString Args = FString::Printf(TEXT("build \"%s\" %s"), *RootFolder, *AdditionalArguments);
+		return InvokeDotNet(Args, nullptr);
+	}
+	
+	static bool InvokeDotNetBuild()
+	{
+		return InvokeDotNetBuild(GetScriptFolderDirectory());
+	}
 
 	static FString GetRuntimeConfigPath();
 

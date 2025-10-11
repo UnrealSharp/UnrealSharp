@@ -15,12 +15,12 @@ public class FieldPathPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        return "FFieldPath";
+        return "UnrealSharp.CoreUObject.FFieldPath";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
-        return "FieldPathMarshaller";
+        return "UnrealSharp.CoreUObject.FieldPathMarshaller";
     }
 
     public override bool CanSupportGenericType(UhtProperty property)

@@ -61,19 +61,12 @@ bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
 
 FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass)
 {
-	FName PropertyName = PropertyMetaData.Name;
-	
-	if (EnumHasAnyFlags(PropertyMetaData.PropertyFlags, CPF_ReturnParm))
-	{
-		PropertyName = "ReturnValue";
-	}
-
 	if (FieldClass == nullptr)
 	{
 		FieldClass = GetPropertyClass();
 	}
 
-	return FPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyName, PropertyMetaData);
+	return FPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyMetaData.GetName(), PropertyMetaData);
 }
 
 UClass* UCSPropertyGenerator::TryFindingOwningClass(UField* Outer)

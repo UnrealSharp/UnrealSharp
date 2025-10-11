@@ -186,7 +186,7 @@ public static class CSharpExporter
             _modulesWriteInfo.Add(packageName, lastEditTime);
         }
 
-        HashSet<string> processedDirectories = new();
+        HashSet<string> processedDirectories = new(package.Children.Count);
 
         string generatedPath = FileExporter.GetDirectoryPath(package);
         bool doesDirectoryExist = Directory.Exists(generatedPath);

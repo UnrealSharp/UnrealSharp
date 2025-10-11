@@ -11,5 +11,10 @@
         <PackageReference Include="CommandLineParser" />
         <PackageReference Include="Newtonsoft.Json" />
     </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    </ItemGroup>
     
 </Project>

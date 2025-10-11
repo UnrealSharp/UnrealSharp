@@ -1,7 +1,7 @@
 ﻿#pragma once
 
+#include "MetaData/CSClassMetaData.h"
 #include "UnrealSharpCore/TypeGenerator/Functions/CSFunction.h"
-#include "TypeGenerator/Register/MetaData/CSClassMetaData.h"
 
 class UCSBlueprint;
 class UClass;

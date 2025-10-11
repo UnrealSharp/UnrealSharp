@@ -49,11 +49,13 @@ public static class StructExporter
         stringBuilder.AppendTooltip(structObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(structObj);
-        if (isBlittable)
+        
+        if (isBlittable || isManualExport)
         {
             attributeBuilder.AddIsBlittableAttribute();
             attributeBuilder.AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential);
         }
+        
         attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());

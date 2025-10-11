@@ -1,39 +1,24 @@
 #include "CSMetaDataUtils.h"
-
-#include "CSFieldName.h"
 #include "CSUnrealSharpSettings.h"
-#include "Dom/JsonObject.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "UObject/UnrealType.h"
 
-void FCSMetaDataUtils::SerializeFunctions(const TArray<TSharedPtr<FJsonValue>>& FunctionsInfo, TArray<FCSFunctionMetaData>& FunctionMetaData)
+void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, UField* Field)
 {
-	FunctionMetaData.Reserve(FunctionsInfo.Num());
-	
-	for (const TSharedPtr<FJsonValue>& FunctionInfo : FunctionsInfo)
+#if WITH_EDITOR
+	for (const TPair<FString, FString>& MetaData : MetaDataMap)
 	{
-		FCSFunctionMetaData NewFunctionMetaData;
-		NewFunctionMetaData.SerializeFromJson(FunctionInfo->AsObject());
-		FunctionMetaData.Emplace(MoveTemp(NewFunctionMetaData));
+		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
 	}
+#endif
 }
 
-void FCSMetaDataUtils::SerializeProperties(const TArray<TSharedPtr<FJsonValue>>& PropertiesInfo, TArray<FCSPropertyMetaData>& PropertiesMetaData, EPropertyFlags DefaultFlags)
+void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, FField* Field)
 {
-	PropertiesMetaData.Reserve(PropertiesInfo.Num());
-	
-	for (const TSharedPtr<FJsonValue>& Property : PropertiesInfo)
+#if WITH_EDITOR
+	for (const TPair<FString, FString>& MetaData : MetaDataMap)
 	{
-		FCSPropertyMetaData NewPropertyMetaData;
-		SerializeProperty(Property->AsObject(), NewPropertyMetaData, DefaultFlags);
-		PropertiesMetaData.Emplace(MoveTemp(NewPropertyMetaData));
+		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
 	}
-}
-
-void FCSMetaDataUtils::SerializeProperty(const TSharedPtr<FJsonObject>& PropertyMetaData, FCSPropertyMetaData& PropertiesMetaData, EPropertyFlags DefaultFlags)
-{
-	PropertiesMetaData.Type = FCSPropertyFactory::CreateTypeMetaData(PropertyMetaData);
-	PropertiesMetaData.SerializeFromJson(PropertyMetaData);
+#endif
 }
 
 FString FCSMetaDataUtils::GetAdjustedFieldName(const FCSFieldName& FieldName)
@@ -52,42 +37,4 @@ FString FCSMetaDataUtils::GetAdjustedFieldName(const FCSFieldName& FieldName)
 	}
 
 	return *Name;
-}
-
-void FCSMetaDataUtils::SerializeFromJson(const TSharedPtr<FJsonObject>& JsonObject, TMap<FString, FString>& MetaDataMap)
-{
-	const TSharedPtr<FJsonObject>* MetaDataObjectPtr;
-	if (JsonObject->TryGetObjectField(TEXT("MetaData"), MetaDataObjectPtr))
-	{
-		TSharedPtr<FJsonObject> MetaDataObject = *MetaDataObjectPtr;
-		for (const auto& Pair : MetaDataObject->Values)
-		{
-			FString Key = Pair.Key;
-			FString Value;
-			
-			MetaDataObject->TryGetStringField(Key, Value);
-
-			MetaDataMap.Add(Key, Value);
-		}
-	}
-}
-
-void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, UField* Field)
-{
-#if WITH_EDITOR
-	for (const auto& MetaData : MetaDataMap)
-	{
-		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
-	}
-#endif
-}
-
-void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, FField* Field)
-{
-#if WITH_EDITOR
-	for (const auto& MetaData : MetaDataMap)
-	{
-		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
-	}
-#endif
 }

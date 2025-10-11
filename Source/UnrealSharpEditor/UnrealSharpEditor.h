@@ -33,19 +33,24 @@ enum HotReloadStatus
 
 struct FCSManagedUnrealSharpEditorCallbacks
 {
-    FCSManagedUnrealSharpEditorCallbacks() : Build(nullptr), ForceManagedGC(nullptr), OpenSolution(nullptr), AddProjectToCollection(nullptr)
+    FCSManagedUnrealSharpEditorCallbacks() : RunGeneratorsAndEmitAsync(nullptr), ForceManagedGC(nullptr), OpenSolution(nullptr), LoadSolution(nullptr)
     {
     }
 
-    using FBuildProject = bool(__stdcall*)(const TCHAR*, const TCHAR*, const TCHAR*, ECSLoggerVerbosity, void*, bool);
+    using FRunGeneratorsAndEmitAsync = bool(__stdcall*)(void*);
+    using FDirtyFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
-    using FAddProjectToCollection = void(__stdcall*)(const TCHAR*);
+    using FAddProjectToCollection = void(__stdcall*)(const TCHAR*, void*);
+     using FGetDependentProjects = void(__stdcall*)(const TCHAR*, TArray<FString>*);
 
-    FBuildProject Build;
+    FRunGeneratorsAndEmitAsync RunGeneratorsAndEmitAsync;
+    FDirtyFile DirtyFilesCallback;
     FForceManagedGC ForceManagedGC;
     FOpenSolution OpenSolution;
-    FAddProjectToCollection AddProjectToCollection;
+    FAddProjectToCollection LoadSolution;
+    FGetDependentProjects GetDependentProjects;
+    
 };
 
 
@@ -61,19 +66,11 @@ public:
     virtual void ShutdownModule() override;
     // End
 
-    void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
-    void StartHotReload(bool bRebuild = true, bool bPromptPlayerWithNewProject = true);
-
     void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
-
-    bool IsHotReloading() const { return HotReloadStatus == Active; }
-    bool HasPendingHotReloadChanges() const { return HotReloadStatus == PendingReload; }
-    bool HasHotReloadFailed() const { return bHotReloadFailed; }
 
     FUICommandList& GetUnrealSharpCommands() const { return *UnrealSharpCommands; }
 
     void OpenSolution();
-    void AddDirectoryToWatch(const FString& Directory);
 
     void AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& Arguments = {});
 
@@ -83,15 +80,13 @@ public:
     }
     
     static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
-
-    static void RepairComponents();
+    static void SuggestProjectSetup();
 
 private:
+
     static FString SelectArchiveDirectory();
 
     static void RunGame(FString ExecutablePath);
-
-    static void CopyProperties(UActorComponent* Source, UActorComponent* Target);
 
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
@@ -105,52 +100,24 @@ private:
     static void OnOpenDocumentation();
     static void OnReportBug();
     static void OnRefreshRuntimeGlue();
-
-    static void OnRepairComponents();
+    
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
     static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpMenu();
 
     static void OpenNewProjectDialog();
-    static void SuggestProjectSetup();
-
-    bool Tick(float DeltaTime);
 
     void RegisterCommands();
     void RegisterMenu();
     void RegisterPluginTemplates();
     void UnregisterPluginTemplates();
 
-    void OnPIEShutdown(bool IsSimulating);
-
-    void OnStructRebuilt(UCSScriptStruct* NewStruct);
-    void OnClassRebuilt(UCSClass* NewClass);
-    void OnEnumRebuilt(UCSEnum* NewEnum);
-
-    bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
-    bool IsNodeAffectedByReload(UEdGraphNode* Node) const;
-    
-    void RefreshAffectedBlueprints();
-
-    FSlateIcon GetMenuIcon() const;
-
     FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
 
-    HotReloadStatus HotReloadStatus = Inactive;
-    bool bHotReloadFailed = false;
-    bool bHasQueuedHotReload = false;
-
-    UCSAssembly* EditorAssembly;
-    FTickerDelegate TickDelegate;
-    FTSTicker::FDelegateHandle TickDelegateHandle;
+    UCSAssembly* EditorAssembly = nullptr;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     TArray<TSharedRef<FPluginTemplateDescription>> PluginTemplates;
 
-    TSet<UCSScriptStruct*> RebuiltStructs;
-    TSet<UCSClass*> RebuiltClasses;
-    TSet<UCSEnum*> RebuiltEnums;
-
     UCSManager* Manager = nullptr;
-    TArray<FString> WatchingDirectories;
 };

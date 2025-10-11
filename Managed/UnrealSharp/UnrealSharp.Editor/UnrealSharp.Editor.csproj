@@ -4,9 +4,9 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <CopyLocalLockFileAssembliesName>true</CopyLocalLockFileAssembliesName>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <IsPublishable>false</IsPublishable>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -25,14 +25,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="UnrealSharpWeaver">
-        <HintPath>..\..\..\Binaries\Managed\UnrealSharpWeaver.dll</HintPath>
-      </Reference>
+        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" />
+      <Reference Include="UnrealSharpBuildTool">
+        <HintPath>..\..\..\Binaries\Managed\net9.0\UnrealSharpBuildTool.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

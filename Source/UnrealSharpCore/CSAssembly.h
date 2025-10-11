@@ -1,9 +1,10 @@
 ﻿#pragma once
 
+#include "CSFieldName.h"
 #include "CSManagedGCHandle.h"
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
-#include "TypeGenerator/Register/MetaData/CSTypeReferenceMetaData.h"
+#include "TypeInfo/CSFieldType.h"
 #include "Utils/CSClassUtilities.h"
 #include "CSAssembly.generated.h"
 
@@ -24,18 +25,30 @@ class UCSAssembly : public UObject
 {
 	GENERATED_BODY()
 public:
-	void SetAssemblyPath(const FStringView InAssemblyPath);
+	void InitializeAssembly(const FStringView InAssemblyPath);
 
 	UNREALSHARPCORE_API bool LoadAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadAssembly();
 	UNREALSHARPCORE_API bool IsValidAssembly() const { return ManagedAssemblyHandle.IsValid() && !ManagedAssemblyHandle->IsNull(); }
 
+	UFUNCTION(meta = (ScriptMethod))
 	FName GetAssemblyName() const { return AssemblyName; }
+
+	UFUNCTION(meta = (ScriptMethod))
 	const FString& GetAssemblyPath() const { return AssemblyPath; }
 
 	bool IsLoading() const { return bIsLoading; }
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
+	
+	TSharedPtr<FGCHandle> RegisterTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle)
+	{
+		TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(TypeHandle, GCHandleType::WeakHandle);
+		AllocatedManagedHandles.Add(AllocatedHandle);
+		ManagedClassHandles.Add(FieldName, AllocatedHandle);
+		return AllocatedHandle;
+	}
+	
 	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 
 	template<typename T = FCSManagedTypeInfo>
@@ -105,11 +118,18 @@ public:
 		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
 		if (TypeInfo.IsValid())
 		{
-			return Cast<T>(TypeInfo->StartBuildingManagedType());
+			return Cast<T>(TypeInfo->StartBuildingType());
 		}
 
 		return TryFindField<T>(FieldName);
 	}
+
+	TSharedPtr<FCSManagedTypeInfo> TryRegisterType(TCHAR* InFieldName,
+		TCHAR* InNamespace,
+		int64 LastModifiedTime,
+		ECSFieldType FieldType,
+		uint8* TypeHandle,
+		bool& NeedsRebuild);
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
@@ -119,17 +139,17 @@ public:
 	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
 
 	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return ManagedAssemblyHandle; }
+	
+	void AddTypeToRebuild(const TSharedPtr<FCSManagedTypeInfo>& TypeInfo) { PendingRebuild.AddUnique(TypeInfo); }
 
 private:
-	
-	bool ProcessTypeMetadata();
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 
 	template<typename T = UField>
 	T* TryFindField(const FCSFieldName FieldName) const
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::TryFindField);
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryFindField);
 		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
 
 		if (!FieldName.IsValid())
@@ -150,6 +170,7 @@ private:
 
 	// All Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> AllTypes;
+	TArray<TSharedPtr<FCSManagedTypeInfo>> PendingRebuild;
 	
 	// All handles allocated by this assembly. Handles to types, methods, objects.
 	TArray<TSharedPtr<FGCHandle>> AllocatedManagedHandles;
@@ -158,7 +179,7 @@ private:
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
 
 	// Pending classes that are waiting for their parent class to be loaded by the engine.
-	TMap<FCSTypeReferenceMetaData, TSet<FCSClassInfo*>> PendingClasses;
+	TMap<FCSTypeReferenceMetaData, TArray<FCSClassInfo*>> PendingClasses;
 
 	// Handle to the Assembly object in C#.
 	TSharedPtr<FGCHandle> ManagedAssemblyHandle;
@@ -168,6 +189,6 @@ private:
 
 	// Assembly file name without the path.
 	FName AssemblyName;
-
+	
 	bool bIsLoading = false;
 };

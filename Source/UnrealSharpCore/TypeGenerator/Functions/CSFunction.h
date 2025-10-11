@@ -25,8 +25,9 @@ public:
 	{
 		return MethodHandle.IsValid() && !MethodHandle->IsNull();
 	}
-
+	
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
+	
 private:
 	TSharedPtr<FGCHandle> MethodHandle = nullptr;
 };

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Register/TypeInfo/CSManagedTypeInfo.h"
+#include "TypeInfo/CSManagedTypeInfo.h"
 #include "UObject/Interface.h"
 #include "CSManagedTypeInterface.generated.h"
 

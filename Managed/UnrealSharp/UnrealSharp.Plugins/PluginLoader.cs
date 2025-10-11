@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
@@ -36,14 +36,23 @@ public static class PluginLoader
             }
             
             Plugin plugin = new Plugin(assemblyName, isCollectible, assemblyPath);
-            if (plugin.Load() && plugin.WeakRefAssembly != null && plugin.WeakRefAssembly.Target is Assembly loadedAssembly)
+            if (!plugin.Load() || plugin.WeakRefAssembly == null || plugin.WeakRefAssembly.Target is not Assembly loadedAssembly)
             {
-                LoadedPlugins.Add(plugin);
-                LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
-                return loadedAssembly;
+                throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
             }
             
-            throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
+            LoadedPlugins.Add(plugin);
+
+            if (!StartUpJobManager.HasJobsForAssembly(assemblyName.Name!))
+            {
+                // Sometimes the module initializer doesn't run automatically, so we force it here
+                RuntimeHelpers.RunModuleConstructor(loadedAssembly.ManifestModule.ModuleHandle);
+            }
+            
+            StartUpJobManager.RunStartUpJobForAssembly(assemblyName.Name!);
+            
+            LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
+            return loadedAssembly;
         }
         catch (Exception ex)
         {

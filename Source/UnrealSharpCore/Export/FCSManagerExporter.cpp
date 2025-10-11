@@ -13,7 +13,8 @@ void* UFCSManagerExporter::FindOrCreateManagedInterfaceWrapper(UObject* Object, 
 
 void* UFCSManagerExporter::GetCurrentWorldContext()
 {
-	return UCSManager::Get().GetCurrentWorldContext();
+	void* WorldContext = UCSManager::Get().GetCurrentWorldContext();
+	return WorldContext;
 }
 
 void* UFCSManagerExporter::GetCurrentWorldPtr()

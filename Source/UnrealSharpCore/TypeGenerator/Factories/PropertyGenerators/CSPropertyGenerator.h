@@ -1,8 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "TypeGenerator/Register/MetaData/CSPropertyMetaData.h"
-#include "TypeGenerator/Register/MetaData/CSPropertyType.h"
+#include "MetaData/CSPropertyMetaData.h"
 #include "UObject/Object.h"
 #include "CSPropertyGenerator.generated.h"
 

@@ -1,12 +1,12 @@
 #include "CSArrayPropertyGenerator.h"
+#include "MetaData/CSTemplateType.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Register/MetaData/CSContainerBaseMetaData.h"
 
 FProperty* UCSArrayPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FArrayProperty* NewProperty = static_cast<FArrayProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
-	TSharedPtr<FCSContainerBaseMetaData> ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSContainerBaseMetaData>();
-	NewProperty->Inner = FCSPropertyFactory::CreateProperty(Outer, ArrayPropertyMetaData->InnerProperty);
+	TSharedPtr<FCSTemplateType> ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
+	NewProperty->Inner = FCSPropertyFactory::CreateProperty(Outer, *ArrayPropertyMetaData->GetTemplateArgument(0));
 	NewProperty->Inner->Owner = NewProperty;
 
 	// Replicate behavior from KismetCompiler.cpp:1454 to always pass arrays as reference parameters
@@ -20,5 +20,5 @@ FProperty* UCSArrayPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 
 TSharedPtr<FCSUnrealType> UCSArrayPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSContainerBaseMetaData>();
+	return MakeShared<FCSTemplateType>();
 }

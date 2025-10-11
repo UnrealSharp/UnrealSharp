@@ -23,13 +23,13 @@ UCSGeneratedClassBuilder::UCSGeneratedClassBuilder()
 
 void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
-	UCSClass* Field = CastChecked<UCSClass>(TypeToBuild);
+	UCSClass* Field = static_cast<UCSClass*>(TypeToBuild);
 	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassMetaData>();
 	
 	UClass* CurrentSuperClass = Field->GetSuperClass();
 	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
 	{
-		UClass* SuperClass = TypeMetaData->ParentClass.GetOwningClass();
+		UClass* SuperClass = TypeMetaData->ParentClass.GetAsClass();
 		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
 		{
 			SuperClass = RedirectedClass->Get();
@@ -39,7 +39,6 @@ void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr
 	}
 	
 	Field->SetSuperStruct(CurrentSuperClass);
-    FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, Field);
 
 	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
 	Field->NumReplicatedProperties = 0;
@@ -54,6 +53,7 @@ void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr
 	}
 	else
 	{
+		// Just prepare the class for being compilated by FCSCompilerContext later
 		CreateClassEditor(TypeMetaData, Field, CurrentSuperClass);
 	}
 #else
@@ -75,7 +75,7 @@ void UCSGeneratedClassBuilder::CreateBlueprint(TSharedPtr<FCSClassMetaData> Type
 	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
 	if (!Blueprint)
 	{
-		UPackage* Package = TypeMetaData->GetOwningPackage();
+		UPackage* Package = TypeMetaData->GetAsPackage();
 		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
 		Blueprint->GeneratedClass = Field;
@@ -217,7 +217,7 @@ void UCSGeneratedClassBuilder::ImplementInterfaces(UClass* ManagedClass, const T
 {
 	for (const FCSTypeReferenceMetaData& InterfaceData : Interfaces)
 	{
-		UClass* InterfaceClass = InterfaceData.GetOwningInterface();
+		UClass* InterfaceClass = InterfaceData.GetAsInterface();
 
 		if (!IsValid(InterfaceClass))
 		{
@@ -257,12 +257,12 @@ void UCSGeneratedClassBuilder::TryUnregisterDynamicSubsystem(UClass* ManagedClas
 
 void UCSGeneratedClassBuilder::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassMetaData>& TypeMetaData)
 {
-	if (TypeMetaData->ClassConfigName.IsNone())
+	if (TypeMetaData->ConfigName.IsNone())
 	{
 		ManagedClass->ClassConfigName = ManagedClass->GetSuperClass()->ClassConfigName;
 	}
 	else
 	{
-		ManagedClass->ClassConfigName = TypeMetaData->ClassConfigName;
+		ManagedClass->ClassConfigName = TypeMetaData->ConfigName;
 	}
 }

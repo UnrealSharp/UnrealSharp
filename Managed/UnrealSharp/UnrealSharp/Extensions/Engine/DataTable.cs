@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using UnrealSharp.Attributes;
+﻿using UnrealSharp.Core;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
 
@@ -18,16 +17,23 @@ public partial class UDataTable
     /// </summary>
     public string ToJSON => UCSDataTableExtensions.GetTableAsJSON(this);
     #endif
-    
+
     /// <summary>
     /// Gets the number of rows in the table.
     /// </summary>
-    public int NumRows => GetNumRows();
-    
+    public int NumRows => RowNames.Count;
+
     /// <summary>
     /// Gets the row names of the table.
     /// </summary>
-    public IList<FName> RowNames => GetRowNames();
+    public IList<FName> RowNames
+    {
+        get
+        {
+            UDataTableFunctionLibrary.GetRowNames(this, out IList<FName> outRowNames);
+            return outRowNames;
+        }
+    }
 
     /// <summary>
     /// Find a row in the table by name. Assumes the row is valid.
@@ -35,17 +41,10 @@ public partial class UDataTable
     /// <param name="rowName">The name of the row to find</param>
     /// <typeparam name="T">The type of the row to find</typeparam>
     /// <returns>The row if found, otherwise the default value of the type</returns>
-    public T FindRow<T>(FName rowName) where T : struct
+    public T FindRow<T>(FName rowName) where T : MarshalledStruct<T>
     {
-        Type type = typeof(T);
-        
-        if (!IsUStruct<T>())
-        {
-            throw new Exception($"The type {type.Name} must be a UStruct.");
-        }
-        
         IntPtr rowPtr = UDataTableExporter.CallGetRow(NativeObject, rowName);
-        return (T)Activator.CreateInstance(type, rowPtr)!;
+        return T.FromNative(rowPtr);
     }
     
     /// <summary>
@@ -55,15 +54,9 @@ public partial class UDataTable
     /// <param name="value">The row if found, otherwise null</param>
     /// <typeparam name="T">The type of the row to find</typeparam>
     /// <returns>True if the row was found, otherwise false</returns>
-    public bool TryFindRow<T>(FName rowName, out T? value) where T : struct
+    public bool TryFindRow<T>(FName rowName, out T? value) where T : MarshalledStruct<T>
     {
-        value = null;
-        Type type = typeof(T);
-        
-        if (!IsUStruct<T>())
-        {
-            throw new Exception($"The type {type.Name} must be a UStruct.");
-        }
+        value = default;
         
         IntPtr rowPtr = UDataTableExporter.CallGetRow(NativeObject, rowName);
         if (rowPtr == IntPtr.Zero)
@@ -71,7 +64,7 @@ public partial class UDataTable
             return false;
         }
         
-        value = (T)Activator.CreateInstance(type, rowPtr)!;
+        value = T.FromNative(rowPtr);
         return true;
     }
     
@@ -89,9 +82,9 @@ public partial class UDataTable
     /// Get the row names of the table.
     /// </summary>
     /// <returns>The row names of the table</returns>
-    public void ForEachRow<T>(Action<FName, T> action) where T : struct
+    public void ForEachRow<T>(Action<FName, T> action) where T : MarshalledStruct<T>
     {
-        IList<FName> rowNames = GetRowNames();
+        IList<FName> rowNames = RowNames;
         foreach (FName rowName in rowNames)
         {
             action(rowName, FindRow<T>(rowName));
@@ -103,9 +96,9 @@ public partial class UDataTable
     /// </summary>
     /// <param name="action">The action to perform on each row</param>
     /// <typeparam name="T">The type of the row</typeparam>
-    public void ForEachRow<T>(Action<T> action) where T : struct
+    public void ForEachRow<T>(Action<T> action) where T : MarshalledStruct<T>
     {
-        IList<FName> rowNames = GetRowNames();
+        IList<FName> rowNames = RowNames;
         foreach (FName rowName in rowNames)
         {
             action(FindRow<T>(rowName));
@@ -118,26 +111,10 @@ public partial class UDataTable
     /// <param name="action">The action to perform on each row</param>
     public void ForEachRow(Action<FName> action)
     {
-        IList<FName> rowNames = GetRowNames();
+        IList<FName> rowNames = RowNames;
         foreach (FName rowName in rowNames)
         {
             action(rowName);
         }
-    }
-    
-    private IList<FName> GetRowNames()
-    {
-        UDataTableFunctionLibrary.GetRowNames(this, out IList<FName> outRowNames);
-        return outRowNames;
-    }
-    
-    private int GetNumRows()
-    {
-        return GetRowNames().Count;
-    }
-    
-    public static bool IsUStruct<T>() where T : struct
-    {
-        return typeof(T).GetCustomAttributes<UStructAttribute>(false).Any();
     }
 }

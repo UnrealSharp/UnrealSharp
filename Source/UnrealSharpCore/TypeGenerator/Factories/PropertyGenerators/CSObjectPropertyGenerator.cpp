@@ -1,6 +1,7 @@
 #include "CSObjectPropertyGenerator.h"
-#include "TypeGenerator/Register/MetaData/CSDefaultComponentMetaData.h"
-#include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
+#include "MetaData/CSDefaultComponentMetaData.h"
+#include "MetaData/CSTemplateType.h"
+#include "MetaData/FCSFieldTypePropertyMetaData.h"
 
 UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -13,20 +14,31 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::DefaultComponent , FObjectProperty::StaticClass() }
 	};
 
-	REGISTER_METADATA(ECSPropertyType::Object, FCSObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::WeakObject, FCSObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSObjectMetaData)
-	REGISTER_METADATA(ECSPropertyType::ObjectPtr, FCSObjectMetaData)
+	REGISTER_METADATA(ECSPropertyType::Object, FCSFieldTypePropertyMetaData)
+	REGISTER_METADATA(ECSPropertyType::WeakObject, FCSTemplateType)
+	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSTemplateType)
 	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
 }
 
 FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FObjectProperty* Property = static_cast<FObjectProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
-	
-	TSharedPtr<FCSObjectMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSObjectMetaData>();
-	UClass* Class = ObjectMetaData->InnerType.GetOwningClass();
+	ECSPropertyType PropertyType = PropertyMetaData.Type->PropertyType;
 
+	UClass* Class;
+	if (PropertyType == ECSPropertyType::WeakObject || PropertyType == ECSPropertyType::SoftObject)
+	{
+		TSharedPtr<FCSTemplateType> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
+		const FCSPropertyMetaData* TemplateMetaData = ObjectMetaData->GetTemplateArgument(0);
+		TSharedPtr<FCSFieldTypePropertyMetaData> InnerTypeMetaData = TemplateMetaData->GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+		Class = InnerTypeMetaData->InnerType.GetAsClass();
+	}
+	else
+	{
+		TSharedPtr<FCSFieldTypePropertyMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+		Class = ObjectMetaData->InnerType.GetAsClass();
+	}
+	
 	Property->SetPropertyClass(Class);
 	
 	if (FLinkerLoad::IsImportLazyLoadEnabled())

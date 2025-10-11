@@ -5,10 +5,10 @@
 #include "UObject/UnrealType.h"
 #include "UObject/Class.h"
 #include "UnrealSharpCore/TypeGenerator/Register/CSMetaDataUtils.h"
-#include "TypeGenerator/Register/MetaData/CSDelegatePropertyMetaData.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 TArray<TObjectPtr<UCSPropertyGenerator>> FCSPropertyFactory::PropertyGenerators;
+TMap<uint32, UCSPropertyGenerator*> FCSPropertyFactory::PropertyGeneratorMap;
 
 void FCSPropertyFactory::Initialize()
 {
@@ -26,14 +26,42 @@ void FCSPropertyFactory::Initialize()
 	{
 		PropertyGenerators.Add(PropertyGenerator);
 	}
+
+	int64 MaxValue = StaticEnum<ECSPropertyType>()->GetMaxEnumValue();
+	PropertyGeneratorMap.Reserve(MaxValue);
+	
+	for (int64 i = 0; i < MaxValue; ++i)
+	{
+		ECSPropertyType PropertyType = static_cast<ECSPropertyType>(i);
+
+		UCSPropertyGenerator* FoundGenerator = nullptr;
+		for (UCSPropertyGenerator* PropertyGenerator : PropertyGenerators)
+		{
+			if (PropertyGenerator->SupportsPropertyType(PropertyType))
+			{
+				FoundGenerator = PropertyGenerator;
+				break;
+			}
+		}
+		
+		if (!IsValid(FoundGenerator))
+		{
+			continue;
+		}
+
+		uint32 Hash = static_cast<uint32>(PropertyType);
+		PropertyGeneratorMap.AddByHash(Hash, Hash, FoundGenerator);
+	}
 }
 
 FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
-	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyMetaData.Type->PropertyType);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSPropertyFactory::CreateProperty);
+	
+	UCSPropertyGenerator* PropertyGenerator = GetPropertyGenerator(PropertyMetaData.Type->PropertyType);
 	FProperty* NewProperty = PropertyGenerator->CreateProperty(Outer, PropertyMetaData);
 
-	NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags);
+	NewProperty->SetPropertyFlags(PropertyMetaData.Flags);
 	NewProperty->SetBlueprintReplicationCondition(PropertyMetaData.LifetimeCondition);
 
 #if WITH_EDITOR
@@ -79,13 +107,6 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 	return NewProperty;
 }
 
-FProperty* FCSPropertyFactory::CreateAndAssignProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
-{
-	FProperty* Property = CreateProperty(Outer, PropertyMetaData);
-	Outer->AddCppProperty(Property);
-	return Property;
-}
-
 void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData, const TFunction<void(FProperty*)>& OnPropertyCreated)
 {
 	for (int32 i = PropertyMetaData.Num() - 1; i >= 0; --i)
@@ -100,33 +121,6 @@ void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<F
 	}
 }
 
-TSharedPtr<FCSUnrealType> FCSPropertyFactory::CreateTypeMetaData(const TSharedPtr<FJsonObject>& PropertyMetaData)
-{
-	const TSharedPtr<FJsonObject>& PropertyTypeObject = PropertyMetaData->GetObjectField(TEXT("PropertyDataType"));
-	ECSPropertyType PropertyType = static_cast<ECSPropertyType>(PropertyTypeObject->GetIntegerField(TEXT("PropertyType")));
-	
-	UCSPropertyGenerator* PropertyGenerator = FindPropertyGenerator(PropertyType);
-	TSharedPtr<FCSUnrealType> PropertiesMetaData = PropertyGenerator->CreateTypeMetaData(PropertyType);
-	
-	PropertiesMetaData->SerializeFromJson(PropertyTypeObject);
-	return PropertiesMetaData;
-}
-
-UCSPropertyGenerator* FCSPropertyFactory::FindPropertyGenerator(ECSPropertyType PropertyType)
-{
-	for (TObjectPtr<UCSPropertyGenerator>& PropertyGenerator : PropertyGenerators)
-	{
-		if (!PropertyGenerator->SupportsPropertyType(PropertyType))
-		{
-			continue;
-		}
-
-		return PropertyGenerator;
-	}
-	
-	return nullptr;
-}
-
 void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& PropertyMetaData, UBlueprintGeneratedClass* Class)
 {
 	bool bImplementsInterface = Class->ImplementsInterface(UNotifyFieldValueChanged::StaticClass());
@@ -137,7 +131,7 @@ void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& 
 		return;
 	}
 	
-	Class->FieldNotifies.Add(FFieldNotificationId(PropertyMetaData.Name));
+	Class->FieldNotifies.Add(FFieldNotificationId(PropertyMetaData.GetName()));
 }
 
 

@@ -12,7 +12,6 @@ class UNREALSHARPCORE_API UFCSManagerExporter : public UObject
 	GENERATED_BODY()
 
 public:
-
 	UNREALSHARP_FUNCTION()
 	static void* FindManagedObject(UObject* Object);
 
@@ -24,5 +23,4 @@ public:
 	
 	UNREALSHARP_FUNCTION()
 	static void* GetCurrentWorldPtr();
-	
 };

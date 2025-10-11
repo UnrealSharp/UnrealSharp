@@ -5,9 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
-        <OutputPath>../../../Binaries/Managed</OutputPath>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	      <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500</NoWarn>
     </PropertyGroup>

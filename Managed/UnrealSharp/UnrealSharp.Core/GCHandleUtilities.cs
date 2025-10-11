@@ -94,6 +94,12 @@ public static class GCHandleUtilities
         }
 
         return default;
-        
+    }
+    
+    public static T? GetObjectFromHandlePtrFast<T>(IntPtr handle)
+    {
+        GCHandle subObjectGcHandle = GCHandle.FromIntPtr(handle);
+        object? subObject = subObjectGcHandle.Target;
+        return (T?)subObject;
     }
 }

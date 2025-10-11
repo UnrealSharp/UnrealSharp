@@ -1,17 +1,17 @@
 #include "CSScriptInterfacePropertyGenerator.h"
-#include "TypeGenerator/Register/MetaData/CSObjectMetaData.h"
+#include "MetaData/FCSFieldTypePropertyMetaData.h"
 
 FProperty* UCSScriptInterfacePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FInterfaceProperty* InterfaceProperty = static_cast<FInterfaceProperty*>(UCSPropertyGenerator::CreateProperty(Outer, PropertyMetaData));
 	
-	TSharedPtr<FCSObjectMetaData> InterfaceData = PropertyMetaData.GetTypeMetaData<FCSObjectMetaData>();
-	InterfaceProperty->SetInterfaceClass(InterfaceData->InnerType.GetOwningInterface());
+	TSharedPtr<FCSFieldTypePropertyMetaData> InterfaceData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	InterfaceProperty->SetInterfaceClass(InterfaceData->InnerType.GetAsInterface());
 	
 	return InterfaceProperty;
 }
 
 TSharedPtr<FCSUnrealType> UCSScriptInterfacePropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSObjectMetaData>();
+	return MakeShared<FCSFieldTypePropertyMetaData>();
 }

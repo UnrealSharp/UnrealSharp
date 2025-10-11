@@ -1,3 +1,4 @@
+using UnrealSharp.Core;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
@@ -43,7 +44,7 @@ public partial struct FGameplayTag
     /// Parses the tag name and returns the name of the leaf.
     /// For example, calling this on x.y.z would return the z component.
     /// </summary>
-    public FName LeafName => this.GetTagLeafName();
+    //public FName LeafName => this.GetTagLeafName();
     
     public bool Equals(FGameplayTag other)
     {
