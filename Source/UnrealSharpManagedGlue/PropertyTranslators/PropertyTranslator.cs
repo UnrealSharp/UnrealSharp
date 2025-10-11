@@ -243,19 +243,21 @@ public abstract class PropertyTranslator
 
     }
 
-    public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, string propertyName, UhtProperty property)
+    public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, 
+                                     string propertyName, UhtProperty property, bool isExplicitImplementation = false,
+                                     HashSet<string>? exportedFunctionNames = null)
     {
         GetterSetterFunctionExporter? getterExporter = getterSetterPair.GetterExporter;
         GetterSetterFunctionExporter? setterExporter = getterSetterPair.SetterExporter;
         
         void ExportBackingFields()
         {
-            if (getterExporter != null)
+            if (getterExporter != null && (exportedFunctionNames is null || !exportedFunctionNames.Contains(getterExporter.Function.SourceName)))
             {
                 getterExporter.ExportFunctionVariables(builder);
             }
             
-            if (setterExporter != null)
+            if (setterExporter != null && (exportedFunctionNames is null || !exportedFunctionNames.Contains(setterExporter.Function.SourceName)))
             {
                 setterExporter.ExportFunctionVariables(builder);
             }
@@ -279,17 +281,21 @@ public abstract class PropertyTranslator
         Action? exportGetterAction = getterExporter != null ? () => AppendInvoke(builder, getterExporter) : null;
         Action? exportSetterAction = setterExporter != null ? () => AppendInvoke(builder, setterExporter) : null;
         
-        ExportProperty_Internal(builder, property, propertyName, ExportBackingFields, ExportProtection, exportGetterAction, exportSetterAction);
+        string? interfaceName = isExplicitImplementation ? getterSetterPair.Accessors.First().Outer?.GetFullManagedName() : null;
+        
+        ExportProperty_Internal(builder, property, propertyName, ExportBackingFields, ExportProtection, exportGetterAction, exportSetterAction, interfaceName: interfaceName);
     }
     
-    public void ExportGetSetProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, UhtProperty property, Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters)
+    public void ExportGetSetProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, UhtProperty property, 
+                                     Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters,
+                                     HashSet<string>? exportedFunctionName = null)
     {
         void ExportNativeGetter()
         {
             builder.BeginUnsafeBlock();
             builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
             builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);");
-            ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "paramsBuffer", "0", false, false);
+            ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "paramsBuffer", "0", true, false);
             builder.AppendLine("return newValue;");
             builder.EndUnsafeBlock();
         }
@@ -310,6 +316,7 @@ public abstract class PropertyTranslator
             builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
             ExportToNative(builder, property, property.SourceName, "paramsBuffer", "0", "value");
             builder.AppendLine($"FPropertyExporter.CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);"); 
+            ExportCleanupMarshallingBuffer(builder, property, property.SourceName);
             builder.EndUnsafeBlock();
         }
         
@@ -353,13 +360,13 @@ public abstract class PropertyTranslator
         
         void ExportBackingFields()
         {
-            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter!))
+            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter!) && (exportedFunctionName is null || !exportedFunctionName.Contains(getterSetterPair.Getter!.SourceName)))
             {
                 getterSetterPair.GetterExporter.ExportFunctionVariables(builder);
                 exportedGetterSetters.Add(getterSetterPair.Getter!, getterSetterPair.GetterExporter);
             }   
             
-            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter!))
+            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter!) && (exportedFunctionName is null || !exportedFunctionName.Contains(getterSetterPair.Setter!.SourceName)))
             {
                 getterSetterPair.SetterExporter.ExportFunctionVariables(builder);
                 exportedGetterSetters.Add(getterSetterPair.Setter!, getterSetterPair.SetterExporter);
@@ -405,7 +412,8 @@ public abstract class PropertyTranslator
         Func<string>? exportProtection,
         Action? exportGetter, 
         Action? exportSetter,
-        string setterOperation = "set")
+        string setterOperation = "set",
+        string? interfaceName = null)
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
@@ -420,7 +428,15 @@ public abstract class PropertyTranslator
         builder.AppendTooltip(property);
         
         string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {propertyName}");
+        if (interfaceName is not null)
+        {
+            builder.AppendLine($"{managedType} {interfaceName}.{propertyName}");
+        }
+        else
+        {
+            builder.AppendLine($"{protection}{managedType} {propertyName}");
+        }
+
         builder.OpenBrace();
 
         if (exportGetter is not null)

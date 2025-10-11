@@ -18,6 +18,7 @@
 
         <PropertyGroup>
             <DefineConstantsJoined>$([System.String]::Join(';', %(UE5Rules_DefineConstants.Identity)))</DefineConstantsJoined>
+            <DefineConstantsJoined>$(DefineConstantsJoined.Replace('%24(DefineConstants);', ''))</DefineConstantsJoined>
             
             <DefineConstants Condition="'$(DefineConstants)' != '' and '$(DefineConstantsJoined)' != ''">
                 $(DefineConstants);$(DefineConstantsJoined)
