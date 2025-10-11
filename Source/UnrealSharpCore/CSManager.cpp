@@ -597,7 +597,7 @@ UCSAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
 }
 
 
-UCSAssembly * UCSManager::FindOwningAssemblySlow(UField *Field)
+UCSAssembly* UCSManager::FindOwningAssemblySlow(UField *Field)
 {
     // Slow path for native classes. This runs once per new native class.
     const FCSFieldName ClassName = FCSFieldName(Field);
@@ -609,8 +609,8 @@ UCSAssembly * UCSManager::FindOwningAssemblySlow(UField *Field)
             continue;
         }
 
-        NativeClassToAssemblyMap.Add(Field->GetUniqueID(), LoadedAssembly.Value);
-
+    	uint32 FieldID = Field->GetUniqueID();
+        NativeClassToAssemblyMap.AddByHash(FieldID, FieldID, LoadedAssembly.Value);
         return LoadedAssembly.Value;
     }
 
