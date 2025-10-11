@@ -79,7 +79,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
         if (property.IsGenericType()) return;
 
         string wrapperType = GetWrapperType(property);
-        if (property.IsOuter<UhtScriptStruct>())
+        if (property.IsOuter<UhtScriptStruct>() || property.HasAnyNativeGetterSetter())
         {
             builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
         }
@@ -216,13 +216,14 @@ public class ContainerPropertyTranslator : PropertyTranslator
     {
         bool isStructProperty = property.IsOuter<UhtScriptStruct>();
         bool isParameter = property.IsOuter<UhtFunction>();
+        bool isNativeGetterSetter = property.HasAnyNativeGetterSetter();
         UhtContainerBaseProperty containerProperty = (UhtContainerBaseProperty) property;
         PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
 
         string innerManagedType = property.IsGenericType() ?
             "DOT" : translator.GetManagedType(containerProperty.ValueProperty);
 
-        string containerType = isStructProperty || isParameter ? CopyMarshallerName : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyMarshallerName : MarshallerName;
+        string containerType = isStructProperty || isParameter || isNativeGetterSetter ? CopyMarshallerName : property.PropertyFlags.HasAnyFlags(EPropertyFlags.BlueprintReadOnly) ? ReadOnlyMarshallerName : MarshallerName;
         return $"{containerType}<{innerManagedType}>";
     }
 

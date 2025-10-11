@@ -8,27 +8,26 @@ public class OptionMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.
 {
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, Option<T> obj)
     {
-        unsafe
+        if (obj.IsSome)
         {
-            if (obj.IsSome)
-            {
-                var result = FOptionalPropertyExporter.CallMarkSetAndGetInitializedValuePointerToReplace(nativeProperty, nativeBuffer);
-                toNative(result, 0, obj.ValueUnsafe());
-            }
-            else
-            {
-                FOptionalPropertyExporter.MarkUnset(nativeProperty, nativeBuffer);
-            }
+            var result = FOptionalPropertyExporter.CallMarkSetAndGetInitializedValuePointerToReplace(nativeProperty, nativeBuffer);
+            toNative(result, 0, obj.ValueUnsafe());
+        }
+        else
+        {
+            FOptionalPropertyExporter.CallMarkUnset(nativeProperty, nativeBuffer);
         }
     }
 
     public Option<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        unsafe
-        {
-            if (!FOptionalPropertyExporter.CallIsSet(nativeProperty, nativeBuffer).ToManagedBool()) return Option<T>.None;
-            var result = FOptionalPropertyExporter.GetValuePointerForRead(nativeProperty, nativeBuffer);
-            return fromNative(result, 0);
-        }
+        if (!FOptionalPropertyExporter.CallIsSet(nativeProperty, nativeBuffer).ToManagedBool()) return Option<T>.None;
+        var result = FOptionalPropertyExporter.CallGetValuePointerForRead(nativeProperty, nativeBuffer);
+        return fromNative(result, 0);
+    }
+    
+    public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
+    {
+        FOptionalPropertyExporter.CallDestructInstance(nativeProperty, nativeBuffer);
     }
 }

@@ -696,6 +696,14 @@ public sealed class NoGetterAttribute : Attribute { }
 public sealed class BindWidgetAttribute : Attribute { }
 
 /// <summary>
+/// [BindWidgetOptional]
+/// Used for UWidget properties. Indicates that the property should be bound to a widget in the Blueprint Editor.
+//  Will not cause an error if not found.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public sealed class BindWidgetOptionalAttribute : Attribute { }
+
+/// <summary>
 /// [BindWidgetAnim]
 /// Used for binding widget animations to a property
 /// </summary>

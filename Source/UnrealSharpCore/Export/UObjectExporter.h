@@ -40,6 +40,9 @@ public:
 	UNREALSHARP_FUNCTION()
 	static void* GetWorld_Internal(UObject* Object);
 
+    UNREALSHARP_FUNCTION()
+    static bool IsA(const UObject* Object, UClass* Class);
+
 	UNREALSHARP_FUNCTION()
 	static uint32 GetUniqueID(UObject* Object);
 
