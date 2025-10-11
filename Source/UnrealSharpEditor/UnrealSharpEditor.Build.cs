@@ -43,6 +43,7 @@ public class UnrealSharpEditor : ModuleRules
                 "UnrealSharpRuntimeGlue",
                 "PluginBrowser", 
                 "UnrealSharpUtilities",
+                "GameplayAbilities",
             }
         );
 
