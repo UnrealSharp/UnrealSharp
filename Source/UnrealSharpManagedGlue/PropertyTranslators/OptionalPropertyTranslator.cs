@@ -168,19 +168,19 @@ public class OptionalPropertyTranslator : PropertyTranslator
         
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"LanguageExt.Option<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"UnrealSharp.TOptional<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
         if (property.Outer is UhtProperty outerProperty && outerProperty.IsGenericType())
         {
-            return "OptionMarshaller<DOT>";
+            return "OptionalMarshaller<DOT>";
         }
 
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"OptionMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"OptionalMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
     
     public override string ExportMarshallerDelegates(UhtProperty property)
@@ -192,7 +192,7 @@ public class OptionalPropertyTranslator : PropertyTranslator
     {
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"Optional.Empty<{translator.GetManagedType(optionalProperty.ValueProperty)}>()";
+        return $"UnrealSharp.TOptional<{translator.GetManagedType(optionalProperty.ValueProperty)}>.None";
     }
 
     public override bool CanExport(UhtProperty property)

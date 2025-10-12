@@ -1,6 +1,7 @@
 ﻿using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
-namespace UnrealSharp.Core.Interop;
+namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
 public static unsafe partial class FOptionalPropertyExporter
