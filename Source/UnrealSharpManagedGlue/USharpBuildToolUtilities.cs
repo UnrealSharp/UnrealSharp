@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Utils;
@@ -98,5 +99,27 @@ public static class USharpBuildToolUtilities
             Program.Factory.Session.ProjectDirectory!,
             Program.Factory.Session.EngineDirectory!,
             arguments);
+    }
+    
+    public static void CompileUSharpBuildTool()
+    {
+        Console.WriteLine("Compiling USharpBuildTool...");
+        
+        string uSharpBuildToolDirectory = Path.Combine(Program.ManagedPath, "UnrealSharpPrograms");
+        
+        if (!Directory.Exists(uSharpBuildToolDirectory))
+        {
+            throw new DirectoryNotFoundException($"Failed to find UnrealSharpPrograms directory at: {uSharpBuildToolDirectory}");
+        }
+        
+        Collection<string> arguments = new Collection<string>
+        {
+            "build",
+        };
+        
+        if (!DotNetUtilities.InvokeDotNet(arguments, uSharpBuildToolDirectory))
+        {
+            throw new InvalidOperationException("Failed to compile USharpBuildTool.");
+        }
     }
 }

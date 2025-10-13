@@ -41,6 +41,7 @@ public static class Program
         Factory = factory;
 
         InitializeStatics();
+        USharpBuildToolUtilities.CompileUSharpBuildTool();
 
         UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
         if (foundType is not UhtClass blueprintFunctionLibrary)
@@ -66,7 +67,7 @@ public static class Program
                 Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
                 DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
             }
-
+            
             USharpBuildToolUtilities.CreateGlueProjects();
             USharpBuildToolUtilities.CreateBuildDirectoryFile();
         }

@@ -22,25 +22,16 @@ public record TemplateProperty : UnrealProperty
         
         int argumentCount = namedTypeSymbol.TypeArguments.Length;
         UnrealProperty[] arguments = new UnrealProperty[argumentCount];
-        
-        TypeSyntax variableDeclarationSyntax;
-        if (syntaxNode is BasePropertyDeclarationSyntax propertyDeclarationSyntax)
+
+        TypeSyntax variableDeclarationSyntax = syntaxNode switch
         {
-            variableDeclarationSyntax = propertyDeclarationSyntax.Type;
-        }
-        else if (syntaxNode is FieldDeclarationSyntax fieldDeclarationSyntax)
-        {
-            variableDeclarationSyntax = fieldDeclarationSyntax.Declaration.Type;
-        }
-        else if (syntaxNode is GenericNameSyntax genericNameSyntax)
-        {
-            variableDeclarationSyntax = genericNameSyntax;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported syntax node type: {syntaxNode.GetType().Name}");
-        }
-        
+            BasePropertyDeclarationSyntax propertyDeclarationSyntax => propertyDeclarationSyntax.Type,
+            FieldDeclarationSyntax fieldDeclarationSyntax => fieldDeclarationSyntax.Declaration.Type,
+            GenericNameSyntax genericNameSyntax => genericNameSyntax,
+            ParameterSyntax parameterSyntax => parameterSyntax.Type!,
+            _ => throw new InvalidOperationException($"Unsupported syntax node type: {syntaxNode.GetType().Name} on property {SourceName} of member {memberSymbol.Name}")
+        };
+
         GenericNameSyntax nameSyntax = (GenericNameSyntax) variableDeclarationSyntax;
         
         for (int i = 0; i < argumentCount; i++)

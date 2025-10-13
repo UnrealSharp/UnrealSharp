@@ -28,7 +28,11 @@ FGameplayTag UCSGameplayTagExtensions::RequestGameplayTag(const FName TagName)
 
 FName UCSGameplayTagExtensions::GetTagLeafName(const FGameplayTag Tag)
 {
+#if UE_VERSION_SINCE(5, 6)
     return Tag.GetTagLeafName();
+#else
+    return FName();
+#endif
 }
 
 FGameplayTag UCSGameplayTagExtensions::RequestDirectParent(const FGameplayTag Tag)
