@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using UnrealSharp.Attributes;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
@@ -35,7 +36,7 @@ public partial class UDataTable
     /// <param name="rowName">The name of the row to find</param>
     /// <typeparam name="T">The type of the row to find</typeparam>
     /// <returns>The row if found, otherwise the default value of the type</returns>
-    public T FindRow<T>(FName rowName) where T : struct
+    public T FindRow<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(FName rowName) where T : struct
     {
         Type type = typeof(T);
         
@@ -55,7 +56,7 @@ public partial class UDataTable
     /// <param name="value">The row if found, otherwise null</param>
     /// <typeparam name="T">The type of the row to find</typeparam>
     /// <returns>True if the row was found, otherwise false</returns>
-    public bool TryFindRow<T>(FName rowName, out T? value) where T : struct
+    public bool TryFindRow<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(FName rowName, out T? value) where T : struct
     {
         value = null;
         Type type = typeof(T);
@@ -89,7 +90,7 @@ public partial class UDataTable
     /// Get the row names of the table.
     /// </summary>
     /// <returns>The row names of the table</returns>
-    public void ForEachRow<T>(Action<FName, T> action) where T : struct
+    public void ForEachRow<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(Action<FName, T> action) where T : struct
     {
         IList<FName> rowNames = GetRowNames();
         foreach (FName rowName in rowNames)
@@ -103,7 +104,7 @@ public partial class UDataTable
     /// </summary>
     /// <param name="action">The action to perform on each row</param>
     /// <typeparam name="T">The type of the row</typeparam>
-    public void ForEachRow<T>(Action<T> action) where T : struct
+    public void ForEachRow<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(Action<T> action) where T : struct
     {
         IList<FName> rowNames = GetRowNames();
         foreach (FName rowName in rowNames)

@@ -18,12 +18,14 @@ public static class TypeDefinitionUtilities
 {
     public static readonly string UClassCallbacks = "UClassExporter";
     public static readonly string UClassAttribute = "UClassAttribute";
-    
+    public static readonly string USingleDelegateAttribute = "USingleDelegateAttribute";
+    public static readonly string UMultiDelegateAttribute = "UMultiDelegateAttribute";
+
     public static readonly string UEnumAttribute = "UEnumAttribute";
     public static readonly string UStructAttribute = "UStructAttribute";
     public static readonly string UInterfaceAttribute = "UInterfaceAttribute";
     public static readonly string BlittableTypeAttribute = "BlittableTypeAttribute";
-    
+
     public static CustomAttribute? GetUClass(this IMemberDefinition definition)
     {
         return definition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, UClassAttribute);
@@ -33,7 +35,27 @@ public static class TypeDefinitionUtilities
     {
         return GetUClass(definition) != null;
     }
-    
+
+    public static CustomAttribute? GetUSingleDelegate(this IMemberDefinition definition)
+    {
+        return definition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, USingleDelegateAttribute);
+    }
+
+    public static bool IsUSingleDelegate(this IMemberDefinition definition)
+    {
+        return GetUSingleDelegate(definition) != null;
+    }
+
+    public static CustomAttribute? GetUMultiDelegate(this IMemberDefinition definition)
+    {
+        return definition.CustomAttributes.FindAttributeByType(WeaverImporter.UnrealSharpAttributesNamespace, UMultiDelegateAttribute);
+    }
+
+    public static bool IsUMultiDelegate(this IMemberDefinition definition)
+    {
+        return GetUMultiDelegate(definition) != null;
+    }
+
     public static bool IsUInterface(this TypeDefinition typeDefinition)
     {
         return GetUInterface(typeDefinition) != null;

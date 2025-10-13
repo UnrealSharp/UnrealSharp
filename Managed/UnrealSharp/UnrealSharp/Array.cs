@@ -127,7 +127,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
         int numElements = Count;
         for (int i = 0; i < numElements; ++i)
         {
-            if (this[i].Equals(item))
+            if (EqualityComparer<T>.Default.Equals(this[i], item))
             {
                 return i;
             }

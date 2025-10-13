@@ -11,7 +11,7 @@ public static class UnrealDelegateProcessor
 {
     public static readonly string InitializeUnrealDelegate = "InitializeUnrealDelegate";
     
-    public static void ProcessDelegates(List<TypeDefinition> delegates, List<TypeDefinition> multicastDelegates, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
+    public static void ProcessDelegates(List<TypeDefinition> delegateDecls, List<TypeDefinition> delegates, List<TypeDefinition> multicastDelegates, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
     {
         int totalDelegateCount = multicastDelegates.Count + delegates.Count;
         if (totalDelegateCount <= 0)
@@ -21,11 +21,11 @@ public static class UnrealDelegateProcessor
             
         delegateMetaData.Capacity = totalDelegateCount;
         
-        ProcessMulticastDelegates(multicastDelegates, delegateMetaData);
-        ProcessSingleDelegates(delegates, assembly, delegateMetaData);
+        ProcessMulticastDelegates(delegateDecls, multicastDelegates, delegateMetaData);
+        ProcessSingleDelegates(delegateDecls, delegates, assembly, delegateMetaData);
     }
     
-    private static void ProcessMulticastDelegates(List<TypeDefinition> delegateExtensions, List<DelegateMetaData> delegateMetaData)
+    private static void ProcessMulticastDelegates(List<TypeDefinition> delegateDecls, List<TypeDefinition> delegateExtensions, List<DelegateMetaData> delegateMetaData)
     {
         foreach (TypeDefinition type in delegateExtensions)
         {
@@ -43,6 +43,13 @@ public static class UnrealDelegateProcessor
                 EFunctionFlags.MulticastDelegate);
             
             delegateMetaData.Add(newDelegate);
+
+            TypeDefinition delegateDecl = delegateDecls.Find(t => t.Namespace == type.Namespace && t.Name == type.Name[1..]) ?? throw new Exception($"Could not find the corresponding delegate declaration for the delegate extension type '{type.FullName}'");
+            CustomAttribute customAttribute = delegateDecl.GetUMultiDelegate() ?? throw new Exception($"Delegate declaration '{delegateDecl.FullName}' does not have UMultiDelegate attribute");
+            if (!customAttribute.Properties.Any(p => p.Name == "WrapperType"))
+            {
+                customAttribute.Properties.Add(new CustomAttributeNamedArgument("WrapperType", new CustomAttributeArgument(type.Module.ImportReference(typeof(Type)), type)));
+            }
             
             if (invokerMethod.Parameters.Count == 0)
             {
@@ -54,7 +61,7 @@ public static class UnrealDelegateProcessor
         }
     }
     
-    private static void ProcessSingleDelegates(List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
+    private static void ProcessSingleDelegates(List<TypeDefinition> delegateDecls, List<TypeDefinition> delegateExtensions, AssemblyDefinition assembly, List<DelegateMetaData> delegateMetaData)
     {
         if (delegateExtensions.Count == 0)
         {
@@ -110,6 +117,13 @@ public static class UnrealDelegateProcessor
                 type, 
                 "USingleDelegate");
             delegateMetaData.Add(newDelegate);
+
+            TypeDefinition delegateDecl = delegateDecls.Find(t => t.Namespace == type.Namespace && t.Name == type.Name[1..]) ?? throw new Exception($"Could not find the corresponding delegate declaration for the delegate extension type '{type.FullName}'");
+            CustomAttribute customAttribute = delegateDecl.GetUSingleDelegate() ?? throw new Exception($"Delegate declaration '{delegateDecl.FullName}' does not have USingleDelegate attribute");
+            if (!customAttribute.Properties.Any(p => p.Name == "WrapperType"))
+            {
+                customAttribute.Properties.Add(new CustomAttributeNamedArgument("WrapperType", new CustomAttributeArgument(type.Module.ImportReference(typeof(Type)), type)));
+            }
             
             if (invokerMethod.Parameters.Count == 0)
             {

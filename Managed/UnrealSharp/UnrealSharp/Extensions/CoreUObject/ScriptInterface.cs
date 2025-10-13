@@ -49,7 +49,7 @@ public static class ScriptInterfaceExtensions
         }
             
         var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, nativeClass);
-		if(wrapperHandle == IntPtr.Zero)
+        if(wrapperHandle == IntPtr.Zero)
         {
             return null;
         }
@@ -63,7 +63,7 @@ public static class ScriptInterfaceExtensions
         {
             return typedWrapper;
         }
-			
+            
         return null;
     }
 
@@ -121,7 +121,7 @@ public static class ScriptInterfaceExtensions
 
 
 
-public static class ScriptInterfaceMarshaller<T> where T : class
+public static class ScriptInterfaceMarshaller<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T> where T : class
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj)
     {
