@@ -99,7 +99,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// <summary>
     /// Copy from a span to the array
     /// </summary>
-    /// <param name="span"> The array to copy the elements from. </param>
+    /// <param name="span"> The span to copy the elements from. </param>
     public void CopyFrom(ReadOnlySpan<T> span)
     {
         FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
