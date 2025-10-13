@@ -67,7 +67,8 @@ public static class Program
                 DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
             }
 
-            CreateGlueProjects();
+            USharpBuildToolUtilities.CreateGlueProjects();
+            USharpBuildToolUtilities.CreateBuildDirectoryFile();
         }
         catch (Exception ex)
         {
@@ -104,92 +105,5 @@ public static class Program
                 .Select(x => new ProjectDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
                 .Where(x => x.GlueProjectName != "UnrealSharp")
                 .ToImmutableArray();
-    }
-    
-    private static void CreateGlueProjects()
-    {
-        bool hasProjectGlue = false;
-        foreach (ProjectDirInfo pluginDir in PluginUtilities.PluginInfo.Values)
-        {
-            if (pluginDir.IsUProject)
-            {
-                hasProjectGlue = true;
-            }
-            
-            TryCreateGlueProject(pluginDir.GlueCsProjPath, pluginDir.GlueProjectName, pluginDir.Dependencies, pluginDir.ProjectRoot);
-        }
-
-        if (!hasProjectGlue)
-        {
-            UhtSession session = Factory.Session;
-            string projectRoot = session.ProjectDirectory!;
-            string baseName = Path.GetFileNameWithoutExtension(session.ProjectFile!);
-            string projectName = baseName + ".Glue";
-            string csprojPath = Path.Join(projectRoot, "Script", projectName, projectName + ".csproj");
-
-            TryCreateGlueProject(csprojPath, projectName, null, projectRoot);
-        }
-    }
-
-    private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
-    {
-        if (!File.Exists(csprojPath))
-        {
-            string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-            List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
-            {
-                new("NewProjectName", projectName),
-                new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-                new("SkipIncludeProjectGlue", "true"),
-                new("SkipSolutionGeneration", "true"),
-            };
-
-            arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
-            if (!DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
-                    ProjectName,
-                    PluginDirectory,
-                    Factory.Session.ProjectDirectory!,
-                    Factory.Session.EngineDirectory!,
-                    arguments))
-            {
-                throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
-            }
-            
-            Console.WriteLine($"Successfully created project file: {projectName}");
-        }
-        else
-        {
-            Console.WriteLine($"Project file already exists: {projectName}. Skipping creation.");
-        }
-        
-        AddPluginDependencies(projectName, csprojPath, dependencyPaths);
-    }
-
-    private static void AddPluginDependencies(string projectName, string projectPath, IEnumerable<string>? dependencies)
-    {
-        List<KeyValuePair<string, string>> arguments = new()
-        {
-            new KeyValuePair<string, string>("ProjectPath", projectPath),
-        };
-
-        if (dependencies != null)
-        {
-            foreach (string path in dependencies)
-            {
-                arguments.Add(new KeyValuePair<string, string>("Dependency", path));
-            }
-        }
-
-        if (!DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
-                ProjectName,
-                PluginDirectory,
-                Factory.Session.ProjectDirectory!,
-                Factory.Session.EngineDirectory!,
-                arguments))
-        {
-            throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
-        }
-        
-        Console.WriteLine($"Updated project dependencies for {projectName}");
     }
 }

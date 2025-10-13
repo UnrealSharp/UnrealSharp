@@ -85,6 +85,9 @@ public class GenerateProject : BuildToolAction
             GenerateSolution generateSolution = new GenerateSolution();
             generateSolution.RunAction();
         }
+        
+        CreateDirectoryBuildPropsFile emitter = new CreateDirectoryBuildPropsFile();
+        emitter.RunAction();
 
         if (Program.HasArgument("SkipUSharpProjSetup"))
         {
@@ -156,15 +159,6 @@ public class GenerateProject : BuildToolAction
                 csprojDocument.DocumentElement!.AppendChild(newItemGroup);
             }
 
-            AppendProperties(csprojDocument);
-            AppendConstantDefines(csprojDocument);
-
-            AppendPackageReference(csprojDocument, newItemGroup, "LanguageExt.Core", "4.4.9");
-            AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
-            AppendReference(csprojDocument, newItemGroup, "UnrealSharp.Core", GetPathToBinaries());
-
-            AppendSourceGeneratorReference(csprojDocument, newItemGroup);
-
             if (!Program.HasArgument("SkipIncludeProjectGlue"))
             {
                 AppendGeneratedCode(csprojDocument, newItemGroup);
@@ -183,89 +177,6 @@ public class GenerateProject : BuildToolAction
         }
     }
 
-    private void AddProperty(string name, string value, XmlDocument doc, XmlNode propertyGroup)
-    {
-        XmlNode? newProperty = propertyGroup.SelectSingleNode(name);
-
-        if (newProperty == null)
-        {
-            newProperty = doc.CreateElement(name);
-            propertyGroup.AppendChild(newProperty);
-        }
-
-        newProperty.InnerText = value;
-    }
-
-    private void AppendProperties(XmlDocument doc)
-    {
-        XmlNode? propertyGroup = doc.SelectSingleNode("//PropertyGroup");
-
-        if (propertyGroup == null)
-        {
-            propertyGroup = doc.CreateElement("PropertyGroup");
-        }
-
-        AddProperty("CopyLocalLockFileAssembliesName", "true", doc, propertyGroup);
-        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
-        AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
-    }
-    
-    private void AddConstDefine(string value, XmlDocument doc, XmlNode propertyGroup, string? condition = null)
-    {
-        var newProperty = doc.CreateElement("DefineConstants");
-        propertyGroup.AppendChild(newProperty);
-        newProperty.InnerText = value;
-        if (condition is not null)
-        {
-            newProperty.SetAttribute("Condition", condition);
-        }
-    }
-    
-    private void AppendConstantDefines(XmlDocument doc)
-    {
-        var propertyGroup = doc.CreateElement("PropertyGroup");
-
-        AddConstDefine("WITH_EDITOR", doc, propertyGroup);
-        AddConstDefine("$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))", doc, propertyGroup, 
-            "'$(DisableWithEditor)' == 'true'");
-        AddConstDefine("$(DefineConstants);$(DefineAdditionalConstants)", doc, propertyGroup, 
-            "'$(DefineAdditionalConstants)' != ''");
-    }
-
-    private string GetPathToBinaries()
-    {
-        string directoryPath = Path.GetDirectoryName(_projectPath)!;
-        string unrealSharpPath = GetRelativePathToUnrealSharp(directoryPath);
-        return Path.Combine(unrealSharpPath, "Binaries", "Managed");
-    }
-
-    private void AppendReference(XmlDocument doc, XmlElement itemGroup, string referenceName, string binPath)
-    {
-        XmlElement referenceElement = doc.CreateElement("Reference");
-        referenceElement.SetAttribute("Include", referenceName);
-
-        XmlElement hintPath = doc.CreateElement("HintPath");
-        hintPath.InnerText = Path.Combine(binPath, Program.GetVersion(), referenceName + ".dll");
-        referenceElement.AppendChild(hintPath);
-        itemGroup.AppendChild(referenceElement);
-    }
-
-    private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
-    {
-        string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "UnrealSharp.SourceGenerators.dll");
-        XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
-        sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
-        itemGroup.AppendChild(sourceGeneratorReference);
-    }
-
-    private void AppendPackageReference(XmlDocument doc, XmlElement itemGroup, string packageName, string packageVersion)
-    {
-        XmlElement packageReference = doc.CreateElement("PackageReference");
-        packageReference.SetAttribute("Include", packageName);
-        packageReference.SetAttribute("Version", packageVersion);
-        itemGroup.AppendChild(packageReference);
-    }
-
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
         string providedGlueName = Program.TryGetArgument("GlueProjectName");
@@ -281,12 +192,6 @@ public class GenerateProject : BuildToolAction
         XmlElement generatedCode = doc.CreateElement("ProjectReference");
         generatedCode.SetAttribute("Include", relativePath);
         itemGroup.AppendChild(generatedCode);
-    }
-
-    private string GetRelativePathToUnrealSharp(string basePath)
-    {
-        string targetPath = Path.Combine(basePath, Program.BuildToolOptions.PluginDirectory);
-        return GetRelativePath(basePath, targetPath);
     }
 
     public static string GetRelativePath(string basePath, string targetPath)

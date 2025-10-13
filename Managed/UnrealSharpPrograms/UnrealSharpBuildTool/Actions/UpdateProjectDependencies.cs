@@ -63,7 +63,7 @@ public class UpdateProjectDependencies : BuildToolAction
 
     private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)
     {
-        string relativePath = GenerateProject.GetRelativePath(_projectFolder, dependency);
+        string relativePath = BuildPropsEmitter.GetRelativePath(_projectFolder, dependency);
         
         if (_existingDependencies.Contains(relativePath))
         {

@@ -118,7 +118,6 @@ public static class FileExporter
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
         CleanFilesInDirectories(Program.EngineGluePath);
-        CleanFilesInDirectories(Program.ProjectGluePath_LEGACY, true);
         
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
@@ -130,12 +129,10 @@ public static class FileExporter
     public static void CleanModuleFolders()
     {
         CleanGeneratedFolder(Program.EngineGluePath);
-        CleanGeneratedFolder(Program.ProjectGluePath_LEGACY);
         
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
             CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory);
-            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory_LEGACY);
         }
     }
     

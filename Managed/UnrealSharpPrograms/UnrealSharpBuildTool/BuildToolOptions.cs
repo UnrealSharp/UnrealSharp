@@ -11,6 +11,7 @@ public enum BuildAction : int
     PackageProject,
     GenerateSolution,
     BuildEmitLoadOrder,
+    EmitBuildProps,
 }
 
 public enum BuildConfig : int
