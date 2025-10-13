@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class TextPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public TextPropertyTranslator() : base(typeof(UhtTextProperty), "FText")
+    public TextPropertyTranslator() : base(typeof(UhtTextProperty), "FText", PropertyKind.Unknown)
     {
     }
     

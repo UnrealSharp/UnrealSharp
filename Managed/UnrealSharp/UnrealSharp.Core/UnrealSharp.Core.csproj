@@ -17,9 +17,5 @@
         </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="LanguageExt.Core" />
-    </ItemGroup>
-
 
 </Project>

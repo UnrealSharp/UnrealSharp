@@ -1,5 +1,7 @@
 ﻿#include "UObjectExporter.h"
 #include "UnrealSharpCore/CSManager.h"
+#include "UObject/UObjectGlobals.h"
+
 
 void* UUObjectExporter::CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
 {
@@ -128,7 +130,43 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 	return UCSManager::Get().FindManagedObject(World);
 }
 
+bool UUObjectExporter::IsA(const UObject* Object, UClass* Class)
+{
+    return Object->IsA(Class);
+}
+
 uint32 UUObjectExporter::GetUniqueID(UObject* Object)
 {
 	return Object->GetUniqueID();
+}
+
+void* UUObjectExporter::StaticLoadClass(UClass* BaseClass, UObject* InOuter, const char* Name)
+{
+	if (Name == nullptr)
+	{
+		return nullptr;
+	}
+
+	UClass* Loaded = ::StaticLoadClass(BaseClass, InOuter, UTF8_TO_TCHAR(Name));
+	if (!IsValid(Loaded))
+	{
+		return nullptr;
+	}
+	return UCSManager::Get().FindManagedObject(Loaded);
+}
+
+
+void* UUObjectExporter::StaticLoadObject(UClass* BaseClass, UObject* InOuter, const char* Name)
+{
+	if (Name == nullptr)
+	{
+		return nullptr;
+	}
+
+	UObject* LoadedObj = ::StaticLoadObject(BaseClass, InOuter, UTF8_TO_TCHAR(Name));
+	if (!IsValid(LoadedObj))
+	{
+		return nullptr;
+	}
+	return UCSManager::Get().FindManagedObject(LoadedObj);
 }

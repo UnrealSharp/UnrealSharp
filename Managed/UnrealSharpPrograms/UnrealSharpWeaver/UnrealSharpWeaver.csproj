@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" />
-        <PackageReference Include="LanguageExt.Core" />
         <PackageReference Include="Mono.Cecil" />
         <PackageReference Include="Newtonsoft.Json" />
     </ItemGroup>

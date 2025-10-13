@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
 
@@ -647,67 +647,6 @@ public partial struct FQuat
             Z = q1z * q2w + q2z * q1w + cz,
             W = q1w * q2w - dot
         };
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given Quats are equal.
-    /// </summary>
-    /// <param name="value1">The first Quat to compare.</param>
-    /// <param name="value2">The second Quat to compare.</param>
-    /// <returns>True if the Quats are equal; False otherwise.</returns>
-    public static bool operator ==(FQuat value1, FQuat value2)
-    {
-        return (value1.X == value2.X &&
-                value1.Y == value2.Y &&
-                value1.Z == value2.Z &&
-                value1.W == value2.W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given Quats are not equal.
-    /// </summary>
-    /// <param name="value1">The first Quat to compare.</param>
-    /// <param name="value2">The second Quat to compare.</param>
-    /// <returns>True if the Quats are not equal; False if they are equal.</returns>
-    public static bool operator !=(FQuat value1, FQuat value2)
-    {
-        return (value1.X != value2.X ||
-                value1.Y != value2.Y ||
-                value1.Z != value2.Z ||
-                value1.W != value2.W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Quat is equal to this Quat instance.
-    /// </summary>
-    /// <param name="other">The Quat to compare this instance to.</param>
-    /// <returns>True if the other Quat is equal to this instance; False otherwise.</returns>
-    public bool Equals(FQuat other)
-    {
-        return (X == other.X &&
-                Y == other.Y &&
-                Z == other.Z &&
-                W == other.W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this Quat instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this Quat; False otherwise.</returns>
-    public override bool Equals(object? obj)
-    {
-        if (obj is FQuat quat)
-        {
-            return Equals(quat);
-        }
-
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z, W);
     }
 
     /// <summary>

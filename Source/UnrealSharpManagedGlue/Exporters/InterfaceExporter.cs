@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 using UnrealSharpScriptGenerator.Tooltip;
 using UnrealSharpScriptGenerator.Utilities;
 
@@ -13,10 +16,11 @@ public static class InterfaceExporter
     {
         GeneratorStringBuilder stringBuilder = new();
         
+        bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
         string typeNamespace = interfaceObj.GetNamespace();
         
-        stringBuilder.GenerateTypeSkeleton(typeNamespace);
+        stringBuilder.GenerateTypeSkeleton(typeNamespace, nullableEnabled: nullableEnabled);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
@@ -34,14 +38,16 @@ public static class InterfaceExporter
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
         Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
+        Dictionary<string, GetterSetterPair> getSetOverrides = new();
 
         if (interfaceObj.AlternateObject is UhtClass alternateObject)
         {
-            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters);
+            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         }
         
-        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters);
+        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         
+        ExportInterfaceProperties(stringBuilder, exportedGetterSetters);
         ExportInterfaceFunctions(stringBuilder, exportedFunctions);
         ExportInterfaceFunctions(stringBuilder, exportedOverrides);
         
@@ -66,7 +72,7 @@ public static class InterfaceExporter
             exportedOverrides, 
             false, interfaceName + "Wrapper");
         
-        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters);
+        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters, [], []);
         ExportWrapperFunctions(stringBuilder, exportedFunctions);
         ExportWrapperFunctions(stringBuilder, exportedOverrides);
         
@@ -88,6 +94,61 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         
         FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
+    }
+
+    static void ExportInterfaceProperties(GeneratorStringBuilder stringBuilder,
+                                          Dictionary<string, GetterSetterPair> exportedGetterSetters)
+    {
+        foreach (var (_, getterSetterPair) in exportedGetterSetters)
+        {
+            if (getterSetterPair.Property is null)
+            {
+                throw new InvalidDataException("Properties should have a UProperty associated with them.");
+            }
+            
+            UhtFunction firstAccessor = getterSetterPair.Accessors.First();
+            UhtProperty firstProperty = getterSetterPair.Property;
+            string propertyName = getterSetterPair.PropertyName;
+            
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            stringBuilder.TryAddWithEditor(firstAccessor);
+            string protection = firstProperty.GetProtection();
+            stringBuilder.AppendTooltip(firstProperty);
+        
+            string managedType = translator.GetManagedType(firstProperty);
+            stringBuilder.AppendLine($"{managedType} {propertyName}");
+            stringBuilder.OpenBrace();
+
+            if (getterSetterPair.Getter is not null)
+            {
+                AppendPropertyFunctionDeclaration(stringBuilder, getterSetterPair.Getter);
+                stringBuilder.AppendLine("get;");
+            }
+
+            if (getterSetterPair.Setter is not null)
+            {
+                AppendPropertyFunctionDeclaration(stringBuilder, getterSetterPair.Setter);
+                stringBuilder.AppendLine("set;");
+            }
+        
+            stringBuilder.CloseBrace();
+            stringBuilder.TryEndWithEditor(firstAccessor);
+        }
+    }
+
+    private static void AppendPropertyFunctionDeclaration(GeneratorStringBuilder stringBuilder, UhtFunction function)
+    {
+        AttributeBuilder attributeBuilder = new AttributeBuilder(function);
+        
+        if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
+        {
+            attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
+        }
+        
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+        attributeBuilder.Finish();
+        
+        stringBuilder.AppendLine(attributeBuilder.ToString());
     }
     
     static void ExportInterfaceFunctions(GeneratorStringBuilder stringBuilder, List<UhtFunction> exportedFunctions)

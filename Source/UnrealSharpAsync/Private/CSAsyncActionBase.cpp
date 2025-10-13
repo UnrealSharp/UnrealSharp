@@ -14,12 +14,17 @@ void UCSAsyncActionBase::Destroy()
 
 void UCSAsyncActionBase::InvokeManagedCallback(bool bDispose)
 {
-	ManagedCallback.Invoke(this, bDispose);
+	InvokeManagedCallback(this, bDispose);
+}
 
-	if (bDispose)
-	{
-		Destroy();
-	}
+void UCSAsyncActionBase::InvokeManagedCallback(UObject* WorldContextObject, bool bDispose)
+{
+    ManagedCallback.Invoke(WorldContextObject, bDispose);
+
+    if (bDispose)
+    {
+        Destroy();
+    }
 }
 
 void UCSAsyncActionBase::InitializeManagedCallback(FGCHandleIntPtr Callback)

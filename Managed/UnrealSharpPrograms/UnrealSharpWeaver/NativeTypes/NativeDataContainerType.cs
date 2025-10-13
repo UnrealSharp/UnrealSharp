@@ -25,6 +25,8 @@ public class NativeDataContainerType : NativeDataType
     
     protected virtual AssemblyDefinition MarshallerAssembly => WeaverImporter.Instance.UnrealSharpAssembly;
     protected virtual string MarshallerNamespace => WeaverImporter.UnrealSharpNamespace;
+
+    protected virtual bool AllowsSetter => false;
     
     protected TypeReference[] ContainerMarshallerTypeParameters { get; set; } = [];
     
@@ -76,11 +78,28 @@ public class NativeDataContainerType : NativeDataType
 
         // Instantiate generics for the direct access and copying marshallers.
         string prefix = propertyMetadata.Name + "_";
-        
-        FieldAttributes fieldAttributes = FieldAttributes.Private;
+        bool shouldUseCopyMarshaller;
+
         if (outer is MethodDefinition method)
         {
+            // The property is a parameter to a method, use copy marshaller
             prefix = method.Name + "_" + prefix;
+            shouldUseCopyMarshaller = true;
+        }
+        else if (typeDefinition.IsValueType)
+        {
+            // The property belongs to a struct, use copy marshaller
+            shouldUseCopyMarshaller = true;
+        }
+        else
+        {
+            // The property belongs to a class, use regular marshaller
+            shouldUseCopyMarshaller = false;
+        }
+
+        FieldAttributes fieldAttributes = FieldAttributes.Private;
+        if (shouldUseCopyMarshaller)
+        {
             TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetCopyContainerMarshallerName(), MarshallerNamespace)!;
             
             _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
@@ -90,12 +109,19 @@ public class NativeDataContainerType : NativeDataType
             
             fieldAttributes |= FieldAttributes.Static;
         }
+        else if (outer is FieldDefinition)
+        {
+            TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetCopyContainerMarshallerName(), MarshallerNamespace)!;
+            _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
+            
+            fieldAttributes |= FieldAttributes.Static;
+        }
         else
         {
-            TypeReference genericCopyMarshallerTypeRef = MarshallerAssembly.FindType(GetContainerMarshallerName(), MarshallerNamespace)!;
-            _containerMarshallerType = genericCopyMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
+            TypeReference genericMarshallerTypeRef = MarshallerAssembly.FindType(GetContainerMarshallerName(), MarshallerNamespace)!;
+            _containerMarshallerType = genericMarshallerTypeRef.Resolve().MakeGenericInstanceType(ContainerMarshallerTypeParameters).ImportType();
 
-            if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition)
+            if (propertyMetadata.MemberRef is PropertyDefinition propertyDefinition && !AllowsSetter)
             {
                 typeDefinition.Methods.Remove(propertyDefinition.SetMethod);
                 propertyDefinition.SetMethod = null;

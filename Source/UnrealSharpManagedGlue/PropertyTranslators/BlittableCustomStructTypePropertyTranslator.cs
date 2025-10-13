@@ -7,7 +7,7 @@ public class BlittableCustomStructTypePropertyTranslator : BlittableTypeProperty
     private readonly string _nativeName;
     public override bool ExportDefaultParameter => false;
     
-    public BlittableCustomStructTypePropertyTranslator(string nativeName, string managedType) : base(typeof(UhtStructProperty), managedType)
+    public BlittableCustomStructTypePropertyTranslator(string nativeName, string managedType) : base(typeof(UhtStructProperty), managedType, PropertyKind.Unknown)
     {
         _nativeName = nativeName;
     }

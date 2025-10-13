@@ -20,4 +20,7 @@ public:
 
 	UFUNCTION(meta = (ScriptMethod))
 	static UClass* K2_GetClass(const UObject* Object);
+
+	UFUNCTION(meta = (ScriptMethod))
+	static UObject* GetOuter(const UObject* Object);
 };

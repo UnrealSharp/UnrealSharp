@@ -20,14 +20,7 @@ public class OptionalPropertyTranslator : PropertyTranslator
         if (property.IsGenericType()) return;
 
         string wrapperType = GetMarshaller(property);
-        if (property.IsOuter<UhtScriptStruct>())
-        {
-            builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
-        }
-        else
-        {
-            builder.AppendLine($"{wrapperType} {propertyEngineName}_Marshaller = null;");
-        }
+        builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
     }
     
     public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
@@ -111,6 +104,28 @@ public class OptionalPropertyTranslator : PropertyTranslator
         }
     }
     
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
+                                                       string paramName)
+    {
+        var optionalProperty = (UhtOptionalProperty)property;
+        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
+        
+        // Blittable types, booleans, and enums are all trivially destructible, and thus don't need a cleanup.
+        if (translator.IsBlittable || optionalProperty.ValueProperty is UhtBoolProperty or UhtEnumProperty)
+        {
+            return;       
+        }
+        
+        string nativeMethodName = "";
+        if (property.Outer is UhtFunction function)
+        {
+            nativeMethodName = function.SourceName + "_";
+        }
+        
+        string marshaller = $"{nativeMethodName}{paramName}_Marshaller";
+        builder.AppendLine($"{marshaller}.DestructInstance({paramName}_NativeBuffer, 0);");
+    }
+    
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
@@ -153,19 +168,19 @@ public class OptionalPropertyTranslator : PropertyTranslator
         
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"LanguageExt.Option<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"UnrealSharp.TOptional<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
         if (property.Outer is UhtProperty outerProperty && outerProperty.IsGenericType())
         {
-            return "OptionMarshaller<DOT>";
+            return "OptionalMarshaller<DOT>";
         }
 
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"OptionMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
+        return $"OptionalMarshaller<{translator.GetManagedType(optionalProperty.ValueProperty)}>";
     }
     
     public override string ExportMarshallerDelegates(UhtProperty property)
@@ -177,7 +192,7 @@ public class OptionalPropertyTranslator : PropertyTranslator
     {
         var optionalProperty = (UhtOptionalProperty)property;
         var translator = PropertyTranslatorManager.GetTranslator(optionalProperty.ValueProperty)!;
-        return $"Optional.Empty<{translator.GetManagedType(optionalProperty.ValueProperty)}>()";
+        return $"UnrealSharp.TOptional<{translator.GetManagedType(optionalProperty.ValueProperty)}>.None";
     }
 
     public override bool CanExport(UhtProperty property)

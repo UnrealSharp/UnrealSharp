@@ -50,11 +50,17 @@ public class GetterSetterFunctionExporter : FunctionExporter
 
     protected override void ExportReturnStatement(GeneratorStringBuilder builder)
     {
-        if (_function.ReturnProperty != null && _function.ReturnProperty.IsSameType(_propertyGetterSetter))
+        if (Function.ReturnProperty != null && Function.ReturnProperty.IsSameType(_propertyGetterSetter))
         {
             string castOperation = _propertyGetterSetter.HasAllFlags(EPropertyFlags.BlueprintReadOnly) 
                 ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;
             builder.AppendLine($"return {castOperation}returnValue;");
+        }
+        else if (Function.ReturnProperty != null)
+        {
+            // Types differ (e.g., getter returns FText, property bound as string). Still return and rely on
+            // available implicit/user-defined conversions on the managed types (FText -> string, etc.).
+            builder.AppendLine("return returnValue;");
         }
         
         if (string.IsNullOrEmpty(_outParameterName))

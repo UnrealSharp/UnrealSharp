@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.PropertyTranslators;
 
 public class EnumPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public EnumPropertyTranslator() : base(typeof(UhtByteProperty), "")
+    public EnumPropertyTranslator() : base(typeof(UhtByteProperty), "", PropertyKind.Enum)
     {
     }
 

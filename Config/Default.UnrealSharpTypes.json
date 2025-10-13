@@ -1,5 +1,8 @@
 {
     "Structs": {
+        "CustomTypes": [ 
+            "FInstancedStruct" 
+        ],
         "BlittableTypes": [
             {
                 "Name": "EStreamingSourcePriority"

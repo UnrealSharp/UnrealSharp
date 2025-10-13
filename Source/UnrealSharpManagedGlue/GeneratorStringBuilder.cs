@@ -148,8 +148,12 @@ public class GeneratorStringBuilder : IDisposable
         CloseBrace();
     }
     
-    public void GenerateTypeSkeleton(string typeNameSpace, bool blittable = false)
+    public void GenerateTypeSkeleton(string typeNameSpace, bool blittable = false, bool nullableEnabled = false)
     {
+        if (nullableEnabled)
+        {
+            AppendLine("#nullable enable");
+        }
         DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.CoreAttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
@@ -170,7 +174,7 @@ public class GeneratorStringBuilder : IDisposable
         GenerateTypeSkeleton(type.GetNamespace());
     }
     
-    public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, List<UhtClass>? nativeInterfaces = default, List<string>? csInterfaces = default)
+    public void DeclareType(UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, string? modifiers = "", List<UhtClass>? nativeInterfaces = default, List<string>? csInterfaces = default)
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
         List<string> inheritingFrom = new List<string>();
@@ -200,7 +204,7 @@ public class GeneratorStringBuilder : IDisposable
         string inheritanceSpecifier =
             inheritingFrom.Count > 0 ? $" : {string.Join(", ", inheritingFrom)}" : string.Empty;
         
-        AppendLine($"{accessSpecifier} {partialSpecifier}{typeName} {declaredTypeName}{inheritanceSpecifier}");
+        AppendLine($"{accessSpecifier}{modifiers} {partialSpecifier}{typeName} {declaredTypeName}{inheritanceSpecifier}");
         OpenBrace();
     }
     

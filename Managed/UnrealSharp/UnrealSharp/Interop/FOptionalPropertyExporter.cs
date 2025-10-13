@@ -1,6 +1,7 @@
 ﻿using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
-namespace UnrealSharp.Core.Interop;
+namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
 public static unsafe partial class FOptionalPropertyExporter
@@ -15,4 +16,5 @@ public static unsafe partial class FOptionalPropertyExporter
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr> GetValuePointerForReadOrReplace;
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr> GetValuePointerForReadOrReplaceIfSet;
     public static delegate* unmanaged<IntPtr, int> CalcSize;
+    public static delegate* unmanaged<IntPtr, IntPtr, void> DestructInstance;
 }

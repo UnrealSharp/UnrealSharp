@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace UnrealSharp.CoreUObject;
@@ -199,66 +199,6 @@ public partial struct FPlane
     }
 
     /// <summary>
-    /// Returns a boolean indicating whether the two given FPlanes are equal.
-    /// </summary>
-    /// <param name="value1">The first FPlane to compare.</param>
-    /// <param name="value2">The second FPlane to compare.</param>
-    /// <returns>True if the FPlanes are equal; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(FPlane value1, FPlane value2)
-    {
-        return (value1.X == value2.X &&
-                value1.Y == value2.Y &&
-                value1.Z == value2.Z &&
-                value1.W == value2.W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given FPlanes are not equal.
-    /// </summary>
-    /// <param name="value1">The first FPlane to compare.</param>
-    /// <param name="value2">The second FPlane to compare.</param>
-    /// <returns>True if the FPlanes are not equal; False if they are equal.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(FPlane value1, FPlane value2)
-    {
-        return (value1.X != value2.X ||
-                value1.Y != value2.Y ||
-                value1.Z != value2.Z ||
-                value1.W != value2.W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given FPlane is equal to this FPlane instance.
-    /// </summary>
-    /// <param name="other">The FPlane to compare this instance to.</param>
-    /// <returns>True if the other FPlane is equal to this instance; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(FPlane other)
-    {
-        return X == other.X &&
-                    Y == other.Y &&
-                    Z == other.Z &&
-                    W == other.W;
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this FPlane instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this FPlane; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object? obj)
-    {
-        if (obj is FPlane)
-        {
-            return Equals((FPlane)obj);
-        }
-
-        return false;
-    }
-
-    /// <summary>
     /// Returns a String representing this FPlane instance.
     /// </summary>
     /// <returns>The string representation.</returns>
@@ -266,14 +206,5 @@ public partial struct FPlane
     {
         CultureInfo ci = CultureInfo.CurrentCulture;
         return $"X={X.ToString(ci)}, Y={Y.ToString(ci)}, Z={Z.ToString(ci)}, W={W.ToString(ci)}";
-    }
-
-    /// <summary>
-    /// Returns the hash code for this instance.
-    /// </summary>
-    /// <returns>The hash code.</returns>
-    public override int GetHashCode()
-    {
-        return GetHashCode() + W.GetHashCode();
     }
 }
