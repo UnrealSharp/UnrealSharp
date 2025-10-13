@@ -13,7 +13,7 @@ internal struct FScriptInterface
         ObjectPointer = objectPointer;
         InterfacePointer = interfacePointer;
     }
-    
+
     internal IntPtr ObjectPointer;
     internal IntPtr InterfacePointer;
 }
@@ -21,10 +21,10 @@ internal struct FScriptInterface
 public interface IScriptInterface
 {
     public UObject Object { get; }
-    
+
 }
 
-public static class ScriptInterfaceExtensions 
+public static class ScriptInterfaceExtensions
 {
     /// <summary>
     /// Attempt to cast a UObject to an interface.
@@ -47,9 +47,9 @@ public static class ScriptInterfaceExtensions
         {
             return null;
         }
-            
+
         var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, nativeClass);
-        if(wrapperHandle == IntPtr.Zero)
+        if (wrapperHandle == IntPtr.Zero)
         {
             return null;
         }
@@ -63,7 +63,7 @@ public static class ScriptInterfaceExtensions
         {
             return typedWrapper;
         }
-            
+
         return null;
     }
 
@@ -81,10 +81,10 @@ public static class ScriptInterfaceExtensions
         {
             return null;
         }
-        
+
         return uobject.AsInterface<T>() ?? throw new InvalidCastException($"Cannot cast {uobject.GetType()} to {typeof(T)}");
     }
-    
+
     /// <summary>
     /// Attempt to convert an interface object to a UObject.
     /// </summary>
@@ -114,7 +114,7 @@ public static class ScriptInterfaceExtensions
         {
             return null;
         }
-        
+
         return scriptInterface.AsUObject() ?? throw new InvalidCastException($"Cannot cast {scriptInterface.GetType()} to UObject");
     }
 }
@@ -133,7 +133,7 @@ public static class ScriptInterfaceMarshaller<[DynamicallyAccessedMembers(Dynami
             scriptInterface->InterfacePointer = objectPointer;
         }
     }
-    
+
     public static T? FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         unsafe
