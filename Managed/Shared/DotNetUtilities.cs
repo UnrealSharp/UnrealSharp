@@ -95,24 +95,14 @@ public static class DotNetUtilities
 	    return Path.Combine(dotNetSdkDirectory, highestVersion);
     }
 
-    public static void BuildSolution(string projectRootDirectory, string managedBinariesPath)
+    public static void BuildSolution(string projectRootDirectory)
     {
     	if (!Directory.Exists(projectRootDirectory))
     	{
     		throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
     	}
 
-	    if (!Directory.Exists(managedBinariesPath))
-	    {
-		    Directory.CreateDirectory(managedBinariesPath);
-	    }
-
-    	Collection<string> arguments = new Collection<string>
-		{
-			"publish",
-			$"-p:PublishDir=\"{managedBinariesPath}\""
-		};
-
+    	Collection<string> arguments = new Collection<string> { "build" };
 	    InvokeDotNet(arguments, projectRootDirectory);
     }
 
@@ -120,7 +110,7 @@ public static class DotNetUtilities
     {
 	    string dotnetPath = FindDotNetExecutable();
 
-	    var startInfo = new ProcessStartInfo
+	    ProcessStartInfo startInfo = new ProcessStartInfo
 	    {
 		    FileName = dotnetPath,
 		    RedirectStandardOutput = true,
