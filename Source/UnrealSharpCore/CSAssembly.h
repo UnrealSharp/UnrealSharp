@@ -12,7 +12,6 @@
 #define __stdcall
 #endif
 
-struct FCSClassInfo;
 struct FCSManagedMethod;
 class UCSClass;
 
@@ -50,21 +49,19 @@ public:
 	}
 	
 	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
-
-	template<typename T = FCSManagedTypeInfo>
-	TSharedPtr<T> FindOrAddTypeInfo(UClass* Field)
+	
+	TSharedPtr<FCSManagedTypeInfo> FindOrAddTypeInfo(UClass* Field)
 	{
 		if (ICSManagedTypeInterface* ManagedClass = FCSClassUtilities::GetManagedType(Field))
 		{
-			return ManagedClass->GetManagedTypeInfo<T>();
+			return ManagedClass->GetManagedTypeInfo();
 		}	
 	
 		FCSFieldName FieldName(Field);
-		return FindOrAddTypeInfo<T>(FieldName);
+		return FindOrAddTypeInfo(FieldName);
 	}
-
-	template<typename T = FCSManagedTypeInfo>
-	TSharedPtr<T> FindOrAddTypeInfo(const FCSFieldName& ClassName)
+	
+	TSharedPtr<FCSManagedTypeInfo> FindOrAddTypeInfo(const FCSFieldName& ClassName)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindOrAddClassInfo);
 
@@ -84,14 +81,7 @@ public:
 			TypeInfo = MakeShared<FCSManagedTypeInfo>(Field, this);
 		}
 
-		if constexpr (std::is_same_v<T, FCSManagedTypeInfo>)
-		{
-			return TypeInfo;
-		}
-		else
-		{
-			return StaticCastSharedPtr<T>(TypeInfo);
-		}
+		return TypeInfo;
 	}
 
 	template<typename T = FCSManagedTypeInfo>
@@ -118,7 +108,7 @@ public:
 		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
 		if (TypeInfo.IsValid())
 		{
-			return Cast<T>(TypeInfo->StartBuildingType());
+			return Cast<T>(TypeInfo->GetOrBuildType());
 		}
 
 		return TryFindField<T>(FieldName);
@@ -135,16 +125,11 @@ public:
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
 	TSharedPtr<FGCHandle> FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
-	// Add a class that is waiting for its parent class to be loaded before it can be created.
-	void AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass);
-
 	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return ManagedAssemblyHandle; }
 	
 	void AddTypeToRebuild(const TSharedPtr<FCSManagedTypeInfo>& TypeInfo) { PendingRebuild.AddUnique(TypeInfo); }
 
 private:
-
-	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 
 	template<typename T = UField>
 	T* TryFindField(const FCSFieldName FieldName) const
@@ -177,9 +162,6 @@ private:
 
 	// Handles to all allocated UTypes (UClass/UStruct, etc) that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedClassHandles;
-
-	// Pending classes that are waiting for their parent class to be loaded by the engine.
-	TMap<FCSTypeReferenceMetaData, TArray<FCSClassInfo*>> PendingClasses;
 
 	// Handle to the Assembly object in C#.
 	TSharedPtr<FGCHandle> ManagedAssemblyHandle;

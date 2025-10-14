@@ -26,12 +26,11 @@ public:
 	{
 		return ManagedTypeInfo.IsValid();
 	}
-
-	template<typename TTypeInfo = FCSManagedTypeInfo>
-	TSharedPtr<TTypeInfo> GetManagedTypeInfo() const
+	
+	TSharedPtr<FCSManagedTypeInfo> GetManagedTypeInfo() const
 	{
 		ensureMsgf(ManagedTypeInfo.IsValid(), TEXT("ManagedTypeInfo is not set. Call SetTypeMetaData() first."));
-		return StaticCastSharedPtr<TTypeInfo>(ManagedTypeInfo);
+		return ManagedTypeInfo;
 	}
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>

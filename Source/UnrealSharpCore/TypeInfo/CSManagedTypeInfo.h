@@ -13,10 +13,9 @@ enum ECSStructureState : uint8
 	HasChangedStructure,
 };
 
-struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeInfo>
+struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManagedTypeInfo>
 {
-	virtual ~FCSManagedTypeInfo() = default;
-	
+	~FCSManagedTypeInfo() = default;
 	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly);
 	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
 	
@@ -53,9 +52,9 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo : TSharedFromThis<FCSManagedTypeIn
 	void SetTypeHandle(uint8* ManagedTypeHandlePtr);
 
 	// FCSManagedTypeInfo interface
-	virtual void OnStructureChanged();
+	void MarkAsChanged();
 protected:
-	virtual UField* StartBuildingType();
+	UField* GetOrBuildType();
 	// End
 
 	friend UCSAssembly;

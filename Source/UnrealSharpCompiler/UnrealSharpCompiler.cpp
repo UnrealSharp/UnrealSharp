@@ -33,7 +33,6 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
 	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
 	
-	CSManager.OnProcessedPendingClassesEvent().AddRaw(this, &FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 
 	// Try to recompile and reinstance all blueprints when the module is loaded.
@@ -141,6 +140,23 @@ void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
 	else
 	{
 		AddToCompileList(ManagedClassesToCompile, Blueprint);
+	}
+
+	// When a class changes, all derived classes must also be marked as changed.
+	// Blueprint compiler will handle the Blueprints that are affected.
+	TArray<UClass*> DerivedClasses;
+	GetDerivedClasses(NewClass, DerivedClasses, false);
+
+	for (UClass* DerivedClass : DerivedClasses)
+	{
+		if (!FCSClassUtilities::IsManagedClass(DerivedClass))
+		{
+			continue;
+		}
+		
+		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
+		TSharedPtr<FCSManagedTypeInfo> DerivedClassInfo = ManagedClass->GetManagedTypeInfo();
+		DerivedClassInfo->MarkAsChanged();
 	}
 }
 

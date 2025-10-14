@@ -1,6 +1,5 @@
 ﻿#include "CSClass.h"
 #include "UnrealSharpCore.h"
-#include "TypeInfo/CSClassInfo.h"
 
 #if WITH_EDITOR
 void UCSClass::PostDuplicate(bool bDuplicateForPIE)
@@ -20,6 +19,6 @@ void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 		UE_LOG(LogUnrealSharp, Error, TEXT("PostDuplicate called on a class that is not a UCSClass: %s"), *GetName());
 	}
 	
-	SetTypeInfo(ManagedClass->GetManagedTypeInfo<FCSClassInfo>());
+	SetTypeInfo(ManagedClass->GetManagedTypeInfo());
 }
 #endif
