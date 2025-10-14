@@ -6,16 +6,22 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <Nullable>enable</Nullable>
+        <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500</NoWarn>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	      <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500</NoWarn>
+        <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
     </PropertyGroup>
 
-	<PropertyGroup>
+    <PropertyGroup>
         <DefineConstants>WITH_EDITOR</DefineConstants>
-        <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
-        <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
-	</PropertyGroup>
-
+        <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">
+            $(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))
+        </DefineConstants>
+        
+        <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">
+            $(DefineConstants);$(DefineAdditionalConstants)
+        </DefineConstants>
+    </PropertyGroup>
+    
     <ItemGroup>
         <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />
         <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />

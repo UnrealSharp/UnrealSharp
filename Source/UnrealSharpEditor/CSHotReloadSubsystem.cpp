@@ -31,7 +31,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	FString PathToSolution = FCSProcHelper::GetPathToSolution();
 	EditorModule->GetManagedUnrealSharpEditorCallbacks().LoadSolution(*PathToSolution, &OnHotReloadReady_Callback);
-	CreateInitializeNotification();
+	PauseHotReload(TEXT("Waiting for initial C# load..."));
 }
 
 void UCSHotReloadSubsystem::Deinitialize()
@@ -50,23 +50,8 @@ void UCSHotReloadSubsystem::OnHotReloadReady_Callback()
 
 void UCSHotReloadSubsystem::OnHotReloadReady()
 {
-	if (InitializeHotReloadNotification.IsValid())
-	{
-		InitializeHotReloadNotification->SetText(LOCTEXT("USharpHotReloadReady", "C# Hot Reload Ready"));
-		InitializeHotReloadNotification->SetCompletionState(SNotificationItem::CS_Success);
-		InitializeHotReloadNotification->ExpireAndFadeout();
-	}
-
-	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
-
-	for (const FString& ProjectPath : ProjectPaths)
-	{
-		FString Path = FPaths::GetPath(ProjectPath);
-		AddDirectoryToWatch(Path);
-	}
-
-	HasInitializedHotReload = true;
+	RefreshDirectoryWatchers();
+	ResumeHotReload();
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "C# Hot Reload is ready.");
 }
 
@@ -87,6 +72,12 @@ FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
 
 void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 {
+	if (HotReloadIsPaused)
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Hot reload is currently paused. Skipping hot reload.");
+		return;
+	}
+	
 	if (HotReloadStatus == FailedToUnload)
 	{
 		// If we failed to unload an assembly, we can't hot reload until the editor is restarted.
@@ -312,6 +303,18 @@ void UCSHotReloadSubsystem::OnEnumRebuilt(UCSEnum* NewEnum)
 	AddRebuiltType(NewEnum);
 }
 
+void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
+{
+	TArray<FString> ProjectPaths;
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+
+	for (const FString& ProjectPath : ProjectPaths)
+	{
+		FString Path = FPaths::GetPath(ProjectPath);
+		AddDirectoryToWatch(Path);
+	}
+}
+
 void UCSHotReloadSubsystem::OnPIEShutdown(bool IsSimulating)
 {
 	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
@@ -352,10 +355,45 @@ void UCSHotReloadSubsystem::AddDirectoryToWatch(const FString& Directory)
 	FDelegateHandle Handle;
 	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(
 		Directory,
-		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::OnCSharpCodeModified),
+		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::OnScriptDirectoryChanged),
 		Handle);
 
 	WatchingDirectories.Add(Directory);
+}
+
+void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
+{
+	if (HotReloadIsPaused)
+	{
+		return;
+	}
+	
+	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
+	PauseNotification = MakeNotification(NotificationFormat);
+	HotReloadIsPaused = true;
+}
+
+void UCSHotReloadSubsystem::ResumeHotReload()
+{
+	if (!HotReloadIsPaused)
+	{
+		return;
+	}
+
+	HotReloadIsPaused = false;
+	if (PauseNotification.IsValid())
+	{
+		PauseNotification->SetText(LOCTEXT("HotReloadResumed", "C# Reload Resumed"));
+		PauseNotification->SetCompletionState(SNotificationItem::CS_Success);
+		PauseNotification->ExpireAndFadeout();
+		PauseNotification.Reset();
+	}
+
+	if (bHasQueuedHotReload)
+	{
+		bHasQueuedHotReload = false;
+		StartHotReload();
+	}
 }
 
 void FindProjectFileFromChangedFile(const FFileChangeData& ChangedFile, FString& OutProjectFile)
@@ -376,7 +414,7 @@ void FindProjectFileFromChangedFile(const FFileChangeData& ChangedFile, FString&
 	}
 }
 
-void UCSHotReloadSubsystem::OnCSharpCodeModified(const TArray<FFileChangeData>& ChangedFiles)
+void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeData>& ChangedFiles)
 {
 	if (IsHotReloading())
 	{
@@ -404,8 +442,7 @@ void UCSHotReloadSubsystem::OnCSharpCodeModified(const TArray<FFileChangeData>& 
 			continue;
 		}
 
-		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") &&
-			NormalizedFileName.Contains(TEXT("/bin/")))
+		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") && NormalizedFileName.Contains(TEXT("/bin/")))
 		{
 			// A module changed, initiate the reload and return
 			StartHotReload();
@@ -438,10 +475,10 @@ void UCSHotReloadSubsystem::OnCSharpCodeModified(const TArray<FFileChangeData>& 
 		
 		DirtiedFiles.Add(FileName);
 		NormalizedFileName.ReplaceInline(TEXT("/"), TEXT("\\"));
-		
+
 		FString ProjectName;
 		FindProjectFileFromChangedFile(ChangedFile, ProjectName);
-		EditorModule->GetManagedUnrealSharpEditorCallbacks().DirtyFilesCallback(*ProjectName, *NormalizedFileName, &ExceptionMessage);
+		EditorModule->GetManagedUnrealSharpEditorCallbacks().DirtyFile(*ProjectName, *NormalizedFileName, &ExceptionMessage);
 	}
 
 	if (!ExceptionMessage.IsEmpty())
@@ -454,17 +491,6 @@ void UCSHotReloadSubsystem::OnCSharpCodeModified(const TArray<FFileChangeData>& 
 	{
 		StartHotReload();
 	}
-}
-
-void UCSHotReloadSubsystem::CreateInitializeNotification()
-{
-	if (InitializeHotReloadNotification.IsValid())
-	{
-		return;
-	}
-	
-	FString NotificationFormat = TEXT("Initializing C# Hot Reload...");
-	InitializeHotReloadNotification = MakeNotification(NotificationFormat);
 }
 
 TSharedPtr<SNotificationItem> UCSHotReloadSubsystem::MakeNotification(const FString& Text) const

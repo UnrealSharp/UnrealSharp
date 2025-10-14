@@ -21,10 +21,13 @@ public class PackageProject : BuildToolAction
         Collection<string> extraArguments =
         [
             "--self-contained",
+            
             "--runtime",
             "win-x64",
+            
 			"-p:DisableWithEditor=true",
             "-p:GenerateDocumentationFile=false",
+            
             $"-p:PublishDir=\"{binariesPath}\"",
             $"-p:OutputPath=\"{bindingsOutputPath}\"",
         ];
@@ -36,7 +39,6 @@ public class PackageProject : BuildToolAction
         buildUserSolution.RunAction();
 
         BuildEmitLoadOrder.EmitLoadOrder(binariesPath);
-
         return true;
     }
 }

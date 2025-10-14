@@ -34,12 +34,16 @@ public:
 	UNREALSHARPEDITOR_API void StartHotReload(bool bPromptPlayerWithNewProject = true);
 
 	void AddDirectoryToWatch(const FString& Directory);
+	
+	void PauseHotReload(const FString& Reason = FString());
+	void ResumeHotReload();
+
+	void RefreshDirectoryWatchers();
 
 private:
 
-	void OnCSharpCodeModified(const TArray<struct FFileChangeData>& ChangedFiles);
+	void OnScriptDirectoryChanged(const TArray<struct FFileChangeData>& ChangedFiles);
 	
-	void CreateInitializeNotification();
 	TSharedPtr<SNotificationItem> MakeNotification(const FString& Text) const;
 
 	static void OnHotReloadReady_Callback();
@@ -53,13 +57,18 @@ private:
 	void OnStructRebuilt(UCSScriptStruct* NewStruct);
 	void OnClassRebuilt(UCSClass* NewClass);
 	void OnEnumRebuilt(UCSEnum* NewEnum);
-	void AddRebuiltType(const UObject* NewType) { RebuiltTypes.Add(NewType->GetUniqueID()); }
+	
+	void AddRebuiltType(const UObject* NewType)
+	{
+		uint32 TypeID = NewType->GetUniqueID();
+		RebuiltTypes.AddByHash(TypeID, TypeID);
+	}
 
 	void OnPIEShutdown(bool IsSimulating);
 
 	bool Tick(float DeltaTime);
 
-	TSharedPtr<SNotificationItem> InitializeHotReloadNotification;
+	TSharedPtr<SNotificationItem> PauseNotification;
 	FUnrealSharpEditorModule* EditorModule = nullptr;
 
 	HotReloadStatus HotReloadStatus = Inactive;
@@ -67,8 +76,6 @@ private:
 	bool bHasHotReloadInitialized = false;
 	bool bHotReloadFailed = false;
 	bool bHasQueuedHotReload = false;
-
-	bool HasInitializedHotReload = false;
 
 	FTickerDelegate TickDelegate;
 	FTSTicker::FDelegateHandle TickDelegateHandle;
@@ -78,4 +85,5 @@ private:
 	TArray<FString> WatchingDirectories;
 	
 	TSet<uint32> RebuiltTypes;
+	bool HotReloadIsPaused = false;
 };

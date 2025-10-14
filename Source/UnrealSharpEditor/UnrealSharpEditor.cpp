@@ -488,6 +488,21 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
     }
 }
 
+void FUnrealSharpEditorModule::LoadNewProject(const FString& ProjectPath)
+{
+	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
+	ManagedUnrealSharpEditorCallbacks.LoadProject(*ProjectPath, &FUnrealSharpEditorModule::OnProjectLoaded);
+}
+
+void FUnrealSharpEditorModule::OnProjectLoaded()
+{
+	AsyncTask(ENamedThreads::GameThread, []()
+	{
+		UCSHotReloadSubsystem::Get()->ResumeHotReload();
+		UCSHotReloadSubsystem::Get()->RefreshDirectoryWatchers();
+	});
+}
+
 void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& ExtraArguments)
 {
 	TMap<FString, FString> Arguments = ExtraArguments;
@@ -513,7 +528,9 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	}
 	
 	OpenSolution();
-	UCSHotReloadSubsystem::Get()->AddDirectoryToWatch(FPaths::Combine(FullProjectRoot, TEXT("Script")));
+
+	FString CSProjPath = FPaths::Combine(ProjectFolder, ModuleName + TEXT(".csproj"));
+	LoadNewProject(CSProjPath);
 }
 
 bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)

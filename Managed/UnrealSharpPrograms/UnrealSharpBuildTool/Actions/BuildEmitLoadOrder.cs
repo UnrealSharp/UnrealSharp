@@ -9,8 +9,20 @@ public class BuildEmitLoadOrder : BuildToolAction
 {
     public override bool RunAction()
     {
+        BuildPropsEmitter.GenerateBuildPropsFile(Program.GetScriptFolder());
+        
         BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder());
-        return buildSolution.RunAction() && EmitLoadOrder(Program.GetOutputPath()) && AddLaunchSettings();
+        if (!buildSolution.RunAction())
+        {
+            return false;
+        }
+        
+        if (!EmitLoadOrder(Program.GetOutputPath()))
+        {
+            return false;
+        }
+        
+        return AddLaunchSettings();
     }
     
     public static bool EmitLoadOrder(string outputPath)
@@ -29,6 +41,13 @@ public class BuildEmitLoadOrder : BuildToolAction
         {
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
             string assemblyPath = Path.Combine(Program.GetOutputPath(), csProjName + ".dll");
+            
+            if (!File.Exists(assemblyPath))
+            {
+                Console.WriteLine($"Could not find assembly for project {csProjName} at expected path {assemblyPath}. Skipping.");
+                continue;
+            }
+            
             assemblyPaths.Add(assemblyPath);
         }
         

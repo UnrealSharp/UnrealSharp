@@ -27,19 +27,17 @@ public static class Main
             #endif
             
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-
-            // Initialize plugin and managed callbacks
-            *pluginCallbacks = PluginsCallbacks.Create();
             
-            NativeBinds.InitializeNativeBinds(bindsCallbacks);
+            PluginsCallbacks.Initialize(pluginCallbacks);
             ManagedCallbacks.Initialize(managedCallbacks);
+            NativeBinds.Initialize(bindsCallbacks);
 
-            LogUnrealSharpPlugins.Log("UnrealSharp successfully setup!");
+            Console.WriteLine("UnrealSharp initialized successfully.");
             return NativeBool.True;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            LogUnrealSharpPlugins.LogError($"Error initializing UnrealSharp: {ex.Message}");
+            Console.WriteLine(exception);
             return NativeBool.False;
         }
     }

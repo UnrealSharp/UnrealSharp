@@ -14,7 +14,8 @@ public class CreateDirectoryBuildPropsFile : BuildToolAction
 public static class BuildPropsEmitter
 {
     private const string ReferencesLabel = "UnrealSharpRefs";
-    private const string AnalyzersLabel = "UnrealSharpAnalyzers";
+    private const string AnalyzersLabelUser = "UnrealSharpAnalyzers_User";
+    private const string AnalyzerLabelGlobal = "UnrealSharpAnalyzers_Global";
     private const string Properties = "UnrealSharpProperties";
     
     private const string SolutionDirProperty = "$(SolutionDir)";
@@ -40,7 +41,7 @@ public static class BuildPropsEmitter
         XmlElement propertyGroup = csprojDocument.FindOrMakeGeneratedLabeledPropertyGroup(projectRoot, Properties);
         EnsureSolutionDirFallback(csprojDocument, propertyGroup);
         AppendProperties(csprojDocument, propertyGroup, solutionDir);
-        AppendConstantDefines(csprojDocument, projectRoot);
+        AppendConstantDefines(csprojDocument, propertyGroup);
 
         XmlElement refsGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, ReferencesLabel);
         string binariesMsbuildPath = GetRelativePathToBinaries(directory, solutionDir);
@@ -48,9 +49,12 @@ public static class BuildPropsEmitter
         csprojDocument.AppendReference(refsGroup, "UnrealSharp.Core", binariesMsbuildPath);
         csprojDocument.AppendReference(refsGroup, "UnrealSharp.Log", binariesMsbuildPath);
 
-        XmlElement analyzersGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, AnalyzersLabel);
-        AppendSourceGeneratorReference(csprojDocument, analyzersGroup, directory, solutionDir, "UnrealSharp.SourceGenerators.dll");
+        XmlElement analyzersGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, AnalyzersLabelUser);
+        analyzersGroup.SetAttribute("Condition", "!$(MSBuildProjectName.EndsWith('.Glue'))");
         AppendSourceGeneratorReference(csprojDocument, analyzersGroup, directory, solutionDir, "UnrealSharp.GlueGenerator.dll");
+        
+        XmlElement globalAnalyzersGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, AnalyzerLabelGlobal);
+        AppendSourceGeneratorReference(csprojDocument, globalAnalyzersGroup, directory, solutionDir, "UnrealSharp.SourceGenerators.dll");
 
         csprojDocument.Save(generatedBuildPropsPath);
     }
@@ -73,6 +77,8 @@ public static class BuildPropsEmitter
     {
         AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
         AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
+        AddProperty("LangVersion", "latest", doc, propertyGroup);
+        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
         
         string absoluteOutput = Program.GetOutputPath(includeVersion: false);
         string relFromSolutionToOutput = GetRelativePath(solutionDir, absoluteOutput);
@@ -94,9 +100,8 @@ public static class BuildPropsEmitter
         propertyGroup.AppendChild(define);
     }
 
-    static void AppendConstantDefines(XmlDocument doc, XmlElement projectRoot)
+    static void AppendConstantDefines(XmlDocument doc, XmlElement propertiesGroup)
     {
-        XmlElement propertiesGroup = doc.FindOrMakeGeneratedLabeledPropertyGroup(projectRoot, Properties);
         AddConstDefine("WITH_EDITOR", doc, propertiesGroup);
         AddConstDefine("$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))", doc, propertiesGroup, "'$(DisableWithEditor)' == 'true'");
         AddConstDefine("$(DefineConstants);$(DefineAdditionalConstants)", doc, propertiesGroup, "'$(DefineAdditionalConstants)' != ''");
@@ -110,11 +115,14 @@ public static class BuildPropsEmitter
         return JoinMsbuildProperty(SolutionDirProperty, rel);
     }
 
-    static void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup, string projectRoot, string solutionDir, string generatorName)
+    static XmlElement AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup, string projectRoot, string solutionDir, string generatorName)
     {
         string relativePath = GetRelativePathToBinaries(projectRoot, solutionDir);
         relativePath = Path.Combine(relativePath, Program.GetNetStandardVersion(), generatorName);
-        doc.AppendAnalyzer(itemGroup, relativePath);
+        XmlElement analyzer = doc.AppendAnalyzer(itemGroup, relativePath);
+        analyzer.SetAttribute("Private", "false");
+        analyzer.SetAttribute("CopyToPublishDirectory", "Never");
+        return analyzer;
     }
 
     static string JoinMsbuildProperty(string property, string path)

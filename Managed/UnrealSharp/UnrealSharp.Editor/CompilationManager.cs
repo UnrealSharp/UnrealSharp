@@ -31,7 +31,7 @@ file sealed class FileAdditionalText : AdditionalText
 
 public static class CompilationManager
 {
-    private static readonly MSBuildWorkspace Workspace = MSBuildWorkspace.Create();
+    private static readonly MSBuildWorkspace UnrealSharpWorkspace = MSBuildWorkspace.Create();
 
     private struct DocumentState
     {
@@ -62,11 +62,31 @@ public static class CompilationManager
 
     public static async void LoadSolutionAsync(string solutionPath, IntPtr callbackPtr)
     {
-        string fullSolutionPath = Path.GetFullPath(solutionPath);
+        try
+        {
+            string fullSolutionPath = Path.GetFullPath(solutionPath);
+            await UnrealSharpWorkspace.OpenSolutionAsync(fullSolutionPath);
+        
+            foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
+            {
+                await ProcessProject(project);
+            }
 
-        await Workspace.OpenSolutionAsync(fullSolutionPath);
+            unsafe
+            {
+                delegate* unmanaged[Cdecl]<void> callback = (delegate* unmanaged[Cdecl]<void>)callbackPtr;
+                callback();
+            }
+        }
+        catch (Exception exception)
+        {
+            LogUnrealSharpEditor.LogError($"Failed to load solution '{solutionPath}': {exception}");
+        }
+    }
 
-        foreach (Project project in Workspace.CurrentSolution.Projects)
+    public static async Task ProcessProject(Project project)
+    {
+        try
         {
             GenState state = new GenState();
             States[project.Id] = state;
@@ -156,8 +176,7 @@ public static class CompilationManager
                 {
                     throw new Exception($"Failed to get syntax tree for document '{document.Name}' in project '{project.Name}'.");
                 }
-
-
+                
                 state.TreesByPath[tree.FilePath] = new DocumentState
                 {
                     DocumentId = document.Id,
@@ -167,12 +186,34 @@ public static class CompilationManager
 
             LogUnrealSharpEditor.Log($"Project '{project.Name}' loaded for incremental generation.");
         }
-
-        unsafe
+        catch (Exception exception)
         {
-            delegate* unmanaged[Cdecl]<void> callback = (delegate* unmanaged[Cdecl]<void>)callbackPtr;
-            callback();
+            LogUnrealSharpEditor.LogError($"Failed to process project '{project.Name}': {exception}");
         }
+    }
+    
+    public static async void AddProjectAsync(string projectPath, IntPtr callbackPtr)
+    {
+        try
+        {
+            await AddProjectAsync_Internal(projectPath);
+        
+            unsafe
+            {
+                delegate* unmanaged[Cdecl]<void> callback = (delegate* unmanaged[Cdecl]<void>)callbackPtr;
+                callback();
+            }
+        }
+        catch (Exception exception)
+        {
+            LogUnrealSharpEditor.LogError($"Failed to add project '{projectPath}': {exception}");
+        }
+    }
+    
+    private static async Task AddProjectAsync_Internal(string projectPath)
+    {
+        Project project = await UnrealSharpWorkspace.OpenProjectAsync(projectPath);
+        await ProcessProject(project);
     }
 
     public static unsafe void GetDependentProjects(string projectName, UnmanagedArray* dependentsArray)
@@ -180,7 +221,7 @@ public static class CompilationManager
         List<string> dependents = new List<string>();
 
         Project? foundProject = null;
-        foreach (Project project in Workspace.CurrentSolution.Projects)
+        foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
         {
             if (project.Name != projectName)
             {
@@ -196,7 +237,7 @@ public static class CompilationManager
             return;
         }
 
-        foreach (Project project in Workspace.CurrentSolution.Projects)
+        foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
         {
             if (project.Id == foundProject.Id)
             {
@@ -228,7 +269,7 @@ public static class CompilationManager
         string fullPath = Path.GetFullPath(filepath);
 
         Project? foundProject = null;
-        foreach (Project project in Workspace.CurrentSolution.Projects)
+        foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
         {
             if (project.Name != projectName)
             {
@@ -290,7 +331,7 @@ public static class CompilationManager
 
         Solution newSolution = document.Project.Solution.WithDocumentSyntaxRoot(document.Id, newTree.GetRoot());
 
-        if (!Workspace.TryApplyChanges(newSolution))
+        if (!UnrealSharpWorkspace.TryApplyChanges(newSolution))
         {
             throw new Exception("Failed to apply document text to workspace.");
         }
@@ -319,7 +360,7 @@ public static class CompilationManager
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            Project? project = Workspace.CurrentSolution.GetProject(dirtyProjectId);
+            Project? project = UnrealSharpWorkspace.CurrentSolution.GetProject(dirtyProjectId);
             if (project is null)
             {
                 throw new Exception($"Project with ID '{dirtyProjectId}' not found in solution.");
@@ -405,9 +446,9 @@ public static class CompilationManager
 
         DirtyProjectIds.Clear();
 
-        List<string> assemblies = new List<string>(Workspace.CurrentSolution.Projects.Count());
+        List<string> assemblies = new List<string>(UnrealSharpWorkspace.CurrentSolution.Projects.Count());
 
-        foreach (Project project in Workspace.CurrentSolution.Projects)
+        foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
         {
             assemblies.Add(MakeAssemblyPath(project));
         }

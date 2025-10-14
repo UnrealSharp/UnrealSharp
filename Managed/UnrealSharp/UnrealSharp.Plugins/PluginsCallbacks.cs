@@ -31,9 +31,9 @@ public unsafe struct PluginsCallbacks
         return PluginLoader.UnloadPlugin(assemblyPathStr).ToNativeBool();
     }
 
-    public static PluginsCallbacks Create()
+    public static void Initialize(PluginsCallbacks* outCallbacks)
     {
-        return new PluginsCallbacks
+        *outCallbacks = new PluginsCallbacks
         {
             LoadPlugin = &ManagedLoadPlugin,
             UnloadPlugin = &ManagedUnloadPlugin,

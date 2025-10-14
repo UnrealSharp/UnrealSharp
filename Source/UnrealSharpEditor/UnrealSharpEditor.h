@@ -41,14 +41,15 @@ struct FCSManagedUnrealSharpEditorCallbacks
     using FDirtyFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
-    using FAddProjectToCollection = void(__stdcall*)(const TCHAR*, void*);
-     using FGetDependentProjects = void(__stdcall*)(const TCHAR*, TArray<FString>*);
+    using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
+    using FGetDependentProjects = void(__stdcall*)(const TCHAR*, TArray<FString>*);
 
     FRunGeneratorsAndEmitAsync RunGeneratorsAndEmitAsync;
-    FDirtyFile DirtyFilesCallback;
+    FDirtyFile DirtyFile;
     FForceManagedGC ForceManagedGC;
     FOpenSolution OpenSolution;
-    FAddProjectToCollection LoadSolution;
+    FLoadSignature LoadSolution;
+    FLoadSignature LoadProject;
     FGetDependentProjects GetDependentProjects;
     
 };
@@ -112,6 +113,9 @@ private:
     void RegisterMenu();
     void RegisterPluginTemplates();
     void UnregisterPluginTemplates();
+
+    void LoadNewProject(const FString& ProjectPath);
+    static void OnProjectLoaded();
 
     FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
 

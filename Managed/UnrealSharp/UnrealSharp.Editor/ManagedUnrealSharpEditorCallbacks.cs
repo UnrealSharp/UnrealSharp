@@ -12,8 +12,12 @@ public unsafe struct FManagedUnrealSharpEditorCallbacks()
     public delegate* unmanaged<IntPtr, NativeBool> RunGeneratorsAndEmitResultsAsync = &ManagedUnrealSharpEditorCallbacks.RunGeneratorsAndEmitResults;
     public delegate* unmanaged<char*, char*, IntPtr, void> DirtyFile = &ManagedUnrealSharpEditorCallbacks.DirtyFile;
     public delegate* unmanaged<void> ForceManagedGC = &ManagedUnrealSharpEditorCallbacks.ForceManagedGc;
+    
     public delegate* unmanaged<char*, IntPtr, NativeBool> OpenSolution = &ManagedUnrealSharpEditorCallbacks.OpenSolution;
+    
     public delegate* unmanaged<char*, IntPtr, void> LoadSolution = &ManagedUnrealSharpEditorCallbacks.LoadSolution;
+    public delegate* unmanaged<char*, IntPtr, void> LoadProject = &ManagedUnrealSharpEditorCallbacks.LoadProject;
+    
     public delegate* unmanaged<char*, UnmanagedArray*, void> GetDependentProjects = &ManagedUnrealSharpEditorCallbacks.GetDependentProjects;
 }
 
@@ -101,6 +105,13 @@ public static class ManagedUnrealSharpEditorCallbacks
     {
         string solutionFilePath = new string(solutionPath);
         CompilationManager.LoadSolutionAsync(solutionFilePath, callbackPtr);
+    }
+
+    [UnmanagedCallersOnly]
+    public static unsafe void LoadProject(char* projectPath, IntPtr callbackPtr)
+    {
+        string projectFilePath = new string(projectPath);
+        CompilationManager.AddProjectAsync(projectFilePath, callbackPtr);
     }
     
     [UnmanagedCallersOnly]

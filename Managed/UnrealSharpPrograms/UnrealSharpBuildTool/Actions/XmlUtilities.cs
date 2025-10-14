@@ -75,11 +75,12 @@ public static class XmlUtilities
         itemGroup.AppendChild(referenceElement);
     }
 
-    public static void AppendAnalyzer(this XmlDocument doc, XmlElement itemGroup, string includePath)
+    public static XmlElement AppendAnalyzer(this XmlDocument doc, XmlElement itemGroup, string includePath)
     {
         XmlElement analyzer = doc.CreateElement("Analyzer");
         analyzer.SetAttribute("Include", includePath);
         itemGroup.AppendChild(analyzer);
+        return analyzer;
     }
     
     public static XmlElement FindOrMakeLabelGroup(

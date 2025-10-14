@@ -6,6 +6,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <RootNamespace>TestSourceGen</RootNamespace>
+        <IsPublishable>false</IsPublishable>
     </PropertyGroup>
     
     <ItemGroup>
