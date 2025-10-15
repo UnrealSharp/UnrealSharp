@@ -7,7 +7,6 @@
 #include "MetaData/CSEnumMetaData.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
-#include "TypeInfo/CSClassInfo.h"
 #include "Utils/CSClassUtilities.h"
 
 void UCSAssembly::InitializeAssembly(const FStringView InAssemblyPath)
@@ -25,8 +24,6 @@ void UCSAssembly::InitializeAssembly(const FStringView InAssemblyPath)
 #endif
 
 	AssemblyName = *FPaths::GetBaseFilename(AssemblyPath);
-
-	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSAssembly::OnModulesChanged);
 }
 
 bool UCSAssembly::LoadAssembly(bool bisCollectible)
@@ -59,7 +56,7 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 
 	for (TSharedPtr<FCSManagedTypeInfo>& TypeInfo : PendingRebuild)
 	{
-		TypeInfo->StartBuildingType();
+		TypeInfo->GetOrBuildType();
 	}
 
 	PendingRebuild.Reset();
@@ -201,15 +198,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	}
 	else
 	{
-		if (FieldType == ECSFieldType::Class)
-		{
-			TypeInfo = MakeShared<FCSClassInfo>(NewMetaData, this);
-		}
-		else
-		{
-			TypeInfo = MakeShared<FCSManagedTypeInfo>(NewMetaData, this);
-		}
-
+		TypeInfo = MakeShared<FCSManagedTypeInfo>(NewMetaData, this);
 		AllTypes.Add(FieldName, TypeInfo);
 	}
 
@@ -218,7 +207,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 #endif
 
 	TypeInfo->SetTypeHandle(TypeHandle);
-	TypeInfo->OnStructureChanged();
+	TypeInfo->MarkAsChanged();
 	
 	NeedsRebuild = true;
 	return TypeInfo;
@@ -291,44 +280,4 @@ TSharedPtr<FGCHandle> UCSAssembly::FindOrCreateManagedInterfaceWrapper(UObject* 
 	
 	TypeMap.AddByHash(TypeId, TypeId, Handle);
 	return Handle;
-}
-
-void UCSAssembly::AddPendingClass(const FCSTypeReferenceMetaData& ParentClass, FCSClassInfo* NewClass)
-{
-	TArray<FCSClassInfo*>& PendingClass = PendingClasses.FindOrAdd(ParentClass);
-	PendingClass.Add(NewClass);
-}
-
-void UCSAssembly::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)
-{
-	if (InModuleChangeReason != EModuleChangeReason::ModuleLoaded)
-	{
-		return;
-	}
-
-	int32 NumPendingClasses = PendingClasses.Num();
-	for (auto Itr = PendingClasses.CreateIterator(); Itr; ++Itr)
-	{
-		UClass* Class = Itr.Key().GetAsClass();
-
-		if (!Class)
-		{
-			// Class still not loaded from this module.
-			continue;
-		}
-
-		for (FCSClassInfo* PendingClass : Itr.Value())
-		{
-			PendingClass->StartBuildingType();
-		}
-
-		Itr.RemoveCurrent();
-	}
-
-#if WITH_EDITOR
-	if (NumPendingClasses != PendingClasses.Num())
-	{
-		UCSManager::Get().OnProcessedPendingClassesEvent().Broadcast();
-	}
-#endif
 }

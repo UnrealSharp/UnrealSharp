@@ -26,13 +26,13 @@ void FCSManagedTypeInfo::SetTypeHandle(uint8* ManagedTypeHandlePtr)
 	ManagedTypeHandle = OwningAssembly->RegisterTypeHandle(TypeMetaData->FieldName, ManagedTypeHandlePtr);
 }
 
-void FCSManagedTypeInfo::OnStructureChanged()
+void FCSManagedTypeInfo::MarkAsChanged()
 {
 	StructureState = HasChangedStructure;
 	OwningAssembly->AddTypeToRebuild(SharedThis(this));
 }
 
-UField* FCSManagedTypeInfo::StartBuildingType()
+UField* FCSManagedTypeInfo::GetOrBuildType()
 {
 	if (StructureState == HasChangedStructure)
 	{

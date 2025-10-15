@@ -14,7 +14,6 @@
 #include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
 #include "TypeGenerator/Register/CSMetaDataUtils.h"
 #include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
-#include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
@@ -78,11 +77,11 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<FCSClassInfo> ClassInfo = GetMainClass()->GetManagedTypeInfo<FCSClassInfo>();
-	const TArray<FCSPropertyMetaData>& Properties = ClassInfo->GetTypeMetaData<FCSClassMetaData>()->Properties;
+	TSharedPtr<FCSManagedTypeInfo> TypeInfo = GetMainClass()->GetManagedTypeInfo();
+	const TArray<FCSPropertyMetaData>& Properties = TypeInfo->GetTypeMetaData<FCSClassMetaData>()->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
-	TryValidateSimpleConstructionScript(ClassInfo);
+	TryValidateSimpleConstructionScript(TypeInfo);
 	
 	FCSPropertyFactory::CreateAndAssignProperties(NewClass, Properties, [this](const FProperty* NewProperty)
 	{
@@ -124,7 +123,7 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 	UCSGeneratedClassBuilder::ImplementInterfaces(Class, GetTypeMetaData()->Interfaces);
 }
 
-void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const
+void FCSCompilerContext::TryValidateSimpleConstructionScript(const TSharedPtr<const FCSManagedTypeInfo>& ClassInfo) const
 {
 	const TArray<FCSPropertyMetaData>& Properties = GetTypeMetaData()->Properties;
 	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
@@ -181,9 +180,9 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 	return CastChecked<UCSClass>(Blueprint->GeneratedClass);
 }
 
-TSharedPtr<const FCSClassInfo> FCSCompilerContext::GetClassInfo() const
+TSharedPtr<const FCSManagedTypeInfo> FCSCompilerContext::GetClassInfo() const
 {
-	return GetMainClass()->GetManagedTypeInfo<FCSClassInfo>();
+	return GetMainClass()->GetManagedTypeInfo();
 }
 
 TSharedPtr<const FCSClassMetaData> FCSCompilerContext::GetTypeMetaData() const

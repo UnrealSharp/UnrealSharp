@@ -9,7 +9,6 @@
 #include "UObject/UnrealType.h"
 #include "Engine/Blueprint.h"
 #include "Extensions/DeveloperSettings/CSDeveloperSettings.h"
-#include "TypeInfo/CSClassInfo.h"
 #include "UnrealSharpCore/TypeGenerator/CSClass.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSPropertyFactory.h"
@@ -167,7 +166,7 @@ void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
-	UCSAssembly* Assembly = FirstManagedClass->GetManagedTypeInfo<FCSClassInfo>()->GetOwningAssembly();
+	UCSAssembly* Assembly = FirstManagedClass->GetManagedTypeInfo()->GetOwningAssembly();
 	Assembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
 

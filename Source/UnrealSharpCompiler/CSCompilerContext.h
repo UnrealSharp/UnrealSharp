@@ -1,9 +1,9 @@
 #pragma once
 #include "KismetCompiler.h"
 
+struct FCSManagedTypeInfo;
 struct FCSClassMetaData;
 struct FCSPropertyMetaData;
-struct FCSClassInfo;
 class UCSClass;
 class UCSBlueprint;
 
@@ -24,11 +24,11 @@ public:
 protected:
 	typedef FKismetCompilerContext Super;
 private:
-	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSClassInfo>& ClassInfo) const;
+	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSManagedTypeInfo>& ClassInfo) const;
 	void GenerateFunctions() const;
 	UCSClass* GetMainClass() const;
 	
-	TSharedPtr<const FCSClassInfo> GetClassInfo() const;
+	TSharedPtr<const FCSManagedTypeInfo> GetClassInfo() const;
 	TSharedPtr<const FCSClassMetaData> GetTypeMetaData() const;
 
 	bool IsDeveloperSettings() const;

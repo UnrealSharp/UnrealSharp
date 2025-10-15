@@ -4,7 +4,6 @@
 #include "CSUnrealSharpSettings.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
-#include "TypeInfo/CSClassInfo.h"
 
 #if ENGINE_MINOR_VERSION >= 4
 #include "Blueprint/BlueprintExceptionInfo.h"
@@ -46,7 +45,7 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 	UCSClass* ManagedClass = static_cast<UCSClass*>(GetOwnerClass());
 	UCSAssembly* Assembly = ManagedClass->GetOwningAssembly();
 	
-	TSharedPtr<FCSClassInfo> ClassInfo = ManagedClass->GetManagedTypeInfo<FCSClassInfo>();
+	TSharedPtr<FCSManagedTypeInfo> ClassInfo = ManagedClass->GetManagedTypeInfo();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
 	
 	MethodHandle = Assembly->GetManagedMethod(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
