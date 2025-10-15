@@ -24,9 +24,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj" />
-    </ItemGroup>
+
 
 
 </Project>

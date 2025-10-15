@@ -17,7 +17,7 @@
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj" OutputItemType="Analyzer" />
+        <Compile Include="..\UnrealSharp.SourceGenerator.Utilities\*.cs" />
     </ItemGroup>
     
 </Project>
