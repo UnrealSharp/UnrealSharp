@@ -33,14 +33,6 @@ public static class CompilationManager
 {
     private static readonly MSBuildWorkspace UnrealSharpWorkspace = MSBuildWorkspace.Create();
 
-    private struct DocumentState
-    {
-        public DocumentId DocumentId;
-        public SyntaxTree SyntaxTree;
-
-        public bool Valid => DocumentId != null && SyntaxTree != null;
-    }
-
     private sealed class GenState
     {
         public GeneratorDriver? Driver;
@@ -52,7 +44,7 @@ public static class CompilationManager
         public int AdditionalDocCount;
 
         public Compilation? InitialCompilation;
-        public Dictionary<string, DocumentState>? TreesByPath;
+        public Dictionary<string, SyntaxTree>? TreesByPath;
 
         public int MetadataRefCount;
     }
@@ -166,7 +158,7 @@ public static class CompilationManager
             }
 
             state.InitialCompilation = state.InitialCompilation.RemoveSyntaxTrees(generatedFilesToRemove);
-            state.TreesByPath = new Dictionary<string, DocumentState>(project.Documents.Count(), StringComparer.OrdinalIgnoreCase);
+            state.TreesByPath = new Dictionary<string, SyntaxTree>(project.Documents.Count(), StringComparer.OrdinalIgnoreCase);
 
             foreach (Document document in project.Documents)
             {
@@ -177,11 +169,7 @@ public static class CompilationManager
                     throw new Exception($"Failed to get syntax tree for document '{document.Name}' in project '{project.Name}'.");
                 }
                 
-                state.TreesByPath[tree.FilePath] = new DocumentState
-                {
-                    DocumentId = document.Id,
-                    SyntaxTree = tree
-                };
+                state.TreesByPath[document.FilePath!] = tree;
             }
 
             LogUnrealSharpEditor.Log($"Project '{project.Name}' loaded for incremental generation.");
@@ -271,7 +259,7 @@ public static class CompilationManager
         Project? foundProject = null;
         foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
         {
-            if (project.Name != projectName)
+            if (!string.Equals(project.Name, projectName, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -285,34 +273,21 @@ public static class CompilationManager
             throw new Exception($"Project '{projectName}' not found in solution.");
         }
 
-        GenState state = States.GetOrAdd(foundProject.Id, _ => new GenState());
-        Document? document;
-
-        if (state.TreesByPath!.TryGetValue(fullPath, out DocumentState foundState))
+        if (!States.TryGetValue(foundProject.Id, out GenState? state))
         {
-            document = foundProject.GetDocument(foundState.DocumentId);
-        }
-        else
-        {
-            string fileName = Path.GetFileName(fullPath);
-            SourceText fileTextIfMissing = SourceText.From(File.ReadAllText(fullPath), Encoding.UTF8);
-            document = foundProject.AddDocument(fileName, fileTextIfMissing, filePath: fullPath);
-        }
-
-        if (document is null)
-        {
-            throw new Exception($"Document for file '{fullPath}' not found in project '{foundProject.Name}'.");
+            throw new Exception($"Project '{projectName}' not initialized for incremental generation.");
         }
 
         string fileContent = File.ReadAllText(fullPath);
         SourceText newText = SourceText.From(fileContent, Encoding.UTF8);
 
         CSharpParseOptions parseOptions = (CSharpParseOptions)foundProject.ParseOptions!;
-        SyntaxTree newTree = CSharpSyntaxTree.ParseText(newText, parseOptions, fullPath);
+        SyntaxTree newTree = CSharpSyntaxTree.ParseText(newText, parseOptions, path: fullPath);
 
         if (newTree.GetDiagnostics().Any())
         {
             StringBuilder builder = new StringBuilder();
+
             foreach (Diagnostic diagnostic in newTree.GetDiagnostics())
             {
                 if (diagnostic.Severity != DiagnosticSeverity.Error)
@@ -329,28 +304,16 @@ public static class CompilationManager
             }
         }
 
-        Solution newSolution = document.Project.Solution.WithDocumentSyntaxRoot(document.Id, newTree.GetRoot());
-
-        if (!UnrealSharpWorkspace.TryApplyChanges(newSolution))
+        if (state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingState))
         {
-            throw new Exception("Failed to apply document text to workspace.");
-        }
-
-        if (foundState.Valid)
-        {
-            state.InitialCompilation = state.InitialCompilation!.ReplaceSyntaxTree(foundState.SyntaxTree, newTree);
+            state.InitialCompilation = state.InitialCompilation!.ReplaceSyntaxTree(existingState, newTree);
         }
         else
         {
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
 
-        state.TreesByPath[fullPath] = new DocumentState
-        {
-            DocumentId = document.Id,
-            SyntaxTree = newTree
-        };
-
+        state.TreesByPath[fullPath] = newTree;
         DirtyProjectIds.Add(foundProject.Id);
     }
 
@@ -405,7 +368,6 @@ public static class CompilationManager
                 state.Driver = state.Driver
                     .WithUpdatedParseOptions(parseOptions)
                     .WithUpdatedAnalyzerConfigOptions(analyzerOptions);
-                
             }
 
             if (refsChanged)
