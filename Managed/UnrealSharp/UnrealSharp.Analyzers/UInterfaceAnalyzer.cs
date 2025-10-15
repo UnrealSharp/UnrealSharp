@@ -1,8 +1,9 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class UInterfaceAnalyzer : DiagnosticAnalyzer

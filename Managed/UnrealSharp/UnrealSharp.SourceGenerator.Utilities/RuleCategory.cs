@@ -1,6 +1,6 @@
-﻿namespace UnrealSharp.SourceGenerators;
+﻿namespace UnrealSharp.SourceGenerator.Utilities;
 
-internal static class RuleCategory
+public static class RuleCategory
 {
     public const string Naming = nameof(Naming);
     public const string Category = nameof(Category);

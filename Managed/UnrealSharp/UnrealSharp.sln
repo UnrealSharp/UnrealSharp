@@ -27,7 +27,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.GlueGenerator",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.GlueGenerator.Tests", "UnrealSharp.GlueGenerator.Tests\UnrealSharp.GlueGenerator.Tests.csproj", "{B586B828-F388-4EC8-A506-244D150524C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerator.Utilities", "UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj", "{9E338254-E624-4D32-98D0-24B7262FD269}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Analyzers", "UnrealSharp.Analyzers\UnrealSharp.Analyzers.csproj", "{27EAD539-FF51-4584-9072-A0CA88AB9B09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerator.Utilities", "UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj", "{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,9 +88,13 @@ Global
 		{B586B828-F388-4EC8-A506-244D150524C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B586B828-F388-4EC8-A506-244D150524C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B586B828-F388-4EC8-A506-244D150524C1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E338254-E624-4D32-98D0-24B7262FD269}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E338254-E624-4D32-98D0-24B7262FD269}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E338254-E624-4D32-98D0-24B7262FD269}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E338254-E624-4D32-98D0-24B7262FD269}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27EAD539-FF51-4584-9072-A0CA88AB9B09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27EAD539-FF51-4584-9072-A0CA88AB9B09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27EAD539-FF51-4584-9072-A0CA88AB9B09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27EAD539-FF51-4584-9072-A0CA88AB9B09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -5,12 +5,8 @@
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <IsPublishable>false</IsPublishable>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
-
-        <RootNamespace>UnrealSharp.SourceGenerator.Utilities</RootNamespace>
-        <PackageId>UnrealSharp.SourceGenerator.Utilities</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,6 +17,9 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     </ItemGroup>
-
+    
+    <ItemGroup>
+        <ProjectReference Include="..\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj" OutputItemType="Analyzer" />
+    </ItemGroup>
 
 </Project>

@@ -14,5 +14,9 @@
         <ProjectReference Include="..\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
+
+        <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
 </Project>

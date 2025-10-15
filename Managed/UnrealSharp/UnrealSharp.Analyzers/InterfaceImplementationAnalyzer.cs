@@ -2,8 +2,9 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class UFunctionConflictAnalyzer : DiagnosticAnalyzer

@@ -3,8 +3,9 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.SourceGenerators.CodeSuppressors;
+namespace UnrealSharp.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class DefaultComponentSuppressor : DiagnosticSuppressor

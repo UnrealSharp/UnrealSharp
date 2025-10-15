@@ -2,8 +2,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class UObjectCreationAnalyzer : DiagnosticAnalyzer

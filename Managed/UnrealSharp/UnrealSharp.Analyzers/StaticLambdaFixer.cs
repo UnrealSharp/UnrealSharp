@@ -9,8 +9,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
+using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.Analyzers;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UFunctionLambdaCodeFixProvider)), Shared]
 public class UFunctionLambdaCodeFixProvider : CodeFixProvider

@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
 
-namespace UnrealSharp.SourceGenerators.CodeAnalyzers;
+namespace UnrealSharp.Analyzers;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnrealTypeCodeFixProvider)), Shared]
 public class UnrealTypeCodeFixProvider : CodeFixProvider
@@ -27,7 +27,7 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-        foreach (var diagnostic in context.Diagnostics)
+        foreach (Diagnostic? diagnostic in context.Diagnostics)
         {
             TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
             SyntaxNode node = root.FindNode(diagnosticSpan);

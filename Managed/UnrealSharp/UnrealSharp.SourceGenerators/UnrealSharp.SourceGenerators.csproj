@@ -16,4 +16,8 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
     </ItemGroup>
     
+    <ItemGroup>
+        <ProjectReference Include="..\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj" OutputItemType="Analyzer" />
+    </ItemGroup>
+    
 </Project>
