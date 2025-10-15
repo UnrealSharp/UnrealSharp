@@ -52,6 +52,7 @@ public static class BuildPropsEmitter
         XmlElement analyzersGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, AnalyzersLabelUser);
         analyzersGroup.SetAttribute("Condition", "!$(MSBuildProjectName.EndsWith('.Glue'))");
         AppendSourceGeneratorReference(csprojDocument, analyzersGroup, directory, solutionDir, "UnrealSharp.GlueGenerator.dll");
+        AppendSourceGeneratorReference(csprojDocument, analyzersGroup, directory, solutionDir, "UnrealSharp.Analyzers.dll");
         
         XmlElement globalAnalyzersGroup = csprojDocument.FindOrMakeGeneratedLabeledItemGroup(projectRoot, AnalyzerLabelGlobal);
         AppendSourceGeneratorReference(csprojDocument, globalAnalyzersGroup, directory, solutionDir, "UnrealSharp.SourceGenerators.dll");
