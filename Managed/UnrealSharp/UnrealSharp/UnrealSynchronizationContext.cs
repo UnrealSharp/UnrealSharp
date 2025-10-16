@@ -80,8 +80,11 @@ namespace UnrealSharp
             });
         }
 
-        public static Task ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false) 
-            => task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel);
+        public static ValueTask ConfigureWithUnrealContext(this ValueTask task, NamedThread thread = NamedThread.GameThread,
+                                                           bool throwOnCancel = false)
+        {
+            return task.IsCompletedSuccessfully ? task : new ValueTask(task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel));
+        }
 
         public static Task<T> ConfigureWithUnrealContext<T>(this Task<T> task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
         {
@@ -102,9 +105,12 @@ namespace UnrealSharp
             });
         }
 
-        public static Task<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task, NamedThread thread = NamedThread.GameThread,
-            bool throwOnCancel = false)
-            => task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel);
+        public static ValueTask<T> ConfigureWithUnrealContext<T>(this ValueTask<T> task,
+                                                              NamedThread thread = NamedThread.GameThread,
+                                                              bool throwOnCancel = false)
+        {
+            return task.IsCompletedSuccessfully ? task : new ValueTask<T>(task.AsTask().ConfigureWithUnrealContext(thread, throwOnCancel));
+        }
     }
     
     public sealed class UnrealSynchronizationContext : SynchronizationContext
