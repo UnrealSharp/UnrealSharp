@@ -535,7 +535,7 @@ public sealed class ClampMaxAttribute(string ClampMax) : Attribute { }
 /// [UIMin]
 /// Used for float and integer properties. Specifies the lowest that the value slider should represent.
 /// </summary>
-/// <param name="ClampMin">N</param>
+/// <param name="UIMin">N</param>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public sealed class UIMinAttribute(string UIMin) : Attribute { }
 
@@ -543,7 +543,7 @@ public sealed class UIMinAttribute(string UIMin) : Attribute { }
 /// [UIMax]
 /// Used for float and integer properties. Specifies the highest that the value slider should represent.
 /// </summary>
-/// <param name="ClampMax">N</param>
+/// <param name="UIMax">N</param>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public sealed class UIMaxAttribute(string UIMax) : Attribute { }
 

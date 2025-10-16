@@ -13,7 +13,6 @@ public partial class SystemLibrary
     /// <param name="time"> The time in seconds before the function is called. </param>
     /// <param name="bLooping"> Whether the timer should loop. </param>
     /// <param name="initialStartDelay"> The initial delay before the timer starts. </param>
-    /// <param name="initialStartDelayVariance"> The variance in the initial delay. </param>
     /// <exception cref="ArgumentException"> Thrown if the target of the action is not an UObject. </exception>
     public static FTimerHandle SetTimer(Action action, float time, bool bLooping, float initialStartDelay = 0.000000f)
     {
