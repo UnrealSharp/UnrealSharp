@@ -652,21 +652,8 @@ internal static class ReflectionHelper
     // Get the name without the U/A/F/E prefix.
     internal static string GetEngineName(this Type type)
     {
-        Attribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
-
-        if (generatedTypeAttribute is null)
-        {
-            return type.Name;
-        }
-
-        FieldInfo? field = generatedTypeAttribute.GetType().GetField("EngineName");
-
-        if (field == null)
-        {
-            throw new InvalidOperationException($"The EngineName field was not found in the {nameof(GeneratedTypeAttribute)}.");
-        }
-
-        return (string) field.GetValue(generatedTypeAttribute)!;
+        var generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
+        return generatedTypeAttribute is null ? type.Name : generatedTypeAttribute.EngineName;
     }
 
     internal static IntPtr TryGetNativeClass(this Type type)

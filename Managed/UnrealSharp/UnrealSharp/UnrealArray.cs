@@ -154,7 +154,7 @@ public class ArrayCopyMarshaller<T>
     {
         unsafe
         {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf<UnmanagedArray>());
             if (obj == null)
             {
                 FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
@@ -191,7 +191,7 @@ public class ArrayCopyMarshaller<T>
     {
         unsafe
         {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf<UnmanagedArray>());
             FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
         }
     }

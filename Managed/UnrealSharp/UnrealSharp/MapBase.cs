@@ -470,7 +470,7 @@ public class MapReadOnlyMarshaller<TKey, TValue> where TKey : notnull
         if (_readOnlyMapWrapper == null)
         {
             _readOnlyMapWrapper = new TMapReadOnly<TKey, TValue>(_nativeProperty, nativeBuffer +
-                (arrayIndex * Marshal.SizeOf(typeof(FScriptMap))), _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
+                (arrayIndex * Marshal.SizeOf<FScriptMap>()), _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
         }
         
         return _readOnlyMapWrapper;
@@ -548,7 +548,7 @@ public class MapCopyMarshaller<TKey, TValue> where TKey : notnull
         ref ScriptMapHelper helper, MarshallingDelegates<TKey>.ToNative keyToNative,
         MarshallingDelegates<TValue>.ToNative valueToNative)
     {
-        IntPtr scriptMapAddress = nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(FScriptMap));
+        IntPtr scriptMapAddress = nativeBuffer + arrayIndex * Marshal.SizeOf<FScriptMap>();
         helper.MapAddress = scriptMapAddress;
 
         // Make sure any existing elements are properly destroyed
