@@ -71,7 +71,11 @@
         {
             "Name": "PluginBrowser",
             "Enabled": true
-        }
+        },
+		{
+			"Name": "StructUtils",
+			"Enabled": true
+		}
 	],
 	"SupportURL": "https://discord.gg/QHb8VjNptE"
 }
