@@ -72,7 +72,7 @@ public static class InterfaceExporter
             exportedOverrides, 
             false, interfaceName + "Wrapper");
         
-        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters, [], []);
+        ClassExporter.ExportCustomProperties(stringBuilder, exportedGetterSetters, new (), new ());
         ExportWrapperFunctions(stringBuilder, exportedFunctions);
         ExportWrapperFunctions(stringBuilder, exportedOverrides);
         

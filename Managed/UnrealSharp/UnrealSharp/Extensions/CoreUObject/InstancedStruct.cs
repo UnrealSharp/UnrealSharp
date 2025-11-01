@@ -5,9 +5,19 @@ using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
+
+#if UE_5_5_OR_LATER
+#else
+using UnrealSharp.CoreUObject;
+#endif
+
 using UnrealSharp.Interop;
 
+#if UE_5_5_OR_LATER
 namespace UnrealSharp.CoreUObject;
+#else
+namespace UnrealSharp.StructUtils;
+#endif
 
 [StructLayout(LayoutKind.Sequential)]
 public struct FInstancedStructData

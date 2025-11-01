@@ -15,7 +15,13 @@
 #include "CSUnrealSharpSettings.h"
 #include "Engine/UserDefinedEnum.h"
 #include "Logging/StructuredLog.h"
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 #include "StructUtils/UserDefinedStruct.h"
+#else
+#include "Engine/UserDefinedStruct.h"
+#endif
+
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
 #include "TypeGenerator/Register/CSBuilderManager.h"

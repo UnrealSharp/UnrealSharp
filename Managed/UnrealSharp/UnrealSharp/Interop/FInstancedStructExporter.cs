@@ -1,5 +1,10 @@
 ﻿using UnrealSharp.Binds;
+
+#if UE_5_5_OR_LATER
 using UnrealSharp.CoreUObject;
+#else
+using UnrealSharp.StructUtils;
+#endif
 
 namespace UnrealSharp.Interop;
 
