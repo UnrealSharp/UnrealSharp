@@ -82,8 +82,13 @@ UFunction* UUFunctionExporter::CreateNativeFunctionCustomStructSpecialization(UF
 
 void UUFunctionExporter::InitializeFunctionParams(UFunction* NativeFunction, void* Params)
 {
-	check(NativeFunction && Params)
-	for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt; ++PropIt)
+	check(NativeFunction && Params);
+	//make sure we only initialize the actual function parameters.
+	//if the function is a BP prototype calls to any Nodes are also contained as parameters.
+	//if this check is not done we would initialize past our Params memory and cause a memory corruption
+	//the assumption is that our parameters are always at front.
+	uint8 paramsLeft = NativeFunction->NumParms;
+	for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && paramsLeft; ++PropIt, --paramsLeft)
 	{
 		PropIt->InitializeValue_InContainer(Params);
 	}

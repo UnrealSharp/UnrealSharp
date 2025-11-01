@@ -35,9 +35,9 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			Stack.StepCompiledIn(LocalValue, FunctionParameter->GetClass());
 		
 			uint8* ValueAddress = LocalValue;
-			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyAddress)
+			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyContainer)
 			{
-				ValueAddress = Stack.MostRecentPropertyAddress;
+				ValueAddress = Stack.MostRecentPropertyContainer;
 			}
 
 			// Add any output parameters to the output params chain

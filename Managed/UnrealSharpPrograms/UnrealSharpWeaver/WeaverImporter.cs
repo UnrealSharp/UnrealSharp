@@ -70,6 +70,7 @@ public class WeaverImporter
     public MethodReference GetNativeStructSizeMethod = null!;
     public MethodReference GetSignatureFunction = null!;
     public MethodReference InitializeStructMethod = null!;
+    public MethodReference InitializeFunctionParamsMethod = null!;
     
     public MethodReference InvokeNativeFunctionMethod = null!;
     public MethodReference InvokeNativeNetFunction = null!;
@@ -158,6 +159,7 @@ public class WeaverImporter
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
         
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
+        InitializeFunctionParamsMethod = FindExporterMethod(UFunctionCallbacks, "CallInitializeFunctionParams");
         
         UObjectDefinition = UnrealSharpAssembly.FindType("UObject", CoreUObjectNamespace)!.Resolve();
         UActorComponentDefinition = UnrealSharpAssembly.FindType("UActorComponent", EngineNamespace)!.Resolve();
