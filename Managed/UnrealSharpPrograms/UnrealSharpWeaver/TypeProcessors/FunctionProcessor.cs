@@ -489,7 +489,7 @@ public static class FunctionProcessor
         // Initialize values
         LoadNativeFunctionField(processor, metadata);
         processor.Emit(OpCodes.Ldloc, argumentsBufferPtr);
-        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InitializeStructMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InitializeFunctionParamsMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
 
