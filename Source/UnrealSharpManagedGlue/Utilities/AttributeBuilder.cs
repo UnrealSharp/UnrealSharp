@@ -85,6 +85,23 @@ public class AttributeBuilder
         _state = AttributeState.InAttribute;
     }
 
+    public void AddAttributeProperty(string propertyName, string value)
+    {
+        switch (_state)
+        {
+            case AttributeState.InAttribute:
+                _stringBuilder.Append("(");
+                break;
+            case AttributeState.InAttributeParams:
+                _stringBuilder.Append(", ");
+                break;
+            default:
+                throw new InvalidOperationException("Invalid state");
+        }
+        _stringBuilder.Append($"{propertyName} = {value}");
+        _state = AttributeState.InAttributeParams;
+    }
+
     public void AddArgument(string arg)
     {
         switch (_state)

@@ -87,6 +87,7 @@ public partial class UMovementComponent : UActorComponent
     /// <remarks>The overload taking rotation as an FQuat is slightly faster than the version using FRotator (which will be converted to an FQuat)..</remarks>
     /// <param name="adjustment">The requested adjustment, usually from GetPenetrationAdjustment()</param>
     /// <param name="hit">The result of the failed move</param>
+    /// <param name="newRotation">The new rotation to apply</param>
     /// <returns>True if the adjustment was successful and the original move should be retried, or false if no repeated attempt should be made.</returns>
     public bool ResolvePenetration(FVector adjustment, FHitResult hit, FQuat newRotation)
     {
@@ -100,6 +101,7 @@ public partial class UMovementComponent : UActorComponent
     /// <remarks>The overload taking rotation as an FQuat is slightly faster than the version using FRotator (which will be converted to an FQuat)..</remarks>
     /// <param name="adjustment">The requested adjustment, usually from GetPenetrationAdjustment()</param>
     /// <param name="hit">The result of the failed move</param>
+    /// <param name="newRotation">The new rotation to apply</param>
     /// <returns>True if the adjustment was successful and the original move should be retried, or false if no repeated attempt should be made.</returns>
     public bool ResolvePenetration(FVector adjustment, FHitResult hit, FRotator newRotation)
     {

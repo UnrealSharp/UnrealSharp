@@ -1,4 +1,4 @@
 ﻿namespace UnrealSharp.Attributes;
 
 [AttributeUsage(AttributeTargets.Delegate)]
-public class UMultiDelegateAttribute : Attribute;
+public class UMultiDelegateAttribute : UDelegateAttribute;

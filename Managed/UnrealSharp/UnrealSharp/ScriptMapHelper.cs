@@ -90,7 +90,6 @@ internal unsafe struct ScriptMapHelper
     /// The map will be invalid until the next Rehash() call.
     /// </summary>
     /// <param name="index">The index of the element to remove.</param>
-    /// <param name="count"></param>
     public void RemoveAt(int index)
     {
         if (!IsValidIndex(index))

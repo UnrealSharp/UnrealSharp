@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
@@ -82,24 +84,24 @@ public class SingleDelegateMarshaller<T> where T : Delegate
 
 public abstract class TDelegateBase<T> where T : Delegate
 {
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
     private static readonly Type Wrapper;
     public readonly DelegateBase<T> InnerDelegate;
 
     internal TDelegateBase()
     {
-        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
+        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper)!;
     }
 
     static TDelegateBase()
     {
-        Type delegateType = typeof(T);
-        string wrapperName = $"U{delegateType.Name}";
-        string fullName = $"{delegateType.Namespace}.{wrapperName}";
-        
-        Wrapper = delegateType.Assembly.GetType(fullName);
-        if (Wrapper == null)
+        if (typeof(T).GetCustomAttribute<UDelegateAttribute>(true)?.WrapperType is Type wrapperType)
         {
-            throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
+            Wrapper = wrapperType;
+        }
+        else
+        {
+            throw new TypeLoadException($"Could not find wrapper type '{typeof(T).FullName}'");
         }
     }
     
