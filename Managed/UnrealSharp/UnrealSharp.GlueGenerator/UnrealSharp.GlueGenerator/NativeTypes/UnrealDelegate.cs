@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -16,6 +17,7 @@ public record UnrealDelegate : UnrealType
     {
         _isMulticast = isMulticast;
         _delegateSignature = new UnrealFunction(model, typeSymbol, (DelegateDeclarationSyntax) syntax, this);
+        SourceName = DelegateProperty.MakeDelegateSignatureName(SourceName);
         ApplyFunctionFlags(isMulticast);
     }
 
@@ -53,7 +55,7 @@ public record UnrealDelegate : UnrealType
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         string baseTypeName = _isMulticast ? "MulticastDelegate" : "Delegate";
-        string delegateWrapperClassName = $"U{_delegateSignature.EngineName}";
+        string delegateWrapperClassName = DelegateProperty.MakeDelegateSignatureName(_delegateSignature.EngineName);
         
         bool hasParameters = _delegateSignature.Properties.Count > 0;
         string args = string.Empty;

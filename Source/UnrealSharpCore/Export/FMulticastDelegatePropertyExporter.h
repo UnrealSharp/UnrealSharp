@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
+#include "UnrealSharpCore.h"
 #include "FMulticastDelegatePropertyExporter.generated.h"
 
 struct Interop_FScriptDelegate
@@ -50,9 +51,19 @@ public:
 	static void* GetSignatureFunction(FMulticastDelegateProperty* DelegateProperty);
 
 	UNREALSHARP_FUNCTION()
-	static FScriptDelegate MakeScriptDelegate(UObject* Target, const char* FunctionName);
-
-	UNREALSHARP_FUNCTION()
 	static const FMulticastScriptDelegate* TryGetSparseMulticastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate);
+
+	static FScriptDelegate MakeScriptDelegate(UObject* Target, const char* FunctionName)
+	{
+		FScriptDelegate NewDelegate;
+		NewDelegate.BindUFunction(Target, FunctionName);
+
+		if (!NewDelegate.IsBound())
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to bind function {FunctionName} on target {TargetName}", FunctionName, *Target->GetName());
+		}
+		
+		return NewDelegate;
+	}
 	
 };

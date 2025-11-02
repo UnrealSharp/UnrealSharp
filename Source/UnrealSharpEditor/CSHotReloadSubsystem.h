@@ -50,9 +50,9 @@ private:
 	void OnHotReloadReady();
 
 	void RefreshAffectedBlueprints();
-
 	bool IsPinAffectedByReload(const FEdGraphPinType& PinType) const;
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node) const;
+	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint) const;
 
 	void OnStructRebuilt(UCSScriptStruct* NewStruct);
 	void OnClassRebuilt(UCSClass* NewClass);

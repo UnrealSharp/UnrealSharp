@@ -10,11 +10,9 @@ class UNREALSHARPCORE_API UCSGeneratedInterfaceBuilder : public UCSGeneratedType
 {
 	GENERATED_BODY()
 public:
+	UCSGeneratedInterfaceBuilder();
+	
 	// UCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
-	virtual UClass* GetFieldType() const override;
 	// End of implementation
-
-private:
-	static void RegisterFunctionsToLoader(UCSInterface* Field);
 };

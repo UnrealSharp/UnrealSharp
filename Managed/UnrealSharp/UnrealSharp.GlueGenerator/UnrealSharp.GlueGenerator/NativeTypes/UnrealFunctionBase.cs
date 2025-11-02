@@ -124,8 +124,8 @@ public abstract record UnrealFunctionBase : UnrealStruct
             }
 
             ReturnType = PropertyFactory.CreateProperty(returnTypeSymbol, returnType, returnValueSymbol, this);
-            ReturnType.PropertyFlags |= EPropertyFlags.ReturnParm | EPropertyFlags.OutParm | EPropertyFlags.Parm |
-                                         EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
+            ReturnType.SourceName = "ReturnValue";
+            ReturnType.MakeReturnParameter();
             
             hasOutParams = true;
         }
@@ -380,8 +380,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
             
         if (HasReturnValue)
         {
-            builder.AppendLine();
-            ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, "return ");
+            builder.AppendLine($"{ReturnType.ManagedType} returnValue = ");
+            ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer);
+            builder.AppendLine("return returnValue;");
         }
             
         builder.EndUnsafeBlock();
@@ -397,11 +398,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         else if (HasParamsOrReturnValue)
         {
-            builder.AppendLine("CallInvokeNativeFunctionOutParms");
+            builder.Append("CallInvokeNativeFunctionOutParms");
         }
         else
         {
-            builder.AppendLine("CallInvokeNativeFunction");
+            builder.Append("CallInvokeNativeFunction");
         }
         
         builder.Append($"(NativeObject, {instanceFunction}, {paramsBuffer}, {returnBuffer});");

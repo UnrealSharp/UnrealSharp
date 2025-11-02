@@ -31,15 +31,14 @@ public:
 	UNREALSHARPCORE_API bool IsValidAssembly() const { return ManagedAssemblyHandle.IsValid() && !ManagedAssemblyHandle->IsNull(); }
 
 	UFUNCTION(meta = (ScriptMethod))
-	FName GetAssemblyName() const { return AssemblyName; }
+	UNREALSHARPCORE_API FName GetAssemblyName() const { return AssemblyName; }
 
 	UFUNCTION(meta = (ScriptMethod))
-	const FString& GetAssemblyPath() const { return AssemblyPath; }
+	UNREALSHARPCORE_API const FString& GetAssemblyPath() const { return AssemblyPath; }
 
-	bool IsLoading() const { return bIsLoading; }
+	UNREALSHARPCORE_API bool IsLoading() const { return bIsLoading; }
 
 	TSharedPtr<FGCHandle> TryFindTypeHandle(const FCSFieldName& FieldName);
-	
 	TSharedPtr<FGCHandle> RegisterTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle)
 	{
 		TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(TypeHandle, GCHandleType::WeakHandle);
@@ -83,20 +82,20 @@ public:
 
 		return TypeInfo;
 	}
-
-	template<typename T = FCSManagedTypeInfo>
-	TSharedPtr<T> FindTypeInfo(const FCSFieldName& FieldName) const
+	
+	TSharedPtr<FCSManagedTypeInfo> FindTypeInfo(const FCSFieldName& FieldName) const
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindClassInfo);
-		static_assert(TIsDerivedFrom<T, FCSManagedTypeInfo>::Value, "T must be a FCSManagedTypeInfo-derived type.");
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindTypeInfo);
 
 		const TSharedPtr<FCSManagedTypeInfo>* TypeInfo = AllTypes.Find(FieldName);
-		if (TypeInfo && TypeInfo->IsValid())
+		
+		if (!TypeInfo || !TypeInfo->IsValid())
 		{
-			return StaticCastSharedPtr<T>(*TypeInfo);
+			UE_LOGFMT(LogUnrealSharp, Warning, "Type info not found for field: {0}", *FieldName.GetName());
+			return nullptr;
 		}
 
-		return nullptr;
+		return *TypeInfo;
 	}
 
 	template<typename T = UField>
@@ -108,7 +107,7 @@ public:
 		TSharedPtr<FCSManagedTypeInfo> TypeInfo = AllTypes.FindRef(FieldName);
 		if (TypeInfo.IsValid())
 		{
-			return Cast<T>(TypeInfo->GetOrBuildType());
+			return Cast<T>(TypeInfo->GetOrBuildField());
 		}
 
 		return TryFindField<T>(FieldName);
@@ -126,8 +125,6 @@ public:
 	TSharedPtr<FGCHandle> FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
 	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return ManagedAssemblyHandle; }
-	
-	void AddTypeToRebuild(const TSharedPtr<FCSManagedTypeInfo>& TypeInfo) { PendingRebuild.AddUnique(TypeInfo); }
 
 private:
 
@@ -153,6 +150,11 @@ private:
 		return FindObject<T>(Package, *FieldName.GetName());
 	}
 
+	void AddTypeToRebuild(TSharedPtr<FCSManagedTypeInfo> TypeInfo)
+	{
+		PendingRebuild.Add(TypeInfo);
+	}
+	
 	// All Unreal types that are defined in this assembly.
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeInfo>> AllTypes;
 	TArray<TSharedPtr<FCSManagedTypeInfo>> PendingRebuild;

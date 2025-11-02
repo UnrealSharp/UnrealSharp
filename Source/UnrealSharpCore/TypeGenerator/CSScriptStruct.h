@@ -14,11 +14,5 @@ class UCSScriptStruct : public UUserDefinedStruct, public ICSManagedTypeInterfac
 {
 	GENERATED_BODY()
 public:
-	
 	void RecreateDefaults() { DefaultStructInstance.Recreate(this); }
-
-#if WITH_EDITORONLY_DATA
-	UPROPERTY(Transient)
-	FCSManagedReferencesCollection ManagedReferences;
-#endif
 };

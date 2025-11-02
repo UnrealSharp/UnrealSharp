@@ -1,12 +1,16 @@
 #include "CSHotReloadSubsystem.h"
+
+#include "BlueprintCompilationManager.h"
 #include "CSManager.h"
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
+#include "K2Node_CallParentFunction.h"
+#include "Engine/InheritableComponentHandler.h"
+#include "Engine/SCS_Node.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/DebuggerCommands.h"
-#include "Kismet2/KismetEditorUtilities.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSScriptStruct.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
@@ -102,7 +106,7 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	HotReloadStatus = Active;
 	double StartTime = FPlatformTime::Seconds();
 
-	FScopedSlowTask Progress(3, LOCTEXT("HotReload", "Reloading C#..."));
+	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
 	Progress.MakeDialog();
 
 	FString ExceptionMessage;
@@ -170,14 +174,14 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 		}
 	}
 
-	if (!RebuiltTypes.IsEmpty())
-	{
-		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Blueprints..."));
-		RefreshAffectedBlueprints();
-	}
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Blueprints..."));
+	RefreshAffectedBlueprints();
 	
 	HotReloadStatus = Inactive;
 	bHotReloadFailed = false;
+
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	
 	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }
@@ -185,11 +189,18 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 void UCSHotReloadSubsystem::RefreshAffectedBlueprints()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::RefreshAffectedBlueprints);
+
+	if (RebuiltTypes.IsEmpty())
+	{
+		return;
+	}
 	
 	for (TObjectIterator<UBlueprint> BlueprintIt; BlueprintIt; ++BlueprintIt)
 	{
 		UBlueprint* Blueprint = *BlueprintIt;
-		if (!IsValid(Blueprint->GeneratedClass) || FCSClassUtilities::IsManagedClass(Blueprint->GeneratedClass))
+		UClass* GeneratedClass = Blueprint->GeneratedClass;
+		
+		if (!IsValid(GeneratedClass) || FCSClassUtilities::IsManagedClass(GeneratedClass))
 		{
 			continue;
 		}
@@ -212,7 +223,7 @@ void UCSHotReloadSubsystem::RefreshAffectedBlueprints()
 			}
 		}
 
-		if (bNeedsRecompile)
+		if (!bNeedsRecompile)
 		{
 			for (const FBPVariableDescription& VarDesc : Blueprint->NewVariables)
 			{
@@ -228,12 +239,38 @@ void UCSHotReloadSubsystem::RefreshAffectedBlueprints()
 
 		if (!bNeedsRecompile)
 		{
-			continue;
+			UClass* ParentClass = Blueprint->ParentClass;
+			while (IsValid(ParentClass))
+			{
+				if (UCSManager::Get().IsManagedType(ParentClass))
+				{
+					int32 TypeID = ParentClass->GetUniqueID();
+					
+					if (RebuiltTypes.ContainsByHash(TypeID, TypeID))
+					{
+						bNeedsRecompile = true;
+						break;
+					}
+				}
+
+				ParentClass = ParentClass->GetSuperClass();
+			}
 		}
 		
-		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection | EBlueprintCompileOptions::SkipSave);
+		if (!bNeedsRecompile && GeneratedClass->IsChildOf(AActor::StaticClass()))
+		{
+			bNeedsRecompile = HasDefaultComponentsBeenAffected(Blueprint);
+		}
+		
+		if (!bNeedsRecompile)
+		{
+			continue;
+		}
+
+		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
 	}
-	
+
+	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
 	RebuiltTypes.Reset();
 }
 
@@ -246,7 +283,8 @@ bool UCSHotReloadSubsystem::IsPinAffectedByReload(const FEdGraphPinType& PinType
 		return false;
 	}
 
-	if (RebuiltTypes.ContainsByHash(PinSubCategoryObject->GetUniqueID(), PinSubCategoryObject->GetUniqueID()))
+	uint32 TypeID = PinSubCategoryObject->GetUniqueID();
+	if (RebuiltTypes.ContainsByHash(TypeID, TypeID))
 	{
 		return true;
 	}
@@ -277,10 +315,89 @@ bool UCSHotReloadSubsystem::IsNodeAffectedByReload(const UEdGraphNode* Node) con
 		}
 	}
 
+	if (const UK2Node_CallParentFunction* CallParentFunction = Cast<UK2Node_CallParentFunction>(Node))
+	{
+		UFunction* EventFunction = CallParentFunction->GetTargetFunction();
+		
+		if (IsValid(EventFunction))
+		{
+			UClass* OwnerClass = EventFunction->GetOwnerClass();
+
+			if (!IsValid(OwnerClass) || !UCSManager::Get().IsManagedType(OwnerClass))
+			{
+				return false;
+			}
+			
+			if (UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(OwnerClass))
+			{
+				OwnerClass = SkeletonClass->GetGeneratedClass();
+			}
+
+			int32 TypeID = OwnerClass->GetUniqueID();
+			
+			if (RebuiltTypes.ContainsByHash(TypeID, TypeID))
+			{
+				return true;
+			}
+		}
+	}
+
 	for (UEdGraphPin* Pin : Node->Pins)
 	{
 		if (IsPinAffectedByReload(Pin->PinType))
 		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UCSHotReloadSubsystem::HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint) const
+{
+	auto CheckIfTemplateIsAffected = [&](const UClass* TemplateClass) -> bool
+	{
+		if (!IsValid(TemplateClass) || !UCSManager::Get().IsManagedType(TemplateClass))
+		{
+			return false;
+		}
+
+		int32 TypeID = TemplateClass->GetUniqueID();
+		if (RebuiltTypes.ContainsByHash(TypeID, TypeID))
+		{
+			return true;
+		}
+		
+		return false;
+	};
+
+	USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
+	if (IsValid(SCS))
+	{
+		for (const USCS_Node* Node : SCS->GetAllNodes())
+		{
+			if (!CheckIfTemplateIsAffected(Node->ComponentClass))
+			{
+				continue;
+			}
+
+			return true;
+		}
+	}
+
+	UInheritableComponentHandler* ComponentHandler = Blueprint->InheritableComponentHandler;
+	if (IsValid(ComponentHandler))
+	{
+		TArray<UActorComponent*> OutArray;
+		ComponentHandler->GetAllTemplates(OutArray);
+
+		for (UActorComponent* ComponentTemplate : OutArray)
+		{
+			if (!CheckIfTemplateIsAffected(ComponentTemplate->GetClass()))
+			{
+				continue;
+			}
+
 			return true;
 		}
 	}
@@ -436,8 +553,8 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 	{
 		FString NormalizedFileName = ChangedFile.Filename;
 
-		// Skip ProjectGlue files, generated files in bin and obj folders
-		if (NormalizedFileName.Contains("Glue") || NormalizedFileName.Contains(TEXT("/obj/")))
+		// Skip generated files in bin and obj folders
+		if (NormalizedFileName.Contains(TEXT("/obj/")))
 		{
 			continue;
 		}

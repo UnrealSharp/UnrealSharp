@@ -3,6 +3,11 @@
 #include "TypeInfo/CSManagedTypeInfo.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
+UCSGeneratedDelegateBuilder::UCSGeneratedDelegateBuilder()
+{
+	FieldType = UDelegateFunction::StaticClass();
+}
+
 void UCSGeneratedDelegateBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UDelegateFunction* Field = static_cast<UDelegateFunction*>(TypeToBuild);
@@ -20,9 +25,4 @@ void UCSGeneratedDelegateBuilder::RebuildType(UField* TypeToBuild, const TShared
 	Field->StaticLink(true);
 	
 	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Struct);
-}
-
-UClass* UCSGeneratedDelegateBuilder::GetFieldType() const
-{
-	return UDelegateFunction::StaticClass();
 }

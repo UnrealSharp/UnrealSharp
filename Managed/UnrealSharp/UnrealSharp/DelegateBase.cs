@@ -93,10 +93,17 @@ public abstract class TDelegateBase<T> where T : Delegate
     static TDelegateBase()
     {
         Type delegateType = typeof(T);
-        string wrapperName = $"U{delegateType.Name}";
+        string wrapperName = $"{delegateType.Name}__DelegateSignature";
         string fullName = $"{delegateType.Namespace}.{wrapperName}";
         
         Wrapper = delegateType.Assembly.GetType(fullName);
+        if (Wrapper == null)
+        {
+            wrapperName = $"U{delegateType.Name}";
+            fullName = $"{delegateType.Namespace}.{wrapperName}";
+            Wrapper = delegateType.Assembly.GetType(fullName);
+        }
+
         if (Wrapper == null)
         {
             throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");

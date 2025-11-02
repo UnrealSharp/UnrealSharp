@@ -1,5 +1,6 @@
 #pragma once
 
+#include "UnrealSharpCore.h"
 #include "MetaData/CSPropertyMetaData.h"
 #include "MetaData/CSPropertyType.h"
 #include "UObject/UnrealType.h"
@@ -14,9 +15,18 @@ public:
 
 	static UCSPropertyGenerator* GetPropertyGenerator(ECSPropertyType PropertyType)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSPropertyFactory::FindPropertyGenerator);
-		uint32 Hash = static_cast<uint32>(PropertyType);
-		return *PropertyGeneratorMap.FindByHash(Hash, Hash);
+		TRACE_CPUPROFILER_EVENT_SCOPE(FCSPropertyFactory::GetPropertyGenerator);
+		
+		const uint32 Hash = static_cast<uint32>(PropertyType);
+		UCSPropertyGenerator** FoundGenerator = PropertyGeneratorMap.FindByHash(Hash, Hash);
+		
+		if (!FoundGenerator)
+		{
+			UE_LOGFMT(LogUnrealSharp, Fatal, "No property generator found for property type: {0}", static_cast<uint8>(PropertyType));
+			return nullptr;
+		}
+
+		return *FoundGenerator;
 	}
 	
 	static FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);

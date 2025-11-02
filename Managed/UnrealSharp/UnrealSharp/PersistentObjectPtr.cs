@@ -26,7 +26,7 @@ public struct FPersistentObjectPtr
     
     public FPersistentObjectPtr(UObject obj)
     {
-        if (!obj.IsValid)
+        if (!obj.IsValid())
         {
             return;
         }

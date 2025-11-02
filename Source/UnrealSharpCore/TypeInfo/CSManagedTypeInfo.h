@@ -7,25 +7,25 @@ class UCSGeneratedTypeBuilder;
 class UCSAssembly;
 struct FGCHandle;
 
-enum ECSStructureState : uint8
-{
-	UpToDate,
-	HasChangedStructure,
-};
-
 struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManagedTypeInfo>
 {
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnStructureChanged, TSharedPtr<FCSManagedTypeInfo> /*ManagedTypeInfo*/);
+	
 	~FCSManagedTypeInfo() = default;
-	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly);
+	
 	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
-	
-	TSharedPtr<FGCHandle> GetManagedTypeHandle() { return ManagedTypeHandle;}
-	
-	template<typename TField = UField>
-	TField* GetFieldChecked() const
+	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
+	: Field(nullptr), Builder(Builder), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
 	{
-		return CastChecked<TField>(Field);
+		
 	}
+
+	static TSharedPtr<FCSManagedTypeInfo> Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
+
+	TSharedPtr<FGCHandle> GetManagedTypeHandle() { return ManagedTypeHandle; }
+
+	UField* GetOrBuildField();
+	UField* GetField() const { return Field.Get(); }
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>
 	TSharedPtr<TMetaData> GetTypeMetaData() const
@@ -34,48 +34,51 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 		return StaticCastSharedPtr<TMetaData>(TypeMetaData);
 	}
 
-	UCSAssembly* GetOwningAssembly() const { return OwningAssembly.Get(); }
-	
-	ECSStructureState GetStructureState() const { return StructureState; }
-
-	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
-
-	UClass* GetFieldClass() const { return TypeMetaData->FieldClass; }
-
-	bool IsNativeType() const { return !TypeMetaData.IsValid(); }
+	UCSAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
 #if WITH_EDITOR
 	uint32 GetLastModifiedTime() const { return LastModifiedTime; }
 	void SetLastModifiedTime(uint32 InLastModifiedTime) { LastModifiedTime = InLastModifiedTime; }
 #endif
 
+	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
 	void SetTypeHandle(uint8* ManagedTypeHandlePtr);
+	
+	void MarkAsStructurallyModified();
 
-	// FCSManagedTypeInfo interface
-	void MarkAsChanged();
-protected:
-	UField* GetOrBuildType();
-	// End
+	FDelegateHandle RegisterOnStructureChanged(const FOnStructureChanged::FDelegate& Delegate)
+	{
+		return OnStructureChanged.Add(Delegate);
+	}
 
+	void UnregisterOnStructureChanged(FDelegateHandle DelegateHandle)
+	{
+		OnStructureChanged.Remove(DelegateHandle);
+	}
+	
+private:
+	void SetField(UField* InField) { Field = TStrongObjectPtr(InField); }
+	
 	friend UCSAssembly;
-
-	// Pointer to the native field of this type. It's fine to not have UPROPERTY here, they're always in the root set.
-	UField* Field;
-	const UCSGeneratedTypeBuilder* CachedTypeBuilder;
+	
+	TStrongObjectPtr<UField> Field;
+	UCSGeneratedTypeBuilder* Builder;
 
 	// The managed assembly that owns this type.
-	TWeakObjectPtr<UCSAssembly> OwningAssembly;
+	UCSAssembly* OwningAssembly;
 	
 	// The metadata for this type (properties, functions et.c.)
 	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData;
 
 	// Current state of the structure of this type. This changes when new UProperties/UFunctions/metadata are added or removed.
-	ECSStructureState StructureState = HasChangedStructure;
+	bool bHasChangedStructure = false;
 
 	// Handle to the managed type in the C# assembly.
 	TSharedPtr<FGCHandle> ManagedTypeHandle;
 
+	FOnStructureChanged OnStructureChanged;
+
 #if WITH_EDITOR
-	uint32 LastModifiedTime;
+	uint32 LastModifiedTime = 0;
 #endif
 };

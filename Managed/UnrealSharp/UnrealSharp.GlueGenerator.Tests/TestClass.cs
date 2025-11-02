@@ -38,6 +38,14 @@ public interface ITestInterface
     public void CallInterfaceFunction(int intParam, string strParam);
 }
 
+[UClass(ClassFlags.EditInlineNew | ClassFlags.DefaultToInstanced)]
+public partial class UTestObject : UObject
+{
+    [UProperty] public partial int IntProp { get; set; }
+    [UProperty] public partial string StringProp { get; set; }
+    [UProperty] public partial FVector VectorProp { get; set; }
+}
+
 [UClass]
 public partial class UTestClass : AActor, ITestInterface
 {
@@ -119,6 +127,26 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial TMulticastDelegate<TestDelegate> MultiDelegateProp { get; set; }
     [UProperty] public partial TDelegate<TestDelegate2> SingleDelegateProp { get; set; }
     [UProperty] public partial TDelegate<TestDelegate2> SingleDelegateProp2 { get; set; }
+    
+    [UProperty(PropertyFlags.Instanced | PropertyFlags.BlueprintReadOnly)] public partial UTestObject TestObjectProp { get; set; }
+
+    public UTestClass()
+    {
+        BoolProp = true;
+        ByteProp = 1;
+        SByteProp = -1;
+        Int16Prop = -16;
+        UInt16Prop = 16;
+        Int32Prop = -32;
+        UInt32Prop = 32;
+        Int64Prop = -64;
+        UInt64Prop = 64;
+        FloatProp = 3.14f;
+        DoubleProp = 6.28;
+        StringProp = "Test String";
+        NameProp = new FName("TestName");
+        TextProp = new FText("Test Text");
+    }
     
     protected override void BeginPlay_Implementation()
     {

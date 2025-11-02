@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -159,6 +160,9 @@ public static class CompilationManager
 
             state.InitialCompilation = state.InitialCompilation.RemoveSyntaxTrees(generatedFilesToRemove);
             state.TreesByPath = new Dictionary<string, SyntaxTree>(project.Documents.Count(), StringComparer.OrdinalIgnoreCase);
+            
+            state.ParseOptions = (CSharpParseOptions)project.ParseOptions!;
+            state.AnalyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
 
             foreach (Document document in project.Documents)
             {
@@ -312,7 +316,7 @@ public static class CompilationManager
         {
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
-
+        
         state.TreesByPath[fullPath] = newTree;
         DirtyProjectIds.Add(foundProject.Id);
     }
@@ -330,10 +334,9 @@ public static class CompilationManager
             }
 
             GenState state = States[project.Id];
-
             CSharpParseOptions parseOptions = (CSharpParseOptions)project.ParseOptions!;
             AnalyzerConfigOptionsProvider analyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
-
+            
             bool firstTime = state.Driver == null;
             bool analyzersChanged = state.AnalyzerRefCount != project.AnalyzerReferences.Count;
             bool additionalChanged = state.AdditionalDocCount != project.AdditionalDocuments.Length();
@@ -377,7 +380,7 @@ public static class CompilationManager
 
             GeneratorDriver driver = state.Driver!.RunGeneratorsAndUpdateCompilation(
                 state.InitialCompilation!,
-                out Compilation updatedCompilationInner,
+                out Compilation updatedCompilation,
                 out ImmutableArray<Diagnostic> genDiagnosticsInner);
 
             state.Driver = driver;
@@ -403,7 +406,7 @@ public static class CompilationManager
 
             stopwatch.Stop();
             LogUnrealSharpEditor.Log($"Project '{project.Name}' generated source in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
-            EmitResultsToDisk(project, updatedCompilationInner);
+            EmitResultsToDisk(project, updatedCompilation);
         }
 
         DirtyProjectIds.Clear();

@@ -46,6 +46,14 @@ public struct TSubclassOf<T>
                 string typeName = classType.GetEngineName();
                 NativeClass = UCoreUObjectExporter.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
                 
+                #if !PACKAGE
+                IntPtr skeletonClass = UCoreUObjectExporter.CallGetGeneratedClassFromSkeleton(NativeClass);
+                if (skeletonClass != IntPtr.Zero)
+                {
+                    NativeClass = skeletonClass;
+                }
+                #endif
+                
                 if (NativeClass == IntPtr.Zero)
                 {
                     throw new ArgumentException($"Class {classType.Name} not found.");

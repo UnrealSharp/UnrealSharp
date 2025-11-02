@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "CSManagedTypeInterface.h"
-#include "ManagedReferencesCollection.h"
 #include "Engine/UserDefinedEnum.h"
 #include "CSEnum.generated.h"
 
@@ -11,13 +10,7 @@ class UCSEnum : public UUserDefinedEnum, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
 public:
-	
 	// UEnum interface
-	virtual FString GenerateFullEnumName(const TCHAR* InEnumName) const override;
+	virtual FString GenerateFullEnumName(const TCHAR* InEnumName) const override { return UEnum::GenerateFullEnumName(InEnumName); }
 	// End of UEnum interface
-
-#if WITH_EDITORONLY_DATA
-	UPROPERTY(Transient)
-	FCSManagedReferencesCollection ManagedReferences;
-#endif
 };

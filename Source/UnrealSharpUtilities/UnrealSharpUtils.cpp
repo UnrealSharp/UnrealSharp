@@ -94,6 +94,11 @@ FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
 	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
+bool FCSUnrealSharpUtils::IsEngineStartingUp()
+{
+	return GIsInitialLoad;
+}
+
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 {
 	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);

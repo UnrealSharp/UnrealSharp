@@ -16,8 +16,7 @@ public:
 	
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
-	virtual FString GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
-	virtual UClass* GetFieldType() const override;
+	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceMetaData>& MetaData) const override;
 	// End of implementation
 	
 	static void ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer);
@@ -30,10 +29,11 @@ public:
 
 private:
 #if WITH_EDITOR
-	static void CreateBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
-	static void CreateClassEditor(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
+	static void CreateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 #endif
 	static void CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
+
+	UClass* TryRedirectSuperClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UClass* SuperClass) const;
 	
 	TMap<TObjectKey<UClass>, TWeakObjectPtr<UClass>> RedirectClasses;
 };

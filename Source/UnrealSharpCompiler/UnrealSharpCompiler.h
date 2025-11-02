@@ -4,6 +4,8 @@
 #include "CSBlueprintCompiler.h"
 #include "Modules/ModuleManager.h"
 
+class UCSAssembly;
+struct FCSManagedTypeInfo;
 class UCSInterface;
 struct FCSManagedReferencesCollection;
 class UCSEnum;
@@ -24,13 +26,15 @@ private:
     void OnNewEnum(UCSEnum* NewEnum);
     void OnNewInterface(UCSInterface* NewInterface);
     
-    void OnManagedAssemblyLoaded(const FName& AssemblyName);
+    void OnManagedAssemblyLoaded(const UCSAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();
 
     void AddManagedReferences(FCSManagedReferencesCollection& Collection);
 
+    static void InvalidateReferences(UBlueprint* Blueprint);
+    
     FCSBlueprintCompiler BlueprintCompiler;
     
-    TArray<UBlueprint*> ManagedClassesToCompile;
-    TArray<UBlueprint*> ManagedComponentsToCompile;
+    TArray<UCSBlueprint*> ManagedClassesToCompile;
+    TArray<UCSBlueprint*> ManagedComponentsToCompile;
 };

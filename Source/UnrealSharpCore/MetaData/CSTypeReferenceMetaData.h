@@ -2,6 +2,7 @@
 
 #include "CSFieldName.h"
 
+class UCSGeneratedTypeBuilder;
 class UCSAssembly;
 
 struct FCSTypeReferenceMetaData
@@ -10,7 +11,6 @@ struct FCSTypeReferenceMetaData
 
 	FCSTypeReferenceMetaData()
 	{
-		FieldClass = nullptr;
 		AssemblyName = NAME_None;
 		FieldName = FCSFieldName();
 	}
@@ -18,8 +18,6 @@ struct FCSTypeReferenceMetaData
 	FCSFieldName FieldName;
 	
 	FName AssemblyName;
-	
-	UClass* FieldClass;
 	
 	TMap<FString, FString> MetaData;
 

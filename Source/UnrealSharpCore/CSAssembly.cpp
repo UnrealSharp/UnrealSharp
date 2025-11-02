@@ -6,7 +6,11 @@
 #include "MetaData/CSClassMetaData.h"
 #include "MetaData/CSEnumMetaData.h"
 #include "TypeGenerator/CSEnum.h"
-#include "TypeGenerator/CSScriptStruct.h"
+#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
+#include "TypeGenerator/Register/CSGeneratedDelegateBuilder.h"
+#include "TypeGenerator/Register/CSGeneratedEnumBuilder.h"
+#include "TypeGenerator/Register/CSGeneratedInterfaceBuilder.h"
+#include "TypeGenerator/Register/CSGeneratedStructBuilder.h"
 #include "Utils/CSClassUtilities.h"
 
 void UCSAssembly::InitializeAssembly(const FStringView InAssemblyPath)
@@ -32,13 +36,13 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 
 	if (IsValidAssembly())
 	{
-		UE_LOG(LogUnrealSharp, Display, TEXT("%s is already loaded"), *AssemblyPath);
+		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already loaded", *AssemblyName.ToString());
 		return true;
 	}
 
 	if (!FPaths::FileExists(AssemblyPath))
 	{
-		UE_LOG(LogUnrealSharp, Display, TEXT("%s doesn't exist"), *AssemblyPath);
+		UE_LOGFMT(LogUnrealSharp, Error, "Assembly path does not exist: {0}", *AssemblyPath);
 		return false;
 	}
 
@@ -48,7 +52,7 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 
 	if (NewHandle.IsNull())
 	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to load: %s"), *AssemblyPath);
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", *AssemblyPath);
 		return false;
 	}
 	
@@ -56,13 +60,13 @@ bool UCSAssembly::LoadAssembly(bool bisCollectible)
 
 	for (TSharedPtr<FCSManagedTypeInfo>& TypeInfo : PendingRebuild)
 	{
-		TypeInfo->GetOrBuildType();
+		TypeInfo->GetOrBuildField();
 	}
 
 	PendingRebuild.Reset();
-
 	bIsLoading = false;
-	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(AssemblyName);
+	
+	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(this);
 	return true;
 }
 
@@ -90,12 +94,15 @@ bool UCSAssembly::UnloadAssembly()
 	ManagedAssemblyHandle->Dispose(ManagedAssemblyHandle->GetHandle());
 	ManagedAssemblyHandle.Reset();
 
-    UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(AssemblyName);
+    UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(this);
 	return UCSManager::Get().GetManagedPluginsCallbacks().UnloadPlugin(*AssemblyPath);
 }
 
 TSharedPtr<FGCHandle> UCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldName)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryFindTypeHandle);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Looking up type handle for {0}", *FieldName.GetFullName().ToString());
+	
 	if (!IsValidAssembly())
 	{
 		return nullptr;
@@ -119,6 +126,9 @@ TSharedPtr<FGCHandle> UCSAssembly::TryFindTypeHandle(const FCSFieldName& FieldNa
 
 TSharedPtr<FGCHandle> UCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::GetManagedMethod);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Looking up managed method {0}", *MethodName);
+	
 	if (!TypeHandle.IsValid())
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Type handle is invalid for method %s", *MethodName);
@@ -135,6 +145,7 @@ TSharedPtr<FGCHandle> UCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>&
 
 	TSharedPtr<FGCHandle> AllocatedHandle = MakeShared<FGCHandle>(MethodHandle, GCHandleType::WeakHandle);
 	AllocatedManagedHandles.Add(AllocatedHandle);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Found managed method {0}", *MethodName);
 	return AllocatedHandle;
 }
 
@@ -146,6 +157,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	bool& NeedsRebuild)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryRegisterType);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
 	
 	FCSFieldName FieldName(InFieldName, InNamespace);
 	TSharedPtr<FCSManagedTypeInfo> TypeInfo = FindTypeInfo(FieldName);
@@ -160,35 +172,34 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 #endif
 	
 	TSharedPtr<FCSTypeReferenceMetaData> NewMetaData;
-	UClass* FieldClass;
+	UClass* BuilderClass;
 	switch (FieldType)
 	{
-	case ECSFieldType::Class:
-		NewMetaData = MakeShared<FCSClassMetaData>();
-		FieldClass = UCSClass::StaticClass();
-		break;
-	case ECSFieldType::Struct:
-		NewMetaData = MakeShared<FCSStructMetaData>();
-		FieldClass = UCSScriptStruct::StaticClass();
-		break;
-	case ECSFieldType::Enum:
-		NewMetaData = MakeShared<FCSEnumMetaData>();
-		FieldClass = UCSEnum::StaticClass();
-		break;
-	case ECSFieldType::Interface:
-		NewMetaData = MakeShared<FCSClassBaseMetaData>();
-		FieldClass = UCSInterface::StaticClass();
-		break;
-	case ECSFieldType::Delegate:
-		NewMetaData = MakeShared<FCSClassBaseMetaData>();
-		FieldClass = UDelegateFunction::StaticClass();
-		break;
-	default:
-		UE_LOGFMT(LogUnrealSharp, Error, "Unsupported field type: {0}", static_cast<uint8>(FieldType));
-		return nullptr;
+		case ECSFieldType::Class:
+			NewMetaData = MakeShared<FCSClassMetaData>();
+			BuilderClass = UCSGeneratedClassBuilder::StaticClass();
+			break;
+		case ECSFieldType::Struct:
+			NewMetaData = MakeShared<FCSStructMetaData>();
+			BuilderClass = UCSGeneratedStructBuilder::StaticClass();
+			break;
+		case ECSFieldType::Enum:
+			NewMetaData = MakeShared<FCSEnumMetaData>();
+			BuilderClass = UCSGeneratedEnumBuilder::StaticClass();
+			break;
+		case ECSFieldType::Interface:
+			NewMetaData = MakeShared<FCSClassBaseMetaData>();
+			BuilderClass = UCSGeneratedInterfaceBuilder::StaticClass();
+			break;
+		case ECSFieldType::Delegate:
+			NewMetaData = MakeShared<FCSClassBaseMetaData>();
+			BuilderClass = UCSGeneratedDelegateBuilder::StaticClass();
+			break;
+		default:
+			UE_LOGFMT(LogUnrealSharp, Error, "Unsupported field type: {0}", static_cast<uint8>(FieldType));
+			return nullptr;
 	}
-
-	NewMetaData->FieldClass = FieldClass;
+	
 	NewMetaData->FieldName = FieldName;
 	NewMetaData->AssemblyName = AssemblyName;
 
@@ -198,8 +209,11 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	}
 	else
 	{
-		TypeInfo = MakeShared<FCSManagedTypeInfo>(NewMetaData, this);
+		TypeInfo = FCSManagedTypeInfo::Create(NewMetaData, this, BuilderClass->GetDefaultObject<UCSGeneratedTypeBuilder>());
 		AllTypes.Add(FieldName, TypeInfo);
+
+		FCSManagedTypeInfo::FOnStructureChanged::FDelegate Delegate = FCSManagedTypeInfo::FOnStructureChanged::FDelegate::CreateUObject(this, &UCSAssembly::AddTypeToRebuild);
+		TypeInfo->RegisterOnStructureChanged(Delegate);
 	}
 
 #if WITH_EDITOR
@@ -207,7 +221,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 #endif
 
 	TypeInfo->SetTypeHandle(TypeHandle);
-	TypeInfo->MarkAsChanged();
+	TypeInfo->MarkAsStructurallyModified();
 	
 	NeedsRebuild = true;
 	return TypeInfo;

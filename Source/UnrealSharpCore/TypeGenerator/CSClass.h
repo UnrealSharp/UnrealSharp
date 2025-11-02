@@ -5,8 +5,8 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "CSClass.generated.h"
 
-UCLASS()
-class UNREALSHARPCORE_API UCSClass : public UBlueprintGeneratedClass, public ICSManagedTypeInterface
+UCLASS(MinimalAPI)
+class UCSClass : public UBlueprintGeneratedClass, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()
 public:
@@ -14,5 +14,27 @@ public:
 	// UObject interface
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
 	// End of UObject interface
+	
+	void SetOwningBlueprint(UBlueprint* InOwningBlueprint)
+	{
+		OwningBlueprint = InOwningBlueprint;
+		ClassGeneratedBy = InOwningBlueprint;
+	}
+
+	UBlueprint* GetOwningBlueprint() const 
+	{
+		return OwningBlueprint;
+	}
+	
+	void SetCanBeInstancedFrom(bool bInCanBeInstancedFrom) { CanBeInstancedFrom = bInCanBeInstancedFrom; }
+	bool SetCanBeInstancedFrom() const { return CanBeInstancedFrom; }
+#endif
+	
+private:
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(Transient)
+	TObjectPtr<UBlueprint> OwningBlueprint;
+	
+	bool CanBeInstancedFrom = true;
 #endif
 };

@@ -15,7 +15,7 @@
 #include "Logging/StructuredLog.h"
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Register/CSBuilderManager.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
 #ifdef _WIN32
@@ -162,7 +162,7 @@ void UCSManager::Initialize()
 	FCSProcHelper::GetAllProjectPaths(ProjectPaths, true);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!ProjectPaths.IsEmpty() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER))
+	if (!ProjectPaths.IsEmpty() && !FCSUnrealSharpUtils::IsStandalonePIE() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER))
 	{
 		Initialize();
 		return;
@@ -172,9 +172,6 @@ void UCSManager::Initialize()
 	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
 	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 #endif
-
-	TypeBuilderManager = NewObject<UCSTypeBuilderManager>(this);
-	TypeBuilderManager->Initialize();
 
 	GUObjectArray.AddUObjectDeleteListener(this);
 
@@ -497,8 +494,6 @@ UCSAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bI
 	{
 		return nullptr;
 	}
-
-	OnManagedAssemblyLoaded.Broadcast(NewAssembly->GetAssemblyName());
 
 	UE_LOGFMT(LogUnrealSharp, Display, "Successfully loaded AssemblyHandle with path {AssemblyPath}.", *AssemblyPath);
 	return NewAssembly;

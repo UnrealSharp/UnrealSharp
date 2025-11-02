@@ -9,6 +9,11 @@
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 #endif
 
+UCSGeneratedStructBuilder::UCSGeneratedStructBuilder()
+{
+	FieldType = UCSScriptStruct::StaticClass();
+}
+
 void UCSGeneratedStructBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSScriptStruct* Field = static_cast<UCSScriptStruct*>(TypeToBuild);
@@ -34,11 +39,6 @@ void UCSGeneratedStructBuilder::RebuildType(UField* TypeToBuild, const TSharedPt
 #if WITH_EDITOR
 	UCSManager::Get().OnNewStructEvent().Broadcast(Field);
 #endif
-}
-
-UClass* UCSGeneratedStructBuilder::GetFieldType() const
-{
-	return UCSScriptStruct::StaticClass();
 }
 
 void UCSGeneratedStructBuilder::PurgeStruct(UCSScriptStruct* Field)

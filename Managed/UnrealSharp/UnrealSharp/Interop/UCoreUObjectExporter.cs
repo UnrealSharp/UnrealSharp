@@ -6,4 +6,5 @@ namespace UnrealSharp.Interop;
 public static unsafe partial class UCoreUObjectExporter
 {
     public static delegate* unmanaged<string, string?, string, IntPtr> GetType;
+    public static delegate* unmanaged<IntPtr, IntPtr> GetGeneratedClassFromSkeleton;
 }

@@ -10,10 +10,10 @@ class UNREALSHARPCORE_API UCSGeneratedEnumBuilder : public UCSGeneratedTypeBuild
 {
 	GENERATED_BODY()
 public:
+	UCSGeneratedEnumBuilder();
 	
 	// TCSGeneratedTypeBuilder interface implementation
 	virtual void RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const override;
-	virtual UClass* GetFieldType() const override;
 	// End of implementation
 
 private:

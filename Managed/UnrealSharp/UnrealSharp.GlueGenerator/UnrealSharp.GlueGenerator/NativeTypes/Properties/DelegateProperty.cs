@@ -24,7 +24,7 @@ public record DelegateProperty : FieldProperty
         
         _fullDelegateName = argumentTypeSymbol.ToDisplayString();
         ManagedType = MakeDelegateType(_fullDelegateName);
-        ShortEngineName = argumentTypeSymbol.Name;
+        ShortEngineName = MakeDelegateSignatureName(argumentTypeSymbol.Name);
     }
     
     public DelegateProperty(PropertyType type, string delegateName, string sourceName, Accessibility accessibility, UnrealType outer) : base(type, delegateName, sourceName, accessibility, outer)
@@ -32,7 +32,7 @@ public record DelegateProperty : FieldProperty
         _isMulticast = type is PropertyType.MulticastInlineDelegate or PropertyType.MulticastSparseDelegate;
         _fullDelegateName = delegateName;
         ManagedType = MakeDelegateType(_fullDelegateName);
-        ShortEngineName = delegateName;
+        ShortEngineName = MakeDelegateSignatureName(delegateName);
     }
     
     string MakeDelegateType(string fullDelegateName)
@@ -91,5 +91,10 @@ public record DelegateProperty : FieldProperty
     protected override void ExportFieldInfo(GeneratorStringBuilder builder)
     {
         builder.AppendLine($"ModifyFieldProperty({BuilderNativePtr}, \"{ShortEngineName}\", typeof({_fullDelegateName}));");
+    }
+    
+    public static string MakeDelegateSignatureName(string fullDelegateName)
+    {
+        return fullDelegateName + "__DelegateSignature";
     }
 }

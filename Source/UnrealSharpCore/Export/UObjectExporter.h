@@ -43,4 +43,7 @@ public:
 	UNREALSHARP_FUNCTION()
 	static uint32 GetUniqueID(UObject* Object);
 
+	UNREALSHARP_FUNCTION()
+	static void* GetOuter(UObject* Object);
+
 };

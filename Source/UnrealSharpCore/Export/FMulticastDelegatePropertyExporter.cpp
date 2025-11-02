@@ -45,13 +45,6 @@ void* UFMulticastDelegatePropertyExporter::GetSignatureFunction(FMulticastDelega
 	return DelegateProperty->SignatureFunction;
 }
 
-FScriptDelegate UFMulticastDelegatePropertyExporter::MakeScriptDelegate(UObject* Target, const char* FunctionName)
-{
-	FScriptDelegate NewDelegate;
-	NewDelegate.BindUFunction(Target, FunctionName);
-	return NewDelegate;
-}
-
 const FMulticastScriptDelegate* UFMulticastDelegatePropertyExporter::TryGetSparseMulticastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate)
 {
 	// If the delegate is a sparse delegate, we need to get the multicast delegate from FSparseDelegate wrapper.

@@ -13,7 +13,7 @@ public partial class UObject
     /// <summary>
     /// The name of the object in Unreal Engine.
     /// </summary>
-    public FName ObjectName
+    public FName Name
     {
         get
         {
@@ -26,11 +26,32 @@ public partial class UObject
             return objectName;
         }
     }
+    
+    public UObject Outer
+    {
+        get
+        {
+            if (IsDestroyed)
+            {
+                throw new InvalidOperationException("Object is not valid.");
+            }
 
-    /// <summary>
-    /// Whether the object is valid. UObjects can be valid but pending kill.
-    /// </summary>
-    public bool IsValid => !IsDestroyed;
+            IntPtr outerPtr = UObjectExporter.CallGetOuter(NativeObject);
+            UObject? foundOuter = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(outerPtr);
+
+            if (foundOuter == null)
+            {
+                throw new InvalidOperationException("Outer object is not valid.");
+            }
+
+            return foundOuter;
+        }
+    }
+    
+    public TOuter GetTypedOuter<TOuter>() where TOuter : UObject
+    {
+        return (TOuter) Outer;
+    }
 
     /// <summary>
     /// Whether the object has been destroyed.
@@ -49,7 +70,7 @@ public partial class UObject
     {
         get
         {
-            if (!IsValid)
+            if (!this.IsValid())
             {
                 throw new InvalidOperationException("Object is not valid.");
             }
@@ -69,7 +90,7 @@ public partial class UObject
     /// <inheritdoc />
     public override string ToString()
     {
-        return ObjectName.ToString();
+        return Name.ToString();
     }
 
     /// <inheritdoc />
@@ -454,6 +475,14 @@ public partial class UObject
     public T GetWorldSettingsAs<T>() where T : AWorldSettings
     {
         return (T) WorldSettings;
+    }
+}
+
+public static class UObjectExtensions
+{
+    public static bool IsValid(this UObject? obj)
+    {
+        return obj != null && !obj.IsDestroyed;
     }
 }
 

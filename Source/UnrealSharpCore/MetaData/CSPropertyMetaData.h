@@ -32,4 +32,15 @@ struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSTypeReferenceMetaData
 	{
 		return StaticCastSharedPtr<T>(Type);
 	}
+
+	template<typename T>
+	TSharedPtr<T> SafeCastTypeMetaData(ECSPropertyType PropertyType) const
+	{
+		if (!Type.IsValid() || Type->PropertyType != PropertyType)
+		{
+			return nullptr;
+		}
+
+		return StaticCastSharedPtr<T>(Type);
+	}
 };

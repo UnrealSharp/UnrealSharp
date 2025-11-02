@@ -2,13 +2,13 @@
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 #include "Utils/CSClassUtilities.h"
 
-FCSFieldName::FCSFieldName(UField* Field)
+FCSFieldName::FCSFieldName(UField* NativeField)
 {
-	if (UClass* Class = Cast<UClass>(Field))
+	if (UClass* Class = Cast<UClass>(NativeField))
 	{
-		Field = FCSClassUtilities::GetFirstNativeClass(Class);
+		NativeField = FCSClassUtilities::GetFirstNativeClass(Class);
 	}
 	
-	Name = Field->GetFName();
-	Namespace = FCSUnrealSharpUtils::GetNamespace(Field);
+	Name = NativeField->GetFName();
+	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeField);
 }

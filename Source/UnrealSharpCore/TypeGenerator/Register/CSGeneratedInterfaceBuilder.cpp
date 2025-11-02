@@ -3,6 +3,11 @@
 #include "TypeGenerator/CSInterface.h"
 #include "UnrealSharpCore/TypeGenerator/Factories/CSFunctionFactory.h"
 
+UCSGeneratedInterfaceBuilder::UCSGeneratedInterfaceBuilder()
+{
+	FieldType = UCSInterface::StaticClass();
+}
+
 void UCSGeneratedInterfaceBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSInterface* Field = static_cast<UCSInterface*>(TypeToBuild);
@@ -24,27 +29,7 @@ void UCSGeneratedInterfaceBuilder::RebuildType(UField* TypeToBuild, const TShare
 	Field->ClassFlags |= CLASS_Interface;
 	
 	FCSFunctionFactory::GenerateFunctions(Field, TypeMetaData->Functions);
-	RegisterFunctionsToLoader(Field);
 
-	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
-	
-	Field->StaticLink(true);
-	Field->Bind();
-	Field->AssembleReferenceTokenStream();
-	Field->GetDefaultObject();
-
-#if WITH_EDITOR
-	UCSManager::Get().OnNewInterfaceEvent().Broadcast(Field);
-#endif
-}
-
-UClass* UCSGeneratedInterfaceBuilder::GetFieldType() const
-{
-	return UCSInterface::StaticClass();
-}
-
-void UCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader(UCSInterface* Field)
-{
 	for (TFieldIterator<UFunction> It(Field, EFieldIterationFlags::None); It; ++It)
 	{
 		UFunction* Function = *It;
@@ -57,4 +42,17 @@ void UCSGeneratedInterfaceBuilder::RegisterFunctionsToLoader(UCSInterface* Field
 		false,
 		Function);
 	}
+
+	Field->ClassConstructor = UInterface::StaticClass()->ClassConstructor;
+	
+	Field->StaticLink(true);
+	Field->Bind();
+	Field->AssembleReferenceTokenStream();
+	Field->GetDefaultObject();
+
+#if WITH_EDITOR
+	UCSManager::Get().OnNewInterfaceEvent().Broadcast(Field);
+#endif
+
+	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Class);
 }

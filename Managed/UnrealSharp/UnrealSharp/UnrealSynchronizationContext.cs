@@ -117,7 +117,7 @@ namespace UnrealSharp
 
         public UnrealSynchronizationContext(NamedThread thread, IDisposable task)
         {
-            if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid)
+            if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid())
             {
                 throw new InvalidOperationException("World context object is not valid.");
             }

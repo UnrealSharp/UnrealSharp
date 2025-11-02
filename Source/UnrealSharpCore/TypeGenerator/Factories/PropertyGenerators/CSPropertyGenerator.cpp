@@ -1,6 +1,5 @@
 #include "CSPropertyGenerator.h"
 
-#include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSSkeletonClass.h"
 #include "TypeGenerator/Functions/CSFunction.h"
 #include "TypeGenerator/Properties/PropertyGeneratorManager.h"
@@ -76,10 +75,12 @@ UClass* UCSPropertyGenerator::TryFindingOwningClass(UField* Outer)
 		Outer = Function->GetOwnerClass();
 	}
 
+#if WITH_EDITOR
 	if (UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(Outer))
 	{
 		return SkeletonClass->GetGeneratedClass();
 	}
+#endif
 
 	return Cast<UClass>(Outer);
 }

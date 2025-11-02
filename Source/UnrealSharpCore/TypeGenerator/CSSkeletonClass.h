@@ -1,13 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSClass.h"
 #include "Animation/AnimBlueprintGeneratedClass.h"
 #include "CSSkeletonClass.generated.h"
 
 class UCSClass;
 
-UCLASS(MinimalAPI)
-class UCSSkeletonClass : public UBlueprintGeneratedClass
+UCLASS()
+class UCSSkeletonClass : public UCSClass
 {
 	GENERATED_BODY()
 public:

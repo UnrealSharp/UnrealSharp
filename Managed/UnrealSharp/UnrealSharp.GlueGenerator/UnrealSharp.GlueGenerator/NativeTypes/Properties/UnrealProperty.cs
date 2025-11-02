@@ -199,7 +199,7 @@ public record UnrealProperty : UnrealType
         UnrealProperty property = (UnrealProperty)topType;
         property.PropertyFlags |= (EPropertyFlags) flags.Value!;
 
-        if (!property.PropertyFlags.HasFlag(EPropertyFlags.PersistentInstance | EPropertyFlags.InstancedReference))
+        if (!property.PropertyFlags.HasFlag(EPropertyFlags.PersistentInstance))
         {
             return;
         }
@@ -335,7 +335,7 @@ public record UnrealProperty : UnrealType
     
     protected string AppendOffsetMath(string basePtr)
     {
-        return $"IntPtr.Add({basePtr}, {OffsetVariable})";
+        return $"{basePtr} + {OffsetVariable}";
     }
 
     public virtual void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)

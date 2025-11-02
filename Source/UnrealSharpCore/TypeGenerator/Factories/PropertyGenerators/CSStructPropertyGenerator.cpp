@@ -5,8 +5,9 @@
 FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FStructProperty* StructProperty = static_cast<FStructProperty*>(Super::CreateProperty(Outer, PropertyMetaData));
-	TSharedPtr<FCSFieldTypePropertyMetaData> StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
-	
+	TSharedPtr<FCSFieldTypePropertyMetaData> StructPropertyMetaData = PropertyMetaData.GetTypeMetaData<
+		FCSFieldTypePropertyMetaData>();
+
 	StructProperty->Struct = StructPropertyMetaData->InnerType.GetAsStruct();
 
 #if WITH_EDITOR
@@ -14,11 +15,11 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	{
 		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
 		{
-			ManagedStruct->ManagedReferences.AddReference(OwningClass);
+			ManagedStruct->GetManagedReferencesCollection().AddReference(OwningClass);
 		}
 	}
 #endif
-	
+
 	return StructProperty;
 }
 

@@ -26,8 +26,8 @@ struct FCSManagedPluginCallbacks
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks::FManagedCallbacks*);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const FName&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyUnloaded, const FName&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const UCSAssembly*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyUnloaded, const UCSAssembly*);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UCSClass*);
@@ -112,8 +112,6 @@ public:
 	FCSStructEvent& OnNewStructEvent() { return OnNewStruct; }
 	FCSInterfaceEvent& OnNewInterfaceEvent() { return OnNewInterface; }
 	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
-
-	FSimpleMulticastDelegate& OnProcessedPendingClassesEvent() { return OnProcessedPendingClasses; }
 #endif
 
 	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
@@ -133,8 +131,6 @@ public:
 	bool IsLoadingAnyAssembly() const;
 
 	void AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> SubsystemClass);
-
-	UCSTypeBuilderManager* GetTypeBuilderManager() const { return TypeBuilderManager; }
 
 private:
 
@@ -170,9 +166,6 @@ private:
 	UPROPERTY(Transient)
 	TArray<TSubclassOf<UDynamicSubsystem>> PendingDynamicSubsystemClasses;
 
-	UPROPERTY(Transient)
-	TObjectPtr<UCSTypeBuilderManager> TypeBuilderManager;
-
 	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 
@@ -198,8 +191,6 @@ private:
 	FCSStructEvent OnNewStruct;
 	FCSInterfaceEvent OnNewInterface;
 	FCSEnumEvent OnNewEnum;
-
-	FSimpleMulticastDelegate OnProcessedPendingClasses;
 #endif
 
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ManagedReferencesCollection.h"
 #include "TypeInfo/CSManagedTypeInfo.h"
 #include "UObject/Interface.h"
 #include "CSManagedTypeInterface.generated.h"
@@ -44,7 +45,12 @@ public:
 		ensureMsgf(ManagedTypeInfo.IsValid(), TEXT("ManagedTypeInfo is not set. Call SetTypeMetaData() first."));
 		return ManagedTypeInfo->GetOwningAssembly();
 	}
+
+	FCSManagedReferencesCollection& GetManagedReferencesCollection() { return ManagedReferences; }
 	
 private:
 	TSharedPtr<FCSManagedTypeInfo> ManagedTypeInfo;
+#if WITH_EDITORONLY_DATA
+	FCSManagedReferencesCollection ManagedReferences;
+#endif
 };

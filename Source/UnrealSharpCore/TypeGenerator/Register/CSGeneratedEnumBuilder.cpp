@@ -4,6 +4,11 @@
 #include "TypeGenerator/CSEnum.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
+UCSGeneratedEnumBuilder::UCSGeneratedEnumBuilder()
+{
+	FieldType = UCSEnum::StaticClass();
+}
+
 void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSEnum* Field = static_cast<UCSEnum*>(TypeToBuild);
@@ -30,11 +35,6 @@ void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<
 #if WITH_EDITOR
 	UCSManager::Get().OnNewEnumEvent().Broadcast(Field);
 #endif
-}
-
-UClass* UCSGeneratedEnumBuilder::GetFieldType() const
-{
-	return UCSEnum::StaticClass();
 }
 
 void UCSGeneratedEnumBuilder::PurgeEnum(UCSEnum* Field)

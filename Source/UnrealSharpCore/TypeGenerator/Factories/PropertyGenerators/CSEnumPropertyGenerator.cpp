@@ -17,7 +17,7 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	{
 		if (UStruct* OwningClass = TryFindingOwningClass(Outer))
 		{
-			ManagedEnum->ManagedReferences.AddReference(OwningClass);
+			ManagedEnum->GetManagedReferencesCollection().AddReference(OwningClass);
 		}
 	}
 #endif

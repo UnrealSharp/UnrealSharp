@@ -7,10 +7,24 @@
 class UNREALSHARPCORE_API FCSClassUtilities
 {
 public:
-	static bool IsManagedClass(const UClass* Class) { return Class->GetClass() == UCSClass::StaticClass(); }
+	static bool IsManagedClass(const UClass* Class)
+	{
+#if WITH_EDITOR
+		UClass* ClassObj = Class->GetClass();
+		return ClassObj == UCSClass::StaticClass() || ClassObj == UCSSkeletonClass::StaticClass();
+#else
+		return Class->GetClass() == UCSClass::StaticClass();
+#endif
+	}
+	
 	static bool IsManagedType(const UClass* Class);
 	static bool IsSkeletonType(const UClass* Class) { return Class->GetClass() == UCSSkeletonClass::StaticClass(); }
 	static bool IsNativeClass(UClass* Class){ return Class->GetClass() == UClass::StaticClass(); }
+
+	static bool IsDeveloperSettingsClass(const UBlueprint* Blueprint, const UClass* NewClass)
+	{
+		return Blueprint->GeneratedClass == NewClass && NewClass->IsChildOf<UDeveloperSettings>();
+	}
 
 	static UCSClass* GetFirstManagedClass(UClass* Class)
 	{
@@ -59,7 +73,7 @@ public:
 
 	static UClass* GetFirstNonBlueprintClass(UClass* Class)
 	{
-		while (Class->GetClass() != UClass::StaticClass() && Class->GetClass() != UCSClass::StaticClass())
+		while (!IsNativeClass(Class) && !IsManagedClass(Class))
 		{
 			Class = Class->GetSuperClass();
 		}

@@ -6,11 +6,14 @@
 #include "CSCompilerContext.h"
 #include "CSManager.h"
 #include "KismetCompiler.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "AssetRegistry/IAssetRegistry.h"
 #include "TypeGenerator/CSBlueprint.h"
 #include "TypeGenerator/CSClass.h"
 #include "TypeGenerator/CSEnum.h"
 #include "TypeGenerator/CSInterface.h"
 #include "TypeGenerator/CSScriptStruct.h"
+#include "UnrealSharpUtilities/UnrealSharpUtils.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
@@ -32,23 +35,7 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
 	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
-	
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
-
-	// Try to recompile and reinstance all blueprints when the module is loaded.
-	CSManager.ForEachManagedPackage([this](const UPackage* Package)
-	{
-		ForEachObjectWithPackage(Package, [this](UObject* Object)
-		{
-			if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
-			{
-				OnNewClass(static_cast<UCSClass*>(Blueprint->GeneratedClass.Get()));
-			}
-			return true;
-		}, false);
-	});
-	
-	RecompileAndReinstanceBlueprints();
 }
 
 void FUnrealSharpCompilerModule::ShutdownModule()
@@ -58,6 +45,8 @@ void FUnrealSharpCompilerModule::ShutdownModule()
 
 void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints);
+	
 	if (UCSManager::Get().IsLoadingAnyAssembly())
 	{
 		// Wait until all assemblies are loaded, so we can recompile all blueprints at once.
@@ -69,8 +58,10 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		// Nothing to compile.
 		return;
 	}
+
+	double StartTime = FPlatformTime::Seconds();
 	
-	auto CompileBlueprints = [this](TArray<UBlueprint*>& Blueprints)
+	auto CompileBlueprints = [this](TArray<UCSBlueprint*>& Blueprints)
 	{
 		if (Blueprints.IsEmpty())
 		{
@@ -79,7 +70,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		
 		for (int32 i = 0; i < Blueprints.Num(); ++i)
 		{
-			UBlueprint* Blueprint = Blueprints[i];
+			UCSBlueprint* Blueprint = Blueprints[i];
 
 			if (!Blueprint)
 			{
@@ -93,7 +84,18 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 				continue;
 			}
 
-			FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
+			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection |
+														EBlueprintCompileOptions::SkipDefaultObjectValidation |
+														EBlueprintCompileOptions::SkipFiBSearchMetaUpdate |
+														EBlueprintCompileOptions::SkipNewVariableDefaultsDetection |
+														EBlueprintCompileOptions::SkipSave;
+			
+			FKismetEditorUtilities::CompileBlueprint(Blueprint, Flags);
+
+			if (!FCSUnrealSharpUtils::IsEngineStartingUp())
+			{
+				InvalidateReferences(Blueprint);
+			}
 		}
 		
 		Blueprints.Reset();
@@ -102,6 +104,8 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(ManagedClassesToCompile);
+
+	UE_LOG(LogUnrealSharpCompiler, Log, TEXT("Recompiled and reinstanced blueprints in %.2f seconds"), FPlatformTime::Seconds() - StartTime);
 }
 
 void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollection& Collection)
@@ -115,15 +119,39 @@ void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollec
 	});
 }
 
+void FUnrealSharpCompilerModule::InvalidateReferences(UBlueprint* Blueprint)
+{
+	// This is mostly for sub-levels, not sure why but sometimes the references are not properly updated for sub-levels and causes a crash on loading the level.
+	// There are probably better ways to do this.
+	TRACE_CPUPROFILER_EVENT_SCOPE(FUnrealSharpCompilerModule::InvalidateReferences);
+	static IAssetRegistry& AssetRegistry = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry").Get();
+			
+	TArray<FName> BlueprintReferences;
+	UPackage* Package = Blueprint->GetOutermost();
+	AssetRegistry.GetReferencers(Package->GetFName(), BlueprintReferences, UE::AssetRegistry::EDependencyCategory::All, UE::AssetRegistry::EDependencyQuery::Hard);
+	
+	for (FName PackageName : BlueprintReferences)
+	{
+		UPackage* ReferencePackage = FindPackage(nullptr, *PackageName.ToString());
+		
+		if (!IsValid(ReferencePackage))
+		{
+			continue;
+		}
+
+		ResetLoaders(ReferencePackage);
+	}
+}
+
 void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
 {
-	UBlueprint* Blueprint = Cast<UBlueprint>(NewClass->ClassGeneratedBy);
+	UCSBlueprint* Blueprint = Cast<UCSBlueprint>(NewClass->ClassGeneratedBy);
 	if (!IsValid(Blueprint))
 	{
 		return;
 	}
 
-	auto AddToCompileList = [this](TArray<UBlueprint*>& List, UBlueprint* Blueprint)
+	auto AddToCompileList = [this](TArray<UCSBlueprint*>& List, UCSBlueprint* Blueprint)
 	{
 		if (List.Contains(Blueprint))
 		{
@@ -142,32 +170,17 @@ void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
 		AddToCompileList(ManagedClassesToCompile, Blueprint);
 	}
 
-	// When a class changes, all derived classes must also be marked as changed.
-	// Blueprint compiler will handle the Blueprints that are affected.
-	TArray<UClass*> DerivedClasses;
-	GetDerivedClasses(NewClass, DerivedClasses, false);
-
-	for (UClass* DerivedClass : DerivedClasses)
-	{
-		if (!FCSClassUtilities::IsManagedClass(DerivedClass))
-		{
-			continue;
-		}
-		
-		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
-		TSharedPtr<FCSManagedTypeInfo> DerivedClassInfo = ManagedClass->GetManagedTypeInfo();
-		DerivedClassInfo->MarkAsChanged();
-	}
+	AddManagedReferences(NewClass->GetManagedReferencesCollection());
 }
 
 void FUnrealSharpCompilerModule::OnNewStruct(UCSScriptStruct* NewStruct)
 {
-	AddManagedReferences(NewStruct->ManagedReferences);
+	AddManagedReferences(NewStruct->GetManagedReferencesCollection());
 }
 
 void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 {
-	AddManagedReferences(NewEnum->ManagedReferences);
+	AddManagedReferences(NewEnum->GetManagedReferencesCollection());
 }
 
 void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
@@ -180,7 +193,7 @@ void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
 	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
 }
 
-void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const FName& AssemblyName)
+void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSAssembly* Assembly)
 {
 	RecompileAndReinstanceBlueprints();
 }

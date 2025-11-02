@@ -20,18 +20,20 @@ public:
 	virtual void CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& OldCDO) override;
 	virtual void SpawnNewClass(const FString& NewClassName) override;
 	virtual void AddInterfacesFromBlueprint(UClass* Class) override;
+	virtual void CopyTermDefaultsToDefaultObject(UObject* DefaultObject) override;
 	// End of FKismetCompilerContext interface
+	
 protected:
 	typedef FKismetCompilerContext Super;
+	
 private:
-	void TryValidateSimpleConstructionScript(const TSharedPtr<const FCSManagedTypeInfo>& ClassInfo) const;
+	void TryValidateSimpleConstructionScript() const;
 	void GenerateFunctions() const;
 	UCSClass* GetMainClass() const;
 	
 	TSharedPtr<const FCSManagedTypeInfo> GetClassInfo() const;
 	TSharedPtr<const FCSClassMetaData> GetTypeMetaData() const;
-
-	bool IsDeveloperSettings() const;
+	
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
 	void ApplyMetaData();

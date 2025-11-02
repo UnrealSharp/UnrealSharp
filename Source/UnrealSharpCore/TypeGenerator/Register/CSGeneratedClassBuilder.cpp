@@ -18,6 +18,7 @@
 UCSGeneratedClassBuilder::UCSGeneratedClassBuilder()
 {
 	RedirectClasses.Add(UDeveloperSettings::StaticClass(), UCSDeveloperSettings::StaticClass());
+	FieldType = UCSClass::StaticClass();
 }
 
 void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
@@ -25,69 +26,63 @@ void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr
 	UCSClass* Field = static_cast<UCSClass*>(TypeToBuild);
 	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassMetaData>();
 	
-	UClass* CurrentSuperClass = Field->GetSuperClass();
-	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
-	{
-		UClass* SuperClass = TypeMetaData->ParentClass.GetAsClass();
-		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
-		{
-			SuperClass = RedirectedClass->Get();
-		}
-
-		CurrentSuperClass = SuperClass;
-	}
-	
+	UClass* CurrentSuperClass = TryRedirectSuperClass(TypeMetaData, Field->GetSuperClass());
 	Field->SetSuperStruct(CurrentSuperClass);
 
 	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
 	Field->NumReplicatedProperties = 0;
 	
 #if WITH_EDITOR
+	CreateOwningBlueprint(TypeMetaData, Field, CurrentSuperClass);
+
 	if (FCSUnrealSharpUtils::IsStandalonePIE())
 	{
-		// Since the BP-compiler is not present in standalone, we just do a normal class creation like in a packaged game.
-		// Some things still reference the Blueprint in standalone, so we need to create it.
-		CreateBlueprint(TypeMetaData, Field, CurrentSuperClass);
 		CreateClass(TypeMetaData, Field, CurrentSuperClass);
 	}
-	else
-	{
-		// Just prepare the class for being compilated by FCSCompilerContext later
-		CreateClassEditor(TypeMetaData, Field, CurrentSuperClass);
-	}
+	
+	TryUnregisterDynamicSubsystem(Field);
+	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 #else
 	CreateClass(TypeMetaData, Field, CurrentSuperClass);
 #endif
 }
 
 #if WITH_EDITOR
-void UCSGeneratedClassBuilder::CreateClassEditor(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
-	CreateBlueprint(TypeMetaData, Field, SuperClass);
-	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
-
-	TryUnregisterDynamicSubsystem(Field);
-}
-
-void UCSGeneratedClassBuilder::CreateBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
-{
-	UBlueprint* Blueprint = static_cast<UBlueprint*>(Field->ClassGeneratedBy);
-	if (!Blueprint)
+	UBlueprint* Blueprint = Field->GetOwningBlueprint();
+	if (IsValid(Blueprint))
 	{
-		UPackage* Package = TypeMetaData->GetAsPackage();
-		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
-		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_Standalone);
-		Blueprint->GeneratedClass = Field;
-		Blueprint->ParentClass = SuperClass;
-		
-		Field->ClassGeneratedBy = Blueprint;
+		return;
 	}
+
+	FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
+
+	UPackage* Package = TypeMetaData->GetAsPackage();
+	Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted | RF_Transient);
+	Blueprint->GeneratedClass = Field;
+	Blueprint->ParentClass = SuperClass;
+	Blueprint->Status = BS_UpToDate;
+	Blueprint->BlueprintType = BPTYPE_Normal;
+	Blueprint->bLegacyNeedToPurgeSkelRefs = false;
+	Blueprint->bIsRegeneratingOnLoad = false;
+	Blueprint->bRecompileOnLoad = false;
+
+	if (FCSUnrealSharpUtils::IsStandalonePIE())
+	{
+		// Some systems still use the skeleton class in standalone,
+		// fallback to the main class since we don't have a separate skeleton class in standalone.
+		Blueprint->SkeletonGeneratedClass = Field;
+	}
+		
+	Field->SetOwningBlueprint(Blueprint);
 }
 #endif
 
 void UCSGeneratedClassBuilder::CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
-	Field->ClassFlags = TypeMetaData->ClassFlags | SuperClass->ClassFlags & CLASS_ScriptInherit;
+	Field->ClassFlags |= TypeMetaData->ClassFlags;
+	Field->ClassFlags |= SuperClass->ClassFlags & CLASS_ScriptInherit;
 
 	Field->PropertyLink = SuperClass->PropertyLink;
 	Field->ClassWithin = SuperClass->ClassWithin;
@@ -103,6 +98,11 @@ void UCSGeneratedClassBuilder::CreateClass(TSharedPtr<FCSClassMetaData> TypeMeta
 
 	// Build the construction script that will spawn the components
 	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Field, &Field->SimpleConstructionScript, TypeMetaData->Properties);
+
+#if WITH_EDITOR
+	UBlueprint* Blueprint = Field->GetOwningBlueprint();
+	Blueprint->SimpleConstructionScript = Field->SimpleConstructionScript;
+#endif
 
 	// Generate functions for this class
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, TypeMetaData);
@@ -126,17 +126,28 @@ void UCSGeneratedClassBuilder::CreateClass(TSharedPtr<FCSClassMetaData> TypeMeta
 	TryRegisterDynamicSubsystem(Field);
 }
 
-FString UCSGeneratedClassBuilder::GetFieldName(const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
+UClass* UCSGeneratedClassBuilder::TryRedirectSuperClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UClass* CurrentSuperClass) const
 {
-	// Blueprint classes have a _C suffix
-	FString FieldName = Super::GetFieldName(ManagedTypeInfo);
-	FieldName += TEXT("_C");
-	return *FieldName;
+	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != TypeMetaData->ParentClass.FieldName.GetName())
+	{
+		UClass* SuperClass = TypeMetaData->ParentClass.GetAsClass();
+		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
+		{
+			SuperClass = RedirectedClass->Get();
+		}
+
+		CurrentSuperClass = SuperClass;
+	}
+
+	return CurrentSuperClass;
 }
 
-UClass* UCSGeneratedClassBuilder::GetFieldType() const
+FString UCSGeneratedClassBuilder::GetFieldName(TSharedPtr<const FCSTypeReferenceMetaData>& MetaData) const
 {
-	return UCSClass::StaticClass();
+	// Blueprint classes have a _C suffix
+	FString FieldName = Super::GetFieldName(MetaData);
+	FieldName += TEXT("_C");
+	return FieldName;
 }
 
 void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer& ObjectInitializer)
@@ -166,6 +177,13 @@ void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 		Property->InitializeValue_InContainer(ObjectInitializer.GetObj());
 	}
 
+#if WITH_EDITOR
+	if (!FirstManagedClass->SetCanBeInstancedFrom())
+	{
+		return;
+	}
+#endif
+	
 	UCSAssembly* Assembly = FirstManagedClass->GetManagedTypeInfo()->GetOwningAssembly();
 	Assembly->CreateManagedObject(ObjectInitializer.GetObj());
 }
@@ -190,7 +208,9 @@ void UCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, 
 	}
 	
 	TickFunction->bCanEverTick = ParentTickFunction->bCanEverTick;
-	if (TickFunction->bCanEverTick)
+	TickFunction->bStartWithTickEnabled = ParentTickFunction->bStartWithTickEnabled;
+	
+	if (TickFunction->bCanEverTick && TickFunction->bStartWithTickEnabled)
 	{
 		return;
 	}

@@ -67,10 +67,9 @@ public static class StringBuilderExtensions
             _ => throw new Exception("Unsupported type kind passed to BeginType" + typeKind)
         };
         
-        string typeName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
-
+        string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
         builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.FullName}\")]");
-        builder.AppendLine($"public partial {typeKeyWord} {typeName}");
+        builder.AppendLine($"public partial {typeKeyWord} {declarationName}");
         
         if (!string.IsNullOrEmpty(baseType))
         {
@@ -92,7 +91,8 @@ public static class StringBuilderExtensions
         
         builder.OpenBrace();
         
-        builder.AppendNewBackingField($"static IntPtr {nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{type.AssemblyName}\", \"{type.Namespace}\", \"{type.EngineName}\");");
+        string engineName = string.IsNullOrEmpty(overrideTypeName) ? type.EngineName : overrideTypeName;
+        builder.AppendNewBackingField($"static IntPtr {nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{type.AssemblyName}\", \"{type.Namespace}\", \"{engineName}\");");
     }
 
     public static void StartModuleInitializer(this GeneratorStringBuilder builder, string outerName)

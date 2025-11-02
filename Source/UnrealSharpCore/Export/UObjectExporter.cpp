@@ -121,6 +121,7 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 {
 	if (!IsValid(Object))
 	{
+		UE_LOG(LogUnrealSharp, Warning, TEXT("UUObjectExporter::GetWorld_Internal called with invalid object"));
 		return nullptr;
 	}
 
@@ -131,4 +132,16 @@ void* UUObjectExporter::GetWorld_Internal(UObject* Object)
 uint32 UUObjectExporter::GetUniqueID(UObject* Object)
 {
 	return Object->GetUniqueID();
+}
+
+void* UUObjectExporter::GetOuter(UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		UE_LOG(LogUnrealSharp, Warning, TEXT("UUObjectExporter::GetOuter called with invalid object"));
+		return nullptr;
+	}
+
+	UObject* Outer = Object->GetOuter();
+	return UCSManager::Get().FindManagedObject(Outer);
 }
