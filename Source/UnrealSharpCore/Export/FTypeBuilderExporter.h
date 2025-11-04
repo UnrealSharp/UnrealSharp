@@ -26,12 +26,11 @@ class UFTypeBuilderExporter : public UObject
 public:
 	UNREALSHARP_FUNCTION()
 	static FCSTypeReferenceMetaData* NewType_Internal(TCHAR* FieldName,
-		TCHAR* Namespace,
-		TCHAR* AssemblyName,
-		int64 LastModifiedTime,
-		ECSFieldType FieldType,
-		uint8* TypeHandle,
-		bool& NeedsRebuild);
+	                                                  TCHAR* Namespace,
+	                                                  TCHAR* AssemblyName,
+	                                                  ECSFieldType FieldType,
+	                                                  uint8* TypeHandle,
+	                                                  bool& NeedsRebuild);
 
 	UNREALSHARP_FUNCTION()
 	static void InitMetaData_Internal(FCSTypeReferenceMetaData* Owner, int32 Count);

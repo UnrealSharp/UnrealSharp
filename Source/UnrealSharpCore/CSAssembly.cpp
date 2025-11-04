@@ -28,6 +28,9 @@ void UCSAssembly::InitializeAssembly(const FStringView InAssemblyPath)
 #endif
 
 	AssemblyName = *FPaths::GetBaseFilename(AssemblyPath);
+
+	FOnStructureChanged::FDelegate Delegate = FOnStructureChanged::FDelegate::CreateUObject(this, &UCSAssembly::OnManagedTypeChanged);
+	FCSManagedTypeInfoDelegates::AddOnStructureChangedDelegate(Delegate);
 }
 
 bool UCSAssembly::LoadAssembly(bool bisCollectible)
@@ -150,20 +153,19 @@ TSharedPtr<FGCHandle> UCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>&
 }
 
 TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
-	TCHAR* InNamespace,
-	int64 LastModifiedTime,
-	ECSFieldType FieldType,
-	uint8* TypeHandle,
-	bool& NeedsRebuild)
+                                                            TCHAR* InNamespace,
+                                                            ECSFieldType FieldType,
+                                                            uint8* TypeHandle,
+                                                            bool& NeedsRebuild)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryRegisterType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
 	
 	FCSFieldName FieldName(InFieldName, InNamespace);
-	TSharedPtr<FCSManagedTypeInfo> TypeInfo = FindTypeInfo(FieldName);
+	TSharedPtr<FCSManagedTypeInfo>& TypeInfo = AllTypes.FindOrAdd(FieldName);
 
 #if WITH_EDITOR
-	if (TypeInfo.IsValid() && TypeInfo->GetLastModifiedTime() == LastModifiedTime)
+	if (TypeInfo.IsValid() && !TypeInfo->HasChangedStructure())
 	{
 		TypeInfo->SetTypeHandle(TypeHandle);
 		NeedsRebuild = false;
@@ -210,19 +212,9 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	else
 	{
 		TypeInfo = FCSManagedTypeInfo::Create(NewMetaData, this, BuilderClass->GetDefaultObject<UCSGeneratedTypeBuilder>());
-		AllTypes.Add(FieldName, TypeInfo);
-
-		FCSManagedTypeInfo::FOnStructureChanged::FDelegate Delegate = FCSManagedTypeInfo::FOnStructureChanged::FDelegate::CreateUObject(this, &UCSAssembly::AddTypeToRebuild);
-		TypeInfo->RegisterOnStructureChanged(Delegate);
 	}
 
-#if WITH_EDITOR
-	TypeInfo->SetLastModifiedTime(LastModifiedTime);
-#endif
-
 	TypeInfo->SetTypeHandle(TypeHandle);
-	TypeInfo->MarkAsStructurallyModified();
-	
 	NeedsRebuild = true;
 	return TypeInfo;
 }

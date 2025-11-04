@@ -1,9 +1,10 @@
 ﻿#include "CSManagedTypeInfo.h"
 #include "CSManager.h"
-#include "Field/FieldSystemNoiseAlgo.h"
 #include "TypeGenerator/Register/CSGeneratedTypeBuilder.h"
 #include "MetaData/CSTypeReferenceMetaData.h"
 #include "TypeGenerator/Register/CSMetaDataUtils.h"
+
+FOnStructureChanged FCSManagedTypeInfoDelegates::OnStructureChangedDelegate;
 
 FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly)
 {
@@ -19,6 +20,8 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::Create(TSharedPtr<FCSTypeRefe
 {
 	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>(MetaData, InOwningAssembly, Builder);
 	NewTypeInfo->SetField(Builder->CreateField(NewTypeInfo));
+	NewTypeInfo->MarkAsStructurallyModified();
+	
 	return NewTypeInfo;
 }
 
@@ -35,28 +38,7 @@ void FCSManagedTypeInfo::MarkAsStructurallyModified()
 	}
 	
 	bHasChangedStructure = true;
-	OnStructureChanged.Broadcast(SharedThis(this));
-
-	UClass* NewClass = Cast<UClass>(Field.Get());
-	if (!IsValid(NewClass))
-	{
-		return;
-	}
-	
-	TArray<UClass*> DerivedClasses;
-	GetDerivedClasses(NewClass, DerivedClasses, false);
-
-	for (UClass* DerivedClass : DerivedClasses)
-	{
-		if (!FCSClassUtilities::IsManagedClass(DerivedClass))
-		{
-			continue;
-		}
-		
-		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
-		TSharedPtr<FCSManagedTypeInfo> DerivedClassInfo = ManagedClass->GetManagedTypeInfo();
-		DerivedClassInfo->MarkAsStructurallyModified();
-	}
+	FCSManagedTypeInfoDelegates::OnStructureChangedDelegate.Broadcast(SharedThis(this));
 }
 
 UField* FCSManagedTypeInfo::GetOrBuildField()

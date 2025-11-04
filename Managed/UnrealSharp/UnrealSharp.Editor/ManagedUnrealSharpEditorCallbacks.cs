@@ -121,7 +121,7 @@ public static class ManagedUnrealSharpEditorCallbacks
         {
             string projectNameStr = new string(projectName);
             string filePathStr = new string(filePath);
-            CompilationManager.DirtyFile(projectNameStr, filePathStr);
+            CompilationManager.ProcessDirtyFile(projectNameStr, filePathStr);
         }
         catch (Exception exception)
         {

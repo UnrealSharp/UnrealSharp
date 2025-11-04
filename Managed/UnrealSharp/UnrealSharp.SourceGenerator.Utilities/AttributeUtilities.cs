@@ -54,11 +54,14 @@ public static class AttributeUtilities
     
     public static bool HasAttribute(this MemberDeclarationSyntax memberDecl, string attributeName)
     {
-        foreach (var attrList in memberDecl.AttributeLists)
+        foreach (AttributeListSyntax attrList in memberDecl.AttributeLists)
         {
-            foreach (var attr in attrList.Attributes)
+            foreach (AttributeSyntax attribute in attrList.Attributes)
             {
-                if (attr.Name.ToString().Contains(attributeName))
+                string name = attribute.Name.ToString();
+                string longAttributeName = name.EndsWith("Attribute") ? name : name + "Attribute";
+                
+                if (longAttributeName == attributeName)
                 {
                     return true;
                 }
@@ -76,4 +79,16 @@ public static class AttributeUtilities
     public static bool HasCustomLogAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, CustomLogAttributeName);
     public static bool HasUMultiDelegateAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, UMultiDelegateAttributeName);
     public static bool HasUDelegateAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, UDelegateAttributeName);
+    
+    public static bool HasAnyUAttribute(this MemberDeclarationSyntax memberDecl)
+    {
+        return memberDecl.HasUPropertyAttribute() ||
+               memberDecl.HasUFunctionAttribute() ||
+               memberDecl.HasUClassAttribute() ||
+               memberDecl.HasUEnumAttribute() ||
+               memberDecl.HasUStructAttribute() ||
+               memberDecl.HasCustomLogAttribute() ||
+               memberDecl.HasUMultiDelegateAttribute() ||
+               memberDecl.HasUDelegateAttribute();
+    }
 }

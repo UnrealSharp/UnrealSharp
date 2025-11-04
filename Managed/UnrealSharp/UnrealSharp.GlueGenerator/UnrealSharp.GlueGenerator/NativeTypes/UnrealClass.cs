@@ -67,8 +67,6 @@ public record UnrealClass : UnrealClassBase
 
     public EquatableList<string> Overrides;
     public EquatableList<InterfaceData> Interfaces;
-
-    public string ParameterlessCtorBodyHash;
     
     public UnrealClass(SemanticModel model, ITypeSymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
     {
@@ -157,60 +155,6 @@ public record UnrealClass : UnrealClassBase
                 Overrides.List.Add(nativeName);
             }
         }
-        
-        // TODO: TEMP: I want to move this to CompilationManager.DirtyFile
-        {
-            ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)syntax;
-            ConstructorDeclarationSyntax? defaultConstructor = classDeclaration.Members
-                .OfType<ConstructorDeclarationSyntax>()
-                .FirstOrDefault(c =>
-                    c.ParameterList is { Parameters.Count: 0 } &&
-                    !c.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword)));
-
-            ParameterlessCtorBodyHash = ProcessConstructor(defaultConstructor);
-        }
-    }
-    
-    private static string ProcessConstructor(ConstructorDeclarationSyntax? ctor)
-    {
-        if (ctor is null)
-        {
-            return String.Empty;
-        }
-
-        SyntaxNode? bodyNode = null;
-        
-        if (ctor.Body is not null)
-        {
-            bodyNode = ctor.Body;
-        }
-        else if (ctor.ExpressionBody is not null)
-        {
-            bodyNode = ctor.ExpressionBody;
-        }
-        
-        if (bodyNode is null)
-        {
-            return String.Empty;
-        }
-
-        StringBuilder stringBuilder = new StringBuilder(256);
-        
-        IEnumerable<SyntaxToken> tokens = bodyNode.DescendantTokens();
-        foreach (SyntaxToken token in tokens)
-        {
-            object? tokenValue = token.Value;
-            
-            if (tokenValue is null)
-            {
-                continue;
-            }
-            
-            stringBuilder.Append(token.Value);
-        }
-
-        using SHA256? sha = SHA256.Create();
-        return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(stringBuilder.ToString())));
     }
     
     public UnrealClass(EClassFlags flags, string parentName, string parentNamespace, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 

@@ -105,6 +105,9 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(ManagedClassesToCompile);
 
+	FOnStructureChanged::FDelegate Delegate = FOnStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnTypeInfoStructureChanged);
+	FCSManagedTypeInfoDelegates::AddOnStructureChangedDelegate(Delegate);
+
 	UE_LOG(LogUnrealSharpCompiler, Log, TEXT("Recompiled and reinstanced blueprints in %.2f seconds"), FPlatformTime::Seconds() - StartTime);
 }
 
@@ -191,6 +194,30 @@ void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
 	}
 	
 	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
+}
+
+void FUnrealSharpCompilerModule::OnTypeInfoStructureChanged(TSharedPtr<FCSManagedTypeInfo> ChangedTypeInfo)
+{
+	UClass* NewClass = Cast<UClass>(ChangedTypeInfo->GetField());
+	if (!IsValid(NewClass))
+	{
+		return;
+	}
+	
+	TArray<UClass*> DerivedClasses;
+	GetDerivedClasses(NewClass, DerivedClasses, false);
+
+	for (UClass* DerivedClass : DerivedClasses)
+	{
+		if (!FCSClassUtilities::IsManagedClass(DerivedClass))
+		{
+			continue;
+		}
+		
+		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
+		TSharedPtr<FCSManagedTypeInfo> DerivedClassInfo = ManagedClass->GetManagedTypeInfo();
+		DerivedClassInfo->MarkAsStructurallyModified();
+	}
 }
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSAssembly* Assembly)

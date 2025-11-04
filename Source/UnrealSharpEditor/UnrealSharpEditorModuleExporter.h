@@ -16,4 +16,7 @@ public:
 
 	UNREALSHARP_FUNCTION()
 	static void GetProjectPaths(TArray<FString>* Paths);
+
+	UNREALSHARP_FUNCTION()
+	static void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName);
 };

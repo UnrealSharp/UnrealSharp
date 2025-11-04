@@ -50,7 +50,7 @@ public static class StringBuilderExtensions
         builder.StartModuleInitializer(type.SourceName);
         builder.StartModuleInitializerMethod(type);
         
-        builder.AppendLine($"IntPtr {type.BuilderNativePtr} = NewType(\"{type.EngineName}\", {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}, {type.FieldTypeValue}, typeof({type.FullName}), out var needsRebuild);");
+        builder.AppendLine($"IntPtr {type.BuilderNativePtr} = NewType(\"{type.EngineName}\", {type.FieldTypeValue}, typeof({type.FullName}), out var needsRebuild);");
         builder.AppendLine("if (!needsRebuild) return;");
         type.CreateTypeBuilder(builder);
         builder.EndModuleInitializer();

@@ -7,7 +7,7 @@ namespace UnrealSharp.Interop;
 [NativeCallbacks]
 public static unsafe partial class FTypeBuilderExporter
 {
-    public static delegate* unmanaged<char*, char*, char*, long, byte, IntPtr, out NativeBool, IntPtr> NewType_Internal;
+    public static delegate* unmanaged<char*, char*, char*, byte, IntPtr, out NativeBool, IntPtr> NewType_Internal;
 
     public static delegate* unmanaged<IntPtr, int, void> InitMetaData_Internal;
     public static delegate* unmanaged<IntPtr, char*, char*, void> AddMetaData_Internal;
@@ -34,7 +34,7 @@ public static unsafe partial class FTypeBuilderExporter
     public static delegate* unmanaged<IntPtr, int, void> ReserveInterfaces_Internal;
     public static delegate* unmanaged<IntPtr, char*, char*, char*, void> AddInterface_Internal;
     
-    public static IntPtr NewType(string typeName, long typeVersion, byte fieldType, Type type, out bool needsRebuild)
+    public static IntPtr NewType(string typeName, byte fieldType, Type type, out bool needsRebuild)
     {
         IntPtr handlePtr = GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(type, type.Assembly));
         
@@ -42,7 +42,7 @@ public static unsafe partial class FTypeBuilderExporter
         fixed (char* namespaceNamePtr = type.Namespace)
         fixed (char* typeNamePtr = typeName)
         {
-            IntPtr nativeType = NewType_Internal(typeNamePtr, namespaceNamePtr, assemblyNamePtr, typeVersion, fieldType, handlePtr, out var nativeNeedsRebuild);
+            IntPtr nativeType = NewType_Internal(typeNamePtr, namespaceNamePtr, assemblyNamePtr, fieldType, handlePtr, out var nativeNeedsRebuild);
             needsRebuild = nativeNeedsRebuild.ToManagedBool();
             return nativeType;
         }

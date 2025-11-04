@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
+using UnrealSharp.Editor.Interop;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharp.Editor;
@@ -33,7 +34,7 @@ file sealed class FileAdditionalText : AdditionalText
 public static class CompilationManager
 {
     private static readonly MSBuildWorkspace UnrealSharpWorkspace = MSBuildWorkspace.Create();
-
+    
     private sealed class GenState
     {
         public GeneratorDriver? Driver;
@@ -256,8 +257,10 @@ public static class CompilationManager
         dependentsArray->ToNativeWithMarshaller<string>(StringMarshaller.ToNative, dependents, sizeof(UnmanagedArray));
     }
 
-    public static void DirtyFile(string projectName, string filepath)
+    public static void ProcessDirtyFile(string projectName, string filepath)
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        
         string fullPath = Path.GetFullPath(filepath);
 
         Project? foundProject = null;
@@ -308,17 +311,22 @@ public static class CompilationManager
             }
         }
 
-        if (state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingState))
+        if (state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree))
         {
-            state.InitialCompilation = state.InitialCompilation!.ReplaceSyntaxTree(existingState, newTree);
+            state.InitialCompilation = state.InitialCompilation!.ReplaceSyntaxTree(existingTree, newTree);
         }
         else
         {
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
         
+        SyntaxUtilities.ProcessForChangesInUTypes(newTree, existingTree, foundProject);
+        
         state.TreesByPath[fullPath] = newTree;
         DirtyProjectIds.Add(foundProject.Id);
+        
+        stopwatch.Stop();
+        LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
     }
 
     public static void ProcessDirtyProjects()

@@ -25,6 +25,8 @@ private:
     void OnNewStruct(UCSScriptStruct* NewStruct);
     void OnNewEnum(UCSEnum* NewEnum);
     void OnNewInterface(UCSInterface* NewInterface);
+
+    void OnTypeInfoStructureChanged(TSharedPtr<FCSManagedTypeInfo> ChangedTypeInfo);
     
     void OnManagedAssemblyLoaded(const UCSAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();

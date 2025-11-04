@@ -83,7 +83,7 @@ public:
 		return TypeInfo;
 	}
 	
-	TSharedPtr<FCSManagedTypeInfo> FindTypeInfo(const FCSFieldName& FieldName) const
+	UNREALSHARPCORE_API TSharedPtr<FCSManagedTypeInfo> FindTypeInfo(const FCSFieldName& FieldName) const
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindTypeInfo);
 
@@ -114,11 +114,10 @@ public:
 	}
 
 	TSharedPtr<FCSManagedTypeInfo> TryRegisterType(TCHAR* InFieldName,
-		TCHAR* InNamespace,
-		int64 LastModifiedTime,
-		ECSFieldType FieldType,
-		uint8* TypeHandle,
-		bool& NeedsRebuild);
+	                                               TCHAR* InNamespace,
+	                                               ECSFieldType FieldType,
+	                                               uint8* TypeHandle,
+	                                               bool& NeedsRebuild);
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);
@@ -150,8 +149,13 @@ private:
 		return FindObject<T>(Package, *FieldName.GetName());
 	}
 
-	void AddTypeToRebuild(TSharedPtr<FCSManagedTypeInfo> TypeInfo)
+	void OnManagedTypeChanged(TSharedPtr<FCSManagedTypeInfo> TypeInfo)
 	{
+		if (TypeInfo->GetOwningAssembly() != this)
+		{
+			return;
+		}
+		
 		PendingRebuild.Add(TypeInfo);
 	}
 	

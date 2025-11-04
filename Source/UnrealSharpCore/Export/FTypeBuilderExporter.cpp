@@ -12,12 +12,11 @@
 #include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
 
 FCSTypeReferenceMetaData* UFTypeBuilderExporter::NewType_Internal(TCHAR* InFieldName,
-                                             TCHAR* InNamespace,
-                                             TCHAR* InAssemblyName,
-                                             int64 LastModifiedTime,
-                                             ECSFieldType FieldType,
-                                             uint8* TypeHandle,
-                                             bool& NeedsRebuild)
+                                                                  TCHAR* InNamespace,
+                                                                  TCHAR* InAssemblyName,
+                                                                  ECSFieldType FieldType,
+                                                                  uint8* TypeHandle,
+                                                                  bool& NeedsRebuild)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::NewType_Internal);
 	
@@ -29,13 +28,7 @@ FCSTypeReferenceMetaData* UFTypeBuilderExporter::NewType_Internal(TCHAR* InField
 		return nullptr;
 	}
 	
-	TSharedPtr<FCSManagedTypeInfo> TypeInfo = Assembly->TryRegisterType(InFieldName,
-		InNamespace,
-		LastModifiedTime,
-		FieldType,
-		TypeHandle,
-		NeedsRebuild);
-
+	TSharedPtr<FCSManagedTypeInfo> TypeInfo = Assembly->TryRegisterType(InFieldName, InNamespace, FieldType, TypeHandle, NeedsRebuild);
 	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData = TypeInfo->GetTypeMetaData();
 	return TypeMetaData.Get();
 }

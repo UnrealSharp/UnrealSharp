@@ -7,17 +7,34 @@ class UCSGeneratedTypeBuilder;
 class UCSAssembly;
 struct FGCHandle;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnStructureChanged, TSharedPtr<struct FCSManagedTypeInfo>);
+
+struct UNREALSHARPCORE_API FCSManagedTypeInfoDelegates
+{
+	static FDelegateHandle AddOnStructureChangedDelegate(const FOnStructureChanged::FDelegate& Delegate)
+	{
+		return OnStructureChangedDelegate.Add(Delegate);
+	}
+
+	static void RemoveOnStructureChangedDelegate(FDelegateHandle DelegateHandle)
+	{
+		OnStructureChangedDelegate.Remove(DelegateHandle);
+	}
+
+private:
+	friend struct FCSManagedTypeInfo;
+	static FOnStructureChanged OnStructureChangedDelegate;
+};
+
 struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManagedTypeInfo>
 {
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnStructureChanged, TSharedPtr<FCSManagedTypeInfo> /*ManagedTypeInfo*/);
-	
 	~FCSManagedTypeInfo() = default;
 	
 	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
 	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
 	: Field(nullptr), Builder(Builder), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
 	{
-		
+
 	}
 
 	static TSharedPtr<FCSManagedTypeInfo> Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
@@ -36,25 +53,11 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 
 	UCSAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
-#if WITH_EDITOR
-	uint32 GetLastModifiedTime() const { return LastModifiedTime; }
-	void SetLastModifiedTime(uint32 InLastModifiedTime) { LastModifiedTime = InLastModifiedTime; }
-#endif
-
 	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
 	void SetTypeHandle(uint8* ManagedTypeHandlePtr);
 	
 	void MarkAsStructurallyModified();
-
-	FDelegateHandle RegisterOnStructureChanged(const FOnStructureChanged::FDelegate& Delegate)
-	{
-		return OnStructureChanged.Add(Delegate);
-	}
-
-	void UnregisterOnStructureChanged(FDelegateHandle DelegateHandle)
-	{
-		OnStructureChanged.Remove(DelegateHandle);
-	}
+	bool HasChangedStructure() const { return bHasChangedStructure; }
 	
 private:
 	void SetField(UField* InField) { Field = TStrongObjectPtr(InField); }
@@ -75,10 +78,4 @@ private:
 
 	// Handle to the managed type in the C# assembly.
 	TSharedPtr<FGCHandle> ManagedTypeHandle;
-
-	FOnStructureChanged OnStructureChanged;
-
-#if WITH_EDITOR
-	uint32 LastModifiedTime = 0;
-#endif
 };

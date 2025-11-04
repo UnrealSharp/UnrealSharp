@@ -26,24 +26,18 @@ public static class TypeUtilities
     
     public static string GetFullNamespace(this CSharpSyntaxNode declaration)
     {
-        BaseNamespaceDeclarationSyntax? namespaceNode = declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
+        SyntaxNode? parent = declaration.Parent;
 
-        if (namespaceNode == null)
+        while (parent != null)
         {
-            return string.Empty;
-        }
-        
-        StringBuilder namespaceBuilder = new StringBuilder();
-        
-        namespaceBuilder.Append(namespaceNode.Name);
-        BaseNamespaceDeclarationSyntax? currentNamespace = namespaceNode.Parent as BaseNamespaceDeclarationSyntax;
-        
-        while (currentNamespace != null)
-        {
-            namespaceBuilder.Insert(0, currentNamespace.Name + ".");
-            currentNamespace = currentNamespace.Parent as BaseNamespaceDeclarationSyntax;
+            if (parent is BaseNamespaceDeclarationSyntax namespaceDeclaration)
+            {
+                return namespaceDeclaration.Name.ToString();
+            }
+
+            parent = parent.Parent;
         }
 
-        return namespaceBuilder.ToString();
+        return string.Empty;
     }
 }
