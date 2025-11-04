@@ -5,7 +5,6 @@
 #else
 #include "Engine/UserDefinedStruct.h"
 #endif
-#include "ManagedReferencesCollection.h"
 #include "CSManagedTypeInterface.h"
 #include "CSScriptStruct.generated.h"
 

@@ -29,13 +29,8 @@ private:
 struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManagedTypeInfo>
 {
 	~FCSManagedTypeInfo() = default;
-	
 	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
-	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
-	: Field(nullptr), Builder(Builder), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
-	{
-
-	}
+	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
 
 	static TSharedPtr<FCSManagedTypeInfo> Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
 
@@ -60,20 +55,21 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 	bool HasChangedStructure() const { return bHasChangedStructure; }
 	
 private:
-	void SetField(UField* InField) { Field = TStrongObjectPtr(InField); }
-	
 	friend UCSAssembly;
-	
+
+	// The actual UClass, UStruct, UEnum et.c. that this managed type info represents.
 	TStrongObjectPtr<UField> Field;
+
+	// The CDO that's responsible for creating/updating the managed type. UCSGeneratedClassBuilder, UCSGeneratedStructBuilder et.c.
 	UCSGeneratedTypeBuilder* Builder;
 
-	// The managed assembly that owns this type.
+	// The managed assembly that owns this type. Assembly is always in memory so a raw pointer is fine.
 	UCSAssembly* OwningAssembly;
 	
-	// The metadata for this type (properties, functions et.c.)
+	// The metadata for this type to generate reflection data from (UProperties, UFunctions, metadata et.c.).
 	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData;
 
-	// Current state of the structure of this type. This changes when new UProperties/UFunctions/metadata are added or removed.
+	// Current state of the structure of this type. This changes when new UProperties/UFunctions/metadata are added or removed from the type.
 	bool bHasChangedStructure = false;
 
 	// Handle to the managed type in the C# assembly.

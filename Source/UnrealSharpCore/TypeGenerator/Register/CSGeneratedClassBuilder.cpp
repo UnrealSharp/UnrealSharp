@@ -57,8 +57,8 @@ void UCSGeneratedClassBuilder::CreateOwningBlueprint(TSharedPtr<FCSClassMetaData
 	}
 
 	FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
-
 	UPackage* Package = TypeMetaData->GetAsPackage();
+	
 	Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted | RF_Transient);
 	Blueprint->GeneratedClass = Field;
 	Blueprint->ParentClass = SuperClass;
@@ -89,11 +89,9 @@ void UCSGeneratedClassBuilder::CreateClass(TSharedPtr<FCSClassMetaData> TypeMeta
 	Field->ClassCastFlags = SuperClass->ClassCastFlags;
 
 	SetConfigName(Field, TypeMetaData);
-
-	// Implement all Blueprint interfaces declared
+	
 	ImplementInterfaces(Field, TypeMetaData->Interfaces);
-
-	// Generate properties for this class
+	
 	FCSPropertyFactory::CreateAndAssignProperties(Field, TypeMetaData->Properties);
 
 	// Build the construction script that will spawn the components
@@ -155,7 +153,7 @@ void UCSGeneratedClassBuilder::ManagedObjectConstructor(const FObjectInitializer
 	UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(ObjectInitializer.GetClass());
 	UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(FirstManagedClass);
 	
-	//Execute the native class' constructor first.
+	// Execute the native class' constructor first.
 	FirstNativeClass->ClassConstructor(ObjectInitializer);
 
 	// Initialize managed properties that are not zero initialized such as FText.

@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "CSClass.h"
-#include "Animation/AnimBlueprintGeneratedClass.h"
 #include "CSSkeletonClass.generated.h"
 
 class UCSClass;

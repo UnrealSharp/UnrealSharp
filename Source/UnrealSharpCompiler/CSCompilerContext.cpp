@@ -233,8 +233,6 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 
 void FCSCompilerContext::ApplyMetaData()
 {
-	TSharedPtr<const FCSClassMetaData> TypeMetaData = GetTypeMetaData();
-
 	static FString DisplayNameKey = TEXT("DisplayName");
 	if (!NewClass->HasMetaData(*DisplayNameKey))
 	{
@@ -248,7 +246,7 @@ void FCSCompilerContext::ApplyMetaData()
 		NewClass->SetMetaData(*DisplayNameKey, *DisplayName);
 	}
 
-	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, NewClass);
+	FCSMetaDataUtils::ApplyMetaData(GetTypeMetaData()->MetaData, NewClass);
 }
 
 bool FCSCompilerContext::NeedsToFakeNativeClass(UClass* Class)

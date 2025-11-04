@@ -6,9 +6,9 @@
 
 FOnStructureChanged FCSManagedTypeInfoDelegates::OnStructureChangedDelegate;
 
-FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly)
+FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly) : Builder(nullptr)
 {
-	SetField(NativeField);
+	Field = TStrongObjectPtr(NativeField);
 	OwningAssembly = InOwningAssembly;
 	ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(FCSFieldName(NativeField));
 
@@ -16,12 +16,17 @@ FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwnin
 	bHasChangedStructure = false;
 }
 
+FCSManagedTypeInfo::FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly,
+	UCSGeneratedTypeBuilder* Builder): Field(nullptr), Builder(Builder), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
+{
+
+}
+
 TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
 {
 	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>(MetaData, InOwningAssembly, Builder);
-	NewTypeInfo->SetField(Builder->CreateField(NewTypeInfo));
+	NewTypeInfo->Field = TStrongObjectPtr(Builder->CreateField(NewTypeInfo));
 	NewTypeInfo->MarkAsStructurallyModified();
-	
 	return NewTypeInfo;
 }
 
