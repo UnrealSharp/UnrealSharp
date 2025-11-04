@@ -1,7 +1,6 @@
 ﻿#include "UCoreUObjectExporter.h"
 #include "CSAssembly.h"
 #include "CSManager.h"
-#include "CSManager.h"
 #include "Logging/StructuredLog.h"
 
 UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* InNamespace, const char* InTypeName)

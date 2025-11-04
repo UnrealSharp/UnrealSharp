@@ -1,15 +1,13 @@
+using UnrealSharp.Core.Interop;
+
 namespace UnrealSharp.Core.Marshallers;
 
 public static class ObjectMarshaller<T> where T : UnrealSharpObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T? obj)
     {
-        IntPtr uObjectPosition = nativeBuffer + arrayIndex * IntPtr.Size;
-
-        unsafe
-        {
-            *(IntPtr*)uObjectPosition = obj?.NativeObject ?? IntPtr.Zero;
-        }
+        IntPtr nativeTObjectPtr = nativeBuffer + arrayIndex * IntPtr.Size;
+        TObjectPtrExporter.CallSetTObjectPtrPropertyValue(nativeTObjectPtr, obj?.NativeObject ?? IntPtr.Zero);
     }
     
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)

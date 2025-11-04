@@ -105,7 +105,8 @@ void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassTo
 void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 {
 	UCSClass* MainClass = GetMainClass();
-	UCSSkeletonClass* NewSkeletonClass = NewObject<UCSSkeletonClass>(Blueprint->GetOutermost(), FName(*NewClassName), RF_Public | RF_Transactional);
+	
+	UCSSkeletonClass* NewSkeletonClass = NewObject<UCSSkeletonClass>(Blueprint->GetOutermost(), *NewClassName, RF_Public | RF_Transactional);
 	NewSkeletonClass->SetOwningBlueprint(Blueprint);
 	NewSkeletonClass->SetGeneratedClass(MainClass);
 
