@@ -72,16 +72,27 @@ public static class PreprocessorExporter
 
     private static void ExportDirective(HashSet<string> defines)
     {
-        GeneratorStringBuilder stringBuilder = new();
+        var ordered = defines
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => s);
 
-        foreach(string define in defines)
-        {
-            stringBuilder.DeclarePreprocessor(define);
-        }
+        var joined = string.Join(";", ordered);
 
-        var definesFilePath = Path.Combine(Program.EngineGluePath, "UE5RulesDefines.cs");
+        GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
 
-        File.WriteAllText(definesFilePath, stringBuilder.ToString());
+        stringBuilder.AppendLine("<Project>");
+        stringBuilder.Indent();
+        stringBuilder.AppendLine("<PropertyGroup>");
+        stringBuilder.Indent();
+        stringBuilder.AppendLine($"<DefineConstants>$(DefineConstants);{joined}</DefineConstants>");
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("</PropertyGroup>");
+        stringBuilder.UnIndent();
+        stringBuilder.AppendLine("</Project>");
+
+        var propsPath = Path.Combine(Program.EngineGluePath, "UE5Rules.Defines.props");
+        File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 
 }
