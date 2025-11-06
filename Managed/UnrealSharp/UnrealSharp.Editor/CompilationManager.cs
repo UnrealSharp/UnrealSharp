@@ -125,7 +125,7 @@ public static class CompilationManager
 
             state.MetadataRefCount = project.MetadataReferences.Count;
             state.AnalyzerRefCount = project.AnalyzerReferences.Count;
-            state.AdditionalDocCount = project.AdditionalDocuments.Length();
+            state.AdditionalDocCount = project.AdditionalDocuments.Count();
 
             state.Driver = state.Driver!
                 .WithUpdatedParseOptions((CSharpParseOptions)project.ParseOptions!)
@@ -347,7 +347,7 @@ public static class CompilationManager
             
             bool firstTime = state.Driver == null;
             bool analyzersChanged = state.AnalyzerRefCount != project.AnalyzerReferences.Count;
-            bool additionalChanged = state.AdditionalDocCount != project.AdditionalDocuments.Length();
+            bool additionalChanged = state.AdditionalDocCount != project.AdditionalDocuments.Count();
             bool optionsChanged = !ReferenceEquals(state.ParseOptions, parseOptions) ||
                                   !ReferenceEquals(state.AnalyzerOptions, analyzerOptions); 
             bool refsChanged = state.MetadataRefCount != project.MetadataReferences.Count;
@@ -371,7 +371,7 @@ public static class CompilationManager
                 }
 
                 state.AdditionalTexts = ImmutableArray.CreateRange(additionalTexts);
-                state.AdditionalDocCount = project.AdditionalDocuments.Length();
+                state.AdditionalDocCount = project.AdditionalDocuments.Count();
             }
 
             if (optionsChanged && state.Driver is not null)

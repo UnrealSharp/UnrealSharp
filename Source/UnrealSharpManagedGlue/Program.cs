@@ -65,7 +65,7 @@ public static class Program
             if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
             {
                 Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
-                DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
+                //DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
             }
             
             USharpBuildToolUtilities.CreateGlueProjects();

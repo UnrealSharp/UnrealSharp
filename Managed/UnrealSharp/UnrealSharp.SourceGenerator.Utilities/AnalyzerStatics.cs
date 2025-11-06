@@ -149,33 +149,4 @@ public static class AnalyzerStatics
 
         return methodName;
     }
-
-    public static string GetFullNamespace(this CSharpSyntaxNode declaration)
-    {
-        var namespaceNode = declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
-        var namespaceBuilder = new StringBuilder();
-        if (namespaceNode != null)
-        {
-            namespaceBuilder.Append(namespaceNode.Name.ToString());
-            var currentNamespace = namespaceNode.Parent as BaseNamespaceDeclarationSyntax;
-            while (currentNamespace != null)
-            {
-                namespaceBuilder.Insert(0, $"{currentNamespace.Name}.");
-                currentNamespace = currentNamespace.Parent as BaseNamespaceDeclarationSyntax;
-            }
-        }
-
-        return namespaceBuilder.ToString();
-    }
-    
-    public static string? GetAnnotatedTypeName(this TypeSyntax? type, SemanticModel model)
-    {
-        if (type is null)
-        {
-            return null;
-        }
-
-        ITypeSymbol? typeInfo = model.GetTypeInfo(type).Type;
-        return type is NullableTypeSyntax ? typeInfo?.WithNullableAnnotation(NullableAnnotation.Annotated).ToString() : typeInfo?.ToString();
-    }
 }

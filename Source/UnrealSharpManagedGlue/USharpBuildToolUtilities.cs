@@ -16,6 +16,11 @@ public static class USharpBuildToolUtilities
         bool hasProjectGlue = false;
         foreach (ProjectDirInfo pluginDir in PluginUtilities.PluginInfo.Values)
         {
+            if (pluginDir.IsPartOfEngine)
+            {
+                return;
+            }
+            
             if (pluginDir.IsUProject)
             {
                 hasProjectGlue = true;

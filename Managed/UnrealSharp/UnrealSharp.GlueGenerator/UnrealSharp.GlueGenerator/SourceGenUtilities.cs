@@ -79,9 +79,9 @@ public static class SourceGenUtilities
         return attributes;
     }
     
-    public static List<MetaData> GetUMetaAttributes(this ISymbol symbol)
+    public static List<MetaDataInfo> GetUMetaAttributes(this ISymbol symbol)
     {
-        List<MetaData> attributes = new List<MetaData>(symbol.GetAttributes().Length);
+        List<MetaDataInfo> attributes = new List<MetaDataInfo>(symbol.GetAttributes().Length);
         
         foreach (AttributeData attribute in symbol.GetAttributes())
         {
@@ -99,7 +99,7 @@ public static class SourceGenUtilities
                     value = valueArg;
                 }
                 
-                attributes.Add(new MetaData(key, value));
+                attributes.Add(new MetaDataInfo(key, value));
                 continue;
             }
 
@@ -109,7 +109,7 @@ public static class SourceGenUtilities
                 int index = attributeName.IndexOf("Attribute", StringComparison.OrdinalIgnoreCase);
                 string name = attributeName.Substring(0, index);
                 
-                attributes.Add(new MetaData(name, ""));
+                attributes.Add(new MetaDataInfo(name, ""));
             }
         }
 

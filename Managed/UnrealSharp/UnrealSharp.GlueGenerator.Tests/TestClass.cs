@@ -153,6 +153,11 @@ public partial class UTestClass : AActor, ITestInterface
         base.BeginPlay_Implementation();
     }
 
+    protected override void Tick_Implementation(float deltaSeconds)
+    {
+        base.Tick_Implementation(deltaSeconds);
+    }
+
     [UFunction(FunctionFlags.BlueprintEvent)]
     public partial float TestFunction(int intParam, string strParam);
     public partial float TestFunction_Implementation(int intParam, string strParam)
@@ -187,6 +192,21 @@ public partial class UTestClass : AActor, ITestInterface
     // Cancellation token is optional.
     [UFunction(FunctionFlags.BlueprintCallable)]
     public async Task<int> SlowAdd(int lhs, int rhs, CancellationToken cancellationToken)
+    {
+        PrintString($"Commencing the world's slowest addition...");
+
+        await Task.Delay(1000, cancellationToken).ConfigureWithUnrealContext();
+        if (cancellationToken.IsCancellationRequested || IsDestroyed) { return default; }
+
+        int result = lhs + rhs;
+        PrintString($"{lhs} + {rhs} = {result}!");
+
+        return result;
+    }
+    
+    // Cancellation token is optional.
+    [UFunction(FunctionFlags.BlueprintCallable)]
+    public async ValueTask<int> SlowAddTask(int lhs, int rhs, CancellationToken cancellationToken)
     {
         PrintString($"Commencing the world's slowest addition...");
 

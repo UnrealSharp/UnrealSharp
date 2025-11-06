@@ -190,6 +190,7 @@ void UCSGeneratedClassBuilder::SetupDefaultTickSettings(UObject* DefaultObject, 
 {
 	FTickFunction* TickFunction;
 	FTickFunction* ParentTickFunction;
+	
 	if (AActor* Actor = Cast<AActor>(DefaultObject))
 	{
 		TickFunction = &Actor->PrimaryActorTick;

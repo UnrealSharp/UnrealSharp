@@ -10,7 +10,7 @@ FGCHandleIntPtr UUEnumExporter::GetManagedEnumType(UEnum* ScriptEnum)
 {
 	if (const UCSEnum* CSEnum = Cast<UCSEnum>(ScriptEnum); CSEnum != nullptr)
 	{
-		return CSEnum->GetManagedTypeInfo<FCSManagedTypeInfo>()->GetManagedTypeHandle()->GetHandle();
+		return CSEnum->GetManagedTypeInfo()->GetManagedTypeHandle()->GetHandle();
 	}
 
 	const UCSAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptEnum);
@@ -20,7 +20,7 @@ FGCHandleIntPtr UUEnumExporter::GetManagedEnumType(UEnum* ScriptEnum)
 	}
 
 	const FCSFieldName FieldName(ScriptEnum);
-	const TSharedPtr<FCSManagedTypeInfo> Info = Assembly->FindTypeInfo<FCSManagedTypeInfo>(FieldName);
+	const TSharedPtr<FCSManagedTypeInfo> Info = Assembly->FindTypeInfo(FieldName);
 	if (!Info.IsValid())
 	{
 		return FGCHandleIntPtr();

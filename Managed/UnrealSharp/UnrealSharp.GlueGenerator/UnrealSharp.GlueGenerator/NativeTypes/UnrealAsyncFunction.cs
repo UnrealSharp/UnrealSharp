@@ -203,11 +203,14 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         
         asyncFactoryFunction.AddMetaData("DefaultToSelf", "Target");
         asyncFactoryFunction.AddMetaData("BlueprintInternalUseOnly", "true");
+        asyncFactoryFunction.AddMetaDataRange(MetaData);
+        
+        string conversion = ReturnValueType == ReturnValueType.ValueTask ? ".AsTask()" : string.Empty;
         
         builder.AppendLine("public static " + wrapperName + " " + SourceName + "(" + string.Join(", ", asyncFactoryFunction.Properties.Select(p => $"{p.ManagedType} {p.SourceName}")) + ")");
         builder.OpenBrace();
         builder.AppendLine($"var action = NewObject<{wrapperName}>(Target);");
-        builder.AppendLine("action.asyncDelegate = (cancellationToken) => Target." + SourceName + "(" + string.Join(", ", asyncFactoryFunction.Properties.Skip(1).Select(p => p.SourceName)) + (hasCancellationToken ? ", cancellationToken" : string.Empty) + ");");
+        builder.AppendLine("action.asyncDelegate = (cancellationToken) => Target." + SourceName + "(" + string.Join(", ", asyncFactoryFunction.Properties.Skip(1).Select(p => p.SourceName)) + (hasCancellationToken ? ", cancellationToken" : string.Empty) + $"){conversion};");
         builder.AppendLine("return action;");
         builder.CloseBrace();
         

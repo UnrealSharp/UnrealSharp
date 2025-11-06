@@ -633,11 +633,6 @@ public partial class UObject
     }
 
     /// <summary>
-    /// Gets the UObject this object resides in
-    /// </summary>
-    public UObject Outer => UCSObjectExtensions.GetOuter(this);
-
-    /// <summary>
     /// Marks the object as garbage.
     /// </summary>
     public void MarkAsGarbage() => UCSObjectExtensions.MarkAsGarbage(this);

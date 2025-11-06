@@ -26,18 +26,30 @@ public static class TypeUtilities
     
     public static string GetFullNamespace(this CSharpSyntaxNode declaration)
     {
-        SyntaxNode? parent = declaration.Parent;
-
-        while (parent != null)
+        var namespaceNode = declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>();
+        var namespaceBuilder = new StringBuilder();
+        if (namespaceNode != null)
         {
-            if (parent is BaseNamespaceDeclarationSyntax namespaceDeclaration)
+            namespaceBuilder.Append(namespaceNode.Name.ToString());
+            var currentNamespace = namespaceNode.Parent as BaseNamespaceDeclarationSyntax;
+            while (currentNamespace != null)
             {
-                return namespaceDeclaration.Name.ToString();
+                namespaceBuilder.Insert(0, $"{currentNamespace.Name}.");
+                currentNamespace = currentNamespace.Parent as BaseNamespaceDeclarationSyntax;
             }
-
-            parent = parent.Parent;
         }
 
-        return string.Empty;
+        return namespaceBuilder.ToString();
+    }
+    
+    public static string? GetAnnotatedTypeName(this TypeSyntax? type, SemanticModel model)
+    {
+        if (type is null)
+        {
+            return null;
+        }
+
+        ITypeSymbol? typeInfo = model.GetTypeInfo(type).Type;
+        return type is NullableTypeSyntax ? typeInfo?.WithNullableAnnotation(NullableAnnotation.Annotated).ToString() : typeInfo?.ToString();
     }
 }

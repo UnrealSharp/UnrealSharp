@@ -232,7 +232,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             return null;
         }
 
-        string namespaceName = AnalyzerStatics.GetFullNamespace(classDeclaration);
+        string namespaceName = classDeclaration.GetFullNamespace();
 
         if (string.IsNullOrEmpty(namespaceName))
         {

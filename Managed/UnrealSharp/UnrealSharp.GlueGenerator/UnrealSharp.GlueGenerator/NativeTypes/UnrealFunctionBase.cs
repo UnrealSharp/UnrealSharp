@@ -43,6 +43,14 @@ public enum EFunctionFlags : ulong
     NetValidate = 0x80000000,
 };
 
+public enum ReturnValueType
+{
+    Void,
+    Value,
+    AsyncTask,
+    ValueTask
+}
+
 [Inspector]
 public abstract record UnrealFunctionBase : UnrealStruct
 {
@@ -50,6 +58,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     
     public UnrealProperty ReturnType;
     public EFunctionFlags FunctionFlags;
+    public ReturnValueType ReturnValueType;
 
     protected static readonly EFunctionFlags NetFunctionFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
     protected const string UFunctionAttributeName = "UFunctionAttribute";
@@ -97,6 +106,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         if (returnTypeSymbol.Name == VoidProperty.VoidTypeName)
         {
             ReturnType = new VoidProperty(this);
+            ReturnValueType = ReturnValueType.Void;
         }
         else
         {
@@ -104,7 +114,12 @@ public abstract record UnrealFunctionBase : UnrealStruct
             if (typeSymbol is IMethodSymbol methodSymbol && methodSymbol.IsAsync)
             {
                 INamedTypeSymbol taskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")!;
-                if (returnTypeSymbol.OriginalDefinition.Equals(taskSymbol, SymbolEqualityComparer.Default))
+                INamedTypeSymbol valueTaskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1")!;
+                
+                bool isValueTask = returnTypeSymbol.OriginalDefinition.Equals(valueTaskSymbol, SymbolEqualityComparer.Default);
+                bool isTask = returnTypeSymbol.OriginalDefinition.Equals(taskSymbol, SymbolEqualityComparer.Default);
+                
+                if (isValueTask || isTask)
                 {
                     ITypeSymbol taskReturnType = returnTypeSymbol is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1
                         ? namedType.TypeArguments[0]
@@ -112,15 +127,19 @@ public abstract record UnrealFunctionBase : UnrealStruct
                     
                     returnValueSymbol = taskReturnType;
                     returnTypeSymbol = taskReturnType;
+                    
+                    ReturnValueType = isValueTask ? ReturnValueType.ValueTask : ReturnValueType.AsyncTask;
                 }
                 else
                 {
                     returnValueSymbol = returnTypeSymbol;
+                    ReturnValueType = ReturnValueType.Value;
                 }
             }
             else
             {
                 returnValueSymbol = model.GetSymbolInfo(returnType).Symbol!;
+                ReturnValueType = ReturnValueType.Value;
             }
 
             ReturnType = PropertyFactory.CreateProperty(returnTypeSymbol, returnType, returnValueSymbol, this);

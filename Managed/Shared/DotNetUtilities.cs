@@ -176,7 +176,7 @@ public static class DotNetUtilities
 				    errorMessage = "Process exited with non-zero exit code but no output was captured.";
 			    }
 			    
-			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}");
+			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}. Arguments: {string.Join(" ", arguments)}" );
 		    }
 	    }
 	    catch (Exception ex)

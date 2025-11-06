@@ -5,12 +5,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
-public record struct MetaData
+public record struct MetaDataInfo
 {
     public string Key;
     public string Value;
     
-    public MetaData(string inKey, string inValue)
+    public MetaDataInfo(string inKey, string inValue)
     {
         Key = inKey;
         Value = inValue;
@@ -35,7 +35,7 @@ public record UnrealType
     
     public string BuilderNativePtr => HasOuter ? $"{Outer!.SourceName}_{SourceName}Ptr" : $"{SourceName}Ptr";
     
-    private readonly EquatableList<MetaData> _metaData = new(new List<MetaData>());
+    private readonly EquatableList<MetaDataInfo> _metaData = new(new List<MetaDataInfo>());
     
     public UnrealType(ISymbol? memberSymbol, SyntaxNode syntaxNode, UnrealType? outer = null)
     {
@@ -44,7 +44,7 @@ public record UnrealType
         
         if (memberSymbol != null)
         {
-            _metaData = new EquatableList<MetaData>(memberSymbol.GetUMetaAttributes());
+            _metaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
             Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
             SourceName = memberSymbol.Name;
             AssemblyName = memberSymbol.ContainingAssembly.Name;
@@ -82,7 +82,10 @@ public record UnrealType
         HasOuter = outer != null;
     }
     
-    public void AddMetaData(string key, string value) => _metaData.List.Add(new MetaData { Key = key, Value = value });
+    public void AddMetaData(string key, string value) => _metaData.List.Add(new MetaDataInfo { Key = key, Value = value });
+    public void AddMetaDataRange(IEnumerable<MetaDataInfo> metaData) => _metaData.List.AddRange(metaData);
+    
+    public EquatableList<MetaDataInfo> MetaData => _metaData;
     public bool HasAnyMetaData => _metaData.List.Count > 0;
     
     public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
@@ -101,7 +104,7 @@ public record UnrealType
         
         builder.AppendLine($"InitMetaData({ownerPtr}, {_metaData.Count});");
         
-        foreach (MetaData metaData in _metaData.List)
+        foreach (MetaDataInfo metaData in _metaData.List)
         {
             builder.AppendLine($"AddMetaData({ownerPtr}, \"{metaData.Key}\", \"{metaData.Value}\");");
         }
