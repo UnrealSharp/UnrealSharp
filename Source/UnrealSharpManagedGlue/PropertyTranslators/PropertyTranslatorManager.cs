@@ -150,6 +150,11 @@ public static class PropertyTranslatorManager
 
     public static void AddTranslationManifest(TypeTranslationManifest manifest)
     {
+        foreach (var skippedStruct in manifest.Structs.CustomTypes)
+        {
+            SpecialTypeInfo.Structs.SkippedTypes.Add(skippedStruct);
+        }
+        
         foreach (var structInfo in manifest.Structs.BlittableTypes)
         {
             if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))

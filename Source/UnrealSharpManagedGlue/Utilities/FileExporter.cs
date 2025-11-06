@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
 
@@ -28,6 +29,8 @@ public readonly struct ProjectDirInfo
     public string GlueCsProjPath => Path.Combine(GlueProjectDirectory, GlueProjectFile);
 
     public bool IsUProject => _projectDirectory.EndsWith(".uproject", StringComparison.OrdinalIgnoreCase);
+    
+    public bool IsPartOfEngine => _projectName == "Engine";
     
     public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
     public string GlueProjectDirectory_LEGACY => Path.Combine(ScriptDirectory, GlueProjectName_LEGACY);
@@ -95,6 +98,11 @@ public static class FileExporter
         string directory = GetDirectoryPath(type.Package);
         string filePath = GetFilePath(type.EngineName, directory);
         UnchangedFiles.Add(filePath);
+
+        if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
+        {
+            UnchangedFiles.Add(GetFilePath($"{type.EngineName}_Extensions", directory));
+        }
     }
 
     public static string GetDirectoryPath(UhtPackage package)
@@ -104,11 +112,11 @@ public static class FileExporter
             throw new InvalidOperationException("Package is null");
         }
 
-        string rootPath = package.IsPartOfEngine() ? Program.EngineGluePath : GetLocalGluePath(package);
+        string rootPath = GetGluePath(package);
         return Path.Combine(rootPath, package.GetShortName());
     }
 
-    public static string GetLocalGluePath(UhtPackage package)
+    public static string GetGluePath(UhtPackage package)
     {
         ProjectDirInfo projectDirInfo = package.FindOrAddProjectInfo();
         return projectDirInfo.GlueProjectDirectory;

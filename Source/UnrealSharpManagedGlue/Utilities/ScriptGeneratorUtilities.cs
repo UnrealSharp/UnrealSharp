@@ -185,7 +185,9 @@ public static class ScriptGeneratorUtilities
     }
 
     public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions,
-        List<UhtFunction> overridableFunctions, Dictionary<string, GetterSetterPair> getterSetterPairs)
+                                            List<UhtFunction> overridableFunctions,
+                                            Dictionary<string, GetterSetterPair> getterSetterPairs,
+                                            Dictionary<string, GetterSetterPair> getSetOverrides)
     {
         List<UhtFunction> exportedFunctions = new();
 
@@ -237,7 +239,7 @@ public static class ScriptGeneratorUtilities
 
                 AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
             }
-            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs))
+            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs, false))
             {
                 functions.Add(function);
             }
@@ -256,7 +258,8 @@ public static class ScriptGeneratorUtilities
 
             foreach (UhtFunction function in interfaceClass.Functions)
             {
-                if (HasFunction(exportedFunctions, function) || !CanExportFunction(function))
+                if (TryMakeFunctionGetterSetterPair(function, interfaceClass, getSetOverrides, true) 
+                    || HasFunction(exportedFunctions, function) || !CanExportFunction(function))
                 {
                     continue;
                 }
@@ -289,7 +292,7 @@ public static class ScriptGeneratorUtilities
     }
 
     public static bool TryMakeFunctionGetterSetterPair(UhtFunction function, UhtClass classObj,
-        Dictionary<string, GetterSetterPair> getterSetterPairs)
+        Dictionary<string, GetterSetterPair> getterSetterPairs, bool ignoreMatchingProperty)
     {
         string scriptName = function.GetFunctionName();
         bool isGetter = CheckIfGetter(scriptName, function);
@@ -315,7 +318,7 @@ public static class ScriptGeneratorUtilities
             return prop.SourceName == name || prop.GetPropertyName() == name;
         }
 
-        UhtProperty? classProperty = classObj.FindPropertyByName(propertyName, ComparePropertyName);
+        UhtProperty? classProperty = !ignoreMatchingProperty ? classObj.FindPropertyByName(propertyName, ComparePropertyName) : null;
         UhtProperty firstProperty = function.ReturnProperty ?? function.Properties.First();
 
         if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() ||
@@ -341,14 +344,18 @@ public static class ScriptGeneratorUtilities
         if (function.ReturnProperty != null || isOutParm)
         {
             pair.Getter = function;
-            pair.GetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Get,
+            // When creating the getter, bind it to the getter's own value type (return or out param)
+            UhtProperty getterValueProperty = function.ReturnProperty ?? function.Properties.First(p =>
+                p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
+            pair.GetterExporter = GetterSetterFunctionExporter.Create(function, getterValueProperty, GetterSetterMode.Get,
                 EFunctionProtectionMode.UseUFunctionProtection);
 
             UhtFunction? setter = classObj.FindFunctionByName("Set" + propertyName, null, true);
             if (setter != null && CheckIfSetter(setter))
             {
                 pair.Setter = setter;
-                pair.SetterExporter = GetterSetterFunctionExporter.Create(setter, firstProperty, GetterSetterMode.Set,
+                // Keep using the getter's value type as the canonical property type
+                pair.SetterExporter = GetterSetterFunctionExporter.Create(setter, getterValueProperty, GetterSetterMode.Set,
                     EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
@@ -362,12 +369,27 @@ public static class ScriptGeneratorUtilities
             if (getter != null && CheckIfGetter(getter))
             {
                 pair.Getter = getter;
-                pair.GetterExporter = GetterSetterFunctionExporter.Create(getter, firstProperty, GetterSetterMode.Get,
+                // Prefer the getter's own value type (return or out param) for the property type
+                UhtProperty getterValueProperty = getter.ReturnProperty ?? getter.Properties.First(p =>
+                    p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
+                pair.GetterExporter = GetterSetterFunctionExporter.Create(getter, getterValueProperty, GetterSetterMode.Get,
+                    EFunctionProtectionMode.UseUFunctionProtection);
+                // Also re-bind the setter exporter to the getter's value type so signatures align
+                pair.SetterExporter = GetterSetterFunctionExporter.Create(function, getterValueProperty, GetterSetterMode.Set,
                     EFunctionProtectionMode.UseUFunctionProtection);
             }
         }
 
-        pair.Property = firstProperty;
+        // Canonical property type: prefer getter value type when available, else fall back to current function's type
+        if (pair.Getter != null)
+        {
+            pair.Property = pair.Getter.ReturnProperty ?? pair.Getter.Properties.First(p =>
+                p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
+        }
+        else
+        {
+            pair.Property = firstProperty;
+        }
         getterSetterPairs[propertyName] = pair;
         return true;
     }
@@ -385,7 +407,8 @@ public static class ScriptGeneratorUtilities
         bool hasSingleOutParam = !hasNoParameters && childrenCount == 1 && function.HasOutParams();
         bool hasWorldContextPassParam =
             childrenCount == 2 && function.Properties.Any(property => property.IsWorldContextParameter());
-        return hasReturnProperty && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
+        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
+        return hasReturnProperty && isNotBlueprintEvent && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
     }
 
     static bool CheckIfSetter(string scriptName, UhtFunction function)
@@ -396,8 +419,11 @@ public static class ScriptGeneratorUtilities
     static bool CheckIfSetter(UhtFunction function)
     {
         bool hasSingleParameter = function.Properties.Count() == 1;
-        bool isNotOutOrReferenceParam = function.HasParameters && !function.Properties.First()
-            .HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm);
-        return hasSingleParameter && isNotOutOrReferenceParam;
+        var property = function.Properties.FirstOrDefault();
+        bool isNotOutOrReferenceParam = function.HasParameters && property is not null 
+                                                               && (!property.HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm) 
+                                                                   || property.HasAllFlags(EPropertyFlags.ConstParm));
+        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
+        return hasSingleParameter && isNotBlueprintEvent && isNotOutOrReferenceParam;
     }
 }

@@ -56,6 +56,9 @@ public class WeaverImporter
     public TypeReference UInt64TypeRef = null!;
     public TypeReference VoidTypeRef = null!;
     public TypeReference ByteTypeRef = null!;
+    
+    public TypeReference MarshalledStructReference = null!;
+    
     public MethodReference GetNativeClassFromNameMethod = null!;
     public MethodReference GetNativeInterfaceFromNameMethod = null!;
     public MethodReference GetNativeStructFromNameMethod = null!;
@@ -67,6 +70,7 @@ public class WeaverImporter
     public MethodReference GetNativeStructSizeMethod = null!;
     public MethodReference GetSignatureFunction = null!;
     public MethodReference InitializeStructMethod = null!;
+    public MethodReference InitializeFunctionParamsMethod = null!;
     
     public MethodReference InvokeNativeFunctionMethod = null!;
     public MethodReference InvokeNativeNetFunction = null!;
@@ -127,6 +131,8 @@ public class WeaverImporter
         UnrealSharpObjectType = UnrealSharpCoreAssembly.FindType(UnrealSharpObject, UnrealSharpCoreNamespace)!;
         IInterfaceType = UnrealSharpAssembly.FindType("IInterface", CoreUObjectNamespace)!.Resolve();
         
+        MarshalledStructReference = UnrealSharpCoreAssembly.FindType("MarshalledStruct`1", "UnrealSharp")!.Resolve();
+        
         TypeDefinition unrealSharpObjectType = UnrealSharpObjectType.Resolve();
         NativeObjectGetter = unrealSharpObjectType.FindMethod("get_NativeObject")!;
 
@@ -153,6 +159,7 @@ public class WeaverImporter
         GetSignatureFunction = FindExporterMethod(MulticastDelegatePropertyCallbacks, "CallGetSignatureFunction");
         
         InitializeStructMethod = FindExporterMethod(UStructCallbacks, "CallInitializeStruct");
+        InitializeFunctionParamsMethod = FindExporterMethod(UFunctionCallbacks, "CallInitializeFunctionParams");
         
         UObjectDefinition = UnrealSharpAssembly.FindType("UObject", CoreUObjectNamespace)!.Resolve();
         UActorComponentDefinition = UnrealSharpAssembly.FindType("UActorComponent", EngineNamespace)!.Resolve();

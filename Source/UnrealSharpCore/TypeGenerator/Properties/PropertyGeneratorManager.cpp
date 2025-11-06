@@ -5,6 +5,9 @@
 #include "MetaData/CSPropertyMetaData.h"
 #include <UObject/PropertyOptional.h>
 
+#include "TypeGenerator/CSClass.h"
+#include "TypeGenerator/CSSkeletonClass.h"
+
 static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	UClass* Class = Cast<UClass>(Outer);
@@ -13,6 +16,15 @@ static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, c
 	{
 		return {nullptr, nullptr};
 	}
+
+#if WITH_EDITOR
+    // Redirect to the generated class if we're trying to bind a function in a skeleton class.
+    // Since NativeFunctionLookupTable is not copied over when duplicating for reinstancing due to not being a UPROPERTY.
+    if (UCSSkeletonClass* OwnerClass = Cast<UCSSkeletonClass>(Outer); OwnerClass != nullptr)
+    {
+        Class = OwnerClass->GetGeneratedClass();
+    }
+#endif
 
 	return
 	{

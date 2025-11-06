@@ -64,6 +64,7 @@ public:
 	UFUNCTION(meta=(ScriptMethod))
 	static FGameplayTag RequestGameplayTag(const FName TagName);
 
+
     /**
      * Parses the tag name and returns the name of the leaf.
      * For example, calling this on x.y.z would return the z component.

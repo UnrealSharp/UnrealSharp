@@ -29,6 +29,17 @@ public class FText
     {
         FTextExporter.CallFromString(ref Data, text);
     }
+
+    public FText(ReadOnlySpan<char> text)
+    {
+        unsafe
+        {
+            fixed (char* textPtr = text)
+            {
+                FTextExporter.CallFromStringView(ref Data, textPtr, text.Length);
+            }
+        }
+    }
     
     public FText(FName name) : this(name.ToString())
     {
@@ -78,6 +89,20 @@ public class FText
             return new string(FTextExporter.CallToString(ref Data));
         }
     }
+
+    public ReadOnlySpan<char> AsReadOnlySpan()
+    {
+        if (Empty)
+        {
+            return ReadOnlySpan<char>.Empty;
+        }
+
+        unsafe
+        {
+            FTextExporter.CallToStringView(ref Data, out char* textPtr, out int length);
+            return new ReadOnlySpan<char>(textPtr, length);
+        }
+    }
     
     public static implicit operator FText(string value)
     {
@@ -87,6 +112,11 @@ public class FText
     public static implicit operator string(FText value)
     {
         return value.ToString();
+    }
+    
+    public static implicit operator ReadOnlySpan<char>(FText value)
+    {
+        return value.AsReadOnlySpan();
     }
     
     public static bool operator ==(FText a, FText b)

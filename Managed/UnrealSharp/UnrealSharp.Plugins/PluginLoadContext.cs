@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
-using LanguageExt;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
 
@@ -22,7 +21,6 @@ public class PluginLoadContext : AssemblyLoadContext
         AddAssembly(typeof(NativeBinds).Assembly);
         AddAssembly(typeof(UnrealSharpObject).Assembly);
         AddAssembly(typeof(UnrealSharpModule).Assembly);
-        AddAssembly(typeof(Option<>).Assembly);
     }
     
     public static void AddAssembly(Assembly assembly)

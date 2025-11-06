@@ -73,6 +73,11 @@ public static class CSharpExporter
 
         WaitForTasks();
 
+        Console.WriteLine("Exporting UE5 defines");
+        PreprocessorExporter.StartExportingPreprocessors(Program.Factory.Session.EngineDirectory, Tasks);
+
+        WaitForTasks();
+
         SerializeModuleData();
 
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
@@ -276,7 +281,8 @@ public static class CSharpExporter
 
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine))
+        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine) 
+            || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
         {
             return;
         }

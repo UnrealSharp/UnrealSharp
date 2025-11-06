@@ -69,8 +69,9 @@ public:
     UCSAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
     UCSAssembly* FindOwningAssembly(UClass* Class);
-
-	UFUNCTION(meta = (ScriptMethod))
+    UCSAssembly* FindOwningAssembly(UScriptStruct* Struct);
+    UCSAssembly* FindOwningAssembly(UEnum* Enum);
+	
     UCSAssembly* FindAssembly(FName AssemblyName) const
     {
         return LoadedAssemblies.FindRef(AssemblyName);
@@ -154,6 +155,8 @@ private:
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void TryInitializeDynamicSubsystems();
+
+    UCSAssembly* FindOwningAssemblySlow(UField* Field);
 
 	static UCSManager* Instance;
 

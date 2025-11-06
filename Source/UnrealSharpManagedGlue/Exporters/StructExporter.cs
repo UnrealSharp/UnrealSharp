@@ -15,11 +15,19 @@ public static class StructExporter
         GeneratorStringBuilder stringBuilder = new();
         List<UhtProperty> exportedProperties = new();
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
-        if (structObj.SuperStruct != null)
+        List<UhtStruct> inheritanceHierarchy = new();
+        UhtStruct? currentStruct = structObj;
+        while (currentStruct is not null)
         {
-            ScriptGeneratorUtilities.GetExportedProperties(structObj.SuperStruct, exportedProperties, getSetBackedProperties);
+            inheritanceHierarchy.Add(currentStruct);
+            currentStruct = currentStruct.SuperStruct;
         }
-        ScriptGeneratorUtilities.GetExportedProperties(structObj, exportedProperties, getSetBackedProperties);
+
+        inheritanceHierarchy.Reverse();
+        foreach (UhtStruct inheritance in inheritanceHierarchy)
+        {
+            ScriptGeneratorUtilities.GetExportedProperties(inheritance, exportedProperties, getSetBackedProperties);
+        }
         
         // Check there are not properties with the same name, remove otherwise
         List<string> propertyNames = new();
@@ -38,13 +46,17 @@ public static class StructExporter
             }
         }
 
+        bool nullableEnabled = structObj.HasMetadata(UhtTypeUtilities.NullableEnable);
+        bool isRecordStruct = structObj.HasMetadata("RecordStruct");
+        bool isReadOnly = structObj.HasMetadata("ReadOnly");
+        bool useProperties = structObj.HasMetadata("UseProperties");
         bool isBlittable = structObj.IsStructBlittable();
         bool isCopyable = structObj.IsStructNativelyCopyable();
         bool isDestructible = structObj.IsStructNativelyDestructible();
         bool isEquatable = structObj.IsStructEquatable(exportedProperties);
 
         string typeNameSpace = structObj.GetNamespace();
-        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable);
+        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable, nullableEnabled);
                 
         stringBuilder.AppendTooltip(structObj);
         
@@ -79,7 +91,8 @@ public static class StructExporter
             (csInterfaces ??= new()).Add($"IEquatable<{structName}>");
         }
 
-        stringBuilder.DeclareType(structObj, "struct", structName, csInterfaces: csInterfaces);
+        stringBuilder.DeclareType(structObj, isRecordStruct ? "record struct" : "struct", structName, csInterfaces: csInterfaces, 
+            modifiers: isReadOnly ? " readonly" : null);
 
         if (isCopyable)
         {
@@ -93,7 +106,7 @@ public static class StructExporter
         {
             List<string> reservedNames = GetReservedNames(exportedProperties);
 
-            ExportStructProperties(structObj, stringBuilder, exportedProperties, isBlittable, reservedNames);
+            ExportStructProperties(structObj, stringBuilder, exportedProperties, isBlittable, reservedNames, isReadOnly, useProperties);
         }
 
         if (isBlittable)
@@ -121,7 +134,7 @@ public static class StructExporter
             
             stringBuilder.AppendLine();
             ExportMirrorStructMarshalling(stringBuilder, structObj, exportedProperties);
-            
+
             if (isDestructible) 
             {
                 stringBuilder.AppendLine();
@@ -367,13 +380,13 @@ public static class StructExporter
         stringBuilder.AppendLine("};");
         stringBuilder.CloseBrace();
     }
-
-    public static void ExportStructProperties(UhtStruct structObj, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets, List<string> reservedNames)
+	
+    public static void ExportStructProperties(UhtStruct structObj, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties, bool suppressOffsets, List<string> reservedNames, bool isReadOnly, bool useProperties)
     {
         foreach (UhtProperty property in exportedProperties)
         {
             PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            translator.ExportMirrorProperty(structObj, stringBuilder, property, suppressOffsets, reservedNames);
+            translator.ExportMirrorProperty(structObj, stringBuilder, property, suppressOffsets, reservedNames, isReadOnly, useProperties);
         }
     }
     
@@ -435,6 +448,7 @@ public static class StructExporter
         }
 
         builder.AppendLine();
+        builder.AppendLine("[System.Diagnostics.CodeAnalysis.SetsRequiredMembers]");
         builder.AppendLine($"public {structName}(IntPtr InNativeStruct)");
         builder.OpenBrace();
         builder.BeginUnsafeBlock();

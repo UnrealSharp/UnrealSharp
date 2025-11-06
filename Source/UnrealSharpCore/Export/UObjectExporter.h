@@ -40,10 +40,19 @@ public:
 	UNREALSHARP_FUNCTION()
 	static void* GetWorld_Internal(UObject* Object);
 
+    UNREALSHARP_FUNCTION()
+    static bool IsA(const UObject* Object, UClass* Class);
+
 	UNREALSHARP_FUNCTION()
 	static uint32 GetUniqueID(UObject* Object);
 
 	UNREALSHARP_FUNCTION()
 	static void* GetOuter(UObject* Object);
+
+	UNREALSHARP_FUNCTION()
+	static void* StaticLoadClass(UClass* BaseClass, UObject* InOuter, const char* Name);
+
+	UNREALSHARP_FUNCTION()
+	static void* StaticLoadObject(UClass* BaseClass, UObject* InOuter, const char* Name);
 
 };

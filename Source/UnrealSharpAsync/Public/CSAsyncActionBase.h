@@ -20,6 +20,7 @@ protected:
 	friend class UUCSAsyncBaseExporter;
 
 	void InvokeManagedCallback(bool bDispose = true);
+    void InvokeManagedCallback(UObject* WorldContextObject, bool bDispose = true);
 	void InitializeManagedCallback(FGCHandleIntPtr Callback);
 	
 	FCSManagedDelegate ManagedCallback;

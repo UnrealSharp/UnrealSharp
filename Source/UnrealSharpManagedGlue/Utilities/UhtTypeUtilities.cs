@@ -4,6 +4,8 @@ namespace UnrealSharpScriptGenerator.Utilities;
 
 public static class UhtTypeUtilities
 {
+    public const string NullableEnable = "NullableEnable";
+    
     public static bool HasMetadata(this UhtType type, string metadataName)
     {
         return type.MetaData.ContainsKey(metadataName);

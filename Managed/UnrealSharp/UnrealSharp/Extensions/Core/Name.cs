@@ -27,7 +27,18 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         {
             fixed (char* stringPtr = name)
             {
-                FNameExporter.CallStringToName(ref this, stringPtr);
+                FNameExporter.CallStringToName(ref this, stringPtr, name.Length);
+            }
+        }
+    }
+    
+    public FName(ReadOnlySpan<char> name)
+    {
+        unsafe
+        {
+            fixed (char* stringPtr = name)
+            {
+                FNameExporter.CallStringToName(ref this, stringPtr, name.Length);
             }
         }
     }

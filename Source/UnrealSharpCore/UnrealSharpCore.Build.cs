@@ -42,6 +42,11 @@ public class UnrealSharpCore : ModuleRules
 			}
 			);
 
+		if (Target.Version.MajorVersion == 5 && Target.Version.MinorVersion < 5)
+		{
+            PrivateDependencyModuleNames.Add("StructUtils");
+        }
+
         PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
         PublicDefinitions.Add("ForceAsEngineGlue=1");
 
