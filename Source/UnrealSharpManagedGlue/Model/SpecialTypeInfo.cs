@@ -48,7 +48,7 @@ public record SpecialTypeInfo
 {
     public SpecialStructInfo Structs { get; init; } = new()
     {
-        SkippedTypes = [],
+        SkippedTypes = new (),
         BlittableTypes = new Dictionary<string, BlittableStructInfo>(),
         NativelyCopyableTypes = new Dictionary<string, NativelyTranslatableStructInfo>()
     };
