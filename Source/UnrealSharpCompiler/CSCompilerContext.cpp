@@ -6,17 +6,17 @@
 #include "Blueprint/StateTreeTaskBlueprintBase.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
-#include "TypeGenerator/CSBlueprint.h"
-#include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/CSSkeletonClass.h"
-#include "TypeGenerator/Factories/CSFunctionFactory.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSMetaDataUtils.h"
-#include "TypeGenerator/Register/CSSimpleConstructionScriptBuilder.h"
+#include "Types/CSBlueprint.h"
+#include "Types/CSClass.h"
+#include "Types/CSSkeletonClass.h"
+#include "Factories/CSFunctionFactory.h"
+#include "Factories/CSPropertyFactory.h"
+#include "Builders/CSGeneratedClassBuilder.h"
+#include "Utilities/CSMetaDataUtils.h"
+#include "Builders/CSSimpleConstructionScriptBuilder.h"
 #include "UnrealSharpEditor/CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
-#include "Utils/CSClassUtilities.h"
+#include "Utilities/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions) : FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
 {
@@ -41,18 +41,9 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 
 	UCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
 	TryInitializeAsDeveloperSettings(Class);
-	ApplyMetaData();
+	TryFakeNativeClass(Class);
 	
-	if (NeedsToFakeNativeClass(Class) && !FCSClassUtilities::IsSkeletonType(Class))
-	{
-		// There are systems in Unreal (BehaviorTree, StateTree) which uses the AssetRegistry to find BP classes, since our C# classes are not assets,
-		// we need to fake that they're native classes in editor in order to be able to find them. 
-
-		// The functions that are used to find classes are:
-		// FGraphNodeClassHelper::BuildClassGraph()
-		// FStateTreeNodeClassCache::CacheClasses()
-		Class->ClassFlags |= CLASS_Native;
-	}
+	ApplyMetaData();
 }
 
 void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContext& Context)
@@ -229,6 +220,22 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 	UDeveloperSettings* DeveloperSettings = static_cast<UDeveloperSettings*>(Settings);
 	SettingsModule.UnregisterSettings(DeveloperSettings->GetContainerName(), DeveloperSettings->GetCategoryName(),
 	                                  DeveloperSettings->GetSectionName());
+}
+
+void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
+{
+	if (!NeedsToFakeNativeClass(Class))
+	{
+		return;
+	}
+
+	// There are systems in Unreal (BehaviorTree, StateTree) which uses the AssetRegistry to find BP classes, since our C# classes are not assets,
+	// we need to fake that they're native classes in editor in order to be able to find them. 
+
+	// The functions that are used to find classes are:
+	// FGraphNodeClassHelper::BuildClassGraph()
+	// FStateTreeNodeClassCache::CacheClasses()
+	Class->ClassFlags |= CLASS_Native;
 }
 
 void FCSCompilerContext::ApplyMetaData()

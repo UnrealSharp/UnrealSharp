@@ -8,8 +8,8 @@
 #include "MetaData/CSStructMetaData.h"
 #include "MetaData/CSTemplateType.h"
 #include "MetaData/FCSFieldTypePropertyMetaData.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
-#include "TypeGenerator/Factories/PropertyGenerators/CSPropertyGenerator.h"
+#include "Factories/CSPropertyFactory.h"
+#include "Factories/PropertyGenerators/CSPropertyGenerator.h"
 
 FCSTypeReferenceMetaData* UFTypeBuilderExporter::NewType_Internal(TCHAR* InFieldName,
                                                                   TCHAR* InNamespace,

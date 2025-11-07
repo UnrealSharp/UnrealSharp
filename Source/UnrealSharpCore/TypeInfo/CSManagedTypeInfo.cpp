@@ -1,38 +1,37 @@
 ﻿#include "CSManagedTypeInfo.h"
 #include "CSManager.h"
-#include "TypeGenerator/Register/CSGeneratedTypeBuilder.h"
+#include "Builders/CSGeneratedTypeBuilder.h"
 #include "MetaData/CSTypeReferenceMetaData.h"
-#include "TypeGenerator/Register/CSMetaDataUtils.h"
+#include "Utilities/CSMetaDataUtils.h"
 
 FOnStructureChanged FCSManagedTypeInfoDelegates::OnStructureChangedDelegate;
 
-FCSManagedTypeInfo::FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly) : Builder(nullptr)
+TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateManaged(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
 {
-	Field = TStrongObjectPtr(NativeField);
-	OwningAssembly = InOwningAssembly;
-	ManagedTypeHandle = OwningAssembly->TryFindTypeHandle(FCSFieldName(NativeField));
-
-	// Native classes never gets rebuilt.
-	bHasChangedStructure = false;
-}
-
-FCSManagedTypeInfo::FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly,
-	UCSGeneratedTypeBuilder* Builder): Field(nullptr), Builder(Builder), OwningAssembly(InOwningAssembly), TypeMetaData(MetaData)
-{
-
-}
-
-TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder)
-{
-	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>(MetaData, InOwningAssembly, Builder);
+	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>();
+	NewTypeInfo->OwningAssembly = InOwningAssembly;
+	NewTypeInfo->TypeMetaData = MetaData;
+	NewTypeInfo->Builder = Builder;
 	NewTypeInfo->Field = TStrongObjectPtr(Builder->CreateField(NewTypeInfo));
 	NewTypeInfo->MarkAsStructurallyModified();
+	
+	return NewTypeInfo;
+}
+
+TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateNative(UField* InField, UCSAssembly* InOwningAssembly)
+{
+	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>();
+	NewTypeInfo->Field = TStrongObjectPtr(InField);
+	NewTypeInfo->OwningAssembly = InOwningAssembly;
+	NewTypeInfo->TypeHandle = InOwningAssembly->TryFindTypeHandle(FCSFieldName(InField));
+	NewTypeInfo->bHasChangedStructure = false;
+	
 	return NewTypeInfo;
 }
 
 void FCSManagedTypeInfo::SetTypeHandle(uint8* ManagedTypeHandlePtr)
 {
-	ManagedTypeHandle = OwningAssembly->RegisterTypeHandle(TypeMetaData->FieldName, ManagedTypeHandlePtr);
+	TypeHandle = OwningAssembly->RegisterTypeHandle(TypeMetaData->FieldName, ManagedTypeHandlePtr);
 }
 
 void FCSManagedTypeInfo::MarkAsStructurallyModified()

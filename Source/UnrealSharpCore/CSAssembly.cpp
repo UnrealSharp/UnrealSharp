@@ -5,13 +5,13 @@
 #include "Logging/StructuredLog.h"
 #include "MetaData/CSClassMetaData.h"
 #include "MetaData/CSEnumMetaData.h"
-#include "TypeGenerator/CSEnum.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "TypeGenerator/Register/CSGeneratedDelegateBuilder.h"
-#include "TypeGenerator/Register/CSGeneratedEnumBuilder.h"
-#include "TypeGenerator/Register/CSGeneratedInterfaceBuilder.h"
-#include "TypeGenerator/Register/CSGeneratedStructBuilder.h"
-#include "Utils/CSClassUtilities.h"
+#include "Types/CSEnum.h"
+#include "Builders/CSGeneratedClassBuilder.h"
+#include "Builders/CSGeneratedDelegateBuilder.h"
+#include "Builders/CSGeneratedEnumBuilder.h"
+#include "Builders/CSGeneratedInterfaceBuilder.h"
+#include "Builders/CSGeneratedStructBuilder.h"
+#include "Utilities/CSClassUtilities.h"
 
 void UCSAssembly::InitializeAssembly(const FStringView InAssemblyPath)
 {
@@ -211,7 +211,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	}
 	else
 	{
-		TypeInfo = FCSManagedTypeInfo::Create(NewMetaData, this, BuilderClass->GetDefaultObject<UCSGeneratedTypeBuilder>());
+		TypeInfo = FCSManagedTypeInfo::CreateManaged(NewMetaData, this, BuilderClass->GetDefaultObject<UCSGeneratedTypeBuilder>());
 	}
 
 	TypeInfo->SetTypeHandle(TypeHandle);
@@ -226,7 +226,7 @@ TSharedPtr<FGCHandle> UCSAssembly::CreateManagedObject(const UObject* Object)
 	// Only managed/native classes have a C# counterpart.
 	UClass* Class = FCSClassUtilities::GetFirstNonBlueprintClass(Object->GetClass());
 	TSharedPtr<FCSManagedTypeInfo> TypeInfo = FindOrAddTypeInfo(Class);
-	TSharedPtr<FGCHandle> TypeHandle = TypeInfo->GetManagedTypeHandle();
+	TSharedPtr<FGCHandle> TypeHandle = TypeInfo->GetTypeHandle();
 
 	TCHAR* Error = nullptr;
 	FGCHandle NewManagedObject = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeHandle->GetPointer(), &Error);
@@ -254,7 +254,7 @@ TSharedPtr<FGCHandle> UCSAssembly::FindOrCreateManagedInterfaceWrapper(UObject* 
 
 	UClass* NonBlueprintClass = FCSClassUtilities::GetFirstNonBlueprintClass(InterfaceClass);
 	TSharedPtr<FCSManagedTypeInfo> ClassInfo = FindOrAddTypeInfo(NonBlueprintClass);
-	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetManagedTypeHandle();
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeHandle();
 	
 	uint32 ObjectID = Object->GetUniqueID();
     TMap<uint32, TSharedPtr<FGCHandle>>& TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);

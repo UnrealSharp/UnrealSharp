@@ -1,6 +1,6 @@
 ﻿#include "UScriptStructExporter.h"
 #include "CSManager.h"
-#include "TypeGenerator/CSScriptStruct.h"
+#include "Types/CSScriptStruct.h"
 
 int UUScriptStructExporter::GetNativeStructSize(const UScriptStruct* ScriptStruct)
 {
@@ -83,7 +83,7 @@ FGCHandleIntPtr UUScriptStructExporter::GetManagedStructType(UScriptStruct *Scri
 {
     if (const UCSScriptStruct* CSStruct = Cast<UCSScriptStruct>(ScriptStruct); CSStruct != nullptr)
     {
-        return CSStruct->GetManagedTypeInfo()->GetManagedTypeHandle()->GetHandle();
+        return CSStruct->GetManagedTypeInfo()->GetTypeHandle()->GetHandle();
     }
 
     const UCSAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptStruct);
@@ -99,6 +99,6 @@ FGCHandleIntPtr UUScriptStructExporter::GetManagedStructType(UScriptStruct *Scri
         return FGCHandleIntPtr();
     }
 
-    return Info->GetManagedTypeHandle()->GetHandle();   
+    return Info->GetTypeHandle()->GetHandle();   
 }
 

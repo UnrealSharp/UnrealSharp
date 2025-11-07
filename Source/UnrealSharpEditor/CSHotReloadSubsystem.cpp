@@ -11,8 +11,8 @@
 #include "Engine/SCS_Node.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/DebuggerCommands.h"
-#include "TypeGenerator/CSEnum.h"
-#include "TypeGenerator/CSScriptStruct.h"
+#include "Types/CSEnum.h"
+#include "Types/CSScriptStruct.h"
 #include "UnrealSharpProcHelper/CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
 

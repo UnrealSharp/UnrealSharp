@@ -21,10 +21,10 @@
 #include "Engine/UserDefinedStruct.h"
 #endif
 
-#include "TypeGenerator/CSInterface.h"
-#include "TypeGenerator/Factories/CSPropertyFactory.h"
+#include "Types/CSInterface.h"
+#include "Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
-#include "Utils/CSClassUtilities.h"
+#include "Utilities/CSClassUtilities.h"
 
 #ifdef _WIN32
 	#define PLATFORM_STRING(string) string
@@ -144,60 +144,23 @@ void UCSManager::AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> Subsyst
 
 void UCSManager::Initialize()
 {
+	if (!InitializeDotNetRuntime())
+	{
+		return;
+	}
+
 #if WITH_EDITOR
-	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
-	if (DotNetInstallationPath.IsEmpty())
-	{
-		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return;
-	}
-
-	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpPluginsPath();
-	if (!FPaths::FileExists(UnrealSharpLibraryPath))
-	{
-		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
-		FString DialogText = FString::Printf(TEXT(
-			"The bindings library could not be found at the following location:\n%s\n\n"
-			"Most likely, the bindings library failed to build due to invalid generated glue."
-		), *FullPath);
-
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
-		return;
-	}
-
-	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths, true);
-
-	// Compile the C# project for any changes done outside the editor.
-	if (!ProjectPaths.IsEmpty() && !FCSUnrealSharpUtils::IsStandalonePIE() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER))
-	{
-		Initialize();
-		return;
-	}
-
 	// Remove this listener when the engine is shutting down.
 	// Otherwise, we'll get a crash when the GC cleans up all the UObject.
 	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 #endif
 
 	GUObjectArray.AddUObjectDeleteListener(this);
-
-	// Initialize the C# runtime.
-	if (!InitializeDotNetRuntime())
-	{
-		return;
-	}
-
-	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
-
-	// Initialize the property factory. This is used to create properties for managed structs/classes/functions.
+	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSManager::OnModulesChanged);
 	FCSPropertyFactory::Initialize();
 
-	// Try to load the user assembly. Can be empty if the user hasn't created any csproj yet.
+	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
 	LoadAllUserAssemblies();
-
-	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSManager::OnModulesChanged);
 }
 
 bool UCSManager::InitializeDotNetRuntime()

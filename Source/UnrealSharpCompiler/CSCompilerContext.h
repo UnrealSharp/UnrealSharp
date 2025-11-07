@@ -36,6 +36,7 @@ private:
 	
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
+	void TryFakeNativeClass(UClass* Class);
 	void ApplyMetaData();
 
 	static bool NeedsToFakeNativeClass(UClass* Class);

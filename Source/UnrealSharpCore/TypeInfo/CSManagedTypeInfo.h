@@ -29,12 +29,12 @@ private:
 struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManagedTypeInfo>
 {
 	~FCSManagedTypeInfo() = default;
-	FCSManagedTypeInfo(UField* NativeField, UCSAssembly* InOwningAssembly);
-	FCSManagedTypeInfo(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
+	FCSManagedTypeInfo() = default;
 
-	static TSharedPtr<FCSManagedTypeInfo> Create(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
+	static TSharedPtr<FCSManagedTypeInfo> CreateManaged(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
+	static TSharedPtr<FCSManagedTypeInfo> CreateNative(UField* InField, UCSAssembly* InOwningAssembly);
 
-	TSharedPtr<FGCHandle> GetManagedTypeHandle() { return ManagedTypeHandle; }
+	TSharedPtr<FGCHandle> GetTypeHandle() { return TypeHandle; }
 
 	UField* GetOrBuildField();
 	UField* GetField() const { return Field.Get(); }
@@ -55,7 +55,6 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 	bool HasChangedStructure() const { return bHasChangedStructure; }
 	
 private:
-	friend UCSAssembly;
 
 	// The actual UClass, UStruct, UEnum et.c. that this managed type info represents.
 	TStrongObjectPtr<UField> Field;
@@ -73,5 +72,5 @@ private:
 	bool bHasChangedStructure = false;
 
 	// Handle to the managed type in the C# assembly.
-	TSharedPtr<FGCHandle> ManagedTypeHandle;
+	TSharedPtr<FGCHandle> TypeHandle;
 };

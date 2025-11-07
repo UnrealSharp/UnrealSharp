@@ -5,7 +5,7 @@
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "TypeInfo/CSFieldType.h"
-#include "Utils/CSClassUtilities.h"
+#include "Utilities/CSClassUtilities.h"
 #include "CSAssembly.generated.h"
 
 #if !defined(_WIN32)
@@ -77,7 +77,7 @@ public:
 				return nullptr;
 			}
 
-			TypeInfo = MakeShared<FCSManagedTypeInfo>(Field, this);
+			TypeInfo = FCSManagedTypeInfo::CreateNative(Field, this);
 		}
 
 		return TypeInfo;

@@ -1,5 +1,5 @@
 ﻿#include "CSAssetTypeAction_CSBlueprint.h"
-#include "TypeGenerator/CSBlueprint.h"
+#include "Types/CSBlueprint.h"
 
 UClass* FCSAssetTypeAction_CSBlueprint::GetSupportedClass() const
 {

@@ -4,13 +4,13 @@
 #include "UEnumExporter.h"
 
 #include "CSManager.h"
-#include "TypeGenerator/CSEnum.h"
+#include "Types/CSEnum.h"
 
 FGCHandleIntPtr UUEnumExporter::GetManagedEnumType(UEnum* ScriptEnum)
 {
 	if (const UCSEnum* CSEnum = Cast<UCSEnum>(ScriptEnum); CSEnum != nullptr)
 	{
-		return CSEnum->GetManagedTypeInfo()->GetManagedTypeHandle()->GetHandle();
+		return CSEnum->GetManagedTypeInfo()->GetTypeHandle()->GetHandle();
 	}
 
 	const UCSAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptEnum);
@@ -26,5 +26,5 @@ FGCHandleIntPtr UUEnumExporter::GetManagedEnumType(UEnum* ScriptEnum)
 		return FGCHandleIntPtr();
 	}
 
-	return Info->GetManagedTypeHandle()->GetHandle();   
+	return Info->GetTypeHandle()->GetHandle();   
 }

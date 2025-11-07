@@ -1,6 +1,6 @@
 #include "CSFieldName.h"
 #include "UnrealSharpUtilities/UnrealSharpUtils.h"
-#include "Utils/CSClassUtilities.h"
+#include "Utilities/CSClassUtilities.h"
 
 FCSFieldName::FCSFieldName(UField* NativeField)
 {

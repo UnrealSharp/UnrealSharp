@@ -1,6 +1,6 @@
 ﻿#include "UFunctionExporter.h"
 #include "UnrealSharpCore.h"
-#include "Utils/CSClassUtilities.h"
+#include "Utilities/CSClassUtilities.h"
 
 uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 {

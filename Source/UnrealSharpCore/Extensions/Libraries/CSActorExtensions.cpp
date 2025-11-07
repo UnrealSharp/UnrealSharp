@@ -4,9 +4,8 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
-#include "TypeGenerator/CSClass.h"
-#include "TypeGenerator/Register/CSGeneratedClassBuilder.h"
-#include "Utils/CSClassUtilities.h"
+#include "Types/CSClass.h"
+#include "Utilities/CSClassUtilities.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wextern-initializer"

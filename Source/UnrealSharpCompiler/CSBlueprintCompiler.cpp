@@ -1,6 +1,6 @@
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
-#include "TypeGenerator/CSBlueprint.h"
+#include "Types/CSBlueprint.h"
 
 bool FCSBlueprintCompiler::CanCompile(const UBlueprint* Blueprint)
 {

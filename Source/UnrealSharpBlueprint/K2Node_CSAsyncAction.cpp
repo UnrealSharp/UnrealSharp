@@ -10,7 +10,7 @@
 #include "Misc/AssertionMacros.h"
 #include "Templates/Casts.h"
 #include "Templates/SubclassOf.h"
-#include "TypeGenerator/CSClass.h"
+#include "Types/CSClass.h"
 #include "UObject/Class.h"
 #include "UObject/Field.h"
 #include "UObject/NameTypes.h"
