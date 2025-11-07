@@ -15,8 +15,7 @@ public:
 	// UFunction interface
 	virtual void Bind() override;
 	// End of UFunction interface
-
-	// Tries to update the method handle to the function pointer in C#.
+	
 	bool TryUpdateMethodHandle();
 	
 	bool IsOwnedByManagedClass() const;
@@ -27,7 +26,6 @@ public:
 	}
 	
 	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL);
-	static void InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL, UObject* WorldContextObject);
 private:
 	TSharedPtr<FGCHandle> MethodHandle = nullptr;
 };
