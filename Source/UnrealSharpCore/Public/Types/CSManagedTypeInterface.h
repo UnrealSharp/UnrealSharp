@@ -35,9 +35,9 @@ public:
 	}
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>
-	TSharedPtr<TMetaData> GetTypeMetaData() const
+	TSharedPtr<TMetaData> GetMetaData() const
 	{
-		return ManagedTypeInfo->GetTypeMetaData<TMetaData>();
+		return ManagedTypeInfo->GetMetaData<TMetaData>();
 	}
 
 	UCSAssembly* GetOwningAssembly() const
