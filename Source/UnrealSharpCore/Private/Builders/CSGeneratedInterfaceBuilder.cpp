@@ -11,7 +11,7 @@ UCSGeneratedInterfaceBuilder::UCSGeneratedInterfaceBuilder()
 void UCSGeneratedInterfaceBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSInterface* Field = static_cast<UCSInterface*>(TypeToBuild);
-	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassBaseMetaData>();
+	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSClassBaseMetaData>();
 	
 	Field->PurgeClass(true);
 

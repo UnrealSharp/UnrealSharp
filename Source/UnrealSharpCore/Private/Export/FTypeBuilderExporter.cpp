@@ -29,7 +29,7 @@ FCSTypeReferenceMetaData* UFTypeBuilderExporter::NewType_Internal(TCHAR* InField
 	}
 	
 	TSharedPtr<FCSManagedTypeInfo> TypeInfo = Assembly->TryRegisterType(InFieldName, InNamespace, FieldType, TypeHandle, NeedsRebuild);
-	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData = TypeInfo->GetTypeMetaData();
+	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData = TypeInfo->GetMetaData();
 	return TypeMetaData.Get();
 }
 

@@ -40,19 +40,19 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 	UField* GetField() const { return Field.Get(); }
 
 	template<typename TMetaData = FCSTypeReferenceMetaData>
-	TSharedPtr<TMetaData> GetTypeMetaData() const
+	TSharedPtr<TMetaData> GetMetaData() const
 	{
 		static_assert(TIsDerivedFrom<TMetaData, FCSTypeReferenceMetaData>::Value, "TMetaData must be a FCSTypeReferenceMetaData-derived type.");
-		return StaticCastSharedPtr<TMetaData>(TypeMetaData);
+		return StaticCastSharedPtr<TMetaData>(MetaData);
 	}
 
 	UCSAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
-	void SetTypeMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InTypeMetaData) { TypeMetaData = InTypeMetaData; }
-	void SetTypeHandle(uint8* ManagedTypeHandlePtr);
+	void SetMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InMetaData) { MetaData = InMetaData; }
+	void SetTypeHandle(uint8* TypeHandlePtr);
 	
 	void MarkAsStructurallyModified();
-	bool HasChangedStructure() const { return bHasChangedStructure; }
+	bool HasStructurallyChanged() const { return bHasChangedStructure; }
 	
 private:
 
@@ -66,7 +66,7 @@ private:
 	UCSAssembly* OwningAssembly;
 	
 	// The metadata for this type to generate reflection data from (UProperties, UFunctions, metadata et.c.).
-	TSharedPtr<FCSTypeReferenceMetaData> TypeMetaData;
+	TSharedPtr<FCSTypeReferenceMetaData> MetaData;
 
 	// Current state of the structure of this type. This changes when new UProperties/UFunctions/metadata are added or removed from the type.
 	bool bHasChangedStructure = false;

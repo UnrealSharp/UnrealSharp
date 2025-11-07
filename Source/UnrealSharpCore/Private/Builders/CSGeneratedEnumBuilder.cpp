@@ -13,7 +13,7 @@ UCSGeneratedEnumBuilder::UCSGeneratedEnumBuilder()
 void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSEnum* Field = static_cast<UCSEnum*>(TypeToBuild);
-	TSharedPtr<FCSEnumMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSEnumMetaData>();
+	TSharedPtr<FCSEnumMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSEnumMetaData>();
 	
 	PurgeEnum(Field);
 	

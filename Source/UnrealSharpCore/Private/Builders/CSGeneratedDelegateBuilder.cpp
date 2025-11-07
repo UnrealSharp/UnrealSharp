@@ -11,7 +11,7 @@ UCSGeneratedDelegateBuilder::UCSGeneratedDelegateBuilder()
 void UCSGeneratedDelegateBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UDelegateFunction* Field = static_cast<UDelegateFunction*>(TypeToBuild);
-	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassBaseMetaData>();
+	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSClassBaseMetaData>();
 	
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 	Field->ParmsSize = 0;

@@ -19,7 +19,7 @@ UField* UCSGeneratedTypeBuilder::CreateField(const TSharedPtr<FCSManagedTypeInfo
 		return ExistingType;
 	}
 	
-	TSharedPtr<const FCSTypeReferenceMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSTypeReferenceMetaData>();
+	TSharedPtr<const FCSTypeReferenceMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSTypeReferenceMetaData>();
 	UPackage* OwningPackage = UCSManager::Get().GetPackage(TypeMetaData->FieldName.GetNamespace());
 	FString Name = GetFieldName(TypeMetaData);
 
@@ -43,7 +43,7 @@ void UCSGeneratedTypeBuilder::TriggerRebuild(UField* FieldToRebuild, const TShar
 
 #if !WITH_EDITOR
 	// Apply metadata only in packaged builds, in editor we apply it in the FCSCompilerContext::FinishCompilingClass
-	TSharedPtr<const FCSTypeReferenceMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSTypeReferenceMetaData>();	
+	TSharedPtr<const FCSTypeReferenceMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSTypeReferenceMetaData>();	
 	FCSMetaDataUtils::ApplyMetaData(TypeMetaData->MetaData, FieldToRebuild);
 #endif
 }

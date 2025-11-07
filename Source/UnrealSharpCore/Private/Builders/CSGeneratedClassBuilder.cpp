@@ -23,7 +23,7 @@ UCSGeneratedClassBuilder::UCSGeneratedClassBuilder()
 void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSClass* Field = static_cast<UCSClass*>(TypeToBuild);
-	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSClassMetaData>();
+	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSClassMetaData>();
 	
 	UClass* CurrentSuperClass = TryRedirectSuperClass(TypeMetaData, Field->GetSuperClass());
 	Field->SetSuperStruct(CurrentSuperClass);

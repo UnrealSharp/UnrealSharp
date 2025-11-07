@@ -10,7 +10,7 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateManaged(TSharedPtr<FCST
 {
 	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>();
 	NewTypeInfo->OwningAssembly = InOwningAssembly;
-	NewTypeInfo->TypeMetaData = MetaData;
+	NewTypeInfo->MetaData = MetaData;
 	NewTypeInfo->Builder = Builder;
 	NewTypeInfo->Field = TStrongObjectPtr(Builder->CreateField(NewTypeInfo));
 	NewTypeInfo->MarkAsStructurallyModified();
@@ -29,9 +29,9 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateNative(UField* InField,
 	return NewTypeInfo;
 }
 
-void FCSManagedTypeInfo::SetTypeHandle(uint8* ManagedTypeHandlePtr)
+void FCSManagedTypeInfo::SetTypeHandle(uint8* TypeHandlePtr)
 {
-	TypeHandle = OwningAssembly->RegisterTypeHandle(TypeMetaData->FieldName, ManagedTypeHandlePtr);
+	TypeHandle = OwningAssembly->RegisterTypeHandle(MetaData->FieldName, TypeHandlePtr);
 }
 
 void FCSManagedTypeInfo::MarkAsStructurallyModified()

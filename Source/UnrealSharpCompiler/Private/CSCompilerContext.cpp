@@ -34,7 +34,7 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 
 	UCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 
-	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->GetTypeMetaData<FCSClassMetaData>();
+	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->GetMetaData<FCSClassMetaData>();
 
 	// Super call overrides the class flags, so we need to set after that
 	Class->ClassFlags |= TypeMetaData->ClassFlags;
@@ -65,7 +65,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
 	TSharedPtr<FCSManagedTypeInfo> TypeInfo = GetMainClass()->GetManagedTypeInfo();
-	const TArray<FCSPropertyMetaData>& Properties = TypeInfo->GetTypeMetaData<FCSClassMetaData>()->Properties;
+	const TArray<FCSPropertyMetaData>& Properties = TypeInfo->GetMetaData<FCSClassMetaData>()->Properties;
 
 	NewClass->PropertyGuids.Empty(Properties.Num());
 	TryValidateSimpleConstructionScript();
@@ -187,7 +187,7 @@ TSharedPtr<const FCSManagedTypeInfo> FCSCompilerContext::GetClassInfo() const
 
 TSharedPtr<const FCSClassMetaData> FCSCompilerContext::GetTypeMetaData() const
 {
-	return GetClassInfo()->GetTypeMetaData<FCSClassMetaData>();
+	return GetClassInfo()->GetMetaData<FCSClassMetaData>();
 }
 
 void FCSCompilerContext::TryInitializeAsDeveloperSettings(const UClass* Class) const

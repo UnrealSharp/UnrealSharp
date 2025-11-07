@@ -17,7 +17,7 @@ UCSGeneratedStructBuilder::UCSGeneratedStructBuilder()
 void UCSGeneratedStructBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UCSScriptStruct* Field = static_cast<UCSScriptStruct*>(TypeToBuild);
-	TSharedPtr<FCSStructMetaData> TypeMetaData = ManagedTypeInfo->GetTypeMetaData<FCSStructMetaData>();
+	TSharedPtr<FCSStructMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSStructMetaData>();
 	
 	PurgeStruct(Field);
 	

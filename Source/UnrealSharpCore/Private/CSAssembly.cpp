@@ -167,7 +167,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	TSharedPtr<FCSManagedTypeInfo>& TypeInfo = AllTypes.FindOrAdd(FieldName);
 
 #if WITH_EDITOR
-	if (TypeInfo.IsValid() && !TypeInfo->HasChangedStructure())
+	if (TypeInfo.IsValid() && !TypeInfo->HasStructurallyChanged())
 	{
 		TypeInfo->SetTypeHandle(TypeHandle);
 		NeedsRebuild = false;
@@ -209,7 +209,7 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 
 	if (TypeInfo.IsValid())
 	{
-		TypeInfo->SetTypeMetaData(NewMetaData);
+		TypeInfo->SetMetaData(NewMetaData);
 	}
 	else
 	{
