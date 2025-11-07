@@ -51,7 +51,17 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 	void SetMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InMetaData) { MetaData = InMetaData; }
 	void SetTypeHandle(uint8* TypeHandlePtr);
 	
-	void MarkAsStructurallyModified();
+	void MarkAsStructurallyModified()
+	{
+		if (bHasChangedStructure)
+		{
+			return;
+		}
+	
+		bHasChangedStructure = true;
+		FCSManagedTypeInfoDelegates::OnStructureChangedDelegate.Broadcast(SharedThis(this));
+	}
+	
 	bool HasStructurallyChanged() const { return bHasChangedStructure; }
 	
 private:

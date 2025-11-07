@@ -34,17 +34,6 @@ void FCSManagedTypeInfo::SetTypeHandle(uint8* TypeHandlePtr)
 	TypeHandle = OwningAssembly->RegisterTypeHandle(MetaData->FieldName, TypeHandlePtr);
 }
 
-void FCSManagedTypeInfo::MarkAsStructurallyModified()
-{
-	if (bHasChangedStructure)
-	{
-		return;
-	}
-	
-	bHasChangedStructure = true;
-	FCSManagedTypeInfoDelegates::OnStructureChangedDelegate.Broadcast(SharedThis(this));
-}
-
 UField* FCSManagedTypeInfo::GetOrBuildField()
 {
 	UField* FieldPtr = Field.Get();
