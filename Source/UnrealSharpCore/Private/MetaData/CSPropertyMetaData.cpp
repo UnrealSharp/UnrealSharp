@@ -12,7 +12,7 @@ bool FCSPropertyMetaData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	JSON_READ_STRING(BlueprintSetter, IS_OPTIONAL);
 	
 	JSON_READ_ENUM(LifetimeCondition, IS_OPTIONAL);
-	JSON_READ_ENUM(PropertyFlags, IS_REQUIRED);
+	JSON_READ_ENUM(PropertyFlags, IS_OPTIONAL);
 	
 	JSON_READ_STRING(RepNotifyFunctionName, IS_OPTIONAL);
 

@@ -228,10 +228,12 @@ void FCSSimpleConstructionScriptBuilder::UpdateTemplateComponent(USCS_Node* Node
 	constexpr EObjectFlags NewObjectFlags = RF_ArchetypeObject | RF_Public;
 	UActorComponent* NewComponentTemplate = NewObject<UActorComponent>(GeneratedClass, NewComponentClass, NAME_None, NewObjectFlags);
 
+#if WITH_EDITOR
 	if (ICSManagedTypeInterface* ManagedType = FCSClassUtilities::GetManagedType(NewComponentClass))
 	{
 		ManagedType->GetManagedReferencesCollection().AddReference(GeneratedClass);
 	}
+#endif
 
 	Node->ComponentClass = NewComponentClass;
 	Node->ComponentTemplate = NewComponentTemplate;

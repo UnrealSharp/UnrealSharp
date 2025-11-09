@@ -6,11 +6,8 @@
 class UCSGeneratedTypeBuilder;
 class UCSAssembly;
 
-struct FCSMetaDataEntry
+struct FCSMetaDataEntry : FCSMetaDataBase
 {
-	FString Key;
-	FString Value;
-
 	FCSMetaDataEntry(const FString& InKey, const FString& InValue = FString())
 		: Key(InKey)
 		, Value(InValue)
@@ -18,6 +15,13 @@ struct FCSMetaDataEntry
 	}
 
 	FCSMetaDataEntry() {}
+
+	// FCSMetaDataBase interface
+	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	// End of FCSMetaDataBase interface
+
+	FString Key;
+	FString Value;
 };
 
 struct FCSTypeReferenceMetaData : FCSMetaDataBase

@@ -434,7 +434,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
-        jsonObject["FunctionFlags"] = (ulong) FunctionFlags;
+        jsonObject.TrySetEnum("FunctionFlags", FunctionFlags);
         
         if (HasReturnValue)
         {

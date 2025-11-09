@@ -241,8 +241,8 @@ public record UnrealClass : UnrealClassBase
     {
         base.PopulateJsonObject(jsonObject);
         
-        jsonObject["ClassFlags"] = (ulong) ClassFlags;
-        jsonObject["ConfigCategory"] = ConfigCategory;
+        jsonObject.TrySetEnum("ClassFlags", ClassFlags);
+        jsonObject.TrySetString("ConfigCategory", ConfigCategory);
         
         Overrides.PopulateWithArray(jsonObject, "Overrides", array =>
         {

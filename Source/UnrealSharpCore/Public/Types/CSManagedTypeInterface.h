@@ -46,7 +46,9 @@ public:
 		return ManagedTypeInfo->GetOwningAssembly();
 	}
 
+#if WITH_EDITOR
 	FCSManagedReferencesCollection& GetManagedReferencesCollection() { return ManagedReferences; }
+#endif
 	
 private:
 	TSharedPtr<FCSManagedTypeInfo> ManagedTypeInfo;

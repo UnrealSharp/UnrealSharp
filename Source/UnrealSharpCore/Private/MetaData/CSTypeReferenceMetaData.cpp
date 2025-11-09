@@ -1,6 +1,16 @@
 ﻿#include "MetaData/CSTypeReferenceMetaData.h"
 #include "CSManager.h"
 
+bool FCSMetaDataEntry::Serialize(TSharedPtr<FJsonObject> JsonObject)
+{
+	START_JSON_SERIALIZE
+	
+	JSON_READ_STRING(Key, IS_REQUIRED);
+	JSON_READ_STRING(Value, IS_OPTIONAL);
+	
+	END_JSON_SERIALIZE
+}
+
 bool FCSTypeReferenceMetaData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 {
 	START_JSON_SERIALIZE
@@ -8,21 +18,7 @@ bool FCSTypeReferenceMetaData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	JSON_READ_STRING(AssemblyName, IS_REQUIRED);
 	CALL_SERIALIZE(FieldName.Serialize(JsonObject));
 	JSON_PARSE_OBJECT_ARRAY(SourceGeneratorDependencies, IS_OPTIONAL);
-
-	JSON_PARSE_OBJECT_ARRAY_CUSTOM(MetaData, [](FCSMetaDataEntry& Dest, const TSharedPtr<FJsonObject>& Object)
-	{
-		START_JSON_SERIALIZE
-		
-		FString Key;
-		JSON_READ_STRING(Object, Key, IS_REQUIRED);
-
-		FString Value;
-		JSON_READ_STRING(Object, Value, IS_OPTIONAL);
-
-		Dest = FCSMetaDataEntry(Key, Value);
-		
-		END_JSON_SERIALIZE
-	}, IS_OPTIONAL);
+	JSON_PARSE_OBJECT_ARRAY(MetaData, IS_OPTIONAL);
 
 	END_JSON_SERIALIZE
 }
