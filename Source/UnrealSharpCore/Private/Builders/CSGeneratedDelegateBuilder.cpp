@@ -11,17 +11,15 @@ UCSGeneratedDelegateBuilder::UCSGeneratedDelegateBuilder()
 void UCSGeneratedDelegateBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<FCSManagedTypeInfo>& ManagedTypeInfo) const
 {
 	UDelegateFunction* Field = static_cast<UDelegateFunction*>(TypeToBuild);
-	TSharedPtr<FCSClassBaseMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSClassBaseMetaData>();
+	TSharedPtr<FCSFunctionMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSFunctionMetaData>();
 	
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 	Field->ParmsSize = 0;
 	Field->ReturnValueOffset = 0;
 	Field->NumParms = 0;
+	Field->FunctionFlags = TypeMetaData->FunctionFlags;
 	
-	const FCSFunctionMetaData& SignatureFunctionMetaData = TypeMetaData->Functions[0];
-	Field->FunctionFlags = SignatureFunctionMetaData.Flags;
-	
-	FCSFunctionFactory::CreateParameters(Field, SignatureFunctionMetaData);
+	FCSFunctionFactory::CreateParameters(Field, *TypeMetaData);
 	Field->StaticLink(true);
 	
 	RegisterFieldToLoader(TypeToBuild, ENotifyRegistrationType::NRT_Struct);

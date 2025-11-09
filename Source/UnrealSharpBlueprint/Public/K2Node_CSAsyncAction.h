@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,16 +10,20 @@
 class FBlueprintActionDatabaseRegistrar;
 class UObject;
 
+struct FCSGetMenuActionsUtilities
+{
+	static bool IsFactoryMethod(const UFunction* Function, const UClass* InTargetType);
+	static void SetNodeFunc(UEdGraphNode* NewNode, bool /*bIsTemplateNode*/, TWeakObjectPtr<UFunction> FunctionPtr);
+	static UBlueprintNodeSpawner* MakeAction(UClass* NodeClass, const UFunction* FactoryFunc);
+};
+
 UCLASS()
 class UNREALSHARPBLUEPRINT_API UK2Node_CSAsyncAction : public UK2Node_BaseAsyncTask
 {
 	GENERATED_BODY()
-
 public:
-
+	friend FCSGetMenuActionsUtilities;
 	UK2Node_CSAsyncAction();
-
-	static void SetNodeFunc(UEdGraphNode* NewNode, bool, TWeakObjectPtr<UFunction> FunctionPtr);
 
 	// UK2Node interface
 	virtual void GetMenuActions(FBlueprintActionDatabaseRegistrar& ActionRegistrar) const override;

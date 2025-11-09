@@ -154,11 +154,7 @@ TSharedPtr<FGCHandle> UCSAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>&
 	return AllocatedHandle;
 }
 
-TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
-                                                            TCHAR* InNamespace,
-                                                            ECSFieldType FieldType,
-                                                            uint8* TypeHandle,
-                                                            bool& NeedsRebuild)
+TSharedPtr<FCSManagedTypeInfo> UCSAssembly::RegisterType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeHandle, char* JsonString)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryRegisterType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
@@ -170,7 +166,6 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	if (TypeInfo.IsValid() && !TypeInfo->HasStructurallyChanged())
 	{
 		TypeInfo->SetTypeHandle(TypeHandle);
-		NeedsRebuild = false;
 		return TypeInfo;
 	}
 #endif
@@ -196,12 +191,29 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 			BuilderClass = UCSGeneratedInterfaceBuilder::StaticClass();
 			break;
 		case ECSFieldType::Delegate:
-			NewMetaData = MakeShared<FCSClassBaseMetaData>();
+			NewMetaData = MakeShared<FCSFunctionMetaData>();
 			BuilderClass = UCSGeneratedDelegateBuilder::StaticClass();
 			break;
 		default:
 			UE_LOGFMT(LogUnrealSharp, Error, "Unsupported field type: {0}", static_cast<uint8>(FieldType));
 			return nullptr;
+	}
+	
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::DeserializeMetaData);
+
+		TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+		TSharedPtr<FJsonObject> RootObject;
+		
+		if (!FJsonSerializer::Deserialize(JsonReader, RootObject))
+		{
+			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to deserialize metadata JSON for type {0}", *FieldName.GetFullName().ToString());
+		}
+
+		if (!NewMetaData->Serialize(RootObject))
+		{
+			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON metadata for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
+		}
 	}
 	
 	NewMetaData->FieldName = FieldName;
@@ -214,10 +226,10 @@ TSharedPtr<FCSManagedTypeInfo> UCSAssembly::TryRegisterType(TCHAR* InFieldName,
 	else
 	{
 		TypeInfo = FCSManagedTypeInfo::CreateManaged(NewMetaData, this, BuilderClass->GetDefaultObject<UCSGeneratedTypeBuilder>());
+		AllTypes.Add(FieldName, TypeInfo);
 	}
 
 	TypeInfo->SetTypeHandle(TypeHandle);
-	NeedsRebuild = true;
 	return TypeInfo;
 }
 

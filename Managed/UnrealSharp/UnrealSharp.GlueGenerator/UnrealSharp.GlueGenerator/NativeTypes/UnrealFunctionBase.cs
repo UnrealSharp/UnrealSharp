@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -227,8 +228,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
         UnrealFunctionBase unrealFunction;
         if (methodSymbol.IsAsync)
         {
-            unrealFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, methodDeclaration, outer!);
-            unrealClass.AddAsyncFunction(unrealFunction);
+            UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, methodDeclaration, outer!);
+            unrealClass.AddAsyncFunction(asyncFunction);
+            
+            outer!.SourceGeneratorDependencies.List.Add(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
+            unrealFunction = asyncFunction;
         }
         else
         {
@@ -427,23 +431,14 @@ public abstract record UnrealFunctionBase : UnrealStruct
         builder.Append($"(NativeObject, {instanceFunction}, {paramsBuffer}, {returnBuffer});");
     }
 
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        ulong flags = (ulong) FunctionFlags;
-        int paramCount = Properties.Count;
-        
-        builder.AppendLine($"IntPtr {BuilderNativePtr} = NewFunction({Outer!.BuilderNativePtr}, \"{SourceName}\", {flags}, {paramCount});");
-        base.CreateTypeBuilder(builder);
-        
-        List<UnrealProperty> allProperties = new List<UnrealProperty>(Properties.List.Capacity + 1);
+        base.PopulateJsonObject(jsonObject);
+        jsonObject["FunctionFlags"] = (ulong) FunctionFlags;
         
         if (HasReturnValue)
         {
-            allProperties.Add(ReturnType);
+            ReturnType.PopulateWithUnrealType(jsonObject, "ReturnValue");
         }
-
-        allProperties.AddRange(Properties.List);
-        
-        AppendProperties(builder, allProperties);
     }
 }

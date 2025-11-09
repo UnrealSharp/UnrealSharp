@@ -3,13 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSCommonPropertyGenerator.h"
 #include "CSPropertyGenerator.h"
 #include "CSDelegateBasePropertyGenerator.generated.h"
 
-UCLASS(Abstract)
-class UNREALSHARPCORE_API UCSDelegateBasePropertyGenerator : public UCSPropertyGenerator
+UCLASS()
+class UNREALSHARPCORE_API UCSDelegateBasePropertyGenerator : public UCSCommonPropertyGenerator
 {
 	GENERATED_BODY()
+public:
+	UCSDelegateBasePropertyGenerator(FObjectInitializer const& ObjectInitializer);
 protected:
 	// UCSPropertyGenerator interface
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;

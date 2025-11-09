@@ -87,7 +87,6 @@ public static class AttributeUtilities
                memberDecl.HasUClassAttribute() ||
                memberDecl.HasUEnumAttribute() ||
                memberDecl.HasUStructAttribute() ||
-               memberDecl.HasCustomLogAttribute() ||
                memberDecl.HasUMultiDelegateAttribute() ||
                memberDecl.HasUDelegateAttribute();
     }

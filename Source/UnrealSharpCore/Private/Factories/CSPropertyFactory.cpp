@@ -63,7 +63,7 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 	UCSPropertyGenerator* PropertyGenerator = GetPropertyGenerator(PropertyMetaData.Type->PropertyType);
 	FProperty* NewProperty = PropertyGenerator->CreateProperty(Outer, PropertyMetaData);
 
-	NewProperty->SetPropertyFlags(PropertyMetaData.Flags);
+	NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags);
 	NewProperty->SetBlueprintReplicationCondition(PropertyMetaData.LifetimeCondition);
 
 #if WITH_EDITOR

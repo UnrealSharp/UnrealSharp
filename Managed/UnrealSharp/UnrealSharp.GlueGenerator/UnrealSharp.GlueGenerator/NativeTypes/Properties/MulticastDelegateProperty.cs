@@ -5,8 +5,17 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record MulticastDelegateProperty : DelegateProperty
 {
     public MulticastDelegateProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.MulticastInlineDelegate, outer, true)
+        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.MulticastInlineDelegate, outer, "MulticastDelegateMarshaller")
     {
         
+    }
+
+    public MulticastDelegateProperty(EquatableArray<UnrealProperty> templateParameters, string sourceName, Accessibility accessibility, UnrealType outer) : base(templateParameters, new FieldName("TMulticastDelegate"), PropertyType.MulticastInlineDelegate, "MulticastDelegateMarshaller", sourceName, accessibility, outer)
+    {
+    }
+
+    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+    {
+        AppendFromNative(builder, NativePropertyVariable);
     }
 }

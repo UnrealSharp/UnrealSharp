@@ -45,7 +45,7 @@ void* FCSBindsManager::GetBoundFunction(const TCHAR* InOuterName, const TCHAR* I
 			
 		if (NativeFunction.Size != ManagedFunctionSize)
 		{
-			UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: Function size mismatch for %s::%s."), InOuterName, InFunctionName);
+			UE_LOG(LogUnrealSharpBinds, Error, TEXT("Failed to get BoundNativeFunction: Function size mismatch for %s::%s. Native size: %d, Managed size: %d"), InOuterName, InFunctionName, NativeFunction.Size, ManagedFunctionSize);
 			return nullptr;
 		}
 			

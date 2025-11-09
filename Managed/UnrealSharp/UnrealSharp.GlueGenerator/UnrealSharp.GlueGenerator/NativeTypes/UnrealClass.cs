@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -58,10 +59,10 @@ public record struct InterfaceData
 [Inspector]
 public record UnrealClass : UnrealClassBase
 {
+    public override int FieldTypeValue => 0;
+    
     const string UClassAttributeName = "UClassAttribute";
     const string LongUClassAttributeName = "UnrealSharp.Attributes.UClassAttribute";
-
-    public override int FieldTypeValue => 0;
     
     public string ConfigCategory = string.Empty;
 
@@ -236,36 +237,44 @@ public record UnrealClass : UnrealClassBase
         TryExportList(builder, spc, Properties);
     }
     
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.CreateTypeBuilder(builder);
-
-        AppendProperties(builder, Properties.List);
+        base.PopulateJsonObject(jsonObject);
         
-        ulong classFlags = (ulong) ClassFlags;
-        builder.AppendLine($"ModifyClass({BuilderNativePtr}, \"{ParentName.Substring(1)}\", typeof({FullParentName}), \"{ConfigCategory}\", {classFlags});");
+        jsonObject["ClassFlags"] = (ulong) ClassFlags;
+        jsonObject["ConfigCategory"] = ConfigCategory;
         
-        int numOverrides = Overrides.Count;
-        if (numOverrides > 0)
+        Overrides.PopulateWithArray(jsonObject, "Overrides", array =>
         {
-            builder.AppendLine($"InitOverrides({BuilderNativePtr}, {numOverrides});");
-            
-            for (int i = 0; i < numOverrides; i++)
+            if (Overrides.Count == 0)
             {
-                builder.AppendLine($"NewOverride({BuilderNativePtr}, \"{Overrides.List[i]}\");");
+                return;
             }
-        }
+            
+            foreach (string overrideName in Overrides.List)
+            {
+                array.Add(overrideName);
+            }
+        });
         
-        int numInterfaces = Interfaces.Count;
-        if (numInterfaces > 0)
+        Interfaces.PopulateWithArray(jsonObject, "Interfaces", array =>
         {
-            builder.AppendLine($"InitInterfaces({BuilderNativePtr}, {numInterfaces});");
-            
-            for (int i = 0; i < numInterfaces; i++)
+            if (Interfaces.Count == 0)
             {
-                InterfaceData interfaceData = Interfaces.List[i];
-                builder.AppendLine($"NewInterface({BuilderNativePtr}, \"{interfaceData.Name.Substring(1)}\", typeof({interfaceData.FullName}));");
+                return;
             }
-        }
+            
+            foreach (InterfaceData interfaceData in Interfaces.List)
+            {
+                JsonObject interfaceObject = new JsonObject
+                {
+                    ["Name"] = interfaceData.Name,
+                    ["FullName"] = interfaceData.FullName
+                };
+                
+                array.Add(interfaceObject);
+            }
+        });
+        
     }
 }

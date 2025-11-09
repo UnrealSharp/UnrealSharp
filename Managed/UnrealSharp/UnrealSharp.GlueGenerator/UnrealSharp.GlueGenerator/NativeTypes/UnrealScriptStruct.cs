@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
@@ -93,12 +94,6 @@ public record UnrealScriptStruct : UnrealStruct
         builder.CloseBrace();
         
         MakeMarshaller(builder);
-    }
-
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
-    {
-        base.CreateTypeBuilder(builder);
-        AppendProperties(builder, Properties.List);
     }
 
     void MakeMarshaller(GeneratorStringBuilder builder)

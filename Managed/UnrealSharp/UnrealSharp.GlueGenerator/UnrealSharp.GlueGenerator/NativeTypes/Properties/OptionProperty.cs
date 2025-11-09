@@ -23,7 +23,7 @@ public record OptionProperty : ContainerProperty
     
     public override void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)
     {
-        string delegates = string.Join(", ", InnerTypes.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
+        string delegates = string.Join(", ", TemplateParameters.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
         builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}, {delegates});");
         builder.AppendLine();
         

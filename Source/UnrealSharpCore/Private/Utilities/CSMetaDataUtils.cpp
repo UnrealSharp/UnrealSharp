@@ -1,20 +1,21 @@
 #include "Utilities/CSMetaDataUtils.h"
 #include "CSUnrealSharpSettings.h"
+#include "MetaData/CSTypeReferenceMetaData.h"
 
-void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, UField* Field)
+void FCSMetaDataUtils::ApplyMetaData(const TArray<FCSMetaDataEntry>& MetaDataMap, UField* Field)
 {
 #if WITH_EDITOR
-	for (const TPair<FString, FString>& MetaData : MetaDataMap)
+	for (const FCSMetaDataEntry& MetaData : MetaDataMap)
 	{
 		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
 	}
 #endif
 }
 
-void FCSMetaDataUtils::ApplyMetaData(const TMap<FString, FString>& MetaDataMap, FField* Field)
+void FCSMetaDataUtils::ApplyMetaData(const TArray<FCSMetaDataEntry>& MetaDataMap, FField* Field)
 {
 #if WITH_EDITOR
-	for (const TPair<FString, FString>& MetaData : MetaDataMap)
+	for (const FCSMetaDataEntry& MetaData : MetaDataMap)
 	{
 		Field->SetMetaData(*MetaData.Key, *MetaData.Value);
 	}

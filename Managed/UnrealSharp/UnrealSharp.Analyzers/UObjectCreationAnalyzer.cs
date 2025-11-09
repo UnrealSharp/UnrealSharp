@@ -73,8 +73,7 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterOperationAction(AnalyzeUObjectCreation, OperationKind.ObjectCreation);
     }
-
-    //check new <UObject> syntax
+    
     private static void AnalyzeUObjectCreation(OperationAnalysisContext context)
     {
         if (context.Operation is not IObjectCreationOperation creationOperation)
@@ -87,11 +86,17 @@ public class UObjectCreationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var isNewKeywordOperation = AnalyzerStatics.IsNewKeywordInstancingOperation(creationOperation, out var newKeywordLocation);
-        if (!isNewKeywordOperation) return;
+        bool isNewKeywordOperation = AnalyzerStatics.IsNewKeywordInstancingOperation(creationOperation, out var newKeywordLocation);
+        if (!isNewKeywordOperation)
+        {
+            return;
+        }
 
-        var rule = GetRule(type);
-        if (rule is null) return;
+        DiagnosticDescriptor? rule = GetRule(type);
+        if (rule is null)
+        {
+            return;
+        }
         
         context.ReportDiagnostic(Diagnostic.Create(rule, newKeywordLocation, type.Name));
 

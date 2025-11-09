@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
@@ -13,10 +14,12 @@ public record UnrealDelegate : UnrealType
     private readonly bool _isMulticast;
     public override int FieldTypeValue => 4;
 
+    public override string EngineName => SourceName.Substring(1);
+
     public UnrealDelegate(bool isMulticast, SemanticModel model, ISymbol typeSymbol, SyntaxNode syntax) : base(typeSymbol, syntax)
     {
         _isMulticast = isMulticast;
-        _delegateSignature = new UnrealFunction(model, typeSymbol, (DelegateDeclarationSyntax) syntax, this);
+        _delegateSignature = new UnrealDelegateFunction(model, typeSymbol, (DelegateDeclarationSyntax) syntax, this);
         SourceName = DelegateProperty.MakeDelegateSignatureName(SourceName);
         ApplyFunctionFlags(isMulticast);
     }
@@ -25,6 +28,8 @@ public record UnrealDelegate : UnrealType
     {
         _isMulticast = isMulticast;
         _delegateSignature = delegateSignature;
+        SourceName = DelegateProperty.MakeDelegateSignatureName(SourceName);
+        
         ApplyFunctionFlags(isMulticast);
     }
     
@@ -55,7 +60,7 @@ public record UnrealDelegate : UnrealType
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         string baseTypeName = _isMulticast ? "MulticastDelegate" : "Delegate";
-        string delegateWrapperClassName = DelegateProperty.MakeDelegateSignatureName(_delegateSignature.EngineName);
+        string delegateWrapperClassName = DelegateProperty.MakeDelegateSignatureName(_delegateSignature.SourceName);
         
         bool hasParameters = _delegateSignature.Properties.Count > 0;
         string args = string.Empty;
@@ -67,7 +72,7 @@ public record UnrealDelegate : UnrealType
             parameters = string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterCall()));
         }
         
-        builder.BeginType(_delegateSignature, TypeKind.Class, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.EngineName}>");
+        builder.BeginType(_delegateSignature, TypeKind.Class, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.SourceName}>");
         AppendAddOperator(builder, delegateWrapperClassName);
         AppendNegateOperator(builder, delegateWrapperClassName);
         AppendInvoker(builder, args);
@@ -79,7 +84,7 @@ public record UnrealDelegate : UnrealType
 
     void AppendAddOperator(GeneratorStringBuilder builder, string wrapperName)
     {
-        builder.AppendLine($"public static {wrapperName} operator +({wrapperName} a, {_delegateSignature.EngineName} b)");
+        builder.AppendLine($"public static {wrapperName} operator +({wrapperName} a, {_delegateSignature.SourceName} b)");
         builder.OpenBrace();
         builder.AppendLine("a.Add(b);");
         builder.AppendLine("return a;");
@@ -88,7 +93,7 @@ public record UnrealDelegate : UnrealType
     
     void AppendNegateOperator(GeneratorStringBuilder builder, string wrapperName)
     {
-        builder.AppendLine($"public static {wrapperName} operator -({wrapperName} a, {_delegateSignature.EngineName} b)");
+        builder.AppendLine($"public static {wrapperName} operator -({wrapperName} a, {_delegateSignature.SourceName} b)");
         builder.OpenBrace();
         builder.AppendLine("a.Remove(b);");
         builder.AppendLine("return a;");
@@ -102,7 +107,7 @@ public record UnrealDelegate : UnrealType
             _delegateSignature.ExportBackingVariables(builder);
         }
         
-        builder.AppendLine($"protected override {_delegateSignature.EngineName} GetInvoker() => Invoker;");
+        builder.AppendLine($"protected override {_delegateSignature.SourceName} GetInvoker() => Invoker;");
         
         builder.AppendLine($"private void Invoker({args})");
         builder.OpenBrace();
@@ -118,19 +123,19 @@ public record UnrealDelegate : UnrealType
         string extensionsClassName = $"{_delegateSignature.EngineName}Extensions";
         builder.AppendLine($"public static class {extensionsClassName}");
         builder.OpenBrace();
-        builder.AppendLine($"public static void Invoke(this TMulticastDelegate<{_delegateSignature.EngineName}> del{(args.Length > 0 ? ", " : string.Empty)}{args})");
+        builder.AppendLine($"public static void Invoke(this TMulticastDelegate<{_delegateSignature.SourceName}> del{(args.Length > 0 ? ", " : string.Empty)}{args})");
         builder.Append($" => del.InnerDelegate.Invoke({parameters});");
         builder.CloseBrace();
     }
     
     public void AppendFunctionAsDelegate(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"public delegate {_delegateSignature.ReturnType.ManagedType} {_delegateSignature.EngineName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
+        builder.AppendLine($"public delegate {_delegateSignature.ReturnType.ManagedType} {_delegateSignature.SourceName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
     }
 
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.CreateTypeBuilder(builder);
-        _delegateSignature.CreateTypeBuilder(builder);
+        _delegateSignature.PopulateJsonObject(jsonObject);
+        base.PopulateJsonObject(jsonObject);
     }
 }

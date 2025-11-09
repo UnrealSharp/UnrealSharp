@@ -3,15 +3,29 @@
 
 struct FCSFunctionMetaData : FCSStructMetaData
 {
-	EFunctionFlags Flags;
+	EFunctionFlags FunctionFlags;
+	FCSPropertyMetaData ReturnValue;
+
+	// FCSMetaDataBase interface
+	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override
+	{
+		START_JSON_SERIALIZE
+		
+		CALL_SERIALIZE(FCSStructMetaData::Serialize(JsonObject));
+		JSON_READ_ENUM(FunctionFlags, IS_REQUIRED);
+		JSON_PARSE_OBJECT(ReturnValue, IS_OPTIONAL);
+		
+		END_JSON_SERIALIZE
+	}
+	// End of FCSMetaDataBase interface
 
 	const FCSPropertyMetaData* TryGetReturnValue() const
 	{
-		if (Properties.Num() > 0 && Properties[0].Flags & CPF_ReturnParm)
+		if (!ReturnValue.Type.IsValid())
 		{
-			return &Properties[0];
+			return nullptr;
 		}
-		
-		return nullptr;
+
+		return &ReturnValue;
 	}
 };

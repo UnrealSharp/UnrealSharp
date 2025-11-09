@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -120,7 +121,7 @@ public record UnrealProperty : UnrealType
 
     public EPropertyFlags PropertyFlags = EPropertyFlags.None;
     public bool DefaultComponent;
-    public bool RootComponent;
+    public bool IsRootComponent;
     public string AttachmentComponent = string.Empty;
     public string AttachmentSocket = string.Empty;
     public string ReplicatedUsing = string.Empty;
@@ -135,12 +136,10 @@ public record UnrealProperty : UnrealType
     public RefKind RefKind;
 
     public readonly bool IsNullable;
-
-    public bool CacheNativeTypePtr = false;
     
     public PropertyType PropertyType = PropertyType.Unknown;
 
-    public string ManagedType = "";
+    public FieldName ManagedType;
     
     public virtual string MarshallerType => throw new NotImplementedException();
 
@@ -228,7 +227,7 @@ public record UnrealProperty : UnrealType
     public static void RootComponentSpecifier(UnrealType topType, TypedConstant rootComponent)
     {
         UnrealProperty property = (UnrealProperty)topType;
-        property.RootComponent = (bool)rootComponent.Value!;
+        property.IsRootComponent = (bool)rootComponent.Value!;
     }
     
     [InspectArgument("AttachmentComponent", UPropertyAttributeName)]
@@ -358,24 +357,22 @@ public record UnrealProperty : UnrealType
     {
         builder.Append($"{assignmentOperator}{marshaller}.FromNative({AppendOffsetMath(buffer)}, 0);");
     }
-    
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        MakeProperty(builder, Outer!.BuilderNativePtr);
+        base.PopulateJsonObject(jsonObject);
+        jsonObject["PropertyFlags"] = (ulong) PropertyFlags;
+        jsonObject["PropertyType"] = (int) PropertyType;
+        jsonObject["DefaultComponent"] = DefaultComponent;
+        jsonObject["IsRootComponent"] = IsRootComponent;
+        jsonObject["AttachmentComponent"] = AttachmentComponent;
+        jsonObject["AttachmentSocket"] = AttachmentSocket;
+        jsonObject["ReplicatedUsing"] = ReplicatedUsing;
+        jsonObject["LifetimeCondition"] = (int) LifetimeCondition;
+        jsonObject["BlueprintSetter"] = BlueprintSetter;
+        jsonObject["BlueprintGetter"] = BlueprintGetter;
     }
 
-    public virtual void MakeProperty(GeneratorStringBuilder builder, string ownerPtr)
-    {
-        byte propertyType = (byte) PropertyType;
-        ulong flags = (ulong) PropertyFlags;
-        int lifetimeCondition = (int) LifetimeCondition;
-
-        string cacheOperation = CacheNativeTypePtr || HasAnyMetaData ? $"IntPtr {BuilderNativePtr} = " : string.Empty;
-        builder.AppendLine($"{cacheOperation}NewProperty({ownerPtr}, {propertyType}, \"{SourceName}\", {flags}, \"{ReplicatedUsing}\", {ArrayDim}, {lifetimeCondition}, \"{BlueprintSetter}\", \"{BlueprintGetter}\");");
-        
-        AppendMetaData(builder, BuilderNativePtr);
-    }
-    
     private void AddEditInlineMeta() => AddMetaData("EditInline", "true");
 
     private string RefKindToString()

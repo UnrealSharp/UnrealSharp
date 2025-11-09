@@ -7,7 +7,7 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record ContainerProperty : TemplateProperty
 {
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
-    public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), InnerTypes.Select(t => t.ManagedType).ToArray());
+    public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
 
     public ContainerProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer)
         : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer, "")
@@ -26,7 +26,7 @@ public record ContainerProperty : TemplateProperty
 
     public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
     {
-        string delegates = string.Join(", ", InnerTypes.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
+        string delegates = string.Join(", ", TemplateParameters.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
         builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}, {delegates});");
         builder.AppendLine();
         AppendCallFromNative(builder, InstancedMarshallerVariable, buffer, assignmentOperator);
@@ -34,7 +34,7 @@ public record ContainerProperty : TemplateProperty
 
     public override void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)
     {
-        string delegates = string.Join(", ", InnerTypes.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
+        string delegates = string.Join(", ", TemplateParameters.Select(t => t).Select(t => $"{t.CallToNative}, {t.CallFromNative}"));
         builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}, {delegates});");
         builder.AppendLine();
         AppendCallToNative(builder, InstancedMarshallerVariable, buffer, value);

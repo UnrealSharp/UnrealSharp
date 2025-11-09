@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -20,25 +21,15 @@ public record UnrealStruct : UnrealType
     {
 
     }
-    
+
+    public override void PopulateJsonObject(JsonObject jsonObject)
+    {
+        base.PopulateJsonObject(jsonObject);
+        Properties.PopulateWithArray(jsonObject, "Properties");
+    }
+
     public void AddProperty(UnrealProperty property)
     {
         Properties.List.Add(property);
-    }
-
-    public void AppendProperties(GeneratorStringBuilder builder, List<UnrealProperty>? properties)
-    {
-        if (properties is null || properties.Count == 0)
-        {
-            return;
-        }
-        
-        string propertiesArrayPtr = $"{SourceName}Properties";
-        builder.AppendLine($"IntPtr {propertiesArrayPtr} = InitStructProps({BuilderNativePtr}, {properties.Count});");
-            
-        for (int i = 0; i < properties.Count; i++)
-        {
-            properties[i].MakeProperty(builder, propertiesArrayPtr);
-        }
     }
 }

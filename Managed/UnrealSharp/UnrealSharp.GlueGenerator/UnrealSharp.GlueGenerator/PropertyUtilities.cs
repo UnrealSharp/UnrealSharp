@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
+using UnrealSharp.GlueGenerator.NativeTypes;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator;
@@ -45,5 +50,43 @@ public static class PropertyUtilities
     public static void MakeBlueprintAssignable(this UnrealProperty property)
     {
         property.PropertyFlags |= EPropertyFlags.BlueprintAssignable;
+    }
+    
+    public static void PopulateWithArray<T>(this IEnumerable<T>? list, JsonObject baseJsonObject, string arrayName) where T : UnrealType
+    {
+        if (list == null)
+        {
+            return;
+        }
+        
+        JsonArray jsonArray = new JsonArray();
+        
+        foreach (T? item in list)
+        {
+            JsonObject propertyObject = new JsonObject();
+            item.PopulateJsonObject(propertyObject);
+            jsonArray.Add(propertyObject);
+        }
+        
+        baseJsonObject[arrayName] = jsonArray;
+    }
+    
+    public static void PopulateWithArray<T>(this IEnumerable<T>? list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction)
+    {
+        if (list == null)
+        {
+            return;
+        }
+        
+        JsonArray jsonArray = new JsonArray();
+        populateAction(jsonArray);
+        baseJsonObject[arrayName] = jsonArray;
+    }
+    
+    public static void PopulateWithUnrealType(this UnrealType type, JsonObject baseJsonObject, string typeName)
+    {
+        JsonObject typeObject = new JsonObject();
+        type.PopulateJsonObject(typeObject);
+        baseJsonObject[typeName] = typeObject;
     }
 }

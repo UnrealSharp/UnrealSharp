@@ -39,6 +39,7 @@ public class UnrealSharpCore : ModuleRules
 				"UnrealSharpBinds",
 				"FieldNotification",
 				"InputCore",
+				"Json"
 			}
 			);
 

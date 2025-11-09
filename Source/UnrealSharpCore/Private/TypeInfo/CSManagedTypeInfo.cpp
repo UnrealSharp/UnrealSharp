@@ -10,7 +10,7 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateManaged(TSharedPtr<FCST
 {
 	TSharedPtr<FCSManagedTypeInfo> NewTypeInfo = MakeShared<FCSManagedTypeInfo>();
 	NewTypeInfo->OwningAssembly = InOwningAssembly;
-	NewTypeInfo->MetaData = MetaData;
+	NewTypeInfo->SetMetaData(MetaData);
 	NewTypeInfo->Builder = Builder;
 	NewTypeInfo->Field = TStrongObjectPtr(Builder->CreateField(NewTypeInfo));
 	NewTypeInfo->MarkAsStructurallyModified();
@@ -32,6 +32,32 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateNative(UField* InField,
 void FCSManagedTypeInfo::SetTypeHandle(uint8* TypeHandlePtr)
 {
 	TypeHandle = OwningAssembly->RegisterTypeHandle(MetaData->FieldName, TypeHandlePtr);
+}
+
+void FCSManagedTypeInfo::MarkAsStructurallyModified()
+{
+	if (bHasChangedStructure)
+	{
+		return;
+	}
+
+	// Notify dependent types to rebuild as well. These are spawned by source generators and depend on this type's structure.
+	// Such as the async wrapper classes.
+	for (int32 i = MetaData->SourceGeneratorDependencies.Num() - 1; i >= 0; --i)
+	{
+		const FCSFieldName& SourceGeneratorDependency = MetaData->SourceGeneratorDependencies[i];
+		TSharedPtr<FCSManagedTypeInfo> DependentTypeInfo = OwningAssembly->FindTypeInfo(SourceGeneratorDependency);
+		
+		if (!DependentTypeInfo.IsValid())
+		{
+			continue;
+		}
+
+		DependentTypeInfo->MarkAsStructurallyModified();
+	}
+	
+	bHasChangedStructure = true;
+	FCSManagedTypeInfoDelegates::OnStructureChangedDelegate.Broadcast(SharedThis(this));
 }
 
 UField* FCSManagedTypeInfo::GetOrBuildField()

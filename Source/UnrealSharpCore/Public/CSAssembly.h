@@ -113,11 +113,7 @@ public:
 		return TryFindField<T>(FieldName);
 	}
 
-	TSharedPtr<FCSManagedTypeInfo> TryRegisterType(TCHAR* InFieldName,
-	                                               TCHAR* InNamespace,
-	                                               ECSFieldType FieldType,
-	                                               uint8* TypeHandle,
-	                                               bool& NeedsRebuild);
+	TSharedPtr<FCSManagedTypeInfo> RegisterType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeHandle, char* JsonString);
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObject(const UObject* Object);

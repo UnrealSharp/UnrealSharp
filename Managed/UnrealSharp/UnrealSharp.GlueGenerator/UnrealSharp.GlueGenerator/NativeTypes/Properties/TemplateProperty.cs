@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -7,32 +8,32 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record TemplateProperty : UnrealProperty
 {
-    protected readonly EquatableArray<UnrealProperty> InnerTypes;
+    protected readonly EquatableArray<UnrealProperty> TemplateParameters;
     private readonly string _marshallerName;
     
-    public override string MarshallerType => MakeMarshallerType(_marshallerName, InnerTypes.Select(t => t.ManagedType).ToArray());
+    public override string MarshallerType => MakeMarshallerType(_marshallerName, TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
 
     public TemplateProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller)
         : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
     {
-        CacheNativeTypePtr = true;
-        
         _marshallerName = marshaller;
         INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol) typeSymbol!;
         
         int argumentCount = namedTypeSymbol.TypeArguments.Length;
         UnrealProperty[] arguments = new UnrealProperty[argumentCount];
 
-        TypeSyntax variableDeclarationSyntax = syntaxNode switch
+        TypeSyntax variableType = syntaxNode switch
         {
-            BasePropertyDeclarationSyntax propertyDeclarationSyntax => propertyDeclarationSyntax.Type,
-            FieldDeclarationSyntax fieldDeclarationSyntax => fieldDeclarationSyntax.Declaration.Type,
-            GenericNameSyntax genericNameSyntax => genericNameSyntax,
-            ParameterSyntax parameterSyntax => parameterSyntax.Type!,
+            BasePropertyDeclarationSyntax p => p.Type,
+            FieldDeclarationSyntax f        => f.Declaration.Type,
+            GenericNameSyntax g             => g,
+            ParameterSyntax p               => p.Type!,
+            QualifiedNameSyntax q           => q,
+            AliasQualifiedNameSyntax a      => a,
             _ => throw new InvalidOperationException($"Unsupported syntax node type: {syntaxNode.GetType().Name} on property {SourceName} of member {memberSymbol.Name}")
         };
 
-        GenericNameSyntax nameSyntax = (GenericNameSyntax) variableDeclarationSyntax;
+        GenericNameSyntax nameSyntax = TryGetGenericName(variableType);
         
         for (int i = 0; i < argumentCount; i++)
         {
@@ -43,25 +44,21 @@ public record TemplateProperty : UnrealProperty
             arguments[i] = newArgument;
         }
         
-        InnerTypes = new EquatableArray<UnrealProperty>(arguments);
+        TemplateParameters = new EquatableArray<UnrealProperty>(arguments);
         
         string fullNamespace = namedTypeSymbol.ContainingNamespace.ToDisplayString();
-        string typedArguments = string.Join(", ", InnerTypes.Select(t => t.ManagedType));
-        ManagedType = $"{fullNamespace}.{namedTypeSymbol.Name}<{typedArguments}>";
+        string typedArguments = string.Join(", ", TemplateParameters.Select(t => t.ManagedType));
+        ManagedType = new FieldName($"{namedTypeSymbol.Name}<{typedArguments}>", fullNamespace, namedTypeSymbol.ContainingAssembly.Name);
     }
     
-    public TemplateProperty(EquatableArray<UnrealProperty> innerTypes, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, string protection, UnrealType outer) 
+    public TemplateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) 
         : base(propertyType, sourceName, accessibility, outer)
     {
-        CacheNativeTypePtr = true;
-        
         _marshallerName = marshaller;
-        InnerTypes = innerTypes;
-        SourceName = sourceName;
+        TemplateParameters = templateParameters;
         
-        string fullNamespace = "System.Collections.Generic";
-        string typedArguments = string.Join(", ", InnerTypes.Select(t => t.ManagedType));
-        ManagedType = $"{fullNamespace}.{marshaller}<{typedArguments}>";
+        string typedArguments = string.Join(", ", TemplateParameters.Select(t => t.ManagedType));
+        ManagedType = new FieldName($"{fieldName.Name}<{typedArguments}>", "UnrealSharp", outer.AssemblyName);
     }
     
     public string MakeMarshallerType(string marshallerName, params string[] innerTypes)
@@ -69,32 +66,18 @@ public record TemplateProperty : UnrealProperty
         return $"{marshallerName}<{string.Join(", ", innerTypes)}>";
     }
 
-    public override void MakeProperty(GeneratorStringBuilder builder, string ownerPtr)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.MakeProperty(builder, ownerPtr);
-        
-        string templateArrayName = $"{SourceName}_TemplateArray";
-        builder.AppendLine($"IntPtr {templateArrayName} = InitTemplateProps({BuilderNativePtr}, {InnerTypes.Count});");
-        
-        for (int i = 0; i < InnerTypes.Count; i++)
-        {
-            UnrealProperty innerType = InnerTypes[i];
-            innerType.MakeProperty(builder, templateArrayName);
-        }
+        base.PopulateJsonObject(jsonObject);
+        TemplateParameters.PopulateWithArray(jsonObject, "TemplateParameters");
     }
-
-    public virtual bool Equals(TemplateProperty? other)
+    
+    private static GenericNameSyntax TryGetGenericName(TypeSyntax ts) => ts switch
     {
-        return base.Equals(other) && InnerTypes.Equals(other.InnerTypes);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            int hashCode = base.GetHashCode();
-            hashCode = (hashCode * 397) ^ InnerTypes.GetHashCode();
-            return hashCode;
-        }
-    }
+        GenericNameSyntax g           => g,
+        QualifiedNameSyntax q         => TryGetGenericName(q.Right),
+        AliasQualifiedNameSyntax a    => TryGetGenericName(a.Name),
+        NullableTypeSyntax n          => TryGetGenericName(n.ElementType),
+        _                             => throw new InvalidOperationException($"TypeSyntax {ts} is not a GenericNameSyntax")
+    };
 }

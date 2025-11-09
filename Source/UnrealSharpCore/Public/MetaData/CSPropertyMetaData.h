@@ -6,24 +6,10 @@
 struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSTypeReferenceMetaData
 {
 	virtual ~FCSPropertyMetaData() override = default;
-	
-	FCSPropertyMetaData() 
-		: Type(nullptr)
-		, Flags(CPF_None)
-		, ArrayDim(1)
-		, RepNotifyFunctionName(NAME_None)
-		, LifetimeCondition(COND_None)
-	{
-		
-	}
-	
-	TSharedPtr<FCSUnrealType> Type;
-	EPropertyFlags Flags;
-	int32 ArrayDim = 0;
-	FName RepNotifyFunctionName;
-	ELifetimeCondition LifetimeCondition;
-	FString BlueprintSetter;
-	FString BlueprintGetter;
+
+	// FCSMetaDataBase interface
+	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	// End of FCSMetaDataBase interface
 
 	FName GetName() const { return FieldName.GetFName(); }
 
@@ -43,4 +29,12 @@ struct UNREALSHARPCORE_API FCSPropertyMetaData : FCSTypeReferenceMetaData
 
 		return StaticCastSharedPtr<T>(Type);
 	}
+
+	TSharedPtr<FCSUnrealType> Type;
+	EPropertyFlags PropertyFlags;
+	int32 ArrayDim = 0;
+	FName RepNotifyFunctionName;
+	ELifetimeCondition LifetimeCondition;
+	FString BlueprintSetter;
+	FString BlueprintGetter;
 };

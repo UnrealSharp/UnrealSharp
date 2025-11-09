@@ -3,14 +3,18 @@ using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
+using UnrealSharp.EnhancedInput;
 
 namespace TestSourceGen;
 
 [UMultiDelegate]
-public delegate void TestDelegate(int intParam, string strParam);
+public delegate void FTestDelegate(int intParam, string strParam);
 
 [USingleDelegate]
-public delegate void TestDelegate2(int intParam, string strParam);
+public delegate void FTestDelegate2(int intParam, string strParam);
+
+[UMultiDelegate]
+public delegate void FTestDelegate3(float newValue, float oldValue);
 
 [UEnum]
 public enum ETestEnum : byte
@@ -71,6 +75,8 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial FRotator RotatorProp { get; set; }
     [UProperty] public partial FQuat QuatProp { get; set; }
     [UProperty] public partial FTransform TransformProp { get; set; }
+    
+    [UProperty] public partial FTestStruct StructProp { get; set; }
 
     [UProperty] public partial FLinearColor LinearColorProp { get; set; }
     [UProperty] public partial FColor ColorProp { get; set; }
@@ -124,9 +130,9 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDict { get; set; }
     [UProperty(PropertyFlags.EditAnywhere)] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDhict { get; set; }
     
-    [UProperty] public partial TMulticastDelegate<TestDelegate> MultiDelegateProp { get; set; }
-    [UProperty] public partial TDelegate<TestDelegate2> SingleDelegateProp { get; set; }
-    [UProperty] public partial TDelegate<TestDelegate2> SingleDelegateProp2 { get; set; }
+    [UProperty] public partial TMulticastDelegate<FTestDelegate> MultiDelegateProp { get; set; }
+    [UProperty] public partial TDelegate<FTestDelegate2> SingleDelegateProp { get; set; }
+    [UProperty] public partial TDelegate<FTestDelegate2> SingleDelegateProp2 { get; set; }
     
     [UProperty(PropertyFlags.Instanced | PropertyFlags.BlueprintReadOnly)] public partial UTestObject TestObjectProp { get; set; }
 
@@ -185,6 +191,12 @@ public partial class UTestClass : AActor, ITestInterface
     }
     
     public void CallInterfaceFunction(int intParam, string strParam)
+    {
+
+    }
+    
+    [UFunction]
+    private void Callback(FInputActionValue arg1, float arg2, float arg3, UInputAction arg4)
     {
 
     }

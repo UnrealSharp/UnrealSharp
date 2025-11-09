@@ -149,4 +149,35 @@ public static class AnalyzerStatics
 
         return methodName;
     }
+    
+    public static bool IsNodePartial(SyntaxNode node)
+    {
+        if (node is not MemberDeclarationSyntax memberDeclaration)
+        {
+            return false;
+        }
+
+        foreach (var modifier in memberDeclaration.Modifiers)
+        {
+            if (modifier.IsKind(SyntaxKind.PartialKeyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    public static object? GetValueFromAttribute(AttributeData attributeData, string key)
+    {
+        foreach (var namedArgument in attributeData.NamedArguments)
+        {
+            if (namedArgument.Key == key)
+            {
+                return namedArgument.Value.Value;
+            }
+        }
+
+        return null;
+    }
 }

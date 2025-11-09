@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -47,13 +49,23 @@ public static class StringBuilderExtensions
 
     public static void BeginModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
     {
-        builder.StartModuleInitializer(type.SourceName);
-        builder.StartModuleInitializerMethod(type);
+        JsonObject typeObject = new JsonObject();
         
-        builder.AppendLine($"IntPtr {type.BuilderNativePtr} = NewType(\"{type.EngineName}\", {type.FieldTypeValue}, typeof({type.FullName}), out var needsRebuild);");
-        builder.AppendLine("if (!needsRebuild) return;");
-        type.CreateTypeBuilder(builder);
-        builder.EndModuleInitializer();
+        builder.StartModuleInitializer(type);
+        
+        type.PopulateJsonObject(typeObject);
+        
+        JsonSerializerOptions options = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+        
+        string jsonString = JsonSerializer.Serialize(typeObject, options);
+        builder.AppendLine($"const string JsonReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
+        builder.AppendLine("static void Initialize() => ");
+        builder.Append($"NewType(\"{type.EngineName}\", JsonReflectionData, {type.FieldTypeValue}, typeof({type.FullName}));");
+
+        builder.CloseBrace();
     }
     
     public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, TypeKind typeKind, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
@@ -91,31 +103,19 @@ public static class StringBuilderExtensions
         
         builder.OpenBrace();
         
-        string engineName = string.IsNullOrEmpty(overrideTypeName) ? type.EngineName : overrideTypeName;
+        string engineName = string.IsNullOrEmpty(overrideTypeName) ? type.EngineName : overrideTypeName.Substring(1);
         builder.AppendNewBackingField($"static IntPtr {nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{type.AssemblyName}\", \"{type.Namespace}\", \"{engineName}\");");
     }
 
-    public static void StartModuleInitializer(this GeneratorStringBuilder builder, string outerName)
+    public static void StartModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
     {
         builder.AppendLine();
-        builder.AppendLine($"static class {outerName}_Initializer");
+        builder.AppendLine($"static class {type.SourceName}_Initializer");
         builder.OpenBrace();
-    }
-    
-    public static void StartModuleInitializerMethod(this GeneratorStringBuilder builder, UnrealType type)
-    {
         builder.AppendLine("#pragma warning disable CA2255");
         builder.AppendLine("[System.Runtime.CompilerServices.ModuleInitializer]");
         builder.AppendLine("#pragma warning restore CA2255");
         builder.AppendLine($"public static void Register() => UnrealSharp.Core.StartUpJobManager.RegisterStartUpJob(\"{type.AssemblyName}\", Initialize);");
-        builder.AppendLine("public static void Initialize()");
-        builder.OpenBrace();
-    }
-    
-    public static void EndModuleInitializer(this GeneratorStringBuilder builder)
-    {
-        builder.CloseBrace();
-        builder.CloseBrace();
     }
     
     public static void AllocateParameterBuffer(this GeneratorStringBuilder builder, string sizeName)

@@ -1,29 +1,33 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text.Json.Nodes;
+using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record FieldProperty : SimpleProperty
 {
-    public FieldProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, PropertyType propertyType, UnrealType outer) 
+    public FieldName InnerType;
+    
+    public FieldProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
         : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
     {
-        CacheNativeTypePtr = true;
+        InnerType = new FieldName(typeSymbol);
+    }
+    
+    public FieldProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, FieldName customFieldName, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
+        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
+    {
+        InnerType = customFieldName;
     }
 
-    public FieldProperty(PropertyType type, string managedType, string sourceName, Accessibility accessibility, UnrealType outer) 
-        : base(type, managedType, sourceName, accessibility, outer)
+    public FieldProperty(PropertyType type, FieldName innerType, FieldName fieldName, string sourceName, Accessibility accessibility, UnrealType outer) 
+        : base(type, fieldName, sourceName, accessibility, outer)
     {
-        CacheNativeTypePtr = true;
+        InnerType = innerType;
     }
 
-    public override void MakeProperty(GeneratorStringBuilder builder, string ownerPtr)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.MakeProperty(builder, ownerPtr);
-        ExportFieldInfo(builder);
-    }
-
-    protected virtual void ExportFieldInfo(GeneratorStringBuilder builder)
-    {
-        builder.AppendLine($"ModifyFieldProperty({BuilderNativePtr}, \"{ShortEngineName}\", typeof({ManagedType}));");
+        base.PopulateJsonObject(jsonObject);
+        InnerType.SerializeToJson(jsonObject, "InnerType", true);
     }
 }

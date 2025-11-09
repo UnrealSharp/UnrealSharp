@@ -33,3 +33,12 @@ UPackage* FCSNamespace::GetPackage() const
 {
 	return UCSManager::Get().FindOrAddManagedPackage(*this);
 }
+
+bool FCSNamespace::Serialize(TSharedPtr<FJsonObject> JsonObject)
+{
+	START_JSON_SERIALIZE
+	
+	JSON_READ_STRING(Namespace, IS_REQUIRED);
+	
+	END_JSON_SERIALIZE
+}

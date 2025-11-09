@@ -40,6 +40,7 @@ enum class ECSPropertyType : uint8
 	Delegate,
 	MulticastInlineDelegate,
 	MulticastSparseDelegate,
+	DelegateSignature,
 
 	Array,
 	Map,

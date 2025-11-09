@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -53,21 +54,21 @@ public record UnrealEnum : UnrealType
         return unrealEnum;
     }
 
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.CreateTypeBuilder(builder);
+        base.PopulateJsonObject(jsonObject);
         
         if (_enumNames is null)
         {
             return;
         }
         
-        int count = _enumNames.Value.Count;
-        builder.AppendLine($"InitEnumValues({BuilderNativePtr}, {count});");
-        
-        foreach (string member in _enumNames.Value)
+        JsonArray enumNamesArray = new JsonArray();
+        foreach (string name in _enumNames)
         {
-            builder.AppendLine($"NewEnumValue({BuilderNativePtr}, \"{member}\");");
+            enumNamesArray.Add(name);
         }
+        
+        jsonObject["EnumNames"] = enumNamesArray;
     }
 }

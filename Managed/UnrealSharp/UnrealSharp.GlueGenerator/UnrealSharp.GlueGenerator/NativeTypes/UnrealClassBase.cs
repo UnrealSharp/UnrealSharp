@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -10,26 +11,22 @@ public abstract record UnrealClassBase : UnrealStruct
 
     public EClassFlags ClassFlags = EClassFlags.CompiledFromBlueprint;
 
-    public readonly string ParentName = string.Empty;
-    public readonly string ParentNamespace = string.Empty;
-    public string FullParentName => string.IsNullOrEmpty(ParentNamespace) ? ParentName : ParentNamespace + "." + ParentName;
+    public FieldName ParentClass;
+    
+    public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
     
     protected UnrealClassBase(ITypeSymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
     {
-        if (typeSymbol.BaseType is null)
+        if (typeSymbol.BaseType is not null)
         {
-            return;
+            ParentClass = new FieldName(typeSymbol.BaseType);
         }
-        
-        ParentName = typeSymbol.BaseType!.Name;
-        ParentNamespace = typeSymbol.BaseType.ContainingNamespace.ToDisplayString();
     }
     
     public UnrealClassBase(string parentName, string parentNamespace, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 
         : base(sourceName, typeNameSpace, accessibility, assemblyName, outer)
     {
-        ParentName = parentName;
-        ParentNamespace = parentNamespace;
+        ParentClass = new FieldName(parentName, parentNamespace, assemblyName);
     }
     
     public void AddFunction(UnrealFunctionBase function)
@@ -42,24 +39,10 @@ public abstract record UnrealClassBase : UnrealStruct
         AsyncFunctions.List.Add(function);
     }
 
-    public override void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.CreateTypeBuilder(builder);
-        AppendFunctions(builder, Functions);
-    }
-    
-    protected void AppendFunctions(GeneratorStringBuilder builder, EquatableList<UnrealFunctionBase> functions)
-    {
-        if (functions.Count == 0)
-        {
-            return;
-        }
-        
-        builder.AppendLine($"InitFunctions({BuilderNativePtr}, {functions.Count});");
-            
-        foreach (UnrealFunctionBase function in functions.List)
-        {
-            function.CreateTypeBuilder(builder);
-        }
+        base.PopulateJsonObject(jsonObject);
+        Functions.PopulateWithArray(jsonObject, "Functions");
+        ParentClass.SerializeToJson(jsonObject, "ParentClass", true);
     }
 }

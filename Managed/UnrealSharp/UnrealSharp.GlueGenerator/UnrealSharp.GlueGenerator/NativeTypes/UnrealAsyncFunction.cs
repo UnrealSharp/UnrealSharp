@@ -9,6 +9,7 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealAsyncFunction : UnrealFunctionBase
 {
     const string CancellationTokenType = "System.Threading.CancellationToken";
+    public string WrapperName => $"{Outer!.SourceName}_{SourceName}Action";
     
     public UnrealAsyncFunction(SemanticModel model, ISymbol typeSymbol, MethodDeclarationSyntax syntax, UnrealType outer) : base(model, typeSymbol, syntax, outer)
     {
@@ -24,7 +25,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         {
             UnrealProperty property = properties[i];
             
-            if (property.ManagedType != CancellationTokenType)
+            if (property.ManagedType.FullName != CancellationTokenType)
             {
                 continue;
             }
@@ -36,17 +37,18 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         
         GeneratorStringBuilder builder = new GeneratorStringBuilder();
         builder.BeginGeneratedSourceFile(this);
-        
-        string wrapperName = $"{Outer!.SourceName}_{SourceName}Action";
-        string wrapperDelegateName = $"{Outer.SourceName}{SourceName}__DelegateSignature";
+
+        string wrapperName = WrapperName;
+        string wrapperDelegateName = $"F{Outer!.EngineName}_{SourceName}";
         
         AppendDelegateWrapper(builder, ReturnType, wrapperDelegateName, spc);
         
-        UnrealClass asyncWrapperClass = new UnrealClass(EClassFlags.None, "UCSCancellableAsyncAction", "UnrealSharp.UnrealSharpCore", wrapperName,
-            Outer.Namespace, Accessibility.Public, AssemblyName)
+        UnrealClass asyncWrapperClass = new UnrealClass(EClassFlags.None, "UCSCancellableAsyncAction", "UnrealSharp.UnrealSharpCore", wrapperName, Outer.Namespace, Accessibility.Public, AssemblyName)
         {
             Overrides = new EquatableList<string>(["ReceiveActivate", "ReceiveCancel"])
         };
+        
+        asyncWrapperClass.AddMetaData("HasDedicatedAsyncNode", "true");
 
         builder.BeginType(asyncWrapperClass, TypeKind.Class, baseType: asyncWrapperClass.FullParentName);
         
@@ -67,7 +69,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     void AppendDelegateWrapper(GeneratorStringBuilder builder, UnrealProperty returnValue, string wrapperDelegateName, SourceProductionContext spc)
     {
-        UnrealFunctionBase delegateFunction = new UnrealFunction(EFunctionFlags.None,
+        UnrealDelegateFunction delegateFunction = new UnrealDelegateFunction(EFunctionFlags.None,
             wrapperDelegateName, Outer!.Namespace, Accessibility.Public, Outer.AssemblyName, Outer);
         
         StringProperty stringProperty = new StringProperty("Exception", Accessibility.Public, delegateFunction);
@@ -100,10 +102,21 @@ public record UnrealAsyncFunction : UnrealFunctionBase
     
     void AppendWrapperVariables(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass, string wrapperDelegateName, bool hasCancellationToken)
     {
-        DelegateProperty completedProperty = new DelegateProperty(PropertyType.MulticastInlineDelegate, wrapperDelegateName, "Completed", Accessibility.Public, asyncWrapperClass);
+        FieldName unrealDelegateType = new FieldName(DelegateProperty.MakeDelegateSignatureName(wrapperDelegateName), asyncWrapperClass.Namespace, asyncWrapperClass.AssemblyName);
+        FieldName managedDelegateType = new FieldName(wrapperDelegateName, asyncWrapperClass.Namespace, asyncWrapperClass.AssemblyName);
+        
+        FieldProperty fieldProperty = new FieldProperty(PropertyType.SignatureDelegate, unrealDelegateType, managedDelegateType, "Arg0", Accessibility.Public, asyncWrapperClass);
+        EquatableArray<UnrealProperty> properties = new EquatableArray<UnrealProperty>([fieldProperty]);
+        
+        MulticastDelegateProperty completedProperty = new MulticastDelegateProperty(properties, "Completed", Accessibility.Public, asyncWrapperClass);
         completedProperty.MakeBlueprintAssignable();
         
-        DelegateProperty failedProperty = new DelegateProperty(PropertyType.MulticastInlineDelegate, wrapperDelegateName, "Failed", Accessibility.Public, asyncWrapperClass);
+        FieldName failedPropertyFunction = new FieldName(DelegateProperty.MakeDelegateSignatureName(wrapperDelegateName), asyncWrapperClass.Namespace, asyncWrapperClass.AssemblyName);
+        
+        FieldProperty failedFieldProperty = new FieldProperty(PropertyType.SignatureDelegate, failedPropertyFunction, managedDelegateType, "Arg0", Accessibility.Public, asyncWrapperClass);
+        EquatableArray<UnrealProperty> failedProperties = new EquatableArray<UnrealProperty>([failedFieldProperty]);
+        
+        MulticastDelegateProperty failedProperty = new MulticastDelegateProperty(failedProperties, "Failed", Accessibility.Public, asyncWrapperClass);
         failedProperty.MakeBlueprintAssignable();
         
         asyncWrapperClass.Properties = new EquatableList<UnrealProperty>([completedProperty, failedProperty]);
@@ -136,7 +149,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         {
             builder.AppendLine("_cancellationTokenSource.Cancel();");
         }
-        builder.AppendLine("base.Cancel();");
+        builder.AppendLine("base.Cancel_Implementation();");
         builder.CloseBrace();
     }
 
@@ -186,10 +199,12 @@ public record UnrealAsyncFunction : UnrealFunctionBase
             AssemblyName,
             asyncWrapperClass);
         
-        ObjectProperty returnValue = new ObjectProperty(wrapperName, SourceGenUtilities.ReturnValueName, Accessibility.NotApplicable, asyncFactoryFunction);
+        FieldName asyncWrapperType = new FieldName(wrapperName, Namespace, AssemblyName);
+        ObjectProperty returnValue = new ObjectProperty(asyncWrapperType, SourceGenUtilities.ReturnValueName, Accessibility.NotApplicable, asyncFactoryFunction);
         returnValue.MakeReturnParameter();
         
-        ObjectProperty targetParam = new ObjectProperty(Outer!.SourceName, "Target", Accessibility.NotApplicable, asyncFactoryFunction);
+        FieldName targetType = new FieldName(Outer!.SourceName, Outer.Namespace, Outer.AssemblyName);
+        ObjectProperty targetParam = new ObjectProperty(targetType, "Target", Accessibility.NotApplicable, asyncFactoryFunction);
         targetParam.MakeParameter();
         
         foreach (UnrealProperty parameter in properties)

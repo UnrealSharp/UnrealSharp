@@ -80,6 +80,7 @@ public static class PropertyFactory
         
         return typeSymbol.TypeKind switch
         {
+            TypeKind.Delegate => new FieldProperty(syntaxNode, memberSymbol, DelegateProperty.MakeFieldNameFromDelegateSymbol(typeSymbol), typeSymbol, PropertyType.SignatureDelegate, outer),
             TypeKind.Class => new ObjectProperty(syntaxNode, memberSymbol, typeSymbol, outer),
             TypeKind.Interface => new InterfaceProperty(syntaxNode, memberSymbol, typeSymbol, outer),
             TypeKind.Enum => new EnumProperty(syntaxNode, memberSymbol, typeSymbol, outer),

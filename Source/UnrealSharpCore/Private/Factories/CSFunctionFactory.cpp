@@ -9,7 +9,7 @@
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
 	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
-	NewFunction->FunctionFlags = FunctionMetaData.Flags | FunctionFlags;
+	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
 	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
 	return NewFunction;
@@ -43,11 +43,6 @@ void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunction
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
 	for (int32 i = FunctionMetaData.Properties.Num(); i-- > 0; )
 	{
-		if (FunctionMetaData.Properties[i].Flags & CPF_ReturnParm)
-		{
-			continue;
-		}
-		
 		CreateParameter(Function, FunctionMetaData.Properties[i]);
 	}
 }
@@ -182,7 +177,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 #endif
 	
-	for (FName VirtualFunction : ClassMetaData->VirtualFunctions)
+	for (FName VirtualFunction : ClassMetaData->Overrides)
 	{
 		if (UFunction* Function = NameToFunctionMap.FindRef(VirtualFunction))
 		{

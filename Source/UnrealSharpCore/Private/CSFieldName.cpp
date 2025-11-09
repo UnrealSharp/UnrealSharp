@@ -13,3 +13,13 @@ FCSFieldName::FCSFieldName(UField* NativeField)
 	Name = NativeField->GetFName();
 	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeField);
 }
+
+bool FCSFieldName::Serialize(TSharedPtr<FJsonObject> JsonObject)
+{
+	START_JSON_SERIALIZE
+	
+	JSON_READ_STRING(Name, IS_REQUIRED);
+	CALL_SERIALIZE(Namespace.Serialize(JsonObject));	
+	
+	END_JSON_SERIALIZE
+}

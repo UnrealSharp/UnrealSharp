@@ -25,7 +25,7 @@ void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<
 	const FString EnumName = Field->GetName();
 	for (int32 i = 0; i < NumItems; i++)
 	{
-		FString ItemName = FString::Printf(TEXT("%s::%s"), *EnumName, *TypeMetaData->Items[i].ToString());
+		FString ItemName = FString::Printf(TEXT("%s::%s"), *EnumName, *TypeMetaData->Items[i]);
 		Entries.Emplace(ItemName, i);
 		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}

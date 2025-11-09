@@ -52,7 +52,7 @@ public:
 			NewProperty = new T(Outer, PropertyName, RF_Public);
 		}
 		
-		NewProperty->PropertyFlags = PropertyMetaData.Flags;
+		NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
 		return NewProperty;
 	}
 };

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes;
@@ -45,7 +46,15 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
         }
         catch (Exception exception)
         {
-            DiagnosticDescriptor descriptor = new DiagnosticDescriptor("UTDG001", "UnrealTypeDiscoveryGenerator Error", exception.ToString(), "UnrealTypeDiscoveryGenerator", DiagnosticSeverity.Error, true);
+            string stackTrace = exception.StackTrace ?? "No stack trace available";
+            
+            DiagnosticDescriptor descriptor = new DiagnosticDescriptor("UTDG001", 
+                "UnrealTypeDiscoveryGenerator Error", 
+                stackTrace, 
+                "UnrealSharp.GlueGenerator", 
+                DiagnosticSeverity.Error, 
+                isEnabledByDefault: true);
+            
             spc.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None));
         }
     }

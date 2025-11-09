@@ -39,6 +39,7 @@ public enum PropertyType : byte
     Delegate,
     MulticastInlineDelegate,
     MulticastSparseDelegate,
+    SignatureDelegate,
 
     Array,
     Map,

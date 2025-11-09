@@ -1,18 +1,19 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Text.Json.Nodes;
+using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record BlittableStructProperty : BlittableProperty
 {
-    public BlittableStructProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, PropertyType propertyType, UnrealType outer) 
+    public BlittableStructProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
         : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
     {
-        CacheNativeTypePtr = true;
+
     }
 
-    public override void MakeProperty(GeneratorStringBuilder builder, string ownerPtr)
+    public override void PopulateJsonObject(JsonObject jsonObject)
     {
-        base.MakeProperty(builder, ownerPtr);
-        builder.AppendLine($"ModifyFieldProperty({BuilderNativePtr}, $\"{ShortEngineName}\", typeof({ManagedType}));");
+        base.PopulateJsonObject(jsonObject);
+        ManagedType.SerializeToJson(jsonObject, "InnerType", true);
     }
 }

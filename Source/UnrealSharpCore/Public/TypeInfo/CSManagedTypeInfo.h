@@ -48,20 +48,19 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 
 	UCSAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
-	void SetMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InMetaData) { MetaData = InMetaData; }
+	void SetMetaData(const TSharedPtr<FCSTypeReferenceMetaData>& InMetaData)
+	{
+		if (MetaData)
+		{
+			checkf(MetaData->FieldName == InMetaData->FieldName, TEXT("Cannot change MetaData to a different type's metadata."));
+		}
+		
+		MetaData = InMetaData;
+	}
 	void SetTypeHandle(uint8* TypeHandlePtr);
 	
-	void MarkAsStructurallyModified()
-	{
-		if (bHasChangedStructure)
-		{
-			return;
-		}
-	
-		bHasChangedStructure = true;
-		FCSManagedTypeInfoDelegates::OnStructureChangedDelegate.Broadcast(SharedThis(this));
-	}
-	
+	void MarkAsStructurallyModified();
+
 	bool HasStructurallyChanged() const { return bHasChangedStructure; }
 	
 private:

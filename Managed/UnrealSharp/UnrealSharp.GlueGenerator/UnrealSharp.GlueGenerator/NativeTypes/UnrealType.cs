@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -20,7 +21,6 @@ public record struct MetaDataInfo
 public record UnrealType
 {
     public UnrealType? Outer;
-    public bool HasOuter { get; }
 
     public string SourceName = string.Empty;
     public virtual string EngineName => SourceName;
@@ -30,17 +30,15 @@ public record UnrealType
     public string Namespace = string.Empty;
     
     public Accessibility Protection;
+
+    public virtual int FieldTypeValue => -1;
     
-    public virtual int FieldTypeValue => throw new NotImplementedException();
-    
-    public string BuilderNativePtr => HasOuter ? $"{Outer!.SourceName}_{SourceName}Ptr" : $"{SourceName}Ptr";
-    
+    public readonly EquatableList<FieldName> SourceGeneratorDependencies = new(new List<FieldName>());
     private readonly EquatableList<MetaDataInfo> _metaData = new(new List<MetaDataInfo>());
     
     public UnrealType(ISymbol? memberSymbol, SyntaxNode syntaxNode, UnrealType? outer = null)
     {
         Outer = outer;
-        HasOuter = outer != null;
         
         if (memberSymbol != null)
         {
@@ -79,7 +77,6 @@ public record UnrealType
         Protection = accessibility;
         AssemblyName = assemblyName;
         Outer = outer;
-        HasOuter = outer != null;
     }
     
     public void AddMetaData(string key, string value) => _metaData.List.Add(new MetaDataInfo { Key = key, Value = value });
@@ -90,23 +87,38 @@ public record UnrealType
     
     public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
     
-    public virtual void CreateTypeBuilder(GeneratorStringBuilder builder)
+    public virtual void PopulateJsonObject(JsonObject jsonObject)
     {
-        AppendMetaData(builder, BuilderNativePtr);
-    }
-    
-    protected void AppendMetaData(GeneratorStringBuilder builder, string ownerPtr)
-    {
-        if (!HasAnyMetaData)
+        jsonObject["Name"] = EngineName;
+        jsonObject["Namespace"] = Namespace;
+        jsonObject["Protection"] = Protection.ToString();
+        jsonObject["AssemblyName"] = AssemblyName;
+
+        if (SourceGeneratorDependencies.Count > 0)
         {
-            return;
+            JsonArray dependenciesArray = new JsonArray();
+            jsonObject["SourceGeneratorDependencies"] = dependenciesArray;
+        
+            foreach (FieldName dependency in SourceGeneratorDependencies.List)
+            {
+                dependenciesArray.Add(dependency.SerializeToJson(true));
+            }
         }
         
-        builder.AppendLine($"InitMetaData({ownerPtr}, {_metaData.Count});");
-        
-        foreach (MetaDataInfo metaData in _metaData.List)
+        if (HasAnyMetaData)
         {
-            builder.AppendLine($"AddMetaData({ownerPtr}, \"{metaData.Key}\", \"{metaData.Value}\");");
+            JsonArray jsonArray = new JsonArray();
+            jsonObject["MetaData"] = jsonArray;
+            
+            foreach (MetaDataInfo metaDataInfo in _metaData.List)
+            {
+                JsonObject metaDataObject = new JsonObject
+                {
+                    ["Key"] = metaDataInfo.Key,
+                    ["Value"] = metaDataInfo.Value
+                };
+                jsonArray.Add(metaDataObject);
+            }
         }
     }
 

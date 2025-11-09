@@ -166,7 +166,7 @@ void FCSCompilerContext::GenerateFunctions() const
 {
 	TSharedPtr<const FCSClassMetaData> TypeMetaData = GetTypeMetaData();
 
-	if (TypeMetaData->VirtualFunctions.IsEmpty() && TypeMetaData->Functions.IsEmpty())
+	if (TypeMetaData->Overrides.IsEmpty() && TypeMetaData->Functions.IsEmpty())
 	{
 		return;
 	}
@@ -285,7 +285,7 @@ void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyM
 		VariableDescription.FriendlyName = PropertyMetaData.GetName().ToString();
 		VariableDescription.VarName = PropertyMetaData.GetName();
 
-		for (const TTuple<FString, FString>& MetaData : PropertyMetaData.MetaData)
+		for (const FCSMetaDataEntry& MetaData : PropertyMetaData.MetaData)
 		{
 			VariableDescription.SetMetaData(*MetaData.Key, MetaData.Value);
 		}

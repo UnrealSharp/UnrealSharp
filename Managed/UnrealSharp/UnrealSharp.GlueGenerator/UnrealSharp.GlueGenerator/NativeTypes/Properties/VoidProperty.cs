@@ -7,6 +7,6 @@ public record VoidProperty : UnrealProperty
     
     public VoidProperty(UnrealType outer) : base(PropertyType.Unknown, outer)
     {
-        ManagedType = VoidSourceName;
+        ManagedType = new FieldName(VoidSourceName);
     }
 }

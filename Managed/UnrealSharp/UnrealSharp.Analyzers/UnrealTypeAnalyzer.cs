@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using UnrealSharp.SourceGenerator.Utilities;
 
@@ -9,10 +11,7 @@ namespace UnrealSharp.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class UnrealTypeAnalyzer : DiagnosticAnalyzer
 {
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        PrefixRule, 
-        ClassRule
-        );
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(PrefixRule, ClassRule);
 
     public override void Initialize(AnalysisContext context)
     {
