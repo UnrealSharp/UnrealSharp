@@ -1,9 +1,9 @@
-#include "Factories/PropertyGenerators/CSDelegateBasePropertyGenerator.h"
+#include "Factories/PropertyGenerators/CSDelegatePropertyGenerator.h"
 
 #include "MetaData/CSTemplateType.h"
 #include "MetaData/CSFieldTypePropertyMetaData.h"
 
-UCSDelegateBasePropertyGenerator::UCSDelegateBasePropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
+UCSDelegatePropertyGenerator::UCSDelegatePropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {
 	TypeToFieldClass =
 	{
@@ -19,7 +19,7 @@ UCSDelegateBasePropertyGenerator::UCSDelegateBasePropertyGenerator(FObjectInitia
 	REGISTER_METADATA(ECSPropertyType::DelegateSignature, FCSFieldTypePropertyMetaData)
 }
 
-FProperty* UCSDelegateBasePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
 	FDelegateProperty* DelegateProperty = NewProperty<FDelegateProperty>(Outer, PropertyMetaData, GetFieldClassForType(PropertyMetaData));
 	TSharedPtr<FCSTemplateType> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
