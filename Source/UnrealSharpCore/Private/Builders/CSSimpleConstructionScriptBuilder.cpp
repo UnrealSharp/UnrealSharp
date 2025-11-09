@@ -15,9 +15,9 @@ FCSRootNodeInfo::FCSRootNodeInfo(const USCS_Node* Node, const USimpleConstructio
 	OwningClass = Node->GetSCS()->GetOwnerClass();
 }
 
-FCSRootNodeInfo::FCSRootNodeInfo(const FObjectProperty* NativeProperty)
+FCSRootNodeInfo::FCSRootNodeInfo(const FObjectProperty* NativeProperty, USceneComponent* Component)
 {
-	Name = NativeProperty->GetFName();
+	Name = Component->GetFName();
 	OwningClass = NativeProperty->GetOwnerClass();
 	IsNative = true;
 	IsInOtherSCS = true;
@@ -129,11 +129,11 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 			if (FCSClassUtilities::IsNativeClass(ParentClass))
 			{
 				UObject* DefaultObject = ParentClass->GetDefaultObject();
-				UObject* Component = ObjectProperty->GetObjectPropertyValue_InContainer(DefaultObject);
+				UObject* Component = ObjectProperty->GetObjectPropertyValue(DefaultObject);
 
 				if (ObjectProperty && IsValid(Component) && Component->IsA<USceneComponent>())
 				{
-					RootComponentNode = FCSRootNodeInfo(ObjectProperty);
+					RootComponentNode = FCSRootNodeInfo(ObjectProperty, static_cast<USceneComponent*>(Component));
 				}
 			}
 			else
@@ -441,7 +441,7 @@ void FCSSimpleConstructionScriptBuilder::TryFindOrPromoteRootComponent(USimpleCo
 					continue;
 				}
 
-				RootComponentNode = FCSRootNodeInfo(Property);
+				RootComponentNode = FCSRootNodeInfo(Property, RootComponent);
 				return;
 			}
 		}

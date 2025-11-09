@@ -18,7 +18,7 @@ struct FCSRootNodeInfo
 	UClass* OwningClass = nullptr;
 
 	FCSRootNodeInfo(const USCS_Node* Node, const USimpleConstructionScript* CurrentSCS);
-	FCSRootNodeInfo(const FObjectProperty* NativeProperty);
+	FCSRootNodeInfo(const FObjectProperty* NativeProperty, USceneComponent* Component);
 	FCSRootNodeInfo() {}
 
 	bool IsValid() const
