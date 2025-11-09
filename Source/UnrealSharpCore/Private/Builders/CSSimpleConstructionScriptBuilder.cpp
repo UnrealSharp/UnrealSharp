@@ -298,6 +298,7 @@ void FCSSimpleConstructionScriptBuilder::UpdateChildren(UClass* Outer, USCS_Node
 		Template->Rename(nullptr, GetTransientPackage(), REN_DoNotDirty | REN_DontCreateRedirectors);
 		Template->ClearFlags(RF_Standalone);
 		Template->RemoveFromRoot();
+		Template->MarkAsGarbage();
 		
 		Blueprint->InheritableComponentHandler->RemoveOverridenComponentTemplate(ComponentKey);
 	}
