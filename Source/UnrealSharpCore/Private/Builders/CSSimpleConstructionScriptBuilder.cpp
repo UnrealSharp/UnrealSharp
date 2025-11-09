@@ -195,8 +195,8 @@ void FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(UClass* O
 			NodeIterator->RemoveChildNode(NodeToAttach, false);
 			break;
 		}
-	}
 #endif
+	}
 }
 
 USCS_Node* FCSSimpleConstructionScriptBuilder::CreateNode(USimpleConstructionScript* SimpleConstructionScript, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName, FString* OptionalName)
