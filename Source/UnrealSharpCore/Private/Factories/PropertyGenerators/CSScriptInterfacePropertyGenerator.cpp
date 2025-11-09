@@ -1,5 +1,5 @@
 #include "Factories/PropertyGenerators/CSScriptInterfacePropertyGenerator.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 FProperty* UCSScriptInterfacePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {

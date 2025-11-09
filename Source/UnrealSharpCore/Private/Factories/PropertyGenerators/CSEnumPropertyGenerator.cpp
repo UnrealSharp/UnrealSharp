@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSEnumPropertyGenerator.h"
 #include "CSManager.h"
 #include "Types/CSEnum.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {

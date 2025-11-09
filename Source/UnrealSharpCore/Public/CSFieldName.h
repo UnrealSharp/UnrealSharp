@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CSNamespace.h"
-#include "MetaData/FCSMetaDataBase.h"
 
 struct UNREALSHARPCORE_API FCSFieldName : FCSMetaDataBase
 {

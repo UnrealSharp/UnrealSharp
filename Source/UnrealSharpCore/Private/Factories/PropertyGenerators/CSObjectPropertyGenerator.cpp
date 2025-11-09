@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSObjectPropertyGenerator.h"
 #include "MetaData/CSDefaultComponentMetaData.h"
 #include "MetaData/CSTemplateType.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {

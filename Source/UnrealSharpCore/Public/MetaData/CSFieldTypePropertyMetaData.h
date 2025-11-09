@@ -1,14 +1,13 @@
-﻿#pragma once
+#pragma once
 
-#include "CSClassBaseMetaData.h"
 #include "CSTypeReferenceMetaData.h"
+#include "CSUnrealType.h"
 
-struct FCSClassMetaData : FCSClassBaseMetaData
+struct FCSFieldTypePropertyMetaData : FCSUnrealType
 {
 	// FCSMetaDataBase interface
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
 	// End of FCSMetaDataBase interface
-
-	TArray<FName> Overrides;
-	TArray<FCSTypeReferenceMetaData> Interfaces;
+	
+	FCSTypeReferenceMetaData InnerType;
 };

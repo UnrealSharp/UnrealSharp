@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSDelegateBasePropertyGenerator.h"
 
 #include "MetaData/CSTemplateType.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 UCSDelegateBasePropertyGenerator::UCSDelegateBasePropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {

@@ -1,6 +1,6 @@
 #include "Factories/PropertyGenerators/CSSoftClassPropertyGenerator.h"
 #include "MetaData/CSTemplateType.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 FProperty* UCSSoftClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {

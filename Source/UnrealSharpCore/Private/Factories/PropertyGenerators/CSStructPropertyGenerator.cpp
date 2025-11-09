@@ -1,6 +1,6 @@
 #include "Factories/PropertyGenerators/CSStructPropertyGenerator.h"
 #include "Types/CSScriptStruct.h"
-#include "MetaData/FCSFieldTypePropertyMetaData.h"
+#include "MetaData/CSFieldTypePropertyMetaData.h"
 
 FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
 {
