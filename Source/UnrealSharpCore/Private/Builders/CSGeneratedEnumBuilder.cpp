@@ -17,7 +17,7 @@ void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<
 	
 	PurgeEnum(Field);
 	
-	const int32 NumItems = TypeMetaData->Items.Num();
+	const int32 NumItems = TypeMetaData->EnumNames.Num();
     
 	TArray<TPair<FName, int64>> Entries;
 	Entries.Reserve(NumItems);
@@ -25,7 +25,7 @@ void UCSGeneratedEnumBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr<
 	const FString EnumName = Field->GetName();
 	for (int32 i = 0; i < NumItems; i++)
 	{
-		FString ItemName = FString::Printf(TEXT("%s::%s"), *EnumName, *TypeMetaData->Items[i]);
+		FString ItemName = FString::Printf(TEXT("%s::%s"), *EnumName, *TypeMetaData->EnumNames[i]);
 		Entries.Emplace(ItemName, i);
 		Field->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}

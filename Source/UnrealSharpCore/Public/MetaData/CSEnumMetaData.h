@@ -8,5 +8,5 @@ struct FCSEnumMetaData : FCSTypeReferenceMetaData
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
 	// End of FCSMetaDataBase interface
 
-	TArray<FString> Items;
+	TArray<FString> EnumNames;
 };
