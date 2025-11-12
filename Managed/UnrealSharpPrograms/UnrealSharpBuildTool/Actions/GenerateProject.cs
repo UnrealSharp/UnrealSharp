@@ -81,8 +81,11 @@ public class GenerateProject : BuildToolAction
         
         ModifyCSProjFile();
         
-        GenerateSolution generateSolution = new GenerateSolution();
-        generateSolution.RunAction();
+        if (!Program.HasArgument("SkipSolutionGeneration"))
+        {
+            GenerateSolution generateSolution = new GenerateSolution();
+            generateSolution.RunAction();
+        }
 
         if (Program.HasArgument("SkipUSharpProjSetup"))
         {
@@ -90,6 +93,7 @@ public class GenerateProject : BuildToolAction
         }
 
         AddLaunchSettings();
+        
         return true;
     }
 

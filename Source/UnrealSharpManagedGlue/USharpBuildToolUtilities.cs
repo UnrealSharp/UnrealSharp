@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using EpicGames.UHT.Utils;
 using UnrealSharp.Shared;
 using UnrealSharpScriptGenerator.Utilities;
@@ -39,6 +38,8 @@ public static class USharpBuildToolUtilities
 
             TryCreateGlueProject(csprojPath, projectName, null, projectRoot);
         }
+
+        InvokeUSharpBuildTool("GenerateSolution");
     }
 
     public static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
