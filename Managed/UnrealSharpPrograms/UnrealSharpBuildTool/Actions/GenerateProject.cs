@@ -78,16 +78,11 @@ public class GenerateProject : BuildToolAction
         {
             File.Delete(myClassFile);
         }
-
-        string slnPath = Program.GetSolutionFile();
-        if (!File.Exists(slnPath))
-        {
-            GenerateSolution generateSolution = new GenerateSolution();
-            generateSolution.RunAction();
-        }
         
-        CreateDirectoryBuildPropsFile emitter = new CreateDirectoryBuildPropsFile();
-        emitter.RunAction();
+        ModifyCSProjFile();
+        
+        GenerateSolution generateSolution = new GenerateSolution();
+        generateSolution.RunAction();
 
         if (Program.HasArgument("SkipUSharpProjSetup"))
         {
@@ -95,55 +90,7 @@ public class GenerateProject : BuildToolAction
         }
 
         AddLaunchSettings();
-        ModifyCSProjFile();
-
-        string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
-        AddProjectToSln(relativePath);
-
         return true;
-    }
-
-    public static void AddProjectToSln(string relativePath)
-    {
-        AddProjectToSln([relativePath]);
-    }
-
-    public static void AddProjectToSln(List<string> relativePaths)
-    {
-        foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
-        {
-            using BuildToolProcess addProjectToSln = new BuildToolProcess();
-            addProjectToSln.StartInfo.ArgumentList.Add("sln");
-            addProjectToSln.StartInfo.ArgumentList.Add("add");
-
-            foreach (string relativePath in projects)
-            {
-                addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
-            }
-
-            addProjectToSln.StartInfo.ArgumentList.Add("-s");
-            addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
-
-            addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
-            addProjectToSln.StartBuildToolProcess();
-        }
-    }
-
-    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(List<string> relativePaths)
-    {
-        return relativePaths.GroupBy(GetPathRelativeToProject)!;
-    }
-
-    private static string GetPathRelativeToProject(string path)
-    {
-        var fullPath = Path.GetFullPath(path, Program.GetScriptFolder());
-        var relativePath = Path.GetRelativePath(Program.GetProjectDirectory(), fullPath);
-        var projectDirName = Path.GetDirectoryName(relativePath)!;
-
-        // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
-        // be in the directory for the plugin itself.
-        var containingDirName = Path.GetDirectoryName(projectDirName)!;
-        return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 
     private void ModifyCSProjFile()
@@ -152,6 +99,7 @@ public class GenerateProject : BuildToolAction
         {
             XmlDocument csprojDocument = new XmlDocument();
             csprojDocument.Load(_projectPath);
+            csprojDocument.EnsureProjectRoot();
 
             if (csprojDocument.SelectSingleNode("//ItemGroup") is not XmlElement newItemGroup)
             {
@@ -163,6 +111,10 @@ public class GenerateProject : BuildToolAction
             {
                 AppendGeneratedCode(csprojDocument, newItemGroup);
             }
+
+            string unrealSharpPluginPath = Program.GetUnrealSharpSharedProps();
+            string relativeUnrealSharpPath = GetRelativePath(_projectFolder, unrealSharpPluginPath);
+            csprojDocument.MakeProjectImport(csprojDocument.DocumentElement!, relativeUnrealSharpPath);
 
             foreach (string dependency in Program.GetArguments("Dependency"))
             {

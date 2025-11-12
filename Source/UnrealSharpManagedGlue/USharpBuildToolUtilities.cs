@@ -18,7 +18,7 @@ public static class USharpBuildToolUtilities
         {
             if (pluginDir.IsPartOfEngine)
             {
-                return;
+                continue;
             }
             
             if (pluginDir.IsUProject)
@@ -40,8 +40,6 @@ public static class USharpBuildToolUtilities
             TryCreateGlueProject(csprojPath, projectName, null, projectRoot);
         }
     }
-
-    public static void CreateBuildDirectoryFile() => InvokeUSharpBuildTool("EmitBuildProps");
 
     public static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
     {

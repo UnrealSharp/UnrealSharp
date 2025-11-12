@@ -150,6 +150,11 @@ public static class Program
             return Path.Combine(rootDir, "Binaries", "Managed");
         }
     }
+    
+    public static string GetUnrealSharpSharedProps()
+    {
+        return Path.GetFullPath(Path.Combine(BuildToolOptions.PluginDirectory, "UnrealSharp.Shared.props"));
+    }
 
     public static string GetWeaver()
     {

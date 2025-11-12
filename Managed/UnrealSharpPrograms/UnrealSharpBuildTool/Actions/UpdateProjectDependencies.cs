@@ -60,10 +60,19 @@ public class UpdateProjectDependencies : BuildToolAction
             throw new InvalidOperationException($"An error occurred while updating the .csproj file: {ex.Message}", ex);
         }
     }
+    
+    public static string GetRelativePath(string basePath, string targetPath)
+    {
+        Uri baseUri = new Uri(basePath.EndsWith(Path.DirectorySeparatorChar.ToString()) ? basePath : basePath + Path.DirectorySeparatorChar);
+        Uri targetUri = new Uri(targetPath);
+        Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
+        string s = Uri.UnescapeDataString(relativeUri.ToString());
+        return OperatingSystem.IsWindows() ? s.Replace('/', '\\') : s;
+    }
 
     private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)
     {
-        string relativePath = BuildPropsEmitter.GetRelativePath(_projectFolder, dependency);
+        string relativePath = GetRelativePath(_projectFolder, dependency);
         
         if (_existingDependencies.Contains(relativePath))
         {

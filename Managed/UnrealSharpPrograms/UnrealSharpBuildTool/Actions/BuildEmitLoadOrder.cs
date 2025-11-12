@@ -9,8 +9,6 @@ public class BuildEmitLoadOrder : BuildToolAction
 {
     public override bool RunAction()
     {
-        BuildPropsEmitter.GenerateBuildPropsFile(Program.GetScriptFolder());
-        
         BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder());
         if (!buildSolution.RunAction())
         {

@@ -5,7 +5,7 @@ public class GenerateSolution : BuildToolAction
     public override bool RunAction()
     {
         using BuildToolProcess generateSln = new BuildToolProcess();
-
+        
         // Create a solution.
         generateSln.StartInfo.ArgumentList.Add("new");
         generateSln.StartInfo.ArgumentList.Add("sln");
@@ -18,7 +18,7 @@ public class GenerateSolution : BuildToolAction
         // Force the creation of the solution.
         generateSln.StartInfo.ArgumentList.Add("--force");
         generateSln.StartBuildToolProcess();
-
+        
         List<string> existingProjectsList = GetExistingProjects()
                 .Select(x => Path.GetRelativePath(Program.GetScriptFolder(), x))
                 .ToList();
@@ -52,23 +52,17 @@ public class GenerateSolution : BuildToolAction
 
     public static void AddProjectToSln(List<string> relativePaths)
     {
-        foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
+        using BuildToolProcess addProjectToSln = new BuildToolProcess();
+        addProjectToSln.StartInfo.ArgumentList.Add("sln");
+        addProjectToSln.StartInfo.ArgumentList.Add("add");
+
+        foreach (string relativePath in relativePaths)
         {
-            using BuildToolProcess addProjectToSln = new BuildToolProcess();
-            addProjectToSln.StartInfo.ArgumentList.Add("sln");
-            addProjectToSln.StartInfo.ArgumentList.Add("add");
-
-            foreach (string relativePath in projects)
-            {
-                addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
-            }
-
-            addProjectToSln.StartInfo.ArgumentList.Add("-s");
-            addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
-
-            addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
-            addProjectToSln.StartBuildToolProcess();
+            addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
         }
+
+        addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+        addProjectToSln.StartBuildToolProcess();
     }
     
     private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(List<string> relativePaths)

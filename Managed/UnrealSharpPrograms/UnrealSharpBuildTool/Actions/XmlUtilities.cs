@@ -41,6 +41,14 @@ public static class XmlUtilities
         root.AppendChild(propertyGroup);
         return propertyGroup;
     }
+    
+    public static XmlElement MakeProjectImport(this XmlDocument doc, XmlElement root, string projectPath)
+    {
+        XmlElement import = doc.CreateElement("Import");
+        import.SetAttribute("Project", projectPath);
+        root.AppendChild(import);
+        return import;
+    }
 
     public static XmlElement GetOrCreateChild(this XmlDocument doc, XmlElement parent, string name)
     {

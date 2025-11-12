@@ -21,7 +21,6 @@ public readonly struct ProjectDirInfo
     }
     
     public string GlueProjectName => $"{_projectName}.Glue";
-    public string GlueProjectName_LEGACY => $"{_projectName}.PluginGlue";
     public string GlueProjectFile => $"{GlueProjectName}.csproj";
     
     public string ScriptDirectory => Path.Combine(_projectDirectory, "Script");
@@ -33,7 +32,6 @@ public readonly struct ProjectDirInfo
     public bool IsPartOfEngine => _projectName == "Engine";
     
     public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
-    public string GlueProjectDirectory_LEGACY => Path.Combine(ScriptDirectory, GlueProjectName_LEGACY);
     
     public string ProjectRoot => _projectDirectory;
 }
@@ -130,7 +128,6 @@ public static class FileExporter
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
             CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory, true);
-            CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory_LEGACY, true);
         }
     }
 
@@ -166,7 +163,14 @@ public static class FileExporter
 
             Directory.Delete(directory, true);
         }
+        
+        string csprojFile = Path.Combine(path, $"{Path.GetFileName(path)}.csproj");
+        if (File.Exists(csprojFile))
+        {
+            File.Delete(csprojFile);
+        }
     }
+    
     private static HashSet<string> GetIgnoredDirectories(string path)
     {
         string glueIgnoreFileName = Path.Combine(path, ".glueignore");
