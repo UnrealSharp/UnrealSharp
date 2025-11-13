@@ -185,11 +185,6 @@ public class FunctionExporter
         }
         else
         {
-            if (BlueprintEvent)
-            {
-                Modifiers += "virtual ";
-            }
-		
             if (Function.IsInterfaceFunction())
             {
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;

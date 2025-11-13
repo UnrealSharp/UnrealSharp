@@ -80,4 +80,17 @@ public:
 	
 		return Class;
 	}
+
+	static bool HasImplementedFunction(const UClass* Class, const FName& FunctionName)
+	{
+		auto ImplementedInBlueprint = [](const UFunction* Func) -> bool
+		{
+			return IsValid(Func) && Func->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass());
+		};
+
+		UFunction* Function = Class->FindFunctionByName(FunctionName);
+		bool ImplementsFunction = ImplementedInBlueprint(Function);
+		
+		return ImplementsFunction;
+	}
 };

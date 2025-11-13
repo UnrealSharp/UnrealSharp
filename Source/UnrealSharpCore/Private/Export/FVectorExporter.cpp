@@ -1,6 +1,6 @@
 ﻿#include "Export/FVectorExporter.h"
 
-FVector UFVectorExporter::FromRotator(const FRotator& Rotator)
+FVector UFVectorExporter::FromRotator(FRotator Rotator)
 {
 	return Rotator.Vector();
 }

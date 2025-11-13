@@ -12,6 +12,6 @@ class UNREALSHARPCORE_API UFVectorExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static FVector FromRotator(const FRotator& Rotator);
+	static FVector FromRotator(FRotator Rotator);
 	
 };
