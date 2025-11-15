@@ -419,12 +419,6 @@ public static class FunctionProcessor
         methodDef.OptimizeMethod();
     }
 
-    public static void RewriteMethodAsAsyncUFunctionImplementation(MethodDefinition methodDefinition)
-    {
-        methodDefinition.CustomAttributes.Clear();
-        methodDefinition.Name = $"{methodDefinition.Name}_Implementation";
-    }
-
     public static MethodDefinition CreateMethod(TypeDefinition declaringType, string name, MethodAttributes attributes, TypeReference? returnType = null, TypeReference[]? parameters = null)
     {
         MethodDefinition def = new MethodDefinition(name, attributes, returnType ?? WeaverImporter.Instance.VoidTypeRef);
@@ -495,7 +489,7 @@ public static class FunctionProcessor
         // Initialize values
         LoadNativeFunctionField(processor, metadata);
         processor.Emit(OpCodes.Ldloc, argumentsBufferPtr);
-        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InitializeStructMethod);
+        processor.Emit(OpCodes.Call, WeaverImporter.Instance.InitializeFunctionParamsMethod);
         
         loadArgumentBuffer = processor.Create(OpCodes.Ldloc, argumentsBufferPtr);
 

@@ -531,7 +531,7 @@ public static class TypeDefinitionUtilities
                             return new NativeDataSoftClassType(typeRef, genericArguments[0], arrayDim);
                         }
 
-                        if (genericTypeName.Contains("Option`1"))
+                        if (genericTypeName.Contains("TOptional`1"))
                         {
                             return new NativeDataOptionalType(typeRef, genericArguments[0], arrayDim);
                         }
@@ -606,7 +606,7 @@ public static class TypeDefinitionUtilities
                     return typeDef.IsUnmanagedType() ? new NativeDataUnmanagedType(typeDef, arrayDim) : new NativeDataManagedObjectType(typeRef, arrayDim);
                 }
                 
-                return typeDef.GetBlittableType() != null ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, typeDef.GetMarshallerClassName(), arrayDim);
+                return typeDef.GetBlittableType() != null ? new NativeDataBlittableStructType(typeDef, arrayDim) : new NativeDataStructType(typeDef, "StructMarshaller`1", arrayDim);
         }
     }
     

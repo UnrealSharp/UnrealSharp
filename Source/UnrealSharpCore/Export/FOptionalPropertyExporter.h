@@ -13,32 +13,35 @@ class UNREALSHARPCORE_API UFOptionalPropertyExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static bool IsSet(FOptionalProperty* OptionalProperty, const void* ScriptValue);
+	static bool IsSet(const FOptionalProperty* OptionalProperty, const void* ScriptValue);
 
 	UNREALSHARP_FUNCTION()
-	static void* MarkSetAndGetInitializedValuePointerToReplace(FOptionalProperty* OptionalProperty, void* Data);
+	static void* MarkSetAndGetInitializedValuePointerToReplace(const FOptionalProperty* OptionalProperty, void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static void MarkUnset(FOptionalProperty* OptionalProperty, void* Data);
+	static void MarkUnset(const FOptionalProperty* OptionalProperty, void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static const void* GetValuePointerForRead(FOptionalProperty* OptionalProperty, const void* Data);
+	static const void* GetValuePointerForRead(const FOptionalProperty* OptionalProperty, const void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static void* GetValuePointerForReplace(FOptionalProperty* OptionalProperty, void* Data);
+	static void* GetValuePointerForReplace(const FOptionalProperty* OptionalProperty, void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static const void* GetValuePointerForReadIfSet(FOptionalProperty* OptionalProperty, const void* Data);
+	static const void* GetValuePointerForReadIfSet(const FOptionalProperty* OptionalProperty, const void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static void* GetValuePointerForReplaceIfSet(FOptionalProperty* OptionalProperty, void* Data);
+	static void* GetValuePointerForReplaceIfSet(const FOptionalProperty* OptionalProperty, void* Data);
 	
 	UNREALSHARP_FUNCTION()
-	static void* GetValuePointerForReadOrReplace(FOptionalProperty* OptionalProperty, void* Data);
+	static void* GetValuePointerForReadOrReplace(const FOptionalProperty* OptionalProperty, void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static void* GetValuePointerForReadOrReplaceIfSet(FOptionalProperty* OptionalProperty, void* Data);
+	static void* GetValuePointerForReadOrReplaceIfSet(const FOptionalProperty* OptionalProperty, void* Data);
 
 	UNREALSHARP_FUNCTION()
-	static int32 CalcSize(FOptionalProperty* OptionalProperty);
+	static int32 CalcSize(const FOptionalProperty* OptionalProperty);
+
+    UNREALSHARP_FUNCTION()
+    static void DestructInstance(const FOptionalProperty* OptionalProperty, void* Data);
 };

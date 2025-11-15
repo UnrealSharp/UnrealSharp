@@ -55,7 +55,7 @@ public static class PluginUtilities
         }
 
         ProjectDirInfo info;
-        HashSet<string> dependencies = [];
+        HashSet<string> dependencies = new ();
         if (package.IsPartOfEngine())
         {
             if (ExtractedEngineModules.TryGetValue(package.SourceName, out string? pluginPath))

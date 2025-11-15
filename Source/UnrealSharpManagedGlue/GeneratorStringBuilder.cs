@@ -89,6 +89,11 @@ public class GeneratorStringBuilder : IDisposable
             DeclareDirective(directive);
         }
     }
+
+    public void DeclarePreprocessor(string define)
+    {
+        AppendLine($"#define {define}");
+    }
     
     public void BeginPreproccesorBlock(string condition)
     {
