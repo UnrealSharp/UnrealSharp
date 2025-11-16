@@ -8,6 +8,16 @@ namespace UnrealSharp.CoreUObject;
 [Binding]
 public partial struct FSoftObjectPath
 {
+    public FSoftObjectPath(FTopLevelAssetPath assetPath)
+    {
+        AssetPath = assetPath;
+    }
+    
+    public FSoftObjectPath(string packageName, string assetName)
+    {
+        AssetPath = new FTopLevelAssetPath(packageName, assetName);
+    }
+    
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))

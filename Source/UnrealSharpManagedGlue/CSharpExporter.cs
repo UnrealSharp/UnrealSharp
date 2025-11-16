@@ -324,7 +324,7 @@ public static class CSharpExporter
             isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
-        else if (type.EngineType == UhtEngineType.Delegate)
+        else if (type.EngineType == UhtEngineType.Delegate || type.EngineType == UhtEngineType.SparseDelegate)
         {
             if (isManualExport)
             {

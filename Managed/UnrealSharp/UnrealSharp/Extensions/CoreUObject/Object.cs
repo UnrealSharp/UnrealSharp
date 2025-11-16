@@ -379,17 +379,9 @@ public partial class UObject
             }
         }
 
-        return new FSoftObjectPath
-        {
-            AssetPath = new FTopLevelAssetPath
-            {
-                PackageName = packageName,
-                AssetName = assetName
-            }
-        };
+        return new FSoftObjectPath(packageName, assetName);
     }
-
-
+    
     /// <summary>
     /// Spawns an actor of the specified type.
     /// </summary>
