@@ -355,6 +355,7 @@ public static class Program
             List<TypeDefinition> structs = [];
             List<TypeDefinition> enums = [];
             List<TypeDefinition> interfaces = [];
+            List<TypeDefinition> delegateDecls = [];
             List<TypeDefinition> multicastDelegates = [];
             List<TypeDefinition> delegates = [];
 
@@ -386,6 +387,10 @@ public static class Program
                         {
                             RegisterType(interfaces, type);
                         }
+                        else if (type.IsUSingleDelegate() || type.IsUMultiDelegate())
+                        {
+                            RegisterType(delegateDecls, type);
+                        }
                         else if (type.BaseType != null && type.BaseType.FullName.Contains("UnrealSharp.MulticastDelegate"))
                         {
                             RegisterType(multicastDelegates, type);
@@ -407,7 +412,7 @@ public static class Program
             UnrealInterfaceProcessor.ProcessInterfaces(interfaces, metadata);
             UnrealStructProcessor.ProcessStructs(structs, metadata, userAssembly);
             UnrealClassProcessor.ProcessClasses(classes, metadata);
-            UnrealDelegateProcessor.ProcessDelegates(delegates, multicastDelegates, userAssembly, metadata.DelegateMetaData);
+            UnrealDelegateProcessor.ProcessDelegates(delegateDecls, delegates, multicastDelegates, userAssembly, metadata.DelegateMetaData);
         }
         catch (Exception ex)
         {

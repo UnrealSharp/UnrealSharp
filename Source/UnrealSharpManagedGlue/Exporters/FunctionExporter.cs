@@ -630,7 +630,8 @@ public class FunctionExporter
         {
             attributeBuilder.AddAttribute("USingleDelegate");
         }
-        
+
+        attributeBuilder.AddAttributeProperty("WrapperType", $"typeof(U{delegateName})");
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
         

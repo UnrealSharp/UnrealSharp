@@ -73,7 +73,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// <summary>
     /// Copy the elements of the span to an array
     /// </summary>
-    /// <param name="array"> The array to copy the elements to. </param>
+    /// <param name="span"> The span to copy the elements to. </param>
     public void CopyTo(Span<T> span)
     {
         Span<T> source = new Span<T>(NativeArrayBuffer.ToPointer(), Length);
@@ -99,7 +99,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// <summary>
     /// Copy from a span to the array
     /// </summary>
-    /// <param name="array"> The array to copy the elements from. </param>
+    /// <param name="span"> The span to copy the elements from. </param>
     public void CopyFrom(ReadOnlySpan<T> span)
     {
         FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
@@ -183,7 +183,7 @@ public class NativeArrayMarshaller<T>(IntPtr nativeProperty)
     {
         unsafe
         {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf<UnmanagedArray>());
             FArrayPropertyExporter.CallInitializeArray(nativeProperty, mirror, obj.Length);
 
             Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
@@ -216,7 +216,7 @@ public class NativeArrayCopyMarshaller<T>
     {
         unsafe
         {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf<UnmanagedArray>());
             FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Length);
 
             Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
@@ -244,7 +244,7 @@ public class NativeArrayCopyMarshaller<T>
     {
         unsafe
         {
-            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
+            UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf<UnmanagedArray>());
             FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
         }
     }
