@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes;
+using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator;
 
@@ -153,5 +154,17 @@ public static class StringBuilderExtensions
     public static void EndUnsafeBlock(this GeneratorStringBuilder builder)
     {
         builder.CloseBrace();
+    }
+    
+    public static void AppendGet(this GeneratorStringBuilder builder, Accessibility accessibility)
+    {
+        builder.AppendLine(accessibility.AccessibilityToString());
+        builder.Append("get");
+    }
+    
+    public static void AppendSet(this GeneratorStringBuilder builder, Accessibility accessibility)
+    {
+        builder.AppendLine(accessibility.AccessibilityToString());
+        builder.Append("set");
     }
 }

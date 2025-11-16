@@ -113,11 +113,21 @@ public enum ELifetimeCondition
     Never = 15,
 };
 
+public record struct PropertyMethod
+{
+    public PropertyMethod(Accessibility accessibility)
+    {
+        Accessibility = accessibility;
+    }
+    
+    public readonly Accessibility Accessibility;
+}
+
 [Inspector]
 public record UnrealProperty : UnrealType
 {
-    protected const string UPropertyAttributeName = "UPropertyAttribute";
-    protected const EPropertyFlags InstancedFlags = EPropertyFlags.InstancedReference | EPropertyFlags.ExportObject;
+    private const string UPropertyAttributeName = "UPropertyAttribute";
+    private const EPropertyFlags InstancedFlags = EPropertyFlags.InstancedReference | EPropertyFlags.ExportObject;
 
     public EPropertyFlags PropertyFlags = EPropertyFlags.None;
     public bool DefaultComponent;
@@ -128,18 +138,22 @@ public record UnrealProperty : UnrealType
     public ELifetimeCondition LifetimeCondition = ELifetimeCondition.None;
     public string BlueprintSetter = string.Empty;
     public string BlueprintGetter = string.Empty;
-    public int ArrayDim = 1;
 
     public readonly bool IsPartial = true;
     
     public bool IsBlittable = false;
-    public RefKind RefKind;
+    public RefKind ReferenceKind;
 
     public readonly bool IsNullable;
     
     public PropertyType PropertyType = PropertyType.Unknown;
 
     public FieldName ManagedType;
+    
+    public PropertyMethod? GetterMethod;
+    public PropertyMethod? SetterMethod;
+
+    public readonly bool IsRequired;
     
     public virtual string MarshallerType => throw new NotImplementedException();
 
@@ -153,11 +167,11 @@ public record UnrealProperty : UnrealType
     public string CallToNative => MarshallerType + ToNative;
     public string CallFromNative => MarshallerType + FromNative;
     
-    public string GetParameterDeclaration() => $"{RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
-    public string GetParameterCall() => $"{RefKindToString()}{SourceName}";
-
-    private string ToNative => ".ToNative";
+    protected string ToNative => ".ToNative";
     protected string FromNative => ".FromNative";
+    
+    public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
+    public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
 
     public UnrealProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, PropertyType propertyType, UnrealType? outer = null) 
         : base(memberSymbol, syntaxNode, outer)
@@ -168,6 +182,13 @@ public record UnrealProperty : UnrealType
         {
             Namespace = typeSymbol.ContainingNamespace.ToDisplayString();
             IsNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+        }
+        
+        if (memberSymbol is IPropertySymbol propertySymbol)
+        {
+            GetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.GetMethod);
+            SetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.SetMethod);
+            IsRequired = propertySymbol.IsRequired;
         }
     }
     
@@ -181,6 +202,8 @@ public record UnrealProperty : UnrealType
     {
         PropertyType = type;
         IsPartial = false;
+        GetterMethod = new PropertyMethod(Accessibility.NotApplicable);
+        SetterMethod = new PropertyMethod(Accessibility.NotApplicable);
     }
     
     [Inspect(FullyQualifiedAttributeName = "UnrealSharp.Attributes.UPropertyAttribute", Name = "UPropertyAttribute")]
@@ -278,34 +301,40 @@ public record UnrealProperty : UnrealType
         UnrealProperty property = (UnrealProperty)topType;
         property.AddMetaData("Category", (string)category.Value!);
     }
-    
-    [InspectArgument("ArrayDim", UPropertyAttributeName)]
-    public static void ArrayDimSpecifier(UnrealType topType, TypedConstant arrayDim)
-    {
-        UnrealProperty property = (UnrealProperty)topType;
-        property.ArrayDim = (int)arrayDim.Value!;
-    }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         string nullableSign = IsNullable ? "?" : string.Empty;
         string partialDeclaration = IsPartial ? "partial " : string.Empty;
-        builder.AppendLine($"{Protection.AccessibilityToString()}{partialDeclaration}{ManagedType}{nullableSign} {SourceName}");
+        string isRequiredSign = IsRequired ? "required " : string.Empty;
+        
+        builder.AppendLine($"{Protection.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedType}{nullableSign} {SourceName}");
         builder.OpenBrace();
-        ExportGetter(builder);
-        ExportSetter(builder);
+        
+        if (GetterMethod != null)
+        {
+            builder.AppendGet(GetterMethod.Value.Accessibility);
+            ExportGetter(builder);
+        }
+        
+        if (SetterMethod != null)
+        {
+            builder.AppendSet(SetterMethod.Value.Accessibility);
+            ExportSetter(builder);
+        }
+        
         builder.CloseBrace();
     }
 
     protected virtual void ExportGetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("get => ");
+        builder.Append(" => ");
         ExportFromNative(builder, SourceGenUtilities.NativeObject);
     }
     
     protected virtual void ExportSetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("set => ");
+        builder.Append(" => ");
         ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
     }
 
@@ -349,7 +378,7 @@ public record UnrealProperty : UnrealType
     
     protected void AppendCallToNative(GeneratorStringBuilder builder, string marshaller, string buffer, string value)
     {
-        string offsetMathOperation = PropertyFlags.HasFlag(EPropertyFlags.ReturnParm) ? buffer : AppendOffsetMath(buffer);
+        string offsetMathOperation = PropertyFlags.IsReturnValue() ? buffer : AppendOffsetMath(buffer);
         builder.Append($"{marshaller}.ToNative({offsetMathOperation}, 0, {value});");
     }
     
@@ -371,20 +400,5 @@ public record UnrealProperty : UnrealType
         jsonObject.TrySetEnum("LifetimeCondition", LifetimeCondition);
         jsonObject.TrySetString("BlueprintSetter", BlueprintSetter);
         jsonObject.TrySetString("BlueprintGetter", BlueprintGetter);
-
-    }
-
-    private void AddEditInlineMeta() => AddMetaData("EditInline", "true");
-
-    private string RefKindToString()
-    {
-        return RefKind switch
-        {
-            RefKind.None => string.Empty,
-            RefKind.Ref => "ref ",
-            RefKind.Out => "out ",
-            RefKind.In => "in ",
-            _ => string.Empty
-        };
     }
 }

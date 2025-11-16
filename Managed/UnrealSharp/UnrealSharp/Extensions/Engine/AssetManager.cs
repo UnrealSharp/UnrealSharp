@@ -230,6 +230,11 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetSoftObjectReference(primaryAssetId);
     }
+    
+    public TSoftObjectPtr<T> GetSoftObjectReferenceFromPrimaryAssetId<T>(FPrimaryAssetId primaryAssetId) where T : UObject
+    {
+        return SystemLibrary.GetSoftObjectReference(primaryAssetId).Cast<T>();
+    }
 
     /// <summary>
     ///     Returns the Blueprint Class Id associated with a Primary Asset Id, this works even if the asset is not loaded
@@ -239,6 +244,11 @@ public partial class UAssetManager
     public TSoftClassPtr<UObject> GetSoftClassReferenceFromPrimaryAssetId(FPrimaryAssetId primaryAssetId)
     {
         return SystemLibrary.GetSoftClassReference(primaryAssetId);
+    }
+    
+    public TSoftClassPtr<T> GetSoftClassReferenceFromPrimaryAssetId<T>(FPrimaryAssetId primaryAssetId) where T : UObject
+    {
+        return SystemLibrary.GetSoftClassReference(primaryAssetId).Cast<T>();
     }
 
     /// <summary>

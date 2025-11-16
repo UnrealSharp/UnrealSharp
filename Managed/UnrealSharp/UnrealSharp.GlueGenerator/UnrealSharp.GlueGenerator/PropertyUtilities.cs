@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -51,4 +52,19 @@ public static class PropertyUtilities
     {
         property.PropertyFlags |= EPropertyFlags.BlueprintAssignable;
     }
+    
+    public static PropertyMethod? GetPropertyMethodInfo(this IPropertySymbol property, IMethodSymbol? getterOrSetter)
+    {
+        if (getterOrSetter == null)
+        {
+            return null;
+        }
+        
+        bool isDifferentAccessibility = getterOrSetter.DeclaredAccessibility != property.DeclaredAccessibility;
+        return new PropertyMethod((Accessibility)(isDifferentAccessibility ? getterOrSetter.DeclaredAccessibility : Accessibility.NotApplicable));
+    }
+    
+    public static void AddEditInlineMeta(this UnrealProperty property) => property.AddMetaData("EditInline", "true");
+    
+    public static bool IsReturnValue(this EPropertyFlags propertyFlags) => propertyFlags.HasFlag(EPropertyFlags.ReturnParm);
 }

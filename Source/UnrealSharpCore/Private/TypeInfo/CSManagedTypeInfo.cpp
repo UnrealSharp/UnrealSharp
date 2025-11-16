@@ -29,6 +29,19 @@ TSharedPtr<FCSManagedTypeInfo> FCSManagedTypeInfo::CreateNative(UField* InField,
 	return NewTypeInfo;
 }
 
+#if WITH_EDITOR
+TSharedPtr<FGCHandle> FCSManagedTypeInfo::GetTypeHandle()
+{
+	if (!TypeHandle.IsValid() || TypeHandle->IsNull())
+	{
+		FCSFieldName FieldName = MetaData.IsValid() ? MetaData->FieldName : FCSFieldName(Field.Get());
+		TypeHandle = OwningAssembly->TryFindTypeHandle(FieldName);
+	}
+	
+	return TypeHandle;
+}
+#endif
+
 void FCSManagedTypeInfo::SetTypeHandle(uint8* TypeHandlePtr)
 {
 	TypeHandle = OwningAssembly->RegisterTypeHandle(MetaData->FieldName, TypeHandlePtr);

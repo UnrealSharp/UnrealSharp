@@ -6,6 +6,9 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>latest</LangVersion>
     <OutputPath>$(UnrealSharpPluginDir)..\..\Binaries\Managed</OutputPath>
+
+    <TargetFramework>net10.0</TargetFramework>
+
     <DefineConstants>WITH_EDITOR</DefineConstants>
     <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">
       $(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))
@@ -17,13 +20,13 @@
 
   <ItemGroup>
     <Reference Include="UnrealSharp">
-      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\net9.0\UnrealSharp.dll</HintPath>
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.dll</HintPath>
     </Reference>
     <Reference Include="UnrealSharp.Core">
-      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\net9.0\UnrealSharp.Core.dll</HintPath>
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="UnrealSharp.Log">
-      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\net9.0\UnrealSharp.Log.dll</HintPath>
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Log.dll</HintPath>
     </Reference>
   </ItemGroup>
 

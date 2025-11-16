@@ -34,7 +34,11 @@ struct UNREALSHARPCORE_API FCSManagedTypeInfo final : TSharedFromThis<FCSManaged
 	static TSharedPtr<FCSManagedTypeInfo> CreateManaged(TSharedPtr<FCSTypeReferenceMetaData> MetaData, UCSAssembly* InOwningAssembly, UCSGeneratedTypeBuilder* Builder);
 	static TSharedPtr<FCSManagedTypeInfo> CreateNative(UField* InField, UCSAssembly* InOwningAssembly);
 
-	TSharedPtr<FGCHandle> GetTypeHandle() { return TypeHandle; }
+#if WITH_EDITOR
+	TSharedPtr<FGCHandle> GetTypeHandle();
+#else
+	TSharedPtr<FGCHandle> GetTypeHandle() const { return TypeHandle; }
+#endif
 
 	UField* GetOrBuildField();
 	UField* GetField() const { return Field.Get(); }

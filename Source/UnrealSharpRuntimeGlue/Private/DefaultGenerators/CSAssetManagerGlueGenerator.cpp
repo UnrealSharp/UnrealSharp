@@ -155,9 +155,11 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 		AssetManager.GetPrimaryAssetIdList(PrimaryAssetType.PrimaryAssetType, PrimaryAssetIdList);
 		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
 		{
-			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.
-				ToString();
+			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.ToString();
+			
 			AssetName = ReplaceSpecialCharacters(AssetName);
+			AssetName = AssetName.Replace(TEXT("Default__"), TEXT(""));
+			AssetName = AssetName.Replace(TEXT("_C"), TEXT(""));
 
 			ScriptBuilder.AppendLine(FString::Printf(
 				TEXT("public static readonly FPrimaryAssetId %s = new(\"%s\", \"%s\");"),

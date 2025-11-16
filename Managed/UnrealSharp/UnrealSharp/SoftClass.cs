@@ -4,6 +4,7 @@ using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
+using UnrealSharp.Engine;
 using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpAsync;
@@ -45,6 +46,12 @@ public struct TSoftClassPtr<T> where T : UObject
     public TSoftClassPtr(UObject obj)
     {
         SoftObjectPtr = new FPersistentObjectPtr(obj);
+    }
+    
+    public TSoftClassPtr(FPrimaryAssetId primaryAssetId)
+    {
+        UAssetManager assetManager = UAssetManager.Get();
+        this = assetManager.GetSoftClassReferenceFromPrimaryAssetId<T>(primaryAssetId);
     }
 
     public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj))

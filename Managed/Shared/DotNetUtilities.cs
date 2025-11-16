@@ -4,12 +4,13 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace UnrealSharp.Shared;
 
 public static class DotNetUtilities
 {
-	public const string DOTNET_MAJOR_VERSION = "9.0";
+	public const string DOTNET_MAJOR_VERSION = "10.0";
 	public const string DOTNET_MAJOR_VERSION_DISPLAY = "net" + DOTNET_MAJOR_VERSION;
 
     public static string FindDotNetExecutable()
@@ -65,34 +66,37 @@ public static class DotNetUtilities
 
 	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
 
-	    string highestVersion = "0.0.0";
+	    Version defaultVersion = new Version(0,0);
+	    Version highest = defaultVersion;
 
 	    foreach (string folderPath in folderPaths)
 	    {
 		    string folderName = Path.GetFileName(folderPath);
 
-		    if (string.IsNullOrEmpty(folderName) || !char.IsDigit(folderName[0]))
+		    if (!Version.TryParse(folderName, out var version))
 		    {
 			    continue;
 		    }
-
-		    if (string.Compare(folderName, highestVersion, StringComparison.Ordinal) > 0)
+		    
+		    if (version > highest)
 		    {
-			    highestVersion = folderName;
+			    highest = version;
 		    }
 	    }
+	    
+	    string versionName = highest.ToString();
 
-	    if (highestVersion == "0.0.0")
+	    if (highest == defaultVersion)
 	    {
 		    throw new Exception("Failed to find the latest .NET SDK version.");
 	    }
 
-	    if (!highestVersion.StartsWith(DOTNET_MAJOR_VERSION))
+	    if (!versionName.StartsWith(DOTNET_MAJOR_VERSION))
 	    {
-		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {highestVersion}");
+		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {versionName}");
 	    }
 
-	    return Path.Combine(dotNetSdkDirectory, highestVersion);
+	    return Path.Combine(dotNetSdkDirectory, versionName);
     }
 
     public static void BuildSolution(string projectRootDirectory)

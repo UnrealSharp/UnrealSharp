@@ -164,7 +164,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
             IParameterSymbol parameterSymbol = model.GetDeclaredSymbol(parameterSyntax)!;
                 
             UnrealProperty property = PropertyFactory.CreateProperty(parameterSymbol.Type, parameterSyntax, parameterSymbol, this);
-            property.RefKind = parameterSymbol.RefKind;
+            property.ReferenceKind = parameterSymbol.RefKind;
                 
             property.PropertyFlags |= EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
 
@@ -326,7 +326,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         
         string functionToCall = NeedsImplementationFunction ? $"{SourceName}_Implementation" : SourceName;
-        builder.Append($"{functionToCall}({string.Join(", ", Properties.Select(p => p.RefKind.RefKindToString() + p.SourceName))});");
+        builder.Append($"{functionToCall}({string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName))});");
         
         if (HasReturnValue)
         {

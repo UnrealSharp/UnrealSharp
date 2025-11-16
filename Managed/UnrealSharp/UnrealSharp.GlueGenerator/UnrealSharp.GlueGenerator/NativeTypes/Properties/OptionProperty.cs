@@ -15,7 +15,6 @@ public record OptionProperty : ContainerProperty
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("set");
         builder.OpenBrace();
         ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
         builder.CloseBrace();

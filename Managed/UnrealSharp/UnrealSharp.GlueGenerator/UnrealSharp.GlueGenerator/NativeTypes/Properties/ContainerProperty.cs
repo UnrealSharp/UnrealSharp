@@ -18,7 +18,6 @@ public record ContainerProperty : TemplateProperty
 
     protected override void ExportGetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("get");
         builder.OpenBrace();
         ExportFromNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ReturnAssignment);
         builder.CloseBrace();
@@ -42,7 +41,7 @@ public record ContainerProperty : TemplateProperty
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("set => throw new NotSupportedException();");
+        builder.Append(" => throw new NotSupportedException();");
     }
 
     protected virtual string GetFieldMarshaller() => throw new NotImplementedException();

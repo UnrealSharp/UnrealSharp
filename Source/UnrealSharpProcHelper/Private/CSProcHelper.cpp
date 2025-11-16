@@ -118,10 +118,16 @@ FString FCSProcHelper::GetPathToSolution()
 	return SolutionPath;
 }
 
+FString& FCSProcHelper::GetManagedBinaries()
+{
+	static FString ManagedBinaries = FPaths::Combine("Binaries", "Managed", DOTNET_DISPLAY_NAME);
+	return ManagedBinaries;
+}
+
 FString FCSProcHelper::GetPluginAssembliesPath()
 {
 #if WITH_EDITOR
-	return FPaths::Combine(GetPluginDirectory(), "Binaries", "Managed", DOTNET_DISPLAY_NAME);
+	return FPaths::Combine(GetPluginDirectory(), GetManagedBinaries());
 #else
 	return GetUserAssemblyDirectory();
 #endif
@@ -139,7 +145,7 @@ FString FCSProcHelper::GetRuntimeConfigPath()
 
 FString FCSProcHelper::GetUserAssemblyDirectory()
 {
-	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), "Binaries", "Managed", "net9.0"));
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), GetManagedBinaries()));
 }
 
 FString FCSProcHelper::GetUnrealSharpMetadataPath()

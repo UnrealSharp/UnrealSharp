@@ -64,7 +64,16 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial ulong UInt64Prop { get; set; }
     [UProperty] public partial float FloatProp { get; set; }
     [UProperty] public partial double DoubleProp { get; set; }
-
+    
+    [UProperty] public partial bool BoolPropPrivateGet { private get; set; }
+    [UProperty] public partial int IntPropPrivateSet { get; private set; }
+    [UProperty] public partial float FloatPropProtectedGet { protected get; set; }
+    [UProperty] public partial string StringPropProtectedSet { get; protected set; }
+    
+    [UProperty] public required partial double DoubleRequiredProp { get; set; }
+    
+    [UProperty] public partial int CharProp { set; }
+    
     [UProperty] public partial string StringProp { get; set; }
     [UProperty] public partial FName NameProp { get; set; }
     [UProperty] public partial FText TextProp { get; set; }

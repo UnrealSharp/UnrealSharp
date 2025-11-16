@@ -1212,9 +1212,16 @@ public class FunctionExporter
                 {
                     Modifiers = ScriptGeneratorUtilities.PublicKeyword;
                 }
-                else if (Function.HasAllFlags(EFunctionFlags.Protected) || Function.HasMetadata("BlueprintProtected"))
+                else if (Function.HasAllFlags(EFunctionFlags.Protected))
                 {
-                    Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
+                    if (Function.HasMetadata("BlueprintProtected"))
+                    {
+                        Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
+                    }
+                    else
+                    {
+                        Modifiers = ScriptGeneratorUtilities.PublicKeyword;
+                    }
                 }
                 else
                 {

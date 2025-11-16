@@ -40,7 +40,6 @@ public record DelegateProperty : TemplateProperty
 
     protected override void ExportGetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("get");
         builder.OpenBrace();
         ExportFromNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ReturnAssignment);
         builder.CloseBrace();
@@ -58,7 +57,6 @@ public record DelegateProperty : TemplateProperty
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("set");
         builder.OpenBrace();
         ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
         builder.CloseBrace();
