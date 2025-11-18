@@ -310,13 +310,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
             parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{parameter.ManagedType} {parameter.SourceName} = ");
         }
         
-        if (HasReturnValue)
-        {
-            builder.AppendLine($"{ReturnType.ManagedType} returnValue = ");
-        }
-        
+        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedType} returnValue = " : string.Empty;
         string functionToCall = NeedsImplementationFunction ? $"{SourceName}_Implementation" : SourceName;
-        builder.Append($"{functionToCall}({string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName))});");
+        builder.AppendLine($"{returnAssignment}{functionToCall}({string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName))});");
         
         if (HasReturnValue)
         {
