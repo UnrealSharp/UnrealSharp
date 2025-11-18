@@ -7,8 +7,8 @@ public record OptionProperty : ContainerProperty
 {
     const string OptionMarshaller = "OptionMarshaller";
     
-    public OptionProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.Optional, outer)
+    public OptionProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, PropertyType.Optional, outer)
     {
 
     }

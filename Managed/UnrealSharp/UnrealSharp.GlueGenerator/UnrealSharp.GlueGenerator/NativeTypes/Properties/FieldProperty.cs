@@ -7,14 +7,14 @@ public record FieldProperty : SimpleProperty
 {
     public FieldName InnerType;
     
-    public FieldProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
+    public FieldProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, propertyType, outer)
     {
         InnerType = new FieldName(typeSymbol);
     }
     
-    public FieldProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, FieldName customFieldName, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
+    public FieldProperty(ISymbol memberSymbol, FieldName customFieldName, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, propertyType, outer)
     {
         InnerType = customFieldName;
     }

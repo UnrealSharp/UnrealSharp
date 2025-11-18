@@ -32,51 +32,32 @@ public record UnrealType
     public Accessibility Protection;
 
     public virtual int FieldTypeValue => -1;
+
+    public readonly EquatableList<FieldName> SourceGeneratorDependencies;
+    private readonly EquatableList<MetaDataInfo> _metaData;
     
-    public readonly EquatableList<FieldName> SourceGeneratorDependencies = new(new List<FieldName>());
-    private readonly EquatableList<MetaDataInfo> _metaData = new(new List<MetaDataInfo>());
-    
-    public UnrealType(ISymbol? memberSymbol, SyntaxNode syntaxNode, UnrealType? outer = null)
+    public UnrealType(UnrealType? outer = null)
     {
         Outer = outer;
-        
-        if (memberSymbol != null)
-        {
-            _metaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
-            Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
-            SourceName = memberSymbol.Name;
-            AssemblyName = memberSymbol.ContainingAssembly.Name;
-        }
-        
-        if (syntaxNode is MemberDeclarationSyntax typeDeclaration)
-        {
-            string firstModifier = typeDeclaration.Modifiers.Count > 0 ? typeDeclaration.Modifiers[0].Text : string.Empty;
-            
-            if (string.IsNullOrEmpty(firstModifier) || firstModifier is not ("public" or "private" or "protected"))
-            {
-                Protection = Accessibility.NotApplicable;
-                return;
-            }
-            
-            Protection = firstModifier switch
-            {
-                "public" => Accessibility.Public,
-                "private" => Accessibility.Private,
-                "protected" => Accessibility.Protected,
-                "internal" => Accessibility.Internal,
-                "protected internal" => Accessibility.ProtectedOrInternal,
-                _ => Accessibility.NotApplicable
-            };
-        }
+        SourceGeneratorDependencies = new EquatableList<FieldName>(new List<FieldName>());
+        _metaData = new EquatableList<MetaDataInfo>(new List<MetaDataInfo>());
+    }
+    
+    public UnrealType(ISymbol memberSymbol, UnrealType? outer = null) : this(outer)
+    {
+        _metaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
+        Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
+        SourceName = memberSymbol.Name;
+        AssemblyName = memberSymbol.ContainingAssembly.Name;
+        Protection = memberSymbol.DeclaredAccessibility;
     }
 
-    public UnrealType(string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null)
+    public UnrealType(string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) : this(outer)
     {
         SourceName = sourceName;
         Namespace = typeNameSpace;
         Protection = accessibility;
         AssemblyName = assemblyName;
-        Outer = outer;
     }
     
     public void AddMetaData(string key, string value) => _metaData.List.Add(new MetaDataInfo { Key = key, Value = value });

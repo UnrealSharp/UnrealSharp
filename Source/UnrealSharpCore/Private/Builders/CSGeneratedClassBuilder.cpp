@@ -25,56 +25,60 @@ void UCSGeneratedClassBuilder::RebuildType(UField* TypeToBuild, const TSharedPtr
 	UCSClass* Field = static_cast<UCSClass*>(TypeToBuild);
 	TSharedPtr<FCSClassMetaData> TypeMetaData = ManagedTypeInfo->GetMetaData<FCSClassMetaData>();
 	
-	UClass* CurrentSuperClass = TryRedirectSuperClass(TypeMetaData, Field->GetSuperClass());
-	Field->SetSuperStruct(CurrentSuperClass);
+	UClass* NewSuperClass = TryRedirectSuperClass(TypeMetaData, Field->GetSuperClass());
+	UClass* CurrentSuperClass = Field->GetSuperClass();
 
-	// Reset for each rebuild of the class, so it doesn't accumulate properties from previous builds.
-	Field->NumReplicatedProperties = 0;
-	
+	if (!IsValid(CurrentSuperClass))
+	{
+		// Initial setup. BP-compiler will handle future re-parenting.
+		Field->SetSuperStruct(NewSuperClass);
+	}
+
 #if WITH_EDITOR
-	CreateOwningBlueprint(TypeMetaData, Field, CurrentSuperClass);
+	CreateOrUpdateOwningBlueprint(TypeMetaData, Field, NewSuperClass);
 
 	if (FCSUnrealSharpUtils::IsStandalonePIE())
 	{
-		CreateClass(TypeMetaData, Field, CurrentSuperClass);
+		CreateClass(TypeMetaData, Field, NewSuperClass);
 	}
 	
 	TryUnregisterDynamicSubsystem(Field);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 #else
-	CreateClass(TypeMetaData, Field, CurrentSuperClass);
+	CreateClass(TypeMetaData, Field, NewSuperClass);
 #endif
 }
 
 #if WITH_EDITOR
-void UCSGeneratedClassBuilder::CreateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
+void UCSGeneratedClassBuilder::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass)
 {
 	UBlueprint* Blueprint = Field->GetOwningBlueprint();
-	if (IsValid(Blueprint))
-	{
-		return;
-	}
-
-	FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
-	UPackage* Package = TypeMetaData->GetAsPackage();
 	
-	Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted | RF_Transient);
-	Blueprint->GeneratedClass = Field;
-	Blueprint->ParentClass = SuperClass;
-	Blueprint->Status = BS_UpToDate;
-	Blueprint->BlueprintType = BPTYPE_Normal;
-	Blueprint->bLegacyNeedToPurgeSkelRefs = false;
-	Blueprint->bIsRegeneratingOnLoad = false;
-	Blueprint->bRecompileOnLoad = false;
-
-	if (FCSUnrealSharpUtils::IsStandalonePIE())
+	if (!IsValid(Blueprint))
 	{
-		// Some systems still use the skeleton class in standalone,
-		// fallback to the main class since we don't have a separate skeleton class in standalone.
-		Blueprint->SkeletonGeneratedClass = Field;
-	}
+		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(TypeMetaData->FieldName);
+		UPackage* Package = TypeMetaData->GetAsPackage();
+	
+		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted | RF_Transient);
+		Blueprint->GeneratedClass = Field;
+
+		Blueprint->Status = BS_UpToDate;
+		Blueprint->BlueprintType = BPTYPE_Normal;
+		Blueprint->bLegacyNeedToPurgeSkelRefs = false;
+		Blueprint->bIsRegeneratingOnLoad = false;
+		Blueprint->bRecompileOnLoad = false;
+
+		if (FCSUnrealSharpUtils::IsStandalonePIE())
+		{
+			// Some systems still use the skeleton class in standalone,
+			// fallback to the main class since we don't have a separate skeleton class in standalone.
+			Blueprint->SkeletonGeneratedClass = Field;
+		}
 		
-	Field->SetOwningBlueprint(Blueprint);
+		Field->SetOwningBlueprint(Blueprint);
+	}
+
+	Blueprint->ParentClass = SuperClass;
 }
 #endif
 

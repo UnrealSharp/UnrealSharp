@@ -22,4 +22,10 @@ void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 	
 	SetTypeInfo(ManagedClass->GetManagedTypeInfo());
 }
+
+void UCSClass::PurgeClass(bool bRecompilingOnLoad)
+{
+	Super::PurgeClass(bRecompilingOnLoad);
+	NumReplicatedProperties = 0;
+}
 #endif

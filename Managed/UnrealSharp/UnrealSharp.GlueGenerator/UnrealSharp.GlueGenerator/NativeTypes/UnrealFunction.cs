@@ -1,15 +1,10 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
 public record UnrealFunction : UnrealFunctionBase
 {
-    public UnrealFunction(SemanticModel model, ISymbol typeSymbol, MethodDeclarationSyntax syntax, UnrealType outer) : base(model, typeSymbol, syntax, outer)
-    {
-    }
-
-    public UnrealFunction(SemanticModel model, ISymbol typeSymbol, DelegateDeclarationSyntax syntax, UnrealType outer) : base(model, typeSymbol, syntax, outer)
+    public UnrealFunction(SemanticModel model, IMethodSymbol typeSymbol, UnrealType outer) : base(model, typeSymbol, outer)
     {
     }
 

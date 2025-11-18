@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
@@ -22,8 +20,7 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
                 static (ctx, _) =>
                 {
                     InspectorData decode = InspectorManager.GetInspectorData(ctx.Attributes[0].AttributeClass!.Name)!;
-                    UnrealType type = decode.InspectAttributeDelegate!(null, ctx, (MemberDeclarationSyntax) ctx.TargetNode,
-                        ctx.Attributes)!;
+                    UnrealType type = decode.InspectAttributeDelegate!(null, ctx, ctx.TargetSymbol, ctx.Attributes)!;
                     return type;
                 });
             

@@ -14,8 +14,9 @@ public record UnrealEnum : UnrealType
 
     private readonly EquatableList<string>? _enumNames;
 
-    public UnrealEnum(SyntaxNode syntax, ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    public UnrealEnum(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)
     {
+        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
         ImmutableArray<ISymbol> members = typeSymbol.GetMembers();
         
         if (members.Length == 0)
@@ -47,11 +48,9 @@ public record UnrealEnum : UnrealType
     }
     
     [Inspect("UnrealSharp.Attributes.UEnumAttribute", "UEnumAttribute", "Global")]
-    public static UnrealType? UEnumAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UEnumAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        ITypeSymbol typeSymbol = (ITypeSymbol) ctx.SemanticModel.GetDeclaredSymbol(declarationSyntax)!;
-        UnrealEnum unrealEnum = new UnrealEnum(declarationSyntax, typeSymbol, outer);
-        return unrealEnum;
+        return new UnrealEnum(symbol, outer);
     }
 
     public override void PopulateJsonObject(JsonObject jsonObject)

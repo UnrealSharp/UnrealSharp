@@ -16,10 +16,12 @@ public record UnrealDelegate : UnrealType
 
     public override string EngineName => SourceName.Substring(1);
 
-    public UnrealDelegate(bool isMulticast, SemanticModel model, ISymbol typeSymbol, SyntaxNode syntax) : base(typeSymbol, syntax)
+    public UnrealDelegate(bool isMulticast, SemanticModel model, ISymbol typeSymbol) : base(typeSymbol)
     {
         _isMulticast = isMulticast;
-        _delegateSignature = new UnrealDelegateFunction(model, typeSymbol, (DelegateDeclarationSyntax) syntax, this);
+        INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol)typeSymbol;
+        _delegateSignature = new UnrealDelegateFunction(model, namedTypeSymbol.DelegateInvokeMethod!, this);
+        _delegateSignature.SourceName = typeSymbol.Name;
         SourceName = DelegateProperty.MakeDelegateSignatureName(SourceName);
         ApplyFunctionFlags(isMulticast);
     }
@@ -39,21 +41,20 @@ public record UnrealDelegate : UnrealType
     }
     
     [Inspect("UnrealSharp.Attributes.UMultiDelegateAttribute", "UMultiDelegateAttribute", "Global")]
-    public static UnrealType? UMultiDelegateAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UMultiDelegateAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        return MakeDelegate(true, ctx, declarationSyntax);
+        return MakeDelegate(true, ctx, symbol);
     }
     
     [Inspect("UnrealSharp.Attributes.USingleDelegateAttribute", "USingleDelegateAttribute", "Global")]
-    public static UnrealType? USingleDelegateAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? USingleDelegateAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        return MakeDelegate(false, ctx, declarationSyntax);
+        return MakeDelegate(false, ctx, symbol);
     }
 
-    static UnrealDelegate MakeDelegate(bool isMulticast, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax)
+    static UnrealDelegate MakeDelegate(bool isMulticast, GeneratorAttributeSyntaxContext ctx, ISymbol symbol)
     {
-        ITypeSymbol typeSymbol = (ITypeSymbol)ctx.SemanticModel.GetDeclaredSymbol(declarationSyntax)!;
-        UnrealDelegate unrealClass = new UnrealDelegate(isMulticast, ctx.SemanticModel, typeSymbol, ctx.TargetNode);
+        UnrealDelegate unrealClass = new UnrealDelegate(isMulticast, ctx.SemanticModel, symbol);
         return unrealClass;
     }
 
@@ -72,7 +73,7 @@ public record UnrealDelegate : UnrealType
             parameters = string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterCall()));
         }
         
-        builder.BeginType(_delegateSignature, TypeKind.Class, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.SourceName}>");
+        builder.BeginType(_delegateSignature, TypeKind.Class, null, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.SourceName}>");
         AppendAddOperator(builder, delegateWrapperClassName);
         AppendNegateOperator(builder, delegateWrapperClassName);
         AppendInvoker(builder, args);

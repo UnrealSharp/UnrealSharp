@@ -4,8 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record SimpleProperty : UnrealProperty
 {
-    public SimpleProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
+    public SimpleProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, propertyType, outer)
     {
         ManagedType = new FieldName(typeSymbol);
     }

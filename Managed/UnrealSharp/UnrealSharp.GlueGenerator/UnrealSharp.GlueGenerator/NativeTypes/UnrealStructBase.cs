@@ -8,10 +8,11 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealStruct : UnrealType
 {
     public override string EngineName => SourceName.Substring(1);
+    
     public EquatableList<UnrealProperty> Properties;
     public bool HasAnyProperties => Properties.Count > 0;
     
-    public UnrealStruct(ISymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    public UnrealStruct(ISymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         Properties = new EquatableList<UnrealProperty>(new List<UnrealProperty>());
     }

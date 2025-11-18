@@ -61,7 +61,7 @@ public static class PropertyUtilities
         }
         
         bool isDifferentAccessibility = getterOrSetter.DeclaredAccessibility != property.DeclaredAccessibility;
-        return new PropertyMethod((Accessibility)(isDifferentAccessibility ? getterOrSetter.DeclaredAccessibility : Accessibility.NotApplicable));
+        return new PropertyMethod(isDifferentAccessibility ? getterOrSetter.DeclaredAccessibility : Accessibility.NotApplicable);
     }
     
     public static void AddEditInlineMeta(this UnrealProperty property) => property.AddMetaData("EditInline", "true");

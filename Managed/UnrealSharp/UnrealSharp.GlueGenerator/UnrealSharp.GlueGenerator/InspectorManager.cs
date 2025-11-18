@@ -37,12 +37,12 @@ public sealed class InspectorData
         }
     }
 
-    public void InspectWithAttributes(UnrealType topType, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declaration, IReadOnlyList<AttributeData> attributes)
+    public void InspectWithAttributes(UnrealType topType, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealType? outer = null;
         if (InspectAttributeDelegate != null)
         {
-            outer = InspectAttributeDelegate(topType, ctx, declaration, attributes);
+            outer = InspectAttributeDelegate(topType, ctx, symbol, attributes);
         }
         
         if (outer is null)
@@ -85,7 +85,7 @@ public sealed class InspectorData
     }
 }
 
-public delegate UnrealType? InspectAttributeDelegate(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes);
+public delegate UnrealType? InspectAttributeDelegate(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes);
 public delegate void InspectAttributeArgumentDelegate(UnrealType topType, TypedConstant constant);
 
 public static class InspectorManager
@@ -193,82 +193,62 @@ public static class InspectorManager
         public InspectorData InspectorData;
         public List<AttributeData> Attributes;
     }
-
-    public static void InspectTypeMembers(UnrealType topType, SyntaxNode syntax, GeneratorAttributeSyntaxContext ctx)
+    
+    public static void InspectTypeMembers(UnrealType topType, ITypeSymbol declaration, GeneratorAttributeSyntaxContext ctx)
     {
-        TypeDeclarationSyntax declaration = (TypeDeclarationSyntax) syntax;
-        foreach (MemberDeclarationSyntax member in declaration.Members)
+        InspectTypeMembers(topType, declaration, declaration.GetMembers(), ctx);
+    }
+    
+    public static void InspectTypeMembers(UnrealType topType, ISymbol symbol, ImmutableArray<ISymbol> members, GeneratorAttributeSyntaxContext ctx)
+    {
+        foreach (ISymbol member in members)
         {
             List<InspectionContext>? inspections = null;
+            ImmutableArray<AttributeData> attributes = member.GetAttributes();
             
-            void TryAdd(ISymbol symbol)
+            foreach (AttributeData attribute in attributes)
             {
-                ImmutableArray<AttributeData> attributes = symbol.GetAttributes();
-                foreach (AttributeData attribute in attributes)
+                string attributeName = attribute.AttributeClass!.Name;
+                if (!TryGetInspectorData(attributeName, out InspectorData? inspectorData))
                 {
-                    string attributeName = attribute.AttributeClass!.Name;
-                    if (!TryGetInspectorData(attributeName, out InspectorData? inspectorData))
-                    {
-                        return;
-                    }
+                    continue;
+                }
+
+                inspections ??= new List<InspectionContext>();
                     
-                    if (inspections is null)
+                InspectionContext? foundContext = null;
+                int index = -1;
+                for (int i = 0; i < inspections.Count; i++)
+                {
+                    if (inspections[i].InspectorData == inspectorData)
                     {
-                        inspections = new List<InspectionContext>();
-                    }
-                
-                    InspectionContext? foundContext = null;
-                    
-                    int index = -1;
-                    for (int i = 0; i < inspections.Count; i++)
-                    {
-                        if (inspections[i].InspectorData == inspectorData)
-                        {
-                            foundContext = inspections[i];
-                            index = i;
-                            break;
-                        }
-                    }
-                    
-                    if (foundContext is null)
-                    {
-                        foundContext = new InspectionContext
-                        {
-                            InspectorData = inspectorData!,
-                            Attributes = new List<AttributeData>()
-                        };
-                    }
-                    
-                    foundContext.Value.Attributes.Add(attribute);
-                    
-                    if (index >= 0)
-                    {
-                        inspections[index] = foundContext.Value;
-                    }
-                    else
-                    {
-                        inspections.Add(foundContext.Value);
+                        foundContext = inspections[i];
+                        index = i;
+                        break;
                     }
                 }
-            }
-            
-            if (member is FieldDeclarationSyntax field)
-            {
-                foreach (VariableDeclaratorSyntax variable in field.Declaration.Variables)
+
+                if (foundContext is null)
                 {
-                    if (ctx.SemanticModel.GetDeclaredSymbol(variable) is not IFieldSymbol fieldSymbol)
+                    foundContext = new InspectionContext
                     {
-                        continue;
-                    }
-                    
-                    TryAdd(fieldSymbol);
+                        InspectorData = inspectorData!,
+                        Attributes = new List<AttributeData>()
+                    };
+                }
+
+                foundContext.Value.Attributes.Add(attribute);
+
+                if (index >= 0)
+                {
+                    inspections[index] = foundContext.Value;
+                }
+                else
+                {
+                    inspections.Add(foundContext.Value);
                 }
             }
-            else if (ctx.SemanticModel.GetDeclaredSymbol(member) is ISymbol symbol)
-            {
-                TryAdd(symbol);
-            }
-            
+
             if (inspections is null)
             {
                 continue;

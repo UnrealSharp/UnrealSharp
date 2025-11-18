@@ -24,14 +24,6 @@ public enum ETestEnum : byte
     ThirdValue
 }
 
-[UStruct]
-public partial struct FTestStruct
-{
-    [UProperty] public int IntProp { get; set; }
-    [UProperty] public string StringProp { get; set; }
-    [UProperty] public FVector VectorProp { get; set; }
-}
-
 [UInterface]
 public interface ITestInterface
 {
@@ -49,6 +41,25 @@ public partial class UTestObject : UObject
     [UProperty] public partial string StringProp { get; set; }
     [UProperty] public partial FVector VectorProp { get; set; }
 }
+
+[UStruct]
+public partial struct FTestStruct
+{
+    [UProperty] public int IntProp { get; set; }
+    [UProperty] public string StringProp { get; set; }
+    [UProperty] public FVector VectorProp { get; set; }
+}
+
+[UStruct]
+public partial record struct FChunkID(
+    [field: UProperty(PropertyFlags.EditAnywhere)]
+    int Face,
+    [field: UProperty(PropertyFlags.EditAnywhere)]
+    int Lod,
+    [field: UProperty(PropertyFlags.EditAnywhere)]
+    int X,
+    [field: UProperty(PropertyFlags.EditAnywhere)]
+    UTestObject Y);
 
 [UClass]
 public partial class UTestClass : AActor, ITestInterface
@@ -84,8 +95,6 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial FRotator RotatorProp { get; set; }
     [UProperty] public partial FQuat QuatProp { get; set; }
     [UProperty] public partial FTransform TransformProp { get; set; }
-    
-    [UProperty] public partial FTestStruct StructProp { get; set; }
 
     [UProperty] public partial FLinearColor LinearColorProp { get; set; }
     [UProperty] public partial FColor ColorProp { get; set; }
@@ -107,6 +116,15 @@ public partial class UTestClass : AActor, ITestInterface
     
     [UProperty] public partial UClass? ClassProp { get; set; }
     [UProperty] public partial TSubclassOf<AActor> SubclassActor { get; set; }
+    
+    [UProperty] public partial TArray<FChunkID> ChunkIDArray { get; set; }
+    [UProperty] public partial IList<FChunkID> ChunkIDList { get; set; }
+    [UProperty] public partial TSet<FChunkID> ChunkIDSet { get; set; }
+    [UProperty] public partial IDictionary<FChunkID, string> ChunkIDToStringMap { get; set; }
+     
+    [UProperty] public partial FTestStruct TestStructProp { get; set; }
+    
+    [UProperty] public partial FChunkID ChunkIDProp { get; set; }
 
     [UProperty] public partial TArray<int> IntArray_TArray { get; set; }
     [UProperty] public partial TArray<FVector> VectorArray_TArray { get; set; }
@@ -139,9 +157,9 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDict { get; set; }
     [UProperty(PropertyFlags.EditAnywhere)] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDhict { get; set; }
     
-    [UProperty] public partial TMulticastDelegate<FTestDelegate> MultiDelegateProp { get; set; }
-    [UProperty] public partial TDelegate<FTestDelegate2> SingleDelegateProp { get; set; }
-    [UProperty] public partial TDelegate<FTestDelegate2> SingleDelegateProp2 { get; set; }
+    [UProperty] private partial TMulticastDelegate<FTestDelegate> MultiDelegateProp { get; set; }
+    [UProperty] private partial TDelegate<FTestDelegate2> SingleDelegateProp { get; set; }
+    [UProperty] private partial TDelegate<FTestDelegate2> SingleDelegateProp2 { get; set; }
     
     [UProperty(PropertyFlags.Instanced | PropertyFlags.BlueprintReadOnly)] public partial UTestObject TestObjectProp { get; set; }
 
@@ -192,6 +210,10 @@ public partial class UTestClass : AActor, ITestInterface
     {
         
     }
+    
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial void OnRefreshInventory(IList<FChunkID> entries);
+    public partial void OnRefreshInventory_Implementation(IList<FChunkID> entries) { }
 
     public partial void InterfaceFunction(int intParam, string strParam);
     public partial void InterfaceFunction_Implementation(int intParam, string strParam)

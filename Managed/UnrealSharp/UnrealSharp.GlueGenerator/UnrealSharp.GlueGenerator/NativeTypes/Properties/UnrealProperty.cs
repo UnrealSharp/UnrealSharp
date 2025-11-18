@@ -173,18 +173,13 @@ public record UnrealProperty : UnrealType
     public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
     public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
 
-    public UnrealProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, PropertyType propertyType, UnrealType? outer = null) 
-        : base(memberSymbol, syntaxNode, outer)
+    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null) : base(memberSymbol, outer)
     {
         PropertyType = propertyType;
+        Namespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        IsNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
         
-        if (typeSymbol != null)
-        {
-            Namespace = typeSymbol.ContainingNamespace.ToDisplayString();
-            IsNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
-        }
-        
-        if (memberSymbol is IPropertySymbol propertySymbol)
+        if (memberSymbol.Kind == SymbolKind.Property && memberSymbol is IPropertySymbol propertySymbol)
         {
             GetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.GetMethod);
             SetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.SetMethod);
@@ -192,7 +187,7 @@ public record UnrealProperty : UnrealType
         }
     }
     
-    public UnrealProperty(PropertyType propertyType, UnrealType outer) : base(null, null!, outer)
+    public UnrealProperty(PropertyType propertyType, UnrealType outer) : base(outer)
     {
         PropertyType = propertyType;
     }
@@ -207,10 +202,10 @@ public record UnrealProperty : UnrealType
     }
     
     [Inspect(FullyQualifiedAttributeName = "UnrealSharp.Attributes.UPropertyAttribute", Name = "UPropertyAttribute")]
-    public static UnrealType? UPropertyAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declaration, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UPropertyAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealStruct owningStruct = (UnrealStruct) outer!;
-        UnrealProperty property = PropertyFactory.CreateProperty(ctx.SemanticModel, declaration, outer!);
+        UnrealProperty property = PropertyFactory.CreateProperty(ctx.SemanticModel, symbol, outer!);
         owningStruct.Properties.List.Add(property);
         return property;
     }

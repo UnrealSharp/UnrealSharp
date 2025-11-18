@@ -10,17 +10,19 @@ public record UnrealInterface : UnrealClassBase
     private const string UInterfaceAttributeName = "UInterfaceAttribute";
     public override int FieldTypeValue => 3;
 
-    public UnrealInterface(ITypeSymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    public UnrealInterface(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         ClassFlags |= EClassFlags.Interface;
     }
     
     [Inspect("UnrealSharp.Attributes.UInterfaceAttribute", "UInterfaceAttribute", "Global")]
-    public static UnrealType? UInterfaceAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UInterfaceAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealInterface unrealClass = new UnrealInterface((ITypeSymbol) ctx.TargetSymbol, declarationSyntax, outer);
+        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
+        UnrealInterface unrealClass = new UnrealInterface(typeSymbol);
+        
         InspectorManager.InspectSpecifiers(UInterfaceAttributeName, unrealClass, attributes);
-        InspectorManager.InspectTypeMembers(unrealClass, declarationSyntax, ctx);
+        InspectorManager.InspectTypeMembers(unrealClass, typeSymbol, ctx);
         return unrealClass;
     }
 

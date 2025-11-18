@@ -69,32 +69,30 @@ public record UnrealClass : UnrealClassBase
     public EquatableList<string> Overrides;
     public EquatableList<InterfaceData> Interfaces;
     
-    public UnrealClass(SemanticModel model, ITypeSymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    public UnrealClass(SemanticModel model, ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
-        ClassDeclarationSyntax declarationSyntax = (ClassDeclarationSyntax) syntax;
-        BaseListSyntax baseList = declarationSyntax.BaseList!;
-
-        if (baseList.Types.Count > 1)
+        ImmutableArray<INamedTypeSymbol> immutableArray = typeSymbol.Interfaces;
+        
+        if (immutableArray.Length > 0)
         {
-            EquatableList<InterfaceData> interfaces = new EquatableList<InterfaceData>(new List<InterfaceData>(baseList.Types.Count - 1));
+            EquatableList<InterfaceData> interfaces = new EquatableList<InterfaceData>(new List<InterfaceData>(immutableArray.Length - 1));
 
-            foreach (BaseTypeSyntax baseType in baseList.Types)
+            foreach (INamedTypeSymbol baseType in immutableArray)
             {
-                ITypeSymbol? baseTypeSymbol = ModelExtensions.GetTypeInfo(model, baseType.Type).Type;
-                if (baseTypeSymbol is null || baseTypeSymbol.TypeKind != TypeKind.Interface || !baseTypeSymbol.HasAttribute("UInterfaceAttribute"))
+                if (baseType is null || baseType.TypeKind != TypeKind.Interface || !baseType.HasAttribute("UInterfaceAttribute"))
                 {
                     continue;
                 }
                 
                 InterfaceData interfaceData = new InterfaceData
                 {
-                    Name = baseTypeSymbol.Name,
-                    FullName = baseTypeSymbol.ToDisplayString()
+                    Name = baseType.Name,
+                    FullName = baseType.ToDisplayString()
                 };
                 
                 interfaces.List.Add(interfaceData);
                 
-                ImmutableArray<ISymbol> members = baseTypeSymbol.GetMembers();
+                ImmutableArray<ISymbol> members = baseType.GetMembers();
                 Functions.List.Capacity += members.Length;
             
                 foreach (ISymbol member in members)
@@ -104,9 +102,7 @@ public record UnrealClass : UnrealClassBase
                         continue;
                     }
                     
-                    MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax) member.DeclaringSyntaxReferences[0].GetSyntax();
-                    SemanticModel methodModel = model.Compilation.GetSemanticModel(methodDeclaration.SyntaxTree);
-                    UnrealFunction function = new UnrealFunction(methodModel, member, methodDeclaration, this);
+                    UnrealFunction function = new UnrealFunction(model, (IMethodSymbol) member, this);
                     function.Protection = function.Protection == Accessibility.NotApplicable ? Accessibility.Public : function.Protection;
                 
                     List<AttributeData> attributes = member.GetAttributesByName("UFunctionAttribute");
@@ -121,21 +117,20 @@ public record UnrealClass : UnrealClassBase
         
         Overrides = new EquatableList<string>(new List<string>());
         
-        foreach (MemberDeclarationSyntax member in declarationSyntax.Members)
+        ImmutableArray<ISymbol> classMembers = typeSymbol.GetMembers();
+        foreach (ISymbol member in classMembers)
         {
-            if (member.RawKind != (int) SyntaxKind.MethodDeclaration)
+            if (member.Kind != SymbolKind.Method)
             {
                 continue;
             }
             
-            ISymbol symbol = ModelExtensions.GetDeclaredSymbol(model, member)!;
-            
-            if (!symbol.IsOverride || !symbol.Name.EndsWith("_Implementation"))
+            if (!member.IsOverride || !member.Name.EndsWith("_Implementation"))
             {
                 continue;
             }
             
-            IMethodSymbol methodSymbol = (IMethodSymbol) symbol;
+            IMethodSymbol methodSymbol = (IMethodSymbol) member;
             
             while (true)
             {
@@ -165,12 +160,14 @@ public record UnrealClass : UnrealClassBase
     }
 
     [Inspect(LongUClassAttributeName, UClassAttributeName, "Global")]
-    public static UnrealType? UClassAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UClassAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        ITypeSymbol typeSymbol = (ITypeSymbol) ModelExtensions.GetDeclaredSymbol(ctx.SemanticModel, declarationSyntax)!;
-        UnrealClass unrealClass = new UnrealClass(ctx.SemanticModel, typeSymbol, ctx.TargetNode);
+        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
+        UnrealClass unrealClass = new UnrealClass(ctx.SemanticModel, typeSymbol);
+        
         InspectorManager.InspectSpecifiers(UClassAttributeName, unrealClass, attributes);
-        InspectorManager.InspectTypeMembers(unrealClass, declarationSyntax, ctx);
+        InspectorManager.InspectTypeMembers(unrealClass, typeSymbol, ctx);
+        
         return unrealClass;
     }
     
@@ -197,6 +194,9 @@ public record UnrealClass : UnrealClassBase
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         builder.BeginType(this, TypeKind.Class);
+        
+        builder.AppendLine($"public static TSubclassOf<{SourceName}> StaticClass = SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr}, 0);");
+        builder.AppendLine();
         
         TryExportProperties(builder, spc);
         TryExportList(builder, spc, Functions);

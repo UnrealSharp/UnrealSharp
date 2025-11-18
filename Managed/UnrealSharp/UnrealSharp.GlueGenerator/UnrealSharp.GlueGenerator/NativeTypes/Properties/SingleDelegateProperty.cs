@@ -4,8 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record SingleDelegateProperty : DelegateProperty
 {
-    public SingleDelegateProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.Delegate, outer, "SingleDelegateMarshaller")
+    public SingleDelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, PropertyType.Delegate, outer, "SingleDelegateMarshaller")
     {
     }
     

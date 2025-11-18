@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -10,23 +11,30 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealScriptStruct : UnrealStruct
 {
     public override int FieldTypeValue => 1;
+    public bool IsRecord;
     
-    public UnrealScriptStruct(ISymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    public UnrealScriptStruct(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)
     {
+        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
+        IsRecord = typeSymbol.IsRecord;
     }
     
     [Inspect("UnrealSharp.Attributes.UStructAttribute", "UStructAttribute", "Global")]
-    public static UnrealType? UStructAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax declarationSyntax, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UStructAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(ctx.TargetSymbol, declarationSyntax, outer);
+        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(ctx.TargetSymbol, outer);
         InspectorManager.InspectSpecifiers("UStructAttribute", unrealStruct, attributes);
-        InspectorManager.InspectTypeMembers(unrealStruct, declarationSyntax, ctx);
+
+        ITypeSymbol typeSymbol = (ITypeSymbol) ctx.TargetSymbol;
+        InspectorManager.InspectTypeMembers(unrealStruct, typeSymbol, ctx);
+        
         return unrealStruct;
     }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        builder.BeginType(this, TypeKind.Struct, interfaceDeclarations: [$"MarshalledStruct<{SourceName}>"]);
+        string recordModifier = IsRecord ? "record " : string.Empty;
+        builder.BeginType(this, TypeKind.Struct, modifiers: recordModifier, interfaceDeclarations: [$"MarshalledStruct<{SourceName}>"]);
         
         bool isStructBlittable = true;
         int propertyCount = Properties.Count;
@@ -71,6 +79,13 @@ public record UnrealScriptStruct : UnrealStruct
         builder.AppendLine();
         
         builder.AppendLine($"public {SourceName}(IntPtr buffer)");
+        
+        if (IsRecord)
+        {
+            string constructorArgs = string.Join(", ", Properties.List.Select(p => $"default({p.ManagedType})"));
+            builder.Append($" : this({constructorArgs})");
+        }
+        
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         builder.AppendLine();

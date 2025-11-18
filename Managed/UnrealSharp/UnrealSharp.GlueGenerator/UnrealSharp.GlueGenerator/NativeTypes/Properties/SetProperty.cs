@@ -4,8 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record SetProperty : ContainerProperty
 {
-    public SetProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.Set, outer)
+    public SetProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, PropertyType.Set, outer)
     {
         
     }

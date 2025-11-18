@@ -13,6 +13,7 @@ public:
 #if WITH_EDITOR
 	// UObject interface
 	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+	virtual void PurgeClass(bool bRecompilingOnLoad) override;
 	// End of UObject interface
 	
 	void SetOwningBlueprint(UBlueprint* InOwningBlueprint)

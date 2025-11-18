@@ -29,7 +29,7 @@ public:
 
 private:
 #if WITH_EDITOR
-	static void CreateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
+	static void CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 #endif
 	static void CreateClass(TSharedPtr<FCSClassMetaData> TypeMetaData, UCSClass* Field, UClass* SuperClass);
 

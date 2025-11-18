@@ -6,8 +6,8 @@ public record InterfaceProperty : FieldProperty
 {
     public override string MarshallerType => ManagedType + "Marshaller";
 
-    public InterfaceProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol? typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.Interface, outer)
+    public InterfaceProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, PropertyType.Interface, outer)
     {
         
     }

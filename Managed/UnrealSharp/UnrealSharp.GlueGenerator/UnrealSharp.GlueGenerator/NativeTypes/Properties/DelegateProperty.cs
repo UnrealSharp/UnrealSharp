@@ -8,8 +8,8 @@ public record DelegateProperty : TemplateProperty
     {
     }
     
-    public DelegateProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller) 
-        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer, marshaller)
+    public DelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller) 
+        : base(memberSymbol, typeSymbol, propertyType, outer, marshaller)
     {
         NeedsBackingFields = false;
     }

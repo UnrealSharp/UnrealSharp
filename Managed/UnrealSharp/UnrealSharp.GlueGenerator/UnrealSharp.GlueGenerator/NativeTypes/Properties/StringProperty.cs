@@ -8,8 +8,8 @@ public record StringProperty : SimpleProperty
     
     static readonly FieldName DefaultFieldName = new FieldName("string");
 
-    public StringProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, PropertyType.String, outer)
+    public StringProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, PropertyType.String, outer)
     {
         
     }

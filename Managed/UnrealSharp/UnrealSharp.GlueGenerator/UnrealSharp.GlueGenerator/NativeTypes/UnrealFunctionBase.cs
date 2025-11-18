@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
@@ -75,9 +76,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
     public string SizeVariableName => $"{SourceName}_Size";
     public string FunctionNativePtr => $"{SourceName}Ptr";
 
-    public UnrealFunctionBase(SemanticModel model, ISymbol typeSymbol, MethodDeclarationSyntax syntax, UnrealType outer) : this(model, typeSymbol, syntax.ReturnType, syntax, syntax.ParameterList.Parameters, outer!)
+    public UnrealFunctionBase(SemanticModel model, IMethodSymbol typeSymbol, UnrealType outer) : this(model, typeSymbol, typeSymbol.ReturnType, typeSymbol.Parameters, outer!)
     {
-        IMethodSymbol methodSymbol = (IMethodSymbol) typeSymbol;
+        IMethodSymbol methodSymbol = typeSymbol;
         
         FunctionFlags |= methodSymbol.DeclaredAccessibility switch
         {
@@ -94,17 +95,10 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
     }
     
-    public UnrealFunctionBase(SemanticModel model, ISymbol typeSymbol, DelegateDeclarationSyntax syntax, UnrealType outer) : this(model, typeSymbol, syntax.ReturnType, syntax, syntax.ParameterList.Parameters, outer!)
+    public UnrealFunctionBase(SemanticModel model, ISymbol typeSymbol, ITypeSymbol returnType, ImmutableArray<IParameterSymbol> parameterList, UnrealType outer) : base(typeSymbol, outer)
     {
-        
-    }
-    
-    public UnrealFunctionBase(SemanticModel model, ISymbol typeSymbol, TypeSyntax returnType, SyntaxNode syntax, SeparatedSyntaxList<ParameterSyntax> parameterList, UnrealType outer) : base(typeSymbol, syntax, outer)
-    {
-        ITypeSymbol returnTypeSymbol = model.GetTypeInfo(returnType).Type!;
-
         bool hasOutParams = false;
-        if (returnTypeSymbol.Name == VoidProperty.VoidTypeName)
+        if (returnType.Name == VoidProperty.VoidTypeName)
         {
             ReturnType = new VoidProperty(this);
             ReturnValueType = ReturnValueType.Void;
@@ -117,53 +111,52 @@ public abstract record UnrealFunctionBase : UnrealStruct
                 INamedTypeSymbol taskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")!;
                 INamedTypeSymbol valueTaskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1")!;
                 
-                bool isValueTask = returnTypeSymbol.OriginalDefinition.Equals(valueTaskSymbol, SymbolEqualityComparer.Default);
-                bool isTask = returnTypeSymbol.OriginalDefinition.Equals(taskSymbol, SymbolEqualityComparer.Default);
+                bool isValueTask = returnType.OriginalDefinition.Equals(valueTaskSymbol, SymbolEqualityComparer.Default);
+                bool isTask = returnType.OriginalDefinition.Equals(taskSymbol, SymbolEqualityComparer.Default);
                 
                 if (isValueTask || isTask)
                 {
-                    ITypeSymbol taskReturnType = returnTypeSymbol is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1
+                    ITypeSymbol taskReturnType = returnType is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1
                         ? namedType.TypeArguments[0]
                         : model.Compilation.GetSpecialType(SpecialType.System_Void);
                     
                     returnValueSymbol = taskReturnType;
-                    returnTypeSymbol = taskReturnType;
+                    returnType = taskReturnType;
                     
                     ReturnValueType = isValueTask ? ReturnValueType.ValueTask : ReturnValueType.AsyncTask;
                 }
                 else
                 {
-                    returnValueSymbol = returnTypeSymbol;
+                    returnValueSymbol = returnType;
                     ReturnValueType = ReturnValueType.Value;
                 }
             }
             else
             {
-                returnValueSymbol = model.GetSymbolInfo(returnType).Symbol!;
+                returnValueSymbol = returnType;
                 ReturnValueType = ReturnValueType.Value;
             }
 
-            ReturnType = PropertyFactory.CreateProperty(returnTypeSymbol, returnType, returnValueSymbol, this);
+            ReturnType = PropertyFactory.CreateProperty(returnType, returnValueSymbol, this);
             ReturnType.SourceName = "ReturnValue";
             ReturnType.MakeReturnParameter();
             
             hasOutParams = true;
         }
 
-        if (parameterList.Count <= 0)
+        if (parameterList.Length <= 0)
         {
             return;
         }
         
-        List<UnrealProperty> parameters = new List<UnrealProperty>(parameterList.Count);
+        List<UnrealProperty> parameters = new List<UnrealProperty>(parameterList.Length);
         bool paramHasDefaults = false;
         
-        for (int i = 0; i < parameterList.Count; i++)
+        for (int i = 0; i < parameterList.Length; i++)
         {
-            ParameterSyntax parameterSyntax = parameterList[i];
-            IParameterSymbol parameterSymbol = model.GetDeclaredSymbol(parameterSyntax)!;
+            IParameterSymbol parameterSymbol = parameterList[i];
                 
-            UnrealProperty property = PropertyFactory.CreateProperty(parameterSymbol.Type, parameterSyntax, parameterSymbol, this);
+            UnrealProperty property = PropertyFactory.CreateProperty(parameterSymbol.Type, parameterSymbol, this);
             property.ReferenceKind = parameterSymbol.RefKind;
                 
             property.PropertyFlags |= EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
@@ -219,16 +212,15 @@ public abstract record UnrealFunctionBase : UnrealStruct
     }
 
     [Inspect("UnrealSharp.Attributes.UFunctionAttribute", "UFunctionAttribute")]
-    public static UnrealType? UFunctionAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, MemberDeclarationSyntax memberDeclaration, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UFunctionAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealClassBase unrealClass = (UnrealClassBase) outer!;
-        IMethodSymbol methodSymbol = (IMethodSymbol) ctx.SemanticModel.GetDeclaredSymbol(memberDeclaration)!;
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax) memberDeclaration;
+        IMethodSymbol methodSymbol = (IMethodSymbol) symbol;
 
         UnrealFunctionBase unrealFunction;
         if (methodSymbol.IsAsync)
         {
-            UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, methodDeclaration, outer!);
+            UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, outer!);
             unrealClass.AddAsyncFunction(asyncFunction);
             
             outer!.SourceGeneratorDependencies.List.Add(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
@@ -236,7 +228,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         else
         {
-            unrealFunction = new UnrealFunction(ctx.SemanticModel, methodSymbol, methodDeclaration, outer!);
+            unrealFunction = new UnrealFunction(ctx.SemanticModel, methodSymbol, outer!);
             unrealClass.AddFunction(unrealFunction);
         }
 
@@ -314,11 +306,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
         
         foreach (UnrealProperty parameter in Properties)
         {
-            builder.AppendLine($"{parameter.ManagedType} {parameter.SourceName} ");
-            parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, "= ");
+            builder.AppendLine();
+            parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{parameter.ManagedType} {parameter.SourceName} = ");
         }
-        
-        builder.AppendLine();
         
         if (HasReturnValue)
         {

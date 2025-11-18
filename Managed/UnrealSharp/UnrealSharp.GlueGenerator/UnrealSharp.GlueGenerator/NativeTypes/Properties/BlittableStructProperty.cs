@@ -5,8 +5,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record BlittableStructProperty : BlittableProperty
 {
-    public BlittableStructProperty(SyntaxNode syntaxNode, ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
-        : base(syntaxNode, memberSymbol, typeSymbol, propertyType, outer)
+    public BlittableStructProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer) 
+        : base(memberSymbol, typeSymbol, propertyType, outer)
     {
 
     }

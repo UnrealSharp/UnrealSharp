@@ -15,7 +15,7 @@ public abstract record UnrealClassBase : UnrealStruct
     
     public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
     
-    protected UnrealClassBase(ITypeSymbol typeSymbol, SyntaxNode syntax, UnrealType? outer = null) : base(typeSymbol, syntax, outer)
+    protected UnrealClassBase(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         if (typeSymbol.BaseType is not null)
         {

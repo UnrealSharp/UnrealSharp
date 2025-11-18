@@ -69,7 +69,7 @@ public static class StringBuilderExtensions
         builder.CloseBrace();
     }
     
-    public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, TypeKind typeKind, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
+    public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, TypeKind typeKind, string? modifiers = null, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
     {
         string typeKeyWord = typeKind switch
         {
@@ -79,10 +79,12 @@ public static class StringBuilderExtensions
             TypeKind.Interface => "interface",
             _ => throw new Exception("Unsupported type kind passed to BeginType" + typeKind)
         };
+
+        string protection = type.Protection.AccessibilityToString();
         
         string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
         builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.FullName}\")]");
-        builder.AppendLine($"public partial {typeKeyWord} {declarationName}");
+        builder.AppendLine($"{protection}partial {modifiers}{typeKeyWord} {declarationName}");
         
         if (!string.IsNullOrEmpty(baseType))
         {
