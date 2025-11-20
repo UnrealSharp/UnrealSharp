@@ -20,6 +20,19 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
         int delegateSignatureIndex = delegateName.IndexOf("__DelegateSignature", StringComparison.Ordinal);
         string strippedDelegateName = delegateName.Substring(0, delegateSignatureIndex);
         
+        // If delegate has an Outer (owner class/struct), add Outer name as prefix to delegate name
+        // This allows distinguishing delegates with same name but different owner classes (e.g., UComboBoxString::FOnSelectionChangedEvent vs UComboBoxKey::FOnSelectionChangedEvent)
+        if (function.Outer != null && function.Outer is not UhtPackage)
+        {
+            string outerName = function.Outer.SourceName;
+            // Remove common prefix to keep name concise
+            if (outerName.StartsWith("U") && outerName.Length > 1 && char.IsUpper(outerName[1]))
+            {
+                outerName = outerName.Substring(1);
+            }
+            strippedDelegateName = $"{outerName}_{strippedDelegateName}";
+        }
+        
         return wrapperName ? "U" + strippedDelegateName : strippedDelegateName;
     }
     

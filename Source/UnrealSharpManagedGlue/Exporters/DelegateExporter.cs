@@ -39,7 +39,10 @@ public static class DelegateExporter
         builder.CloseBrace();
         builder.CloseBrace();
         
-        FileExporter.SaveGlueToDisk(function, builder);
+        // Use modified delegate name (with Outer prefix) as file name to prevent same-named delegates from overwriting each other
+        string directory = FileExporter.GetDirectoryPath(function.Package);
+        string fileName = $"{delegateName}__DelegateSignature";
+        FileExporter.SaveGlueToDisk(function.Package, directory, fileName, builder.ToString());
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
