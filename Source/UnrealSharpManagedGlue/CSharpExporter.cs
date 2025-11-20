@@ -337,14 +337,20 @@ public static class CSharpExporter
                 return;
             }
 
-            // There are some duplicate delegates in the same modules, so we need to check if we already exported it
+            // Use full path (including Outer) as unique identifier to distinguish delegates with same name but different owner classes
+            // e.g., UComboBoxString::OnSelectionChangedEvent vs UComboBoxKey::OnSelectionChangedEvent
+            string outerName = delegateFunction.Outer != null ? delegateFunction.Outer.SourceName : "";
             string delegateName = DelegateBasePropertyTranslator.GetFullDelegateName(delegateFunction);
-            if (ExportedDelegates.Contains(delegateName))
+            string uniqueDelegateKey = !string.IsNullOrEmpty(outerName) 
+                ? $"{outerName}.{delegateName}" 
+                : delegateName;
+            
+            if (ExportedDelegates.Contains(uniqueDelegateKey))
             {
                 return;
             }
 
-            ExportedDelegates.Add(delegateName);
+            ExportedDelegates.Add(uniqueDelegateKey);
             Tasks.Add(Program.Factory.CreateTask(_ => { DelegateExporter.ExportDelegate(delegateFunction); })!);
         }
     }

@@ -620,7 +620,8 @@ public class FunctionExporter
         exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder();
-        attributeBuilder.AddGeneratedTypeAttribute(function);
+        // Use specialized delegate attribute method with modified C# delegate name (including Outer prefix)
+        attributeBuilder.AddGeneratedDelegateTypeAttribute(function, delegateName);
         
         if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
         {
