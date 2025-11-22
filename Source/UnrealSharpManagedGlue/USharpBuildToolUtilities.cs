@@ -119,6 +119,8 @@ public static class USharpBuildToolUtilities
         Collection<string> arguments = new Collection<string>
         {
             "build",
+            "-v",
+            "diag"
         };
         
         if (!DotNetUtilities.InvokeDotNet(arguments, uSharpBuildToolDirectory))

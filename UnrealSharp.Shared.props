@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <OutputPath>$(UnrealSharpPluginDir)..\..\Binaries\Managed</OutputPath>
 
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
 
     <DefineConstants>WITH_EDITOR</DefineConstants>
     <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">

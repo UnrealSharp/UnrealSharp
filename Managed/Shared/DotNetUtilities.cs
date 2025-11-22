@@ -10,7 +10,7 @@ namespace UnrealSharp.Shared;
 
 public static class DotNetUtilities
 {
-	public const string DOTNET_MAJOR_VERSION = "10.0";
+	public const string DOTNET_MAJOR_VERSION = "9.0";
 	public const string DOTNET_MAJOR_VERSION_DISPLAY = "net" + DOTNET_MAJOR_VERSION;
 
     public static string FindDotNetExecutable()
@@ -66,9 +66,9 @@ public static class DotNetUtilities
 
 	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
 
-	    Version defaultVersion = new Version(0,0);
-	    Version highest = defaultVersion;
-
+	    string? versionName = null;
+	    Version latestVersion = new Version(0, 0);
+	    
 	    foreach (string folderPath in folderPaths)
 	    {
 		    string folderName = Path.GetFileName(folderPath);
@@ -78,22 +78,19 @@ public static class DotNetUtilities
 			    continue;
 		    }
 		    
-		    if (version > highest)
+		    string versionString = version.ToString();
+		    if (!versionString.StartsWith(DOTNET_MAJOR_VERSION) || version <= latestVersion)
 		    {
-			    highest = version;
+			    continue;
 		    }
+		    
+		    latestVersion = version;
+		    versionName = folderName;
 	    }
 	    
-	    string versionName = highest.ToString();
-
-	    if (highest == defaultVersion)
+	    if (versionName == null)
 	    {
-		    throw new Exception("Failed to find the latest .NET SDK version.");
-	    }
-
-	    if (!versionName.StartsWith(DOTNET_MAJOR_VERSION))
-	    {
-		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {versionName}");
+		    throw new Exception($"Couldn't find .NET SDK version starting with {DOTNET_MAJOR_VERSION} in {dotNetSdkDirectory}");
 	    }
 
 	    return Path.Combine(dotNetSdkDirectory, versionName);
