@@ -77,20 +77,14 @@ bool UCSManagedAssembly::UnloadManagedAssembly()
 		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", *AssemblyName.ToString());
 		return true;
 	}
-
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::UnloadManagedAssembly: " + AssemblyName.ToString())));
-
-	FGCHandleIntPtr AssemblyHandle = AssemblyGCHandle->GetHandle();
-	for (TSharedPtr<FGCHandle> Handle : AllocatedGCHandles)
+	
+	for (TSharedPtr<FGCHandle>& GCHandle : AllocatedGCHandles)
 	{
-		Handle->Dispose(AssemblyHandle);
+		GCHandle->Invalidate();
 	}
 
 	ManagedTypeGCHandles.Reset();
 	AllocatedGCHandles.Reset();
-
-	// Don't need the assembly handle anymore, we use the path to unload the assembly.
-	AssemblyGCHandle->Dispose(AssemblyGCHandle->GetHandle());
 	AssemblyGCHandle.Reset();
 
     UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(this);
@@ -200,7 +194,6 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 	else
 	{
 		ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromReflectionData(ReflectionData, this, BuilderClass->GetDefaultObject<UCSManagedTypeCompiler>());
-		DefinedManagedTypes.Add(FieldName, ManagedTypeDefinition);
 	}
 
 	ManagedTypeDefinition->SetTypeGCHandle(TypeHandle);

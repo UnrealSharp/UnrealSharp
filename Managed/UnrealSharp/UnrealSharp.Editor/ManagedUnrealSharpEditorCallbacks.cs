@@ -50,9 +50,9 @@ public static class ManagedUnrealSharpEditorCallbacks
     [UnmanagedCallersOnly]
     public static void ForceManagedGc()
     {
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+        GC.Collect();
         GC.WaitForPendingFinalizers();
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
     }
 
     [UnmanagedCallersOnly]

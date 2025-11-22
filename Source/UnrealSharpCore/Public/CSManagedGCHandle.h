@@ -53,6 +53,12 @@ struct FGCHandle
 		Handle.IntPtr = nullptr;
 		Type = GCHandleType::Null;
 	}
+	
+	void Invalidate()
+	{
+		Handle.IntPtr = nullptr;
+		Type = GCHandleType::Null;
+	}
 
 	void operator = (const FGCHandle& Other)
 	{
