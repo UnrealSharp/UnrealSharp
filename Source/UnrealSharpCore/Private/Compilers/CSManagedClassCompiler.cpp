@@ -60,7 +60,7 @@ void UCSManagedClassCompiler::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassR
 		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(ClassReflectionData->FieldName);
 		UPackage* Package = ClassReflectionData->GetAsPackage();
 	
-		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted | RF_Transient);
+		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted);
 		Blueprint->GeneratedClass = Field;
 
 		Blueprint->Status = BS_UpToDate;
