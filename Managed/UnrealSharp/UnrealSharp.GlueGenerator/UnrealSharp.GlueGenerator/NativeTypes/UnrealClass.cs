@@ -194,7 +194,6 @@ public record UnrealClass : UnrealClassBase
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         builder.BeginType(this, TypeKind.Class);
-        builder.AppendLine($"public new static TSubclassOf<{SourceName}> StaticClass => SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr});");
         
         TryExportProperties(builder, spc);
         TryExportList(builder, spc, Functions);

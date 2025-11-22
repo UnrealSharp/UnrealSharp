@@ -482,8 +482,14 @@ UCSManagedAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyNam
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 {
-	Class = FCSClassUtilities::GetFirstNativeClass(Class);
-	return FindOwningAssemblyGeneric<UClass, UBlueprintGeneratedClass>(Class);
+	UClass* FirstNonBlueprintClass = FCSClassUtilities::GetFirstNonBlueprintClass(Class);
+	
+	if (ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(FirstNonBlueprintClass))
+	{
+		return ManagedType->GetOwningAssembly();
+	}
+	
+	return FindOwningAssemblyGeneric<UClass, UBlueprintGeneratedClass>(FirstNonBlueprintClass);
 }
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UScriptStruct* Struct)

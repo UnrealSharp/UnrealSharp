@@ -220,12 +220,6 @@ public class GeneratorStringBuilder : IDisposable
     public void AppendNativeTypePtr(UhtStruct structType)
     {
         AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
-        
-        if (structType is UhtClass)
-        {
-            string structName = structType.GetStructName();
-            AppendLine($"public new static TSubclassOf<{structName}> StaticClass => SubclassOfMarshaller<{structName}>.FromNative(NativeClassPtr);");
-        }
     }
     
     public void AppendStackAlloc(string sizeVariableName)
