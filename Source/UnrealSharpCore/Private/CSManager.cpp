@@ -124,7 +124,7 @@ bool UCSManager::IsLoadingAnyAssembly() const
 	return false;
 }
 
-void UCSManager::AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> SubsystemClass)
+void UCSManager::ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass)
 {
 	if (!IsValid(SubsystemClass))
 	{
@@ -132,12 +132,12 @@ void UCSManager::AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> Subsyst
 		return;
 	}
 
-	if (!PendingDynamicSubsystemClasses.Contains(SubsystemClass))
+	if (!PendingSubsystems.Contains(SubsystemClass))
 	{
-		PendingDynamicSubsystemClasses.Add(SubsystemClass);
+		PendingSubsystems.Add(SubsystemClass);
 	}
 
-	TryInitializeDynamicSubsystems();
+	InitializeSubsystems();
 }
 
 void UCSManager::Initialize()
@@ -314,43 +314,33 @@ void UCSManager::OnModulesChanged(FName InModuleName, EModuleChangeReason InModu
 		return;
 	}
 
-	TryInitializeDynamicSubsystems();
+	InitializeSubsystems();
 }
 
-void UCSManager::TryInitializeDynamicSubsystems()
+void UCSManager::InitializeSubsystems()
 {
-	// Try to activate Editor/EngineSubsystems
-	for (int32 i = PendingDynamicSubsystemClasses.Num() - 1; i >= 0; --i)
+	for (int32 i = PendingSubsystems.Num() - 1; i >= 0; --i)
 	{
-		TSubclassOf<UDynamicSubsystem> SubsystemClass = PendingDynamicSubsystemClasses[i];
+		TSubclassOf<USubsystem> SubsystemClass = PendingSubsystems[i];
+		
 		if (!IsValid(SubsystemClass))
 		{
-			UE_LOG(LogUnrealSharp, Warning, TEXT("Tried to activate an invalid dynamic subsystem class"));
-			PendingDynamicSubsystemClasses.RemoveAt(i);
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Tried to activate an invalid subsystem class"));
+			PendingSubsystems.RemoveAt(i);
 			continue;
 		}
 
 		FSubsystemCollectionBase::ActivateExternalSubsystem(SubsystemClass);
-
-		// Unfortunately no better way to check if the subsystems actually registered.
+		
+		TArray<UObject*> FoundSubsystems;
+		GetObjectsOfClass(SubsystemClass, FoundSubsystems);
+		
+		if (FoundSubsystems.IsEmpty())
 		{
-			if (SubsystemClass->IsChildOf(UEngineSubsystem::StaticClass()))
-			{
-				if (IsValid(GEngine) && GEngine->GetEngineSubsystemBase(SubsystemClass.Get()))
-				{
-					PendingDynamicSubsystemClasses.RemoveAt(i);
-				}
-			}
-#if WITH_EDITOR
-			else if (SubsystemClass->IsChildOf(UEditorSubsystem::StaticClass()))
-			{
-				if (IsValid(GEditor) && GEditor->GetEditorSubsystemBase(SubsystemClass.Get()))
-				{
-					PendingDynamicSubsystemClasses.RemoveAt(i);
-				}
-			}
-#endif
+			continue;
 		}
+		
+		PendingSubsystems.RemoveAt(i);
 	}
 }
 

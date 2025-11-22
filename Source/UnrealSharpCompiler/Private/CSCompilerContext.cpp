@@ -54,7 +54,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 	UCSClass* MainClass = GetMainClass();
 	if (MainClass == NewClass)
 	{
-		UCSManagedClassCompiler::TryRegisterDynamicSubsystem(NewClass);
+		UCSManagedClassCompiler::ActivateSubsystem(NewClass);
 
 		if (GEditor)
 		{

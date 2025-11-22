@@ -23,8 +23,8 @@ public:
 	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
 	static void SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class);
 
-	static void TryRegisterDynamicSubsystem(UClass* ManagedClass);
-	static void TryUnregisterDynamicSubsystem(UClass* ManagedClass);
+	static void ActivateSubsystem(TSubclassOf<USubsystem> SubsystemClass);
+	static void DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass);
 
 private:
 #if WITH_EDITOR

@@ -43,7 +43,7 @@ void UCSManagedClassCompiler::Recompile(UField* TypeToRecompile, const TSharedPt
 		CompileClass(ClassReflectionData, Field, NewSuperClass);
 	}
 	
-	TryUnregisterDynamicSubsystem(Field);
+	DeactivateSubsystem(Field);
 	UCSManager::Get().OnNewClassEvent().Broadcast(Field);
 #else
 	CompileClass(ClassReflectionData, Field, NewSuperClass);
@@ -125,7 +125,7 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 	Field->UpdateCustomPropertyListForPostConstruction();
 
 	RegisterFieldToLoader(Field, ENotifyRegistrationType::NRT_Class);
-	TryRegisterDynamicSubsystem(Field);
+	ActivateSubsystem(Field);
 }
 
 UClass* UCSManagedClassCompiler::TryRedirectSuperClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UClass* CurrentSuperClass) const
@@ -218,25 +218,24 @@ void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TA
 	}
 }
 
-void UCSManagedClassCompiler::TryRegisterDynamicSubsystem(UClass* ManagedClass)
+void UCSManagedClassCompiler::ActivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)
 {
-	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
+	if (!SubsystemClass->IsChildOf<USubsystem>())
 	{
 		return;
 	}
-
-	UCSManager::Get().AddDynamicSubsystemClass(ManagedClass);
+	
+	UCSManager::Get().ActivateSubsystemClass(SubsystemClass);
 }
 
-void UCSManagedClassCompiler::TryUnregisterDynamicSubsystem(UClass* ManagedClass)
+void UCSManagedClassCompiler::DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)
 {
-	if (!ManagedClass->IsChildOf<UDynamicSubsystem>())
+	if (!SubsystemClass->IsChildOf<USubsystem>())
 	{
 		return;
 	}
-
-	// Remove lingering subsystems from hot reload.
-	FSubsystemCollectionBase::DeactivateExternalSubsystem(ManagedClass);
+	
+	FSubsystemCollectionBase::DeactivateExternalSubsystem(SubsystemClass);
 }
 
 void UCSManagedClassCompiler::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)

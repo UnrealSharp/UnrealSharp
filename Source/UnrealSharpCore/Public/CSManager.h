@@ -131,7 +131,7 @@ public:
 
 	bool IsLoadingAnyAssembly() const;
 
-	void AddDynamicSubsystemClass(TSubclassOf<UDynamicSubsystem> SubsystemClass);
+	void ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass);
 
 private:
 
@@ -154,7 +154,7 @@ private:
 	// End of interface
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
-	void TryInitializeDynamicSubsystems();
+	void InitializeSubsystems();
 
 	template<typename T, typename TUserDefined>
 	UCSManagedAssembly* FindOwningAssemblyGeneric(T* Object)
@@ -194,7 +194,7 @@ private:
 	TObjectPtr<UPackage> GlobalManagedPackage;
 
 	UPROPERTY(Transient)
-	TArray<TSubclassOf<UDynamicSubsystem>> PendingDynamicSubsystemClasses;
+	TArray<TSubclassOf<USubsystem>> PendingSubsystems;
 
 	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
