@@ -78,13 +78,17 @@ bool UCSManagedAssembly::UnloadManagedAssembly()
 		return true;
 	}
 	
-	for (TSharedPtr<FGCHandle>& GCHandle : AllocatedGCHandles)
+	FGCHandleIntPtr AssemblyHandle = AssemblyGCHandle->GetHandle();
+	for (TSharedPtr<FGCHandle>& Handle : AllocatedGCHandles)
 	{
-		GCHandle->Invalidate();
+		Handle->Dispose(AssemblyHandle);
 	}
 
 	ManagedTypeGCHandles.Reset();
 	AllocatedGCHandles.Reset();
+
+	// Don't need the assembly handle anymore, we use the path to unload the assembly.
+	AssemblyGCHandle->Dispose(AssemblyGCHandle->GetHandle());
 	AssemblyGCHandle.Reset();
 
     UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(this);

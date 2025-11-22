@@ -2,6 +2,7 @@
 using System.Runtime.Loader;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
+using UnrealSharp.Log;
 
 namespace UnrealSharp.Plugins;
 
@@ -21,6 +22,7 @@ public class PluginLoadContext : AssemblyLoadContext
         AddAssembly(typeof(NativeBinds).Assembly);
         AddAssembly(typeof(UnrealSharpObject).Assembly);
         AddAssembly(typeof(UnrealSharpModule).Assembly);
+        AddAssembly(typeof(CustomLog).Assembly);
     }
     
     public static void AddAssembly(Assembly assembly)

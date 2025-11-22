@@ -69,7 +69,7 @@ void FUnrealSharpEditorModule::StartupModule()
     RegisterPluginTemplates();
 
 	UCSManager& CSharpManager = UCSManager::Get();
-	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"));
+	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"), false);
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
