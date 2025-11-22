@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Loader;
 using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
@@ -83,51 +85,57 @@ public static class PluginLoader
 
     public static bool UnloadPlugin(string assemblyPath)
     {
-        string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-        WeakReference? assemblyLoadContext = RemovePlugin(assemblyName);
+        const int warnThresholdMs = 200;
+        const int timeoutMs = 2000;
         
-        if (assemblyLoadContext == null)
+        string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
+        WeakReference? alcWeak = RemovePlugin(assemblyName);
+
+        if (alcWeak == null)
         {
-            LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is not loaded or already unloaded.");
+            LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is not loaded or already removed from registry.");
             return true;
         }
-        
+
         try
         {
             LogUnrealSharpPlugins.Log($"Unloading plugin {assemblyName}...");
 
-            int startTimeMs = Environment.TickCount;
-            bool takingTooLong = false;
+            Stopwatch stopWatch = Stopwatch.StartNew();
+            bool hasWarned = false;
 
-            while (assemblyLoadContext.IsAlive)
+            while (alcWeak.IsAlive)
             {
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+                GC.Collect();
                 GC.WaitForPendingFinalizers();
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
 
-                if (!assemblyLoadContext.IsAlive)
+                if (!alcWeak.IsAlive)
                 {
                     break;
                 }
-
-                int elapsedTimeMs = Environment.TickCount - startTimeMs;
                 
-                if (!takingTooLong && elapsedTimeMs >= 200)
+                if (!hasWarned && stopWatch.ElapsedMilliseconds >= warnThresholdMs)
                 {
-                    takingTooLong = true;
+                    hasWarned = true;
                     LogUnrealSharpPlugins.LogError($"Unloading {assemblyName} is taking longer than expected...");
                 }
-                else if (elapsedTimeMs >= 1000)
+
+                if (stopWatch.ElapsedMilliseconds >= timeoutMs)
                 {
-                    throw new InvalidOperationException($"Failed to unload {assemblyName}. Possible causes: Strong GC handles, running threads, etc.");
+                    LogUnrealSharpPlugins.LogError($"Failed to unload {assemblyName} within {timeoutMs}ms. Common causes: static references, GCHandles, background threads.");
+                    return false;
                 }
+                
+                Thread.Sleep(10);
             }
 
-            LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully!");
+            LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully in {stopWatch.ElapsedMilliseconds}ms.");
             return true;
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            LogUnrealSharpPlugins.LogError($"An error occurred while unloading the plugin: {e.Message}");
+            LogUnrealSharpPlugins.LogError($"An error occurred while unloading the plugin: {exception}");
             return false;
         }
     }
