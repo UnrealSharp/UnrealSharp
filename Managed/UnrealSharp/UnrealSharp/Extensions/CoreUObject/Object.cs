@@ -76,7 +76,7 @@ public partial class UObject
             }
 
             IntPtr worldGcHandle = UObjectExporter.CallGetWorld_Internal(NativeObject);
-            return ReflectionHelper.GetObjectFromPointer<UWorld>(worldGcHandle)!;
+            return GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldGcHandle)!;
         }
     }
 
@@ -690,12 +690,5 @@ internal static class ReflectionHelper
     internal static IntPtr TryGetNativeClassDefaults(this Type type)
     {
         return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
-    }
-    
-    internal static T? GetObjectFromPointer<T>(IntPtr ptr) where T : UnrealSharpObject
-    {
-        IntPtr gcHandlePtr = FCSManagerExporter.CallFindManagedObject(ptr);
-        T? foundObject = GCHandleUtilities.GetObjectFromHandlePtr<T>(gcHandlePtr);
-        return foundObject;
     }
 }
