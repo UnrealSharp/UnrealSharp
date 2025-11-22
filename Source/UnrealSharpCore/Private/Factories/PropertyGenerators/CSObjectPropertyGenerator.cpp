@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSObjectPropertyGenerator.h"
-#include "MetaData/CSDefaultComponentMetaData.h"
-#include "MetaData/CSTemplateType.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSDefaultComponentType.h"
+#include "ReflectionData/CSTemplateType.h"
+#include "ReflectionData/CSFieldType.h"
 
 UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -14,29 +14,29 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::DefaultComponent , FObjectProperty::StaticClass() }
 	};
 
-	REGISTER_METADATA(ECSPropertyType::Object, FCSFieldTypePropertyMetaData)
-	REGISTER_METADATA(ECSPropertyType::WeakObject, FCSTemplateType)
-	REGISTER_METADATA(ECSPropertyType::SoftObject, FCSTemplateType)
-	REGISTER_METADATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentMetaData)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::Object, FCSFieldType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::WeakObject, FCSTemplateType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::SoftObject, FCSTemplateType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::DefaultComponent, FCSDefaultComponentType)
 }
 
-FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FObjectProperty* ObjectProperty = NewProperty<FObjectProperty>(Outer, PropertyMetaData, GetFieldClassForType(PropertyMetaData));
-	ECSPropertyType PropertyType = PropertyMetaData.Type->PropertyType;
+	FObjectProperty* ObjectProperty = NewProperty<FObjectProperty>(Outer, PropertyReflectionData, GetFieldClassForType(PropertyReflectionData));
+	ECSPropertyType PropertyType = PropertyReflectionData.InnerType->PropertyType;
 
 	UClass* Class;
 	if (PropertyType == ECSPropertyType::WeakObject || PropertyType == ECSPropertyType::SoftObject)
 	{
-		TSharedPtr<FCSTemplateType> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
-		const FCSPropertyMetaData* TemplateMetaData = ObjectMetaData->GetTemplateArgument(0);
-		TSharedPtr<FCSFieldTypePropertyMetaData> InnerTypeMetaData = TemplateMetaData->GetTypeMetaData<FCSFieldTypePropertyMetaData>();
-		Class = InnerTypeMetaData->InnerType.GetAsClass();
+		TSharedPtr<FCSTemplateType> TemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
+		const FCSPropertyReflectionData* ArgumentReflectionData = TemplateType->GetTemplateArgument(0);
+		TSharedPtr<FCSFieldType> FieldType = ArgumentReflectionData->GetInnerTypeData<FCSFieldType>();
+		Class = FieldType->InnerType.GetAsClass();
 	}
 	else
 	{
-		TSharedPtr<FCSFieldTypePropertyMetaData> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
-		Class = ObjectMetaData->InnerType.GetAsClass();
+		TSharedPtr<FCSFieldType> FieldType = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
+		Class = FieldType->InnerType.GetAsClass();
 	}
 	
 	ObjectProperty->SetPropertyClass(Class);

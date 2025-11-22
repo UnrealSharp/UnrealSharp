@@ -83,22 +83,22 @@ FGCHandleIntPtr UUScriptStructExporter::GetManagedStructType(UScriptStruct *Scri
 {
     if (const UCSScriptStruct* CSStruct = Cast<UCSScriptStruct>(ScriptStruct); CSStruct != nullptr)
     {
-        return CSStruct->GetManagedTypeInfo()->GetTypeHandle()->GetHandle();
+        return CSStruct->GetManagedTypeDefinition()->GetTypeGCHandle()->GetHandle();
     }
 
-    const UCSAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptStruct);
+    const UCSManagedAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptStruct);
     if (Assembly == nullptr)
     {
         return FGCHandleIntPtr();
     }
 
     const FCSFieldName FieldName(ScriptStruct);
-    const TSharedPtr<FCSManagedTypeInfo> Info = Assembly->FindTypeInfo(FieldName);
+    const TSharedPtr<FCSManagedTypeDefinition> Info = Assembly->FindManagedTypeDefinition(FieldName);
     if (!Info.IsValid())
     {
         return FGCHandleIntPtr();
     }
 
-    return Info->GetTypeHandle()->GetHandle();   
+    return Info->GetTypeGCHandle()->GetHandle();   
 }
 

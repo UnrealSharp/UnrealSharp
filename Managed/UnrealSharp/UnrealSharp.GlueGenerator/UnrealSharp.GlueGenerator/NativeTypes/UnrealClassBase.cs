@@ -28,7 +28,7 @@ public abstract record UnrealClassBase : UnrealStruct
     {
         ParentClass = new FieldName(parentName, parentNamespace, assemblyName);
     }
-    
+
     public void AddFunction(UnrealFunctionBase function)
     {
         Functions.List.Add(function);

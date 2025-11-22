@@ -4,8 +4,8 @@
 #include "CSBlueprintCompiler.h"
 #include "Modules/ModuleManager.h"
 
-class UCSAssembly;
-struct FCSManagedTypeInfo;
+class UCSManagedAssembly;
+struct FCSManagedTypeDefinition;
 class UCSInterface;
 struct FCSManagedReferencesCollection;
 class UCSEnum;
@@ -26,9 +26,9 @@ private:
     void OnNewEnum(UCSEnum* NewEnum);
     void OnNewInterface(UCSInterface* NewInterface);
 
-    void OnTypeInfoStructureChanged(TSharedPtr<FCSManagedTypeInfo> ChangedTypeInfo);
+    void OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
     
-    void OnManagedAssemblyLoaded(const UCSAssembly* Assembly);
+    void OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();
 
     void AddManagedReferences(FCSManagedReferencesCollection& Collection);

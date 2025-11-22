@@ -1,8 +1,8 @@
 #pragma once
 
-#include "MetaData/CSMetaDataBase.h"
+#include "ReflectionData/CSReflectionDataBase.h"
 
-struct FCSNamespace : FCSMetaDataBase
+struct FCSNamespace : FCSReflectionDataBase
 {
 	FCSNamespace(FName InNamespace = NAME_None) : Namespace(InNamespace)
 	{
@@ -43,9 +43,9 @@ struct FCSNamespace : FCSMetaDataBase
 		return GetTypeHash(InNamespace.Namespace);
 	}
 
-	// FCSMetaDataBase interface
+	// FCSReflectionDataBase interface
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
-	// End of FCSMetaDataBase interface
+	// End of FCSReflectionDataBase interface
 
 private:
 	FName Namespace;

@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "Types/CSSkeletonClass.h"
 #include "Functions/CSFunction.h"
-#include "MetaData/CSPropertyType.h"
+#include "ReflectionData/CSPropertyType.h"
 #include "Properties/CSPropertyGeneratorManager.h"
 
 #if WITH_EDITOR
@@ -26,7 +26,7 @@ bool UCSPropertyGenerator::SupportsPropertyType(ECSPropertyType InPropertyType) 
 	return PropertyType == InPropertyType;
 }
 
-TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
 	PURE_VIRTUAL();
 	return nullptr;
@@ -53,14 +53,14 @@ bool UCSPropertyGenerator::CanBeHashed(const FProperty* InParam)
 	return true;
 }
 
-FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData, const FFieldClass* FieldClass)
+FProperty* UCSPropertyGenerator::NewProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData, const FFieldClass* FieldClass)
 {
 	if (FieldClass == nullptr)
 	{
 		FieldClass = GetPropertyClass();
 	}
 
-	return FCSPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyMetaData.GetName(), PropertyMetaData);
+	return FCSPropertyGeneratorManager::Get().ConstructProperty(FieldClass, Outer, PropertyReflectionData.GetName(), PropertyReflectionData);
 }
 
 UClass* UCSPropertyGenerator::TryFindingOwningClass(UField* Outer)

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ManagedReferencesCollection.h"
-#include "TypeInfo/CSManagedTypeInfo.h"
+#include "CSManagedTypeDefinition.h"
 #include "UObject/Interface.h"
 #include "CSManagedTypeInterface.generated.h"
 
@@ -18,32 +18,32 @@ class UNREALSHARPCORE_API ICSManagedTypeInterface
 {
 	GENERATED_BODY()
 public:
-	void SetTypeInfo(const TSharedPtr<FCSManagedTypeInfo>& InTypeMetaData)
+	void SetManagedTypeDefinition(const TSharedPtr<FCSManagedTypeDefinition>& InManagedTypeDefinition)
 	{
-		ManagedTypeInfo = InTypeMetaData;
+		ManagedTypeDefinition = InManagedTypeDefinition;
 	}
 
-	bool HasTypeInfo() const
+	bool HasManagedTypeDefinition() const
 	{
-		return ManagedTypeInfo.IsValid();
+		return ManagedTypeDefinition.IsValid();
 	}
 	
-	TSharedPtr<FCSManagedTypeInfo> GetManagedTypeInfo() const
+	TSharedPtr<FCSManagedTypeDefinition> GetManagedTypeDefinition() const
 	{
-		ensureMsgf(ManagedTypeInfo.IsValid(), TEXT("ManagedTypeInfo is not set. Call SetTypeMetaData() first."));
-		return ManagedTypeInfo;
+		ensureMsgf(ManagedTypeDefinition.IsValid(), TEXT("ManagedTypeDefinition is not set. Call SetManagedTypeDefinition() first."));
+		return ManagedTypeDefinition;
 	}
 
-	template<typename TMetaData = FCSTypeReferenceMetaData>
-	TSharedPtr<TMetaData> GetMetaData() const
+	template<typename TReflectionData = FCSTypeReferenceReflectionData>
+	TSharedPtr<TReflectionData> GetReflectionData() const
 	{
-		return ManagedTypeInfo->GetMetaData<TMetaData>();
+		return ManagedTypeDefinition->GetReflectionData<TReflectionData>();
 	}
 
-	UCSAssembly* GetOwningAssembly() const
+	UCSManagedAssembly* GetOwningAssembly() const
 	{
-		ensureMsgf(ManagedTypeInfo.IsValid(), TEXT("ManagedTypeInfo is not set. Call SetTypeMetaData() first."));
-		return ManagedTypeInfo->GetOwningAssembly();
+		ensureMsgf(ManagedTypeDefinition.IsValid(), TEXT("ManagedTypeDefinition is not set. Call SetManagedTypeDefinition() first."));
+		return ManagedTypeDefinition->GetOwningAssembly();
 	}
 
 #if WITH_EDITOR
@@ -51,7 +51,7 @@ public:
 #endif
 	
 private:
-	TSharedPtr<FCSManagedTypeInfo> ManagedTypeInfo;
+	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition;
 #if WITH_EDITORONLY_DATA
 	FCSManagedReferencesCollection ManagedReferences;
 #endif

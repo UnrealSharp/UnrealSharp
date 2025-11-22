@@ -1,21 +1,21 @@
 #include "Factories/PropertyGenerators/CSSoftClassPropertyGenerator.h"
-#include "MetaData/CSTemplateType.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSTemplateType.h"
+#include "ReflectionData/CSFieldType.h"
 
-FProperty* UCSSoftClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSSoftClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FSoftClassProperty* SoftClassProperty = NewProperty<FSoftClassProperty>(Outer, PropertyMetaData);
-	TSharedPtr<FCSTemplateType> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
+	FSoftClassProperty* SoftClassProperty = NewProperty<FSoftClassProperty>(Outer, PropertyReflectionData);
+	TSharedPtr<FCSTemplateType> TemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
 	
-	const FCSPropertyMetaData* TemplateMetaData = ObjectMetaData->GetTemplateArgument(0);
-	TSharedPtr<FCSFieldTypePropertyMetaData> InnerTypeMetaData = TemplateMetaData->GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	const FCSPropertyReflectionData* TemplateMetaData = TemplateType->GetTemplateArgument(0);
+	TSharedPtr<FCSFieldType> FieldType = TemplateMetaData->GetInnerTypeData<FCSFieldType>();
 	
 	SoftClassProperty->PropertyClass = UClass::StaticClass();
-	SoftClassProperty->SetMetaClass(InnerTypeMetaData->InnerType.GetAsClass());
+	SoftClassProperty->SetMetaClass(FieldType->InnerType.GetAsClass());
 	return SoftClassProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSSoftClassPropertyGenerator::CreateTypeMetaData(
+TSharedPtr<FCSUnrealType> UCSSoftClassPropertyGenerator::CreatePropertyInnerTypeData(
 	ECSPropertyType PropertyType)
 {
 	return MakeShared<FCSTemplateType>();

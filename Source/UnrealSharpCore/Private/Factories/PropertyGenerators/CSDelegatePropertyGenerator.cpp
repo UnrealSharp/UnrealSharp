@@ -1,7 +1,7 @@
 #include "Factories/PropertyGenerators/CSDelegatePropertyGenerator.h"
 
-#include "MetaData/CSTemplateType.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSTemplateType.h"
+#include "ReflectionData/CSFieldType.h"
 
 UCSDelegatePropertyGenerator::UCSDelegatePropertyGenerator(FObjectInitializer const& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -13,25 +13,25 @@ UCSDelegatePropertyGenerator::UCSDelegatePropertyGenerator(FObjectInitializer co
 		{ ECSPropertyType::DelegateSignature, FDelegateProperty::StaticClass() }
 	};
 
-	REGISTER_METADATA(ECSPropertyType::Delegate, FCSTemplateType)
-	REGISTER_METADATA(ECSPropertyType::MulticastInlineDelegate, FCSTemplateType)
-	REGISTER_METADATA(ECSPropertyType::MulticastSparseDelegate, FCSTemplateType)
-	REGISTER_METADATA(ECSPropertyType::DelegateSignature, FCSFieldTypePropertyMetaData)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::Delegate, FCSTemplateType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::MulticastInlineDelegate, FCSTemplateType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::MulticastSparseDelegate, FCSTemplateType)
+	REGISTER_REFLECTION_DATA(ECSPropertyType::DelegateSignature, FCSFieldType)
 }
 
-FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FDelegateProperty* DelegateProperty = NewProperty<FDelegateProperty>(Outer, PropertyMetaData, GetFieldClassForType(PropertyMetaData));
-	TSharedPtr<FCSTemplateType> DelegateMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
+	FDelegateProperty* DelegateProperty = NewProperty<FDelegateProperty>(Outer, PropertyReflectionData, GetFieldClassForType(PropertyReflectionData));
+	TSharedPtr<FCSTemplateType> TemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
 	
-	const FCSPropertyMetaData* InnerTypeMetaData = DelegateMetaData->GetTemplateArgument(0);
-	TSharedPtr<FCSFieldTypePropertyMetaData> InnerFieldTypeMetaData = InnerTypeMetaData->GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	const FCSPropertyReflectionData* InnerType = TemplateType->GetTemplateArgument(0);
+	TSharedPtr<FCSFieldType> FieldType = InnerType->GetInnerTypeData<FCSFieldType>();
 	
-	DelegateProperty->SignatureFunction = InnerFieldTypeMetaData->InnerType.GetAsDelegate();
+	DelegateProperty->SignatureFunction = FieldType->InnerType.GetAsDelegate();
 
 	if (!IsValid(DelegateProperty->SignatureFunction))
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Failed to get delegate signature function for delegate property '{0}'", *PropertyMetaData.FieldName.GetFullName().ToString());
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to get delegate signature function for delegate property '{0}'", *PropertyReflectionData.FieldName.GetFullName().ToString());
 		return nullptr;
 	}
 	

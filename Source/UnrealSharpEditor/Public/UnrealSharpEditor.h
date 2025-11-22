@@ -8,7 +8,7 @@
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #endif
 
-class UCSAssembly;
+class UCSManagedAssembly;
 struct FPluginTemplateDescription;
 enum ECSLoggerVerbosity : uint8;
 class UCSInterface;
@@ -33,25 +33,28 @@ enum HotReloadStatus
 
 struct FCSManagedUnrealSharpEditorCallbacks
 {
-    FCSManagedUnrealSharpEditorCallbacks() : RunGeneratorsAndEmitAsync(nullptr), ForceManagedGC(nullptr), OpenSolution(nullptr), LoadSolution(nullptr)
-    {
-    }
-
-    using FRunGeneratorsAndEmitAsync = bool(__stdcall*)(void*);
-    using FDirtyFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
+    FCSManagedUnrealSharpEditorCallbacks() = default;
+    
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*);
+    using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
+    using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
+    
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
     using FGetDependentProjects = void(__stdcall*)(const TCHAR*, TArray<FString>*);
 
-    FRunGeneratorsAndEmitAsync RunGeneratorsAndEmitAsync;
-    FDirtyFile DirtyFile;
-    FForceManagedGC ForceManagedGC;
-    FOpenSolution OpenSolution;
-    FLoadSignature LoadSolution;
-    FLoadSignature LoadProject;
-    FGetDependentProjects GetDependentProjects;
+    FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
+    FRecompileChangedFile RecompileChangedFile = nullptr;
+    FRemoveSourceFile RemoveSourceFile = nullptr;
     
+    FForceManagedGC ForceManagedGC = nullptr;
+    FOpenSolution OpenSolution = nullptr;
+    
+    FLoadSignature LoadSolutionAsync = nullptr;
+    FLoadSignature LoadProject = nullptr;
+    
+    FGetDependentProjects GetDependentProjects = nullptr;
 };
 
 
@@ -119,7 +122,7 @@ private:
 
     FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
 
-    UCSAssembly* EditorAssembly = nullptr;
+    UCSManagedAssembly* EditorAssembly = nullptr;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     TArray<TSharedRef<FPluginTemplateDescription>> PluginTemplates;
 

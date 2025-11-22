@@ -4,12 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "CSPropertyGenerator.h"
-#include "UObject/PropertyOptional.h"
 #include "CSOptionalPropertyGenerator.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class UNREALSHARPCORE_API UCSOptionalPropertyGenerator : public UCSPropertyGenerator
 {
@@ -19,7 +15,7 @@ protected:
 	// Begin UCSPropertyGenerator interface
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Optional; }
 	virtual FFieldClass* GetPropertyClass() override { return FOptionalProperty::StaticClass(); }
-	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
-	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData) override;
+	virtual TSharedPtr<FCSUnrealType> CreatePropertyInnerTypeData(ECSPropertyType PropertyType) override;
 	// End UCSPropertyGenerator interface
 };

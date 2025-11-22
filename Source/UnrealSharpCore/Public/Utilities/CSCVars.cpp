@@ -1,0 +1,195 @@
+
+#include "CSFieldName.h"
+#include "CSManagedAssembly.h"
+#include "CSManager.h"
+#include "CSUtilities.h"
+
+FString Indent(int32 Level)
+{
+	return FString::ChrN(Level * 4, ' ');
+}
+
+void MetaDataFromMap(const TMap<FName, FString>* PropertyMetaData, int32 IndentLevel)
+{
+	if (!PropertyMetaData || PropertyMetaData->Num() == 0)
+	{
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}(No Metadata Assigned)", Indent(IndentLevel + 1));
+		return;
+	}
+	
+	for (const TPair<FName, FString>& MetaDataPair : *PropertyMetaData)
+	{
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} = {2}", Indent(IndentLevel + 1), *MetaDataPair.Key.ToString(), *MetaDataPair.Value);
+	}
+}
+
+void DumpMetaData(UField* Field, int32 IndentLevel)
+{
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Metadata:", Indent(IndentLevel));
+	
+	UPackage* Package = Field->GetOutermost();
+	FMetaData& MetaData = Package->GetMetaData();
+	
+	TMap<FName, FString>* FieldMetaData = MetaData.GetMapForObject(Field);
+	MetaDataFromMap(FieldMetaData, IndentLevel);
+}
+
+void DumpMetaData(FProperty* Property, int32 IndentLevel)
+{
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Metadata:", Indent(IndentLevel));
+	
+	const TMap<FName, FString>* PropertyMetaData = Property->GetMetaDataMap();
+	MetaDataFromMap(PropertyMetaData, IndentLevel);
+}
+
+void DumpPropertiesOfStruct(UStruct* Struct, int32 IndentLevel)
+{
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Properties:", Indent(IndentLevel));
+	
+	bool bHasProperties = false;
+	for (TFieldIterator<FProperty> It(Struct, EFieldIterationFlags::None); It; ++It)
+	{
+		bHasProperties = true;
+		
+		FProperty* Property = *It;
+
+		TArray<const TCHAR*> FlagStrings;
+		FCSUtilities::ParsePropertyFlags(Property->PropertyFlags, FlagStrings);
+		
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} ({2}) ({3})", Indent(IndentLevel + 1), Property->GetName(), Property->GetClass()->GetName(), FString::Join(FlagStrings, TEXT(", ")));
+		DumpMetaData(Property, IndentLevel + 2);
+	}
+	
+	if (!bHasProperties)
+	{
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}(No Properties Assigned)", Indent(IndentLevel + 1));
+	}
+}
+
+void DumpDataAsStruct(UStruct* Struct, int32 IndentLevel = 1)
+{
+	DumpPropertiesOfStruct(Struct, IndentLevel + 1);
+}
+
+void DumpDataAsClass(UClass* Class, int32 IndentLevel = 1)
+{
+	DumpPropertiesOfStruct(Class, IndentLevel + 1);
+
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Functions:", Indent(IndentLevel + 1));
+	
+	bool bHasFunctions = false;
+	for (TFieldIterator<UFunction> It(Class, EFieldIterationFlags::None); It; ++It)
+	{
+		bHasFunctions = true;
+		UFunction* Function = *It;
+
+		TArray<const TCHAR*> FlagStrings;
+		FCSUtilities::ParseFunctionFlags(Function->FunctionFlags, FlagStrings);
+
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} ({2})", Indent(IndentLevel + 2), Function->GetName(), FString::Join(FlagStrings, TEXT(", ")));
+		DumpMetaData(Function, IndentLevel + 3);
+		DumpPropertiesOfStruct(Function, IndentLevel + 3);
+	}
+	
+	if (!bHasFunctions)
+	{
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}(No Functions Assigned)", Indent(IndentLevel + 2));
+	}
+}
+
+void DumpDataAsEnum(UEnum* Enum, int32 IndentLevel = 1)
+{
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Enum Values:", Indent(IndentLevel + 1));
+
+	for (int32 i = 0; i < Enum->NumEnums(); i++)
+	{
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} = {2}", Indent(IndentLevel + 2), Enum->GetNameStringByIndex(i), Enum->GetValueByIndex(i));
+	}
+}
+
+void DumpDataAsDelegate(UDelegateFunction* Delegate, int32 IndentLevel = 1)
+{
+	DumpDataAsStruct(Delegate, IndentLevel + 1);
+}
+
+void DumpTypeReflectionData(const TArray<FString>& Args)
+{
+	if (Args.Num() != 1)
+	{
+		UE_LOG(LogUnrealSharp, Warning, TEXT("Usage: UnrealSharp.DumpTypeReflectionData [TypeFullName]"));
+		return;
+	}
+
+	FString TypeFullName = Args[0];
+	
+	if (!TypeFullName.Contains("."))
+	{
+		UE_LOG(LogUnrealSharp, Warning, TEXT("TypeFullName must be in the format 'Namespace.TypeName'"));
+		return;
+	}
+	
+	int32 LastDotIndex;
+	TypeFullName.FindLastChar('.', LastDotIndex);
+		
+	FString Namespace = TypeFullName.Left(LastDotIndex);
+	FString TypeName = TypeFullName.Mid(LastDotIndex + 1);
+		
+	FCSFieldName TypeFieldName(*TypeName, *Namespace);
+	
+	TArray<UCSManagedAssembly*> Assemblies;
+	UCSManager::Get().GetAllLoadedAssemblies(Assemblies);
+	
+	for (UCSManagedAssembly* Assembly : Assemblies)
+	{
+		TSharedPtr<FCSManagedTypeDefinition> TypeDefinition = Assembly->FindManagedTypeDefinition(TypeFieldName);
+		
+		if (!TypeDefinition.IsValid())
+		{
+			continue;
+		}
+		
+		UField* Field = TypeDefinition->GetManagedField();
+		
+		if (!IsValid(Field))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Managed type found but no associated UField: {0}", *TypeFullName);
+			return;
+		}
+		
+		UE_LOGFMT(LogUnrealSharp, Log, "Reflection data for type: {0}", *TypeFullName);
+		
+		DumpMetaData(Field, 2);
+		
+		if (UClass* Class = Cast<UClass>(Field))
+		{
+			DumpDataAsClass(Class);
+		}
+		else if (UScriptStruct* Struct = Cast<UScriptStruct>(Field))
+		{
+			DumpDataAsStruct(Struct);
+		}
+		else if (UEnum* Enum = Cast<UEnum>(Field))
+		{
+			DumpDataAsEnum(Enum);
+		}
+		else if (UDelegateFunction* Delegate = Cast<UDelegateFunction>(Field))
+		{
+			DumpDataAsDelegate(Delegate);
+		}
+		else
+		{
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Unsupported type: %s"), *Field->GetClass()->GetName());
+		}
+		
+		return;
+	}
+	
+	UE_LOGFMT(LogUnrealSharp, Warning, "Type not found in any Assembly: {0}", *TypeFullName);
+}
+
+static FAutoConsoleCommand CVarDumpTypeReflectionData(
+	TEXT("UnrealSharp.DumpTypeReflectionData"),
+	TEXT("Shows reflection data for managed type. Example: UnrealSharp.DumpTypeReflectionData MyNamespace.MyClass"),
+	FConsoleCommandWithArgsDelegate::CreateStatic(&DumpTypeReflectionData)
+);
+

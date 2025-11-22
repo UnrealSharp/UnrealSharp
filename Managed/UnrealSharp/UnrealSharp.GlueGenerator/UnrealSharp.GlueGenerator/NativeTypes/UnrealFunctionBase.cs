@@ -65,9 +65,9 @@ public abstract record UnrealFunctionBase : UnrealStruct
     protected static readonly EFunctionFlags NetFunctionFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
     protected const string UFunctionAttributeName = "UFunctionAttribute";
     
-    protected bool IsNetFunction => (FunctionFlags & NetFunctionFlags) != EFunctionFlags.None;
+    protected bool IsNetworkFunction => (FunctionFlags & NetFunctionFlags) != EFunctionFlags.None;
 
-    protected bool NeedsImplementationFunction => IsNetFunction || FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent);
+    protected bool NeedsImplementationFunction => IsNetworkFunction || FunctionFlags.HasFlag(EFunctionFlags.BlueprintNativeEvent);
     protected bool IsEvent => FunctionFlags.HasFlag(EFunctionFlags.Event);
     protected bool HasParamsOrReturnValue => HasParams || HasReturnValue;
     protected bool HasParams => Properties.Count > 0;
@@ -223,7 +223,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
             UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, outer!);
             unrealClass.AddAsyncFunction(asyncFunction);
             
-            outer!.SourceGeneratorDependencies.List.Add(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
+            outer!.AddSourceGeneratorDependency(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
             unrealFunction = asyncFunction;
         }
         else
@@ -252,7 +252,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
             unrealFunction.FunctionFlags |= EFunctionFlags.Event;
         }
 
-        if (unrealFunction.IsNetFunction)
+        if (unrealFunction.IsNetworkFunction)
         {
             unrealFunction.FunctionFlags |= EFunctionFlags.Net;
         }
@@ -325,14 +325,14 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     public void ExportImplementationMethod(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"{Protection.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}_Implementation({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))});");
+        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}_Implementation({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))});");
     }
 
     public void ExportWrapperMethod(GeneratorStringBuilder builder, string instanceFunction)
     {
         builder.AppendLine();
         
-        builder.AppendLine($"{Protection.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))})");
+        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))})");
         builder.OpenBrace();
 
         if (FunctionFlags.HasFlag(EFunctionFlags.Event))
@@ -401,7 +401,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     {
         builder.AppendLine("UObjectExporter.");
         
-        if (IsNetFunction)
+        if (IsNetworkFunction)
         {
             builder.Append("CallInvokeNativeNetFunction");
         }

@@ -36,6 +36,9 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
 	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
+	
+	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnManagedTypeStructureChanged);
+	FCSManagedTypeDefinitionEvents::AddOnStructureChangedDelegate(Delegate);
 }
 
 void FUnrealSharpCompilerModule::ShutdownModule()
@@ -84,12 +87,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 				continue;
 			}
 
-			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection |
-														EBlueprintCompileOptions::SkipDefaultObjectValidation |
-														EBlueprintCompileOptions::SkipFiBSearchMetaUpdate |
-														EBlueprintCompileOptions::SkipNewVariableDefaultsDetection |
-														EBlueprintCompileOptions::SkipSave;
-			
+			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection | EBlueprintCompileOptions::SkipSave;
 			FKismetEditorUtilities::CompileBlueprint(Blueprint, Flags);
 
 			if (!FCSUnrealSharpUtils::IsEngineStartingUp())
@@ -104,9 +102,6 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	// Components needs be compiled first, as they are instantiated by the owning actor, and needs their size to be known.
 	CompileBlueprints(ManagedComponentsToCompile);
 	CompileBlueprints(ManagedClassesToCompile);
-
-	FOnStructureChanged::FDelegate Delegate = FOnStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnTypeInfoStructureChanged);
-	FCSManagedTypeInfoDelegates::AddOnStructureChangedDelegate(Delegate);
 
 	UE_LOG(LogUnrealSharpCompiler, Log, TEXT("Recompiled and reinstanced blueprints in %.2f seconds"), FPlatformTime::Seconds() - StartTime);
 }
@@ -196,9 +191,9 @@ void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
 	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
 }
 
-void FUnrealSharpCompilerModule::OnTypeInfoStructureChanged(TSharedPtr<FCSManagedTypeInfo> ChangedTypeInfo)
+void FUnrealSharpCompilerModule::OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 {
-	UClass* NewClass = Cast<UClass>(ChangedTypeInfo->GetField());
+	UClass* NewClass = Cast<UClass>(ManagedTypeDefinition->GetManagedField());
 	if (!IsValid(NewClass))
 	{
 		return;
@@ -215,12 +210,12 @@ void FUnrealSharpCompilerModule::OnTypeInfoStructureChanged(TSharedPtr<FCSManage
 		}
 		
 		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
-		TSharedPtr<FCSManagedTypeInfo> DerivedClassInfo = ManagedClass->GetManagedTypeInfo();
-		DerivedClassInfo->MarkAsStructurallyModified();
+		TSharedPtr<FCSManagedTypeDefinition> DerivedClassInfo = ManagedClass->GetManagedTypeDefinition();
+		DerivedClassInfo->MarkStructurallyDirty();
 	}
 }
 
-void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSAssembly* Assembly)
+void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
 {
 	RecompileAndReinstanceBlueprints();
 }

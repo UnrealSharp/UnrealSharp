@@ -91,8 +91,8 @@ public static class StructExporter
             (csInterfaces ??= new()).Add($"IEquatable<{structName}>");
         }
 
-        stringBuilder.DeclareType(structObj, isRecordStruct ? "record struct" : "struct", structName, csInterfaces: csInterfaces, 
-            modifiers: isReadOnly ? " readonly" : null);
+        stringBuilder.DeclareType(structObj, isRecordStruct ? "record struct" : "struct", structName, csInterfaces: csInterfaces, modifiers: isReadOnly ? " readonly" : null);
+        stringBuilder.AppendNativeTypePtr(structObj);
 
         if (isCopyable)
         {

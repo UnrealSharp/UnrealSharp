@@ -1,27 +1,30 @@
 ﻿#include "Factories/CSFunctionFactory.h"
 #include "UnrealSharpCore.h"
-#include "Builders/CSGeneratedClassBuilder.h"
+#include "Compilers/CSManagedClassCompiler.h"
 #include "Factories/CSPropertyFactory.h"
 #include "Utilities/CSMetaDataUtils.h"
 #include "Functions/CSFunction_Params.h"
 #include "UnrealSharpUtils.h"
 
-UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionMetaData& FunctionMetaData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
+UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionReflectionData& FunctionReflectionData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
-	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
-	NewFunction->FunctionFlags = FunctionMetaData.FunctionFlags | FunctionFlags;
+	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public | RF_Transient);
+	
+	NewFunction->FunctionFlags = FunctionReflectionData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);
-	FCSMetaDataUtils::ApplyMetaData(FunctionMetaData.MetaData, NewFunction);
+	
+	FCSMetaDataUtils::ApplyMetaData(FunctionReflectionData.MetaData, NewFunction);
+	
 	return NewFunction;
 }
 
-FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyMetaData);
+	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyReflectionData);
 
 	if (UBlueprintGeneratedClass* Class = Cast<UBlueprintGeneratedClass>(Function->GetOuter()))
 	{
-		FCSPropertyFactory::TryAddPropertyAsFieldNotify(PropertyMetaData, Class);
+		FCSPropertyFactory::TryAddPropertyAsFieldNotify(PropertyReflectionData, Class);
 	}
 
 	if (!NewParam->HasAnyPropertyFlags(CPF_ZeroConstructor))
@@ -32,33 +35,33 @@ FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPro
 	return NewParam;
 }
 
-void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData)
+void FCSFunctionFactory::CreateParameters(UFunction* Function, const FCSFunctionReflectionData& PropertyReflectionData)
 {
-	if (const FCSPropertyMetaData* ReturnValueMetaData = FunctionMetaData.TryGetReturnValue())
+	if (const FCSPropertyReflectionData* ReturnValueReflectionData = PropertyReflectionData.TryGetReturnValue())
 	{
-		CreateParameter(Function, *ReturnValueMetaData);
+		CreateParameter(Function, *ReturnValueReflectionData);
 	}
 
 	// Create the function's parameters and assign them.
 	// AddCppProperty inserts at the beginning of the property list, so we need to add them backwards to ensure a matching function signature.
-	for (int32 i = FunctionMetaData.Properties.Num(); i-- > 0; )
+	for (int32 i = PropertyReflectionData.Properties.Num(); i-- > 0; )
 	{
-		CreateParameter(Function, FunctionMetaData.Properties[i]);
+		CreateParameter(Function, PropertyReflectionData.Properties[i]);
 	}
 }
 
-UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData)
+UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromReflectionData(UClass* Outer, const FCSFunctionReflectionData& FunctionReflectionData)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateFunctionFromMetaData);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateFunctionFromReflectionData);
 	
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionMetaData.FieldName.GetFName(), FunctionMetaData);
+	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionReflectionData.FieldName.GetFName(), FunctionReflectionData);
 
 	if (!NewFunction)
 	{
 		return nullptr;
 	}
 
-	CreateParameters(NewFunction, FunctionMetaData);
+	CreateParameters(NewFunction, FunctionReflectionData);
 	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
 }
@@ -70,7 +73,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 	constexpr EFunctionFlags InheritFlags = FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure | FUNC_HasOutParms;
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & InheritFlags;
 	
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionMetaData(), FunctionFlags, ParentFunction);
+	UCSFunctionBase* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionReflectionData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
@@ -126,13 +129,13 @@ void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* F
 	Function->Bind();
 	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
 
-	if (!Function->TryUpdateMethodHandle())
+	if (!Function->UpdateMethodHandle())
 	{
 		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to find managed method for function: %s"), *Function->GetName());
 	}
 }
 
-void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions)
+void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData, TArray<UFunction*>& VirtualFunctions)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::GetOverriddenFunctions);
 	
@@ -159,7 +162,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 
 #if WITH_EDITOR
 	// The BP compiler purges the interfaces from the UClass pre-compilation, so we need to get them from the metadata instead.
-	for (const FCSTypeReferenceMetaData& InterfaceInfo : ClassMetaData->Interfaces)
+	for (const FCSTypeReferenceReflectionData& InterfaceInfo : ClassReflectionData->Interfaces)
 	{
 		if (UClass* Interface = InterfaceInfo.GetAsInterface())
 		{
@@ -177,7 +180,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 #endif
 	
-	for (FName VirtualFunction : ClassMetaData->Overrides)
+	for (FName VirtualFunction : ClassReflectionData->Overrides)
 	{
 		if (UFunction* Function = NameToFunctionMap.FindRef(VirtualFunction))
 		{
@@ -190,10 +193,10 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	}
 }
 
-void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData)
+void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)
 {
 	TArray<UFunction*> VirtualFunctions;
-	GetOverriddenFunctions(Outer, ClassMetaData, VirtualFunctions);
+	GetOverriddenFunctions(Outer, ClassReflectionData, VirtualFunctions);
 	
 	for (UFunction* VirtualFunction : VirtualFunctions)
 	{
@@ -201,11 +204,11 @@ void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPt
 	}
 }
 
-void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData)
+void FCSFunctionFactory::GenerateFunctions(UClass* Outer, const TArray<FCSFunctionReflectionData>& FunctionsReflectionData)
 {
-	for (const FCSFunctionMetaData& FunctionMetaData : FunctionsMetaData)
+	for (const FCSFunctionReflectionData& FunctionMetaData : FunctionsReflectionData)
 	{
-		CreateFunctionFromMetaData(Outer, FunctionMetaData);
+		CreateFunctionFromReflectionData(Outer, FunctionMetaData);
 	}
 }
 

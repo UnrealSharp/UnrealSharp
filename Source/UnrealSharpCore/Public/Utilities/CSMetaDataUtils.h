@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CSFieldName.h"
-#include "MetaData/CSTypeReferenceMetaData.h"
+#include "ReflectionData/CSTypeReferenceReflectionData.h"
 
 namespace FCSMetaDataUtils
 {

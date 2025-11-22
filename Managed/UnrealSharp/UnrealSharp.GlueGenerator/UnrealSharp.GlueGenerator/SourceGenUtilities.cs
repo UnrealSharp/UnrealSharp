@@ -109,7 +109,13 @@ public static class SourceGenUtilities
                 int index = attributeName.IndexOf("Attribute", StringComparison.OrdinalIgnoreCase);
                 string name = attributeName.Substring(0, index);
                 
-                attributes.Add(new MetaDataInfo(name, ""));
+                string value = string.Empty;
+                if (attribute.ConstructorArguments.Length > 0 && attribute.ConstructorArguments[0].Value is string valueArg2)
+                {
+                    value = valueArg2;
+                }
+                
+                attributes.Add(new MetaDataInfo(name, value));
             }
         }
 

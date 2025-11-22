@@ -5,7 +5,6 @@ using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;
 using UnrealSharp.UnrealSharpCore;
-using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -76,15 +75,8 @@ public partial class UObject
                 throw new InvalidOperationException("Object is not valid.");
             }
 
-            IntPtr worldPtr = UObjectExporter.CallGetWorld_Internal(NativeObject);
-            UWorld? foundWorld = GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
-
-            if (foundWorld == null)
-            {
-                throw new InvalidOperationException("World is not valid.");
-            }
-
-            return foundWorld;
+            IntPtr worldGcHandle = UObjectExporter.CallGetWorld_Internal(NativeObject);
+            return ReflectionHelper.GetObjectFromPointer<UWorld>(worldGcHandle)!;
         }
     }
 
@@ -107,7 +99,7 @@ public partial class UObject
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is UnrealSharpObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
+        return obj is UObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
     }
 
     /// <inheritdoc />
@@ -165,11 +157,11 @@ public partial class UObject
     /// <typeparam name="T"> The type of the object to create. </typeparam>
     /// <returns> The newly created object. </returns>
     /// <exception cref="ArgumentException"> Thrown if the outer object is not valid. </exception>
-    public static T NewObject<T>(UObject? outer = null, TSubclassOf<T> classType = default, UObject? template = null) where T : UnrealSharpObject
+    public static T NewObject<T>(UObject? outer = null, TSubclassOf<T> classType = default, UObject? template = null) where T : UObject
     {
         if (classType.NativeClass == IntPtr.Zero)
         {
-            classType = new TSubclassOf<T>();
+            classType = new TSubclassOf<T>(typeof(T));
         }
 
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
@@ -698,5 +690,12 @@ internal static class ReflectionHelper
     internal static IntPtr TryGetNativeClassDefaults(this Type type)
     {
         return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+    }
+    
+    internal static T? GetObjectFromPointer<T>(IntPtr ptr) where T : UnrealSharpObject
+    {
+        IntPtr gcHandlePtr = FCSManagerExporter.CallFindManagedObject(ptr);
+        T? foundObject = GCHandleUtilities.GetObjectFromHandlePtr<T>(gcHandlePtr);
+        return foundObject;
     }
 }

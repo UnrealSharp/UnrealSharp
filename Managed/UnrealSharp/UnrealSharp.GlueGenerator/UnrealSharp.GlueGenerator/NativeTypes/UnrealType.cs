@@ -29,42 +29,62 @@ public record UnrealType
     public string FullName => Namespace + "." + SourceName;
     public string Namespace = string.Empty;
     
-    public Accessibility Protection;
+    public Accessibility TypeAccessibility;
 
     public virtual int FieldTypeValue => -1;
 
-    public readonly EquatableList<FieldName> SourceGeneratorDependencies;
-    private readonly EquatableList<MetaDataInfo> _metaData;
+    public EquatableList<FieldName> SourceGeneratorDependencies;
+    public EquatableList<MetaDataInfo> MetaData;
     
     public UnrealType(UnrealType? outer = null)
     {
         Outer = outer;
-        SourceGeneratorDependencies = new EquatableList<FieldName>(new List<FieldName>());
-        _metaData = new EquatableList<MetaDataInfo>(new List<MetaDataInfo>());
     }
     
     public UnrealType(ISymbol memberSymbol, UnrealType? outer = null) : this(outer)
     {
-        _metaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
+        MetaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
         Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
         SourceName = memberSymbol.Name;
         AssemblyName = memberSymbol.ContainingAssembly.Name;
-        Protection = memberSymbol.DeclaredAccessibility;
+        TypeAccessibility = memberSymbol.DeclaredAccessibility;
     }
 
     public UnrealType(string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) : this(outer)
     {
         SourceName = sourceName;
         Namespace = typeNameSpace;
-        Protection = accessibility;
+        TypeAccessibility = accessibility;
         AssemblyName = assemblyName;
     }
-    
-    public void AddMetaData(string key, string value) => _metaData.List.Add(new MetaDataInfo { Key = key, Value = value });
-    public void AddMetaDataRange(IEnumerable<MetaDataInfo> metaData) => _metaData.List.AddRange(metaData);
-    
-    public EquatableList<MetaDataInfo> MetaData => _metaData;
-    public bool HasAnyMetaData => _metaData.List.Count > 0;
+
+    public void AddMetaData(string key, string value)
+    {
+        if (MetaData.IsNull)
+        {
+            MetaData = new EquatableList<MetaDataInfo>(new List<MetaDataInfo>());
+        }
+        
+        MetaData.List.Add(new MetaDataInfo(key, value));
+    }
+
+    public void AddMetaDataRange(IEnumerable<MetaDataInfo> metaData)
+    {
+        foreach (MetaDataInfo info in metaData)
+        {
+            AddMetaData(info.Key, info.Value);
+        }
+    }
+
+    public void AddSourceGeneratorDependency(FieldName dependency)
+    {
+        if (SourceGeneratorDependencies.IsNull)
+        {
+            SourceGeneratorDependencies = new EquatableList<FieldName>(new List<FieldName>());
+        }
+
+        SourceGeneratorDependencies.List.Add(dependency);
+    }
     
     public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
     
@@ -72,7 +92,6 @@ public record UnrealType
     {
         jsonObject["Name"] = EngineName;
         jsonObject["Namespace"] = Namespace;
-        jsonObject["Protection"] = Protection.ToString();
         jsonObject["AssemblyName"] = AssemblyName;
 
         if (SourceGeneratorDependencies.Count > 0)
@@ -86,12 +105,12 @@ public record UnrealType
             }
         }
         
-        if (HasAnyMetaData)
+        if (MetaData.Count > 0)
         {
             JsonArray jsonArray = new JsonArray();
             jsonObject["MetaData"] = jsonArray;
             
-            foreach (MetaDataInfo metaDataInfo in _metaData.List)
+            foreach (MetaDataInfo metaDataInfo in MetaData.List)
             {
                 JsonObject metaDataObject = new JsonObject
                 {
@@ -116,9 +135,9 @@ public record UnrealType
         }
         
         return SourceName == other.SourceName && 
-               _metaData.Equals(other._metaData) && 
+               MetaData.Equals(other.MetaData) && 
                Namespace == other.Namespace && 
-               Protection == other.Protection;
+               TypeAccessibility == other.TypeAccessibility;
     }
 
     public override int GetHashCode()
@@ -127,7 +146,7 @@ public record UnrealType
         {
             int hashCode = SourceName.GetHashCode();
             hashCode = (hashCode * 397) ^ Namespace.GetHashCode();
-            hashCode = (hashCode * 397) ^ _metaData.GetHashCode();
+            hashCode = (hashCode * 397) ^ MetaData.GetHashCode();
             return hashCode;
         }
     }

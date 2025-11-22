@@ -31,7 +31,7 @@ void UCSFunctionBase::Bind()
 	}
 }
 
-bool UCSFunctionBase::TryUpdateMethodHandle()
+bool UCSFunctionBase::UpdateMethodHandle()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunctionBase::TryUpdateMethodHandle);
 	
@@ -43,10 +43,10 @@ bool UCSFunctionBase::TryUpdateMethodHandle()
 	}
 	
 	UCSClass* ManagedClass = static_cast<UCSClass*>(GetOwnerClass());
-	UCSAssembly* Assembly = ManagedClass->GetOwningAssembly();
+	UCSManagedAssembly* Assembly = ManagedClass->GetOwningAssembly();
 	
-	TSharedPtr<FCSManagedTypeInfo> ClassInfo = ManagedClass->GetManagedTypeInfo();
-	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeHandle();
+	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = ManagedClass->GetManagedTypeDefinition();
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
 	
 	MethodHandle = Assembly->GetManagedMethod(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
 	return MethodHandle.IsValid();
@@ -73,7 +73,7 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 
 #if WITH_EDITOR
 	// After a full reload, method pointers are stale, so we just lazy update them here.
-	if (!ManagedFunction->HasValidMethodHandle() && !ManagedFunction->TryUpdateMethodHandle())
+	if (!ManagedFunction->HasValidMethodHandle() && !ManagedFunction->UpdateMethodHandle())
 	{
 		return;
 	}

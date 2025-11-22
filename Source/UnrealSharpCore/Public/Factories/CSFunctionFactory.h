@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "MetaData/CSClassMetaData.h"
+#include "ReflectionData/CSClassReflectionData.h"
 #include "Functions/CSFunction.h"
 
 class UCSBlueprint;
@@ -10,24 +10,24 @@ class UNREALSHARPCORE_API FCSFunctionFactory
 {
 public:
 	
-	static UCSFunctionBase* CreateFunctionFromMetaData(UClass* Outer, const FCSFunctionMetaData& FunctionMetaData);
+	static UCSFunctionBase* CreateFunctionFromReflectionData(UClass* Outer, const FCSFunctionReflectionData& FunctionReflectionData);
 	static UCSFunctionBase* CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction);
 	
-	static void GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData, TArray<UFunction*>& VirtualFunctions);
-	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassMetaData>& ClassMetaData);
-	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionMetaData>& FunctionsMetaData);
+	static void GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData, TArray<UFunction*>& VirtualFunctions);
+	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
+	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionReflectionData>& FunctionsReflectionData);
 
 	static void AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function);
 
 	static UCSFunctionBase* CreateFunction(
 		UClass* Outer,
 		const FName& Name,
-		const FCSFunctionMetaData& FunctionMetaData,
+		const FCSFunctionReflectionData& FunctionReflectionData,
 		EFunctionFlags FunctionFlags = FUNC_None,
 		UStruct* ParentFunction = nullptr);
 
 	static void FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function);
 	
-	static FProperty* CreateParameter(UFunction* Function, const FCSPropertyMetaData& PropertyMetaData);
-	static void CreateParameters(UFunction* Function, const FCSFunctionMetaData& FunctionMetaData);
+	static FProperty* CreateParameter(UFunction* Function, const FCSPropertyReflectionData& PropertyReflectionData);
+	static void CreateParameters(UFunction* Function, const FCSFunctionReflectionData& PropertyReflectionData);
 };

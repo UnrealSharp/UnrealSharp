@@ -1,26 +1,29 @@
 #include "Factories/PropertyGenerators/CSCommonPropertyGenerator.h"
 
+#include "ReflectionData/CSUnrealType.h"
+
 bool UCSCommonPropertyGenerator::SupportsPropertyType(ECSPropertyType InPropertyType) const
 {
 	return TypeToFieldClass.Contains(InPropertyType);
 }
 
-FProperty* UCSCommonPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSCommonPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FFieldClass* FieldClass = TypeToFieldClass.FindChecked(PropertyMetaData.Type->PropertyType);
-	return NewProperty(Outer, PropertyMetaData, FieldClass);
+	FFieldClass* FieldClass = TypeToFieldClass.FindChecked(PropertyReflectionData.InnerType->PropertyType);
+	return NewProperty(Outer, PropertyReflectionData, FieldClass);
 }
 
-TSharedPtr<FCSUnrealType> UCSCommonPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSCommonPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
-	TSharedPtr<FCSUnrealType> MetaData;
-	if (TFunction<TSharedPtr<FCSUnrealType>()>* FactoryMethod = MetaDataFactoryMap.Find(PropertyType))
+	TSharedPtr<FCSUnrealType> InnerTypeData;
+	if (TFunction<TSharedPtr<FCSUnrealType>()>* FactoryMethod = ReflectionDataFactoryMap.Find(PropertyType))
 	{
-		MetaData = (*FactoryMethod)();
+		InnerTypeData = (*FactoryMethod)();
 	}
 	else
 	{
-		MetaData = MakeShared<FCSUnrealType>();
+		InnerTypeData = MakeShared<FCSUnrealType>();
 	}
-	return MetaData;
+	
+	return InnerTypeData;
 }

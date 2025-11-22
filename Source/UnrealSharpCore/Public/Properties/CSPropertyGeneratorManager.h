@@ -2,13 +2,13 @@
 
 #include "CoreMinimal.h"
 
-struct FCSPropertyMetaData;
+struct FCSPropertyReflectionData;
 
 class ICSPropertyInitializer
 {
 public:
 	virtual ~ICSPropertyInitializer() = default;
-	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyMetaData& PropertyMetaData) const = 0;
+	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyReflectionData& PropertyMetaData) const = 0;
 };
 
 class UNREALSHARPCORE_API FCSPropertyGeneratorManager
@@ -36,7 +36,7 @@ public:
 	static void Initialize();
 	static void Shutdown();
 
-	FProperty* ConstructProperty(const FFieldClass* FieldClass, UField* Owner, FName PropertyName, const FCSPropertyMetaData& PropertyMetaData) const;
+	FProperty* ConstructProperty(const FFieldClass* FieldClass, UField* Owner, FName PropertyName, const FCSPropertyReflectionData& PropertyReflectionData) const;
 
 private:
 	static FPtr Instance;

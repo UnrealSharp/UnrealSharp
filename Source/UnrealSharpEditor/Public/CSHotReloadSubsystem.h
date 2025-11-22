@@ -32,8 +32,6 @@ public:
 	UNREALSHARPEDITOR_API bool HasHotReloadFailed() const { return bHotReloadFailed; }
 
 	UNREALSHARPEDITOR_API void StartHotReload(bool bPromptPlayerWithNewProject = true);
-
-	void AddDirectoryToWatch(const FString& Directory);
 	
 	void PauseHotReload(const FString& Reason = FString());
 	void ResumeHotReload();
@@ -41,6 +39,8 @@ public:
 	void RefreshDirectoryWatchers();
 
 private:
+	
+	void AddDirectoryToWatch(const FString& Directory);
 
 	void OnScriptDirectoryChanged(const TArray<struct FFileChangeData>& ChangedFiles);
 	

@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "CSCommonPropertyGenerator.h"
-#include "CSPropertyGenerator.h"
 #include "CSDelegatePropertyGenerator.generated.h"
 
 UCLASS()
@@ -13,6 +12,6 @@ public:
 	UCSDelegatePropertyGenerator(FObjectInitializer const& ObjectInitializer);
 protected:
 	// UCSPropertyGenerator interface
-	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData) override;
 	// End of UCSPropertyGenerator interface
 };

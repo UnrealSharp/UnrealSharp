@@ -34,16 +34,16 @@ public static class CSharpExporter
 
     public static void StartExport()
     {
-        if (!HasChangedGeneratorSourceRecently())
-        {
-            // The source for this generator hasn't changed, so we don't need to re-export the whole API.
-            DeserializeModuleData();
-        }
-        else
+        if (HasChangedGeneratorSourceRecently())
         {
             // Just in case the source has changed, we need to clean the old files
             Console.WriteLine("Detected new source since last export, cleaning old files...");
             FileExporter.CleanModuleFolders();
+        }
+        else
+        {
+            // The source for this generator hasn't changed, so we don't need to re-export the whole API.
+            DeserializeModuleData();
         }
 
         Console.WriteLine("Exporting C++ to C#...");
@@ -242,7 +242,6 @@ public static class CSharpExporter
             }
         }
         #endif
-
     }
 
     public static bool HasBeenExported(string directory)
@@ -324,7 +323,11 @@ public static class CSharpExporter
             isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
-        else if (type.EngineType == UhtEngineType.Delegate || type.EngineType == UhtEngineType.SparseDelegate)
+        else if (type.EngineType is UhtEngineType.Delegate 
+                #if UE_5_7_OR_LATER
+                 or UhtEngineType.SparseDelegate
+                #endif
+                 )
         {
             if (isManualExport)
             {

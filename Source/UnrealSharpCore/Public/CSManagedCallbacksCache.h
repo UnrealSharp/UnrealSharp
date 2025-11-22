@@ -34,7 +34,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		ManagedCallbacks_LookupType LookupManagedType;
 
 	private:
-		//Only call these from GCHandles.
+		// Only call these from GCHandles.
 		friend FGCHandle;
 	    friend FScopedGCHandle;
 		ManagedCallbacks_Dispose Dispose;

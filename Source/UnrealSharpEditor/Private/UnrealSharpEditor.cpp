@@ -122,7 +122,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 {
 	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
-	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(NativeSolutionPath))
 	{
@@ -273,7 +273,7 @@ void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
 
 void FUnrealSharpEditorModule::OpenSolution()
 {
-	FString SolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToSolution());
+	FString SolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(SolutionPath))
 	{

@@ -1,17 +1,17 @@
 #include "Factories/PropertyGenerators/CSScriptInterfacePropertyGenerator.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSFieldType.h"
 
-FProperty* UCSScriptInterfacePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSScriptInterfacePropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FInterfaceProperty* InterfaceProperty = NewProperty<FInterfaceProperty>(Outer, PropertyMetaData);
+	FInterfaceProperty* InterfaceProperty = NewProperty<FInterfaceProperty>(Outer, PropertyReflectionData);
 	
-	TSharedPtr<FCSFieldTypePropertyMetaData> InterfaceData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	TSharedPtr<FCSFieldType> InterfaceData = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
 	InterfaceProperty->SetInterfaceClass(InterfaceData->InnerType.GetAsInterface());
 	
 	return InterfaceProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSScriptInterfacePropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSScriptInterfacePropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSFieldTypePropertyMetaData>();
+	return MakeShared<FCSFieldType>();
 }

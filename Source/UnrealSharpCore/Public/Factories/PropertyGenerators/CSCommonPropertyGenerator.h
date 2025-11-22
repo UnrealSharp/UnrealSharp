@@ -4,15 +4,15 @@
 #include "CSPropertyGenerator.h"
 #include "CSCommonPropertyGenerator.generated.h"
 
-#define REGISTER_METADATA_WITH_NAME(CustomName, MetaDataName) \
-MetaDataFactoryMap.Add(CustomName, \
+#define REGISTER_REFLECTION_DATA_WITH_NAME(CustomName, InnerTypeName) \
+ReflectionDataFactoryMap.Add(CustomName, \
 []() \
 { \
-return MakeShared<MetaDataName>(); \
+return MakeShared<InnerTypeName>(); \
 });
 
-#define REGISTER_METADATA(PropertyName, MetaDataName) \
-REGISTER_METADATA_WITH_NAME(PropertyName, MetaDataName)
+#define REGISTER_REFLECTION_DATA(PropertyName, InnerTypeName) \
+REGISTER_REFLECTION_DATA_WITH_NAME(PropertyName, InnerTypeName)
 
 UCLASS(Abstract)
 class UNREALSHARPCORE_API UCSCommonPropertyGenerator : public UCSPropertyGenerator
@@ -21,15 +21,15 @@ class UNREALSHARPCORE_API UCSCommonPropertyGenerator : public UCSPropertyGenerat
 protected:
 	// Begin UCSPropertyGenerator interface
 	virtual bool SupportsPropertyType(ECSPropertyType InPropertyType) const override;
-	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
-	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData) override;
+	virtual TSharedPtr<FCSUnrealType> CreatePropertyInnerTypeData(ECSPropertyType PropertyType) override;
 	// End UCSPropertyGenerator interface
 
-	FFieldClass* GetFieldClassForType(const FCSPropertyMetaData& PropertyMetaData) const
+	FFieldClass* GetFieldClassForType(const FCSPropertyReflectionData& PropertyReflectionData) const
 	{
-		return TypeToFieldClass.FindChecked(PropertyMetaData.Type->PropertyType);
+		return TypeToFieldClass.FindChecked(PropertyReflectionData.InnerType->PropertyType);
 	}
 	
 	TMap<ECSPropertyType, FFieldClass*> TypeToFieldClass;
-	TMap<ECSPropertyType, TFunction<TSharedPtr<FCSUnrealType>()>> MetaDataFactoryMap;
+	TMap<ECSPropertyType, TFunction<TSharedPtr<FCSUnrealType>()>> ReflectionDataFactoryMap;
 };

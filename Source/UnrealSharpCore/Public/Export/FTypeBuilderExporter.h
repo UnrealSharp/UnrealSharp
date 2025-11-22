@@ -5,17 +5,17 @@
 #include "UObject/Object.h"
 #include "FTypeBuilderExporter.generated.h"
 
-struct FCSFunctionMetaData;
-struct FCSEnumMetaData;
-struct FCSTypeReferenceMetaData;
-struct FCSClassMetaData;
+struct FCSFunctionReflectionData;
+struct FCSEnumReflectionData;
+struct FCSTypeReferenceReflectionData;
+struct FCSClassReflectionData;
 struct FCSTemplateType;
-struct FCSDefaultComponentMetaData;
-struct FCSFieldTypePropertyMetaData;
-struct FCSPropertyMetaData;
-struct FCSClassBaseMetaData;
+struct FCSDefaultComponentType;
+struct FCSFieldType;
+struct FCSPropertyReflectionData;
+struct FCSClassBaseReflectionData;
 enum class ECSPropertyType : uint8;
-struct FCSStructMetaData;
+struct FCSStructReflectionData;
 enum class ECSFieldType : uint8;
 enum ECSStructureState : uint8;
 
@@ -25,5 +25,5 @@ class UFTypeBuilderExporter : public UObject
 	GENERATED_BODY()
 public:
 	UNREALSHARP_FUNCTION()
-	static void NewType_Internal(char* FieldName, char* Namespace, char* AssemblyName, char* JsonString, ECSFieldType FieldType, uint8* TypeHandle);
+	static void RegisterManagedType_Native(char* FieldName, char* Namespace, char* AssemblyName, char* JsonString, ECSFieldType FieldType, uint8* TypeHandle);
 };

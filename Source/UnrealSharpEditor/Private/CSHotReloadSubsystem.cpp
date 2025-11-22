@@ -33,8 +33,9 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	FEditorDelegates::ShutdownPIE.AddUObject(this, &UCSHotReloadSubsystem::OnPIEShutdown);
 
-	FString PathToSolution = FCSProcHelper::GetPathToSolution();
-	EditorModule->GetManagedUnrealSharpEditorCallbacks().LoadSolution(*PathToSolution, &OnHotReloadReady_Callback);
+	FString PathToManagedSolution = FCSProcHelper::GetPathToManagedSolution();
+	EditorModule->GetManagedUnrealSharpEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
+	
 	PauseHotReload(TEXT("Waiting for initial C# load..."));
 }
 
@@ -110,7 +111,7 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	Progress.MakeDialog();
 
 	FString ExceptionMessage;
-	if (!EditorModule->GetManagedUnrealSharpEditorCallbacks().RunGeneratorsAndEmitAsync(&ExceptionMessage))
+	if (!EditorModule->GetManagedUnrealSharpEditorCallbacks().RecompileDirtyProjects(&ExceptionMessage))
 	{
 		HotReloadStatus = Inactive;
 		bHotReloadFailed = true;
@@ -135,9 +136,9 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
 	{
 		const FString& ProjectName = ProjectsByLoadOrder[i];
-		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
+		UCSManagedAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
 
-		if (IsValid(Assembly) && !Assembly->UnloadAssembly())
+		if (IsValid(Assembly) && !Assembly->UnloadManagedAssembly())
 		{
 			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
 			bUnloadFailed = true;
@@ -161,11 +162,11 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	// Load all assemblies again in the correct order.
 	for (const FString& ProjectName : ProjectsByLoadOrder)
 	{
-		UCSAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
+		UCSManagedAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
 
 		if (IsValid(Assembly))
 		{
-			Assembly->LoadAssembly();
+			Assembly->LoadManagedAssembly();
 		}
 		else
 		{
@@ -545,10 +546,19 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 		bHasQueuedHotReload = true;
 		return;
 	}
+	
+	struct FCSChangedFile
+	{
+		FString ProjectFile;
+		FString FilePath;
+		
+		const FFileChangeData& ChangeData;
+	};
 
 	bool bHotReloadNeeded = false;
-	TArray<FString> DirtiedFiles;
+	TArray<FCSChangedFile> DirtiedFiles;
 	FString ExceptionMessage;
+	
 	for (const FFileChangeData& ChangedFile : ChangedFiles)
 	{
 		FString NormalizedFileName = ChangedFile.Filename;
@@ -572,8 +582,7 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 		{
 			continue;
 		}
-
-		// Return on the first .cs file we encounter so we can reload.
+		
 		if (Settings->AutomaticHotReloading != OnScriptSave)
 		{
 			HotReloadStatus = PendingReload;
@@ -582,20 +591,39 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 		{
 			bHotReloadNeeded = true;
 		}
-
+		
 		FString FileName = FPaths::GetCleanFilename(NormalizedFileName);
-
-		if (DirtiedFiles.Contains(FileName))
+		NormalizedFileName.ReplaceInline(TEXT("/"), TEXT("\\"));
+		
+		FString ProjectFile;
+		FindProjectFileFromChangedFile(ChangedFile, ProjectFile);
+		
+		if (ProjectFile.IsEmpty())
 		{
-			continue;
+			ExceptionMessage = FString::Printf(TEXT("Could not find .csproj file for changed file: %s"), *FileName);
+			break;
 		}
 		
-		DirtiedFiles.Add(FileName);
-		NormalizedFileName.ReplaceInline(TEXT("/"), TEXT("\\"));
-
-		FString ProjectName;
-		FindProjectFileFromChangedFile(ChangedFile, ProjectName);
-		EditorModule->GetManagedUnrealSharpEditorCallbacks().DirtyFile(*ProjectName, *NormalizedFileName, &ExceptionMessage);
+		DirtiedFiles.Add({ ProjectFile, NormalizedFileName, ChangedFile });
+	}
+	
+	DirtiedFiles.Sort([](const FCSChangedFile& A, const FCSChangedFile& B)
+	{
+		return A.ChangeData.Action == FFileChangeData::FCA_Removed && B.ChangeData.Action != FFileChangeData::FCA_Removed;
+	});
+	
+	FCSManagedUnrealSharpEditorCallbacks& UnrealSharpEditorCallbacks = EditorModule->GetManagedUnrealSharpEditorCallbacks();
+	
+	for (const FCSChangedFile& DirtiedFile : DirtiedFiles)
+	{
+		if (DirtiedFile.ChangeData.Action == FFileChangeData::FCA_Removed)
+		{
+			UnrealSharpEditorCallbacks.RemoveSourceFile(*DirtiedFile.ProjectFile, *DirtiedFile.FilePath);
+		}
+		else
+		{
+			UnrealSharpEditorCallbacks.RecompileChangedFile(*DirtiedFile.ProjectFile, *DirtiedFile.FilePath, &ExceptionMessage);
+		}
 	}
 
 	if (!ExceptionMessage.IsEmpty())

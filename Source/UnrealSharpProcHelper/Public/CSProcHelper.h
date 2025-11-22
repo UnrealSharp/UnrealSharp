@@ -108,7 +108,7 @@ public:
 	static FString GetRuntimeHostPath();
 
 	// Path to the C# solution file.
-	static FString GetPathToSolution();
+	static FString GetPathToManagedSolution();
 
 private:
 	static FString& GetManagedBinaries();

@@ -62,9 +62,9 @@ public static class StringBuilderExtensions
         };
         
         string jsonString = JsonSerializer.Serialize(typeObject, options);
-        builder.AppendLine($"const string JsonReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
+        builder.AppendLine($"const string NativeReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
         builder.AppendLine("static void Initialize() => ");
-        builder.Append($"NewType(\"{type.EngineName}\", JsonReflectionData, {type.FieldTypeValue}, typeof({type.FullName}));");
+        builder.Append($"RegisterManagedType(\"{type.EngineName}\", NativeReflectionData, {type.FieldTypeValue}, typeof({type.FullName}));");
 
         builder.CloseBrace();
     }
@@ -80,7 +80,7 @@ public static class StringBuilderExtensions
             _ => throw new Exception("Unsupported type kind passed to BeginType" + typeKind)
         };
 
-        string protection = type.Protection.AccessibilityToString();
+        string protection = type.TypeAccessibility.AccessibilityToString();
         
         string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
         builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.FullName}\")]");

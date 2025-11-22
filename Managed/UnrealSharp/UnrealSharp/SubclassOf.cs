@@ -226,4 +226,9 @@ public static class SubclassOfMarshaller<T>
         IntPtr nativeClassPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
         return new TSubclassOf<T>(nativeClassPointer);
     }
+    
+    public static TSubclassOf<T> FromNative(IntPtr nativeBuffer)
+    {
+        return new TSubclassOf<T>(nativeBuffer);
+    }
 }

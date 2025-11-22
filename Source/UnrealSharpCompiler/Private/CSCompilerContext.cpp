@@ -11,11 +11,12 @@
 #include "Types/CSSkeletonClass.h"
 #include "Factories/CSFunctionFactory.h"
 #include "Factories/CSPropertyFactory.h"
-#include "Builders/CSGeneratedClassBuilder.h"
 #include "Utilities/CSMetaDataUtils.h"
-#include "Builders/CSSimpleConstructionScriptBuilder.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtils.h"
+#include "Compilers/CSManagedClassCompiler.h"
+#include "Compilers/CSSimpleConstructionScriptCompiler.h"
+#include "ReflectionData/CSClassReflectionData.h"
 #include "Utilities/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions) : FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
@@ -28,18 +29,18 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	UCSClass* CSClass = static_cast<UCSClass*>(Class);
 	CSClass->SetCanBeInstancedFrom(FCSUnrealSharpUtils::IsEngineStartingUp());
 	
-	Class->ClassConstructor = &UCSGeneratedClassBuilder::ManagedObjectConstructor;
+	Class->ClassConstructor = &UCSClass::ManagedObjectConstructor;
 	
 	Super::FinishCompilingClass(Class);
 
-	UCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
+	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 
-	TSharedPtr<FCSClassMetaData> TypeMetaData = GetClassInfo()->GetMetaData<FCSClassMetaData>();
+	TSharedPtr<FCSClassReflectionData> ClassReflectionData = GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
 
 	// Super call overrides the class flags, so we need to set after that
-	Class->ClassFlags |= TypeMetaData->ClassFlags;
+	Class->ClassFlags |= ClassReflectionData->ClassFlags;
 
-	UCSGeneratedClassBuilder::SetConfigName(Class, TypeMetaData);
+	UCSManagedClassCompiler::SetConfigName(Class, ClassReflectionData);
 	TryInitializeAsDeveloperSettings(Class);
 	TryFakeNativeClass(Class);
 	
@@ -53,7 +54,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 	UCSClass* MainClass = GetMainClass();
 	if (MainClass == NewClass)
 	{
-		UCSGeneratedClassBuilder::TryRegisterDynamicSubsystem(NewClass);
+		UCSManagedClassCompiler::TryRegisterDynamicSubsystem(NewClass);
 
 		if (GEditor)
 		{
@@ -64,13 +65,14 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 {
-	TSharedPtr<FCSManagedTypeInfo> TypeInfo = GetMainClass()->GetManagedTypeInfo();
-	const TArray<FCSPropertyMetaData>& Properties = TypeInfo->GetMetaData<FCSClassMetaData>()->Properties;
+	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = GetMainClass()->GetManagedTypeDefinition();
+	TSharedPtr<FCSClassReflectionData> ClassReflectionData = ManagedTypeDefinition->GetReflectionData<FCSClassReflectionData>();
+	const TArray<FCSPropertyReflectionData>& PropertiesReflectionData = ClassReflectionData->Properties;
 
-	NewClass->PropertyGuids.Empty(Properties.Num());
+	NewClass->PropertyGuids.Empty(PropertiesReflectionData.Num());
 	TryValidateSimpleConstructionScript();
 
-	FCSPropertyFactory::CreateAndAssignProperties(NewClass, Properties, [this](const FProperty* NewProperty)
+	FCSPropertyFactory::CreateAndAssignProperties(NewClass, PropertiesReflectionData, [this](const FProperty* NewProperty)
 	{
 		FName PropertyName = NewProperty->GetFName();
 		FGuid PropertyGuid = FCSUnrealSharpUtils::ConstructGUIDFromName(PropertyName);
@@ -79,7 +81,7 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 
 	// Create dummy variables for the blueprint.
 	// They should not get compiled, just there for metadata for different Unreal modules.
-	CreateDummyBlueprintVariables(Properties);
+	CreateDummyBlueprintVariables(PropertiesReflectionData);
 }
 
 void FCSCompilerContext::CleanAndSanitizeClass(UBlueprintGeneratedClass* ClassToClean, UObject*& InOldCDO)
@@ -102,7 +104,7 @@ void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 	NewSkeletonClass->SetGeneratedClass(MainClass);
 
 	ICSManagedTypeInterface* ManagedType = FCSClassUtilities::GetManagedType(NewSkeletonClass);
-	ManagedType->SetTypeInfo(MainClass->GetManagedTypeInfo());
+	ManagedType->SetManagedTypeDefinition(MainClass->GetManagedTypeDefinition());
 
 	Blueprint->SkeletonGeneratedClass = NewSkeletonClass;
 	NewClass = NewSkeletonClass;
@@ -114,19 +116,19 @@ void FCSCompilerContext::SpawnNewClass(const FString& NewClassName)
 
 void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 {
-	UCSGeneratedClassBuilder::ImplementInterfaces(Class, GetTypeMetaData()->Interfaces);
+	UCSManagedClassCompiler::ImplementInterfaces(Class, GetReflectionData()->Interfaces);
 }
 
 void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
 	UCSManager::Get().FindManagedObject(DefaultObject);
-	UCSGeneratedClassBuilder::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
+	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 }
 
 void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 {
-	const TArray<FCSPropertyMetaData>& Properties = GetTypeMetaData()->Properties;
-	FCSSimpleConstructionScriptBuilder::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
+	const TArray<FCSPropertyReflectionData>& Properties = GetReflectionData()->Properties;
+	FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
 
 	if (!Blueprint->SimpleConstructionScript)
 	{
@@ -134,9 +136,9 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 	}
 
 	TArray<USCS_Node*> Nodes;
-	for (const FCSPropertyMetaData& Property : Properties)
+	for (const FCSPropertyReflectionData& Property : Properties)
 	{
-		if (Property.Type->PropertyType != ECSPropertyType::DefaultComponent)
+		if (Property.InnerType->PropertyType != ECSPropertyType::DefaultComponent)
 		{
 			continue;
 		}
@@ -164,15 +166,15 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 
 void FCSCompilerContext::GenerateFunctions() const
 {
-	TSharedPtr<const FCSClassMetaData> TypeMetaData = GetTypeMetaData();
+	TSharedPtr<const FCSClassReflectionData> ReflectionData = GetReflectionData();
 
-	if (TypeMetaData->Overrides.IsEmpty() && TypeMetaData->Functions.IsEmpty())
+	if (ReflectionData->Overrides.IsEmpty() && ReflectionData->Functions.IsEmpty())
 	{
 		return;
 	}
 
-	FCSFunctionFactory::GenerateVirtualFunctions(NewClass, TypeMetaData);
-	FCSFunctionFactory::GenerateFunctions(NewClass, TypeMetaData->Functions);
+	FCSFunctionFactory::GenerateVirtualFunctions(NewClass, ReflectionData);
+	FCSFunctionFactory::GenerateFunctions(NewClass, ReflectionData->Functions);
 }
 
 UCSClass* FCSCompilerContext::GetMainClass() const
@@ -180,14 +182,14 @@ UCSClass* FCSCompilerContext::GetMainClass() const
 	return CastChecked<UCSClass>(Blueprint->GeneratedClass);
 }
 
-TSharedPtr<const FCSManagedTypeInfo> FCSCompilerContext::GetClassInfo() const
+TSharedPtr<const FCSManagedTypeDefinition> FCSCompilerContext::GetClassInfo() const
 {
-	return GetMainClass()->GetManagedTypeInfo();
+	return GetMainClass()->GetManagedTypeDefinition();
 }
 
-TSharedPtr<const FCSClassMetaData> FCSCompilerContext::GetTypeMetaData() const
+TSharedPtr<const FCSClassReflectionData> FCSCompilerContext::GetReflectionData() const
 {
-	return GetClassInfo()->GetMetaData<FCSClassMetaData>();
+	return GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
 }
 
 void FCSCompilerContext::TryInitializeAsDeveloperSettings(const UClass* Class) const
@@ -238,7 +240,7 @@ void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 	Class->ClassFlags |= CLASS_Native;
 }
 
-void FCSCompilerContext::ApplyMetaData()
+void FCSCompilerContext::ApplyMetaData() const
 {
 	static FString DisplayNameKey = TEXT("DisplayName");
 	if (!NewClass->HasMetaData(*DisplayNameKey))
@@ -253,7 +255,7 @@ void FCSCompilerContext::ApplyMetaData()
 		NewClass->SetMetaData(*DisplayNameKey, *DisplayName);
 	}
 
-	FCSMetaDataUtils::ApplyMetaData(GetTypeMetaData()->MetaData, NewClass);
+	FCSMetaDataUtils::ApplyMetaData(GetReflectionData()->MetaData, NewClass);
 }
 
 bool FCSCompilerContext::NeedsToFakeNativeClass(UClass* Class)
@@ -275,17 +277,17 @@ bool FCSCompilerContext::NeedsToFakeNativeClass(UClass* Class)
 	return false;
 }
 
-void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyMetaData>& Properties) const
+void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyReflectionData>& Properties) const
 {
 	Blueprint->NewVariables.Empty(Properties.Num());
 
-	for (const FCSPropertyMetaData& PropertyMetaData : Properties)
+	for (const FCSPropertyReflectionData& PropertyReflectionData : Properties)
 	{
 		FBPVariableDescription VariableDescription;
-		VariableDescription.FriendlyName = PropertyMetaData.GetName().ToString();
-		VariableDescription.VarName = PropertyMetaData.GetName();
+		VariableDescription.FriendlyName = PropertyReflectionData.GetName().ToString();
+		VariableDescription.VarName = PropertyReflectionData.GetName();
 
-		for (const FCSMetaDataEntry& MetaData : PropertyMetaData.MetaData)
+		for (const FCSMetaDataEntry& MetaData : PropertyReflectionData.MetaData)
 		{
 			VariableDescription.SetMetaData(*MetaData.Key, MetaData.Value);
 		}

@@ -1,18 +1,18 @@
 #include "Factories/PropertyGenerators/CSSetPropertyGenerator.h"
 #include "Factories/CSPropertyFactory.h"
-#include "MetaData/CSTemplateType.h"
+#include "ReflectionData/CSTemplateType.h"
 
-FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSSetPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FSetProperty* SetProperty = NewProperty<FSetProperty>(Outer, PropertyMetaData);
+	FSetProperty* SetProperty = NewProperty<FSetProperty>(Outer, PropertyReflectionData);
 
-	TSharedPtr<FCSTemplateType> ArrayPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
+	TSharedPtr<FCSTemplateType> ArrayPropertyMetaData = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
 	SetProperty->ElementProp = FCSPropertyFactory::CreateProperty(Outer, *ArrayPropertyMetaData->GetTemplateArgument(0));
 	SetProperty->ElementProp->Owner = SetProperty;
 	return SetProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSSetPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSSetPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
 	return MakeShared<FCSTemplateType>();
 }

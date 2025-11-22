@@ -184,8 +184,11 @@ public class GeneratorStringBuilder : IDisposable
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
         List<string> inheritingFrom = new List<string>();
-        
-        if (!string.IsNullOrEmpty(baseType)) inheritingFrom.Add(baseType);
+
+        if (!string.IsNullOrEmpty(baseType))
+        {
+            inheritingFrom.Add(baseType);
+        }
 
         if (nativeInterfaces != null)
         {
@@ -212,6 +215,17 @@ public class GeneratorStringBuilder : IDisposable
         
         AppendLine($"{accessSpecifier}{modifiers} {partialSpecifier}{typeName} {declaredTypeName}{inheritanceSpecifier}");
         OpenBrace();
+    }
+
+    public void AppendNativeTypePtr(UhtStruct structType)
+    {
+        AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
+        
+        if (structType is UhtClass)
+        {
+            string structName = structType.GetStructName();
+            AppendLine($"public new static TSubclassOf<{structName}> StaticClass => SubclassOfMarshaller<{structName}>.FromNative(NativeClassPtr);");
+        }
     }
     
     public void AppendStackAlloc(string sizeVariableName)

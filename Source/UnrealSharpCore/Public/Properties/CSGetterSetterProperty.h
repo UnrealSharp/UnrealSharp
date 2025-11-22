@@ -16,7 +16,7 @@ concept ValidProperty = std::derived_from<T, FProperty>
  * 
  */
 template <ValidProperty PropertyBaseClass>
-class  TCSGetterSetterProperty : public PropertyBaseClass {
+class TCSGetterSetterProperty : public PropertyBaseClass {
 public:
     TCSGetterSetterProperty(FFieldVariant InOwner, FName InName, EObjectFlags InFlags, UFunction* InSetterFunc, UFunction* InGetterFunc) : PropertyBaseClass(InOwner, InName, InFlags), SetterFunc(MoveTemp(InSetterFunc)), GetterFunc(MoveTemp(InGetterFunc)) {
     }
@@ -89,6 +89,7 @@ public:
         return Result;
     }
 
+#if ENGINE_MINOR_VERSION <= 6
     virtual EConvertFromTypeResult ConvertFromType(const FPropertyTag& Tag, FStructuredArchive::FSlot Slot, uint8* Data, UStruct* DefaultsStruct, const uint8* Defaults)
     {
         // We need to call the setter to initialize the backing field from the serialized memory to ensure it gets initialized correctly
@@ -96,6 +97,7 @@ public:
         CallSetterInternal(Data, Data + this->GetOffset_ForInternal());
         return Result;
     }
+#endif
 
     virtual void SerializeItem(FStructuredArchive::FSlot Slot, void* Value, void const* Defaults) const
     {

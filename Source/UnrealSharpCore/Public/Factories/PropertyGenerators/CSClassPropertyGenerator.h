@@ -14,7 +14,7 @@ protected:
 	// Begin UCSPropertyGenerator interface
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Class; }
 	virtual FFieldClass* GetPropertyClass() override { return FClassProperty::StaticClass(); }
-	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData) override;
-	virtual TSharedPtr<FCSUnrealType> CreateTypeMetaData(ECSPropertyType PropertyType) override;
+	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData) override;
+	virtual TSharedPtr<FCSUnrealType> CreatePropertyInnerTypeData(ECSPropertyType PropertyType) override;
 	// End UCSPropertyGenerator interface
 };

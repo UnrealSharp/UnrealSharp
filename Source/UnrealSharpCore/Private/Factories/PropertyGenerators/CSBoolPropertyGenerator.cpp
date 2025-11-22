@@ -1,13 +1,15 @@
 ﻿#include "Factories/PropertyGenerators/CSBoolPropertyGenerator.h"
 
-FProperty* UCSBoolPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+#include "ReflectionData/CSUnrealType.h"
+
+FProperty* UCSBoolPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FBoolProperty* BoolProperty = NewProperty<FBoolProperty>(Outer, PropertyMetaData);
+	FBoolProperty* BoolProperty = NewProperty<FBoolProperty>(Outer, PropertyReflectionData);
 	BoolProperty->SetBoolSize(sizeof(bool), true);
 	return BoolProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSBoolPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSBoolPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
 	return MakeShared<FCSUnrealType>();
 }

@@ -112,7 +112,7 @@ FString FCSProcHelper::GetRuntimeHostPath()
 #endif
 }
 
-FString FCSProcHelper::GetPathToSolution()
+FString FCSProcHelper::GetPathToManagedSolution()
 {
 	static FString SolutionPath = GetScriptFolderDirectory() / GetUserManagedProjectName() + ".sln";
 	return SolutionPath;

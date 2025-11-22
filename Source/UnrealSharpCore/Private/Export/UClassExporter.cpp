@@ -1,6 +1,6 @@
 ﻿#include "Export/UClassExporter.h"
 
-#include "CSAssembly.h"
+#include "CSManagedAssembly.h"
 #include "CSManager.h"
 #include "UnrealSharpCore.h"
 
@@ -30,10 +30,10 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 
 void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName)
 {
-	UCSAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
+	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
 	FCSFieldName FieldName(ClassName, Namespace);
 	
-	UClass* Class = Assembly->FindType<UClass>(FieldName);
+	UClass* Class = Assembly->ResolveUField<UClass>(FieldName);
 	
 	if (!IsValid(Class))
 	{

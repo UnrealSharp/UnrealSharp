@@ -1,8 +1,8 @@
 #pragma once
 
 #include "UnrealSharpCore.h"
-#include "MetaData/CSPropertyMetaData.h"
-#include "MetaData/CSPropertyType.h"
+#include "ReflectionData/CSPropertyReflectionData.h"
+#include "ReflectionData/CSPropertyType.h"
 #include "UObject/UnrealType.h"
 
 class UCSPropertyGenerator;
@@ -29,17 +29,16 @@ public:
 		return *FoundGenerator;
 	}
 	
-	static FProperty* CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData);
-	static FProperty* CreateAndAssignProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+	static FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData);
+	static FProperty* CreateAndAssignProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 	{
-		FProperty* Property = CreateProperty(Outer, PropertyMetaData);
+		FProperty* Property = CreateProperty(Outer, PropertyReflectionData);
 		Outer->AddCppProperty(Property);
 		return Property;
 	}
 	
-	static void CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData, const TFunction<void(FProperty*)>& OnPropertyCreated = nullptr);
-
-	static void TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& PropertyMetaData, UBlueprintGeneratedClass* Class);
+	static void CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyReflectionData>& PropertyReflectionData, const TFunction<void(FProperty*)>& OnPropertyCreated = nullptr);
+	static void TryAddPropertyAsFieldNotify(const FCSPropertyReflectionData& PropertyReflectionData, UBlueprintGeneratedClass* Class);
 
 private:
 	static TArray<TObjectPtr<UCSPropertyGenerator>> PropertyGenerators;

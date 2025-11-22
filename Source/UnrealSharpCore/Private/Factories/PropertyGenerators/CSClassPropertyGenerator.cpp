@@ -1,22 +1,24 @@
 #include "Factories/PropertyGenerators/CSClassPropertyGenerator.h"
-#include "MetaData/CSTemplateType.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSTemplateType.h"
+#include "ReflectionData/CSFieldType.h"
 
-FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FClassProperty* ClassProperty = NewProperty<FClassProperty>(Outer, PropertyMetaData);
+	FClassProperty* ClassProperty = NewProperty<FClassProperty>(Outer, PropertyReflectionData);
 
-	TSharedPtr<FCSTemplateType> ObjectMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
-	const FCSPropertyMetaData* TemplateMetaData = ObjectMetaData->GetTemplateArgument(0);
-	TSharedPtr<FCSFieldTypePropertyMetaData> InnerTypeMetaData = TemplateMetaData->GetTypeMetaData<FCSFieldTypePropertyMetaData>();
-	UClass* Class = InnerTypeMetaData->InnerType.GetAsClass();
+	TSharedPtr<FCSTemplateType> ClassTemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
+	const FCSPropertyReflectionData* TemplateArgument = ClassTemplateType->GetTemplateArgument(0);
+	
+	TSharedPtr<FCSFieldType> FieldType = TemplateArgument->GetInnerTypeData<FCSFieldType>();
+	UClass* Class = FieldType->InnerType.GetAsClass();
 	
 	ClassProperty->PropertyClass = UClass::StaticClass();
 	ClassProperty->SetMetaClass(Class);
+	
 	return ClassProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSClassPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSClassPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
 	return MakeShared<FCSTemplateType>();
 }

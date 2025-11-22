@@ -34,7 +34,7 @@ public class UnrealSharpEditor : ModuleRules
                 "Projects",
                 "GameplayTags",
                 "DeveloperSettings",
-                "UnrealSharpBlueprint",
+                "UnrealSharpAsyncBlueprint",
                 "Kismet",
                 "KismetCompiler",
                 "BlueprintEditorLibrary",

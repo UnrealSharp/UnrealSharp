@@ -103,7 +103,7 @@ public record UnrealClass : UnrealClassBase
                     }
                     
                     UnrealFunction function = new UnrealFunction(model, (IMethodSymbol) member, this);
-                    function.Protection = function.Protection == Accessibility.NotApplicable ? Accessibility.Public : function.Protection;
+                    function.TypeAccessibility = function.TypeAccessibility == Accessibility.NotApplicable ? Accessibility.Public : function.TypeAccessibility;
                 
                     List<AttributeData> attributes = member.GetAttributesByName("UFunctionAttribute");
                     InspectorManager.InspectSpecifiers("UFunctionAttribute", function, attributes);
@@ -194,9 +194,7 @@ public record UnrealClass : UnrealClassBase
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         builder.BeginType(this, TypeKind.Class);
-        
-        builder.AppendLine($"public static TSubclassOf<{SourceName}> StaticClass = SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr}, 0);");
-        builder.AppendLine();
+        builder.AppendLine($"public new static TSubclassOf<{SourceName}> StaticClass => SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr});");
         
         TryExportProperties(builder, spc);
         TryExportList(builder, spc, Functions);

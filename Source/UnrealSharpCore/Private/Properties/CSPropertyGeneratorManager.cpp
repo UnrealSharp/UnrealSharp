@@ -2,14 +2,14 @@
 
 #include <array>
 #include "UnrealSharpCore.h"
-#include "MetaData/CSPropertyMetaData.h"
+#include "ReflectionData/CSPropertyReflectionData.h"
 #include <UObject/PropertyOptional.h>
 
 #include "Properties/CSGetterSetterProperty.h"
 #include "Types/CSClass.h"
 #include "Types/CSSkeletonClass.h"
 
-static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
 	UClass* Class = Cast<UClass>(Outer);
 	
@@ -29,8 +29,8 @@ static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, c
 
 	return
 	{
-		Class->FindFunctionByName(*PropertyMetaData.BlueprintGetter),
-		Class->FindFunctionByName(*PropertyMetaData.BlueprintSetter)
+		Class->FindFunctionByName(*PropertyReflectionData.BlueprintGetter),
+		Class->FindFunctionByName(*PropertyReflectionData.BlueprintSetter)
 	};
 }
 
@@ -38,9 +38,9 @@ template <ValidProperty T>
 class TCSPropertyInitializer : public ICSPropertyInitializer
 {
 public:
-	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyMetaData& PropertyMetaData) const override
+	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyReflectionData& PropertyReflectionData) const override
 	{
-		auto [BlueprintGetterFunction, BlueprintSetterFunction] = GetGetterAndSetterMethods(Outer, PropertyMetaData);
+		auto [BlueprintGetterFunction, BlueprintSetterFunction] = GetGetterAndSetterMethods(Outer, PropertyReflectionData);
 
 		FProperty* NewProperty;
 		if (BlueprintGetterFunction != nullptr || BlueprintSetterFunction != nullptr)
@@ -52,7 +52,7 @@ public:
 			NewProperty = new T(Outer, PropertyName, RF_Public);
 		}
 		
-		NewProperty->PropertyFlags = PropertyMetaData.PropertyFlags;
+		NewProperty->PropertyFlags = PropertyReflectionData.PropertyFlags;
 		return NewProperty;
 	}
 };
@@ -135,7 +135,7 @@ void FCSPropertyGeneratorManager::Shutdown()
 	Instance.Reset();
 }
 
-FProperty* FCSPropertyGeneratorManager::ConstructProperty(const FFieldClass* FieldClass, UField* Owner, FName PropertyName, const FCSPropertyMetaData& PropertyMetaData) const
+FProperty* FCSPropertyGeneratorManager::ConstructProperty(const FFieldClass* FieldClass, UField* Owner, FName PropertyName, const FCSPropertyReflectionData& PropertyReflectionData) const
 {
 	const TSharedRef<ICSPropertyInitializer>* PropertyInitializer = PropertyInitializers.Find(FieldClass->GetFName());
 	
@@ -145,5 +145,5 @@ FProperty* FCSPropertyGeneratorManager::ConstructProperty(const FFieldClass* Fie
 		return static_cast<FProperty*>(FieldClass->Construct(Owner, PropertyName, RF_Public));
 	}
 
-	return PropertyInitializer->Get().ConstructProperty(Owner, PropertyName, PropertyMetaData);
+	return PropertyInitializer->Get().ConstructProperty(Owner, PropertyName, PropertyReflectionData);
 }

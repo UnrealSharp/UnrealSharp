@@ -2,7 +2,7 @@
 
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
-#include "CSAssembly.h"
+#include "CSManagedAssembly.h"
 #include "CSManagedCallbacksCache.h"
 #include "CSManager.generated.h"
 
@@ -13,7 +13,7 @@ class UCSScriptStruct;
 class FUnrealSharpCoreModule;
 class UFunctionsExporter;
 struct FCSNamespace;
-struct FCSTypeReferenceMetaData;
+struct FCSTypeReferenceReflectionData;
 
 struct FCSManagedPluginCallbacks
 {
@@ -26,8 +26,8 @@ struct FCSManagedPluginCallbacks
 
 using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks::FManagedCallbacks*);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const UCSAssembly*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyUnloaded, const UCSAssembly*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyLoaded, const UCSManagedAssembly*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedAssemblyUnloaded, const UCSManagedAssembly*);
 DECLARE_MULTICAST_DELEGATE(FOnAssembliesReloaded);
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UCSClass*);
@@ -60,27 +60,27 @@ public:
     UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
     UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
 
-    UCSAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
     // Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-    UCSAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
     // Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-    UCSAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
 
-    UCSAssembly* FindOwningAssembly(UClass* Class);
-    UCSAssembly* FindOwningAssembly(UScriptStruct* Struct);
-    UCSAssembly* FindOwningAssembly(UEnum* Enum);
+    UCSManagedAssembly* FindOwningAssembly(UClass* Class);
+    UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
+    UCSManagedAssembly* FindOwningAssembly(UEnum* Enum);
 	
-    UCSAssembly* FindAssembly(FName AssemblyName) const
+    UCSManagedAssembly* FindAssembly(FName AssemblyName) const
     {
         return LoadedAssemblies.FindRef(AssemblyName);
     }
 
 	UFUNCTION(meta = (ScriptMethod))
-    UCSAssembly* FindOrLoadAssembly(FName AssemblyName)
+    UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName)
     {
-        if (UCSAssembly* Assembly = FindAssembly(AssemblyName))
+        if (UCSManagedAssembly* Assembly = FindAssembly(AssemblyName))
         {
             return Assembly;
         }
@@ -89,9 +89,9 @@ public:
     }
 
 	UFUNCTION(meta = (ScriptMethod))
-	void GetAllLoadedAssemblies(TArray<UCSAssembly*>& Assemblies) const
+	void GetAllLoadedAssemblies(TArray<UCSManagedAssembly*>& Assemblies) const
     {
-    	TArray<TObjectPtr<UCSAssembly>> FoundAssemblies;
+    	TArray<TObjectPtr<UCSManagedAssembly>> FoundAssemblies;
 	    LoadedAssemblies.GenerateValueArray(FoundAssemblies);
     	Assemblies.Append(FoundAssemblies);
     }
@@ -135,7 +135,7 @@ public:
 
 private:
 
-	friend UCSAssembly;
+	friend UCSManagedAssembly;
 	friend FUnrealSharpCoreModule;
 
 	void Initialize();
@@ -156,7 +156,34 @@ private:
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void TryInitializeDynamicSubsystems();
 
-    UCSAssembly* FindOwningAssemblySlow(UField* Field);
+	template<typename T, typename TUserDefined>
+	UCSManagedAssembly* FindOwningAssemblyGeneric(T* Object)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssemblyGeneric);
+
+		if (const ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Object))
+		{
+			return ManagedType->GetOwningAssembly();
+		}
+
+		if (Cast<TUserDefined>(Object))
+		{
+			// Blueprint-defined type. They have no associated assembly.
+			return nullptr;
+		}
+
+		uint32 ClassID = Object->GetUniqueID();
+		TObjectPtr<UCSManagedAssembly> Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
+
+		if (IsValid(Assembly))
+		{
+			return Assembly;
+		}
+
+		return FindOwningAssemblySlow(Object);
+	}
+
+	UCSManagedAssembly* FindOwningAssemblySlow(UField* Field);
 
 	static UCSManager* Instance;
 
@@ -178,10 +205,10 @@ private:
 	
 	// Map to cache assemblies that native classes are associated with, for quick lookup.
 	UPROPERTY()
-	TMap<uint32, TObjectPtr<UCSAssembly>> NativeClassToAssemblyMap;
+	TMap<uint32, TObjectPtr<UCSManagedAssembly>> NativeClassToAssemblyMap;
 
 	UPROPERTY()
-	TMap<FName, TObjectPtr<UCSAssembly>> LoadedAssemblies;
+	TMap<FName, TObjectPtr<UCSManagedAssembly>> LoadedAssemblies;
 
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 

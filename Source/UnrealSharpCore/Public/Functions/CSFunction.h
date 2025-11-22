@@ -16,7 +16,7 @@ public:
 	virtual void Bind() override;
 	// End of UFunction interface
 	
-	bool TryUpdateMethodHandle();
+	bool UpdateMethodHandle();
 	
 	bool IsOwnedByManagedClass() const;
 

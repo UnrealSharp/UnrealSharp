@@ -1,19 +1,19 @@
 ﻿#include "Factories/PropertyGenerators/CSOptionalPropertyGenerator.h"
 #include "Factories/CSPropertyFactory.h"
-#include "MetaData/CSTemplateType.h"
+#include "ReflectionData/CSTemplateType.h"
 
 struct FCSTemplateType;
 
-FProperty* UCSOptionalPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSOptionalPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FOptionalProperty* OptionalProperty = NewProperty<FOptionalProperty>(Outer, PropertyMetaData);
-	TSharedPtr<FCSTemplateType> OptionalPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSTemplateType>();
-	OptionalProperty->SetValueProperty(FCSPropertyFactory::CreateProperty(Outer, *OptionalPropertyMetaData->GetTemplateArgument(0)));
+	FOptionalProperty* OptionalProperty = NewProperty<FOptionalProperty>(Outer, PropertyReflectionData);
+	TSharedPtr<FCSTemplateType> TemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
+	OptionalProperty->SetValueProperty(FCSPropertyFactory::CreateProperty(Outer, *TemplateType->GetTemplateArgument(0)));
 	OptionalProperty->GetValueProperty()->Owner = OptionalProperty;
 	return OptionalProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSOptionalPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSOptionalPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
 	return MakeShared<FCSTemplateType>();
 }

@@ -303,7 +303,7 @@ public record UnrealProperty : UnrealType
         string partialDeclaration = IsPartial ? "partial " : string.Empty;
         string isRequiredSign = IsRequired ? "required " : string.Empty;
         
-        builder.AppendLine($"{Protection.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedType}{nullableSign} {SourceName}");
+        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}{isRequiredSign}{partialDeclaration}{ManagedType}{nullableSign} {SourceName}");
         builder.OpenBrace();
         
         if (GetterMethod != null)

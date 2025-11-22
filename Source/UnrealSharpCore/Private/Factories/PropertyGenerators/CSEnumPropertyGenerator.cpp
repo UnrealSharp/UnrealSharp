@@ -1,15 +1,15 @@
 #include "Factories/PropertyGenerators/CSEnumPropertyGenerator.h"
 #include "CSManager.h"
 #include "Types/CSEnum.h"
-#include "MetaData/CSFieldTypePropertyMetaData.h"
+#include "ReflectionData/CSFieldType.h"
 
-FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
-	FEnumProperty* EnumProperty = NewProperty<FEnumProperty>(Outer, PropertyMetaData);
-	const TSharedPtr<FCSFieldTypePropertyMetaData> EnumPropertyMetaData = PropertyMetaData.GetTypeMetaData<FCSFieldTypePropertyMetaData>();
+	FEnumProperty* EnumProperty = NewProperty<FEnumProperty>(Outer, PropertyReflectionData);
+	const TSharedPtr<FCSFieldType> FieldType = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
 
-	UCSAssembly* Assembly = UCSManager::Get().FindAssembly(EnumPropertyMetaData->InnerType.AssemblyName);
-	UEnum* Enum = Assembly->FindType<UEnum>(EnumPropertyMetaData->InnerType.FieldName);
+	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(FieldType->InnerType.AssemblyName);
+	UEnum* Enum = Assembly->ResolveUField<UEnum>(FieldType->InnerType.FieldName);
 
 #if WITH_EDITOR
 	if (UCSEnum* ManagedEnum = Cast<UCSEnum>(Enum))
@@ -29,7 +29,7 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	return EnumProperty;
 }
 
-TSharedPtr<FCSUnrealType> UCSEnumPropertyGenerator::CreateTypeMetaData(ECSPropertyType PropertyType)
+TSharedPtr<FCSUnrealType> UCSEnumPropertyGenerator::CreatePropertyInnerTypeData(ECSPropertyType PropertyType)
 {
-	return MakeShared<FCSFieldTypePropertyMetaData>();
+	return MakeShared<FCSFieldType>();
 }

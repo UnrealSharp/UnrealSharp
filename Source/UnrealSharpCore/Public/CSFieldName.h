@@ -2,7 +2,7 @@
 
 #include "CSNamespace.h"
 
-struct UNREALSHARPCORE_API FCSFieldName : FCSMetaDataBase
+struct UNREALSHARPCORE_API FCSFieldName : FCSReflectionDataBase
 {
 	FCSFieldName() : Name(NAME_None), Namespace(NAME_None) {}
 	FCSFieldName(FName Name, FName Namespace) : Name(Name), Namespace(Namespace) {}
@@ -33,9 +33,9 @@ struct UNREALSHARPCORE_API FCSFieldName : FCSMetaDataBase
 		return GetTypeHash(Field.Name) ^ GetTypeHash(Field.Namespace);
 	}
 
-	// FCSMetaDataBase interface
+	// FCSReflectionDataBase interface
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
-	// End of FCSMetaDataBase interface
+	// End of FCSReflectionDataBase interface
 private:
 	FName Name;
 	FCSNamespace Namespace;

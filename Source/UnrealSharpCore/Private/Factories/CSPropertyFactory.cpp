@@ -56,39 +56,39 @@ void FCSPropertyFactory::Initialize()
 	}
 }
 
-FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMetaData& PropertyMetaData)
+FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSPropertyFactory::CreateProperty);
 	
-	UCSPropertyGenerator* PropertyGenerator = GetPropertyGenerator(PropertyMetaData.Type->PropertyType);
-	FProperty* NewProperty = PropertyGenerator->CreateProperty(Outer, PropertyMetaData);
+	UCSPropertyGenerator* PropertyGenerator = GetPropertyGenerator(PropertyReflectionData.InnerType->PropertyType);
+	FProperty* NewProperty = PropertyGenerator->CreateProperty(Outer, PropertyReflectionData);
 
-	NewProperty->SetPropertyFlags(PropertyMetaData.PropertyFlags);
-	NewProperty->SetBlueprintReplicationCondition(PropertyMetaData.LifetimeCondition);
+	NewProperty->SetPropertyFlags(PropertyReflectionData.PropertyFlags);
+	NewProperty->SetBlueprintReplicationCondition(PropertyReflectionData.LifetimeCondition);
 
 #if WITH_EDITOR
-	if (!PropertyMetaData.BlueprintSetter.IsEmpty())
+	if (!PropertyReflectionData.BlueprintSetter.IsEmpty())
 	{
-		NewProperty->SetMetaData("BlueprintSetter", *PropertyMetaData.BlueprintSetter);
+		NewProperty->SetMetaData("BlueprintSetter", *PropertyReflectionData.BlueprintSetter);
 
-		if (UFunction* BlueprintSetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyMetaData.BlueprintSetter))
+		if (UFunction* BlueprintSetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyReflectionData.BlueprintSetter))
 		{
 			BlueprintSetterFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
 		}
 	}
 
-	if (!PropertyMetaData.BlueprintGetter.IsEmpty())
+	if (!PropertyReflectionData.BlueprintGetter.IsEmpty())
 	{
-		NewProperty->SetMetaData("BlueprintGetter", *PropertyMetaData.BlueprintGetter);
+		NewProperty->SetMetaData("BlueprintGetter", *PropertyReflectionData.BlueprintGetter);
 			
-		if (UFunction* BlueprintGetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyMetaData.BlueprintGetter))
+		if (UFunction* BlueprintGetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyReflectionData.BlueprintGetter))
 		{
 			BlueprintGetterFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
 		}
 	}
 #endif
 
-	FCSMetaDataUtils::ApplyMetaData(PropertyMetaData.MetaData, NewProperty);
+	FCSMetaDataUtils::ApplyMetaData(PropertyReflectionData.MetaData, NewProperty);
 	
 	if (UBlueprintGeneratedClass* OwningClass = Cast<UBlueprintGeneratedClass>(Outer))
 	{
@@ -96,24 +96,24 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyMe
 		{
 			++OwningClass->NumReplicatedProperties;
 			
-			if (!PropertyMetaData.RepNotifyFunctionName.IsNone())
+			if (!PropertyReflectionData.RepNotifyFunctionName.IsNone())
 			{
-				NewProperty->RepNotifyFunc = PropertyMetaData.RepNotifyFunctionName;
+				NewProperty->RepNotifyFunc = PropertyReflectionData.RepNotifyFunctionName;
 			}
 		}
 
-		TryAddPropertyAsFieldNotify(PropertyMetaData, OwningClass);
+		TryAddPropertyAsFieldNotify(PropertyReflectionData, OwningClass);
 	}
 
 	NewProperty->SetFlags(RF_LoadCompleted);
 	return NewProperty;
 }
 
-void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyMetaData>& PropertyMetaData, const TFunction<void(FProperty*)>& OnPropertyCreated)
+void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<FCSPropertyReflectionData>& PropertyReflectionData, const TFunction<void(FProperty*)>& OnPropertyCreated)
 {
-	for (int32 i = PropertyMetaData.Num() - 1; i >= 0; --i)
+	for (int32 i = PropertyReflectionData.Num() - 1; i >= 0; --i)
 	{
-		const FCSPropertyMetaData& Property = PropertyMetaData[i];
+		const FCSPropertyReflectionData& Property = PropertyReflectionData[i];
 		FProperty* NewProperty = CreateAndAssignProperty(Outer, Property);
 
 		if (OnPropertyCreated)
@@ -123,17 +123,17 @@ void FCSPropertyFactory::CreateAndAssignProperties(UField* Outer, const TArray<F
 	}
 }
 
-void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FCSPropertyMetaData& PropertyMetaData, UBlueprintGeneratedClass* Class)
+void FCSPropertyFactory::TryAddPropertyAsFieldNotify(const FCSPropertyReflectionData& PropertyReflectionData, UBlueprintGeneratedClass* Class)
 {
 	bool bImplementsInterface = Class->ImplementsInterface(UNotifyFieldValueChanged::StaticClass());
-	bool bHasFieldNotifyMetaData = PropertyMetaData.HasMetaData(TEXT("FieldNotify"));
+	bool bHasFieldNotifyMetaData = PropertyReflectionData.HasMetaData(TEXT("FieldNotify"));
 	
 	if (!bImplementsInterface || !bHasFieldNotifyMetaData)
 	{
 		return;
 	}
 	
-	Class->FieldNotifies.Add(FFieldNotificationId(PropertyMetaData.GetName()));
+	Class->FieldNotifies.Add(FFieldNotificationId(PropertyReflectionData.GetName()));
 }
 
 

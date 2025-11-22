@@ -13,6 +13,8 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
         _array = array;
     }
     
+    public bool IsNull => _array is null;
+    
     public bool Equals(EquatableArray<T> array)
     {
         int aCount = Count;
@@ -100,6 +102,22 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
 public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumerable<T> where T : IEquatable<T>
 {
     private readonly List<T> _list;
+    public List<T> List => _list;
+    
+    public bool IsNull => _list is null;
+
+    public int Count
+    {
+        get
+        {
+            if (_list is null)
+            {
+                return 0;
+            }
+
+            return _list.Count;
+        }
+    }
     
     public EquatableList(List<T> list)
     {
@@ -149,8 +167,6 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
         return hashCode.ToHashCode();
     }
     
-    public List<T> List => _list;
-    
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         return ((IEnumerable<T>)(_list ?? new List<T>())).GetEnumerator();
@@ -159,18 +175,5 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
     IEnumerator IEnumerable.GetEnumerator()
     {
         return ((IEnumerable<T>)(_list ?? new List<T>())).GetEnumerator();
-    }
-
-    public int Count
-    {
-        get
-        {
-            if (_list is null)
-            {
-                return 0;
-            }
-
-            return _list.Count;
-        }
     }
 }

@@ -1,6 +1,6 @@
 #include "Utilities/CSMetaDataUtils.h"
 #include "CSUnrealSharpSettings.h"
-#include "MetaData/CSTypeReferenceMetaData.h"
+#include "ReflectionData/CSTypeReferenceReflectionData.h"
 
 void FCSMetaDataUtils::ApplyMetaData(const TArray<FCSMetaDataEntry>& MetaDataMap, UField* Field)
 {

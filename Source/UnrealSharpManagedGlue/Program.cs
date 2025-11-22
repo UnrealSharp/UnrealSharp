@@ -21,7 +21,6 @@ public static class Program
 
     public static string EngineGluePath { get; private set; } = "";
     public static string PluginsPath { get; private set; } = "";
-    public static string ProjectGluePath_LEGACY { get; private set; } = "";
     public static string ProjectName => Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile!);
 
     public static bool BuildingEditor { get; private set; }
@@ -88,7 +87,6 @@ public static class Program
         string projectDirectory = Factory.Session.ProjectDirectory!;
 		ScriptFolder = Path.Combine(projectDirectory, "Script");
         PluginsPath = Path.Combine(projectDirectory, "Plugins");
-        ProjectGluePath_LEGACY = Path.Combine(ScriptFolder, "ProjectGlue");
 
         EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
 
