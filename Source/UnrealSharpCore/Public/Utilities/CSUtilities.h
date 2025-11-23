@@ -11,4 +11,5 @@ namespace FCSUtilities
 	
 	void ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results);
 	void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);
+	void ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Results);
 };

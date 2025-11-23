@@ -37,6 +37,8 @@ public:
 	UNREALSHARPCORE_API FString GetAssemblyFileName() const { return FPaths::GetCleanFilename(AssemblyFilePath); }
 	
 	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return bIsLoading; }
+	
+	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 
 	TSharedPtr<FGCHandle> FindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> AddTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle)

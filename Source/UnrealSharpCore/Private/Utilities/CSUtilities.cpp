@@ -44,37 +44,37 @@ void FCSUtilities::ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Result
 {
 	const TCHAR* FunctionFlags[32] =
 	{
-		TEXT("Final"),					// FUNC_Final
+		TEXT("Final"),
 		TEXT("0x00000002"),
-		TEXT("BlueprintAuthorityOnly"),	// FUNC_BlueprintAuthorityOnly
-		TEXT("BlueprintCosmetic"),		// FUNC_BlueprintCosmetic
+		TEXT("BlueprintAuthorityOnly"),
+		TEXT("BlueprintCosmetic"),
 		TEXT("0x00000010"),
 		TEXT("0x00000020"),
-		TEXT("Net"),					// FUNC_Net
-		TEXT("NetReliable"),			// FUNC_NetReliable
-		TEXT("NetRequest"),				// FUNC_NetRequest
-		TEXT("Exec"),					// FUNC_Exec
-		TEXT("Native"),					// FUNC_Native
-		TEXT("Event"),					// FUNC_Event
-		TEXT("NetResponse"),			// FUNC_NetResponse
-		TEXT("Static"),					// FUNC_Static
-		TEXT("NetMulticast"),			// FUNC_NetMulticast
+		TEXT("Net"),
+		TEXT("NetReliable"),
+		TEXT("NetRequest"),
+		TEXT("Exec")
+		TEXT("Native"),
+		TEXT("Event"),
+		TEXT("NetResponse"),
+		TEXT("Static"),
+		TEXT("NetMulticast"),
 		TEXT("0x00008000"),
-		TEXT("MulticastDelegate"),		// FUNC_MulticastDelegate
-		TEXT("Public"),					// FUNC_Public
-		TEXT("Private"),				// FUNC_Private
-		TEXT("Protected"),				// FUNC_Protected
-		TEXT("Delegate"),				// FUNC_Delegate
-		TEXT("NetServer"),				// FUNC_NetServer
-		TEXT("HasOutParms"),			// FUNC_HasOutParms
-		TEXT("HasDefaults"),			// FUNC_HasDefaults
-		TEXT("NetClient"),				// FUNC_NetClient
-		TEXT("DLLImport"),				// FUNC_DLLImport
-		TEXT("BlueprintCallable"),		// FUNC_BlueprintCallable
-		TEXT("BlueprintEvent"),			// FUNC_BlueprintEvent
-		TEXT("BlueprintPure"),			// FUNC_BlueprintPure
+		TEXT("MulticastDelegate"),
+		TEXT("Public"),
+		TEXT("Private"),
+		TEXT("Protected"),
+		TEXT("Delegate"),
+		TEXT("NetServer"),
+		TEXT("HasOutParms"),
+		TEXT("HasDefaults"),
+		TEXT("NetClient"),
+		TEXT("DLLImport"),
+		TEXT("BlueprintCallable"),
+		TEXT("BlueprintEvent"),
+		TEXT("BlueprintPure"),
 		TEXT("0x20000000"),
-		TEXT("Const"),					// FUNC_Const
+		TEXT("Const"),
 		TEXT("0x80000000"),
 	};
 
@@ -92,67 +92,67 @@ void FCSUtilities::ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR
 {
 	static const TCHAR* PropertyFlags[] =
 	{
-		TEXT("CPF_Edit"),
-		TEXT("CPF_ConstParm"),
-		TEXT("CPF_BlueprintVisible"),
-		TEXT("CPF_ExportObject"),
-		TEXT("CPF_BlueprintReadOnly"),
-		TEXT("CPF_Net"),
-		TEXT("CPF_EditFixedSize"),
-		TEXT("CPF_Parm"),
-		TEXT("CPF_OutParm"),
-		TEXT("CPF_ZeroConstructor"),
-		TEXT("CPF_ReturnParm"),
-		TEXT("CPF_DisableEditOnTemplate"),
-		TEXT("CPF_NonNullable"),
-		TEXT("CPF_Transient"),
-		TEXT("CPF_Config"),
-		TEXT("CPF_RequiredParm"),
-		TEXT("CPF_DisableEditOnInstance"),
-		TEXT("CPF_EditConst"),
-		TEXT("CPF_GlobalConfig"),
-		TEXT("CPF_InstancedReference"),
-		TEXT("CPF_ExperimentalExternalObjects"),
-		TEXT("CPF_DuplicateTransient"),
+		TEXT("Edit"),
+		TEXT("ConstParm"),
+		TEXT("BlueprintVisible"),
+		TEXT("ExportObject"),
+		TEXT("BlueprintReadOnly"),
+		TEXT("Net"),
+		TEXT("EditFixedSize"),
+		TEXT("Parm"),
+		TEXT("OutParm"),
+		TEXT("ZeroConstructor"),
+		TEXT("ReturnParm"),
+		TEXT("DisableEditOnTemplate"),
+		TEXT("NonNullable"),
+		TEXT("Transient"),
+		TEXT("Config"),
+		TEXT("RequiredParm"),
+		TEXT("DisableEditOnInstance"),
+		TEXT("EditConst"),
+		TEXT("GlobalConfig"),
+		TEXT("InstancedReference"),
+		TEXT("ExperimentalExternalObjects"),
+		TEXT("DuplicateTransient"),
 		TEXT("0x0000000000400000"),
 		TEXT("0x0000000000800000"),
-		TEXT("CPF_SaveGame"),	
-		TEXT("CPF_NoClear"),
-		TEXT("CPF_Virtual"),
-		TEXT("CPF_ReferenceParm"),
-		TEXT("CPF_BlueprintAssignable"),
-		TEXT("CPF_Deprecated"),
-		TEXT("CPF_IsPlainOldData"),
-		TEXT("CPF_RepSkip"),
-		TEXT("CPF_RepNotify"),
-		TEXT("CPF_Interp"),
-		TEXT("CPF_NonTransactional"),
-		TEXT("CPF_EditorOnly"),
-		TEXT("CPF_NoDestructor"),
+		TEXT("SaveGame"),	
+		TEXT("NoClear"),
+		TEXT("Virtual"),
+		TEXT("ReferenceParm"),
+		TEXT("BlueprintAssignable"),
+		TEXT("Deprecated"),
+		TEXT("IsPlainOldData"),
+		TEXT("RepSkip"),
+		TEXT("RepNotify"),
+		TEXT("Interp"),
+		TEXT("NonTransactional"),
+		TEXT("EditorOnly"),
+		TEXT("NoDestructor"),
 		TEXT("0x0000002000000000"),
-		TEXT("CPF_AutoWeak"),
-		TEXT("CPF_ContainsInstancedReference"),
-		TEXT("CPF_AssetRegistrySearchable"),
-		TEXT("CPF_SimpleDisplay"),
-		TEXT("CPF_AdvancedDisplay"),
-		TEXT("CPF_Protected"),
-		TEXT("CPF_BlueprintCallable"),
-		TEXT("CPF_BlueprintAuthorityOnly"),
-		TEXT("CPF_TextExportTransient"),
-		TEXT("CPF_NonPIEDuplicateTransient"),
-		TEXT("CPF_ExposeOnSpawn"),
-		TEXT("CPF_PersistentInstance"),
-		TEXT("CPF_UObjectWrapper"),
-		TEXT("CPF_HasGetValueTypeHash"),
-		TEXT("CPF_NativeAccessSpecifierPublic"),
-		TEXT("CPF_NativeAccessSpecifierProtected"),
-		TEXT("CPF_NativeAccessSpecifierPrivate"),
-		TEXT("CPF_SkipSerialization"),
-		TEXT("CPF_TObjectPtr")
-		TEXT("CPF_ExperimentalOverridableLogic"),
-		TEXT("CPF_ExperimentalAlwaysOverriden"),
-		TEXT("CPF_ExperimentalNeverOverriden"),
-		TEXT("CPF_AllowSelfReference"),
+		TEXT("AutoWeak"),
+		TEXT("ContainsInstancedReference"),
+		TEXT("AssetRegistrySearchable"),
+		TEXT("SimpleDisplay"),
+		TEXT("AdvancedDisplay"),
+		TEXT("Protected"),
+		TEXT("BlueprintCallable"),
+		TEXT("BlueprintAuthorityOnly"),
+		TEXT("TextExportTransient"),
+		TEXT("NonPIEDuplicateTransient"),
+		TEXT("ExposeOnSpawn"),
+		TEXT("PersistentInstance"),
+		TEXT("UObjectWrapper"),
+		TEXT("HasGetValueTypeHash"),
+		TEXT("NativeAccessSpecifierPublic"),
+		TEXT("NativeAccessSpecifierProtected"),
+		TEXT("NativeAccessSpecifierPrivate"),
+		TEXT("SkipSerialization"),
+		TEXT("TObjectPtr")
+		TEXT("ExperimentalOverridableLogic"),
+		TEXT("ExperimentalAlwaysOverriden"),
+		TEXT("ExperimentalNeverOverriden"),
+		TEXT("AllowSelfReference"),
 	};
 
 	uint64 Flags = InFlags;
@@ -166,3 +166,54 @@ void FCSUtilities::ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR
 		Flags >>= 1;
 	}
 }
+
+void FCSUtilities::ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Results)
+{
+	static const TCHAR* ClassFlags[] =
+	{
+		TEXT("None"),
+		TEXT("Abstract"),
+		TEXT("DefaultConfig"),
+		TEXT("Config"),
+		TEXT("Transient"),
+		TEXT("Optional"),
+		TEXT("MatchedSerializers"),
+		TEXT("ProjectUserConfig"),
+		TEXT("Native"),
+		TEXT("NotPlaceable"),
+		TEXT("PerObjectConfig"),
+		TEXT("ReplicationDataIsSetUp"),
+		TEXT("EditInlineNew"),
+		TEXT("CollapseCategories"),
+		TEXT("Interface"),
+		TEXT("PerPlatformConfig"),
+		TEXT("Const"),
+		TEXT("NeedsDeferredDependencyLoading"),
+		TEXT("CompiledFromBlueprint"),
+		TEXT("MinimalAPI"),
+		TEXT("RequiredAPI"),
+		TEXT("DefaultToInstanced"),
+		TEXT("TokenStreamAssembled"),
+		TEXT("HasInstancedReference"),
+		TEXT("Hidden"),
+		TEXT("Deprecated"),
+		TEXT("HideDropDown"),
+		TEXT("GlobalUserConfig"),
+		TEXT("Intrinsic"),
+		TEXT("Constructed"),
+		TEXT("ConfigDoNotCheckDefaults"),
+		TEXT("NewerVersionExists"),
+	};
+
+	uint32 Flags = static_cast<uint32>(InFlags);
+
+	for (int32 Bit = 0; Bit < UE_ARRAY_COUNT(ClassFlags); ++Bit)
+	{
+		uint32 Mask = (Bit == 0) ? 0 : (1u << (Bit - 1));
+		if ((Flags & Mask) != 0)
+		{
+			Results.Add(ClassFlags[Bit]);
+		}
+	}
+}
+

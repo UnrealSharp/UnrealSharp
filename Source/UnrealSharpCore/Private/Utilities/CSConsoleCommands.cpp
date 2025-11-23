@@ -2,7 +2,7 @@
 #include "CSFieldName.h"
 #include "CSManagedAssembly.h"
 #include "CSManager.h"
-#include "CSUtilities.h"
+#include "Utilities/CSUtilities.h"
 
 FString Indent(int32 Level)
 {
@@ -73,6 +73,10 @@ void DumpDataAsStruct(UStruct* Struct, int32 IndentLevel = 1)
 
 void DumpDataAsClass(UClass* Class, int32 IndentLevel = 1)
 {
+	TArray<const TCHAR*> ClassFlagsStrings;
+	FCSUtilities::ParseClassFlags(Class->ClassFlags, ClassFlagsStrings);
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Class Flags: ({1})", Indent(IndentLevel + 1), FString::Join(ClassFlagsStrings, TEXT(", ")));
+	
 	DumpPropertiesOfStruct(Class, IndentLevel + 1);
 
 	UE_LOGFMT(LogUnrealSharp, Log, "{0}Functions:", Indent(IndentLevel + 1));
@@ -83,10 +87,10 @@ void DumpDataAsClass(UClass* Class, int32 IndentLevel = 1)
 		bHasFunctions = true;
 		UFunction* Function = *It;
 
-		TArray<const TCHAR*> FlagStrings;
-		FCSUtilities::ParseFunctionFlags(Function->FunctionFlags, FlagStrings);
+		TArray<const TCHAR*> FunctionFlagsStrings;
+		FCSUtilities::ParseFunctionFlags(Function->FunctionFlags, FunctionFlagsStrings);
 
-		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} ({2})", Indent(IndentLevel + 2), Function->GetName(), FString::Join(FlagStrings, TEXT(", ")));
+		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} ({2})", Indent(IndentLevel + 2), Function->GetName(), FString::Join(FunctionFlagsStrings, TEXT(", ")));
 		DumpMetaData(Function, IndentLevel + 3);
 		DumpPropertiesOfStruct(Function, IndentLevel + 3);
 	}
@@ -191,5 +195,68 @@ static FAutoConsoleCommand CVarDumpTypeReflectionData(
 	TEXT("UnrealSharp.DumpTypeReflectionData"),
 	TEXT("Shows reflection data for managed type. Example: UnrealSharp.DumpTypeReflectionData MyNamespace.MyClass"),
 	FConsoleCommandWithArgsDelegate::CreateStatic(&DumpTypeReflectionData)
+);
+
+static FAutoConsoleCommand CVarDumpLoadedAssemblies(
+	TEXT("UnrealSharp.DumpLoadedAssemblies"),
+	TEXT("Lists all loaded managed assemblies."),
+	FConsoleCommandDelegate::CreateStatic([]()
+	{
+		TArray<UCSManagedAssembly*> Assemblies;
+		UCSManager::Get().GetAllLoadedAssemblies(Assemblies);
+		
+		UE_LOG(LogUnrealSharp, Log, TEXT("Loaded Managed Assemblies:"));
+		for (UCSManagedAssembly* Assembly : Assemblies)
+		{
+			UE_LOGFMT(LogUnrealSharp, Log, "- {0}", *Assembly->GetAssemblyName().ToString());
+		}
+	})
+);
+
+static FAutoConsoleCommand CVarListTypesInAssembly(
+	TEXT("UnrealSharp.ListTypesInAssembly"),
+	TEXT("Lists all managed types in the specified assembly. Usage: UnrealSharp.ListTypesInAssembly [AssemblyName]"),
+	FConsoleCommandWithArgsDelegate::CreateStatic([](const TArray<FString>& Args)
+	{
+		if (Args.Num() != 1)
+		{
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Usage: UnrealSharp.ListTypesInAssembly [AssemblyName]"));
+			return;
+		}
+		
+		FName AssemblyName(*Args[0]);
+		UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
+		
+		if (!IsValid(Assembly))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Assembly not found: {0}", *AssemblyName.ToString());
+			return;
+		}
+		
+		UE_LOGFMT(LogUnrealSharp, Log, "Managed Types in Assembly {0}:", *AssemblyName.ToString());
+		
+		for (const TTuple<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& Pair : Assembly->GetDefinedManagedTypes())
+		{
+			const FCSFieldName& FieldName = Pair.Key;
+			TSharedPtr<FCSManagedTypeDefinition> TypeDefinition = Pair.Value;
+			
+			if (TypeDefinition.IsValid())
+			{
+				UField* Field = TypeDefinition->GetManagedField();
+				if (IsValid(Field))
+				{
+					UE_LOGFMT(LogUnrealSharp, Log, "- {0} ({1})", *FieldName.GetFullName().ToString(), Field->GetClass()->GetName());
+				}
+				else
+				{
+					UE_LOGFMT(LogUnrealSharp, Log, "- {0} (No UField)", *FieldName.GetFullName().ToString());
+				}
+			}
+			else
+			{
+				UE_LOGFMT(LogUnrealSharp, Log, "- {0} (No Type Definition)", *FieldName.GetFullName().ToString());
+			}
+		}
+	})
 );
 
