@@ -129,7 +129,7 @@ void FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(UClass* 
 			if (FCSClassUtilities::IsNativeClass(ParentClass))
 			{
 				UObject* DefaultObject = ParentClass->GetDefaultObject();
-				UObject* Component = ObjectProperty->GetObjectPropertyValue(DefaultObject);
+				UObject* Component = ObjectProperty->GetObjectPropertyValue_InContainer(DefaultObject);
 
 				if (ObjectProperty && IsValid(Component) && Component->IsA<USceneComponent>())
 				{
