@@ -70,14 +70,14 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 	const TArray<FCSPropertyReflectionData>& PropertiesReflectionData = ClassReflectionData->Properties;
 
 	NewClass->PropertyGuids.Empty(PropertiesReflectionData.Num());
-	TryValidateSimpleConstructionScript();
-
 	FCSPropertyFactory::CreateAndAssignProperties(NewClass, PropertiesReflectionData, [this](const FProperty* NewProperty)
 	{
 		FName PropertyName = NewProperty->GetFName();
 		FGuid PropertyGuid = FCSUnrealSharpUtils::ConstructGUIDFromName(PropertyName);
 		NewClass->PropertyGuids.Add(PropertyName, PropertyGuid);
 	});
+	
+	TryValidateSimpleConstructionScript();
 
 	// Create dummy variables for the blueprint.
 	// They should not get compiled, just there for metadata for different Unreal modules.
