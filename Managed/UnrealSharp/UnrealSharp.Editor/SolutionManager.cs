@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.Core;
+using UnrealSharp.UnrealSharpEditor;
 
 namespace UnrealSharp.Editor;
 
@@ -51,11 +53,15 @@ public static class SolutionManager
         {
             string fullSolutionPath = Path.GetFullPath(solutionPath);
             await UnrealSharpWorkspace.OpenSolutionAsync(fullSolutionPath);
+            
+            IList<Project> projects = UnrealSharpWorkspace.CurrentSolution.Projects.ToList();
         
-            foreach (Project project in UnrealSharpWorkspace.CurrentSolution.Projects)
+            foreach (Project project in projects)
             {
                 await ProcessProject(project);
             }
+            
+            BuildProjectDependencyMap(projects);
 
             unsafe
             {
@@ -66,6 +72,43 @@ public static class SolutionManager
         catch (Exception exception)
         {
             LogUnrealSharpEditor.LogError($"Failed to load solution '{solutionPath}': {exception}");
+        }
+    }
+    
+    private static void BuildProjectDependencyMap(IList<Project> projects)
+    {
+        foreach (Project target in projects)
+        {
+            List<FName> dependentProjects = new List<FName>();
+
+            foreach (Project project in projects)
+            {
+                if (project == target)
+                {
+                    continue; 
+                }
+                    
+                foreach (ProjectReference projectReference in project.ProjectReferences)
+                {
+                    if (projectReference.ProjectId != target.Id)
+                    {
+                        continue;
+                    }
+                        
+                    dependentProjects.Add(project.Name);
+                    break;
+                }
+            }
+            
+            List<FName> referencedProjects = new List<FName>();
+            foreach (ProjectReference projectReference in target.ProjectReferences)
+            {
+                string filePath = projectReference.ProjectId.ToString();
+                string projectName = Path.GetFileNameWithoutExtension(filePath);
+                referencedProjects.Add(projectName);
+            }
+            
+            UCSEditorBlueprintFunctionLibrary.SetupAssemblyReferences(target.Name, dependentProjects, referencedProjects);
         }
     }
 

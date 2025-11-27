@@ -15,6 +15,7 @@
 #include "Types/CSScriptStruct.h"
 #include "CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "Utilities/CSUtilities.h"
 
 #define LOCTEXT_NAMESPACE "UCSHotReloadSubsystem"
 
@@ -37,6 +38,8 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	EditorModule->GetManagedUnrealSharpEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
 	
 	PauseHotReload(TEXT("Waiting for initial C# load..."));
+	
+	RefreshDirectoryWatchers();
 }
 
 void UCSHotReloadSubsystem::Deinitialize()
@@ -55,7 +58,6 @@ void UCSHotReloadSubsystem::OnHotReloadReady_Callback()
 
 void UCSHotReloadSubsystem::OnHotReloadReady()
 {
-	RefreshDirectoryWatchers();
 	ResumeHotReload();
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "C# Hot Reload is ready.");
 }
@@ -77,7 +79,7 @@ FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
 
 void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 {
-	if (HotReloadIsPaused)
+	if (bHotReloadIsPaused)
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Hot reload is currently paused. Skipping hot reload.");
 		return;
@@ -94,13 +96,9 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	TArray<FString> AllProjects;
 	FCSProcHelper::GetAllProjectPaths(AllProjects);
 
-	if (AllProjects.IsEmpty())
+	if (AllProjects.IsEmpty() && bPromptPlayerWithNewProject)
 	{
-		if (bPromptPlayerWithNewProject)
-		{
-			EditorModule->SuggestProjectSetup();
-		}
-
+		EditorModule->SuggestProjectSetup();
 		return;
 	}
 	
@@ -108,7 +106,7 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	double StartTime = FPlatformTime::Seconds();
 
 	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
-	Progress.MakeDialog();
+	Progress.MakeDialog(false, true);
 
 	FString ExceptionMessage;
 	if (!EditorModule->GetManagedUnrealSharpEditorCallbacks().RecompileDirtyProjects(&ExceptionMessage))
@@ -121,68 +119,61 @@ void UCSHotReloadSubsystem::StartHotReload(bool bPromptPlayerWithNewProject)
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
-
-	UCSManager& CSharpManager = UCSManager::Get();
-	bool bUnloadFailed = false;
-
-	TArray<FString> ProjectsByLoadOrder;
-	FCSProcHelper::GetProjectNamesByLoadOrder(ProjectsByLoadOrder, true);
 	
-	// Unload all assemblies in reverse order to prevent unloading an assembly that is still being referenced.
-	// For instance, most assemblies depend on ProjectGlue, so it must be unloaded last.
-	// Good info: https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability
-	// Note: An assembly is only referenced if any of its types are referenced in code.
-	// Otherwise optimized out, so ProjectGlue can be unloaded first if it's not used.
-	for (int32 i = ProjectsByLoadOrder.Num() - 1; i >= 0; --i)
+	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
+	FCSUtilities::SortAssembliesByDependencyOrder(AffectedAssemblies, AssembliesSortedByDependencies);
+	
+	AffectedAssemblies.Reset();
+	
+	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
-		const FString& ProjectName = ProjectsByLoadOrder[i];
-		UCSManagedAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
-
-		if (IsValid(Assembly) && !Assembly->UnloadManagedAssembly())
+		if (!IsValid(Assembly))
 		{
-			UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to unload assembly: {0}", *ProjectName);
-			bUnloadFailed = true;
-			break;
+			UE_LOGFMT(LogUnrealSharpEditor, Warning, "Skipping invalid assembly during hot reload.");
+			continue;
 		}
-	}
-
-	if (bUnloadFailed)
-	{
+		
+		if (Assembly->UnloadManagedAssembly())
+		{
+			continue;
+		}
+		
 		HotReloadStatus = FailedToUnload;
 		bHotReloadFailed = true;
 
-		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("HotReloadFailure",
-			"One or more assemblies failed to unload. Hot reload will be disabled until the editor restarts.\n\n"
-			"Possible causes: Strong GC handles, running threads, etc."),
-			FText::FromString(TEXT("Hot Reload Failed")));
+		FString ErrorMessage = FString::Printf(
+			TEXT("Failed to unload assembly: %s\n\n"
+				 "C# Hot Reload has been disabled for the remainder of this editor session.\n\n"
+				 "Common causes include:\n"
+				 "- Active references preventing unload (strong GC handles)\n"
+				 "- Running or unfinished managed threads\n"
+				 "- Dependent assemblies still loaded\n"),
+			*Assembly->GetAssemblyName().ToString());
 
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage), LOCTEXT("HotReloadFailure", "C# Hot Reload Failed"));
 		return;
 	}
-
-	// Load all assemblies again in the correct order.
-	for (const FString& ProjectName : ProjectsByLoadOrder)
+	
+	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)
 	{
-		UCSManagedAssembly* Assembly = CSharpManager.FindAssembly(*ProjectName);
-
-		if (IsValid(Assembly))
+		UCSManagedAssembly* Assembly = AssembliesSortedByDependencies[i];
+		
+		if (!IsValid(Assembly))
 		{
-			Assembly->LoadManagedAssembly();
+			continue;
 		}
-		else
-		{
-			// If the assembly is not loaded. It's a new project, and we need to load it.
-			CSharpManager.LoadUserAssemblyByName(*ProjectName);
-		}
+		
+		Assembly->LoadManagedAssembly(true);
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Blueprints..."));
 	RefreshAffectedBlueprints();
-	
-	HotReloadStatus = Inactive;
-	bHotReloadFailed = false;
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
+	
+	HotReloadStatus = Inactive;
+	bHotReloadFailed = false;
 	
 	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
 }
@@ -268,10 +259,9 @@ void UCSHotReloadSubsystem::RefreshAffectedBlueprints()
 			continue;
 		}
 
-		FBlueprintCompilationManager::QueueForCompilation(Blueprint);
+		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 	}
-
-	FBlueprintCompilationManager::FlushCompilationQueueAndReinstance();
+	
 	RebuiltTypes.Reset();
 }
 
@@ -424,7 +414,7 @@ void UCSHotReloadSubsystem::OnEnumRebuilt(UCSEnum* NewEnum)
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	FCSProcHelper::GetAllProjectPaths(ProjectPaths, true);
 
 	for (const FString& ProjectPath : ProjectPaths)
 	{
@@ -473,7 +463,7 @@ void UCSHotReloadSubsystem::AddDirectoryToWatch(const FString& Directory)
 	FDelegateHandle Handle;
 	DirectoryWatcherModule.Get()->RegisterDirectoryChangedCallback_Handle(
 		Directory,
-		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::OnScriptDirectoryChanged),
+		IDirectoryWatcher::FDirectoryChanged::CreateUObject(this, &UCSHotReloadSubsystem::OnScriptsFolderChanged),
 		Handle);
 
 	WatchingDirectories.Add(Directory);
@@ -481,24 +471,25 @@ void UCSHotReloadSubsystem::AddDirectoryToWatch(const FString& Directory)
 
 void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
 {
-	if (HotReloadIsPaused)
+	if (bHotReloadIsPaused)
 	{
 		return;
 	}
 	
 	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
 	PauseNotification = MakeNotification(NotificationFormat);
-	HotReloadIsPaused = true;
+	bHotReloadIsPaused = true;
 }
 
 void UCSHotReloadSubsystem::ResumeHotReload()
 {
-	if (!HotReloadIsPaused)
+	if (!bHotReloadIsPaused)
 	{
 		return;
 	}
 
-	HotReloadIsPaused = false;
+	bHotReloadIsPaused = false;
+	
 	if (PauseNotification.IsValid())
 	{
 		PauseNotification->SetText(LOCTEXT("HotReloadResumed", "C# Reload Resumed"));
@@ -506,11 +497,11 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 		PauseNotification->ExpireAndFadeout();
 		PauseNotification.Reset();
 	}
-
-	if (bHasQueuedHotReload)
+	
+	if (FileChangesDuringPause.Num() > 0)
 	{
-		bHasQueuedHotReload = false;
-		StartHotReload();
+		OnScriptsFolderChanged(FileChangesDuringPause);
+		FileChangesDuringPause.Empty();
 	}
 }
 
@@ -532,8 +523,14 @@ void FindProjectFileFromChangedFile(const FFileChangeData& ChangedFile, FString&
 	}
 }
 
-void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeData>& ChangedFiles)
+void UCSHotReloadSubsystem::OnScriptsFolderChanged(const TArray<FFileChangeData>& ChangedFiles)
 {
+	if (bHotReloadIsPaused)
+	{
+		FileChangesDuringPause.Append(ChangedFiles);
+		return;
+	}
+	
 	if (IsHotReloading())
 	{
 		return;
@@ -564,21 +561,14 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 		FString NormalizedFileName = ChangedFile.Filename;
 
 		// Skip generated files in bin and obj folders
-		if (NormalizedFileName.Contains(TEXT("/obj/")))
+		if (NormalizedFileName.Contains(TEXT("/obj/")) || NormalizedFileName.Contains(TEXT("/bin/")))
 		{
 			continue;
 		}
 
-		if (Settings->AutomaticHotReloading == OnModuleChange && NormalizedFileName.EndsWith(".dll") && NormalizedFileName.Contains(TEXT("/bin/")))
-		{
-			// A module changed, initiate the reload and return
-			StartHotReload();
-			return;
-		}
-
 		// Check if the file is a .cs file and not in the bin directory
 		FString Extension = FPaths::GetExtension(NormalizedFileName);
-		if (Extension != "cs" || NormalizedFileName.Contains(TEXT("/bin/")))
+		if (Extension != "cs")
 		{
 			continue;
 		}
@@ -605,6 +595,20 @@ void UCSHotReloadSubsystem::OnScriptDirectoryChanged(const TArray<FFileChangeDat
 		}
 		
 		DirtiedFiles.Add({ ProjectFile, NormalizedFileName, ChangedFile });
+		
+		UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(*ProjectFile);
+		if (!IsValid(Assembly))
+		{
+			ExceptionMessage = FString::Printf(TEXT("Could not find loaded assembly for project: %s"), *ProjectFile);
+			break;
+		}
+		
+		if (AffectedAssemblies.Contains(Assembly))
+		{
+			continue;
+		}
+		
+		AffectedAssemblies.Add(Assembly);
 	}
 	
 	DirtiedFiles.Sort([](const FCSChangedFile& A, const FCSChangedFile& B)

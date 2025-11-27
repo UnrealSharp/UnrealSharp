@@ -8,7 +8,7 @@ namespace UnrealSharp.GlueGenerator;
 
 public static class JsonUtilities
 {
-    public static void TrySetString(this JsonObject jsonObject, string propertyName, string? value)
+    public static void TrySetJsonString(this JsonObject jsonObject, string propertyName, string? value)
     {
         if (!string.IsNullOrEmpty(value))
         {
@@ -16,7 +16,7 @@ public static class JsonUtilities
         }
     }
     
-    public static void TrySetNumber(this JsonObject jsonObject, string propertyName, int value)
+    public static void TrySetJsonNumber(this JsonObject jsonObject, string propertyName, int value)
     {
         if (value != 0)
         {
@@ -24,7 +24,7 @@ public static class JsonUtilities
         }
     }
     
-    public static void TrySetEnum<T>(this JsonObject jsonObject, string propertyName, T value) where T : Enum
+    public static void TrySetJsonEnum<T>(this JsonObject jsonObject, string propertyName, T value) where T : Enum
     {
         if (!EqualityComparer<T>.Default.Equals(value, default))
         {
@@ -32,7 +32,7 @@ public static class JsonUtilities
         }
     }
     
-    public static void TrySetBoolean(this JsonObject jsonObject, string propertyName, bool value)
+    public static void TrySetJsonBoolean(this JsonObject jsonObject, string propertyName, bool value)
     {
         if (value)
         {
@@ -40,7 +40,7 @@ public static class JsonUtilities
         }
     }
     
-    public static void TrySetArray<T>(this JsonObject jsonObject, string propertyName, List<T>? values)
+    public static void TrySetJsonArray<T>(this JsonObject jsonObject, string propertyName, List<T>? values)
     {
         if (values != null && values.Count > 0)
         {
@@ -53,27 +53,27 @@ public static class JsonUtilities
         }
     }
     
-    public static void PopulateWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
+        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
     }
     
-    public static void PopulateWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
+        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
     }
     
-    static void PopulateWithArray<T>(this IEnumerable<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType
+    static void PopulateJsonWithArray<T>(this IEnumerable<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType
     {
         JsonArray jsonArray = new JsonArray();
         
@@ -87,27 +87,27 @@ public static class JsonUtilities
         baseJsonObject[arrayName] = jsonArray;
     }
     
-    public static void PopulateWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
+        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
     }
     
-    public static void PopulateWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
+        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
     }
     
-    static void PopulateWithArray<T>(this IEnumerable<T>? list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction)
+    static void PopulateJsonWithArray<T>(this IEnumerable<T>? list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction)
     {
         if (list == null)
         {
@@ -119,7 +119,7 @@ public static class JsonUtilities
         baseJsonObject[arrayName] = jsonArray;
     }
     
-    public static void PopulateWithUnrealType(this UnrealType type, JsonObject baseJsonObject, string typeName)
+    public static void PopulateJsonWithUnrealType(this UnrealType type, JsonObject baseJsonObject, string typeName)
     {
         JsonObject typeObject = new JsonObject();
         type.PopulateJsonObject(typeObject);

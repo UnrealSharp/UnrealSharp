@@ -15,6 +15,18 @@
 struct FCSManagedMethod;
 class UCSClass;
 
+USTRUCT()
+struct FCSManagedAssemblyReferences
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UCSManagedAssembly>> ReferencedAssemblies;
+	
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UCSManagedAssembly>> DependentAssemblies;
+};
+
 /**
  * Represents a managed assembly.
  * This class is responsible for loading and unloading the assembly, as well as managing all types that are defined in the C# assembly.
@@ -39,6 +51,12 @@ public:
 	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return bIsLoading; }
 	
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
+	
+#if WITH_EDITOR
+	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { AssemblyReferences.DependentAssemblies.Add(DependencyAssembly); }
+	UNREALSHARPCORE_API void AddReferencedAssembly(UCSManagedAssembly* ReferencedAssembly) { AssemblyReferences.ReferencedAssemblies.Add(ReferencedAssembly); }
+	UNREALSHARPCORE_API const FCSManagedAssemblyReferences& GetAssemblyReferences() const { return AssemblyReferences; }
+#endif
 
 	TSharedPtr<FGCHandle> FindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> AddTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle)
@@ -178,4 +196,9 @@ private:
 	FName AssemblyName;
 	
 	bool bIsLoading = false;
+	
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(Transient)
+	FCSManagedAssemblyReferences AssemblyReferences;
+#endif
 };

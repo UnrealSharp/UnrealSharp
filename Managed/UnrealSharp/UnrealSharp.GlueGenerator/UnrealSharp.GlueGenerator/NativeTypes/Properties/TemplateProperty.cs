@@ -55,6 +55,6 @@ public record TemplateProperty : UnrealProperty
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
-        TemplateParameters.PopulateWithArray(jsonObject, "TemplateParameters");
+        TemplateParameters.PopulateJsonWithArray(jsonObject, "TemplateParameters");
     }
 }

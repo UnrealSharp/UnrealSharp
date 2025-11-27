@@ -30,7 +30,7 @@ public:
 	}
 	
 	void SetCanBeInstancedFrom(bool bInCanBeInstancedFrom) { CanBeInstancedFrom = bInCanBeInstancedFrom; }
-	bool SetCanBeInstancedFrom() const { return CanBeInstancedFrom; }
+	bool GetCanBeInstancedFrom() const { return CanBeInstancedFrom; }
 #endif
 	
 private:

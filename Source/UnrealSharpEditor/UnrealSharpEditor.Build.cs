@@ -46,6 +46,6 @@ public class UnrealSharpEditor : ModuleRules
             }
         );
 
-        PublicDefinitions.Add("SkipGlueGeneration");
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
     }
 }

@@ -38,7 +38,15 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 		return nullptr;
 	}
 
-	UBlueprintGeneratedClass* CurrentClass = FCSClassUtilities::GetFirstManagedClass(Actor->GetClass());
+	UCSClass* CurrentClass = FCSClassUtilities::GetFirstManagedClass(Actor->GetClass());
+	
+#if WITH_EDITOR
+	if (UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(Actor->GetClass()))
+	{
+		CurrentClass = SkeletonClass->GetGeneratedClass();
+	}
+#endif
+	
 	while (IsValid(CurrentClass))
 	{
 		if (USimpleConstructionScript* SCS = CurrentClass->SimpleConstructionScript)
@@ -59,7 +67,6 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 				Blueprint->InheritableComponentHandler = InheritableComponentHandler;
 			}
 #endif
-			
 			FComponentKey ComponentKey = InheritableComponentHandler->FindKey(ComponentName);
 			
 			if (UActorComponent* ComponentTemplate = InheritableComponentHandler->GetOverridenComponentTemplate(ComponentKey))
@@ -68,7 +75,7 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 			}
 			
 			USCS_Node* OriginalTemplate = nullptr;
-			for (UBlueprintGeneratedClass* SCSClass = CurrentClass; SCSClass; SCSClass = Cast<UBlueprintGeneratedClass>(SCSClass->GetSuperClass()))
+			for (UCSClass* SCSClass = CurrentClass; SCSClass; SCSClass = Cast<UCSClass>(SCSClass->GetSuperClass()))
 			{
 				if (USimpleConstructionScript* SCS = SCSClass->SimpleConstructionScript)
 				{
@@ -85,16 +92,16 @@ UActorComponent* UCSActorExtensions::GetComponentTemplate(const AActor* Actor, F
 				static UClass* HandlerClass = UInheritableComponentHandler::StaticClass();
 				static FArrayProperty* RecordsArray = FindFieldChecked<FArrayProperty>(HandlerClass, ReflectionHelper::Records);
 
-				FScriptArrayHelper_InContainer ArrayHelper(RecordsArray, InheritableComponentHandler);
-				int32 NewIndex = ArrayHelper.AddValue();
-				FComponentOverrideRecord* NewRecord = reinterpret_cast<FComponentOverrideRecord*>(ArrayHelper.GetRawPtr(NewIndex));
+				TArray<FComponentOverrideRecord>* Records = RecordsArray->ContainerPtrToValuePtr<TArray<FComponentOverrideRecord>>(InheritableComponentHandler);
+				FComponentOverrideRecord& NewRecord = Records->AddDefaulted_GetRef();
 
-				CreateNewRecord(InheritableComponentHandler, FComponentKey(OriginalTemplate), NewRecord);
-				return NewRecord->ComponentTemplate;
+				CreateNewRecord(InheritableComponentHandler, FComponentKey(OriginalTemplate), &NewRecord);
+				
+				return NewRecord.ComponentTemplate;
 			}
 		}
 		
-		CurrentClass = Cast<UBlueprintGeneratedClass>(CurrentClass->GetSuperClass());
+		CurrentClass = Cast<UCSClass>(CurrentClass->GetSuperClass());
 	}
 
 	UE_LOG(LogUnrealSharp, Error, TEXT("Component %s not found in actor %s. Should not happen to DefaultComponents"), *ComponentName.ToString(), *Actor->GetName());

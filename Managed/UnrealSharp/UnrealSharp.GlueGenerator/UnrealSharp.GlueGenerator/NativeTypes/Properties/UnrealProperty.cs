@@ -385,15 +385,15 @@ public record UnrealProperty : UnrealType
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
-        jsonObject.TrySetEnum("PropertyFlags", PropertyFlags);
-        jsonObject.TrySetEnum("PropertyType", PropertyType);
-        jsonObject.TrySetBoolean("DefaultComponent", DefaultComponent);
-        jsonObject.TrySetBoolean("IsRootComponent", IsRootComponent);
-        jsonObject.TrySetString("AttachmentComponent", AttachmentComponent);
-        jsonObject.TrySetString("AttachmentSocket", AttachmentSocket);
-        jsonObject.TrySetString("ReplicatedUsing", ReplicatedUsing);
-        jsonObject.TrySetEnum("LifetimeCondition", LifetimeCondition);
-        jsonObject.TrySetString("BlueprintSetter", BlueprintSetter);
-        jsonObject.TrySetString("BlueprintGetter", BlueprintGetter);
+        jsonObject.TrySetJsonEnum("PropertyFlags", PropertyFlags);
+        jsonObject.TrySetJsonEnum("PropertyType", PropertyType);
+        jsonObject.TrySetJsonBoolean("DefaultComponent", DefaultComponent);
+        jsonObject.TrySetJsonBoolean("IsRootComponent", IsRootComponent);
+        jsonObject.TrySetJsonString("AttachmentComponent", AttachmentComponent);
+        jsonObject.TrySetJsonString("AttachmentSocket", AttachmentSocket);
+        jsonObject.TrySetJsonString("ReplicatedUsing", ReplicatedUsing);
+        jsonObject.TrySetJsonEnum("LifetimeCondition", LifetimeCondition);
+        jsonObject.TrySetJsonString("BlueprintSetter", BlueprintSetter);
+        jsonObject.TrySetJsonString("BlueprintGetter", BlueprintGetter);
     }
 }

@@ -26,7 +26,7 @@ public record UnrealStruct : UnrealType
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
-        Properties.PopulateWithArray(jsonObject, "Properties");
+        Properties.PopulateJsonWithArray(jsonObject, "Properties");
     }
 
     public void AddProperty(UnrealProperty property)

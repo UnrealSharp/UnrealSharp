@@ -29,9 +29,9 @@ public record UnrealType
     public string FullName => Namespace + "." + SourceName;
     public string Namespace = string.Empty;
     
-    public Accessibility TypeAccessibility;
-
     public virtual int FieldTypeValue => -1;
+    
+    public Accessibility TypeAccessibility;
 
     public EquatableList<FieldName> SourceGeneratorDependencies;
     public EquatableList<MetaDataInfo> MetaData;
@@ -43,7 +43,12 @@ public record UnrealType
     
     public UnrealType(ISymbol memberSymbol, UnrealType? outer = null) : this(outer)
     {
-        MetaData = new EquatableList<MetaDataInfo>(memberSymbol.GetUMetaAttributes());
+        List<MetaDataInfo>? metaData = memberSymbol.GetUMetaAttributes();
+        if (metaData != null)
+        {
+            MetaData = new EquatableList<MetaDataInfo>(metaData);
+        }
+        
         Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
         SourceName = memberSymbol.Name;
         AssemblyName = memberSymbol.ContainingAssembly.Name;

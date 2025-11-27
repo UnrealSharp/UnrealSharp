@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
 #include "UnrealSharpEditor.h"
+#include "IDirectoryWatcher.h"
 #include "CSHotReloadSubsystem.generated.h"
 
 class FControlFlowNode;
@@ -42,7 +43,7 @@ private:
 	
 	void AddDirectoryToWatch(const FString& Directory);
 
-	void OnScriptDirectoryChanged(const TArray<struct FFileChangeData>& ChangedFiles);
+	void OnScriptsFolderChanged(const TArray<struct FFileChangeData>& ChangedFiles);
 	
 	TSharedPtr<SNotificationItem> MakeNotification(const FString& Text) const;
 
@@ -57,6 +58,8 @@ private:
 	void OnStructRebuilt(UCSScriptStruct* NewStruct);
 	void OnClassRebuilt(UCSClass* NewClass);
 	void OnEnumRebuilt(UCSEnum* NewEnum);
+	
+	void SortByDependencyOrder(TArray<UCSManagedAssembly*>& AssembliesToSort, TArray<UCSManagedAssembly*>& OutSortedAssemblies) const;
 	
 	void AddRebuiltType(const UObject* NewType)
 	{
@@ -76,14 +79,17 @@ private:
 	bool bHasHotReloadInitialized = false;
 	bool bHotReloadFailed = false;
 	bool bHasQueuedHotReload = false;
+	bool bHotReloadIsPaused = false;
 
 	FTickerDelegate TickDelegate;
 	FTSTicker::FDelegateHandle TickDelegateHandle;
 
-	TSharedPtr<FControlFlow> HotReloadControlFlow;
-
 	TArray<FString> WatchingDirectories;
 	
 	TSet<uint32> RebuiltTypes;
-	bool HotReloadIsPaused = false;
+	
+	TArray<FFileChangeData> FileChangesDuringPause;
+	
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UCSManagedAssembly>> AffectedAssemblies;
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "KismetCompiler.h"
+#include "Utilities/CSClassUtilities.h"
 
 struct FCSManagedTypeDefinition;
 struct FCSClassReflectionData;

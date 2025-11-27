@@ -65,12 +65,18 @@ public record UnrealClass : UnrealClassBase
     const string LongUClassAttributeName = "UnrealSharp.Attributes.UClassAttribute";
     
     public string ConfigCategory = string.Empty;
+    
+    public FieldName ParentClass;
 
     public EquatableList<string> Overrides;
     public EquatableList<InterfaceData> Interfaces;
     
+    public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
+    
     public UnrealClass(SemanticModel model, ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
+        ParentClass = new FieldName(typeSymbol.BaseType!);
+        
         ImmutableArray<INamedTypeSymbol> immutableArray = typeSymbol.Interfaces;
         
         if (immutableArray.Length > 0)
@@ -156,6 +162,7 @@ public record UnrealClass : UnrealClassBase
     public UnrealClass(EClassFlags flags, string parentName, string parentNamespace, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 
         : base(parentName, parentNamespace, sourceName, typeNameSpace, accessibility, assemblyName, outer)
     {
+        ParentClass = new FieldName(parentName, parentNamespace, assemblyName);
         ClassFlags = flags;
     }
 
@@ -194,6 +201,9 @@ public record UnrealClass : UnrealClassBase
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         builder.BeginType(this, TypeKind.Class);
+        
+        builder.AppendLine($"public static new TSubclassOf<{SourceName}> StaticClass = SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr});");
+        builder.AppendLine();
         
         TryExportProperties(builder, spc);
         TryExportList(builder, spc, Functions);
@@ -238,10 +248,12 @@ public record UnrealClass : UnrealClassBase
     {
         base.PopulateJsonObject(jsonObject);
         
-        jsonObject.TrySetEnum("ClassFlags", ClassFlags);
-        jsonObject.TrySetString("ConfigCategory", ConfigCategory);
+        ParentClass.SerializeToJson(jsonObject, "ParentClass", true);
         
-        Overrides.PopulateWithArray(jsonObject, "Overrides", array =>
+        jsonObject.TrySetJsonEnum("ClassFlags", ClassFlags);
+        jsonObject.TrySetJsonString("ConfigCategory", ConfigCategory);
+        
+        Overrides.PopulateJsonWithArray(jsonObject, "Overrides", array =>
         {
             if (Overrides.Count == 0)
             {
@@ -254,7 +266,7 @@ public record UnrealClass : UnrealClassBase
             }
         });
         
-        Interfaces.PopulateWithArray(jsonObject, "Interfaces", array =>
+        Interfaces.PopulateJsonWithArray(jsonObject, "Interfaces", array =>
         {
             if (Interfaces.Count == 0)
             {

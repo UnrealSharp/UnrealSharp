@@ -199,7 +199,7 @@ public partial class UTestClass : AActor, ITestInterface
     }
     
     [UFunction(FunctionFlags.BlueprintCallable)]
-    public void CallTestFunction(int intParam = 7, string strParam = "Hello from C#", ETestEnum test = ETestEnum.FirstValue)
+    public void CallTestFunction([UMetaData("Test")] int intParam = 7, string strParam = "Hello from C#", ETestEnum test = ETestEnum.FirstValue)
     {
         float result = TestFunction(42, "Hello from C#");
     }

@@ -24,10 +24,13 @@ void UCSFunctionBase::Bind()
 
 	for (FNativeFunctionLookup& Function : ClassToFindFunction->NativeFunctionLookupTable)
 	{
-		if (Function.Name == GetFName())
+		if (Function.Name != GetFName())
 		{
-			SetNativeFunc(Function.Pointer);
+			continue;
 		}
+		
+		SetNativeFunc(Function.Pointer);
+		return;
 	}
 }
 

@@ -79,11 +79,19 @@ public static class SourceGenUtilities
         return attributes;
     }
     
-    public static List<MetaDataInfo> GetUMetaAttributes(this ISymbol symbol)
+    public static List<MetaDataInfo>? GetUMetaAttributes(this ISymbol symbol)
     {
-        List<MetaDataInfo> attributes = new List<MetaDataInfo>(symbol.GetAttributes().Length);
+        ImmutableArray<AttributeData> symbolAttributes = symbol.GetAttributes();
+        int attributeCount = symbolAttributes.Length;
         
-        foreach (AttributeData attribute in symbol.GetAttributes())
+        if (attributeCount == 0)
+        {
+            return null;
+        }
+        
+        List<MetaDataInfo> attributes = new List<MetaDataInfo>();
+        
+        foreach (AttributeData attribute in symbolAttributes)
         {
             if (attribute.AttributeClass!.Name == "UMetaDataAttribute")
             {

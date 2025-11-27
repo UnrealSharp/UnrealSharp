@@ -28,7 +28,6 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
 	UCSClass* CSClass = static_cast<UCSClass*>(Class);
 	CSClass->SetCanBeInstancedFrom(FCSUnrealSharpUtils::IsEngineStartingUp());
-	
 	Class->ClassConstructor = &UCSClass::ManagedObjectConstructor;
 	
 	Super::FinishCompilingClass(Class);
@@ -121,16 +120,32 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 
 void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
+	UCSClass* ManagedClass = static_cast<UCSClass*>(DefaultObject->GetClass());
+	ManagedClass->SetCanBeInstancedFrom(true);
+	
 	UCSManager::Get().FindManagedObject(DefaultObject);
-	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
+	
+	UCSManagedClassCompiler::SetupDefaultTickSettings(DefaultObject, NewClass);
 }
 
 void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 {
+	UCSClass* MainClass = GetMainClass();
+	
+	if (MainClass == NewClass)
+	{
+		// This is a bit weird, but we create the main class' SCS from the skeleton class compilation, since we need it for the skeleton's managed constructor.
+		// And it's not allowed to have SCS on the skeleton class.
+		return;
+	}
+	
 	const TArray<FCSPropertyReflectionData>& Properties = GetReflectionData()->Properties;
-	FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(Blueprint->GeneratedClass, &Blueprint->SimpleConstructionScript, Properties);
+	
+	FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(MainClass, &MainClass->SimpleConstructionScript, Properties);
+	USimpleConstructionScript* SimpleConstructionScript = MainClass->SimpleConstructionScript;
+	Blueprint->SimpleConstructionScript = SimpleConstructionScript;
 
-	if (!Blueprint->SimpleConstructionScript)
+	if (!IsValid(SimpleConstructionScript))
 	{
 		return;
 	}
@@ -142,26 +157,25 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 		{
 			continue;
 		}
-
-		USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
-		USCS_Node* Node = SCS->FindSCSNode(Property.GetName());
+		
+		USCS_Node* Node = SimpleConstructionScript->FindSCSNode(Property.GetName());
 		Nodes.Add(Node);
 	}
 
 	// Remove all nodes that are not part of the class anymore.
-	int32 NumNodes = Blueprint->SimpleConstructionScript->GetAllNodes().Num();
-	TArray<USCS_Node*> AllNodes = Blueprint->SimpleConstructionScript->GetAllNodes();
+	int32 NumNodes = SimpleConstructionScript->GetAllNodes().Num();
+	TArray<USCS_Node*> AllNodes = SimpleConstructionScript->GetAllNodes();
 	for (int32 i = NumNodes - 1; i >= 0; --i)
 	{
 		USCS_Node* Node = AllNodes[i];
 		if (!Nodes.Contains(Node))
 		{
-			Blueprint->SimpleConstructionScript->RemoveNode(Node);
+			SimpleConstructionScript->RemoveNode(Node);
 		}
 	}
 
-	Blueprint->SimpleConstructionScript->ValidateNodeTemplates(MessageLog);
-	Blueprint->SimpleConstructionScript->ValidateNodeVariableNames(MessageLog);
+	SimpleConstructionScript->ValidateNodeTemplates(MessageLog);
+	SimpleConstructionScript->ValidateNodeVariableNames(MessageLog);
 }
 
 void FCSCompilerContext::GenerateFunctions() const

@@ -34,7 +34,7 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 	}
 
 #if WITH_EDITOR
-	if (!FirstManagedClass->SetCanBeInstancedFrom())
+	if (!FirstManagedClass->GetCanBeInstancedFrom())
 	{
 		return;
 	}

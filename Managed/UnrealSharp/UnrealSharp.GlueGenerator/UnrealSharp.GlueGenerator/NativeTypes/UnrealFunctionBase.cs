@@ -277,7 +277,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     {
         if (HasParamsOrReturnValue)
         {
-            builder.AppendNewBackingField($"static int {SourceName}_Size = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
+            builder.AppendNewBackingField($"static int {SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
         }
             
         foreach (UnrealProperty parameter in Properties)
@@ -420,11 +420,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
-        jsonObject.TrySetEnum("FunctionFlags", FunctionFlags);
+        jsonObject.TrySetJsonEnum("FunctionFlags", FunctionFlags);
         
         if (HasReturnValue)
         {
-            ReturnType.PopulateWithUnrealType(jsonObject, "ReturnValue");
+            ReturnType.PopulateJsonWithUnrealType(jsonObject, "ReturnValue");
         }
     }
 }
