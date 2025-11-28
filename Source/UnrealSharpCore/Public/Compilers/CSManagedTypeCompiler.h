@@ -16,7 +16,7 @@ public:
 	void RecompileManagedTypeDefinition(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
 
 protected:
-	// Start TCSGeneratedTypeBuilder interface
+	// Start UCSManagedTypeCompiler interface
 	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const;
 	// End of interface

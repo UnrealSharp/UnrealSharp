@@ -12,7 +12,7 @@ class UCSManagedEnumCompiler : public UCSManagedTypeCompiler
 public:
 	UCSManagedEnumCompiler();
 	
-	// TCSGeneratedTypeBuilder interface implementation
+	// UCSManagedTypeCompiler interface implementation
 	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
 	// End of implementation
 

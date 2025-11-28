@@ -14,7 +14,7 @@ class UNREALSHARPCORE_API UCSManagedClassCompiler : public UCSManagedTypeCompile
 public:
 	UCSManagedClassCompiler();
 	
-	// TCSGeneratedTypeBuilder interface implementation
+	// UCSManagedTypeCompiler interface implementation
 	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const override;
 	// End of implementation
