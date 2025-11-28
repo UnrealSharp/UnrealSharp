@@ -7,7 +7,7 @@ namespace UnrealSharp.Editor;
 
 public static class SyntaxUtilities
 {
-    public static void ProcessForChangesInUTypes(SyntaxTree newTree, SyntaxTree? existingTree, Project owningProject)
+    public static void LookForChangesInUTypes(SyntaxTree newTree, SyntaxTree? existingTree, Project owningProject)
     {
         List<BaseTypeDeclarationSyntax> newTypeDeclarations = newTree.GetRoot()
             .DescendantNodes()

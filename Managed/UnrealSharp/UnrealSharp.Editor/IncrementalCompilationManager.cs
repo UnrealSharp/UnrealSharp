@@ -93,12 +93,12 @@ public static class IncrementalCompilationManager
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
         
-        SyntaxUtilities.ProcessForChangesInUTypes(newTree, existingTree, foundProject);
+        SyntaxUtilities.LookForChangesInUTypes(newTree, existingTree, foundProject);
         
         state.TreesByPath[fullPath] = newTree;
         
         stopwatch.Stop();
-        LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
+        LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalMilliseconds:F2}ms.");
     }
 
     public static void RecompileDirtyProjects(List<string> modifiedAssemblyNames)
@@ -330,6 +330,6 @@ public static class IncrementalCompilationManager
         }
 
         stopwatch.Stop();
-        LogUnrealSharpEditor.Log($"Project '{project.Name}' emitted in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
+        LogUnrealSharpEditor.Log($"Project '{project.Name}' produced an assembly in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
     }
 }
