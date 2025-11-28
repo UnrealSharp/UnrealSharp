@@ -6,7 +6,7 @@
 #include "FOptionalPropertyExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFOptionalPropertyExporter : public UObject
+class UFOptionalPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 	

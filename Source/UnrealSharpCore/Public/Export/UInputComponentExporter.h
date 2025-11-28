@@ -7,7 +7,7 @@
 class UInputAction;
 
 UCLASS()
-class UNREALSHARPCORE_API UUInputComponentExporter : public UObject
+class UUInputComponentExporter : public UObject
 {
 	GENERATED_BODY()
 

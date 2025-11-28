@@ -9,11 +9,8 @@
 #include "UObject/Object.h"
 #include "ManagedHandleExporter.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class UNREALSHARPCORE_API UManagedHandleExporter : public UObject 
+class UManagedHandleExporter : public UObject 
 {
     GENERATED_BODY()
 

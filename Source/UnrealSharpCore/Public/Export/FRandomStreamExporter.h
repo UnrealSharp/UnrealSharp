@@ -5,7 +5,7 @@
 #include "FRandomStreamExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFRandomStreamExporter : public UObject
+class UFRandomStreamExporter : public UObject
 {
 	GENERATED_BODY()
 

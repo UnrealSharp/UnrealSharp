@@ -7,7 +7,7 @@
 #include "FPropertyExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFPropertyExporter : public UObject
+class UFPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 

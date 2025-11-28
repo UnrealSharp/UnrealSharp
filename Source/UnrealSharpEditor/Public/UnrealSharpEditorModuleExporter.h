@@ -7,7 +7,7 @@
 #include "UnrealSharpEditorModuleExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPEDITOR_API UFUnrealSharpEditorModuleExporter : public UObject
+class UFUnrealSharpEditorModuleExporter : public UObject
 {
 	GENERATED_BODY()
 public:

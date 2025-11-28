@@ -6,7 +6,7 @@
 class UCSScriptStruct;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSManagedStructCompiler : public UCSManagedTypeCompiler
+class UCSManagedStructCompiler : public UCSManagedTypeCompiler
 {
 	GENERATED_BODY()
 public:

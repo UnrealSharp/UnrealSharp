@@ -5,7 +5,7 @@
 #include "FSoftObjectPtrExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFSoftObjectPtrExporter : public UObject
+class UFSoftObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 

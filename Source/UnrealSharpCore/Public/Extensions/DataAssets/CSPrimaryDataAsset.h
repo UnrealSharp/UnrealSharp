@@ -5,7 +5,7 @@
 #include "CSPrimaryDataAsset.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UCSPrimaryDataAsset : public UPrimaryDataAsset
+class UCSPrimaryDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 

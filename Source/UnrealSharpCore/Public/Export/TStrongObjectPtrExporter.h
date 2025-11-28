@@ -7,11 +7,8 @@
 #include "UObject/Object.h"
 #include "TStrongObjectPtrExporter.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class UNREALSHARPCORE_API UTStrongObjectPtrExporter : public UObject
+class UTStrongObjectPtrExporter : public UObject
 {
     GENERATED_BODY()
 

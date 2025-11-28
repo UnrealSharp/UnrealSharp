@@ -5,7 +5,7 @@
 #include "FNameExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFNameExporter : public UObject
+class UFNameExporter : public UObject
 {
 	GENERATED_BODY()
 

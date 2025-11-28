@@ -28,7 +28,9 @@ enum HotReloadStatus
     // Actively Hot Reloading
     Active,
     // Failed to unload an assembly during Hot Reload
-    FailedToUnload
+    FailedToUnload,
+    // Failed to compile the managed code during Hot Reload
+    FailedToCompile
 };
 
 struct FCSManagedUnrealSharpEditorCallbacks

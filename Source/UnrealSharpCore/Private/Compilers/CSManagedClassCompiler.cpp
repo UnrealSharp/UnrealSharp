@@ -105,19 +105,16 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 	UBlueprint* Blueprint = Field->GetOwningBlueprint();
 	Blueprint->SimpleConstructionScript = Field->SimpleConstructionScript;
 #endif
-
-	// Generate functions for this class
+	
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassReflectionData);
 	FCSFunctionFactory::GenerateFunctions(Field, ClassReflectionData->Functions);
-
-	//Finalize class
+	
 	Field->ClassConstructor = &UCSClass::ManagedObjectConstructor;
 
 	Field->Bind();
 	Field->StaticLink(true);
 	Field->AssembleReferenceTokenStream();
-
-	//Create the default object for this class
+	
 	UObject* DefaultObject = Field->GetDefaultObject();
 	SetupDefaultTickSettings(DefaultObject, Field);
 
@@ -220,7 +217,7 @@ void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TA
 
 void UCSManagedClassCompiler::ActivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)
 {
-	if (!SubsystemClass->IsChildOf<USubsystem>())
+	if (!IsValid(SubsystemClass) || !SubsystemClass->IsChildOf<USubsystem>())
 	{
 		return;
 	}
@@ -230,7 +227,7 @@ void UCSManagedClassCompiler::ActivateSubsystem(TSubclassOf<USubsystem> Subsyste
 
 void UCSManagedClassCompiler::DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)
 {
-	if (!SubsystemClass->IsChildOf<USubsystem>())
+	if (!IsValid(SubsystemClass) || !SubsystemClass->IsChildOf<USubsystem>())
 	{
 		return;
 	}

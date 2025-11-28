@@ -5,7 +5,7 @@
 #include "ULocalPlayerExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UULocalPlayerExporter : public UObject
+class UULocalPlayerExporter : public UObject
 {
 	GENERATED_BODY()
 

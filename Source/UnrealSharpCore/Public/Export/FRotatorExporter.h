@@ -5,7 +5,7 @@
 #include "FRotatorExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFRotatorExporter : public UObject
+class UFRotatorExporter : public UObject
 {
 	GENERATED_BODY()
 

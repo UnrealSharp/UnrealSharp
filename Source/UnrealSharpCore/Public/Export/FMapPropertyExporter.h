@@ -8,7 +8,7 @@
 #include "FMapPropertyExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFMapPropertyExporter : public UObject
+class UFMapPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 public:

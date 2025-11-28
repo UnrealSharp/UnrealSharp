@@ -15,7 +15,7 @@ void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr
 	TSharedPtr<FCSEnumReflectionData> EnumReflectionData = ManagedTypeDefinition->GetReflectionData<FCSEnumReflectionData>();
 	
 	PurgeEnum(Enum);
-	
+
 	const int32 NumItems = EnumReflectionData->EnumNames.Num();
     
 	TArray<TPair<FName, int64>> Entries;

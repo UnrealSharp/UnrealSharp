@@ -8,11 +8,9 @@
 #include "FInstancedStructExporter.generated.h"
 
 struct FInstancedStruct;
-/**
- * 
- */
+
 UCLASS()
-class UNREALSHARPCORE_API UFInstancedStructExporter : public UObject
+class UFInstancedStructExporter : public UObject
 {
 	GENERATED_BODY()
 

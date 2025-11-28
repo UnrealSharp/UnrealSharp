@@ -8,7 +8,7 @@
 #include "TObjectPtrExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UTObjectPtrExporter : public UObject
+class UTObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 public:

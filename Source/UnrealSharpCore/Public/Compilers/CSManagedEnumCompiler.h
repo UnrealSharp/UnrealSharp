@@ -6,7 +6,7 @@
 class UCSEnum;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSManagedEnumCompiler : public UCSManagedTypeCompiler
+class UCSManagedEnumCompiler : public UCSManagedTypeCompiler
 {
 	GENERATED_BODY()
 public:

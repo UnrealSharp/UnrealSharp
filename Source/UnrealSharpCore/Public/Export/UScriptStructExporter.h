@@ -15,7 +15,7 @@ union FNativeStructData
 };
 
 UCLASS()
-class UNREALSHARPCORE_API UUScriptStructExporter : public UObject
+class UUScriptStructExporter : public UObject
 {
 	GENERATED_BODY()
 public:

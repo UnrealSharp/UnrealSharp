@@ -48,7 +48,7 @@ void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TShar
 	Interface->StaticLink(true);
 	Interface->Bind();
 	Interface->AssembleReferenceTokenStream();
-	Interface->GetDefaultObject();
+	(void)Interface->GetDefaultObject();
 
 #if WITH_EDITOR
 	UCSManager::Get().OnNewInterfaceEvent().Broadcast(Interface);

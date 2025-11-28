@@ -5,7 +5,7 @@
 #include "FStringExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFStringExporter : public UObject
+class UFStringExporter : public UObject
 {
 	GENERATED_BODY()
 

@@ -5,7 +5,7 @@
 #include "GEngineExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UGEngineExporter : public UObject
+class UGEngineExporter : public UObject
 {
 	GENERATED_BODY()
 

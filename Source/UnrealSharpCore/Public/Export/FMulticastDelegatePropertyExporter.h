@@ -21,7 +21,7 @@ struct Interop_FScriptDelegate
 };
 
 UCLASS()
-class UNREALSHARPCORE_API UFMulticastDelegatePropertyExporter : public UObject
+class UFMulticastDelegatePropertyExporter : public UObject
 {
 	GENERATED_BODY()
 

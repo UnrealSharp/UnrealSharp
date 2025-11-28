@@ -148,7 +148,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetManagedMethod(const TSharedPtr<FGCH
 
 TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeHandle, char* JsonString)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::TryRegisterType);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::RegisterManagedType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
 	
 	FCSFieldName FieldName(InFieldName, InNamespace);
@@ -163,9 +163,8 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 #endif
 	
 	TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData;
-	UClass* BuilderClass;
-	
-	if (!FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(FieldType, BuilderClass, ReflectionData))
+	UClass* CompilerClass;
+	if (!FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(FieldType, CompilerClass, ReflectionData))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to resolve builder and metadata for field type {0} for type {1}", static_cast<uint8>(FieldType), *FieldName.GetFullName().ToString());
 		return nullptr;
@@ -187,9 +186,6 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
 		}
 	}
-	
-	ReflectionData->FieldName = FieldName;
-	ReflectionData->AssemblyName = AssemblyName;
 
 	if (ManagedTypeDefinition.IsValid())
 	{
@@ -197,9 +193,10 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 	}
 	else
 	{
-		ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromReflectionData(ReflectionData, this, BuilderClass->GetDefaultObject<UCSManagedTypeCompiler>());
+		UCSManagedTypeCompiler* Compiler = CompilerClass->GetDefaultObject<UCSManagedTypeCompiler>();
+		ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromReflectionData(ReflectionData, this, Compiler);
 	}
-
+	
 	ManagedTypeDefinition->SetTypeGCHandle(TypeHandle);
 	return ManagedTypeDefinition;
 }

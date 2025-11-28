@@ -10,7 +10,7 @@ using FConstructFn = void(*)(void*);
 using FDestructFn = void(*)(void*);
 
 UCLASS()
-class UNREALSHARPCORE_API UFScriptSetExporter : public UObject
+class UFScriptSetExporter : public UObject
 {
 	GENERATED_BODY()
 

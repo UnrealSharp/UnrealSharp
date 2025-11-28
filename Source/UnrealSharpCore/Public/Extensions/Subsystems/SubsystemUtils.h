@@ -2,5 +2,5 @@
 
 namespace FCSSubsystemUtils
 {
-	UNREALSHARPCORE_API bool IsReinstancingClass(const UClass* Class);
+	bool IsReinstancingClass(const UClass* Class);
 };

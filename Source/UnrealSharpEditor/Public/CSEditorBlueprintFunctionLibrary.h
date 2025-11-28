@@ -10,5 +10,5 @@ class UCSEditorBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 public:
 	UFUNCTION(meta = (ScriptMethod))
-	static void SetupAssemblyReferences(FName AssemblyName, const TArray<FName>& DependentAssemblyNames, const TArray<FName>& ReferencedAssemblyNames);
+	static void AddAssemblyDependencies(FName AssemblyName, const TArray<FName>& DependentAssemblyNames);
 };

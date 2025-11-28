@@ -10,7 +10,7 @@ class UInputAction;
 class UEnhancedInputComponent;
 
 UCLASS()
-class UNREALSHARPCORE_API UUEnhancedInputComponentExporter : public UObject
+class UUEnhancedInputComponentExporter : public UObject
 {
 	GENERATED_BODY()
 

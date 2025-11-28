@@ -7,7 +7,7 @@
 #include "FBoolPropertyExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFBoolPropertyExporter : public UObject
+class UFBoolPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 

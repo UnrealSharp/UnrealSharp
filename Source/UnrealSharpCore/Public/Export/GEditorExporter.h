@@ -5,7 +5,7 @@
 #include "GEditorExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UGEditorExporter : public UObject
+class UGEditorExporter : public UObject
 {
 	GENERATED_BODY()
 public:

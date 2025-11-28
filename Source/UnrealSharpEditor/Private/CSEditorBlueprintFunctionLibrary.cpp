@@ -2,7 +2,7 @@
 #include "CSManager.h"
 #include "UnrealSharpEditor.h"
 
-void UCSEditorBlueprintFunctionLibrary::SetupAssemblyReferences(FName AssemblyName, const TArray<FName>& DependentAssemblyNames, const TArray<FName>& ReferencedAssemblyNames)
+void UCSEditorBlueprintFunctionLibrary::AddAssemblyDependencies(FName AssemblyName, const TArray<FName>& DependentAssemblyNames)
 {
 	UCSManager& Manager = UCSManager::Get();
 	UCSManagedAssembly* Assembly = Manager.FindAssembly(AssemblyName);
@@ -13,35 +13,24 @@ void UCSEditorBlueprintFunctionLibrary::SetupAssemblyReferences(FName AssemblyNa
 		return;
 	}
 	
-	auto GatherAssembliesFromNames = [&Manager](const TArray<FName>& AssemblyNames, TArray<UCSManagedAssembly*>& OutAssemblies)
-	{
-		for (const FName& Name : AssemblyNames)
-		{
-			UCSManagedAssembly* FoundAssembly = Manager.FindAssembly(Name);
-			
-			if (!IsValid(FoundAssembly))
-			{
-				UE_LOGFMT(LogUnrealSharpEditor, Warning, "Tried to add an invalid referenced assembly: {0}", *Name.ToString());
-				continue;
-			}
-			
-			OutAssemblies.Add(FoundAssembly);
-		}
-	};
-	
 	TArray<UCSManagedAssembly*> DependentAssemblies;
-	GatherAssembliesFromNames(DependentAssemblyNames, DependentAssemblies);
+	DependentAssemblies.Reserve(DependentAssemblyNames.Num());
 	
-	TArray<UCSManagedAssembly*> ReferencedAssemblies;
-	GatherAssembliesFromNames(ReferencedAssemblyNames, ReferencedAssemblies);
+	for (FName DependentAssemblyName : DependentAssemblyNames)
+	{
+		UCSManagedAssembly* DependentAssembly = Manager.FindAssembly(DependentAssemblyName);
+		
+		if (!IsValid(DependentAssembly))
+		{
+			UE_LOGFMT(LogUnrealSharpEditor, Warning, "Tried to add an invalid dependent assembly: {0}", *DependentAssemblyName.ToString());
+			continue;
+		}
+		
+		DependentAssemblies.Add(DependentAssembly);
+	}
 	
 	for (UCSManagedAssembly* DependentAssembly : DependentAssemblies)
 	{
 		Assembly->AddDependentAssembly(DependentAssembly);
-	}
-	
-	for (UCSManagedAssembly* ReferencedAssembly : ReferencedAssemblies)
-	{
-		Assembly->AddReferencedAssembly(ReferencedAssembly);
 	}
 }

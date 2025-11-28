@@ -9,7 +9,7 @@
 using FWorldCleanupEventDelegate = void(*)(UWorld*, bool, bool);
 
 UCLASS()
-class UNREALSHARPCORE_API UFWorldDelegatesExporter : public UObject
+class UFWorldDelegatesExporter : public UObject
 {
 	GENERATED_BODY()
 public:

@@ -100,15 +100,7 @@ public static class SolutionManager
                 }
             }
             
-            List<FName> referencedProjects = new List<FName>();
-            foreach (ProjectReference projectReference in target.ProjectReferences)
-            {
-                string filePath = projectReference.ProjectId.ToString();
-                string projectName = Path.GetFileNameWithoutExtension(filePath);
-                referencedProjects.Add(projectName);
-            }
-            
-            UCSEditorBlueprintFunctionLibrary.SetupAssemblyReferences(target.Name, dependentProjects, referencedProjects);
+            UCSEditorBlueprintFunctionLibrary.AddAssemblyDependencies(target.Name, dependentProjects);
         }
     }
 

@@ -9,7 +9,7 @@
 class FCSManagedCallbacks;
 
 UCLASS()
-class UNREALSHARPCORE_API UFCSManagedCallbacksExporter : public UObject
+class UFCSManagedCallbacksExporter : public UObject
 {
 	GENERATED_BODY()
 public:

@@ -5,7 +5,7 @@
 #include "FWeakObjectPtrExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFWeakObjectPtrExporter : public UObject
+class UFWeakObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 

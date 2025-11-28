@@ -7,7 +7,7 @@
 #include "FCSManagerExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFCSManagerExporter : public UObject
+class UFCSManagerExporter : public UObject
 {
 	GENERATED_BODY()
 

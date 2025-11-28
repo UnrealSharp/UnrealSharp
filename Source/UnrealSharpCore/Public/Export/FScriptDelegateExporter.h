@@ -5,7 +5,7 @@
 #include "FScriptDelegateExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFScriptDelegateExporter : public UObject
+class UFScriptDelegateExporter : public UObject
 {
 	GENERATED_BODY()
 

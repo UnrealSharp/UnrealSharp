@@ -7,7 +7,7 @@
 using FPIEEvent = void(*)(bool);
 
 UCLASS()
-class UNREALSHARPCORE_API UFEditorDelegatesExporter : public UObject
+class UFEditorDelegatesExporter : public UObject
 {
 	GENERATED_BODY()
 	

@@ -6,6 +6,7 @@
 #include "Logging/StructuredLog.h"
 #include "CSFieldType.h"
 #include "Utilities/CSClassUtilities.h"
+#include "Utilities/CSUtilities.h"
 #include "CSManagedAssembly.generated.h"
 
 #if !defined(_WIN32)
@@ -14,18 +15,6 @@
 
 struct FCSManagedMethod;
 class UCSClass;
-
-USTRUCT()
-struct FCSManagedAssemblyReferences
-{
-	GENERATED_BODY()
-public:
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UCSManagedAssembly>> ReferencedAssemblies;
-	
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UCSManagedAssembly>> DependentAssemblies;
-};
 
 /**
  * Represents a managed assembly.
@@ -53,9 +42,8 @@ public:
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 	
 #if WITH_EDITOR
-	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { AssemblyReferences.DependentAssemblies.Add(DependencyAssembly); }
-	UNREALSHARPCORE_API void AddReferencedAssembly(UCSManagedAssembly* ReferencedAssembly) { AssemblyReferences.ReferencedAssemblies.Add(ReferencedAssembly); }
-	UNREALSHARPCORE_API const FCSManagedAssemblyReferences& GetAssemblyReferences() const { return AssemblyReferences; }
+	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { DependentAssemblies.Add(DependencyAssembly); }
+	UNREALSHARPCORE_API const TArray<UCSManagedAssembly*>& GetDependentAssemblies() const { return DependentAssemblies; }
 #endif
 
 	TSharedPtr<FGCHandle> FindTypeHandle(const FCSFieldName& FieldName);
@@ -89,7 +77,7 @@ public:
 		// Native types are populated on the go when they are needed for managed code execution.
 		if (!ManagedTypeDefinition.IsValid())
 		{
-			UField* Field = TryFindField(ClassName);
+			UField* Field = FCSUtilities::FindField<UField>(ClassName);
 
 			if (!IsValid(Field))
 			{
@@ -128,8 +116,8 @@ public:
 		{
 			return Cast<T>(ManagedTypeDefinition->CompileAndGetManagedField());
 		}
-
-		return TryFindField<T>(FieldName);
+		
+		return FCSUtilities::FindField<T>(FieldName);
 	}
 
 	TSharedPtr<FCSManagedTypeDefinition> RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeHandle, char* JsonString);
@@ -141,28 +129,6 @@ public:
 	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return AssemblyGCHandle; }
 
 private:
-
-	template<typename T = UField>
-	T* TryFindField(const FCSFieldName FieldName) const
-	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::TryFindField);
-		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
-
-		if (!FieldName.IsValid())
-		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetName());
-			return nullptr;
-		}
-
-		UPackage* Package = FieldName.GetPackage();
-		if (!IsValid(Package))
-		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetName());
-			return nullptr;
-		}
-
-		return FindObject<T>(Package, *FieldName.GetName());
-	}
 
 	void OnManagedTypeChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 	{
@@ -199,6 +165,6 @@ private:
 	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
-	FCSManagedAssemblyReferences AssemblyReferences;
+	TArray<TObjectPtr<UCSManagedAssembly>> DependentAssemblies;
 #endif
 };

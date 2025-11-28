@@ -7,11 +7,8 @@
 #include "UObject/Object.h"
 #include "FSubsystemCollectionBaseRefExporter.generated.h"
 
-/**
- *
- */
 UCLASS()
-class UNREALSHARPCORE_API UFSubsystemCollectionBaseRefExporter : public UObject
+class UFSubsystemCollectionBaseRefExporter : public UObject
 {
     GENERATED_BODY()
 

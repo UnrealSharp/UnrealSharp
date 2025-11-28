@@ -54,11 +54,6 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 
 	void SetReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData)
 	{
-		if (ReflectionData)
-		{
-			checkf(ReflectionData->FieldName == InReflectionData->FieldName, TEXT("Cannot change ReflectionData to a different type's metadata."));
-		}
-		
 		ReflectionData = InReflectionData;
 	}
 	

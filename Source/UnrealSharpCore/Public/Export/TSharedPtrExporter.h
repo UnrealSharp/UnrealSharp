@@ -5,7 +5,7 @@
 #include "TSharedPtrExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UTSharedPtrExporter : public UObject
+class UTSharedPtrExporter : public UObject
 {
 	GENERATED_BODY()
 

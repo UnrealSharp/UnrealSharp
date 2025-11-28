@@ -7,7 +7,7 @@
 #include "UObjectExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UUObjectExporter : public UObject
+class UUObjectExporter : public UObject
 {
 	GENERATED_BODY()
 

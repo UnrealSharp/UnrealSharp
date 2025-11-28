@@ -5,7 +5,7 @@
 #include "FScriptMapHelperExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFScriptMapHelperExporter : public UObject
+class UFScriptMapHelperExporter : public UObject
 {
 	GENERATED_BODY()
 

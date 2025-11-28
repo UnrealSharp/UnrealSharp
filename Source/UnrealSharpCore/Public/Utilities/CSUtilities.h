@@ -1,6 +1,8 @@
 #pragma once
 
+#include "CSFieldName.h"
 #include "CSFieldType.h"
+#include "UnrealSharpCore.h"
 
 class UCSManagedAssembly;
 struct FCSTypeReferenceReflectionData;
@@ -14,8 +16,26 @@ namespace FCSUtilities
 	UNREALSHARPCORE_API void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Results);
 	
-#if WITH_EDITOR
-	UNREALSHARPCORE_API void SortAssembliesByDependencyOrder(const TArray<UCSManagedAssembly*>& InputAssemblies, TArray<UCSManagedAssembly*>& OutSortedAssemblies);
-	UNREALSHARPCORE_API void GetReferencedAssemblies(UCSManagedAssembly* Assembly, TArray<UCSManagedAssembly*>& OutReferencedAssemblies);
-#endif
+	template<typename T = UField>
+	T* FindField(const FCSFieldName& FieldName)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(FCSUtilities::TryFindField);
+		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
+
+		if (!FieldName.IsValid())
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetName());
+			return nullptr;
+		}
+
+		UPackage* Package = FieldName.GetPackage();
+		if (!IsValid(Package))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetName());
+			return nullptr;
+		}
+
+		return FindObject<T>(Package, *FieldName.GetName());
+	}
+
 };

@@ -6,7 +6,7 @@ struct FCSTypeReferenceReflectionData;
 struct FCSManagedTypeDefinition;
 class UCSManagedAssembly;
 
-UCLASS(Abstract, MinimalAPI, Transient)
+UCLASS(Abstract, Transient)
 class UCSManagedTypeCompiler : public UObject
 {
 	GENERATED_BODY()

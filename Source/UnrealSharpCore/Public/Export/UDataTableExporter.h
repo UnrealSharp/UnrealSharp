@@ -5,7 +5,7 @@
 #include "UDataTableExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UUDataTableExporter : public UObject
+class UUDataTableExporter : public UObject
 {
 	GENERATED_BODY()
 

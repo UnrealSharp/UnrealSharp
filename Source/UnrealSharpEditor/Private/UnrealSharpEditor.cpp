@@ -1,6 +1,5 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
-#include "CSHotReloadSubsystem.h"
 #include "CSUnrealSharpEditorCommands.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
@@ -24,6 +23,7 @@
 #include "CSProcHelper.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
+#include "HotReload/CSHotReloadSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -91,12 +91,12 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
-	UCSHotReloadSubsystem::Get()->StartHotReload();
+	UCSHotReloadSubsystem::Get()->PerformHotReload();
 }
 
 void FUnrealSharpEditorModule::OnReloadManagedCode()
 {
-	UCSHotReloadSubsystem::Get()->StartHotReload();
+	UCSHotReloadSubsystem::Get()->PerformHotReload();
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()

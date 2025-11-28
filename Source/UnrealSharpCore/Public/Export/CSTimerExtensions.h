@@ -7,7 +7,7 @@
 using FNextTickEvent = void(*)();
 
 UCLASS()
-class UNREALSHARPCORE_API UCSTimerExtensions : public UObject
+class UCSTimerExtensions : public UObject
 {
 	GENERATED_BODY()
 	

@@ -14,7 +14,7 @@ class UCSManagedTypeInterface : public UInterface
 	GENERATED_BODY()
 };
 
-class UNREALSHARPCORE_API ICSManagedTypeInterface
+class ICSManagedTypeInterface
 {
 	GENERATED_BODY()
 public:

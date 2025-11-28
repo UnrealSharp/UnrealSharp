@@ -6,7 +6,7 @@
 class UCSInterface;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSManagedInterfaceCompiler : public UCSManagedTypeCompiler
+class UCSManagedInterfaceCompiler : public UCSManagedTypeCompiler
 {
 	GENERATED_BODY()
 public:

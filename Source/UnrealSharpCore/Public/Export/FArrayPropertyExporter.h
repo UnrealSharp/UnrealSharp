@@ -7,7 +7,7 @@
 #include "FArrayPropertyExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFArrayPropertyExporter : public UObject
+class UFArrayPropertyExporter : public UObject
 {
 	GENERATED_BODY()
 

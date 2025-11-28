@@ -18,7 +18,7 @@ struct FCSGetMenuActionsUtilities
 };
 
 UCLASS()
-class UNREALSHARPASYNCBLUEPRINT_API UK2Node_CSAsyncAction : public UK2Node_BaseAsyncTask
+class UK2Node_CSAsyncAction : public UK2Node_BaseAsyncTask
 {
 	GENERATED_BODY()
 public:

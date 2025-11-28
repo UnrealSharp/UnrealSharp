@@ -5,10 +5,7 @@
 #include "CoreMinimal.h"
 #include "Features/IPluginsEditorFeature.h"
 
-/**
- *
- */
-class UNREALSHARPEDITOR_API FCSPluginTemplateDescription final : public FPluginTemplateDescription
+class FCSPluginTemplateDescription final : public FPluginTemplateDescription
 {
 public:
     FCSPluginTemplateDescription(FText InName, FText InDescription, FString InOnDiskPath, const bool InCanContainContent,

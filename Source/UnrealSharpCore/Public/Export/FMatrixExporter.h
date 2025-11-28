@@ -5,13 +5,10 @@
 #include "FMatrixExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFMatrixExporter : public UObject
+class UFMatrixExporter : public UObject
 {
 	GENERATED_BODY()
-
 public:
-
 	UNREALSHARP_FUNCTION()
 	static void FromRotator(FMatrix* Matrix, const FRotator Rotator);
-	
 };

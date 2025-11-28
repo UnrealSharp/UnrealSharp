@@ -5,7 +5,7 @@
 #include "FVectorExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFVectorExporter : public UObject
+class UFVectorExporter : public UObject
 {
 	GENERATED_BODY()
 

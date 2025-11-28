@@ -33,7 +33,7 @@ struct FGCHandle
 	FGCHandleIntPtr Handle;
 	GCHandleType Type = GCHandleType::Null;
 
-	static FGCHandle Null() { return FGCHandle(nullptr, GCHandleType::Null); }
+	static FGCHandle InvalidHandle() { return FGCHandle(nullptr, GCHandleType::Null); }
 
 	bool IsNull() const { return !Handle.IntPtr; }
 	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
@@ -49,9 +49,7 @@ struct FGCHandle
 		}
 
 		FCSManagedCallbacks::ManagedCallbacks.Dispose(Handle, AssemblyHandle);
-	
-		Handle.IntPtr = nullptr;
-		Type = GCHandleType::Null;
+		Invalidate();
 	}
 	
 	void Invalidate()

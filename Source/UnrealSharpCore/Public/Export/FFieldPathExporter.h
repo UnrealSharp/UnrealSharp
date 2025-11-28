@@ -8,7 +8,7 @@
 #include "FFieldPathExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFFieldPathExporter : public UObject
+class UFFieldPathExporter : public UObject
 {
 	GENERATED_BODY()
 

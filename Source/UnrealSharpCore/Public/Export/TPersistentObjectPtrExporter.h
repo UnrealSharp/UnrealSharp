@@ -7,7 +7,7 @@
 #include "TPersistentObjectPtrExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UTPersistentObjectPtrExporter : public UObject
+class UTPersistentObjectPtrExporter : public UObject
 {
 	GENERATED_BODY()
 

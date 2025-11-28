@@ -518,7 +518,7 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 
 	if (!IsValid(Object))
 	{
-		return FGCHandle::Null();
+		return FGCHandle::InvalidHandle();
 	}
 
 	uint32 ObjectID = Object->GetUniqueID();
@@ -542,7 +542,7 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 	if (!IsValid(OwningAssembly))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *Object->GetName());
-		return FGCHandle::Null();
+		return FGCHandle::InvalidHandle();
 	}
 
 	return *OwningAssembly->CreateManagedObjectFromNative(Object);
@@ -552,7 +552,7 @@ FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClas
 {
 	if (!Object->GetClass()->ImplementsInterface(InterfaceClass))
 	{
-		return FGCHandle::Null();
+		return FGCHandle::InvalidHandle();
 	}
 
 	// No existing handle found, we need to create a new managed object.
@@ -560,13 +560,13 @@ FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClas
 	if (!IsValid(OwningAssembly))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find assembly for {0}", *InterfaceClass->GetName());
-		return FGCHandle::Null();
+		return FGCHandle::InvalidHandle();
 	}
 	
 	TSharedPtr<FGCHandle> FoundHandle = OwningAssembly->GetOrCreateManagedInterface(Object, InterfaceClass);
 	if (!FoundHandle.IsValid())
 	{
-		return FGCHandle::Null();
+		return FGCHandle::InvalidHandle();
 	}
 
 	return *FoundHandle;

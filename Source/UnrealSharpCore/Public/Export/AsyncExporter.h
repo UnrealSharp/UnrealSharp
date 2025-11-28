@@ -7,7 +7,7 @@
 #include "AsyncExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UAsyncExporter : public UObject
+class UAsyncExporter : public UObject
 {
 	GENERATED_BODY()
 

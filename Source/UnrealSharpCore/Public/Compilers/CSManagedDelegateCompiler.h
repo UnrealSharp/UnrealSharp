@@ -4,7 +4,7 @@
 #include "CSManagedDelegateCompiler.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UCSManagedDelegateCompiler : public UCSManagedTypeCompiler
+class UCSManagedDelegateCompiler : public UCSManagedTypeCompiler
 {
 	GENERATED_BODY()
 public:

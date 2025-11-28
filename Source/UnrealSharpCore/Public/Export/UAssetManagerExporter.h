@@ -7,7 +7,7 @@
 #include "UAssetManagerExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UUAssetManagerExporter : public UObject
+class UUAssetManagerExporter : public UObject
 {
 	GENERATED_BODY()
 

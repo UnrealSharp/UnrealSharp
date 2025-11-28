@@ -5,7 +5,7 @@
 #include "FTextExporter.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UFTextExporter : public UObject
+class UFTextExporter : public UObject
 {
 	GENERATED_BODY()
 public:

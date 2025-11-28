@@ -8,11 +8,8 @@
 #include "UObject/Object.h"
 #include "UEnumExporter.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class UNREALSHARPCORE_API UUEnumExporter : public UObject
+class UUEnumExporter : public UObject
 {
 	GENERATED_BODY()
 
