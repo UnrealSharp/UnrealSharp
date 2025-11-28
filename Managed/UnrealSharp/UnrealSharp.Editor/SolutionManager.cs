@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Core;
+using UnrealSharp.Editor.Utilities;
 using UnrealSharp.UnrealSharpEditor;
 
 namespace UnrealSharp.Editor;
@@ -45,6 +46,7 @@ public sealed class GenState
 public static class SolutionManager
 {
     public static readonly MSBuildWorkspace UnrealSharpWorkspace = MSBuildWorkspace.Create();
+    public static IList<Project> CurrentProjects => UnrealSharpWorkspace.CurrentSolution.Projects.ToList();
     private static readonly ConcurrentDictionary<ProjectId, GenState> States = new();
 
     public static async void LoadSolutionAsync(string solutionPath, IntPtr callbackPtr)
@@ -77,30 +79,10 @@ public static class SolutionManager
     
     private static void BuildProjectDependencyMap(IList<Project> projects)
     {
-        foreach (Project target in projects)
+        foreach (Project project in projects)
         {
-            List<FName> dependentProjects = new List<FName>();
-
-            foreach (Project project in projects)
-            {
-                if (project == target)
-                {
-                    continue; 
-                }
-                    
-                foreach (ProjectReference projectReference in project.ProjectReferences)
-                {
-                    if (projectReference.ProjectId != target.Id)
-                    {
-                        continue;
-                    }
-                        
-                    dependentProjects.Add(project.Name);
-                    break;
-                }
-            }
-            
-            UCSEditorBlueprintFunctionLibrary.AddAssemblyDependencies(target.Name, dependentProjects);
+            List<FName> dependentProjects = project.GetDependentProjectsAsFName(projects);
+            UCSEditorBlueprintFunctionLibrary.AddAssemblyDependencies(project.Name, dependentProjects);
         }
     }
 

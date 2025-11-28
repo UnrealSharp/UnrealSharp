@@ -8,62 +8,13 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
+using UnrealSharp.Editor.Utilities;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharp.Editor;
 
 public static class IncrementalCompilationManager
 {
-    private static readonly HashSet<ProjectId> DirtyProjectIds = new();
-    
-    public static unsafe void GetDependentProjects(string projectName, UnmanagedArray* dependentsArray)
-    {
-        List<string> dependents = new List<string>();
-
-        Project? foundProject = null;
-        foreach (Project project in SolutionManager.UnrealSharpWorkspace.CurrentSolution.Projects)
-        {
-            if (project.Name != projectName)
-            {
-                continue;
-            }
-
-            foundProject = project;
-            break;
-        }
-
-        if (foundProject is null)
-        {
-            return;
-        }
-
-        foreach (Project project in SolutionManager.UnrealSharpWorkspace.CurrentSolution.Projects)
-        {
-            if (project.Id == foundProject.Id)
-            {
-                continue;
-            }
-
-            foreach (ProjectReference projectReference in project.ProjectReferences)
-            {
-                if (projectReference.ProjectId != foundProject.Id)
-                {
-                    continue;
-                }
-
-                dependents.Add(project.Name);
-                break;
-            }
-        }
-
-        if (dependents.Count == 0)
-        {
-            return;
-        }
-
-        dependentsArray->ToNativeWithMarshaller<string>(StringMarshaller.ToNative, dependents, sizeof(UnmanagedArray));
-    }
-    
     public static void RemoveSourceFile(string projectName, string filepath)
     {
         Project? foundProject = SolutionManager.GetProjectByName(projectName);
@@ -88,8 +39,6 @@ public static class IncrementalCompilationManager
         
         state.InitialCompilation = state.InitialCompilation!.RemoveSyntaxTrees(existingTree);
         state.TreesByPath.Remove(fullPath);
-        
-        DirtyProjectIds.Add(foundProject.Id);
     }
 
     public static void RecompileChangedFile(string projectName, string filepath)
@@ -147,25 +96,23 @@ public static class IncrementalCompilationManager
         SyntaxUtilities.ProcessForChangesInUTypes(newTree, existingTree, foundProject);
         
         state.TreesByPath[fullPath] = newTree;
-        DirtyProjectIds.Add(foundProject.Id);
         
         stopwatch.Stop();
         LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
     }
 
-    public static void RecompileDirtyProjects()
+    public static void RecompileDirtyProjects(List<string> modifiedAssemblyNames)
     {
-        foreach (ProjectId dirtyProjectId in DirtyProjectIds)
+        List<Project> projects = ProjectUtilities.GetProjectsFromNames(modifiedAssemblyNames, SolutionManager.CurrentProjects);
+        
+        for (int i = projects.Count - 1; i >= 0; i--)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
+            Project project = projects[i];
             
-            Project? project = SolutionManager.UnrealSharpWorkspace.CurrentSolution.GetProject(dirtyProjectId);
-            if (project is null)
-            {
-                throw new Exception($"Project with ID '{dirtyProjectId}' not found in solution.");
-            }
-
-            GenState? state = SolutionManager.GetProjectState(dirtyProjectId);
+            LogUnrealSharpEditor.Log($"Starting source generation for project '{project.Name}'.");
+            
+            GenState? state = SolutionManager.GetProjectState(project.Id);
             
             if (state is null)
             {
@@ -241,13 +188,13 @@ public static class IncrementalCompilationManager
 
             state.ParseOptions = parseOptions;
             state.AnalyzerOptions = analyzerOptions;
+            
+            UpdateDependentProjectsWithNewCompilation(updatedCompilation, project);
 
             stopwatch.Stop();
             LogUnrealSharpEditor.Log($"Project '{project.Name}' generated source in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
             EmitResultsToDisk(project, updatedCompilation);
         }
-
-        DirtyProjectIds.Clear();
 
         List<string> assemblies = new List<string>(SolutionManager.UnrealSharpWorkspace.CurrentSolution.Projects.Count());
 
@@ -259,7 +206,59 @@ public static class IncrementalCompilationManager
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
         AssemblyLoadOrder.EmitLoadOrder(assemblies, outputDir);
     }
+    
+    private static void UpdateDependentProjectsWithNewCompilation(Compilation newCompilation, Project producedProject)
+    {
+        IEnumerable<Project> dependentProjects = producedProject.GetDependentProjects(SolutionManager.CurrentProjects);
+        
+        foreach (Project dependentProject in dependentProjects)
+        {
+            GenState? projectState = SolutionManager.GetProjectState(dependentProject.Id);
+            
+            if (projectState is null)
+            {
+                throw new Exception($"Project '{dependentProject.Name}' not initialized for incremental generation.");
+            }
+            
+            if (projectState.InitialCompilation is null)
+            {
+                throw new Exception($"Project '{dependentProject.Name}' has no initial compilation.");
+            }
+            
+            Compilation depCompilation = projectState.InitialCompilation;
 
+            MetadataReference? oldCompilationReference = null;
+            foreach (MetadataReference reference in depCompilation.References)
+            {
+                if (reference is not CompilationReference compilationReference)
+                {
+                    continue;
+                }
+
+                if (compilationReference.Compilation.AssemblyName != newCompilation.AssemblyName)
+                {
+                    continue;
+                }
+                
+                oldCompilationReference = reference;
+                break;
+            }
+
+            CompilationReference newCompilationReference = newCompilation.ToMetadataReference();
+            
+            if (oldCompilationReference != null)
+            {
+                depCompilation = depCompilation.ReplaceReference(oldCompilationReference, newCompilationReference);
+            }
+            else
+            {
+                depCompilation = depCompilation.AddReferences(newCompilationReference);
+            }
+            
+            projectState.InitialCompilation = depCompilation;
+        }
+    }
+    
     private static string GetOutputPath(Project project, string extension)
     {
         string projectDir = Path.GetDirectoryName(project.FilePath!)!;

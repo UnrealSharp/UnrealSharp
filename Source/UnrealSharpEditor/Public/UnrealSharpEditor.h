@@ -37,14 +37,13 @@ struct FCSManagedUnrealSharpEditorCallbacks
 {
     FCSManagedUnrealSharpEditorCallbacks() = default;
     
-    using FRecompileDirtyProjects = bool(__stdcall*)(void*);
+    using FRecompileDirtyProjects = bool(__stdcall*)(void*, TArray<FString>);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
     using FRemoveSourceFile = void(__stdcall*)(const TCHAR*, const TCHAR*);
     
     using FForceManagedGC = void(__stdcall*)();
     using FOpenSolution = bool(__stdcall*)(const TCHAR*, void*);
     using FLoadSignature = void(__stdcall*)(const TCHAR*, void*);
-    using FGetDependentProjects = void(__stdcall*)(const TCHAR*, TArray<FString>*);
 
     FRecompileDirtyProjects RecompileDirtyProjects = nullptr;
     FRecompileChangedFile RecompileChangedFile = nullptr;
@@ -55,8 +54,6 @@ struct FCSManagedUnrealSharpEditorCallbacks
     
     FLoadSignature LoadSolutionAsync = nullptr;
     FLoadSignature LoadProject = nullptr;
-    
-    FGetDependentProjects GetDependentProjects = nullptr;
 };
 
 

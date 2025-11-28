@@ -95,9 +95,12 @@ void UCSHotReloadSubsystem::PerformHotReload()
 
 	FScopedSlowTask Progress(4, LOCTEXT("HotReload", "Reloading C#..."));
 	Progress.MakeDialog(false, true);
+	
+	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
+	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
 
 	FString ExceptionMessage;
-	if (!UnrealSharpEditorModule->GetManagedUnrealSharpEditorCallbacks().RecompileDirtyProjects(&ExceptionMessage))
+	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
 	{
 		CurrentHotReloadStatus = FailedToCompile;
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Reload Failed")));
@@ -105,9 +108,6 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
-	
-	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
-	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
 	
 	PendingModifiedAssemblies.Reset();
 	
