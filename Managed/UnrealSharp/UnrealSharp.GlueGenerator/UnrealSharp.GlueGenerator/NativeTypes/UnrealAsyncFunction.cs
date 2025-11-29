@@ -11,7 +11,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
     const string CancellationTokenType = "System.Threading.CancellationToken";
     public string WrapperName => $"{Outer!.SourceName}_{SourceName}Action";
     
-    public UnrealAsyncFunction(SemanticModel model, IMethodSymbol typeSymbol, UnrealType outer) : base(model, typeSymbol, outer)
+    public UnrealAsyncFunction(IMethodSymbol typeSymbol, UnrealType outer) : base(typeSymbol, outer)
     {
         
     }

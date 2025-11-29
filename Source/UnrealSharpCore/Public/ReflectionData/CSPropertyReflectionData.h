@@ -3,6 +3,8 @@
 #include "CSTypeReferenceReflectionData.h"
 #include "CSUnrealType.h"
 
+struct FCSFunctionReflectionData;
+
 struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectionData
 {
 	virtual ~FCSPropertyReflectionData() override = default;
@@ -12,6 +14,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	// End of FCSReflectionDataBase interface
 
 	FName GetName() const { return FieldName.GetFName(); }
+	bool HasGetterOrSetter() const { return CustomGetter.IsValid() || CustomSetter.IsValid(); }
 
 	template<typename T>
 	TSharedPtr<T> GetInnerTypeData() const
@@ -32,9 +35,9 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 
 	TSharedPtr<FCSUnrealType> InnerType;
 	EPropertyFlags PropertyFlags;
-	int32 ArrayDim = 0;
 	FName RepNotifyFunctionName;
 	ELifetimeCondition LifetimeCondition;
-	FString BlueprintSetter;
-	FString BlueprintGetter;
+	
+	TSharedPtr<FCSFunctionReflectionData> CustomGetter;
+	TSharedPtr<FCSFunctionReflectionData> CustomSetter;
 };

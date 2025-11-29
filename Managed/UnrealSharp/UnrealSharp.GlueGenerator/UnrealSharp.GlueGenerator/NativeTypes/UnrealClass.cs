@@ -73,7 +73,7 @@ public record UnrealClass : UnrealClassBase
     
     public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
     
-    public UnrealClass(SemanticModel model, ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
+    public UnrealClass(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         ParentClass = new FieldName(typeSymbol.BaseType!);
         
@@ -108,7 +108,7 @@ public record UnrealClass : UnrealClassBase
                         continue;
                     }
                     
-                    UnrealFunction function = new UnrealFunction(model, (IMethodSymbol) member, this);
+                    UnrealFunction function = new UnrealFunction((IMethodSymbol) member, this);
                     function.TypeAccessibility = function.TypeAccessibility == Accessibility.NotApplicable ? Accessibility.Public : function.TypeAccessibility;
                 
                     List<AttributeData> attributes = member.GetAttributesByName("UFunctionAttribute");
@@ -167,13 +167,13 @@ public record UnrealClass : UnrealClassBase
     }
 
     [Inspect(LongUClassAttributeName, UClassAttributeName, "Global")]
-    public static UnrealType? UClassAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UClassAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
-        UnrealClass unrealClass = new UnrealClass(ctx.SemanticModel, typeSymbol);
+        UnrealClass unrealClass = new UnrealClass(typeSymbol);
         
         InspectorManager.InspectSpecifiers(UClassAttributeName, unrealClass, attributes);
-        InspectorManager.InspectTypeMembers(unrealClass, typeSymbol, ctx);
+        InspectorManager.InspectTypeMembers(unrealClass, ctx.TargetNode, typeSymbol, ctx);
         
         return unrealClass;
     }

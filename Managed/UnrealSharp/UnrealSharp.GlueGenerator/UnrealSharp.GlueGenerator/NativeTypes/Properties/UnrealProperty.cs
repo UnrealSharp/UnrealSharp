@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
@@ -115,12 +117,16 @@ public enum ELifetimeCondition
 
 public record struct PropertyMethod
 {
-    public PropertyMethod(Accessibility accessibility)
+    public PropertyMethod(Accessibility accessibility, UnrealFunction? customPropertyMethod = null)
     {
         Accessibility = accessibility;
+        CustomPropertyMethod = customPropertyMethod;
     }
     
+    public bool HasCustomMethod => CustomPropertyMethod != null;
+    
     public readonly Accessibility Accessibility;
+    public readonly UnrealFunction? CustomPropertyMethod;
 }
 
 [Inspector]
@@ -136,8 +142,6 @@ public record UnrealProperty : UnrealType
     public string AttachmentSocket = string.Empty;
     public string ReplicatedUsing = string.Empty;
     public ELifetimeCondition LifetimeCondition = ELifetimeCondition.None;
-    public string BlueprintSetter = string.Empty;
-    public string BlueprintGetter = string.Empty;
 
     public readonly bool IsPartial = true;
     
@@ -173,16 +177,17 @@ public record UnrealProperty : UnrealType
     public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
     public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
 
-    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null) : base(memberSymbol, outer)
+    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer)
     {
         PropertyType = propertyType;
         Namespace = typeSymbol.ContainingNamespace.ToDisplayString();
         IsNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
         
-        if (memberSymbol.Kind == SymbolKind.Property && memberSymbol is IPropertySymbol propertySymbol)
+        if (syntaxNode is PropertyDeclarationSyntax propertyDeclarationSyntax)
         {
-            GetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.GetMethod);
-            SetterMethod = propertySymbol.GetPropertyMethodInfo(propertySymbol.SetMethod);
+            IPropertySymbol propertySymbol = (IPropertySymbol) memberSymbol;
+            GetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.GetMethod);
+            SetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.SetMethod);
             IsRequired = propertySymbol.IsRequired;
         }
     }
@@ -202,10 +207,10 @@ public record UnrealProperty : UnrealType
     }
     
     [Inspect(FullyQualifiedAttributeName = "UnrealSharp.Attributes.UPropertyAttribute", Name = "UPropertyAttribute")]
-    public static UnrealType? UPropertyAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UPropertyAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealStruct owningStruct = (UnrealStruct) outer!;
-        UnrealProperty property = PropertyFactory.CreateProperty(ctx.SemanticModel, symbol, outer!);
+        UnrealProperty property = PropertyFactory.CreateProperty(symbol, outer!, syntaxNode);
         owningStruct.Properties.List.Add(property);
         return property;
     }
@@ -276,20 +281,6 @@ public record UnrealProperty : UnrealType
         property.LifetimeCondition = (ELifetimeCondition)lifetimeCondition.Value!;
     }
     
-    [InspectArgument("BlueprintSetter", UPropertyAttributeName)]
-    public static void BlueprintSetterSpecifier(UnrealType topType, TypedConstant blueprintSetter)
-    {
-        UnrealProperty property = (UnrealProperty)topType;
-        property.BlueprintSetter = (string)blueprintSetter.Value!;
-    }
-    
-    [InspectArgument("BlueprintGetter", UPropertyAttributeName)]
-    public static void BlueprintGetterSpecifier(UnrealType topType, TypedConstant blueprintGetter)
-    {
-        UnrealProperty property = (UnrealProperty)topType;
-        property.BlueprintGetter = (string)blueprintGetter.Value!;
-    }
-    
     [InspectArgument("Category", UPropertyAttributeName)]
     public static void CategorySpecifier(UnrealType topType, TypedConstant category)
     {
@@ -299,6 +290,21 @@ public record UnrealProperty : UnrealType
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
+        if (this.HasCustomGetterOrSetter())
+        {
+            if (SetterMethod.HasCustomPropertyMethod())
+            {
+                SetterMethod!.Value.CustomPropertyMethod!.ExportType(builder, spc);
+            }
+
+            if (GetterMethod.HasCustomPropertyMethod())
+            {
+                GetterMethod!.Value.CustomPropertyMethod!.ExportType(builder, spc);
+            }
+            
+            return;
+        }
+        
         string nullableSign = IsNullable ? "?" : string.Empty;
         string partialDeclaration = IsPartial ? "partial " : string.Empty;
         string isRequiredSign = IsRequired ? "required " : string.Empty;
@@ -393,7 +399,20 @@ public record UnrealProperty : UnrealType
         jsonObject.TrySetJsonString("AttachmentSocket", AttachmentSocket);
         jsonObject.TrySetJsonString("ReplicatedUsing", ReplicatedUsing);
         jsonObject.TrySetJsonEnum("LifetimeCondition", LifetimeCondition);
-        jsonObject.TrySetJsonString("BlueprintSetter", BlueprintSetter);
-        jsonObject.TrySetJsonString("BlueprintGetter", BlueprintGetter);
+        
+        SetGetterSetterToJson(jsonObject, "GetterMethod", GetterMethod);
+        SetGetterSetterToJson(jsonObject, "SetterMethod", SetterMethod);
+    }
+    
+    private void SetGetterSetterToJson(JsonObject jsonObject, string key, PropertyMethod? method)
+    {
+        if (method == null || !method.Value.HasCustomMethod)
+        {
+            return;
+        }
+        
+        JsonObject methodObject = new();
+        method.Value.CustomPropertyMethod!.PopulateJsonObject(methodObject);
+        jsonObject[key] = methodObject;
     }
 }

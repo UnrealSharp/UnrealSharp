@@ -1,15 +1,13 @@
 #include "ReflectionData/CSPropertyReflectionData.h"
 #include "Factories/CSPropertyFactory.h"
 #include "Factories/PropertyGenerators/CSPropertyGenerator.h"
+#include "ReflectionData/CSFunctionReflectionData.h"
 
 bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 {
 	START_JSON_SERIALIZE
 	
 	CALL_SERIALIZE(FCSTypeReferenceReflectionData::Serialize(JsonObject));
-
-	JSON_READ_STRING(BlueprintGetter, IS_OPTIONAL);
-	JSON_READ_STRING(BlueprintSetter, IS_OPTIONAL);
 	
 	JSON_READ_ENUM(LifetimeCondition, IS_OPTIONAL);
 	JSON_READ_ENUM(PropertyFlags, IS_OPTIONAL);
@@ -18,6 +16,20 @@ bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
 	JSON_READ_ENUM(PropertyType, IS_REQUIRED);
+	
+	FCSFunctionReflectionData GetterMethod;
+	JSON_PARSE_OBJECT(GetterMethod, IS_OPTIONAL);
+	if (GetterMethod.FieldName.IsValid())
+	{
+		CustomGetter = MakeShared<FCSFunctionReflectionData>(GetterMethod);
+	}
+	
+	FCSFunctionReflectionData SetterMethod;
+	JSON_PARSE_OBJECT(SetterMethod, IS_OPTIONAL);
+	if (SetterMethod.FieldName.IsValid())
+	{
+		CustomSetter = MakeShared<FCSFunctionReflectionData>(SetterMethod);
+	}
 	
 	UCSPropertyGenerator* PropertyGenerator = FCSPropertyFactory::GetPropertyGenerator(PropertyType);
 	InnerType = PropertyGenerator->CreatePropertyInnerTypeData(PropertyType);

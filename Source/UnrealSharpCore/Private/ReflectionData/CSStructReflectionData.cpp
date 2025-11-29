@@ -1,4 +1,5 @@
 #include "ReflectionData/CSStructReflectionData.h"
+#include "ReflectionData/CSPropertyReflectionData.h"
 
 bool FCSStructReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 {

@@ -37,12 +37,12 @@ public sealed class InspectorData
         }
     }
 
-    public void InspectWithAttributes(UnrealType topType, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public void InspectWithAttributes(UnrealType topType, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealType? outer = null;
         if (InspectAttributeDelegate != null)
         {
-            outer = InspectAttributeDelegate(topType, ctx, symbol, attributes);
+            outer = InspectAttributeDelegate(topType, syntaxNode, ctx, symbol, attributes);
         }
         
         if (outer is null)
@@ -85,7 +85,7 @@ public sealed class InspectorData
     }
 }
 
-public delegate UnrealType? InspectAttributeDelegate(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes);
+public delegate UnrealType? InspectAttributeDelegate(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes);
 public delegate void InspectAttributeArgumentDelegate(UnrealType topType, TypedConstant constant);
 
 public static class InspectorManager
@@ -194,18 +194,42 @@ public static class InspectorManager
         public List<AttributeData> Attributes;
     }
     
-    public static void InspectTypeMembers(UnrealType topType, ITypeSymbol declaration, GeneratorAttributeSyntaxContext ctx)
+    public static void InspectTypeMembers(UnrealType topType, ISymbol containingTypeSymbol, TypeDeclarationSyntax typeDeclaration, GeneratorAttributeSyntaxContext ctx)
     {
-        InspectTypeMembers(topType, declaration, declaration.GetMembers(), ctx);
+        foreach (MemberDeclarationSyntax memberDecl in typeDeclaration.Members)
+        {
+            ImmutableArray<ISymbol> memberSymbols = GetDeclaredSymbolsForMember(memberDecl, ctx.SemanticModel);
+            if (memberSymbols.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+            
+            IterateMembers(topType, memberDecl, memberSymbols, ctx);
+        }
     }
     
-    public static void InspectTypeMembers(UnrealType topType, ISymbol symbol, ImmutableArray<ISymbol> members, GeneratorAttributeSyntaxContext ctx)
+    public static void InspectTypeMembers(UnrealType topType, SyntaxNode? syntaxNode, ITypeSymbol declaration, GeneratorAttributeSyntaxContext ctx)
     {
-        foreach (ISymbol member in members)
+        if (syntaxNode is not TypeDeclarationSyntax typeDeclaration)
+        {
+            return;
+        }
+        
+        InspectTypeMembers(topType, declaration, typeDeclaration, ctx);
+    }
+    
+    public static void InspectTypeMembers(UnrealType topType, ITypeSymbol containingTypeSymbol, GeneratorAttributeSyntaxContext ctx)
+    {
+        IterateMembers(topType, null, containingTypeSymbol.GetMembers(), ctx);
+    }
+
+    static void IterateMembers(UnrealType topType, MemberDeclarationSyntax? memberDecl, ImmutableArray<ISymbol> memberSymbols, GeneratorAttributeSyntaxContext ctx)
+    {
+        foreach (ISymbol memberSymbol in memberSymbols)
         {
             List<InspectionContext>? inspections = null;
-            ImmutableArray<AttributeData> attributes = member.GetAttributes();
-            
+            ImmutableArray<AttributeData> attributes = memberSymbol.GetAttributes();
+
             foreach (AttributeData attribute in attributes)
             {
                 string attributeName = attribute.AttributeClass!.Name;
@@ -215,17 +239,19 @@ public static class InspectorManager
                 }
 
                 inspections ??= new List<InspectionContext>();
-                    
+
                 InspectionContext? foundContext = null;
                 int index = -1;
                 for (int i = 0; i < inspections.Count; i++)
                 {
-                    if (inspections[i].InspectorData == inspectorData)
+                    if (inspections[i].InspectorData != inspectorData)
                     {
-                        foundContext = inspections[i];
-                        index = i;
-                        break;
+                        continue;
                     }
+                    
+                    foundContext = inspections[i];
+                    index = i;
+                    break;
                 }
 
                 if (foundContext is null)
@@ -253,12 +279,40 @@ public static class InspectorManager
             {
                 continue;
             }
-            
+
             foreach (InspectionContext inspectionContext in inspections)
             {
-                inspectionContext.InspectorData.InspectWithAttributes(topType, ctx, member, inspectionContext.Attributes);
+                inspectionContext.InspectorData.InspectWithAttributes(topType, memberDecl, ctx, memberSymbol,
+                    inspectionContext.Attributes);
             }
         }
+    }
+    
+    static ImmutableArray<ISymbol> GetDeclaredSymbolsForMember(MemberDeclarationSyntax memberDecl, SemanticModel semanticModel)
+    {
+        ISymbol? direct = semanticModel.GetDeclaredSymbol(memberDecl);
+        if (direct is not null)
+        {
+            return ImmutableArray.Create(direct);
+        }
+
+        if (memberDecl is not FieldDeclarationSyntax fieldDecl)
+        {
+            return ImmutableArray<ISymbol>.Empty;
+        }
+        
+        ImmutableArray<ISymbol>.Builder builder = ImmutableArray.CreateBuilder<ISymbol>();
+        
+        foreach (VariableDeclaratorSyntax variable in fieldDecl.Declaration.Variables)
+        {
+            ISymbol? symbol = semanticModel.GetDeclaredSymbol(variable);
+            if (symbol is not null)
+            {
+                builder.Add(symbol);
+            }
+        }
+        
+        return builder.ToImmutable();
     }
     
     public static void InspectSpecifiers(string attributeName, UnrealType topType, IReadOnlyList<AttributeData> attributes)

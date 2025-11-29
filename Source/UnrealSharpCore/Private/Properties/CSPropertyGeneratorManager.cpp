@@ -5,33 +5,18 @@
 #include "ReflectionData/CSPropertyReflectionData.h"
 #include <UObject/PropertyOptional.h>
 
+#include "Factories/CSFunctionFactory.h"
+#include "Functions/CSFunction.h"
 #include "Properties/CSGetterSetterProperty.h"
-#include "Types/CSClass.h"
-#include "Types/CSSkeletonClass.h"
 
-static TTuple<UFunction*, UFunction*> GetGetterAndSetterMethods(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData)
+UCSFunctionBase* CreateGetterSetterFunction(const UField* Outer, const TSharedPtr<FCSFunctionReflectionData>& GetterSetterReflectionData)
 {
-	UClass* Class = Cast<UClass>(Outer);
-	
-	if (Class == nullptr)
+	if (!GetterSetterReflectionData.IsValid())
 	{
-		return {nullptr, nullptr};
+		return nullptr;
 	}
-
-#if WITH_EDITOR
-    // Redirect to the generated class if we're trying to bind a function in a skeleton class.
-    // Since NativeFunctionLookupTable is not copied over when duplicating for reinstancing due to not being a UPROPERTY.
-    if (UCSSkeletonClass* OwnerClass = Cast<UCSSkeletonClass>(Outer); OwnerClass != nullptr)
-    {
-        Class = OwnerClass->GetGeneratedClass();
-    }
-#endif
-
-	return
-	{
-		Class->FindFunctionByName(*PropertyReflectionData.BlueprintGetter),
-		Class->FindFunctionByName(*PropertyReflectionData.BlueprintSetter)
-	};
+	
+	return FCSFunctionFactory::CreateFunctionFromReflectionData(Outer->GetOwnerClass(), *GetterSetterReflectionData);
 }
 
 template <ValidProperty T>
@@ -40,12 +25,12 @@ class TCSPropertyInitializer : public ICSPropertyInitializer
 public:
 	virtual FProperty* ConstructProperty(UField* Outer, FName PropertyName, const FCSPropertyReflectionData& PropertyReflectionData) const override
 	{
-		auto [BlueprintGetterFunction, BlueprintSetterFunction] = GetGetterAndSetterMethods(Outer, PropertyReflectionData);
-
 		FProperty* NewProperty;
-		if (BlueprintGetterFunction != nullptr || BlueprintSetterFunction != nullptr)
+		if (PropertyReflectionData.HasGetterOrSetter())
 		{
-			NewProperty = new TCSGetterSetterProperty<T>(Outer, PropertyName, RF_Public, BlueprintSetterFunction, BlueprintGetterFunction);
+			UCSFunctionBase* Getter = CreateGetterSetterFunction(Outer, PropertyReflectionData.CustomGetter);
+			UCSFunctionBase* Setter = CreateGetterSetterFunction(Outer, PropertyReflectionData.CustomSetter);
+			NewProperty = new TCSGetterSetterProperty<T>(Outer, PropertyName, RF_Public, Setter, Getter);
 		}
 		else
 		{

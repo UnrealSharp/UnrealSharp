@@ -6,8 +6,8 @@ public record BoolProperty : SimpleProperty
 {
     public override string MarshallerType => "BoolMarshaller";
     
-    public BoolProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.Bool, outer)
+    public BoolProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.Bool, outer, syntaxNode)
     {
     }
 }

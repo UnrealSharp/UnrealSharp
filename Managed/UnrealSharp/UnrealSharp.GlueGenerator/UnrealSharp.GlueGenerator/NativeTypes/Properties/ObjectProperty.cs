@@ -8,8 +8,8 @@ public record ObjectProperty : FieldProperty
         ? $"DefaultComponentMarshaller<{ManagedType}>"
         : $"ObjectMarshaller<{ManagedType}>";
 
-    public ObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.Object, outer)
+    public ObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.Object, outer, syntaxNode)
     {
 
     }

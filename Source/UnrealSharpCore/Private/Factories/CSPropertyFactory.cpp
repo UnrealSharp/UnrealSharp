@@ -66,28 +66,6 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyRe
 	NewProperty->SetPropertyFlags(PropertyReflectionData.PropertyFlags);
 	NewProperty->SetBlueprintReplicationCondition(PropertyReflectionData.LifetimeCondition);
 
-#if WITH_EDITOR
-	if (!PropertyReflectionData.BlueprintSetter.IsEmpty())
-	{
-		NewProperty->SetMetaData("BlueprintSetter", *PropertyReflectionData.BlueprintSetter);
-
-		if (UFunction* BlueprintSetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyReflectionData.BlueprintSetter))
-		{
-			BlueprintSetterFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
-		}
-	}
-
-	if (!PropertyReflectionData.BlueprintGetter.IsEmpty())
-	{
-		NewProperty->SetMetaData("BlueprintGetter", *PropertyReflectionData.BlueprintGetter);
-			
-		if (UFunction* BlueprintGetterFunction = CastChecked<UClass>(Outer)->FindFunctionByName(*PropertyReflectionData.BlueprintGetter))
-		{
-			BlueprintGetterFunction->SetMetaData("BlueprintInternalUseOnly", TEXT("true"));
-		}
-	}
-#endif
-
 	FCSMetaDataUtils::ApplyMetaData(PropertyReflectionData.MetaData, NewProperty);
 	
 	if (UBlueprintGeneratedClass* OwningClass = Cast<UBlueprintGeneratedClass>(Outer))

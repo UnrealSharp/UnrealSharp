@@ -76,7 +76,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     public string SizeVariableName => $"{SourceName}_Size";
     public string FunctionNativePtr => $"{SourceName}Ptr";
 
-    public UnrealFunctionBase(SemanticModel model, IMethodSymbol typeSymbol, UnrealType outer) : this(model, typeSymbol, typeSymbol.ReturnType, typeSymbol.Parameters, outer!)
+    public UnrealFunctionBase(IMethodSymbol typeSymbol, UnrealType outer) : this(typeSymbol, typeSymbol.ReturnType, typeSymbol.Parameters, outer!)
     {
         IMethodSymbol methodSymbol = typeSymbol;
         
@@ -95,7 +95,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
     }
     
-    public UnrealFunctionBase(SemanticModel model, ISymbol typeSymbol, ITypeSymbol returnType, ImmutableArray<IParameterSymbol> parameterList, UnrealType outer) : base(typeSymbol, outer)
+    public UnrealFunctionBase(ISymbol typeSymbol, ITypeSymbol returnType, ImmutableArray<IParameterSymbol> parameterList, UnrealType outer) : base(typeSymbol, outer)
     {
         bool hasOutParams = false;
         if (returnType.Name == VoidProperty.VoidTypeName)
@@ -105,20 +105,15 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         else
         {
-            ISymbol returnValueSymbol;
+            ISymbol? returnValueSymbol;
             if (typeSymbol is IMethodSymbol methodSymbol && methodSymbol.IsAsync)
             {
-                INamedTypeSymbol taskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1")!;
-                INamedTypeSymbol valueTaskSymbol = model.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1")!;
-                
-                bool isValueTask = returnType.OriginalDefinition.Equals(valueTaskSymbol, SymbolEqualityComparer.Default);
-                bool isTask = returnType.OriginalDefinition.Equals(taskSymbol, SymbolEqualityComparer.Default);
+                bool isValueTask = returnType.OriginalDefinition.Name == "ValueTask" && returnType.OriginalDefinition.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks";
+                bool isTask = returnType.OriginalDefinition.Name == "Task" && returnType.OriginalDefinition.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks";
                 
                 if (isValueTask || isTask)
                 {
-                    ITypeSymbol taskReturnType = returnType is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1
-                        ? namedType.TypeArguments[0]
-                        : model.Compilation.GetSpecialType(SpecialType.System_Void);
+                    ITypeSymbol taskReturnType = returnType is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1 ? namedType.TypeArguments[0] : returnType;
                     
                     returnValueSymbol = taskReturnType;
                     returnType = taskReturnType;
@@ -212,7 +207,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
     }
 
     [Inspect("UnrealSharp.Attributes.UFunctionAttribute", "UFunctionAttribute")]
-    public static UnrealType? UFunctionAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UFunctionAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealClassBase unrealClass = (UnrealClassBase) outer!;
         IMethodSymbol methodSymbol = (IMethodSymbol) symbol;
@@ -220,7 +215,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         UnrealFunctionBase unrealFunction;
         if (methodSymbol.IsAsync)
         {
-            UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(ctx.SemanticModel, methodSymbol, outer!);
+            UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(methodSymbol, outer!);
             unrealClass.AddAsyncFunction(asyncFunction);
             
             outer!.AddSourceGeneratorDependency(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
@@ -228,7 +223,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         else
         {
-            unrealFunction = new UnrealFunction(ctx.SemanticModel, methodSymbol, outer!);
+            unrealFunction = new UnrealFunction(methodSymbol, outer!);
             unrealClass.AddFunction(unrealFunction);
         }
 
@@ -310,9 +305,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
             parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{parameter.ManagedType} {parameter.SourceName} = ");
         }
         
-        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedType} returnValue = " : string.Empty;
-        string functionToCall = NeedsImplementationFunction ? $"{SourceName}_Implementation" : SourceName;
-        builder.AppendLine($"{returnAssignment}{functionToCall}({string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName))});");
+        ExportInvokeMethodCallSignature(builder);
         
         if (HasReturnValue)
         {
@@ -321,6 +314,18 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         
         builder.CloseBrace();
+    }
+
+    protected virtual void ExportInvokeMethodCallSignature(GeneratorStringBuilder builder)
+    {
+        string returnAssignment = HasReturnValue ? $"{ReturnType.ManagedType} returnValue = " : string.Empty;
+        string functionToCall = NeedsImplementationFunction ? $"{SourceName}_Implementation" : SourceName;
+        builder.AppendLine($"{returnAssignment}{functionToCall}({GetParameterSignature()});");
+    }
+
+    protected string GetParameterSignature()
+    {
+        return string.Join(", ", Properties.Select(p => p.ReferenceKind.RefKindToString() + p.SourceName));
     }
 
     public void ExportImplementationMethod(GeneratorStringBuilder builder)
@@ -344,7 +349,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
             
             builder.AppendLine($"if (!UFunctionExporter.IsFunctionImplemented({instanceFunction}))");
             builder.OpenBrace();
-            builder.AppendLine($"throw new InvalidOperationException($\"Function {SourceName} is not implemented on instance of {Outer!.SourceName}.\");");
+            builder.AppendLine($"throw new InvalidOperationException($\"CustomPropertyMethod {SourceName} is not implemented on instance of {Outer!.SourceName}.\");");
             builder.CloseBrace();
         }
         

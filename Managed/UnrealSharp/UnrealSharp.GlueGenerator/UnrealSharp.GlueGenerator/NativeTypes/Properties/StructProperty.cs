@@ -6,8 +6,8 @@ public record StructProperty : FieldProperty
 {
     public override string MarshallerType => ManagedType + "Marshaller";
 
-    public StructProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.Struct, outer)
+    public StructProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.Struct, outer, syntaxNode)
     {
 
     }

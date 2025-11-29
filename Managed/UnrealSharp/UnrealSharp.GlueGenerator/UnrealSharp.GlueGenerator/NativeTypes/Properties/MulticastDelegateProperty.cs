@@ -4,8 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record MulticastDelegateProperty : DelegateProperty
 {
-    public MulticastDelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.MulticastInlineDelegate, outer, "MulticastDelegateMarshaller")
+    public MulticastDelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.MulticastInlineDelegate, outer, "MulticastDelegateMarshaller", syntaxNode)
     {
         
     }

@@ -20,7 +20,7 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
                 static (ctx, _) =>
                 {
                     InspectorData decode = InspectorManager.GetInspectorData(ctx.Attributes[0].AttributeClass!.Name)!;
-                    UnrealType type = decode.InspectAttributeDelegate!(null, ctx, ctx.TargetSymbol, ctx.Attributes)!;
+                    UnrealType type = decode.InspectAttributeDelegate!(null, ctx.TargetNode, ctx, ctx.TargetSymbol, ctx.Attributes)!;
                     return type;
                 });
             

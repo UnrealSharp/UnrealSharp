@@ -4,8 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record MapProperty : ContainerProperty
 {
-    public MapProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.Map, outer)
+    public MapProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.Map, outer, syntaxNode)
     {
 
     }

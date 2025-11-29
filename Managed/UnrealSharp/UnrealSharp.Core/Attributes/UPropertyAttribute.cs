@@ -116,16 +116,6 @@ public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None)
     /// The condition for the lifetime of the property.
     /// </summary>
     public ELifetimeCondition LifetimeCondition = ELifetimeCondition.None;
-
-    /// <summary>
-    /// The function to call when the property is changed.
-    /// </summary>
-    public string BlueprintSetter = "";
-    
-    /// <summary>
-    /// The function to call when the property is getting accessed.
-    /// </summary>
-    public string BlueprintGetter = "";
     
     public int ArrayDim = 1;
 }

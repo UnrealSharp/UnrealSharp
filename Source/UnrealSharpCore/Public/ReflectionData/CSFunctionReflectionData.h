@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "CSStructReflectionData.h"
 
 struct FCSFunctionReflectionData : FCSStructReflectionData

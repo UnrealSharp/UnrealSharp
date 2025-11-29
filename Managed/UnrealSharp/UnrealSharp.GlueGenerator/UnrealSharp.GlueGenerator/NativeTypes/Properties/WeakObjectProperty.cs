@@ -6,8 +6,8 @@ public record WeakObjectProperty : TemplateProperty
 {
     public override string MarshallerType => $"BlittableMarshaller<{ManagedType}>";
 
-    public WeakObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer) 
-        : base(memberSymbol, typeSymbol, PropertyType.WeakObject, outer, "BlittableMarshaller")
+    public WeakObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
+        : base(memberSymbol, typeSymbol, PropertyType.WeakObject, outer, "BlittableMarshaller", syntaxNode)
     {
     }
 }

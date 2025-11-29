@@ -9,8 +9,8 @@ public record ContainerProperty : TemplateProperty
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
     public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
 
-    public ContainerProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer)
-        : base(memberSymbol, typeSymbol, propertyType, outer, "")
+    public ContainerProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null)
+        : base(memberSymbol, typeSymbol, propertyType, outer, "", syntaxNode)
     {
         NeedsBackingFields = true;
         CanInstanceMarshallerBeStatic = outer is not UnrealClass;

@@ -4,7 +4,7 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 
 public record UnrealDelegateFunction : UnrealFunction
 {
-    public UnrealDelegateFunction(SemanticModel model, IMethodSymbol typeSymbol, UnrealType outer) : base(model, typeSymbol, outer)
+    public UnrealDelegateFunction(IMethodSymbol typeSymbol, UnrealType outer) : base(typeSymbol, outer)
     {
     }
 

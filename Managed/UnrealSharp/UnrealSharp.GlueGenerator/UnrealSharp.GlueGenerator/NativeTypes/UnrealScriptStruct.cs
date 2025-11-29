@@ -20,13 +20,20 @@ public record UnrealScriptStruct : UnrealStruct
     }
     
     [Inspect("UnrealSharp.Attributes.UStructAttribute", "UStructAttribute", "Global")]
-    public static UnrealType? UStructAttribute(UnrealType? outer, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType? UStructAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(ctx.TargetSymbol, outer);
+        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(symbol, outer);
         InspectorManager.InspectSpecifiers("UStructAttribute", unrealStruct, attributes);
 
-        ITypeSymbol typeSymbol = (ITypeSymbol) ctx.TargetSymbol;
-        InspectorManager.InspectTypeMembers(unrealStruct, typeSymbol, ctx);
+        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
+        if (unrealStruct.IsRecord)
+        {
+            InspectorManager.InspectTypeMembers(unrealStruct, typeSymbol, ctx);
+        }
+        else
+        {
+            InspectorManager.InspectTypeMembers(unrealStruct, syntaxNode, typeSymbol, ctx);
+        }
         
         return unrealStruct;
     }

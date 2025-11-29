@@ -12,30 +12,17 @@ concept ValidProperty = std::derived_from<T, FProperty>
 		{ T::StaticClass() } -> std::same_as<FFieldClass*>;
 	};
 
-/**
- * 
- */
 template <ValidProperty PropertyBaseClass>
 class TCSGetterSetterProperty : public PropertyBaseClass {
 public:
     TCSGetterSetterProperty(FFieldVariant InOwner, FName InName, EObjectFlags InFlags, UFunction* InSetterFunc, UFunction* InGetterFunc) : PropertyBaseClass(InOwner, InName, InFlags), SetterFunc(MoveTemp(InSetterFunc)), GetterFunc(MoveTemp(InGetterFunc)) {
     }
 	
-    virtual bool HasSetter() const override
-    {
-        return !!SetterFunc;
-    }
-
-    virtual bool HasGetter() const override
-    {
-        return !!GetterFunc;
-    }
-
-    virtual bool HasSetterOrGetter() const override
-    {
-        return !!SetterFunc || !!GetterFunc;
-    }
-
+    // FProperty interface
+    virtual bool HasSetter() const override { return !!SetterFunc; }
+    virtual bool HasGetter() const override { return !!GetterFunc; }
+    virtual bool HasSetterOrGetter() const override { return !!SetterFunc || !!GetterFunc; }
+ 
     virtual void CallSetter(void* Container, const void* InValue) const override
     {
         CallSetterInternal(Container, InValue);
@@ -70,9 +57,7 @@ public:
             CallGetterInternal(const_cast<uint8*>(ObjectPointer), const_cast<void*>(PropertyValueOrContainer));
         }
         
-        
-        PropertyBaseClass::ExportText_Internal(ValueStr, PropertyValueOrContainer, PointerType,
-            DefaultValue, Parent, PortFlags, ExportRootScope);
+        PropertyBaseClass::ExportText_Internal(ValueStr, PropertyValueOrContainer, PointerType, DefaultValue, Parent, PortFlags, ExportRootScope);
     }
     
     virtual const TCHAR* ImportText_Internal(const TCHAR* Buffer, void* ContainerOrPropertyPtr, EPropertyPointerType PointerType, UObject* OwnerObject, int32 PortFlags, FOutputDevice* ErrorText) const override
@@ -98,7 +83,7 @@ public:
         return Result;
     }
 #endif
-
+    
     virtual void SerializeItem(FStructuredArchive::FSlot Slot, void* Value, void const* Defaults) const
     {
         const FArchive &UnderlyingArchive = Slot.GetUnderlyingArchive();
@@ -135,22 +120,39 @@ public:
 
         return Result;
     }
+    // End of FProperty interface
 
 private:
     void CallSetterInternal(void* Container, const void* InValue) const
     {
-        checkf(SetterFunc, TEXT("Calling a setter on %s but the property has no setter defined."), *PropertyBaseClass::GetFullName());
-        auto AsObject = static_cast<UObject*>(Container);
-        FFrame NewStack(AsObject, SetterFunc, const_cast<void*>(InValue), nullptr, SetterFunc->ChildProperties);
-        SetterFunc->Invoke(AsObject, NewStack, nullptr);
+        CallGetterSetterInternal(SetterFunc, Container, const_cast<void*>(InValue));
     }
     
     void CallGetterInternal(const void* Container, void* OutValue) const
     {
-        checkf(GetterFunc, TEXT("Calling a getter on %s but the property has no getter defined."), *PropertyBaseClass::GetFullName());
-        auto AsObject = static_cast<UObject*>(const_cast<void*>(Container));
+        CallGetterSetterInternal(GetterFunc, Container, OutValue);
+    }
+    
+    void CallGetterSetterInternal(UFunction* Function, const void* Container, void* OutValue) const
+    {
+        if (!IsValid(Function))
+        {
+            UE_LOGFMT(LogUnrealSharp, Error, "Attempted to call invalid getter/setter function on property '{0}'", *this->GetName());
+            return;
+        }
+        
+#if WITH_EDITOR
+        if (!Function->GetNativeFunc())
+        {
+            // Usually happens on skeleton classes. No big deal, just skip the call.
+            return;
+        }
+#endif
+
+        UObject* AsObject = static_cast<UObject*>(const_cast<void*>(Container));
         FFrame NewStack(AsObject, GetterFunc, OutValue, nullptr, GetterFunc->ChildProperties);
-        GetterFunc->Invoke(AsObject, NewStack, OutValue);
+        
+        Function->Invoke(AsObject, NewStack, OutValue);
     }
     
 	UFunction* SetterFunc = nullptr;

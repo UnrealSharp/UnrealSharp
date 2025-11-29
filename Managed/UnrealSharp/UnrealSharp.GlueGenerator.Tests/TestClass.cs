@@ -1,4 +1,5 @@
-﻿using UnrealSharp;
+﻿
+using UnrealSharp;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
@@ -155,7 +156,13 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] public partial IDictionary<FName, AActor?> NameToActor_IDict { get; set; }
     [UProperty] public partial IDictionary<string, TSoftObjectPtr<UTexture2D>> stringToSoftTex_IDict { get; set; }
     [UProperty] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDict { get; set; }
-    [UProperty(PropertyFlags.EditAnywhere)] public partial IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDhict { get; set; }
+
+    [UProperty(PropertyFlags.EditAnywhere)]
+    public IDictionary<TSubclassOf<AActor>, FGuid> SubclassToGuid_IDhict
+    {
+        get { return SubclassToGuid_IDict; }
+        set{ SubclassToGuid_IDict = value; }
+    }
     
     [UProperty] private partial TMulticastDelegate<FTestDelegate> MultiDelegateProp { get; set; }
     [UProperty] private partial TDelegate<FTestDelegate2> SingleDelegateProp { get; set; }

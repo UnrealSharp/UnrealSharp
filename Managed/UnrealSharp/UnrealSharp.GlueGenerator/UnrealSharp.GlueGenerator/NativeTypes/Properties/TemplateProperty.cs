@@ -13,8 +13,8 @@ public record TemplateProperty : UnrealProperty
     
     public override string MarshallerType => MakeMarshallerType(_marshallerName, TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
 
-    public TemplateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller)
-        : base(memberSymbol, typeSymbol, propertyType, outer)
+    public TemplateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller, SyntaxNode? syntaxNode = null)
+        : base(memberSymbol, typeSymbol, propertyType, outer, syntaxNode)
     {
         _marshallerName = marshaller;
         INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol) typeSymbol!;
