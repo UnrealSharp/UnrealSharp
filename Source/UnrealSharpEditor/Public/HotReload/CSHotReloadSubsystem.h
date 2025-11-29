@@ -41,9 +41,10 @@ public:
 	FSlateIcon GetMenuIcon() const;
 
 	UNREALSHARPEDITOR_API bool IsHotReloading() const { return CurrentHotReloadStatus == Active; }
-	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const { return CurrentHotReloadStatus == PendingReload; }
+	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const { return PendingModifiedAssemblies.Num() > 0; }
 	UNREALSHARPEDITOR_API bool HasHotReloadFailed() const { return CurrentHotReloadStatus == FailedToUnload || CurrentHotReloadStatus == FailedToCompile; }
-
+	
+	UNREALSHARPEDITOR_API void PerformHotReloadOnPendingChanges();
 	UNREALSHARPEDITOR_API void PerformHotReload();
 	
 	void PauseHotReload(const FString& Reason = FString());
@@ -54,7 +55,9 @@ public:
 private:
 	
 	void AddDirectoryToWatch(const FString& Directory, FName ProjectName);
+	
 	void HandleScriptFileChanges(const TArray<struct FFileChangeData>& ChangedFiles, FName ProjectName);
+	void ProcessChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 
 	static void OnHotReloadReady_Callback();
 	void OnHotReloadReady();
@@ -88,7 +91,7 @@ private:
 
 	TArray<FString> WatchingDirectories;
 
-	TArray<FCSPendingHotReloadChange> PendingFileChangesWhilePaused;
+	TArray<FCSPendingHotReloadChange> PendingFileChanges;
 
 	TSet<uint32> ReloadedTypes;
 };

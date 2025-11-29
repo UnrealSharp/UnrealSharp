@@ -91,12 +91,7 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
-	UCSHotReloadSubsystem::Get()->PerformHotReload();
-}
-
-void FUnrealSharpEditorModule::OnReloadManagedCode()
-{
-	UCSHotReloadSubsystem::Get()->PerformHotReload();
+	UCSHotReloadSubsystem::Get()->PerformHotReloadOnPendingChanges();
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
@@ -316,10 +311,7 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 	// Build
 	MenuBuilder.BeginSection("Build", LOCTEXT("Build", "Build"));
 
-	MenuBuilder.AddMenuEntry(CSCommands.CompileManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
-	                         FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
-
-	MenuBuilder.AddMenuEntry(CSCommands.ReloadManagedCode, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+	MenuBuilder.AddMenuEntry(CSCommands.HotReload, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 	                         FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
 
 	MenuBuilder.EndSection();
@@ -370,11 +362,6 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
 
 	MenuBuilder.EndSection();
 
-	MenuBuilder.BeginSection("Tools", LOCTEXT("Tools", "Tools"));
-
-	MenuBuilder.AddMenuEntry(CSCommands.RepairComponents, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
-	                         FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
-
 	return MenuBuilder.MakeWidget();
 }
 
@@ -410,10 +397,8 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
 	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().CreateNewProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().CompileManagedCode,
+	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().HotReload,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().ReloadManagedCode,
-	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReloadManagedCode));
 	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RegenerateSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenSolution,

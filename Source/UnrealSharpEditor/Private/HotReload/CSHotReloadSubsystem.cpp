@@ -75,6 +75,21 @@ FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
 	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
+void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
+{
+	if (PendingFileChanges.IsEmpty())
+	{
+		return;
+	}
+	
+	for (const FCSPendingHotReloadChange& PendingFiles : PendingFileChanges)
+	{
+		ProcessChangedFiles(PendingFiles.ChangedFiles, PendingFiles.ProjectName);
+	}
+		
+	PendingFileChanges.Reset();
+}
+
 void UCSHotReloadSubsystem::PerformHotReload()
 {
 	if (bIsHotReloadPaused)
@@ -106,10 +121,10 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Reload Failed")));
 		return;
 	}
-
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
 	
 	PendingModifiedAssemblies.Reset();
+
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
@@ -150,7 +165,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		Assembly->LoadManagedAssembly();
 	}
 
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Blueprints..."));
+	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Affected Blueprints..."));
 	FCSHotReloadUtilities::RebuildDependentBlueprints(ReloadedTypes);
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
@@ -159,7 +174,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	CurrentHotReloadStatus = Inactive;
 	ReloadedTypes.Reset();
 	
-	UE_LOG(LogUnrealSharpEditor, Log, TEXT("Hot reload took %.2f seconds to execute"), FPlatformTime::Seconds() - StartTime);
+	UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# Hot Reload completed in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
 }
 
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
@@ -199,10 +214,10 @@ void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 {
 	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
 	UnrealSharpEditorModule->GetManagedUnrealSharpEditorCallbacks().ForceManagedGC();
-
-	if (PendingFileChangesWhilePaused.Num() > 0)
+	
+	if (GetDefault<UCSUnrealSharpEditorSettings>()->AutomaticHotReloading != Off)
 	{
-		PerformHotReload();
+		PerformHotReloadOnPendingChanges();
 	}
 }
 
@@ -212,7 +227,7 @@ bool UCSHotReloadSubsystem::Tick(float DeltaTime)
 	
 	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() &&FApp::HasFocus())
 	{
-		PerformHotReload();
+		PerformHotReloadOnPendingChanges();
 	}
 
 	return true;
@@ -269,16 +284,6 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 		PauseNotification->ExpireAndFadeout();
 		PauseNotification.Reset();
 	}
-	
-	if (PendingFileChangesWhilePaused.Num() > 0)
-	{
-		for (const FCSPendingHotReloadChange& PendingChange : PendingFileChangesWhilePaused)
-		{
-			HandleScriptFileChanges(PendingChange.ChangedFiles, PendingChange.ProjectName);
-		}
-		
-		PendingFileChangesWhilePaused.Empty();
-	}
 }
 
 void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
@@ -289,13 +294,18 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	}
 	
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus)
+	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
 	{
 		FCSPendingHotReloadChange PendingChange = FCSPendingHotReloadChange(ProjectName, ChangedFiles);
-		PendingFileChangesWhilePaused.Add(PendingChange);
+		PendingFileChanges.Add(PendingChange);
 		return;
 	}
 	
+	ProcessChangedFiles(ChangedFiles, ProjectName);
+}
+
+void UCSHotReloadSubsystem::ProcessChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
+{
 	TArray<FCSHotReloadUtilities::FCSChangedFile> DirtiedFiles;
 	FCSHotReloadUtilities::CollectDirtiedFiles(ChangedFiles, DirtiedFiles);
 	

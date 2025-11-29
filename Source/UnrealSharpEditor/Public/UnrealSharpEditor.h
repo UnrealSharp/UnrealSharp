@@ -23,8 +23,6 @@ enum HotReloadStatus
 {
     // Not Hot Reloading
     Inactive,
-    // When the DirectoryWatcher picks up on new code changes that haven't been Hot Reloaded yet
-    PendingReload,
     // Actively Hot Reloading
     Active,
     // Failed to unload an assembly during Hot Reload
@@ -93,7 +91,7 @@ private:
 
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
-    static void OnReloadManagedCode();
+    
     void OnRegenerateSolution();
     void OnOpenSolution();
     static void OnPackageProject();

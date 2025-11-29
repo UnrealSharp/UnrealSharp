@@ -89,7 +89,7 @@ public:
     }
 
 	UFUNCTION(meta = (ScriptMethod))
-	void GetAllLoadedAssemblies(TArray<UCSManagedAssembly*>& Assemblies) const
+	void GetLoadedAssemblies(TArray<UCSManagedAssembly*>& Assemblies) const
     {
     	TArray<TObjectPtr<UCSManagedAssembly>> FoundAssemblies;
 	    LoadedAssemblies.GenerateValueArray(FoundAssemblies);

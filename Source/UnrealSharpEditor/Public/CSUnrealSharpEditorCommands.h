@@ -10,8 +10,7 @@ public:
 	// End
 
 	TSharedPtr<FUICommandInfo> CreateNewProject;
-    TSharedPtr<FUICommandInfo> CompileManagedCode;
-	TSharedPtr<FUICommandInfo> ReloadManagedCode;
+    TSharedPtr<FUICommandInfo> HotReload;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
 	TSharedPtr<FUICommandInfo> MergeManagedSlnAndNativeSln;
@@ -20,6 +19,5 @@ public:
 	TSharedPtr<FUICommandInfo> OpenDocumentation;
 	TSharedPtr<FUICommandInfo> ReportBug;
 	TSharedPtr<FUICommandInfo> RefreshRuntimeGlue;
-	TSharedPtr<FUICommandInfo> RepairComponents;
 };
 

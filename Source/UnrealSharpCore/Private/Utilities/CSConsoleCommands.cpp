@@ -141,7 +141,7 @@ void DumpTypeReflectionData(const TArray<FString>& Args)
 	FCSFieldName TypeFieldName(*TypeName, *Namespace);
 	
 	TArray<UCSManagedAssembly*> Assemblies;
-	UCSManager::Get().GetAllLoadedAssemblies(Assemblies);
+	UCSManager::Get().GetLoadedAssemblies(Assemblies);
 	
 	for (UCSManagedAssembly* Assembly : Assemblies)
 	{
@@ -203,7 +203,7 @@ static FAutoConsoleCommand CVarDumpLoadedAssemblies(
 	FConsoleCommandDelegate::CreateStatic([]()
 	{
 		TArray<UCSManagedAssembly*> Assemblies;
-		UCSManager::Get().GetAllLoadedAssemblies(Assemblies);
+		UCSManager::Get().GetLoadedAssemblies(Assemblies);
 		
 		UE_LOG(LogUnrealSharp, Log, TEXT("Loaded Managed Assemblies:"));
 		for (UCSManagedAssembly* Assembly : Assemblies)
