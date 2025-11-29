@@ -3,6 +3,16 @@
 #include "Factories/PropertyGenerators/CSPropertyGenerator.h"
 #include "ReflectionData/CSFunctionReflectionData.h"
 
+#define JSON_PARSE_GETTER_SETTER(MemberPtr, Optional) \
+	{ \
+		FCSFunctionReflectionData MemberPtr##Data; \
+		bSuccess &= ParseObjectField(MemberPtr##Data, JsonObject, TEXT(#MemberPtr), Optional); \
+		if (MemberPtr##Data.FieldName.IsValid()) \
+		{ \
+			MemberPtr = MakeShared<FCSFunctionReflectionData>(MemberPtr##Data); \
+		} \
+	}
+
 bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 {
 	START_JSON_SERIALIZE
@@ -17,33 +27,20 @@ bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
 	JSON_READ_ENUM(PropertyType, IS_REQUIRED);
 	
-	FCSFunctionReflectionData GetterMethod;
-	JSON_PARSE_OBJECT(GetterMethod, IS_OPTIONAL);
-	if (GetterMethod.FieldName.IsValid())
-	{
-		CustomGetter = MakeShared<FCSFunctionReflectionData>(GetterMethod);
-	}
-	
-	FCSFunctionReflectionData SetterMethod;
-	JSON_PARSE_OBJECT(SetterMethod, IS_OPTIONAL);
-	if (SetterMethod.FieldName.IsValid())
-	{
-		CustomSetter = MakeShared<FCSFunctionReflectionData>(SetterMethod);
-	}
+	JSON_PARSE_GETTER_SETTER(CustomGetter, IS_OPTIONAL);
+	JSON_PARSE_GETTER_SETTER(CustomSetter, IS_OPTIONAL);
 	
 	UCSPropertyGenerator* PropertyGenerator = FCSPropertyFactory::GetPropertyGenerator(PropertyType);
 	InnerType = PropertyGenerator->CreatePropertyInnerTypeData(PropertyType);
 
-	if (InnerType.IsValid())
-	{
-		InnerType->PropertyType = PropertyType;
-		CALL_SERIALIZE(InnerType->Serialize(JsonObject));
-	}
-	else
+	if (!InnerType.IsValid())
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Failed to create type reflection data for property '{0}' of type '{1}'", *FieldName.GetFullName().ToString(), static_cast<uint8>(PropertyType));
 		SET_SUCCESS(false);
+		END_JSON_SERIALIZE
 	}
-
+	
+	InnerType->PropertyType = PropertyType;
+	CALL_SERIALIZE(InnerType->Serialize(JsonObject));
 	END_JSON_SERIALIZE
 }
