@@ -411,7 +411,7 @@ public record UnrealProperty : UnrealType
             return;
         }
         
-        JsonObject methodObject = new();
+        JsonObject methodObject = new JsonObject();
         method.Value.CustomPropertyMethod!.PopulateJsonObject(methodObject);
         jsonObject[key] = methodObject;
     }

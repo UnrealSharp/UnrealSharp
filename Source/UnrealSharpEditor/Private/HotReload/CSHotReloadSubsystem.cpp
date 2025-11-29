@@ -79,8 +79,11 @@ void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
 {
 	if (PendingFileChanges.IsEmpty())
 	{
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending file changes to process for hot reload.");
 		return;
 	}
+	
+	UE_LOGFMT(LogUnrealSharpEditor, Display, "Processing pending file changes for hot reload.");
 	
 	for (const FCSPendingHotReloadChange& PendingFiles : PendingFileChanges)
 	{
@@ -128,12 +131,6 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
-		if (!IsValid(Assembly))
-		{
-			UE_LOGFMT(LogUnrealSharpEditor, Warning, "Skipping invalid assembly during hot reload.");
-			continue;
-		}
-		
 		if (Assembly->UnloadManagedAssembly())
 		{
 			continue;
@@ -155,14 +152,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)
 	{
-		UCSManagedAssembly* Assembly = AssembliesSortedByDependencies[i];
-		
-		if (!IsValid(Assembly))
-		{
-			continue;
-		}
-		
-		Assembly->LoadManagedAssembly();
+		AssembliesSortedByDependencies[i]->LoadManagedAssembly();
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Affected Blueprints..."));

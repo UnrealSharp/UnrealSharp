@@ -21,6 +21,7 @@
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
 #include "CSProcHelper.h"
+#include "CSUnrealSharpEditorSettings.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
