@@ -188,14 +188,14 @@ public partial class UTestClass : AActor, ITestInterface
         TextProp = new FText("Test Text");
     }
     
-    protected override void BeginPlay_Implementation()
+    public override void BeginPlay()
     {
-        base.BeginPlay_Implementation();
+        base.BeginPlay();
     }
 
-    protected override void Tick_Implementation(float deltaSeconds)
+    public override void Tick(float deltaSeconds)
     {
-        base.Tick_Implementation(deltaSeconds);
+        base.Tick(deltaSeconds);
     }
 
     [UFunction(FunctionFlags.BlueprintEvent)]

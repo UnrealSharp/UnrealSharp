@@ -28,6 +28,18 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 	return NativeObject->FindFunctionChecked(FunctionName);
 }
 
+UFunction* UUClassExporter::GetFirstNativeImplementationFromInstanceAndName(const UObject* NativeObject, const char* FunctionName)
+{
+	if (!IsValid(NativeObject))
+	{
+		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. NativeObject is not valid."))
+		return nullptr;
+	}
+	
+	UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(NativeObject->GetClass());
+	return FirstNativeClass->FindFunctionByName(FunctionName);
+}
+
 void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* Namespace, const char* ClassName)
 {
 	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);

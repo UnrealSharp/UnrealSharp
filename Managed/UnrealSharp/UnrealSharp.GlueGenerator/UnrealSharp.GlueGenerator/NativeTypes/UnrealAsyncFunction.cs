@@ -133,7 +133,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     void AppendActivateOverride(GeneratorStringBuilder builder)
     {
-        builder.AppendLine("protected override void Activate_Implementation()");
+        builder.AppendLine("public override void Activate()");
         builder.OpenBrace();
         builder.AppendLine("if (asyncDelegate == null) { throw new InvalidOperationException(\"AsyncDelegate was null\"); }");
         builder.AppendLine(" _task = asyncDelegate(_cancellationTokenSource.Token);");
@@ -143,13 +143,13 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     void AppendCancelOverride(GeneratorStringBuilder builder, bool hasCancellationToken)
     {
-        builder.AppendLine("protected override void Cancel_Implementation()");
+        builder.AppendLine("public override void Cancel()");
         builder.OpenBrace();
         if (hasCancellationToken)
         {
             builder.AppendLine("_cancellationTokenSource.Cancel();");
         }
-        builder.AppendLine("base.Cancel_Implementation();");
+        builder.AppendLine("base.Cancel();");
         builder.CloseBrace();
     }
 

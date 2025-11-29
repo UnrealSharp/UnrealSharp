@@ -131,7 +131,7 @@ public record UnrealClass : UnrealClassBase
                 continue;
             }
             
-            if (!member.IsOverride || !member.Name.EndsWith("_Implementation"))
+            if (!member.IsOverride)
             {
                 continue;
             }
@@ -148,6 +148,11 @@ public record UnrealClass : UnrealClassBase
                 }
                 
                 methodSymbol = originalMethodSymbol;
+            }
+            
+            if (!methodSymbol.HasUFunctionAttribute() && !methodSymbol.Name.EndsWith("_Implementation"))
+            {
+                continue;
             }
 
             string nativeName = methodSymbol.TryGetEngineName();

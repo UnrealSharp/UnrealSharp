@@ -22,7 +22,4 @@ public:
 	UNREALSHARP_FUNCTION()
 	static void InitializeFunctionParams(UFunction* NativeFunction, void* Params);
 
-	UNREALSHARP_FUNCTION()
-	static bool HasBlueprintEventBeenImplemented(const UFunction* NativeFunction);
-
 };

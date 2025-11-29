@@ -346,11 +346,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
             builder.OpenBrace();
             builder.AppendLine($"{instanceFunction} = CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{SourceName}\");");
             builder.CloseBrace();
-            
-            builder.AppendLine($"if (!UFunctionExporter.IsFunctionImplemented({instanceFunction}))");
-            builder.OpenBrace();
-            builder.AppendLine($"throw new InvalidOperationException($\"CustomPropertyMethod {SourceName} is not implemented on instance of {Outer!.SourceName}.\");");
-            builder.CloseBrace();
         }
         
         if (HasParamsOrReturnValue)
