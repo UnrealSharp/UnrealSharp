@@ -475,10 +475,19 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
     }
 }
 
-void FUnrealSharpEditorModule::LoadNewProject(const FString& ProjectPath)
+void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const FString& ModulePath) const
 {
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
-	ManagedUnrealSharpEditorCallbacks.LoadProject(*ProjectPath, &FUnrealSharpEditorModule::OnProjectLoaded);
+	
+	UCSManagedAssembly* LoadedAssembly = Manager->LoadUserAssemblyByName(*ModuleName);
+	if (!LoadedAssembly || !LoadedAssembly->IsValidAssembly())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to load newly created project {ModuleName}", *ModuleName);
+		UCSHotReloadSubsystem::Get()->ResumeHotReload();
+		return;
+	}
+	
+	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, &FUnrealSharpEditorModule::OnProjectLoaded);
 }
 
 void FUnrealSharpEditorModule::OnProjectLoaded()
@@ -515,9 +524,9 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	}
 	
 	OpenSolution();
-
-	FString CSProjPath = FPaths::Combine(ProjectFolder, ModuleName + TEXT(".csproj"));
-	LoadNewProject(CSProjPath);
+	
+	FString ModulePath = FPaths::Combine(ProjectFolder, ModuleName + TEXT(".csproj"));
+	LoadNewProject(ModuleName, ModulePath);
 }
 
 bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)

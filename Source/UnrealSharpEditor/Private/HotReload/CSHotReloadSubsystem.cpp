@@ -75,6 +75,23 @@ FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
 	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
+bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
+{
+	bool bHasPendingChanges = false;
+	for (const UCSManagedAssembly* Assembly : PendingModifiedAssemblies)
+	{
+		if (!IsValid(Assembly) || FCSAssemblyUtilities::IsGlueAssembly(Assembly))
+		{
+			continue;
+		}
+		
+		bHasPendingChanges = true;
+		break;
+	}
+	
+	return bHasPendingChanges;
+}
+
 void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
 {
 	if (PendingFileChanges.IsEmpty())

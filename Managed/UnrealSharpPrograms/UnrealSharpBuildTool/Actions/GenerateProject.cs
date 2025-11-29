@@ -93,7 +93,7 @@ public class GenerateProject : BuildToolAction
         }
 
         AddLaunchSettings();
-        
+        BuildProject();
         return true;
     }
 
@@ -177,6 +177,20 @@ public class GenerateProject : BuildToolAction
         }
 
         Program.CreateOrUpdateLaunchSettings(launchSettingsPath);
+    }
+    
+    void BuildProject()
+    {
+        using BuildToolProcess buildProjectProcess = new BuildToolProcess();
+
+        buildProjectProcess.StartInfo.ArgumentList.Add("build");
+        buildProjectProcess.StartInfo.ArgumentList.Add(_projectPath);
+        buildProjectProcess.StartInfo.WorkingDirectory = _projectFolder;
+
+        if (!buildProjectProcess.StartBuildToolProcess())
+        {
+            throw new InvalidOperationException("Failed to build the generated project.");
+        }
     }
 }
 
