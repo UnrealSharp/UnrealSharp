@@ -386,8 +386,9 @@ void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 
 void FUnrealSharpEditorModule::OnOpenSettings()
 {
+	const UDeveloperSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer(
-		"Editor", "General", "CSUnrealSharpEditorSettings");
+		Settings->GetContainerName(), Settings->GetCategoryName(), Settings->GetSectionName());
 }
 
 void FUnrealSharpEditorModule::OnOpenDocumentation()
