@@ -7,7 +7,6 @@ namespace UnrealSharp;
 
 public class ManagedObjectMarshaller<T>
 {
-    
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T? obj)
     {
         GCHandle handle = obj is not null ? GCHandle.Alloc(obj, GCHandleType.Normal) : GCHandle.FromIntPtr(0);

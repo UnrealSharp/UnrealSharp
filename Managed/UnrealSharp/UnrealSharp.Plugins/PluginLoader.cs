@@ -87,6 +87,8 @@ public static class PluginLoader
     {
         const int warnThresholdMs = 200;
         const int timeoutMs = 2000;
+
+        TaskTracker.WaitForAllActiveTasks();
         
         string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
         WeakReference? alcWeak = RemovePlugin(assemblyName);
