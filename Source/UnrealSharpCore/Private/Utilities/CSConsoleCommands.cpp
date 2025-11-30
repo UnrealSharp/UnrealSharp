@@ -26,6 +26,7 @@ void MetaDataFromMap(const TMap<FName, FString>* PropertyMetaData, int32 IndentL
 
 void DumpMetaData(UField* Field, int32 IndentLevel)
 {
+#if WITH_EDITOR
 	UE_LOGFMT(LogUnrealSharp, Log, "{0}Metadata:", Indent(IndentLevel));
 	
 	UPackage* Package = Field->GetOutermost();
@@ -33,14 +34,17 @@ void DumpMetaData(UField* Field, int32 IndentLevel)
 	
 	TMap<FName, FString>* FieldMetaData = MetaData.GetMapForObject(Field);
 	MetaDataFromMap(FieldMetaData, IndentLevel);
+#endif
 }
 
 void DumpMetaData(FProperty* Property, int32 IndentLevel)
 {
+#if WITH_EDITOR
 	UE_LOGFMT(LogUnrealSharp, Log, "{0}Metadata:", Indent(IndentLevel));
 	
 	const TMap<FName, FString>* PropertyMetaData = Property->GetMetaDataMap();
 	MetaDataFromMap(PropertyMetaData, IndentLevel);
+#endif
 }
 
 void DumpPropertiesOfStruct(UStruct* Struct, int32 IndentLevel)

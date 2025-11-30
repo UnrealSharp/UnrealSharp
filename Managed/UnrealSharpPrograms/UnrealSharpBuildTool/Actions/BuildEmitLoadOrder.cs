@@ -14,31 +14,23 @@ public class BuildEmitLoadOrder : BuildToolAction
         {
             return false;
         }
-        
-        if (!EmitLoadOrder(Program.GetOutputPath()))
-        {
-            return false;
-        }
-        
+
+        string outputPath = Program.GetOutputPath();
+        EmitLoadOrder(outputPath, outputPath);
         return AddLaunchSettings();
     }
     
-    public static bool EmitLoadOrder(string outputPath)
+    public static void EmitLoadOrder(string assemblyFolder, string publishPath)
     {
         DirectoryInfo scriptDirectory = new DirectoryInfo(Program.GetProjectDirectory());
         Dictionary<string, List<FileInfo>> projectFiles = Program.GetProjectFilesByDirectory(scriptDirectory);
         List<FileInfo> allProjectFiles = projectFiles.Values.SelectMany(x => x).ToList();
-        
-        if (allProjectFiles.Count == 0)
-        {
-            return true;
-        }
 
         List<string> assemblyPaths = new List<string>(allProjectFiles.Count);
         foreach (FileInfo projectFile in allProjectFiles)
         {
             string csProjName = Path.GetFileNameWithoutExtension(projectFile.Name);
-            string assemblyPath = Path.Combine(Program.GetOutputPath(), csProjName + ".dll");
+            string assemblyPath = Path.Combine(assemblyFolder, csProjName + ".dll");
             
             if (!File.Exists(assemblyPath))
             {
@@ -49,8 +41,7 @@ public class BuildEmitLoadOrder : BuildToolAction
             assemblyPaths.Add(assemblyPath);
         }
         
-        AssemblyLoadOrder.EmitLoadOrder(assemblyPaths, outputPath);
-        return true;
+        AssemblyLoadOrder.EmitLoadOrder(assemblyPaths, publishPath);
     }
     
     bool AddLaunchSettings()
@@ -96,7 +87,7 @@ public static class AssemblyLoadOrder
         }
     }
 
-    public static void EmitLoadOrder(List<string> pathsList, string outputFolder)
+    public static void EmitLoadOrder(List<string> pathsList, string publishPath)
     {
         List<AssemblyInfo> assemblyInfos = new List<AssemblyInfo>();
         for (int i = 0; i < pathsList.Count; i++)
@@ -238,7 +229,7 @@ public static class AssemblyLoadOrder
         root["LoadOrder"] = array;
         
         string jsonString = root.ToJsonString();
-        string fullPath = Path.Combine(outputFolder, "AssemblyLoadOrder.json");
+        string fullPath = Path.Combine(publishPath, "AssemblyLoadOrder.json");
         File.WriteAllText(fullPath, jsonString);
     }
 

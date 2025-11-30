@@ -174,7 +174,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         builder.OpenBrace();
         builder.AppendLine("if (UnrealSynchronizationContext.CurrentThread != NamedThread.GameThread)");
         builder.OpenBrace();
-        builder.AppendLine("new UnrealSynchronizationContext(NamedThread.GameThread, t).Post(_ => OnTaskCompleted(t), null);");
+        builder.AppendLine("new UnrealSynchronizationContext(NamedThread.GameThread).Post(_ => OnTaskCompleted(t), null);");
         builder.AppendLine("return;");
         builder.CloseBrace();
         

@@ -61,10 +61,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     /// Check if the object that this weak object points to is valid.
     /// </summary>
     /// <returns>True if the object is valid, false otherwise.</returns>
-    public bool IsValid()
-    {
-        return FWeakObjectPtrExporter.CallIsValid(Data).ToManagedBool();
-    }
+    public bool IsValid => FWeakObjectPtrExporter.CallIsValid(Data).ToManagedBool();
 
     /// <summary>
     /// Check if the object that this weak object points to is stale.
@@ -78,7 +75,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     /// <inheritdoc />
     public override string ToString()
     {
-        return IsValid() ? Object.ToString() : "None";
+        return IsValid ? Object!.ToString() : "None";
     }
 
     /// <inheritdoc />

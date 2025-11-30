@@ -14,9 +14,9 @@ public class PackageProject : BuildToolAction
         }
 
         string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
-        string binariesPath = Program.GetOutputPath(rootProjectPath);
+        string publishFolder = Program.GetOutputPath(rootProjectPath);
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
-        string bindingsOutputPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
+        string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
         
         Collection<string> extraArguments =
         [
@@ -28,8 +28,8 @@ public class PackageProject : BuildToolAction
 			"-p:DisableWithEditor=true",
             "-p:GenerateDocumentationFile=false",
             
-            $"-p:PublishDir=\"{binariesPath}\"",
-            $"-p:OutputPath=\"{bindingsOutputPath}\"",
+            $"-p:PublishDir=\"{publishFolder}\"",
+            $"-p:OutputPath=\"{packageOutputFolder}\"",
         ];
 
         BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);
@@ -38,7 +38,7 @@ public class PackageProject : BuildToolAction
         BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
         buildUserSolution.RunAction();
 
-        BuildEmitLoadOrder.EmitLoadOrder(binariesPath);
+        BuildEmitLoadOrder.EmitLoadOrder(packageOutputFolder, publishFolder);
         return true;
     }
 }

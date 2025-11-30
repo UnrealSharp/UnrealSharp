@@ -12,9 +12,15 @@ class UFScriptDelegateExporter : public UObject
 public:
 
 	UNREALSHARP_FUNCTION()
-	static void BroadcastDelegate(FScriptDelegate* Delegate, void* Params);
+	static void BroadcastDelegate(UObject* Object, FName FunctionName, void* Params);
 
 	UNREALSHARP_FUNCTION()
 	static bool IsBound(FScriptDelegate* Delegate);
+	
+	UNREALSHARP_FUNCTION()
+	static void MakeDelegate(FScriptDelegate* OutDelegate, UObject* Object, FName FunctionName);
+	
+	UNREALSHARP_FUNCTION()	
+	static void GetDelegateInfo(FScriptDelegate* Delegate, UObject** OutObject, FName* OutFunctionName);
 	
 };

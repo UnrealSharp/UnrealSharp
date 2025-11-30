@@ -218,29 +218,27 @@ USCS_Node* FCSSimpleConstructionScriptCompiler::CreateNode(USimpleConstructionSc
 
 void FCSSimpleConstructionScriptCompiler::UpdateTemplateComponent(USCS_Node* Node, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName)
 {
-	UPackage* TransientPackage = GetTransientPackage();
 	const FName TemplateName(*FString::Printf(TEXT("%s_GEN_VARIABLE"), *NewComponentVariableName.ToString()));
 
-	UObject* OldTemplateObject = IsValid(Node->ComponentTemplate) ? FindObjectFast<UObject>(GeneratedClass, TemplateName) : nullptr;
+#if WITH_EDITOR
+	UActorComponent* OldTemplateObject = IsValid(Node->ComponentTemplate) ? FindObjectFast<UActorComponent>(GeneratedClass, TemplateName) : nullptr;
 
 	if (IsValid(OldTemplateObject))
 	{
-		OldTemplateObject->Rename(nullptr, TransientPackage, REN_DoNotDirty | REN_DontCreateRedirectors);
+		OldTemplateObject->Rename(nullptr, GetTransientPackage(), REN_DoNotDirty | REN_DontCreateRedirectors);
 	}
-
-	constexpr EObjectFlags NewObjectFlags = RF_ArchetypeObject | RF_Public;
-	UActorComponent* NewComponentTemplate = NewObject<UActorComponent>(GeneratedClass, NewComponentClass, NAME_None, NewObjectFlags);
+#endif
+	
+	UActorComponent* NewComponentTemplate = NewObject<UActorComponent>(GeneratedClass, NewComponentClass, TemplateName,  RF_ArchetypeObject | RF_Public);
+	Node->ComponentClass = NewComponentClass;
+	Node->ComponentTemplate = NewComponentTemplate;
 
 #if WITH_EDITOR
 	if (ICSManagedTypeInterface* ManagedType = FCSClassUtilities::GetManagedType(NewComponentClass))
 	{
 		ManagedType->GetManagedReferencesCollection().AddReference(GeneratedClass);
 	}
-#endif
-
-	Node->ComponentClass = NewComponentClass;
-	Node->ComponentTemplate = NewComponentTemplate;
-
+	
 	if (!IsValid(OldTemplateObject))
 	{
 		return;
@@ -271,6 +269,7 @@ void FCSSimpleConstructionScriptCompiler::UpdateTemplateComponent(USCS_Node* Nod
 	}
 
 	OldTemplateObject->MarkAsGarbage();
+#endif
 }
 
 void FCSSimpleConstructionScriptCompiler::UpdateChildren(UClass* Outer, USCS_Node* Node)

@@ -29,7 +29,7 @@ void* UUObjectExporter::GetTransientPackage()
 
 void UUObjectExporter::NativeGetName(UObject* Object, FName* OutName)
 {
-	*OutName = !IsValid(Object) ? NAME_None : Object->GetFName();
+	*OutName = IsValid(Object) ? Object->GetFName() : NAME_None;
 }
 
 void EvaluateInvokePath(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)

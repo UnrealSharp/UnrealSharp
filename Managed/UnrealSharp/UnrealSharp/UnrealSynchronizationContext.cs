@@ -165,7 +165,7 @@ public static class UnrealContextTaskExtension
     public static Task ConfigureWithUnrealContext(this Task task, NamedThread thread = NamedThread.GameThread, bool throwOnCancel = false)
     {
         SynchronizationContext? previousContext = SynchronizationContext.Current;
-        UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread, task);
+        UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread);
         SynchronizationContext.SetSynchronizationContext(unrealContext);
 
         return task.ContinueWith(t =>
@@ -194,29 +194,29 @@ public static class UnrealContextTaskExtension
         TaskTracker.RegisterTask(task, thread);
 
         SynchronizationContext? previousContext = SynchronizationContext.Current;
-        UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread, task);
+        UnrealSynchronizationContext unrealContext = new UnrealSynchronizationContext(thread);
         SynchronizationContext.SetSynchronizationContext(unrealContext);
 
-        return task.ContinueWith(t =>
+        return task.ContinueWith(finishedTask =>
         {
             try
             {
-                if (throwOnCancel && t.IsCanceled)
+                if (throwOnCancel && finishedTask.IsCanceled)
                 {
                     throw new TaskCanceledException();
                 }
                 
-                if (t.IsFaulted)
+                if (finishedTask.IsFaulted)
                 {
-                    ExceptionDispatchInfo.Capture(t.Exception!).Throw();
+                    ExceptionDispatchInfo.Capture(finishedTask.Exception!).Throw();
                 }
 
-                return t.Result;
+                return finishedTask.Result;
             }
             finally
             {
                 SynchronizationContext.SetSynchronizationContext(previousContext);
-                TaskTracker.UnregisterTask(t);
+                TaskTracker.UnregisterTask(finishedTask);
             }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Current);
     }
@@ -235,9 +235,8 @@ public sealed class UnrealSynchronizationContext : SynchronizationContext
         
     private readonly NamedThread _thread;
     private readonly TWeakObjectPtr<UObject> _worldContext;
-    private readonly Task? _task;
 
-    public UnrealSynchronizationContext(NamedThread thread, Task task)
+    public UnrealSynchronizationContext(NamedThread thread)
     {
         if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid())
         {
@@ -246,7 +245,6 @@ public sealed class UnrealSynchronizationContext : SynchronizationContext
             
         _thread = thread;
         _worldContext = new TWeakObjectPtr<UObject>(worldContext.World);
-        _task = task;
     }
 
     public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));
@@ -276,12 +274,12 @@ public sealed class UnrealSynchronizationContext : SynchronizationContext
 
     void RunOnThread(TWeakObjectPtr<UObject> worldContextObject, NamedThread thread, Action callback)
     {
-        if (worldContextObject.IsValid())
+        if (!worldContextObject.IsValid)
         {
-            GCHandle callbackHandle = GCHandle.Alloc(callback);
-            AsyncExporter.CallRunOnThread(worldContextObject.Data, (int) thread, GCHandle.ToIntPtr(callbackHandle));
+            return;
         }
         
-        TaskTracker.UnregisterTask(_task);
+        GCHandle callbackHandle = GCHandle.Alloc(callback);
+        AsyncExporter.CallRunOnThread(worldContextObject.Data, (int) thread, GCHandle.ToIntPtr(callbackHandle));
     }
 }
