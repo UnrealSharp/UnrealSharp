@@ -89,7 +89,7 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 		break;
 	}
 	
-	return bHasPendingChanges;
+	return bHasPendingChanges || PendingFileChanges.Num() > 0;
 }
 
 void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
@@ -232,7 +232,7 @@ bool UCSHotReloadSubsystem::Tick(float DeltaTime)
 {
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	
-	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() &&FApp::HasFocus())
+	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() && FApp::HasFocus())
 	{
 		PerformHotReloadOnPendingChanges();
 	}

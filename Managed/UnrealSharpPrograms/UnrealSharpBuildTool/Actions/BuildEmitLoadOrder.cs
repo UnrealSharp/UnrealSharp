@@ -25,6 +25,12 @@ public class BuildEmitLoadOrder : BuildToolAction
         DirectoryInfo scriptDirectory = new DirectoryInfo(Program.GetProjectDirectory());
         Dictionary<string, List<FileInfo>> projectFiles = Program.GetProjectFilesByDirectory(scriptDirectory);
         List<FileInfo> allProjectFiles = projectFiles.Values.SelectMany(x => x).ToList();
+        
+        if (allProjectFiles.Count == 0)
+        {
+            Console.WriteLine("No project files found to emit load order for.");
+            return;
+        }
 
         List<string> assemblyPaths = new List<string>(allProjectFiles.Count);
         foreach (FileInfo projectFile in allProjectFiles)
