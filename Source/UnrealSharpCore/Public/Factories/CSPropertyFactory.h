@@ -23,7 +23,6 @@ public:
 		if (!FoundGenerator)
 		{
 			UE_LOGFMT(LogUnrealSharp, Fatal, "No property generator found for property type: {0}", static_cast<uint8>(PropertyType));
-			return nullptr;
 		}
 
 		return *FoundGenerator;

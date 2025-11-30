@@ -8,7 +8,7 @@
 
 UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionReflectionData& FunctionReflectionData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
 {
-	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public | RF_Transient);
+	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
 	
 	NewFunction->FunctionFlags = FunctionReflectionData.FunctionFlags | FunctionFlags;
 	NewFunction->SetSuperStruct(ParentFunction);

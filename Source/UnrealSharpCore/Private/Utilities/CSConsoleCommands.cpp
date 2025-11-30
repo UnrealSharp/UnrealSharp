@@ -1,3 +1,4 @@
+#if !UE_BUILD_SHIPPING
 
 #include "CSFieldName.h"
 #include "CSManagedAssembly.h"
@@ -259,4 +260,6 @@ static FAutoConsoleCommand CVarListTypesInAssembly(
 		}
 	})
 );
+
+#endif // !UE_BUILD_SHIPPING
 
