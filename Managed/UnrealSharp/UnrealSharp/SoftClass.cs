@@ -85,7 +85,7 @@ public struct TSoftClassPtr<T> where T : UObject
     {
         if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
         {
-            return Class.Valid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
+            return Class.IsValid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
         }
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");

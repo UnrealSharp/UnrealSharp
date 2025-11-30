@@ -22,7 +22,7 @@ public struct TSubclassOf<T>
     /// <summary>
     /// Check if the class is valid.
     /// </summary>
-    public bool Valid => IsChildOf(typeof(T));
+    public bool IsValid => IsChildOf(typeof(T));
     
     public TSubclassOf() : this(typeof(T))
     {
@@ -183,9 +183,9 @@ public struct TSubclassOf<T>
     
     public override string ToString()
     {
-        if (!Valid)
+        if (!IsValid)
         {
-            return "null";
+            return "None";
         }
         
         UObjectExporter.CallNativeGetName(NativeClass, out FName className);

@@ -310,7 +310,7 @@ public partial class UObject
         }
         
         TSubclassOf<T> result = new TSubclassOf<T>(loadedClass);
-        if (!result.Valid)
+        if (!result.IsValid)
         {
             throw new InvalidOperationException($"Loaded class at path '{path}' is not compatible with type {typeof(T).Name}.");
         }
