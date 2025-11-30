@@ -76,12 +76,29 @@ void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
 	return UCSManager::Get().FindManagedObject(CDO);
 }
 
+#if WITH_EDITOR
+UClass* RedirectClassIfNeeded(UClass* Class)
+{
+	if (UCSSkeletonClass* ManagedClass = Cast<UCSSkeletonClass>(Class))
+	{
+		return ManagedClass->GetGeneratedClass();
+	}
+
+	return Class;
+}
+#endif
+
 bool UUClassExporter::IsChildOf(UClass* ChildClass, UClass* ParentClass)
 {
 	 if (!IsValid(ChildClass) || !IsValid(ParentClass))
 	 {
 		 return false;
 	 }
+	
+#if WITH_EDITOR
+	ChildClass = RedirectClassIfNeeded(ChildClass);
+	ParentClass = RedirectClassIfNeeded(ParentClass);
+#endif
 	
 	 return ChildClass->IsChildOf(ParentClass);
 }

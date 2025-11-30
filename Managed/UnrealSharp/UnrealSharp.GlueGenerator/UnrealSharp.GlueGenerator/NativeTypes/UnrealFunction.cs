@@ -27,12 +27,7 @@ public record UnrealFunction : UnrealFunctionBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        if (HasParamsOrReturnValue || NeedsImplementationFunction)
-        {
-            ExportBackingVariables(builder);
-            builder.AppendLine();
-        }
-
+        ExportBackingVariables(builder);
         ExportInvokeMethod(builder);
 
         if (NeedsImplementationFunction)
