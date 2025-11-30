@@ -23,6 +23,22 @@ public record UnrealStruct : UnrealType
 
     }
 
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
+    {
+        base.ExportBackingVariables(builder);
+        
+        foreach (UnrealProperty parameter in Properties)
+        {
+            parameter.ExportBackingVariables(builder);
+        }
+    }
+
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
+        Properties.ExportListToStaticConstructor(builder, nativeType);
+    }
+
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);

@@ -15,7 +15,6 @@ namespace UnrealSharp;
 /// Holds a soft reference to a class. Useful for holding a reference to a class that may be unloaded.
 /// </summary>
 /// <typeparam name="T"> The type of the object. </typeparam>
-[Binding]
 public struct TSoftClassPtr<T> where T : UObject
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]

@@ -28,18 +28,18 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
         }
     }
     
-    private static void EmitType(SourceProductionContext spc, UnrealType utype)
+    private static void EmitType(SourceProductionContext spc, UnrealType unrealType)
     {
         try 
         {
             GeneratorStringBuilder builder = new GeneratorStringBuilder();
-            builder.BeginGeneratedSourceFile(utype);
+            builder.BeginGeneratedSourceFile(unrealType);
             
-            builder.AppendLine();
-            utype.ExportType(builder, spc);
-            builder.BeginModuleInitializer(utype);
+            unrealType.ExportType(builder, spc);
             
-            spc.AddSource(utype.SourceName + ".g.cs", builder.ToString());
+            builder.GenerateTypeRegistration(unrealType);
+            
+            spc.AddSource(unrealType.SourceName + ".g.cs", builder.ToString());
         }
         catch (Exception exception)
         {

@@ -1,14 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -50,12 +44,6 @@ public enum EClassFlags : ulong
     NewerVersionExists  = 0x80000000u,
 }
 
-public record struct InterfaceData
-{
-    public string Name;
-    public string FullName;
-}
-
 [Inspector]
 public record UnrealClass : UnrealClassBase
 {
@@ -69,7 +57,7 @@ public record UnrealClass : UnrealClassBase
     public FieldName ParentClass;
 
     public EquatableList<string> Overrides;
-    public EquatableList<InterfaceData> Interfaces;
+    public EquatableList<FieldName> Interfaces;
     
     public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
     
@@ -81,7 +69,7 @@ public record UnrealClass : UnrealClassBase
         
         if (immutableArray.Length > 0)
         {
-            EquatableList<InterfaceData> interfaces = new EquatableList<InterfaceData>(new List<InterfaceData>(immutableArray.Length - 1));
+            EquatableList<FieldName> interfaces = new EquatableList<FieldName>(new List<FieldName>(immutableArray.Length - 1));
 
             foreach (INamedTypeSymbol baseType in immutableArray)
             {
@@ -90,11 +78,7 @@ public record UnrealClass : UnrealClassBase
                     continue;
                 }
                 
-                InterfaceData interfaceData = new InterfaceData
-                {
-                    Name = baseType.Name,
-                    FullName = baseType.ToDisplayString()
-                };
+                FieldName interfaceData = new FieldName(baseType);
                 
                 interfaces.List.Add(interfaceData);
                 
@@ -205,19 +189,27 @@ public record UnrealClass : UnrealClassBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        builder.BeginType(this, TypeKind.Class);
+        builder.BeginType(this, SourceGenUtilities.ClassKeyword);
+            
+        builder.BeginTypeStaticConstructor(this);
+        ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
+        builder.EndTypeStaticConstructor();
         
-        builder.AppendLine($"public static new TSubclassOf<{SourceName}> StaticClass = SubclassOfMarshaller<{SourceName}>.FromNative({SourceGenUtilities.NativeTypePtr});");
-        builder.AppendLine();
-        
-        TryExportProperties(builder, spc);
-        TryExportList(builder, spc, Functions);
-        TryExportList(builder, spc, AsyncFunctions);
+        ExportList(builder, spc, Properties);
+        ExportList(builder, spc, Functions);
+        ExportList(builder, spc, AsyncFunctions);
         
         builder.CloseBrace();
     }
     
-    public void TryExportList<T>(GeneratorStringBuilder builder, SourceProductionContext spc, EquatableList<T> list) where T : UnrealType, IEquatable<T>
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
+        Functions.ExportListToStaticConstructor(builder, nativeType);
+        AsyncFunctions.ExportListToStaticConstructor(builder, nativeType);
+    }
+
+    public void ExportList<T>(GeneratorStringBuilder builder, SourceProductionContext spc, EquatableList<T> list) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
@@ -232,23 +224,6 @@ public record UnrealClass : UnrealClassBase
         builder.AppendLine();
     }
     
-    public void TryExportProperties(GeneratorStringBuilder builder, SourceProductionContext spc)
-    {
-        int numProperties = Properties.Count;
-        if (numProperties == 0)
-        {
-            return;
-        }
-        
-        for (int i = 0; i < numProperties; i++)
-        {
-            UnrealProperty property = Properties.List[i];
-            property.ExportBackingVariables(builder, SourceGenUtilities.NativeTypePtr);
-        }
-            
-        TryExportList(builder, spc, Properties);
-    }
-    
     public override void PopulateJsonObject(JsonObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
@@ -260,11 +235,6 @@ public record UnrealClass : UnrealClassBase
         
         Overrides.PopulateJsonWithArray(jsonObject, "Overrides", array =>
         {
-            if (Overrides.Count == 0)
-            {
-                return;
-            }
-            
             foreach (string overrideName in Overrides.List)
             {
                 array.Add(overrideName);
@@ -273,19 +243,9 @@ public record UnrealClass : UnrealClassBase
         
         Interfaces.PopulateJsonWithArray(jsonObject, "Interfaces", array =>
         {
-            if (Interfaces.Count == 0)
+            foreach (FieldName interfaceName in Interfaces.List)
             {
-                return;
-            }
-            
-            foreach (InterfaceData interfaceData in Interfaces.List)
-            {
-                JsonObject interfaceObject = new JsonObject
-                {
-                    ["Name"] = interfaceData.Name,
-                    ["FullName"] = interfaceData.FullName
-                };
-                
+                JsonObject interfaceObject = interfaceName.SerializeToJson(true)!;
                 array.Add(interfaceObject);
             }
         });

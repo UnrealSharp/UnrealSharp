@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes;
@@ -11,19 +7,16 @@ namespace UnrealSharp.GlueGenerator;
 
 public static class PropertyUtilities
 {
-    public const EPropertyFlags BaseParametersFlags =
-        EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
+    public const EPropertyFlags BaseParametersFlags = EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
 
     public const EPropertyFlags OutParameterFlags = BaseParametersFlags | EPropertyFlags.OutParm;
     public const EPropertyFlags ReturnParameterFlags = OutParameterFlags | EPropertyFlags.ReturnParm;
 
     public const EPropertyFlags BaseBlueprintVisiblePropertyFlags = EPropertyFlags.BlueprintVisible;
 
-    public const EPropertyFlags BaseBlueprintReadOnlyPropertyFlags =
-        EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
+    public const EPropertyFlags BaseBlueprintReadOnlyPropertyFlags = EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
 
-    public const EPropertyFlags BaseBlueprintReadWritePropertyFlags =
-        EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadWrite;
+    public const EPropertyFlags BaseBlueprintReadWritePropertyFlags = EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadWrite;
 
     public static void MakeParameter(this UnrealProperty property)
     {
@@ -111,5 +104,10 @@ public static class PropertyUtilities
     public static bool HasCustomPropertyMethod(this PropertyMethod? method)
     {
         return method != null && method.Value.CustomPropertyMethod != null;
+    }
+    
+    public static string GetNullableAnnotation(this UnrealProperty property)
+    {
+        return property.IsNullable ? "?" : string.Empty;
     }
 }

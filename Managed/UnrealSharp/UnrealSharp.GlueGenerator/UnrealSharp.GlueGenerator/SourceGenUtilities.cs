@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -21,6 +22,12 @@ public static class SourceGenUtilities
     public const string ValueParam = "value";
     
     public const string ReturnValueName = "ReturnValue";
+    
+    public const string ClassKeyword = "class";
+    public const string StructKeyword = "struct";
+    public const string InterfaceKeyword = "interface";
+    public const string EnumKeyword = "enum";
+    public const string DelegateKeyword = "delegate";
     
     public static bool HasAttribute(this ISymbol symbol, string attributeFullName)
     {
@@ -82,48 +89,81 @@ public static class SourceGenUtilities
     public static List<MetaDataInfo>? GetUMetaAttributes(this ISymbol symbol)
     {
         ImmutableArray<AttributeData> symbolAttributes = symbol.GetAttributes();
-        int attributeCount = symbolAttributes.Length;
-        
-        if (attributeCount == 0)
-        {
-            return null;
-        }
-        
-        List<MetaDataInfo> attributes = new List<MetaDataInfo>();
-        
+        List<MetaDataInfo>? attributes = null;
+
         foreach (AttributeData attribute in symbolAttributes)
         {
-            if (attribute.AttributeClass!.Name == "UMetaDataAttribute")
+            if (attribute.AttributeClass == null)
+            {
+                continue;
+            }
+            
+            INamedTypeSymbol? attributeClass = attribute.AttributeClass;
+            
+            if (attributeClass.Name == "UMetaDataAttribute")
             {
                 string key = string.Empty;
-                if (attribute.ConstructorArguments[0].Value is string keyArg)
-                {
-                    key = keyArg;
-                }
-                
                 string value = string.Empty;
-                if (attribute.ConstructorArguments[1].Value is string valueArg)
+
+                if (attribute.ConstructorArguments.Length > 0)
                 {
-                    value = valueArg;
+                    TypedConstant argument = attribute.ConstructorArguments[0];
+                    if (argument.Value is string argumentValue)
+                    {
+                        key = argumentValue;
+                    }
                 }
-                
+
+                if (attribute.ConstructorArguments.Length > 1)
+                {
+                    TypedConstant argument = attribute.ConstructorArguments[1];
+                    if (argument.Value is string argumentValue)
+                    {
+                        value = argumentValue;
+                    }
+                }
+
+                if (attributes == null)
+                {
+                    attributes = new List<MetaDataInfo>();
+                }
+
                 attributes.Add(new MetaDataInfo(key, value));
                 continue;
             }
-
-            if (attribute.AttributeClass.ContainingNamespace.Name == "MetaTags")
+            
+            if (attributeClass.HasAttribute("CustomMetaDataAttribute"))
             {
-                string attributeName = attribute.AttributeClass.Name;
-                int index = attributeName.IndexOf("Attribute", StringComparison.OrdinalIgnoreCase);
-                string name = attributeName.Substring(0, index);
-                
-                string value = string.Empty;
-                if (attribute.ConstructorArguments.Length > 0 && attribute.ConstructorArguments[0].Value is string valueArg2)
+                string attributeName = attributeClass.Name;
+
+                int attributeSuffixIndex = attributeName.IndexOf("Attribute", StringComparison.OrdinalIgnoreCase);
+
+                string key;
+                if (attributeSuffixIndex >= 0)
                 {
-                    value = valueArg2;
+                    key = attributeName.Substring(0, attributeSuffixIndex);
                 }
-                
-                attributes.Add(new MetaDataInfo(name, value));
+                else
+                {
+                    key = attributeName;
+                }
+
+                string value = string.Empty;
+                if (attribute.ConstructorArguments.Length > 0)
+                {
+                    TypedConstant argument = attribute.ConstructorArguments[0];
+                    if (argument.Value is string argumentValue)
+                    {
+                        value = argumentValue;
+                    }
+                }
+
+                if (attributes == null)
+                {
+                    attributes = new List<MetaDataInfo>();
+                }
+
+                attributes.Add(new MetaDataInfo(key, value));
             }
         }
 
@@ -156,6 +196,11 @@ public static class SourceGenUtilities
         };
     }
     
+    public static string GetNamespace(this ISymbol symbol)
+    {
+        return symbol.ContainingNamespace.ToDisplayString();
+    }
+    
     public static string GetEnumNameFromValue(ITypeSymbol enumType, byte value)
     {
         foreach (ISymbol? member in enumType.GetMembers())
@@ -169,5 +214,18 @@ public static class SourceGenUtilities
         }
 
         return value.ToString();
+    }
+
+    public static void ExportListToStaticConstructor<T>(this EquatableList<T> list, GeneratorStringBuilder builder, string nativeType) where T : UnrealType, IEquatable<T>
+    {
+        if (list.Count == 0)
+        {
+            return;
+        }
+        
+        foreach (T item in list)
+        {
+            item.ExportBackingVariablesToStaticConstructor(builder, nativeType);
+        }
     }
 }

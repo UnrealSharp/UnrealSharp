@@ -25,4 +25,7 @@ public:
 
 	UNREALSHARP_FUNCTION()
 	static void* GetDefaultFromInstance(UObject* Object);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsChildOf(UClass* ChildClass, UClass* ParentClass);
 };

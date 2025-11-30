@@ -17,8 +17,7 @@ public struct WeakObjectData
 /// A weak reference to an Unreal Engine UObject.
 /// </summary>
 /// <typeparam name="T">The type of object that this weak object points to.</typeparam>
-[Binding]
-public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObject
+public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObject
 {
     internal readonly WeakObjectData Data;
     

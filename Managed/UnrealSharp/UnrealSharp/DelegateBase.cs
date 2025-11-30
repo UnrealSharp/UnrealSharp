@@ -4,7 +4,6 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 
-[Binding]
 public abstract class DelegateBase<TDelegate> where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();

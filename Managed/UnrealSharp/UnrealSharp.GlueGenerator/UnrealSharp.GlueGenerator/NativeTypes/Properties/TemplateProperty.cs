@@ -1,8 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -31,9 +29,10 @@ public record TemplateProperty : UnrealProperty
         }
         
         TemplateParameters = new EquatableArray<UnrealProperty>(arguments);
+
+        string fullNamespace = namedTypeSymbol.GetNamespace();
+        string typedArguments = string.Join(", ", TemplateParameters.Select(t => $"{t.ManagedType}{t.GetNullableAnnotation()}"));
         
-        string fullNamespace = namedTypeSymbol.ContainingNamespace.ToDisplayString();
-        string typedArguments = string.Join(", ", TemplateParameters.Select(t => t.ManagedType));
         ManagedType = new FieldName($"{namedTypeSymbol.Name}<{typedArguments}>", fullNamespace, namedTypeSymbol.ContainingAssembly.Name);
     }
     

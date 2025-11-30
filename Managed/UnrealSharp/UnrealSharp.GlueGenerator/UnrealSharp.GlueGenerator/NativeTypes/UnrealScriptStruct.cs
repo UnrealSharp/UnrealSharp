@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -11,7 +9,7 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealScriptStruct : UnrealStruct
 {
     public override int FieldTypeValue => 1;
-    public bool IsRecord;
+    public readonly bool IsRecord;
     
     public UnrealScriptStruct(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)
     {
@@ -41,21 +39,20 @@ public record UnrealScriptStruct : UnrealStruct
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         string recordModifier = IsRecord ? "record " : string.Empty;
-        builder.BeginType(this, TypeKind.Struct, modifiers: recordModifier, interfaceDeclarations: [$"MarshalledStruct<{SourceName}>"]);
+        builder.BeginType(this, SourceGenUtilities.StructKeyword, modifiers: recordModifier, interfaceDeclarations: [$"MarshalledStruct<{SourceName}>"]);
+        
+        ExportBackingVariables(builder);
+        
+        builder.BeginTypeStaticConstructor(this);
+        ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
+        builder.EndTypeStaticConstructor();
         
         bool isStructBlittable = true;
-        int propertyCount = Properties.Count;
-        for (int i = 0; i < propertyCount; i++)
+        foreach (UnrealProperty property in Properties.List)
         {
-            UnrealProperty property = Properties.List[i];
-            
-            property.ExportBackingVariables(builder, SourceGenUtilities.NativeTypePtr);
             isStructBlittable &= property.IsBlittable;
         }
         
-        builder.AppendLine();
-        
-        builder.AppendLine($"private static int NativeDataSize = UScriptStructExporter.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
         builder.AppendLine("public static int GetNativeDataSize() => NativeDataSize;");
         builder.AppendLine($"public static IntPtr GetNativeClassPtr() => {SourceGenUtilities.NativeTypePtr};");
         
@@ -73,9 +70,8 @@ public record UnrealScriptStruct : UnrealStruct
         }
         else
         {
-            for (int i = 0; i < propertyCount; i++)
+            foreach (UnrealProperty property in Properties.List)
             {
-                UnrealProperty property = Properties.List[i];
                 property.ExportToNative(builder, SourceGenUtilities.Buffer, property.SourceName);
                 builder.AppendLine();
             }
@@ -89,7 +85,7 @@ public record UnrealScriptStruct : UnrealStruct
         
         if (IsRecord)
         {
-            string constructorArgs = string.Join(", ", Properties.List.Select(p => $"default({p.ManagedType})"));
+            string constructorArgs = string.Join(", ", Properties.List.Select(p => p.NullValue));
             builder.Append($" : this({constructorArgs})");
         }
         
@@ -103,9 +99,8 @@ public record UnrealScriptStruct : UnrealStruct
         }
         else
         {
-            for (int i = 0; i < propertyCount; i++)
+            foreach (UnrealProperty property in Properties.List)
             {
-                UnrealProperty property = Properties.List[i];
                 property.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{property.SourceName} = ");
                 builder.AppendLine();
             }
@@ -116,6 +111,18 @@ public record UnrealScriptStruct : UnrealStruct
         builder.CloseBrace();
         
         MakeMarshaller(builder);
+    }
+
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
+    {
+        base.ExportBackingVariables(builder);
+        builder.AppendNewBackingField("static int NativeDataSize;");
+    }
+
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
+        builder.AppendLine($"NativeDataSize = UScriptStructExporter.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
     }
 
     void MakeMarshaller(GeneratorStringBuilder builder)

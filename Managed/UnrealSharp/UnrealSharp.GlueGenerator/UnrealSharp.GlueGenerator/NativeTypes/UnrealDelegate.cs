@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -16,7 +15,7 @@ public record UnrealDelegate : UnrealType
 
     public override string EngineName => SourceName.Substring(1);
 
-    public UnrealDelegate(bool isMulticast, SemanticModel model, ISymbol typeSymbol) : base(typeSymbol)
+    public UnrealDelegate(bool isMulticast, ISymbol typeSymbol) : base(typeSymbol)
     {
         _isMulticast = isMulticast;
         INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol)typeSymbol;
@@ -43,18 +42,18 @@ public record UnrealDelegate : UnrealType
     [Inspect("UnrealSharp.Attributes.UMultiDelegateAttribute", "UMultiDelegateAttribute", "Global")]
     public static UnrealType? UMultiDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        return MakeDelegate(true, ctx, symbol);
+        return MakeDelegate(true, symbol);
     }
     
     [Inspect("UnrealSharp.Attributes.USingleDelegateAttribute", "USingleDelegateAttribute", "Global")]
     public static UnrealType? USingleDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        return MakeDelegate(false, ctx, symbol);
+        return MakeDelegate(false, symbol);
     }
 
-    static UnrealDelegate MakeDelegate(bool isMulticast, GeneratorAttributeSyntaxContext ctx, ISymbol symbol)
+    static UnrealDelegate MakeDelegate(bool isMulticast, ISymbol symbol)
     {
-        UnrealDelegate unrealClass = new UnrealDelegate(isMulticast, ctx.SemanticModel, symbol);
+        UnrealDelegate unrealClass = new UnrealDelegate(isMulticast, symbol);
         return unrealClass;
     }
 
@@ -73,10 +72,16 @@ public record UnrealDelegate : UnrealType
             parameters = string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterCall()));
         }
         
-        builder.BeginType(_delegateSignature, TypeKind.Class, null, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.SourceName}>");
+        builder.BeginType(_delegateSignature, SourceGenUtilities.ClassKeyword, null, nativeTypePtrName: _delegateSignature.FunctionNativePtr, overrideTypeName: delegateWrapperClassName,  $"{baseTypeName}<{_delegateSignature.SourceName}>");
+
+        builder.BeginTypeStaticConstructor(delegateWrapperClassName);
+        _delegateSignature.ExportBackingVariablesToStaticConstructor(builder, _delegateSignature.FunctionNativePtr);
+        builder.EndTypeStaticConstructor();
+        
         AppendAddOperator(builder, delegateWrapperClassName);
         AppendNegateOperator(builder, delegateWrapperClassName);
         AppendInvoker(builder, args);
+        
         builder.CloseBrace();
         builder.AppendLine();
         

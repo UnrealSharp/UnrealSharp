@@ -12,6 +12,9 @@ public record OptionProperty : ContainerProperty
     {
 
     }
+    
+    protected override string GetFieldMarshaller() => OptionMarshaller;
+    protected override string GetCopyMarshaller() => OptionMarshaller;
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
@@ -28,7 +31,4 @@ public record OptionProperty : ContainerProperty
         
         AppendCallToNative(builder, InstancedMarshallerVariable, buffer, value);
     }
-
-    protected override string GetFieldMarshaller() => OptionMarshaller;
-    protected override string GetCopyMarshaller() => OptionMarshaller;
 }

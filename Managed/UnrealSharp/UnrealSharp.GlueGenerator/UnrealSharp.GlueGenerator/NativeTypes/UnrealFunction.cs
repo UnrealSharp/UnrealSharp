@@ -12,11 +12,23 @@ public record UnrealFunction : UnrealFunctionBase
     {
     }
 
+
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
+    {
+        base.ExportBackingVariables(builder);
+        builder.AppendNewBackingField($"static IntPtr {FunctionNativePtr};");
+    }
+
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        builder.AppendLine($"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({SourceGenUtilities.NativeTypePtr}, \"{SourceName}\");");
+        base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
+    }
+
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         if (HasParamsOrReturnValue || NeedsImplementationFunction)
         {
-            builder.AppendNewBackingField($"static IntPtr {FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({SourceGenUtilities.NativeTypePtr}, \"{SourceName}\");");
             ExportBackingVariables(builder);
             builder.AppendLine();
         }

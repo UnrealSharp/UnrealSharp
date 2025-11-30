@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using UnrealSharp.GlueGenerator.NativeTypes;
-using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator;
 
@@ -32,7 +30,9 @@ public static class StringBuilderExtensions
     public static void BeginGeneratedSourceFile(this GeneratorStringBuilder builder, UnrealType type)
     {
         builder.AppendLine("#nullable enable");
+        
         builder.AppendLine("using UnrealSharp.Interop;");
+        
         builder.AppendLine("using static UnrealSharp.Interop.FTypeBuilderExporter;");
         builder.AppendLine("using static UnrealSharp.Interop.FPropertyExporter;"); 
         builder.AppendLine("using static System.ComponentModel.EditorBrowsableState;");  
@@ -43,12 +43,13 @@ public static class StringBuilderExtensions
         builder.AppendLine("using UnrealSharp;");
         builder.AppendLine("using UnrealSharp.Core.Marshallers;");
         builder.AppendLine("using UnrealSharp.Core.Attributes;");
+        
         builder.AppendLine();
         builder.AppendLine($"namespace {type.Namespace};");
         builder.AppendLine();
     }
 
-    public static void BeginModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
+    public static void GenerateTypeRegistration(this GeneratorStringBuilder builder, UnrealType type)
     {
         JsonObject typeObject = new JsonObject();
         
@@ -69,22 +70,13 @@ public static class StringBuilderExtensions
         builder.CloseBrace();
     }
     
-    public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, TypeKind typeKind, string? modifiers = null, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
+    public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, string typeKeyword, string? modifiers = null, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
     {
-        string typeKeyWord = typeKind switch
-        {
-            TypeKind.Class => "class",
-            TypeKind.Struct => "struct",
-            TypeKind.Enum => "enum",
-            TypeKind.Interface => "interface",
-            _ => throw new Exception("Unsupported type kind passed to BeginType" + typeKind)
-        };
-
         string protection = type.TypeAccessibility.AccessibilityToString();
         
         string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
         builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.FullName}\")]");
-        builder.AppendLine($"{protection}partial {modifiers}{typeKeyWord} {declarationName}");
+        builder.AppendLine($"{protection}partial {modifiers}{typeKeyword} {declarationName}");
         
         if (!string.IsNullOrEmpty(baseType))
         {
@@ -105,9 +97,26 @@ public static class StringBuilderExtensions
         }
         
         builder.OpenBrace();
-        
         string engineName = string.IsNullOrEmpty(overrideTypeName) ? type.EngineName : overrideTypeName.Substring(1);
         builder.AppendNewBackingField($"static IntPtr {nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{type.AssemblyName}\", \"{type.Namespace}\", \"{engineName}\");");
+    }
+    
+    public static void BeginTypeStaticConstructor(this GeneratorStringBuilder builder, UnrealType unrealType)
+    {
+        BeginTypeStaticConstructor(builder, unrealType.SourceName);
+    }
+    
+    public static void BeginTypeStaticConstructor(this GeneratorStringBuilder builder, string typeName)
+    {
+        builder.AppendLine();
+        builder.AppendLine($"static {typeName}()");
+        builder.OpenBrace();
+    }
+    
+    public static void EndTypeStaticConstructor(this GeneratorStringBuilder builder)
+    {
+        builder.CloseBrace();
+        builder.AppendLine();
     }
 
     public static void StartModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)

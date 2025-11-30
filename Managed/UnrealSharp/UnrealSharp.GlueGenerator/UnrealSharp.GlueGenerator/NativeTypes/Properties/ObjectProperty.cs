@@ -4,9 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record ObjectProperty : FieldProperty
 {
-    public override string MarshallerType => DefaultComponent
-        ? $"DefaultComponentMarshaller<{ManagedType}>"
-        : $"ObjectMarshaller<{ManagedType}>";
+    public override string MarshallerType => DefaultComponent ? $"DefaultComponentMarshaller<{ManagedType}>" : $"ObjectMarshaller<{ManagedType}>";
+    public override string NullValue => "null!";
 
     public ObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
         : base(memberSymbol, typeSymbol, PropertyType.Object, outer, syntaxNode)

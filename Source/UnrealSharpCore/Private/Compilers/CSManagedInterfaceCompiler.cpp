@@ -15,15 +15,7 @@ void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TShar
 	
 	Interface->PurgeClass(true);
 
-	UClass* ParentInterface;
-	if (ClassReflectionData->ParentClass.IsValid())
-	{
-		ParentInterface = ClassReflectionData->ParentClass.GetAsInterface();
-	}
-	else
-	{
-		ParentInterface = UInterface::StaticClass();
-	}
+	UClass* ParentInterface = UInterface::StaticClass();
 	
 	Interface->SetSuperStruct(ParentInterface);
 	Interface->ClassFlags |= CLASS_Interface;

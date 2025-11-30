@@ -1,25 +1,21 @@
-using UnrealSharp.Interop;
+using UnrealSharp.Core.Interop;
 
 namespace UnrealSharp.Core.Marshallers;
 
 public static class StringMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string stringToMarshal)
     {
         unsafe
         {
-            if (string.IsNullOrEmpty(obj)) 
+            if (string.IsNullOrEmpty(stringToMarshal)) 
             {
                 //Guard against C# null strings (use string.Empty instead)
-                obj = string.Empty; 
+                stringToMarshal = string.Empty; 
             }
             
-            IntPtr unrealString = nativeBuffer + arrayIndex * sizeof(UnmanagedArray);
-            
-            fixed (char* stringPtr = obj)
-            {
-                FStringExporter.CallMarshalToNativeString(unrealString, stringPtr);
-            }
+            UnmanagedArray* unrealString = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
+            FStringExporter.CallMarshalToNativeString(unrealString, stringToMarshal);
         }
     }
     

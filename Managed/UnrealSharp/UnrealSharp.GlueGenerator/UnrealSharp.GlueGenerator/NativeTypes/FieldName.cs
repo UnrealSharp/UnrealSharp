@@ -11,7 +11,7 @@ public readonly record struct FieldName
 
     public readonly string FullName;
 
-    public FieldName(ITypeSymbol typeSymbol) : this(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.ContainingAssembly.Name)
+    public FieldName(ITypeSymbol typeSymbol) : this(typeSymbol.Name, typeSymbol.GetNamespace(), typeSymbol.ContainingAssembly.Name)
     {
     }
     

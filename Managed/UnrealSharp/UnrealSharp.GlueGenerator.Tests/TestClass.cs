@@ -2,6 +2,7 @@
 using UnrealSharp;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
 using UnrealSharp.EnhancedInput;
@@ -41,6 +42,12 @@ public partial class UTestObject : UObject
     [UProperty] public partial int IntProp { get; set; }
     [UProperty] public partial string StringProp { get; set; }
     [UProperty] public partial FVector VectorProp { get; set; }
+    
+    [UFunction]
+    public void TestParams(int intParam, string strParam, FVector vectorParam)
+    {
+        
+    }
 }
 
 [UStruct]
@@ -169,24 +176,6 @@ public partial class UTestClass : AActor, ITestInterface
     [UProperty] private partial TDelegate<FTestDelegate2> SingleDelegateProp2 { get; set; }
     
     [UProperty(PropertyFlags.Instanced | PropertyFlags.BlueprintReadOnly)] public partial UTestObject TestObjectProp { get; set; }
-
-    public UTestClass()
-    {
-        BoolProp = true;
-        ByteProp = 1;
-        SByteProp = -1;
-        Int16Prop = -16;
-        UInt16Prop = 16;
-        Int32Prop = -32;
-        UInt32Prop = 32;
-        Int64Prop = -64;
-        UInt64Prop = 64;
-        FloatProp = 3.14f;
-        DoubleProp = 6.28;
-        StringProp = "Test String";
-        NameProp = new FName("TestName");
-        TextProp = new FText("Test Text");
-    }
     
     public override void BeginPlay()
     {
@@ -255,7 +244,7 @@ public partial class UTestClass : AActor, ITestInterface
     }
     
     // Cancellation token is optional.
-    [UFunction(FunctionFlags.BlueprintCallable)]
+    [UFunction(FunctionFlags.BlueprintCallable), ExpandEnumAsExecs("void")]
     public async ValueTask<int> SlowAddTask(int lhs, int rhs, CancellationToken cancellationToken)
     {
         PrintString($"Commencing the world's slowest addition...");

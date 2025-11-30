@@ -27,8 +27,8 @@ bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
 	JSON_READ_ENUM(PropertyType, IS_REQUIRED);
 	
-	JSON_PARSE_GETTER_SETTER(CustomGetter, IS_OPTIONAL);
-	JSON_PARSE_GETTER_SETTER(CustomSetter, IS_OPTIONAL);
+	JSON_PARSE_GETTER_SETTER(GetterMethod, IS_OPTIONAL);
+	JSON_PARSE_GETTER_SETTER(SetterMethod, IS_OPTIONAL);
 	
 	UCSPropertyGenerator* PropertyGenerator = FCSPropertyFactory::GetPropertyGenerator(PropertyType);
 	InnerType = PropertyGenerator->CreatePropertyInnerTypeData(PropertyType);

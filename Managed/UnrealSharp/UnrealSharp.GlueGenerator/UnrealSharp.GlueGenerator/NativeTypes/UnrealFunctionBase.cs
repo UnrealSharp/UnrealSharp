@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -108,8 +106,8 @@ public abstract record UnrealFunctionBase : UnrealStruct
             ISymbol? returnValueSymbol;
             if (typeSymbol is IMethodSymbol methodSymbol && methodSymbol.IsAsync)
             {
-                bool isValueTask = returnType.OriginalDefinition.Name == "ValueTask" && returnType.OriginalDefinition.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks";
-                bool isTask = returnType.OriginalDefinition.Name == "Task" && returnType.OriginalDefinition.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks";
+                bool isValueTask = returnType.OriginalDefinition.Name == "ValueTask" && returnType.OriginalDefinition.GetNamespace() == "System.Threading.Tasks";
+                bool isTask = returnType.OriginalDefinition.Name == "Task" && returnType.OriginalDefinition.GetNamespace() == "System.Threading.Tasks";
                 
                 if (isValueTask || isTask)
                 {
@@ -268,22 +266,34 @@ public abstract record UnrealFunctionBase : UnrealStruct
         unrealFunction.AddMetaData("Category", (string) constant.Value!);
     }
 
-    public void ExportBackingVariables(GeneratorStringBuilder builder)
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
     {
         if (HasParamsOrReturnValue)
         {
-            builder.AppendNewBackingField($"static int {SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
-        }
-            
-        foreach (UnrealProperty parameter in Properties)
-        {
-            parameter.ExportBackingVariables(builder, FunctionNativePtr);
+            builder.AppendNewBackingField($"static int {SizeVariableName};");
         }
             
         if (HasReturnValue)
         {
-            ReturnType.ExportBackingVariables(builder, FunctionNativePtr);
+            ReturnType.ExportBackingVariables(builder);
         }
+        
+        base.ExportBackingVariables(builder);
+    }
+
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        if (HasParamsOrReturnValue)
+        {
+            builder.AppendLine($"{SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
+        }
+        
+        if (HasReturnValue)
+        {
+            ReturnType.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
+        }
+        
+        base.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
     }
 
     public void ExportInvokeMethod(GeneratorStringBuilder builder)

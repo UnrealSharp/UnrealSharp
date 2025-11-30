@@ -75,3 +75,13 @@ void* UUClassExporter::GetDefaultFromInstance(UObject* Object)
 	
 	return UCSManager::Get().FindManagedObject(CDO);
 }
+
+bool UUClassExporter::IsChildOf(UClass* ChildClass, UClass* ParentClass)
+{
+	 if (!IsValid(ChildClass) || !IsValid(ParentClass))
+	 {
+		 return false;
+	 }
+	
+	 return ChildClass->IsChildOf(ParentClass);
+}

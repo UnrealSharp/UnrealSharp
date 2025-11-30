@@ -28,8 +28,8 @@ public:
 		FProperty* NewProperty;
 		if (PropertyReflectionData.HasGetterOrSetter())
 		{
-			UCSFunctionBase* Getter = CreateGetterSetterFunction(Outer, PropertyReflectionData.CustomGetter);
-			UCSFunctionBase* Setter = CreateGetterSetterFunction(Outer, PropertyReflectionData.CustomSetter);
+			UCSFunctionBase* Getter = CreateGetterSetterFunction(Outer, PropertyReflectionData.GetterMethod);
+			UCSFunctionBase* Setter = CreateGetterSetterFunction(Outer, PropertyReflectionData.SetterMethod);
 			NewProperty = new TCSGetterSetterProperty<T>(Outer, PropertyName, RF_Public, Setter, Getter);
 		}
 		else

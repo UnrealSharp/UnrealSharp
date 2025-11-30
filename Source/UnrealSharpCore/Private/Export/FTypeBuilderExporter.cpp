@@ -4,9 +4,9 @@
 
 void UFTypeBuilderExporter::RegisterManagedType_Native(char* InFieldName, char* InNamespace, char* InAssemblyName, char* JsonString, ECSFieldType FieldType, uint8* TypeHandle)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::NewType_Internal);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::RegisterManagedType_Native);
 	
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
 
 	if (!IsValid(Assembly))
 	{

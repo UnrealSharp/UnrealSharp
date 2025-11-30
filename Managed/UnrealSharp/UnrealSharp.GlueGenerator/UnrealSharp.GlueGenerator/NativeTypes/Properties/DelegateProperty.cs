@@ -4,14 +4,17 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record DelegateProperty : TemplateProperty
 {
+    public override bool NeedsBackingNativeProperty => true;
+
     public DelegateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) : base(templateParameters, fieldName, propertyType, marshaller, sourceName, accessibility, outer)
     {
+
     }
     
     public DelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller, SyntaxNode? syntaxNode = null) 
         : base(memberSymbol, typeSymbol, propertyType, outer, marshaller, syntaxNode)
     {
-        NeedsBackingFields = false;
+        
     }
 
     private string BackingFieldName => $"{SourceName}_BackingField";
@@ -21,12 +24,6 @@ public record DelegateProperty : TemplateProperty
         string nativePropertyParam = nativeProperty != null ? $", {nativeProperty}" : string.Empty;
         builder.AppendLine($"{BackingFieldName} ??= {CallFromNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}{nativePropertyParam}, 0);");
         builder.AppendLine($"return {BackingFieldName};");
-    }
-
-    public override void ExportBackingVariables(GeneratorStringBuilder builder, string nativePtrType)
-    {
-        base.ExportBackingVariables(builder, nativePtrType);
-        ExportNativeProperty(builder, nativePtrType);
     }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
@@ -70,6 +67,6 @@ public record DelegateProperty : TemplateProperty
     public static FieldName MakeFieldNameFromDelegateSymbol(ITypeSymbol typeSymbol)
     {
         string unrealDelegateName = MakeDelegateSignatureName(typeSymbol.Name);
-        return new FieldName(unrealDelegateName, typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.ContainingAssembly.Name);
+        return new FieldName(unrealDelegateName, typeSymbol.GetNamespace(), typeSymbol.ContainingAssembly.Name);
     }
 }

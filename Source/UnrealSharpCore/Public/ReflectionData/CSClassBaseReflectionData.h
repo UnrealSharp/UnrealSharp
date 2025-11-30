@@ -9,7 +9,6 @@ struct FCSClassBaseReflectionData : FCSStructReflectionData
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
 	// End of FCSReflectionDataBase interface
 	
-	FCSTypeReferenceReflectionData ParentClass;
 	TArray<FCSFunctionReflectionData> Functions;
 	EClassFlags ClassFlags;
 	FName ConfigName;

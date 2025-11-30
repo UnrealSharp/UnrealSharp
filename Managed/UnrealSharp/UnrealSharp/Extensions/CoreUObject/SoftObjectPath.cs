@@ -1,11 +1,8 @@
-using UnrealSharp.Attributes;
-using UnrealSharp.Core.Attributes;
 using UnrealSharp.UnrealSharpAsync;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-[Binding]
 public partial struct FSoftObjectPath
 {
     public FSoftObjectPath(FTopLevelAssetPath assetPath)

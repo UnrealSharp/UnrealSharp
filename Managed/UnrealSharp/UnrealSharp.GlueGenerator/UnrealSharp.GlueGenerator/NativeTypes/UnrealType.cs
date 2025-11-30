@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -43,16 +41,16 @@ public record UnrealType
     
     public UnrealType(ISymbol memberSymbol, UnrealType? outer = null) : this(outer)
     {
+        Namespace = memberSymbol.GetNamespace();
+        SourceName = memberSymbol.Name;
+        AssemblyName = memberSymbol.ContainingAssembly.Name;
+        TypeAccessibility = memberSymbol.DeclaredAccessibility;
+        
         List<MetaDataInfo>? metaData = memberSymbol.GetUMetaAttributes();
         if (metaData != null)
         {
             MetaData = new EquatableList<MetaDataInfo>(metaData);
         }
-        
-        Namespace = memberSymbol.ContainingNamespace.ToDisplayString();
-        SourceName = memberSymbol.Name;
-        AssemblyName = memberSymbol.ContainingAssembly.Name;
-        TypeAccessibility = memberSymbol.DeclaredAccessibility;
     }
 
     public UnrealType(string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) : this(outer)
@@ -92,6 +90,9 @@ public record UnrealType
     }
     
     public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
+    
+    public virtual void ExportBackingVariables(GeneratorStringBuilder builder) { }
+    public virtual void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType) { }
     
     public virtual void PopulateJsonObject(JsonObject jsonObject)
     {

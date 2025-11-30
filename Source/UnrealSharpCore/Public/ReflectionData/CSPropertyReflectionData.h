@@ -14,7 +14,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	// End of FCSReflectionDataBase interface
 
 	FName GetName() const { return FieldName.GetFName(); }
-	bool HasGetterOrSetter() const { return CustomGetter.IsValid() || CustomSetter.IsValid(); }
+	bool HasGetterOrSetter() const { return GetterMethod.IsValid() || SetterMethod.IsValid(); }
 
 	template<typename T>
 	TSharedPtr<T> GetInnerTypeData() const
@@ -38,6 +38,6 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	FName RepNotifyFunctionName;
 	ELifetimeCondition LifetimeCondition;
 	
-	TSharedPtr<FCSFunctionReflectionData> CustomGetter;
-	TSharedPtr<FCSFunctionReflectionData> CustomSetter;
+	TSharedPtr<FCSFunctionReflectionData> GetterMethod;
+	TSharedPtr<FCSFunctionReflectionData> SetterMethod;
 };

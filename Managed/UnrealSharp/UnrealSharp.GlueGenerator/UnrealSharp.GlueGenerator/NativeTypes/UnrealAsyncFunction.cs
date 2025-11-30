@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -50,7 +49,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         
         asyncWrapperClass.AddMetaData("HasDedicatedAsyncNode", "true");
 
-        builder.BeginType(asyncWrapperClass, TypeKind.Class, baseType: asyncWrapperClass.FullParentName);
+        builder.BeginType(asyncWrapperClass, SourceGenUtilities.ClassKeyword, baseType: asyncWrapperClass.FullParentName);
         
         AppendWrapperVariables(builder, asyncWrapperClass, wrapperDelegateName, hasCancellationToken);
         
@@ -59,12 +58,27 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         
         AppendOnTaskCompletedFunction(builder, hasCancellationToken);
         
-        AppendAsyncWrapperMetaData(builder, properties, asyncWrapperClass, hasCancellationToken, spc, wrapperName);
+        AppendAsyncFactoryFunction(builder, properties, asyncWrapperClass, hasCancellationToken, spc, wrapperName);
+        
+        asyncWrapperClass.ExportList(builder, spc, asyncWrapperClass.Properties);
+        
+        AppendStaticConstructor(builder, asyncWrapperClass);
         
         builder.CloseBrace();
         
-        builder.BeginModuleInitializer(asyncWrapperClass); 
+        builder.GenerateTypeRegistration(asyncWrapperClass); 
+        
         spc.AddSource($"{wrapperName}.g.cs", builder.ToString());
+    }
+
+    public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
+    {
+        
+    }
+
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
+    {
+        
     }
 
     void AppendDelegateWrapper(GeneratorStringBuilder builder, UnrealProperty returnValue, string wrapperDelegateName, SourceProductionContext spc)
@@ -96,7 +110,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         asyncDelegate.AppendFunctionAsDelegate(builder);
         asyncDelegate.ExportType(builder, spc);
         
-        builder.BeginModuleInitializer(asyncDelegate);
+        builder.GenerateTypeRegistration(asyncDelegate);
         builder.AppendLine();
     }
     
@@ -190,7 +204,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         builder.CloseBrace();
     }
     
-    void AppendAsyncWrapperMetaData(GeneratorStringBuilder builder, List<UnrealProperty> properties, UnrealClass asyncWrapperClass, bool hasCancellationToken, SourceProductionContext spc, string wrapperName)
+    void AppendAsyncFactoryFunction(GeneratorStringBuilder builder, List<UnrealProperty> properties, UnrealClass asyncWrapperClass, bool hasCancellationToken, SourceProductionContext spc, string wrapperName)
     {
         UnrealFunctionBase asyncFactoryFunction = new UnrealFunction(EFunctionFlags.BlueprintCallable | EFunctionFlags.Static, 
             SourceName, 
@@ -211,6 +225,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         {
             parameter.Outer = asyncWrapperClass;
         }
+        
         properties.Insert(0, targetParam);
 
         asyncFactoryFunction.Properties = new EquatableList<UnrealProperty>(properties);
@@ -232,6 +247,12 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         asyncFactoryFunction.ExportType(builder, spc);
         
         asyncWrapperClass.AddFunction(asyncFactoryFunction);
-        asyncWrapperClass.TryExportProperties(builder, spc);
+    }
+
+    void AppendStaticConstructor(GeneratorStringBuilder builder, UnrealClass asyncWrapperClass)
+    {
+        builder.BeginTypeStaticConstructor(asyncWrapperClass);
+        asyncWrapperClass.ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
+        builder.EndTypeStaticConstructor();
     }
 }

@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
-public record UnrealDelegateFunction : UnrealFunction
+public record UnrealDelegateFunction : UnrealFunctionBase
 {
     public UnrealDelegateFunction(IMethodSymbol typeSymbol, UnrealType outer) : base(typeSymbol, outer)
     {

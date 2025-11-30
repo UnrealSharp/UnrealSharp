@@ -14,7 +14,6 @@ public struct DelegateData
     public FName FunctionName;
 }
 
-[Binding]
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     private DelegateData _data;

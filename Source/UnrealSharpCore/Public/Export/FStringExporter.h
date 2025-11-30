@@ -8,10 +8,10 @@ UCLASS()
 class UFStringExporter : public UObject
 {
 	GENERATED_BODY()
-
 public:
-
 	UNREALSHARP_FUNCTION()
-	static void MarshalToNativeString(FString* String, TCHAR* ManagedString);
-	
+	static void MarshalToNativeString(FString* NativeString, const char* ManagedString)
+	{
+		*NativeString = ManagedString;
+	}
 };

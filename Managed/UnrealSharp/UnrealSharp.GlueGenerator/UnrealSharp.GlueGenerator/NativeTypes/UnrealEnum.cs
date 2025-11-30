@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -14,10 +13,9 @@ public record UnrealEnum : UnrealType
 
     private readonly EquatableList<string>? _enumNames;
 
-    public UnrealEnum(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)
+    public UnrealEnum(ITypeSymbol symbol, UnrealType? outer = null) : base(symbol, outer)
     {
-        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
-        ImmutableArray<ISymbol> members = typeSymbol.GetMembers();
+        ImmutableArray<ISymbol> members = symbol.GetMembers();
         
         if (members.Length == 0)
         {
@@ -50,7 +48,7 @@ public record UnrealEnum : UnrealType
     [Inspect("UnrealSharp.Attributes.UEnumAttribute", "UEnumAttribute", "Global")]
     public static UnrealType? UEnumAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        return new UnrealEnum(symbol, outer);
+        return new UnrealEnum((ITypeSymbol) symbol, outer);
     }
 
     public override void PopulateJsonObject(JsonObject jsonObject)

@@ -12,7 +12,6 @@ public struct FTextData
     public uint Flags;
 }
 
-[Binding]
 public class FText
 {
     internal FTextData Data;
