@@ -122,7 +122,7 @@ public static class StringBuilderExtensions
     public static void StartModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
     {
         builder.AppendLine();
-        builder.AppendLine($"static class {type.SourceName}_Initializer");
+        builder.AppendLine($"file static class {type.SourceName}_Initializer");
         builder.OpenBrace();
         builder.AppendLine("#pragma warning disable CA2255");
         builder.AppendLine("[System.Runtime.CompilerServices.ModuleInitializer]");
