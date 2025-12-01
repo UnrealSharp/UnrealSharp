@@ -209,7 +209,7 @@ public static class FileExporter
             }
 
             string moduleName = Path.GetFileName(directory);
-            if (!CSharpExporter.HasBeenExported(moduleName))
+            if (!ModuleHeadersTracker.HasModuleBeenExported(moduleName))
             {
                 continue;
             }

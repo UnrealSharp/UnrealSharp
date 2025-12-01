@@ -13,18 +13,15 @@ namespace UnrealSharpScriptGenerator.Exporters;
 
 public static class PreprocessorExporter
 {
-
     private static HashSet<string> LoadUE5RulesDefines(string engineDir)
     {
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> definesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var csproj = Path.Combine(
-            engineDir,
-            "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
+        string csproj = Path.Combine(engineDir, "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
 
         if (!File.Exists(csproj))
         {
-            return set;
+            return definesSet;
         }
 
         XDocument doc;
@@ -34,29 +31,34 @@ public static class PreprocessorExporter
         }
         catch 
         {
-            return set; 
+            return definesSet; 
         }
 
-        var values = doc.Descendants("DefineConstants")
-            .Select(x => x.Value ?? string.Empty);
+        IEnumerable<string> values = doc.Descendants("DefineConstants").Select(x => x.Value);
 
-        foreach (var val in values)
+        foreach (string value in values)
         {
-            foreach (var raw in val.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string raw in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var s = raw.Trim();
-                if (s.Length == 0) continue;
+                string s = raw.Trim();
+                
+                if (s.Length == 0)
+                {
+                    continue;
+                }
 
-                if (s.StartsWith("$(", StringComparison.Ordinal)) continue;
+                if (s.StartsWith("$(", StringComparison.Ordinal))
+                {
+                    continue;
+                }
 
-                set.Add(s);
+                definesSet.Add(s);
             }
         }
 
-        return set;
+        return definesSet;
     }
-
-
+    
     public static void StartExportingPreprocessors(string? engineDirectory, List<Task> tasks)
     {
         if (engineDirectory == null)
@@ -72,12 +74,12 @@ public static class PreprocessorExporter
 
     private static void ExportDirective(HashSet<string> defines)
     {
-        var ordered = defines
+        IOrderedEnumerable<string> ordered = defines
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(s => s);
 
-        var joined = string.Join(";", ordered);
+        string joined = string.Join(";", ordered);
 
         GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
 
@@ -91,7 +93,7 @@ public static class PreprocessorExporter
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
 
-        var propsPath = Path.Combine(Program.EngineGluePath, "UE5Rules.Defines.props");
+        string propsPath = Path.Combine(Program.EngineGluePath, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 

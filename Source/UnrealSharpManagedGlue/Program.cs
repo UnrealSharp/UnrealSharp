@@ -36,34 +36,27 @@ public static class Program
         ModuleName = "UnrealSharpCore")]
     private static void Main(IUhtExportFactory factory)
     {
-        Console.WriteLine("Initializing C# Glue Generator...");
+        Console.WriteLine("Initializing C# exporter...");
+        
         Factory = factory;
-
+        
         InitializeStatics();
+        CacheBlueprintFunctionLibrary();
+        
         USharpBuildToolUtilities.CompileUSharpBuildTool();
-
-        UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
-        if (foundType is not UhtClass blueprintFunctionLibrary)
-        {
-            throw new InvalidOperationException("Failed to find UBlueprintFunctionLibrary class.");
-        }
-
-        BlueprintFunctionLibrary = blueprintFunctionLibrary;
 
         try
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-
             CSharpExporter.StartExport();
-            FileExporter.CleanOldExportedFiles();
-
             stopwatch.Stop();
+            
             Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
             if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
             {
-                Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
+                Console.WriteLine("Detected modifications to Engine glue, rebuilding UnrealSharp solution...");
                 DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
             }
             
@@ -103,5 +96,16 @@ public static class Program
                 .Select(x => new ProjectDirInfo(Path.GetFileNameWithoutExtension(x.Name), x.DirectoryName!))
                 .Where(x => x.GlueProjectName != "UnrealSharp")
                 .ToImmutableArray();
+    }
+    
+    private static void CacheBlueprintFunctionLibrary()
+    {
+        UhtType? foundType = Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
+        if (foundType is not UhtClass blueprintFunctionLibrary)
+        {
+            throw new InvalidOperationException("Failed to find UBlueprintFunctionLibrary class.");
+        }
+
+        BlueprintFunctionLibrary = blueprintFunctionLibrary;
     }
 }
