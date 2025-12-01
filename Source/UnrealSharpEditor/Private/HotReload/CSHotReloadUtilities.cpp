@@ -101,7 +101,7 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 
 void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<uint32>& RebuiltTypes)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(FCSHotReloadUtilities::RefreshAffectedBlueprints);
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSHotReloadUtilities::RebuildDependentBlueprints);
 
 	if (RebuiltTypes.IsEmpty())
 	{
