@@ -1,5 +1,4 @@
 ﻿#include "Compilers/CSManagedClassCompiler.h"
-
 #include "CSManagedAssembly.h"
 #include "CSManager.h"
 #include "Compilers/CSSimpleConstructionScriptCompiler.h"
@@ -13,6 +12,10 @@
 #include "Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtils.h"
 #include "Utilities/CSClassUtilities.h"
+
+#if WITH_EDITOR
+#include "BlueprintActionDatabase.h"
+#endif
 
 UCSManagedClassCompiler::UCSManagedClassCompiler()
 {
@@ -234,6 +237,18 @@ void UCSManagedClassCompiler::DeactivateSubsystem(TSubclassOf<USubsystem> Subsys
 	
 	FSubsystemCollectionBase::DeactivateExternalSubsystem(SubsystemClass);
 }
+
+#if WITH_EDITOR
+void UCSManagedClassCompiler::RefreshClassActions(UClass* ClassToRefresh)
+{
+	if (!IsValid(GEditor))
+	{
+		return;
+	}
+	
+	FBlueprintActionDatabase::Get().RefreshClassActions(ClassToRefresh);
+}
+#endif
 
 void UCSManagedClassCompiler::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)
 {

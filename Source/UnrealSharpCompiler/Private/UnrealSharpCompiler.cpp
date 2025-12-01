@@ -34,7 +34,6 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
-	CSManager.OnNewInterfaceEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewInterface);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 	
 	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnManagedTypeStructureChanged);
@@ -179,16 +178,6 @@ void FUnrealSharpCompilerModule::OnNewStruct(UCSScriptStruct* NewStruct)
 void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 {
 	AddManagedReferences(NewEnum->GetManagedReferencesCollection());
-}
-
-void FUnrealSharpCompilerModule::OnNewInterface(UCSInterface* NewInterface)
-{
-	if (!IsValid(GEditor))
-	{
-		return;
-	}
-	
-	FBlueprintActionDatabase::Get().RefreshClassActions(NewInterface);
 }
 
 void FUnrealSharpCompilerModule::OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)

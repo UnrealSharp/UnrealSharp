@@ -24,7 +24,6 @@ private:
     void OnNewClass(UCSClass* NewClass);
     void OnNewStruct(UCSScriptStruct* NewStruct);
     void OnNewEnum(UCSEnum* NewEnum);
-    void OnNewInterface(UCSInterface* NewInterface);
 
     void OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
     

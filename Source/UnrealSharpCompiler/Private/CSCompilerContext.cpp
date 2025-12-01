@@ -54,11 +54,7 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 	if (MainClass == NewClass)
 	{
 		UCSManagedClassCompiler::ActivateSubsystem(NewClass);
-
-		if (GEditor)
-		{
-			FBlueprintActionDatabase::Get().RefreshClassActions(NewClass);
-		}
+		UCSManagedClassCompiler::RefreshClassActions(NewClass);
 	}
 }
 

@@ -11,6 +11,8 @@ public static class AttributeUtilities
     public const string UClassAttributeName = "UClassAttribute";
     public const string UEnumAttributeName = "UEnumAttribute";
     public const string UStructAttributeName = "UStructAttribute";
+    public const string UInterfaceAttributeName = "UInterfaceAttribute";
+    
     public const string CustomLogAttributeName = "CustomLogAttribute";
     
     public const string UMultiDelegateAttributeName = "UMultiDelegateAttribute";
@@ -79,6 +81,7 @@ public static class AttributeUtilities
     public static bool HasCustomLogAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, CustomLogAttributeName);
     public static bool HasUMultiDelegateAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, UMultiDelegateAttributeName);
     public static bool HasUDelegateAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, UDelegateAttributeName);
+    public static bool HasUInterfaceAttribute(this MemberDeclarationSyntax memberDecl) => HasAttribute(memberDecl, UInterfaceAttributeName);
     
     public static bool HasAnyUAttribute(this MemberDeclarationSyntax memberDecl)
     {
@@ -88,6 +91,7 @@ public static class AttributeUtilities
                memberDecl.HasUEnumAttribute() ||
                memberDecl.HasUStructAttribute() ||
                memberDecl.HasUMultiDelegateAttribute() ||
-               memberDecl.HasUDelegateAttribute();
+               memberDecl.HasUDelegateAttribute() ||
+               memberDecl.HasUInterfaceAttribute();
     }
 }

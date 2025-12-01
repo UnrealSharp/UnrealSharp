@@ -1,4 +1,5 @@
 #pragma once
+#include "CSHotReloadSubsystem.h"
 #include "IDirectoryWatcher.h"
 #include "UnrealSharpEditor.h"
 
@@ -32,4 +33,6 @@ namespace FCSHotReloadUtilities
 	bool IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<uint32>& RebuiltTypes);
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<uint32>& RebuiltTypes);
 	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes);
+	
+	void AppendChangedFiles(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 };

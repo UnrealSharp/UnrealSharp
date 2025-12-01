@@ -25,6 +25,10 @@ public:
 
 	static void ActivateSubsystem(TSubclassOf<USubsystem> SubsystemClass);
 	static void DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass);
+	
+#if WITH_EDITOR
+	static void RefreshClassActions(UClass* ClassToRefresh);
+#endif
 
 private:
 #if WITH_EDITOR

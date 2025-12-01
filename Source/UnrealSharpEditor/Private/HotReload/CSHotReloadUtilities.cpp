@@ -2,6 +2,7 @@
 
 #include "CSManager.h"
 #include "IDirectoryWatcher.h"
+#include "Projects.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
@@ -281,4 +282,38 @@ bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* B
 	}
 
 	return false;
+}
+
+void FCSHotReloadUtilities::AppendChangedFiles(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
+{
+	bool bFoundExistingProjectEntry = false;
+	for (FCSPendingHotReloadChange& PendingChange : PendingFileChanges)
+	{
+		if (PendingChange.ProjectName != ProjectName)
+		{
+			continue;
+		}
+		
+		for (const FFileChangeData& ChangedFile : ChangedFiles)
+		{
+			bool AlreadyRecordedFile = PendingChange.ChangedFiles.ContainsByPredicate([&ChangedFile](const FFileChangeData& ExistingFile)
+			{
+				return ExistingFile.Filename == ChangedFile.Filename && ExistingFile.Action == ChangedFile.Action;
+			});
+			
+			if (AlreadyRecordedFile)
+			{
+				continue;
+			}
+			
+			PendingChange.ChangedFiles.Add(ChangedFile);
+			bFoundExistingProjectEntry = true;
+		}
+	}
+	
+	if (!bFoundExistingProjectEntry)
+	{
+		FCSPendingHotReloadChange NewPendingChange(ProjectName, ChangedFiles);
+		PendingFileChanges.Add(NewPendingChange);
+	}
 }

@@ -1,5 +1,6 @@
 ﻿#include "Compilers/CSManagedInterfaceCompiler.h"
 #include "CSManager.h"
+#include "Compilers/CSManagedClassCompiler.h"
 #include "Types/CSInterface.h"
 #include "Factories/CSFunctionFactory.h"
 
@@ -42,9 +43,10 @@ void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TShar
 	Interface->AssembleReferenceTokenStream();
 	(void)Interface->GetDefaultObject();
 
+	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Class);
+	
 #if WITH_EDITOR
 	UCSManager::Get().OnNewInterfaceEvent().Broadcast(Interface);
+	UCSManagedClassCompiler::RefreshClassActions(Interface);
 #endif
-
-	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Class);
 }

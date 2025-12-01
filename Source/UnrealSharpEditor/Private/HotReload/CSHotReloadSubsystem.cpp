@@ -303,8 +303,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
 	{
-		FCSPendingHotReloadChange PendingChange = FCSPendingHotReloadChange(ProjectName, ChangedFiles);
-		PendingFileChanges.Add(PendingChange);
+		FCSHotReloadUtilities::AppendChangedFiles(PendingFileChanges, ChangedFiles, ProjectName);
 		return;
 	}
 	
