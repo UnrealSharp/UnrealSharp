@@ -18,8 +18,9 @@ namespace FCSHotReloadUtilities
 		const FFileChangeData& ChangeData;
 	};
 
-	inline bool IsSkippablePath(const FString& Path) { return Path.Contains(TEXT("/obj/")) || Path.Contains(TEXT("/bin/")); }
 	inline bool IsCSharpFile(const FString& Path) { return Path.EndsWith(TEXT(".cs")); }
+	inline bool IsSkippablePath(const FString& Path) { return Path.Contains(TEXT("/obj/")) || Path.Contains(TEXT("/bin/")) || !IsCSharpFile(Path); }
+
 	void SortDirtiedFiles(TArray<FCSChangedFile>& Files);
 	
 	bool HasFileBeenDirtied(const TArray<FCSChangedFile>& DirtiedFiles, const FString& FilePath, FFileChangeData::EFileChangeAction Action);
@@ -34,5 +35,6 @@ namespace FCSHotReloadUtilities
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<uint32>& RebuiltTypes);
 	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes);
 	
-	void AppendChangedFiles(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	void UpdatePendingHotReloadChanges(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	void GetChangedCSharpFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FFileChangeData>& OutFilteredFiles);
 };

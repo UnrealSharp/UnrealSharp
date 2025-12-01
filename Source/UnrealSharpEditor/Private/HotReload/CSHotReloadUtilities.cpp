@@ -42,7 +42,7 @@ void FCSHotReloadUtilities::CollectDirtiedFiles(const TArray<FFileChangeData>& C
 		FString NormalizedPath = Change.Filename;
 		NormalizedPath.ReplaceInline(TEXT("/"), TEXT("\\"));
 		
-		if (IsSkippablePath(NormalizedPath) || !IsCSharpFile(NormalizedPath) || HasFileBeenDirtied(OutDirtied, NormalizedPath, Change.Action))
+		if (HasFileBeenDirtied(OutDirtied, NormalizedPath, Change.Action))
 		{
 			continue;
 		}
@@ -284,15 +284,18 @@ bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* B
 	return false;
 }
 
-void FCSHotReloadUtilities::AppendChangedFiles(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
+void FCSHotReloadUtilities::UpdatePendingHotReloadChanges(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
 {
 	bool bFoundExistingProjectEntry = false;
+	
 	for (FCSPendingHotReloadChange& PendingChange : PendingFileChanges)
 	{
 		if (PendingChange.ProjectName != ProjectName)
 		{
 			continue;
 		}
+		
+		bFoundExistingProjectEntry = true;
 		
 		for (const FFileChangeData& ChangedFile : ChangedFiles)
 		{
@@ -307,7 +310,6 @@ void FCSHotReloadUtilities::AppendChangedFiles(TArray<FCSPendingHotReloadChange>
 			}
 			
 			PendingChange.ChangedFiles.Add(ChangedFile);
-			bFoundExistingProjectEntry = true;
 		}
 	}
 	
@@ -315,5 +317,20 @@ void FCSHotReloadUtilities::AppendChangedFiles(TArray<FCSPendingHotReloadChange>
 	{
 		FCSPendingHotReloadChange NewPendingChange(ProjectName, ChangedFiles);
 		PendingFileChanges.Add(NewPendingChange);
+	}
+}
+
+void FCSHotReloadUtilities::GetChangedCSharpFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FFileChangeData>& OutFilteredFiles)
+{
+	OutFilteredFiles.Empty(ChangedFiles.Num());
+	
+	for (const FFileChangeData& ChangedFile : ChangedFiles)
+	{
+		if (IsSkippablePath(ChangedFile.Filename))
+		{
+			continue;
+		}
+		
+		OutFilteredFiles.Add(ChangedFile);
 	}
 }

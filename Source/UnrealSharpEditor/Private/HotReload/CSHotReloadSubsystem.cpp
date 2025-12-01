@@ -104,7 +104,7 @@ void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
 	
 	for (const FCSPendingHotReloadChange& PendingFiles : PendingFileChanges)
 	{
-		ProcessChangedFiles(PendingFiles.ChangedFiles, PendingFiles.ProjectName);
+		ApplyHotReloadToChangedFiles(PendingFiles.ChangedFiles, PendingFiles.ProjectName);
 	}
 		
 	PendingFileChanges.Reset();
@@ -300,17 +300,25 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
+	TArray<FFileChangeData> CSharpFiles;
+	FCSHotReloadUtilities::GetChangedCSharpFiles(ChangedFiles, CSharpFiles);
+	
+	if (CSharpFiles.IsEmpty())
 	{
-		FCSHotReloadUtilities::AppendChangedFiles(PendingFileChanges, ChangedFiles, ProjectName);
 		return;
 	}
 	
-	ProcessChangedFiles(ChangedFiles, ProjectName);
+	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
+	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
+	{
+		FCSHotReloadUtilities::UpdatePendingHotReloadChanges(PendingFileChanges, CSharpFiles, ProjectName);
+		return;
+	}
+	
+	ApplyHotReloadToChangedFiles(CSharpFiles, ProjectName);
 }
 
-void UCSHotReloadSubsystem::ProcessChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
+void UCSHotReloadSubsystem::ApplyHotReloadToChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
 {
 	TArray<FCSHotReloadUtilities::FCSChangedFile> DirtiedFiles;
 	FCSHotReloadUtilities::CollectDirtiedFiles(ChangedFiles, DirtiedFiles);

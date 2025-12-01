@@ -56,8 +56,8 @@ private:
 	
 	void AddDirectoryToWatch(const FString& Directory, FName ProjectName);
 	
-	void HandleScriptFileChanges(const TArray<struct FFileChangeData>& ChangedFiles, FName ProjectName);
-	void ProcessChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	void HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	void ApplyHotReloadToChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 
 	static void OnHotReloadReady_Callback();
 	void OnHotReloadReady();
