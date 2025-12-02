@@ -26,9 +26,13 @@ struct FCSMetaDataEntry : FCSReflectionDataBase
 
 struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 {
+	void StartSerializeFromJson(const char* RawJsonString);
+	
 	// FCSReflectionDataBase interface
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
 	// End of FCSReflectionDataBase interface
+	
+	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }
 
 	UCSManagedAssembly* GetOwningAssemblyChecked() const;
 	
@@ -39,7 +43,9 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 	UDelegateFunction* GetAsDelegate() const;
 	UPackage* GetAsPackage() const;
 	
-	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }
+	const FString& GetRawReflectionData() const { return RawReflectionData; }
+	
+	bool MatchesRawReflectionData(const char* InRawReflectionData) const { return RawReflectionData == InRawReflectionData; }
 
 	bool HasMetaData(const FString& Key) const
 	{
@@ -67,4 +73,7 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 	FName AssemblyName;
 	TArray<FCSMetaDataEntry> MetaData;
 	TArray<FCSFieldName> SourceGeneratorDependencies;
+	
+private:
+	FString RawReflectionData;
 };

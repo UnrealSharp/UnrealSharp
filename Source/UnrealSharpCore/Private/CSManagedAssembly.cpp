@@ -146,7 +146,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetManagedMethod(const TSharedPtr<FGCH
 	return AllocatedHandle;
 }
 
-TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeHandle, char* JsonString)
+TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, const char* RawJsonString)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::RegisterManagedType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
@@ -155,9 +155,9 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = DefinedManagedTypes.FindOrAdd(FieldName);
 
 #if WITH_EDITOR
-	if (ManagedTypeDefinition.IsValid() && !ManagedTypeDefinition->HasStructuralChanges())
+	if (ManagedTypeDefinition.IsValid() && !FCSUtilities::ShouldReloadDefinition(ManagedTypeDefinition.ToSharedRef(), RawJsonString))
 	{
-		ManagedTypeDefinition->SetTypeGCHandle(TypeHandle);
+		ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
 		return ManagedTypeDefinition;
 	}
 #endif
@@ -167,25 +167,9 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 	if (!FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(FieldType, CompilerClass, ReflectionData))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to resolve builder and metadata for field type {0} for type {1}", static_cast<uint8>(FieldType), *FieldName.GetFullName().ToString());
-		return nullptr;
 	}
 	
-	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::DeserializeReflectionData);
-
-		TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
-		
-		TSharedPtr<FJsonObject> JsonReflectionData;
-		if (!FJsonSerializer::Deserialize(JsonReader, JsonReflectionData))
-		{
-			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to deserialize reflection data JSON for type {0}", *FieldName.GetFullName().ToString());
-		}
-
-		if (!ReflectionData->Serialize(JsonReflectionData))
-		{
-			UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
-		}
-	}
+	ReflectionData->StartSerializeFromJson(RawJsonString);
 
 	if (ManagedTypeDefinition.IsValid())
 	{
@@ -197,7 +181,7 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 		ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromReflectionData(ReflectionData, this, Compiler);
 	}
 	
-	ManagedTypeDefinition->SetTypeGCHandle(TypeHandle);
+	ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
 	return ManagedTypeDefinition;
 }
 

@@ -42,6 +42,22 @@ bool FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(ECSFieldType Fie
 	return OutCompilerClass != nullptr && OutReflectionData.IsValid();
 }
 
+bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* RawReflectionData)
+{
+	if (!ManagedTypeDefinition->HasStructuralChanges())
+	{
+		return false;
+	}
+	
+	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
+	if (ReflectionData->MatchesRawReflectionData(RawReflectionData))
+	{
+		return false;
+	}
+	
+	return true;
+}
+
 void FCSUtilities::ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results)
 {
 	const TCHAR* FunctionFlags[32] =

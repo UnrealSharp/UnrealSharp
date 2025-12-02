@@ -109,7 +109,7 @@ struct FCSReflectionDataBase
 		return true;
 	}
 
-	static bool ReadStringField(FString& Dest, const TSharedPtr<FJsonObject>& Object, const FString& FieldName, bool bIsOptional = false)
+	static bool ReadStringField(FString& Destination, const TSharedPtr<FJsonObject>& Object, const FString& FieldName, bool bIsOptional = false)
 	{
 		FString Temp;
 		if (!Object->TryGetStringField(FieldName, Temp))
@@ -123,16 +123,16 @@ struct FCSReflectionDataBase
 			return false;
 		}
 
-		Dest = Temp;
+		Destination = Temp;
 		return true;
 	}
 	
-	static bool ReadStringField(FName& Dest, const TSharedPtr<FJsonObject>& Object, const FString& FieldName, bool bIsOptional = false)
+	static bool ReadStringField(FName& Destination, const TSharedPtr<FJsonObject>& Object, const FString& FieldName, bool bIsOptional = false)
 	{
 		FString TempString;
 		if (ReadStringField(TempString, Object, FieldName, bIsOptional))
 		{
-			Dest = FName(*TempString);
+			Destination = FName(*TempString);
 			return true;
 		}
 		

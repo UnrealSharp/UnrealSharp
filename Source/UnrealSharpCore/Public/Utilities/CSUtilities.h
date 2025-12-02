@@ -4,13 +4,15 @@
 #include "CSFieldType.h"
 #include "UnrealSharpCore.h"
 
+struct FCSManagedTypeDefinition;
 class UCSManagedAssembly;
 struct FCSTypeReferenceReflectionData;
 class UCSManagedTypeCompiler;
 
 namespace FCSUtilities
 {
-	UNREALSHARPCORE_API bool ResolveCompilerAndReflectionDataForFieldType(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData);
+	bool ResolveCompilerAndReflectionDataForFieldType(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData);
+	bool ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* RawReflectionData);
 	
 	UNREALSHARPCORE_API void ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);
