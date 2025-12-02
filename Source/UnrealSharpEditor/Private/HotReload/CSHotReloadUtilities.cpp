@@ -1,12 +1,15 @@
 #include "HotReload/CSHotReloadUtilities.h"
 
 #include "CSManager.h"
+#include "CSUnrealSharpEditorSettings.h"
 #include "IDirectoryWatcher.h"
 #include "Projects.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
+#include "Kismet2/DebuggerCommands.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSClassUtilities.h"
 
 void FCSHotReloadUtilities::SortDirtiedFiles(TArray<FCSChangedFile>& Files)
@@ -284,42 +287,6 @@ bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* B
 	return false;
 }
 
-void FCSHotReloadUtilities::UpdatePendingHotReloadChanges(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
-{
-	bool bFoundExistingProjectEntry = false;
-	
-	for (FCSPendingHotReloadChange& PendingChange : PendingFileChanges)
-	{
-		if (PendingChange.ProjectName != ProjectName)
-		{
-			continue;
-		}
-		
-		bFoundExistingProjectEntry = true;
-		
-		for (const FFileChangeData& ChangedFile : ChangedFiles)
-		{
-			bool AlreadyRecordedFile = PendingChange.ChangedFiles.ContainsByPredicate([&ChangedFile](const FFileChangeData& ExistingFile)
-			{
-				return ExistingFile.Filename == ChangedFile.Filename && ExistingFile.Action == ChangedFile.Action;
-			});
-			
-			if (AlreadyRecordedFile)
-			{
-				continue;
-			}
-			
-			PendingChange.ChangedFiles.Add(ChangedFile);
-		}
-	}
-	
-	if (!bFoundExistingProjectEntry)
-	{
-		FCSPendingHotReloadChange NewPendingChange(ProjectName, ChangedFiles);
-		PendingFileChanges.Add(NewPendingChange);
-	}
-}
-
 void FCSHotReloadUtilities::GetChangedCSharpFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FFileChangeData>& OutFilteredFiles)
 {
 	OutFilteredFiles.Empty(ChangedFiles.Num());
@@ -333,4 +300,41 @@ void FCSHotReloadUtilities::GetChangedCSharpFiles(const TArray<FFileChangeData>&
 		
 		OutFilteredFiles.Add(ChangedFile);
 	}
+}
+
+bool FCSHotReloadUtilities::ShouldDeferHotReloadRequest(const UCSManagedAssembly* ModifiedAssembly)
+{
+	if (FCSAssemblyUtilities::IsGlueAssembly(ModifiedAssembly))
+	{
+		return true;
+	}
+	
+	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
+	if (Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+bool FCSHotReloadUtilities::ShouldHotReloadOnEditorFocus(const UCSHotReloadSubsystem* HotReloadSubsystem)
+{
+	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
+	if (Settings->AutomaticHotReloading != OnEditorFocus)
+	{
+		return false;
+	}
+	
+	if (!HotReloadSubsystem->HasPendingHotReloadChanges())
+	{
+		return false;
+	}
+	
+	if (!FApp::HasFocus())
+	{
+		return false;
+	}
+	
+	return true;
 }

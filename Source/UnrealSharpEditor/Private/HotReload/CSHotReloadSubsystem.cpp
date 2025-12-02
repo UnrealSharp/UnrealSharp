@@ -89,29 +89,29 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 		break;
 	}
 	
-	return bHasPendingChanges || PendingFileChanges.Num() > 0;
-}
-
-void UCSHotReloadSubsystem::PerformHotReloadOnPendingChanges()
-{
-	if (PendingFileChanges.IsEmpty())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending file changes to process for hot reload.");
-		return;
-	}
-	
-	UE_LOGFMT(LogUnrealSharpEditor, Display, "Processing pending file changes for hot reload.");
-	
-	for (const FCSPendingHotReloadChange& PendingFiles : PendingFileChanges)
-	{
-		ApplyHotReloadToChangedFiles(PendingFiles.ChangedFiles, PendingFiles.ProjectName);
-	}
-		
-	PendingFileChanges.Reset();
+	return bHasPendingChanges;
 }
 
 void UCSHotReloadSubsystem::PerformHotReload()
 {
+	if (FPlayWorldCommandCallbacks::IsInPIE())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE.");
+		return;
+	}
+	
+	if (!HasPendingHotReloadChanges())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending C# changes to hot reload.");
+		return;
+	}
+	
+	if (IsHotReloading())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Warning, "A hot reload is already in progress. Skipping hot reload request.");
+		return;
+	}
+	
 	if (bIsHotReloadPaused)
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Hot reload is currently paused. Skipping hot reload.");
@@ -124,6 +124,8 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Hot reload is disabled until the editor is restarted.");
 		return;
 	}
+	
+	UE_LOGFMT(LogUnrealSharpEditor, Display, "Starting C# Hot Reload...");
 	
 	CurrentHotReloadStatus = Active;
 	double StartTime = FPlatformTime::Seconds();
@@ -224,19 +226,17 @@ void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 	
 	if (GetDefault<UCSUnrealSharpEditorSettings>()->AutomaticHotReloading != Off)
 	{
-		PerformHotReloadOnPendingChanges();
+		PerformHotReload();
 	}
 }
 
 bool UCSHotReloadSubsystem::Tick(float DeltaTime)
 {
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	
-	if (Settings->AutomaticHotReloading == OnEditorFocus && !IsHotReloading() && HasPendingHotReloadChanges() && FApp::HasFocus())
+	if (FCSHotReloadUtilities::ShouldHotReloadOnEditorFocus(this))
 	{
-		PerformHotReloadOnPendingChanges();
+		PerformHotReload();
 	}
-
+	
 	return true;
 }
 
@@ -308,20 +308,8 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
-	if (bIsHotReloadPaused || FPlayWorldCommandCallbacks::IsInPIE() || Settings->AutomaticHotReloading == OnEditorFocus || Settings->AutomaticHotReloading == Off)
-	{
-		FCSHotReloadUtilities::UpdatePendingHotReloadChanges(PendingFileChanges, CSharpFiles, ProjectName);
-		return;
-	}
-	
-	ApplyHotReloadToChangedFiles(CSharpFiles, ProjectName);
-}
-
-void UCSHotReloadSubsystem::ApplyHotReloadToChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
-{
 	TArray<FCSHotReloadUtilities::FCSChangedFile> DirtiedFiles;
-	FCSHotReloadUtilities::CollectDirtiedFiles(ChangedFiles, DirtiedFiles);
+	FCSHotReloadUtilities::CollectDirtiedFiles(CSharpFiles, DirtiedFiles);
 	
 	if (DirtiedFiles.IsEmpty())
 	{
@@ -335,22 +323,25 @@ void UCSHotReloadSubsystem::ApplyHotReloadToChangedFiles(const TArray<FFileChang
 		return;
 	}
 	
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(ProjectName);
-	if (!IsValid(Assembly))
+	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
+	if (!IsValid(ModifiedAssembly))
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Could not find assembly for project {0} during hot reload.", *ProjectName.ToString());
 		return;
 	}
 	
-	if (!PendingModifiedAssemblies.Contains(Assembly))
+	if (!PendingModifiedAssemblies.Contains(ModifiedAssembly))
 	{
-		PendingModifiedAssemblies.Add(Assembly);
+		PendingModifiedAssemblies.Add(ModifiedAssembly);
 	}
 	
-	if (!FCSAssemblyUtilities::IsGlueAssembly(Assembly))
+	if (FCSHotReloadUtilities::ShouldDeferHotReloadRequest(ModifiedAssembly))
 	{
-		PerformHotReload();
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Deferring hot reload request for assembly {0}.", *ModifiedAssembly->GetAssemblyName().ToString());
+		return;
 	}
+	
+	PerformHotReload();
 }
 
 #undef LOCTEXT_NAMESPACE

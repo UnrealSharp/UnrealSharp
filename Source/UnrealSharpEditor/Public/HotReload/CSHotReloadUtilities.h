@@ -35,6 +35,8 @@ namespace FCSHotReloadUtilities
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<uint32>& RebuiltTypes);
 	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes);
 	
-	void UpdatePendingHotReloadChanges(TArray<FCSPendingHotReloadChange>& PendingFileChanges, const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 	void GetChangedCSharpFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FFileChangeData>& OutFilteredFiles);
+	
+	bool ShouldDeferHotReloadRequest(const UCSManagedAssembly* ModifiedAssembly);
+	bool ShouldHotReloadOnEditorFocus(const UCSHotReloadSubsystem* HotReloadSubsystem);
 };

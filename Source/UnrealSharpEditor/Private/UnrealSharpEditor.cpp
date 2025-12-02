@@ -92,7 +92,7 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
-	UCSHotReloadSubsystem::Get()->PerformHotReloadOnPendingChanges();
+	UCSHotReloadSubsystem::Get()->PerformHotReload();
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()

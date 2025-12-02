@@ -44,7 +44,6 @@ public:
 	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const;
 	UNREALSHARPEDITOR_API bool HasHotReloadFailed() const { return CurrentHotReloadStatus == FailedToUnload || CurrentHotReloadStatus == FailedToCompile; }
 	
-	UNREALSHARPEDITOR_API void PerformHotReloadOnPendingChanges();
 	UNREALSHARPEDITOR_API void PerformHotReload();
 	
 	void PauseHotReload(const FString& Reason = FString());
@@ -57,7 +56,6 @@ private:
 	void AddDirectoryToWatch(const FString& Directory, FName ProjectName);
 	
 	void HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
-	void ApplyHotReloadToChangedFiles(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
 
 	static void OnHotReloadReady_Callback();
 	void OnHotReloadReady();
