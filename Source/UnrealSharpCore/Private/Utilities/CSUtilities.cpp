@@ -50,7 +50,7 @@ bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinit
 	}
 	
 	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
-	if (ReflectionData->MatchesRawReflectionData(RawReflectionData))
+	if (ReflectionData->GetRawReflectionData() == RawReflectionData)
 	{
 		return false;
 	}

@@ -44,8 +44,6 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 	UPackage* GetAsPackage() const;
 	
 	const FString& GetRawReflectionData() const { return RawReflectionData; }
-	
-	bool MatchesRawReflectionData(const char* InRawReflectionData) const { return RawReflectionData == InRawReflectionData; }
 
 	bool HasMetaData(const FString& Key) const
 	{
