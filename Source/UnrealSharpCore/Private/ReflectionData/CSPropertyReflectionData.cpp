@@ -22,7 +22,7 @@ bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	JSON_READ_ENUM(LifetimeCondition, IS_OPTIONAL);
 	JSON_READ_ENUM(PropertyFlags, IS_OPTIONAL);
 	
-	JSON_READ_STRING(RepNotifyFunctionName, IS_OPTIONAL);
+	JSON_READ_STRING(ReplicatedUsing, IS_OPTIONAL);
 
 	ECSPropertyType PropertyType = ECSPropertyType::Unknown;
 	JSON_READ_ENUM(PropertyType, IS_REQUIRED);

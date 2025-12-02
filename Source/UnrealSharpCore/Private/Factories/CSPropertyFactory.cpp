@@ -74,9 +74,9 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyRe
 		{
 			++OwningClass->NumReplicatedProperties;
 			
-			if (!PropertyReflectionData.RepNotifyFunctionName.IsNone())
+			if (!PropertyReflectionData.ReplicatedUsing.IsNone())
 			{
-				NewProperty->RepNotifyFunc = PropertyReflectionData.RepNotifyFunctionName;
+				NewProperty->RepNotifyFunc = PropertyReflectionData.ReplicatedUsing;
 			}
 		}
 

@@ -35,7 +35,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 
 	TSharedPtr<FCSUnrealType> InnerType;
 	EPropertyFlags PropertyFlags;
-	FName RepNotifyFunctionName;
+	FName ReplicatedUsing;
 	ELifetimeCondition LifetimeCondition;
 	
 	TSharedPtr<FCSFunctionReflectionData> GetterMethod;
