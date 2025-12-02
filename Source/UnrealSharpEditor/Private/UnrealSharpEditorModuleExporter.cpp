@@ -14,19 +14,19 @@ void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)
 
 void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName)
 {
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(UTF8_TO_TCHAR(AssemblyName));
+	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
 
 	if (!IsValid(Assembly))
 	{
 		return;
 	}
 
-	FCSFieldName FieldName(UTF8_TO_TCHAR(TypeName), UTF8_TO_TCHAR(Namespace));
+	FCSFieldName FieldName(TypeName, Namespace);
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
 
 	if (!ManagedTypeDefinition.IsValid())
 	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to dirty type {0}.{1} in assembly {2}: type not found", Namespace, TypeName, AssemblyName);
+		UE_LOGFMT(LogUnrealSharpEditor, Log, "Skipping dirty check: {0}.{1} isn't registered in assembly {2}. It may be a new managed type.", Namespace, TypeName, AssemblyName);
 		return;
 	}
 	
