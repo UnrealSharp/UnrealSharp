@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 
+#if PLATFORM_APPLE
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 class UCSUnrealSharpSettings;
 template <typename T>
 concept ValidProperty = std::derived_from<T, FProperty>
