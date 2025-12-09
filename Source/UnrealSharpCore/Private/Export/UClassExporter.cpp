@@ -6,11 +6,17 @@
 
 UFunction* UUClassExporter::GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName)
 {
+	if (!IsValid(Class))
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction for class. Class is not valid. FunctionName: {0}", FunctionName);
+		return nullptr;
+	}
+	
 	UFunction* Function = Class->FindFunctionByName(FunctionName);
 	
-	if (!Function)
+	if (!IsValid(Function))
 	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. FunctionName: %hs"), FunctionName)
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction. Class: {0}, FunctionName: {1}", *Class->GetName(), FunctionName);
 		return nullptr;
 	}
 
@@ -21,7 +27,7 @@ UFunction* UUClassExporter::GetNativeFunctionFromInstanceAndName(const UObject* 
 {
 	if (!IsValid(NativeObject))
 	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. NativeObject is not valid."))
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction. NativeObject is not valid. ObjectName: {0}", *NativeObject->GetName());
 		return nullptr;
 	}
 	
@@ -32,7 +38,7 @@ UFunction* UUClassExporter::GetFirstNativeImplementationFromInstanceAndName(cons
 {
 	if (!IsValid(NativeObject))
 	{
-		UE_LOG(LogUnrealSharp, Warning, TEXT("Failed to get NativeFunction. NativeObject is not valid."))
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction. NativeObject is not valid. ObjectName: {0}", *NativeObject->GetName());
 		return nullptr;
 	}
 	
@@ -49,7 +55,7 @@ void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* 
 	
 	if (!IsValid(Class))
 	{
-		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object. ClassName: {0}", *FieldName.GetName());
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object for class {0} in assembly {1}.", *FieldName.GetName(), *AssemblyName);
 		return nullptr;
 	}
 	

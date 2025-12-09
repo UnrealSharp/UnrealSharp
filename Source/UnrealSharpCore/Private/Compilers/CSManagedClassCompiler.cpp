@@ -102,7 +102,7 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 	FCSPropertyFactory::CreateAndAssignProperties(Field, ClassReflectionData->Properties);
 
 	// Build the construction script that will spawn the components
-	FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(Field, &Field->SimpleConstructionScript, ClassReflectionData->Properties);
+	FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(Field, &Field->SimpleConstructionScript, ClassReflectionData->Properties);
 
 #if WITH_EDITOR
 	UBlueprint* Blueprint = Field->GetOwningBlueprint();

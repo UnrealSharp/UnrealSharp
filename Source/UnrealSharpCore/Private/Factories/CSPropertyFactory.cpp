@@ -7,12 +7,11 @@
 #include "Utilities/CSMetaDataUtils.h"
 #include "UnrealSharpUtils.h"
 
-TArray<TObjectPtr<UCSPropertyGenerator>> FCSPropertyFactory::PropertyGenerators;
 TMap<uint32, UCSPropertyGenerator*> FCSPropertyFactory::PropertyGeneratorMap;
 
 void FCSPropertyFactory::Initialize()
 {
-	if (PropertyGenerators.Num() > 0)
+	if (PropertyGeneratorMap.Num() > 0)
 	{
 		return;
 	}
@@ -22,6 +21,7 @@ void FCSPropertyFactory::Initialize()
 	TArray<UCSPropertyGenerator*> FoundPropertyGeneratorClasses;
 	FCSUnrealSharpUtils::GetAllCDOsOfClass<UCSPropertyGenerator>(FoundPropertyGeneratorClasses);
 	
+	TArray<UCSPropertyGenerator*> PropertyGenerators;
 	PropertyGenerators.Reserve(FoundPropertyGeneratorClasses.Num());
 	
 	for (UCSPropertyGenerator* PropertyGenerator : FoundPropertyGeneratorClasses)
@@ -74,7 +74,7 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyRe
 		{
 			++OwningClass->NumReplicatedProperties;
 			
-			if (!PropertyReflectionData.ReplicatedUsing.IsNone())
+			if (PropertyReflectionData.ReplicatedUsing.IsValid())
 			{
 				NewProperty->RepNotifyFunc = PropertyReflectionData.ReplicatedUsing;
 			}

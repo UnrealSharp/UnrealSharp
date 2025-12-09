@@ -9,13 +9,11 @@ UCSDelegatePropertyGenerator::UCSDelegatePropertyGenerator(FObjectInitializer co
 	{
 		{ ECSPropertyType::Delegate, FDelegateProperty::StaticClass() },
 		{ ECSPropertyType::MulticastInlineDelegate, FMulticastInlineDelegateProperty::StaticClass() },
-		{ ECSPropertyType::MulticastSparseDelegate, FMulticastInlineDelegateProperty::StaticClass() },
 		{ ECSPropertyType::DelegateSignature, FDelegateProperty::StaticClass() }
 	};
 
 	REGISTER_REFLECTION_DATA(ECSPropertyType::Delegate, FCSTemplateType)
 	REGISTER_REFLECTION_DATA(ECSPropertyType::MulticastInlineDelegate, FCSTemplateType)
-	REGISTER_REFLECTION_DATA(ECSPropertyType::MulticastSparseDelegate, FCSTemplateType)
 	REGISTER_REFLECTION_DATA(ECSPropertyType::DelegateSignature, FCSFieldType)
 }
 

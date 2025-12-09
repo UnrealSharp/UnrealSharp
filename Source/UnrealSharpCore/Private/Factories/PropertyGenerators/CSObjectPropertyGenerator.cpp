@@ -10,7 +10,6 @@ UCSObjectPropertyGenerator::UCSObjectPropertyGenerator(FObjectInitializer const&
 		{ ECSPropertyType::Object, FObjectProperty::StaticClass() },
 		{ ECSPropertyType::WeakObject, FWeakObjectProperty::StaticClass() },
 		{ ECSPropertyType::SoftObject, FSoftObjectProperty::StaticClass() },
-		{ ECSPropertyType::ObjectPtr, FObjectProperty::StaticClass() },
 		{ ECSPropertyType::DefaultComponent , FObjectProperty::StaticClass() }
 	};
 

@@ -2,9 +2,9 @@
 #include "CSManager.h"
 #include "CSProcHelper.h"
 
-void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks)
+void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FCSManagedEditorCallbacks Callbacks)
 {
-	FUnrealSharpEditorModule::Get().InitializeUnrealSharpEditorCallbacks(Callbacks);
+	FUnrealSharpEditorModule::Get().InitializeManagedEditorCallbacks(Callbacks);
 }
 
 void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)

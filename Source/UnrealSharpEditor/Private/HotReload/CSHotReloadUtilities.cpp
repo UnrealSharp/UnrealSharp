@@ -60,7 +60,7 @@ void FCSHotReloadUtilities::CollectDirtiedFiles(const TArray<FFileChangeData>& C
 bool FCSHotReloadUtilities::ApplyDirtiedFiles(const FString& ProjectName, const TArray<FCSChangedFile>& DirtyFiles, FString& OutException)
 {
 	FUnrealSharpEditorModule& EditorModule = FUnrealSharpEditorModule::Get();
-	const FCSManagedUnrealSharpEditorCallbacks& Callbacks = EditorModule.GetManagedUnrealSharpEditorCallbacks();
+	const FCSManagedEditorCallbacks& Callbacks = EditorModule.GetManagedEditorCallbacks();
 	
 	for (const FCSChangedFile& DirtyFile : DirtyFiles)
 	{
@@ -99,7 +99,7 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 		AssemblyNames.Add(Assembly->GetAssemblyName().ToString());
 	}
 	
-	return UnrealSharpEditorModule.GetManagedUnrealSharpEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNames);
+	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNames);
 }
 
 void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<uint32>& RebuiltTypes)

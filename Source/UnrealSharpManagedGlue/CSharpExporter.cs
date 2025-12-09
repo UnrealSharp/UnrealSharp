@@ -169,7 +169,7 @@ public static class CSharpExporter
         }
     }
 
-    private static void ForEachChild(UhtType child, Action<UhtType> action)
+    public static void ForEachChild(UhtType child, Action<UhtType> action)
     {
         #if UE_5_5_OR_LATER
         action(child);
@@ -189,6 +189,16 @@ public static class CSharpExporter
             }
         }
         #endif
+    }
+    
+    public static void ForEachChildRecursive(UhtType child, Action<UhtType> action)
+    {
+        action(child);
+
+        foreach (UhtType type in child.Children)
+        {
+            ForEachChildRecursive(type, action);
+        }
     }
 
     private static void ExportType(UhtType type)

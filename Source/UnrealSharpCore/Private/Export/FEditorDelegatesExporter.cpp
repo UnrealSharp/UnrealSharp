@@ -1,5 +1,9 @@
 #include "Export/FEditorDelegatesExporter.h"
 
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
+
 void UFEditorDelegatesExporter::BindEndPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
 {
 #if WITH_EDITOR

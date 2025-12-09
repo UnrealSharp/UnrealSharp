@@ -37,6 +37,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const
 	FString DotNetPath = GetDotNetExecutablePath();
 
 	FString Args;
+	Args += FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(GetUnrealSharpBuildToolPath()));
 	Args += FString::Printf(TEXT(" --Action %s"), *BuildAction);
 	Args += FString::Printf(TEXT(" --EngineDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::EngineDir()));
 	Args += FString::Printf(TEXT(" --ProjectDirectory \"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()));
@@ -56,7 +57,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const
 	int32 ReturnCode = 0;
 	FString Output;
 	FString WorkingDirectory = GetPluginAssembliesPath();
-	return InvokeCommand(GetUnrealSharpBuildToolPath(), Args, ReturnCode, Output, &WorkingDirectory);
+	return InvokeCommand(DotNetPath, Args, ReturnCode, Output, &WorkingDirectory);
 }
 
 FString FCSProcHelper::GetLatestHostFxrPath()
@@ -284,7 +285,7 @@ bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
 FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 {
 #if PLATFORM_WINDOWS
-	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.exe");
+	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.dll");
 #else
 	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool");
 #endif

@@ -157,7 +157,7 @@ void DumpTypeReflectionData(const TArray<FString>& Args)
 			continue;
 		}
 		
-		UField* Field = TypeDefinition->GetManagedField();
+		UField* Field = TypeDefinition->GetDefinitionField();
 		
 		if (!IsValid(Field))
 		{
@@ -247,7 +247,7 @@ static FAutoConsoleCommand CVarListTypesInAssembly(
 			
 			if (TypeDefinition.IsValid())
 			{
-				UField* Field = TypeDefinition->GetManagedField();
+				UField* Field = TypeDefinition->GetDefinitionField();
 				if (IsValid(Field))
 				{
 					UE_LOGFMT(LogUnrealSharp, Log, "- {0} ({1})", *FieldName.GetFullName().ToString(), Field->GetClass()->GetName());

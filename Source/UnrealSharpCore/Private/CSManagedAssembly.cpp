@@ -59,7 +59,7 @@ bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
 
 	for (TSharedPtr<FCSManagedTypeDefinition>& PendingRebuildType : PendingRebuildTypes)
 	{
-		PendingRebuildType->CompileAndGetManagedField();
+		PendingRebuildType->CompileAndGetDefinitionField();
 	}
 
 	PendingRebuildTypes.Reset();
@@ -164,12 +164,12 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 	
 	TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData;
 	UClass* CompilerClass;
-	if (!FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(FieldType, CompilerClass, ReflectionData))
+	if (!FCSUtilities::ResolveCompilerAndReflectionData(FieldType, CompilerClass, ReflectionData))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to resolve builder and metadata for field type {0} for type {1}", static_cast<uint8>(FieldType), *FieldName.GetFullName().ToString());
 	}
 	
-	ReflectionData->StartSerializeFromJson(RawJsonString);
+	ReflectionData->SerializeFromJsonString(RawJsonString);
 
 	if (ManagedTypeDefinition.IsValid())
 	{

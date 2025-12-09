@@ -10,7 +10,7 @@ public class UnrealSharpEditor : ModuleRules
             new string[]
             {
                 "Core",
-                "UnrealSharpBinds",
+                "UnrealSharpBinds"
             }
         );
 

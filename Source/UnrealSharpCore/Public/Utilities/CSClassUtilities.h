@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Engine/DeveloperSettings.h"
 #include "Types/CSClass.h"
 #include "Types/CSInterface.h"
 #include "Types/CSSkeletonClass.h"

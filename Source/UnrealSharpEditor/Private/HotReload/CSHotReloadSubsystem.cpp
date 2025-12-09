@@ -33,7 +33,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	UnrealSharpEditorModule = &FUnrealSharpEditorModule::Get();
 	
 	FString PathToManagedSolution = FCSProcHelper::GetPathToManagedSolution();
-	UnrealSharpEditorModule->GetManagedUnrealSharpEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
+	UnrealSharpEditorModule->GetManagedEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
 	
 	RefreshDirectoryWatchers();
 	
@@ -222,7 +222,7 @@ void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 {
 	// Replicate UE behavior, which forces a garbage collection when exiting PIE.
-	UnrealSharpEditorModule->GetManagedUnrealSharpEditorCallbacks().ForceManagedGC();
+	UnrealSharpEditorModule->GetManagedEditorCallbacks().ForceManagedGC();
 	
 	if (GetDefault<UCSUnrealSharpEditorSettings>()->AutomaticHotReloading != Off)
 	{

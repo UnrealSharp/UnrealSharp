@@ -41,6 +41,8 @@ class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUO
     GENERATED_BODY()
 public:
 
+	static UCSManager& Get() { return *Instance; }
+	
     static UCSManager& GetOrCreate()
     {
         if (!Instance)
@@ -51,14 +53,10 @@ public:
         return *Instance;
     }
 
-    static UCSManager& Get() { return *Instance; }
-
-	UFUNCTION(meta = (ScriptMethod))
-	static UCSManager* K2_GetManager() { return Instance; }
-
     // The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
     UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
-    UPackage* FindOrAddManagedPackage(FCSNamespace Namespace);
+	
+    UPackage* FindOrAddManagedPackage(const FCSNamespace& Namespace);
 
     UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
 
@@ -185,8 +183,6 @@ private:
 
 	UCSManagedAssembly* FindOwningAssemblySlow(UField* Field);
 
-	static UCSManager* Instance;
-
 	UPROPERTY()
 	TArray<TObjectPtr<UPackage>> AllPackages;
 
@@ -233,4 +229,6 @@ private:
 
 	void* RuntimeHost = nullptr;
 	//End
+	
+	static UCSManager* Instance;
 };

@@ -21,15 +21,12 @@ enum class ECSPropertyType : uint8
 	Float,
 
 	Enum,
-
-	Interface,
+	
 	Struct,
 	Class,
 
 	Object,
-	ObjectPtr,
 	DefaultComponent,
-	LazyObject,
 	WeakObject,
 
 	ScriptInterface,
@@ -39,7 +36,6 @@ enum class ECSPropertyType : uint8
 
 	Delegate,
 	MulticastInlineDelegate,
-	MulticastSparseDelegate,
 	DelegateSignature,
 
 	Array,
@@ -50,10 +46,4 @@ enum class ECSPropertyType : uint8
 	String,
 	Name,
 	Text,
-	
-	GameplayTag,
-	GameplayTagContainer,
-
-	InternalNativeFixedSizeArray,
-	InternalManagedFixedSizeArray
 };

@@ -26,10 +26,11 @@ public:
 	
 protected:
 	typedef FKismetCompilerContext Super;
-	
 private:
-	void TryValidateSimpleConstructionScript() const;
+	
+	void ValidateSimpleConstructionScript() const;
 	void GenerateFunctions() const;
+	
 	UCSClass* GetMainClass() const;
 	
 	TSharedPtr<const FCSManagedTypeDefinition> GetClassInfo() const;
@@ -37,10 +38,10 @@ private:
 	
 	void TryInitializeAsDeveloperSettings(const UClass* Class) const;
 	void TryDeinitializeAsDeveloperSettings(UObject* Settings) const;
-	void TryFakeNativeClass(UClass* Class);
-	void ApplyMetaData() const;
 
-	static bool NeedsToFakeNativeClass(UClass* Class);
+	static void TryFakeNativeClass(UClass* Class);
+	
+	void ApplyMetaData() const;
 
 	void CreateDummyBlueprintVariables(const TArray<FCSPropertyReflectionData>& Properties) const;
 };

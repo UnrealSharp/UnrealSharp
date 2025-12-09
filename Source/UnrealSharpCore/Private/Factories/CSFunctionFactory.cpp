@@ -6,18 +6,6 @@
 #include "Functions/CSFunction_Params.h"
 #include "UnrealSharpUtils.h"
 
-UCSFunctionBase* FCSFunctionFactory::CreateFunction(UClass* Outer, const FName& Name, const FCSFunctionReflectionData& FunctionReflectionData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
-{
-	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
-	
-	NewFunction->FunctionFlags = FunctionReflectionData.FunctionFlags | FunctionFlags;
-	NewFunction->SetSuperStruct(ParentFunction);
-	
-	FCSMetaDataUtils::ApplyMetaData(FunctionReflectionData.MetaData, NewFunction);
-	
-	return NewFunction;
-}
-
 FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPropertyReflectionData& PropertyReflectionData)
 {
 	FProperty* NewParam = FCSPropertyFactory::CreateAndAssignProperty(Function, PropertyReflectionData);
@@ -54,7 +42,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateFunctionFromReflectionData(UClass* Ou
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSFunctionFactory::CreateFunctionFromReflectionData);
 	
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, FunctionReflectionData.FieldName.GetFName(), FunctionReflectionData);
+	UCSFunctionBase* NewFunction = CreateFunction_Internal(Outer, FunctionReflectionData.FieldName.GetFName(), FunctionReflectionData);
 
 	if (!NewFunction)
 	{
@@ -73,7 +61,7 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 	constexpr EFunctionFlags InheritFlags = FUNC_FuncInherit | FUNC_Public | FUNC_Protected | FUNC_Private | FUNC_BlueprintPure | FUNC_HasOutParms;
 	const EFunctionFlags FunctionFlags = ParentFunction->FunctionFlags & InheritFlags;
 	
-	UCSFunctionBase* NewFunction = CreateFunction(Outer, ParentFunction->GetFName(), FCSFunctionReflectionData(), FunctionFlags, ParentFunction);
+	UCSFunctionBase* NewFunction = CreateFunction_Internal(Outer, ParentFunction->GetFName(), FCSFunctionReflectionData(), FunctionFlags, ParentFunction);
 	
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
@@ -105,34 +93,6 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 	
 	FinalizeFunctionSetup(Outer, NewFunction);
 	return NewFunction;
-}
-
-void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function)
-{
-	Function->Next = Outer->Children;
-	Outer->Children = Function;
-	
-	// Mark the function as Native so we can override with InvokeManagedMethod/InvokeManagedMethod_Params and call into C#
-	Function->FunctionFlags |= FUNC_Native;
-	
-	Function->StaticLink(true);
-	
-	if (Function->NumParms == 0)
-	{
-		Outer->AddNativeFunction(*Function->GetName(), &UCSFunctionBase::InvokeManagedMethod);
-	}
-	else
-	{
-		Outer->AddNativeFunction(*Function->GetName(), &UCSFunction_Params::InvokeManagedMethod_Params);
-	}
-	
-	Function->Bind();
-	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
-
-	if (!Function->UpdateMethodHandle())
-	{
-		UE_LOG(LogUnrealSharp, Fatal, TEXT("Failed to find managed method for function: %s"), *Function->GetName());
-	}
 }
 
 void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData, TArray<UFunction*>& VirtualFunctions)
@@ -195,6 +155,11 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 
 void FCSFunctionFactory::GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)
 {
+	if (!ClassReflectionData->Overrides.Num())
+	{
+		return;
+	}
+	
 	TArray<UFunction*> VirtualFunctions;
 	GetOverriddenFunctions(Outer, ClassReflectionData, VirtualFunctions);
 	
@@ -217,4 +182,44 @@ void FCSFunctionFactory::AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Func
 	Function->Next = Outer->Children;
 	Outer->Children = Function;
 	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
+}
+
+void FCSFunctionFactory::FinalizeFunctionSetup(UClass* Outer, UCSFunctionBase* Function)
+{
+	Function->Next = Outer->Children;
+	Outer->Children = Function;
+	
+	// Mark the function as Native so we can override with InvokeManagedMethod/InvokeManagedMethod_Params and call into C#
+	Function->FunctionFlags |= FUNC_Native;
+	
+	Function->StaticLink(true);
+	
+	if (Function->NumParms == 0)
+	{
+		Outer->AddNativeFunction(*Function->GetName(), &UCSFunctionBase::InvokeManagedMethod);
+	}
+	else
+	{
+		Outer->AddNativeFunction(*Function->GetName(), &UCSFunction_Params::InvokeManagedMethod_Params);
+	}
+	
+	Function->Bind();
+	Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
+
+	if (!Function->UpdateMethodHandle())
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to update method handle for function {0} in class {1}.", *Function->GetName(), *Outer->GetName());
+	}
+}
+
+UCSFunctionBase* FCSFunctionFactory::CreateFunction_Internal(UClass* Outer, const FName& Name, const FCSFunctionReflectionData& FunctionReflectionData, EFunctionFlags FunctionFlags, UStruct* ParentFunction)
+{
+	UCSFunctionBase* NewFunction = NewObject<UCSFunctionBase>(Outer, UCSFunctionBase::StaticClass(), Name, RF_Public);
+	
+	NewFunction->FunctionFlags = FunctionReflectionData.FunctionFlags | FunctionFlags;
+	NewFunction->SetSuperStruct(ParentFunction);
+	
+	FCSMetaDataUtils::ApplyMetaData(FunctionReflectionData.MetaData, NewFunction);
+	
+	return NewFunction;
 }

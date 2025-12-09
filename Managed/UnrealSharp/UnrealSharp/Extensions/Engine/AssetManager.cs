@@ -8,7 +8,7 @@ namespace UnrealSharp.Engine;
 public partial class UAssetManager
 {
     /// <summary>
-    ///     Gets the AssetManager singleton of the specified type
+    /// Gets the AssetManager singleton of the specified type
     /// </summary>
     public static T Get<T>() where T : UAssetManager
     {
@@ -23,7 +23,7 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    ///     Gets the AssetManager singleton
+    /// Gets the AssetManager singleton
     /// </summary>
     public static UAssetManager Get()
     {
@@ -128,7 +128,7 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    ///     Loads multiple primary asset classes by their FPrimaryAssetId list and returns them as TSubclassOf.
+    /// Loads multiple primary asset classes by their FPrimaryAssetId list and returns them as TSubclassOf.
     /// </summary>
     /// <param name="primaryAssets">A list of primary assets to load</param>
     /// <param name="bundles">The bundles to load along with the assets (optional)</param>

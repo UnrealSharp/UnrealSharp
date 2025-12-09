@@ -40,8 +40,8 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 	TSharedPtr<FGCHandle> GetTypeGCHandle() const { return TypeGCHandle; }
 #endif
 
-	UField* CompileAndGetManagedField();
-	UField* GetManagedField() const { return ManagedField.Get(); }
+	UField* CompileAndGetDefinitionField();
+	UField* GetDefinitionField() const { return DefinitionField.Get(); }
 
 	template<typename TReflectionData = FCSTypeReferenceReflectionData>
 	TSharedPtr<TReflectionData> GetReflectionData() const
@@ -66,7 +66,7 @@ private:
 
 	// The Unreal reflection type generated for this managed definition.
 	// This may be a UClass, UStruct, UEnum, UInterface, UFunction (Delegate), et.c depending on ReflectionData.
-	TStrongObjectPtr<UField> ManagedField;
+	TStrongObjectPtr<UField> DefinitionField;
 
 	// Compiler responsible for creating and updating the native Unreal type from the managed reflection data.
 	UCSManagedTypeCompiler* Compiler;

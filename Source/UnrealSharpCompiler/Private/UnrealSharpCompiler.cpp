@@ -182,7 +182,7 @@ void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 
 void FUnrealSharpCompilerModule::OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 {
-	UClass* NewClass = Cast<UClass>(ManagedTypeDefinition->GetManagedField());
+	UClass* NewClass = Cast<UClass>(ManagedTypeDefinition->GetDefinitionField());
 	if (!IsValid(NewClass))
 	{
 		return;

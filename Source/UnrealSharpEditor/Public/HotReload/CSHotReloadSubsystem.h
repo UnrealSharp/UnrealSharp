@@ -6,8 +6,17 @@
 #include "IDirectoryWatcher.h"
 #include "CSHotReloadSubsystem.generated.h"
 
-class FControlFlowNode;
-class FControlFlow;
+enum EHotReloadStatus : uint8
+{
+	// Not Hot Reloading
+	Inactive,
+	// Actively Hot Reloading
+	Active,
+	// Failed to unload an assembly during Hot Reload
+	FailedToUnload,
+	// Failed to compile the managed code during Hot Reload
+	FailedToCompile
+};
 
 struct FCSPendingHotReloadChange
 {
@@ -21,7 +30,7 @@ struct FCSPendingHotReloadChange
 	TArray<FFileChangeData> ChangedFiles;
 };
 
-UCLASS(MinimalAPI)
+UCLASS()
 class UCSHotReloadSubsystem : public UEditorSubsystem
 {
 	GENERATED_BODY()
@@ -84,7 +93,7 @@ private:
 
 	FUnrealSharpEditorModule* UnrealSharpEditorModule = nullptr;
 
-	HotReloadStatus CurrentHotReloadStatus = Inactive;
+	EHotReloadStatus CurrentHotReloadStatus = Inactive;
 	bool bIsHotReloadPaused = false;
 
 	TArray<FString> WatchingDirectories;

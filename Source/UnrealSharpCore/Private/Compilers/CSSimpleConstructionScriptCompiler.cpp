@@ -25,7 +25,7 @@ FCSRootNodeInfo::FCSRootNodeInfo(const FObjectProperty* NativeProperty, USceneCo
 	ensure(OwningClass->HasAllClassFlags(CLASS_Native));
 }
 
-void FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData)
+void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData)
 {
 	USimpleConstructionScript* CurrentSCS = SimpleConstructionScript->Get();
 	UBlueprintGeneratedClass* GeneratedClass = Cast<UBlueprintGeneratedClass>(Outer);

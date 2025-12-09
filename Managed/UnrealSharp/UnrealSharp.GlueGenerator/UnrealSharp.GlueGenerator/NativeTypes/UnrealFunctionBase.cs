@@ -283,6 +283,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
     {
+        if ((HasParamsOrReturnValue || NeedsImplementationFunction) && !FunctionFlags.HasFlag(EFunctionFlags.Delegate))
+        {
+            builder.AppendLine($"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{SourceName}\");");
+        }
+        
         if (HasParamsOrReturnValue)
         {
             builder.AppendLine($"{SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");

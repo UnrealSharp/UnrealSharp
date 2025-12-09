@@ -10,7 +10,7 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 	FCSFieldName FieldName(InTypeName, InNamespace);
 	
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);
-	UField* Field = ManagedTypeDefinition->CompileAndGetManagedField();
+	UField* Field = ManagedTypeDefinition->CompileAndGetDefinitionField();
 
 #if WITH_EDITOR
 	if (UCSClass* Class = Cast<UCSClass>(Field))

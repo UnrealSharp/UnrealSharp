@@ -19,21 +19,9 @@ class UCSManager;
 class IAssetTools;
 class FCSScriptBuilder;
 
-enum HotReloadStatus
+struct FCSManagedEditorCallbacks
 {
-    // Not Hot Reloading
-    Inactive,
-    // Actively Hot Reloading
-    Active,
-    // Failed to unload an assembly during Hot Reload
-    FailedToUnload,
-    // Failed to compile the managed code during Hot Reload
-    FailedToCompile
-};
-
-struct FCSManagedUnrealSharpEditorCallbacks
-{
-    FCSManagedUnrealSharpEditorCallbacks() = default;
+    FCSManagedEditorCallbacks() = default;
     
     using FRecompileDirtyProjects = bool(__stdcall*)(void*, TArray<FString>);
     using FRecompileChangedFile = void(__stdcall*)(const TCHAR*, const TCHAR*, void*);
@@ -54,7 +42,6 @@ struct FCSManagedUnrealSharpEditorCallbacks
     FLoadSignature LoadProject = nullptr;
 };
 
-
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
 
 class FUnrealSharpEditorModule : public IModuleInterface
@@ -67,23 +54,14 @@ public:
     virtual void ShutdownModule() override;
     // End
 
-    void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
-
-    FUICommandList& GetUnrealSharpCommands() const { return *UnrealSharpCommands; }
-
-    void OpenSolution();
+    void InitializeManagedEditorCallbacks(FCSManagedEditorCallbacks Callbacks);
+    FCSManagedEditorCallbacks& GetManagedEditorCallbacks() { return ManagedUnrealSharpEditorCallbacks; }
 
     void AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& Arguments = {});
 
-    FCSManagedUnrealSharpEditorCallbacks& GetManagedUnrealSharpEditorCallbacks()
-    {
-        return ManagedUnrealSharpEditorCallbacks;
-    }
-    
-    static bool FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path);
-    static void SuggestProjectSetup();
-
 private:
+    
+    static void SuggestProjectSetup();
 
     static FString SelectArchiveDirectory();
 
@@ -94,6 +72,8 @@ private:
     
     void OnRegenerateSolution();
     void OnOpenSolution();
+    void OpenSolution();
+    
     static void OnPackageProject();
     static void OnMergeManagedSlnAndNativeSln();
 
@@ -105,23 +85,20 @@ private:
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
     static void PackageProject();
 
-    TSharedRef<SWidget> GenerateUnrealSharpMenu();
+    TSharedRef<SWidget> GenerateUnrealSharpToolbar() const;
 
     static void OpenNewProjectDialog();
 
     void RegisterCommands();
-    void RegisterMenu();
+    void RegisterToolbar();
+    
     void RegisterPluginTemplates();
     void UnregisterPluginTemplates();
 
     void LoadNewProject(const FString& ModuleName, const FString& ModulePath) const;
     static void OnProjectLoaded();
 
-    FCSManagedUnrealSharpEditorCallbacks ManagedUnrealSharpEditorCallbacks;
-
-    UCSManagedAssembly* EditorAssembly = nullptr;
+    FCSManagedEditorCallbacks ManagedUnrealSharpEditorCallbacks;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     TArray<TSharedRef<FPluginTemplateDescription>> PluginTemplates;
-
-    UCSManager* Manager = nullptr;
 };

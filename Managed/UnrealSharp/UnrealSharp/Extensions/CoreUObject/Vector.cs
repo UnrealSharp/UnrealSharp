@@ -23,6 +23,13 @@ public partial struct FVector
         Y = xyz;
         Z = xyz;
     }
+
+    public FVector(FVector2D vector)
+    {
+        X = vector.X;
+        Y = vector.Y;
+        Z = 0;
+    }
     
     public static FVector One => new(1, 1, 1);
     public static FVector Zero => new(0, 0, 0);
@@ -33,6 +40,9 @@ public partial struct FVector
     
     public static implicit operator System.Numerics.Vector3(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z);
     public static implicit operator FVector(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
+    public static implicit operator System.Numerics.Vector4(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z, 0f);
+    public static implicit operator FVector(System.Numerics.Vector4 v) => new(v.X, v.Y, v.Z);
+    public static implicit operator FVector(FVector2D v) => new(v.X, v.Y, 0);
 
     /// <summary>
     /// Returns a String representing this Vector instance.
@@ -277,93 +287,6 @@ public partial struct FVector
             value.X * (xz2 - wy2) + value.Y * (yz2 + wx2) + value.Z * (1.0 - xx2 - yy2));
     }
 
-    // All these methods should be inlined as they are implemented
-    // over JIT intrinsics
-
-    /// <summary>
-    /// Adds two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The summed vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Add(FVector left, FVector right)
-    {
-        return left + right;
-    }
-
-    /// <summary>
-    /// Subtracts the second vector from the first.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The difference vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Subtract(FVector left, FVector right)
-    {
-        return left - right;
-    }
-
-    /// <summary>
-    /// Multiplies two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The product vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Multiply(FVector left, FVector right)
-    {
-        return left * right;
-    }
-
-    /// <summary>
-    /// Multiplies a vector by the given scalar.
-    /// </summary>
-    /// <param name="left">The source vector.</param>
-    /// <param name="right">The scalar value.</param>
-    /// <returns>The scaled vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Multiply(FVector left, double right)
-    {
-        return left * right;
-    }
-
-    /// <summary>
-    /// Multiplies a vector by the given scalar.
-    /// </summary>
-    /// <param name="left">The scalar value.</param>
-    /// <param name="right">The source vector.</param>
-    /// <returns>The scaled vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Multiply(double left, FVector right)
-    {
-        return left * right;
-    }
-
-    /// <summary>
-    /// Divides the first vector by the second.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The vector resulting from the division.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Divide(FVector left, FVector right)
-    {
-        return left / right;
-    }
-
-    /// <summary>
-    /// Divides the vector by the given scalar.
-    /// </summary>
-    /// <param name="left">The source vector.</param>
-    /// <param name="divisor">The scalar value.</param>
-    /// <returns>The result of the division.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector Divide(FVector left, double divisor)
-    {
-        return left / divisor;
-    }
-
     /// <summary>
     /// Negates a given vector.
     /// </summary>
@@ -380,6 +303,7 @@ public partial struct FVector
     {
         return (float)(left.X * right.X + left.Y * right.Y + left.Z * right.Z);
     }
+    
     public static FVector operator -(FVector value)
     {
         return new FVector(-value.X, -value.Y, -value.Z);
@@ -455,5 +379,15 @@ public partial struct FVector
     public static FVector operator +(FVector value, float value2)
     {
         return new FVector(value.X + value2, value.Y + value2, value.Z + value2);
+    }
+    
+    public static FVector operator +(double value, FVector value2)
+    {
+        return new FVector(value + value2.X, value + value2.Y, value + value2.Z);
+    }
+    
+    public static FVector operator +(float value, FVector value2)
+    {
+        return new FVector(value + value2.X, value + value2.Y, value + value2.Z);
     }
 }

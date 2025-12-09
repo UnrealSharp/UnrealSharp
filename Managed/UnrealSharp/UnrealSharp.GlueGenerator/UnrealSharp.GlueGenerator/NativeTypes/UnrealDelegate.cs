@@ -36,7 +36,12 @@ public record UnrealDelegate : UnrealType
     
     void ApplyFunctionFlags(bool isMulticast)
     {
-        _delegateSignature.FunctionFlags |= isMulticast ? EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate : EFunctionFlags.Delegate;
+        _delegateSignature.FunctionFlags |= EFunctionFlags.Delegate;
+        
+        if (isMulticast)
+        {
+            _delegateSignature.FunctionFlags |= EFunctionFlags.MulticastDelegate;
+        }
     }
     
     [Inspect("UnrealSharp.Attributes.UMultiDelegateAttribute", "UMultiDelegateAttribute", "Global")]

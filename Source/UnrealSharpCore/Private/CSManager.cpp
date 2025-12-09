@@ -38,13 +38,13 @@
 
 UCSManager* UCSManager::Instance = nullptr;
 
-UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace Namespace)
+UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace& Namespace)
 {
 	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
 	{
 		return NativePackage;
 	}
-
+	
 	FCSNamespace CurrentNamespace = Namespace;
 	TArray<FCSNamespace> ParentNamespaces;
 	while (true)
@@ -304,7 +304,7 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	}
 	
 	FoundHandles->Empty();
-	ManagedInterfaceWrappers.Remove(Index);
+	ManagedInterfaceWrappers.RemoveByHash(Index, Index);
 }
 
 void UCSManager::OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason)

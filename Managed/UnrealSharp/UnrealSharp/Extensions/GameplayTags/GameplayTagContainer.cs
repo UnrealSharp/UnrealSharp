@@ -1,9 +1,7 @@
-using System.Runtime.InteropServices;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
 
-[StructLayout(LayoutKind.Sequential)]
 public partial struct FGameplayTagContainer
 {
     public FGameplayTagContainer(FGameplayTag[] tags, FGameplayTag[]? parentTags = null)
@@ -17,13 +15,11 @@ public partial struct FGameplayTagContainer
     {
     }
 
-    public FGameplayTagContainer(params FGameplayTag[] tags) 
-        : this(tags, null)
+    public FGameplayTagContainer(params FGameplayTag[] tags) : this(tags, null)
     {
     }
 
-    public FGameplayTagContainer(FGameplayTag tag)
-        : this([tag])
+    public FGameplayTagContainer(FGameplayTag tag) : this([tag])
     {
     }
     
@@ -129,6 +125,33 @@ public partial struct FGameplayTagContainer
     /// </summary>
     /// <returns>True if the container is valid</returns>
     public bool IsValid => UCSGameplayTagContainerExtensions.IsValid(this);
+
+    /// <summary>
+    /// Iterate over each tag in the container and perform the specified action
+    /// </summary>
+    /// <param name="action">The action to perform on each tag</param>
+    public void ForEachTag(Action<FGameplayTag> action)
+    {
+        foreach (FGameplayTag tag in GameplayTags)
+        {
+            action(tag);
+        }
+    }
+    
+    /// <summary>
+    /// Iterate over each tag in the container and perform the specified function until it returns false
+    /// </summary>
+    /// <param name="func">The function to perform on each tag, returning false to break the loop</param>
+    public void ForEachTagWithBreak(Func<FGameplayTag, bool> func)
+    {
+        foreach (FGameplayTag tag in GameplayTags)
+        {
+            if (!func(tag))
+            {
+                break;
+            }
+        }
+    }
     
     public override string ToString()
     {

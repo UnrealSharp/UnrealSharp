@@ -43,9 +43,7 @@ struct FCSNodeInfo
 class FCSSimpleConstructionScriptCompiler
 {
 public:
-	static inline FString DefaultSceneRoot_UnrealSharp = TEXT("DefaultSceneRoot_UnrealSharp");
-	
-	UNREALSHARPCORE_API static void BuildSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData);
+	UNREALSHARPCORE_API static void CompileSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData);
 private:
 	static USCS_Node* CreateNode(USimpleConstructionScript* SimpleConstructionScript, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName, FString* OptionalName = nullptr);
 	static void UpdateTemplateComponent(USCS_Node* Node, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
@@ -57,4 +55,6 @@ private:
 	static USCS_Node* FindRootComponentNode(USimpleConstructionScript* SimpleConstructionScript);
 
 	static void TryFindOrPromoteRootComponent(USimpleConstructionScript* SimpleConstructionScript, FCSRootNodeInfo& RootComponentNode, UBlueprintGeneratedClass* Outer, const TArray<FCSNodeInfo>& AllNodes);
+	
+	static inline FString DefaultSceneRoot_UnrealSharp = TEXT("DefaultSceneRoot_UnrealSharp");
 };

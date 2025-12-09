@@ -14,7 +14,7 @@ UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefin
 		return nullptr;
 	}
 	
-	UField* ExistingType = ManagedTypeDefinition->GetManagedField();
+	UField* ExistingType = ManagedTypeDefinition->GetDefinitionField();
 	if (IsValid(ExistingType))
 	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Type: {0} already exists, skipping creation.", *ExistingType->GetName());
@@ -40,7 +40,7 @@ void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedPtr<FCS
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::TriggerRecompile);
 	
-	UField* TypeToRecompile = ManagedTypeDefinition->GetManagedField();
+	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinitionField();
 	
 	if (!IsValid(TypeToRecompile))
 	{

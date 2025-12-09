@@ -40,6 +40,5 @@ public:
 	static void TryAddPropertyAsFieldNotify(const FCSPropertyReflectionData& PropertyReflectionData, UBlueprintGeneratedClass* Class);
 
 private:
-	static TArray<TObjectPtr<UCSPropertyGenerator>> PropertyGenerators;
 	static TMap<uint32, UCSPropertyGenerator*> PropertyGeneratorMap;
 };

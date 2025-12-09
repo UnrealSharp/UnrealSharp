@@ -60,7 +60,7 @@ public static class Program
                 DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
             }
             
-            USharpBuildToolUtilities.CreateGlueProjects();
+            GlueModuleFactory.CreateGlueProjects();
         }
         catch (Exception ex)
         {

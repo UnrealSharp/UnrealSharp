@@ -1,5 +1,4 @@
 #include "CSCompilerContext.h"
-#include "BlueprintActionDatabase.h"
 #include "CSManager.h"
 #include "ISettingsModule.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
@@ -72,7 +71,7 @@ void FCSCompilerContext::CreateClassVariablesFromBlueprint()
 		NewClass->PropertyGuids.Add(PropertyName, PropertyGuid);
 	});
 	
-	TryValidateSimpleConstructionScript();
+	ValidateSimpleConstructionScript();
 
 	// Create dummy variables for the blueprint.
 	// They should not get compiled, just there for metadata for different Unreal modules.
@@ -124,7 +123,7 @@ void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 	UCSManagedClassCompiler::SetupDefaultTickSettings(DefaultObject, NewClass);
 }
 
-void FCSCompilerContext::TryValidateSimpleConstructionScript() const
+void FCSCompilerContext::ValidateSimpleConstructionScript() const
 {
 	UCSClass* MainClass = GetMainClass();
 	
@@ -137,7 +136,7 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 	
 	const TArray<FCSPropertyReflectionData>& Properties = GetReflectionData()->Properties;
 	
-	FCSSimpleConstructionScriptCompiler::BuildSimpleConstructionScript(MainClass, &MainClass->SimpleConstructionScript, Properties);
+	FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(MainClass, &MainClass->SimpleConstructionScript, Properties);
 	USimpleConstructionScript* SimpleConstructionScript = MainClass->SimpleConstructionScript;
 	Blueprint->SimpleConstructionScript = SimpleConstructionScript;
 
@@ -177,12 +176,6 @@ void FCSCompilerContext::TryValidateSimpleConstructionScript() const
 void FCSCompilerContext::GenerateFunctions() const
 {
 	TSharedPtr<const FCSClassReflectionData> ReflectionData = GetReflectionData();
-
-	if (ReflectionData->Overrides.IsEmpty() && ReflectionData->Functions.IsEmpty())
-	{
-		return;
-	}
-
 	FCSFunctionFactory::GenerateVirtualFunctions(NewClass, ReflectionData);
 	FCSFunctionFactory::GenerateFunctions(NewClass, ReflectionData->Functions);
 }
@@ -236,7 +229,23 @@ void FCSCompilerContext::TryDeinitializeAsDeveloperSettings(UObject* Settings) c
 
 void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 {
-	if (!NeedsToFakeNativeClass(Class))
+	static TArray ParentClasses =
+	{
+		UBTTask_BlueprintBase::StaticClass(),
+		UStateTreeTaskBlueprintBase::StaticClass(),
+	};
+
+	bool bIsChildOfSpecialClass = false;
+	for (UClass* ParentClass : ParentClasses)
+	{
+		if (Class->IsChildOf(ParentClass))
+		{
+			bIsChildOfSpecialClass = true;
+			break;
+		}
+	}
+	
+	if (!bIsChildOfSpecialClass)
 	{
 		return;
 	}
@@ -266,25 +275,6 @@ void FCSCompilerContext::ApplyMetaData() const
 	}
 
 	FCSMetaDataUtils::ApplyMetaData(GetReflectionData()->MetaData, NewClass);
-}
-
-bool FCSCompilerContext::NeedsToFakeNativeClass(UClass* Class)
-{
-	static TArray ParentClasses =
-	{
-		UBTTask_BlueprintBase::StaticClass(),
-		UStateTreeTaskBlueprintBase::StaticClass(),
-	};
-
-	for (UClass* ParentClass : ParentClasses)
-	{
-		if (Class->IsChildOf(ParentClass))
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void FCSCompilerContext::CreateDummyBlueprintVariables(const TArray<FCSPropertyReflectionData>& Properties) const

@@ -12,7 +12,7 @@ class UFUnrealSharpEditorModuleExporter : public UObject
 	GENERATED_BODY()
 public:
 	UNREALSHARP_FUNCTION()
-	static void InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks);
+	static void InitializeUnrealSharpEditorCallbacks(FCSManagedEditorCallbacks Callbacks);
 
 	UNREALSHARP_FUNCTION()
 	static void GetProjectPaths(TArray<FString>* Paths);

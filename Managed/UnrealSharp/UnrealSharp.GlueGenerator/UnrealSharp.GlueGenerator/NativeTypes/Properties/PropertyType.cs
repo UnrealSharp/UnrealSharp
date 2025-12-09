@@ -20,15 +20,12 @@ public enum PropertyType : byte
     Float,
 
     Enum,
-
-    Interface,
+    
     Struct,
     Class,
 
     Object,
-    ObjectPtr,
     DefaultComponent,
-    LazyObject,
     WeakObject,
 
     ScriptInterface,
@@ -38,7 +35,6 @@ public enum PropertyType : byte
 
     Delegate,
     MulticastInlineDelegate,
-    MulticastSparseDelegate,
     SignatureDelegate,
 
     Array,
@@ -49,10 +45,4 @@ public enum PropertyType : byte
     String,
     Name,
     Text,
-	
-    GameplayTag,
-    GameplayTagContainer,
-
-    InternalNativeFixedSizeArray,
-    InternalManagedFixedSizeArray
 };

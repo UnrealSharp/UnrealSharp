@@ -7,11 +7,11 @@ using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
-public readonly struct ProjectDirInfo
+public struct ProjectDirInfo
 {
     private readonly string _projectName;
     private readonly string _projectDirectory;
-    public HashSet<string>? Dependencies { get; }
+    public HashSet<string>? Dependencies { get; set; }
 
     public ProjectDirInfo(string projectName, string projectDirectory, HashSet<string>? dependencies = null)
     {

@@ -12,7 +12,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflect
 	NewDefinition->OwningAssembly = InOwningAssembly;
 	NewDefinition->SetReflectionData(InReflectionData);
 	NewDefinition->Compiler = Compiler;
-	NewDefinition->ManagedField = TStrongObjectPtr(Compiler->CreateField(NewDefinition));
+	NewDefinition->DefinitionField = TStrongObjectPtr(Compiler->CreateField(NewDefinition));
 	NewDefinition->MarkStructurallyDirty();
 	
 	return NewDefinition;
@@ -21,7 +21,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflect
 TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeField(UField* InField, UCSManagedAssembly* InOwningAssembly)
 {
 	TSharedPtr<FCSManagedTypeDefinition> NewDefinition = MakeShared<FCSManagedTypeDefinition>();
-	NewDefinition->ManagedField = TStrongObjectPtr(InField);
+	NewDefinition->DefinitionField = TStrongObjectPtr(InField);
 	NewDefinition->OwningAssembly = InOwningAssembly;
 	NewDefinition->TypeGCHandle = InOwningAssembly->FindTypeHandle(FCSFieldName(InField));
 	NewDefinition->bHasChangedStructure = false;
@@ -34,7 +34,7 @@ TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 {
 	if (!TypeGCHandle.IsValid() || TypeGCHandle->IsNull())
 	{
-		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName(ManagedField.Get());
+		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName(DefinitionField.Get());
 		TypeGCHandle = OwningAssembly->FindTypeHandle(FieldName);
 	}
 	
@@ -73,7 +73,7 @@ void FCSManagedTypeDefinition::MarkStructurallyDirty()
 	FCSManagedTypeDefinitionEvents::OnStructureChangedDelegate.Broadcast(SharedThis(this));
 }
 
-UField* FCSManagedTypeDefinition::CompileAndGetManagedField()
+UField* FCSManagedTypeDefinition::CompileAndGetDefinitionField()
 {
 	if (bHasChangedStructure)
 	{
@@ -81,5 +81,5 @@ UField* FCSManagedTypeDefinition::CompileAndGetManagedField()
 		Compiler->RecompileManagedTypeDefinition(SharedThis(this));
 	}
 	
-	return ManagedField.Get();
+	return DefinitionField.Get();
 }

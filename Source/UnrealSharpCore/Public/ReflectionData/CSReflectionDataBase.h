@@ -70,6 +70,7 @@
 struct FCSReflectionDataBase
 {
 	virtual ~FCSReflectionDataBase() = default;
+protected:
 	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) = 0;
 
 	static bool ReadBoolField(bool& Dest, const TSharedPtr<FJsonObject>& Object, const FString& FieldName, bool bIsOptional = false)

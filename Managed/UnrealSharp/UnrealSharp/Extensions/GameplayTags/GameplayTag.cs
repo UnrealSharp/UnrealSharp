@@ -8,6 +8,7 @@ public partial struct FGameplayTag
     public FGameplayTag(FName tagName)
     {
         this = UCSGameplayTagExtensions.RequestGameplayTag(tagName);
+        
         if (!IsValid)
         {
             throw new Exception($"Failed to create GameplayTag with name {tagName}");
@@ -74,5 +75,15 @@ public partial struct FGameplayTag
     public static bool operator !=(FGameplayTag lhs, FGameplayTag rhs)
     {
         return !(lhs == rhs);
+    }
+    
+    public static implicit operator FGameplayTag(string tagName)
+    {
+        return new FGameplayTag(tagName);
+    }
+    
+    public static implicit operator FGameplayTag(FName gameplayTag)
+    {
+        return new FGameplayTag(gameplayTag);
     }
 }

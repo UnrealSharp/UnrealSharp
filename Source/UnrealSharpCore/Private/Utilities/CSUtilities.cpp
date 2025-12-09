@@ -10,7 +10,7 @@
 #include "ReflectionData/CSClassReflectionData.h"
 #include "ReflectionData/CSEnumReflectionData.h"
 
-bool FCSUtilities::ResolveCompilerAndReflectionDataForFieldType(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData)
+bool FCSUtilities::ResolveCompilerAndReflectionData(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData)
 {
 	switch (FieldType)
 	{

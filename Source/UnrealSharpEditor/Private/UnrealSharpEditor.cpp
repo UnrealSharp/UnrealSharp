@@ -25,6 +25,7 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
+#include "Utilities/CSTemplateUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -37,7 +38,6 @@ FUnrealSharpEditorModule& FUnrealSharpEditorModule::Get()
 
 void FUnrealSharpEditorModule::StartupModule()
 {
-	Manager = &UCSManager::GetOrCreate();
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
@@ -57,7 +57,7 @@ void FUnrealSharpEditorModule::StartupModule()
 		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
 		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
 
-		Manager->ForEachManagedPackage([&AssetToolsRef](const UPackage* Package)
+		UCSManager::Get().ForEachManagedPackage([&AssetToolsRef](const UPackage* Package)
 		{
 			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
 		});
@@ -66,7 +66,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	FCSStyle::Initialize();
 
 	RegisterCommands();
-	RegisterMenu();
+	RegisterToolbar();
     RegisterPluginTemplates();
 
 	UCSManager& CSharpManager = UCSManager::Get();
@@ -80,7 +80,7 @@ void FUnrealSharpEditorModule::ShutdownModule()
     UnregisterPluginTemplates();
 }
 
-void FUnrealSharpEditorModule::InitializeUnrealSharpEditorCallbacks(FCSManagedUnrealSharpEditorCallbacks Callbacks)
+void FUnrealSharpEditorModule::InitializeManagedEditorCallbacks(FCSManagedEditorCallbacks Callbacks)
 {
 	ManagedUnrealSharpEditorCallbacks = Callbacks;
 }
@@ -305,7 +305,7 @@ FString FUnrealSharpEditorModule::SelectArchiveDirectory()
 	return FString();
 }
 
-TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpMenu()
+TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpToolbar() const
 {
 	const FCSUnrealSharpEditorCommands& CSCommands = FCSUnrealSharpEditorCommands::Get();
 	FMenuBuilder MenuBuilder(true, UnrealSharpCommands);
@@ -423,7 +423,7 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	Commands->Append(UnrealSharpCommands.ToSharedRef());
 }
 
-void FUnrealSharpEditorModule::RegisterMenu()
+void FUnrealSharpEditorModule::RegisterToolbar()
 {
 	UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
 	FToolMenuSection& Section = ToolbarMenu->FindOrAddSection("PluginTools");
@@ -431,7 +431,7 @@ void FUnrealSharpEditorModule::RegisterMenu()
 	FToolMenuEntry Entry = FToolMenuEntry::InitComboButton(
 		"UnrealSharp",
 		FUIAction(),
-		FOnGetContent::CreateLambda([this]() { return GenerateUnrealSharpMenu(); }),
+		FOnGetContent::CreateLambda([this]() { return GenerateUnrealSharpToolbar(); }),
 		LOCTEXT("UnrealSharp_Label", "UnrealSharp"),
 		LOCTEXT("UnrealSharp_Tooltip", "List of all UnrealSharp actions"),
 		TAttribute<FSlateIcon>::CreateLambda([this]()
@@ -479,7 +479,7 @@ void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const F
 {
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
 	
-	UCSManagedAssembly* LoadedAssembly = Manager->LoadUserAssemblyByName(*ModuleName);
+	UCSManagedAssembly* LoadedAssembly = UCSManager::Get().LoadUserAssemblyByName(*ModuleName);
 	if (!LoadedAssembly || !LoadedAssembly->IsValidAssembly())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to load newly created project {ModuleName}", *ModuleName);
@@ -509,7 +509,7 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
 	FString ModuleFilePath = FPaths::Combine(ProjectFolder, ModuleName + ".cs");
 	
-	FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
+	FCSTemplateUtilities::FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
 
 	Arguments.Add(TEXT("NewProjectName"), ModuleName);
 	Arguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
@@ -527,32 +527,6 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	
 	FString ModulePath = FPaths::Combine(ProjectFolder, ModuleName + TEXT(".csproj"));
 	LoadNewProject(ModuleName, ModulePath);
-}
-
-bool FUnrealSharpEditorModule::FillTemplateFile(const FString& TemplateName, TMap<FString, FString>& Replacements, const FString& Path)
-{
-	const FString FullFileName = FCSProcHelper::GetPluginDirectory() / TEXT("Templates") / TemplateName + TEXT(".cs.template");
-
-	FString OutTemplate;
-	if (!FFileHelper::LoadFileToString(OutTemplate, *FullFileName))
-	{
-		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to load template file %s"), *FullFileName);
-		return false;
-	}
-
-	for (const TPair<FString, FString>& Replacement : Replacements)
-	{
-		FString ReplacementKey = TEXT("%") + Replacement.Key + TEXT("%");
-		OutTemplate = OutTemplate.Replace(*ReplacementKey, *Replacement.Value);
-	}
-
-	if (!FFileHelper::SaveStringToFile(OutTemplate, *Path))
-	{
-		UE_LOG(LogUnrealSharpEditor, Error, TEXT("Failed to save %s when trying to create a template"), *Path);
-		return false;
-	}
-
-	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

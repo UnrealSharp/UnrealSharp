@@ -5,6 +5,7 @@
 #include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "CSFieldType.h"
+#include "Misc/Paths.h"
 #include "Utilities/CSClassUtilities.h"
 #include "Utilities/CSUtilities.h"
 #include "CSManagedAssembly.generated.h"
@@ -114,7 +115,7 @@ public:
 		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindManagedTypeDefinition(FieldName);
 		if (ManagedTypeDefinition.IsValid())
 		{
-			return Cast<T>(ManagedTypeDefinition->CompileAndGetManagedField());
+			return Cast<T>(ManagedTypeDefinition->CompileAndGetDefinitionField());
 		}
 		
 		return FCSUtilities::FindField<T>(FieldName);
