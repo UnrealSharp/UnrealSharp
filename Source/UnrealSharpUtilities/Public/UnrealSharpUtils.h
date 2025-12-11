@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "UnrealSharpUtilities.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 #define UE_VERSION_VAL(Major, Minor) ((Major) * 10000 + (Minor))
@@ -25,6 +26,12 @@ namespace FCSUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromString(const FString& Name)
 	{
+		if (Name.IsEmpty())
+		{
+			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Tried to construct a GUID from an empty string. Returning an invalid GUID.");
+			return FGuid();
+		}
+		
 		const uint32 BufferLength = Name.Len() * sizeof(Name[0]); 
 		uint32 HashBuffer[5]; 
 		FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer)); 
