@@ -48,13 +48,17 @@ private:
 	static USCS_Node* CreateNode(USimpleConstructionScript* SimpleConstructionScript, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName, FString* OptionalName = nullptr);
 	static void UpdateTemplateComponent(USCS_Node* Node, UStruct* GeneratedClass, UClass* NewComponentClass, FName NewComponentVariableName);
 	static void UpdateChildren(UClass* Outer, USCS_Node* Node);
-	static bool TryFindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS);
+	static USCS_Node* GetParentNode(FName ParentComponentName, const UClass* ClassToSearch, const TArray<FCSNodeInfo>& AllNodes);
 	static bool IsRootNode(const TSharedPtr<FCSDefaultComponentType>& DefaultComponentData, const USCS_Node* Node);
 	
 	static void ForEachSimpleConstructionScript(USimpleConstructionScript* SimpleConstructionScript, TFunctionRef<bool(USimpleConstructionScript*)> Callback);
 	static USCS_Node* FindRootComponentNode(USimpleConstructionScript* SimpleConstructionScript);
 
 	static void TryFindOrPromoteRootComponent(USimpleConstructionScript* SimpleConstructionScript, FCSRootNodeInfo& RootComponentNode, UBlueprintGeneratedClass* Outer, const TArray<FCSNodeInfo>& AllNodes);
+	
+	static void DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS, const FCSAttachmentNode& AttachmentNode);
+	
+	static USCS_Node* GetNodeByName(const TArray<FCSNodeInfo>& AllNodes, FName NodeName);
 	
 	static inline FString DefaultSceneRoot_UnrealSharp = TEXT("DefaultSceneRoot_UnrealSharp");
 };

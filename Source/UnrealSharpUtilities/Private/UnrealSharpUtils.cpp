@@ -74,11 +74,6 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 	Struct->RefLink = nullptr;
 }
 
-FGuid FCSUnrealSharpUtils::ConstructGUIDFromName(const FName& Name)
-{
-	return ConstructGUIDFromString(Name.ToString());
-}
-
 FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
 {
 	if (Path.IsEmpty())
@@ -92,17 +87,4 @@ FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
 	}
 
 	return FString::Printf(TEXT("\"%s\""), *Path);
-}
-
-bool FCSUnrealSharpUtils::IsEngineStartingUp()
-{
-	return GIsInitialLoad;
-}
-
-FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
-{
-	const uint32 BufferLength = Name.Len() * sizeof(Name[0]);
-	uint32 HashBuffer[5];
-	FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer));
-	return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]); 
 }

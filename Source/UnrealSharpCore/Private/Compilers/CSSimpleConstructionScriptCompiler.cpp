@@ -33,7 +33,7 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 	TArray<FCSAttachmentNode> AttachmentNodes;
 	TArray<FCSNodeInfo> AllNodes;
 	
-	FCSRootNodeInfo RootComponentNode;
+	FCSRootNodeInfo ActorRootComponentInfo;
 	
 	for (const FCSPropertyReflectionData& PropertyReflectionData : PropertiesReflectionData)
 	{
@@ -80,11 +80,12 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		}
 		else if (bWasRootNode && bIsRootNodeNow)
 		{
-			if (!RootComponentNode.IsValid() && Node->ComponentClass->IsChildOf<USceneComponent>())
+			if (!ActorRootComponentInfo.IsValid() && Node->ComponentClass->IsChildOf<USceneComponent>())
 			{
-				RootComponentNode = FCSRootNodeInfo(Node, CurrentSCS);
+				ActorRootComponentInfo = FCSRootNodeInfo(Node, CurrentSCS);
 			}
 			
+			// Still a root node, nothing else to do. No attachment needed.
 			continue;
 		}
 
@@ -100,14 +101,14 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		return;
 	}
 
-	if (!RootComponentNode.IsValid())
+	if (!ActorRootComponentInfo.IsValid())
 	{
 		// User has not specified a root component, try to find or promote one
-		TryFindOrPromoteRootComponent(CurrentSCS, RootComponentNode, GeneratedClass, AllNodes);
+		TryFindOrPromoteRootComponent(CurrentSCS, ActorRootComponentInfo, GeneratedClass, AllNodes);
 	}
 
 	USCS_Node* DefaultSceneRootComponent = FindObject<USCS_Node>(CurrentSCS, *DefaultSceneRoot_UnrealSharp);
-	if (IsValid(DefaultSceneRootComponent) && RootComponentNode.Name != DefaultSceneRootComponent->GetVariableName())
+	if (IsValid(DefaultSceneRootComponent) && ActorRootComponentInfo.Name != DefaultSceneRootComponent->GetVariableName())
 	{
 		// New user-defined root component has been found, remove the default one
 		CurrentSCS->RemoveNode(DefaultSceneRootComponent, false);
@@ -122,48 +123,51 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 			continue;
 		}
 		
-		bool FoundValidNativeParent = false;
+		// Start by assuming the parent is the actor's root component, then try to find a better match
+		FCSRootNodeInfo CurrentParentComponentInfo = ActorRootComponentInfo;
+		
+		bool bFoundValidNativeParent = false;
 		if (const FObjectProperty* ObjectProperty = FindFProperty<FObjectProperty>(Outer, AttachmentNode.AttachToComponentName))
 		{
 			UClass* ParentClass = ObjectProperty->GetOwnerClass();
 			
-			if (IsValid(ParentClass) && FCSClassUtilities::IsNativeClass(ParentClass))
+			if (FCSClassUtilities::IsNativeClass(ParentClass))
 			{
 				UObject* DefaultObject = ParentClass->GetDefaultObject();
 				UObject* Component = ObjectProperty->GetObjectPropertyValue_InContainer(DefaultObject);
 
-				if (ObjectProperty && IsValid(Component) && Component->IsA<USceneComponent>())
+				if (IsValid(Component) && Component->IsA<USceneComponent>())
 				{
-					RootComponentNode = FCSRootNodeInfo(ObjectProperty, static_cast<USceneComponent*>(Component));
-					FoundValidNativeParent = true;
+					CurrentParentComponentInfo = FCSRootNodeInfo(ObjectProperty, static_cast<USceneComponent*>(Component));
+					bFoundValidNativeParent = true;
 				}
 			}
 		}
 		
-		if (!FoundValidNativeParent)
+		if (!bFoundValidNativeParent)
 		{
-			USimpleConstructionScript* ParentSimpleConstructionComponent;
-			USCS_Node* ParentNode;
-			if (TryFindParentNodeAndComponent(AttachmentNode.AttachToComponentName, Outer, ParentNode, ParentSimpleConstructionComponent))
+			USCS_Node* ParentNode = GetParentNode(AttachmentNode.AttachToComponentName, Outer, AllNodes);
+			
+			if (IsValid(ParentNode))
 			{
-				RootComponentNode = FCSRootNodeInfo(ParentNode, ParentSimpleConstructionComponent);
+				CurrentParentComponentInfo = FCSRootNodeInfo(ParentNode, ParentNode->GetSCS());
 			}
 		}
 		
 		USCS_Node* NodeToAttach = AttachmentNode.Node;
 		
-		if (RootComponentNode.IsNative || RootComponentNode.IsInOtherSCS)
+		if (CurrentParentComponentInfo.IsNative || CurrentParentComponentInfo.IsInOtherSCS)
 		{
-			NodeToAttach->bIsParentComponentNative = RootComponentNode.IsNative;
-			NodeToAttach->ParentComponentOrVariableName = RootComponentNode.Name;
-			NodeToAttach->ParentComponentOwnerClassName = RootComponentNode.OwningClass->GetFName();
+			NodeToAttach->bIsParentComponentNative = CurrentParentComponentInfo.IsNative;
+			NodeToAttach->ParentComponentOrVariableName = CurrentParentComponentInfo.Name;
+			NodeToAttach->ParentComponentOwnerClassName = CurrentParentComponentInfo.OwningClass->GetFName();
 
-			// Is considered a root node if parent is native or in another SCS
+			// A node is considered a root node if parent is native or in another SCS
 			CurrentSCS->AddNode(NodeToAttach);
 		}
 		else
 		{
-			USCS_Node* RootNode = CurrentSCS->FindSCSNode(RootComponentNode.Name);
+			USCS_Node* RootNode = GetNodeByName(AllNodes, CurrentParentComponentInfo.Name);
 				
 			if (!RootNode->ChildNodes.Contains(NodeToAttach))
 			{
@@ -171,34 +175,8 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 				RootNode->AddChildNode(NodeToAttach, bAddToAllNodes);
 			}
 		}
-
-#if WITH_EDITOR
-		const TArray<USCS_Node*>& AllRegisteredNodes = CurrentSCS->GetAllNodes();
-		for (USCS_Node* NodeIterator : AllRegisteredNodes)
-		{
-			FName ParentComponentName = NodeIterator->GetVariableName();
-
-			if (NodeIterator == NodeToAttach)
-			{
-				continue;
-			}
-
-			if (AttachmentNode.AttachToComponentName == NAME_None || ParentComponentName != AttachmentNode.AttachToComponentName)
-			{
-				continue;
-			}
-
-			if (NodeIterator->ChildNodes.Contains(NodeToAttach))
-			{
-				// The node is already correctly attached
-				break;
-			}
-			
-			// The attachment has changed, remove the node from the old parent
-			NodeIterator->RemoveChildNode(NodeToAttach, false);
-			break;
-		}
-#endif
+		
+		DetachNodeFromOldParent(NodeToAttach, CurrentSCS, AttachmentNode);
 	}
 }
 
@@ -307,9 +285,16 @@ void FCSSimpleConstructionScriptCompiler::UpdateChildren(UClass* Outer, USCS_Nod
 #endif
 }
 
-bool FCSSimpleConstructionScriptCompiler::TryFindParentNodeAndComponent(FName ParentComponentName, UClass* ClassToSearch, USCS_Node*& OutNode, USimpleConstructionScript*& OutSCS)
+USCS_Node* FCSSimpleConstructionScriptCompiler::GetParentNode(FName ParentComponentName, const UClass* ClassToSearch, const TArray<FCSNodeInfo>& AllNodes)
 {
-	for (UClass* CurrentClass = ClassToSearch; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
+	USCS_Node* ParentNode = GetNodeByName(AllNodes, ParentComponentName);
+	
+	if (IsValid(ParentNode))
+	{
+		return ParentNode;
+	}
+	
+	for (UClass* CurrentClass = ClassToSearch->GetSuperClass(); CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
 		UBlueprintGeneratedClass* CurrentGeneratedClass = Cast<UBlueprintGeneratedClass>(CurrentClass);
 		if (!IsValid(CurrentGeneratedClass))
@@ -337,18 +322,17 @@ bool FCSSimpleConstructionScriptCompiler::TryFindParentNodeAndComponent(FName Pa
 			continue;
 		}
 		
-		USCS_Node* FoundNode = CurrentSCS->FindSCSNode(ParentComponentName);
-		if (!IsValid(FoundNode))
+		USCS_Node* ParentSCSNode = CurrentSCS->FindSCSNode(ParentComponentName);
+		if (!IsValid(ParentSCSNode))
 		{
 			continue;
 		}
-
-		OutNode = FoundNode;
-		OutSCS = CurrentSCS;
-		return true;
+		
+		ParentNode = ParentSCSNode;
+		break;
 	}
 
-	return false;
+	return ParentNode;
 }
 
 bool FCSSimpleConstructionScriptCompiler::IsRootNode(const TSharedPtr<FCSDefaultComponentType>& DefaultComponentData, const USCS_Node* Node)
@@ -429,7 +413,7 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 		// See if the actor's default root component can be used
 		UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(Outer);
 		AActor* DefaultActor = Cast<AActor>(FirstNativeClass->GetDefaultObject());
-			
+		
 		if (IsValid(DefaultActor) && IsValid(DefaultActor->GetRootComponent()))
 		{
 			USceneComponent* RootComponent = DefaultActor->GetRootComponent();
@@ -437,9 +421,9 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 			for (TFieldIterator<FObjectProperty> It (FirstNativeClass); It; ++It)
 			{
 				FObjectProperty* Property = *It;
-				UObject* Value = Property->GetObjectPropertyValue_InContainer(DefaultActor);
+				UObject* ObjectInProperty = Property->GetObjectPropertyValue_InContainer(DefaultActor);
 					
-				if (Value != RootComponent)
+				if (ObjectInProperty != RootComponent)
 				{
 					continue;
 				}
@@ -477,4 +461,52 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 		SimpleConstructionScript->AddNode(Node);
 		RootComponentNode = FCSRootNodeInfo(Node, SimpleConstructionScript);
 	}
+}
+
+void FCSSimpleConstructionScriptCompiler::DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS, const FCSAttachmentNode& AttachmentNode)
+{
+#if WITH_EDITOR
+	const TArray<USCS_Node*>& AllRegisteredNodes = CurrentSCS->GetAllNodes();
+	for (USCS_Node* NodeIterator : AllRegisteredNodes)
+	{
+		FName ParentComponentName = NodeIterator->GetVariableName();
+
+		if (NodeIterator == Node)
+		{
+			continue;
+		}
+
+		if (AttachmentNode.AttachToComponentName == NAME_None || ParentComponentName != AttachmentNode.AttachToComponentName)
+		{
+			continue;
+		}
+
+		if (NodeIterator->ChildNodes.Contains(Node))
+		{
+			// The node is already correctly attached
+			break;
+		}
+			
+		// The attachment has changed, remove the node from the old parent
+		NodeIterator->RemoveChildNode(Node, false);
+		break;
+	}
+#endif
+}
+
+USCS_Node* FCSSimpleConstructionScriptCompiler::GetNodeByName(const TArray<FCSNodeInfo>& AllNodes, FName NodeName)
+{
+	USCS_Node* FoundNode = nullptr;
+	
+	for (const FCSNodeInfo& NodeInfo : AllNodes)
+	{
+		if (NodeInfo.Node->GetVariableName() != NodeName)
+		{	
+			continue;
+		}
+		
+		FoundNode = NodeInfo.Node;
+	}
+
+	return FoundNode;
 }

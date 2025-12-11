@@ -23,12 +23,22 @@ namespace FCSUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
 
-	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
-	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromName(const FName& Name);
-
+	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromString(const FString& Name)
+	{
+		const uint32 BufferLength = Name.Len() * sizeof(Name[0]); 
+		uint32 HashBuffer[5]; 
+		FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer)); 
+		return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]);
+	}
+	
+	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromName(const FName& Name)
+	{
+		return ConstructGUIDFromString(Name.ToString());
+	}
+	
+	UNREALSHARPUTILITIES_API inline bool IsEngineStartingUp() { return GIsInitialLoad; }
+	
 	UNREALSHARPUTILITIES_API FString MakeQuotedPath(const FString& Path);
-
-	UNREALSHARPUTILITIES_API bool IsEngineStartingUp();
 
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)
