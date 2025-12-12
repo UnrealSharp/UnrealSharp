@@ -52,6 +52,8 @@ public static class Program
             CSharpExporter.StartExport();
             stopwatch.Stop();
             
+            FileExporter.CleanOldExportedFiles();
+            
             Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
             if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)

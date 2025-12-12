@@ -123,10 +123,16 @@ public static class FileExporter
     public static void CleanOldExportedFiles()
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
+        
         CleanFilesInDirectories(Program.EngineGluePath);
         
-        foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
+        foreach (ProjectDirInfo pluginDirectory in PluginUtilities.PluginInfo.Values)
         {
+            if (pluginDirectory.IsPartOfEngine)
+            {
+                continue;
+            }
+            
             CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory, true);
         }
     }
@@ -184,7 +190,11 @@ public static class FileExporter
         while (!fileInput.EndOfStream)
         {
             string? line = fileInput.ReadLine();
-            if (string.IsNullOrWhiteSpace(line)) continue;
+            
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
 
             ignoredDirectories.Add(line.Trim());
         }
@@ -201,7 +211,7 @@ public static class FileExporter
         string[] directories = Directory.GetDirectories(path);
         HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
 
-        foreach (var directory in directories)
+        foreach (string directory in directories)
         {
             if (ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
             {
@@ -217,7 +227,7 @@ public static class FileExporter
             int removedFiles = 0;
             string[] files = Directory.GetFiles(directory);
 
-            foreach (var file in files)
+            foreach (string file in files)
             {
                 if (ChangedFiles.Contains(file) || UnchangedFiles.Contains(file))
                 {

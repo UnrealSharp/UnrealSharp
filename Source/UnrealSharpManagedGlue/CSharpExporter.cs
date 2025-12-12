@@ -72,8 +72,6 @@ public static class CSharpExporter
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
         string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
         OutputTypeRules(typeInfoFilePath);
-        
-        FileExporter.CleanOldExportedFiles();
     }
 
     static bool HasChangedGeneratorSourceRecently()
