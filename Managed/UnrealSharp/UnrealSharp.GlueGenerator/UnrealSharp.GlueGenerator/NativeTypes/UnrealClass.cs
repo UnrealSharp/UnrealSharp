@@ -47,7 +47,7 @@ public enum EClassFlags : ulong
 [Inspector]
 public record UnrealClass : UnrealClassBase
 {
-    public override int FieldTypeValue => 0;
+    public override FieldType FieldType => FieldType.Class;
     
     const string UClassAttributeName = "UClassAttribute";
     const string LongUClassAttributeName = "UnrealSharp.Attributes.UClassAttribute";
@@ -249,6 +249,5 @@ public record UnrealClass : UnrealClassBase
                 array.Add(interfaceObject);
             }
         });
-        
     }
 }

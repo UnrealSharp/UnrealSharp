@@ -7,7 +7,7 @@ namespace UnrealSharp.Editor;
 
 public static class SyntaxUtilities
 {
-    public static void LookForChangesInUTypes(SyntaxTree newTree, SyntaxTree? existingTree, Project owningProject)
+    public static void LookForChangesInUnrealTypes(SyntaxTree newTree, SyntaxTree? existingTree, Project owningProject)
     {
         List<BaseTypeDeclarationSyntax> newTypeDeclarations = newTree.GetRoot()
             .DescendantNodes()
@@ -33,8 +33,6 @@ public static class SyntaxUtilities
 
                 if (oldTypeDecl != null)
                 {
-                    // Need more granular comparison here to avoid full rebuilds on non-meaningful changes.
-                    // For now, just check for equivalence, goes pretty fast anyway.
                     if (newTypeDecl.IsEquivalentTo(oldTypeDecl, false))
                     {
                         continue;
@@ -48,7 +46,7 @@ public static class SyntaxUtilities
 
     public static void DirtyUnrealType(BaseTypeDeclarationSyntax syntax, Project owningProject)
     {
-        string typeNameSpace = TypeUtilities.GetFullNamespace(syntax);
+        string typeNameSpace = syntax.GetFullNamespace();
         string typeName = syntax.Identifier.Text.Substring(1);
         string assemblyName = owningProject.AssemblyName;
         

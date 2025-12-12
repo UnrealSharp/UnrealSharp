@@ -9,11 +9,11 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 [Inspector]
 public record UnrealDelegate : UnrealType
 {
+    public override string EngineName => SourceName.Substring(1);
+    public override FieldType FieldType => FieldType.Delegate;
+    
     private readonly UnrealFunctionBase _delegateSignature;
     private readonly bool _isMulticast;
-    public override int FieldTypeValue => 4;
-
-    public override string EngineName => SourceName.Substring(1);
 
     public UnrealDelegate(bool isMulticast, ISymbol typeSymbol) : base(typeSymbol)
     {

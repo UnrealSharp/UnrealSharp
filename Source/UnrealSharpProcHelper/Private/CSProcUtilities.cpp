@@ -1,4 +1,4 @@
-﻿#include "CSProcHelper.h"
+﻿#include "CSProcUtilities.h"
 #include "UnrealSharpProcHelper.h"
 #include "XmlFile.h"
 #include "XmlNode.h"
@@ -7,7 +7,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 
-bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
+bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
@@ -31,7 +31,7 @@ bool FCSProcHelper::InvokeCommand(const FString& ProgramPath, const FString& Arg
 	return true;
 }
 
-bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments)
+bool UCSProcUtilities::InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments)
 {
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
 	FString DotNetPath = GetDotNetExecutablePath();
@@ -60,7 +60,7 @@ bool FCSProcHelper::InvokeUnrealSharpBuildTool(const FString& BuildAction, const
 	return InvokeCommand(DotNetPath, Args, ReturnCode, Output, &WorkingDirectory);
 }
 
-FString FCSProcHelper::GetLatestHostFxrPath()
+FString UCSProcUtilities::GetLatestHostFxrPath()
 {
 	FString DotNetRoot = GetDotNetDirectory();
 	FString HostFxrRoot = FPaths::Combine(DotNetRoot, "host", "fxr");
@@ -98,7 +98,7 @@ FString FCSProcHelper::GetLatestHostFxrPath()
 #endif
 }
 
-FString FCSProcHelper::GetRuntimeHostPath()
+FString UCSProcUtilities::GetRuntimeHostPath()
 {
 #if WITH_EDITOR
 	return GetLatestHostFxrPath();
@@ -113,19 +113,19 @@ FString FCSProcHelper::GetRuntimeHostPath()
 #endif
 }
 
-FString FCSProcHelper::GetPathToManagedSolution()
+FString UCSProcUtilities::GetPathToManagedSolution()
 {
 	static FString SolutionPath = GetScriptFolderDirectory() / GetUserManagedProjectName() + ".sln";
 	return SolutionPath;
 }
 
-FString& FCSProcHelper::GetManagedBinaries()
+FString& UCSProcUtilities::GetManagedBinaries()
 {
 	static FString ManagedBinaries = FPaths::Combine("Binaries", "Managed", DOTNET_DISPLAY_NAME);
 	return ManagedBinaries;
 }
 
-FString FCSProcHelper::GetPluginAssembliesPath()
+FString UCSProcUtilities::GetPluginAssembliesPath()
 {
 #if WITH_EDITOR
 	return FPaths::Combine(GetPluginDirectory(), GetManagedBinaries());
@@ -134,27 +134,27 @@ FString FCSProcHelper::GetPluginAssembliesPath()
 #endif
 }
 
-FString FCSProcHelper::GetUnrealSharpPluginsPath()
+FString UCSProcUtilities::GetUnrealSharpPluginsPath()
 {
 	return GetPluginAssembliesPath() / "UnrealSharp.Plugins.dll";
 }
 
-FString FCSProcHelper::GetRuntimeConfigPath()
+FString UCSProcUtilities::GetRuntimeConfigPath()
 {
 	return GetPluginAssembliesPath() / "UnrealSharp.runtimeconfig.json";
 }
 
-FString FCSProcHelper::GetUserAssemblyDirectory()
+FString UCSProcUtilities::GetUserAssemblyDirectory()
 {
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), GetManagedBinaries()));
 }
 
-FString FCSProcHelper::GetUnrealSharpMetadataPath()
+FString UCSProcUtilities::GetUnrealSharpMetadataPath()
 {
 	return FPaths::Combine(GetUserAssemblyDirectory(), "AssemblyLoadOrder.json");
 }
 
-void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeGlue)
+void UCSProcUtilities::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, const bool bIncludeGlue)
 {
 	const FString ProjectMetadataPath = GetUnrealSharpMetadataPath();
 
@@ -199,7 +199,7 @@ void FCSProcHelper::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames
 }
 
 
-void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeGlue)
+void UCSProcUtilities::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, const bool bIncludeGlue)
 {
 	FString AbsoluteFolderPath = GetUserAssemblyDirectory();
 
@@ -213,7 +213,7 @@ void FCSProcHelper::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, 
 	}
 }
 
-void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue)
+void UCSProcUtilities::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue)
 {
 	// Use the FileManager to find files matching the pattern
 	IFileManager::Get().FindFilesRecursive(ProjectPaths,
@@ -248,41 +248,7 @@ void FCSProcHelper::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncl
 	}
 }
 
-bool FCSProcHelper::IsProjectReloadable(FStringView ProjectPath)
-{
-    FXmlFile ProjectFile(ProjectPath.GetData());
-    if (!ProjectFile.IsValid())
-    {
-        UE_LOG(LogUnrealSharpProcHelper, Warning, TEXT("Failed to parse project file as XML: %s"),
-            ProjectPath.GetData());
-        return true;
-    }
-
-    const FXmlNode* RootNode = ProjectFile.GetRootNode();
-    if (!RootNode)
-    {
-        return true;
-    }
-
-    // Look through all PropertyGroup elements
-    for (const TArray<FXmlNode*>& ProjectNodes = RootNode->GetChildrenNodes();
-        const FXmlNode* Node : ProjectNodes)
-    {
-        if (Node->GetTag() == TEXT("PropertyGroup"))
-        {
-            if (const FXmlNode* RoslynComponentNode = Node->FindChildNode(TEXT("ExcludeFromWeaver"));
-                RoslynComponentNode &&
-                RoslynComponentNode->GetContent().Equals(TEXT("true"), ESearchCase::IgnoreCase))
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-FString FCSProcHelper::GetUnrealSharpBuildToolPath()
+FString UCSProcUtilities::GetUnrealSharpBuildToolPath()
 {
 #if PLATFORM_WINDOWS
 	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.dll");
@@ -291,7 +257,7 @@ FString FCSProcHelper::GetUnrealSharpBuildToolPath()
 #endif
 }
 
-FString FCSProcHelper::GetDotNetDirectory()
+FString UCSProcUtilities::GetDotNetDirectory()
 {
 	const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
 
@@ -322,7 +288,7 @@ FString FCSProcHelper::GetDotNetDirectory()
 	return "";
 }
 
-FString FCSProcHelper::GetDotNetExecutablePath()
+FString UCSProcUtilities::GetDotNetExecutablePath()
 {
 #if defined(_WIN32)
 	return GetDotNetDirectory() + "dotnet.exe";
@@ -331,7 +297,7 @@ FString FCSProcHelper::GetDotNetExecutablePath()
 #endif
 }
 
-FString& FCSProcHelper::GetPluginDirectory()
+FString& UCSProcUtilities::GetPluginDirectory()
 {
 	static FString PluginDirectory;
 
@@ -345,35 +311,35 @@ FString& FCSProcHelper::GetPluginDirectory()
 	return PluginDirectory;
 }
 
-FString FCSProcHelper::GetUnrealSharpDirectory()
+FString UCSProcUtilities::GetUnrealSharpDirectory()
 {
 	return FPaths::Combine(GetPluginDirectory(), "Managed", "UnrealSharp");
 }
 
-FString FCSProcHelper::GetGeneratedClassesDirectory()
+FString UCSProcUtilities::GetGeneratedClassesDirectory()
 {
 	return FPaths::Combine(GetUnrealSharpDirectory(), "UnrealSharp", "Generated");
 }
 
-const FString& FCSProcHelper::GetScriptFolderDirectory()
+const FString& UCSProcUtilities::GetScriptFolderDirectory()
 {
 	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
 	return ScriptFolderDirectory;
 }
 
-const FString& FCSProcHelper::GetPluginsDirectory()
+const FString& UCSProcUtilities::GetPluginsDirectory()
 {
     static FString PluginsDirectory = FPaths::ProjectDir() / "Plugins";
     return PluginsDirectory;
 }
 
-const FString& FCSProcHelper::GetProjectGlueFolderPath()
+const FString& UCSProcUtilities::GetProjectGlueFolderPath()
 {
 	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / FApp::GetProjectName() + TEXT(".Glue");
 	return ProjectGlueFolderPath;
 }
 
-FString FCSProcHelper::GetUserManagedProjectName()
+FString UCSProcUtilities::GetUserManagedProjectName()
 {
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
 }

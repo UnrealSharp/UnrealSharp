@@ -11,7 +11,7 @@
 #include "CoreMinimal.h"
 #include "CSManager.h"
 #include "Properties/CSPropertyGeneratorManager.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 #include "UnrealSharpUtils.h"
 #include "Modules/ModuleManager.h"
 
@@ -22,7 +22,7 @@ DEFINE_LOG_CATEGORY(LogUnrealSharp);
 void FUnrealSharpCoreModule::StartupModule()
 {
 #if WITH_EDITOR
-	FString DotNetInstallationPath = FCSProcHelper::GetDotNetDirectory();
+	FString DotNetInstallationPath = UCSProcUtilities::GetDotNetDirectory();
 	if (DotNetInstallationPath.IsEmpty())
 	{
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
@@ -30,7 +30,7 @@ void FUnrealSharpCoreModule::StartupModule()
 		return;
 	}
 
-	FString UnrealSharpLibraryPath = FCSProcHelper::GetUnrealSharpPluginsPath();
+	FString UnrealSharpLibraryPath = UCSProcUtilities::GetUnrealSharpPluginsPath();
 	if (!FPaths::FileExists(UnrealSharpLibraryPath))
 	{
 		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
@@ -44,13 +44,19 @@ void FUnrealSharpCoreModule::StartupModule()
 	}
 
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths, true);
+	UCSProcUtilities::GetAllProjectPaths(ProjectPaths, true);
 
 	// Compile the C# project for any changes done outside the editor.
-	if (!ProjectPaths.IsEmpty() && !FCSUnrealSharpUtils::IsStandalonePIE() && !FApp::IsUnattended() && !FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER))
+	if (!ProjectPaths.IsEmpty() && !FCSUnrealSharpUtils::IsStandalonePIE() && !FApp::IsUnattended())
 	{
-		StartupModule();
-		return;
+		TMap<FString, FString> Arguments;
+		Arguments.Add("OutputPath", UCSProcUtilities::GetUserAssemblyDirectory());
+		
+		if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER, Arguments))
+		{
+			StartupModule();
+			return;
+		}
 	}
 #endif
 	

@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpProcHelper.h"
 
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpProcHelperModule"
 

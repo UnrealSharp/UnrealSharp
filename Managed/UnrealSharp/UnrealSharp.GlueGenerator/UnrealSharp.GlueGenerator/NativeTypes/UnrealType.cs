@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -27,7 +28,7 @@ public record UnrealType
     public string FullName => Namespace + "." + SourceName;
     public string Namespace = string.Empty;
     
-    public virtual int FieldTypeValue => -1;
+    public virtual FieldType FieldType => FieldType.Unknown;
     
     public Accessibility TypeAccessibility;
 
@@ -39,12 +40,12 @@ public record UnrealType
         Outer = outer;
     }
     
-    public UnrealType(ISymbol memberSymbol, UnrealType? outer = null) : this(outer)
+    public UnrealType(ISymbol memberSymbol, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : this(outer)
     {
         Namespace = memberSymbol.GetNamespace();
         SourceName = memberSymbol.Name;
         AssemblyName = memberSymbol.ContainingAssembly.Name;
-        TypeAccessibility = memberSymbol.DeclaredAccessibility;
+        TypeAccessibility = syntaxNode != null ? syntaxNode.GetDeclaredAccessibility() : memberSymbol.DeclaredAccessibility;
         
         List<MetaDataInfo>? metaData = memberSymbol.GetUMetaAttributes();
         if (metaData != null)

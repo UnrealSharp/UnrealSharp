@@ -6,8 +6,9 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 [Inspector]
 public record UnrealInterface : UnrealClassBase
 {
+    public override FieldType FieldType => FieldType.Interface;
+    
     private const string UInterfaceAttributeName = "UInterfaceAttribute";
-    public override int FieldTypeValue => 3;
 
     public UnrealInterface(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {

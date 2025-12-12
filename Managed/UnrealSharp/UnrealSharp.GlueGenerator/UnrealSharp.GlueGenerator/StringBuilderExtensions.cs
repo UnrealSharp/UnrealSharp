@@ -65,7 +65,9 @@ public static class StringBuilderExtensions
         string jsonString = JsonSerializer.Serialize(typeObject, options);
         builder.AppendLine($"const string NativeReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
         builder.AppendLine("static void Initialize() => ");
-        builder.Append($"RegisterManagedType(\"{type.EngineName}\", NativeReflectionData, {type.FieldTypeValue}, typeof({type.FullName}));");
+
+        byte fieldType = (byte) type.FieldType;
+        builder.Append($"RegisterManagedType(\"{type.EngineName}\", NativeReflectionData, {fieldType}, typeof({type.FullName}));");
 
         builder.CloseBrace();
     }

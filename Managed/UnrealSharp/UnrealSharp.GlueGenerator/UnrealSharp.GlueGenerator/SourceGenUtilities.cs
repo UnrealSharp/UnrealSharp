@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
@@ -227,5 +229,48 @@ public static class SourceGenUtilities
         {
             item.ExportBackingVariablesToStaticConstructor(builder, nativeType);
         }
+    }
+    
+    public static Accessibility GetDeclaredAccessibility(this SyntaxNode node)
+    {
+        SyntaxTokenList modifiers = node switch
+        {
+            BaseTypeDeclarationSyntax t => t.Modifiers,
+            BaseMethodDeclarationSyntax m => m.Modifiers,
+            PropertyDeclarationSyntax p => p.Modifiers,
+            FieldDeclarationSyntax f => f.Modifiers,
+            EventDeclarationSyntax e => e.Modifiers,
+            _ => default
+        };
+
+        if (modifiers.Count == 0)
+        {
+            return Accessibility.NotApplicable;
+        }
+        
+        foreach (SyntaxToken modifier in modifiers)
+        {
+            switch (modifier.Kind())
+            {
+                case SyntaxKind.PublicKeyword:
+                    return Accessibility.Public;
+                case SyntaxKind.PrivateKeyword:
+                    return Accessibility.Private;
+                case SyntaxKind.ProtectedKeyword:
+                    if (modifiers.Any(SyntaxKind.InternalKeyword))
+                    {
+                        return Accessibility.ProtectedAndInternal;
+                    }
+                    return Accessibility.Protected;
+                case SyntaxKind.InternalKeyword:
+                    if (modifiers.Any(SyntaxKind.ProtectedKeyword))
+                    {
+                        return Accessibility.ProtectedAndInternal;
+                    }
+                    return Accessibility.Internal;
+            }
+        }
+        
+        return Accessibility.NotApplicable;
     }
 }

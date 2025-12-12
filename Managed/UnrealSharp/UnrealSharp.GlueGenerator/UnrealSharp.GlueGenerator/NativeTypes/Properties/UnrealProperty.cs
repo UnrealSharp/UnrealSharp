@@ -74,7 +74,7 @@ public record UnrealProperty : UnrealType
     public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
     public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
     
-    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer)
+    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer, syntaxNode)
     {
         PropertyType = propertyType;
         Namespace = typeSymbol.GetNamespace();

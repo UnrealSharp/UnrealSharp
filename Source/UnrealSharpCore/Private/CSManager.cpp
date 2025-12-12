@@ -7,7 +7,7 @@
 #include "UObject/Object.h"
 #include "Misc/MessageDialog.h"
 #include "Engine/Blueprint.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 #include <vector>
 #include "CSBindsManager.h"
 #include "CSNamespace.h"
@@ -179,8 +179,8 @@ bool UCSManager::InitializeDotNetRuntime()
 	const FString EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
 	const FString EntryPointFunctionName = TEXT("InitializeUnrealSharp");
 
-	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUnrealSharpPluginsPath());
-	const FString UserWorkingDirectory = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetUserAssemblyDirectory());
+	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetUnrealSharpPluginsPath());
+	const FString UserWorkingDirectory = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetUserAssemblyDirectory());
 
 	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
 	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
@@ -212,7 +212,7 @@ bool UCSManager::InitializeDotNetRuntime()
 
 bool UCSManager::LoadRuntimeHost()
 {
-	const FString RuntimeHostPath = FCSProcHelper::GetRuntimeHostPath();
+	const FString RuntimeHostPath = UCSProcUtilities::GetRuntimeHostPath();
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Couldn't find Hostfxr.dll"));
@@ -254,7 +254,7 @@ bool UCSManager::LoadRuntimeHost()
 bool UCSManager::LoadAllUserAssemblies()
 {
 	TArray<FString> UserAssemblyPaths;
-	FCSProcHelper::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
+	UCSProcUtilities::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
 
 	if (UserAssemblyPaths.IsEmpty())
 	{
@@ -347,9 +347,9 @@ void UCSManager::InitializeSubsystems()
 load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const
 {
 #if WITH_EDITOR
-	FString DotNetPath = FCSProcHelper::GetDotNetDirectory();
+	FString DotNetPath = UCSProcUtilities::GetDotNetDirectory();
 #else
-	FString DotNetPath = FCSProcHelper::GetPluginAssembliesPath();
+	FString DotNetPath = UCSProcUtilities::GetPluginAssembliesPath();
 #endif
 
 	if (!FPaths::DirectoryExists(DotNetPath))
@@ -358,7 +358,7 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() con
 		return nullptr;
 	}
 
-	FString RuntimeHostPath =  FCSProcHelper::GetRuntimeHostPath();
+	FString RuntimeHostPath =  UCSProcUtilities::GetRuntimeHostPath();
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Runtime host path does not exist at: %s"), *RuntimeHostPath);
@@ -376,7 +376,7 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() con
 	hostfxr_handle HostFXR_Handle = nullptr;
 	int32 ErrorCode = 0;
 #if WITH_EDITOR
-	FString RuntimeConfigPath = FCSProcHelper::GetRuntimeConfigPath();
+	FString RuntimeConfigPath = UCSProcUtilities::GetRuntimeConfigPath();
 
 	if (!FPaths::FileExists(RuntimeConfigPath))
 	{
@@ -390,7 +390,7 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() con
 #endif
 
 #else
-	FString PluginAssemblyPath = FCSProcHelper::GetUnrealSharpPluginsPath();
+	FString PluginAssemblyPath = UCSProcUtilities::GetUnrealSharpPluginsPath();
 
 	if (!FPaths::FileExists(PluginAssemblyPath))
 	{
@@ -460,13 +460,13 @@ UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, 
 
 UCSManagedAssembly* UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
-	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetUserAssemblyDirectory(), AssemblyName.ToString() + ".dll");
+	FString AssemblyPath = FPaths::Combine(UCSProcUtilities::GetUserAssemblyDirectory(), AssemblyName.ToString() + ".dll");
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 
 UCSManagedAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible)
 {
-	FString AssemblyPath = FPaths::Combine(FCSProcHelper::GetPluginAssembliesPath(), AssemblyName.ToString() + ".dll");
+	FString AssemblyPath = FPaths::Combine(UCSProcUtilities::GetPluginAssembliesPath(), AssemblyName.ToString() + ".dll");
 	return LoadAssemblyByPath(AssemblyPath, bIsCollectible);
 }
 

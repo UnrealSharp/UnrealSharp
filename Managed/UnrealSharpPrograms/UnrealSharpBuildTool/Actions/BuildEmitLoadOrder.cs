@@ -1,4 +1,5 @@
-﻿using System.Reflection.Metadata;
+﻿using System.Collections.ObjectModel;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -9,7 +10,18 @@ public class BuildEmitLoadOrder : BuildToolAction
 {
     public override bool RunAction()
     {
-        BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder());
+        string output = Program.TryGetArgument("OutputPath");
+
+        Collection<string>? extraArguments = null;
+        if (!string.IsNullOrEmpty(output))
+        {
+            extraArguments =
+            [
+                $"-p:OutputPath=\"{Program.GetOutputPath()}\""
+            ]; 
+        }
+
+        BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments);
         if (!buildSolution.RunAction())
         {
             return false;

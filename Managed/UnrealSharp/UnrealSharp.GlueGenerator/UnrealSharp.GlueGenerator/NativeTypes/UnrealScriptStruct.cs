@@ -8,7 +8,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 [Inspector]
 public record UnrealScriptStruct : UnrealStruct
 {
-    public override int FieldTypeValue => 1;
+    public override FieldType FieldType => FieldType.Struct;
+    
     public readonly bool IsRecord;
     
     public UnrealScriptStruct(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)

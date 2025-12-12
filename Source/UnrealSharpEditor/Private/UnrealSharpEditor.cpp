@@ -20,7 +20,7 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
@@ -42,7 +42,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths);
+	UCSProcUtilities::GetAllProjectPaths(ProjectPaths);
 	
 	if (ProjectPaths.IsEmpty())
 	{
@@ -97,7 +97,7 @@ void FUnrealSharpEditorModule::OnCompileManagedCode()
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_SOLUTION))
+	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_SOLUTION))
 	{
 		return;
 	}
@@ -118,7 +118,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 {
 	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
-	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToManagedSolution());
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(NativeSolutionPath))
 	{
@@ -239,7 +239,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	TMap<FString, FString> Arguments;
 	Arguments.Add("ArchiveDirectory", FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
 	Arguments.Add("BuildConfig", "Release");
-	FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
+	UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
 
 	FNotificationInfo Info(
 		FText::FromString(
@@ -270,7 +270,7 @@ void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
 
 void FUnrealSharpEditorModule::OpenSolution()
 {
-	FString SolutionPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetPathToManagedSolution());
+	FString SolutionPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(SolutionPath))
 	{
@@ -517,7 +517,7 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
 	Arguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
 
-	if (!FCSProcHelper::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
+	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project %s in %s", *ModuleName, *ProjectParentFolder);
 		return;

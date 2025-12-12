@@ -4,14 +4,14 @@
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
 #include "UnrealSharpEditor.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
 void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
     static FName ProjectDestination(TEXT("<ProjectDestination>"));
-	const FString ScriptPath = FPaths::ConvertRelativePathToFull(FCSProcHelper::GetScriptFolderDirectory());
+	const FString ScriptPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetScriptFolderDirectory());
 
 	FText ProjectDestinationName = FText::FromString(FString::Printf(TEXT("%s (This Project)"), FApp::GetProjectName()));
     ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, FApp::GetProjectName(), ScriptPath, 0));
@@ -22,7 +22,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
     for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
     {
         const FString PluginFilePath = FPaths::ConvertRelativePathToFull(Plugin->GetBaseDir());
-        if (!FPaths::IsUnderDirectory(PluginFilePath, FCSProcHelper::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
+        if (!FPaths::IsUnderDirectory(PluginFilePath, UCSProcUtilities::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
         {
             continue;
         }
@@ -186,7 +186,7 @@ FReply SCSNewProjectDialog::OnExplorerButtonClicked()
 
 	FString FolderName;
 	const FString Title = TEXT("Choose a location for new project");
-	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title,FCSProcHelper::GetScriptFolderDirectory(), FolderName))
+	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title,UCSProcUtilities::GetScriptFolderDirectory(), FolderName))
 	{
 		if (!FolderName.EndsWith(TEXT("/")) )
 		{
@@ -236,7 +236,7 @@ void SCSNewProjectDialog::OnFinish()
     else
     {
     	ProjectRoot = FPaths::ProjectDir();
-    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, FApp::GetProjectName(), FCSProcHelper::GetProjectGlueFolderPath());
+    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, FApp::GetProjectName(), UCSProcUtilities::GetProjectGlueFolderPath());
     }
 
 	if (!FPaths::FileExists(GlueProjectLocation))

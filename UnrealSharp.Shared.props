@@ -1,13 +1,11 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
     <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)..\..\</SolutionDir>
     <UnrealSharpPluginDir>$(MSBuildThisFileDirectory)</UnrealSharpPluginDir>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>latest</LangVersion>
-    <OutputPath>$(UnrealSharpPluginDir)..\..\Binaries\Managed</OutputPath>
-
-    <TargetFramework>net9.0</TargetFramework>
 
     <DefineConstants>WITH_EDITOR</DefineConstants>
     <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">

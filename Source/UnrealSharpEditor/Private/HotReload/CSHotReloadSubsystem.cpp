@@ -7,7 +7,7 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSEditorUtilities.h"
@@ -32,7 +32,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	UnrealSharpEditorModule = &FUnrealSharpEditorModule::Get();
 	
-	FString PathToManagedSolution = FCSProcHelper::GetPathToManagedSolution();
+	FString PathToManagedSolution = UCSProcUtilities::GetPathToManagedSolution();
 	UnrealSharpEditorModule->GetManagedEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
 	
 	RefreshDirectoryWatchers();
@@ -209,7 +209,7 @@ void UCSHotReloadSubsystem::OnInterfaceRebuilt(UCSInterface* NewInterface)
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
-	FCSProcHelper::GetAllProjectPaths(ProjectPaths, true);
+	UCSProcUtilities::GetAllProjectPaths(ProjectPaths, true);
 
 	for (const FString& ProjectPath : ProjectPaths)
 	{

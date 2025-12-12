@@ -6,9 +6,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
-using UnrealSharp.Core;
-using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Editor.Utilities;
+using UnrealSharp.UnrealSharpProcHelper;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharp.Editor;
@@ -93,7 +92,7 @@ public static class IncrementalCompilationManager
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
         
-        SyntaxUtilities.LookForChangesInUTypes(newTree, existingTree, foundProject);
+        SyntaxUtilities.LookForChangesInUnrealTypes(newTree, existingTree, foundProject);
         
         state.TreesByPath[fullPath] = newTree;
         
@@ -261,13 +260,14 @@ public static class IncrementalCompilationManager
     
     private static string GetOutputPath(Project project, string extension)
     {
-        string projectDir = Path.GetDirectoryName(project.FilePath!)!;
-        string outputDirectory = project.OutputFilePath != null
-            ? Path.GetDirectoryName(project.OutputFilePath)!
-            : Path.Combine(projectDir, "bin", "Debug");
+        string userAssemblyDir = UCSProcUtilities.UserAssemblyDirectory;
 
-        Directory.CreateDirectory(outputDirectory);
-        return Path.Combine(outputDirectory, project.AssemblyName + extension);
+        if (!Directory.Exists(userAssemblyDir))
+        {
+            Directory.CreateDirectory(userAssemblyDir);
+        }
+        
+        return Path.Combine(userAssemblyDir, project.AssemblyName + extension);
     }
 
     private static string GetAssemblyOutputPath(Project project)

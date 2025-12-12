@@ -1,11 +1,11 @@
 #include "Utilities/CSTemplateUtilities.h"
-#include "CSProcHelper.h"
+#include "CSProcUtilities.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCSTemplateUtilities, Log, All);
 
 const FString& FCSTemplateUtilities::GetTemplateFolderPath()
 {
-	static FString TemplateFolderPath = FCSProcHelper::GetPluginDirectory() / TEXT("Templates");
+	static FString TemplateFolderPath = UCSProcUtilities::GetPluginDirectory() / TEXT("Templates");
 	return TemplateFolderPath;
 }
 
