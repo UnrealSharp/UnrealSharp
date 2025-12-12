@@ -148,11 +148,23 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("public static class AssetIds"));
 	ScriptBuilder.OpenBrace();
+	
+	TArray<FPrimaryAssetTypeInfo> SortedPrimaryAssetTypes = Settings.PrimaryAssetTypesToScan;
+	SortedPrimaryAssetTypes.Sort([](const FPrimaryAssetTypeInfo& A, const FPrimaryAssetTypeInfo& B)
+	{
+		return A.PrimaryAssetType.ToString() < B.PrimaryAssetType.ToString();
+	});
 
-	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
+	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : SortedPrimaryAssetTypes)
 	{
 		TArray<FPrimaryAssetId> PrimaryAssetIdList;
 		AssetManager.GetPrimaryAssetIdList(PrimaryAssetType.PrimaryAssetType, PrimaryAssetIdList);
+		
+		PrimaryAssetIdList.Sort([](const FPrimaryAssetId& A, const FPrimaryAssetId& B)
+		{
+			return A.PrimaryAssetName.ToString() < B.PrimaryAssetName.ToString();
+		});
+		
 		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
 		{
 			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + AssetType.PrimaryAssetName.ToString();
@@ -182,8 +194,14 @@ void UCSAssetManagerGlueGenerator::ProcessAssetTypes()
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("public static class AssetTypes"));
 	ScriptBuilder.OpenBrace();
+	
+	TArray<FPrimaryAssetTypeInfo> SortedPrimaryAssetTypes = Settings.PrimaryAssetTypesToScan;
+	SortedPrimaryAssetTypes.Sort([](const FPrimaryAssetTypeInfo& A, const FPrimaryAssetTypeInfo& B)
+	{
+		return A.PrimaryAssetType.ToString() < B.PrimaryAssetType.ToString();
+	});
 
-	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
+	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : SortedPrimaryAssetTypes)
 	{
 		FString AssetTypeName = ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
 
