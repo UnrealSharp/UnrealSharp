@@ -146,6 +146,8 @@ public static class CSharpExporter
         string generatedPath = FileExporter.GetDirectoryPath(package);
         bool doesDirectoryExist = Directory.Exists(generatedPath);
 
+        List<UhtHeaderFile> processedHeaders = new List<UhtHeaderFile>(package.Children.Count);
+        
         foreach (UhtType child in package.Children)
         {
             if (!doesDirectoryExist || ModuleHeadersTracker.HasHeaderChanged(packageName, child.HeaderFile))
@@ -163,8 +165,10 @@ public static class CSharpExporter
                 ForEachChild(child, FileExporter.AddUnchangedType);
             }
             
-            ModuleHeadersTracker.RecordHeaderWriteTime(packageName, child.HeaderFile);
+            processedHeaders.Add(child.HeaderFile);
         }
+        
+        ModuleHeadersTracker.RecordHeadersWriteTime(packageName, processedHeaders);
     }
 
     public static void ForEachChild(UhtType child, Action<UhtType> action)

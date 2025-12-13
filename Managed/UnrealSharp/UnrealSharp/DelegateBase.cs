@@ -81,32 +81,29 @@ public class SingleDelegateMarshaller<T> where T : Delegate
 
 public abstract class TDelegateBase<T> where T : Delegate
 {
-    private static readonly Type Wrapper;
+    static readonly Type Wrapper;
+    
     public readonly DelegateBase<T> InnerDelegate;
-
-    internal TDelegateBase()
-    {
-        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
-    }
-
+    
     static TDelegateBase()
     {
         Type delegateType = typeof(T);
         string wrapperName = $"{delegateType.Name}__DelegateSignature";
         string fullName = $"{delegateType.Namespace}.{wrapperName}";
         
-        Wrapper = delegateType.Assembly.GetType(fullName);
-        if (Wrapper == null)
-        {
-            wrapperName = $"U{delegateType.Name}";
-            fullName = $"{delegateType.Namespace}.{wrapperName}";
-            Wrapper = delegateType.Assembly.GetType(fullName);
-        }
+        Type? foundWrapper = delegateType.Assembly.GetType(fullName);
 
-        if (Wrapper == null)
+        if (foundWrapper == null)
         {
             throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
         }
+        
+        Wrapper = foundWrapper;
+    }
+
+    internal TDelegateBase()
+    {
+        InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
     }
     
     /// <summary>

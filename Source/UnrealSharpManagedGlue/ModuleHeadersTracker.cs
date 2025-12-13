@@ -87,6 +87,14 @@ public static class ModuleHeadersTracker
         return true;
     }
     
+    public static void RecordHeadersWriteTime(string moduleName, IEnumerable<UhtHeaderFile> headerPaths)
+    {
+        foreach (UhtHeaderFile headerPath in headerPaths)
+        {
+            RecordHeaderWriteTime(moduleName, headerPath);
+        }
+    }
+    
     public static void RecordHeaderWriteTime(string moduleName, UhtHeaderFile headerPath)
     {
         DateTime currentWriteTime = File.GetLastWriteTimeUtc(headerPath.FilePath);

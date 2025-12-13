@@ -32,7 +32,7 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
             return;
         }
         
-        string fullDelegateName = GetFullDelegateName(delegateProperty.Function, true);
+        string fullDelegateName = GetFullWrapperName(delegateProperty.Function);
         builder.AppendLine($"{fullDelegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
     }
 
