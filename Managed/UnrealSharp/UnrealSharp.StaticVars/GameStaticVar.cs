@@ -70,8 +70,13 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
     }
 #endif
     
-    public static implicit operator T(FGameStaticVar<T> value)
+    public static implicit operator T?(FGameStaticVar<T> value)
     {
-        return value.Value;
+        if (value.Value != null)
+        {
+            return value.Value;
+        }
+        
+        return default;
     }
 }

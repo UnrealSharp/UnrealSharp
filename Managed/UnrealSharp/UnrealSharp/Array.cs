@@ -10,7 +10,6 @@ namespace UnrealSharp;
 /// An array that can be used to interact with Unreal Engine arrays.
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
-[Binding]
 public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
 {
     /// <inheritdoc />

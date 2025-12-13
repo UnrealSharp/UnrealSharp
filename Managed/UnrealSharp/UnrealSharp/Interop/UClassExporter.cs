@@ -1,4 +1,5 @@
 using UnrealSharp.Binds;
+using UnrealSharp.Core;
 
 namespace UnrealSharp.Interop;
 
@@ -7,6 +8,9 @@ public static unsafe partial class UClassExporter
 {
     public static delegate* unmanaged<IntPtr, string, IntPtr> GetNativeFunctionFromClassAndName;
     public static delegate* unmanaged<IntPtr, string, IntPtr> GetNativeFunctionFromInstanceAndName;
+    public static delegate* unmanaged<IntPtr, string, IntPtr> GetFirstNativeImplementationFromInstanceAndName;
     public static delegate* unmanaged<string, string, string, IntPtr> GetDefaultFromName;
     public static delegate* unmanaged<IntPtr, IntPtr> GetDefaultFromInstance;
+    
+    public static delegate* unmanaged<IntPtr, IntPtr, NativeBool> IsChildOf;
 }

@@ -31,11 +31,14 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
         
         UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
-        if (multicastDelegateProperty.Function.HasParameters)
+
+        if (!multicastDelegateProperty.Function.HasParameters)
         {
-            string fullDelegateName = GetFullDelegateName(((UhtMulticastDelegateProperty) property).Function, true);
-            builder.AppendLine($"{fullDelegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
+            return;
         }
+        
+        string fullDelegateName = GetFullWrapperName(multicastDelegateProperty.Function);
+        builder.AppendLine($"{fullDelegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
     }
     
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)

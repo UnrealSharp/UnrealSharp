@@ -72,7 +72,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
     
     static FInstancedStruct()
     {
-        NativeClassPtr = UCoreUObjectExporter.CallGetNativeStructFromName(typeof(FInstancedStruct).GetAssemblyName(), "UnrealSharp.CoreUObject", "InstancedStruct");
+        NativeClassPtr = UCoreUObjectExporter.CallGetType(typeof(FInstancedStruct).GetAssemblyName(), "UnrealSharp.CoreUObject", "InstancedStruct");
         NativeDataSize = UScriptStructExporter.CallGetNativeStructSize(NativeClassPtr);
     }
 

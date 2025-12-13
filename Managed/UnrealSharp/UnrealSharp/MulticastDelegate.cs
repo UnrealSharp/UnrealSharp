@@ -6,7 +6,6 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-[Binding]
 public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
     protected IntPtr NativeProperty;

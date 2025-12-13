@@ -30,11 +30,6 @@
 			"LoadingPhase": "PostDefault"
 		},
 		{
-			"Name": "UnrealSharpBlueprint",
-			"Type": "UncookedOnly",
-			"LoadingPhase": "PostDefault"
-		},
-		{
 			"Name": "UnrealSharpCompiler",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
@@ -43,6 +38,11 @@
 			"Name": "UnrealSharpBinds",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UnrealSharpAsyncBlueprint",
+			"Type": "UncookedOnly",
+			"LoadingPhase": "PostDefault"
 		},
 		{
 			"Name": "UnrealSharpAsync",

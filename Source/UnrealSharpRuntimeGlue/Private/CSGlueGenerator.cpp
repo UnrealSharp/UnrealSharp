@@ -1,11 +1,11 @@
 ﻿#include "CSGlueGenerator.h"
 #include "UnrealSharpRuntimeGlue.h"
 #include "Logging/StructuredLog.h"
-#include "UnrealSharpProcHelper/CSProcHelper.h"
+#include "CSProcUtilities.h"
 
 void UCSGlueGenerator::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
 {
-	const FString Path = FPaths::Combine(FCSProcHelper::GetProjectGlueFolderPath(), FileName + Suffix);
+	const FString Path = FPaths::Combine(UCSProcUtilities::GetProjectGlueFolderPath(), FileName + Suffix);
 
 	FString CurrentRuntimeGlue;
 	FFileHelper::LoadFileToString(CurrentRuntimeGlue, *Path);

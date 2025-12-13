@@ -29,6 +29,8 @@ public static class InterfaceExporter
         
         stringBuilder.AppendLine(attributeBuilder.ToString());
         stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
+        stringBuilder.AppendNativeTypePtr(interfaceObj);
+        
         stringBuilder.AppendLine();
         stringBuilder.AppendLine($"static {interfaceName} Wrap(UnrealSharp.CoreUObject.UObject obj)");
         stringBuilder.OpenBrace();
@@ -54,8 +56,12 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         
         stringBuilder.AppendLine();
+        
         stringBuilder.AppendLine($"internal sealed class {interfaceName}Wrapper : {interfaceName}, UnrealSharp.CoreUObject.IScriptInterface");
         stringBuilder.OpenBrace();
+        
+        stringBuilder.AppendNativeTypePtr(interfaceObj);
+        
         stringBuilder.AppendLine("public UnrealSharp.CoreUObject.UObject Object { get; }");
         stringBuilder.AppendLine("private IntPtr NativeObject => Object.NativeObject;");
         stringBuilder.AppendLine();

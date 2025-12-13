@@ -8,7 +8,7 @@ namespace UnrealSharp.Engine;
 public partial class UAssetManager
 {
     /// <summary>
-    ///     Gets the AssetManager singleton of the specified type
+    /// Gets the AssetManager singleton of the specified type
     /// </summary>
     public static T Get<T>() where T : UAssetManager
     {
@@ -23,7 +23,7 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    ///     Gets the AssetManager singleton
+    /// Gets the AssetManager singleton
     /// </summary>
     public static UAssetManager Get()
     {
@@ -128,7 +128,7 @@ public partial class UAssetManager
     }
 
     /// <summary>
-    ///     Loads multiple primary asset classes by their FPrimaryAssetId list and returns them as TSubclassOf.
+    /// Loads multiple primary asset classes by their FPrimaryAssetId list and returns them as TSubclassOf.
     /// </summary>
     /// <param name="primaryAssets">A list of primary assets to load</param>
     /// <param name="bundles">The bundles to load along with the assets (optional)</param>
@@ -160,7 +160,7 @@ public partial class UAssetManager
         List<UObject> loadedObjects = new(loadedAssets.Count);
         foreach (FPrimaryAssetId assetId in loadedAssets)
         {
-            if (assetId.AssetClass.Value.Valid)
+            if (assetId.AssetClass.Value.IsValid)
             {
                 var loaded = SystemLibrary.GetClass(assetId);
 
@@ -230,6 +230,11 @@ public partial class UAssetManager
     {
         return SystemLibrary.GetSoftObjectReference(primaryAssetId);
     }
+    
+    public TSoftObjectPtr<T> GetSoftObjectReferenceFromPrimaryAssetId<T>(FPrimaryAssetId primaryAssetId) where T : UObject
+    {
+        return SystemLibrary.GetSoftObjectReference(primaryAssetId).Cast<T>();
+    }
 
     /// <summary>
     ///     Returns the Blueprint Class Id associated with a Primary Asset Id, this works even if the asset is not loaded
@@ -239,6 +244,11 @@ public partial class UAssetManager
     public TSoftClassPtr<UObject> GetSoftClassReferenceFromPrimaryAssetId(FPrimaryAssetId primaryAssetId)
     {
         return SystemLibrary.GetSoftClassReference(primaryAssetId);
+    }
+    
+    public TSoftClassPtr<T> GetSoftClassReferenceFromPrimaryAssetId<T>(FPrimaryAssetId primaryAssetId) where T : UObject
+    {
+        return SystemLibrary.GetSoftClassReference(primaryAssetId).Cast<T>();
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections;
+using System.Collections.ObjectModel;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -14,29 +15,31 @@ public class PackageProject : BuildToolAction
         }
 
         string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
-        string binariesPath = Program.GetOutputPath(rootProjectPath);
+        string publishFolder = Program.GetOutputPath(rootProjectPath);
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
-        string bindingsOutputPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
+        string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
         
         Collection<string> extraArguments =
         [
             "--self-contained",
+            
             "--runtime",
             "win-x64",
+            
 			"-p:DisableWithEditor=true",
-            $"-p:PublishDir=\"{binariesPath}\"",
-            $"-p:OutputPath=\"{bindingsOutputPath}\"",
+            "-p:GenerateDocumentationFile=false",
+            
+            $"-p:PublishDir=\"{publishFolder}\"",
+            $"-p:OutputPath=\"{packageOutputFolder}\"",
         ];
 
         BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);
         buildBindings.RunAction();
         
-        BuildUserSolution buildUserSolution = new BuildUserSolution(null, BuildConfig.Publish);
+        BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
         buildUserSolution.RunAction();
-        
-        WeaveProject weaveProject = new WeaveProject(binariesPath);
-        weaveProject.RunAction();
-        
+
+        BuildEmitLoadOrder.EmitLoadOrder(packageOutputFolder, publishFolder);
         return true;
     }
 }

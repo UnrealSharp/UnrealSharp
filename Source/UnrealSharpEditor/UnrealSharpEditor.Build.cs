@@ -34,7 +34,7 @@ public class UnrealSharpEditor : ModuleRules
                 "Projects",
                 "GameplayTags",
                 "DeveloperSettings",
-                "UnrealSharpBlueprint",
+                "UnrealSharpAsyncBlueprint",
                 "Kismet",
                 "KismetCompiler",
                 "BlueprintEditorLibrary",
@@ -42,10 +42,10 @@ public class UnrealSharpEditor : ModuleRules
                 "AssetTools",
                 "UnrealSharpRuntimeGlue",
                 "PluginBrowser", 
-                "UnrealSharpUtilities",
+                "UnrealSharpUtilities"
             }
         );
 
-        PublicDefinitions.Add("SkipGlueGeneration");
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
     }
 }

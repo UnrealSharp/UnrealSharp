@@ -10,14 +10,14 @@ class FCSBindsManager
 {
 public:
 	
-	static FCSBindsManager* Get();
-	
 	UNREALSHARPBINDS_API static void RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction);
-
-	UNREALSHARPBINDS_API static void* GetBoundFunction(const TCHAR* InOuterName, const TCHAR* InFunctionName, int32 ManagedFunctionSize);
+	UNREALSHARPBINDS_API static void* GetBoundFunction(const TCHAR* InOuterName, const TCHAR* InFunctionName, int32 InParametersSize);
 
 private:
 	FCSBindsManager() = default;
+	
+	static FCSBindsManager* Get();
+	
 	static FCSBindsManager* BindsManagerInstance;
-	TMap<FName, TArray<FCSExportedFunction>> ExportedFunctionsMap;
+	TMap<FName, TArray<FCSExportedFunction>> ExportedFunctions;
 };

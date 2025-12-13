@@ -4,7 +4,6 @@ using UnrealSharp.Core.Marshallers;
 
 namespace UnrealSharp;
 
-[Binding]
 public class TMap<TKey, TValue> : MapBase<TKey, TValue>, IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
 {
     public TMap(IntPtr mapProperty, IntPtr address,

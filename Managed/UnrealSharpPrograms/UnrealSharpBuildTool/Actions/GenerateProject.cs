@@ -78,9 +78,10 @@ public class GenerateProject : BuildToolAction
         {
             File.Delete(myClassFile);
         }
-
-        string slnPath = Program.GetSolutionFile();
-        if (!File.Exists(slnPath))
+        
+        ModifyCSProjFile();
+        
+        if (!Program.HasArgument("SkipSolutionGeneration"))
         {
             GenerateSolution generateSolution = new GenerateSolution();
             generateSolution.RunAction();
@@ -92,55 +93,8 @@ public class GenerateProject : BuildToolAction
         }
 
         AddLaunchSettings();
-        ModifyCSProjFile();
-
-        string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), _projectPath);
-        AddProjectToSln(relativePath);
-
+        BuildProject();
         return true;
-    }
-
-    public static void AddProjectToSln(string relativePath)
-    {
-        AddProjectToSln([relativePath]);
-    }
-
-    public static void AddProjectToSln(List<string> relativePaths)
-    {
-        foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
-        {
-            using BuildToolProcess addProjectToSln = new BuildToolProcess();
-            addProjectToSln.StartInfo.ArgumentList.Add("sln");
-            addProjectToSln.StartInfo.ArgumentList.Add("add");
-
-            foreach (string relativePath in projects)
-            {
-                addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
-            }
-
-            addProjectToSln.StartInfo.ArgumentList.Add("-s");
-            addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
-
-            addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
-            addProjectToSln.StartBuildToolProcess();
-        }
-    }
-
-    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(List<string> relativePaths)
-    {
-        return relativePaths.GroupBy(GetPathRelativeToProject)!;
-    }
-
-    private static string GetPathRelativeToProject(string path)
-    {
-        var fullPath = Path.GetFullPath(path, Program.GetScriptFolder());
-        var relativePath = Path.GetRelativePath(Program.GetProjectDirectory(), fullPath);
-        var projectDirName = Path.GetDirectoryName(relativePath)!;
-
-        // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
-        // be in the directory for the plugin itself.
-        var containingDirName = Path.GetDirectoryName(projectDirName)!;
-        return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 
     private void ModifyCSProjFile()
@@ -149,6 +103,7 @@ public class GenerateProject : BuildToolAction
         {
             XmlDocument csprojDocument = new XmlDocument();
             csprojDocument.Load(_projectPath);
+            csprojDocument.EnsureProjectRoot();
 
             if (csprojDocument.SelectSingleNode("//ItemGroup") is not XmlElement newItemGroup)
             {
@@ -156,18 +111,14 @@ public class GenerateProject : BuildToolAction
                 csprojDocument.DocumentElement!.AppendChild(newItemGroup);
             }
 
-            AppendProperties(csprojDocument);
-            AppendConstantDefines(csprojDocument);
-
-            AppendReference(csprojDocument, newItemGroup, "UnrealSharp", GetPathToBinaries());
-            AppendReference(csprojDocument, newItemGroup, "UnrealSharp.Core", GetPathToBinaries());
-
-            AppendSourceGeneratorReference(csprojDocument, newItemGroup);
-
             if (!Program.HasArgument("SkipIncludeProjectGlue"))
             {
                 AppendGeneratedCode(csprojDocument, newItemGroup);
             }
+
+            string unrealSharpPluginPath = Program.GetUnrealSharpSharedProps();
+            string relativeUnrealSharpPath = GetRelativePath(_projectFolder, unrealSharpPluginPath);
+            csprojDocument.MakeProjectImport(csprojDocument.DocumentElement!, relativeUnrealSharpPath);
 
             foreach (string dependency in Program.GetArguments("Dependency"))
             {
@@ -180,89 +131,6 @@ public class GenerateProject : BuildToolAction
         {
             throw new InvalidOperationException($"An error occurred while updating the .csproj file: {ex.Message}", ex);
         }
-    }
-
-    private void AddProperty(string name, string value, XmlDocument doc, XmlNode propertyGroup)
-    {
-        XmlNode? newProperty = propertyGroup.SelectSingleNode(name);
-
-        if (newProperty == null)
-        {
-            newProperty = doc.CreateElement(name);
-            propertyGroup.AppendChild(newProperty);
-        }
-
-        newProperty.InnerText = value;
-    }
-
-    private void AppendProperties(XmlDocument doc)
-    {
-        XmlNode? propertyGroup = doc.SelectSingleNode("//PropertyGroup");
-
-        if (propertyGroup == null)
-        {
-            propertyGroup = doc.CreateElement("PropertyGroup");
-        }
-
-        AddProperty("CopyLocalLockFileAssembliesName", "true", doc, propertyGroup);
-        AddProperty("AllowUnsafeBlocks", "true", doc, propertyGroup);
-        AddProperty("EnableDynamicLoading", "true", doc, propertyGroup);
-    }
-    
-    private void AddConstDefine(string value, XmlDocument doc, XmlNode propertyGroup, string? condition = null)
-    {
-        var newProperty = doc.CreateElement("DefineConstants");
-        propertyGroup.AppendChild(newProperty);
-        newProperty.InnerText = value;
-        if (condition is not null)
-        {
-            newProperty.SetAttribute("Condition", condition);
-        }
-    }
-    
-    private void AppendConstantDefines(XmlDocument doc)
-    {
-        var propertyGroup = doc.CreateElement("PropertyGroup");
-
-        AddConstDefine("WITH_EDITOR", doc, propertyGroup);
-        AddConstDefine("$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))", doc, propertyGroup, 
-            "'$(DisableWithEditor)' == 'true'");
-        AddConstDefine("$(DefineConstants);$(DefineAdditionalConstants)", doc, propertyGroup, 
-            "'$(DefineAdditionalConstants)' != ''");
-    }
-
-    private string GetPathToBinaries()
-    {
-        string directoryPath = Path.GetDirectoryName(_projectPath)!;
-        string unrealSharpPath = GetRelativePathToUnrealSharp(directoryPath);
-        return Path.Combine(unrealSharpPath, "Binaries", "Managed");
-    }
-
-    private void AppendReference(XmlDocument doc, XmlElement itemGroup, string referenceName, string binPath)
-    {
-        XmlElement referenceElement = doc.CreateElement("Reference");
-        referenceElement.SetAttribute("Include", referenceName);
-
-        XmlElement hintPath = doc.CreateElement("HintPath");
-        hintPath.InnerText = Path.Combine(binPath, Program.GetVersion(), referenceName + ".dll");
-        referenceElement.AppendChild(hintPath);
-        itemGroup.AppendChild(referenceElement);
-    }
-
-    private void AppendSourceGeneratorReference(XmlDocument doc, XmlElement itemGroup)
-    {
-        string sourceGeneratorPath = Path.Combine(GetPathToBinaries(), "UnrealSharp.SourceGenerators.dll");
-        XmlElement sourceGeneratorReference = doc.CreateElement("Analyzer");
-        sourceGeneratorReference.SetAttribute("Include", sourceGeneratorPath);
-        itemGroup.AppendChild(sourceGeneratorReference);
-    }
-
-    private void AppendPackageReference(XmlDocument doc, XmlElement itemGroup, string packageName, string packageVersion)
-    {
-        XmlElement packageReference = doc.CreateElement("PackageReference");
-        packageReference.SetAttribute("Include", packageName);
-        packageReference.SetAttribute("Version", packageVersion);
-        itemGroup.AppendChild(packageReference);
     }
 
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
@@ -280,12 +148,6 @@ public class GenerateProject : BuildToolAction
         XmlElement generatedCode = doc.CreateElement("ProjectReference");
         generatedCode.SetAttribute("Include", relativePath);
         itemGroup.AppendChild(generatedCode);
-    }
-
-    private string GetRelativePathToUnrealSharp(string basePath)
-    {
-        string targetPath = Path.Combine(basePath, Program.BuildToolOptions.PluginDirectory);
-        return GetRelativePath(basePath, targetPath);
     }
 
     public static string GetRelativePath(string basePath, string targetPath)
@@ -315,6 +177,20 @@ public class GenerateProject : BuildToolAction
         }
 
         Program.CreateOrUpdateLaunchSettings(launchSettingsPath);
+    }
+    
+    void BuildProject()
+    {
+        using BuildToolProcess buildProjectProcess = new BuildToolProcess();
+
+        buildProjectProcess.StartInfo.ArgumentList.Add("build");
+        buildProjectProcess.StartInfo.ArgumentList.Add(_projectPath);
+        buildProjectProcess.StartInfo.WorkingDirectory = _projectFolder;
+
+        if (!buildProjectProcess.StartBuildToolProcess())
+        {
+            throw new InvalidOperationException("Failed to build the generated project.");
+        }
     }
 }
 

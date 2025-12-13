@@ -1,9 +1,20 @@
+using UnrealSharp.Core;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.InputCore;
 
 public partial struct FKey
 {
+    public FKey(string keyName)
+    {
+        KeyName = new FName(keyName);
+    }
+    
+    public FKey(FName keyName)
+    {
+        KeyName = keyName;
+    }
+    
     public override string ToString() => UCSKeyExtensions.ToString(this);
 
     public bool IsValid => UCSKeyExtensions.IsValid(this);

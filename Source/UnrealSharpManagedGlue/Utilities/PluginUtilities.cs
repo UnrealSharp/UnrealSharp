@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Model;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -56,6 +55,7 @@ public static class PluginUtilities
 
         ProjectDirInfo info;
         HashSet<string> dependencies = new ();
+        
         if (package.IsPartOfEngine())
         {
             if (ExtractedEngineModules.TryGetValue(package.SourceName, out string? pluginPath))
@@ -70,7 +70,6 @@ public static class PluginUtilities
         }
         else
         {
-
             string baseDirectory = package.GetModule().BaseDirectory;
             DirectoryInfo? currentDirectory = new DirectoryInfo(baseDirectory);
 
@@ -92,54 +91,70 @@ public static class PluginUtilities
 
             if (projectFile is null)
             {
-                throw new InvalidOperationException(
-                    $"Could not find .uplugin or .uproject file for package {package.SourceName} in {baseDirectory}");
+                throw new InvalidOperationException($"Could not find .uplugin or .uproject file for package {package.SourceName} in {baseDirectory}");
             }
-            info = new ProjectDirInfo(Path.GetFileNameWithoutExtension(projectFile.Name), currentDirectory!.FullName, dependencies);
+            
+            string fileName = Path.GetFileNameWithoutExtension(projectFile.Name);
+            info = new ProjectDirInfo(fileName, currentDirectory!.FullName, dependencies);
         }
 
         PluginInfo.Add(package, info);
         
-        foreach (UhtHeaderFile header in package.GetHeaderFiles())
+        void TryAddDependency(UhtPackage referencePackage)
         {
-            HashSet<UhtHeaderFile> referencedHeaders = header.References.ReferencedHeaders;
-            referencedHeaders.UnionWith(header.ReferencedHeadersNoLock);
-            
-            foreach (UhtHeaderFile refHeader in referencedHeaders)
+            if (referencePackage == package)
             {
-                foreach (UhtPackage refPackage in refHeader.GetPackages())
+                return;
+            }
+
+            if (referencePackage.IsPartOfEngine())
+            {
+                if (!ExtractedEngineModules.TryGetValue(referencePackage.SourceName, out string? pluginPath))
                 {
-                    if (refPackage == package)
-                    {
-                        continue;
-                    }
+                    return;
+                }
 
-                    if (refPackage.IsPartOfEngine())
-                    {
-                        if (!ExtractedEngineModules.TryGetValue(refPackage.SourceName, out string? pluginPath))
-                        {
-                            continue;
-                        }
-
-                        if (info.IsPartOfEngine)
-                        {
-                            DirectoryInfo pluginDir = new(pluginPath);
-                            info = new ProjectDirInfo(pluginDir.Name, pluginPath, dependencies);
-                            PluginInfo[package] = info;
-                        }
-                    }
-                    
-                    
-                    ProjectDirInfo projectInfo = refPackage.FindOrAddProjectInfo();
-                    if (info.GlueCsProjPath == projectInfo.GlueCsProjPath)
-                    {
-                        continue;
-                    }
-                    
-                    dependencies.Add(projectInfo.GlueCsProjPath);
+                if (info.IsPartOfEngine)
+                {
+                    DirectoryInfo pluginDir = new(pluginPath);
+                    info = new ProjectDirInfo(pluginDir.Name, pluginPath, dependencies);
+                    PluginInfo[package] = info;
                 }
             }
+            
+            ProjectDirInfo projectInfo = referencePackage.FindOrAddProjectInfo();
+            if (info.GlueCsProjPath == projectInfo.GlueCsProjPath)
+            {
+                return;
+            }
+            
+            dependencies.Add(projectInfo.GlueCsProjPath);
         }
+
+        CSharpExporter.ForEachChildRecursive(package, childType =>
+        {
+            UhtEngineType engineType = childType.EngineType;
+
+            if (engineType is UhtEngineType.Class or UhtEngineType.ScriptStruct)
+            {
+                UhtStruct foundClass = (UhtStruct) childType;
+                
+                if (foundClass.Super == null)
+                {
+                    return;
+                }
+                
+                TryAddDependency(foundClass.Super!.Package);
+            }
+            else if (childType.EngineType == UhtEngineType.Property)
+            {
+                UhtProperty property = (UhtProperty) childType;
+                foreach (UhtType referencedType in property.EnumerateReferencedTypes())
+                {
+                    TryAddDependency(referencedType.Package);
+                }
+            }
+        });
         
         return info;
     }

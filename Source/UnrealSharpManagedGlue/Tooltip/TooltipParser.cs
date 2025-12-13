@@ -6,7 +6,7 @@ namespace UnrealSharpScriptGenerator.Tooltip;
 
 public static class TooltipParser
 {
-    private static void ParseTooltip(string inTooltip, ref ParsedTooltip outParsedTooltip)
+    private static void ParseTooltip(string inTooltip, ParsedTooltip outParsedTooltip)
     {
         string sourceTooltip = inTooltip;
         int sourceTooltipParseIndex = 0;
@@ -143,7 +143,7 @@ public static class TooltipParser
         }
 
         ParsedTooltip parsedTooltip = new();
-        ParseTooltip(toolTip, ref parsedTooltip);
+        ParseTooltip(toolTip, parsedTooltip);
 
         if (!string.IsNullOrEmpty(parsedTooltip.BasicTooltipText))
         {

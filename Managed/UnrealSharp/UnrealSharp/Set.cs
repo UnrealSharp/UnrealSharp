@@ -1,12 +1,9 @@
-﻿using UnrealSharp.Attributes;
-using UnrealSharp.Core.Attributes;
-using UnrealSharp.Core.Marshallers;
+﻿using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
 using UnrealSharp.Interop.Properties;
 
 namespace UnrealSharp;
 
-[Binding]
 public class TSet<T> : TSetBase<T>, ISet<T>, IReadOnlySet<T>
 {
     public TSet(IntPtr setProperty, IntPtr address,

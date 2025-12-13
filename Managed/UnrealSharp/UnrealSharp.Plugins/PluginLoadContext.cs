@@ -2,6 +2,7 @@
 using System.Runtime.Loader;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
+using UnrealSharp.Log;
 
 namespace UnrealSharp.Plugins;
 
@@ -21,9 +22,10 @@ public class PluginLoadContext : AssemblyLoadContext
         AddAssembly(typeof(NativeBinds).Assembly);
         AddAssembly(typeof(UnrealSharpObject).Assembly);
         AddAssembly(typeof(UnrealSharpModule).Assembly);
+        AddAssembly(typeof(CustomLog).Assembly);
     }
     
-    private static void AddAssembly(Assembly assembly)
+    public static void AddAssembly(Assembly assembly)
     {
         LoadedAssemblies[assembly.GetName().Name!] = new WeakReference<Assembly>(assembly);
     }
@@ -63,7 +65,7 @@ public class PluginLoadContext : AssemblyLoadContext
         Assembly? loadedAssembly;
         if (!File.Exists(pdbPath))
         {
-            loadedAssembly = LoadFromStream(assemblyFile);
+            loadedAssembly = LoadFromAssemblyPath(assemblyPath);
         }
         else
         {

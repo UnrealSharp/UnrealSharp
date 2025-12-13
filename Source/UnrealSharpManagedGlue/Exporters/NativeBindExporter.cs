@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Parsers;
 using EpicGames.UHT.Tables;
@@ -116,7 +117,7 @@ public static class NativeBindExporter
             UhtHeaderFile headerFile = bindMethod.Key;
             List<NativeBindTypeInfo> containingTypesInHeader = bindMethod.Value;
             
-            GeneratorStringBuilder builder = new();
+            StringBuilder builder = new();
             builder.AppendLine("#include \"UnrealSharpBinds.h\"");
             builder.AppendLine($"#include \"{headerFile.FilePath}\"");
             builder.AppendLine();
@@ -128,16 +129,15 @@ public static class NativeBindExporter
                 
                 string typeName = $"Z_Construct_U{topType.EngineClassName}_UnrealSharp_Binds_" + topType.SourceName;
                 builder.Append($"struct {typeName}");
-            
-                builder.OpenBrace();
+
+                builder.AppendLine("{");
             
                 foreach (NativeBindMethod method in methods)
                 {
                     builder.AppendLine($"static const FCSExportedFunction UnrealSharpBind_{method.MethodName};");
                 }
             
-                builder.CloseBrace();
-                builder.Append(";");
+                builder.AppendLine("};");
             
                 foreach (NativeBindMethod method in methods)
                 {
@@ -154,14 +154,14 @@ public static class NativeBindExporter
             #if UE_5_5_OR_LATER
             manifestModule = headerFile.Module.Module;
             #else
-            manifestModule= headerFile.Package.GetModule();
+            manifestModule = headerFile.Package.GetModule();
             #endif
             
             string outputDirectory = manifestModule.OutputDirectory;
             string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.gen.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             
-            factory.CommitOutput(filePath, builder.ToString());
+            factory.CommitOutput(filePath, builder);
         }
     }
 }

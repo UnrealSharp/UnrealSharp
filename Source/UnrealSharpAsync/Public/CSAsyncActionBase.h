@@ -10,7 +10,7 @@
 #include "CSAsyncActionBase.generated.h"
 
 UCLASS()
-class UNREALSHARPASYNC_API UCSAsyncActionBase : public UObject
+class UCSAsyncActionBase : public UObject
 {
 	GENERATED_BODY()
 public:

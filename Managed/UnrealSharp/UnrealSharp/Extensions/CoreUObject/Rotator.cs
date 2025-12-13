@@ -61,22 +61,35 @@ public partial struct FRotator
         Roll = 0.0f;
     }
     
-    public FQuat ToQuaternion()
+    public FQuat ToQuaternion
     {
-        UCSQuatExtensions.ToQuaternion(out var quat, this);
-        return quat;
+        get
+        {
+            UCSQuatExtensions.ToQuaternion(out FQuat quat, this);
+            return quat;
+        }
     }
-
-    public FMatrix ToMatrix()
+    
+    public FMatrix ToMatrix
     {
-        FMatrixExporter.CallFromRotator(out var rotationMatrix, this);
-        return rotationMatrix;
+        get
+        {
+            FMatrixExporter.CallFromRotator(out FMatrix rotationMatrix, this);
+            return rotationMatrix;
+        }
     }
-
-    // Convert the rotator into a vector facing in its direction.
-    public FVector ToVector()
+    
+    public FVector ToVector => FVectorExporter.CallFromRotator(this);
+    public bool IsZero => Pitch == 0 && Yaw == 0 && Roll == 0;
+    
+    public bool IsNearlyZero(float tolerance = 0.0001f)
     {
-        return FVectorExporter.CallFromRotator(this);
+        return Math.Abs(Pitch) < tolerance && Math.Abs(Yaw) < tolerance && Math.Abs(Roll) < tolerance;
+    }
+    
+    public override string ToString()
+    {
+        return $"Pitch={Pitch}, Yaw={Yaw}, Roll={Roll}";
     }
 
     public static FRotator operator + (FRotator lhs, FRotator rhs)
@@ -147,24 +160,9 @@ public partial struct FRotator
                Math.Abs(left.Roll - right.Roll) < tolerance &&
                Math.Abs(left.Yaw - right.Yaw) < tolerance;
     }
+    
     public static bool operator !=(FRotator left, FRotator right)
     {
         return !(left == right);
-    }
-    
-    public bool IsZero()
-    {
-        
-        return Pitch == 0 && Yaw == 0 && Roll == 0;
-    }
-    
-    public bool IsNearlyZero(float tolerance = 0.0001f)
-    {
-        return Math.Abs(Pitch) < tolerance && Math.Abs(Yaw) < tolerance && Math.Abs(Roll) < tolerance;
-    }
-    
-    public override string ToString()
-    {
-        return $"({Pitch}, {Yaw}, {Roll})";
     }
 }
