@@ -73,9 +73,6 @@ public class GenerateSolution : BuildToolAction
                     {
                         addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
                     }
-					
-					addProjectToSln.StartInfo.ArgumentList.Add("--include-references");
-                    addProjectToSln.StartInfo.ArgumentList.Add("false");
 
                     addProjectToSln.StartInfo.ArgumentList.Add("-s");
                     addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
