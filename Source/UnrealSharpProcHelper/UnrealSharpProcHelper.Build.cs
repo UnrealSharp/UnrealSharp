@@ -25,7 +25,7 @@ public class UnrealSharpProcHelper : ModuleRules
                 "XmlParser",
             }
         );
-
-        PublicDefinitions.Add("SkipGlueGeneration");
+        
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
     }
 }

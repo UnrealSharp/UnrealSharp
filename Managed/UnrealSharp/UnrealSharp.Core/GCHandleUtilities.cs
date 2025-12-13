@@ -9,16 +9,20 @@ namespace UnrealSharp.Core;
 public static class GCHandleUtilities
 {
     private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongRefsByAssembly = new();
+    private static readonly ConditionalWeakTable<AssemblyLoadContext, object?> AlcsBeingUnloaded = new();
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static bool IsAlcBeingUnloaded(AssemblyLoadContext alc) => AlcsBeingUnloaded.TryGetValue(alc, out _);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnAlcUnloading(AssemblyLoadContext alc)
     {
-        StrongRefsByAssembly.TryRemove(alc, out _);
-    }
-
-    public static GCHandle AllocateStrongPointer(object value, object allocator)
-    {
-        return AllocateStrongPointer(value, allocator.GetType().Assembly);
+        AlcsBeingUnloaded.Add(alc, null);
+        
+        if (StrongRefsByAssembly.TryRemove(alc, out ConcurrentDictionary<GCHandle, object>? strongReferences))
+        {
+            strongReferences.Clear();
+        }
     }
     
     public static GCHandle AllocateStrongPointer(object value, Assembly alc)
@@ -36,22 +40,24 @@ public static class GCHandleUtilities
     public static GCHandle AllocateStrongPointer(object value, AssemblyLoadContext loadContext)
     {
         GCHandle weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
+
+        if (IsAlcBeingUnloaded(loadContext))
+        {
+            return weakHandle;
+        }
+        
         ConcurrentDictionary<GCHandle, object> strongReferences = StrongRefsByAssembly.GetOrAdd(loadContext, alcInstance =>
         {
             alcInstance.Unloading += OnAlcUnloading;
             return new ConcurrentDictionary<GCHandle, object>();
         });
-
+            
         strongReferences.TryAdd(weakHandle, value);
-
         return weakHandle;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GCHandle AllocateWeakPointer(object value) => GCHandle.Alloc(value, GCHandleType.Weak);
-        
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GCHandle AllocatePinnedPointer(object value) => GCHandle.Alloc(value, GCHandleType.Pinned);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Free(GCHandle handle, Assembly? assembly)
@@ -94,6 +100,12 @@ public static class GCHandleUtilities
         }
 
         return default;
-        
+    }
+    
+    public static T? GetObjectFromHandlePtrFast<T>(IntPtr handle)
+    {
+        GCHandle subObjectGcHandle = GCHandle.FromIntPtr(handle);
+        object? subObject = subObjectGcHandle.Target;
+        return (T?)subObject;
     }
 }

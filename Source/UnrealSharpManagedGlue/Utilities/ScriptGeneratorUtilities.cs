@@ -78,6 +78,7 @@ public class GetterSetterPair
 public static class ScriptGeneratorUtilities
 {
     public const string InteropNamespace = "UnrealSharp.Interop";
+    public const string CoreNamespace = "UnrealSharp.Core";
     public const string MarshallerNamespace = "UnrealSharp.Core.Marshallers";
     public const string AttributeNamespace = "UnrealSharp.Attributes";
     public const string CoreAttributeNamespace = "UnrealSharp.Core.Attributes";

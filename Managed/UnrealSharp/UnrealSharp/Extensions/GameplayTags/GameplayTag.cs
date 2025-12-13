@@ -1,3 +1,4 @@
+using UnrealSharp.Core;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
@@ -7,6 +8,7 @@ public partial struct FGameplayTag
     public FGameplayTag(FName tagName)
     {
         this = UCSGameplayTagExtensions.RequestGameplayTag(tagName);
+        
         if (!IsValid)
         {
             throw new Exception($"Failed to create GameplayTag with name {tagName}");
@@ -43,7 +45,7 @@ public partial struct FGameplayTag
     /// Parses the tag name and returns the name of the leaf.
     /// For example, calling this on x.y.z would return the z component.
     /// </summary>
-    public FName LeafName => this.GetTagLeafName();
+    //public FName LeafName => this.GetTagLeafName();
     
     public bool Equals(FGameplayTag other)
     {
@@ -73,5 +75,15 @@ public partial struct FGameplayTag
     public static bool operator !=(FGameplayTag lhs, FGameplayTag rhs)
     {
         return !(lhs == rhs);
+    }
+    
+    public static implicit operator FGameplayTag(string tagName)
+    {
+        return new FGameplayTag(tagName);
+    }
+    
+    public static implicit operator FGameplayTag(FName gameplayTag)
+    {
+        return new FGameplayTag(gameplayTag);
     }
 }

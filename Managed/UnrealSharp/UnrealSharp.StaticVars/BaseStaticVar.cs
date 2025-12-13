@@ -29,6 +29,12 @@ public class FBaseStaticVar<T>
     
     public override string ToString()
     {
-        return Value.ToString();
+        var value = Value;
+        if (value == null)
+        {
+            return "null value";
+        }
+        
+        return value.ToString()!;
     }
 }

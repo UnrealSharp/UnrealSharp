@@ -2,26 +2,26 @@
 
 public static class NativeBinds
 {
-    private unsafe static delegate* unmanaged[Cdecl]<char*, char*, int, IntPtr> _getBoundFunction = null;
+    private static unsafe delegate* unmanaged[Cdecl]<char*, char*, int, IntPtr> _getBoundFunction = null;
 
-    public unsafe static void InitializeNativeBinds(IntPtr bindsCallbacks)
+    public static unsafe void Initialize(IntPtr bindsCallbacks)
     {
         if (_getBoundFunction != null)
         {
-            throw new Exception("NativeBinds.InitializeNativeBinds called twice");
+            throw new Exception("NativeBinds.Initialize called twice");
         }
 
         _getBoundFunction = (delegate* unmanaged[Cdecl]<char*, char*, int, IntPtr>)bindsCallbacks;
     }
 
-    public unsafe static IntPtr TryGetBoundFunction(string outerName, string functionName, int functionSize)
+    public static unsafe IntPtr TryGetBoundFunction(string outerName, string functionName, int functionSize)
     {
         if (_getBoundFunction == null)
         {
             throw new Exception("NativeBinds not initialized");
         }
 
-        IntPtr functionPtr = IntPtr.Zero;
+        IntPtr functionPtr;
         fixed (char* outerNamePtr = outerName)
         fixed (char* functionNamePtr = functionName)
         {

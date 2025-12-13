@@ -21,7 +21,6 @@ public static class Program
 
     public static string EngineGluePath { get; private set; } = "";
     public static string PluginsPath { get; private set; } = "";
-    public static string ProjectGluePath_LEGACY { get; private set; } = "";
     public static string ProjectName => Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile!);
 
     public static bool BuildingEditor { get; private set; }
@@ -37,37 +36,33 @@ public static class Program
         ModuleName = "UnrealSharpCore")]
     private static void Main(IUhtExportFactory factory)
     {
-        Console.WriteLine("Initializing C# Glue Generator...");
+        Console.WriteLine("Initializing C# exporter...");
+        
         Factory = factory;
-
+        
         InitializeStatics();
-
-        UhtType? foundType = factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
-        if (foundType is not UhtClass blueprintFunctionLibrary)
-        {
-            throw new InvalidOperationException("Failed to find UBlueprintFunctionLibrary class.");
-        }
-
-        BlueprintFunctionLibrary = blueprintFunctionLibrary;
+        CacheBlueprintFunctionLibrary();
+        
+        USharpBuildToolUtilities.CompileUSharpBuildTool();
 
         try
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-
             CSharpExporter.StartExport();
-            FileExporter.CleanOldExportedFiles();
-
             stopwatch.Stop();
+            
+            FileExporter.CleanOldExportedFiles();
+            
             Console.WriteLine($"Export process completed successfully in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
             if (CSharpExporter.HasModifiedEngineGlue && BuildingEditor)
             {
-                Console.WriteLine("Detected modified engine glue. Building UnrealSharp solution...");
-                DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"), ManagedBinariesPath);
+                Console.WriteLine("Detected modifications to Engine glue, rebuilding UnrealSharp solution...");
+                DotNetUtilities.BuildSolution(Path.Combine(ManagedPath, "UnrealSharp"));
             }
-
-            CreateGlueProjects();
+            
+            GlueModuleFactory.CreateGlueProjects();
         }
         catch (Exception ex)
         {
@@ -87,7 +82,6 @@ public static class Program
         string projectDirectory = Factory.Session.ProjectDirectory!;
 		ScriptFolder = Path.Combine(projectDirectory, "Script");
         PluginsPath = Path.Combine(projectDirectory, "Plugins");
-        ProjectGluePath_LEGACY = Path.Combine(ScriptFolder, "ProjectGlue");
 
         EngineGluePath = ScriptGeneratorUtilities.TryGetPluginDefine("GENERATED_GLUE_PATH");
 
@@ -106,92 +100,14 @@ public static class Program
                 .ToImmutableArray();
     }
     
-    private static void CreateGlueProjects()
+    private static void CacheBlueprintFunctionLibrary()
     {
-        bool hasProjectGlue = false;
-        foreach (ProjectDirInfo pluginDir in PluginUtilities.PluginInfo.Values)
+        UhtType? foundType = Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary");
+        if (foundType is not UhtClass blueprintFunctionLibrary)
         {
-            if (pluginDir.IsPartOfEngine) continue;
-            
-            if (pluginDir.IsUProject)
-            {
-                hasProjectGlue = true;
-            }
-            
-            TryCreateGlueProject(pluginDir.GlueCsProjPath, pluginDir.GlueProjectName, pluginDir.Dependencies, pluginDir.ProjectRoot);
+            throw new InvalidOperationException("Failed to find UBlueprintFunctionLibrary class.");
         }
 
-        if (!hasProjectGlue)
-        {
-            UhtSession session = Factory.Session;
-            string projectRoot = session.ProjectDirectory!;
-            string baseName = Path.GetFileNameWithoutExtension(session.ProjectFile!);
-            string projectName = baseName + ".Glue";
-            string csprojPath = Path.Join(projectRoot, "Script", projectName, projectName + ".csproj");
-
-            TryCreateGlueProject(csprojPath, projectName, null, projectRoot);
-        }
-    }
-
-    private static void TryCreateGlueProject(string csprojPath, string projectName, IEnumerable<string>? dependencyPaths, string projectRoot)
-    {
-        if (!File.Exists(csprojPath))
-        {
-            string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-            List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
-            {
-                new("NewProjectName", projectName),
-                new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-                new("SkipIncludeProjectGlue", "true"),
-                new("SkipSolutionGeneration", "true"),
-            };
-
-            arguments.Add(new KeyValuePair<string, string>("ProjectRoot", projectRoot));
-            if (!DotNetUtilities.InvokeUSharpBuildTool("GenerateProject", ManagedBinariesPath,
-                    ProjectName,
-                    PluginDirectory,
-                    Factory.Session.ProjectDirectory!,
-                    Factory.Session.EngineDirectory!,
-                    arguments))
-            {
-                throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
-            }
-            
-            Console.WriteLine($"Successfully created project file: {projectName}");
-        }
-        else
-        {
-            Console.WriteLine($"Project file already exists: {projectName}. Skipping creation.");
-        }
-        
-        AddPluginDependencies(projectName, csprojPath, dependencyPaths);
-    }
-
-    private static void AddPluginDependencies(string projectName, string projectPath, IEnumerable<string>? dependencies)
-    {
-        List<KeyValuePair<string, string>> arguments = new()
-        {
-            new KeyValuePair<string, string>("ProjectPath", projectPath),
-        };
-
-        if (dependencies != null)
-        {
-            foreach (string path in dependencies)
-            {
-                arguments.Add(new KeyValuePair<string, string>("Dependency", path));
-            }
-        }
-
-        if (!DotNetUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", ManagedBinariesPath,
-                ProjectName,
-                PluginDirectory,
-                Factory.Session.ProjectDirectory!,
-                Factory.Session.EngineDirectory!,
-                arguments))
-        {
-            throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
-        }
-        
-        Console.WriteLine($"Updated project dependencies for {projectName}");
+        BlueprintFunctionLibrary = blueprintFunctionLibrary;
     }
 }

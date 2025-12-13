@@ -44,7 +44,7 @@ struct UNREALSHARPBINDS_API FCSExportedFunction
 {
 	FName Name;
 	void* FunctionPointer;
-	int32 Size;
+	int32 ParameterSize;
 
-	FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InSize);
+	FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize);
 };

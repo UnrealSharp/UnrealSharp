@@ -7,11 +7,11 @@ using EpicGames.UHT.Types;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
-public readonly struct ProjectDirInfo
+public struct ProjectDirInfo
 {
     private readonly string _projectName;
     private readonly string _projectDirectory;
-    public HashSet<string>? Dependencies { get; }
+    public HashSet<string>? Dependencies { get; set; }
 
     public ProjectDirInfo(string projectName, string projectDirectory, HashSet<string>? dependencies = null)
     {
@@ -21,7 +21,6 @@ public readonly struct ProjectDirInfo
     }
     
     public string GlueProjectName => $"{_projectName}.Glue";
-    public string GlueProjectName_LEGACY => $"{_projectName}.PluginGlue";
     public string GlueProjectFile => $"{GlueProjectName}.csproj";
     
     public string ScriptDirectory => Path.Combine(_projectDirectory, "Script");
@@ -33,7 +32,6 @@ public readonly struct ProjectDirInfo
     public bool IsPartOfEngine => _projectName == "Engine";
     
     public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
-    public string GlueProjectDirectory_LEGACY => Path.Combine(ScriptDirectory, GlueProjectName_LEGACY);
     
     public string ProjectRoot => _projectDirectory;
 }
@@ -125,25 +123,27 @@ public static class FileExporter
     public static void CleanOldExportedFiles()
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
-        CleanFilesInDirectories(Program.EngineGluePath);
-        CleanFilesInDirectories(Program.ProjectGluePath_LEGACY, true);
         
-        foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
+        CleanFilesInDirectories(Program.EngineGluePath);
+        
+        foreach (ProjectDirInfo pluginDirectory in PluginUtilities.PluginInfo.Values)
         {
+            if (pluginDirectory.IsPartOfEngine)
+            {
+                continue;
+            }
+            
             CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory, true);
-            CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory_LEGACY, true);
         }
     }
 
     public static void CleanModuleFolders()
     {
         CleanGeneratedFolder(Program.EngineGluePath);
-        CleanGeneratedFolder(Program.ProjectGluePath_LEGACY);
         
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
             CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory);
-            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory_LEGACY);
         }
     }
     
@@ -169,7 +169,14 @@ public static class FileExporter
 
             Directory.Delete(directory, true);
         }
+        
+        string csprojFile = Path.Combine(path, $"{Path.GetFileName(path)}.csproj");
+        if (File.Exists(csprojFile))
+        {
+            File.Delete(csprojFile);
+        }
     }
+    
     private static HashSet<string> GetIgnoredDirectories(string path)
     {
         string glueIgnoreFileName = Path.Combine(path, ".glueignore");
@@ -183,7 +190,11 @@ public static class FileExporter
         while (!fileInput.EndOfStream)
         {
             string? line = fileInput.ReadLine();
-            if (string.IsNullOrWhiteSpace(line)) continue;
+            
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
 
             ignoredDirectories.Add(line.Trim());
         }
@@ -200,7 +211,7 @@ public static class FileExporter
         string[] directories = Directory.GetDirectories(path);
         HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
 
-        foreach (var directory in directories)
+        foreach (string directory in directories)
         {
             if (ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
             {
@@ -208,7 +219,7 @@ public static class FileExporter
             }
 
             string moduleName = Path.GetFileName(directory);
-            if (!CSharpExporter.HasBeenExported(moduleName))
+            if (!ModuleHeadersTracker.HasModuleBeenExported(moduleName))
             {
                 continue;
             }
@@ -216,7 +227,7 @@ public static class FileExporter
             int removedFiles = 0;
             string[] files = Directory.GetFiles(directory);
 
-            foreach (var file in files)
+            foreach (string file in files)
             {
                 if (ChangedFiles.Contains(file) || UnchangedFiles.Contains(file))
                 {

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using UnrealSharp.Engine.Core.Modules;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.Plugins;
 

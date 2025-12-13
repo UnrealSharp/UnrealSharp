@@ -6,15 +6,11 @@ namespace UnrealSharpBuildTool;
 
 public enum BuildAction : int
 {
-    Build,
-    Clean,
     GenerateProject,
     UpdateProjectDependencies,
-    Rebuild,
-    Weave,
     PackageProject,
     GenerateSolution,
-    BuildWeave,
+    BuildEmitLoadOrder,
 }
 
 public enum BuildConfig : int
@@ -26,7 +22,7 @@ public enum BuildConfig : int
 
 public class BuildToolOptions
 {
-    [Option("Action", Required = true, HelpText = "The action the build tool should process. Possible values: Build, Clean, GenerateProject, Rebuild, Weave, PackageProject, GenerateSolution, BuildWeave.")]
+    [Option("Action", Required = true, HelpText = "The action the build tool should process. Possible values: Build, Clean, GenerateProject, Rebuild, Weave, PackageProject, GenerateSolution, BuildEmitLoadOrder.")]
     public BuildAction Action { get; set; }
 
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
@@ -71,13 +67,5 @@ public class BuildToolOptions
 
         var helpText = HelpText.AutoBuild(result, h => h, e => e);
         Console.WriteLine(helpText);
-    }
-
-    public void NormalizePaths()
-    {
-        ProjectDirectory = Path.GetFullPath(ProjectDirectory);
-        PluginDirectory = Path.GetFullPath(PluginDirectory);
-        EngineDirectory = Path.GetFullPath(EngineDirectory);
-        DotNetPath = Path.GetFullPath(DotNetPath);
     }
 }

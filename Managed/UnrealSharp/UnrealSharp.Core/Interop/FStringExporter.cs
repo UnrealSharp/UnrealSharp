@@ -1,9 +1,9 @@
 using UnrealSharp.Binds;
 
-namespace UnrealSharp.Interop;
+namespace UnrealSharp.Core.Interop;
 
 [NativeCallbacks]
 public unsafe partial class FStringExporter
 {
-    public static delegate* unmanaged<IntPtr, char*, void> MarshalToNativeString;
+    public static delegate* unmanaged<UnmanagedArray*, string, void> MarshalToNativeString;
 }

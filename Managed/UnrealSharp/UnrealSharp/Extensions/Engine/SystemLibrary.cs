@@ -38,4 +38,34 @@ public partial class SystemLibrary
     {
         return LineTraceByChannel(start, end, traceChannel, traceComplex, actorsToIgnore, EDrawDebugTrace.None, out outHit, true);
     }
+    
+    public static bool LineTraceByChannel(FVector start, FVector end, ETraceTypeQuery traceChannel, bool traceComplex, out FHitResult outHit)
+    {
+        return LineTraceByChannel(start, end, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHit, true);
+    }
+    
+    public static bool MultiLineTraceByChannel(FVector start, FVector end, ETraceTypeQuery traceChannel, bool traceComplex, out IList<FHitResult> outHits)
+    {
+        return MultiLineTraceByChannel(start, end, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHits, true);
+    }
+    
+    public static bool SphereTraceByChannel(FVector start, FVector end, float radius, ETraceTypeQuery traceChannel, bool traceComplex, out FHitResult outHit)
+    {
+        return SphereTraceByChannel(start, end, radius, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHit, true);
+    }
+    
+    public static bool MultiSphereTraceByChannel(FVector start, FVector end, float radius, ETraceTypeQuery traceChannel, bool traceComplex, out IList<FHitResult> outHits)
+    {
+        return MultiSphereTraceByChannel(start, end, radius, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHits, true);
+    }
+    
+    public static bool BoxTraceByChannel(FVector start, FVector end, FVector halfSize, FRotator orientation, ETraceTypeQuery traceChannel, bool traceComplex, out FHitResult outHit)
+    {
+        return BoxTraceByChannel(start, end, halfSize, orientation, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHit, true);
+    }
+    
+    public static bool MultiBoxTraceByChannel(FVector start, FVector end, FVector halfSize, FRotator orientation, ETraceTypeQuery traceChannel, bool traceComplex, out IList<FHitResult> outHits)
+    {
+        return MultiBoxTraceByChannel(start, end, halfSize, orientation, traceChannel, traceComplex, new List<AActor>(), EDrawDebugTrace.None, out outHits, true);
+    }
 }
