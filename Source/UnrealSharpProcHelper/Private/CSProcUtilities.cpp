@@ -158,6 +158,13 @@ FString UCSProcUtilities::GetUnrealSharpPluginsPath()
 	return GetPluginAssembliesPath() / "UnrealSharp.Plugins.dll";
 }
 
+bool UCSProcUtilities::BuildUserSolution()
+{
+	TMap<FString, FString> Arguments;
+	Arguments.Add("OutputPath", GetUserAssemblyDirectory());
+	return InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER, Arguments);
+}
+
 FString UCSProcUtilities::GetRuntimeConfigPath()
 {
 	return GetPluginAssembliesPath() / "UnrealSharp.runtimeconfig.json";

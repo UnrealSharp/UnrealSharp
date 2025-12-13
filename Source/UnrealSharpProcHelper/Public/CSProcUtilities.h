@@ -25,6 +25,7 @@ class UNREALSHARPPROCHELPER_API UCSProcUtilities : public UObject
 	
 public:
 	static bool InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory = nullptr);
+	
 	static bool InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments = TMap<FString, FString>());
 	
 	static bool InvokeDotNet(const FString& Arguments, const FString* InWorkingDirectory = nullptr)
@@ -44,6 +45,8 @@ public:
 	{
 		return InvokeDotNetBuild(GetScriptFolderDirectory());
 	}
+	
+	static bool BuildUserSolution();
 
 	UFUNCTION(meta = (ScriptMethod))
 	static FString GetRuntimeConfigPath();

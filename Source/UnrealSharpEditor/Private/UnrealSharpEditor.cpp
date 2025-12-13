@@ -477,16 +477,8 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
 
 void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const FString& ModulePath) const
 {
+	UCSProcUtilities::BuildUserSolution();
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
-	
-	UCSManagedAssembly* LoadedAssembly = UCSManager::Get().LoadUserAssemblyByName(*ModuleName);
-	if (!LoadedAssembly || !LoadedAssembly->IsValidAssembly())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to load newly created project {ModuleName}", *ModuleName);
-		UCSHotReloadSubsystem::Get()->ResumeHotReload();
-		return;
-	}
-	
 	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, &FUnrealSharpEditorModule::OnProjectLoaded);
 }
 
