@@ -135,16 +135,16 @@ public static class PluginUtilities
         {
             UhtEngineType engineType = childType.EngineType;
 
-            if (engineType == UhtEngineType.Class)
+            if (engineType is UhtEngineType.Class or UhtEngineType.ScriptStruct)
             {
-                UhtClass foundClass = (UhtClass) childType;
+                UhtStruct foundClass = (UhtStruct) childType;
                 
-                if (foundClass.SuperClass == null)
+                if (foundClass.Super == null)
                 {
                     return;
                 }
                 
-                TryAddDependency(foundClass.SuperClass!.Package);
+                TryAddDependency(foundClass.Super!.Package);
             }
             else if (childType.EngineType == UhtEngineType.Property)
             {
