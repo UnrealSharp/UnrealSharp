@@ -13,9 +13,4 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\Shared\DotNetUtilities.cs" Link="..\..\..\Managed\Shared\DotNetUtilities.cs" />
-  </ItemGroup>
-  
 </Project>

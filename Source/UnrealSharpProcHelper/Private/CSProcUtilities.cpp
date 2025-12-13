@@ -1,7 +1,5 @@
 ﻿#include "CSProcUtilities.h"
 #include "UnrealSharpProcHelper.h"
-#include "XmlFile.h"
-#include "XmlNode.h"
 #include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Interfaces/IPluginManager.h"
@@ -12,14 +10,35 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
+	
+	void* PipeRead = nullptr;
+	void* PipeWrite = nullptr;
 
-	FString ErrorMessage;
-	FPlatformProcess::ExecProcess(*ProgramPath, *Arguments, &OutReturnCode, &Output, &ErrorMessage, *WorkingDirectory);
+	FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
+
+	OutReturnCode = -1;
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath, *Arguments, true, true, true, nullptr, 0, *WorkingDirectory, PipeWrite, PipeRead);
+	
+	if (ProcHandle.IsValid())
+	{
+		while (FPlatformProcess::IsProcRunning(ProcHandle))
+		{
+			FString ThisRead = FPlatformProcess::ReadPipe(PipeRead);
+			Output += ThisRead;
+		}
+
+		Output += FPlatformProcess::ReadPipe(PipeRead);
+		FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
+	}
+	else
+	{
+		UE_LOGFMT(LogUnrealSharpProcHelper, Error, "Failed to start process: {0} with arguments: {1}", *ProgramName, *Arguments);
+	}
+
+	FPlatformProcess::ClosePipe(PipeRead, PipeWrite);
 
 	if (OutReturnCode != 0)
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Error, TEXT("%s task failed (Args: %s) with return code %d. Error: %s"), *ProgramName, *Arguments, OutReturnCode, *Output)
-
 		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 		return false;
@@ -27,7 +46,7 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 
 	double EndTime = FPlatformTime::Seconds();
 	double ElapsedTime = EndTime - StartTime;
-	UE_LOG(LogUnrealSharpProcHelper, Log, TEXT("%s with args (%s) took %f seconds to execute."), *ProgramName, *Arguments, ElapsedTime);
+	UE_LOGFMT(LogUnrealSharpProcHelper, Display, "{0} task completed in {1} seconds.", *ProgramName, ElapsedTime);
 	return true;
 }
 

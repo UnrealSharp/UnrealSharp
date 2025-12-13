@@ -23,6 +23,7 @@ public class GenerateSolution : BuildToolAction
             .ToList();
 
         AddProjectToSln(existingProjectsList);
+        CopyGlobalJson();
         return true;
     }
 
@@ -156,5 +157,12 @@ public class GenerateSolution : BuildToolAction
         // be in the directory for the plugin itself.
         string containingDirName = Path.GetDirectoryName(projectDirName)!;
         return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
+    }
+    
+    private static void CopyGlobalJson()
+    {
+        string sourceGlobalJsonPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "global.json");
+        string destinationGlobalJsonPath = Path.Combine(Program.GetScriptFolder(), "global.json");
+        File.Copy(sourceGlobalJsonPath, destinationGlobalJsonPath, overwrite: true);
     }
 }
