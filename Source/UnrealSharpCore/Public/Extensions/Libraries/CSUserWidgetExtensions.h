@@ -25,4 +25,7 @@ public:
 
 	UFUNCTION(meta=(ScriptMethod, UserWidgetClass = "/Script/UMG.UserWidget", DeterminesOutputType = "UserWidgetClass"))
 	static UUserWidget* CreateWidget(UObject* WorldContextObject, const TSubclassOf<UUserWidget>& UserWidgetClass, APlayerController* OwningController);
+
+	UFUNCTION(meta=(ScriptMethod))
+	static TArray<UWidget*> GetAllWidgets(UUserWidget* UserWidget);
 };

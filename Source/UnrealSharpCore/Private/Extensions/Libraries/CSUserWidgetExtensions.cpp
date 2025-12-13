@@ -2,6 +2,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/WidgetTree.h"
 
 APlayerController* UCSUserWidgetExtensions::GetOwningPlayerController(UUserWidget* UserWidget)
 {
@@ -47,4 +48,16 @@ UUserWidget* UCSUserWidgetExtensions::CreateWidget(UObject* WorldContextObject, 
 {
 	UUserWidget* UserWidget = UWidgetBlueprintLibrary::Create(WorldContextObject, UserWidgetClass, OwningController);
 	return UserWidget;
+}
+
+TArray<UWidget*> UCSUserWidgetExtensions::GetAllWidgets(UUserWidget* UserWidget)
+{
+	TArray<UWidget*> Widgets;
+	if (!IsValid(UserWidget) || !IsValid(UserWidget->WidgetTree))
+	{
+		return Widgets;
+	}
+
+	UserWidget->WidgetTree->GetAllWidgets(Widgets);
+	return Widgets;
 }
