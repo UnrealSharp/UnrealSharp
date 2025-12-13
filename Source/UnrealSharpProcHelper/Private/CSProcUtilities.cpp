@@ -10,32 +10,9 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 	double StartTime = FPlatformTime::Seconds();
 	FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
 	FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
-	
-	void* PipeRead = nullptr;
-	void* PipeWrite = nullptr;
 
-	FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
-
-	OutReturnCode = -1;
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath, *Arguments, true, true, true, nullptr, 0, *WorkingDirectory, PipeWrite, PipeRead);
-	
-	if (ProcHandle.IsValid())
-	{
-		while (FPlatformProcess::IsProcRunning(ProcHandle))
-		{
-			FString ThisRead = FPlatformProcess::ReadPipe(PipeRead);
-			Output += ThisRead;
-		}
-
-		Output += FPlatformProcess::ReadPipe(PipeRead);
-		FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
-	}
-	else
-	{
-		UE_LOGFMT(LogUnrealSharpProcHelper, Error, "Failed to start process: {0} with arguments: {1}", *ProgramName, *Arguments);
-	}
-
-	FPlatformProcess::ClosePipe(PipeRead, PipeWrite);
+	FString ErrorMessage;
+	FPlatformProcess::ExecProcess(*ProgramPath, *Arguments, &OutReturnCode, &Output, &ErrorMessage, *WorkingDirectory);
 
 	if (OutReturnCode != 0)
 	{
