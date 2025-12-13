@@ -268,6 +268,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     public override void ExportBackingVariables(GeneratorStringBuilder builder)
     {
+        if ((HasParamsOrReturnValue || NeedsImplementationFunction) && !FunctionFlags.HasFlag(EFunctionFlags.Delegate))
+        {
+            builder.AppendNewBackingField($"static IntPtr {FunctionNativePtr};");
+        }
+        
         if (HasParamsOrReturnValue)
         {
             builder.AppendNewBackingField($"static int {SizeVariableName};");

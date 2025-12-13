@@ -12,12 +12,6 @@ public record UnrealFunction : UnrealFunctionBase
     {
     }
 
-    public override void ExportBackingVariables(GeneratorStringBuilder builder)
-    {
-        base.ExportBackingVariables(builder);
-        builder.AppendNewBackingField($"static IntPtr {FunctionNativePtr};");
-    }
-
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         ExportBackingVariables(builder);
