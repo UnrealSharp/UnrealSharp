@@ -125,6 +125,8 @@ public:
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object);
+	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle);
+	
 	TSharedPtr<FGCHandle> GetOrCreateManagedInterface(UObject* Object, UClass* InterfaceClass);
 
 	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return AssemblyGCHandle; }

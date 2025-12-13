@@ -26,7 +26,7 @@ FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResults
 void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 {
 	UCSClass* CSClass = static_cast<UCSClass*>(Class);
-	CSClass->SetCanBeInstancedFrom(FCSUnrealSharpUtils::IsEngineStartingUp());
+	CSClass->SetDeferredCreation(!FCSUnrealSharpUtils::IsEngineStartingUp());
 	Class->ClassConstructor = &UCSClass::ManagedObjectConstructor;
 	
 	Super::FinishCompilingClass(Class);
@@ -116,7 +116,7 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
 	UCSClass* ManagedClass = static_cast<UCSClass*>(DefaultObject->GetClass());
-	ManagedClass->SetCanBeInstancedFrom(true);
+	ManagedClass->SetDeferredCreation(false);
 	
 	UCSManager::Get().FindManagedObject(DefaultObject);
 	

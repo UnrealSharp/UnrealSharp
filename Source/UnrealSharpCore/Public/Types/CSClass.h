@@ -33,8 +33,8 @@ public:
 		return OwningBlueprint;
 	}
 	
-	void SetCanBeInstancedFrom(bool bInCanBeInstancedFrom) { CanBeInstancedFrom = bInCanBeInstancedFrom; }
-	bool GetCanBeInstancedFrom() const { return CanBeInstancedFrom; }
+	void SetDeferredCreation(bool bInDeferredCreation) { bDeferredCreation = bInDeferredCreation; }
+	bool IsCreationDeferred() const { return bDeferredCreation; }
 #endif
 	
 private:
@@ -42,6 +42,6 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UBlueprint> OwningBlueprint;
 	
-	bool CanBeInstancedFrom = true;
+	bool bDeferredCreation = true;
 #endif
 };

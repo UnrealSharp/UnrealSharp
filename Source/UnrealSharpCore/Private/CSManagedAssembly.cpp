@@ -187,23 +187,27 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(cha
 
 TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UObject* Object)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::CreateManagedObjectFromNative);
-	
-	// Only managed/native classes have a C# counterpart. Other types such as blueprints, structs, enums are not directly represented in C#.
+	// Only managed/native classes have a C# counterpart. Other types such as Blueprints are not directly represented.
 	UClass* Class = FCSClassUtilities::GetFirstNonBlueprintClass(Object->GetClass());
 	
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindOrAddManagedTypeDefinition(Class);
 	TSharedPtr<FGCHandle> TypeGCHandle = ManagedTypeDefinition->GetTypeGCHandle();
+	
+	return CreateManagedObjectFromNative(Object, TypeGCHandle);
+}
 
+TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::CreateManagedObjectFromNative);
+	
 	TCHAR* Error = nullptr;
 	FGCHandle NewObjectHandle = FCSManagedCallbacks::ManagedCallbacks.CreateNewManagedObject(Object, TypeGCHandle->GetPointer(), &Error);
 	NewObjectHandle.Type = GCHandleType::StrongHandle;
 
 	if (NewObjectHandle.IsNull())
 	{
-		// This should never happen. Potential issues: IL errors, typehandle is invalid.
+		// This should never happen. Potential issues: Exceptions in managed code, TypeHandle is invalid.
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}:\n{1}", *Object->GetName(), Error);
-		return nullptr;
 	}
 
 	TSharedPtr<FGCHandle> Handle = MakeShared<FGCHandle>(NewObjectHandle);
@@ -211,7 +215,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UO
 
 	uint32 ObjectID = Object->GetUniqueID();
 	UCSManager::Get().ManagedObjectHandles.AddByHash(ObjectID, ObjectID, Handle);
-
+	
 	return Handle;
 }
 

@@ -50,12 +50,7 @@ bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinit
 	}
 	
 	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
-	if (ReflectionData->GetRawReflectionData() == RawReflectionData)
-	{
-		return false;
-	}
-	
-	return true;
+	return ReflectionData->GetRawReflectionData() == RawReflectionData;
 }
 
 void FCSUtilities::ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results)

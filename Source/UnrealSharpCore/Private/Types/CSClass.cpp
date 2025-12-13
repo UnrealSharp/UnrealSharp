@@ -34,14 +34,16 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 	}
 
 #if WITH_EDITOR
-	if (!FirstManagedClass->GetCanBeInstancedFrom())
+	if (FirstManagedClass->IsCreationDeferred())
 	{
 		return;
 	}
 #endif
 	
-	UCSManagedAssembly* Assembly = FirstManagedClass->GetManagedTypeDefinition()->GetOwningAssembly();
-	Assembly->CreateManagedObjectFromNative(Object);
+	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FirstManagedClass->GetManagedTypeDefinition();
+	UCSManagedAssembly* OwningAssembly = ManagedTypeDefinition->GetOwningAssembly();
+	
+	OwningAssembly->CreateManagedObjectFromNative(Object, ManagedTypeDefinition->GetTypeGCHandle());
 }
 
 #if WITH_EDITOR
