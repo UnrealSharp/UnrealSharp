@@ -35,6 +35,8 @@ private:
 	static void CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UCSClass* Field, UClass* SuperClass);
 #endif
 	static void CompileClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UCSClass* Field, UClass* SuperClass);
+	
+	static void PopulateComponentOverrides(TArray<FBPComponentClassOverride>* Overrides, const TSharedPtr<FCSClassReflectionData>& ClassReflectionData);
 
 	UClass* TryRedirectSuperClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UClass* SuperClass) const;
 	

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CSClassBaseReflectionData.h"
+#include "CSComponentOverrideReflectionData.h"
 
 struct FCSClassReflectionData : FCSClassBaseReflectionData
 {
@@ -11,4 +12,5 @@ struct FCSClassReflectionData : FCSClassBaseReflectionData
 	FCSTypeReferenceReflectionData ParentClass;
 	TArray<FName> Overrides;
 	TArray<FCSTypeReferenceReflectionData> Interfaces;
+	TArray<FCSComponentOverrideReflectionData> ComponentOverrides;
 };

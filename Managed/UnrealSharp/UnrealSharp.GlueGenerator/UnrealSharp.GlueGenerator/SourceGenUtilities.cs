@@ -88,6 +88,36 @@ public static class SourceGenUtilities
         return attributes;
     }
     
+    public static T? TryGetAttributeConstructorArgument<T>(this AttributeData attribute, int argumentIndex)
+    {
+        if (attribute.ConstructorArguments.Length <= argumentIndex)
+        {
+            return default;
+        }
+        
+        TypedConstant argument = attribute.ConstructorArguments[argumentIndex];
+            
+        if (argument.Value is not T value)
+        {
+            return default;
+        }
+
+        return value;
+    }
+    
+    public static object? TryGetAttributeNamedArgument(this AttributeData attribute, string argumentName)
+    {
+        foreach (KeyValuePair<string, TypedConstant> namedArgument in attribute.NamedArguments)
+        {
+            if (namedArgument.Key == argumentName)
+            {
+                return namedArgument.Value.Value;
+            }
+        }
+
+        return null;
+    }
+    
     public static List<MetaDataInfo>? GetUMetaAttributes(this ISymbol symbol)
     {
         ImmutableArray<AttributeData> symbolAttributes = symbol.GetAttributes();
@@ -272,5 +302,52 @@ public static class SourceGenUtilities
         }
         
         return Accessibility.NotApplicable;
+    }
+    
+    public static ISymbol? GetMemberSymbolByName(this INamedTypeSymbol typeSymbol, string memberName)
+    {
+        ISymbol? foundMember = null;
+        
+        ITypeSymbol? currentType = typeSymbol;
+        
+        while (currentType != null)
+        {
+            foreach (ISymbol member in currentType.GetMembers())
+            {
+                if (member.Name != memberName)
+                {
+                    continue;
+                }
+                
+                foundMember = member;
+                break;
+            }
+
+            if (foundMember != null)
+            {
+                break;
+            }
+            
+            currentType = currentType.BaseType;
+        }
+
+        return foundMember;
+    }
+    
+    public static bool IsChildOf(this INamedTypeSymbol typeSymbol, INamedTypeSymbol potentialBaseType)
+    {
+        INamedTypeSymbol? currentBaseType = typeSymbol;
+        
+        while (currentBaseType != null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(currentBaseType, potentialBaseType))
+            {
+                return true;
+            }
+            
+            currentBaseType = currentBaseType.BaseType;
+        }
+
+        return false;
     }
 }

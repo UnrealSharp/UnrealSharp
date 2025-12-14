@@ -58,6 +58,8 @@ public record UnrealClass : UnrealClassBase
 
     public EquatableList<string> Overrides;
     public EquatableList<FieldName> Interfaces;
+
+    public EquatableList<ComponentOverride> ComponentOverrides;
     
     public string FullParentName => string.IsNullOrEmpty(ParentClass.Namespace) ? ParentClass.Name : $"{ParentClass.Namespace}.{ParentClass.Name}";
     
@@ -146,6 +148,38 @@ public record UnrealClass : UnrealClassBase
                 Overrides.List.Add(nativeName);
             }
         }
+        
+        List<AttributeData> overrideComponentAttribute = typeSymbol.GetAttributesByName("OverrideComponentAttribute");
+        ComponentOverrides = new EquatableList<ComponentOverride>(new List<ComponentOverride>(overrideComponentAttribute.Count));
+        
+        foreach (AttributeData attributeData in overrideComponentAttribute)
+        {
+            INamedTypeSymbol? componentType = attributeData.TryGetAttributeConstructorArgument<INamedTypeSymbol>(0);
+            string? overrideWithName = attributeData.TryGetAttributeConstructorArgument<string>(1);
+            string? optionalPropertyName = attributeData.TryGetAttributeConstructorArgument<string>(2);
+            
+            if (componentType == null || string.IsNullOrEmpty(overrideWithName))
+            {
+                continue;
+            }
+            
+            ISymbol? symbol = typeSymbol.BaseType!.GetMemberSymbolByName(overrideWithName!);
+            if (symbol == null || symbol.Kind != SymbolKind.Property)
+            {
+                continue;
+            }
+            
+            IPropertySymbol propertySymbol = (IPropertySymbol) symbol;
+            INamedTypeSymbol propertyType = (INamedTypeSymbol) propertySymbol.Type;
+            
+            if (!componentType.IsChildOf(propertyType))
+            {
+                continue;
+            }
+            
+            ComponentOverride componentOverride = new ComponentOverride(symbol.ContainingType, componentType, overrideWithName!, symbol.DeclaredAccessibility, optionalPropertyName);
+            ComponentOverrides.List.Add(componentOverride);
+        }
     }
     
     public UnrealClass(EClassFlags flags, string parentName, string parentNamespace, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 
@@ -196,6 +230,8 @@ public record UnrealClass : UnrealClassBase
         builder.EndTypeStaticConstructor();
         
         ExportList(builder, spc, Properties);
+        ExportComponentOverrides(builder);
+        
         ExportList(builder, spc, Functions);
         ExportList(builder, spc, AsyncFunctions);
         
@@ -207,6 +243,27 @@ public record UnrealClass : UnrealClassBase
         base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
         Functions.ExportListToStaticConstructor(builder, nativeType);
         AsyncFunctions.ExportListToStaticConstructor(builder, nativeType);
+    }
+    
+    public void ExportComponentOverrides(GeneratorStringBuilder builder)
+    {
+        if (ComponentOverrides.Count == 0)
+        {
+            return;
+        }
+        
+        foreach (ComponentOverride componentOverride in ComponentOverrides.List)
+        {
+            if (string.IsNullOrEmpty(componentOverride.OptionalPropertyName))
+            {
+                continue;
+            }
+            
+            string accessibilityPrefix = componentOverride.Accessibility.AccessibilityToString();
+            builder.AppendLine($"{accessibilityPrefix}{componentOverride.OverrideComponentType.FullName} {componentOverride.OptionalPropertyName} => ({componentOverride.OverrideComponentType.FullName}){componentOverride.OverridePropertyName};");
+        }
+        
+        builder.AppendLine();
     }
 
     public void ExportList<T>(GeneratorStringBuilder builder, SourceProductionContext spc, EquatableList<T> list) where T : UnrealType, IEquatable<T>
@@ -247,6 +304,21 @@ public record UnrealClass : UnrealClassBase
             {
                 JsonObject interfaceObject = interfaceName.SerializeToJson(true)!;
                 array.Add(interfaceObject);
+            }
+        });
+        
+        ComponentOverrides.PopulateJsonWithArray(jsonObject, "ComponentOverrides", array =>
+        {
+            foreach (ComponentOverride componentOverride in ComponentOverrides.List)
+            {
+                JsonObject componentObject = new JsonObject
+                {
+                    ["OwningClass"] = componentOverride.OwningClass.SerializeToJson(true),
+                    ["ComponentType"] = componentOverride.OverrideComponentType.SerializeToJson(true),
+                    ["PropertyName"] = componentOverride.OverridePropertyName,
+                };
+                
+                array.Add(componentObject);
             }
         });
     }

@@ -36,6 +36,22 @@ public interface ITestInterface
     public void CallInterfaceFunction(int intParam, string strParam);
 }
 
+[UClass]
+public partial class UMyMovementComponent : UCharacterMovementComponent
+{
+    
+}
+
+[UClass]
+[OverrideComponent(typeof(UMyMovementComponent), nameof(MovementComponent), "MyMovementComponent")]
+public partial class ATestCharacter : ACharacter
+{
+    public override void BeginPlay()
+    {
+        base.BeginPlay();
+    }
+}
+
 [UClass(ClassFlags.EditInlineNew | ClassFlags.DefaultToInstanced)]
 public partial class UTestObject : UObject
 {
@@ -70,7 +86,7 @@ public partial record struct FChunkID(
     UTestObject Y);
 
 [UClass]
-public partial class UTestClass : AActor, ITestInterface
+public partial class UTestClass : ACharacter, ITestInterface
 {
     [UProperty] public partial bool BoolProp { get; set; }
     [UProperty] public partial byte ByteProp { get; set; }

@@ -81,7 +81,8 @@ void UCSManagedClassCompiler::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassR
 		
 		Field->SetOwningBlueprint(Blueprint);
 	}
-
+	
+	PopulateComponentOverrides(&Blueprint->ComponentClassOverrides, ClassReflectionData);
 	Blueprint->ParentClass = SuperClass;
 }
 #endif
@@ -109,6 +110,8 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 	Blueprint->SimpleConstructionScript = Field->SimpleConstructionScript;
 #endif
 	
+	PopulateComponentOverrides(&Field->ComponentClassOverrides, ClassReflectionData);
+	
 	FCSFunctionFactory::GenerateVirtualFunctions(Field, ClassReflectionData);
 	FCSFunctionFactory::GenerateFunctions(Field, ClassReflectionData->Functions);
 	
@@ -126,6 +129,62 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 
 	RegisterFieldToLoader(Field, ENotifyRegistrationType::NRT_Class);
 	ActivateSubsystem(Field);
+}
+
+void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClassOverride>* Overrides, const TSharedPtr<FCSClassReflectionData>& ClassReflectionData)
+{
+	if (ClassReflectionData->ComponentOverrides.IsEmpty())
+	{
+		return;
+	}
+	
+	Overrides->Reset(ClassReflectionData->ComponentOverrides.Num());
+	
+	for (const FCSComponentOverrideReflectionData& OverrideData : ClassReflectionData->ComponentOverrides)
+	{
+		UClass* ComponentClass = OverrideData.ComponentType.GetAsClass();
+		
+		if (!IsValid(ComponentClass))
+		{
+			UE_LOG(LogUnrealSharp, Warning, TEXT("Can't find component class: %s"), *OverrideData.ComponentType.FieldName.GetName());
+			continue;
+		}
+		
+		UClass* ParentClass = OverrideData.OwningClass.GetAsClass();
+		
+		if (!IsValid(ParentClass) || !FCSClassUtilities::IsNativeClass(ParentClass))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Can't find native owning class {0} for component override", *OverrideData.OwningClass.FieldName.GetName());
+			continue;
+		}
+		
+		FObjectProperty* FoundProperty = FindFProperty<FObjectProperty>(ParentClass, OverrideData.PropertyName);
+		
+		if (!FoundProperty)
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Can't find component property {0} on class {1}", *OverrideData.PropertyName.ToString(), *ParentClass->GetName());
+			continue;
+		}
+		
+		AActor* OwnerActor = FoundProperty->GetOwnerClass()->GetDefaultObject<AActor>();
+		if (!IsValid(OwnerActor))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Owner of component property {0} is not a valid Actor on default object of class {1}", *OverrideData.PropertyName.ToString(), *ParentClass->GetName());
+			continue;
+		}
+		
+		UObject* Component = FoundProperty->GetObjectPropertyValue_InContainer(OwnerActor);
+		
+		if (!IsValid(Component))
+		{
+			UE_LOGFMT(LogUnrealSharp, Warning, "Component property {0} is not initialized on default object of class {1}", *OverrideData.PropertyName.ToString(), *ParentClass->GetName());
+			continue;
+		}
+		
+		FBPComponentClassOverride& NewOverride = Overrides->AddDefaulted_GetRef();
+		NewOverride.ComponentClass = ComponentClass;
+		NewOverride.ComponentName = Component->GetFName();
+	}
 }
 
 UClass* UCSManagedClassCompiler::TryRedirectSuperClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UClass* CurrentSuperClass) const
