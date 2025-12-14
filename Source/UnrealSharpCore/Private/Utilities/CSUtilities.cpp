@@ -50,7 +50,14 @@ bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinit
 	}
 	
 	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
-	return ReflectionData->GetRawReflectionData() == RawReflectionData;
+	const FString& ExistingRawData = ReflectionData->GetRawReflectionData();
+	
+	if (ExistingRawData.Equals(RawReflectionData, ESearchCase::CaseSensitive))
+	{
+		return false;
+	}
+	
+	return true;
 }
 
 void FCSUtilities::ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results)
