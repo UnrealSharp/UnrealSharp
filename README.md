@@ -14,9 +14,11 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 ## Sample Projects
 
-[UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropout/tree/main), originally created in Blueprints by Epic Games, now converted into C#.
-
 [Sample Defense Game](https://github.com/UnrealSharp/UnrealSharp-SampleDefenseGame), project made for Mini Jam 174.
+
+[Slime Guzzler](https://github.com/UnrealSharp/Epic-MegaJam-Project), project made for Epic MegaJam 2025.
+
+[UnrealSharp-Cropout](https://github.com/UnrealSharp/UnrealSharp-Cropout/tree/main), originally created in Blueprints by Epic Games, now converted into C#.
 
 ## Prerequisites
 - Unreal Engine 5.3 - 5.7
