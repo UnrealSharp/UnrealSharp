@@ -1,8 +1,6 @@
-using UnrealSharp.InputCore;
-
 namespace UnrealSharp.InputCore;
 
-public partial struct FKey
+public static class Keys
 {
     public static readonly FKey AnyKey = new("AnyKey");
 
