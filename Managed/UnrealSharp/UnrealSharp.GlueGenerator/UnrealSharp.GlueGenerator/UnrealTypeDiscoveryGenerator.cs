@@ -47,12 +47,17 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
             
             DiagnosticDescriptor descriptor = new DiagnosticDescriptor("UTDG001", 
                 "UnrealTypeDiscoveryGenerator Error", 
-                stackTrace, 
+                "{0}", 
                 "UnrealSharp.GlueGenerator", 
                 DiagnosticSeverity.Error, 
                 isEnabledByDefault: true);
             
-            spc.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None));
+            spc.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None, stackTrace));
+            if(exception.Message != "")
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(descriptor, Location.None, exception.Message));
+            }
+            
         }
     }
 }
