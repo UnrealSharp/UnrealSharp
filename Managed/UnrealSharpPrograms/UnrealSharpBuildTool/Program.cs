@@ -156,16 +156,6 @@ public static class Program
         return Path.GetFullPath(Path.Combine(BuildToolOptions.PluginDirectory, "UnrealSharp.Shared.props"));
     }
 
-    public static string GetWeaver()
-    {
-        return Path.Combine(GetManagedBinariesDirectory(), "UnrealSharpWeaver.dll");
-    }
-
-    public static string GetManagedBinariesDirectory()
-    {
-        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed", GetVersion());
-    }
-
     public static string GetVersion()
     {
         Version currentVersion = Environment.Version;
@@ -254,22 +244,15 @@ public static class Program
 
     private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
     {
-        var csprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
-        var fsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
-        return csprojFiles.Concat(fsprojFiles).Where(IsWeavableProject);
+        IEnumerable<FileInfo> csprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
+        IEnumerable<FileInfo> fsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
+        return csprojFiles.Concat(fsprojFiles);
     }
-
-    private static bool IsWeavableProject(FileInfo projectFile)
+    
+    public static void CopyGlobalJson()
     {
-        // We need to be able to filter out certain non-production projects.
-        // The main target of this is source generators and analyzers which users
-        // may want to leverage as part of their solution and can't be weaved because
-        // they have to use netstandard2.0.
-        XDocument doc = XDocument.Load(projectFile.FullName);
-        return !doc.Descendants()
-            .Where(element => element.Name.LocalName == "PropertyGroup")
-            .SelectMany(element => element.Elements())
-            .Any(element => element.Name.LocalName == "ExcludeFromWeaver" &&
-                            element.Value.Equals("true", StringComparison.OrdinalIgnoreCase));
+        string sourceGlobalJsonPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "global.json");
+        string destinationGlobalJsonPath = Path.Combine(Program.GetScriptFolder(), "global.json");
+        File.Copy(sourceGlobalJsonPath, destinationGlobalJsonPath, overwrite: true);
     }
 }

@@ -13,6 +13,8 @@ public class PackageProject : BuildToolAction
         {
             throw new Exception("ArchiveDirectory argument is required for the Publish action.");
         }
+        
+        Program.CopyGlobalJson();
 
         string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
         string publishFolder = Program.GetOutputPath(rootProjectPath);
