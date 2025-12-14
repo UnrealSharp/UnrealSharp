@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace UnrealSharp.Shared;
 
@@ -65,54 +66,44 @@ public static class DotNetUtilities
 
 	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
 
-	    string highestVersion = "0.0.0";
-
+	    string? versionName = null;
+	    Version latestVersion = new Version(0, 0);
+	    
 	    foreach (string folderPath in folderPaths)
 	    {
 		    string folderName = Path.GetFileName(folderPath);
 
-		    if (string.IsNullOrEmpty(folderName) || !char.IsDigit(folderName[0]))
+		    if (!Version.TryParse(folderName, out var version))
 		    {
 			    continue;
 		    }
-
-		    if (string.Compare(folderName, highestVersion, StringComparison.Ordinal) > 0)
+		    
+		    string versionString = version.ToString();
+		    if (!versionString.StartsWith(DOTNET_MAJOR_VERSION) || version <= latestVersion)
 		    {
-			    highestVersion = folderName;
+			    continue;
 		    }
+		    
+		    latestVersion = version;
+		    versionName = folderName;
 	    }
-
-	    if (highestVersion == "0.0.0")
+	    
+	    if (versionName == null)
 	    {
-		    throw new Exception("Failed to find the latest .NET SDK version.");
+		    throw new Exception($"Couldn't find .NET SDK version starting with {DOTNET_MAJOR_VERSION} in {dotNetSdkDirectory}");
 	    }
 
-	    if (!highestVersion.StartsWith(DOTNET_MAJOR_VERSION))
-	    {
-		    throw new Exception($"Failed to find the latest .NET SDK version. Expected version to start with {DOTNET_MAJOR_VERSION} but found: {highestVersion}");
-	    }
-
-	    return Path.Combine(dotNetSdkDirectory, highestVersion);
+	    return Path.Combine(dotNetSdkDirectory, versionName);
     }
 
-    public static void BuildSolution(string projectRootDirectory, string managedBinariesPath)
+    public static void BuildSolution(string projectRootDirectory)
     {
     	if (!Directory.Exists(projectRootDirectory))
     	{
     		throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
     	}
 
-	    if (!Directory.Exists(managedBinariesPath))
-	    {
-		    Directory.CreateDirectory(managedBinariesPath);
-	    }
-
-    	Collection<string> arguments = new Collection<string>
-		{
-			"publish",
-			$"-p:PublishDir=\"{managedBinariesPath}\""
-		};
-
+    	Collection<string> arguments = new Collection<string> { "build" };
 	    InvokeDotNet(arguments, projectRootDirectory);
     }
 
@@ -120,7 +111,7 @@ public static class DotNetUtilities
     {
 	    string dotnetPath = FindDotNetExecutable();
 
-	    var startInfo = new ProcessStartInfo
+	    ProcessStartInfo startInfo = new ProcessStartInfo
 	    {
 		    FileName = dotnetPath,
 		    RedirectStandardOutput = true,
@@ -186,7 +177,7 @@ public static class DotNetUtilities
 				    errorMessage = "Process exited with non-zero exit code but no output was captured.";
 			    }
 			    
-			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}");
+			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}. Arguments: {string.Join(" ", arguments)}" );
 		    }
 	    }
 	    catch (Exception ex)

@@ -81,6 +81,9 @@ public class FunctionExporter
     protected bool BlueprintNativeEvent => Function.IsBlueprintNativeEvent();
     protected bool BlueprintImplementableEvent => Function.IsBlueprintImplementableEvent();
     protected bool Throwing => _blueprintVisibility == EBlueprintVisibility.Throwing;
+    protected bool BlueprintCallable => Function.HasAnyFlags(EFunctionFlags.BlueprintCallable);
+    
+    protected bool HasReturnValue => Function.ReturnProperty != null;
     
     protected string _invokeFunction = "";
     protected string _invokeFirstArgument = "";
@@ -185,11 +188,11 @@ public class FunctionExporter
         }
         else
         {
-            if (BlueprintEvent)
+            if (BlueprintEvent && !BlueprintCallable)
             {
                 Modifiers += "virtual ";
             }
-		
+            
             if (Function.IsInterfaceFunction())
             {
                 Modifiers = ScriptGeneratorUtilities.PublicKeyword;
@@ -525,37 +528,43 @@ public class FunctionExporter
             ? PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!.GetManagedType(function.ReturnProperty)
             : "void";
         
-        builder.AppendLine("// Hide implementation function from Intellisense");
-        builder.AppendLine("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
-        
-        builder.OpenBrace();
-        if (exportFunction.BlueprintNativeEvent)
-        {
-            exportFunction.ExportInvoke(builder);
-        }
-        else
-        {
-            exportFunction.ForEachParameter((translator, parameter) =>
-            {
-                if (!parameter.HasAllFlags(EPropertyFlags.OutParm) || parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm | EPropertyFlags.ReferenceParm))
-                {
-                    return;
-                }
-                
-                string paramName = parameter.GetParameterName();
-                string nullValue = translator.GetNullValue(parameter);
-                builder.AppendLine($"{paramName} = {nullValue};");
-            });
+        AttributeBuilder attributeBuilder = new AttributeBuilder(function);
+        attributeBuilder.AddGeneratedTypeAttribute(function);
+        attributeBuilder.Finish();
+        builder.AppendLine(attributeBuilder.ToString());
 
-            if (function.ReturnProperty != null)
+        if (function.HasAnyFlags(EFunctionFlags.BlueprintCallable))
+        {
+            builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
+        
+            builder.OpenBrace();
+            if (exportFunction.BlueprintNativeEvent)
             {
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!;
-                string nullValue = translator.GetNullValue(function.ReturnProperty);
-                builder.AppendLine($"return {nullValue};");
+                exportFunction.ExportInvoke(builder);
             }
+            else
+            {
+                exportFunction.ForEachParameter((translator, parameter) =>
+                {
+                    if (!parameter.HasAllFlags(EPropertyFlags.OutParm) || parameter.HasAnyFlags(EPropertyFlags.ReturnParm | EPropertyFlags.ConstParm | EPropertyFlags.ReferenceParm))
+                    {
+                        return;
+                    }
+                
+                    string paramName = parameter.GetParameterName();
+                    string nullValue = translator.GetNullValue(parameter);
+                    builder.AppendLine($"{paramName} = {nullValue};");
+                });
+
+                if (function.ReturnProperty != null)
+                {
+                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty)!;
+                    string nullValue = translator.GetNullValue(function.ReturnProperty);
+                    builder.AppendLine($"return {nullValue};");
+                }
+            }
+            builder.CloseBrace();
         }
-        builder.CloseBrace();
         
         builder.AppendLine($"void Invoke_{function.EngineName}(IntPtr buffer, IntPtr returnBuffer)");
         builder.OpenBrace();
@@ -587,7 +596,11 @@ public class FunctionExporter
             }
         });
         
-        builder.AppendLine($"{returnAssignment}{methodName}_Implementation({paramsCallString});");
+        string implementationFunctionName = function.HasAnyFlags(EFunctionFlags.BlueprintCallable)
+            ? "_Implementation"
+            : string.Empty;
+        
+        builder.AppendLine($"{returnAssignment}{methodName}{implementationFunctionName}({paramsCallString});");
 
         if (function.ReturnProperty != null)
         {
@@ -920,16 +933,13 @@ public class FunctionExporter
         {
             builder.AppendLine($"if ({InstanceFunctionPtr} == IntPtr.Zero)");
             builder.OpenBrace();
-            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{Function.EngineName}\");");
-            builder.CloseBrace();
 
-            if (BlueprintImplementableEvent)
-            {
-                builder.AppendLine($"if (!{ExporterCallbacks.UFunctionCallbacks}.IsFunctionImplemented({InstanceFunctionPtr}))");
-                builder.OpenBrace();
-                builder.AppendLine($"throw new System.NotImplementedException(\"Tried calling {Function.Outer!.EngineName}.{_functionName} which is not implemented in C# or Blueprint!\");");
-                builder.CloseBrace();
-            }
+            string nativeCall = BlueprintCallable
+                ? "GetNativeFunctionFromInstanceAndName"
+                : "GetFirstNativeImplementationFromInstanceAndName";
+            
+            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.UClassCallbacks}.Call{nativeCall}(NativeObject, \"{Function.EngineName}\");");
+            builder.CloseBrace();
             
             ExportInvoke(builder, InstanceFunctionPtr);
         }
@@ -1215,9 +1225,16 @@ public class FunctionExporter
                 {
                     Modifiers = ScriptGeneratorUtilities.PublicKeyword;
                 }
-                else if (Function.HasAllFlags(EFunctionFlags.Protected) || Function.HasMetadata("BlueprintProtected"))
+                else if (Function.HasAllFlags(EFunctionFlags.Protected))
                 {
-                    Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
+                    if (Function.HasMetadata("BlueprintProtected"))
+                    {
+                        Modifiers = ScriptGeneratorUtilities.ProtectedKeyword;
+                    }
+                    else
+                    {
+                        Modifiers = ScriptGeneratorUtilities.PublicKeyword;
+                    }
                 }
                 else
                 {

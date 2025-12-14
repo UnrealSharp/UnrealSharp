@@ -68,7 +68,8 @@ public class BuildToolProcess : Process
             
             throw new Exception($"BuildTool process failed with exit code {ExitCode}:\n{errorMessage}");
         }
-
+        
+        Close();
         return true;
     }
 }

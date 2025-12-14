@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpScriptGenerator.PropertyTranslators;
 
@@ -28,44 +27,7 @@ public static class StaticConstructorUtilities
         {
             return;
         }
-
-        bool hasStaticFunctions = true;
-        void CheckIfStaticFunction(UhtFunction function)
-        {
-            if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
-            {
-                hasStaticFunctions = true;
-            }
-        }
         
-        foreach (UhtFunction function in exportedFunctions)
-        {
-            CheckIfStaticFunction(function);
-        }
-        
-        foreach (GetterSetterPair pair in exportedGetterSetters.Values)
-        {
-            if (pair.Getter != null)
-            {
-                CheckIfStaticFunction(pair.Getter);
-            }
-            
-            if (pair.Setter != null)
-            {
-                CheckIfStaticFunction(pair.Setter);
-            }
-        }
-
-        string nativeClassPtrDeclaration = string.Empty;
-        if (hasStaticFunctions)
-        {
-            generatorStringBuilder.AppendLine("static readonly IntPtr NativeClassPtr;");
-        }
-        else
-        {
-            nativeClassPtrDeclaration = "IntPtr ";
-        }
-
         if (scriptStructObj != null)
         {
             if(classObj == null) generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
@@ -92,11 +54,6 @@ public static class StaticConstructorUtilities
         generatorStringBuilder.AppendLine($"static {staticCtorName}()");
         generatorStringBuilder.OpenBrace();
         
-        string type = classObj != null ? "Class" : "Struct";
-        
-        string engineName = structObj.EngineName;
-        generatorStringBuilder.AppendLine($"{nativeClassPtrDeclaration}NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetNative{type}FromName({structObj.ExportGetAssemblyName()}, \"{structObj.GetNamespace()}\", \"{engineName}\");");
-        
         ExportPropertiesStaticConstructor(generatorStringBuilder, exportedProperties);
         ExportGetSetBackedPropertyStaticConstructor(generatorStringBuilder, getSetBackedProperties);
 
@@ -118,7 +75,10 @@ public static class StaticConstructorUtilities
             ExportClassFunctionsStaticConstructor(generatorStringBuilder, exportedFunctions);
             ExportClassOverridesStaticConstructor(generatorStringBuilder, overrides);
         }
-        else if (!isBlittable) generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
+        else if (!isBlittable)
+        {
+            generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
+        }
         
         generatorStringBuilder.CloseBrace();
     }

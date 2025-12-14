@@ -2,20 +2,27 @@
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FTransform
+public partial struct FTransform : IEquatable<FTransform>
 {
-    public FTransform(FQuat rotation, FVector location, FVector scale) : this()
+    public FTransform(FQuat rotation, FVector location, FVector? scale = null) : this()
     {
         Rotation = rotation;
         Location = location;
-        Scale = scale;
+        Scale = scale ?? FVector.One;
     }
     
-    public FTransform(FRotator rotation, FVector location, FVector scale) : this()
+    public FTransform(FRotator rotation, FVector location, FVector? scale = null) : this()
     {
-        Rotation = rotation.ToQuaternion();
+        Rotation = rotation.ToQuaternion;
         Location = location;
-        Scale = scale;
+        Scale = scale ?? FVector.One;
+    }
+
+    public FTransform()
+    {
+        Rotation = FQuat.Identity;
+        Location = FVector.Zero;
+        Scale = FVector.One;
     }
     
     public FQuat Rotation;
@@ -29,10 +36,10 @@ public partial struct FTransform
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            const double SmallNumber = 1e-8;
+            const double smallNumber = 1e-8;
 
             // Invert the scale
-            FVector invScale = GetSafeScaleReciprocal(Scale, SmallNumber);
+            FVector invScale = GetSafeScaleReciprocal(Scale, smallNumber);
 
             // Invert the rotation
             FQuat invRotation = FQuat.Inverse(Rotation);

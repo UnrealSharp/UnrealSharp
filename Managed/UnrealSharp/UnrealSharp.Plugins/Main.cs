@@ -2,38 +2,42 @@
 using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
-using UnrealSharp.Shared;
 
 namespace UnrealSharp.Plugins;
 
 public static class Main
 {
-    internal static DllImportResolver _dllImportResolver = null!;
-
     [UnmanagedCallersOnly]
     private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
     {
         try
         {
             #if WITH_EDITOR
-            string dotnetSdk = DotNetUtilities.GetLatestDotNetSdkPath();
-            MSBuildLocator.RegisterMSBuildPath(dotnetSdk);
+            IEnumerable<VisualStudioInstance> instances = MSBuildLocator.QueryVisualStudioInstances();
+            VisualStudioInstance? visualStudioInstance = instances.OrderByDescending(i => i.Version).FirstOrDefault();
+            
+            if (visualStudioInstance is not null)
+            {
+                MSBuildLocator.RegisterInstance(visualStudioInstance);
+            }
+            else
+            {
+                MSBuildLocator.RegisterDefaults();
+            }
             #endif
             
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-
-            // Initialize plugin and managed callbacks
-            *pluginCallbacks = PluginsCallbacks.Create();
             
-            NativeBinds.InitializeNativeBinds(bindsCallbacks);
+            PluginsCallbacks.Initialize(pluginCallbacks);
             ManagedCallbacks.Initialize(managedCallbacks);
+            NativeBinds.Initialize(bindsCallbacks);
 
-            LogUnrealSharpPlugins.Log("UnrealSharp successfully setup!");
+            Console.WriteLine("UnrealSharp initialized successfully.");
             return NativeBool.True;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            LogUnrealSharpPlugins.LogError($"Error initializing UnrealSharp: {ex.Message}");
+            Console.WriteLine(exception);
             return NativeBool.False;
         }
     }

@@ -31,39 +31,21 @@ void UCSGameplayTagsGlueGenerator::ProcessGameplayTags()
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("public static class GameplayTags"));
 	ScriptBuilder.OpenBrace();
-
-	TArray<FName> TagNames;
-	auto GenerateGameplayTag = [&ScriptBuilder, &TagNames](const FGameplayTagTableRow& RowTag)
+	
+	FGameplayTagContainer AllTags;
+	GameplayTagsManager.RequestAllGameplayTags(AllTags, false);
+	
+	TArray<FGameplayTag> GameplayTagArray = AllTags.GetGameplayTagArray();
+	GameplayTagArray.Sort([](const FGameplayTag& A, const FGameplayTag& B)
 	{
-		if (TagNames.Contains(RowTag.Tag))
-		{
-			return;
-		}
-
-		const FString TagName = RowTag.Tag.ToString();
+		return A.ToString() < B.ToString();
+	});
+	
+	for (const FGameplayTag& GameplayTag : GameplayTagArray)
+	{
+		const FString TagName = GameplayTag.ToString();
 		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
-		ScriptBuilder.AppendLine(
-			FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));
-		TagNames.Add(RowTag.Tag);
-	};
-
-	for (const FGameplayTagSource* Source : Sources)
-	{
-		if (Source->SourceTagList)
-		{
-			for (const FGameplayTagTableRow& RowTag : Source->SourceTagList->GameplayTagList)
-			{
-				GenerateGameplayTag(RowTag);
-			}
-		}
-
-		if (Source->SourceRestrictedTagList)
-		{
-			for (const FGameplayTagTableRow& RowTag : Source->SourceRestrictedTagList->RestrictedGameplayTagList)
-			{
-				GenerateGameplayTag(RowTag);
-			}
-		}
+		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));
 	}
 
 	ScriptBuilder.CloseBrace();

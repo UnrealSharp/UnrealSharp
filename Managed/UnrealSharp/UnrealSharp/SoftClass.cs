@@ -4,6 +4,7 @@ using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
+using UnrealSharp.Engine;
 using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpAsync;
@@ -14,7 +15,6 @@ namespace UnrealSharp;
 /// Holds a soft reference to a class. Useful for holding a reference to a class that may be unloaded.
 /// </summary>
 /// <typeparam name="T"> The type of the object. </typeparam>
-[Binding]
 public struct TSoftClassPtr<T> where T : UObject
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -45,6 +45,12 @@ public struct TSoftClassPtr<T> where T : UObject
     public TSoftClassPtr(UObject obj)
     {
         SoftObjectPtr = new FPersistentObjectPtr(obj);
+    }
+    
+    public TSoftClassPtr(FPrimaryAssetId primaryAssetId)
+    {
+        UAssetManager assetManager = UAssetManager.Get();
+        this = assetManager.GetSoftClassReferenceFromPrimaryAssetId<T>(primaryAssetId);
     }
 
     public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj))
@@ -79,7 +85,7 @@ public struct TSoftClassPtr<T> where T : UObject
     {
         if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
         {
-            return Class.Valid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
+            return Class.IsValid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
         }
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");

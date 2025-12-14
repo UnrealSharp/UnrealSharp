@@ -19,7 +19,7 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 [Sample Defense Game](https://github.com/UnrealSharp/UnrealSharp-SampleDefenseGame), project made for Mini Jam 174.
 
 ## Prerequisites
-- Unreal Engine 5.3 - 5.6
+- Unreal Engine 5.3 - 5.7
 - .NET 9.0+
 
 ## Frequently Asked Questions
@@ -45,42 +45,40 @@ namespace ManagedSharpProject;
 public delegate void OnIsPickedUp(bool bIsPickedUp);
 
 [UClass]
-// Partial classes are only a requirement if you want UnrealSharp to generate helper methods.
-// Such as: MyCustomComponent foundComponent = MyCustomComponent.Get(actorReference);
 public partial class AResourceBase : AActor, IInteractable
 {
     public AResourceBase()
     {
-        SetReplicates(true);
+        Replicates = true;
         RespawnTime = 500.0f;
     }
     
     // The mesh of the resource
     [UProperty(DefaultComponent = true, RootComponent = true)]
-    public UStaticMeshComponent Mesh { get; set; }
+    public partial UStaticMeshComponent Mesh { get; set; }
     
     // The health component of the resource, if it has one
     [UProperty(DefaultComponent = true)]
-    public UHealthComponent HealthComponent { get; set; }
+    public partial UHealthComponent HealthComponent { get; set; }
     
     [UProperty(PropertyFlags.EditDefaultsOnly)]
-    public int PickUpAmount { get; set; }
+    public partial int PickUpAmount { get; set; }
     
     // The time it takes for the resource to respawn
     [UProperty(PropertyFlags.EditDefaultsOnly | PropertyFlags.BlueprintReadOnly)]
-    protected float RespawnTime { get; set; }
+    protected partial float RespawnTime { get; set; }
     
     // Whether the resource has been picked up, is replicated to clients.
     [UProperty(PropertyFlags.BlueprintReadOnly, ReplicatedUsing = nameof(OnRep_IsPickedUp))]
-    protected bool bIsPickedUp { get; set; }
+    protected partial bool bIsPickedUp { get; set; }
     
     // The effect to play when the resource is picked up
     [UProperty(PropertyFlags.EditDefaultsOnly)]
-    public TSoftObjectPtr<UNiagaraSystem>? PickUpEffect { get; set; }
+    public partial TSoftObjectPtr<UNiagaraSystem>? PickUpEffect { get; set; }
     
     // The delegate to call when the resource is picked up, broadcasts on clients too.
     [UProperty(PropertyFlags.BlueprintAssignable)]
-    public TMulticastDelegate<OnIsPickedUp> OnIsPickedUp { get; set; }
+    public partial TMulticastDelegate<OnIsPickedUp> OnIsPickedUp { get; set; }
 
     protected override void BeginPlay()
     {
@@ -143,7 +141,8 @@ public partial class AResourceBase : AActor, IInteractable
     
     // This can be overridden in blueprints
     [UFunction(FunctionFlags.BlueprintEvent)]
-    public void OnIsPickedUpChanged(bool bIsPickedUp)
+    public partial void OnIsPickedUpChanged(bool bIsPickedUp);
+    public partial void OnIsPickedUpChanged_Implementation(bool bIsPickedUp)
     {
         SetActorHiddenInGame(bIsPickedUp);
     }

@@ -1,0 +1,42 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)..\..\</SolutionDir>
+    <UnrealSharpPluginDir>$(MSBuildThisFileDirectory)</UnrealSharpPluginDir>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <LangVersion>latest</LangVersion>
+
+    <DefineConstants>WITH_EDITOR</DefineConstants>
+    <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">
+      $(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))
+    </DefineConstants>
+    <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">
+      $(DefineConstants);$(DefineAdditionalConstants)
+    </DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="UnrealSharp">
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="UnrealSharp.Core">
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="UnrealSharp.Log">
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Log.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('.Glue'))">
+    <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.GlueGenerator.dll"
+              Private="false" CopyToPublishDirectory="Never" />
+    <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.Analyzers.dll"
+              Private="false" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.SourceGenerators.dll"
+              Private="false" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+</Project>

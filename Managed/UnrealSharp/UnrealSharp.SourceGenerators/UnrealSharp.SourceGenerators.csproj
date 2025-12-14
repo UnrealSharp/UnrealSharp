@@ -7,12 +7,17 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;RS1038</NoWarn>
         <Nullable>enable</Nullable>
+        <IsPublishable>false</IsPublishable>
     </PropertyGroup>
     
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Compile Include="..\UnrealSharp.SourceGenerator.Utilities\*.cs" />
     </ItemGroup>
     
 </Project>

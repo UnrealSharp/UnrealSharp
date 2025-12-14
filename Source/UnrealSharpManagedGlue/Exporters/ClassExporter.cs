@@ -56,6 +56,7 @@ public static class ClassExporter
         }
         
         stringBuilder.DeclareType(classObj, "class", classObj.GetStructName(), superClassName, nativeInterfaces: interfaces);
+        stringBuilder.AppendNativeTypePtr(classObj);
         
         // For manual exports we just want to generate attributes
         if (!isManualExport)

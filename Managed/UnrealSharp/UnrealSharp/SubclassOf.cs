@@ -13,18 +13,16 @@ namespace UnrealSharp;
 /// Represents a subclass of a specific class.
 /// </summary>
 /// <typeparam name="T">The base class that the subclass must inherit from.</typeparam>
-[StructLayout(LayoutKind.Sequential), Binding]
+[StructLayout(LayoutKind.Sequential)]
 public struct TSubclassOf<T>
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     internal IntPtr NativeClass;
     
-    private Type ManagedType { get; }
-    
     /// <summary>
     /// Check if the class is valid.
     /// </summary>
-    public bool Valid => IsChildOf(typeof(T));
+    public bool IsValid => IsChildOf(typeof(T));
     
     public TSubclassOf() : this(typeof(T))
     {
@@ -44,14 +42,15 @@ public struct TSubclassOf<T>
             if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
             {
                 string typeName = classType.GetEngineName();
-                NativeClass = UCoreUObjectExporter.CallGetNativeClassFromName(classType.GetAssemblyName(), classType.Namespace, typeName);
+                NativeClass = UCoreUObjectExporter.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
                 
-                if (NativeClass == IntPtr.Zero)
+                #if !PACKAGE
+                IntPtr skeletonClass = UCoreUObjectExporter.CallGetGeneratedClassFromSkeleton(NativeClass);
+                if (skeletonClass != IntPtr.Zero)
                 {
-                    throw new ArgumentException($"Class {classType.Name} not found.");
+                    NativeClass = skeletonClass;
                 }
-                
-                ManagedType = classType;
+                #endif
             }
             else
             {
@@ -66,35 +65,7 @@ public struct TSubclassOf<T>
     
     internal TSubclassOf(IntPtr nativeClass)
     {
-        try
-        {
-            if (nativeClass == IntPtr.Zero)
-            {
-                return;
-            }
-        
-            NativeClass = nativeClass;
-        
-            IntPtr classHandle = UClassExporter.CallGetDefaultFromInstance(nativeClass);
-
-            if (classHandle == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Invalid class handle.");
-            }
-
-            object? obj = GCHandleUtilities.GetObjectFromHandlePtr<object>(classHandle);
-        
-            if (obj == null)
-            {
-                throw new InvalidOperationException("Invalid class object.");
-            }
-
-            ManagedType = obj.GetType();
-        }
-        catch (Exception exception)
-        {
-            LogUnrealSharpCore.Log("Failed to create TSubclassOf instance from native: " + exception.Message);
-        }
+        NativeClass = nativeClass;
     }
     
     /// <summary>
@@ -143,7 +114,15 @@ public struct TSubclassOf<T>
     /// <returns></returns>
     public bool IsChildOf(Type type)
     {
-        return ManagedType != null && (ManagedType == type || ManagedType.IsSubclassOf(type));
+        IntPtr nativeClass = type.TryGetNativeClass();
+        
+        if (nativeClass == IntPtr.Zero)
+        {
+            LogUnrealSharpCore.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
+            return false;
+        }
+        
+        return UClassExporter.CallIsChildOf(NativeClass, nativeClass).ToManagedBool();
     }
     
     /// <summary>
@@ -153,7 +132,15 @@ public struct TSubclassOf<T>
     /// <returns> True if the class is a parent of the specified type, false otherwise. </returns>
     public bool IsParentOf(Type type)
     {
-        return ManagedType != null && ManagedType.IsAssignableFrom(type);
+        IntPtr nativeClass = type.TryGetNativeClass();
+        
+        if (nativeClass == IntPtr.Zero)
+        {
+            LogUnrealSharpCore.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
+            return false;
+        }
+        
+        return UClassExporter.CallIsChildOf(nativeClass, NativeClass).ToManagedBool();
     }
     
     public static implicit operator TSubclassOf<T>(Type inClass)
@@ -196,9 +183,9 @@ public struct TSubclassOf<T>
     
     public override string ToString()
     {
-        if (!Valid)
+        if (!IsValid)
         {
-            return "null";
+            return "None";
         }
         
         UObjectExporter.CallNativeGetName(NativeClass, out FName className);
@@ -217,5 +204,10 @@ public static class SubclassOfMarshaller<T>
     {
         IntPtr nativeClassPointer = BlittableMarshaller<IntPtr>.FromNative(nativeBuffer, arrayIndex);
         return new TSubclassOf<T>(nativeClassPointer);
+    }
+    
+    public static TSubclassOf<T> FromNative(IntPtr nativeBuffer)
+    {
+        return new TSubclassOf<T>(nativeBuffer);
     }
 }

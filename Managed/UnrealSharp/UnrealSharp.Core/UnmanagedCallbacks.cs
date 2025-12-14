@@ -171,6 +171,31 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
+    public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle, IntPtr methodHandlePtr, IntPtr exceptionTextBuffer)
+    {
+        try
+        {
+            IntPtr? methodHandle = GCHandleUtilities.GetObjectFromHandlePtrFast<IntPtr>(methodHandlePtr);
+            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtrFast<object>(managedObjectHandle);
+            
+            if (methodHandle == null || managedObject == null)
+            {
+                throw new Exception("Invalid method or target handle");
+            }
+            
+            delegate*<object, void> methodPtr = (delegate*<object, void>) methodHandle;
+            methodPtr(managedObject);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            StringMarshaller.ToNative(exceptionTextBuffer, 0, ex.ToString());
+            LogUnrealSharpCore.LogError($"Exception during InvokeManagedMethod: {ex.Message}");
+            return 1;
+        }
+    }
+    
+    [UnmanagedCallersOnly]
     public static unsafe int InvokeManagedMethod(IntPtr managedObjectHandle,
         IntPtr methodHandlePtr, 
         IntPtr argumentsBuffer, 

@@ -1,61 +1,36 @@
-﻿using System.Runtime.InteropServices;
-using UnrealSharp.Core.Attributes;
+﻿using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-[StructLayout(LayoutKind.Sequential)]
-public struct DelegateData
-{
-    public ulong Storage;
-    public WeakObjectData Object;
-    public FName FunctionName;
-}
-
-[Binding]
 public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
-    private DelegateData _data;
-    
-    public TWeakObjectPtr<UObject> TargetObjectPtr => new(_data.Object);
-    public FName FunctionName => _data.FunctionName;
+    public TWeakObjectPtr<UObject> TargetObject;
+    public FName FunctionName;
     
     public Delegate()
     {
-    }
-    
-    public Delegate(DelegateData data)
-    {
-        _data = data;
+        
     }
     
     public Delegate(UObject targetObject, FName functionName)
     {
-        _data = new DelegateData
-        {
-            FunctionName = functionName
-        };
-        
-        FWeakObjectPtrExporter.CallSetObject(ref _data.Object, targetObject.NativeObject);
+        TargetObject = new TWeakObjectPtr<UObject>(targetObject);
+        FunctionName = functionName;
     }
 
     public override void FromNative(IntPtr address, IntPtr nativeProperty)
     {
-        // Copy the singlecast delegate data from the native property
-        unsafe
-        {
-            _data = *(DelegateData*)address;
-        }
+        FScriptDelegateExporter.CallGetDelegateInfo(address, out IntPtr targetObjectPtr, out FName functionName);
+        TargetObject = new TWeakObjectPtr<UObject>(targetObjectPtr);
+        FunctionName = functionName;
     }
 
     public override void ToNative(IntPtr address)
     {
-        // Copy the singlecast delegate data to the native property
-        unsafe
-        {
-            *(DelegateData*)address = _data;
-        }
+        UObject? targetObject = TargetObject.Object;
+        FScriptDelegateExporter.CallMakeDelegate(address, targetObject?.NativeObject ?? IntPtr.Zero, FunctionName);
     }
 
     public override bool Contains(TDelegate handler)
@@ -65,7 +40,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
             return false;
         }
         
-        return targetObject.Equals(TargetObjectPtr.Object) && FunctionName == handler.Method.Name;
+        return targetObject.Equals(TargetObject.Object) && FunctionName == handler.Method.Name;
     }
     
     public override void BindUFunction(UObject targetObject, FName functionName)
@@ -75,8 +50,8 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 
     public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        _data.Object = targetObjectPtr.Data;
-        _data.FunctionName = functionName;
+        TargetObject = targetObjectPtr;
+        FunctionName = functionName;
     }
 
     public override void Add(TDelegate handler)
@@ -91,8 +66,8 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
             throw new ArgumentException("The callback for a singlecast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
         
-        _data.Object = new TWeakObjectPtr<UObject>(targetObject).Data;
-        _data.FunctionName = new FName(handler.Method.Name);
+        TargetObject = new TWeakObjectPtr<UObject>(targetObject);
+        FunctionName = new FName(handler.Method.Name);
     }
 
     public override void Remove(TDelegate handler)
@@ -105,22 +80,29 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
         Clear();
     }
 
-    public override bool IsBound => _data.Object.ObjectIndex != 0;
+    public override bool IsBound => TargetObject.IsValid && !FunctionName.IsNone;
 
     public override void Clear()
     {
-        _data.Object = default;
-        _data.FunctionName = default;
-        _data.Storage = 0;
+        TargetObject = new TWeakObjectPtr<UObject>();
+        FunctionName = FName.None;
     }
 
     public override string ToString()
     {
-        return $"{TargetObjectPtr.Object}::{FunctionName}";
+        return $"{TargetObject.Object}::{FunctionName}";
     }
 
     protected override void ProcessDelegate(IntPtr parameters)
     {
-        FScriptDelegateExporter.CallBroadcastDelegate(ref _data, parameters);
+        UObject? targetObject = TargetObject.Object;
+        
+        if (targetObject == null)
+        {
+            LogUnrealSharp.LogWarning($"Attempted to invoke delegate, but target object is null. Delegate: {this}");
+            return;
+        }
+        
+        FScriptDelegateExporter.CallBroadcastDelegate(targetObject.NativeObject, FunctionName, parameters);
     }
 }

@@ -28,8 +28,9 @@ public static class DelegateExporter
         }
         
         FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(builder, function, delegateName);
+        string wrapperName = DelegateBasePropertyTranslator.GetWrapperName(function);
         
-        builder.DeclareType(function, "class", $"U{delegateName}", superClass);
+        builder.DeclareType(function, "class", wrapperName, superClass);
         
         FunctionExporter.ExportDelegateGlue(builder, functionExporter);
         

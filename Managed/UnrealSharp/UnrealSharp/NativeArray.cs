@@ -12,7 +12,6 @@ namespace UnrealSharp;
 /// An blittable type only array that can be used to interact with Unreal Engine arrays in a optimized manner.
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
-[Binding]
 public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
 {
     protected readonly IntPtr NativeUnrealProperty;

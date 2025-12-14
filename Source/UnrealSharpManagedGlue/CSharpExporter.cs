@@ -15,38 +15,27 @@ using UnrealSharpScriptGenerator.Utilities;
 
 namespace UnrealSharpScriptGenerator;
 
-class ModuleFolders
-{
-    public Dictionary<string, DateTime> DirectoryToWriteTime { get; set; } = new();
-    public bool HasBeenExported;
-}
-
 public static class CSharpExporter
 {
-    const string ModuleDataFileName = "UnrealSharpModuleData.json";
     private const string SpecialtypesJson = "SpecialTypes.json";
     public static bool HasModifiedEngineGlue;
 
     private static readonly List<Task> Tasks = new();
     private static readonly List<string> ExportedDelegates = new();
-    private static readonly Dictionary<string, DateTime> CachedDirectoryTimes = new();
-    private static Dictionary<string, ModuleFolders?> _modulesWriteInfo = new();
 
     public static void StartExport()
     {
-        if (!HasChangedGeneratorSourceRecently())
+        if (HasChangedGeneratorSourceRecently())
         {
-            // The source for this generator hasn't changed, so we don't need to re-export the whole API.
-            DeserializeModuleData();
+            Console.WriteLine("Detected changes in generator source, re-exporting entire API...");
+            FileExporter.CleanModuleFolders();
         }
         else
         {
-            // Just in case the source has changed, we need to clean the old files
-            Console.WriteLine("Detected new source since last export, cleaning old files...");
-            FileExporter.CleanModuleFolders();
+            ModuleHeadersTracker.DeserializeModuleHeaders();
         }
 
-        Console.WriteLine("Exporting C++ to C#...");
+        Console.WriteLine("Starting C# export of Unreal Engine API...");
 
         #if UE_5_5_OR_LATER
         foreach (UhtModule module in Program.Factory.Session.Modules)
@@ -78,41 +67,11 @@ public static class CSharpExporter
 
         WaitForTasks();
 
-        SerializeModuleData();
+        ModuleHeadersTracker.SerializeModuleData();
 
         string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
         string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
         OutputTypeRules(typeInfoFilePath);
-    }
-
-    static void DeserializeModuleData()
-    {
-        if (!Directory.Exists(Program.EngineGluePath))
-        {
-            return;
-        }
-
-        string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
-
-        if (!File.Exists(outputPath))
-        {
-            return;
-        }
-
-        using FileStream fileStream = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        Dictionary<string, ModuleFolders>? jsonValue = JsonSerializer.Deserialize<Dictionary<string, ModuleFolders>>(fileStream);
-
-        if (jsonValue != null)
-        {
-            _modulesWriteInfo = new Dictionary<string, ModuleFolders?>(jsonValue!);
-        }
-    }
-
-    static void SerializeModuleData()
-    {
-        string outputPath = Path.Combine(Program.PluginModule.OutputDirectory, ModuleDataFileName);
-        using FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-        JsonSerializer.Serialize(fs, _modulesWriteInfo);
     }
 
     static bool HasChangedGeneratorSourceRecently()
@@ -184,45 +143,35 @@ public static class CSharpExporter
         }
 
         string packageName = package.GetShortName();
-
-        if (!_modulesWriteInfo.TryGetValue(packageName, out ModuleFolders? lastEditTime))
-        {
-            lastEditTime = new ModuleFolders();
-            _modulesWriteInfo.Add(packageName, lastEditTime);
-        }
-
-        HashSet<string> processedDirectories = new();
-
         string generatedPath = FileExporter.GetDirectoryPath(package);
         bool doesDirectoryExist = Directory.Exists(generatedPath);
 
+        List<UhtHeaderFile> processedHeaders = new List<UhtHeaderFile>(package.Children.Count);
+        
         foreach (UhtType child in package.Children)
         {
-            string directoryName = Path.GetDirectoryName(child.HeaderFile.FilePath)!;
-
-            // We only need to export the C++ directory if it doesn't exist or if it has been modified
-            if (!doesDirectoryExist || ShouldExportDirectory(directoryName, lastEditTime!))
+            if (!doesDirectoryExist || ModuleHeadersTracker.HasHeaderChanged(packageName, child.HeaderFile))
             {
-                processedDirectories.Add(directoryName);
+                if (ModuleHeadersTracker.HasDataFromDisk)
+                {
+                    string headerFileName = Path.GetFileName(child.HeaderFile.FilePath);
+                    Console.WriteLine($"Detected changes in header file: {headerFileName}, re-exporting...");
+                }
+                
                 ForEachChild(child, ExportType);
             }
             else
             {
                 ForEachChild(child, FileExporter.AddUnchangedType);
             }
+            
+            processedHeaders.Add(child.HeaderFile);
         }
-
-        if (processedDirectories.Count == 0)
-        {
-            // No directories in this package have been exported or modified
-            return;
-        }
-
-        // The glue has been exported, so we need to update the last write times
-        UpdateLastWriteTimes(processedDirectories, lastEditTime!);
+        
+        ModuleHeadersTracker.RecordHeadersWriteTime(packageName, processedHeaders);
     }
 
-    private static void ForEachChild(UhtType child, Action<UhtType> action)
+    public static void ForEachChild(UhtType child, Action<UhtType> action)
     {
         #if UE_5_5_OR_LATER
         action(child);
@@ -242,47 +191,21 @@ public static class CSharpExporter
             }
         }
         #endif
-
     }
-
-    public static bool HasBeenExported(string directory)
+    
+    public static void ForEachChildRecursive(UhtType child, Action<UhtType> action)
     {
-        return _modulesWriteInfo.TryGetValue(directory, out ModuleFolders? lastEditTime) && lastEditTime is
+        action(child);
+
+        foreach (UhtType type in child.Children)
         {
-            HasBeenExported: true
-        };
-    }
-
-    private static bool ShouldExportDirectory(string directoryPath, ModuleFolders lastEditTime)
-    {
-        if (!CachedDirectoryTimes.TryGetValue(directoryPath, out DateTime cachedTime))
-        {
-            DateTime currentWriteTime = Directory.GetLastWriteTimeUtc(directoryPath);
-            CachedDirectoryTimes[directoryPath] = currentWriteTime;
-            cachedTime = currentWriteTime;
-        }
-
-        return !lastEditTime.DirectoryToWriteTime.TryGetValue(directoryPath, out DateTime lastEditTimeValue) || lastEditTimeValue != cachedTime;
-    }
-
-    private static void UpdateLastWriteTimes(HashSet<string> directories, ModuleFolders lastEditTime)
-    {
-        foreach (string directory in directories)
-        {
-            if (!CachedDirectoryTimes.TryGetValue(directory, out DateTime cachedTime))
-            {
-                continue;
-            }
-
-            lastEditTime.DirectoryToWriteTime[directory] = cachedTime;
-            lastEditTime.HasBeenExported = true;
+            ForEachChildRecursive(type, action);
         }
     }
 
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine) 
-            || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
+        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine) || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
         {
             return;
         }
@@ -324,7 +247,11 @@ public static class CSharpExporter
             isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
             Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
         }
-        else if (type.EngineType == UhtEngineType.Delegate)
+        else if (type.EngineType is UhtEngineType.Delegate 
+                #if UE_5_7_OR_LATER
+                 or UhtEngineType.SparseDelegate
+                #endif
+                 )
         {
             if (isManualExport)
             {

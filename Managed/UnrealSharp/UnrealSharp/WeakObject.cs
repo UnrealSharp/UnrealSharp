@@ -17,8 +17,7 @@ public struct WeakObjectData
 /// A weak reference to an Unreal Engine UObject.
 /// </summary>
 /// <typeparam name="T">The type of object that this weak object points to.</typeparam>
-[Binding]
-public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObject
+public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObject
 {
     internal readonly WeakObjectData Data;
     
@@ -62,10 +61,7 @@ public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObjec
     /// Check if the object that this weak object points to is valid.
     /// </summary>
     /// <returns>True if the object is valid, false otherwise.</returns>
-    public bool IsValid()
-    {
-        return FWeakObjectPtrExporter.CallIsValid(Data).ToManagedBool();
-    }
+    public bool IsValid => FWeakObjectPtrExporter.CallIsValid(Data).ToManagedBool();
 
     /// <summary>
     /// Check if the object that this weak object points to is stale.
@@ -79,7 +75,7 @@ public struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T : UObjec
     /// <inheritdoc />
     public override string ToString()
     {
-        return IsValid() ? Object.ToString() : "None";
+        return IsValid ? Object!.ToString() : "None";
     }
 
     /// <inheritdoc />

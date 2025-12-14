@@ -134,14 +134,26 @@ public static class Program
         return "Managed" + BuildToolOptions.ProjectName;
     }
 
-    public static string GetOutputPath(string rootDir = "")
+    public static string GetOutputPath(string rootDir = "", bool includeVersion = true)
     {
         if (string.IsNullOrEmpty(rootDir))
         {
             rootDir = BuildToolOptions.ProjectDirectory;
         }
 
-        return Path.Combine(rootDir, "Binaries", "Managed");
+        if (includeVersion)
+        {
+            return Path.Combine(rootDir, "Binaries", "Managed", GetVersion());
+        }
+        else
+        {
+            return Path.Combine(rootDir, "Binaries", "Managed");
+        }
+    }
+    
+    public static string GetUnrealSharpSharedProps()
+    {
+        return Path.GetFullPath(Path.Combine(BuildToolOptions.PluginDirectory, "UnrealSharp.Shared.props"));
     }
 
     public static string GetWeaver()
@@ -151,7 +163,7 @@ public static class Program
 
     public static string GetManagedBinariesDirectory()
     {
-        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed");
+        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed", GetVersion());
     }
 
     public static string GetVersion()
@@ -159,6 +171,11 @@ public static class Program
         Version currentVersion = Environment.Version;
         string currentVersionStr = $"{currentVersion.Major}.{currentVersion.Minor}";
         return "net" + currentVersionStr;
+    }
+    
+    public static string GetNetStandardVersion()
+    {
+        return "netstandard2.0";
     }
 
     public static void CreateOrUpdateLaunchSettings(string launchSettingsPath)

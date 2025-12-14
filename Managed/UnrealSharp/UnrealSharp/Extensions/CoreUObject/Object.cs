@@ -5,7 +5,6 @@ using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 using UnrealSharp.UMG;
 using UnrealSharp.UnrealSharpCore;
-using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp.CoreUObject;
 
@@ -14,7 +13,7 @@ public partial class UObject
     /// <summary>
     /// The name of the object in Unreal Engine.
     /// </summary>
-    public FName ObjectName
+    public FName Name
     {
         get
         {
@@ -27,11 +26,32 @@ public partial class UObject
             return objectName;
         }
     }
+    
+    public UObject Outer
+    {
+        get
+        {
+            if (IsDestroyed)
+            {
+                throw new InvalidOperationException("Object is not valid.");
+            }
 
-    /// <summary>
-    /// Whether the object is valid. UObjects can be valid but pending kill.
-    /// </summary>
-    public bool IsValid => !IsDestroyed;
+            IntPtr outerPtr = UObjectExporter.CallGetOuter(NativeObject);
+            UObject? foundOuter = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(outerPtr);
+
+            if (foundOuter == null)
+            {
+                throw new InvalidOperationException("Outer object is not valid.");
+            }
+
+            return foundOuter;
+        }
+    }
+    
+    public TOuter GetTypedOuter<TOuter>() where TOuter : UObject
+    {
+        return (TOuter) Outer;
+    }
 
     /// <summary>
     /// Whether the object has been destroyed.
@@ -50,20 +70,13 @@ public partial class UObject
     {
         get
         {
-            if (!IsValid)
+            if (!this.IsValid())
             {
                 throw new InvalidOperationException("Object is not valid.");
             }
 
-            IntPtr worldPtr = UObjectExporter.CallGetWorld_Internal(NativeObject);
-            UWorld? foundWorld = GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldPtr);
-
-            if (foundWorld == null)
-            {
-                throw new InvalidOperationException("World is not valid.");
-            }
-
-            return foundWorld;
+            IntPtr worldGcHandle = UObjectExporter.CallGetWorld_Internal(NativeObject);
+            return GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldGcHandle)!;
         }
     }
 
@@ -80,13 +93,13 @@ public partial class UObject
     /// <inheritdoc />
     public override string ToString()
     {
-        return ObjectName.ToString();
+        return Name.ToString();
     }
 
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is UnrealSharpObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
+        return obj is UObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
     }
 
     /// <inheritdoc />
@@ -144,11 +157,11 @@ public partial class UObject
     /// <typeparam name="T"> The type of the object to create. </typeparam>
     /// <returns> The newly created object. </returns>
     /// <exception cref="ArgumentException"> Thrown if the outer object is not valid. </exception>
-    public static T NewObject<T>(UObject? outer = null, TSubclassOf<T> classType = default, UObject? template = null) where T : UnrealSharpObject
+    public static T NewObject<T>(UObject? outer = null, TSubclassOf<T> classType = default, UObject? template = null) where T : UObject
     {
         if (classType.NativeClass == IntPtr.Zero)
         {
-            classType = new TSubclassOf<T>();
+            classType = new TSubclassOf<T>(typeof(T));
         }
 
         IntPtr nativeTemplate = template?.NativeObject ?? IntPtr.Zero;
@@ -297,7 +310,7 @@ public partial class UObject
         }
         
         TSubclassOf<T> result = new TSubclassOf<T>(loadedClass);
-        if (!result.Valid)
+        if (!result.IsValid)
         {
             throw new InvalidOperationException($"Loaded class at path '{path}' is not compatible with type {typeof(T).Name}.");
         }
@@ -358,17 +371,9 @@ public partial class UObject
             }
         }
 
-        return new FSoftObjectPath
-        {
-            AssetPath = new FTopLevelAssetPath
-            {
-                PackageName = packageName,
-                AssetName = assetName
-            }
-        };
+        return new FSoftObjectPath(packageName, assetName);
     }
-
-
+    
     /// <summary>
     /// Spawns an actor of the specified type.
     /// </summary>
@@ -612,11 +617,6 @@ public partial class UObject
     }
 
     /// <summary>
-    /// Gets the UObject this object resides in
-    /// </summary>
-    public UObject Outer => UCSObjectExtensions.GetOuter(this);
-
-    /// <summary>
     /// Marks the object as garbage.
     /// </summary>
     public void MarkAsGarbage() => UCSObjectExtensions.MarkAsGarbage(this);
@@ -647,6 +647,14 @@ public partial class UObject
     }
 }
 
+public static class UObjectExtensions
+{
+    public static bool IsValid(this UObject? obj)
+    {
+        return obj != null && !obj.IsDestroyed;
+    }
+}
+
 internal static class ReflectionHelper
 {
     // Get the name without the U/A/F/E prefix.
@@ -671,12 +679,12 @@ internal static class ReflectionHelper
 
     internal static IntPtr TryGetNativeClass(this Type type)
     {
-        return UCoreUObjectExporter.CallGetNativeClassFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+        return UCoreUObjectExporter.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
     
     internal static IntPtr TryGetNativeInterface(this Type type)
     {
-        return UCoreUObjectExporter.CallGetNativeInterfaceFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+        return UCoreUObjectExporter.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
     
     internal static IntPtr TryGetNativeClassDefaults(this Type type)

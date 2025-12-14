@@ -5,7 +5,6 @@ namespace UnrealSharp.Interop;
 [NativeCallbacks]
 public static unsafe partial class UCoreUObjectExporter
 {
-    public static delegate* unmanaged<string, string?, string, IntPtr> GetNativeClassFromName;
-    public static delegate* unmanaged<string, string?, string, IntPtr> GetNativeInterfaceFromName;
-    public static delegate* unmanaged<string, string?, string, IntPtr> GetNativeStructFromName;
+    public static delegate* unmanaged<string, string?, string, IntPtr> GetType;
+    public static delegate* unmanaged<IntPtr, IntPtr> GetGeneratedClassFromSkeleton;
 }

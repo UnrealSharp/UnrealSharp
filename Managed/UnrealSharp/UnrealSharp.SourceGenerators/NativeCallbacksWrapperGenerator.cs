@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.SourceGenerator.Utilities;
 
 namespace UnrealSharp.SourceGenerators;
 
@@ -144,7 +145,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
             {
                 sourceBuilder.Append(", ");
             }
-
+            
             sourceBuilder.Append(delegateInfo.ReturnValue.Type.GetAnnotatedTypeName(model) ?? delegateInfo.ReturnValue.Type.ToString());
 
             sourceBuilder.Append($">){funcPtrName};");

@@ -160,6 +160,7 @@ public class GeneratorStringBuilder : IDisposable
             AppendLine("#nullable enable");
         }
         DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
+        DeclareDirective(ScriptGeneratorUtilities.CoreNamespace);
         DeclareDirective(ScriptGeneratorUtilities.CoreAttributeNamespace);
         DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
         DeclareDirective(ScriptGeneratorUtilities.MarshallerNamespace);
@@ -183,8 +184,11 @@ public class GeneratorStringBuilder : IDisposable
     {
         string partialSpecifier = isPartial ? "partial " : string.Empty;
         List<string> inheritingFrom = new List<string>();
-        
-        if (!string.IsNullOrEmpty(baseType)) inheritingFrom.Add(baseType);
+
+        if (!string.IsNullOrEmpty(baseType))
+        {
+            inheritingFrom.Add(baseType);
+        }
 
         if (nativeInterfaces != null)
         {
@@ -211,6 +215,11 @@ public class GeneratorStringBuilder : IDisposable
         
         AppendLine($"{accessSpecifier}{modifiers} {partialSpecifier}{typeName} {declaredTypeName}{inheritanceSpecifier}");
         OpenBrace();
+    }
+
+    public void AppendNativeTypePtr(UhtStruct structType)
+    {
+        AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
     }
     
     public void AppendStackAlloc(string sizeVariableName)
