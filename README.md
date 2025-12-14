@@ -80,7 +80,7 @@ public partial class AResourceBase : AActor, IInteractable
     [UProperty(PropertyFlags.BlueprintAssignable)]
     public partial TMulticastDelegate<OnIsPickedUp> OnIsPickedUp { get; set; }
 
-    protected override void BeginPlay()
+    public override void BeginPlay()
     {
         HealthComponent.OnDeath += OnDeath;
         base.BeginPlay();
