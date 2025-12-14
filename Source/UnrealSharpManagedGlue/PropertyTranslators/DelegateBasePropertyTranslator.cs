@@ -18,6 +18,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     public static string GetDelegateName(UhtFunction function)
     {
         string engineName = function.EngineName;
+        
         int suffixIndex = engineName.IndexOf(DelegateSignatureSuffix, StringComparison.Ordinal);
         string strippedDelegateName = engineName.Substring(0, suffixIndex);
         
@@ -33,10 +34,10 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
                 outerName = outerName.Substring(1);
             }
             
-            strippedDelegateName = $"{outerName}_{engineName}";
+            strippedDelegateName = $"{outerName}_{strippedDelegateName}";
         }
         
-        return strippedDelegateName;
+        return StructPrefix + strippedDelegateName;
     }
     
     public static string GetFullDelegateName(UhtFunction function)
@@ -51,7 +52,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     
     public static string GetWrapperName(UhtFunction function)
     {
-        return $"{StructPrefix}{GetDelegateName(function)}__DelegateSignature";
+        return $"{GetDelegateName(function)}__DelegateSignature";
     }
     
     public override bool CanExport(UhtProperty property)
