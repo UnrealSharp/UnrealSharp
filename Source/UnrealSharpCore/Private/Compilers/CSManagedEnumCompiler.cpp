@@ -4,6 +4,10 @@
 #include "Types/CSEnum.h"
 #include "UnrealSharpUtils.h"
 
+#if WITH_EDITOR
+#include "Kismet2/EnumEditorUtils.h"
+#endif
+
 UCSManagedEnumCompiler::UCSManagedEnumCompiler()
 {
 	FieldType = UCSEnum::StaticClass();
@@ -34,6 +38,7 @@ void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr
 
 #if WITH_EDITOR
 	UCSManager::Get().OnNewEnumEvent().Broadcast(Enum);
+	FEnumEditorUtils::AddNewEnumeratorForUserDefinedEnum(Enum);
 #endif
 }
 
