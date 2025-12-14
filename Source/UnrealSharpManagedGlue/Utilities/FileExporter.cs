@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
+using UnrealSharpScriptGenerator.PropertyTranslators;
 
 namespace UnrealSharpScriptGenerator.Utilities;
 
@@ -39,9 +40,7 @@ public struct ProjectDirInfo
 public static class FileExporter
 {
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
-
-    private static readonly List<string> ChangedFiles = new();
-    private static readonly List<string> UnchangedFiles = new();
+    private static readonly HashSet<string> AffectedFiles = new();
 
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
@@ -63,12 +62,13 @@ public static class FileExporter
         ReadWriteLock.EnterWriteLock();
         try
         {
+            AffectedFiles.Add(absoluteFilePath);
+            
             bool matchingGlue = glueExists && File.ReadAllText(absoluteFilePath) == text;
 
             // If the directory exists and the file exists with the same text, we can return early
             if (directoryExists && matchingGlue)
             {
-                UnchangedFiles.Add(absoluteFilePath);
                 return;
             }
 
@@ -78,7 +78,6 @@ public static class FileExporter
             }
 
             File.WriteAllText(absoluteFilePath, text);
-            ChangedFiles.Add(absoluteFilePath);
 
             if (package.IsPartOfEngine())
             {
@@ -93,13 +92,20 @@ public static class FileExporter
 
     public static void AddUnchangedType(UhtType type)
     {
+        string engineName = type.EngineName;
+        
+        if (type is UhtFunction function)
+        {
+            engineName = DelegateBasePropertyTranslator.GetDelegateName(function);
+        }
+        
         string directory = GetDirectoryPath(type.Package);
-        string filePath = GetFilePath(type.EngineName, directory);
-        UnchangedFiles.Add(filePath);
+        string filePath = GetFilePath(engineName, directory);
+        AffectedFiles.Add(filePath);
 
         if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
         {
-            UnchangedFiles.Add(GetFilePath($"{type.EngineName}_Extensions", directory));
+            AffectedFiles.Add(GetFilePath($"{engineName}_Extensions", directory));
         }
     }
 
@@ -229,7 +235,7 @@ public static class FileExporter
 
             foreach (string file in files)
             {
-                if (ChangedFiles.Contains(file) || UnchangedFiles.Contains(file))
+                if (AffectedFiles.Contains(file))
                 {
                     continue;
                 }

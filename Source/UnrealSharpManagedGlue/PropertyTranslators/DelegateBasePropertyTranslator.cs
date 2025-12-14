@@ -20,6 +20,12 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
         string engineName = function.EngineName;
         
         int suffixIndex = engineName.IndexOf(DelegateSignatureSuffix, StringComparison.Ordinal);
+        
+        if (suffixIndex == -1)
+        {
+            return StructPrefix + engineName;
+        }
+        
         string strippedDelegateName = engineName.Substring(0, suffixIndex);
         
         // If delegate has an Outer (owner class/struct), add Outer name as prefix to delegate name

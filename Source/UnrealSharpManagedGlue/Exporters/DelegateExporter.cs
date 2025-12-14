@@ -42,8 +42,8 @@ public static class DelegateExporter
         
         // Use modified delegate name (with Outer prefix) as file name to prevent same-named delegates from overwriting each other
         string directory = FileExporter.GetDirectoryPath(function.Package);
-        string fileName = $"{delegateName}__DelegateSignature";
-        FileExporter.SaveGlueToDisk(function.Package, directory, fileName, builder.ToString());
+        
+        FileExporter.SaveGlueToDisk(function.Package, directory, delegateName, builder.ToString());
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
