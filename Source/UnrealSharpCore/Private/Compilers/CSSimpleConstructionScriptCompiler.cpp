@@ -150,7 +150,7 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 			
 			if (IsValid(ParentNode))
 			{
-				CurrentParentComponentInfo = FCSRootNodeInfo(ParentNode, ParentNode->GetSCS());
+				CurrentParentComponentInfo = FCSRootNodeInfo(ParentNode, CurrentSCS);
 			}
 		}
 		
