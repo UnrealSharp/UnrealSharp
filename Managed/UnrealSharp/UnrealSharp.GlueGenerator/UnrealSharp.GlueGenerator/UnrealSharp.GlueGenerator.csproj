@@ -9,6 +9,7 @@
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
         <RootNamespace>UnrealSharp.GlueGenerator</RootNamespace>
         <PackageId>UnrealSharp.GlueGenerator</PackageId>
