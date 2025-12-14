@@ -18,14 +18,26 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     public static string GetDelegateName(UhtFunction function)
     {
         string engineName = function.EngineName;
-        int suffixIndex = engineName.IndexOf(DelegateSignatureSuffix, StringComparison.Ordinal);
         
-        if (suffixIndex < 0)
+        int suffixIndex = engineName.IndexOf(DelegateSignatureSuffix, StringComparison.Ordinal);
+        string strippedDelegateName = engineName.Substring(0, suffixIndex);
+        
+        // If delegate has an Outer (owner class/struct), add Outer name as prefix to delegate name
+        // This allows distinguishing delegates with same name but different owner classes (e.g., UComboBoxString::FOnSelectionChangedEvent vs UComboBoxKey::FOnSelectionChangedEvent)
+        if (function.Outer != null && function.Outer is not UhtPackage)
         {
-            throw new InvalidOperationException($"Function '{engineName}' is not a delegate signature.");
+            string outerName = function.Outer.SourceName;
+            
+            // Remove common prefix to keep name concise
+            if (outerName.StartsWith("U") && outerName.Length > 1 && char.IsUpper(outerName[1]))
+            {
+                outerName = outerName.Substring(1);
+            }
+            
+            strippedDelegateName = $"{outerName}_{strippedDelegateName}";
         }
-
-        return StructPrefix + engineName.Substring(0, suffixIndex);
+        
+        return StructPrefix + strippedDelegateName;
     }
     
     public static string GetFullDelegateName(UhtFunction function)
@@ -40,7 +52,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     
     public static string GetWrapperName(UhtFunction function)
     {
-        return $"{StructPrefix}{function.EngineName}";
+        return $"{GetDelegateName(function)}__DelegateSignature";
     }
     
     public override bool CanExport(UhtProperty property)

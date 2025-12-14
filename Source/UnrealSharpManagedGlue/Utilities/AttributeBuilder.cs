@@ -30,6 +30,17 @@ public class AttributeBuilder
         AddArgument($"\"{fullName}\"");
     }
     
+    // Generate GeneratedType attribute for delegate using modified C# type name (with Outer prefix)
+    public void AddGeneratedDelegateTypeAttribute(UhtFunction delegateFunction, string csharpDelegateName)
+    {
+        AddAttribute("GeneratedType");
+        // First parameter: Original UE reflection name (used for runtime UDelegateFunction lookup)
+        AddArgument($"\"{delegateFunction.EngineName}\"");
+        // Second parameter: Modified full C# type name (with Outer prefix to avoid conflicts)
+        string fullName = delegateFunction.GetNamespace() + "." + csharpDelegateName;
+        AddArgument($"\"{fullName}\"");
+    }
+    
     public void AddIsBlittableAttribute()
     {
         AddAttribute("BlittableType");
