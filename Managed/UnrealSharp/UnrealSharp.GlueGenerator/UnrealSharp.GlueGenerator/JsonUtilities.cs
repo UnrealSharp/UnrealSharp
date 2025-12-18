@@ -26,7 +26,7 @@ public static class JsonUtilities
     
     public static void TrySetJsonEnum<T>(this JsonObject jsonObject, string propertyName, T value) where T : Enum
     {
-        if (!EqualityComparer<T>.Default.Equals(value, default))
+        if (!EqualityComparer<T>.Default.Equals(value, default!))
         {
             jsonObject[propertyName] = Convert.ToInt64(value);
         }

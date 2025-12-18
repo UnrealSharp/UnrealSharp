@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
@@ -42,7 +43,10 @@ public static class PropertyFactory
         ["IDictionary"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
 
         ["TSet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode),
-        ["ISet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode)
+        ["ISet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode),
+        
+        ["ValueTask"] = (m, t, o, syntaxNode) => new ValueTaskProperty(m, t, o, syntaxNode),
+        ["Task"] = (m, t, o, syntaxNode) => new TaskProperty(m, t, o, syntaxNode),
     };
 
     public static UnrealProperty CreateProperty(ISymbol memberSymbol, UnrealType outer, SyntaxNode? syntaxNode = null)

@@ -6,10 +6,24 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record TemplateProperty : UnrealProperty
 {
-    protected readonly EquatableArray<UnrealProperty> TemplateParameters;
-    private readonly string _marshallerName;
+    public readonly EquatableArray<UnrealProperty> TemplateParameters;
     
-    public override string MarshallerType => MakeMarshallerType(_marshallerName, TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+    public override string MarshallerType 
+    {
+        get
+        {
+            if (!HasTemplateParameters)
+            {
+                return string.Empty;
+            }
+            
+            return MakeMarshallerType(_marshallerName, TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+        }
+    }
+    
+    public bool HasTemplateParameters => TemplateParameters.Count > 0;
+    
+    private readonly string _marshallerName;
 
     public TemplateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller, SyntaxNode? syntaxNode = null)
         : base(memberSymbol, typeSymbol, propertyType, outer, syntaxNode)
@@ -32,8 +46,15 @@ public record TemplateProperty : UnrealProperty
 
         string fullNamespace = namedTypeSymbol.GetNamespace();
         string typedArguments = string.Join(", ", TemplateParameters.Select(t => $"{t.ManagedType}{t.GetNullableAnnotation()}"));
-        
-        ManagedType = new FieldName($"{namedTypeSymbol.Name}<{typedArguments}>", fullNamespace, namedTypeSymbol.ContainingAssembly.Name);
+
+        if (HasTemplateParameters)
+        {
+            ManagedType = new FieldName($"{namedTypeSymbol.Name}<{typedArguments}>", fullNamespace, namedTypeSymbol.ContainingAssembly.Name);
+        }
+        else
+        {
+            ManagedType = new FieldName(namedTypeSymbol);
+        }
     }
     
     public TemplateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) 

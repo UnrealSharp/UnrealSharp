@@ -15,11 +15,6 @@ FProperty* FCSFunctionFactory::CreateParameter(UFunction* Function, const FCSPro
 		FCSPropertyFactory::TryAddPropertyAsFieldNotify(PropertyReflectionData, Class);
 	}
 
-	if (!NewParam->HasAnyPropertyFlags(CPF_ZeroConstructor))
-	{
-		Function->FunctionFlags |= FUNC_HasDefaults;
-	}
-
 	return NewParam;
 }
 

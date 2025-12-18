@@ -35,9 +35,9 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			Stack.StepCompiledIn(LocalValue, FunctionParameter->GetClass());
 		
 			uint8* ValueAddress = LocalValue;
-			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyContainer)
+			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyAddress)
 			{
-				ValueAddress = Stack.MostRecentPropertyContainer;
+				ValueAddress = Stack.MostRecentPropertyAddress;
 			}
 
 			// Add any output parameters to the output params chain
@@ -74,12 +74,6 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
-	    // The return value should already have been set
-	    if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm))
-	    {
-		    continue;
-	    }
-	    
 		const uint8* ValueAddress = ArgumentBuffer + OutParameter->Property->GetOffset_ForUFunction();
 		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
 	}

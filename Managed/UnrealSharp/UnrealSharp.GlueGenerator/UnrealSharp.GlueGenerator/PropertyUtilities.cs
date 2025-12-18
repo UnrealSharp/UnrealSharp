@@ -7,10 +7,9 @@ namespace UnrealSharp.GlueGenerator;
 
 public static class PropertyUtilities
 {
-    public const EPropertyFlags BaseParametersFlags = EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
-
+    public const EPropertyFlags BaseParametersFlags = EPropertyFlags.Parm;
     public const EPropertyFlags OutParameterFlags = BaseParametersFlags | EPropertyFlags.OutParm;
-    public const EPropertyFlags ReturnParameterFlags = OutParameterFlags | EPropertyFlags.ReturnParm;
+    public const EPropertyFlags ReturnParameterFlags = BaseParametersFlags | OutParameterFlags | EPropertyFlags.ReturnParm;
 
     public const EPropertyFlags BaseBlueprintVisiblePropertyFlags = EPropertyFlags.BlueprintVisible;
 
@@ -20,7 +19,7 @@ public static class PropertyUtilities
 
     public static void MakeParameter(this UnrealProperty property)
     {
-        property.PropertyFlags |= BaseParametersFlags;
+        property.PropertyFlags |= BaseParametersFlags | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
     }
 
     public static void MakeReturnParameter(this UnrealProperty property)
@@ -31,6 +30,11 @@ public static class PropertyUtilities
     public static void MakeOutParameter(this UnrealProperty property)
     {
         property.PropertyFlags |= OutParameterFlags;
+    }
+    
+    public static void MakeRefParameter(this UnrealProperty property)
+    {
+        property.PropertyFlags |= OutParameterFlags | EPropertyFlags.ReferenceParm;
     }
 
     public static void MakeBlueprintVisibleProperty(this UnrealProperty property)

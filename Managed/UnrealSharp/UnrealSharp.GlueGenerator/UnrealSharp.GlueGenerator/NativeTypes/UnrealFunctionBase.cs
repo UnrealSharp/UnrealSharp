@@ -43,13 +43,6 @@ public enum EFunctionFlags : ulong
     NetValidate = 0x80000000,
 };
 
-public enum ReturnValueType
-{
-    Void,
-    Value,
-    AsyncTask,
-    ValueTask
-}
 
 [Inspector]
 public abstract record UnrealFunctionBase : UnrealStruct
@@ -58,7 +51,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
     
     public UnrealProperty ReturnType;
     public EFunctionFlags FunctionFlags;
-    public ReturnValueType ReturnValueType;
 
     protected static readonly EFunctionFlags NetFunctionFlags = EFunctionFlags.NetServer | EFunctionFlags.NetClient | EFunctionFlags.NetMulticast;
     protected const string UFunctionAttributeName = "UFunctionAttribute";
@@ -99,38 +91,10 @@ public abstract record UnrealFunctionBase : UnrealStruct
         if (returnType.Name == VoidProperty.VoidTypeName)
         {
             ReturnType = new VoidProperty(this);
-            ReturnValueType = ReturnValueType.Void;
         }
         else
         {
-            ISymbol? returnValueSymbol;
-            if (typeSymbol is IMethodSymbol methodSymbol && methodSymbol.IsAsync)
-            {
-                bool isValueTask = returnType.OriginalDefinition.Name == "ValueTask" && returnType.OriginalDefinition.GetNamespace() == "System.Threading.Tasks";
-                bool isTask = returnType.OriginalDefinition.Name == "Task" && returnType.OriginalDefinition.GetNamespace() == "System.Threading.Tasks";
-                
-                if (isValueTask || isTask)
-                {
-                    ITypeSymbol taskReturnType = returnType is INamedTypeSymbol namedType && namedType.TypeArguments.Length == 1 ? namedType.TypeArguments[0] : returnType;
-                    
-                    returnValueSymbol = taskReturnType;
-                    returnType = taskReturnType;
-                    
-                    ReturnValueType = isValueTask ? ReturnValueType.ValueTask : ReturnValueType.AsyncTask;
-                }
-                else
-                {
-                    returnValueSymbol = returnType;
-                    ReturnValueType = ReturnValueType.Value;
-                }
-            }
-            else
-            {
-                returnValueSymbol = returnType;
-                ReturnValueType = ReturnValueType.Value;
-            }
-
-            ReturnType = PropertyFactory.CreateProperty(returnType, returnValueSymbol, this);
+            ReturnType = PropertyFactory.CreateProperty(returnType, returnType, this);
             ReturnType.SourceName = "ReturnValue";
             ReturnType.MakeReturnParameter();
             
@@ -143,7 +107,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
         }
         
         List<UnrealProperty> parameters = new List<UnrealProperty>(parameterList.Length);
-        bool paramHasDefaults = false;
         
         for (int i = 0; i < parameterList.Length; i++)
         {
@@ -151,18 +114,19 @@ public abstract record UnrealFunctionBase : UnrealStruct
                 
             UnrealProperty property = PropertyFactory.CreateProperty(parameterSymbol.Type, parameterSymbol, this);
             property.ReferenceKind = parameterSymbol.RefKind;
-                
-            property.PropertyFlags |= EPropertyFlags.Parm | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
-
+            
             switch (parameterSymbol.RefKind)
             {
                 case RefKind.Out:
-                    property.PropertyFlags |= EPropertyFlags.OutParm;
+                    property.MakeOutParameter();
                     hasOutParams = true;
                     break;
                 case RefKind.Ref:
-                    property.PropertyFlags |= EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm;
+                    property.MakeRefParameter();
                     hasOutParams = true;
+                    break;
+                case RefKind.None:
+                    property.MakeParameter();
                     break;
             }
             
@@ -179,15 +143,10 @@ public abstract record UnrealFunctionBase : UnrealStruct
                 }
                 
                 AddMetaData($"CPP_Default_{parameterSymbol.Name}", defaultValue);
-                paramHasDefaults = true;
+                FunctionFlags |= EFunctionFlags.HasDefaults;
             }
 
             parameters.Add(property);
-        }
-        
-        if (paramHasDefaults)
-        {
-            FunctionFlags |= EFunctionFlags.HasDefaults;
         }
         
         if (hasOutParams)
@@ -215,8 +174,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
         {
             UnrealAsyncFunction asyncFunction = new UnrealAsyncFunction(methodSymbol, outer!);
             unrealClass.AddAsyncFunction(asyncFunction);
-            
-            outer!.AddSourceGeneratorDependency(new FieldName(asyncFunction.WrapperName, outer.Namespace, outer.AssemblyName));
             unrealFunction = asyncFunction;
         }
         else
@@ -331,6 +288,12 @@ public abstract record UnrealFunctionBase : UnrealStruct
         {
             builder.AppendLine();
             ReturnType.ExportToNative(builder, "returnBuffer", "returnValue");
+        }
+        
+        foreach (UnrealProperty parameter in Properties.Where(p => p.PropertyFlags.HasFlag(EPropertyFlags.OutParm)))
+        {
+            builder.AppendLine();
+            parameter.ExportToNative(builder, SourceGenUtilities.Buffer, parameter.SourceName);
         }
         
         builder.CloseBrace();

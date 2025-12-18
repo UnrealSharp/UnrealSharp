@@ -38,10 +38,15 @@ public record UnrealType
     public UnrealType(UnrealType? outer = null)
     {
         Outer = outer;
+        SourceName = string.Empty;
+        AssemblyName = string.Empty;
+        Namespace = string.Empty;
     }
     
-    public UnrealType(ISymbol memberSymbol, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : this(outer)
+    public UnrealType(ISymbol memberSymbol, UnrealType? outer = null, SyntaxNode? syntaxNode = null)
     {
+        Outer = outer;
+        
         Namespace = memberSymbol.GetNamespace();
         SourceName = memberSymbol.Name;
         AssemblyName = memberSymbol.ContainingAssembly.Name;
@@ -78,6 +83,11 @@ public record UnrealType
         {
             AddMetaData(info.Key, info.Value);
         }
+    }
+    
+    public void AddSourceGeneratorDependency(UnrealType dependency)
+    {
+        AddSourceGeneratorDependency(new FieldName(dependency));
     }
 
     public void AddSourceGeneratorDependency(FieldName dependency)
