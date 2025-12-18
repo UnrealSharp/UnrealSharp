@@ -11,5 +11,5 @@ struct FCSClassBaseReflectionData : FCSStructReflectionData
 	
 	TArray<FCSFunctionReflectionData> Functions;
 	EClassFlags ClassFlags;
-	FName ConfigName;
+	FName Config;
 };

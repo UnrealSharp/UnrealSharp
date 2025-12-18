@@ -8,4 +8,4 @@ class StructFlagsMapAttribute(StructFlags flags = StructFlags.NoFlags) : Attribu
 
 [AttributeUsage(AttributeTargets.Struct)]
 [StructFlagsMap(StructFlags.Native)]
-public sealed class UStructAttribute : BaseUAttribute;
+public sealed class UStructAttribute : Attribute;

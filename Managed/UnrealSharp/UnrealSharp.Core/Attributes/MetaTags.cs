@@ -21,6 +21,9 @@ namespace UnrealSharp.Core.Attributes;
 [AttributeUsage(AttributeTargets.All), CustomMetaData]
 public sealed class DisplayNameAttribute(string displayName) : Attribute { }
 
+[AttributeUsage(AttributeTargets.All), CustomMetaData]
+public sealed class CategoryAttribute(string categoryName) : Attribute { }
+
 /// <summary>
 /// [ToolTip]
 /// Overrides the automatically generated tooltip from code comments.

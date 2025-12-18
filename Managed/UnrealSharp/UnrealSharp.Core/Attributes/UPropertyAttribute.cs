@@ -69,7 +69,7 @@ public enum PropertyFlags : ulong
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 [PropertyFlagsMap]
-public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None) : BaseUAttribute
+public sealed class UPropertyAttribute(PropertyFlags flags = PropertyFlags.None) : Attribute
 {
     /// <summary>
     /// These flags determine how the property is handled in the engine.

@@ -45,7 +45,7 @@ public enum FunctionFlags : ulong
 
 [AttributeUsage(AttributeTargets.Method)]
 [FunctionFlagsMap(NativeFunctionFlags.Native)] 
-public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None) : BaseUAttribute
+public sealed class UFunctionAttribute(FunctionFlags flags = FunctionFlags.None) : Attribute
 {
     /// <summary>
     /// The flags of the function.

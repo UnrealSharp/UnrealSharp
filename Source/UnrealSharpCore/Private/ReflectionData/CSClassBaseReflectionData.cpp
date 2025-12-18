@@ -8,7 +8,7 @@ bool FCSClassBaseReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	
 	JSON_PARSE_OBJECT_ARRAY(Functions, IS_OPTIONAL);
 	JSON_READ_ENUM(ClassFlags, IS_OPTIONAL);
-	JSON_READ_STRING(ConfigName, IS_OPTIONAL);
+	JSON_READ_STRING(Config, IS_OPTIONAL);
 		
 	END_JSON_SERIALIZE
 }

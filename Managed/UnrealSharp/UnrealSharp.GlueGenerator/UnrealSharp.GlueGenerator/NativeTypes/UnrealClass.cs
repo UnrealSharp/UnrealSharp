@@ -52,7 +52,7 @@ public record UnrealClass : UnrealClassBase
     const string UClassAttributeName = "UClassAttribute";
     const string LongUClassAttributeName = "UnrealSharp.Attributes.UClassAttribute";
     
-    public string ConfigCategory = string.Empty;
+    public string Config = string.Empty;
     
     public FieldName ParentClass;
 
@@ -214,11 +214,11 @@ public record UnrealClass : UnrealClassBase
         }
     }
 
-    [InspectArgument(["ConfigCategory", "config"], UClassAttributeName)]
+    [InspectArgument(["Config", "config"], UClassAttributeName)]
     public static void ConfigCategorySpecifier(UnrealType topScope, TypedConstant constant)
     {
         UnrealClass unrealClass = (UnrealClass)topScope;
-        unrealClass.ConfigCategory = (string) constant.Value!;
+        unrealClass.Config = (string) constant.Value!;
     }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
@@ -288,7 +288,7 @@ public record UnrealClass : UnrealClassBase
         ParentClass.SerializeToJson(jsonObject, "ParentClass", true);
         
         jsonObject.TrySetJsonEnum("ClassFlags", ClassFlags);
-        jsonObject.TrySetJsonString("ConfigCategory", ConfigCategory);
+        jsonObject.TrySetJsonString("Config", Config);
         
         Overrides.PopulateJsonWithArray(jsonObject, "Overrides", array =>
         {

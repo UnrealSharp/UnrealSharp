@@ -311,12 +311,12 @@ void UCSManagedClassCompiler::RefreshClassActions(UClass* ClassToRefresh)
 
 void UCSManagedClassCompiler::SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)
 {
-	if (ClassReflectionData->ConfigName.IsNone())
+	if (ClassReflectionData->Config.IsNone())
 	{
 		ManagedClass->ClassConfigName = ManagedClass->GetSuperClass()->ClassConfigName;
 	}
 	else
 	{
-		ManagedClass->ClassConfigName = ClassReflectionData->ConfigName;
+		ManagedClass->ClassConfigName = ClassReflectionData->Config;
 	}
 }
