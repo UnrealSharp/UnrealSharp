@@ -17,7 +17,8 @@ uint32 UIRefCountedObjectExporter::AddRef(const IRefCountedObject* Object)
 		return 0;
 	}
 	
-	return Object->AddRef();
+	Object->AddRef();
+	return Object->GetRefCount();
 }
 
 uint32 UIRefCountedObjectExporter::Release(const IRefCountedObject* Object)
