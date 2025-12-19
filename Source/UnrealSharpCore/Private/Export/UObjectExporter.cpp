@@ -82,20 +82,23 @@ void UUObjectExporter::InvokeNativeNetFunction(UObject* NativeObject, UFunction*
 	// Therefore, for Net functions, resolve the UFunction against the object's runtime class / generated class before invoking.
 	if (NativeFunction->HasAnyFunctionFlags(FUNC_Net))
 	{
-		if (UFunction* ResolvedFunction = NativeObject->FindFunction(NativeFunction->GetFName()))
-		{
-			NativeFunction = ResolvedFunction;
-		}
+		UClass* RuntimeClass = NativeObject->GetClass();
 
-		// If the object itself is a skeleton class (e.g. Default__SKEL_...), try jumping to its corresponding GeneratedClass.
-		if (const UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(NativeObject->GetClass()))
+		// If the runtime class is a skeleton class (e.g. Default__SKEL_...), try jumping to its corresponding GeneratedClass.
+		if (const UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(RuntimeClass))
 		{
 			if (UCSClass* GeneratedClass = SkeletonClass->GetGeneratedClass())
 			{
-				if (UFunction* GeneratedFunction = GeneratedClass->FindFunctionByName(NativeFunction->GetFName()))
-				{
-					NativeFunction = GeneratedFunction;
-				}
+				RuntimeClass = GeneratedClass;
+			}
+		}
+
+		// Only do the (potentially repeated) name lookup when the cached function doesn't belong to the runtime/generated class.
+		if (NativeFunction->GetOuterUClass() != RuntimeClass)
+		{
+			if (UFunction* ResolvedFunction = RuntimeClass->FindFunctionByName(NativeFunction->GetFName()))
+			{
+				NativeFunction = ResolvedFunction;
 			}
 		}
 	}
