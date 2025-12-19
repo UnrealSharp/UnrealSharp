@@ -19,7 +19,7 @@ protected:
 
 	virtual ECSPropertyType GetPropertyType() const;
 	virtual FFieldClass* GetPropertyClass();
-	
+
 	template <typename T>
 	T* NewProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData, const FFieldClass* FieldClass = nullptr)
 	{

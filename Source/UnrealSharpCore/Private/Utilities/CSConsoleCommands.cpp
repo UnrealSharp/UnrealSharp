@@ -4,6 +4,7 @@
 #include "CSManagedAssembly.h"
 #include "CSManager.h"
 #include "Utilities/CSUtilities.h"
+#include "UnrealSharpUtils.h"
 
 FString Indent(int32 Level)
 {
@@ -30,9 +31,16 @@ void DumpMetaData(UField* Field, int32 IndentLevel)
 	UE_LOGFMT(LogUnrealSharp, Log, "{0}Metadata:", Indent(IndentLevel));
 	
 	UPackage* Package = Field->GetOutermost();
+
+#if UE_VERSION_BEFORE(5, 6)
+	UMetaData* MetaData = Package->GetMetaData();
+	TMap<FName, FString>* FieldMetaData = MetaData->GetMapForObject(Field);
+
+#else
 	FMetaData& MetaData = Package->GetMetaData();
-	
 	TMap<FName, FString>* FieldMetaData = MetaData.GetMapForObject(Field);
+#endif
+	
 	MetaDataFromMap(FieldMetaData, IndentLevel);
 #endif
 }

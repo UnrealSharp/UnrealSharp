@@ -42,7 +42,7 @@ enum ECSLoggerVerbosity : uint8
 };
 
 UCLASS(config = EditorPerProjectUserSettings, meta = (DisplayName = "UnrealSharp Editor Settings"))
-class UCSUnrealSharpEditorSettings : public UDeveloperSettings
+class UNREALSHARPEDITOR_API UCSUnrealSharpEditorSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 

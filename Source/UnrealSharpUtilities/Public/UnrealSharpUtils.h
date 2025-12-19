@@ -10,6 +10,14 @@
 #define UE_VERSION_SINCE(Major, Minor)  (UE_CURRENT_VERSION >= UE_VERSION_VAL(Major, Minor))
 #define UE_VERSION_EQUAL(Major, Minor)  (UE_CURRENT_VERSION == UE_VERSION_VAL(Major, Minor))
 
+#if ENGINE_MAJOR_VERSION > 5 || ENGINE_MINOR_VERSION >= 6
+#define US_LOGFMT(Category, Verbosity, Fmt, ...) \
+        UE_LOGFMT(Category, Verbosity, Fmt, ##__VA_ARGS__)
+#else
+#define US_LOGFMT(Category, Verbosity, Fmt, ...) \
+        UE_LOG(Category, Verbosity, TEXT("%s"), *FString::Printf(TEXT(Fmt), ##__VA_ARGS__))
+#endif
+
 namespace FCSUnrealSharpUtils
 {
 	UNREALSHARPUTILITIES_API FName GetNamespace(const UObject* Object);
@@ -28,7 +36,7 @@ namespace FCSUnrealSharpUtils
 	{
 		if (Name.IsEmpty())
 		{
-			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Tried to construct a GUID from an empty string. Returning an invalid GUID.");
+			US_LOGFMT(LogUnrealSharpUtilities, Warning, "Tried to construct a GUID from an empty string. Returning an invalid GUID.");
 			return FGuid();
 		}
 		
