@@ -1,6 +1,7 @@
 ﻿#include "Export/UObjectExporter.h"
 
 #include "CSManager.h"
+#include "Types/CSSkeletonClass.h"
 #include "UObject/UObjectGlobals.h"
 
 
@@ -69,6 +70,36 @@ void UUObjectExporter::InvokeNativeStaticFunction(UClass* NativeClass, UFunction
 void UUObjectExporter::InvokeNativeNetFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UUObjectExporter::InvokeNativeNetFunction);
+
+	if (!IsValid(NativeObject) || !IsValid(NativeFunction))
+	{
+		return;
+	}
+
+#if WITH_EDITOR
+	// Editor-only: The UFunction pointer cached on the C# side may come from the SkeletonGeneratedClass,
+	// while the replication metadata required by RPCs (e.g. RPCId) is typically only valid on the actual GeneratedClass.
+	// Therefore, for Net functions, resolve the UFunction against the object's runtime class / generated class before invoking.
+	if (NativeFunction->HasAnyFunctionFlags(FUNC_Net))
+	{
+		if (UFunction* ResolvedFunction = NativeObject->FindFunction(NativeFunction->GetFName()))
+		{
+			NativeFunction = ResolvedFunction;
+		}
+
+		// If the object itself is a skeleton class (e.g. Default__SKEL_...), try jumping to its corresponding GeneratedClass.
+		if (const UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(NativeObject->GetClass()))
+		{
+			if (UCSClass* GeneratedClass = SkeletonClass->GetGeneratedClass())
+			{
+				if (UFunction* GeneratedFunction = GeneratedClass->FindFunctionByName(NativeFunction->GetFName()))
+				{
+					NativeFunction = GeneratedFunction;
+				}
+			}
+		}
+	}
+#endif
 
 	int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
 

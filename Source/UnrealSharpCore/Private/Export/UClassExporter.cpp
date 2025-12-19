@@ -2,6 +2,10 @@
 
 #include "CSManagedAssembly.h"
 #include "CSManager.h"
+#include "Engine/Blueprint.h"
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Types/CSSkeletonClass.h"
+#include "Utilities/CSClassUtilities.h"
 #include "UnrealSharpCore.h"
 
 UFunction* UUClassExporter::GetNativeFunctionFromClassAndName(const UClass* Class, const char* FunctionName)
@@ -11,9 +15,81 @@ UFunction* UUClassExporter::GetNativeFunctionFromClassAndName(const UClass* Clas
 		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction for class. Class is not valid. FunctionName: {0}", FunctionName);
 		return nullptr;
 	}
-	
+
 	UFunction* Function = Class->FindFunctionByName(FunctionName);
-	
+
+#if WITH_EDITOR
+	// Editor-only: In the editor, the type pointer we cache on the managed side often points to the SkeletonGeneratedClass.
+	// For RPCs, the skeleton can be missing runtime replication metadata (e.g. RPCId), which may crash on the very first call
+	// of a newly created RPC. Prefer resolving Net functions against the actual GeneratedClass when possible.
+	if (IsValid(Function) && Function->HasAnyFunctionFlags(FUNC_Net))
+	{
+		if (const UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(Class))
+		{
+			if (UCSClass* GeneratedClass = SkeletonClass->GetGeneratedClass())
+			{
+				if (UFunction* GeneratedFunction = GeneratedClass->FindFunctionByName(FunctionName))
+				{
+					return GeneratedFunction;
+				}
+			}
+		}
+
+		// Fallback: regular Blueprint classes can also have skeleton/generated mismatches (not just UCSSkeletonClass).
+		if (const UBlueprintGeneratedClass* BlueprintGeneratedClass = Cast<UBlueprintGeneratedClass>(Class))
+		{
+			if (const UBlueprint* Blueprint = Cast<UBlueprint>(BlueprintGeneratedClass->ClassGeneratedBy))
+			{
+				if (UClass* GeneratedClass = Blueprint->GeneratedClass; IsValid(GeneratedClass) && GeneratedClass != Class)
+				{
+					if (UFunction* GeneratedFunction = GeneratedClass->FindFunctionByName(FunctionName))
+					{
+						return GeneratedFunction;
+					}
+				}
+			}
+		}
+	}
+#endif
+
+	// Non-Net functions: Prefer looking up on the provided Class. During editor compilation, many UFunctions only exist
+	// on the SkeletonGeneratedClass.
+	if (IsValid(Function))
+	{
+		return Function;
+	}
+
+#if WITH_EDITOR
+	// If not found on the provided class, try the GeneratedClass. At runtime/PIE, only the GeneratedClass may have
+	// the complete function table (e.g. newly created RPCs).
+	if (const UCSSkeletonClass* SkeletonClass = Cast<UCSSkeletonClass>(Class))
+	{
+		if (UCSClass* GeneratedClass = SkeletonClass->GetGeneratedClass())
+		{
+			Function = GeneratedClass->FindFunctionByName(FunctionName);
+			if (IsValid(Function))
+			{
+				return Function;
+			}
+		}
+	}
+
+	if (const UBlueprintGeneratedClass* BlueprintGeneratedClass = Cast<UBlueprintGeneratedClass>(Class))
+	{
+		if (const UBlueprint* Blueprint = Cast<UBlueprint>(BlueprintGeneratedClass->ClassGeneratedBy))
+		{
+			if (UClass* GeneratedClass = Blueprint->GeneratedClass; IsValid(GeneratedClass) && GeneratedClass != Class)
+			{
+				Function = GeneratedClass->FindFunctionByName(FunctionName);
+				if (IsValid(Function))
+				{
+					return Function;
+				}
+			}
+		}
+	}
+#endif
+
 	if (!IsValid(Function))
 	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get NativeFunction. Class: {0}, FunctionName: {1}", *Class->GetName(), FunctionName);
