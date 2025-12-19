@@ -245,22 +245,42 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
     {
-        if ((HasParamsOrReturnValue || NeedsImplementationFunction) && !FunctionFlags.HasFlag(EFunctionFlags.Delegate))
+        bool isDelegate = FunctionFlags.HasFlag(EFunctionFlags.Delegate);
+        bool needsFunctionPtr = (HasParamsOrReturnValue || NeedsImplementationFunction) && !isDelegate;
+
+        // Network functions (RPCs) are a special case:
+        // - We need a UFunction pointer here to read parameter sizes/offsets.
+        // - But we avoid caching a UFunction pointer for invocation during static initialization because in-editor it
+        //   may come from a SkeletonGeneratedClass and lack runtime replication metadata.
+        //   The wrapper will resolve and cache the correct UFunction lazily from the instance at runtime.
+        string functionPtrForOffsets = FunctionNativePtr;
+        if (needsFunctionPtr)
         {
-            builder.AppendLine($"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{SourceName}\");");
+            if (IsNetworkFunction)
+            {
+                if (HasParamsOrReturnValue)
+                {
+                    functionPtrForOffsets = $"{FunctionNativePtr}_Local";
+                    builder.AppendLine($"IntPtr {functionPtrForOffsets} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{SourceName}\");");
+                }
+            }
+            else
+            {
+                builder.AppendLine($"{FunctionNativePtr} = CallGetNativeFunctionFromClassAndName({nativeType}, \"{SourceName}\");");
+            }
         }
-        
+
         if (HasParamsOrReturnValue)
         {
-            builder.AppendLine($"{SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
+            builder.AppendLine($"{SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({functionPtrForOffsets});");
         }
-        
+
         if (HasReturnValue)
         {
-            ReturnType.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
+            ReturnType.ExportBackingVariablesToStaticConstructor(builder, functionPtrForOffsets);
         }
-        
-        base.ExportBackingVariablesToStaticConstructor(builder, FunctionNativePtr);
+
+        base.ExportBackingVariablesToStaticConstructor(builder, functionPtrForOffsets);
     }
 
     public void ExportInvokeMethod(GeneratorStringBuilder builder)
@@ -323,7 +343,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))})");
         builder.OpenBrace();
 
-        if (FunctionFlags.HasFlag(EFunctionFlags.Event))
+        if (FunctionFlags.HasFlag(EFunctionFlags.Event) || IsNetworkFunction)
         {
             builder.AppendLine($"if ({instanceFunction} == IntPtr.Zero)");
             builder.OpenBrace();

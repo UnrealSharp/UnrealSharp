@@ -2,6 +2,7 @@
 
 #include "CSManager.h"
 #include "Types/CSSkeletonClass.h"
+#include "Engine/SkeletonGeneratedClass.h"
 #include "UObject/UObjectGlobals.h"
 
 
@@ -93,8 +94,14 @@ void UUObjectExporter::InvokeNativeNetFunction(UObject* NativeObject, UFunction*
 			}
 		}
 
-		// Only do the (potentially repeated) name lookup when the cached function doesn't belong to the runtime/generated class.
-		if (NativeFunction->GetOuterUClass() != RuntimeClass)
+		// Only resolve functions that are owned by a skeleton class. Regular inheritance (where OuterUClass != RuntimeClass)
+		// is expected and does not require re-resolution.
+		UClass* FunctionOuterClass = NativeFunction->GetOuterUClass();
+		const bool bFunctionOwnedBySkeleton =
+			Cast<UCSSkeletonClass>(FunctionOuterClass) != nullptr ||
+			Cast<USkeletonGeneratedClass>(FunctionOuterClass) != nullptr;
+
+		if (bFunctionOwnedBySkeleton)
 		{
 			if (UFunction* ResolvedFunction = RuntimeClass->FindFunctionByName(NativeFunction->GetFName()))
 			{
