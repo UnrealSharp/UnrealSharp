@@ -26,7 +26,21 @@ public class FText
     
     public FText(string text)
     {
-        FTextExporter.CallFromString(ref Data, text);
+        if (text == null)
+        {
+            FTextExporter.CallCreateEmptyText(ref Data);
+            return;
+        }
+
+        // NOTE: do not pass a string directly to native (the runtime marshals it as ANSI and replaces non-ASCII with '?').
+        // Pin the UTF-16 buffer and let the UE side build FText from a TCHAR view (pointer + length).
+        unsafe
+        {
+            fixed (char* textPtr = text)
+            {
+                FTextExporter.CallFromStringView(ref Data, textPtr, text.Length);
+            }
+        }
     }
 
     public FText(ReadOnlySpan<char> text)
