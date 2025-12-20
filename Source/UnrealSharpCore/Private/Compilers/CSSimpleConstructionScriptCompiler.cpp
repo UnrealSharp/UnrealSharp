@@ -108,11 +108,17 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 	}
 
 	USCS_Node* DefaultSceneRootComponent = FindObject<USCS_Node>(CurrentSCS, *DefaultSceneRoot_UnrealSharp);
-	if (IsValid(DefaultSceneRootComponent) && ActorRootComponentInfo.Name != DefaultSceneRootComponent->GetVariableName())
+	if (IsValid(DefaultSceneRootComponent))
 	{
-		// New user-defined root component has been found, remove the default one
-		CurrentSCS->RemoveNode(DefaultSceneRootComponent, false);
-		DefaultSceneRootComponent->MarkAsGarbage();
+		if (ActorRootComponentInfo.Name != DefaultSceneRootComponent->GetVariableName())
+		{
+			CurrentSCS->RemoveNode(DefaultSceneRootComponent, false);
+			DefaultSceneRootComponent->MarkAsGarbage();
+		}
+		else
+		{
+			AllNodes.Add(FCSNodeInfo(DefaultSceneRootComponent, nullptr));
+		}
 	}
 
 	for (const FCSAttachmentNode& AttachmentNode : AttachmentNodes)
