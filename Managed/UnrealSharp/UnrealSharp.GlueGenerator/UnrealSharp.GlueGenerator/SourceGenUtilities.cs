@@ -350,4 +350,21 @@ public static class SourceGenUtilities
 
         return false;
     }
+    
+    public static bool IsChildOf(this INamedTypeSymbol typeSymbol, string potentialBaseTypeName)
+    {
+        INamedTypeSymbol? currentBaseType = typeSymbol;
+        
+        while (currentBaseType != null)
+        {
+            if (currentBaseType.Name == potentialBaseTypeName)
+            {
+                return true;
+            }
+            
+            currentBaseType = currentBaseType.BaseType;
+        }
+
+        return false;
+    }
 }
