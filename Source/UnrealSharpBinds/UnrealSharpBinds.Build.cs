@@ -19,8 +19,7 @@ public class UnrealSharpBinds : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore",
-                "UnrealSharpUtilities"
+                "SlateCore"
             }
         );
     }

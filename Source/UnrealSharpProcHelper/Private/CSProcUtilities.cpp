@@ -4,7 +4,7 @@
 #include "Misc/Paths.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
-#include "UnrealSharpUtils.h"
+#include "Logging/StructuredLog.h"
 
 bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
@@ -24,7 +24,7 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 
 	double EndTime = FPlatformTime::Seconds();
 	double ElapsedTime = EndTime - StartTime;
-	US_LOGFMT(LogUnrealSharpProcHelper, Display, "{0} task completed in {1} seconds.", *ProgramName, ElapsedTime);
+	UE_LOGFMT(LogUnrealSharpProcHelper, Display, "{0} task completed in {1} seconds.", *ProgramName, ElapsedTime);
 	return true;
 }
 

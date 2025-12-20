@@ -1,6 +1,6 @@
 #include "CSBindsManager.h"
 #include "UnrealSharpBinds.h"
-#include "UnrealSharpUtils.h"
+#include "Logging/StructuredLog.h"
 
 FCSBindsManager* FCSBindsManager::BindsManagerInstance = nullptr;
 
@@ -47,7 +47,7 @@ void* FCSBindsManager::GetBoundFunction(const TCHAR* InOuterName, const TCHAR* I
 			
 		if (NativeFunction.ParameterSize != InParametersSize)
 		{
-			US_LOGFMT(LogUnrealSharpBinds, Error, "Failed to get BoundNativeFunction: Function size mismatch for {0}.{1} (expected {2}, got {3})",
+			UE_LOGFMT(LogUnrealSharpBinds, Error, "Failed to get BoundNativeFunction: Function size mismatch for {0}.{1} (expected {2}, got {3})",
 				*ManagedOuterName.ToString(), *ManagedFunctionName.ToString(), NativeFunction.ParameterSize, InParametersSize);
 			
 			break;
