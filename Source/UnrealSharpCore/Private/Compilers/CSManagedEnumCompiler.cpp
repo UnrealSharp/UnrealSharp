@@ -38,7 +38,7 @@ void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr
 
 #if WITH_EDITOR
 	UCSManager::Get().OnNewEnumEvent().Broadcast(Enum);
-	FEnumEditorUtils::AddNewEnumeratorForUserDefinedEnum(Enum);
+	FEnumEditorUtils::SetEnumeratorBitflagsTypeState(Enum, false);
 #endif
 }
 
