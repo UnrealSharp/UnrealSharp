@@ -31,7 +31,16 @@ void UFTextExporter::FromString(FText* Text, const char* String)
 		return;
 	}
 
-	*Text = Text->FromString(String);
+	if (!String)
+	{
+		*Text = FText::GetEmpty();
+		return;
+	}
+
+	// Contract: this API receives a UTF-8 byte string and must decode it into TCHAR.
+	// NOTE: do NOT call this from C# by passing a string directly (the runtime will marshal it as ANSI and replace non-ASCII with '?').
+	// Prefer FromStringView (TCHAR* + length) by pinning the UTF-16 buffer on the managed side to avoid data loss.
+	*Text = FText::FromString(FString(UTF8_TO_TCHAR(String)));
 }
 
 void UFTextExporter::FromStringView(FText* Text, const TCHAR* String, int32 Length)
