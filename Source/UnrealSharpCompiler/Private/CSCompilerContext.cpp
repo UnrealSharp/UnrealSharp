@@ -13,6 +13,10 @@
 #include "Utilities/CSMetaDataUtils.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtils.h"
+#include "BehaviorTree/Decorators/BTDecorator_BlueprintBase.h"
+#include "BehaviorTree/Services/BTService_BlueprintBase.h"
+#include "Blueprint/StateTreeConditionBlueprintBase.h"
+#include "Blueprint/StateTreeConsiderationBlueprintBase.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Compilers/CSSimpleConstructionScriptCompiler.h"
 #include "ReflectionData/CSClassReflectionData.h"
@@ -230,7 +234,12 @@ void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 	static TArray ParentClasses =
 	{
 		UBTTask_BlueprintBase::StaticClass(),
+		UBTDecorator_BlueprintBase::StaticClass(),
+		UBTService_BlueprintBase::StaticClass(),
+		
 		UStateTreeTaskBlueprintBase::StaticClass(),
+		UStateTreeConditionBlueprintBase::StaticClass(),
+		UStateTreeConsiderationBlueprintBase::StaticClass(),
 	};
 
 	bool bIsChildOfSpecialClass = false;
