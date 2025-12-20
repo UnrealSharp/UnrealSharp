@@ -27,8 +27,19 @@ FCSRootNodeInfo::FCSRootNodeInfo(const FObjectProperty* NativeProperty, USceneCo
 
 void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData)
 {
+	if (!Outer->IsChildOf(AActor::StaticClass()))
+	{
+		return;
+	}
+	
+	UBlueprintGeneratedClass* GeneratedClass = static_cast<UBlueprintGeneratedClass*>(Outer);
 	USimpleConstructionScript* CurrentSCS = SimpleConstructionScript->Get();
-	UBlueprintGeneratedClass* GeneratedClass = Cast<UBlueprintGeneratedClass>(Outer);
+	
+	if (!IsValid(CurrentSCS))
+	{
+		CurrentSCS = NewObject<USimpleConstructionScript>(Outer);
+		*SimpleConstructionScript = CurrentSCS;
+	}
 	
 	TArray<FCSAttachmentNode> AttachmentNodes;
 	TArray<FCSNodeInfo> AllNodes;
@@ -42,12 +53,6 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		if (!DefaultComponentData.IsValid())
 		{
 			continue;
-		}
-		
-		if (!IsValid(CurrentSCS))
-		{
-			CurrentSCS = NewObject<USimpleConstructionScript>(Outer);
-			*SimpleConstructionScript = CurrentSCS;
 		}
 		
 		UClass* ComponentClass = DefaultComponentData->InnerType.GetAsClass();
@@ -94,11 +99,6 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		AttachmentNode.AttachToComponentName = DefaultComponentData->AttachmentComponent;
 		AttachmentNodes.Add(AttachmentNode);
 		ComponentNode->AttachToName = DefaultComponentData->AttachmentSocket;
-	}
-
-	if (!IsValid(CurrentSCS))
-	{
-		return;
 	}
 
 	if (!ActorRootComponentInfo.IsValid())

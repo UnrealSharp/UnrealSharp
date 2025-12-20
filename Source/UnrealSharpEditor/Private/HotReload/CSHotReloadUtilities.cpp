@@ -3,6 +3,7 @@
 #include "CSManager.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "IDirectoryWatcher.h"
+#include "IPlacementModeModule.h"
 #include "Projects.h"
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
@@ -185,6 +186,12 @@ void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<uint32>& Rebui
 
 		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
 	}
+}
+
+void FCSHotReloadUtilities::RefreshPlacementMode()
+{
+	IPlacementModeModule::Get().OnAllPlaceableAssetsChanged().Broadcast();
+	IPlacementModeModule::Get().OnPlaceableItemFilteringChanged().Broadcast();
 }
 
 bool FCSHotReloadUtilities::IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<uint32>& RebuiltTypes)

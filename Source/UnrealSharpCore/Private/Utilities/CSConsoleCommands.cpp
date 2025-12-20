@@ -76,6 +76,15 @@ void DumpDataAsStruct(UStruct* Struct, int32 IndentLevel = 1)
 	DumpPropertiesOfStruct(Struct, IndentLevel + 1);
 }
 
+void DumpDataAsTickFunction(const FTickFunction& TickFunction, int32 IndentLevel = 1)
+{
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}Tick Function:", Indent(IndentLevel + 1));
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}- bCanEverTick: {1}", Indent(IndentLevel + 2), TickFunction.bCanEverTick ? TEXT("true") : TEXT("false"));
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}- bStartWithTickEnabled: {1}", Indent(IndentLevel + 2), TickFunction.bStartWithTickEnabled ? TEXT("true") : TEXT("false"));
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}- TickInterval: {1}", Indent(IndentLevel + 2), TickFunction.TickInterval);
+	UE_LOGFMT(LogUnrealSharp, Log, "{0}- TickGroup: {1}", Indent(IndentLevel + 2), static_cast<int32>(TickFunction.TickGroup));
+}
+
 void DumpDataAsClass(UClass* Class, int32 IndentLevel = 1)
 {
 	TArray<const TCHAR*> ClassFlagsStrings;
@@ -98,6 +107,18 @@ void DumpDataAsClass(UClass* Class, int32 IndentLevel = 1)
 		UE_LOGFMT(LogUnrealSharp, Log, "{0}- {1} ({2})", Indent(IndentLevel + 2), Function->GetName(), FString::Join(FunctionFlagsStrings, TEXT(", ")));
 		DumpMetaData(Function, IndentLevel + 3);
 		DumpPropertiesOfStruct(Function, IndentLevel + 3);
+	}
+	
+	AActor* DefaultActor = Cast<AActor>(Class->GetDefaultObject());
+	if (IsValid(DefaultActor))
+	{
+		DumpDataAsTickFunction(DefaultActor->PrimaryActorTick, IndentLevel);
+	}
+	
+	UActorComponent* DefaultComponent = Cast<UActorComponent>(Class->GetDefaultObject());
+	if (IsValid(DefaultComponent))
+	{
+		DumpDataAsTickFunction(DefaultComponent->PrimaryComponentTick, IndentLevel);
 	}
 	
 	if (!bHasFunctions)

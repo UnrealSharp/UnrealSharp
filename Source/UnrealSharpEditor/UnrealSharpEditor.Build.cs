@@ -42,7 +42,8 @@ public class UnrealSharpEditor : ModuleRules
                 "AssetTools",
                 "UnrealSharpRuntimeGlue",
                 "PluginBrowser", 
-                "UnrealSharpUtilities"
+                "UnrealSharpUtilities", 
+                "PlacementMode"
             }
         );
 

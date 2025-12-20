@@ -31,8 +31,6 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	
 	Super::FinishCompilingClass(Class);
 
-	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
-
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
 
 	// Super call overrides the class flags, so we need to set after that
@@ -55,6 +53,8 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 		UCSManagedClassCompiler::ActivateSubsystem(NewClass);
 		UCSManagedClassCompiler::RefreshClassActions(NewClass);
 	}
+	
+	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 }
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
@@ -119,8 +119,6 @@ void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 	ManagedClass->SetDeferredCreation(false);
 	
 	UCSManager::Get().FindManagedObject(DefaultObject);
-	
-	UCSManagedClassCompiler::SetupDefaultTickSettings(DefaultObject, NewClass);
 }
 
 void FCSCompilerContext::ValidateSimpleConstructionScript() const

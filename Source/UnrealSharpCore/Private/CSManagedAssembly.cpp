@@ -25,8 +25,8 @@ void UCSManagedAssembly::InitializeManagedAssembly(const FStringView InAssemblyP
 
 	AssemblyName = *FPaths::GetBaseFilename(AssemblyFilePath);
 
-	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateUObject(this, &UCSManagedAssembly::OnManagedTypeChanged);
-	FCSManagedTypeDefinitionEvents::AddOnStructureChangedDelegate(Delegate);
+	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateUObject(this, &UCSManagedAssembly::OnTypeReflectionDataChanged);
+	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
 }
 
 bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
@@ -256,4 +256,14 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetOrCreateManagedInterface(UObject* O
 	
 	TypeMap.AddByHash(TypeId, TypeId, Handle);
 	return Handle;
+}
+
+void UCSManagedAssembly::OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
+{
+	if (ManagedTypeDefinition->GetOwningAssembly() != this)
+	{
+		return;
+	}
+		
+	PendingRebuildTypes.Add(ManagedTypeDefinition);
 }

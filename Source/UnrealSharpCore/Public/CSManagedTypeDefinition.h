@@ -11,19 +11,19 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnManagedTypeStructureChanged, TSharedPtr<s
 
 struct UNREALSHARPCORE_API FCSManagedTypeDefinitionEvents
 {
-	static FDelegateHandle AddOnStructureChangedDelegate(const FOnManagedTypeStructureChanged::FDelegate& Delegate)
+	static FDelegateHandle AddOnReflectionDataChangedDelegate(const FOnManagedTypeStructureChanged::FDelegate& Delegate)
 	{
-		return OnStructureChangedDelegate.Add(Delegate);
+		return OnReflectionDataChanged.Add(Delegate);
 	}
 
-	static void RemoveOnStructureChangedDelegate(FDelegateHandle DelegateHandle)
+	static void RemoveOnReflectionDataChangedDelegate(FDelegateHandle DelegateHandle)
 	{
-		OnStructureChangedDelegate.Remove(DelegateHandle);
+		OnReflectionDataChanged.Remove(DelegateHandle);
 	}
 
 private:
 	friend struct FCSManagedTypeDefinition;
-	static FOnManagedTypeStructureChanged OnStructureChangedDelegate;
+	static FOnManagedTypeStructureChanged OnReflectionDataChanged;
 };
 
 struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition>
@@ -55,6 +55,7 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 	void SetReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData)
 	{
 		ReflectionData = InReflectionData;
+		FCSManagedTypeDefinitionEvents::OnReflectionDataChanged.Broadcast(SharedThis(this));
 	}
 	
 	void SetTypeGCHandle(uint8* GCHandlePtr);

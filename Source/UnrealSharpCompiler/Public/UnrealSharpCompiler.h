@@ -25,7 +25,7 @@ private:
     void OnNewStruct(UCSScriptStruct* NewStruct);
     void OnNewEnum(UCSEnum* NewEnum);
 
-    void OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
+    void OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
     
     void OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();

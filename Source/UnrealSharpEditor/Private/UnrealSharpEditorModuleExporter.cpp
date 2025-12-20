@@ -1,6 +1,7 @@
 #include "UnrealSharpEditorModuleExporter.h"
 #include "CSManager.h"
 #include "CSProcUtilities.h"
+#include "HotReload/CSHotReloadSubsystem.h"
 
 void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FCSManagedEditorCallbacks Callbacks)
 {
@@ -14,21 +15,13 @@ void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)
 
 void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName)
 {
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
-
-	if (!IsValid(Assembly))
+	UCSHotReloadSubsystem* HotReloadSubsystem = UCSHotReloadSubsystem::Get();
+	
+	if (!IsValid(HotReloadSubsystem))
 	{
-		return;
-	}
-
-	FCSFieldName FieldName(TypeName, Namespace);
-	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
-
-	if (!ManagedTypeDefinition.IsValid())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Log, "Skipping dirty check: {0}.{1} isn't registered in assembly {2}. It may be a new managed type.", Namespace, TypeName, AssemblyName);
+		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Failed to dirty Unreal type. HotReloadSubsystem is not valid.");
 		return;
 	}
 	
-	ManagedTypeDefinition->MarkStructurallyDirty();
+	HotReloadSubsystem->DirtyUnrealType(AssemblyName, Namespace, TypeName);
 }

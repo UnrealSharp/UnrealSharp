@@ -4,14 +4,15 @@
 #include "ReflectionData/CSTypeReferenceReflectionData.h"
 #include "Utilities/CSMetaDataUtils.h"
 
-FOnManagedTypeStructureChanged FCSManagedTypeDefinitionEvents::OnStructureChangedDelegate;
+FOnManagedTypeStructureChanged FCSManagedTypeDefinitionEvents::OnReflectionDataChanged;
 
 TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData, UCSManagedAssembly* InOwningAssembly, UCSManagedTypeCompiler* Compiler)
 {
 	TSharedPtr<FCSManagedTypeDefinition> NewDefinition = MakeShared<FCSManagedTypeDefinition>();
 	NewDefinition->OwningAssembly = InOwningAssembly;
-	NewDefinition->SetReflectionData(InReflectionData);
 	NewDefinition->Compiler = Compiler;
+	NewDefinition->SetReflectionData(InReflectionData);
+	
 	NewDefinition->DefinitionField = TStrongObjectPtr(Compiler->CreateField(NewDefinition));
 	NewDefinition->MarkStructurallyDirty();
 	
@@ -70,7 +71,6 @@ void FCSManagedTypeDefinition::MarkStructurallyDirty()
 	}
 	
 	bHasChangedStructure = true;
-	FCSManagedTypeDefinitionEvents::OnStructureChangedDelegate.Broadcast(SharedThis(this));
 }
 
 UField* FCSManagedTypeDefinition::CompileAndGetDefinitionField()
