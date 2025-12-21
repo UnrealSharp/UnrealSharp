@@ -175,12 +175,19 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Affected Blueprints..."));
+	
 	FCSHotReloadUtilities::RebuildDependentBlueprints(ReloadedTypes);
+	
+	if (bDetectedNewManagedType)
+	{
+		FCSHotReloadUtilities::RefreshPlacementMode();
+	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	
 	CurrentHotReloadStatus = Inactive;
+	bDetectedNewManagedType = false;
 	ReloadedTypes.Reset();
 	
 	UE_LOG(LogUnrealSharpEditor, Display, TEXT("C# Hot Reload completed in %.2f seconds."), FPlatformTime::Seconds() - StartTime);
@@ -217,6 +224,28 @@ void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 		FName ProjectName = *FPaths::GetBaseFilename(ProjectPath);
 		AddDirectoryToWatch(Path, ProjectName);
 	}
+}
+
+void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName)
+{
+	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
+
+	if (!IsValid(Assembly))
+	{
+		return;
+	}
+
+	FCSFieldName FieldName(TypeName, Namespace);
+	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
+
+	if (!ManagedTypeDefinition.IsValid())
+	{
+		bDetectedNewManagedType = true;
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Skipping dirty check: {0}.{1} isn't registered in assembly {2}. It may be a new managed type.", Namespace, TypeName, AssemblyName);
+		return;
+	}
+	
+	ManagedTypeDefinition->MarkStructurallyDirty();
 }
 
 void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)

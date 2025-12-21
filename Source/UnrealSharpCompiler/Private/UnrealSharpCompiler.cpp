@@ -36,8 +36,8 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
 	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 	
-	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnManagedTypeStructureChanged);
-	FCSManagedTypeDefinitionEvents::AddOnStructureChangedDelegate(Delegate);
+	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnReflectionDataChanged);
+	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
 }
 
 void FUnrealSharpCompilerModule::ShutdownModule()
@@ -180,16 +180,16 @@ void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 	AddManagedReferences(NewEnum->GetManagedReferencesCollection());
 }
 
-void FUnrealSharpCompilerModule::OnManagedTypeStructureChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
+void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 {
-	UClass* NewClass = Cast<UClass>(ManagedTypeDefinition->GetDefinitionField());
-	if (!IsValid(NewClass))
+	UClass* DefinitionClass = Cast<UClass>(ManagedTypeDefinition->GetDefinitionField());
+	if (!IsValid(DefinitionClass))
 	{
 		return;
 	}
 	
 	TArray<UClass*> DerivedClasses;
-	GetDerivedClasses(NewClass, DerivedClasses, false);
+	GetDerivedClasses(DefinitionClass, DerivedClasses, false);
 
 	for (UClass* DerivedClass : DerivedClasses)
 	{

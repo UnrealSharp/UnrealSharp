@@ -27,8 +27,19 @@ FCSRootNodeInfo::FCSRootNodeInfo(const FObjectProperty* NativeProperty, USceneCo
 
 void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass* Outer, TObjectPtr<USimpleConstructionScript>* SimpleConstructionScript, const TArray<FCSPropertyReflectionData>& PropertiesReflectionData)
 {
+	if (!Outer->IsChildOf(AActor::StaticClass()))
+	{
+		return;
+	}
+	
+	UBlueprintGeneratedClass* GeneratedClass = static_cast<UBlueprintGeneratedClass*>(Outer);
 	USimpleConstructionScript* CurrentSCS = SimpleConstructionScript->Get();
-	UBlueprintGeneratedClass* GeneratedClass = Cast<UBlueprintGeneratedClass>(Outer);
+	
+	if (!IsValid(CurrentSCS))
+	{
+		CurrentSCS = NewObject<USimpleConstructionScript>(Outer);
+		*SimpleConstructionScript = CurrentSCS;
+	}
 	
 	TArray<FCSAttachmentNode> AttachmentNodes;
 	TArray<FCSNodeInfo> AllNodes;
@@ -44,45 +55,39 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 			continue;
 		}
 		
-		if (!IsValid(CurrentSCS))
-		{
-			CurrentSCS = NewObject<USimpleConstructionScript>(Outer);
-			*SimpleConstructionScript = CurrentSCS;
-		}
-		
-		UClass* Class = DefaultComponentData->InnerType.GetAsClass();
-		USCS_Node* Node = CurrentSCS->FindSCSNode(PropertyReflectionData.GetName());
+		UClass* ComponentClass = DefaultComponentData->InnerType.GetAsClass();
+		USCS_Node* ComponentNode = CurrentSCS->FindSCSNode(PropertyReflectionData.GetName());
 	
-		if (!IsValid(Node))
+		if (!IsValid(ComponentNode))
 		{
-			Node = CreateNode(CurrentSCS, Outer, Class, PropertyReflectionData.GetName());
+			ComponentNode = CreateNode(CurrentSCS, Outer, ComponentClass, PropertyReflectionData.GetName());
 
-			if (IsRootNode(DefaultComponentData, Node))
+			if (IsRootNode(DefaultComponentData, ComponentNode))
 			{
-				CurrentSCS->AddNode(Node);
+				CurrentSCS->AddNode(ComponentNode);
 			}
 		}
-		else if (Class != Node->ComponentClass)
+		else if (ComponentClass != ComponentNode->ComponentClass)
 		{
-			UpdateChildren(Outer, Node);
-			UpdateTemplateComponent(Node, Outer, Class, PropertyReflectionData.GetName());
+			UpdateChildren(Outer, ComponentNode);
+			UpdateTemplateComponent(ComponentNode, Outer, ComponentClass, PropertyReflectionData.GetName());
 		}
 
-		AllNodes.Add(FCSNodeInfo(Node, DefaultComponentData));
+		AllNodes.Add(FCSNodeInfo(ComponentNode, DefaultComponentData));
 
-		bool bWasRootNode = Node->IsRootNode();
-		bool bIsRootNodeNow = IsRootNode(DefaultComponentData, Node);
+		bool bWasRootNode = ComponentNode->IsRootNode();
+		bool bIsRootNodeNow = IsRootNode(DefaultComponentData, ComponentNode);
 
 		if (bWasRootNode && !bIsRootNodeNow)
 		{
 			// Node used to be root but no longer is, remove it from root
-			CurrentSCS->RemoveNode(Node, false);
+			CurrentSCS->RemoveNode(ComponentNode, false);
 		}
 		else if (bWasRootNode && bIsRootNodeNow)
 		{
-			if (!ActorRootComponentInfo.IsValid() && Node->ComponentClass->IsChildOf<USceneComponent>())
+			if (!ActorRootComponentInfo.IsValid() && ComponentNode->ComponentClass->IsChildOf<USceneComponent>())
 			{
-				ActorRootComponentInfo = FCSRootNodeInfo(Node, CurrentSCS);
+				ActorRootComponentInfo = FCSRootNodeInfo(ComponentNode, CurrentSCS);
 			}
 			
 			// Still a root node, nothing else to do. No attachment needed.
@@ -90,15 +95,10 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		}
 
 		FCSAttachmentNode AttachmentNode;
-		AttachmentNode.Node = Node;
+		AttachmentNode.Node = ComponentNode;
 		AttachmentNode.AttachToComponentName = DefaultComponentData->AttachmentComponent;
 		AttachmentNodes.Add(AttachmentNode);
-		Node->AttachToName = DefaultComponentData->AttachmentSocket;
-	}
-
-	if (!IsValid(CurrentSCS))
-	{
-		return;
+		ComponentNode->AttachToName = DefaultComponentData->AttachmentSocket;
 	}
 
 	if (!ActorRootComponentInfo.IsValid())
@@ -108,11 +108,17 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 	}
 
 	USCS_Node* DefaultSceneRootComponent = FindObject<USCS_Node>(CurrentSCS, *DefaultSceneRoot_UnrealSharp);
-	if (IsValid(DefaultSceneRootComponent) && ActorRootComponentInfo.Name != DefaultSceneRootComponent->GetVariableName())
+	if (IsValid(DefaultSceneRootComponent))
 	{
-		// New user-defined root component has been found, remove the default one
-		CurrentSCS->RemoveNode(DefaultSceneRootComponent, false);
-		DefaultSceneRootComponent->MarkAsGarbage();
+		if (ActorRootComponentInfo.Name != DefaultSceneRootComponent->GetVariableName())
+		{
+			CurrentSCS->RemoveNode(DefaultSceneRootComponent, false);
+			DefaultSceneRootComponent->MarkAsGarbage();
+		}
+		else
+		{
+			AllNodes.Add(FCSNodeInfo(DefaultSceneRootComponent, nullptr));
+		}
 	}
 
 	for (const FCSAttachmentNode& AttachmentNode : AttachmentNodes)

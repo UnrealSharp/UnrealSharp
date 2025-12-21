@@ -133,16 +133,8 @@ public:
 
 private:
 
-	void OnManagedTypeChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
-	{
-		if (ManagedTypeDefinition->GetOwningAssembly() != this)
-		{
-			return;
-		}
-		
-		PendingRebuildTypes.Add(ManagedTypeDefinition);
-	}
-	
+	void OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
+
 	// Map of all Unreal types defined in this assembly, keyed by their field name (namespace + name).
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> DefinedManagedTypes;
 

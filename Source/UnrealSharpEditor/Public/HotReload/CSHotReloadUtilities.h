@@ -31,6 +31,8 @@ namespace FCSHotReloadUtilities
 	bool RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, FString& OutExceptionMessage);
 	
 	void RebuildDependentBlueprints(const TSet<uint32>& RebuiltTypes);
+	void RefreshPlacementMode();
+	
 	bool IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<uint32>& RebuiltTypes);
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<uint32>& RebuiltTypes);
 	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes);

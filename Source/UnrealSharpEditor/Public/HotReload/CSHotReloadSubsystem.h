@@ -44,6 +44,11 @@ public:
 
 	static UCSHotReloadSubsystem* Get()
 	{
+		if (!IsValid(GEditor))
+		{
+			return nullptr;
+		}
+		
 		return GEditor->GetEditorSubsystem<UCSHotReloadSubsystem>();
 	}
 
@@ -59,6 +64,8 @@ public:
 	void ResumeHotReload();
 	
 	void RefreshDirectoryWatchers();
+	
+	void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName);
 
 private:
 	
@@ -101,4 +108,5 @@ private:
 	TArray<FCSPendingHotReloadChange> PendingFileChanges;
 
 	TSet<uint32> ReloadedTypes;
+	bool bDetectedNewManagedType = false;
 };

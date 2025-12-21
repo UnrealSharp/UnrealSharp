@@ -189,7 +189,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
     public static void FlagsSpecifier(UnrealType topScope, TypedConstant constant)
     {
         UnrealFunctionBase unrealFunction = (UnrealFunctionBase) topScope;
-        
         unrealFunction.FunctionFlags |= (EFunctionFlags) constant.Value!;
         
         if (unrealFunction.FunctionFlags.HasFlag(EFunctionFlags.BlueprintPure))
@@ -204,7 +203,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         if (unrealFunction.IsNetworkFunction)
         {
-            unrealFunction.FunctionFlags |= EFunctionFlags.Net;
+            unrealFunction.FunctionFlags |= EFunctionFlags.Net | EFunctionFlags.Event;
         }
     }
     

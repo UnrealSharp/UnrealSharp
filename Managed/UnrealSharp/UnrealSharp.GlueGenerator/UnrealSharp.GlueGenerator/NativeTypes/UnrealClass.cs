@@ -65,6 +65,16 @@ public record UnrealClass : UnrealClassBase
     
     public UnrealClass(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
+        if (typeSymbol.BaseType == null)
+        {
+            throw new InvalidOperationException($"Type {typeSymbol.Name} does not have a base type. Needs to inherit from UObject class.");
+        }
+
+        if (!typeSymbol.BaseType.IsChildOf("UObject"))
+        {
+            throw new InvalidOperationException($"'{typeSymbol.Name}' inherits from '{typeSymbol.BaseType.Name}' which does not inherit from 'UObject'. All UClass types must ultimately inherit from UObject.");
+        }
+
         ParentClass = new FieldName(typeSymbol.BaseType!);
         
         ImmutableArray<INamedTypeSymbol> immutableArray = typeSymbol.Interfaces;

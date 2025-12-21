@@ -15,7 +15,13 @@ public static class StringMarshaller
             }
             
             UnmanagedArray* unrealString = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
-            FStringExporter.CallMarshalToNativeString(unrealString, stringToMarshal);
+
+            // NOTE: do not pass a string directly to native (the runtime marshals it as ANSI and replaces non-ASCII with '?').
+            // Pin the UTF-16 buffer and let the UE side convert it to TCHAR/FString.
+            fixed (char* stringPtr = stringToMarshal)
+            {
+                FStringExporter.CallMarshalToNativeStringView(unrealString, stringPtr, stringToMarshal.Length);
+            }
         }
     }
     

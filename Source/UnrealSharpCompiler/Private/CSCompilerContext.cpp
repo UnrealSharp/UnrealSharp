@@ -13,6 +13,10 @@
 #include "Utilities/CSMetaDataUtils.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "UnrealSharpUtils.h"
+#include "BehaviorTree/Decorators/BTDecorator_BlueprintBase.h"
+#include "BehaviorTree/Services/BTService_BlueprintBase.h"
+#include "Blueprint/StateTreeConditionBlueprintBase.h"
+#include "Blueprint/StateTreeConsiderationBlueprintBase.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Compilers/CSSimpleConstructionScriptCompiler.h"
 #include "ReflectionData/CSClassReflectionData.h"
@@ -30,8 +34,6 @@ void FCSCompilerContext::FinishCompilingClass(UClass* Class)
 	Class->ClassConstructor = &UCSClass::ManagedObjectConstructor;
 	
 	Super::FinishCompilingClass(Class);
-
-	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
 
@@ -55,6 +57,8 @@ void FCSCompilerContext::OnPostCDOCompiled(const UObject::FPostCDOCompiledContex
 		UCSManagedClassCompiler::ActivateSubsystem(NewClass);
 		UCSManagedClassCompiler::RefreshClassActions(NewClass);
 	}
+	
+	UCSManagedClassCompiler::SetupDefaultTickSettings(NewClass->GetDefaultObject(), NewClass);
 }
 
 void FCSCompilerContext::CreateClassVariablesFromBlueprint()
@@ -119,8 +123,6 @@ void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 	ManagedClass->SetDeferredCreation(false);
 	
 	UCSManager::Get().FindManagedObject(DefaultObject);
-	
-	UCSManagedClassCompiler::SetupDefaultTickSettings(DefaultObject, NewClass);
 }
 
 void FCSCompilerContext::ValidateSimpleConstructionScript() const
@@ -232,7 +234,12 @@ void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 	static TArray ParentClasses =
 	{
 		UBTTask_BlueprintBase::StaticClass(),
+		UBTDecorator_BlueprintBase::StaticClass(),
+		UBTService_BlueprintBase::StaticClass(),
+		
 		UStateTreeTaskBlueprintBase::StaticClass(),
+		UStateTreeConditionBlueprintBase::StaticClass(),
+		UStateTreeConsiderationBlueprintBase::StaticClass(),
 	};
 
 	bool bIsChildOfSpecialClass = false;
