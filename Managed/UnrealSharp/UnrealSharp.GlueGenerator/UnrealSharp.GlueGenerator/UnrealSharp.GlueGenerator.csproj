@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <IsPackable>true</IsPackable>
@@ -26,14 +25,16 @@
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
-
-        <PackageReference Include="System.Text.Json" GeneratePathProperty="true" PrivateAssets="all" />
+        <PackageReference Include="Newtonsoft.Json" PrivateAssets="all" GeneratePathProperty="true" />
     </ItemGroup>
+    
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
 
-    <Target Name="PackTaskDependencies" AfterTargets="GenerateNuspec">
+    <Target Name="GetDependencyTargetPaths" AfterTargets="ResolvePackageDependenciesForBuild">
         <ItemGroup>
-            <_PackageFiles Include="$(OutputPath)\System.Text.Json.dll" PackagePath="analyzers/dotnet/cs" />
+            <TargetPathWithTargetPlatformMoniker Include="@(ResolvedCompileFileDefinitions)" IncludeRuntimeDependency="false" />
         </ItemGroup>
     </Target>
-
 </Project>

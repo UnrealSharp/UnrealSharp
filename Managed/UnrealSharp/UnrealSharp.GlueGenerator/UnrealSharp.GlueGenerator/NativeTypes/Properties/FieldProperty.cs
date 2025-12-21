@@ -1,5 +1,5 @@
-﻿using System.Text.Json.Nodes;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -25,7 +25,7 @@ public record FieldProperty : SimpleProperty
         InnerType = innerType;
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
         InnerType.SerializeToJson(jsonObject, "InnerType", true);

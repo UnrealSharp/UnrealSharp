@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json.Linq;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -318,7 +318,7 @@ public record UnrealProperty : UnrealType
         builder.Append($"{assignmentOperator}{marshaller}.FromNative({AppendOffsetMath(buffer)}, 0);");
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
         
@@ -335,14 +335,14 @@ public record UnrealProperty : UnrealType
         SetGetterSetterToJson(jsonObject, "SetterMethod", SetterMethod);
     }
     
-    private void SetGetterSetterToJson(JsonObject jsonObject, string key, PropertyMethod? method)
+    private void SetGetterSetterToJson(JObject jsonObject, string key, PropertyMethod? method)
     {
         if (method == null || !method.Value.HasCustomMethod)
         {
             return;
         }
         
-        JsonObject methodObject = new JsonObject();
+        JObject methodObject = new JObject();
         method.Value.CustomPropertyMethod!.PopulateJsonObject(methodObject);
         jsonObject[key] = methodObject;
     }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -291,7 +291,7 @@ public record UnrealClass : UnrealClassBase
         builder.AppendLine();
     }
     
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
         
@@ -312,7 +312,7 @@ public record UnrealClass : UnrealClassBase
         {
             foreach (FieldName interfaceName in Interfaces.List)
             {
-                JsonObject interfaceObject = interfaceName.SerializeToJson(true)!;
+                JObject interfaceObject = interfaceName.SerializeToJson(true)!;
                 array.Add(interfaceObject);
             }
         });
@@ -321,7 +321,7 @@ public record UnrealClass : UnrealClassBase
         {
             foreach (ComponentOverride componentOverride in ComponentOverrides.List)
             {
-                JsonObject componentObject = new JsonObject
+                JObject componentObject = new JObject
                 {
                     ["OwningClass"] = componentOverride.OwningClass.SerializeToJson(true),
                     ["ComponentType"] = componentOverride.OverrideComponentType.SerializeToJson(true),

@@ -1,5 +1,5 @@
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -42,14 +42,14 @@ public readonly record struct FieldName
         return FullName;
     }
 
-    public JsonObject? SerializeToJson(bool stripPrefix = false)
+    public JObject? SerializeToJson(bool stripPrefix = false)
     {
         if (string.IsNullOrEmpty(Name))
         {
             return null;
         }
         
-        JsonObject fieldObject = new()
+        JObject fieldObject = new()
         {
             ["Name"] = stripPrefix ? Name.Substring(1) : Name,
             ["Namespace"] = Namespace,
@@ -59,9 +59,9 @@ public readonly record struct FieldName
         return fieldObject;
     }
     
-    public void SerializeToJson(JsonObject jsonObject, string propertyName, bool stripPrefix = false)
+    public void SerializeToJson(JObject jsonObject, string propertyName, bool stripPrefix = false)
     {
-        JsonObject? fieldObject = SerializeToJson(stripPrefix);
+        JObject? fieldObject = SerializeToJson(stripPrefix);
         if (fieldObject != null)
         {
             jsonObject[propertyName] = fieldObject;

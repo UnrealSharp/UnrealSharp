@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -399,7 +399,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         builder.Append($"(NativeObject, {instanceFunction}, {paramsBuffer}, {returnBuffer});");
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JObject jsonObject)
     {
         base.PopulateJsonObject(jsonObject);
         jsonObject.TrySetJsonEnum("FunctionFlags", FunctionFlags);

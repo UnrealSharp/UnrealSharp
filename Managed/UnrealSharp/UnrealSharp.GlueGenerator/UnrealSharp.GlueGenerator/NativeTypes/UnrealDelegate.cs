@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json.Linq;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -144,7 +144,7 @@ public record UnrealDelegate : UnrealType
         builder.AppendLine($"public delegate {_delegateSignature.ReturnType.ManagedType} {_delegateSignature.SourceName}({string.Join(", ", _delegateSignature.Properties.Select(x => x.GetParameterDeclaration()))});");
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JObject jsonObject)
     {
         _delegateSignature.PopulateJsonObject(jsonObject);
         base.PopulateJsonObject(jsonObject);

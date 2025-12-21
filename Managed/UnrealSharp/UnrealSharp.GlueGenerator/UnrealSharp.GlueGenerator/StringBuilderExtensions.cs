@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
@@ -51,18 +51,19 @@ public static class StringBuilderExtensions
 
     public static void GenerateTypeRegistration(this GeneratorStringBuilder builder, UnrealType type)
     {
-        JsonObject typeObject = new JsonObject();
+        JObject typeObject = new JObject();
         
         builder.StartModuleInitializer(type);
         
         type.PopulateJsonObject(typeObject);
         
-        JsonSerializerOptions options = new JsonSerializerOptions
+        JsonSerializerSettings settings = new JsonSerializerSettings
         {
-            WriteIndented = true
+            Formatting = Formatting.Indented
         };
         
-        string jsonString = JsonSerializer.Serialize(typeObject, options);
+        string jsonString = JsonConvert.SerializeObject(typeObject, settings);
+        
         builder.AppendLine($"const string NativeReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
         builder.AppendLine("static void Initialize() => ");
 

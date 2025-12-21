@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json.Linq;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -105,7 +104,7 @@ public record UnrealType
     public virtual void ExportBackingVariables(GeneratorStringBuilder builder) { }
     public virtual void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType) { }
     
-    public virtual void PopulateJsonObject(JsonObject jsonObject)
+    public virtual void PopulateJsonObject(JObject jsonObject)
     {
         jsonObject["Name"] = EngineName;
         jsonObject["Namespace"] = Namespace;
@@ -113,27 +112,28 @@ public record UnrealType
 
         if (SourceGeneratorDependencies.Count > 0)
         {
-            JsonArray dependenciesArray = new JsonArray();
+            JArray dependenciesArray = new JArray();
             jsonObject["SourceGeneratorDependencies"] = dependenciesArray;
         
             foreach (FieldName dependency in SourceGeneratorDependencies.List)
             {
-                dependenciesArray.Add(dependency.SerializeToJson(true));
+                dependenciesArray.Add(dependency.SerializeToJson(true)!);
             }
         }
         
         if (MetaData.Count > 0)
         {
-            JsonArray jsonArray = new JsonArray();
+            JArray jsonArray = new JArray();
             jsonObject["MetaData"] = jsonArray;
             
             foreach (MetaDataInfo metaDataInfo in MetaData.List)
             {
-                JsonObject metaDataObject = new JsonObject
+                JObject metaDataObject = new JObject
                 {
                     ["Key"] = metaDataInfo.Key,
                     ["Value"] = metaDataInfo.Value
                 };
+                
                 jsonArray.Add(metaDataObject);
             }
         }
