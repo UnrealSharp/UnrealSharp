@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text.Json.Nodes;
-using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -51,21 +51,21 @@ public record UnrealEnum : UnrealType
         return new UnrealEnum((ITypeSymbol) symbol, outer);
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
+        base.PopulateJsonObject(jsonWriter);
         
         if (_enumNames is null)
         {
             return;
         }
-        
-        JsonArray enumNamesArray = new JsonArray();
+
+        jsonWriter.WritePropertyName("EnumNames");
+        jsonWriter.WriteStartArray();
         foreach (string name in _enumNames)
         {
-            enumNamesArray.Add(name);
+            jsonWriter.WriteValue(name);
         }
-        
-        jsonObject["EnumNames"] = enumNamesArray;
+        jsonWriter.WriteEndArray();
     }
 }

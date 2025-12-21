@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -318,32 +318,33 @@ public record UnrealProperty : UnrealType
         builder.Append($"{assignmentOperator}{marshaller}.FromNative({AppendOffsetMath(buffer)}, 0);");
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
+        base.PopulateJsonObject(jsonWriter);
+
+        jsonWriter.TrySetJsonEnum("PropertyFlags", PropertyFlags);
+        jsonWriter.TrySetJsonEnum("PropertyType", PropertyType);
+        jsonWriter.TrySetJsonBoolean("DefaultComponent", DefaultComponent);
+        jsonWriter.TrySetJsonBoolean("IsRootComponent", IsRootComponent);
+        jsonWriter.TrySetJsonString("AttachmentComponent", AttachmentComponent);
+        jsonWriter.TrySetJsonString("AttachmentSocket", AttachmentSocket);
+        jsonWriter.TrySetJsonString("ReplicatedUsing", ReplicatedUsing);
+        jsonWriter.TrySetJsonEnum("LifetimeCondition", LifetimeCondition);
         
-        jsonObject.TrySetJsonEnum("PropertyFlags", PropertyFlags);
-        jsonObject.TrySetJsonEnum("PropertyType", PropertyType);
-        jsonObject.TrySetJsonBoolean("DefaultComponent", DefaultComponent);
-        jsonObject.TrySetJsonBoolean("IsRootComponent", IsRootComponent);
-        jsonObject.TrySetJsonString("AttachmentComponent", AttachmentComponent);
-        jsonObject.TrySetJsonString("AttachmentSocket", AttachmentSocket);
-        jsonObject.TrySetJsonString("ReplicatedUsing", ReplicatedUsing);
-        jsonObject.TrySetJsonEnum("LifetimeCondition", LifetimeCondition);
-        
-        SetGetterSetterToJson(jsonObject, "GetterMethod", GetterMethod);
-        SetGetterSetterToJson(jsonObject, "SetterMethod", SetterMethod);
+        SetGetterSetterToJson(jsonWriter, "GetterMethod", GetterMethod);
+        SetGetterSetterToJson(jsonWriter, "SetterMethod", SetterMethod);
     }
     
-    private void SetGetterSetterToJson(JsonObject jsonObject, string key, PropertyMethod? method)
+    private void SetGetterSetterToJson(JsonWriter jsonWriter, string key, PropertyMethod? method)
     {
         if (method == null || !method.Value.HasCustomMethod)
         {
             return;
         }
-        
-        JsonObject methodObject = new JsonObject();
-        method.Value.CustomPropertyMethod!.PopulateJsonObject(methodObject);
-        jsonObject[key] = methodObject;
+
+        jsonWriter.WritePropertyName(key);
+        jsonWriter.WriteStartObject();
+        method.Value.CustomPropertyMethod!.PopulateJsonObject(jsonWriter);
+        jsonWriter.WriteEndObject();
     }
 }

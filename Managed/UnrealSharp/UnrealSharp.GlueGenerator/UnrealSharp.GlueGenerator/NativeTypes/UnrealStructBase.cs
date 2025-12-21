@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -39,10 +39,10 @@ public record UnrealStruct : UnrealType
         Properties.ExportListToStaticConstructor(builder, nativeType);
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
-        Properties.PopulateJsonWithArray(jsonObject, "Properties");
+        base.PopulateJsonObject(jsonWriter);
+        Properties.PopulateJsonWithArray(jsonWriter, "Properties");
     }
 
     public void AddProperty(UnrealProperty property)
