@@ -74,8 +74,8 @@ public static class JsonUtilities
         {
             return;
         }
-        
-        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName);
+
+        list.AsEnumerable().PopulateJsonWithArray(jsonWriter, arrayName);
     }
     
     static void PopulateJsonWithArray<T>(this IEnumerable<T> list, JsonWriter jsonWriter, string arrayName) where T : UnrealType
@@ -91,38 +91,41 @@ public static class JsonUtilities
         jsonWriter.WriteEndArray();
     }
     
-    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction) where T : IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter, T> populateAction) where T : IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
-        
-        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName, populateAction);
+
+        list.AsEnumerable().PopulateJsonWithArray(jsonWriter, arrayName, populateAction);
     }
     
-    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction) where T : IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter, T> populateAction) where T : IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
-        
-        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName, populateAction);
+
+        list.AsEnumerable().PopulateJsonWithArray(jsonWriter, arrayName, populateAction);
     }
     
-    static void PopulateJsonWithArray<T>(this IEnumerable<T>? list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction)
+    static void PopulateJsonWithArray<T>(this IEnumerable<T>? list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter, T> populateAction)
     {
         if (list == null)
         {
             return;
         }
+        
         jsonWriter.WritePropertyName(arrayName);
         jsonWriter.WriteStartArray();
+        
         foreach (T item in list)
         {
-            populateAction(jsonWriter);
+            populateAction(jsonWriter, item);
         }
+        
         jsonWriter.WriteEndArray();
     }
     

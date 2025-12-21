@@ -300,35 +300,26 @@ public record UnrealClass : UnrealClassBase
         jsonWriter.TrySetJsonEnum("ClassFlags", ClassFlags);
         jsonWriter.TrySetJsonString("Config", Config);
         
-        Overrides.PopulateJsonWithArray(jsonWriter, "Overrides", array =>
+        Overrides.PopulateJsonWithArray(jsonWriter, "Overrides", (writer, overrideName) =>
         {
-            foreach (string overrideName in Overrides.List)
-            {
-                array.WriteValue(overrideName);
-            }
+            writer.WriteValue(overrideName);
         });
         
-        Interfaces.PopulateJsonWithArray(jsonWriter, "Interfaces", array =>
+        Interfaces.PopulateJsonWithArray(jsonWriter, "Interfaces", (writer, interfaceName) =>
         {
-            foreach (FieldName interfaceName in Interfaces.List)
-            {
-                interfaceName.SerializeToJson(array, true);
-            }
+            interfaceName.SerializeToJson(writer, true);
         });
         
-        ComponentOverrides.PopulateJsonWithArray(jsonWriter, "ComponentOverrides", array =>
+        ComponentOverrides.PopulateJsonWithArray(jsonWriter, "ComponentOverrides", (writer, componentOverride) =>
         {
-            foreach (ComponentOverride componentOverride in ComponentOverrides.List)
-            {
-                array.WriteStartObject();
-                array.WritePropertyName("OwningClass");
-                componentOverride.OwningClass.SerializeToJson(array, true);
-                array.WritePropertyName("ComponentType");
-                componentOverride.OverrideComponentType.SerializeToJson(array, true);
-                array.WritePropertyName("PropertyName");
-                array.WriteValue(componentOverride.OverridePropertyName);
-                array.WriteEndObject();
-            }
+            writer.WriteStartObject();
+            writer.WritePropertyName("OwningClass");
+            componentOverride.OwningClass.SerializeToJson(writer, true);
+            writer.WritePropertyName("ComponentType");
+            componentOverride.OverrideComponentType.SerializeToJson(writer, true);
+            writer.WritePropertyName("PropertyName");
+            writer.WriteValue(componentOverride.OverridePropertyName);
+            writer.WriteEndObject();
         });
     }
 }
