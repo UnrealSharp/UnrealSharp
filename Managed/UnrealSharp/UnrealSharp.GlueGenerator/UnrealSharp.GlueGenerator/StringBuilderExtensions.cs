@@ -54,8 +54,7 @@ public static class StringBuilderExtensions
     public static void GenerateTypeRegistration(this GeneratorStringBuilder builder, UnrealType type)
     {
         StringBuilder sb = new StringBuilder();
-        StringWriter sw = new StringWriter(sb);
-
+        using StringWriter sw = new StringWriter(sb);
         using JsonWriter jsonWriter = new JsonTextWriter(sw);
         jsonWriter.Formatting = Formatting.Indented;
 
