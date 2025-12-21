@@ -29,6 +29,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('.Glue'))">
+    <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\Newtonsoft.Json.dll"
+              Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.GlueGenerator.dll"
               Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.Analyzers.dll"
@@ -39,4 +41,6 @@
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.SourceGenerators.dll"
               Private="false" CopyToPublishDirectory="Never" />
   </ItemGroup>
+  
+  
 </Project>

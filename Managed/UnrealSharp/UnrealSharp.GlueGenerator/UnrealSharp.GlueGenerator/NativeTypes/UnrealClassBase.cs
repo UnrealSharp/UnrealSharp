@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -32,9 +32,9 @@ public abstract record UnrealClassBase : UnrealStruct
         AsyncFunctions.List.Add(function);
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
-        Functions.PopulateJsonWithArray(jsonObject, "Functions");
+        base.PopulateJsonObject(jsonWriter);
+        Functions.PopulateJsonWithArray(jsonWriter, "Functions");
     }
 }

@@ -1,5 +1,5 @@
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -42,29 +42,32 @@ public readonly record struct FieldName
         return FullName;
     }
 
-    public JsonObject? SerializeToJson(bool stripPrefix = false)
+    public void SerializeToJson(JsonWriter wtr, bool stripPrefix = false)
     {
         if (string.IsNullOrEmpty(Name))
         {
-            return null;
+            wtr.WriteNull();
+            return;
         }
-        
-        JsonObject fieldObject = new()
-        {
-            ["Name"] = stripPrefix ? Name.Substring(1) : Name,
-            ["Namespace"] = Namespace,
-            ["AssemblyName"] = Assembly
-        };
 
-        return fieldObject;
+        wtr.WriteStartObject();
+        wtr.WritePropertyName("Name");
+        wtr.WriteValue(stripPrefix ? Name.Substring(1) : Name);
+        wtr.WritePropertyName("Namespace");
+        wtr.WriteValue(Namespace);
+        wtr.WritePropertyName("AssemblyName");
+        wtr.WriteValue(Assembly);
+        wtr.WriteEndObject();
     }
     
-    public void SerializeToJson(JsonObject jsonObject, string propertyName, bool stripPrefix = false)
+    public void SerializeToJson(JsonWriter jsonWriter, string propertyName, bool stripPrefix = false)
     {
-        JsonObject? fieldObject = SerializeToJson(stripPrefix);
-        if (fieldObject != null)
+        if (string.IsNullOrEmpty(Name))
         {
-            jsonObject[propertyName] = fieldObject;
+            return;
         }
+
+        jsonWriter.WritePropertyName(propertyName);
+        SerializeToJson(jsonWriter, stripPrefix);
     }
 }

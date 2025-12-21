@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -291,44 +291,43 @@ public record UnrealClass : UnrealClassBase
         builder.AppendLine();
     }
     
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
+        base.PopulateJsonObject(jsonWriter);
         
-        ParentClass.SerializeToJson(jsonObject, "ParentClass", true);
+        ParentClass.SerializeToJson(jsonWriter, "ParentClass", true);
+
+        jsonWriter.TrySetJsonEnum("ClassFlags", ClassFlags);
+        jsonWriter.TrySetJsonString("Config", Config);
         
-        jsonObject.TrySetJsonEnum("ClassFlags", ClassFlags);
-        jsonObject.TrySetJsonString("Config", Config);
-        
-        Overrides.PopulateJsonWithArray(jsonObject, "Overrides", array =>
+        Overrides.PopulateJsonWithArray(jsonWriter, "Overrides", array =>
         {
             foreach (string overrideName in Overrides.List)
             {
-                array.Add(overrideName);
+                array.WriteValue(overrideName);
             }
         });
         
-        Interfaces.PopulateJsonWithArray(jsonObject, "Interfaces", array =>
+        Interfaces.PopulateJsonWithArray(jsonWriter, "Interfaces", array =>
         {
             foreach (FieldName interfaceName in Interfaces.List)
             {
-                JsonObject interfaceObject = interfaceName.SerializeToJson(true)!;
-                array.Add(interfaceObject);
+                interfaceName.SerializeToJson(array, true);
             }
         });
         
-        ComponentOverrides.PopulateJsonWithArray(jsonObject, "ComponentOverrides", array =>
+        ComponentOverrides.PopulateJsonWithArray(jsonWriter, "ComponentOverrides", array =>
         {
             foreach (ComponentOverride componentOverride in ComponentOverrides.List)
             {
-                JsonObject componentObject = new JsonObject
-                {
-                    ["OwningClass"] = componentOverride.OwningClass.SerializeToJson(true),
-                    ["ComponentType"] = componentOverride.OverrideComponentType.SerializeToJson(true),
-                    ["PropertyName"] = componentOverride.OverridePropertyName,
-                };
-                
-                array.Add(componentObject);
+                array.WriteStartObject();
+                array.WritePropertyName("OwningClass");
+                componentOverride.OwningClass.SerializeToJson(array, true);
+                array.WritePropertyName("ComponentType");
+                componentOverride.OverrideComponentType.SerializeToJson(array, true);
+                array.WritePropertyName("PropertyName");
+                array.WriteValue(componentOverride.OverridePropertyName);
+                array.WriteEndObject();
             }
         });
     }
