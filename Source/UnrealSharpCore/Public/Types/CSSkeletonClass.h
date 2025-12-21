@@ -7,12 +7,12 @@
 class UCSClass;
 
 UCLASS()
-class UCSSkeletonClass : public UCSClass
+class UNREALSHARPCORE_API UCSSkeletonClass : public UCSClass
 {
 	GENERATED_BODY()
 public:
-	UNREALSHARPCORE_API void SetGeneratedClass(UCSClass* InGeneratedClass) { GeneratedClass = InGeneratedClass; }
-	UNREALSHARPCORE_API UCSClass* GetGeneratedClass() const { return GeneratedClass; }
+	void SetGeneratedClass(UCSClass* InGeneratedClass) { GeneratedClass = InGeneratedClass; }
+	UCSClass* GetGeneratedClass() const { return GeneratedClass; }
 private:
 	UPROPERTY()
 	TObjectPtr<UCSClass> GeneratedClass;

@@ -1,5 +1,6 @@
 ﻿#include "Extensions/Libraries/CSGameplayTagExtensions.h"
 #include "GameplayTagContainer.h"
+#include "UnrealSharpUtils.h"
 
 bool UCSGameplayTagExtensions::MatchesTag(const FGameplayTag& Tag, const FGameplayTag& Other)
 {
@@ -28,7 +29,7 @@ FGameplayTag UCSGameplayTagExtensions::RequestGameplayTag(const FName TagName)
 
 FName UCSGameplayTagExtensions::GetTagLeafName(const FGameplayTag Tag)
 {
-	#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
+	#if UE_VERSION_SINCE(5, 6)
 		return Tag.GetTagLeafName();
 	#else
 		return NAME_None;
