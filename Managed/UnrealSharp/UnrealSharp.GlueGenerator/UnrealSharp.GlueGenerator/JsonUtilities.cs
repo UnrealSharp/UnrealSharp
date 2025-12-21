@@ -1,128 +1,136 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
 
 public static class JsonUtilities
 {
-    public static void TrySetJsonString(this JsonObject jsonObject, string propertyName, string? value)
+    public static void TrySetJsonString(this JsonWriter jsonWriter, string propertyName, string? value)
     {
         if (!string.IsNullOrEmpty(value))
         {
-            jsonObject[propertyName] = value;
+            jsonWriter.WritePropertyName(propertyName);
+            jsonWriter.WriteValue(value);
         }
     }
     
-    public static void TrySetJsonNumber(this JsonObject jsonObject, string propertyName, int value)
+    public static void TrySetJsonNumber(this JsonWriter jsonWriter, string propertyName, int value)
     {
         if (value != 0)
         {
-            jsonObject[propertyName] = value;
+            jsonWriter.WritePropertyName(propertyName);
+            jsonWriter.WriteValue(value);
         }
     }
     
-    public static void TrySetJsonEnum<T>(this JsonObject jsonObject, string propertyName, T value) where T : Enum
+    public static void TrySetJsonEnum<T>(this JsonWriter jsonWriter, string propertyName, T value) where T : Enum
     {
         if (!EqualityComparer<T>.Default.Equals(value, default!))
         {
-            jsonObject[propertyName] = Convert.ToInt64(value);
+            jsonWriter.WritePropertyName(propertyName);
+            jsonWriter.WriteValue(Convert.ToInt64(value));
         }
     }
     
-    public static void TrySetJsonBoolean(this JsonObject jsonObject, string propertyName, bool value)
+    public static void TrySetJsonBoolean(this JsonWriter jsonWriter, string propertyName, bool value)
     {
         if (value)
         {
-            jsonObject[propertyName] = value;
+            jsonWriter.WritePropertyName(propertyName);
+            jsonWriter.WriteValue(value);
         }
     }
     
-    public static void TrySetJsonArray<T>(this JsonObject jsonObject, string propertyName, List<T>? values)
+    public static void TrySetJsonArray<T>(this JsonWriter jsonWriter, string propertyName, List<T>? values)
     {
         if (values != null && values.Count > 0)
         {
-            JsonArray jsonArray = new JsonArray();
+            jsonWriter.WritePropertyName(propertyName);
+            jsonWriter.WriteStartArray();
             foreach (T value in values)
             {
-                jsonArray.Add(JsonValue.Create(value));
+                jsonWriter.WriteValue(value);
             }
-            jsonObject[propertyName] = jsonArray;
+            jsonWriter.WriteEndArray();
         }
     }
     
-    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonWriter jsonWriter, string arrayName) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
+        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName);
     }
     
-    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType, IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonWriter jsonWriter, string arrayName) where T : UnrealType, IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName);
+        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName);
     }
     
-    static void PopulateJsonWithArray<T>(this IEnumerable<T> list, JsonObject baseJsonObject, string arrayName) where T : UnrealType
+    static void PopulateJsonWithArray<T>(this IEnumerable<T> list, JsonWriter jsonWriter, string arrayName) where T : UnrealType
     {
-        JsonArray jsonArray = new JsonArray();
-        
-        foreach (T? item in list)
+        jsonWriter.WritePropertyName(arrayName);
+        jsonWriter.WriteStartArray();
+        foreach (T item in list)
         {
-            JsonObject propertyObject = new JsonObject();
-            item.PopulateJsonObject(propertyObject);
-            jsonArray.Add(propertyObject);
+            jsonWriter.WriteStartObject();
+            item.PopulateJsonObject(jsonWriter);
+            jsonWriter.WriteEndObject();
         }
-        
-        baseJsonObject[arrayName] = jsonArray;
+        jsonWriter.WriteEndArray();
     }
     
-    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
-    {
-        if (list.Count == 0)
-        {
-            return;
-        }
-        
-        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
-    }
-    
-    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction) where T : IEquatable<T>
+    public static void PopulateJsonWithArray<T>(this EquatableList<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction) where T : IEquatable<T>
     {
         if (list.Count == 0)
         {
             return;
         }
         
-        PopulateJsonWithArray(list.AsEnumerable(), baseJsonObject, arrayName, populateAction);
+        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName, populateAction);
     }
     
-    static void PopulateJsonWithArray<T>(this IEnumerable<T>? list, JsonObject baseJsonObject, string arrayName, Action<JsonArray> populateAction)
+    public static void PopulateJsonWithArray<T>(this EquatableArray<T> list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction) where T : IEquatable<T>
+    {
+        if (list.Count == 0)
+        {
+            return;
+        }
+        
+        PopulateJsonWithArray(list.AsEnumerable(), jsonWriter, arrayName, populateAction);
+    }
+    
+    static void PopulateJsonWithArray<T>(this IEnumerable<T>? list, JsonWriter jsonWriter, string arrayName, Action<JsonWriter> populateAction)
     {
         if (list == null)
         {
             return;
         }
-        
-        JsonArray jsonArray = new JsonArray();
-        populateAction(jsonArray);
-        baseJsonObject[arrayName] = jsonArray;
+        jsonWriter.WritePropertyName(arrayName);
+        jsonWriter.WriteStartArray();
+        foreach (T item in list)
+        {
+            populateAction(jsonWriter);
+        }
+        jsonWriter.WriteEndArray();
     }
     
-    public static void PopulateJsonWithUnrealType(this UnrealType type, JsonObject baseJsonObject, string typeName)
+    public static void PopulateJsonWithUnrealType(this UnrealType type, JsonWriter jsonWriter, string typeName)
     {
-        JsonObject typeObject = new JsonObject();
-        type.PopulateJsonObject(typeObject);
-        baseJsonObject[typeName] = typeObject;
+        jsonWriter.WritePropertyName(typeName);
+        jsonWriter.WriteStartObject();
+        type.PopulateJsonObject(jsonWriter);
+        jsonWriter.WriteEndObject();
     }
 }

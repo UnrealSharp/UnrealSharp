@@ -1,6 +1,6 @@
 ﻿using System.Linq;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -72,9 +72,9 @@ public record TemplateProperty : UnrealProperty
         return $"{marshallerName}<{string.Join(", ", innerTypes)}>";
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
-        TemplateParameters.PopulateJsonWithArray(jsonObject, "TemplateParameters");
+        base.PopulateJsonObject(jsonWriter);
+        TemplateParameters.PopulateJsonWithArray(jsonWriter, "TemplateParameters");
     }
 }
