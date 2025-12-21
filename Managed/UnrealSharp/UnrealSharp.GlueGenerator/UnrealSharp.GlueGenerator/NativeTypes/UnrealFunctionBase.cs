@@ -203,7 +203,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
         if (unrealFunction.IsNetworkFunction)
         {
-            unrealFunction.FunctionFlags |= EFunctionFlags.Net | EFunctionFlags.Event;
+            unrealFunction.FunctionFlags |= EFunctionFlags.Net | EFunctionFlags.Event | EFunctionFlags.Final;
         }
     }
     
