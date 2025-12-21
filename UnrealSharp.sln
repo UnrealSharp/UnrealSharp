@@ -26,13 +26,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnrealSharpPrograms", "Unre
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharpBuildTool", "Managed\UnrealSharpPrograms\UnrealSharpBuildTool\UnrealSharpBuildTool.csproj", "{CBB98BF4-B0B6-49CD-BBB3-FD0D372CDED2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharpWeaver", "Managed\UnrealSharpPrograms\UnrealSharpWeaver\UnrealSharpWeaver.csproj", "{B7341E56-6BD6-484E-83B2-3C57F2893CE4}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{3E4761CE-C36A-4EF4-997C-386378A9BB02}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharpManagedGlue.ubtplugin", "Source\UnrealSharpManagedGlue\UnrealSharpManagedGlue.ubtplugin.csproj", "{E495FA66-9A5D-4015-BD3E-E4E8E10BF165}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Editor", "Managed\UnrealSharp\UnrealSharp.Editor\UnrealSharp.Editor.csproj", "{48DD0F70-9A5E-484F-8F04-FCB49384E1EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Analyzers", "Managed\UnrealSharp\UnrealSharp.Analyzers\UnrealSharp.Analyzers.csproj", "{F3D27965-DCF9-4059-99CE-52674542645C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.GlueGenerator", "Managed\UnrealSharp\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator.csproj", "{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.GlueGenerator.Tests", "Managed\UnrealSharp\UnrealSharp.GlueGenerator.Tests\UnrealSharp.GlueGenerator.Tests.csproj", "{C3FC9576-7087-40D1-84E5-E8626FB5CD58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerator.Utilities", "Managed\UnrealSharp\UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj", "{148EB562-D90D-42BB-9A5D-E607DFDE03D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,9 +58,12 @@ Global
 		{3C21EAAB-270F-4176-94BD-B24F73FF5852} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
 		{1DA7A72C-8FA5-4059-83AB-31D1148DDB8F} = {1C2253CE-32EB-4A80-9C1D-3E4A16626AE8}
 		{CBB98BF4-B0B6-49CD-BBB3-FD0D372CDED2} = {1DA7A72C-8FA5-4059-83AB-31D1148DDB8F}
-		{B7341E56-6BD6-484E-83B2-3C57F2893CE4} = {1DA7A72C-8FA5-4059-83AB-31D1148DDB8F}
 		{E495FA66-9A5D-4015-BD3E-E4E8E10BF165} = {3E4761CE-C36A-4EF4-997C-386378A9BB02}
 		{48DD0F70-9A5E-484F-8F04-FCB49384E1EC} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
+		{F3D27965-DCF9-4059-99CE-52674542645C} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
+		{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
+		{C3FC9576-7087-40D1-84E5-E8626FB5CD58} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
+		{148EB562-D90D-42BB-9A5D-E607DFDE03D2} = {4E09386F-64C1-4B64-863D-67C199AF2B82}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{889F6A84-6B1F-4690-A1D0-DF4ADDE2CC67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -97,10 +106,6 @@ Global
 		{CBB98BF4-B0B6-49CD-BBB3-FD0D372CDED2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBB98BF4-B0B6-49CD-BBB3-FD0D372CDED2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBB98BF4-B0B6-49CD-BBB3-FD0D372CDED2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B7341E56-6BD6-484E-83B2-3C57F2893CE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B7341E56-6BD6-484E-83B2-3C57F2893CE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7341E56-6BD6-484E-83B2-3C57F2893CE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B7341E56-6BD6-484E-83B2-3C57F2893CE4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E495FA66-9A5D-4015-BD3E-E4E8E10BF165}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E495FA66-9A5D-4015-BD3E-E4E8E10BF165}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E495FA66-9A5D-4015-BD3E-E4E8E10BF165}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -109,5 +114,21 @@ Global
 		{48DD0F70-9A5E-484F-8F04-FCB49384E1EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48DD0F70-9A5E-484F-8F04-FCB49384E1EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48DD0F70-9A5E-484F-8F04-FCB49384E1EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3D27965-DCF9-4059-99CE-52674542645C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3D27965-DCF9-4059-99CE-52674542645C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3D27965-DCF9-4059-99CE-52674542645C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3D27965-DCF9-4059-99CE-52674542645C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFDB2D1E-A773-47BD-ABAF-EEBCC4805739}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3FC9576-7087-40D1-84E5-E8626FB5CD58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3FC9576-7087-40D1-84E5-E8626FB5CD58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3FC9576-7087-40D1-84E5-E8626FB5CD58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3FC9576-7087-40D1-84E5-E8626FB5CD58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{148EB562-D90D-42BB-9A5D-E607DFDE03D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{148EB562-D90D-42BB-9A5D-E607DFDE03D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{148EB562-D90D-42BB-9A5D-E607DFDE03D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{148EB562-D90D-42BB-9A5D-E607DFDE03D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
