@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -105,37 +105,40 @@ public record UnrealType
     public virtual void ExportBackingVariables(GeneratorStringBuilder builder) { }
     public virtual void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType) { }
     
-    public virtual void PopulateJsonObject(JsonObject jsonObject)
+    public virtual void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        jsonObject["Name"] = EngineName;
-        jsonObject["Namespace"] = Namespace;
-        jsonObject["AssemblyName"] = AssemblyName;
+        jsonWriter.WritePropertyName("Name");
+        jsonWriter.WriteValue(EngineName);
+        jsonWriter.WritePropertyName("Namespace");
+        jsonWriter.WriteValue(Namespace);
+        jsonWriter.WritePropertyName("AssemblyName");
+        jsonWriter.WriteValue(AssemblyName);
 
         if (SourceGeneratorDependencies.Count > 0)
         {
-            JsonArray dependenciesArray = new JsonArray();
-            jsonObject["SourceGeneratorDependencies"] = dependenciesArray;
-        
+            jsonWriter.WritePropertyName("SourceGeneratorDependencies");
+            jsonWriter.WriteStartArray();
             foreach (FieldName dependency in SourceGeneratorDependencies.List)
             {
-                dependenciesArray.Add(dependency.SerializeToJson(true));
+                dependency.SerializeToJson(jsonWriter, true);
             }
+            jsonWriter.WriteEndArray();
         }
         
         if (MetaData.Count > 0)
         {
-            JsonArray jsonArray = new JsonArray();
-            jsonObject["MetaData"] = jsonArray;
-            
+            jsonWriter.WritePropertyName("MetaData");
+            jsonWriter.WriteStartArray();            
             foreach (MetaDataInfo metaDataInfo in MetaData.List)
             {
-                JsonObject metaDataObject = new JsonObject
-                {
-                    ["Key"] = metaDataInfo.Key,
-                    ["Value"] = metaDataInfo.Value
-                };
-                jsonArray.Add(metaDataObject);
+                jsonWriter.WriteStartObject();
+                jsonWriter.WritePropertyName("Key");
+                jsonWriter.WriteValue(metaDataInfo.Key);
+                jsonWriter.WritePropertyName("Value");
+                jsonWriter.WriteValue(metaDataInfo.Value);
+                jsonWriter.WriteEndObject();
             }
+            jsonWriter.WriteEndArray();
         }
     }
 

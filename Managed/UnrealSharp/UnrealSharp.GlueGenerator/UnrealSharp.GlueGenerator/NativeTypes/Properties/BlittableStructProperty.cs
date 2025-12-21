@@ -1,5 +1,5 @@
-﻿using System.Text.Json.Nodes;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
+using Newtonsoft.Json;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -11,9 +11,9 @@ public record BlittableStructProperty : BlittableProperty
 
     }
 
-    public override void PopulateJsonObject(JsonObject jsonObject)
+    public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        base.PopulateJsonObject(jsonObject);
-        ManagedType.SerializeToJson(jsonObject, "InnerType", true);
+        base.PopulateJsonObject(jsonWriter);
+        ManagedType.SerializeToJson(jsonWriter, "InnerType", true);
     }
 }
