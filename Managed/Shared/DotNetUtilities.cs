@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -136,6 +136,9 @@ public static class DotNetUtilities
 		    startInfo.Environment["MSBUILD_EXE_PATH"] = $@"{latestDotNetSdkPath}\MSBuild.dll";
 		    startInfo.Environment["MSBuildSDKsPath"] = $@"{latestDotNetSdkPath}\Sdks";
 	    }
+
+        // Disable roll forward to avoid using wrong .NET runtimes, this propagates to child processes.
+        startInfo.Environment["DOTNET_ROLL_FORWARD"] = "Disable";
 
 	    using Process process = new Process();
 	    process.StartInfo = startInfo;
