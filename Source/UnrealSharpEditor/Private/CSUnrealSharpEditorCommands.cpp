@@ -17,6 +17,7 @@ void FCSUnrealSharpEditorCommands::RegisterCommands()
 {
 	UI_COMMAND(CreateNewProject, "Create C# Project", "Create a new C# project with all necessary dependencies and initial setup", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(HotReload, "Force Hot Reload", "Manually reloads any modified C# code into the editor. Only required if Automatic Hot Reloading is disabled", EUserInterfaceActionType::Button, FInputChord(EKeys::F5, EModifierKey::Control | EModifierKey::Alt));
+	UI_COMMAND(HotReloadAssemblyOnly, "Reload Assembly", "Reload managed assemblies from disk without recompiling.", EUserInterfaceActionType::Button, FInputChord(EKeys::F5, EModifierKey::None));
 	UI_COMMAND(RegenerateSolution, "Regenerate Solution", "Rebuild the C# solution file to reflect the latest project changes", EUserInterfaceActionType::Button, FInputChord(EKeys::F9, EModifierKey::Control | EModifierKey::Alt));
 	UI_COMMAND(OpenSolution, "Open C# Solution", "Launch the project's C# solution file in the default IDE.", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(MergeManagedSlnAndNativeSln, "Merge Managed and Native Solution", "Merges the managed sln and native sln into one mixed.sln, coding in one IDE instance. This will create a new sln in the root folder of your project", EUserInterfaceActionType::Button, FInputChord());

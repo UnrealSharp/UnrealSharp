@@ -7,6 +7,7 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
+#include "HAL/FileManager.h"
 #include "CSProcUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
 #include "Utilities/CSAssemblyUtilities.h"
@@ -92,36 +93,87 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 	return bHasPendingChanges;
 }
 
-void UCSHotReloadSubsystem::PerformHotReload()
+void UCSHotReloadSubsystem::PerformHotReload(bool bShouldRecompile)
 {
 	if (FPlayWorldCommandCallbacks::IsInPIE())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE.");
 		return;
 	}
-	
-	if (!HasPendingHotReloadChanges())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending C# changes to hot reload.");
-		return;
-	}
-	
+
 	if (IsHotReloading())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Warning, "A hot reload is already in progress. Skipping hot reload request.");
 		return;
 	}
-	
+
 	if (bIsHotReloadPaused)
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Hot reload is currently paused. Skipping hot reload.");
 		return;
 	}
-	
+
 	if (CurrentHotReloadStatus == FailedToUnload)
 	{
 		// If we failed to unload an assembly, we can't hot reload until the editor is restarted.
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Hot reload is disabled until the editor is restarted.");
+		return;
+	}
+
+	TArray<UCSManagedAssembly*> AssembliesToHotReload;
+	TArray<UCSManagedAssembly*> AssembliesToSync;
+
+	if (bShouldRecompile)
+	{
+		if (!HasPendingHotReloadChanges())
+		{
+			UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No pending C# changes to hot reload.");
+			return;
+		}
+
+		for (UCSManagedAssembly* Assembly : PendingModifiedAssemblies)
+		{
+			if (!IsValid(Assembly) || FCSAssemblyUtilities::IsGlueAssembly(Assembly))
+			{
+				continue;
+			}
+
+			AssembliesToHotReload.Add(Assembly);
+		}
+	}
+	else
+	{
+		TArray<UCSManagedAssembly*> LoadedAssemblies;
+		UCSManager::Get().GetLoadedAssemblies(LoadedAssemblies);
+
+		const FString UserAssemblyDirectory = UCSProcUtilities::GetUserAssemblyDirectory();
+
+		for (UCSManagedAssembly* Assembly : LoadedAssemblies)
+		{
+			if (!IsValid(Assembly))
+			{
+				continue;
+			}
+
+			if (!FPaths::IsUnderDirectory(Assembly->GetAssemblyFilePath(), UserAssemblyDirectory))
+			{
+				continue;
+			}
+
+			AssembliesToSync.Add(Assembly);
+
+			if (FCSAssemblyUtilities::IsGlueAssembly(Assembly))
+			{
+				continue;
+			}
+
+			AssembliesToHotReload.Add(Assembly);
+		}
+	}
+
+	if (AssembliesToHotReload.IsEmpty())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "No eligible C# assemblies found to reload.");
 		return;
 	}
 	
@@ -134,14 +186,114 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	Progress.MakeDialog(false, true);
 	
 	TArray<UCSManagedAssembly*> AssembliesSortedByDependencies;
-	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(PendingModifiedAssemblies, AssembliesSortedByDependencies);
+	FCSAssemblyUtilities::SortAssembliesByDependencyOrder(AssembliesToHotReload, AssembliesSortedByDependencies);
 
 	FString ExceptionMessage;
-	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
+	if (bShouldRecompile)
 	{
-		CurrentHotReloadStatus = FailedToCompile;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Reload Failed")));
-		return;
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Compiling", "Compiling Managed Code..."));
+		if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
+		{
+			CurrentHotReloadStatus = FailedToCompile;
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Reload Failed")));
+			return;
+		}
+	}
+	else
+	{
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Syncing", "Syncing Assemblies..."));
+
+		TArray<FString> ProjectPaths;
+		UCSProcUtilities::GetAllProjectPaths(ProjectPaths, true);
+
+		IFileManager& FileManager = IFileManager::Get();
+
+		auto CopyIfExists = [&](const FString& SourcePath, const FString& DestPath) -> bool
+		{
+			if (!FPaths::FileExists(SourcePath))
+			{
+				return true;
+			}
+
+			const uint32 Result = FileManager.Copy(*DestPath, *SourcePath, true, true);
+			if (Result != COPY_OK)
+			{
+				return false;
+			}
+
+			FileManager.SetTimeStamp(*DestPath, FileManager.GetTimeStamp(*SourcePath));
+			return true;
+		};
+
+		for (UCSManagedAssembly* Assembly : AssembliesToSync)
+		{
+			if (!IsValid(Assembly))
+			{
+				continue;
+			}
+
+			const FString AssemblyName = Assembly->GetAssemblyName().ToString();
+			FString LatestBuiltDllPath;
+			FDateTime LatestBuiltDllTimestamp = FDateTime::MinValue();
+
+			for (const FString& ProjectPath : ProjectPaths)
+			{
+				if (!AssemblyName.Equals(FPaths::GetBaseFilename(ProjectPath), ESearchCase::IgnoreCase))
+				{
+					continue;
+				}
+
+				const FString BinDirectory = FPaths::Combine(FPaths::GetPath(ProjectPath), TEXT("bin"));
+				if (!FPaths::DirectoryExists(BinDirectory))
+				{
+					continue;
+				}
+
+				TArray<FString> DllCandidates;
+				FileManager.FindFilesRecursive(DllCandidates, *BinDirectory, *(AssemblyName + TEXT(".dll")), true, false);
+
+				for (const FString& CandidatePath : DllCandidates)
+				{
+					const FDateTime CandidateTimestamp = FileManager.GetTimeStamp(*CandidatePath);
+					if (CandidateTimestamp > LatestBuiltDllTimestamp)
+					{
+						LatestBuiltDllTimestamp = CandidateTimestamp;
+						LatestBuiltDllPath = CandidatePath;
+					}
+				}
+			}
+
+			if (LatestBuiltDllPath.IsEmpty())
+			{
+				continue;
+			}
+
+			const FString TargetDllPath = Assembly->GetAssemblyFilePath();
+			if (FPaths::IsSamePath(LatestBuiltDllPath, TargetDllPath))
+			{
+				continue;
+			}
+
+			if (FPaths::FileExists(TargetDllPath))
+			{
+				const FDateTime ExistingTimestamp = FileManager.GetTimeStamp(*TargetDllPath);
+				if (LatestBuiltDllTimestamp <= ExistingTimestamp)
+				{
+					continue;
+				}
+			}
+
+			if (!CopyIfExists(LatestBuiltDllPath, TargetDllPath))
+			{
+				UE_LOGFMT(LogUnrealSharpEditor, Warning, "Failed to sync assembly {0} from {1} to {2}", *AssemblyName, *LatestBuiltDllPath, *TargetDllPath);
+				continue;
+			}
+
+			CopyIfExists(FPaths::ChangeExtension(LatestBuiltDllPath, TEXT("pdb")), FPaths::ChangeExtension(TargetDllPath, TEXT("pdb")));
+			CopyIfExists(FPaths::ChangeExtension(LatestBuiltDllPath, TEXT("deps.json")), FPaths::ChangeExtension(TargetDllPath, TEXT("deps.json")));
+			CopyIfExists(FPaths::ChangeExtension(LatestBuiltDllPath, TEXT("runtimeconfig.json")), FPaths::ChangeExtension(TargetDllPath, TEXT("runtimeconfig.json")));
+			CopyIfExists(FPaths::ChangeExtension(LatestBuiltDllPath, TEXT("runtimeconfig.dev.json")), FPaths::ChangeExtension(TargetDllPath, TEXT("runtimeconfig.dev.json")));
+		}
 	}
 	
 	PendingModifiedAssemblies.Reset();
@@ -255,7 +407,7 @@ void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 	
 	if (GetDefault<UCSUnrealSharpEditorSettings>()->AutomaticHotReloading != Off)
 	{
-		PerformHotReload();
+		PerformHotReload(true);
 	}
 }
 
@@ -263,7 +415,7 @@ bool UCSHotReloadSubsystem::Tick(float DeltaTime)
 {
 	if (FCSHotReloadUtilities::ShouldHotReloadOnEditorFocus(this))
 	{
-		PerformHotReload();
+		PerformHotReload(true);
 	}
 	
 	return true;
@@ -370,7 +522,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	PerformHotReload();
+	PerformHotReload(true);
 }
 
 #undef LOCTEXT_NAMESPACE

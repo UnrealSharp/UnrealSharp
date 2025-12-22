@@ -11,6 +11,7 @@ public:
 
 	TSharedPtr<FUICommandInfo> CreateNewProject;
     TSharedPtr<FUICommandInfo> HotReload;
+    TSharedPtr<FUICommandInfo> HotReloadAssemblyOnly;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;
 	TSharedPtr<FUICommandInfo> MergeManagedSlnAndNativeSln;

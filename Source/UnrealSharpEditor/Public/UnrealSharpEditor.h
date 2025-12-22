@@ -69,6 +69,7 @@ private:
 
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
+    static void OnReloadAssemblyOnly();
     
     void OnRegenerateSolution();
     void OnOpenSolution();

@@ -58,7 +58,7 @@ public:
 	UNREALSHARPEDITOR_API bool HasPendingHotReloadChanges() const;
 	UNREALSHARPEDITOR_API bool HasHotReloadFailed() const { return CurrentHotReloadStatus == FailedToUnload || CurrentHotReloadStatus == FailedToCompile; }
 	
-	UNREALSHARPEDITOR_API void PerformHotReload();
+	UNREALSHARPEDITOR_API void PerformHotReload(bool bShouldRecompile);
 	
 	void PauseHotReload(const FString& Reason = FString());
 	void ResumeHotReload();
