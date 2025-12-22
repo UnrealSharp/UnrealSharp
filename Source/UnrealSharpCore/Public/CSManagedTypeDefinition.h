@@ -26,6 +26,13 @@ private:
 	static FOnManagedTypeStructureChanged OnReflectionDataChanged;
 };
 
+enum UNREALSHARPCORE_API ECSTypeStructuralFlags : uint8
+{
+	None = 0,
+	StructuralChanges = 1 << 0,
+	ConstructorChanges = 1 << 1, 
+};
+
 struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition>
 {
 	~FCSManagedTypeDefinition() = default;
@@ -42,6 +49,13 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 
 	UField* CompileAndGetDefinitionField();
 	UField* GetDefinitionField() const { return DefinitionField.Get(); }
+	
+	FCSFieldName GetFieldName() const { return ReflectionData->FieldName; }
+	FCSNamespace GetNamespace() const { return GetFieldName().GetNamespace(); }
+	
+	FName GetEngineName() const { return GetFieldName().GetFName(); }
+	
+	UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
 	template<typename TReflectionData = FCSTypeReferenceReflectionData>
 	TSharedPtr<TReflectionData> GetReflectionData() const
@@ -49,8 +63,6 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 		static_assert(TIsDerivedFrom<TReflectionData, FCSTypeReferenceReflectionData>::Value, "TReflectionData must be a FCSTypeReferenceReflectionData-derived type.");
 		return StaticCastSharedPtr<TReflectionData>(ReflectionData);
 	}
-
-	UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
 	void SetReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData)
 	{
@@ -60,8 +72,12 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 	
 	void SetTypeGCHandle(uint8* GCHandlePtr);
 	
-	void MarkStructurallyDirty();
-	bool HasStructuralChanges() const { return bHasChangedStructure; }
+	void SetDirtyFlags(ECSTypeStructuralFlags InFlags);
+	ECSTypeStructuralFlags GetDirtyFlags() const { return DirtyFlags; }
+	
+	bool HasStructuralChanges() const { return EnumHasAnyFlags(DirtyFlags, StructuralChanges); }
+	bool HasConstructorChanges() const { return EnumHasAnyFlags(DirtyFlags, ConstructorChanges); }
+	bool RequiresRecompile() const { return DirtyFlags != None; }
 	
 private:
 
@@ -78,10 +94,9 @@ private:
 	// The data describing this type (properties, functions, interfaces...)
 	// Used to compile the native Unreal type in the UCSManagedTypeCompiler.
 	TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData;
-
-	// Indicates whether the structure of this type has changed since last compilation.
-	// Set when properties, functions, or metadata are added/removed, triggering regeneration.
-	bool bHasChangedStructure = false;
+	
+	// Indicates what kind of changes have occurred since last compilation.
+	ECSTypeStructuralFlags DirtyFlags;
 
 	// Handle to the underlying managed (C#) type
 	TSharedPtr<FGCHandle> TypeGCHandle;

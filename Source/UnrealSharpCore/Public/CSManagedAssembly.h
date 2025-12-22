@@ -121,7 +121,7 @@ public:
 		return FCSUtilities::FindField<T>(FieldName);
 	}
 
-	TSharedPtr<FCSManagedTypeDefinition> RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, const char* RawJsonString);
+	TSharedPtr<FCSManagedTypeDefinition> RegisterManagedType(char* InFieldName, char* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, const char* NewJsonReflectionData);
 
 	// Creates a C# counterpart for the given UObject.
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object);

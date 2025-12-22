@@ -11,8 +11,8 @@ class UCSManagedTypeCompiler;
 
 namespace FCSUtilities
 {
-	bool ResolveCompilerAndReflectionData(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData);
-	bool ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* RawReflectionData);
+	UCSManagedTypeCompiler* ResolveCompilerFromFieldType(ECSFieldType FieldType);
+	bool ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* NewJsonReflectionData);
 	
 	UNREALSHARPCORE_API void ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);

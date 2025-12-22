@@ -41,6 +41,11 @@ void UCSManagedStructCompiler::Recompile(UField* TypeToRecompile, const TSharedP
 #endif
 }
 
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedStructCompiler::CreateNewReflectionData() const
+{
+	return MakeShared<FCSStructReflectionData>();
+}
+
 void UCSManagedStructCompiler::PurgeStruct(UCSScriptStruct* Field)
 {
 	FCSUnrealSharpUtils::PurgeStruct(Field);

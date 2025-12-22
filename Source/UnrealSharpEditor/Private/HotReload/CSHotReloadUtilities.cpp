@@ -184,7 +184,8 @@ void FCSHotReloadUtilities::RebuildDependentBlueprints(const TSet<uint32>& Rebui
 			continue;
 		}
 
-		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::SkipGarbageCollection);
+		constexpr EBlueprintCompileOptions CompileOptions = EBlueprintCompileOptions::SkipGarbageCollection | EBlueprintCompileOptions::SkipSave;
+		FKismetEditorUtilities::CompileBlueprint(Blueprint, CompileOptions);
 	}
 }
 

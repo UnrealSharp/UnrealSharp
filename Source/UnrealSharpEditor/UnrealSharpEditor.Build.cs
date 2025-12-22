@@ -10,7 +10,8 @@ public class UnrealSharpEditor : ModuleRules
             new string[]
             {
                 "Core",
-                "UnrealSharpBinds"
+                "UnrealSharpBinds", 
+                "UnrealSharpCore"
             }
         );
 
@@ -22,7 +23,6 @@ public class UnrealSharpEditor : ModuleRules
                 "Slate",
                 "SlateCore",
                 "EditorSubsystem",
-                "UnrealSharpCore",
                 "UnrealEd",
                 "UnrealSharpProcHelper",
                 "BlueprintGraph",

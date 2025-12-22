@@ -1,4 +1,6 @@
 #include "CSCompilerContext.h"
+
+#include "ComponentTypeRegistry.h"
 #include "CSManager.h"
 #include "ISettingsModule.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
@@ -19,30 +21,53 @@
 #include "Blueprint/StateTreeConsiderationBlueprintBase.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Compilers/CSSimpleConstructionScriptCompiler.h"
+#include "HotReload/CSHotReloadSubsystem.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 #include "ReflectionData/CSClassReflectionData.h"
 #include "Utilities/CSClassUtilities.h"
 
 FCSCompilerContext::FCSCompilerContext(UCSBlueprint* Blueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompilerOptions) : FKismetCompilerContext(Blueprint, InMessageLog, InCompilerOptions)
 {
-	
 }
 
-void FCSCompilerContext::FinishCompilingClass(UClass* Class)
+void FCSCompilerContext::FinishCompilingClass(UClass* InClass)
 {
-	UCSClass* CSClass = static_cast<UCSClass*>(Class);
-	CSClass->SetDeferredCreation(!FCSUnrealSharpUtils::IsEngineStartingUp());
-	Class->ClassConstructor = &UCSClass::ManagedObjectConstructor;
-	
-	Super::FinishCompilingClass(Class);
-
+	UCSClass* ManagedClass = static_cast<UCSClass*>(InClass);
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
+	
+	bool bEngineStartingUp = FCSUnrealSharpUtils::IsEngineStartingUp();
+	ManagedClass->SetDeferredCreation(!bEngineStartingUp);
+	
+	UClass* ParentClass = ManagedClass->GetSuperClass();
+	FBlueprintEditorUtils::RecreateClassMetaData(Blueprint, ManagedClass, false);
+	
+	ManagedClass->ReferenceSchema.Reset();
+	UCSManagedClassCompiler::SetClassFlags(ManagedClass, ClassReflectionData);
+	UCSManagedClassCompiler::SetConfigName(ManagedClass, ClassReflectionData);
+		
+	if (ParentClass->IsChildOf(UActorComponent::StaticClass()))
+	{
+		FComponentTypeRegistry::Get().InvalidateClass(ManagedClass);
+	}
+	
+	ManagedClass->ClassFlags |= ClassReflectionData->ClassFlags;
+	
+	ManagedClass->SimpleConstructionScript = Blueprint->SimpleConstructionScript;
+	ManagedClass->InheritableComponentHandler = Blueprint->InheritableComponentHandler;
+	ManagedClass->ComponentClassOverrides = Blueprint->ComponentClassOverrides;
+	
+	ManagedClass->ClassConstructor = &UCSClass::ManagedObjectConstructor;
+	ManagedClass->Bind();
 
-	// Super call overrides the class flags, so we need to set after that
-	Class->ClassFlags |= ClassReflectionData->ClassFlags;
-
-	UCSManagedClassCompiler::SetConfigName(Class, ClassReflectionData);
-	TryInitializeAsDeveloperSettings(Class);
-	TryFakeNativeClass(Class);
+	ManagedClass->StaticLink(true);
+	ManagedClass->SetUpRuntimeReplicationData();
+	
+	(void)ManagedClass->GetDefaultObject(true);
+	
+	ManagedClass->InitializeFieldNotifies();
+	
+	TryInitializeAsDeveloperSettings(ManagedClass);
+	TryFakeNativeClass(ManagedClass);
 	
 	ApplyMetaData();
 }
@@ -121,8 +146,8 @@ void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
 	UCSClass* ManagedClass = static_cast<UCSClass*>(DefaultObject->GetClass());
 	ManagedClass->SetDeferredCreation(false);
-	
 	UCSManager::Get().FindManagedObject(DefaultObject);
+	UCSManagedClassCompiler::SetupDefaultTickSettings(ManagedClass->GetDefaultObject(), ManagedClass);
 }
 
 void FCSCompilerContext::ValidateSimpleConstructionScript() const

@@ -13,13 +13,17 @@ class UCSManagedTypeCompiler : public UObject
 public:
 
 	UField* CreateField(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
-	void RecompileManagedTypeDefinition(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
+	void RecompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
 
 protected:
 	// Start UCSManagedTypeCompiler interface
 	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const;
+public:
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const { PURE_VIRTUAL(UCSManagedTypeCompiler::CreateNewReflectionData, return nullptr;); }
 	// End of interface
+	
+protected:
 
 	static void RegisterFieldToLoader(UField* Field, ENotifyRegistrationType RegistrationType)
 	{
@@ -32,7 +36,7 @@ protected:
 		Field);
 	}
 
-	UPROPERTY(Transient, DuplicateTransient)
+	UPROPERTY(Transient)
 	TObjectPtr<UClass> FieldType;
 };
 

@@ -13,7 +13,7 @@ void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)
 	UCSProcUtilities::GetAllProjectPaths(*Paths, true);
 }
 
-void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName)
+void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
 {
 	UCSHotReloadSubsystem* HotReloadSubsystem = UCSHotReloadSubsystem::Get();
 	
@@ -23,5 +23,5 @@ void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName
 		return;
 	}
 	
-	HotReloadSubsystem->DirtyUnrealType(AssemblyName, Namespace, TypeName);
+	HotReloadSubsystem->DirtyUnrealType(AssemblyName, Namespace, TypeName, Flags);
 }

@@ -86,7 +86,12 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 				continue;
 			}
 
-			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection | EBlueprintCompileOptions::SkipSave;
+			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection 
+			| EBlueprintCompileOptions::SkipSave 
+			| EBlueprintCompileOptions::SkipDefaultObjectValidation
+			| EBlueprintCompileOptions::SkipFiBSearchMetaUpdate
+			| EBlueprintCompileOptions::SkipNewVariableDefaultsDetection;
+			
 			FKismetEditorUtilities::CompileBlueprint(Blueprint, Flags);
 
 			if (!FCSUnrealSharpUtils::IsEngineStartingUp())
@@ -200,7 +205,7 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 		
 		UCSClass* ManagedClass = static_cast<UCSClass*>(DerivedClass);
 		TSharedPtr<FCSManagedTypeDefinition> DerivedClassInfo = ManagedClass->GetManagedTypeDefinition();
-		DerivedClassInfo->MarkStructurallyDirty();
+		DerivedClassInfo->SetDirtyFlags(ManagedTypeDefinition->GetDirtyFlags());
 	}
 }
 

@@ -74,7 +74,7 @@ public record UnrealProperty : UnrealType
     public string GetParameterDeclaration() => $"{ReferenceKind.RefKindToString()}{ManagedType}{(IsNullable ? "?" : string.Empty)} {SourceName}";
     public string GetParameterCall() => $"{ReferenceKind.RefKindToString()}{SourceName}";
     
-    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType? outer = null, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer, syntaxNode)
+    public UnrealProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null) : base(memberSymbol, outer, syntaxNode)
     {
         PropertyType = propertyType;
         Namespace = typeSymbol.GetNamespace();
@@ -116,21 +116,26 @@ public record UnrealProperty : UnrealType
     public static void PropertyFlagsSpecifier(UnrealType topType, TypedConstant flags)
     {
         UnrealProperty property = (UnrealProperty)topType;
-        property.PropertyFlags |= (EPropertyFlags) flags.Value!;
-
-        if (!property.PropertyFlags.HasFlag(EPropertyFlags.PersistentInstance))
-        {
-            return;
-        }
-
-        property.PropertyFlags |= InstancedFlags;
+        EPropertyFlags flagValue = (EPropertyFlags)(flags.Value ?? EPropertyFlags.None);
+        property.PropertyFlags |= flagValue;
             
-        if (topType.Outer is UnrealClass outerClass)
+        UnrealClass? outerClass = topType.Outer as UnrealClass;
+            
+        if (property.PropertyFlags.HasFlag(EPropertyFlags.PersistentInstance))
         {
-            outerClass.ClassFlags |= EClassFlags.HasInstancedReference;
+            property.PropertyFlags |= InstancedFlags;
+            property.AddEditInlineMeta();
+
+            if (outerClass != null)
+            {
+                outerClass.ClassFlags |= EClassFlags.HasInstancedReference;
+            }
         }
-        
-        property.AddEditInlineMeta();
+            
+        if (property.PropertyFlags.HasFlag(EPropertyFlags.Config) && outerClass != null)
+        {
+            outerClass.ClassFlags |= EClassFlags.Config;
+        }
     }
     
     [InspectArgument("DefaultComponent", UPropertyAttributeName)]

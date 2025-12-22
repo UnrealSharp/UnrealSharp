@@ -226,7 +226,7 @@ void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 	}
 }
 
-void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName)
+void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
 {
 	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
 
@@ -245,7 +245,7 @@ void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char
 		return;
 	}
 	
-	ManagedTypeDefinition->MarkStructurallyDirty();
+	ManagedTypeDefinition->SetDirtyFlags(Flags);
 }
 
 void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)

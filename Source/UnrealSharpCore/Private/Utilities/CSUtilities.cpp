@@ -1,63 +1,55 @@
 #include "Utilities/CSUtilities.h"
-
 #include "CSManagedAssembly.h"
-#include "CSManager.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Compilers/CSManagedDelegateCompiler.h"
 #include "Compilers/CSManagedEnumCompiler.h"
 #include "Compilers/CSManagedInterfaceCompiler.h"
 #include "Compilers/CSManagedStructCompiler.h"
-#include "ReflectionData/CSClassReflectionData.h"
-#include "ReflectionData/CSEnumReflectionData.h"
 
-bool FCSUtilities::ResolveCompilerAndReflectionData(ECSFieldType FieldType, UClass*& OutCompilerClass, TSharedPtr<FCSTypeReferenceReflectionData>& OutReflectionData)
+UCSManagedTypeCompiler* FCSUtilities::ResolveCompilerFromFieldType(ECSFieldType FieldType)
 {
+	UClass* CompilerClass;
 	switch (FieldType)
 	{
-	case ECSFieldType::Class:
-		OutReflectionData = MakeShared<FCSClassReflectionData>();
-		OutCompilerClass = UCSManagedClassCompiler::StaticClass();
-		break;
-	case ECSFieldType::Struct:
-		OutReflectionData = MakeShared<FCSStructReflectionData>();
-		OutCompilerClass = UCSManagedStructCompiler::StaticClass();
-		break;
-	case ECSFieldType::Enum:
-		OutReflectionData = MakeShared<FCSEnumReflectionData>();
-		OutCompilerClass = UCSManagedEnumCompiler::StaticClass();
-		break;
-	case ECSFieldType::Interface:
-		OutReflectionData = MakeShared<FCSClassBaseReflectionData>();
-		OutCompilerClass = UCSManagedInterfaceCompiler::StaticClass();
-		break;
-	case ECSFieldType::Delegate:
-		OutReflectionData = MakeShared<FCSFunctionReflectionData>();
-		OutCompilerClass = UCSManagedDelegateCompiler::StaticClass();
-		break;
-	default:
-		UE_LOGFMT(LogUnrealSharp, Error, "Unsupported field type: {0}", static_cast<uint8>(FieldType));
-		break;
+		case ECSFieldType::Class:
+			CompilerClass = UCSManagedClassCompiler::StaticClass();
+			break;
+		case ECSFieldType::Struct:
+			CompilerClass = UCSManagedStructCompiler::StaticClass();
+			break;
+		case ECSFieldType::Enum:
+			CompilerClass = UCSManagedEnumCompiler::StaticClass();
+			break;
+		case ECSFieldType::Interface:
+			CompilerClass = UCSManagedInterfaceCompiler::StaticClass();
+			break;
+		case ECSFieldType::Delegate:
+			CompilerClass = UCSManagedDelegateCompiler::StaticClass();
+			break;
+		default:
+			return nullptr;
 	}
 	
-	return OutCompilerClass != nullptr && OutReflectionData.IsValid();
+	return CompilerClass->GetDefaultObject<UCSManagedTypeCompiler>();
 }
 
-bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* RawReflectionData)
+bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* NewJsonReflectionData)
 {
-	if (!ManagedTypeDefinition->HasStructuralChanges())
+	if (!ManagedTypeDefinition->RequiresRecompile())
 	{
 		return false;
+	}
+	
+	if (ManagedTypeDefinition->HasConstructorChanges())
+	{
+		return true;
 	}
 	
 	const TSharedPtr<FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
-	const FString& ExistingRawData = ReflectionData->GetRawReflectionData();
+	const FString& ExistingReflectionData = ReflectionData->GetRawReflectionData();
+	bool IdenticalReflectionData = ExistingReflectionData.Equals(NewJsonReflectionData, ESearchCase::CaseSensitive);
 	
-	if (ExistingRawData.Equals(RawReflectionData, ESearchCase::CaseSensitive))
-	{
-		return false;
-	}
-	
-	return true;
+	return !IdenticalReflectionData;
 }
 
 void FCSUtilities::ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results)

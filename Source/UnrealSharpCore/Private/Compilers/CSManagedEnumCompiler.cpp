@@ -42,6 +42,11 @@ void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr
 #endif
 }
 
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedEnumCompiler::CreateNewReflectionData() const
+{
+	return MakeShared<FCSEnumReflectionData>();
+}
+
 void UCSManagedEnumCompiler::PurgeEnum(UCSEnum* Field)
 {
 	Field->DisplayNameMap.Reset();

@@ -89,13 +89,7 @@ void UCSManagedClassCompiler::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassR
 
 void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UCSClass* Field, UClass* SuperClass)
 {
-	Field->ClassFlags |= ClassReflectionData->ClassFlags;
-	Field->ClassFlags |= SuperClass->ClassFlags & CLASS_ScriptInherit;
-
-	Field->PropertyLink = SuperClass->PropertyLink;
-	Field->ClassWithin = SuperClass->ClassWithin;
-	Field->ClassCastFlags = SuperClass->ClassCastFlags;
-
+	SetClassFlags(Field, ClassReflectionData);
 	SetConfigName(Field, ClassReflectionData);
 	
 	ImplementInterfaces(Field, ClassReflectionData->Interfaces);
@@ -211,6 +205,11 @@ FString UCSManagedClassCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceR
 	return FieldName;
 }
 
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedClassCompiler::CreateNewReflectionData() const
+{
+	return MakeShared<FCSClassReflectionData>();
+}
+
 void UCSManagedClassCompiler::SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class)
 {
 	FTickFunction* TickFunction;
@@ -319,4 +318,16 @@ void UCSManagedClassCompiler::SetConfigName(UClass* ManagedClass, const TSharedP
 	{
 		ManagedClass->ClassConfigName = ClassReflectionData->Config;
 	}
+}
+
+void UCSManagedClassCompiler::SetClassFlags(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData)
+{
+	UClass* SuperClass = ManagedClass->GetSuperClass();
+	
+	ManagedClass->ClassFlags |= ClassReflectionData->ClassFlags;
+	ManagedClass->ClassFlags |= SuperClass->ClassFlags & CLASS_ScriptInherit;
+
+	ManagedClass->PropertyLink = SuperClass->PropertyLink;
+	ManagedClass->ClassWithin = SuperClass->ClassWithin;
+	ManagedClass->ClassCastFlags = SuperClass->ClassCastFlags;
 }

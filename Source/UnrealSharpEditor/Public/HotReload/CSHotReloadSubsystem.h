@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSManagedTypeDefinition.h"
 #include "EditorSubsystem.h"
 #include "UnrealSharpEditor.h"
 #include "IDirectoryWatcher.h"
@@ -65,7 +66,7 @@ public:
 	
 	void RefreshDirectoryWatchers();
 	
-	void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName);
+	void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags);
 
 private:
 	

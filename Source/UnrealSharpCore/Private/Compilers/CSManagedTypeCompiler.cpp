@@ -36,16 +36,16 @@ UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefin
 	return NewField;
 }
 
-void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::TriggerRecompile);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::RecompileManagedTypeDefinition);
 	
 	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinitionField();
 	
 	if (!IsValid(TypeToRecompile))
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Type to recompile is invalid. Needs to be created first.");
-		return;
+		FName TypeName = ManagedTypeDefinition->GetEngineName();
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Type to recompile is invalid. Needs to be created first. Type name: {0}", *TypeName.ToString());
 	}
 	
 	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Rebuilding type: {0}", *TypeToRecompile->GetName());

@@ -17,10 +17,12 @@ public:
 	// UCSManagedTypeCompiler interface implementation
 	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const override;
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const override;
 	// End of implementation
 	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceReflectionData>& Interfaces);
 	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
+	static void SetClassFlags(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
 	static void SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class);
 
 	static void ActivateSubsystem(TSubclassOf<USubsystem> SubsystemClass);

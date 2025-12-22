@@ -14,7 +14,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflect
 	NewDefinition->SetReflectionData(InReflectionData);
 	
 	NewDefinition->DefinitionField = TStrongObjectPtr(Compiler->CreateField(NewDefinition));
-	NewDefinition->MarkStructurallyDirty();
+	NewDefinition->SetDirtyFlags(StructuralChanges);
 	
 	return NewDefinition;
 }
@@ -25,7 +25,6 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeF
 	NewDefinition->DefinitionField = TStrongObjectPtr(InField);
 	NewDefinition->OwningAssembly = InOwningAssembly;
 	NewDefinition->TypeGCHandle = InOwningAssembly->FindTypeHandle(FCSFieldName(InField));
-	NewDefinition->bHasChangedStructure = false;
 	
 	return NewDefinition;
 }
@@ -48,13 +47,10 @@ void FCSManagedTypeDefinition::SetTypeGCHandle(uint8* GCHandlePtr)
 	TypeGCHandle = OwningAssembly->AddTypeHandle(ReflectionData->FieldName, GCHandlePtr);
 }
 
-void FCSManagedTypeDefinition::MarkStructurallyDirty()
+void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InFlags)
 {
-	if (bHasChangedStructure)
-	{
-		return;
-	}
-
+	DirtyFlags = InFlags;
+	
 	// Notify dependent types to rebuild as well. These are spawned by source generators and depend on this type's structure.
 	// Such as the async wrapper classes.
 	for (int32 i = ReflectionData->SourceGeneratorDependencies.Num() - 1; i >= 0; --i)
@@ -64,20 +60,19 @@ void FCSManagedTypeDefinition::MarkStructurallyDirty()
 		
 		if (!ManagedTypeDefinition.IsValid())
 		{
+			UE_LOGFMT(LogUnrealSharp, Verbose, "Failed to find dependent type {0} for dirty propagation of {1}", *SourceGeneratorDependency.GetFullName().ToString(), *ReflectionData->FieldName.GetFullName().ToString());
 			continue;
 		}
 
-		ManagedTypeDefinition->MarkStructurallyDirty();
+		ManagedTypeDefinition->SetDirtyFlags(InFlags);
 	}
-	
-	bHasChangedStructure = true;
 }
 
 UField* FCSManagedTypeDefinition::CompileAndGetDefinitionField()
 {
-	if (bHasChangedStructure)
+	if (RequiresRecompile())
 	{
-		bHasChangedStructure = false;
+		DirtyFlags = None;
 		Compiler->RecompileManagedTypeDefinition(SharedThis(this));
 	}
 	

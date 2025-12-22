@@ -43,6 +43,8 @@ struct FGCHandle
 	
 	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr())
 	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(FGCHandle::Dispose);
+		
 		if (!Handle.IntPtr || Type == GCHandleType::Null)
 		{
 			return;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSManagedTypeDefinition.h"
 #include "UnrealSharpEditor.h"
 #include "UnrealSharpBinds/Public/CSBindsManager.h"
 #include "UObject/Object.h"
@@ -18,5 +19,8 @@ public:
 	static void GetProjectPaths(TArray<FString>* Paths);
 
 	UNREALSHARP_FUNCTION()
-	static void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName);
+	static void DirtyUnrealType(const char* AssemblyName, 
+		const char* Namespace, 
+		const char* TypeName, 
+		ECSTypeStructuralFlags Flags);
 };
