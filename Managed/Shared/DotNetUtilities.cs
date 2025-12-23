@@ -138,7 +138,7 @@ public static class DotNetUtilities
 	    }
 
         // Disable roll forward to avoid using wrong .NET runtimes, this propagates to child processes.
-        startInfo.Environment["DOTNET_ROLL_FORWARD"] = "Disable";
+        startInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
 
 	    using Process process = new Process();
 	    process.StartInfo = startInfo;
