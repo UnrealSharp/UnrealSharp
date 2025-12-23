@@ -324,7 +324,7 @@ void UCSManagedClassCompiler::SetClassFlags(UClass* ManagedClass, const TSharedP
 {
 	UClass* SuperClass = ManagedClass->GetSuperClass();
 	
-	ManagedClass->ClassFlags |= ClassReflectionData->ClassFlags;
+	ManagedClass->ClassFlags = ClassReflectionData->ClassFlags;
 	ManagedClass->ClassFlags |= SuperClass->ClassFlags & CLASS_ScriptInherit;
 
 	ManagedClass->PropertyLink = SuperClass->PropertyLink;

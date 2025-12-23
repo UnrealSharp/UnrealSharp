@@ -216,12 +216,7 @@ public record UnrealClass : UnrealClassBase
     {
         UnrealClass unrealClass = (UnrealClass) topScope;
         unrealClass.ClassFlags |= (EClassFlags) constant.Value!;
-        
-        if (unrealClass.ClassFlags.HasFlag(EClassFlags.Config) && 
-            !unrealClass.ClassFlags.HasFlag(EClassFlags.GlobalUserConfig | EClassFlags.DefaultConfig | EClassFlags.ProjectUserConfig))
-        {
-            unrealClass.ClassFlags |= EClassFlags.DefaultConfig;
-        }
+        TryApplyDefaultConfigFlag(unrealClass);
     }
 
     [InspectArgument(["Config", "config"], UClassAttributeName)]
@@ -229,6 +224,21 @@ public record UnrealClass : UnrealClassBase
     {
         UnrealClass unrealClass = (UnrealClass)topScope;
         unrealClass.Config = (string) constant.Value!;
+        
+        if (!string.IsNullOrEmpty(unrealClass.Config))
+        {
+            unrealClass.ClassFlags |= EClassFlags.Config;
+            TryApplyDefaultConfigFlag(unrealClass);
+        }
+    }
+    
+    static void TryApplyDefaultConfigFlag(UnrealClass unrealClass)
+    {
+        if (unrealClass.ClassFlags.HasFlag(EClassFlags.Config) && 
+            !unrealClass.ClassFlags.HasFlag(EClassFlags.GlobalUserConfig | EClassFlags.DefaultConfig | EClassFlags.ProjectUserConfig))
+        {
+            unrealClass.ClassFlags |= EClassFlags.DefaultConfig;
+        }
     }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
