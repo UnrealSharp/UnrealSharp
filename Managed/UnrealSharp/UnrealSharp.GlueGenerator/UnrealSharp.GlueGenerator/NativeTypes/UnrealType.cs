@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json;
@@ -25,7 +25,7 @@ public record UnrealType
     public virtual string EngineName => SourceName;
     public readonly string AssemblyName = string.Empty;
     
-    public string FullName => Namespace + "." + SourceName;
+    public string FullName => string.IsNullOrEmpty(Namespace) ? SourceName : Namespace + "." + SourceName;
     public string Namespace = string.Empty;
     
     public virtual FieldType FieldType => FieldType.Unknown;
