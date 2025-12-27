@@ -15,4 +15,8 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\UnrealSharp.SourceGenerator.Utilities\*.cs" />
+    </ItemGroup>
+
 </Project>

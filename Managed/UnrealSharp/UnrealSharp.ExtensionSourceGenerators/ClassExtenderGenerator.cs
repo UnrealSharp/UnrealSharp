@@ -1,61 +1,71 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.SourceGenerator.Utilities;
 
 namespace UnrealSharp.ExtensionSourceGenerators;
 
+public enum ExtensionType
+{
+    Unknown,
+    Actor,
+    ActorComponent
+}
+    
+public readonly record struct ParseResult
+{
+    public readonly string TypeName;
+    public readonly string TypeNamespace;
+    public string FullTypeName => $"{TypeNamespace}.{TypeName}";
+    public readonly ExtensionType ExtensionType;
+    
+    public bool IsEmpty => string.IsNullOrEmpty(TypeName);
+        
+    public ParseResult(string typeName, string typeNamespace, ExtensionType extensionType)
+    {
+        TypeName = typeName;
+        TypeNamespace = typeNamespace;
+        ExtensionType = extensionType;
+    }
+    
+    public static ParseResult Empty => new ParseResult(string.Empty, string.Empty, ExtensionType.Unknown);
+}
+
 [Generator]
 public class ClassExtenderGenerator : IIncrementalGenerator
-{    
-    private static bool IsA(ITypeSymbol classSymbol, ITypeSymbol otherSymbol)
+{
+    private record struct GeneratorInfo(ExtensionType ExtensionType, ExtensionGenerator Generator);
+    
+    private readonly List<GeneratorInfo> _generators =
+    [
+        new(ExtensionType.Actor, new ActorExtensionGenerator()),
+        new(ExtensionType.ActorComponent, new ActorComponentExtensionGenerator())
+    ];
+    
+    private ExtensionGenerator GetGenerator(ExtensionType extensionType)
     {
-        var currentSymbol = classSymbol.BaseType;
-
-        while (currentSymbol != null)
+        foreach (GeneratorInfo generatorInfo in _generators)
         {
-            if (SymbolEqualityComparer.Default.Equals(currentSymbol, otherSymbol))
+            if (generatorInfo.ExtensionType == extensionType)
             {
-                return true;
+                return generatorInfo.Generator;
             }
-
-            currentSymbol = currentSymbol.BaseType;
         }
 
-        return false;
+        throw new System.Exception($"No generator found for extension type {extensionType}.");
     }
-
+    
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var actorExtensionGenerator = new ActorExtensionGenerator();
-        var actorComponentExtensionGenerator = new ActorComponentExtensionGenerator();
+        IncrementalValuesProvider<ParseResult> discoveryResults = context.SyntaxProvider.ForAttributeWithMetadataName(
+            "UnrealSharp.Attributes.UClassAttribute", Predicate, GetResult);
+        
+        discoveryResults = discoveryResults.Where(result => !result.IsEmpty);
 
-        var syntaxProvider = context.SyntaxProvider.CreateSyntaxProvider<(INamedTypeSymbol Symbol, ExtensionGenerator Generator)>(
-            static (syntaxNode, _) => syntaxNode is ClassDeclarationSyntax { BaseList: not null },
-            (context, _) =>
-            {
-                if (context.SemanticModel.GetTypeInfo(context.Node).Type is not INamedTypeSymbol typeSymbol)
-                {
-                    return (null!, null!);
-                }
-
-                if (IsA(typeSymbol, context.SemanticModel.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.AActor")!))
-                {
-                    return (typeSymbol, actorExtensionGenerator);
-                }
-                else if (IsA(typeSymbol, context.SemanticModel.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.UActorComponent")!))
-                {
-                    return (typeSymbol, actorComponentExtensionGenerator);
-                }
-                else
-                {
-                    return (null!, null!);
-                }
-            })
-            .Where(classDecl => classDecl.Symbol != null);
-
-        context.RegisterSourceOutput(syntaxProvider, (outputContext, classDecl) =>
+        context.RegisterSourceOutput(discoveryResults, (outputContext, parseResult) =>
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("#nullable disable");
@@ -66,28 +76,38 @@ public class ClassExtenderGenerator : IIncrementalGenerator
             stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine();
 
-            stringBuilder.AppendLine($"namespace {classDecl.Symbol.ContainingNamespace};");
+            stringBuilder.AppendLine($"namespace {parseResult.TypeNamespace};");
             stringBuilder.AppendLine();
-            stringBuilder.AppendLine($"public partial class {classDecl.Symbol.Name}");
+            stringBuilder.AppendLine($"public partial class {parseResult.TypeName}");
             stringBuilder.AppendLine("{");
 
-            classDecl.Generator.Generate(ref stringBuilder, classDecl.Symbol);
+            ExtensionGenerator generator = GetGenerator(parseResult.ExtensionType);
+            generator.Generate(stringBuilder, parseResult);
 
             stringBuilder.AppendLine("}");
-            outputContext.AddSource($"{classDecl.Symbol.Name}.generated.extension.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
+            outputContext.AddSource($"{parseResult.TypeName}.generated.extension.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
         });
     }
 
-    private class ClassSyntaxReceiver : ISyntaxReceiver
+    private ParseResult GetResult(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
-        public List<ClassDeclarationSyntax> CandidateClasses { get; } = [];
+        ITypeSymbol typeSymbol = (ITypeSymbol)context.TargetSymbol;
 
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+        if (typeSymbol.InheritsFrom("AActor"))
         {
-            if (syntaxNode is ClassDeclarationSyntax { BaseList: not null } classDeclaration)
-            {
-                CandidateClasses.Add(classDeclaration);
-            }
+            return new ParseResult(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString(), ExtensionType.Actor);
         }
+
+        if (typeSymbol.InheritsFrom("UActorComponent"))
+        {
+            return new ParseResult(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString(), ExtensionType.ActorComponent);
+        }
+        
+        return ParseResult.Empty;
+    }
+
+    private bool Predicate(SyntaxNode syntaxNode, CancellationToken cancellationToken)
+    {
+        return true;
     }
 }

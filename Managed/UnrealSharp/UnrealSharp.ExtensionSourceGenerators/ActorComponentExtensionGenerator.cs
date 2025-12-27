@@ -1,20 +1,18 @@
 using System.Text;
-using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.ExtensionSourceGenerators;
 
-public class ActorComponentExtensionGenerator : ExtensionGenerator
+public record ActorComponentExtensionGenerator : ExtensionGenerator
 {
-    public override void Generate(ref StringBuilder builder, INamedTypeSymbol classSymbol)
+    public override void Generate(StringBuilder builder, ParseResult parseResult)
     {
-        GenerateConstructMethod(ref builder, classSymbol);
-        GenerateComponentGetter(ref builder, classSymbol);
+        string fullTypeName = parseResult.FullTypeName;
+        GenerateConstructMethod(builder, fullTypeName);
+        GenerateComponentGetter(builder, fullTypeName);
     }
     
-    private void GenerateConstructMethod(ref StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
+    private void GenerateConstructMethod(StringBuilder stringBuilder, string fullTypeName)
     {
-        string fullTypeName = classSymbol.ToDisplayString();
-        
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("     /// <summary>");
         stringBuilder.AppendLine("     /// Constructs a new component of the specified class, and attaches it to the specified actor.");
@@ -54,9 +52,8 @@ public class ActorComponentExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     }");
     }
     
-    private void GenerateComponentGetter(ref StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
+    private void GenerateComponentGetter(StringBuilder stringBuilder, string fullTypeName)
     {
-        string fullTypeName = classSymbol.ToDisplayString();
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("     /// <summary>");
         stringBuilder.AppendLine("     /// Gets the component of the specified class attached to the specified actor.");
