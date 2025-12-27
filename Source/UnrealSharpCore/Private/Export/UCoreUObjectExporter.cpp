@@ -7,6 +7,13 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 {
 	// This gets called by the static constructor of the type, so we can cache the type info of native classes here.
 	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+	
+	if (!IsValid(Assembly))
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find assembly: {0}", InAssemblyName);
+		return nullptr;
+	}
+	
 	FCSFieldName FieldName(InTypeName, InNamespace);
 	
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);

@@ -47,6 +47,7 @@ public:
     {
         if (!Instance)
         {
+        	check(IsInGameThread());
             Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
         }
 

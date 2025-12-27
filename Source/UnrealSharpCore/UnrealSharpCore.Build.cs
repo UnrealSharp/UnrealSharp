@@ -16,7 +16,8 @@ public class UnrealSharpCore : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core", 
+				"GameplayTags",
 			}
 			);
 		

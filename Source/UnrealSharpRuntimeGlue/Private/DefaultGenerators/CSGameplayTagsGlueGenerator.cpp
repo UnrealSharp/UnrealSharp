@@ -43,6 +43,19 @@ void UCSGameplayTagsGlueGenerator::ProcessGameplayTags()
 	
 	for (const FGameplayTag& GameplayTag : GameplayTagArray)
 	{
+		TSharedPtr<FGameplayTagNode> TagSource = GameplayTagsManager.FindTagNode(GameplayTag);
+		
+		if (!TagSource.IsValid())
+		{
+			continue;
+		}
+		
+		FName FirstSourceName = TagSource->GetFirstSourceName();
+		if (FirstSourceName == TEXT("UnrealSharpCore"))
+		{
+			continue;
+		}
+		
 		const FString TagName = GameplayTag.ToString();
 		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));

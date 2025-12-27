@@ -44,7 +44,7 @@ public struct TSubclassOf<T>
                 string typeName = classType.GetEngineName();
                 NativeClass = UCoreUObjectExporter.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
                 
-                #if !PACKAGE
+                #if !WITH_EDITOR
                 IntPtr skeletonClass = UCoreUObjectExporter.CallGetGeneratedClassFromSkeleton(NativeClass);
                 if (skeletonClass != IntPtr.Zero)
                 {
