@@ -75,6 +75,10 @@ void UUObjectExporter::InvokeNativeNetFunction(UObject* NativeObject, UFunction*
 	if (FunctionCallspace & FunctionCallspace::Remote)
 	{
 		NativeObject->CallRemoteFunction(NativeFunction, Params, nullptr, nullptr);
+	}
+
+	if ((FunctionCallspace & FunctionCallspace::Local) == 0)
+	{
 		return;
 	}
 
