@@ -21,7 +21,7 @@ public readonly record struct FieldName
         Namespace = nameSpace;
         Assembly = assembly;
         
-        FullName = $"{Namespace}.{Name}";
+        FullName = string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
     }
     
     public FieldName(UnrealType type) : this(type.SourceName, type.Namespace, type.AssemblyName)

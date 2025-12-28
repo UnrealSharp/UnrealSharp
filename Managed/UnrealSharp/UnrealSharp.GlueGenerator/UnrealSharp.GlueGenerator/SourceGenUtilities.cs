@@ -230,6 +230,11 @@ public static class SourceGenUtilities
     
     public static string GetNamespace(this ISymbol symbol)
     {
+        if (symbol.ContainingNamespace.IsGlobalNamespace)
+        {
+            return string.Empty;
+        }
+
         return symbol.ContainingNamespace.ToDisplayString();
     }
     
