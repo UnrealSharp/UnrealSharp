@@ -1,4 +1,4 @@
-﻿
+
 using UnrealSharp;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
@@ -204,16 +204,23 @@ public partial class UTestClass : ACharacter, ITestInterface
     }
 
     [UFunction(FunctionFlags.BlueprintEvent)]
-    public partial float TestFunction(int intParam, string strParam);
-    public partial float TestFunction_Implementation(int intParam, string strParam)
+    public partial IList<string> TestFunction(int intParam, string strParam);
+    public partial IList<string> TestFunction_Implementation(int intParam, string strParam)
     {
-        return 0f;
+        return [];
     }
-    
+
+    [UFunction(FunctionFlags.BlueprintEvent)]
+    public partial string TestFunction2(int intParam, string strParam);
+    public partial string TestFunction2_Implementation(int intParam, string strParam)
+    {
+        return "";
+    }
+
     [UFunction(FunctionFlags.BlueprintCallable)]
     public void CallTestFunction([UMetaData("Test")] int intParam = 7, string strParam = "Hello from C#", ETestEnum test = ETestEnum.FirstValue)
     {
-        float result = TestFunction(42, "Hello from C#");
+        IList<string> result = TestFunction(42, "Hello from C#");
     }
 
     [UFunction(FunctionFlags.RunOnServer)]
