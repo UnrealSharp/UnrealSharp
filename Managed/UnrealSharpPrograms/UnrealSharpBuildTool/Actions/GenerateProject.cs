@@ -79,7 +79,7 @@ public class GenerateProject : BuildToolAction
             File.Delete(myClassFile);
         }
         
-        ModifyCSProjFile();
+        ModifyModuleFile();
         
         if (!Program.HasArgument("SkipSolutionGeneration"))
         {
@@ -97,7 +97,7 @@ public class GenerateProject : BuildToolAction
         return true;
     }
 
-    private void ModifyCSProjFile()
+    private void ModifyModuleFile()
     {
         try
         {
@@ -114,6 +114,13 @@ public class GenerateProject : BuildToolAction
             if (!Program.HasArgument("SkipIncludeProjectGlue"))
             {
                 AppendGeneratedCode(csprojDocument, newItemGroup);
+            }
+            
+            if (Program.HasArgument("EditorOnly"))
+            {
+                XmlElement newPropertyGroup = csprojDocument.MakePropertyGroup(csprojDocument.DocumentElement!);
+                XmlElement outputType = csprojDocument.GetOrCreateChild(newPropertyGroup, "IsPublishable");
+                outputType.InnerText = "false";
             }
 
             string unrealSharpPluginPath = Program.GetUnrealSharpSharedProps();

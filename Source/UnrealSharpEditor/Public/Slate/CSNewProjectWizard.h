@@ -55,6 +55,7 @@ private:
 	TSharedPtr<SEditableTextBox> PathTextBox;
     TSharedPtr<SComboBox<TSharedRef<FCSProjectDestination>>> ProjectDestinationComboBox;
 	TSharedPtr<SEditableTextBox> NameTextBox;
+	TSharedPtr<SCheckBox> EditorOnlyCheckBox;
 
 	FString SuggestedProjectName;
     TArray<TSharedRef<FCSProjectDestination>> ProjectDestinations;

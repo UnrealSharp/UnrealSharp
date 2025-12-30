@@ -134,6 +134,33 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
                         ]
                     ]
                 ]
+				+ SVerticalBox::Slot()
+				.Padding(0, 0, 0, 20)
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.Padding(0, 0, 10, 0)
+					.VAlign(VAlign_Center)
+					.AutoWidth()
+					[
+						SNew(STextBlock)
+						.Text(LOCTEXT("NewProjectOwner", "Editor Only"))
+					]
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					[
+						SAssignNew(EditorOnlyCheckBox, SCheckBox)
+						.ToolTipText_Lambda([this] 
+						{
+							return LOCTEXT(
+								"EditorOnlyTooltip",
+								"When enabled, the generated project is editor-only and will not be included in packaged builds. "
+								"To make it available in packaged builds later, change the IsPublishable property in the .csproj file to true."
+							);
+						})
+					]
+				]
 			]
 		]
 	];
@@ -242,6 +269,11 @@ void SCSNewProjectDialog::OnFinish()
 	if (!FPaths::FileExists(GlueProjectLocation))
 	{
 		Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
+	}
+	
+	if (EditorOnlyCheckBox->IsChecked())
+	{
+		Arguments.Add(TEXT("EditorOnly"), TEXT("true"));
 	}
 
 	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
