@@ -21,12 +21,12 @@ public record UnrealType
 {
     public UnrealType? Outer;
 
-    public string SourceName = string.Empty;
+    public string SourceName;
     public virtual string EngineName => SourceName;
-    public readonly string AssemblyName = string.Empty;
+    public readonly string AssemblyName;
     
     public string FullName => string.IsNullOrEmpty(Namespace) ? SourceName : Namespace + "." + SourceName;
-    public string Namespace = string.Empty;
+    public string Namespace;
     
     public virtual FieldType FieldType => FieldType.Unknown;
     
@@ -99,6 +99,8 @@ public record UnrealType
 
         SourceGeneratorDependencies.List.Add(dependency);
     }
+    
+    public virtual void PostParse(ISymbol symbol) { }
     
     public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
     

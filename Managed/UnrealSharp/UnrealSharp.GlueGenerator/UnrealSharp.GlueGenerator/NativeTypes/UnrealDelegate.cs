@@ -17,11 +17,13 @@ public record UnrealDelegate : UnrealType
 
     public UnrealDelegate(bool isMulticast, ISymbol typeSymbol) : base(typeSymbol)
     {
+        INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol) typeSymbol;
+        
         _isMulticast = isMulticast;
-        INamedTypeSymbol namedTypeSymbol = (INamedTypeSymbol)typeSymbol;
         _delegateSignature = new UnrealDelegateFunction(namedTypeSymbol.DelegateInvokeMethod!, this);
         _delegateSignature.SourceName = typeSymbol.Name;
         SourceName = DelegateProperty.MakeDelegateSignatureName(SourceName);
+        
         ApplyFunctionFlags(isMulticast);
     }
 
@@ -45,13 +47,13 @@ public record UnrealDelegate : UnrealType
     }
     
     [Inspect("UnrealSharp.Attributes.UMultiDelegateAttribute", "UMultiDelegateAttribute", "Global")]
-    public static UnrealType? UMultiDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UMultiDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         return MakeDelegate(true, symbol);
     }
     
     [Inspect("UnrealSharp.Attributes.USingleDelegateAttribute", "USingleDelegateAttribute", "Global")]
-    public static UnrealType? USingleDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType USingleDelegateAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         return MakeDelegate(false, symbol);
     }

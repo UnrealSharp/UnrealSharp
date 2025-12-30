@@ -53,9 +53,10 @@ public static class StringBuilderExtensions
 
     public static void GenerateTypeRegistration(this GeneratorStringBuilder builder, UnrealType type)
     {
-        StringBuilder sb = new StringBuilder();
-        using StringWriter sw = new StringWriter(sb);
-        using JsonWriter jsonWriter = new JsonTextWriter(sw);
+        StringBuilder stringBuilder = new StringBuilder();
+        using StringWriter stringWriter = new StringWriter(stringBuilder);
+        
+        using JsonWriter jsonWriter = new JsonTextWriter(stringWriter);
         jsonWriter.Formatting = Formatting.Indented;
 
         builder.StartModuleInitializer(type);
@@ -64,13 +65,9 @@ public static class StringBuilderExtensions
         type.PopulateJsonObject(jsonWriter);
         jsonWriter.WriteEndObject();
 
-        string jsonString = sb.ToString();
-        builder.AppendLine($"const string NativeReflectionData = \"\"\"\n {jsonString} \n\"\"\";");
-        builder.AppendLine("static void Initialize() => ");
-
-        byte fieldType = (byte) type.FieldType;
-        builder.Append($"RegisterManagedType(\"{type.EngineName}\", NativeReflectionData, {fieldType}, typeof({type.FullName}));");
-
+        string jsonString = stringBuilder.ToString();
+        builder.AppendLine($"static string JsonReflectionData => \"\"\"\n {jsonString} \n\"\"\";");
+        builder.AppendLine($"static void Initialize() => RegisterManagedType(\"{type.EngineName}\", JsonReflectionData, {(byte) type.FieldType}, typeof({type.FullName}));");
         builder.CloseBrace();
     }
     

@@ -103,8 +103,8 @@ public record UnrealProperty : UnrealType
         SetterMethod = new PropertyMethod(Accessibility.NotApplicable);
     }
     
-    [Inspect(FullyQualifiedAttributeName = "UnrealSharp.Attributes.UPropertyAttribute", Name = "UPropertyAttribute")]
-    public static UnrealType? UPropertyAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    [Inspect("UnrealSharp.Attributes.UPropertyAttribute", "UPropertyAttribute")]
+    public static UnrealType UPropertyAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealStruct owningStruct = (UnrealStruct) outer!;
         UnrealProperty property = PropertyFactory.CreateProperty(symbol, outer!, syntaxNode);

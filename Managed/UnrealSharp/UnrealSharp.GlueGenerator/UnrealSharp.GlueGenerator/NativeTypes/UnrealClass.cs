@@ -113,8 +113,8 @@ public record UnrealClass : UnrealClassBase
                     UnrealFunction function = new UnrealFunction((IMethodSymbol) member, this);
                     function.TypeAccessibility = function.TypeAccessibility == Accessibility.NotApplicable ? Accessibility.Public : function.TypeAccessibility;
                 
-                    List<AttributeData> attributes = member.GetAttributesByName("UFunctionAttribute");
-                    InspectorManager.InspectSpecifiers("UFunctionAttribute", function, attributes);
+                    List<AttributeData> attributes = member.GetAttributesByName(UnrealFunctionBase.UFunctionAttributeName);
+                    InspectionDispatcher.InspectSpecifiers(UnrealFunctionBase.UFunctionAttributeName, function, attributes);
                 
                     Functions.List.Add(function);
                 }
@@ -206,14 +206,10 @@ public record UnrealClass : UnrealClassBase
     }
 
     [Inspect(LongUClassAttributeName, UClassAttributeName, "Global")]
-    public static UnrealType? UClassAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UClassAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
         UnrealClass unrealClass = new UnrealClass(typeSymbol);
-        
-        InspectorManager.InspectSpecifiers(UClassAttributeName, unrealClass, attributes);
-        InspectorManager.InspectTypeMembers(unrealClass, ctx.TargetNode, typeSymbol, ctx);
-        
         return unrealClass;
     }
     

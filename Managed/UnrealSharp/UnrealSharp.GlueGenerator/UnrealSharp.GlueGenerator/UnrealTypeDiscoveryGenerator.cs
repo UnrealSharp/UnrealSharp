@@ -3,17 +3,50 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.GlueGenerator.Exceptions;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
 
+public record struct ParseResult
+{
+    public readonly UnrealType? Type;
+    public readonly string SymbolName;
+    public readonly Exception? ParseException;
+
+    public ParseResult(UnrealType? type, string symbolName, Exception? exception) : this()
+    {
+        Type = type;
+        SymbolName = symbolName;
+        ParseException = exception;
+    }
+
+    public bool Equals(ParseResult? other)
+    {
+        if (other is null || Type is null || other.Value.Type is null)
+        {
+            return false;
+        }
+
+        return Type == other.Value.Type;
+    }
+
+    public override int GetHashCode()
+    {
+        if (Type is null)
+        {
+            return 0;
+        }
+        
+        return Type.GetHashCode();
+    }
+}
+
 [Generator(LanguageNames.CSharp)]
 public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
 {
-    private record struct ParseResult(UnrealType? Type, string SymbolName, Exception? Error = null);
-    
     private const string UnrealSharpStackTraceTitle = "UnrealSharp StackTrace";
     private const string UnrealSharpGeneratorCategory = "UnrealSharp Glue Generator";
     
@@ -33,89 +66,88 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        List<InspectorData> inspectors = InspectorManager.GetScopedInspectorData("Global");
+        List<InspectorData> globalInspectors = InspectionDispatcher.GetInspectorsForScope("Global");
 
-        foreach (InspectorData globalType in inspectors)
+        foreach (InspectorData inspector in globalInspectors)
         {
-            IncrementalValuesProvider<ParseResult> discoveryResults = context.SyntaxProvider.ForAttributeWithMetadataName(
-                    globalType.InspectAttribute.FullyQualifiedAttributeName, CanGenerateType, ParseUnrealType);
-
-            context.RegisterSourceOutput(discoveryResults, RegisterType);
+            string attributeName = inspector.InspectAttribute.FullyQualifiedAttributeName;
+            IncrementalValuesProvider<ParseResult> parsedUnrealTypes = context.SyntaxProvider.ForAttributeWithMetadataName(
+                attributeName, IsGenerationCandidate, ParseUnrealType);
+            
+            context.RegisterSourceOutput(parsedUnrealTypes, ProcessParsedUnrealType);
         }
     }
 
-    private bool CanGenerateType(SyntaxNode token, CancellationToken cancellationToken)
+    private bool IsGenerationCandidate(SyntaxNode token, CancellationToken cancellationToken)
     {
         return true;
     }
-
-    private void RegisterType(SourceProductionContext spc, ParseResult result)
-    {
-        if (result.Error != null)
-        {
-            Diagnostic diagnostic = Diagnostic.Create(
-                GenerateSourceErrorDescriptor, 
-                Location.None,
-                result.SymbolName, 
-                result.Error.Message);
-
-            ReportException(diagnostic, result.Error, spc);
-            return;
-        }
-
-        EmitUnrealType(spc, result.Type!);
-    }
-
+    
     private static ParseResult ParseUnrealType(GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken)
     {
         string symbolName = ctx.TargetSymbol.Name;
+        UnrealType? newType = null;
+        Exception? error = null;
 
         try
         {
-            INamedTypeSymbol? attributeClass = ctx.Attributes[0].AttributeClass;
-
-            if (attributeClass == null)
-            {
-                throw new InvalidOperationException("Attribute class is null");
-            }
-
-            InspectorData? inspector = InspectorManager.GetInspectorData(attributeClass.Name);
+            INamedTypeSymbol attributeClass = ctx.Attributes[0].AttributeClass!;
+            InspectorData? inspector = InspectionDispatcher.GetInspector(attributeClass.Name);
 
             if (inspector == null)
             {
                 throw new InvalidOperationException($"No inspector found for {attributeClass.Name}");
             }
 
-            if (inspector.InspectAttributeDelegate == null)
-            {
-                throw new InvalidOperationException($"No inspector delegate found for {attributeClass.Name}");
-            }
+            newType = inspector.ApplyInspection(null, ctx.TargetNode, ctx, ctx.TargetSymbol, ctx.Attributes);
 
-            UnrealType? type = inspector.InspectAttributeDelegate(null, ctx.TargetNode, ctx, ctx.TargetSymbol, ctx.Attributes);
-            return new ParseResult(type, symbolName);
+            if (ctx.TargetNode is TypeDeclarationSyntax typeDeclarationSyntax)
+            {
+                ITypeSymbol typeSymbol = (ITypeSymbol) ctx.TargetSymbol;
+                InspectionDispatcher.InspectMembers(newType, typeSymbol, typeDeclarationSyntax, ctx);
+            }
         }
         catch (Exception exception)
         {
-            return new ParseResult(null, symbolName, exception);
+            error = exception;
         }
+        
+        return new ParseResult(newType, symbolName, error);
     }
 
-    private static void EmitUnrealType(SourceProductionContext spc, UnrealType unrealType)
+    private void ProcessParsedUnrealType(SourceProductionContext sourceProductionContext, ParseResult parseResult)
+    {
+        if (parseResult.ParseException != null)
+        {
+            Diagnostic diagnostic = Diagnostic.Create(
+                GenerateSourceErrorDescriptor, 
+                Location.None,
+                parseResult.SymbolName, 
+                parseResult.ParseException.Message);
+
+            ReportException(diagnostic, parseResult.ParseException, sourceProductionContext);
+            return;
+        }
+
+        EmitUnrealTypeSource(sourceProductionContext, parseResult.Type!);
+    }
+
+    private static void EmitUnrealTypeSource(SourceProductionContext sourceProductionContext, UnrealType unrealType)
     {
         try
         {
             GeneratorStringBuilder builder = new GeneratorStringBuilder();
             builder.BeginGeneratedSourceFile(unrealType);
 
-            unrealType.ExportType(builder, spc);
+            unrealType.ExportType(builder, sourceProductionContext);
             builder.GenerateTypeRegistration(unrealType);
 
-            spc.AddSource($"{unrealType.SourceName}.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+            sourceProductionContext.AddSource($"{unrealType.SourceName}.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
         }
         catch (Exception exception)
         {
             Diagnostic diagnostic = Diagnostic.Create(GenerateSourceErrorDescriptor, Location.None, unrealType.FullName, exception.Message);
-            ReportException(diagnostic, exception, spc);
+            ReportException(diagnostic, exception, sourceProductionContext);
         }
     }
 

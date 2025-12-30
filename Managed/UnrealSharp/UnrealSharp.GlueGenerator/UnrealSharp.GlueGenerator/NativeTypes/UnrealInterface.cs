@@ -16,13 +16,10 @@ public record UnrealInterface : UnrealClassBase
     }
     
     [Inspect("UnrealSharp.Attributes.UInterfaceAttribute", "UInterfaceAttribute", "Global")]
-    public static UnrealType? UInterfaceAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UInterfaceAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
         UnrealInterface unrealClass = new UnrealInterface(typeSymbol);
-        
-        InspectorManager.InspectSpecifiers(UInterfaceAttributeName, unrealClass, attributes);
-        InspectorManager.InspectTypeMembers(unrealClass, ctx.TargetNode, typeSymbol, ctx);
         return unrealClass;
     }
 
