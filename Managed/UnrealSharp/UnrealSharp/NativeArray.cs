@@ -1,15 +1,13 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
 using UnrealSharp.Core;
-using UnrealSharp.Core.Attributes;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
 /// <summary>
-/// An blittable type only array that can be used to interact with Unreal Engine arrays in a optimized manner.
+/// A blittable type only array that can be used to interact with Unreal Engine arrays in a optimized manner.
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
 public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
@@ -67,8 +65,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
 
         source.CopyTo(destination);
     }
-
-
+    
     /// <summary>
     /// Copy the elements of the span to an array
     /// </summary>
@@ -111,26 +108,31 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// Gets the NativeArrayBuffer as a span
     /// </summary>
     /// <returns></returns>
-    public ReadOnlySpan<T> AsReadOnlySpan() 
-        => new ReadOnlySpan<T>(NativeArrayBuffer.ToPointer(), Length);
+    public ReadOnlySpan<T> AsReadOnlySpan() => new(NativeArrayBuffer.ToPointer(), Length);
 
 
     /// <summary>
     /// Gets the NativeArrayBuffer as a span
     /// </summary>
     /// <returns></returns>
-    public Span<T> AsSpan() 
-        => new Span<T>(NativeArrayBuffer.ToPointer(), Length);
+    public Span<T> AsSpan() => new(NativeArrayBuffer.ToPointer(), Length);
 
     /// <summary>
     /// Converts TNativeArray to a normal array
     /// </summary>
     public T[] ToArray()
     {
-        unsafe
-        {
-            return new Span<T>(NativeArrayBuffer.ToPointer(), Length).ToArray();
-        }
+        return new Span<T>(NativeArrayBuffer.ToPointer(), Length).ToArray();
+    }
+    
+    public static implicit operator ReadOnlySpan<T>(TNativeArray<T> nativeArray)
+    {
+        return nativeArray.AsReadOnlySpan();
+    }
+    
+    public static implicit operator Span<T>(TNativeArray<T> nativeArray)
+    {
+        return nativeArray.AsSpan();
     }
 
     /// <summary>
@@ -173,8 +175,7 @@ public class UnrealNativeArrayEnumerator<T>(TNativeArray<T> array) : IEnumerator
     }
 }
 
-public class NativeArrayMarshaller<T>(IntPtr nativeProperty) 
-    where T : INumber<T>
+public class NativeArrayMarshaller<T>(IntPtr nativeProperty) where T : INumber<T>
 {
     private TNativeArray<T>? _nativeArrayWrapper;
 

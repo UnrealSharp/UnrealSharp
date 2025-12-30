@@ -38,6 +38,10 @@ public static class PropertyFactory
         ["IList"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["IEnumerable"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["ICollection"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
+        
+        ["TNativeArray"] = (m, t, o, syntaxNode) => new NativeArrayProperty(m, t, o, syntaxNode),
+        ["Span"] = (m, t, o, syntaxNode) => new NativeArrayProperty(m, t, o, syntaxNode),
+        ["ReadOnlySpan"] = (m, t, o, syntaxNode) => new NativeArrayProperty(m, t, o, syntaxNode),
 
         ["TMap"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
         ["IDictionary"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
