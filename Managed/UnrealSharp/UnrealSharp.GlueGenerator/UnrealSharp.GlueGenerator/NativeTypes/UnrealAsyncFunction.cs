@@ -103,9 +103,10 @@ public record UnrealAsyncFunction : UnrealFunctionBase
             returnValue = taskProperty.TemplateParameters[0];
             
             properties.Add(returnValue);
-            returnValue.PropertyFlags = 0;
             returnValue.SourceName = "Result";
-            returnValue.MakeReturnParameter();
+            
+            returnValue.PropertyFlags = 0;
+            returnValue.MakeParameter();
         }
         
         properties.Add(stringProperty);

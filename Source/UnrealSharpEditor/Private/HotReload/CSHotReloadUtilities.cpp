@@ -250,7 +250,7 @@ bool FCSHotReloadUtilities::IsNodeAffectedByReload(const UEdGraphNode* Node, con
 
 bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes)
 {
-	auto CheckIfTemplateIsAffected = [&](const UClass* TemplateClass) -> bool
+	auto IsTemplateAffectedByHotReload = [&](const UClass* TemplateClass) -> bool
 	{
 		if (!IsValid(TemplateClass))
 		{
@@ -266,7 +266,7 @@ bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* B
 	{
 		for (const USCS_Node* Node : SCS->GetAllNodes())
 		{
-			if (!CheckIfTemplateIsAffected(Node->ComponentClass))
+			if (!IsTemplateAffectedByHotReload(Node->ComponentClass))
 			{
 				continue;
 			}
@@ -283,7 +283,7 @@ bool FCSHotReloadUtilities::HasDefaultComponentsBeenAffected(const UBlueprint* B
 
 		for (UActorComponent* ComponentTemplate : OutArray)
 		{
-			if (!CheckIfTemplateIsAffected(ComponentTemplate->GetClass()))
+			if (!IsTemplateAffectedByHotReload(ComponentTemplate->GetClass()))
 			{
 				continue;
 			}
