@@ -371,8 +371,8 @@ public abstract record UnrealFunctionBase : UnrealStruct
             
         if (HasReturnValue)
         {
-            builder.AppendLine($"{ReturnType.ManagedType} returnValue = ");
-            ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer);
+            string assignment = $"{ReturnType.ManagedType} returnValue = ";
+            ReturnType.ExportFromNative(builder, SourceGenUtilities.ParamsBuffer, assignment);
             builder.AppendLine("return returnValue;");
         }
             
