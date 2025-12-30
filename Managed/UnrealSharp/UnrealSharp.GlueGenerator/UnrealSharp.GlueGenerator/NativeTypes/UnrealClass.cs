@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Newtonsoft.Json;
+using UnrealSharp.GlueGenerator.Exceptions;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
 
@@ -67,12 +68,17 @@ public record UnrealClass : UnrealClassBase
     {
         if (typeSymbol.BaseType == null)
         {
-            throw new InvalidOperationException($"Type {typeSymbol.Name} does not have a base type. Needs to inherit from UObject class.");
+            throw new ParseReflectionException($"Type {typeSymbol.Name} does not have a base type. Needs to inherit from UObject class.");
         }
 
         if (!typeSymbol.BaseType.IsChildOf("UObject"))
         {
-            throw new InvalidOperationException($"'{typeSymbol.Name}' inherits from '{typeSymbol.BaseType.Name}' which does not inherit from 'UObject'. All UClass types must ultimately inherit from UObject.");
+            throw new ParseReflectionException($"'{typeSymbol.Name}' inherits from '{typeSymbol.BaseType.Name}' which does not inherit from 'UObject'. All UClass types must ultimately inherit from UObject.");
+        }
+
+        if (typeSymbol.IsAbstract)
+        {
+            throw new ParseReflectionException($"Unreal does not support abstract classes. Do '[UClass(ClassFlags.Abstract)]' instead of using the 'abstract' keyword in C# for class '{typeSymbol.Name}'.");
         }
 
         ParentClass = new FieldName(typeSymbol.BaseType!);

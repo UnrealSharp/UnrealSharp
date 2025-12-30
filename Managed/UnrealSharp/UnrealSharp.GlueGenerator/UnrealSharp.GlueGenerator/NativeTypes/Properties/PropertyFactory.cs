@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using UnrealSharp.GlueGenerator.Exceptions;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
@@ -98,7 +99,7 @@ public static class PropertyFactory
             TypeKind.Interface => new InterfaceProperty(memberSymbol, typeSymbol, outer, syntaxNode),
             TypeKind.Enum => new EnumProperty(memberSymbol, typeSymbol, outer, syntaxNode),
             TypeKind.Struct => typeSymbol.HasAttribute("BlittableTypeAttribute") ? new BlittableStructProperty(memberSymbol, typeSymbol, PropertyType.Struct, outer, syntaxNode) : new StructProperty(memberSymbol, typeSymbol, outer, syntaxNode),
-            _ => throw new NotSupportedException($"Type {typeSymbol} is not supported in PropertyFactory")
+            _ => throw new ParseReflectionException($"Type {typeSymbol} is not supported in PropertyFactory")
         };
     }
 }

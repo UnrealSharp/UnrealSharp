@@ -60,9 +60,11 @@ void FCSCompilerContext::FinishCompilingClass(UClass* InClass)
 	ManagedClass->Bind();
 
 	ManagedClass->StaticLink(true);
-	ManagedClass->SetUpRuntimeReplicationData();
 	
 	(void)ManagedClass->GetDefaultObject(true);
+	
+	ManagedClass->SetUpRuntimeReplicationData();
+	ManagedClass->UpdateCustomPropertyListForPostConstruction();
 	
 	ManagedClass->InitializeFieldNotifies();
 	

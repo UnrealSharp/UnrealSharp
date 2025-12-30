@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.GlueGenerator.Exceptions;
 using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
@@ -18,7 +19,7 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
     
     private static readonly DiagnosticDescriptor GenerateSourceErrorDescriptor = new("USG001",
         "UnrealSharp Generation Failed",
-        "Failed to generate source for '{0}'. Exception: {1}. See stack trace below for more details.",
+        "Failed to generate source for '{0}' due to {1}",
         UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
     
     private static readonly DiagnosticDescriptor StartStackTraceErrorDescriptor = new("USG002",
@@ -118,30 +119,33 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
         }
     }
 
-    static void ReportException(Diagnostic diagnostic, Exception ex, SourceProductionContext spc)
+    static void ReportException(Diagnostic diagnostic, Exception exception, SourceProductionContext sourceProductionContext)
     {
-        spc.ReportDiagnostic(diagnostic);
+        sourceProductionContext.ReportDiagnostic(diagnostic);
         
-        string? stackTrace = ex.StackTrace;
-        List<string> stackTraceLines = new List<string>();
+        if (exception is not ParseReflectionException)
+        {
+            List<string> stackTraceLines = new List<string>();
+            string? stackTrace = exception.StackTrace;
 
-        if (stackTrace != null && stackTrace.Length > 0)
-        {
-            string[] lines = stackTrace.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
-            stackTraceLines.AddRange(lines);
-        }
-        else
-        {
-            stackTraceLines.Add("No stack trace available.");
-        }
-
-        spc.ReportDiagnostic(Diagnostic.Create(StartStackTraceErrorDescriptor, Location.None));
+            if (stackTrace != null && stackTrace.Length > 0)
+            {
+                string[] lines = stackTrace.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
+                stackTraceLines.AddRange(lines);
+            }
+            else
+            {
+                stackTraceLines.Add("No stack trace available.");
+            }
+            
+            sourceProductionContext.ReportDiagnostic(Diagnostic.Create(StartStackTraceErrorDescriptor, Location.None));
         
-        foreach (string line in stackTraceLines)
-        {
-            spc.ReportDiagnostic(Diagnostic.Create(StackTraceErrorDescriptor, Location.None, line.Trim()));
-        }
+            foreach (string line in stackTraceLines)
+            {
+                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(StackTraceErrorDescriptor, Location.None, line.Trim()));
+            }
         
-        spc.ReportDiagnostic(Diagnostic.Create(EndStackTraceErrorDescriptor, Location.None));
+            sourceProductionContext.ReportDiagnostic(Diagnostic.Create(EndStackTraceErrorDescriptor, Location.None));
+        }
     }
 }
