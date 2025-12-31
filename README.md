@@ -3,7 +3,7 @@
 ## Introduction
 UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C# in their projects with the power of .NET 9. This plugin bridges the gap between C# and UE5, providing a seamless and efficient workflow for those who prefer C# over C++/Blueprints.
 
-[Workflow Showcase](https://www.youtube.com/watch?v=NdbiysPTztA)
+[Workflow Showcase](https://www.youtube.com/watch?v=xR7M2XgCuNU)
 
 ## Features
 - **C# Integration**: Write your game logic in C#.
