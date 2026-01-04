@@ -218,7 +218,7 @@ public partial class UTestClass : ACharacter, ITestInterface
     }
 
     [UFunction(FunctionFlags.BlueprintCallable)]
-    public void CallTestFunction([UMetaData("Test")] int intParam = 7, string strParam = "Hello from C#", ETestEnum test = ETestEnum.FirstValue)
+    public void CallTestFunction([UMetaData("Test")] int intParam = 7, string strParam = "Hello from C#", ETestEnum test = ETestEnum.FirstValue, FRotator rotatorParam = default)
     {
         IList<string> result = TestFunction(42, "Hello from C#");
     }

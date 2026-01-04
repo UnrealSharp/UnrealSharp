@@ -132,16 +132,16 @@ public abstract record UnrealFunctionBase : UnrealStruct
                     break;
             }
             
-            if (parameterSymbol.HasExplicitDefaultValue)
+            if (parameterSymbol.HasExplicitDefaultValue && parameterSymbol.ExplicitDefaultValue != null)
             {
                 string defaultValue;
                 if (parameterSymbol.Type.TypeKind == TypeKind.Enum)
                 {
-                    defaultValue = SourceGenUtilities.GetEnumNameFromValue(parameterSymbol.Type, (byte) parameterSymbol.ExplicitDefaultValue!);
+                    defaultValue = SourceGenUtilities.GetEnumNameFromValue(parameterSymbol.Type, (byte) parameterSymbol.ExplicitDefaultValue);
                 }
                 else
                 {
-                    defaultValue = parameterSymbol.ExplicitDefaultValue!.ToString();
+                    defaultValue = parameterSymbol.ExplicitDefaultValue.ToString();
                 }
                 
                 AddMetaData($"CPP_Default_{parameterSymbol.Name}", defaultValue);
