@@ -74,6 +74,11 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 	
 	for (FOutParmRec* OutParameter = OutParameters; OutParameter != nullptr; OutParameter = OutParameter->NextOutParm)
 	{
+		if (OutParameter->Property->HasAnyPropertyFlags(CPF_ReturnParm))
+		{
+			continue;
+		}
+		
 		const uint8* ValueAddress = ArgumentBuffer + OutParameter->Property->GetOffset_ForUFunction();
 		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
 	}
