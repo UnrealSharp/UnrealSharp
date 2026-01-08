@@ -20,6 +20,8 @@ void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TShar
 	
 	Interface->SetSuperStruct(ParentInterface);
 	Interface->ClassFlags |= CLASS_Interface;
+
+	Interface->SetMetaData(FBlueprintMetadata::MD_AllowableBlueprintVariableType, TEXT("true"));
 	
 	FCSFunctionFactory::GenerateFunctions(Interface, ClassReflectionData->Functions);
 
