@@ -61,8 +61,11 @@ public static class FileExporter
         bool needsWrite = true;
         if (File.Exists(absoluteFilePath))
         {
-            FileInfo info = new FileInfo(absoluteFilePath);
-            needsWrite = info.Length == text.Length && File.ReadAllText(absoluteFilePath) == text;
+            FileInfo fileInfo = new FileInfo(absoluteFilePath);
+            if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
+            {
+                needsWrite = false;
+            }
         }
         
         ReadWriteLock.EnterWriteLock();
