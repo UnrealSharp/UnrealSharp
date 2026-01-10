@@ -1038,8 +1038,7 @@ public class FunctionExporter
                     string marshalDestination;
                     if (parameter.HasAllFlags(EPropertyFlags.ReturnParm))
                     {
-                        builder.AppendLine($"{ReturnValueTranslator!.GetManagedType(parameter)} returnValue;");
-                        marshalDestination = "returnValue";
+                        marshalDestination = "var returnValue";
                     }
                     else
                     {
