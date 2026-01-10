@@ -1,12 +1,11 @@
-﻿using System.Linq;
-using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+﻿using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class IntPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public IntPropertyTranslator() : base(typeof(UhtIntProperty), "int", PropertyKind.Int)
+    public IntPropertyTranslator() : base(typeof(UhtIntProperty), "int")
     {
     }
 
@@ -14,8 +13,7 @@ public class IntPropertyTranslator : BlittableTypePropertyTranslator
     {
         if (property.Outer is UhtFunction function && property.IsCustomStructureType())
         {
-            if (function.GetCustomStructParamCount() == 1) return "CSP";
-            return $"CSP{property.GetPrecedingCustomStructParams()}";
+            return function.GetCustomStructParamCount() == 1 ? "CSP" : $"CSP{property.GetPrecedingCustomStructParams()}";
         }
         
         return base.GetManagedType(property);
@@ -27,6 +25,7 @@ public class IntPropertyTranslator : BlittableTypePropertyTranslator
         {
             return $"StructMarshaller<{GetManagedType(property)}>";
         }
+        
         return base.GetMarshaller(property);
     }
 

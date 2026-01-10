@@ -1,7 +1,7 @@
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class InterfacePropertyTranslator : SimpleTypePropertyTranslator
 {

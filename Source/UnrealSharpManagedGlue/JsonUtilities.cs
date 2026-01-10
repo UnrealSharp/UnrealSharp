@@ -1,7 +1,8 @@
 using System.IO;
 using System.Text.Json;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 public static class JsonUtilities
 {
@@ -33,6 +34,6 @@ public static class JsonUtilities
     
     static string GetJsonOutputPath(string fileName)
     {
-        return Path.Combine(Program.PluginModule.OutputDirectory, fileName + ".json");
+        return Path.Combine(GeneratorStatics.PluginModule.OutputDirectory, fileName + ".json");
     }
 }

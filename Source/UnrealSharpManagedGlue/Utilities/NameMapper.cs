@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.PropertyTranslators;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public enum ENameType
 {
@@ -64,12 +64,12 @@ public static class NameMapper
     
     public static string GetStructName(this UhtType type)
     {
-        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == Program.Factory.Session.UInterface)
+        if (type.EngineType is UhtEngineType.Interface or UhtEngineType.NativeInterface || type == GeneratorStatics.Factory.Session.UInterface)
         {
             return "I" + type.EngineName;
         }
         
-        if (type is UhtClass uhtClass && uhtClass.IsChildOf(Program.BlueprintFunctionLibrary))
+        if (type is UhtClass uhtClass && uhtClass.IsChildOf(GeneratorStatics.BlueprintFunctionLibrary))
         {
             return type.GetScriptName();
         }
@@ -80,6 +80,11 @@ public static class NameMapper
     public static string ExportGetAssemblyName(this UhtType type)
     {
         string structName = type.GetStructName();
+        return ExportGetAssemblyName(structName);
+    }
+    
+    public static string ExportGetAssemblyName(string structName)
+    {
         return $"typeof({structName}).GetAssemblyName()";
     }
     
@@ -89,6 +94,7 @@ public static class NameMapper
     }
     
     static readonly string[] MetadataKeys = { "ScriptName", "ScriptMethod", "DisplayName" };
+    
     public static string GetScriptName(this UhtType type)
     {
         bool OnlyContainsLetters(string str)
@@ -124,7 +130,7 @@ public static class NameMapper
     {
         UhtType outer = typeObj;
 
-        string packageShortName = "";
+        string packageShortName = string.Empty;
         if (outer is UhtPackage package)
         {
             packageShortName = package.GetShortName();
@@ -224,23 +230,36 @@ public static class NameMapper
                 {
                     continue;
                 }
-
+                
                 UhtFunction? function = interfaceClass.FindFunctionByName(scriptName, (uhtFunction, s) => uhtFunction.GetFunctionName() == s);
 
-                if (function != null && type is UhtFunction typeAsFunction)
+                if (function == null)
                 {
-                    if (function.HasSameSignature(typeAsFunction))
-                    {
-                        continue;
-                    }
-                    
-                    isConflicting = true;
-                    break;
+                    continue;
                 }
+                
+                isConflicting = true;
+                    
+                if (type is UhtFunction typeAsFunction && !function.HasSameSignature(typeAsFunction))
+                {
+                    isConflicting = false;
+                }
+                    
+                break;
             }
         }
         
         return isConflicting ? type.EngineName : scriptName;
+    }
+
+    public static string PrefixWithOuterName(this UhtType type, string name)
+    {
+        if (type.Outer == null)
+        {
+            return name;
+        }
+        
+        return $"{type.Outer.SourceName}_{name}";
     }
 
     public static string ScriptifyName(string engineName, ENameType nameType)

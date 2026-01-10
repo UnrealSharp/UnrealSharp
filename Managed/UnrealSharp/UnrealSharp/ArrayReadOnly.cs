@@ -19,6 +19,11 @@ public class ArrayReadOnlyMarshaller<T>(IntPtr nativeProperty, MarshallingDelega
 {
     private TArrayReadOnly<T>? _readOnlyWrapper;
 
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IReadOnlyList<T> obj)
+    {
+        ToNative(nativeBuffer, obj);
+    }
+
     public void ToNative(IntPtr nativeBuffer, IReadOnlyList<T> obj)
     {
         unsafe

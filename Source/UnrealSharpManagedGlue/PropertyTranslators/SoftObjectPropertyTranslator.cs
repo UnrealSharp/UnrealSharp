@@ -1,33 +1,16 @@
-﻿using System.Collections.Generic;
-using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+﻿using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
-public class SoftObjectPropertyTranslator : SimpleTypePropertyTranslator
+public class SoftObjectPropertyTranslator : ObjectContainerPropertyTranslator
 {
-    public SoftObjectPropertyTranslator() : base(typeof(UhtSoftObjectProperty))
+    public SoftObjectPropertyTranslator() : base(typeof(UhtSoftObjectProperty), "TSoftObjectPtr", "SoftObjectMarshaller")
     {
-    }
-    
-    public override bool CanExport(UhtProperty property)
-    {
-        return property is UhtSoftObjectProperty;
     }
 
-    public override string GetManagedType(UhtProperty property)
+    protected override UhtClass GetMetaClass(UhtObjectPropertyBase property)
     {
-        UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty)property;
-        string fullName = softObjectProperty.Class.GetFullManagedName();
-        return $"TSoftObjectPtr<{fullName}>";
+        UhtSoftObjectProperty softObjectProperty = (UhtSoftObjectProperty) property;
+        return softObjectProperty.Class;
     }
-
-    public override string GetMarshaller(UhtProperty property)
-    {
-        UhtSoftObjectProperty softClassProperty = (UhtSoftObjectProperty) property;
-        string fullName = softClassProperty.Class.GetFullManagedName();
-        return $"SoftObjectMarshaller<{fullName}>";
-    }
-
-    public override bool CanSupportGenericType(UhtProperty property) => false;
 }

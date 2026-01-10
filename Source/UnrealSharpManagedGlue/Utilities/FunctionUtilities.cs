@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.Exporters;
+using UnrealSharpManagedGlue.PropertyTranslators;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
+
+public struct GenericFunctionInfo
+{
+    public required UhtProperty DeterminesOutputType { get; init; }
+    public required UhtProperty DynamicOutputParam { get; init; }
+}
 
 public static class FunctionUtilities
 {
@@ -94,11 +100,13 @@ public static class FunctionUtilities
         {
             UhtProperty param = (UhtProperty) function.Children[i];
             UhtProperty otherParam = (UhtProperty) otherFunction.Children[i];
+            
             if (!param.IsSameType(otherParam))
             {
                 return false;
             }
         }
+        
         return true;
     }
     
@@ -205,8 +213,7 @@ public static class FunctionUtilities
             return false;
         }
         
-        return function.IsBlueprintAccessor("BlueprintGetter", property => property.GetBlueprintGetter()) 
-               || function.IsNativeAccessor(GetterSetterMode.Get);
+        return function.IsBlueprintAccessor("BlueprintGetter", property => property.GetBlueprintGetter()) || function.IsNativeAccessor(GetterSetterMode.Get);
     }
 
     public static bool IsAnySetter(this UhtFunction function)
@@ -219,67 +226,101 @@ public static class FunctionUtilities
         return function.IsBlueprintAccessor("BlueprintSetter", property => property.GetBlueprintSetter()) 
                || function.IsNativeAccessor(GetterSetterMode.Set);
     }
+    
+    public static bool TryGetGenericFunctionInfo(this UhtFunction function, out GenericFunctionInfo info)
+    {
+        info = default;
+
+        string dotName = function.GetMetadata("DeterminesOutputType");
+        string dopName = function.GetMetadata("DynamicOutputParam");
+        
+        if (!string.IsNullOrEmpty(dotName) && string.IsNullOrEmpty(dopName))
+        {
+            // If only DOT is specified, DOP is assumed to be the return value.
+            dopName = function.HasReturnProperty ? function.ReturnProperty!.EngineName : string.Empty;
+        }
+
+        IList<UhtProperty> allParameters = function.GetAllParameters();
+        UhtProperty? dot = allParameters.FirstOrDefault(p => p.EngineName == dotName);
+        UhtProperty? dop = allParameters.FirstOrDefault(p => p.EngineName == dopName);
+
+        if (dot == null || dop == null)
+        {
+            return false;
+        }
+
+        PropertyTranslator dotTranslator = dot.GetTranslator()!;
+        PropertyTranslator dopTranslator = dop.GetTranslator()!;
+
+        if (!dotTranslator.CanSupportGenericType(dot) || !dopTranslator.CanSupportGenericType(dop))
+        {
+            return false;
+        }
+
+        string dotGenericType = dot.GetGenericManagedType();
+        string dopGenericType = dop.GetGenericManagedType();
+        if (dotGenericType != dopGenericType)
+        {
+            return false;
+        }
+
+        info = new GenericFunctionInfo
+        {
+            DeterminesOutputType = dot,
+            DynamicOutputParam = dop
+        };
+
+        return true;
+    }
 
     public static bool HasGenericTypeSupport(this UhtFunction function)
     {
-        if (!function.HasMetadata("DeterminesOutputType")) return false;
-
-        var propertyDOTEngineName = function.GetMetadata("DeterminesOutputType");
-
-        var propertyDeterminingOutputType = function.Properties
-            .Where(p => p.EngineName == propertyDOTEngineName)
-            .FirstOrDefault();
-
-        if (propertyDeterminingOutputType == null) return false;
-
-        PropertyTranslator dotParamTranslator = PropertyTranslatorManager.GetTranslator(propertyDeterminingOutputType)!;
-        if (!dotParamTranslator.CanSupportGenericType(propertyDeterminingOutputType)) return false;
-
-        if (function.HasMetadata("DynamicOutputParam"))
-        {
-            var propertyDynamicOutputParam = function.Properties
-                .Where(p => p.EngineName == function.GetMetadata("DynamicOutputParam"))
-                .FirstOrDefault();
-
-            if (propertyDynamicOutputParam == null) return false;
-
-            if (propertyDeterminingOutputType!.GetGenericManagedType() != propertyDynamicOutputParam.GetGenericManagedType()) return false;
-
-            PropertyTranslator dopParamTranslator = PropertyTranslatorManager.GetTranslator(propertyDynamicOutputParam)!;
-            return dopParamTranslator.CanSupportGenericType(propertyDynamicOutputParam);
-        }
-        else if (function.HasReturnProperty)
-        {
-            PropertyTranslator returnParamTranslator = PropertyTranslatorManager.GetTranslator(function.ReturnProperty!)!;
-            return returnParamTranslator.CanSupportGenericType(function.ReturnProperty!);
-        }
-
-        return false;
+        return function.TryGetGenericFunctionInfo(out _);
     }
 
     public static string GetGenericTypeConstraint(this UhtFunction function)
     {
-        if (!function.HasMetadata("DeterminesOutputType")) return string.Empty;
+        if (!function.HasMetadata("DeterminesOutputType"))
+        {
+            return string.Empty;
+        }
 
-        var propertyDeterminingOutputType = function.Properties
-            .Where(p => p.EngineName == function.GetMetadata("DeterminesOutputType"))
-            .FirstOrDefault();
+        UhtProperty? propertyDeterminingOutputType = function.Properties.FirstOrDefault(p => p.EngineName == function.GetMetadata("DeterminesOutputType"));
 
         return propertyDeterminingOutputType?.GetGenericManagedType() ?? string.Empty;
     }
 
     public static bool HasCustomStructParamSupport(this UhtFunction function)
     {
-        if (!function.HasMetadata("CustomStructureParam")) return false;
+        if (!function.HasMetadata("CustomStructureParam"))
+        {
+            return false;
+        }
 
-        var customStructParams = function.GetCustomStructParams();
-        return customStructParams.All(customParamName =>
-            function.Properties.Count(param => param.EngineName == customParamName) == 1);
+        List<string> customStructParams = function.GetCustomStructParams();
+        return customStructParams.All(customParamName => function.Properties.Count(param => param.EngineName == customParamName) == 1);
+    }
+    
+    public static IList<UhtProperty> GetAllParameters(this UhtFunction function)
+    {
+        IList<UhtProperty> parameters = function.Properties.ToList();
+
+        if (!function.HasReturnProperty)
+        {
+            return parameters;
+        }
+        
+        parameters.Add(function.ReturnProperty!);
+        return parameters;
+
     }
 
     public static List<string> GetCustomStructParams(this UhtFunction function)
     {
-        if (!function.HasMetadata("CustomStructureParam")) return new List<string>();
+        if (!function.HasMetadata("CustomStructureParam"))
+        {
+            return new List<string>();
+        }
 
         return function.GetMetadata("CustomStructureParam").Split(",").ToList();
     }
@@ -288,9 +329,17 @@ public static class FunctionUtilities
     
     public static List<string> GetCustomStructParamTypes(this UhtFunction function)
     {
-        if (!function.HasMetadata("CustomStructureParam")) return new List<string>();
+        if (!function.HasMetadata("CustomStructureParam"))
+        {
+            return new List<string>();
+        }
+        
         int paramCount = function.GetCustomStructParamCount();
-        if (paramCount == 1) return new List<string> { "CSP" };
+        if (paramCount == 1)
+        {
+            return new List<string> { "CSP" };
+        }
+        
         return Enumerable.Range(0, paramCount).ToList().ConvertAll(i => $"CSP{i}");
     }
 

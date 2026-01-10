@@ -147,14 +147,12 @@ public static class SoftObjectMarshaller<T> where T : UObject
 {
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSoftObjectPtr<T> obj)
     {
-        BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.ToNative(nativeBuffer, arrayIndex,
-            obj.SoftObjectPtr.Data);
+        BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.ToNative(nativeBuffer, arrayIndex, obj.SoftObjectPtr.Data);
     }
 
     public static TSoftObjectPtr<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        FPersistentObjectPtrData<FSoftObjectPathUnsafe> softObjectPath =
-            BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.FromNative(nativeBuffer, arrayIndex);
+        FPersistentObjectPtrData<FSoftObjectPathUnsafe> softObjectPath = BlittableMarshaller<FPersistentObjectPtrData<FSoftObjectPathUnsafe>>.FromNative(nativeBuffer, arrayIndex);
         return new TSoftObjectPtr<T>(softObjectPath);
     }
 }

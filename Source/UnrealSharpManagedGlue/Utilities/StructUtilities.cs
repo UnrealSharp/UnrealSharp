@@ -1,8 +1,9 @@
-﻿using EpicGames.UHT.Types;
+﻿using System;
+using EpicGames.UHT.Types;
 using System.Collections.Generic;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.PropertyTranslators;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class StructUtilities
 {
@@ -45,9 +46,7 @@ public static class StructUtilities
 
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-
-            if (!translator.IsPrimitive)
+            if (property is not UhtNumericProperty or UhtBoolProperty or UhtStrProperty or UhtEnumProperty)
             {
                 return false;
             }
@@ -75,12 +74,12 @@ public static class StructUtilities
 
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            if (!translator.IsNumeric)
+            if (property is not UhtNumericProperty || property is UhtByteProperty byteProp && byteProp.Enum != null)
             {
                 return false;
             }
         }
+        
         return true;
     }
 }

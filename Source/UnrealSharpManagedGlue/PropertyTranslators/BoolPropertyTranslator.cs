@@ -1,14 +1,14 @@
 ﻿using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class BoolPropertyTranslator : SimpleTypePropertyTranslator
 {
-    private const string OffSetPostfix = "_Offset";
     private const string FieldMaskPostfix = "_FieldMask";
     
-    public BoolPropertyTranslator() : base(typeof(UhtBoolProperty), "bool", PropertyKind.Bool)
+    public BoolPropertyTranslator() : base(typeof(UhtBoolProperty), "bool", string.Empty)
     {
     }
 
@@ -21,7 +21,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     {
         if (property.IsBitfield && !property.HasGetterSetterPair())
         {
-            builder.AppendLine($"{GetFieldMaskFieldName(nativePropertyName)} = {ExporterCallbacks.FPropertyCallbacks}.CallGetBoolPropertyFieldMaskFromName(NativeClassPtr, \"{nativePropertyName}\");");
+            builder.AppendLine($"{GetFieldMaskFieldName(nativePropertyName)} = CallGetBoolPropertyFieldMaskFromName(NativeClassPtr, \"{nativePropertyName}\");");
         }
         
         base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
@@ -47,35 +47,29 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     {
         if (property.IsBitfield)
         {
-            builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), {GetFieldMaskFieldName(propertyName)}, {source});");
+            builder.AppendLine($"{GetMarshaller(property)}.ToNative({destinationBuffer} + {offset}, {GetFieldMaskFieldName(propertyName)}, {source});");
             return;
         }
         
         base.ExportToNative(builder, property, propertyName, destinationBuffer, offset, source);
     }
 
-    public override void ExportFromNative(
-        GeneratorStringBuilder builder,
-        UhtProperty property, 
+    public override void ExportFromNative(GeneratorStringBuilder builder,
+        UhtProperty property,
         string propertyName,
-        string assignmentOrReturn, 
-        string sourceBuffer, 
-        string offset, 
-        bool bCleanupSourceBuffer, 
+        string assignmentOrReturn,
+        string sourceBuffer,
+        string offset,
+        bool cleanupSourceBuffer,
         bool reuseRefMarshallers)
     {
         if (property.IsBitfield)
         {
-            builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative(IntPtr.Add({sourceBuffer}, {offset}), {GetFieldMaskFieldName(propertyName)});");
+            builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative({sourceBuffer} + {offset}, {GetFieldMaskFieldName(propertyName)});");
             return;
         }
         
-        base.ExportFromNative(builder, property, propertyName, assignmentOrReturn, sourceBuffer, offset, bCleanupSourceBuffer, reuseRefMarshallers);
-    }
-    
-    private string GetOffsetFieldName(string nativePropertyName)
-    {
-        return $"{nativePropertyName}{OffSetPostfix}";
+        base.ExportFromNative(builder, property, propertyName, assignmentOrReturn, sourceBuffer, offset, cleanupSourceBuffer, reuseRefMarshallers);
     }
     
     private string GetFieldMaskFieldName(string nativePropertyName)

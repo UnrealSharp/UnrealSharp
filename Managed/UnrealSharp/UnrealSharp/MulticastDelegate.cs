@@ -1,6 +1,4 @@
-﻿using UnrealSharp.Attributes;
-using UnrealSharp.Core;
-using UnrealSharp.Core.Attributes;
+﻿using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -8,14 +6,14 @@ namespace UnrealSharp;
 
 public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> where TDelegate : Delegate
 {
-    protected IntPtr NativeProperty;
-    protected IntPtr NativeDelegate;
+    IntPtr _nativeProperty;
+    IntPtr _nativeDelegate;
 
     public override void FromNative(IntPtr address, IntPtr nativeProperty)
     {
         // Keep a reference to the property and delegate for later usage
-        NativeDelegate = address;
-        NativeProperty = nativeProperty;
+        _nativeDelegate = address;
+        _nativeProperty = nativeProperty;
     }
 
     public override void ToNative(IntPtr address)
@@ -26,17 +24,22 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
 
     protected override void ProcessDelegate(IntPtr parameters)
     {
-        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(NativeProperty, NativeDelegate, parameters);
+        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(_nativeProperty, _nativeDelegate, parameters);
     }
 
     public override void BindUFunction(UObject targetObject, FName functionName)
     {
-        FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, functionName.ToString());
+        FMulticastDelegatePropertyExporter.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, functionName.ToString());
     }
 
     public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
     {
-        BindUFunction(targetObjectPtr.Object, functionName);
+        if (!targetObjectPtr.Object.IsValid())
+        {
+            return;
+        }
+        
+        BindUFunction(targetObjectPtr.Object!, functionName);
     }
 
     public override void Add(TDelegate handler)
@@ -45,7 +48,8 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         {
             throw new ArgumentException("The callback for a multicast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
-        FMulticastDelegatePropertyExporter.CallAddDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
+        
+        FMulticastDelegatePropertyExporter.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
     public override void Remove(TDelegate handler)
@@ -54,7 +58,8 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         {
             return;
         }
-        FMulticastDelegatePropertyExporter.CallRemoveDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name);
+        
+        FMulticastDelegatePropertyExporter.CallRemoveDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
     public override bool Contains(TDelegate handler)
@@ -63,13 +68,14 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
         {
             return false;
         }
-        return FMulticastDelegatePropertyExporter.CallContainsDelegate(NativeProperty, NativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
+        
+        return FMulticastDelegatePropertyExporter.CallContainsDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
     }
 
-    public override bool IsBound => FMulticastDelegatePropertyExporter.CallIsBound(NativeDelegate).ToManagedBool();
+    public override bool IsBound => FMulticastDelegatePropertyExporter.CallIsBound(_nativeDelegate).ToManagedBool();
 
     public override void Clear()
     {
-        FMulticastDelegatePropertyExporter.CallClearDelegate(NativeProperty, NativeDelegate);
+        FMulticastDelegatePropertyExporter.CallClearDelegate(_nativeProperty, _nativeDelegate);
     }
 }

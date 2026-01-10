@@ -4,25 +4,25 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Model;
+using UnrealSharpManagedGlue.Model;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public static class PropertyTranslatorManager
 {
     private static readonly Dictionary<Type, List<PropertyTranslator>?> RegisteredTranslators = new();
-
     public static SpecialTypeInfo SpecialTypeInfo { get; } = new();
     
     static PropertyTranslatorManager()
     {
-        var projectDirectory = Program.Factory.Session.ProjectDirectory;
-        var configDirectory = Path.Combine(projectDirectory!, "Config");
+        string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
+        string configDirectory = Path.Combine(projectDirectory!, "Config");
         
-        var pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
-        var pluginDirInfo = new DirectoryInfo(pluginDirectory);
-
-        var files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
+        string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
+        DirectoryInfo pluginDirInfo = new DirectoryInfo(pluginDirectory);
+        
+        IEnumerable<string> files = pluginDirInfo.GetFiles("*.uplugin", SearchOption.AllDirectories)
             .Select(x => x.DirectoryName!)
             .Select(x => Path.Combine(x, "Config"))
             .Concat(new List<string> { configDirectory })
@@ -30,12 +30,13 @@ public static class PropertyTranslatorManager
             .Where(x => x.Exists)
             .SelectMany(x => x.GetFiles("*.UnrealSharpTypes.json", SearchOption.AllDirectories))
             .Select(x => x.FullName);
-        foreach (var pluginFile in files)
+        
+        foreach (string pluginFile in files)
         {
-            using var fileStream = File.OpenRead(pluginFile);
+            using FileStream fileStream = File.OpenRead(pluginFile);
             try
             {
-                var manifest = JsonSerializer.Deserialize<TypeTranslationManifest>(fileStream);
+                TypeTranslationManifest? manifest = JsonSerializer.Deserialize<TypeTranslationManifest>(fileStream);
                 AddTranslationManifest(manifest!);
             }
             catch (JsonException e)
@@ -48,15 +49,15 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtEnumProperty), enumPropertyTranslator);
         AddPropertyTranslator(typeof(UhtByteProperty), enumPropertyTranslator);
         
-        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte", PropertyKind.SByte);
-        AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short", PropertyKind.Short);
-        AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long", PropertyKind.Long);
-        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort", PropertyKind.UShort);
-        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint", PropertyKind.UInt);
-        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong", PropertyKind.ULong);
-        AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double", PropertyKind.Double);
-        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte", PropertyKind.Byte);
-        AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double", PropertyKind.Double);
+        AddBlittablePropertyTranslator(typeof(UhtInt8Property), "sbyte");
+        AddBlittablePropertyTranslator(typeof(UhtInt16Property), "short");
+        AddBlittablePropertyTranslator(typeof(UhtInt64Property), "long");
+        AddBlittablePropertyTranslator(typeof(UhtUInt16Property), "ushort");
+        AddBlittablePropertyTranslator(typeof(UhtUInt32Property), "uint");
+        AddBlittablePropertyTranslator(typeof(UhtUInt64Property), "ulong");
+        AddBlittablePropertyTranslator(typeof(UhtDoubleProperty), "double");
+        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
+        AddBlittablePropertyTranslator(typeof(UhtLargeWorldCoordinatesRealProperty), "double");
         AddPropertyTranslator(typeof(UhtFloatProperty), new FloatPropertyTranslator());
         AddPropertyTranslator(typeof(UhtIntProperty), new IntPropertyTranslator());
 
@@ -66,7 +67,7 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtMulticastInlineDelegateProperty), multicastDelegatePropertyTranslator);
         AddPropertyTranslator(typeof(UhtDelegateProperty), new SinglecastDelegatePropertyTranslator());
         
-        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte", PropertyKind.Byte);
+        AddBlittablePropertyTranslator(typeof(UhtByteProperty), "byte");
         
         AddPropertyTranslator(typeof(UhtBoolProperty), new BoolPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStrProperty), new StringPropertyTranslator());
@@ -93,32 +94,50 @@ public static class PropertyTranslatorManager
         
         AddPropertyTranslator(typeof(UhtInterfaceProperty), new InterfacePropertyTranslator());
         
-        AddPropertyTranslator(typeof(UhtClassProperty), new ClassPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtClassProperty), new SubclassOfPropertyTranslator());
 #if !UE_5_6_OR_LATER
-        AddPropertyTranslator(typeof(UhtClassPtrProperty), new ClassPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtClassPtrProperty), new SubclassOfPropertyTranslator());
 #endif
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtFieldPathProperty), new FieldPathPropertyTranslator());
 
-        foreach (var (nativeName, managedType) in SpecialTypeInfo.Structs.BlittableTypes.Values)
+        foreach ((string nativeName, string? managedType) in SpecialTypeInfo.Structs.BlittableTypes.Values)
         {
             if (managedType is null)
             {
                 continue;
             }
 
-            AddBlittableCustomStructPropertyTranslator(nativeName, managedType);
+            AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
         }
 
-        AddPropertyTranslator(typeof(UhtArrayProperty), new ArrayPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtMapProperty), new MapPropertyTranslator());
-        AddPropertyTranslator(typeof(UhtSetProperty), new SetPropertyTranslator());
+        AddPropertyTranslator(typeof(UhtArrayProperty), new ContainerPropertyTranslator("ArrayCopyMarshaller",
+            "ArrayReadOnlyMarshaller",
+            "ArrayMarshaller",
+            "System.Collections.Generic.IReadOnlyList",
+            "System.Collections.Generic.IList"));
+        
+        AddPropertyTranslator(typeof(UhtMapProperty), new ContainerPropertyTranslator("MapCopyMarshaller",
+            "MapReadOnlyMarshaller",
+            "MapMarshaller",
+            "System.Collections.Generic.IReadOnlyDictionary",
+            "System.Collections.Generic.IDictionary"));
+        
+        AddPropertyTranslator(typeof(UhtSetProperty), new ContainerPropertyTranslator("SetCopyMarshaller", 
+            "SetReadOnlyMarshaller", 
+            "SetMarshaller", 
+            "System.Collections.Generic.IReadOnlySet", 
+            "System.Collections.Generic.ISet"));
+        
+        AddPropertyTranslator(typeof(UhtOptionalProperty), new ContainerPropertyTranslator("OptionalMarshaller",
+            "OptionalMarshaller",
+            "OptionalMarshaller",
+            "UnrealSharp.TOptional",
+            "UnrealSharp.TOptional"));
         
         AddPropertyTranslator(typeof(UhtStructProperty), new BlittableStructPropertyTranslator());
         AddPropertyTranslator(typeof(UhtStructProperty), new StructPropertyTranslator());
-        
-        AddPropertyTranslator(typeof(UhtOptionalProperty), new OptionalPropertyTranslator());
         
         // Manually exported properties
         InclusionLists.BanProperty("UWorld", "GameState");
@@ -148,12 +167,12 @@ public static class PropertyTranslatorManager
 
     public static void AddTranslationManifest(TypeTranslationManifest manifest)
     {
-        foreach (var skippedStruct in manifest.Structs.CustomTypes)
+        foreach (string skippedStruct in manifest.Structs.CustomTypes)
         {
             SpecialTypeInfo.Structs.SkippedTypes.Add(skippedStruct);
         }
         
-        foreach (var structInfo in manifest.Structs.BlittableTypes)
+        foreach (BlittableStructInfo structInfo in manifest.Structs.BlittableTypes)
         {
             if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
             {
@@ -161,7 +180,7 @@ public static class PropertyTranslatorManager
                     $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
             }
             
-            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out var existing))
+            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out BlittableStructInfo existing))
             {
                 if (structInfo.ManagedType is not null && existing.ManagedType is not null &&
                     structInfo.ManagedType != existing.ManagedType)
@@ -175,9 +194,9 @@ public static class PropertyTranslatorManager
             }
         }
 
-        foreach (var structInfo in manifest.Structs.NativelyTranslatableTypes)
+        foreach (NativelyTranslatableStructInfo structInfo in manifest.Structs.NativelyTranslatableTypes)
         {
-            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structInfo.Name, out var existing))
+            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structInfo.Name, out NativelyTranslatableStructInfo existing))
             {
                 SpecialTypeInfo.Structs.NativelyCopyableTypes[structInfo.Name] = existing with { HasDestructor = existing.HasDestructor || structInfo.HasDestructor };
                 continue;
@@ -193,9 +212,9 @@ public static class PropertyTranslatorManager
         }
     }
     
-    public static PropertyTranslator? GetTranslator(UhtProperty property)
+    public static PropertyTranslator? GetTranslator(this UhtProperty property)
     {
-        if (!RegisteredTranslators.TryGetValue(property.GetType(), out var translator))
+        if (!RegisteredTranslators.TryGetValue(property.GetType(), out List<PropertyTranslator>? translator))
         {
             return null;
         }
@@ -210,31 +229,29 @@ public static class PropertyTranslatorManager
         
         return null;
     }
-    
-    public static void AddBlittablePropertyTranslator(Type propertyType, string managedType, PropertyKind propertyKind = PropertyKind.Unknown)
+
+    static void AddBlittablePropertyTranslator(Type propertyType, string managedType)
     {
-        if (RegisteredTranslators.TryGetValue(propertyType, out var translators))
+        if (RegisteredTranslators.TryGetValue(propertyType, out List<PropertyTranslator>? translators))
         {
-            translators!.Add(new BlittableTypePropertyTranslator(propertyType, managedType, propertyKind));
+            translators!.Add(new BlittableTypePropertyTranslator(propertyType, managedType));
             return;
         }
         
-        RegisteredTranslators.Add(propertyType, new List<PropertyTranslator> {new BlittableTypePropertyTranslator(propertyType, managedType, propertyKind) });
+        RegisteredTranslators.Add(propertyType, new List<PropertyTranslator>
+        {
+            new BlittableTypePropertyTranslator(propertyType, managedType) 
+        });
     }
 
-    private static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
+    static void AddPropertyTranslator(Type propertyClass, PropertyTranslator translator)
     {
-        if (RegisteredTranslators.TryGetValue(propertyClass, out var translators))
+        if (RegisteredTranslators.TryGetValue(propertyClass, out List<PropertyTranslator>? translators))
         {
             translators!.Add(translator);
             return;
         }
         
         RegisteredTranslators.Add(propertyClass, new List<PropertyTranslator> {translator});
-    }
-    
-    private static void AddBlittableCustomStructPropertyTranslator(string nativeName, string managedType)
-    {
-        AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
     }
 }

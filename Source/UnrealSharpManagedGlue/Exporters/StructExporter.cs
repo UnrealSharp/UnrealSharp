@@ -1,12 +1,13 @@
 ﻿using EpicGames.UHT.Types;
-using System;
 using System.Collections.Generic;
 using System.Text;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Tooltip;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Attributes;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+using UnrealSharpManagedGlue.Tooltip;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class StructExporter
 {
@@ -17,6 +18,7 @@ public static class StructExporter
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
         List<UhtStruct> inheritanceHierarchy = new();
         UhtStruct? currentStruct = structObj;
+        
         while (currentStruct is not null)
         {
             inheritanceHierarchy.Add(currentStruct);
@@ -54,9 +56,8 @@ public static class StructExporter
         bool isCopyable = structObj.IsStructNativelyCopyable();
         bool isDestructible = structObj.IsStructNativelyDestructible();
         bool isEquatable = structObj.IsStructEquatable(exportedProperties);
-
-        string typeNameSpace = structObj.GetNamespace();
-        stringBuilder.GenerateTypeSkeleton(typeNameSpace, isBlittable, nullableEnabled);
+        
+        stringBuilder.StartGlueFile(structObj, isBlittable, nullableEnabled);
                 
         stringBuilder.AppendTooltip(structObj);
         
@@ -96,9 +97,7 @@ public static class StructExporter
 
         if (isCopyable)
         {
-            stringBuilder.AppendLine(isDestructible
-                ? "private NativeStructHandle NativeHandle;"
-                : "private byte[] Allocation;");
+            stringBuilder.AppendLine(isDestructible ? "private NativeStructHandle NativeHandle;" : "private byte[] Allocation;");
         }
         
         // For manual exports we just want to generate attributes
@@ -118,6 +117,7 @@ public static class StructExporter
                 new Dictionary<UhtProperty, GetterSetterPair>(),
                 new List<UhtFunction>(), 
                 true);
+            
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"public static {structName} FromNative(IntPtr buffer) => BlittableMarshaller<{structName}>.FromNative(buffer, 0);");
             stringBuilder.AppendLine();
@@ -147,12 +147,12 @@ public static class StructExporter
 
         if (isEquatable)
         {
-            ExportStructEquality(structObj, structName, stringBuilder, exportedProperties);
+            ExportStructEquality(structName, stringBuilder, exportedProperties);
         }
 
         if (structObj.CanSupportArithmetic(exportedProperties))
         {
-            ExportStructArithmetic(structObj, structName, stringBuilder, exportedProperties);
+            ExportStructArithmetic(structName, stringBuilder, exportedProperties);
         }
 
         stringBuilder.CloseBrace();
@@ -162,14 +162,14 @@ public static class StructExporter
             ExportStructMarshaller(stringBuilder, structObj);
         }
         
-        
+        stringBuilder.EndGlueFile(structObj);
         FileExporter.SaveGlueToDisk(structObj, stringBuilder);
     }
 
-    public static void ExportStructEquality(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    public static void ExportStructEquality(string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
     {
         stringBuilder.AppendLine();
-        stringBuilder.AppendLine($"public override bool Equals(object? obj)");
+        stringBuilder.AppendLine("public override bool Equals(object? obj)");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine($"return obj is {structName} other && Equals(other);");
         stringBuilder.CloseBrace();
@@ -200,10 +200,12 @@ public static class StructExporter
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("public override int GetHashCode()");
         stringBuilder.OpenBrace();
+        
         if (exportedProperties.Count == 0)
         {
             stringBuilder.AppendLine("return 0;");
         }
+        
         // More accurate hashcode equality
         else if (exportedProperties.Count <= 8)
         {
@@ -253,7 +255,7 @@ public static class StructExporter
         stringBuilder.CloseBrace();
     }
 
-    public static void ExportStructArithmetic(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    public static void ExportStructArithmetic(string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
     {
         // Addition operator
         stringBuilder.AppendLine();
@@ -265,8 +267,7 @@ public static class StructExporter
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Add);
 
@@ -290,8 +291,7 @@ public static class StructExporter
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Subtract);
 
@@ -315,8 +315,7 @@ public static class StructExporter
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Multiply);
 
@@ -341,7 +340,7 @@ public static class StructExporter
         {
             UhtProperty property = exportedProperties[i];
             string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Divide);
 
@@ -365,8 +364,7 @@ public static class StructExporter
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Modulo);
 
@@ -385,7 +383,7 @@ public static class StructExporter
     {
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
             translator.ExportMirrorProperty(structObj, stringBuilder, property, suppressOffsets, reservedNames, isReadOnly, useProperties);
         }
     }
@@ -436,6 +434,7 @@ public static class StructExporter
         string structName = structObj.GetStructName();
         bool isCopyable = structObj.IsStructNativelyCopyable();
         bool isDestructible = structObj.IsStructNativelyDestructible();
+        
         if (isCopyable)
         {
             builder.AppendLine();
@@ -476,7 +475,7 @@ public static class StructExporter
         {
             foreach (UhtProperty property in properties)
             {
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                PropertyTranslator translator = property.GetTranslator()!;
                 string scriptName = property.GetPropertyName();
                 string assignmentOrReturn = $"{scriptName} =";
                 string offsetName = $"{property.SourceName}_Offset";
@@ -528,7 +527,7 @@ public static class StructExporter
         {
             foreach (UhtProperty property in properties)
             {
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                PropertyTranslator translator = property.GetTranslator()!;
                 string scriptName = property.GetPropertyName();
                 string offsetName = $"{property.SourceName}_Offset";
                 builder.TryAddWithEditor(property);

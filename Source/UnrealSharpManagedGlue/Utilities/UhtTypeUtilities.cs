@@ -1,10 +1,25 @@
 ﻿using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class UhtTypeUtilities
 {
     public const string NullableEnable = "NullableEnable";
+    
+    public static T? GetTypedOuter<T>(this UhtType type) where T : UhtType
+    {
+        while (type.Outer != null)
+        {
+            if (type.Outer is T typedOuter)
+            {
+                return typedOuter;
+            }
+
+            type = type.Outer;
+        }
+        
+        return null;
+    }
     
     public static bool HasMetadata(this UhtType type, string metadataName)
     {

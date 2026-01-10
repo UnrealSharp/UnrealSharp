@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Utils;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 public static class GlueModuleFactory
 {
@@ -64,7 +64,7 @@ public static class GlueModuleFactory
         // Used for runtime generated code such as GameplayTags.
         if (!hasProjectGlue)
         {
-            UhtSession session = Program.Factory.Session;
+            UhtSession session = GeneratorStatics.Factory.Session;
             string projectRoot = session.ProjectDirectory!;
             string baseName = Path.GetFileNameWithoutExtension(session.ProjectFile!);
             string projectName = baseName + ".Glue";

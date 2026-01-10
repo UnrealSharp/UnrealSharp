@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PluginUtilities
 {
@@ -15,7 +15,7 @@ public static class PluginUtilities
 
     static PluginUtilities()
     {
-        string? projectDirectory = Program.Factory.Session.ProjectDirectory;
+        string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
         string pluginDirectory = Path.Combine(projectDirectory!, "Plugins");
         DirectoryInfo pluginDirInfo = new DirectoryInfo(pluginDirectory);
         
@@ -65,7 +65,7 @@ public static class PluginUtilities
             }
             else
             {
-                info = new ProjectDirInfo("Engine", Program.EngineGluePath, dependencies); 
+                info = new ProjectDirInfo("Engine", GeneratorStatics.EngineGluePath, dependencies); 
             }
         }
         else

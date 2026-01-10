@@ -1,8 +1,9 @@
 ﻿using System;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class DelegateBasePropertyTranslator : PropertyTranslator
 {
@@ -50,11 +51,6 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     {
         return $"{function.GetNamespace()}.{GetDelegateName(function)}";
     }
-
-    public static string GetFullWrapperName(UhtFunction function)
-    {
-        return $"{function.GetNamespace()}.{GetWrapperName(function)}";
-    }
     
     public static string GetWrapperName(UhtFunction function)
     {
@@ -87,7 +83,8 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
-        string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer, bool reuseRefMarshallers)
+        string assignmentOrReturn, string sourceBuffer, string offset, bool cleanupSourceBuffer,
+        bool reuseRefMarshallers)
     {
         throw new NotImplementedException();
     }
@@ -98,7 +95,7 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
         throw new NotImplementedException();
     }
 
-    public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
+    public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
     {
         throw new NotImplementedException();
     }

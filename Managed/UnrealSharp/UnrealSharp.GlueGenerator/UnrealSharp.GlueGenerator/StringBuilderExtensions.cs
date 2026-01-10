@@ -122,13 +122,15 @@ public static class StringBuilderExtensions
 
     public static void StartModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
     {
+        string initializerName = $"{type.SourceName}_Initializer";
+        
         builder.AppendLine();
-        builder.AppendLine($"file static class {type.SourceName}_Initializer");
+        builder.AppendLine($"file static class {initializerName}");
         builder.OpenBrace();
         builder.AppendLine("#pragma warning disable CA2255");
         builder.AppendLine("[System.Runtime.CompilerServices.ModuleInitializer]");
         builder.AppendLine("#pragma warning restore CA2255");
-        builder.AppendLine($"public static void Register() => UnrealSharp.Core.StartUpJobManager.RegisterStartUpJob(\"{type.AssemblyName}\", Initialize);");
+        builder.AppendLine($"public static void Register() => UnrealSharp.Core.StartupJobManager.Register(typeof({initializerName}).Assembly, Initialize);");
     }
     
     public static void AllocateParameterBuffer(this GeneratorStringBuilder builder, string sizeName)

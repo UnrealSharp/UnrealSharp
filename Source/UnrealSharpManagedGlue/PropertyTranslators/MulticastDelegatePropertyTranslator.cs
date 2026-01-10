@@ -1,7 +1,8 @@
 ﻿using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslator
 {
@@ -24,21 +25,6 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
     {
         UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
         return $"TMulticastDelegate<{GetFullDelegateName(multicastDelegateProperty.Function)}>";
-    }
-
-    public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
-    {
-        base.ExportPropertyStaticConstructor(builder, property, nativePropertyName);
-        
-        UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
-
-        if (!multicastDelegateProperty.Function.HasParameters)
-        {
-            return;
-        }
-        
-        string fullDelegateName = GetFullWrapperName(multicastDelegateProperty.Function);
-        builder.AppendLine($"{fullDelegateName}.InitializeUnrealDelegate({nativePropertyName}_NativeProperty);");
     }
     
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
@@ -65,7 +51,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         builder.AppendLine("return;");
         builder.CloseBrace();
         builder.AppendLine($"{backingField} = value;");
-        builder.AppendLine($"MulticastDelegateMarshaller<{fullDelegateName}>.ToNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), 0, value);");
+        builder.AppendLine($"MulticastDelegateMarshaller<{fullDelegateName}>.ToNative(NativeObject + {propertyManagedName}_Offset, 0, value);");
     }
 
     public override void ExportPropertyGetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
@@ -78,7 +64,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         
         builder.AppendLine($"if ({backingField} == null)");
         builder.OpenBrace();
-        builder.AppendLine($"{backingField} = MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(IntPtr.Add(NativeObject, {propertyManagedName}_Offset), {propertyFieldName}, 0);");
+        builder.AppendLine($"{backingField} = MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, {propertyFieldName}, 0);");
         builder.CloseBrace();
         builder.AppendLine($"return {backingField};");
     }

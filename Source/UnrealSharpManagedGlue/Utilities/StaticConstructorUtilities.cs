@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class StaticConstructorUtilities
 {
@@ -30,7 +31,11 @@ public static class StaticConstructorUtilities
         
         if (scriptStructObj != null)
         {
-            if(classObj == null) generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
+            if (classObj == null)
+            {
+                generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
+            }
+            
             if (isBlittable)
             {
                 generatorStringBuilder.AppendLine("public static int GetNativeDataSize()");
@@ -113,15 +118,14 @@ public static class StaticConstructorUtilities
                     continue;
                 }
 
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                PropertyTranslator translator = property.GetTranslator()!;
                 translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
             }
             
             if (hasCustomStructParams)
             {
                 List<string> customStructParams = function.GetCustomStructParams();
-                List<string> initializerElements = customStructParams.ConvertAll(param =>
-                    $"{ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({nativeFunctionName}, \"{param}\")");
+                List<string> initializerElements = customStructParams.ConvertAll(param => $"CallGetNativePropertyFromName({nativeFunctionName}, \"{param}\")");
                 generatorStringBuilder.AppendLine($"{functionName}_CustomStructureNativeProperties = new IntPtr[]{{{string.Join(", ", initializerElements)}}};");
             }
         }
@@ -149,7 +153,7 @@ public static class StaticConstructorUtilities
                         continue;
                     }
                 
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                    PropertyTranslator translator = property.GetTranslator()!;
                     translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
                 }
             }
@@ -177,7 +181,7 @@ public static class StaticConstructorUtilities
     private static void ExportPropertyStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtProperty property)
     {
         generatorStringBuilder.TryAddWithEditor(property);
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+        PropertyTranslator translator = property.GetTranslator()!;
         translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.SourceName);
         generatorStringBuilder.TryEndWithEditor(property);
     }

@@ -1,14 +1,12 @@
-﻿using System;
-using System.Text;
-using EpicGames.Core;
-using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+﻿using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class BlittableStructPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public BlittableStructPropertyTranslator() : base(typeof(UhtStructProperty), "", PropertyKind.Unknown)
+    public BlittableStructPropertyTranslator() : base(typeof(UhtStructProperty), "")
     {
     }
     

@@ -1,21 +1,21 @@
 ﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class DelegateExporter
 {
     public static void ExportDelegate(UhtFunction function)
     {
         string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
-        string delegateNamespace = function.GetNamespace();
         
-        GeneratorStringBuilder builder = new();
+        GeneratorStringBuilder stringBuilder = new();
         
-        builder.GenerateTypeSkeleton(delegateNamespace);
-        builder.AppendLine();
+        stringBuilder.StartGlueFile(function);
+        stringBuilder.AppendLine();
         
         string superClass;
         if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
@@ -27,29 +27,33 @@ public static class DelegateExporter
             superClass = $"Delegate<{delegateName}>";
         }
         
-        FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(builder, function, delegateName);
+        FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(stringBuilder, function, delegateName);
         string wrapperName = DelegateBasePropertyTranslator.GetWrapperName(function);
         
-        builder.DeclareType(function, "class", wrapperName, superClass);
+        stringBuilder.DeclareType(function, "class", wrapperName, superClass);
         
-        FunctionExporter.ExportDelegateGlue(builder, functionExporter);
+        FunctionExporter.ExportDelegateGlue(stringBuilder, functionExporter, delegateName);
         
-        builder.AppendLine("static public void InitializeUnrealDelegate(IntPtr nativeDelegateProperty)");
-        builder.OpenBrace();
-        ExportDelegateFunctionStaticConstruction(builder, function);
-        builder.CloseBrace();
-        builder.CloseBrace();
+        stringBuilder.AppendLine($"static {wrapperName}()");
+        stringBuilder.OpenBrace();
+        ExportDelegateFunctionStaticConstruction(stringBuilder, function, wrapperName);
+        stringBuilder.CloseBrace();
+        
+        stringBuilder.CloseBrace();
+        
+        FunctionExporter.ExportDelegateExtensions(stringBuilder, functionExporter, superClass);
         
         // Use modified delegate name (with Outer prefix) as file name to prevent same-named delegates from overwriting each other
         string directory = FileExporter.GetDirectoryPath(function.Package);
-        
-        FileExporter.SaveGlueToDisk(function.Package, directory, delegateName, builder.ToString());
+
+        stringBuilder.EndGlueFile(function);
+        FileExporter.SaveGlueToDisk(function.Package, directory, delegateName, stringBuilder.ToString());
     }
 
-    private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
+    private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function, string wrapperName)
     {
         string delegateName = function.SourceName;
-        builder.AppendLine($"{delegateName}_NativeFunction = FMulticastDelegatePropertyExporter.CallGetSignatureFunction(nativeDelegateProperty);");
+        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({NameMapper.ExportGetAssemblyName(wrapperName)}, \"{function.GetNamespace()}\", \"{function.EngineName}\");");
         if (function.HasParameters)
         {
             builder.AppendLine($"{delegateName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({delegateName}_NativeFunction);");
@@ -57,7 +61,7 @@ public static class DelegateExporter
         
         foreach (UhtProperty parameter in function.Properties)
         {
-            PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(parameter)!;
+            PropertyTranslator propertyTranslator = parameter.GetTranslator()!;
             propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, parameter.SourceName, delegateName);
         }
     }

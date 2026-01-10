@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace UnrealSharpScriptGenerator.Model;
+namespace UnrealSharpManagedGlue.Model;
 
 public record struct BlittableStructInfo(string Name, string? ManagedType = null);
 

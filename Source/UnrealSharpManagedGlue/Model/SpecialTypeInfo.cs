@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace UnrealSharpScriptGenerator.Model;
+namespace UnrealSharpManagedGlue.Model;
 
 public record struct SpecialStructInfo
 {

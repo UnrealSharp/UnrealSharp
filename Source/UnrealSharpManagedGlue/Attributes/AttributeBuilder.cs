@@ -2,8 +2,9 @@
 using System.Text;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Attributes;
 
 public class AttributeBuilder
 {
@@ -19,26 +20,6 @@ public class AttributeBuilder
     public AttributeBuilder(UhtType type) : this()
     {
         AddAttribute(GetAttributeForType(type));
-    }
-
-    public void AddGeneratedTypeAttribute(UhtType type)
-    {
-        AddAttribute("GeneratedType");
-        AddArgument($"\"{type.EngineName}\"");
-        
-        string fullName = type.GetNamespace() + "." + type.EngineName;
-        AddArgument($"\"{fullName}\"");
-    }
-    
-    // Generate GeneratedType attribute for delegate using modified C# type name (with Outer prefix)
-    public void AddGeneratedDelegateTypeAttribute(UhtFunction delegateFunction, string csharpDelegateName)
-    {
-        AddAttribute("GeneratedType");
-        // First parameter: Original UE reflection name (used for runtime UDelegateFunction lookup)
-        AddArgument($"\"{delegateFunction.EngineName}\"");
-        // Second parameter: Modified full C# type name (with Outer prefix to avoid conflicts)
-        string fullName = delegateFunction.GetNamespace() + "." + csharpDelegateName;
-        AddArgument($"\"{fullName}\"");
     }
     
     public void AddIsBlittableAttribute()

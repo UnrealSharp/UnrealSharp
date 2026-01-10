@@ -1,7 +1,8 @@
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
 {
@@ -15,7 +16,7 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
         string offset, string source)
     {
-        builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, UnrealSharp.Core.FCSManagerExporter.CallGetCurrentWorldContext());");
+        builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative({destinationBuffer} + {offset}, 0, UnrealSharp.Core.FCSManagerExporter.CallGetCurrentWorldContext());");
     }
 
     public override bool CanSupportGenericType(UhtProperty property) => false;

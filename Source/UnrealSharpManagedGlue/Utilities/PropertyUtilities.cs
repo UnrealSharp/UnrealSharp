@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.Exporters;
+using UnrealSharpManagedGlue.PropertyTranslators;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PropertyUtilities
 {
@@ -118,7 +117,7 @@ public static class PropertyUtilities
             return false;
         }
 
-        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != Program.Factory.Session.UObject)
+        if (property is not UhtObjectProperty objectProperty || objectProperty.Class != GeneratorStatics.Factory.Session.UObject)
         {
             return false;
         }
@@ -150,6 +149,46 @@ public static class PropertyUtilities
     public static bool IsEditInstanceOnly(this UhtProperty property)
     {
         return property.HasAllFlags(EPropertyFlags.Edit | EPropertyFlags.DisableEditOnTemplate);
+    }
+    
+    public static void ForEachInnerProperty(this UhtContainerBaseProperty property, Action<UhtProperty> action)
+    {
+        action(property.ValueProperty);
+        
+        if (property is UhtMapProperty mapProperty)
+        {
+            action(mapProperty.KeyProperty);
+        }
+    }
+    
+    public static void ForEachInnerPropertyTranslator(this UhtContainerBaseProperty property, Action<PropertyTranslator> action)
+    {
+        List<UhtProperty> innerProperties = property.GetInnerProperties();
+        foreach (UhtProperty innerProperty in innerProperties)
+        {
+            PropertyTranslator translator = innerProperty.GetTranslator()!;
+            action(translator);
+        }
+    }
+    
+    public static List<UhtProperty> GetInnerProperties(this UhtContainerBaseProperty property)
+    {
+        List<UhtProperty> innerProperties = new List<UhtProperty>(2);
+        ForEachInnerProperty(property, innerProperty => innerProperties.Add(innerProperty));
+        return innerProperties;
+    }
+    
+    public static List<PropertyTranslator> GetInnerPropertyTranslators(this UhtContainerBaseProperty property)
+    {
+        List<PropertyTranslator> innerTranslators = new List<PropertyTranslator>(2);
+        
+        ForEachInnerProperty(property, innerProperty =>
+        {
+            PropertyTranslator translator = innerProperty.GetTranslator()!;
+            innerTranslators.Add(translator);
+        });
+        
+        return innerTranslators;
     }
     
     public static UhtFunction? TryGetBlueprintAccessor(this UhtProperty property, GetterSetterMode accessorType)
@@ -279,76 +318,52 @@ public static class PropertyUtilities
         return ScriptGeneratorUtilities.PrivateKeyword;
     }
 
-    public static bool DeterminesOutputType(this UhtProperty property)
-    {
-        if (property.Outer is not UhtFunction function) return false;
-        return function.HasMetadata("DeterminesOutputType");
-    }
-
     public static bool IsGenericType(this UhtProperty property)
     {
-        if (property.Outer is not UhtFunction function) return false;
-        if (!function.HasGenericTypeSupport()) return false;
-
-        if (function.HasMetadata("DynamicOutputParam")
-            && function.GetMetadata("DynamicOutputParam") == property.EngineName)
+        UhtFunction? function = property.GetTypedOuter<UhtFunction>();
+        if (function == null)
         {
-            var propertyDeterminingOutputType = function.Properties
-                .Where(p => p.EngineName == function.GetMetadata("DeterminesOutputType"))
-                .FirstOrDefault();
-
-            if (propertyDeterminingOutputType == null) return false;
-
-            if (propertyDeterminingOutputType!.GetGenericManagedType() != property.GetGenericManagedType()) return false;
-
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            return translator.CanSupportGenericType(property);
+            return false;
         }
-        else if (!function.HasMetadata("DynamicOutputParam") && property.HasAllFlags(EPropertyFlags.ReturnParm))
+        
+        if (!function.TryGetGenericFunctionInfo(out GenericFunctionInfo info))
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            return translator.CanSupportGenericType(property);
-        }
-        else if (function.GetMetadata("DeterminesOutputType") == property.EngineName)
-        {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
-            return translator.CanSupportGenericType(property);
+            return false;
         }
 
-        return false;
+        string propertyGenericType = property.GetGenericManagedType();
+        string determinesGenericType = info.DeterminesOutputType.GetGenericManagedType();
+        return propertyGenericType == determinesGenericType;
     }
 
     public static string GetGenericManagedType(this UhtProperty property)
     {
-        if (property is UhtClassProperty classProperty)
+        return property switch
         {
-            return classProperty.MetaClass!.GetFullManagedName();
-        }
-        else if (property is UhtSoftClassProperty softClassProperty)
-        {
-            return softClassProperty.MetaClass!.GetFullManagedName();
-        }
-        else if (property is UhtContainerBaseProperty containerProperty)
-        {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(containerProperty.ValueProperty)!;
-            return translator.GetManagedType(containerProperty.ValueProperty);
-        }
-        else if (property is UhtObjectProperty objectProperty)
-        {
-            return objectProperty.Class.GetFullManagedName();
-        }
-
-        return "";
+            UhtSoftObjectProperty softClass => softClass.Class.GetFullManagedName(),
+            UhtClassProperty softClass => softClass.MetaClass!.GetFullManagedName(),
+            UhtObjectProperty objProp => objProp.Class.GetFullManagedName(),
+            UhtContainerBaseProperty container => GetGenericManagedType(container.ValueProperty),
+            UhtObjectPropertyBase objBase => objBase.MetaClass!.GetFullManagedName(),
+            _ => string.Empty
+        };
     }
-
+    
     public static bool IsCustomStructureType(this UhtProperty property)
     {
-        if (property.Outer is not UhtFunction function) return false;
-        if (!function.HasCustomStructParamSupport()) return false;
+        if (property.Outer is not UhtFunction function)
+        {
+            return false;
+        }
+        
+        if (!function.HasCustomStructParamSupport())
+        {
+            return false;
+        }
 
         if (function.GetCustomStructParams().Contains(property.EngineName))
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
             return translator.CanSupportCustomStruct(property);
         }
 
@@ -357,16 +372,26 @@ public static class PropertyUtilities
 
     public static List<UhtProperty>? GetPrecedingParams(this UhtProperty property)
     {
-        if (property.Outer is not UhtFunction function) return null;
+        if (property.Outer is not UhtFunction function)
+        {
+            return null;
+        }
+        
         return function.Children.Cast<UhtProperty>().TakeWhile(param => param != property).ToList();
     }
     
     public static int GetPrecedingCustomStructParams(this UhtProperty property)
     {
-        if (property.Outer is not UhtFunction function) return 0;
-        if (!function.HasCustomStructParamSupport()) return 0;
+        if (property.Outer is not UhtFunction function)
+        {
+            return 0;
+        }
 
-        return property.GetPrecedingParams()!
-            .Count(param => param.IsCustomStructureType());
+        if (!function.HasCustomStructParamSupport())
+        {
+            return 0;
+        }
+
+        return property.GetPrecedingParams()!.Count(param => param.IsCustomStructureType());
     }
 }

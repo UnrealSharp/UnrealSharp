@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using EpicGames.Core;
@@ -9,9 +7,8 @@ using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
-using UnrealSharpScriptGenerator.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 [UnrealHeaderTool]
 public static class NativeBindExporter
@@ -53,13 +50,6 @@ public static class NativeBindExporter
     private static UhtParseResult UNREALSHARP_FUNCTIONKeyword(UhtParsingScope topScope, UhtParsingScope actionScope, ref UhtToken token)
     {
         return ParseUnrealSharpBind(topScope, actionScope, ref token);
-    }
-    
-    [UhtSpecifier(Extends = UhtTableNames.Function, ValueType = UhtSpecifierValueType.Legacy)]
-    private static void ScriptCallableSpecifier(UhtSpecifierContext specifierContext)
-    {
-        UhtFunction function = (UhtFunction)specifierContext.Type;
-        function.MetaData.Add("ScriptCallable", "");
     }
     
     private static UhtParseResult ParseUnrealSharpBind(UhtParsingScope topScope, UhtParsingScope actionScope, ref UhtToken token)

@@ -436,7 +436,7 @@ UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, 
 	}
 
 	FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
-	UCSManagedAssembly* ExistingAssembly = FindAssembly(FName(*AssemblyName));
+	UCSManagedAssembly* ExistingAssembly = FindAssembly(*AssemblyName);
 	
 	if (IsValid(ExistingAssembly) && ExistingAssembly->IsValidAssembly())
 	{

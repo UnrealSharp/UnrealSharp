@@ -45,13 +45,13 @@ public static class PluginLoader
             
             LoadedPlugins.Add(plugin);
 
-            if (!StartUpJobManager.HasJobsForAssembly(assemblyName.Name!))
+            if (!StartupJobManager.HasJobs(loadedAssembly))
             {
                 // Sometimes the module initializer doesn't run automatically, so we force it here
                 RuntimeHelpers.RunModuleConstructor(loadedAssembly.ManifestModule.ModuleHandle);
             }
             
-            StartUpJobManager.RunStartUpJobForAssembly(assemblyName.Name!);
+            StartupJobManager.RunForAssembly(loadedAssembly);
             
             LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
             return loadedAssembly;

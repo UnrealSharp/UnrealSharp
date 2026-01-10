@@ -1,28 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading.Tasks;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
-using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.Model;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Exporters;
+using UnrealSharpManagedGlue.Model;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 public static class CSharpExporter
 {
-    private const string SpecialtypesJson = "SpecialTypes.json";
+    private const string SpecialTypesJson = "SpecialTypes.json";
     public static bool HasModifiedEngineGlue;
-
-    private static readonly List<Task> Tasks = new();
-    private static readonly List<string> ExportedDelegates = new();
-
+    
     public static void StartExport()
     {
         if (HasChangedGeneratorSourceRecently())
@@ -32,13 +26,13 @@ public static class CSharpExporter
         }
         else
         {
-            ModuleHeadersTracker.DeserializeModuleHeaders();
+            PackageHeadersTracker.DeserializeModuleHeaders();
         }
 
         Console.WriteLine("Starting C# export of Unreal Engine API...");
 
         #if UE_5_5_OR_LATER
-        foreach (UhtModule module in Program.Factory.Session.Modules)
+        foreach (UhtModule module in GeneratorStatics.Factory.Session.Modules)
         {
             foreach (UhtPackage modulePackage in module.Packages)
             {
@@ -51,27 +45,17 @@ public static class CSharpExporter
             ExportPackage(package);
         }
         #endif
-
-        WaitForTasks();
-
-        FunctionExporter.StartExportingExtensionMethods(Tasks);
-
-        WaitForTasks();
-
-        AutocastExporter.StartExportingAutocastFunctions(Tasks);
-
-        WaitForTasks();
-
-        Console.WriteLine("Exporting UE5 defines");
-        PreprocessorExporter.StartExportingPreprocessors(Program.Factory.Session.EngineDirectory, Tasks);
-
-        WaitForTasks();
-
-        ModuleHeadersTracker.SerializeModuleData();
-
-        string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
-        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
-        OutputTypeRules(typeInfoFilePath);
+        
+        PreprocessorExporter.StartExportingPreprocessors();
+        PackageHeadersTracker.SerializeModuleData();
+        OutputTypeRules();
+        
+        TaskManager.WaitForTasks();
+        
+        FunctionExporter.StartExportingExtensionMethods();
+        AutocastExporter.StartExportingAutocastFunctions();
+        
+        TaskManager.WaitForTasks();
     }
 
     static bool HasChangedGeneratorSourceRecently()
@@ -79,11 +63,11 @@ public static class CSharpExporter
         string executingAssemblyPath = Assembly.GetExecutingAssembly().Location;
         DateTime executingAssemblyLastWriteTime = File.GetLastWriteTimeUtc(executingAssemblyPath);
 
-        string generatedCodeDirectory = Program.PluginModule.OutputDirectory;
+        string generatedCodeDirectory = GeneratorStatics.PluginModule.OutputDirectory;
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
-        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialtypesJson);
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialTypesJson);
 
-        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(Program.EngineGluePath))
+        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(GeneratorStatics.EngineGluePath))
         {
             return true;
         }
@@ -99,8 +83,9 @@ public static class CSharpExporter
 
     static bool TypeRulesChanged(string typeInfoFilePath)
     {
-        using var fs = new FileStream(typeInfoFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var rules = JsonSerializer.Deserialize<SpecialTypeInfo>(fs);
+        using FileStream fileStream = new FileStream(typeInfoFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        
+        SpecialTypeInfo? rules = JsonSerializer.Deserialize<SpecialTypeInfo>(fileStream);
         if (rules == null)
         {
             return true;
@@ -109,30 +94,18 @@ public static class CSharpExporter
         return !rules.Equals(PropertyTranslatorManager.SpecialTypeInfo);
     }
 
-    static void OutputTypeRules(string typeInfoFilePath)
+    static void OutputTypeRules()
     {
-        using var fs = new FileStream(typeInfoFilePath, FileMode.Create, FileAccess.Write);
-        JsonSerializer.Serialize(fs, PropertyTranslatorManager.SpecialTypeInfo);
-    }
-
-    private static void WaitForTasks()
-    {
-        Task[] waitTasks = Tasks.ToArray();
-        if (waitTasks.Length > 0)
-        {
-            Task.WaitAll(waitTasks);
-        }
-        Tasks.Clear();
+        string generatedCodeDirectory = GeneratorStatics.PluginModule.OutputDirectory;
+        string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialTypesJson);
+        
+        using var fileStream = new FileStream(typeInfoFilePath, FileMode.Create, FileAccess.Write);
+        JsonSerializer.Serialize(fileStream, PropertyTranslatorManager.SpecialTypeInfo);
     }
 
     private static void ExportPackage(UhtPackage package)
     {
-        if (!package.ShouldExport())
-        {
-            return;
-        }
-
-        if (!Program.BuildingEditor && package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly))
+        if (!package.ShouldExportPackage())
         {
             return;
         }
@@ -144,20 +117,16 @@ public static class CSharpExporter
 
         string packageName = package.GetShortName();
         string generatedPath = FileExporter.GetDirectoryPath(package);
-        bool doesDirectoryExist = Directory.Exists(generatedPath);
+        bool generatedGlueFolderExists = Directory.Exists(generatedPath);
 
-        List<UhtHeaderFile> processedHeaders = new List<UhtHeaderFile>(package.Children.Count);
+        UhtHeaderFile[] processedHeaders = new UhtHeaderFile[package.Children.Count];
         
-        foreach (UhtType child in package.Children)
+        for (int i = 0; i < package.Children.Count; i++)
         {
-            if (!doesDirectoryExist || ModuleHeadersTracker.HasHeaderChanged(packageName, child.HeaderFile))
+            UhtType child = package.Children[i];
+            
+            if (!generatedGlueFolderExists || PackageHeadersTracker.HasHeaderFileChanged(packageName, child.HeaderFile))
             {
-                if (ModuleHeadersTracker.HasDataFromDisk)
-                {
-                    string headerFileName = Path.GetFileName(child.HeaderFile.FilePath);
-                    Console.WriteLine($"Detected changes in header file: {headerFileName}, re-exporting...");
-                }
-                
                 ForEachChild(child, ExportType);
             }
             else
@@ -165,10 +134,10 @@ public static class CSharpExporter
                 ForEachChild(child, FileExporter.AddUnchangedType);
             }
             
-            processedHeaders.Add(child.HeaderFile);
+            processedHeaders[i] = child.HeaderFile;
         }
         
-        ModuleHeadersTracker.RecordHeadersWriteTime(packageName, processedHeaders);
+        PackageHeadersTracker.RecordPackageHeadersWriteTime(packageName, processedHeaders);
     }
 
     public static void ForEachChild(UhtType child, Action<UhtType> action)
@@ -221,16 +190,16 @@ public static class CSharpExporter
                     return;
                 }
 
-                if (classObj.ClassType is not UhtClassType.Interface && type != Program.Factory.Session.IInterface)
+                if (classObj.ClassType is not UhtClassType.Interface && type != GeneratorStatics.Factory.Session.IInterface)
                 {
                     return;
                 }
 
-                Tasks.Add(Program.Factory.CreateTask(_ => { InterfaceExporter.ExportInterface(classObj); })!);
+                TaskManager.StartTask(_ => { InterfaceExporter.ExportInterface(classObj); });
             }
             else
             {
-                Tasks.Add(Program.Factory.CreateTask(_ => { ClassExporter.ExportClass(classObj, isManualExport); })!);
+                TaskManager.StartTask(_ => { ClassExporter.ExportClass(classObj, isManualExport); });
             }
         }
         else if (type is UhtEnum enumObj)
@@ -240,12 +209,12 @@ public static class CSharpExporter
                 return;
             }
 
-            Tasks.Add(Program.Factory.CreateTask(_ => { EnumExporter.ExportEnum(enumObj); })!);
+            TaskManager.StartTask(_ => { EnumExporter.ExportEnum(enumObj); });
         }
         else if (type is UhtScriptStruct structObj)
         {
             isManualExport = PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out var info) && info.ManagedType is not null;
-            Tasks.Add(Program.Factory.CreateTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); })!);
+            TaskManager.StartTask(_ => { StructExporter.ExportStruct(structObj, isManualExport); });
         }
         else if (type.EngineType is UhtEngineType.Delegate 
                 #if UE_5_7_OR_LATER
@@ -263,22 +232,8 @@ public static class CSharpExporter
             {
                 return;
             }
-
-            // Use full path (including Outer) as unique identifier to distinguish delegates with same name but different owner classes
-            // e.g., UComboBoxString::OnSelectionChangedEvent vs UComboBoxKey::OnSelectionChangedEvent
-            string outerName = delegateFunction.Outer != null ? delegateFunction.Outer.SourceName : "";
-            string delegateName = DelegateBasePropertyTranslator.GetFullDelegateName(delegateFunction);
-            string uniqueDelegateKey = !string.IsNullOrEmpty(outerName) 
-                ? $"{outerName}.{delegateName}" 
-                : delegateName;
             
-            if (ExportedDelegates.Contains(uniqueDelegateKey))
-            {
-                return;
-            }
-
-            ExportedDelegates.Add(uniqueDelegateKey);
-            Tasks.Add(Program.Factory.CreateTask(_ => { DelegateExporter.ExportDelegate(delegateFunction); })!);
+            TaskManager.StartTask(_ => { DelegateExporter.ExportDelegate(delegateFunction); });
         }
     }
 }

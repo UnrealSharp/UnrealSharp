@@ -1,32 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class SimpleTypePropertyTranslator : PropertyTranslator
 {
     public override bool IsBlittable => true;
-
-    private readonly Type _propertyType;
+	
     protected readonly string ManagedType;
-
-    protected SimpleTypePropertyTranslator(Type propertyType, string managedType = "", PropertyKind propertyKind = PropertyKind.Unknown) 
-		: base(EPropertyUsageFlags.Any, propertyKind)
+    protected readonly string Marshaller;
+    
+    private readonly Type _propertyType;
+    
+    protected SimpleTypePropertyTranslator(Type propertyType, string managedType = "", string marshaller = "") : base(EPropertyUsageFlags.Any)
     {
         _propertyType = propertyType;
         ManagedType = managedType;
+        Marshaller = marshaller;
     }
 
-    public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
+    public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
     {
-        if (defaultValue == "None")
-        {
-            return GetNullValue(parameter);
-        }
-        
-        return defaultValue;
+	    return defaultValue == "None" ? GetNullValue(parameter) : defaultValue;
     }
     
     public override string GetNullValue(UhtProperty property)
@@ -36,27 +34,22 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
     }
 
     public override void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
-        string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
-        bool reuseRefMarshallers)
+	    string assignmentOrReturn, string sourceBuffer, string offset, bool cleanupSourceBuffer,
+	    bool reuseRefMarshallers)
     {
-        builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative(IntPtr.Add({sourceBuffer}, {offset}), 0);");
+        builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative({sourceBuffer} + {offset}, 0);");
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
 	    string offset, string source)
     {
-	    builder.AppendLine($"{GetMarshaller(property)}.ToNative(IntPtr.Add({destinationBuffer}, {offset}), 0, {source});");
+	    builder.AppendLine($"{GetMarshaller(property)}.ToNative({destinationBuffer} + {offset}, 0, {source});");
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
-	    throw new NotImplementedException();
+	    return Marshaller;
     }
-    
-    public virtual string GetPropertyName(UhtProperty property)
-	{
-		return property.GetParameterName();
-	}
 
     public override string ExportMarshallerDelegates(UhtProperty property)
     {
@@ -116,7 +109,7 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		for (int i = 0; i < fieldCount; i++)
 		{
 			UhtProperty property = (UhtProperty) structProperty.ScriptStruct.Children[i];
-			PropertyTranslator propertyTranslator = PropertyTranslatorManager.GetTranslator(property)!;
+			PropertyTranslator propertyTranslator = property.GetTranslator()!;
 			
 			string managedType = propertyTranslator.GetManagedType(property);
 			bool isFloat = managedType is "float" or "double";
@@ -139,10 +132,9 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
 		builder.Append(";");
     }
 
-    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property,
-	    string paramName)
+    public override void ExportCleanupMarshallingBuffer(GeneratorStringBuilder builder, UhtProperty property, string paramName)
     {
-	    // No cleanup needed
+	    
     }
 
 	public override bool CanSupportGenericType(UhtProperty property) => true;

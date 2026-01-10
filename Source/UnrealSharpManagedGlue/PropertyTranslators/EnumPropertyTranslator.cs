@@ -1,12 +1,13 @@
 ﻿using System;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class EnumPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public EnumPropertyTranslator() : base(typeof(UhtByteProperty), "", PropertyKind.Enum)
+    public EnumPropertyTranslator() : base(typeof(UhtByteProperty), string.Empty)
     {
     }
 
@@ -15,7 +16,7 @@ public class EnumPropertyTranslator : BlittableTypePropertyTranslator
         return property is UhtEnumProperty or UhtByteProperty && GetEnum(property) != null;
     }
 
-    public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
+    public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
     {
         UhtEnum enumObj = GetEnum(parameter)!;
         int index = enumObj.GetIndexByName(defaultValue);
@@ -39,7 +40,7 @@ public class EnumPropertyTranslator : BlittableTypePropertyTranslator
     {
         if (defaultValue.Contains("::"))
         {
-            defaultValue = defaultValue.Substring(defaultValue.LastIndexOf("::") + 2);
+            defaultValue = defaultValue.Substring(defaultValue.LastIndexOf("::", StringComparison.Ordinal) + 2);
         }
         
         string fullEnumName = GetManagedType(paramProperty);
