@@ -153,12 +153,12 @@ public static class PropertyUtilities
     
     public static void ForEachInnerProperty(this UhtContainerBaseProperty property, Action<UhtProperty> action)
     {
-        action(property.ValueProperty);
-        
         if (property is UhtMapProperty mapProperty)
         {
             action(mapProperty.KeyProperty);
         }
+        
+        action(property.ValueProperty);
     }
     
     public static void ForEachInnerPropertyTranslator(this UhtContainerBaseProperty property, Action<PropertyTranslator> action)
