@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -39,10 +40,11 @@ public static class NativeBindExporter
 
     [UhtExporter(Name = "UnrealSharpNativeGlue", 
         Description = "Exports Native Glue", 
-        Options = UhtExporterOptions.Default, 
-        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.gen.cpp" })]
+        Options = UhtExporterOptions.Default | UhtExporterOptions.CompileOutput,
+        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.cpp" })]
     private static void Main(IUhtExportFactory factory)
     {
+        Console.WriteLine("Exporting UnrealSharp Native Binds...");
         ExportBindMethods(factory);
     }
     
@@ -148,7 +150,7 @@ public static class NativeBindExporter
             #endif
             
             string outputDirectory = manifestModule.OutputDirectory;
-            string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.gen.cpp";
+            string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             
             factory.CommitOutput(filePath, builder);
