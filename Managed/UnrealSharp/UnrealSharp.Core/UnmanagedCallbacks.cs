@@ -121,6 +121,40 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
+    public static void InitializeStruct(IntPtr structHandle, IntPtr buffer)
+    {
+        try
+        {
+            Type? structType = GCHandleUtilities.GetObjectFromHandlePtr<Type>(structHandle);
+            
+            if (structType == null)
+            {
+                throw new Exception("Invalid struct type handle");
+            }
+            
+            object? structInstance = Activator.CreateInstance(structType);
+            
+            if (structInstance == null)
+            {
+                throw new Exception("Failed to create struct instance");
+            }
+
+            MethodInfo? methodInfo = structType.GetMethod("ToNative");
+            
+            if (methodInfo == null)
+            {
+                throw new Exception("The struct type does not have a ToNative method");
+            }
+            
+            methodInfo.Invoke(structInstance, [buffer]);
+        }
+        catch (Exception e)
+        {
+            LogUnrealSharpCore.LogError($"Exception while trying to initialize struct: {e.Message}");
+        }
+    }
+    
+    [UnmanagedCallersOnly]
     public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* fullTypeName)
     {
         try

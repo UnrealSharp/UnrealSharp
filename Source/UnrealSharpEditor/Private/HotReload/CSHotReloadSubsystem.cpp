@@ -9,6 +9,7 @@
 #include "Types/CSScriptStruct.h"
 #include "CSProcUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
+#include "Kismet2/StructureEditorUtils.h"
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSEditorUtilities.h"
 #include "Widgets/Notifications/SNotificationList.h"
@@ -196,6 +197,9 @@ void UCSHotReloadSubsystem::PerformHotReload()
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
 {
 	AddReloadedType(NewStruct);
+	
+	NewStruct->OnChanged();
+	FStructureEditorUtils::BroadcastPostChange(NewStruct);
 }
 
 void UCSHotReloadSubsystem::OnClassRebuilt(UCSClass* NewClass)

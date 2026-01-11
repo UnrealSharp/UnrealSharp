@@ -70,8 +70,12 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 	Struct->ChildProperties = nullptr;
 	Struct->Children = nullptr;
 	Struct->PropertiesSize = 0;
-	Struct->MinAlignment = 0;
 	Struct->RefLink = nullptr;
+	Struct->SetSuperStruct(nullptr);
+	Struct->DestroyChildPropertiesAndResetPropertyLinks();
+	Struct->Script.Empty();
+	Struct->MinAlignment = 0;
+	Struct->ScriptAndPropertyObjectReferences.Empty();
 }
 
 FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)

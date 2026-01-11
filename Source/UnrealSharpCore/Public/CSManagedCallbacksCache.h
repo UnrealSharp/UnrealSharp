@@ -21,6 +21,7 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		using ManagedCallbacks_InvokeDelegate = int(__stdcall*)(FGCHandleIntPtr);
 		using ManagedCallbacks_LookupMethod = uint8*(__stdcall*)(void*, const TCHAR*);
 		using ManagedCallbacks_LookupType = uint8*(__stdcall*)(uint8*, const TCHAR*);
+		using ManagedCallbacks_InitializeStructure = void(__stdcall*)(FGCHandleIntPtr, void*);
 		using ManagedCallbacks_Dispose = void(__stdcall*)(FGCHandleIntPtr, FGCHandleIntPtr);
 		using ManagedCallbacks_FreeHandle = void(__stdcall*)(FGCHandleIntPtr);
 		
@@ -32,7 +33,9 @@ class UNREALSHARPCORE_API FCSManagedCallbacks
 		ManagedCallbacks_InvokeDelegate InvokeDelegate;
 		ManagedCallbacks_LookupMethod LookupManagedMethod;
 		ManagedCallbacks_LookupType LookupManagedType;
-
+	
+		ManagedCallbacks_InitializeStructure InitializeStructure;
+	
 	private:
 		// Only call these from GCHandles.
 		friend FGCHandle;
