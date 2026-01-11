@@ -7,6 +7,7 @@ using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
+using UnrealSharpManagedGlue.SourceGeneration;
 
 namespace UnrealSharpManagedGlue.Exporters;
 
@@ -36,17 +37,17 @@ public static class NativeBindExporter
     }
 
     private static readonly Dictionary<UhtHeaderFile, List<NativeBindTypeInfo>> NativeBindTypes = new();
-
+    
     [UhtExporter(Name = "UnrealSharpNativeGlue", 
         Description = "Exports Native Glue", 
         Options = UhtExporterOptions.Default, 
-        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.gen.cpp" })]
+        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.UnrealSharp.cpp" })]
     private static void Main(IUhtExportFactory factory)
     {
         ExportBindMethods(factory);
     }
     
-    [UhtKeyword(Extends = UhtTableNames.Default, Keyword = "UNREALSHARP_FUNCTION")]
+    [UhtKeyword(Extends = UhtTableNames.Class, Keyword = "UNREALSHARP_FUNCTION")]
     private static UhtParseResult UNREALSHARP_FUNCTIONKeyword(UhtParsingScope topScope, UhtParsingScope actionScope, ref UhtToken token)
     {
         return ParseUnrealSharpBind(topScope, actionScope, ref token);
@@ -107,10 +108,9 @@ public static class NativeBindExporter
             UhtHeaderFile headerFile = bindMethod.Key;
             List<NativeBindTypeInfo> containingTypesInHeader = bindMethod.Value;
             
-            StringBuilder builder = new();
+            GeneratorStringBuilder builder = new();
             builder.AppendLine("#include \"UnrealSharpBinds.h\"");
             builder.AppendLine($"#include \"{headerFile.FilePath}\"");
-            builder.AppendLine();
             
             foreach (NativeBindTypeInfo containingType in containingTypesInHeader)
             {
@@ -118,16 +118,17 @@ public static class NativeBindExporter
                 List<NativeBindMethod> methods = containingType.Methods;
                 
                 string typeName = $"Z_Construct_U{topType.EngineClassName}_UnrealSharp_Binds_" + topType.SourceName;
-                builder.Append($"struct {typeName}");
+                builder.AppendLine($"struct {typeName}");
 
-                builder.AppendLine("{");
+                builder.OpenBrace();
             
                 foreach (NativeBindMethod method in methods)
                 {
                     builder.AppendLine($"static const FCSExportedFunction UnrealSharpBind_{method.MethodName};");
                 }
             
-                builder.AppendLine("};");
+                builder.CloseBrace();
+                builder.Append(";");
             
                 foreach (NativeBindMethod method in methods)
                 {
@@ -135,9 +136,6 @@ public static class NativeBindExporter
                     builder.AppendLine($"const FCSExportedFunction {typeName}::UnrealSharpBind_{method.MethodName}");
                     builder.Append($" = FCSExportedFunction(\"{topType.EngineName}\", \"{method.MethodName}\", (void*)&{functionReference}, GetFunctionSize({functionReference}));");
                 }
-                
-                builder.AppendLine();
-                builder.AppendLine();
             }
 
             UHTManifest.Module manifestModule;
@@ -148,10 +146,10 @@ public static class NativeBindExporter
             #endif
             
             string outputDirectory = manifestModule.OutputDirectory;
-            string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.gen.cpp";
+            string fileName = headerFile.FileNameWithoutExtension + ".UnrealSharp.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             
-            factory.CommitOutput(filePath, builder);
+            factory.CommitOutput(filePath, builder.ToString());
         }
     }
 }
