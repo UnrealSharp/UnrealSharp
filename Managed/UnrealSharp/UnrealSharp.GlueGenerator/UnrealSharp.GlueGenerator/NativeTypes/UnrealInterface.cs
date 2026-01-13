@@ -13,6 +13,7 @@ public record UnrealInterface : UnrealClassBase
     public UnrealInterface(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         ClassFlags |= EClassFlags.Interface;
+        AddMetaData("BlueprintType", "true");
     }
     
     [Inspect("UnrealSharp.Attributes.UInterfaceAttribute", "UInterfaceAttribute", "Global")]
