@@ -89,8 +89,9 @@ public class DelegateBasePropertyTranslator : PropertyTranslator
         throw new NotImplementedException();
     }
 
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
-        string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer,
+        string offset, string source, bool reuseRefMarshallers)
     {
         throw new NotImplementedException();
     }

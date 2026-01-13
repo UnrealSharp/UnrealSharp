@@ -352,4 +352,9 @@ public static class FunctionUtilities
     {
         return function.HasAllFlags(EFunctionFlags.BlueprintEvent) && !function.HasAllFlags(EFunctionFlags.Native);
     }
+    
+    public static bool IsBlueprintEvent(this UhtFunction function)
+    {
+        return function.HasAllFlags(EFunctionFlags.BlueprintEvent);
+    }
 }

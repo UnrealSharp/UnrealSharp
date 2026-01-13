@@ -49,7 +49,8 @@ public class StringPropertyTranslator : PropertyTranslator
         builder.AppendLine($"{assignmentOrReturn} StringMarshaller.FromNative({propertyName}_NativePtr,0);");
     }
 
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer, string offset, string source, bool reuseRefMarshallers)
     {
         builder.AppendLine($"IntPtr {propertyName}_NativePtr = {destinationBuffer} + {offset};");
         builder.AppendLine($"StringMarshaller.ToNative({propertyName}_NativePtr,0,{source});");

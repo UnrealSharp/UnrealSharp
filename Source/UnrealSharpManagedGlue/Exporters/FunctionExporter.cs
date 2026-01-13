@@ -584,8 +584,7 @@ public class FunctionExporter
                 string assignmentOrReturn = $"{paramType} {parameterName} = ";
                 string offsetName = parameter.GetOffsetVariableName();
 
-                translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer",
-                    offsetName, false, false);
+                translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer", offsetName, false, false);
             }
         });
         
@@ -598,7 +597,7 @@ public class FunctionExporter
         if (function.ReturnProperty != null)
         {
             PropertyTranslator translator = function.ReturnProperty.GetTranslator()!;
-            translator.ExportToNative(builder, function.ReturnProperty, function.ReturnProperty.SourceName, "returnBuffer", "0", "returnValue");
+            translator.ExportToNative(builder, function.ReturnProperty, function.ReturnProperty.SourceName, "returnBuffer", "0", "returnValue", false);
         }
 
         exportFunction.ForEachParameter((translator, parameter) =>
@@ -608,7 +607,8 @@ public class FunctionExporter
                 return;
             }
 
-            translator.ExportToNative(builder, parameter, parameter.SourceName, "buffer", parameter.GetOffsetVariableName(), parameter.GetParameterName());
+            bool reuseRefMarshallers = parameter.IsRefParam() && !(function.IsBlueprintEvent() && function.HasAnyFlags(EFunctionFlags.BlueprintCallable));
+            translator.ExportToNative(builder, parameter, parameter.SourceName, "buffer", parameter.GetOffsetVariableName(), parameter.GetParameterName(), reuseRefMarshallers);
         });
         
         builder.EndUnsafeBlock();
@@ -1002,7 +1002,7 @@ public class FunctionExporter
                 }
                 
                 string offsetName = TryAddPrecedingCustomStructParams(parameter, parameter.GetOffsetVariableName());
-                translator.ExportToNative(builder, parameter, parameter.SourceName, "paramsBuffer", offsetName, GetParameterName(parameter));
+                translator.ExportToNative(builder, parameter, parameter.SourceName, "paramsBuffer", offsetName, GetParameterName(parameter), false);
             });
             
             builder.AppendLine();
