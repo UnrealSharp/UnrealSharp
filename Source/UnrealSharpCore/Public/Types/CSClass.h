@@ -18,10 +18,6 @@ public:
 	virtual void PurgeClass(bool bRecompilingOnLoad) override;
 	// End of UObject interface
 	
-	// UClass interface
-	virtual bool CanCreateAssetOfClass() const override { return false; }
-	// End of UClass interface
-	
 	void SetOwningBlueprint(UBlueprint* InOwningBlueprint)
 	{
 		OwningBlueprint = InOwningBlueprint;
