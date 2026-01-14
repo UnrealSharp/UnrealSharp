@@ -22,6 +22,5 @@ public:
 	
 private:
 	void InitializeStructDefaults();
-	void PopulateEditorData();
 	TUniquePtr<uint8[]> StructDefaults;
 };

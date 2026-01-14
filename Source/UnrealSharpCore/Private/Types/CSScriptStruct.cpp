@@ -1,18 +1,19 @@
 #include "Types/CSScriptStruct.h"
-
-#include "UnrealSharpUtils.h"
 #include "UserDefinedStructure/UserDefinedStructEditorData.h"
 
 void UCSScriptStruct::Initialize()
 {
-#if WITH_EDITORONLY_DATA
+#if WITH_EDITOR
 	PrimaryStruct = this;
 #endif
 	
 	InitializeStructDefaults();
 	DefaultStructInstance = FUserStructOnScopeIgnoreDefaults(this, StructDefaults.Get());
 	UpdateStructFlags();
-	PopulateEditorData();
+	
+#if WITH_EDITOR
+	OnChanged();
+#endif
 }
 
 void UCSScriptStruct::InitializeStruct(void* Dest, int32 ArrayDim) const
@@ -54,33 +55,4 @@ void UCSScriptStruct::InitializeStructDefaults()
 	
 	StructDefaults = MakeUnique<uint8[]>(Size);
 	FCSManagedCallbacks::ManagedCallbacks.InitializeStructure(GetTypeGCHandle()->GetHandle(), StructDefaults.Get());
-}
-
-void UCSScriptStruct::PopulateEditorData()
-{
-	if (!IsValid(EditorData))
-	{
-		EditorData = NewObject<UUserDefinedStructEditorData>(this, NAME_None, RF_Transactional);
-	}
-	
-	UUserDefinedStructEditorData* EditorDataInstance = static_cast<UUserDefinedStructEditorData*>(EditorData);
-	EditorDataInstance->VariablesDescriptions.Reset();
-	
-	for (TFieldIterator<FProperty> It(this); It; ++It)
-	{
-		FProperty* Property = *It;
-		
-		FStructVariableDescription& VarDesc = EditorDataInstance->VariablesDescriptions.AddDefaulted_GetRef();
-		VarDesc.VarName = Property->GetFName();
-		VarDesc.VarGuid = FCSUnrealSharpUtils::ConstructGUIDFromName(Property->GetFName());
-		
-		FString DefaultValue;
-		if (!Property->ExportText_InContainer(0, DefaultValue, StructDefaults.Get(), StructDefaults.Get(), this, PPF_None))
-		{
-			continue;
-		}
-		
-		VarDesc.DefaultValue = DefaultValue;
-		Property->SetMetaData(TEXT("MakeStructureDefaultValue"), *VarDesc.DefaultValue);
-	}
 }
