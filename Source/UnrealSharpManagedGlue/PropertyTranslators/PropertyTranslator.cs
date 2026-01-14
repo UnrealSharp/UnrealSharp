@@ -165,7 +165,7 @@ public abstract class PropertyTranslator
 
     public virtual void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value");
+        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value", false);
     }
 
     public virtual void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName,
@@ -187,7 +187,8 @@ public abstract class PropertyTranslator
         bool reuseRefMarshallers);
     
     // Build the C# code to marshal this property from C# to C++
-    public abstract void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source);
+    public abstract void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer, string offset, string source, bool reuseRefMarshallers);
     
     // Convert a C++ default value to a C# default value
     // Example: "0.0f" for a float property
@@ -264,7 +265,7 @@ public abstract class PropertyTranslator
         {
             builder.BeginUnsafeBlock();
             builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
-            ExportToNative(builder, property, property.SourceName, "paramsBuffer", "0", "value");
+            ExportToNative(builder, property, property.SourceName, "paramsBuffer", "0", "value", false);
             builder.AppendLine($"CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);"); 
             ExportCleanupMarshallingBuffer(builder, property, property.SourceName);
             builder.EndUnsafeBlock();
@@ -498,7 +499,7 @@ public abstract class PropertyTranslator
         }
         else
         {
-            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value");
+            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value", false);
         }
         
         builder.CloseBrace();

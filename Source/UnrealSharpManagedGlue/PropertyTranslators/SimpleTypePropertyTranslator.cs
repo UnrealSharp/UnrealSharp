@@ -40,8 +40,9 @@ public class SimpleTypePropertyTranslator : PropertyTranslator
         builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative({sourceBuffer} + {offset}, 0);");
     }
 
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
-	    string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+	    string destinationBuffer,
+	    string offset, string source, bool reuseRefMarshallers)
     {
 	    builder.AppendLine($"{GetMarshaller(property)}.ToNative({destinationBuffer} + {offset}, 0, {source});");
     }

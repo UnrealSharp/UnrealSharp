@@ -122,13 +122,13 @@ public class ContainerPropertyTranslator : PropertyTranslator
         string assignmentOrReturn,
         string sourceBuffer, string offset, bool cleanupSourceBuffer, bool reuseRefMarshallers)
     {
-        string marshallerType = GetWrapperType(property);
-        string marshallingDelegates = ExportMarshallerDelegates(property);
-        
         GetNativePropertyFieldAndMarshaller(property, propertyName, out string marshaller, out string nativeProperty);
 
         if (!reuseRefMarshallers)
         {
+            string marshallerType = GetWrapperType(property);
+            string marshallingDelegates = ExportMarshallerDelegates(property);
+            
             if (property.IsGenericType())
             {
                 builder.AppendLine($"var {marshaller} = new {marshallerType}({nativeProperty}, {marshallingDelegates});");
@@ -138,7 +138,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
                 builder.AppendLine($"{marshaller} ??= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
             }
             
-            builder.Append($"IntPtr {propertyName}_NativeBuffer = {sourceBuffer} + {offset};");
+            builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = {sourceBuffer} + {offset};");
         }
 
         builder.AppendLine($"{assignmentOrReturn} {marshaller}.FromNative({propertyName}_NativeBuffer, 0);");
@@ -149,18 +149,23 @@ public class ContainerPropertyTranslator : PropertyTranslator
         }
     }
     
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer, string offset, string source, bool reuseRefMarshallers)
     {
-        string marshallerType = GetWrapperType(property);
-        string marshallingDelegates = ExportMarshallerDelegates(property);
         GetNativePropertyFieldAndMarshaller(property, propertyName, out string marshaller, out string nativeProperty);
 
-        string marshallerCreationLine = property.IsGenericType() ? $"var {marshaller} " : $"{marshaller} ??";
-        builder.AppendLine(marshallerCreationLine);
+        if (!reuseRefMarshallers)
+        {
+            string marshallerCreationLine = property.IsGenericType() ? $"var {marshaller} " : $"{marshaller} ??";
+            builder.AppendLine(marshallerCreationLine);
+            
+            string marshallerType = GetWrapperType(property);
+            string marshallingDelegates = ExportMarshallerDelegates(property);
+            
+            builder.Append($"= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
+            builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = {destinationBuffer} + {offset};");
+        }
 
-        builder.Append($"= new {marshallerType}({nativeProperty}, {marshallingDelegates});");
-        
-        builder.AppendLine($"IntPtr {propertyName}_NativeBuffer = {destinationBuffer} + {offset};");
         builder.AppendLine($"{marshaller}.ToNative({propertyName}_NativeBuffer, 0, {source});");
     }
 

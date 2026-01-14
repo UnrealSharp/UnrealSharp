@@ -394,4 +394,9 @@ public static class PropertyUtilities
 
         return property.GetPrecedingParams()!.Count(param => param.IsCustomStructureType());
     }
+    
+    public static bool IsRefParam(this UhtProperty property)
+    {
+        return property.HasAnyFlags(EPropertyFlags.ReferenceParm) && !property.HasAnyFlags(EPropertyFlags.ConstParm | EPropertyFlags.ReturnParm);
+    }
 }

@@ -36,7 +36,7 @@ public static class DelegateExporter
         
         stringBuilder.AppendLine($"static {wrapperName}()");
         stringBuilder.OpenBrace();
-        ExportDelegateFunctionStaticConstruction(stringBuilder, function, wrapperName);
+        ExportDelegateFunctionStaticConstruction(stringBuilder, function);
         stringBuilder.CloseBrace();
         
         stringBuilder.CloseBrace();
@@ -50,10 +50,14 @@ public static class DelegateExporter
         FileExporter.SaveGlueToDisk(function.Package, directory, delegateName, stringBuilder.ToString());
     }
 
-    private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function, string wrapperName)
+    private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
     {
         string delegateName = function.SourceName;
-        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({NameMapper.ExportGetAssemblyName(wrapperName)}, \"{function.GetNamespace()}\", \"{function.EngineName}\");");
+        string moduleName = function.Package.EngineName;
+        string outerName = function.Outer is UhtField ? $"\"{function.Outer!.EngineName}\"" : "null";
+        
+        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetNativeDelegate(\"{moduleName}\", {outerName}, \"{function.EngineName}\");");
+        
         if (function.HasParameters)
         {
             builder.AppendLine($"{delegateName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({delegateName}_NativeFunction);");

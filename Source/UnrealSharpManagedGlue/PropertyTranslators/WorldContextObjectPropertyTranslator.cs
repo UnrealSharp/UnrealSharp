@@ -13,8 +13,9 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
         return base.CanExport(property) && property.IsWorldContextParameter();
     }
 
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
-        string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer,
+        string offset, string source, bool reuseRefMarshallers)
     {
         builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative({destinationBuffer} + {offset}, 0, UnrealSharp.Core.FCSManagerExporter.CallGetCurrentWorldContext());");
     }

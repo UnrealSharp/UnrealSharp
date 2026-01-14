@@ -531,7 +531,7 @@ public static class StructExporter
                 string scriptName = property.GetPropertyName();
                 string offsetName = $"{property.SourceName}_Offset";
                 builder.TryAddWithEditor(property);
-                translator.ExportToNative(builder, property, property.SourceName, "buffer", offsetName, scriptName);
+                translator.ExportToNative(builder, property, property.SourceName, "buffer", offsetName, scriptName, false);
                 builder.TryEndWithEditor(property);
             }
         }

@@ -22,8 +22,9 @@ public class SinglecastDelegatePropertyTranslator : DelegateBasePropertyTranslat
         return $"TDelegate<{GetFullDelegateName(((UhtDelegateProperty) property).Function)}>";
     }
 
-    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer,
-        string offset, string source)
+    public override void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer,
+        string offset, string source, bool reuseRefMarshallers)
     {
         UhtDelegateProperty delegateProperty = (UhtDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(delegateProperty.Function);
