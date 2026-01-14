@@ -19,7 +19,8 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 	FCSFieldName FieldName(InTypeName, InNamespace);
 
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);
-	if (!ManagedTypeDefinition.IsValid()) {
+	if (!ManagedTypeDefinition.IsValid()) 
+	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find type definition: {0}.{1} in assembly {2}", InNamespace, InTypeName,
 				  InAssemblyName);
 		return nullptr;
