@@ -664,7 +664,7 @@ internal static class ReflectionHelper
 
         if (generatedTypeAttribute is null)
         {
-            return type.Name;
+            return type.Name.Substring(1);
         }
 
         FieldInfo? field = generatedTypeAttribute.GetType().GetField("EngineName");
