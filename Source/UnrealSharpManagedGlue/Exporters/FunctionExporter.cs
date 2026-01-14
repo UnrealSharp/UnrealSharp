@@ -581,7 +581,7 @@ public class FunctionExporter
             else
             {
                 string parameterName = parameter.GetParameterName();
-                string assignmentOrReturn = $"{paramType} {parameterName} = ";
+                string assignmentOrReturn = $"{paramType} {parameterName} =";
                 string offsetName = parameter.GetOffsetVariableName();
 
                 translator.ExportFromNative(builder, parameter, parameter.SourceName, assignmentOrReturn, "buffer", offsetName, false, false);
