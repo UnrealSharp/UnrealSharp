@@ -1,5 +1,4 @@
 #include "Types/CSScriptStruct.h"
-#include "UserDefinedStructure/UserDefinedStructEditorData.h"
 
 void UCSScriptStruct::Initialize()
 {
@@ -10,10 +9,6 @@ void UCSScriptStruct::Initialize()
 	InitializeStructDefaults();
 	DefaultStructInstance = FUserStructOnScopeIgnoreDefaults(this, StructDefaults.Get());
 	UpdateStructFlags();
-	
-#if WITH_EDITOR
-	OnChanged();
-#endif
 }
 
 void UCSScriptStruct::InitializeStruct(void* Dest, int32 ArrayDim) const
