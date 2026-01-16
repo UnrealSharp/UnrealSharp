@@ -50,3 +50,23 @@ UObject* UCSObjectExtensions::GetOuter(const UObject* Object)
 	return Object->GetOuter();
 }
 
+FPrimaryAssetId UCSObjectExtensions::GetPrimaryAssetId(const UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		return FPrimaryAssetId();
+	}
+	
+	return Object->GetPrimaryAssetId();
+}
+
+bool UCSObjectExtensions::IsInBlueprint(const UObject* Object)
+{
+	if (!IsValid(Object))
+	{
+		return false;
+	}
+	
+	return Object->IsInBlueprint();
+}
+

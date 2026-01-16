@@ -76,7 +76,7 @@ public static class StringBuilderExtensions
         string protection = type.TypeAccessibility.AccessibilityToString();
         
         string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
-        builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.FullName}\")]");
+        builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.Namespace}.{type.EngineName}\")]");
         builder.AppendLine($"{protection}partial {modifiers}{typeKeyword} {declarationName}");
         
         if (!string.IsNullOrEmpty(baseType))
