@@ -8,9 +8,7 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 [Inspector]
 public record UnrealEnum : UnrealType
 {
-    public override string EngineName => SourceName.Substring(1);
     public override FieldType FieldType => FieldType.Enum;
-
     private readonly EquatableList<string>? _enumNames;
 
     public UnrealEnum(ITypeSymbol symbol, UnrealType? outer = null) : base(symbol, outer)

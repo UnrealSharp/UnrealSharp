@@ -8,12 +8,17 @@ UCLASS()
 class UNREALSHARPCORE_API UCSEnumPropertyGenerator : public UCSPropertyGenerator
 {
 	GENERATED_BODY()
-
+public:
+	UCSEnumPropertyGenerator();
 protected:
+	
 	// Begin UCSPropertyGenerator interface
 	virtual ECSPropertyType GetPropertyType() const override { return ECSPropertyType::Enum; }
 	virtual FFieldClass* GetPropertyClass() override { return FEnumProperty::StaticClass(); }
 	virtual FProperty* CreateProperty(UField* Outer, const FCSPropertyReflectionData& PropertyReflectionData) override;
 	virtual TSharedPtr<FCSUnrealType> CreatePropertyInnerTypeData(ECSPropertyType PropertyType) override;
 	// End UCSPropertyGenerator interface
+	
+private:
+	TMap<FName, UEnum*> EnumRedirectors;
 };

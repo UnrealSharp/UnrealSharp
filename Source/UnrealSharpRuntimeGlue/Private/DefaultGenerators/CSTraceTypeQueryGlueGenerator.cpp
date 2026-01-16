@@ -10,23 +10,24 @@ void UCSTraceTypeQueryGlueGenerator::Initialize()
 
 	CollisionProfile->OnLoadProfileConfig.AddUObject(this, &ThisClass::OnCollisionProfileChanged);
 
-	ProcessTraceTypeQuery();
+	ProcessCollisionProfile();
 }
 
 void UCSTraceTypeQueryGlueGenerator::OnCollisionProfileChanged(UCollisionProfile* CollisionProfile)
 {
-	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ProcessTraceTypeQuery));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ProcessCollisionProfile));
 }
 
-void UCSTraceTypeQueryGlueGenerator::ProcessTraceTypeQuery()
+void UCSTraceTypeQueryGlueGenerator::ProcessCollisionProfile()
 {
-	// Initialize CollisionProfile in-case it's not loaded yet
-	UCollisionProfile::Get();
+	UCollisionProfile* CollisionProfile = UCollisionProfile::Get();
 
 	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.Engine;"));
+	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.Core;"));
 	ScriptBuilder.AppendLine();
+	
 	ScriptBuilder.AppendLine(TEXT("public enum ETraceChannel"));
 	ScriptBuilder.OpenBrace();
 
@@ -60,21 +61,10 @@ void UCSTraceTypeQueryGlueGenerator::ProcessTraceTypeQuery()
 
 	ScriptBuilder.CloseBrace();
 
-	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public static class TraceChannelStatics"));
-	ScriptBuilder.OpenBrace();
-
-	ScriptBuilder.AppendLine(TEXT("public static ETraceTypeQuery ToQuery(this ETraceChannel traceTypeQueryHelper)"));
-	ScriptBuilder.OpenBrace();
-	ScriptBuilder.AppendLine(TEXT("return (ETraceTypeQuery)traceTypeQueryHelper;"));
-	ScriptBuilder.CloseBrace();
-
-	ScriptBuilder.CloseBrace();
-
 	UEnum* ObjectTypeEnum = StaticEnum<EObjectTypeQuery>();
 
 	ScriptBuilder.AppendLine();
-	ScriptBuilder.AppendLine(TEXT("public enum ECollisionChannel"));
+	ScriptBuilder.AppendLine(TEXT("public enum EObjectChannel"));
 	ScriptBuilder.OpenBrace();
 
 	for (int32 i = 0; i < ObjectTypeQuery_MAX; i++)
@@ -92,13 +82,31 @@ void UCSTraceTypeQueryGlueGenerator::ProcessTraceTypeQuery()
 
 	ScriptBuilder.CloseBrace();
 	ScriptBuilder.AppendLine();
+	
+	ScriptBuilder.AppendLine(TEXT("public static class CollisionProfiles"));
+	ScriptBuilder.OpenBrace();
 
-	ScriptBuilder.AppendLine(TEXT("public static class CollisionChannelStatics"));
-	ScriptBuilder.OpenBrace();
-	ScriptBuilder.AppendLine(TEXT("public static EObjectTypeQuery ToObjectTypeQuery(this ECollisionChannel traceTypeQueryHelper)"));
-	ScriptBuilder.OpenBrace();
-	ScriptBuilder.AppendLine(TEXT("return (EObjectTypeQuery)traceTypeQueryHelper;"));
+	for (int i = 0; i < CollisionProfile->GetNumOfProfiles(); ++i)
+	{
+		const FCollisionResponseTemplate* Template = CollisionProfile->GetProfileByIndex(i);
+		FString ProfileName = Template->Name.ToString();
+		FString Code = FString::Printf(TEXT("public static readonly FName %s = new(\"%s\");"), *ProfileName, *ProfileName);
+		ScriptBuilder.AppendLine(Code);
+	}
+	
 	ScriptBuilder.CloseBrace();
+	
+	ScriptBuilder.AppendLine();
+	
+	ScriptBuilder.AppendLine(TEXT("public static class QueryChannelConverter"));
+	ScriptBuilder.OpenBrace();
+	
+	ScriptBuilder.AppendLine(TEXT("public static ETraceTypeQuery ToTraceQuery(this ETraceChannel traceChannel) => (ETraceTypeQuery)traceChannel;"));
+	ScriptBuilder.AppendLine(TEXT("public static ETraceChannel ToTraceChannel(this ETraceTypeQuery traceTypeQuery) => (ETraceChannel)traceTypeQuery;"));
+	
+	ScriptBuilder.AppendLine(TEXT("public static EObjectTypeQuery ToObjectQuery(this EObjectChannel objectChannel) => (EObjectTypeQuery)objectChannel;"));
+	ScriptBuilder.AppendLine(TEXT("public static EObjectChannel ToObjectChannel(this EObjectTypeQuery objectTypeQuery) => (EObjectChannel)objectTypeQuery;"));
+	
 	ScriptBuilder.CloseBrace();
 
 	SaveRuntimeGlue(ScriptBuilder, TEXT("TraceChannel"));
