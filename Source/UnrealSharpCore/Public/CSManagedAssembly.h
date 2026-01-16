@@ -31,14 +31,13 @@ public:
 	UNREALSHARPCORE_API bool LoadManagedAssembly(bool bIsCollectible = true);
 	UNREALSHARPCORE_API bool UnloadManagedAssembly();
 
-	UNREALSHARPCORE_API bool IsValidAssembly() const { return AssemblyGCHandle.IsValid() && !AssemblyGCHandle->IsNull(); }
+	UNREALSHARPCORE_API bool IsAssemblyLoading() const { return bIsLoading; }
+	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return AssemblyGCHandle.IsValid() && !AssemblyGCHandle->IsNull(); }
 	
 	UNREALSHARPCORE_API FName GetAssemblyName() const { return AssemblyName; }
 	
 	UNREALSHARPCORE_API const FString& GetAssemblyFilePath() const { return AssemblyFilePath; }
 	UNREALSHARPCORE_API FString GetAssemblyFileName() const { return FPaths::GetCleanFilename(AssemblyFilePath); }
-	
-	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return bIsLoading; }
 	
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 	
