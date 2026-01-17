@@ -29,7 +29,8 @@ public class UnrealSharpCompiler : ModuleRules
                 "UnrealSharpEditor", 
                 "AIModule", 
                 "StateTreeModule", 
-                "UnrealSharpUtilities"
+                "UnrealSharpUtilities", 
+                "UnrealSharpProcHelper"
             }
         );
     }

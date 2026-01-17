@@ -5,6 +5,7 @@
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
 #include "CSManager.h"
+#include "CSProcUtilities.h"
 #include "KismetCompiler.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
@@ -211,6 +212,14 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
 {
+	TArray<FString> Projects;
+	UCSProcUtilities::GetProjectNamesByLoadOrder(Projects);
+	
+	if (!Projects.Contains(Assembly->GetName()))
+	{
+		return;
+	}
+	
 	RecompileAndReinstanceBlueprints();
 }
 
