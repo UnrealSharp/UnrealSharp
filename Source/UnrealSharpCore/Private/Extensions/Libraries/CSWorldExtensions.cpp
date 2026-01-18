@@ -64,6 +64,7 @@ AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObjec
 	SpawnParams.Template = SpawnParameters.Template;
 	SpawnParams.SpawnCollisionHandlingOverride = SpawnParameters.SpawnMethod;
 	SpawnParams.bDeferConstruction = bDeferConstruction;
+	SpawnParams.Name = SpawnParameters.Name;
 	
 	return World->SpawnActor(Class, &Transform, SpawnParams);
 }

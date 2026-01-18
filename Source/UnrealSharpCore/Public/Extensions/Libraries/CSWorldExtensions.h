@@ -15,6 +15,9 @@ struct FCSSpawnActorParameters
 
 	UPROPERTY()
 	TObjectPtr<AActor> Template = nullptr;
+	
+	UPROPERTY()
+	FName Name;
 
 	UPROPERTY()
 	ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod::Undefined;

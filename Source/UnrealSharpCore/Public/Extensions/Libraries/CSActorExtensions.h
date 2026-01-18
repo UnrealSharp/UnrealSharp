@@ -32,6 +32,9 @@ public:
 	
 	UFUNCTION(meta=(ScriptMethod))
 	static void SetReplicates(AActor* Actor, bool bReplicates);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static void MarkAsNetworkAddressable(AActor* Actor);
 
 public:
 	static void CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord);
