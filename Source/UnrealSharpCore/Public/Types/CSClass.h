@@ -28,16 +28,16 @@ public:
 	{
 		return OwningBlueprint;
 	}
+#endif
 	
 	void SetDeferredCreation(bool bInDeferredCreation) { bDeferredCreation = bInDeferredCreation; }
 	bool IsCreationDeferred() const { return bDeferredCreation; }
-#endif
 	
 private:
+	bool bDeferredCreation = true;
+	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
 	TObjectPtr<UBlueprint> OwningBlueprint;
-	
-	bool bDeferredCreation = true;
 #endif
 };

@@ -35,9 +35,6 @@ void FCSCompilerContext::FinishCompilingClass(UClass* InClass)
 	UCSClass* ManagedClass = static_cast<UCSClass*>(InClass);
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = GetClassInfo()->GetReflectionData<FCSClassReflectionData>();
 	
-	bool bEngineStartingUp = FCSUnrealSharpUtils::IsEngineStartingUp();
-	ManagedClass->SetDeferredCreation(!bEngineStartingUp);
-	
 	UClass* ParentClass = ManagedClass->GetSuperClass();
 	FBlueprintEditorUtils::RecreateClassMetaData(Blueprint, ManagedClass, false);
 	
@@ -61,7 +58,13 @@ void FCSCompilerContext::FinishCompilingClass(UClass* InClass)
 
 	ManagedClass->StaticLink(true);
 	
-	(void)ManagedClass->GetDefaultObject(true);
+	UObject* DefaultObject = UCSManagedClassCompiler::CreateDeferredManagedCDO(ManagedClass);
+	
+	if (FCSUnrealSharpUtils::IsEngineStartingUp())
+	{
+		// Directly copy defaults to the CDO
+		CopyTermDefaultsToDefaultObject(DefaultObject);
+	}
 	
 	ManagedClass->SetUpRuntimeReplicationData();
 	ManagedClass->UpdateCustomPropertyListForPostConstruction();
@@ -147,9 +150,7 @@ void FCSCompilerContext::AddInterfacesFromBlueprint(UClass* Class)
 void FCSCompilerContext::CopyTermDefaultsToDefaultObject(UObject* DefaultObject)
 {
 	UCSClass* ManagedClass = static_cast<UCSClass*>(DefaultObject->GetClass());
-	ManagedClass->SetDeferredCreation(false);
-	UCSManager::Get().FindManagedObject(DefaultObject);
-	UCSManagedClassCompiler::SetupDefaultTickSettings(ManagedClass->GetDefaultObject(), ManagedClass);
+	UCSManagedClassCompiler::FinalizeManagedCDO(ManagedClass);
 }
 
 void FCSCompilerContext::ValidateSimpleConstructionScript() const

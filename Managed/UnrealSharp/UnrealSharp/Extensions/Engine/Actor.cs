@@ -210,4 +210,13 @@ public partial class AActor
     /// All components of the actor
     /// </summary>
     public IList<UActorComponent> Components => GetComponentsByClass<UActorComponent>();
+
+    /// <summary>
+    /// If true, this actor will replicate to remote machines
+    /// </summary>
+    public bool Replicates
+    {
+        get => UCSActorExtensions.GetReplicates(this);
+        set => UCSActorExtensions.SetReplicates(this, value);
+    }
 }
