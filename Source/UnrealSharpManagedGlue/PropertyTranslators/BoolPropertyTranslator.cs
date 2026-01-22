@@ -11,15 +11,20 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     public BoolPropertyTranslator() : base(typeof(UhtBoolProperty), "bool", string.Empty)
     {
     }
+    
+    public bool IsBitfield(UhtProperty property)
+    {
+        return property.IsBitfield && !property.HasGetterSetterPair();
+    }
 
     public override string GetMarshaller(UhtProperty property)
     {
-        return property.IsBitfield ? "BitfieldBoolMarshaller" : "BoolMarshaller";
+        return IsBitfield(property) ? "BitfieldBoolMarshaller" : "BoolMarshaller";
     }
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-        if ((property.IsBitfield && !property.HasBlueprintGetterOrSetter()) || (property.IsBitfield && property.HasAnyNativeGetterSetter()))
+        if (IsBitfield(property))
         {
             builder.AppendLine($"{GetFieldMaskFieldName(nativePropertyName)} = CallGetBoolPropertyFieldMaskFromName(NativeClassPtr, \"{nativePropertyName}\");");
         }
@@ -29,7 +34,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
     
     public override void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
     {
-        if (property.IsBitfield)
+        if (IsBitfield(property))
         {
             builder.AppendLine($"static byte {GetFieldMaskFieldName(propertyEngineName)};");
         }
@@ -44,7 +49,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
         string offset,
         string source, bool reuseRefMarshallers)
     {
-        if (property.IsBitfield)
+        if (IsBitfield(property))
         {
             builder.AppendLine($"{GetMarshaller(property)}.ToNative({destinationBuffer} + {offset}, {GetFieldMaskFieldName(propertyName)}, {source});");
             return;
@@ -62,7 +67,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
         bool cleanupSourceBuffer,
         bool reuseRefMarshallers)
     {
-        if (property.IsBitfield)
+        if (IsBitfield(property))
         {
             builder.AppendLine($"{assignmentOrReturn} {GetMarshaller(property)}.FromNative({sourceBuffer} + {offset}, {GetFieldMaskFieldName(propertyName)});");
             return;
