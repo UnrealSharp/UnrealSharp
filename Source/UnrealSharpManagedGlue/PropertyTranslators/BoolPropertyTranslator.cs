@@ -19,7 +19,7 @@ public class BoolPropertyTranslator : SimpleTypePropertyTranslator
 
     public override void ExportPropertyStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, string nativePropertyName)
     {
-        if (property.IsBitfield && !property.HasBlueprintGetterSetterPair())
+        if ((property.IsBitfield && !property.HasBlueprintGetterOrSetter()) || (property.IsBitfield && property.HasAnyNativeGetterSetter()))
         {
             builder.AppendLine($"{GetFieldMaskFieldName(nativePropertyName)} = CallGetBoolPropertyFieldMaskFromName(NativeClassPtr, \"{nativePropertyName}\");");
         }
