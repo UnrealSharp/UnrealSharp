@@ -38,8 +38,6 @@ public static class PropertyFactory
         ["List"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["IList"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["IReadOnlyList"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
-        ["IEnumerable"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
-        ["ICollection"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         
         ["TNativeArray"] = (m, t, o, syntaxNode) => new NativeArrayProperty(m, t, o, syntaxNode),
         ["Span"] = (m, t, o, syntaxNode) => new NativeArrayProperty(m, t, o, syntaxNode),
@@ -47,9 +45,11 @@ public static class PropertyFactory
 
         ["TMap"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
         ["IDictionary"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
+        ["IReadOnlyDictionary"] = (m, t, o, syntaxNode) => new MapProperty(m, t, o, syntaxNode),
 
         ["TSet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode),
         ["ISet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode),
+        ["IReadOnlySet"] = (m, t, o, syntaxNode) => new SetProperty(m, t, o, syntaxNode),
         
         ["ValueTask"] = (m, t, o, syntaxNode) => new ValueTaskProperty(m, t, o, syntaxNode),
         ["Task"] = (m, t, o, syntaxNode) => new TaskProperty(m, t, o, syntaxNode),
