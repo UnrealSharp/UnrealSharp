@@ -46,6 +46,9 @@ public:
 	UFUNCTION(meta = (ScriptMethod))
 	static void ServerTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute = false, bool bShouldSkipGameNotify = false);
 	
+	UFUNCTION(meta = (ScriptMethod))
+	static void SeamlessTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute = false);
+	
 private:
 	static AActor* SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction);
 };

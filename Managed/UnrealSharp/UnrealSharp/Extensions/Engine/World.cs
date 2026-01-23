@@ -65,4 +65,26 @@ public partial class UWorld
 	{
 		UCSWorldExtensions.ServerTravel(url, bAbsolute, bShouldSkipGameNotify);
 	}
+    
+	/// <summary>
+	/// Seamlessly travels to the given URL by first loading the entry level in the background,
+	/// switching to it, and then loading the specified level. Does not disrupt network communication 
+	/// or disconnect clients.
+	/// </summary>
+	/// <remarks>
+	/// You may need to implement GameModeBase::GetSeamlessTravelActorList(), 
+	/// PlayerController::GetSeamlessTravelActorList(), GameModeBase::PostSeamlessTravel(), 
+	/// and/or GameModeBase::HandleSeamlessTravelPlayer() to handle preserving any information 
+	/// that should be maintained (player teams, etc).
+	/// <para>
+	/// This codepath is designed for worlds that use little or no level streaming and GameModes 
+	/// where the game state is reset/reloaded when transitioning (like UT).
+	/// </para>
+	/// </remarks>
+	/// <param name="url">The URL to travel to; must be on the same server as the current URL.</param>
+	/// <param name="isAbsolute">If true, URL is absolute; otherwise, it is relative.</param>
+    public void SeamlessTravel(string url, bool isAbsolute = false)
+	{
+		UCSWorldExtensions.SeamlessTravel(url, isAbsolute);
+	}
 }

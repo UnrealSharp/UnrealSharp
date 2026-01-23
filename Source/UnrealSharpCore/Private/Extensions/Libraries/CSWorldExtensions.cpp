@@ -32,13 +32,6 @@ FURL UCSWorldExtensions::WorldURL(const UObject* WorldContextObject)
 	}
 
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-
-	if (!IsValid(World))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to get world from context object"));
-		return nullptr;
-	}
-
 	return World->URL;
 }
 
@@ -51,14 +44,19 @@ void UCSWorldExtensions::ServerTravel(const UObject* WorldContextObject, const F
 	}
 	
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	
-	if (!IsValid(World))
+	World->ServerTravel(URL, bAbsolute, bShouldSkipGameNotify);
+}
+
+void UCSWorldExtensions::SeamlessTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute)
+{
+	if (!IsValid(WorldContextObject))
 	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to get world from context object"));
+		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
 		return;
 	}
-
-	World->ServerTravel(URL, bAbsolute, bShouldSkipGameNotify);
+	
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	World->SeamlessTravel(URL, bAbsolute);
 }
 
 AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction)
@@ -68,15 +66,7 @@ AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObjec
 		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object or class"));
 		return nullptr;
 	}
-
-	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-
-	if (!IsValid(World))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to get world from context object"));
-		return nullptr;
-	}
-
+	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Instigator = SpawnParameters.Instigator;
 	SpawnParams.Owner = SpawnParameters.Owner;
@@ -85,6 +75,7 @@ AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObjec
 	SpawnParams.bDeferConstruction = bDeferConstruction;
 	SpawnParams.Name = SpawnParameters.Name;
 	
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	return World->SpawnActor(Class, &Transform, SpawnParams);
 }
 
