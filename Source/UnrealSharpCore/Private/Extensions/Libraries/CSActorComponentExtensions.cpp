@@ -14,3 +14,22 @@ bool UCSActorComponentExtensions::IsReplicatedSubObjectRegistered(UActorComponen
 {
 	return ActorComponent->IsReplicatedSubObjectRegistered(SubObject);
 }
+
+void UCSActorComponentExtensions::SetIsReplicated(UActorComponent* ActorComponent, bool bInIsReplicated)
+{
+	static FBoolProperty* ReplicatesProperty = FindFieldChecked<FBoolProperty>(UActorComponent::StaticClass(), TEXT("bReplicates"));
+	
+	if (ActorComponent->HasAnyFlags(RF_NeedInitialization))
+	{
+		ReplicatesProperty->SetPropertyValue_InContainer(ActorComponent, bInIsReplicated);
+	}
+	else
+	{
+		ActorComponent->SetIsReplicated(bInIsReplicated);
+	}
+}
+
+bool UCSActorComponentExtensions::GetIsReplicated(const UActorComponent* ActorComponent)
+{
+	return ActorComponent->GetIsReplicated();
+}

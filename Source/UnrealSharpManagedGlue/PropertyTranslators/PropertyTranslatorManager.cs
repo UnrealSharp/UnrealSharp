@@ -142,7 +142,11 @@ public static class PropertyTranslatorManager
         // Manually exported properties
         InclusionLists.BanProperty("UWorld", "GameState");
         InclusionLists.BanProperty("UWorld", "AuthorityGameMode");
+        
+        // Replicated properties handled by custom code
         InclusionLists.BanProperty("AActor", "bReplicates");
+        InclusionLists.BanProperty("UActorComponent", "bReplicates");
+        InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
 
         // Some reason == equality differs from .Equals
         InclusionLists.BanEquality("FRandomStream");

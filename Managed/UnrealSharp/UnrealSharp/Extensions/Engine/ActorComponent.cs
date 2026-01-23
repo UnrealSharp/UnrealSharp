@@ -6,6 +6,15 @@ namespace UnrealSharp.Engine;
 public partial class UActorComponent
 {
     /// <summary>
+    /// Whether this component is replicated to clients.
+    /// </summary>
+    public bool IsReplicated 
+    {
+        get => UCSActorComponentExtensions.GetIsReplicated(this);
+        set => UCSActorComponentExtensions.SetIsReplicated(this, value);
+    }
+    
+    /// <summary>
     /// Register a SubObject that will get replicated along with the actor component.
     /// The subobject needs to be manually removed from the list before it gets deleted.
     /// </summary>

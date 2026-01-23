@@ -102,6 +102,11 @@ public static class ScriptGeneratorUtilities
         {
             return false;
         }
+        
+        if (InclusionLists.HasBannedFunction(function))
+        {
+            return false;
+        }
 
         return CanExportParameters(function);
     }

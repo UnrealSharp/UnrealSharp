@@ -17,4 +17,10 @@ public:
 	
 	UFUNCTION(meta=(ScriptMethod))
 	static bool IsReplicatedSubObjectRegistered(UActorComponent* ActorComponent, UObject* SubObject);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static void SetIsReplicated(UActorComponent* ActorComponent, bool bInIsReplicated);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static bool GetIsReplicated(const UActorComponent* ActorComponent);
 };
