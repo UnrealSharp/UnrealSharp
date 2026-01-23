@@ -19,6 +19,11 @@
 void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+
+	if (IsRunningCommandlet()) 
+	{
+		return;
+	}
 	
 	UCSManager& Manager = UCSManager::Get();
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
