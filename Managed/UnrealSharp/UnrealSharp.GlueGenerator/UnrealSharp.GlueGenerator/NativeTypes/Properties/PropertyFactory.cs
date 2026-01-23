@@ -37,6 +37,7 @@ public static class PropertyFactory
         ["TArray"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["List"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["IList"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
+        ["IReadOnlyList"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["IEnumerable"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         ["ICollection"] = (m, t, o, syntaxNode) => new ArrayProperty(m, t, o, syntaxNode),
         
