@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.Exporters;
+using UnrealSharpManagedGlue.PropertyTranslators;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public class GetterSetterPair
 {
@@ -92,7 +92,7 @@ public static class ScriptGeneratorUtilities
 
     public static string TryGetPluginDefine(string key)
     {
-        Program.PluginModule.TryGetDefine(key, out string? generatedCodePath);
+        GeneratorStatics.PluginModule.TryGetDefine(key, out string? generatedCodePath);
         return generatedCodePath!;
     }
 
@@ -110,7 +110,7 @@ public static class ScriptGeneratorUtilities
     {
         bool CanExportParameter(UhtProperty property, Func<PropertyTranslator, bool> isSupported)
         {
-            PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(property);
+            PropertyTranslator? translator = property.GetTranslator();
             return translator != null && isSupported(translator) && translator.CanExport(property);
         }
 
@@ -133,7 +133,7 @@ public static class ScriptGeneratorUtilities
 
     public static bool CanExportProperty(UhtProperty property)
     {
-        PropertyTranslator? translator = PropertyTranslatorManager.GetTranslator(property);
+        PropertyTranslator? translator = property.GetTranslator();
         if (translator == null || !translator.CanExport(property))
         {
             return false;
@@ -338,9 +338,7 @@ public static class ScriptGeneratorUtilities
             return true;
         }
 
-        bool isOutParm = function.Properties.Any(p =>
-            p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
-
+        bool isOutParm = function.Properties.Any(p => p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
         if (function.ReturnProperty != null || isOutParm)
         {
             pair.Getter = function;

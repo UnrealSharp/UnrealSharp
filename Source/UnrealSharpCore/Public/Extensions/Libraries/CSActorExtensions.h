@@ -26,6 +26,15 @@ public:
 
 	UFUNCTION(meta=(ScriptMethod))
 	static FBox GetComponentsBoundingBox(const AActor* Actor, bool bNonColliding = false, bool bIncludeFromChildActors = false);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static bool GetReplicates(AActor* Actor);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static void SetReplicates(AActor* Actor, bool bReplicates);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static void MarkAsNetworkAddressable(AActor* Actor);
 
 public:
 	static void CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord);

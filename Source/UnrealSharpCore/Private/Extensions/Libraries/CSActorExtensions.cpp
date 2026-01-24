@@ -113,6 +113,36 @@ FBox UCSActorExtensions::GetComponentsBoundingBox(const AActor* Actor, bool bNon
 	return Actor->GetComponentsBoundingBox(bNonColliding, bIncludeFromChildActors);
 }
 
+bool UCSActorExtensions::GetReplicates(AActor* Actor)
+{
+	return Actor->GetIsReplicated();
+}
+
+void UCSActorExtensions::SetReplicates(AActor* Actor, bool bReplicates)
+{
+	static FBoolProperty* ReplicatesProperty = FindFieldChecked<FBoolProperty>(AActor::StaticClass(), TEXT("bReplicates"));
+	
+	if (Actor->IsActorInitialized())
+	{
+		Actor->SetReplicates(bReplicates);
+	}
+	else
+	{
+		ReplicatesProperty->SetPropertyValue_InContainer(Actor, bReplicates);
+	}
+}
+
+void UCSActorExtensions::MarkAsNetworkAddressable(AActor* Actor)
+{
+	if (!IsValid(Actor))
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Calling {0} with an invalid Actor reference", __FUNCTION__);
+		return;
+	}
+	
+	Actor->SetNetAddressable();
+}
+
 void UCSActorExtensions::CreateNewRecord(const UInheritableComponentHandler* InheritableComponentHandler, const FComponentKey& Key, FComponentOverrideRecord* NewRecord)
 {
 	UActorComponent* BestArchetype = FindBestArchetype(InheritableComponentHandler->GetOuter(), Key);

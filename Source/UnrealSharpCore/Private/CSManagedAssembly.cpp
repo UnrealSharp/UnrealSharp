@@ -33,7 +33,7 @@ bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::LoadManagedAssembly: " + AssemblyName.ToString())));
 
-	if (IsValidAssembly())
+	if (IsAssemblyLoaded())
 	{
 		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already loaded", *AssemblyName.ToString());
 		return true;
@@ -71,7 +71,7 @@ bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
 
 bool UCSManagedAssembly::UnloadManagedAssembly()
 {
-	if (!IsValidAssembly())
+	if (!IsAssemblyLoaded())
 	{
 		// Assembly is already unloaded.
 		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", *AssemblyName.ToString());
@@ -100,7 +100,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::FindTypeHandle(const FCSFieldName& Fie
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::FindTypeHandle);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Looking up type handle for {0}", *FieldName.GetFullName().ToString());
 	
-	if (!IsValidAssembly())
+	if (!IsAssemblyLoaded())
 	{
 		return nullptr;
 	}

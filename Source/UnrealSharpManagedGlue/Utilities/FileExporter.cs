@@ -4,9 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public struct ProjectDirInfo
 {
@@ -56,23 +57,28 @@ public static class FileExporter
     public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
     {
         string absoluteFilePath = GetFilePath(typeName, directory);
-        bool directoryExists = Directory.Exists(directory);
-        bool glueExists = File.Exists(absoluteFilePath);
-
+        
+        bool needsWrite = true;
+        if (File.Exists(absoluteFilePath))
+        {
+            FileInfo fileInfo = new FileInfo(absoluteFilePath);
+            if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
+            {
+                needsWrite = false;
+            }
+        }
+        
         ReadWriteLock.EnterWriteLock();
         try
         {
             AffectedFiles.Add(absoluteFilePath);
-            
-            bool matchingGlue = glueExists && File.ReadAllText(absoluteFilePath) == text;
 
-            // If the directory exists and the file exists with the same text, we can return early
-            if (directoryExists && matchingGlue)
+            if (!needsWrite)
             {
                 return;
             }
-
-            if (!directoryExists)
+            
+            if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -130,7 +136,7 @@ public static class FileExporter
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
         
-        CleanFilesInDirectories(Program.EngineGluePath);
+        CleanFilesInDirectories(GeneratorStatics.EngineGluePath);
         
         foreach (ProjectDirInfo pluginDirectory in PluginUtilities.PluginInfo.Values)
         {
@@ -145,7 +151,7 @@ public static class FileExporter
 
     public static void CleanModuleFolders()
     {
-        CleanGeneratedFolder(Program.EngineGluePath);
+        CleanGeneratedFolder(GeneratorStatics.EngineGluePath);
         
         foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
         {
@@ -225,7 +231,7 @@ public static class FileExporter
             }
 
             string moduleName = Path.GetFileName(directory);
-            if (!ModuleHeadersTracker.HasModuleBeenExported(moduleName))
+            if (!PackageHeadersTracker.HasModuleBeenExported(moduleName))
             {
                 continue;
             }
@@ -250,7 +256,6 @@ public static class FileExporter
             }
         }
     }
-
     static bool IsIntermediateDirectory(string path)
     {
         string directoryName = Path.GetFileName(path);

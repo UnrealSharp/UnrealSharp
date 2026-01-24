@@ -1,18 +1,19 @@
 ﻿using System.Collections.Generic;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class ExtensionsClassExporter
 {
     public static void ExportExtensionsClass(UhtPackage package, List<ExtensionMethod> extensionMethods)
     {
-        Dictionary<UhtType, List<ExtensionMethod>?> libraryToExtensionMethod = new();
+        Dictionary<UhtClass, List<ExtensionMethod>?> libraryToExtensionMethod = new();
         
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
-            UhtType outerClass = extensionMethod.Function.Outer!;
+            UhtClass outerClass = (UhtClass) extensionMethod.Function.Outer!;
             
             if (!libraryToExtensionMethod.TryGetValue(outerClass, out List<ExtensionMethod>? libraryExtensions))
             {
@@ -23,21 +24,20 @@ public static class ExtensionsClassExporter
             libraryExtensions!.Add(extensionMethod);
         }
         
-        foreach (KeyValuePair<UhtType, List<ExtensionMethod>?> pair in libraryToExtensionMethod)
+        foreach (KeyValuePair<UhtClass, List<ExtensionMethod>?> pair in libraryToExtensionMethod)
         {
-            UhtType libraryClass = pair.Key;
+            UhtClass libraryClass = pair.Key;
             List<ExtensionMethod>? libraryExtensions = pair.Value;
             ExportLibrary(package, libraryClass, libraryExtensions!);
         }
     }
 
-    public static void ExportLibrary(UhtPackage package, UhtType libraryClass, List<ExtensionMethod> extensionMethods)
+    public static void ExportLibrary(UhtPackage package, UhtClass libraryClass, List<ExtensionMethod> extensionMethods)
     {
-        string typeNamespace = package.GetNamespace();
         string className = $"{libraryClass.EngineName}_Extensions";
         
         GeneratorStringBuilder stringBuilder = new();
-        stringBuilder.GenerateTypeSkeleton(typeNamespace);
+        stringBuilder.StartGlueFile(libraryClass);
         stringBuilder.DeclareType(package, "static class", className, null, false);
         
         foreach (ExtensionMethod extensionMethod in extensionMethods)
@@ -49,6 +49,7 @@ public static class ExtensionsClassExporter
         }
         
         stringBuilder.CloseBrace();
+        stringBuilder.EndGlueFile(libraryClass);
         
         string directory = FileExporter.GetDirectoryPath(package);
         FileExporter.SaveGlueToDisk(package, directory, className, stringBuilder.ToString());

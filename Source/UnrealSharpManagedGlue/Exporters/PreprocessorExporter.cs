@@ -1,23 +1,20 @@
-﻿using EpicGames.UHT.Types;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
-using UnrealSharpScriptGenerator.Utilities;
-using static System.Net.Mime.MediaTypeNames;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class PreprocessorExporter
 {
-    private static HashSet<string> LoadUE5RulesDefines(string engineDir)
+    private static HashSet<string> LoadUE5RulesDefines(string engineDirectory)
     {
         HashSet<string> definesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        string csproj = Path.Combine(engineDir, "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
+        string csproj = Path.Combine(engineDirectory, "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
 
         if (!File.Exists(csproj))
         {
@@ -59,17 +56,12 @@ public static class PreprocessorExporter
         return definesSet;
     }
     
-    public static void StartExportingPreprocessors(string? engineDirectory, List<Task> tasks)
+    public static void StartExportingPreprocessors()
     {
-        if (engineDirectory == null)
+        TaskManager.StartTask(static _ =>
         {
-            throw new InvalidOperationException("Engine directory is null, cannot load UE5Rules defines.");
-        }
-
-        tasks.Add(Program.Factory.CreateTask(_ =>
-        {
-            ExportDirective(LoadUE5RulesDefines(engineDirectory));
-        })!);
+            ExportDirective(LoadUE5RulesDefines(GeneratorStatics.EngineDirectory));
+        });
     }
 
     private static void ExportDirective(HashSet<string> defines)
@@ -93,7 +85,7 @@ public static class PreprocessorExporter
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
 
-        string propsPath = Path.Combine(Program.EngineGluePath, "UE5Rules.Defines.props");
+        string propsPath = Path.Combine(GeneratorStatics.EngineGluePath, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 

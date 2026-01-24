@@ -50,6 +50,8 @@ void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedRef<FCS
 	
 	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Rebuilding type: {0}", *TypeToRecompile->GetName());
 	Recompile(TypeToRecompile, ManagedTypeDefinition);
+	
+	FCSMetaDataUtils::ApplyMetaData(ManagedTypeDefinition->GetReflectionData()->MetaData, TypeToRecompile);
 }
 
 FString UCSManagedTypeCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const

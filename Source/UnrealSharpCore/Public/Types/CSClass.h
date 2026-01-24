@@ -18,10 +18,6 @@ public:
 	virtual void PurgeClass(bool bRecompilingOnLoad) override;
 	// End of UObject interface
 	
-	// UClass interface
-	virtual bool CanCreateAssetOfClass() const override { return false; }
-	// End of UClass interface
-	
 	void SetOwningBlueprint(UBlueprint* InOwningBlueprint)
 	{
 		OwningBlueprint = InOwningBlueprint;
@@ -32,16 +28,16 @@ public:
 	{
 		return OwningBlueprint;
 	}
+#endif
 	
 	void SetDeferredCreation(bool bInDeferredCreation) { bDeferredCreation = bInDeferredCreation; }
 	bool IsCreationDeferred() const { return bDeferredCreation; }
-#endif
 	
 private:
+	bool bDeferredCreation = true;
+	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)
 	TObjectPtr<UBlueprint> OwningBlueprint;
-	
-	bool bDeferredCreation = true;
 #endif
 };

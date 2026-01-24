@@ -31,8 +31,7 @@ void UCSManagedStructCompiler::Recompile(UField* TypeToRecompile, const TSharedP
 	
 	Struct->Bind();
 	Struct->StaticLink(true);
-	Struct->RecreateDefaults();
-	Struct->UpdateStructFlags();
+	Struct->Initialize();
 	
 	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Struct);
 
@@ -50,6 +49,7 @@ void UCSManagedStructCompiler::PurgeStruct(UCSScriptStruct* Field)
 {
 	FCSUnrealSharpUtils::PurgeStruct(Field);
 #if WITH_EDITORONLY_DATA
+	Field->ErrorMessage.Empty();
 	Field->PrimaryStruct = nullptr;
 	Field->EditorData = nullptr;
 #endif

@@ -2,22 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using EpicGames.UHT.Utils;
 using UnrealSharp.Shared;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 public static class USharpBuildToolUtilities
 {
     public static bool InvokeUSharpBuildTool(string action, List<KeyValuePair<string, string>>? arguments = null)
     {
-        string path = Path.Combine(Program.ManagedBinariesPath, DotNetUtilities.DOTNET_MAJOR_VERSION_DISPLAY);
+        string path = Path.Combine(GeneratorStatics.ManagedBinariesPath, DotNetUtilities.DOTNET_MAJOR_VERSION_DISPLAY);
         return DotNetUtilities.InvokeUSharpBuildTool(action, path,
-            Program.ProjectName,
-            Program.PluginDirectory,
-            Program.Factory.Session.ProjectDirectory!,
-            Program.Factory.Session.EngineDirectory!,
+            GeneratorStatics.ProjectName,
+            GeneratorStatics.PluginDirectory,
+            GeneratorStatics.Factory.Session.ProjectDirectory!,
+            GeneratorStatics.Factory.Session.EngineDirectory!,
             arguments);
     }
     
@@ -25,7 +24,7 @@ public static class USharpBuildToolUtilities
     {
         Console.WriteLine("Compiling USharpBuildTool...");
         
-        string uSharpBuildToolDirectory = Path.Combine(Program.ManagedPath, "UnrealSharpPrograms");
+        string uSharpBuildToolDirectory = Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharpPrograms");
         
         if (!Directory.Exists(uSharpBuildToolDirectory))
         {

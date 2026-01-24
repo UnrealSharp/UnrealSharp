@@ -1,5 +1,4 @@
 using UnrealSharp.Core;
-using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
@@ -8,10 +7,7 @@ public abstract class DelegateBase<TDelegate> where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();
 
-    protected virtual TDelegate GetInvoker()
-    {
-        return null;
-    }
+    protected abstract TDelegate GetInvoker();
 
     public abstract void FromNative(IntPtr address, IntPtr nativeProperty);
     public abstract void ToNative(IntPtr address);
@@ -81,7 +77,7 @@ public class SingleDelegateMarshaller<T> where T : Delegate
 
 public abstract class TDelegateBase<T> where T : Delegate
 {
-    static readonly Type Wrapper;
+    private static readonly Type Wrapper;
     
     public readonly DelegateBase<T> InnerDelegate;
     
@@ -170,10 +166,6 @@ public abstract class TDelegateBase<T> where T : Delegate
 
 public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public TMulticastDelegate() : base()
-    {
-    }
-
     public static TMulticastDelegate<T> operator +(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
@@ -189,11 +181,6 @@ public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
 
 public class TDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public TDelegate() : base()
-    {
-        
-    }
-    
     public static TDelegate<T> operator +(TDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);

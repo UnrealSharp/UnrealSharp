@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using CommandLine;
+﻿using CommandLine;
 using Newtonsoft.Json;
 using UnrealSharpBuildTool.Actions;
 

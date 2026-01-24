@@ -45,6 +45,12 @@ public:
 		ensureMsgf(ManagedTypeDefinition.IsValid(), TEXT("ManagedTypeDefinition is not set. Call SetManagedTypeDefinition() first."));
 		return ManagedTypeDefinition->GetOwningAssembly();
 	}
+	
+	TSharedPtr<FGCHandle> GetTypeGCHandle() const
+	{
+		ensureMsgf(ManagedTypeDefinition.IsValid(), TEXT("ManagedTypeDefinition is not set. Call SetManagedTypeDefinition() first."));
+		return ManagedTypeDefinition->GetTypeGCHandle();
+	}
 
 #if WITH_EDITOR
 	FCSManagedReferencesCollection& GetManagedReferencesCollection() { return ManagedReferences; }

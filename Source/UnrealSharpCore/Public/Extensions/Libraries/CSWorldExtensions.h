@@ -15,6 +15,9 @@ struct FCSSpawnActorParameters
 
 	UPROPERTY()
 	TObjectPtr<AActor> Template = nullptr;
+	
+	UPROPERTY()
+	FName Name;
 
 	UPROPERTY()
 	ESpawnActorCollisionHandlingMethod SpawnMethod = ESpawnActorCollisionHandlingMethod::Undefined;
@@ -39,6 +42,10 @@ public:
 
 	UFUNCTION(meta = (ScriptMethod))
 	static FURL WorldURL(const UObject* WorldContextObject);
+	
+	UFUNCTION(meta = (ScriptMethod))
+	static void ServerTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute = false, bool bShouldSkipGameNotify = false);
+	
 private:
 	static AActor* SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction);
 };

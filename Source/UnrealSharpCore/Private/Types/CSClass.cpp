@@ -32,13 +32,11 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 
 		Property->InitializeValue_InContainer(Object);
 	}
-
-#if WITH_EDITOR
+	
 	if (FirstManagedClass->IsCreationDeferred())
 	{
 		return;
 	}
-#endif
 	
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FirstManagedClass->GetManagedTypeDefinition();
 	UCSManagedAssembly* OwningAssembly = ManagedTypeDefinition->GetOwningAssembly();

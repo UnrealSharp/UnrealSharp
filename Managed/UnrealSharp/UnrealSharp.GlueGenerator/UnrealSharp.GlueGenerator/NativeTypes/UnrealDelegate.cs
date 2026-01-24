@@ -85,32 +85,12 @@ public record UnrealDelegate : UnrealType
         _delegateSignature.ExportBackingVariablesToStaticConstructor(builder, _delegateSignature.FunctionNativePtr);
         builder.EndTypeStaticConstructor();
         
-        AppendAddOperator(builder, delegateWrapperClassName);
-        AppendNegateOperator(builder, delegateWrapperClassName);
         AppendInvoker(builder, args);
         
         builder.CloseBrace();
         builder.AppendLine();
         
         AppendExtensionsClass(builder, args, parameters);
-    }
-
-    void AppendAddOperator(GeneratorStringBuilder builder, string wrapperName)
-    {
-        builder.AppendLine($"public static {wrapperName} operator +({wrapperName} a, {_delegateSignature.SourceName} b)");
-        builder.OpenBrace();
-        builder.AppendLine("a.Add(b);");
-        builder.AppendLine("return a;");
-        builder.CloseBrace();
-    }
-    
-    void AppendNegateOperator(GeneratorStringBuilder builder, string wrapperName)
-    {
-        builder.AppendLine($"public static {wrapperName} operator -({wrapperName} a, {_delegateSignature.SourceName} b)");
-        builder.OpenBrace();
-        builder.AppendLine("a.Remove(b);");
-        builder.AppendLine("return a;");
-        builder.CloseBrace();
     }
     
     void AppendInvoker(GeneratorStringBuilder builder, string args)

@@ -174,6 +174,7 @@ public record UnrealProperty : UnrealType
     {
         UnrealProperty property = (UnrealProperty)topType;
         property.ReplicatedUsing = (string)replicatedUsing.Value!;
+        property.PropertyFlags |= EPropertyFlags.RepNotify | EPropertyFlags.Net;
     }
     
     [InspectArgument("LifetimeCondition", UPropertyAttributeName)]

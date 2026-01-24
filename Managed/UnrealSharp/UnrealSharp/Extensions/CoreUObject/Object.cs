@@ -637,6 +637,16 @@ public partial class UObject
     public AWorldSettings WorldSettings => UCSObjectExtensions.GetWorldSettings(this);
 
     /// <summary>
+    /// Gets the primary asset id of the object
+    /// </summary>
+    public FPrimaryAssetId PrimaryAssetId => UCSObjectExtensions.GetPrimaryAssetId(this);
+
+    /// <summary>
+    /// Returns whether this object is contained in or part of a blueprint object
+    /// </summary>
+    public bool IsInBlueprint => UCSObjectExtensions.IsInBlueprint(this);
+
+    /// <summary>
     /// Gets the world settings as the specified type.
     /// </summary>
     /// <typeparam name="T"> The type of the world settings to get. </typeparam>
@@ -660,21 +670,14 @@ internal static class ReflectionHelper
     // Get the name without the U/A/F/E prefix.
     internal static string GetEngineName(this Type type)
     {
-        Attribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
+        GeneratedTypeAttribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
 
         if (generatedTypeAttribute is null)
         {
-            return type.Name;
+            throw new Exception("Generated Type doesn't exist");
         }
 
-        FieldInfo? field = generatedTypeAttribute.GetType().GetField("EngineName");
-
-        if (field == null)
-        {
-            throw new InvalidOperationException($"The EngineName field was not found in the {nameof(GeneratedTypeAttribute)}.");
-        }
-
-        return (string) field.GetValue(generatedTypeAttribute)!;
+        return generatedTypeAttribute.EngineName;
     }
 
     internal static IntPtr TryGetNativeClass(this Type type)

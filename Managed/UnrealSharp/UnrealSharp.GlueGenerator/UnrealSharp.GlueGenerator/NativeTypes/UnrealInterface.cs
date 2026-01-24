@@ -13,14 +13,15 @@ public record UnrealInterface : UnrealClassBase
     public UnrealInterface(ITypeSymbol typeSymbol, UnrealType? outer = null) : base(typeSymbol, outer)
     {
         ClassFlags |= EClassFlags.Interface;
+        AddMetaData("BlueprintType", "true");
     }
     
     [Inspect("UnrealSharp.Attributes.UInterfaceAttribute", "UInterfaceAttribute", "Global")]
     public static UnrealType UInterfaceAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
-        UnrealInterface unrealClass = new UnrealInterface(typeSymbol);
-        return unrealClass;
+        UnrealInterface unrealInterface = new UnrealInterface(typeSymbol);
+        return unrealInterface;
     }
 
     [InspectArgument("CannotImplementInterfaceInBlueprint", UInterfaceAttributeName)]
@@ -34,6 +35,8 @@ public record UnrealInterface : UnrealClassBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
+        builder.BeginType(this, SourceGenUtilities.InterfaceKeyword);
+        builder.CloseBrace();
         ExportMarshaller(builder);
     }
     

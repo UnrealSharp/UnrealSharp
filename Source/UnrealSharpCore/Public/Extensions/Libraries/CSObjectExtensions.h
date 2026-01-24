@@ -23,4 +23,10 @@ public:
 
 	UFUNCTION(meta = (ScriptMethod))
 	static UObject* GetOuter(const UObject* Object);
+	
+	UFUNCTION(meta = (ScriptMethod))
+	static FPrimaryAssetId GetPrimaryAssetId(const UObject* Object);
+	
+	UFUNCTION(meta = (ScriptMethod))
+	static bool IsInBlueprint(const UObject* Object);
 };

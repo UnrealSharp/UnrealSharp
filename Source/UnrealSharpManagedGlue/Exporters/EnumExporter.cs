@@ -1,9 +1,11 @@
 ﻿using System;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Tooltip;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Attributes;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+using UnrealSharpManagedGlue.Tooltip;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class EnumExporter
 {
@@ -11,9 +13,7 @@ public static class EnumExporter
     {
         GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
         
-        string moduleName = enumObj.GetNamespace();
-        
-        stringBuilder.GenerateTypeSkeleton(moduleName);
+        stringBuilder.StartGlueFile(enumObj);
         stringBuilder.AppendTooltip(enumObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(enumObj);
@@ -40,6 +40,8 @@ public static class EnumExporter
         }
         
         stringBuilder.CloseBrace();
+        stringBuilder.EndGlueFile(enumObj);
+        
         FileExporter.SaveGlueToDisk(enumObj, stringBuilder);
     }
     
@@ -59,6 +61,5 @@ public static class EnumExporter
             UhtEnumUnderlyingType.Uint64 => "ulong",
             _ => throw new ArgumentOutOfRangeException(nameof(underlyingType), underlyingType, null)
         };
-        
     }
 }

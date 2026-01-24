@@ -1,34 +1,37 @@
+using System.Collections.Concurrent;
+using System.Reflection;
+
 namespace UnrealSharp.Core;
 
-public static class StartUpJobManager
+public static class StartupJobManager
 {
-    private static readonly Dictionary<string, List<Action>> AssemblyStartupJobs = new();
-    
-    public static void RegisterStartUpJob(string assemblyName, Action initializer)
-    {
-        if (!AssemblyStartupJobs.TryGetValue(assemblyName, out List<Action>? value))
-        {
-            value = new List<Action>();
-            AssemblyStartupJobs[assemblyName] = value;
-        }
+    private static readonly ConcurrentDictionary<Assembly, ConcurrentQueue<Action>> JobsByAssembly = new();
 
-        value.Add(initializer);
-    }
-    
-    public static void RunStartUpJobForAssembly(string assemblyName)
+    public static void Register(Assembly assembly, Action job)
     {
-        if (!AssemblyStartupJobs.TryGetValue(assemblyName, out List<Action>? initializers))
+        ConcurrentQueue<Action> queue = JobsByAssembly.GetOrAdd(assembly, static _ => new ConcurrentQueue<Action>());
+        queue.Enqueue(job);
+    }
+
+    public static void RunForAssembly(Assembly assembly)
+    {
+        if (!JobsByAssembly.TryRemove(assembly, out ConcurrentQueue<Action>? queue))
         {
             return;
         }
-        
-        foreach (Action initializer in initializers)
+
+        while (queue.TryDequeue(out Action? jobToRun))
         {
-            initializer();
+            try
+            {
+                jobToRun();
+            }
+            catch (Exception ex)
+            {
+                LogUnrealSharpCore.LogError($"Exception while running startup job for assembly {assembly.FullName}: {ex}");
+            }
         }
-            
-        AssemblyStartupJobs.Remove(assemblyName);
     }
-    
-    public static bool HasJobsForAssembly(string assemblyName) => AssemblyStartupJobs.ContainsKey(assemblyName);
+
+    public static bool HasJobs(Assembly assembly) => JobsByAssembly.ContainsKey(assembly);
 }

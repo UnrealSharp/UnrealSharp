@@ -4,7 +4,7 @@
 #include "Engine/DataAsset.h"
 #include "CSPrimaryDataAsset.generated.h"
 
-UCLASS()
+UCLASS(Abstract)
 class UCSPrimaryDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

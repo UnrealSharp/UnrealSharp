@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Tooltip;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Attributes;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+using UnrealSharpManagedGlue.Tooltip;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class InterfaceExporter
 {
@@ -18,9 +19,8 @@ public static class InterfaceExporter
         
         bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
-        string typeNamespace = interfaceObj.GetNamespace();
         
-        stringBuilder.GenerateTypeSkeleton(typeNamespace, nullableEnabled: nullableEnabled);
+        stringBuilder.StartGlueFile(interfaceObj, nullableEnabled: nullableEnabled);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
@@ -99,6 +99,7 @@ public static class InterfaceExporter
         stringBuilder.CloseBrace();
         stringBuilder.CloseBrace();
         
+        stringBuilder.EndGlueFile(interfaceObj);
         FileExporter.SaveGlueToDisk(interfaceObj, stringBuilder);
     }
 
@@ -116,9 +117,8 @@ public static class InterfaceExporter
             UhtProperty firstProperty = getterSetterPair.Property;
             string propertyName = getterSetterPair.PropertyName;
             
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            PropertyTranslator translator = firstProperty.GetTranslator()!;
             stringBuilder.TryAddWithEditor(firstAccessor);
-            string protection = firstProperty.GetProtection();
             stringBuilder.AppendTooltip(firstProperty);
         
             string managedType = translator.GetManagedType(firstProperty);

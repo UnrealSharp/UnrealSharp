@@ -1,15 +1,14 @@
 ﻿using EpicGames.UHT.Types;
 using System.Collections.Generic;
-using System.Linq;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 public static class InclusionLists
 {
     private static readonly IDictionary<string, HashSet<string>> BannedProperties = new Dictionary<string, HashSet<string>>();
-    private static readonly HashSet<string> BannedEquality = new HashSet<string>();
-    private static readonly HashSet<string> BannedArithmetic = new HashSet<string>();
+    private static readonly HashSet<string> BannedEquality = new();
+    private static readonly HashSet<string> BannedArithmetic = new();
 
     public static void BanProperty(string structName, string propertyName)
     {

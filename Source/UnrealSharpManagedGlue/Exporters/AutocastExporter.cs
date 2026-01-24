@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class AutocastExporter 
 {
@@ -19,24 +19,24 @@ public static class AutocastExporter
             ExportedAutocasts[conversionStruct] = value;
         }
 
-        value!.Add(function);
+        value.Add(function);
     }
     
-    public static void StartExportingAutocastFunctions(List<Task> tasks)
+    public static void StartExportingAutocastFunctions()
     {
         foreach (KeyValuePair<UhtStruct, List<UhtFunction>> pair in ExportedAutocasts)
         {
-            tasks.Add(Program.Factory.CreateTask(_ => 
+            TaskManager.StartTask(_ => 
             {
                 ExportAutocast(pair.Key, pair.Value);
-            })!);
+            });
         }
     }
     
     static void ExportAutocast(UhtStruct conversionStruct, List<UhtFunction> functions)
     {
         GeneratorStringBuilder stringBuilder = new();
-        stringBuilder.GenerateTypeSkeleton(conversionStruct);
+        stringBuilder.StartGlueFile(conversionStruct);
         stringBuilder.DeclareType(conversionStruct, "struct", conversionStruct.GetStructName());
 
         string conversionStructName = conversionStruct.GetFullManagedName();
@@ -44,7 +44,7 @@ public static class AutocastExporter
         
         foreach (UhtFunction function in functions)
         {
-            string returnType = PropertyTranslatorManager.GetTranslator(function.ReturnProperty!)!.GetManagedType(function.ReturnProperty!);
+            string returnType = function.ReturnProperty!.GetTranslator()!.GetManagedType(function.ReturnProperty!);
             string functionCall = $"{function.Outer!.GetFullManagedName()}.{function.GetFunctionName()}";
             
             if (SharesSignature(function, exportedFunctions) || ReturnValueIsSameAsParameter(function))
@@ -60,6 +60,8 @@ public static class AutocastExporter
 
         string directory = FileExporter.GetDirectoryPath(conversionStruct.Package);
         string fileName = $"{conversionStruct.EngineName}.Autocast";
+        
+        stringBuilder.EndGlueFile(conversionStruct);
         FileExporter.SaveGlueToDisk(conversionStruct.Package, directory, fileName, stringBuilder.ToString());
     }
     

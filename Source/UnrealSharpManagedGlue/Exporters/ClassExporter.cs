@@ -1,21 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
-using UnrealSharpScriptGenerator.Tooltip;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Attributes;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+using UnrealSharpManagedGlue.Tooltip;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 public static class ClassExporter
 {
     public static void ExportClass(UhtClass classObj, bool isManualExport)
     {
         GeneratorStringBuilder stringBuilder = new();
-
-        string typeNameSpace = classObj.GetNamespace();
         
         List<UhtFunction> exportedFunctions = new();
         List<UhtFunction> exportedOverrides = new();
@@ -33,7 +34,7 @@ public static class ClassExporter
         List<UhtClass> interfaces = classObj.GetInterfaces();
         
         bool nullableEnabled = classObj.HasMetadata(UhtTypeUtilities.NullableEnable);
-        stringBuilder.GenerateTypeSkeleton(typeNameSpace, nullableEnabled: nullableEnabled);
+        stringBuilder.StartGlueFile(classObj, nullableEnabled: nullableEnabled);
         stringBuilder.AppendTooltip(classObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(classObj);
@@ -41,6 +42,7 @@ public static class ClassExporter
         {
             attributeBuilder.AddArgument("ClassFlags.Abstract");
         }
+        
         attributeBuilder.AddGeneratedTypeAttribute(classObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
@@ -82,6 +84,8 @@ public static class ClassExporter
 
         stringBuilder.CloseBrace();
         
+        stringBuilder.EndGlueFile(classObj);
+        
         FileExporter.SaveGlueToDisk(classObj, stringBuilder);
     }
 
@@ -89,7 +93,7 @@ public static class ClassExporter
     {
         foreach (UhtProperty property in exportedProperties)
         {
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
             translator.ExportProperty(generatorStringBuilder, property);
             exportedPropertyNames.Add(property.SourceName);
         }
@@ -105,7 +109,7 @@ public static class ClassExporter
         {
             UhtProperty property = pair.Key;
             GetterSetterPair getterSetterPair = pair.Value;
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
             translator.ExportGetSetProperty(builder, getterSetterPair, property, exportedGetterSetters, exportedFunctionNames);
             
             exportedPropertyNames.Add(getterSetterPair.PropertyName);
@@ -130,7 +134,7 @@ public static class ClassExporter
             UhtProperty firstProperty = pair.Value.Property;
             string propertyName = pair.Value.PropertyName;
             
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            PropertyTranslator translator = firstProperty.GetTranslator()!;
             builder.TryAddWithEditor(firstAccessor);
             translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty, 
                 exportedPropertyNames.Contains(propertyName), exportedFunctionNames);
@@ -156,7 +160,7 @@ public static class ClassExporter
     static void ExportClassFunctions(UhtClass owner, GeneratorStringBuilder builder, List<UhtFunction> exportedFunctions,
                                      HashSet<string> exportedFunctionNames)
     {
-        bool isBlueprintFunctionLibrary = owner.IsChildOf(Program.BlueprintFunctionLibrary);
+        bool isBlueprintFunctionLibrary = owner.IsChildOf(GeneratorStatics.BlueprintFunctionLibrary);
         foreach (UhtFunction function in exportedFunctions)
         {
             if (function.HasAllFlags(EFunctionFlags.Static) && isBlueprintFunctionLibrary)
@@ -185,7 +189,7 @@ public static class ClassExporter
             UhtProperty firstProperty = pair.Value.Property;
             string propertyName = pair.Value.PropertyName;
             
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(firstProperty)!;
+            PropertyTranslator translator = firstProperty.GetTranslator()!;
             builder.TryAddWithEditor(firstAccessor);
             translator.ExportCustomProperty(builder, pair.Value, propertyName, firstProperty, exportedFunctionNames: exportedFunctionNames);
             builder.TryEndWithEditor(firstAccessor);

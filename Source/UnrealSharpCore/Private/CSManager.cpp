@@ -115,7 +115,9 @@ bool UCSManager::IsLoadingAnyAssembly() const
 	for (const TPair<FName, TObjectPtr<UCSManagedAssembly>>& LoadedAssembly : LoadedAssemblies)
 	{
 		UCSManagedAssembly* AssemblyPtr = LoadedAssembly.Value;
-		if (IsValid(AssemblyPtr) && AssemblyPtr->IsAssemblyLoaded())
+		
+		// Assembly is either loading or awaiting load from a reload state.
+		if (AssemblyPtr->IsAssemblyLoading() || !AssemblyPtr->IsAssemblyLoaded())
 		{
 			return true;
 		}
@@ -436,9 +438,9 @@ UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, 
 	}
 
 	FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
-	UCSManagedAssembly* ExistingAssembly = FindAssembly(FName(*AssemblyName));
+	UCSManagedAssembly* ExistingAssembly = FindAssembly(*AssemblyName);
 	
-	if (IsValid(ExistingAssembly) && ExistingAssembly->IsValidAssembly())
+	if (IsValid(ExistingAssembly) && ExistingAssembly->IsAssemblyLoaded())
 	{
 		UE_LOGFMT(LogUnrealSharp, Display, "Assembly {AssemblyFileName} is already loaded.", *AssemblyName);
 		return ExistingAssembly;

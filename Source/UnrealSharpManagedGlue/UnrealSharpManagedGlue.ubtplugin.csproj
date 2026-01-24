@@ -53,8 +53,8 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-        <RootNamespace>UnrealSharpScriptGenerator</RootNamespace>
-        <AssemblyName>UnrealSharpScriptGenerator</AssemblyName>
+        <RootNamespace>UnrealSharpManagedGlue</RootNamespace>
+        <AssemblyName>UnrealSharpManagedGlue</AssemblyName>
         <Configurations>Debug;Release;Development</Configurations>
         <DebugType>pdbonly</DebugType>
         <Nullable>enable</Nullable>

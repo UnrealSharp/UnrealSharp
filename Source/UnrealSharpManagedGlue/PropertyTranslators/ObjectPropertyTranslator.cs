@@ -1,8 +1,8 @@
 ﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 {
@@ -38,8 +38,12 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     private static string GetManagedType(UhtProperty property, bool isNullable)
     {
-        string nullableAnnotation = isNullable ? "?" : "";
-        if (property.IsGenericType()) return $"DOT{nullableAnnotation}";
+        string nullableAnnotation = isNullable ? "?" : string.Empty;
+        
+        if (property.IsGenericType())
+        {
+            return $"DOT{nullableAnnotation}";
+        }
 
         UhtObjectProperty objectProperty = (UhtObjectProperty)property;
         return $"{objectProperty.Class.GetFullManagedName()}{nullableAnnotation}";

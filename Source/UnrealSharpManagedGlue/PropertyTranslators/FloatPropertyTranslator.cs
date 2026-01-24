@@ -1,15 +1,15 @@
 ﻿using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class FloatPropertyTranslator : BlittableTypePropertyTranslator
 {
-    public FloatPropertyTranslator() : base(typeof(UhtFloatProperty), "float", PropertyKind.Float)
+    public FloatPropertyTranslator() : base(typeof(UhtFloatProperty), "float")
     {
     }
 
-    public override string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
+    public override string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter)
     {
-        return base.ConvertCPPDefaultValue(defaultValue, function, parameter) + "f";
+        return base.ConvertCppDefaultValue(defaultValue, function, parameter) + "f";
     }
 }

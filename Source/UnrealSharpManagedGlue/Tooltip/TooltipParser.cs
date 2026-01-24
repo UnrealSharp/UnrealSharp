@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Linq;
 using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.Tooltip;
+namespace UnrealSharpManagedGlue.Tooltip;
 
 public static class TooltipParser
 {

@@ -7,6 +7,20 @@ namespace UnrealSharp.Engine;
 public partial class AActor
 {
     /// <summary>
+    /// All components of the actor
+    /// </summary>
+    public IList<UActorComponent> Components => GetComponentsByClass<UActorComponent>();
+
+    /// <summary>
+    /// If true, this actor will replicate to remote machines
+    /// </summary>
+    public bool Replicates
+    {
+        get => UCSActorExtensions.GetReplicates(this);
+        set => UCSActorExtensions.SetReplicates(this, value);
+    }
+        
+    /// <summary>
     /// Bind an action to a callback.
     /// </summary>
     /// <param name="actionName"> The name of the action to bind </param>
@@ -207,7 +221,8 @@ public partial class AActor
     }
     
     /// <summary>
-    /// All components of the actor
+    /// Allows this actor to be net-addressable by full path name, even if the actor was spawned after map load.
+    /// The caller is required to ensure that this actor's name is stable between server/client. Must be called before FinishSpawning
     /// </summary>
-    public IList<UActorComponent> Components => GetComponentsByClass<UActorComponent>();
+    public void MarkAsNetworkAddressable() => UCSActorExtensions.MarkAsNetworkAddressable(this);
 }

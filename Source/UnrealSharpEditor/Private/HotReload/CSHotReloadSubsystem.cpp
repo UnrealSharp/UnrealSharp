@@ -9,6 +9,7 @@
 #include "Types/CSScriptStruct.h"
 #include "CSProcUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
+#include "Kismet2/StructureEditorUtils.h"
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSEditorUtilities.h"
 #include "Widgets/Notifications/SNotificationList.h"
@@ -18,6 +19,11 @@
 void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+
+	if (IsRunningCommandlet()) 
+	{
+		return;
+	}
 	
 	UCSManager& Manager = UCSManager::Get();
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
@@ -196,6 +202,9 @@ void UCSHotReloadSubsystem::PerformHotReload()
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
 {
 	AddReloadedType(NewStruct);
+	
+	NewStruct->OnChanged();
+	FStructureEditorUtils::BroadcastPostChange(NewStruct);
 }
 
 void UCSHotReloadSubsystem::OnClassRebuilt(UCSClass* NewClass)

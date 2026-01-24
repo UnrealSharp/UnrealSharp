@@ -27,7 +27,7 @@ public enum ETestEnum : byte
 }
 
 [UInterface]
-public interface ITestInterface
+public partial interface ITestInterface
 {
     [UFunction(FunctionFlags.BlueprintEvent)]
     public void InterfaceFunction(int intParam, string strParam);

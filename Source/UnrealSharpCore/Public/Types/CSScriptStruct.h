@@ -13,5 +13,10 @@ class UCSScriptStruct : public UUserDefinedStruct, public ICSManagedTypeInterfac
 {
 	GENERATED_BODY()
 public:
-	void RecreateDefaults() { DefaultStructInstance.Recreate(this); }
+	
+	void Initialize();
+	
+private:
+	void InitializeStructDefaults();
+	TUniquePtr<uint8[]> StructDefaults;
 };

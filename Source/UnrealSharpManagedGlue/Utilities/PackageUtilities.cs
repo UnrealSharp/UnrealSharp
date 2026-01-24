@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PackageUtilities
 {
@@ -39,6 +37,11 @@ public static class PackageUtilities
         return package.IsPlugin;
         #endif
     }
+    
+    public static bool IsEditorOnly(this UhtPackage package)
+    {
+        return package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly | EPackageFlags.Developer);
+    }
 
     public static bool IsForcedAsEngineGlue(this UhtPackage package)
     {
@@ -55,7 +58,7 @@ public static class PackageUtilities
         #endif
     }
 
-    public static bool ShouldExport(this UhtPackage package)
+    public static bool ShouldExportPackage(this UhtPackage package)
     {
         bool foundDefine = package.GetModule().PublicDefines.Contains(SkipGlueGenerationDefine);
         return !foundDefine;

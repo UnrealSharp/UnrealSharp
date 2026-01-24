@@ -115,8 +115,8 @@ void UCSManagedClassCompiler::CompileClass(TSharedPtr<FCSClassReflectionData> Cl
 	Field->StaticLink(true);
 	Field->AssembleReferenceTokenStream();
 	
-	UObject* DefaultObject = Field->GetDefaultObject();
-	SetupDefaultTickSettings(DefaultObject, Field);
+	CreateDeferredManagedCDO(Field);
+	FinalizeManagedCDO(Field);
 
 	Field->SetUpRuntimeReplicationData();
 	Field->UpdateCustomPropertyListForPostConstruction();
@@ -253,6 +253,23 @@ void UCSManagedClassCompiler::SetupDefaultTickSettings(UObject* DefaultObject, c
 	bool bCanTick = FoundTick != nullptr;
 	TickFunction->bCanEverTick = bCanTick;
 	TickFunction->bStartWithTickEnabled = bCanTick;
+}
+
+UObject* UCSManagedClassCompiler::CreateDeferredManagedCDO(UCSClass* ManagedClass)
+{
+	ManagedClass->SetDeferredCreation(true);
+	return ManagedClass->GetDefaultObject(true);
+}
+
+void UCSManagedClassCompiler::FinalizeManagedCDO(UCSClass* ManagedClass)
+{
+	UCSManagedAssembly* ManagedAssembly = ManagedClass->GetOwningAssembly();
+	UObject* DefaultObject = ManagedClass->GetDefaultObject(false);
+	check(IsValid(DefaultObject));
+	
+	ManagedClass->SetDeferredCreation(false);
+	ManagedAssembly->CreateManagedObjectFromNative(DefaultObject, ManagedClass->GetTypeGCHandle());
+	SetupDefaultTickSettings(DefaultObject, ManagedClass);
 }
 
 void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceReflectionData>& Interfaces)

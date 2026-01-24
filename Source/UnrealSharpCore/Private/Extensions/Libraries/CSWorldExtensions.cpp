@@ -42,6 +42,25 @@ FURL UCSWorldExtensions::WorldURL(const UObject* WorldContextObject)
 	return World->URL;
 }
 
+void UCSWorldExtensions::ServerTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute, bool bShouldSkipGameNotify)
+{
+	if (!IsValid(WorldContextObject))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
+		return;
+	}
+	
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	
+	if (!IsValid(World))
+	{
+		UE_LOG(LogUnrealSharp, Error, TEXT("Failed to get world from context object"));
+		return;
+	}
+
+	World->ServerTravel(URL, bAbsolute, bShouldSkipGameNotify);
+}
+
 AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction)
 {
 	if (!IsValid(WorldContextObject) || !IsValid(Class))
@@ -64,6 +83,7 @@ AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObjec
 	SpawnParams.Template = SpawnParameters.Template;
 	SpawnParams.SpawnCollisionHandlingOverride = SpawnParameters.SpawnMethod;
 	SpawnParams.bDeferConstruction = bDeferConstruction;
+	SpawnParams.Name = SpawnParameters.Name;
 	
 	return World->SpawnActor(Class, &Transform, SpawnParams);
 }

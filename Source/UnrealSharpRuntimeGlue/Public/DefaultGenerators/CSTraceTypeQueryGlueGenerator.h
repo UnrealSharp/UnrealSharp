@@ -10,13 +10,13 @@ UCLASS(DisplayName="Trace Type Query Glue Generator", NotBlueprintable, NotBluep
 class UCSTraceTypeQueryGlueGenerator : public UCSGlueGenerator
 {
 	GENERATED_BODY()
-private:
+
 	// UCSGlueGenerator interface
 	virtual void Initialize() override;
-	virtual void ForceRefresh() override { ProcessTraceTypeQuery(); }
+	virtual void ForceRefresh() override { ProcessCollisionProfile(); }
 	// End of UCSGlueGenerator interface
 
 	void OnCollisionProfileChanged(UCollisionProfile* CollisionProfile);
 	
-	void ProcessTraceTypeQuery();
+	void ProcessCollisionProfile();
 };
