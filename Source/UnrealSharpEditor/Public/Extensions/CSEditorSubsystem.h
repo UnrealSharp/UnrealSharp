@@ -10,40 +10,19 @@ class UCSEditorSubsystem : public UEditorSubsystem
 	GENERATED_BODY()
 
 	// USubsystem Begin
-	
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override
-	{
-		Super::Initialize(Collection);
-		K2_Initialize();
-	}
-  
-	virtual void Deinitialize() override
-	{
-		Super::Deinitialize();
-		K2_Deinitialize();
-	}
-  
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
-	{
-		if (!Super::ShouldCreateSubsystem(Outer))
-		{
-			return false;
-		}
-  
-		return K2_ShouldCreateSubsystem();
-	}
-
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	// End
 
-	protected:
+protected:
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
-	bool K2_ShouldCreateSubsystem() const;
+	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"))
+	bool K2_ShouldCreateSubsystem(UObject* SubsystemOuter) const;
   
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"))
 	void K2_Initialize();
   
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"))
 	void K2_Deinitialize();
-	
 };

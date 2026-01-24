@@ -13,83 +13,40 @@ class UCSGameInstanceSubsystem : public UGameInstanceSubsystem, public FTickable
 	GENERATED_BODY()
 
 	// USubsystem Begin
-
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override
-	{
-		Super::Initialize(Collection);
-		K2_Initialize(Collection);
-	}
-
-	virtual void Deinitialize() override
-	{
-		Super::Deinitialize();
-		K2_Deinitialize();
-	}
-
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
-	{
-		if (!Super::ShouldCreateSubsystem(Outer))
-		{
-			return false;
-		}
-
-		return K2_ShouldCreateSubsystem();
-	}
-
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	// End
 
 	// FTickableGameObject Begin
-
-	virtual void Tick(float DeltaTime) override
-	{
-		K2_Tick(DeltaTime);
-	}
-
-	virtual ETickableTickType GetTickableTickType() const override
-	{
-		return ETickableTickType::Conditional;
-	}
-
-	virtual bool IsTickable() const override
-	{
-		return bIsTickable;
-	}
-
-	virtual TStatId GetStatId() const override
-	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(UCSGameInstanceSubsystem, STATGROUP_Tickables);
-	}
-
+	virtual void Tick(float DeltaTime) override;
+	virtual ETickableTickType GetTickableTickType() const override;
+	virtual bool IsTickable() const override;
+	virtual TStatId GetStatId() const override;
 	// End
 
 public:
 
-	UPROPERTY(EditAnywhere, Category = "Managed Subsystems")
+	UPROPERTY(EditAnywhere)
 	bool bIsTickable;
 
-	UFUNCTION(BlueprintCallable, Category = "Managed Subsystems")
-	void SetIsTickable(bool bInIsTickable)
-	{
-		bIsTickable = bInIsTickable;
-	}
+	UFUNCTION(BlueprintCallable)
+	void SetIsTickable(bool bInIsTickable);
 
 protected:
 
-	UFUNCTION(BlueprintCallable, meta = (ScriptName = "GetGameInstance"), DisplayName = "Get Game Instance", Category = "Managed Subsystems")
-	UGameInstance* K2_GetGameInstance() const
-	{
-		return GetGameInstance();
-	};
+	UFUNCTION(BlueprintCallable, meta = (ScriptName = "GetGameInstance"), DisplayName = "Get Game Instance")
+	UGameInstance* K2_GetGameInstance() const;
 
-	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"), Category = "Managed Subsystems")
-	bool K2_ShouldCreateSubsystem() const;
+	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"))
+	bool K2_ShouldCreateSubsystem(UObject* SubsystemOuter) const;
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"))
 	void K2_Initialize(FSubsystemCollectionBaseRef Collection);
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"))
 	void K2_Deinitialize();
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"), Category = "Managed Subsystems")
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"))
 	void K2_Tick(float DeltaTime);
 };
