@@ -39,7 +39,7 @@ public:
 
 	// USubsystem interface implementation
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const override { return !FApp::IsUnattended(); }
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override { return !FApp::IsUnattended() && !IsRunningCommandlet(); }
 	virtual void Deinitialize() override;
 	// End of interface
 
