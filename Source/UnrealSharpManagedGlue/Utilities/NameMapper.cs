@@ -24,7 +24,7 @@ public static class NameMapper
         "long", "namespace", "new", "null", "object", "operator", "out", "override", "params", "private", "protected", "public", 
         "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", 
         "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual",
-        "void", "volatile", "while", "System"
+        "void", "volatile", "while", "System", "buffer",
     };
 
     public static string GetParameterName(this UhtProperty property)
