@@ -53,6 +53,62 @@ public partial class UWorld
     /// Returns the net mode this world is running under
     /// </summary>
     public ENetMode NetMode => (ENetMode)(int)UWorldExporter.CallGetNetMode(NativeObject);
+
+    /// <summary>
+    /// Returns the type of this world
+    /// </summary>
+    public ECSWorldType WorldType => UCSWorldExtensions.WorldType;
+
+    /// <summary>
+    /// Returns true if this world is a game world (Game, PIE, GamePreview, GameRPC)
+    /// </summary>
+    public bool IsGameWorld
+    {
+	    get
+	    {
+		    ECSWorldType worldType = WorldType;
+		    return worldType == ECSWorldType.Game || worldType == ECSWorldType.PIE || worldType == ECSWorldType.GamePreview || worldType == ECSWorldType.GameRPC;
+	    }
+    }
+
+    /// <summary>
+    /// Returns true if this world is an editor world (Editor, EditorPreview, PIE)
+    /// </summary>
+    public bool IsEditorWorld
+    {
+	    get
+	    {
+		    ECSWorldType worldType = WorldType;
+		    return worldType == ECSWorldType.Editor || worldType == ECSWorldType.EditorPreview || worldType == ECSWorldType.PIE;
+	    }
+    }
+
+    /// <summary>
+    /// Returns true if this world is a preview world (EditorPreview, GamePreview)
+    /// </summary>
+    public bool IsPreviewWorld
+    {
+	    get
+	    {
+		    ECSWorldType worldType = WorldType;
+		    return worldType == ECSWorldType.EditorPreview || worldType == ECSWorldType.GamePreview;
+	    }
+    }
+    
+    /// <summary>
+    /// Returns true if we are running as a listen server or dedicated server
+    /// </summary>
+    public bool IsServer => NetMode == ENetMode.ListenServer || NetMode == ENetMode.DedicatedServer;
+    
+    /// <summary>
+    /// Returns true if we are running as a client
+    /// </summary>
+    public bool IsClient => NetMode == ENetMode.Client;
+    
+    /// <summary>
+    /// Returns true if we are running as a standalone game. No multiplayer involved.
+    /// </summary>
+	public bool IsStandalone => NetMode == ENetMode.Standalone;
     
     /// <summary>
     /// Jumps the server to new level.  If bAbsolute is true and we are using seemless traveling, we
