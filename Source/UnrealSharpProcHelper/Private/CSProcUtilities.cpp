@@ -5,6 +5,19 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/ConfigCacheIni.h"
+
+static bool ShouldShowBuildWarnings()
+{
+	bool bShowBuildWarnings = true;
+	GConfig->GetBool(
+		TEXT("/Script/UnrealSharpEditor.CSUnrealSharpEditorSettings"),
+		TEXT("bShowBuildWarnings"),
+		bShowBuildWarnings,
+		GEditorPerProjectIni
+	);
+	return bShowBuildWarnings;
+}
 
 bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
@@ -17,7 +30,23 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 
 	if (OutReturnCode != 0)
 	{
-		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
+		FString DisplayOutput = Output;
+
+		if (!ShouldShowBuildWarnings())
+		{
+			TArray<FString> Lines;
+			Output.ParseIntoArrayLines(Lines);
+			DisplayOutput.Empty();
+			for (const FString& Line : Lines)
+			{
+				if (!Line.Contains(TEXT(": warning ")))
+				{
+					DisplayOutput += Line + TEXT("\n");
+				}
+			}
+		}
+
+		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *DisplayOutput));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 		return false;
 	}

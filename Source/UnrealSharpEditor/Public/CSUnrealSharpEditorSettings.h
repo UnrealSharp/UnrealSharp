@@ -67,6 +67,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
 	bool bSuffixGeneratedTypes = false;
 
+	// When disabled, only errors will be displayed.
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Build Output")
+	bool bShowBuildWarnings = true;
+
 	FString GetBuildConfigurationString() const;
 
 	FString GetLogVerbosityString() const;
