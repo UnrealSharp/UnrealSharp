@@ -25,12 +25,20 @@ public partial struct FPrimaryAssetId
     /// <summary>
     /// Gets the asset associated with this primary asset ID. Use AssetClass if this asset ID belongs to a primary asset which is a Blueprint class.
     /// </summary>
-    public UObject? Asset => UAssetManager.Get().GetPrimaryAssetObject(this);
+    public readonly UObject? Asset => UAssetManager.Get().GetPrimaryAssetObject(this);
+    public readonly T? AssetAs<T>() where T : UObject
+    {
+        return (T?)Asset;
+    }
     
     /// <summary>
     /// Gets the asset class associated with this primary asset ID.
     /// </summary>
-    public TSubclassOf<UObject>? AssetClass => UAssetManager.Get().GetPrimaryAssetObjectClass(this);
+    public readonly TSubclassOf<UObject>? AssetClass => UAssetManager.Get().GetPrimaryAssetObjectClass(this);
+    public readonly TSubclassOf<T>? AssetClassAs<T>() where T : UObject
+    {
+        return AssetClass?.Cast<T>();
+    }
 }
 
 public static class FPrimaryAssetIdExtensions
