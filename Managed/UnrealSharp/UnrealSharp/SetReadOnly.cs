@@ -48,8 +48,7 @@ public class SetReadOnlyMarshaller<T>
     readonly MarshallingDelegates<T>.ToNative _elementToNative;
     private TSetReadOnly<T>? _readonlySetWrapper;
 
-    public SetReadOnlyMarshaller(IntPtr setProperty,
-        MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    public SetReadOnlyMarshaller(IntPtr setProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
         _helper = new FScriptSetHelper(_property);
@@ -67,12 +66,7 @@ public class SetReadOnlyMarshaller<T>
         return _readonlySetWrapper;
     }
 
-    public void ToNative(IntPtr nativeBuffer, IReadOnlyCollection<T> value)
-    {
-        ToNative(nativeBuffer, 0, IntPtr.Zero, value);
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyCollection<T> value)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value)
     {
         SetMarshaller<T>.ToNativeInternal(nativeBuffer, arrayIndex, value, _helper, _elementToNative);
     }

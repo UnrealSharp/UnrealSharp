@@ -33,6 +33,23 @@ void FUnrealSharpRuntimeGlueModule::ForceRefreshRuntimeGlue()
 	}
 }
 
+FString FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(const FString& Input)
+{
+	FString ModifiedString = Input;
+	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
+	FRegexMatcher Matcher(Pattern, ModifiedString);
+
+	while (Matcher.FindNext())
+	{
+		int32 MatchStart = Matcher.GetMatchBeginning();
+		int32 MatchEnd = Matcher.GetMatchEnding();
+		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
+		Matcher = FRegexMatcher(Pattern, ModifiedString);
+	}
+
+	return ModifiedString;
+}
+
 void FUnrealSharpRuntimeGlueModule::InitializeRuntimeGlueGenerators()
 {
 	const UCSRuntimeGlueSettings* Settings = GetDefault<UCSRuntimeGlueSettings>();

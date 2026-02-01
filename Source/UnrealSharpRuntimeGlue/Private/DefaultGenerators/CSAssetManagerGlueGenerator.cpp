@@ -3,6 +3,7 @@
 
 #include "DefaultGenerators/CSAssetManagerGlueGenerator.h"
 
+#include "UnrealSharpRuntimeGlue.h"
 #include "Engine/AssetManager.h"
 #include "Engine/AssetManagerSettings.h"
 
@@ -120,23 +121,6 @@ bool UCSAssetManagerGlueGenerator::IsRegisteredAssetType(UClass* Class)
 	return bIsPrimaryAsset;
 }
 
-FString ReplaceSpecialCharacters(const FString& Input)
-{
-	FString ModifiedString = Input;
-	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
-	FRegexMatcher Matcher(Pattern, ModifiedString);
-
-	while (Matcher.FindNext())
-	{
-		int32 MatchStart = Matcher.GetMatchBeginning();
-		int32 MatchEnd = Matcher.GetMatchEnding();
-		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
-		Matcher = FRegexMatcher(Pattern, ModifiedString);
-	}
-
-	return ModifiedString;
-}
-
 void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
@@ -171,7 +155,7 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 			PrimaryAssetName = PrimaryAssetName.Replace(TEXT("Default__"), TEXT(""));
 			
 			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + PrimaryAssetName;
-			AssetName = ReplaceSpecialCharacters(AssetName);
+			AssetName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(AssetName);
 			AssetName.RemoveFromEnd(TEXT("_C"));
 			
 			ScriptBuilder.AppendLine(FString::Printf(
@@ -204,7 +188,7 @@ void UCSAssetManagerGlueGenerator::ProcessAssetTypes()
 
 	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : SortedPrimaryAssetTypes)
 	{
-		FString AssetTypeName = ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
+		FString AssetTypeName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
 
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetType %s = new(\"%s\");"),
 		                                         *AssetTypeName, *PrimaryAssetType.PrimaryAssetType.ToString()));

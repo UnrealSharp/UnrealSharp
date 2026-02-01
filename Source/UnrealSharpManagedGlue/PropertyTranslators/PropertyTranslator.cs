@@ -352,7 +352,7 @@ public abstract class PropertyTranslator
         bool isReadWrite = property.IsReadWrite();
         bool isEditDefaultsOnly = property.IsEditDefaultsOnly();
 
-        Action? exportSetterAction = SupportsSetter && (isReadWrite || isEditDefaultsOnly) ? ExportSetter : null;
+        Action? exportSetterAction = SupportsSetter && (isReadWrite || property.IsEditAnywhere()) ? ExportSetter : null;
         string setterOperation = isEditDefaultsOnly && !isReadWrite ? "init" : "set";
 
         ExportProperty_Internal(builder, property, property.GetPropertyName(), ExportBackingFields, null, ExportGetter, exportSetterAction, setterOperation); 
