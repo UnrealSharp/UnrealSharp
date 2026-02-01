@@ -4,6 +4,7 @@
 #include "CSUnrealSharpSettings.h"
 #include "Types/CSClass.h"
 #include "Types/CSSkeletonClass.h"
+#include "Engine/World.h"
 
 #if ENGINE_MINOR_VERSION >= 4
 #include "Blueprint/BlueprintExceptionInfo.h"
@@ -70,7 +71,18 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	
 	Stack.Code += !!Stack.Code;
 
-	UCSManager::Get().SetCurrentWorldContext(Stack.Object);
+	// Prefer using World as context since it's more stable
+	UObject* WorldContext = nullptr;
+	if (Stack.Object)
+	{
+		UWorld* World = Stack.Object->GetWorld();
+		WorldContext = World ? World : Stack.Object;
+	}
+
+	if (WorldContext)
+	{
+		UCSManager::Get().SetCurrentWorldContext(WorldContext);
+	}
 
 	UCSFunctionBase* ManagedFunction = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
 
