@@ -1,6 +1,7 @@
 ﻿#include "CSManagedDelegate.h"
 
 #include "CSManager.h"
+#include "Engine/World.h"
 
 void FCSManagedDelegate::Invoke(UObject* WorldContextObject, bool bDispose)
 {
@@ -12,9 +13,17 @@ void FCSManagedDelegate::Invoke(UObject* WorldContextObject, bool bDispose)
 		return;
 	}
 
+	// Prefer using World as context since it's more stable
+	UObject* WorldContext = nullptr;
 	if (IsValid(WorldContextObject))
 	{
-		UCSManager::Get().SetCurrentWorldContext(WorldContextObject);
+		UWorld* World = WorldContextObject->GetWorld();
+		WorldContext = World ? World : WorldContextObject;
+	}
+
+	if (WorldContext)
+	{
+		UCSManager::Get().SetCurrentWorldContext(WorldContext);
 	}
 
 	FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(CallbackHandle.GetHandle());
