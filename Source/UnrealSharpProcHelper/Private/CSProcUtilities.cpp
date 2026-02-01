@@ -30,23 +30,7 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 
 	if (OutReturnCode != 0)
 	{
-		FString DisplayOutput = Output;
-
-		if (!ShouldShowBuildWarnings())
-		{
-			TArray<FString> Lines;
-			Output.ParseIntoArrayLines(Lines);
-			DisplayOutput.Empty();
-			for (const FString& Line : Lines)
-			{
-				if (!Line.Contains(TEXT(": warning ")))
-				{
-					DisplayOutput += Line + TEXT("\n");
-				}
-			}
-		}
-
-		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *DisplayOutput));
+		FText DialogText = FText::FromString(FString::Printf(TEXT("%s task failed: \n %s"), *ProgramName, *Output));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 		return false;
 	}
@@ -169,6 +153,12 @@ bool UCSProcUtilities::BuildUserSolution()
 {
 	TMap<FString, FString> Arguments;
 	Arguments.Add("OutputPath", GetUserAssemblyDirectory());
+
+	if (!ShouldShowBuildWarnings())
+	{
+		Arguments.Add("clp", "ErrorsOnly");
+	}
+
 	return InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER, Arguments);
 }
 
