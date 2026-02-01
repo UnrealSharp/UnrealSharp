@@ -3,6 +3,46 @@
 
 #include "DefaultGenerators/CSTraceTypeQueryGlueGenerator.h"
 
+FString SanitizeToCSharpIdentifier(const FString& InName)
+{
+	if (InName.IsEmpty())
+	{
+		return InName;
+	}
+
+	FString Result;
+	Result.Reserve(InName.Len());
+
+	for (int32 i = 0; i < InName.Len(); ++i)
+	{
+		TCHAR Char = InName[i];
+
+		if (FChar::IsAlpha(Char) || Char == TEXT('_'))
+		{
+			Result.AppendChar(Char);
+		}
+		else if (FChar::IsDigit(Char))
+		{
+			if (Result.IsEmpty())
+			{
+				Result.AppendChar(TEXT('_'));
+			}
+			Result.AppendChar(Char);
+		}
+		else
+		{
+			Result.AppendChar(TEXT('_'));
+		}
+	}
+
+	if (Result.IsEmpty())
+	{
+		return InName;
+	}
+
+	return Result;
+}
+
 void UCSTraceTypeQueryGlueGenerator::Initialize()
 {
 	UCollisionProfile* CollisionProfile = UCollisionProfile::Get();
@@ -50,11 +90,7 @@ void UCSTraceTypeQueryGlueGenerator::ProcessCollisionProfile()
 
 		FString ChannelName = TraceTypeQueryEnum->GetMetaData(TEXT("ScriptName"), i);
 		ChannelName.RemoveFromStart(TEXT("ECC_"));
-
-		if (ChannelName.Len() > 0 && FChar::IsDigit(ChannelName[0]))
-		{
-			ChannelName = TEXT("_") + ChannelName;
-		}
+		ChannelName = SanitizeToCSharpIdentifier(ChannelName);
 
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ChannelName, i));
 	}
@@ -77,6 +113,8 @@ void UCSTraceTypeQueryGlueGenerator::ProcessCollisionProfile()
 		}
 		
 		ObjectTypeName.RemoveFromStart(TEXT("ECC_"));
+		ObjectTypeName = SanitizeToCSharpIdentifier(ObjectTypeName);
+
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ObjectTypeName, i));
 	}
 
