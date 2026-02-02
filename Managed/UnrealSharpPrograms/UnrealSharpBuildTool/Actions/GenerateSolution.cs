@@ -10,6 +10,9 @@ public class GenerateSolution : BuildToolAction
 
         generateSln.StartInfo.ArgumentList.Add("new");
         generateSln.StartInfo.ArgumentList.Add("sln");
+        
+        generateSln.StartInfo.ArgumentList.Add("--format");
+        generateSln.StartInfo.ArgumentList.Add("sln");
 
         generateSln.StartInfo.ArgumentList.Add("-n");
         generateSln.StartInfo.ArgumentList.Add(Program.GetProjectNameAsManaged());
