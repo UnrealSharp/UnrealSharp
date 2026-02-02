@@ -24,7 +24,7 @@ struct FCSSpawnActorParameters
 };
 
 UENUM(BlueprintType)
-enum ECSWorldType : int
+enum class ECSWorldType : uint8
 {
 	/** An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels */
 	None = EWorldType::None,
@@ -51,7 +51,14 @@ enum ECSWorldType : int
 	Inactive = EWorldType::Inactive,
 };
 
-static_assert(sizeof(ECSWorldType) == sizeof(EWorldType::Type), "ECSWorldType size does not match EWorldType size");
+static_assert(static_cast<uint8>(ECSWorldType::None)          == static_cast<uint8>(EWorldType::None),          "ECSWorldType::None mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::Game)          == static_cast<uint8>(EWorldType::Game),          "ECSWorldType::Game mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::Editor)        == static_cast<uint8>(EWorldType::Editor),        "ECSWorldType::Editor mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::PIE)           == static_cast<uint8>(EWorldType::PIE),           "ECSWorldType::PIE mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::EditorPreview) == static_cast<uint8>(EWorldType::EditorPreview), "ECSWorldType::EditorPreview mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::GamePreview)   == static_cast<uint8>(EWorldType::GamePreview),   "ECSWorldType::GamePreview mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::GameRPC)       == static_cast<uint8>(EWorldType::GameRPC),       "ECSWorldType::GameRPC mismatch");
+static_assert(static_cast<uint8>(ECSWorldType::Inactive)      == static_cast<uint8>(EWorldType::Inactive),      "ECSWorldType::Inactive mismatch");
 
 UCLASS(meta = (InternalType))
 class UCSWorldExtensions : public UBlueprintFunctionLibrary
