@@ -26,6 +26,11 @@ public struct TSoftClassPtr<T> where T : UObject
     public FSoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
 
     /// <summary>
+    /// The primary asset ID of the object, if it has one.
+    /// </summary>
+    public FPrimaryAssetId PrimaryAssetId => SoftObjectPath.PrimaryAssetId;
+
+    /// <summary>
     /// The class of the object.
     /// </summary>
     public TSubclassOf<T> Class => GetClass();

@@ -22,7 +22,12 @@ public struct TSoftObjectPtr<T> where T : UObject
     /// The path to the object.
     /// </summary>
     public FSoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
-
+    
+    /// <summary>
+    /// The primary asset ID for this object, if it has one.
+    /// </summary>
+    public FPrimaryAssetId PrimaryAssetId => SoftObjectPath.PrimaryAssetId;
+    
     /// <summary>
     /// Tries to get the object. Returns null if the object is not loaded.
     /// </summary>
