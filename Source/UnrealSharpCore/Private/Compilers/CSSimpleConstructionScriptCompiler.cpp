@@ -363,9 +363,9 @@ bool FCSSimpleConstructionScriptCompiler::IsRootNode(const TSharedPtr<FCSDefault
 	return false;
 }
 
-void FCSSimpleConstructionScriptCompiler::ForEachSimpleConstructionScript(USimpleConstructionScript* SimpleConstructionScript, TFunctionRef<bool(USimpleConstructionScript*)> Callback)
+void FCSSimpleConstructionScriptCompiler::ForEachSimpleConstructionScript(const USimpleConstructionScript* SimpleConstructionScript, const TFunctionRef<bool(USimpleConstructionScript*)>& Callback)
 {
-	for (UClass* CurrentClass = SimpleConstructionScript->GetOwnerClass(); CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
+	for (UClass* CurrentClass = SimpleConstructionScript->GetOwnerClass()->GetSuperClass(); CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
 	{
 		UBlueprintGeneratedClass* CurrentGeneratedClass = Cast<UBlueprintGeneratedClass>(CurrentClass);
 		if (!IsValid(CurrentGeneratedClass))
@@ -386,17 +386,21 @@ void FCSSimpleConstructionScriptCompiler::ForEachSimpleConstructionScript(USimpl
 	}
 }
 
-USCS_Node* FCSSimpleConstructionScriptCompiler::FindRootComponentNode(USimpleConstructionScript* SimpleConstructionScript)
+USCS_Node* FCSSimpleConstructionScriptCompiler::FindRootComponentNode(const USimpleConstructionScript* SimpleConstructionScript)
 {
+	USCS_Node* RootNode = nullptr;
 	for (USCS_Node* Node : SimpleConstructionScript->GetRootNodes())
 	{
-		if (Node->ComponentClass->IsChildOf<USceneComponent>())
+		if (!Node->ComponentClass->IsChildOf<USceneComponent>())
 		{
-			return Node;
+			continue;
 		}
+		
+		RootNode = Node;
+		break;
 	}
 
-	return nullptr;
+	return RootNode;
 }
 
 void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleConstructionScript* SimpleConstructionScript, FCSRootNodeInfo& RootComponentNode, UBlueprintGeneratedClass* Outer, const TArray<FCSNodeInfo>& AllNodes)
@@ -406,12 +410,13 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 		// See if the parent SCS has a root component we can use
 		USCS_Node* ParentRootNode = FindRootComponentNode(ParentSCS);
 				
-		if (IsValid(ParentRootNode) && ParentRootNode->GetName() == DefaultSceneRoot_UnrealSharp)
+		if (!IsValid(ParentRootNode))
 		{
-			RootComponentNode = FCSRootNodeInfo(ParentRootNode, SimpleConstructionScript);
-			return false;
+			return true;
 		}
-		return true;
+		
+		RootComponentNode = FCSRootNodeInfo(ParentRootNode, SimpleConstructionScript);
+		return false;
 	});
 
 	if (!RootComponentNode.IsValid())

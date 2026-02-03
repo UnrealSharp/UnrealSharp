@@ -51,8 +51,8 @@ private:
 	static USCS_Node* GetParentNode(FName ParentComponentName, const UClass* ClassToSearch, const TArray<FCSNodeInfo>& AllNodes);
 	static bool IsRootNode(const TSharedPtr<FCSDefaultComponentType>& DefaultComponentData, const USCS_Node* Node);
 	
-	static void ForEachSimpleConstructionScript(USimpleConstructionScript* SimpleConstructionScript, TFunctionRef<bool(USimpleConstructionScript*)> Callback);
-	static USCS_Node* FindRootComponentNode(USimpleConstructionScript* SimpleConstructionScript);
+	static void ForEachSimpleConstructionScript(const USimpleConstructionScript* SimpleConstructionScript, const TFunctionRef<bool(USimpleConstructionScript*)>& Callback);
+	static USCS_Node* FindRootComponentNode(const USimpleConstructionScript* SimpleConstructionScript);
 
 	static void TryFindOrPromoteRootComponent(USimpleConstructionScript* SimpleConstructionScript, FCSRootNodeInfo& RootComponentNode, UBlueprintGeneratedClass* Outer, const TArray<FCSNodeInfo>& AllNodes);
 	
