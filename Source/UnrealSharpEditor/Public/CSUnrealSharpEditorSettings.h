@@ -67,9 +67,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
 	bool bSuffixGeneratedTypes = false;
 
-	// When disabled, only errors will be displayed.
+	/** by: dahai-li-1993
+	* Whether to show build warnings in the build error dialog.
+	* Only affects the full dotnet build (editor startup / manual rebuild), not the incremental hot reload compiler.
+	*/
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Build Output")
-	bool bShowBuildWarnings = true;
+	bool bShowBuildWarnings = false;
 
 	FString GetBuildConfigurationString() const;
 
