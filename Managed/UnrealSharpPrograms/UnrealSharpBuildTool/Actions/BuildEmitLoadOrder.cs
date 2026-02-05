@@ -11,6 +11,7 @@ public class BuildEmitLoadOrder : BuildToolAction
     public override bool RunAction()
     {
         string output = Program.TryGetArgument("OutputPath");
+        string consoleLoggerParameters = Program.TryGetArgument("consoleLoggerParameters");
 
         Collection<string>? extraArguments = null;
         if (!string.IsNullOrEmpty(output))
@@ -18,7 +19,13 @@ public class BuildEmitLoadOrder : BuildToolAction
             extraArguments =
             [
                 $"-p:OutputPath=\"{Program.GetOutputPath()}\""
-            ]; 
+            ];
+        }
+
+        if (!string.IsNullOrEmpty(consoleLoggerParameters))
+        {
+            extraArguments ??= [];
+            extraArguments.Add($"-clp:{consoleLoggerParameters}");
         }
 
         BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments);
