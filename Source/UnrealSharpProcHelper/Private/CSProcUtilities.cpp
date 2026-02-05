@@ -152,7 +152,7 @@ bool UCSProcUtilities::BuildUserSolution()
 
 	if (!bShowBuildWarnings)
 	{
-		Arguments.Add("consoleLoggerParameters", "ErrorsOnly");
+		Arguments.Add("clp", "ErrorsOnly");
 	}
 
 	return InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER, Arguments);
