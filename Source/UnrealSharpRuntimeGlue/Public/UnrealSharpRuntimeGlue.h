@@ -23,6 +23,8 @@ public:
     UNREALSHARPRUNTIMEGLUE_API void ForceRefreshRuntimeGlue();
     UNREALSHARPRUNTIMEGLUE_API FOnRuntimeGlueChanged& GetOnRuntimeGlueChanged() { return OnRuntimeGlueChanged; }
     
+    static FString ReplaceSpecialCharacters(const FString& Input);
+
 private:
     void InitializeRuntimeGlueGenerators();
     void OnModulesChanged(FName ModuleName, EModuleChangeReason Reason);

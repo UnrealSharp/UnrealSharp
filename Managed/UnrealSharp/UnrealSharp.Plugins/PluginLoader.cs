@@ -18,11 +18,6 @@ public static class PluginLoader
 
             foreach (Plugin loadedPlugin in LoadedPlugins)
             {
-                if (!loadedPlugin.IsLoadContextAlive)
-                {
-                    continue;
-                }
-                
                 if (loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly)
                 {
                     continue;
@@ -42,7 +37,7 @@ public static class PluginLoader
             {
                 throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
             }
-            
+
             LoadedPlugins.Add(plugin);
 
             if (!StartupJobManager.HasJobs(loadedAssembly))
@@ -67,20 +62,20 @@ public static class PluginLoader
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference? RemovePlugin(string assemblyName)
     {
+        WeakReference? weakRefLoadContext = null;
         foreach (Plugin loadedPlugin in LoadedPlugins)
         {
-            // Trying to resolve the weakptr to the assembly here will cause unload issues, so we compare names instead
-            if (!loadedPlugin.IsLoadContextAlive || loadedPlugin.AssemblyName.Name != assemblyName)
+            if (loadedPlugin.AssemblyName.Name != assemblyName)
             {
                 continue;
             }
             
-            loadedPlugin.Unload();
             LoadedPlugins.Remove(loadedPlugin);
-            return loadedPlugin.WeakRefLoadContext;
+            weakRefLoadContext = loadedPlugin.Unload();
+            break;
         }
         
-        return null;
+        return weakRefLoadContext;
     }
 
     public static bool UnloadPlugin(string assemblyPath)
@@ -91,9 +86,9 @@ public static class PluginLoader
         TaskTracker.WaitForAllActiveTasks();
         
         string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-        WeakReference? alcWeak = RemovePlugin(assemblyName);
+        WeakReference? weakAlc = RemovePlugin(assemblyName);
 
-        if (alcWeak == null)
+        if (weakAlc == null)
         {
             LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is not loaded or already removed from registry.");
             return true;
@@ -106,13 +101,13 @@ public static class PluginLoader
             Stopwatch stopWatch = Stopwatch.StartNew();
             bool hasWarned = false;
 
-            while (alcWeak.IsAlive)
+            while (weakAlc.IsAlive)
             {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
 
-                if (!alcWeak.IsAlive)
+                if (!weakAlc.IsAlive)
                 {
                     break;
                 }
@@ -128,8 +123,6 @@ public static class PluginLoader
                     LogUnrealSharpPlugins.LogError($"Failed to unload {assemblyName} within {timeoutMs}ms. Common causes: static references, GCHandles, background threads.");
                     return false;
                 }
-                
-                Thread.Sleep(10);
             }
 
             LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully in {stopWatch.ElapsedMilliseconds}ms.");

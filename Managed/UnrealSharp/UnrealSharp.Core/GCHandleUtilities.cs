@@ -9,20 +9,11 @@ namespace UnrealSharp.Core;
 public static class GCHandleUtilities
 {
     private static readonly ConcurrentDictionary<AssemblyLoadContext, ConcurrentDictionary<GCHandle, object>> StrongRefsByAssembly = new();
-    private static readonly ConditionalWeakTable<AssemblyLoadContext, object?> AlcsBeingUnloaded = new();
-    
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static bool IsAlcBeingUnloaded(AssemblyLoadContext alc) => AlcsBeingUnloaded.TryGetValue(alc, out _);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void OnAlcUnloading(AssemblyLoadContext alc)
     {
-        AlcsBeingUnloaded.Add(alc, null);
-        
-        if (StrongRefsByAssembly.TryRemove(alc, out ConcurrentDictionary<GCHandle, object>? strongReferences))
-        {
-            strongReferences.Clear();
-        }
+        StrongRefsByAssembly.TryRemove(alc, out _);
     }
     
     public static GCHandle AllocateStrongPointer(object value, Assembly alc)
@@ -40,11 +31,6 @@ public static class GCHandleUtilities
     public static GCHandle AllocateStrongPointer(object value, AssemblyLoadContext loadContext)
     {
         GCHandle weakHandle = GCHandle.Alloc(value, GCHandleType.Weak);
-
-        if (IsAlcBeingUnloaded(loadContext))
-        {
-            return weakHandle;
-        }
         
         ConcurrentDictionary<GCHandle, object> strongReferences = StrongRefsByAssembly.GetOrAdd(loadContext, alcInstance =>
         {

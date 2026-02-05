@@ -95,9 +95,9 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 
 void UCSHotReloadSubsystem::PerformHotReload()
 {
-	if (FPlayWorldCommandCallbacks::IsInPIE())
+	if (FPlayWorldCommandCallbacks::IsInPIE() || FPlayWorldCommandCallbacks::IsInSIE())
 	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE.");
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE or SIE.");
 		return;
 	}
 	

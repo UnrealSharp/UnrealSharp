@@ -25,38 +25,26 @@ void UCSWorldExtensions::PostActorConstruction(AActor* Actor)
 
 FURL UCSWorldExtensions::WorldURL(const UObject* WorldContextObject)
 {
-	if (!IsValid(WorldContextObject))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
-		return nullptr;
-	}
-
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	return World->URL;
 }
 
 void UCSWorldExtensions::ServerTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute, bool bShouldSkipGameNotify)
 {
-	if (!IsValid(WorldContextObject))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
-		return;
-	}
-	
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	World->ServerTravel(URL, bAbsolute, bShouldSkipGameNotify);
 }
 
 void UCSWorldExtensions::SeamlessTravel(const UObject* WorldContextObject, const FString& URL, bool bAbsolute)
 {
-	if (!IsValid(WorldContextObject))
-	{
-		UE_LOG(LogUnrealSharp, Error, TEXT("Invalid world context object"));
-		return;
-	}
-	
 	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
 	World->SeamlessTravel(URL, bAbsolute);
+}
+
+ECSWorldType UCSWorldExtensions::GetWorldType(const UObject* WorldContextObject)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	return static_cast<ECSWorldType>(World->WorldType.GetValue());
 }
 
 AActor* UCSWorldExtensions::SpawnActor_Internal(const UObject* WorldContextObject, const TSubclassOf<AActor>& Class, const FTransform& Transform, const FCSSpawnActorParameters& SpawnParameters, bool bDeferConstruction)

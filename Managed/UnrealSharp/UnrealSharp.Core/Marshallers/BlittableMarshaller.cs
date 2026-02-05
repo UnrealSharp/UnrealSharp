@@ -9,16 +9,7 @@ public static class BlittableMarshaller<T> where T : unmanaged, allows ref struc
     {
         unsafe
         {
-            ToNative(nativeBuffer, arrayIndex, obj, sizeof(T));
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T obj, int size)
-    {
-        unsafe
-        {
-            *(T*)(nativeBuffer + arrayIndex * size) = obj;
+            *(T*)(nativeBuffer + arrayIndex * sizeof(T)) = obj;
         }
     }
 
@@ -27,16 +18,7 @@ public static class BlittableMarshaller<T> where T : unmanaged, allows ref struc
     {
         unsafe
         {
-            return FromNative(nativeBuffer, arrayIndex, sizeof(T));
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T FromNative(IntPtr nativeBuffer, int arrayIndex, int size)
-    {
-        unsafe
-        {
-            return *(T*)(nativeBuffer + arrayIndex * size);
+            return *(T*)(nativeBuffer + arrayIndex * sizeof(T));
         }
     }
 }

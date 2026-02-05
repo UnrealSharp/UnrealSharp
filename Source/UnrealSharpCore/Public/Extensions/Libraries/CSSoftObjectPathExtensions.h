@@ -13,4 +13,7 @@ class UCSSoftObjectPathExtensions : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(meta=(ScriptMethod))
 	static UObject* ResolveObject(const FSoftObjectPath& SoftObjectPath);
+	
+	UFUNCTION(meta=(ScriptMethod))
+	static FPrimaryAssetId GetPrimaryAssetId(const FSoftObjectPath& SoftObjectPath);
 };

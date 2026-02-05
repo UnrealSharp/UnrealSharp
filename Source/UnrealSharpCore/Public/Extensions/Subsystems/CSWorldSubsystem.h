@@ -5,37 +5,9 @@
 #include "Streaming/StreamingWorldSubsystemInterface.h"
 #endif
 #include "SubsystemCollectionBaseRef.h"
+#include "Extensions/Libraries/CSWorldExtensions.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "CSWorldSubsystem.generated.h"
-
-UENUM(BlueprintType)
-enum class ECSWorldType : uint8
-{
-    /** An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels */
-    None = EWorldType::None,
-
-    /** The game world */
-    Game = EWorldType::Game,
-
-    /** A world being edited in the editor */
-    Editor = EWorldType::Editor,
-
-    /** A Play In Editor world */
-    PIE = EWorldType::PIE,
-
-    /** A preview world for an editor tool */
-    EditorPreview = EWorldType::EditorPreview,
-
-    /** A preview world for a game */
-    GamePreview = EWorldType::GamePreview,
-
-    /** A minimal RPC world for a game */
-    GameRPC = EWorldType::GameRPC,
-
-    /** An editor world that was loaded but not currently being edited in the level editor */
-    Inactive = EWorldType::Inactive,
-};
-
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
 class UCSWorldSubsystem : public UTickableWorldSubsystem
