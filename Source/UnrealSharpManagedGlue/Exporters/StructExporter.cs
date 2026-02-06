@@ -66,7 +66,11 @@ public static class StructExporter
         if (isBlittable || isManualExport)
         {
             attributeBuilder.AddIsBlittableAttribute();
-            attributeBuilder.AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential);
+            
+            if (!structObj.HasAttribute("UserSpecifiedLayout"))
+            {
+                attributeBuilder.AddStructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential);
+            }
         }
         
         attributeBuilder.AddGeneratedTypeAttribute(structObj);

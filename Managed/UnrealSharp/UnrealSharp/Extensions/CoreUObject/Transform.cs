@@ -1,7 +1,9 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace UnrealSharp.CoreUObject;
 
+[StructLayout(LayoutKind.Explicit, Size = 96)]
 public partial struct FTransform : IEquatable<FTransform>
 {
     public FTransform(FQuat rotation, FVector location, FVector? scale = null) : this()
@@ -25,11 +27,14 @@ public partial struct FTransform : IEquatable<FTransform>
         Scale = FVector.One;
     }
     
+    [FieldOffset(0)]
     public FQuat Rotation;
+    
+    [FieldOffset(32)]
     public FVector Location;
-    private double u0;
+    
+    [FieldOffset(64)]
     public FVector Scale;
-    private double u1;
 
     public FTransform Inversed
     {
