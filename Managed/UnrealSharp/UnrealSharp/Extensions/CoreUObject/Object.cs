@@ -615,6 +615,18 @@ public partial class UObject
     {
         return UCSUserWidgetExtensions.CreateWidget(widgetClass, owningController);
     }
+    
+    /// <summary>
+    /// Creates a widget of the specified type using a parent widget as context.
+    /// </summary>
+    /// <param name="parentWidget"> The parent widget used for world. </param>
+    /// <param name="widgetClass"> The class of the widget to create. </param>
+    /// <typeparam name="T"> The type of the widget to create. </typeparam>
+    /// <returns>The created widget instance.</returns>
+    public static T CreateWidget<T>(UUserWidget owningWidget, TSubclassOf<T> widgetClass) where T : UUserWidget
+    {
+        return UCSUserWidgetExtensions.CreateWidget_WithWidget(owningWidget, widgetClass);
+    }
 
     /// <summary>
     /// Marks the object as garbage.
