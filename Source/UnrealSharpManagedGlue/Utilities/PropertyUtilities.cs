@@ -331,6 +331,21 @@ public static class PropertyUtilities
             return false;
         }
 
+        // Only the DOT/DOP parameter chain participates in generic substitution.
+        // Without this, unrelated parameters sharing the same native type (for example
+        // UUserWidget owningWidget in CreateWidget overloads) are incorrectly rewritten to DOT.
+        UhtProperty topLevelFunctionProperty = property;
+        while (topLevelFunctionProperty.Outer is UhtProperty outerProperty)
+        {
+            topLevelFunctionProperty = outerProperty;
+        }
+
+        if (topLevelFunctionProperty != info.DeterminesOutputType &&
+            topLevelFunctionProperty != info.DynamicOutputParam)
+        {
+            return false;
+        }
+
         string propertyGenericType = property.GetGenericManagedType();
         string determinesGenericType = info.DeterminesOutputType.GetGenericManagedType();
         return propertyGenericType == determinesGenericType;
