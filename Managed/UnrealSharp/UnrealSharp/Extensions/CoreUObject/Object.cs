@@ -653,52 +653,17 @@ public partial class UObject
     
     public static implicit operator bool(UObject? @object)
     {
-        return @object.IsValid();
+        return @object != null;
     }
     
     public static bool operator ==(UObject? left, UObject? right)
     {
-        if (ReferenceEquals(left, right))
-        {
-            return true;
-        }
-
-        if (left is null || right is null)
-        {
-            return false;
-        }
-
-        return left.NativeObject == right.NativeObject;
+        return ReferenceEquals(left, right);
     }
 
     public static bool operator !=(UObject? left, UObject? right)
     {
         return !(left == right);
-    }
-    
-    public static bool operator !(UObject? @object)
-    {
-        return !@object.IsValid();
-    }
-    
-    public static bool operator true(UObject? @object)
-    {
-        return @object.IsValid();
-    }
-
-    public static bool operator false(UObject? @object)
-    {
-        return !@object.IsValid();
-    }
-    
-    public static UObject? operator &(UObject? left, UObject? right)
-    {
-        return left.IsValid() && right.IsValid() ? right : null;
-    }
-
-    public static UObject? operator |(UObject? left, UObject? right)
-    {
-        return left.IsValid() ? left : right;
     }
 }
 
