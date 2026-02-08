@@ -99,18 +99,13 @@ public partial class UObject
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is UObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
+        return obj is UObject other && NativeObject == other.NativeObject;
     }
 
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        return NativeObject.GetHashCode();
-    }
-
-    public static implicit operator bool(UObject Object)
-    {
-        return Object != null && UObjectExporter.CallNativeIsValid(Object.NativeObject).ToManagedBool();
+        return UniqueID;
     }
 
     /// <summary>
@@ -654,6 +649,56 @@ public partial class UObject
     public T GetWorldSettingsAs<T>() where T : AWorldSettings
     {
         return (T) WorldSettings;
+    }
+    
+    public static implicit operator bool(UObject? @object)
+    {
+        return @object.IsValid();
+    }
+    
+    public static bool operator ==(UObject? left, UObject? right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
+        return left.NativeObject == right.NativeObject;
+    }
+
+    public static bool operator !=(UObject? left, UObject? right)
+    {
+        return !(left == right);
+    }
+    
+    public static bool operator !(UObject? @object)
+    {
+        return !@object.IsValid();
+    }
+    
+    public static bool operator true(UObject? @object)
+    {
+        return @object.IsValid();
+    }
+
+    public static bool operator false(UObject? @object)
+    {
+        return !@object.IsValid();
+    }
+    
+    public static UObject? operator &(UObject? left, UObject? right)
+    {
+        return left.IsValid() && right.IsValid() ? right : null;
+    }
+
+    public static UObject? operator |(UObject? left, UObject? right)
+    {
+        return left.IsValid() ? left : right;
     }
 }
 

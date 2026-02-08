@@ -132,12 +132,22 @@ public class FText
         return value.AsReadOnlySpan();
     }
     
-    public static bool operator ==(FText a, FText b)
+    public static bool operator ==(FText? a, FText? b)
     {
+        if (ReferenceEquals(a, b))
+        {
+            return true;
+        }
+
+        if (a is null || b is null)
+        {
+            return false;
+        }
+
         return a.Data.ObjectPointer == b.Data.ObjectPointer;
     }
 
-    public static bool operator !=(FText a, FText b)
+    public static bool operator !=(FText? a, FText? b)
     {
         return !(a == b);
     }
