@@ -72,10 +72,11 @@ public static class CSharpExporter
             return true;
         }
 
-        if (TypeRulesChanged(typeInfoFilePath))
-        {
-            return true;
-        }
+        // TODO: Need better equality. Commenting out for now until fixed.
+        // if (TypeRulesChanged(typeInfoFilePath))
+        // {
+        //     return true;
+        // }
 
         DateTime savedTimestampUtc = File.GetLastWriteTimeUtc(timestampFilePath);
         return executingAssemblyLastWriteTime > savedTimestampUtc;
