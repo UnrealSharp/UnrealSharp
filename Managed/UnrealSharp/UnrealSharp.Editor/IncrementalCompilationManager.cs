@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -14,6 +14,13 @@ namespace UnrealSharp.Editor;
 
 public static class IncrementalCompilationManager
 {
+    private static bool IsSkippablePath(string path)
+    {
+        string normalized = path.Replace('\\', '/');
+        return normalized.Contains("/obj/", StringComparison.OrdinalIgnoreCase)
+               || normalized.Contains("/bin/", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static void RemoveSourceFile(string projectName, string filepath)
     {
         Project? foundProject = SolutionManager.GetProjectByName(projectName);
@@ -30,6 +37,10 @@ public static class IncrementalCompilationManager
         }
 
         string fullPath = Path.GetFullPath(filepath);
+        if (IsSkippablePath(fullPath))
+        {
+            return;
+        }
 
         if (!state.TreesByPath!.TryGetValue(fullPath, out SyntaxTree? existingTree))
         {
@@ -57,6 +68,11 @@ public static class IncrementalCompilationManager
         }
 
         string fullPath = Path.GetFullPath(filepath);
+        if (IsSkippablePath(fullPath))
+        {
+            return;
+        }
+
         string fileContent = File.ReadAllText(fullPath);
         SourceText newText = SourceText.From(fileContent, Encoding.UTF8);
 
@@ -108,6 +124,11 @@ public static class IncrementalCompilationManager
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             Project project = projects[i];
+
+            // Force-refresh project state from disk before generation.
+            // Incremental state can become stale after file watcher churn and
+            // lead to partial compilations (missing in-project types).
+            SolutionManager.ProcessProject(project).GetAwaiter().GetResult();
             
             LogUnrealSharpEditor.Log($"Starting source generation for project '{project.Name}'.");
             
@@ -297,15 +318,17 @@ public static class IncrementalCompilationManager
 
         string assemblyPath = GetAssemblyOutputPath(project);
         string symbolsPath = GetOutputPath(project, GetDebugSymbolExtension());
+        string assemblyTempPath = assemblyPath + ".tmp";
+        string symbolsTempPath = symbolsPath + ".tmp";
 
         EmitOptions emitOptions = new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb);
-        FileStream assemblyStream = File.Create(assemblyPath);
-        FileStream symbolsStream = File.Create(symbolsPath);
+        EmitResult emitResult;
 
-        EmitResult emitResult = updatedCompilation.Emit(assemblyStream, symbolsStream, options: emitOptions);
-
-        assemblyStream.Close();
-        symbolsStream.Close();
+        using (FileStream assemblyStream = File.Create(assemblyTempPath))
+        using (FileStream symbolsStream = File.Create(symbolsTempPath))
+        {
+            emitResult = updatedCompilation.Emit(assemblyStream, symbolsStream, options: emitOptions);
+        }
 
         if (!emitResult.Success)
         {
@@ -326,8 +349,21 @@ public static class IncrementalCompilationManager
                 stringBuilder.Append(diagnostic);
             }
 
+            if (File.Exists(assemblyTempPath))
+            {
+                File.Delete(assemblyTempPath);
+            }
+
+            if (File.Exists(symbolsTempPath))
+            {
+                File.Delete(symbolsTempPath);
+            }
+
             throw new InvalidOperationException(stringBuilder.ToString());
         }
+
+        File.Move(assemblyTempPath, assemblyPath, true);
+        File.Move(symbolsTempPath, symbolsPath, true);
 
         stopwatch.Stop();
         LogUnrealSharpEditor.Log($"Project '{project.Name}' produced an assembly in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
