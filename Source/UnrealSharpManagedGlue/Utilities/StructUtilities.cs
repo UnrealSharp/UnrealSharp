@@ -1,6 +1,7 @@
 ﻿using System;
 using EpicGames.UHT.Types;
 using System.Collections.Generic;
+using UnrealSharpManagedGlue.Model;
 using UnrealSharpManagedGlue.PropertyTranslators;
 
 namespace UnrealSharpManagedGlue.Utilities;
@@ -20,6 +21,22 @@ public static class StructUtilities
         // but have a non-UPROPERTY property that is not picked up by UHT, that makes it not blittable causing a mismatch in memory layout.
         // This is a temporary solution until we can get that working.
         return false;
+    }
+    
+    public static bool HasAttribute(this UhtStruct structObj, string key)
+    {
+        return structObj.GetAttributeValue(key) != null;
+    }
+    
+    public static string? GetAttributeValue(this UhtStruct structObj, string key)
+    {
+        if (!PropertyTranslatorManager.SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structObj.SourceName, out BlittableStructInfo info))
+        {
+            return null;
+        }
+
+        IDictionary<string, string>? attributes = info.Attributes;
+        return attributes != null && attributes.TryGetValue(key, out var attribute) ? attribute : null;
     }
 
     public static bool IsStructNativelyCopyable(this UhtStruct structObj)

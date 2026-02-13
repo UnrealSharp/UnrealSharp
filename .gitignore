@@ -82,5 +82,5 @@ obj/
 
 *.props
 !Directory.Packages.props
-!Directory.Build.Props
-!UnrealSharp.Shared.Props
+!Directory.Build.props
+!UnrealSharp.Shared.props

@@ -102,14 +102,14 @@ public static class PropertyTranslatorManager
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtFieldPathProperty), new FieldPathPropertyTranslator());
 
-        foreach ((string nativeName, string? managedType) in SpecialTypeInfo.Structs.BlittableTypes.Values)
+        foreach (BlittableStructInfo managedType in SpecialTypeInfo.Structs.BlittableTypes.Values)
         {
-            if (managedType is null)
+            if (managedType.ManagedType is null)
             {
                 continue;
             }
-
-            AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(nativeName, managedType));
+            
+            AddPropertyTranslator(typeof(UhtStructProperty), new BlittableCustomStructTypePropertyTranslator(managedType.Name, managedType.ManagedType));
         }
 
         AddPropertyTranslator(typeof(UhtArrayProperty), new ContainerPropertyTranslator("ArrayCopyMarshaller",
@@ -181,14 +181,12 @@ public static class PropertyTranslatorManager
         {
             if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
             {
-                throw new InvalidOperationException(
-                    $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
             }
             
             if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out BlittableStructInfo existing))
             {
-                if (structInfo.ManagedType is not null && existing.ManagedType is not null &&
-                    structInfo.ManagedType != existing.ManagedType)
+                if (structInfo.ManagedType is not null && existing.ManagedType is not null && structInfo.ManagedType != existing.ManagedType)
                 {
                     throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
                 }

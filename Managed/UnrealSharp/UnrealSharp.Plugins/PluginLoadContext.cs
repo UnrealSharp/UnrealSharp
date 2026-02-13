@@ -12,9 +12,6 @@ public class PluginLoadContext : AssemblyLoadContext
     {
         _resolver = resolver;
     }
-
-    private readonly AssemblyDependencyResolver _resolver;
-    private static readonly Dictionary<string, WeakReference<Assembly>> LoadedAssemblies = new();
     
     static PluginLoadContext()
     {
@@ -27,8 +24,11 @@ public class PluginLoadContext : AssemblyLoadContext
     
     public static void AddAssembly(Assembly assembly)
     {
-        LoadedAssemblies[assembly.GetName().Name!] = new WeakReference<Assembly>(assembly);
+        LoadedAssemblies[assembly.GetName().Name!] = new WeakReference(assembly);
     }
+
+    private readonly AssemblyDependencyResolver _resolver;
+    private static readonly Dictionary<string, WeakReference> LoadedAssemblies = new();
     
     public static void RemoveAssemblyFromCache(string assemblyName)
     {
@@ -47,7 +47,7 @@ public class PluginLoadContext : AssemblyLoadContext
             return null;
         }
         
-        if (LoadedAssemblies.TryGetValue(assemblyName.Name, out WeakReference<Assembly>? weakRef) && weakRef.TryGetTarget(out Assembly? cachedAssembly))
+        if (LoadedAssemblies.TryGetValue(assemblyName.Name, out WeakReference? weakRef) && weakRef.IsAlive && weakRef.Target is Assembly cachedAssembly)
         {
             return cachedAssembly;
         }
@@ -73,14 +73,13 @@ public class PluginLoadContext : AssemblyLoadContext
             loadedAssembly = LoadFromStream(assemblyFile, pdbFile);
         }
         
-        LoadedAssemblies[assemblyName.Name] = new WeakReference<Assembly>(loadedAssembly);
+        LoadedAssemblies[assemblyName.Name] = new WeakReference(loadedAssembly);
         return loadedAssembly;
     }
 
     protected override nint LoadUnmanagedDll(string unmanagedDllName)
     {
         string? libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
-
         return libraryPath != null ? LoadUnmanagedDllFromPath(libraryPath) : nint.Zero;
     }
 }

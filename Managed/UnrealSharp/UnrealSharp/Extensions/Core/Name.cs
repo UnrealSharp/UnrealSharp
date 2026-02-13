@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
 using UnrealSharp.Attributes;
-using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Interop;
 
@@ -104,6 +103,11 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         return name.IsValid ? new FText(name) : FText.None;
     }
     
+    public static implicit operator FName(FText text)
+    {
+        return !text.Empty ? new FName(text.ToString()) : None;
+    }
+    
     public bool Equals(FName other)
     {
         return this == other;
@@ -111,12 +115,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     
     public override bool Equals(object? obj)
     {
-        if (obj is FName name)
-        {
-            return this == name;
-        }
-
-        return false;
+        return obj is FName other && Equals(other);
     }
     
     public override int GetHashCode()

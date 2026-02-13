@@ -60,7 +60,11 @@
             },
             {
                 "Name": "FTransform",
-                "ManagedType": "UnrealSharp.CoreUObject.FTransform"
+                "ManagedType": "UnrealSharp.CoreUObject.FTransform",
+				"Attributes": 
+				{
+					"UserSpecifiedLayout": "true"
+				}
             },
             {
                 "Name": "FTimerHandle",

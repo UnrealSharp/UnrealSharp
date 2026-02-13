@@ -13,4 +13,11 @@ public partial class UScriptStruct
             return GCHandleUtilities.GetObjectFromHandlePtr<Type>(managedStruct);
         }
     }
+    
+    public static UScriptStruct GetScriptStruct<T>() where T : MarshalledStruct<T>
+    {
+        IntPtr structPtr = T.GetNativeClassPtr();
+        IntPtr handle = FCSManagerExporter.CallFindManagedObject(structPtr);
+        return GCHandleUtilities.GetObjectFromHandlePtrFast<UScriptStruct>(handle)!;
+    }
 }
