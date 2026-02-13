@@ -15,9 +15,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
+        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj"/>
+        <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj"/>
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
-      <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
         
         <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
             <OutputItemType>Analyzer</OutputItemType>

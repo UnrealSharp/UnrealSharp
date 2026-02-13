@@ -24,7 +24,7 @@ struct FCSSpawnActorParameters
 };
 
 UENUM(BlueprintType)
-enum ECSWorldType : int
+enum class ECSWorldType : uint8
 {
 	/** An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels */
 	None = EWorldType::None,
@@ -50,8 +50,6 @@ enum ECSWorldType : int
 	/** An editor world that was loaded but not currently being edited in the level editor */
 	Inactive = EWorldType::Inactive,
 };
-
-static_assert(sizeof(ECSWorldType) == sizeof(EWorldType::Type), "ECSWorldType size does not match EWorldType size");
 
 UCLASS(meta = (InternalType))
 class UCSWorldExtensions : public UBlueprintFunctionLibrary

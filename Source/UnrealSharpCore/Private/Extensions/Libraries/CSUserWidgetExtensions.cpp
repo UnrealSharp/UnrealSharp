@@ -50,6 +50,17 @@ UUserWidget* UCSUserWidgetExtensions::CreateWidget(UObject* WorldContextObject, 
 	return UserWidget;
 }
 
+UUserWidget* UCSUserWidgetExtensions::CreateWidget_WithWidget(UUserWidget* OwningWidget, const TSubclassOf<UUserWidget>& UserWidgetClass)
+{
+	if (!IsValid(OwningWidget))
+	{
+		return nullptr;
+	}
+
+	UUserWidget* UserWidget = UWidgetBlueprintLibrary::Create(OwningWidget, UserWidgetClass, nullptr);
+	return UserWidget;
+}
+
 TArray<UWidget*> UCSUserWidgetExtensions::GetAllWidgets(UUserWidget* UserWidget)
 {
 	TArray<UWidget*> Widgets;
