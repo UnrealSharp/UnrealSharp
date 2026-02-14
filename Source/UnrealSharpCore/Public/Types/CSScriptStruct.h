@@ -14,6 +14,11 @@ class UCSScriptStruct : public UUserDefinedStruct, public ICSManagedTypeInterfac
 	GENERATED_BODY()
 public:
 	
+	// UObject interface
+	virtual bool IsFullNameStableForNetworking() const override { return true; }
+	virtual bool IsNameStableForNetworking() const override { return true; }
+	// End of UObject interface
+	
 	void Initialize();
 	
 private:
