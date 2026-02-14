@@ -146,22 +146,29 @@ public static class SolutionManager
 
             state.InitialCompilation = updatedCompilation;
 
+            HashSet<string> projectDocumentPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Document document in project.Documents)
+            {
+                if (document.FilePath is null)
+                {
+                    continue;
+                }
+
+                string normalizedDocumentPath = Path.GetFullPath(document.FilePath).Replace('\\', '/');
+                projectDocumentPaths.Add(normalizedDocumentPath);
+            }
+
             List<SyntaxTree> generatedFilesToRemove = new List<SyntaxTree>();
             foreach (SyntaxTree tree in state.InitialCompilation.SyntaxTrees)
             {
-                bool found = false;
-                foreach (Document document in project.Documents)
+                if (tree.FilePath is null)
                 {
-                    if (!string.Equals(document.FilePath, tree.FilePath))
-                    {
-                        continue;
-                    }
-
-                    found = true;
-                    break;
+                    generatedFilesToRemove.Add(tree);
+                    continue;
                 }
 
-                if (!found)
+                string normalizedTreePath = Path.GetFullPath(tree.FilePath).Replace('\\', '/');
+                if (!projectDocumentPaths.Contains(normalizedTreePath))
                 {
                     generatedFilesToRemove.Add(tree);
                 }
