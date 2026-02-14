@@ -14,6 +14,15 @@ namespace UnrealSharp.Editor;
 
 public static class IncrementalCompilationManager
 {
+    private static bool NeedsProjectStateRefresh(GenState? state)
+    {
+        return state == null
+               || state.Driver == null
+               || state.InitialCompilation == null
+               || state.TreesByPath == null
+               || state.Generators == null;
+    }
+
     private static bool IsSkippablePath(string path)
     {
         string normalized = path.Replace('\\', '/');
@@ -124,15 +133,18 @@ public static class IncrementalCompilationManager
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             Project project = projects[i];
-
-            // Force-refresh project state from disk before generation.
-            // Incremental state can become stale after file watcher churn and
-            // lead to partial compilations (missing in-project types).
-            SolutionManager.ProcessProject(project).GetAwaiter().GetResult();
             
             LogUnrealSharpEditor.Log($"Starting source generation for project '{project.Name}'.");
             
             GenState? state = SolutionManager.GetProjectState(project.Id);
+
+            if (NeedsProjectStateRefresh(state))
+            {
+                LogUnrealSharpEditor.LogWarning(
+                    $"Project '{project.Name}' incremental state is invalid. Rebuilding project state.");
+                SolutionManager.ProcessProject(project).GetAwaiter().GetResult();
+                state = SolutionManager.GetProjectState(project.Id);
+            }
             
             if (state is null)
             {
