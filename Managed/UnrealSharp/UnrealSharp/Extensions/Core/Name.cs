@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
 using UnrealSharp.Attributes;
-using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Interop;
 
@@ -10,12 +9,12 @@ namespace UnrealSharp.Core;
 [UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
 public struct FName : IEquatable<FName>, IComparable<FName>
 {
-#if !WITH_EDITOR
+#if WITH_EDITOR
     private uint ComparisonIndex;
+    private uint DisplayIndex;
     private uint Number;
 #else
-	private uint ComparisonIndex;
-    private uint DisplayIndex;
+    private uint ComparisonIndex;
     private uint Number;
 #endif
 
@@ -104,6 +103,11 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         return name.IsValid ? new FText(name) : FText.None;
     }
     
+    public static implicit operator FName(FText text)
+    {
+        return text.IsEmpty ? None : new FName(text.ToString());
+    }
+    
     public bool Equals(FName other)
     {
         return this == other;
@@ -111,12 +115,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     
     public override bool Equals(object? obj)
     {
-        if (obj is FName name)
-        {
-            return this == name;
-        }
-
-        return false;
+        return obj is FName other && Equals(other);
     }
     
     public override int GetHashCode()

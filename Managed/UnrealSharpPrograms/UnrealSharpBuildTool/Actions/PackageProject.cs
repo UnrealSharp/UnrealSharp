@@ -6,7 +6,7 @@ public class PackageProject : BuildToolAction
 {
     public override bool RunAction()
     {
-        string archiveDirectoryPath = Program.TryGetArgument("ArchiveDirectory");
+        string archiveDirectoryPath = Program.GetArgument("ArchiveDirectory");
         
         if (string.IsNullOrEmpty(archiveDirectoryPath))
         {
@@ -19,6 +19,13 @@ public class PackageProject : BuildToolAction
         string publishFolder = Program.GetOutputPath(rootProjectPath);
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
         string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
+
+        string UETargetType = Program.GetArgument("UETargetType");
+        
+        if (string.IsNullOrEmpty(UETargetType))
+        {
+            throw new Exception("UETargetType argument is required for the Publish action.");
+        }
         
         Collection<string> extraArguments =
         [
@@ -29,6 +36,8 @@ public class PackageProject : BuildToolAction
             
 			"-p:DisableWithEditor=true",
             "-p:GenerateDocumentationFile=false",
+            
+            $"-p:UETargetType={UETargetType}",
             
             $"-p:PublishDir=\"{publishFolder}\"",
             $"-p:OutputPath=\"{packageOutputFolder}\"",

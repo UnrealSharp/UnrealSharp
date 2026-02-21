@@ -354,8 +354,32 @@ const FString& UCSProcUtilities::GetPluginsDirectory()
 
 const FString& UCSProcUtilities::GetProjectGlueFolderPath()
 {
-	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / FApp::GetProjectName() + TEXT(".Glue");
+	static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / AppendGlueSuffix(FApp::GetProjectName());
 	return ProjectGlueFolderPath;
+}
+
+FString UCSProcUtilities::GetPluginGlueFolderPath(const FString& PluginName)
+{
+	IPluginManager& PluginManager = IPluginManager::Get();
+	TSharedPtr<IPlugin> Plugin = PluginManager.FindPlugin(PluginName);
+	
+	if (!Plugin.IsValid())
+	{
+		UE_LOG(LogUnrealSharpProcHelper, Warning, TEXT("Plugin %s not found. Can't get glue folder path."), *PluginName);
+		return "";
+	}
+	
+	return FPaths::Combine(Plugin->GetBaseDir(), "Script", AppendGlueSuffix(PluginName));
+}
+
+FString UCSProcUtilities::AppendGlueSuffix(const FString& FileName)
+{
+	if (FileName.EndsWith(TEXT(".Glue")))
+	{
+		return FileName;
+	}
+
+	return FileName + TEXT(".Glue");
 }
 
 FString UCSProcUtilities::GetUserManagedProjectName()

@@ -17,7 +17,7 @@ enum ECSReplicationState
  * This class provides support for replicated UObjects in C#
  */
 UCLASS(Blueprintable, BlueprintType, DisplayName = "Replicated UObject", Abstract)
-class UCSReplicatedObject : public UObject
+class UNREALSHARPCORE_API UCSReplicatedObject : public UObject
 {
 	GENERATED_BODY()
 

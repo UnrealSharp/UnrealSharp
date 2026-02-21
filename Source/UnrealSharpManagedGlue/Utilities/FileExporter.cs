@@ -9,43 +9,14 @@ using UnrealSharpManagedGlue.SourceGeneration;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public struct ProjectDirInfo
-{
-    private readonly string _projectName;
-    private readonly string _projectDirectory;
-    public HashSet<string>? Dependencies { get; set; }
-
-    public ProjectDirInfo(string projectName, string projectDirectory, HashSet<string>? dependencies = null)
-    {
-        _projectName = projectName;
-        _projectDirectory = projectDirectory;
-        Dependencies = dependencies;
-    }
-    
-    public string GlueProjectName => $"{_projectName}.Glue";
-    public string GlueProjectFile => $"{GlueProjectName}.csproj";
-    
-    public string ScriptDirectory => Path.Combine(_projectDirectory, "Script");
-    
-    public string GlueCsProjPath => Path.Combine(GlueProjectDirectory, GlueProjectFile);
-
-    public bool IsUProject => _projectDirectory.EndsWith(".uproject", StringComparison.OrdinalIgnoreCase);
-    
-    public bool IsPartOfEngine => _projectName == "Engine";
-    
-    public string GlueProjectDirectory => Path.Combine(ScriptDirectory, GlueProjectName);
-    
-    public string ProjectRoot => _projectDirectory;
-}
-
 public static class FileExporter
 {
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
-    private static readonly HashSet<string> AffectedFiles = new();
+    private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
 
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
-        string directory = GetDirectoryPath(type.Package);
+        string directory =type.Package.GetModuleUhtOutputDirectory();
         SaveGlueToDisk(type.Package, directory, type.EngineName, stringBuilder.ToString());
     }
 
@@ -57,17 +28,17 @@ public static class FileExporter
     public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
     {
         string absoluteFilePath = GetFilePath(typeName, directory);
-        
         bool needsWrite = true;
+
         if (File.Exists(absoluteFilePath))
         {
-            FileInfo fileInfo = new FileInfo(absoluteFilePath);
+            FileInfo fileInfo = new(absoluteFilePath);
             if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
             {
                 needsWrite = false;
             }
         }
-        
+
         ReadWriteLock.EnterWriteLock();
         try
         {
@@ -77,7 +48,7 @@ public static class FileExporter
             {
                 return;
             }
-            
+
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
@@ -98,16 +69,10 @@ public static class FileExporter
 
     public static void AddUnchangedType(UhtType type)
     {
-        string engineName = type.EngineName;
-        
-        if (type is UhtFunction function)
-        {
-            engineName = DelegateBasePropertyTranslator.GetDelegateName(function);
-        }
-        
-        string directory = GetDirectoryPath(type.Package);
-        string filePath = GetFilePath(engineName, directory);
-        AffectedFiles.Add(filePath);
+        string engineName = type is UhtFunction function ? DelegateBasePropertyTranslator.GetDelegateName(function) : type.EngineName;
+
+        string directory = type.Package.GetModuleUhtOutputDirectory();
+        AffectedFiles.Add(GetFilePath(engineName, directory));
 
         if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
         {
@@ -115,150 +80,72 @@ public static class FileExporter
         }
     }
 
-    public static string GetDirectoryPath(UhtPackage package)
-    {
-        if (package == null)
-        {
-            throw new InvalidOperationException("Package is null");
-        }
-
-        string rootPath = GetGluePath(package);
-        return Path.Combine(rootPath, package.GetShortName());
-    }
-
-    public static string GetGluePath(UhtPackage package)
-    {
-        ProjectDirInfo projectDirInfo = package.FindOrAddProjectInfo();
-        return projectDirInfo.GlueProjectDirectory;
-    }
-
     public static void CleanOldExportedFiles()
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
-        
-        CleanFilesInDirectories(GeneratorStatics.EngineGluePath);
-        
-        foreach (ProjectDirInfo pluginDirectory in PluginUtilities.PluginInfo.Values)
+
+        foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            if (pluginDirectory.IsPartOfEngine)
+            if (plugin.ShouldFlatten)
             {
                 continue;
             }
             
-            CleanFilesInDirectories(pluginDirectory.GlueProjectDirectory, true);
+            CleanOldFilesInDirectories(plugin.GlueModuleDirectory);
         }
     }
 
-    public static void CleanModuleFolders()
-    {
-        CleanGeneratedFolder(GeneratorStatics.EngineGluePath);
-        
-        foreach (ProjectDirInfo pluginDirectory in Program.PluginDirs)
-        {
-            CleanGeneratedFolder(pluginDirectory.GlueProjectDirectory);
-        }
-    }
-    
     public static void CleanGeneratedFolder(string path)
     {
         if (!Directory.Exists(path))
         {
             return;
         }
-
-        HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
-
-        // TODO: Move runtime glue to a separate csproj. So we can fully clean the ProjectGlue folder.
-        // Below is a temporary solution to not delete runtime glue that can cause compilation errors on editor startup,
-        // and avoid having to restore nuget packages.
-        string[] directories = Directory.GetDirectories(path);
-        foreach (string directory in directories)
-        {
-            if (IsIntermediateDirectory(directory) || ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
-            {
-                continue;
-            }
-
-            Directory.Delete(directory, true);
-        }
-        
-        string csprojFile = Path.Combine(path, $"{Path.GetFileName(path)}.csproj");
-        if (File.Exists(csprojFile))
-        {
-            File.Delete(csprojFile);
-        }
-    }
     
-    private static HashSet<string> GetIgnoredDirectories(string path)
-    {
-        string glueIgnoreFileName = Path.Combine(path, ".glueignore");
-        if (!File.Exists(glueIgnoreFileName))
+        DirectoryInfo root = new DirectoryInfo(path);
+        foreach (FileSystemInfo item in root.GetFileSystemInfos())
         {
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        HashSet<string> ignoredDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        using StreamReader fileInput = File.OpenText(glueIgnoreFileName);
-        while (!fileInput.EndOfStream)
-        {
-            string? line = fileInput.ReadLine();
-            
-            if (string.IsNullOrWhiteSpace(line))
+            if (item is DirectoryInfo dir)
             {
-                continue;
+                dir.Delete(true);
             }
-
-            ignoredDirectories.Add(line.Trim());
+            else
+            {
+                item.Delete();
+            }
         }
-        return ignoredDirectories;
     }
 
-    private static void CleanFilesInDirectories(string path, bool recursive = false)
+    private static void CleanOldFilesInDirectories(string path)
     {
         if (!Directory.Exists(path))
         {
             return;
         }
 
-        string[] directories = Directory.GetDirectories(path);
-        HashSet<string> ignoredDirectories = GetIgnoredDirectories(path);
-
-        foreach (string directory in directories)
+        if (!PackageHeadersTracker.HasModuleBeenExported(Path.GetFileName(path)))
         {
-            if (ignoredDirectories.Contains(Path.GetRelativePath(path, directory)))
+            return;
+        }
+        
+        foreach (string directory in Directory.GetDirectories(path))
+        {
+            CleanOldFilesInDirectories(directory);
+        }
+        
+        string[] files = Directory.GetFiles(path);
+        foreach (string file in files)
+        {
+            if (!AffectedFiles.Contains(file))
             {
-                continue;
-            }
-
-            string moduleName = Path.GetFileName(directory);
-            if (!PackageHeadersTracker.HasModuleBeenExported(moduleName))
-            {
-                continue;
-            }
-
-            int removedFiles = 0;
-            string[] files = Directory.GetFiles(directory);
-
-            foreach (string file in files)
-            {
-                if (AffectedFiles.Contains(file))
-                {
-                    continue;
-                }
-
                 File.Delete(file);
-                removedFiles++;
-            }
-
-            if (removedFiles == files.Length)
-            {
-                Directory.Delete(directory, recursive);
             }
         }
-    }
-    static bool IsIntermediateDirectory(string path)
-    {
-        string directoryName = Path.GetFileName(path);
-        return directoryName is "obj" or "bin" or "Properties";
+        
+        string[] remainingFiles = Directory.GetFiles(path);
+        if (remainingFiles.Length == 0)
+        {
+            Directory.Delete(path, false); 
+        }
     }
 }

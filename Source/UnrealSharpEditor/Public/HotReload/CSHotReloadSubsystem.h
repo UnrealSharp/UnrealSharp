@@ -19,18 +19,6 @@ enum EHotReloadStatus : uint8
 	FailedToCompile
 };
 
-struct FCSPendingHotReloadChange
-{
-	FCSPendingHotReloadChange(FName InProjectName, const TArray<FFileChangeData>& InChangedFiles)
-		: ProjectName(InProjectName)
-		, ChangedFiles(InChangedFiles)
-	{
-	}
-	
-	FName ProjectName;
-	TArray<FFileChangeData> ChangedFiles;
-};
-
 UCLASS()
 class UCSHotReloadSubsystem : public UEditorSubsystem
 {
@@ -82,6 +70,8 @@ private:
 	void OnEnumRebuilt(UCSEnum* NewEnum);
 	void OnInterfaceRebuilt(UCSInterface* NewInterface);
 	
+	void AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName);
+	
 	void AddReloadedType(const UObject* NewType)
 	{
 		uint32 TypeID = NewType->GetUniqueID();
@@ -106,7 +96,7 @@ private:
 
 	TArray<FString> WatchingDirectories;
 
-	TArray<FCSPendingHotReloadChange> PendingFileChanges;
+	TMap<FName, TArray<FFileChangeData>> PendingFileChanges;
 
 	TSet<uint32> ReloadedTypes;
 	bool bDetectedNewManagedType = false;

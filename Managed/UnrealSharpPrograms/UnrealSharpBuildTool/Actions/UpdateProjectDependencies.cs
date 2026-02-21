@@ -12,7 +12,7 @@ public class UpdateProjectDependencies : BuildToolAction
 
     public override bool RunAction()
     {
-        _projectPath = Program.TryGetArgument("ProjectPath");
+        _projectPath = Program.GetArgument("ProjectPath");
         _projectFolder = Directory.GetParent(_projectPath)!.FullName;
         _dependencies = Program.GetArguments("Dependency").ToImmutableList();
 

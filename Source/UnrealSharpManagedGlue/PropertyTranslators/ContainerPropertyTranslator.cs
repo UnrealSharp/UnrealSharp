@@ -36,7 +36,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
         foreach (UhtProperty innerProperty in innerProperties)
         {
             PropertyTranslator? translator = innerProperty.GetTranslator();
-            if (translator == null || !translator.CanExport(innerProperty) || !translator.IsSupportedAsInner())
+            if (translator == null || !translator.CanExport(innerProperty) || !translator.IsSupportedAsInner)
             {
                 return false;
             }

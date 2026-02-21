@@ -90,10 +90,16 @@ public static class ScriptGeneratorUtilities
     
     public const string IntPtrZero = "IntPtr.Zero";
 
-    public static string TryGetPluginDefine(string key)
+    public static string TryGetPluginStringDefine(string key)
     {
         GeneratorStatics.PluginModule.TryGetDefine(key, out string? generatedCodePath);
         return generatedCodePath!;
+    }
+    
+    public static int TryGetPluginIntDefine(string key)
+    {
+        GeneratorStatics.PluginModule.TryGetDefine(key, out int valueStr);
+        return valueStr;
     }
 
     public static bool CanExportFunction(UhtFunction function)
@@ -119,15 +125,14 @@ public static class ScriptGeneratorUtilities
             return translator != null && isSupported(translator) && translator.CanExport(property);
         }
 
-        if (function.ReturnProperty != null && !CanExportParameter(function.ReturnProperty,
-                translator => translator.IsSupportedAsReturnValue()))
+        if (function.ReturnProperty != null && !CanExportParameter(function.ReturnProperty, translator => translator.IsSupportedAsReturnValue))
         {
             return false;
         }
 
         foreach (UhtProperty parameter in function.Properties)
         {
-            if (!CanExportParameter(parameter, translator => translator.IsSupportedAsParameter()))
+            if (!CanExportParameter(parameter, translator => translator.IsSupportedAsParameter))
             {
                 return false;
             }
@@ -145,8 +150,8 @@ public static class ScriptGeneratorUtilities
         }
 
         bool isClassProperty = property.Outer!.EngineType == UhtEngineType.Class;
-        bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty();
-        bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty();
+        bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty;
+        bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty;
         return canBeClassProperty || canBeStructProperty;
     }
 

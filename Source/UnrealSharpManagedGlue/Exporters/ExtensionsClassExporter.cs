@@ -43,7 +43,7 @@ public static class ExtensionsClassExporter
         foreach (ExtensionMethod extensionMethod in extensionMethods)
         {
             FunctionExporter exporter = new FunctionExporter(extensionMethod);
-            exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+            exporter.Initialize(OverloadMode.AllowOverloads, EFunctionProtectionMode.UseUFunctionProtection);
             exporter.ExportExtensionMethodOverloads(stringBuilder);
             exporter.ExportExtensionMethod(stringBuilder);
         }
@@ -51,7 +51,6 @@ public static class ExtensionsClassExporter
         stringBuilder.CloseBrace();
         stringBuilder.EndGlueFile(libraryClass);
         
-        string directory = FileExporter.GetDirectoryPath(package);
-        FileExporter.SaveGlueToDisk(package, directory, className, stringBuilder.ToString());
+        FileExporter.SaveGlueToDisk(package, package.GetModuleUhtOutputDirectory(), className, stringBuilder.ToString());
     }
 }

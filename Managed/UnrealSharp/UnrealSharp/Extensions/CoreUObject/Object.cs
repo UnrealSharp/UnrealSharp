@@ -99,18 +99,13 @@ public partial class UObject
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is UObject unrealSharpObject && NativeObject == unrealSharpObject.NativeObject;
+        return obj is UObject other && NativeObject == other.NativeObject;
     }
 
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        return NativeObject.GetHashCode();
-    }
-
-    public static implicit operator bool(UObject Object)
-    {
-        return Object != null && UObjectExporter.CallNativeIsValid(Object.NativeObject).ToManagedBool();
+        return UniqueID;
     }
 
     /// <summary>
@@ -615,6 +610,18 @@ public partial class UObject
     {
         return UCSUserWidgetExtensions.CreateWidget(widgetClass, owningController);
     }
+    
+    /// <summary>
+    /// Creates a widget of the specified type using a parent widget as context.
+    /// </summary>
+    /// <param name="parentWidget"> The parent widget used for world. </param>
+    /// <param name="widgetClass"> The class of the widget to create. </param>
+    /// <typeparam name="T"> The type of the widget to create. </typeparam>
+    /// <returns>The created widget instance.</returns>
+    public static T CreateWidget<T>(UUserWidget owningWidget, TSubclassOf<T> widgetClass) where T : UUserWidget
+    {
+        return UCSUserWidgetExtensions.CreateWidget_WithWidget(owningWidget, widgetClass);
+    }
 
     /// <summary>
     /// Marks the object as garbage.
@@ -654,6 +661,21 @@ public partial class UObject
     public T GetWorldSettingsAs<T>() where T : AWorldSettings
     {
         return (T) WorldSettings;
+    }
+    
+    public static implicit operator bool(UObject? @object)
+    {
+        return @object != null;
+    }
+    
+    public static bool operator ==(UObject? left, UObject? right)
+    {
+        return ReferenceEquals(left, right);
+    }
+
+    public static bool operator !=(UObject? left, UObject? right)
+    {
+        return !(left == right);
     }
 }
 

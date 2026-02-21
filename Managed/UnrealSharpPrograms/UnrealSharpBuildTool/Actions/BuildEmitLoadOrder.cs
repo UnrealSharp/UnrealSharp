@@ -10,9 +10,9 @@ public class BuildEmitLoadOrder : BuildToolAction
 {
     public override bool RunAction()
     {
-        string output = Program.TryGetArgument("OutputPath");
-        string clp = Program.TryGetArgument("clp");
-
+        string output = Program.GetArgument("OutputPath");
+        string clp = Program.GetArgument("clp");
+        
         Collection<string>? extraArguments = null;
         if (!string.IsNullOrEmpty(output))
         {

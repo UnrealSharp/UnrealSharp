@@ -85,7 +85,7 @@ public static class PreprocessorExporter
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
 
-        string propsPath = Path.Combine(GeneratorStatics.EngineGluePath, "UE5Rules.Defines.props");
+        string propsPath = Path.Combine(GeneratorStatics.BindingsProjectDirectory, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 

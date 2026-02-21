@@ -73,3 +73,28 @@ void UFTextExporter::CreateEmptyText(FText* Text)
 	*Text = FText::GetEmpty();
 }
 
+bool UFTextExporter::IsCultureInvariant(FText* Text)
+{
+	return Text->IsCultureInvariant();
+}
+
+bool UFTextExporter::IsFromStringTable(FText* Text)
+{
+	return Text->IsFromStringTable();
+}
+
+bool UFTextExporter::IsInitializedFromString(FText* Text)
+{
+	return Text->IsInitializedFromString();
+}
+
+bool UFTextExporter::IsNumeric(FText* Text)
+{
+	return Text->IsNumeric();
+}
+
+bool UFTextExporter::IsEmpty(FText* Text)
+{
+	return Text->IsEmpty();
+}
+

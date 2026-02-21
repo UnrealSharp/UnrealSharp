@@ -26,8 +26,8 @@ public class GenerateProject : BuildToolAction
 
     public override bool RunAction()
     {
-        string folder = Program.TryGetArgument("NewProjectFolder");
-        _projectRoot = Program.TryGetArgument("ProjectRoot");
+        string folder = Program.GetArgument("NewProjectFolder");
+        _projectRoot = Program.GetArgument("ProjectRoot");
         
         if (!ContainsUPluginOrUProjectFile(_projectRoot))
         {
@@ -39,45 +39,13 @@ public class GenerateProject : BuildToolAction
             folder = Path.Combine(folder, "Script");
         }
 
-        string projectName = Program.TryGetArgument("NewProjectName");
+        string projectName = Program.GetArgument("NewProjectName");
         string csProjFileName = $"{projectName}.csproj";
-
-        if (!Directory.Exists(folder))
-        {
-            Directory.CreateDirectory(folder);
-        }
 
         _projectFolder = Path.Combine(folder, projectName);
         _projectPath = Path.Combine(_projectFolder, csProjFileName);
-
-        string version = Program.GetVersion();
-        using BuildToolProcess generateProjectProcess = new BuildToolProcess();
-
-        // Create a class library.
-        generateProjectProcess.StartInfo.ArgumentList.Add("new");
-        generateProjectProcess.StartInfo.ArgumentList.Add("classlib");
-
-        // Assign project name to the class library.
-        generateProjectProcess.StartInfo.ArgumentList.Add("-n");
-        generateProjectProcess.StartInfo.ArgumentList.Add(projectName);
-
-        // Set the target framework to the current version.
-        generateProjectProcess.StartInfo.ArgumentList.Add("-f");
-        generateProjectProcess.StartInfo.ArgumentList.Add(version);
-
-        generateProjectProcess.StartInfo.WorkingDirectory = folder;
-
-        if (!generateProjectProcess.StartBuildToolProcess())
-        {
-            return false;
-        }
-
-        // dotnet new class lib generates a file named Class1, remove it.
-        string myClassFile = Path.Combine(_projectFolder, "Class1.cs");
-        if (File.Exists(myClassFile))
-        {
-            File.Delete(myClassFile);
-        }
+        
+        TemplateUtilities.WriteTemplateToFile("Csproj", projectName, "csproj", _projectFolder, [Program.GetVersion()]);
         
         ModifyModuleFile();
         
@@ -116,12 +84,11 @@ public class GenerateProject : BuildToolAction
                 AppendGeneratedCode(csprojDocument, newItemGroup);
             }
             
-            if (Program.HasArgument("EditorOnly"))
-            {
-                XmlElement newPropertyGroup = csprojDocument.MakePropertyGroup(csprojDocument.DocumentElement!);
-                XmlElement outputType = csprojDocument.GetOrCreateChild(newPropertyGroup, "IsPublishable");
-                outputType.InnerText = "false";
-            }
+            XmlElement newPropertyGroup = csprojDocument.MakePropertyGroup(csprojDocument.DocumentElement!);
+            XmlElement outputType = csprojDocument.GetOrCreateChild(newPropertyGroup, "IsPublishable");
+            
+			bool isEditorOnly = Program.GetArgumentBool("EditorOnly");
+            outputType.InnerText = (!isEditorOnly).ToString();
 
             string unrealSharpPluginPath = Program.GetUnrealSharpSharedProps();
             string relativeUnrealSharpPath = GetRelativePath(_projectFolder, unrealSharpPluginPath);
@@ -142,7 +109,7 @@ public class GenerateProject : BuildToolAction
 
     private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
     {
-        string providedGlueName = Program.TryGetArgument("GlueProjectName");
+        string providedGlueName = Program.GetArgument("GlueProjectName");
         string scriptFolder = string.IsNullOrEmpty(_projectRoot) ? Program.GetScriptFolder() : Path.Combine(_projectRoot, "Script");
         string generatedGluePath = Path.Combine(scriptFolder, providedGlueName, $"{providedGlueName}.csproj");
         AddDependency(doc, itemGroup, generatedGluePath);

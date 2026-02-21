@@ -21,7 +21,7 @@ public partial struct FQuat
     /// </summary>
     public FQuat(FRotator rotator)
     {
-        UCSQuatExtensions.ToQuaternion(out this, this);
+        UCSQuatExtensions.ToQuaternion(out this, rotator);
     }
     
     /// <summary>

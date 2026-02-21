@@ -14,6 +14,8 @@ class UNREALSHARPRUNTIMEGLUE_API UCSGlueGenerator : public UObject
 public:
 	virtual void Initialize() {}
 	virtual void ForceRefresh() {}
+
+	static FString GetPluginGlueFolder(const FString& PluginName);
 protected:
-	void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
+	void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString* OverrideFolder = nullptr, const FString& Suffix = FString(TEXT(".cs")));
 };

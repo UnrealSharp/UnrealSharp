@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -16,11 +15,12 @@
       <DefineConstants>WITH_EDITOR</DefineConstants>
       <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
       <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
-  </PropertyGroup>
-
-  <Import Project="Generated/UE5Rules.Defines.props" Condition="Exists('Generated/UE5Rules.Defines.props')" />
-
-  <ItemGroup>
+    </PropertyGroup>
+    
+    <Import Project="obj/UE5Rules.Defines.props" Condition="Exists('obj/UE5Rules.Defines.props')" />
+    <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
+    
+    <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />
       <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
       <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
@@ -34,6 +34,6 @@
             <OutputItemType>Analyzer</OutputItemType>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       </ProjectReference>
-  </ItemGroup>
+    </ItemGroup>
     
 </Project>

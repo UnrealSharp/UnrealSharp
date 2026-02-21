@@ -12,5 +12,7 @@ class UCSEnum : public UUserDefinedEnum, public ICSManagedTypeInterface
 public:
 	// UEnum interface
 	virtual FString GenerateFullEnumName(const TCHAR* InEnumName) const override { return UEnum::GenerateFullEnumName(InEnumName); }
+	virtual bool IsFullNameStableForNetworking() const override { return true; }
+	virtual bool IsNameStableForNetworking() const override { return true; }
 	// End of UEnum interface
 };

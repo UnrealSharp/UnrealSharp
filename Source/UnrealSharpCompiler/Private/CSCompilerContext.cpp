@@ -301,6 +301,8 @@ void FCSCompilerContext::ApplyMetaData() const
 	{
 		NewClass->SetMetaData(*DisplayNameKey, *Blueprint->GetName());
 	}
+	
+	Blueprint->BlueprintDisplayName = NewClass->GetMetaData(*DisplayNameKey);
 
 	if (GetDefault<UCSUnrealSharpEditorSettings>()->bSuffixGeneratedTypes)
 	{

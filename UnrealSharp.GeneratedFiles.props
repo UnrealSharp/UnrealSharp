@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <UETargetType Condition="'$(UETargetType)' == ''">Editor</UETargetType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildProjectDirectory)\obj\UHT\$(UETargetType)\**\*.cs">
+      <Link>Generated\$(GeneratedTypeDir)\%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="DebugUETargetType" BeforeTargets="Build">
+    <Message Importance="high" Text="Building for UETargetType: $(UETargetType)" />
+  </Target>
+</Project>
