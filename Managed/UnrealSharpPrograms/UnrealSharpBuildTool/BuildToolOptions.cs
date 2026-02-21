@@ -4,7 +4,7 @@ using CommandLine.Text;
 
 namespace UnrealSharpBuildTool;
 
-public enum BuildAction : int
+public enum BuildAction
 {
     GenerateProject,
     UpdateProjectDependencies,
@@ -13,7 +13,7 @@ public enum BuildAction : int
     BuildEmitLoadOrder,
 }
 
-public enum BuildConfig : int
+public enum BuildConfig
 {
     Debug,
     Release,
@@ -22,7 +22,7 @@ public enum BuildConfig : int
 
 public class BuildToolOptions
 {
-    [Option("Action", Required = true, HelpText = "The action the build tool should process. Possible values: Build, Clean, GenerateProject, Rebuild, Weave, PackageProject, GenerateSolution, BuildEmitLoadOrder.")]
+    [Option("Action", Required = true, HelpText = "The action the build tool should process.")]
     public BuildAction Action { get; set; }
 
     [Option("DotNetPath", Required = false, HelpText = "The path to the dotnet.exe")]
@@ -40,18 +40,55 @@ public class BuildToolOptions
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; } = string.Empty;
 
-    [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments for the build tool.")]
+    [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments.")]
     public IEnumerable<string> AdditionalArgs { get; set; } = new List<string>();
 
-    public string TryGetArgument(string argument)
+    public string GetArgument(string argument, string defaultValue = "")
     {
-        return GetArguments(argument).FirstOrDefault() ?? string.Empty;
+        string? result = AdditionalArgs.FirstOrDefault(arg => arg.StartsWith(argument));
+        
+        if (result == null)
+        {
+            return defaultValue;
+        }
+        
+        return result[(argument.Length + 1)..];
+    }
+
+    public bool GetArgumentBool(string argument, bool defaultValue = false)
+    {
+        string value = GetArgument(argument);
+        
+        if (string.IsNullOrEmpty(value))
+        {
+            return defaultValue;
+        }
+
+        if (bool.TryParse(value, out bool result))
+        {
+            return result;
+        }
+        
+        return defaultValue;
+    }
+
+    public int GetArgumentInt(string argument, int defaultValue = 0)
+    {
+        string value = GetArgument(argument);
+        
+        if (int.TryParse(value, out int result))
+        {
+            return result;
+        }
+        
+        return defaultValue;
     }
 
     public IEnumerable<string> GetArguments(string argument)
     {
-        return AdditionalArgs.Where(arg => arg.StartsWith(argument))
-                .Select(arg => arg[(argument.Length + 1)..]);
+        return AdditionalArgs
+            .Where(arg => arg.StartsWith(argument))
+            .Select(arg => arg[(argument.Length + 1)..]);
     }
 
     public bool HasArgument(string argument)
@@ -63,9 +100,7 @@ public class BuildToolOptions
     {
         string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly()!.Location);
         Console.Error.WriteLine($"Usage: {name} [options]");
-        Console.Error.WriteLine("Options:");
-
-        var helpText = HelpText.AutoBuild(result, h => h, e => e);
+        HelpText helpText = HelpText.AutoBuild(result, (HelpText h) => h, (Example e) => e);
         Console.WriteLine(helpText);
     }
 }

@@ -26,7 +26,7 @@ public static class PackageHeadersTracker
             return;
         }
         
-        if (!Directory.Exists(GeneratorStatics.EngineGluePath))
+        if (!Directory.Exists(GeneratorStatics.BindingsProjectDirectory))
         {
             return;
         }

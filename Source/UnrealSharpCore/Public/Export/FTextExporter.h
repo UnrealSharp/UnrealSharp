@@ -26,4 +26,19 @@ public:
 	
 	UNREALSHARP_FUNCTION()
 	static void CreateEmptyText(FText* Text);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsCultureInvariant(FText* Text);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsFromStringTable(FText* Text);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsInitializedFromString(FText* Text);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsNumeric(FText* Text);
+	
+	UNREALSHARP_FUNCTION()
+	static bool IsEmpty(FText* Text);
 };

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using EpicGames.Core;
 using EpicGames.UHT.Parsers;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
@@ -141,15 +140,8 @@ public static class NativeBindExporter
                 builder.AppendLine();
                 builder.AppendLine();
             }
-
-            UHTManifest.Module manifestModule;
-            #if UE_5_5_OR_LATER
-            manifestModule = headerFile.Module.Module;
-            #else
-            manifestModule = headerFile.Package.GetModule();
-            #endif
             
-            string outputDirectory = manifestModule.OutputDirectory;
+            string outputDirectory = headerFile.Module.Module.OutputDirectory;
             string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             

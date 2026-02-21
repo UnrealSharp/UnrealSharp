@@ -476,6 +476,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	TMap<FString, FString> Arguments;
 	Arguments.Add("ArchiveDirectory", FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
 	Arguments.Add("BuildConfig", "Release");
+	Arguments.Add("UETargetType", "Game");
 	UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
 
 	FNotificationInfo Info(

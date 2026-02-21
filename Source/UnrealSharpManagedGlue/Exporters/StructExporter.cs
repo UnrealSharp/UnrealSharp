@@ -340,20 +340,23 @@ public static class StructExporter
         stringBuilder.AppendLine($"return new {structName}");
         stringBuilder.OpenBrace();
         stringBuilder.AppendLine();
+        
         for (int i = 0; i < exportedProperties.Count; i++)
         {
             UhtProperty property = exportedProperties[i];
-            string scriptName = property.GetPropertyName();
             PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportPropertyArithmetic(stringBuilder, property, ArithmeticKind.Divide);
 
-            if (i < exportedProperties.Count - 1)
+            if (i >= exportedProperties.Count - 1)
             {
-                stringBuilder.Append(", ");
-                stringBuilder.AppendLine();
+                continue;
             }
+            
+            stringBuilder.Append(", ");
+            stringBuilder.AppendLine();
         }
+        
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("};");
         stringBuilder.CloseBrace();

@@ -271,11 +271,7 @@ void SCSNewProjectDialog::OnFinish()
 		Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
 	}
 	
-	if (EditorOnlyCheckBox->IsChecked())
-	{
-		Arguments.Add(TEXT("EditorOnly"), TEXT("true"));
-	}
-
+	Arguments.Add(TEXT("EditorOnly"), EditorOnlyCheckBox->IsChecked() ? TEXT("true") : TEXT("false"));
 	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);

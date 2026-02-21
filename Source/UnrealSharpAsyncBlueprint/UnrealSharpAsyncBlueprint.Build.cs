@@ -23,6 +23,6 @@ public class UnrealSharpAsyncBlueprint : ModuleRules
             }
         );
 
-        PublicDefinitions.Add("SkipGlueGeneration");
+        PublicDefinitions.Add("SkipGlueGeneration=1");
     }
 }

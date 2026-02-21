@@ -217,6 +217,29 @@ void UCSHotReloadSubsystem::OnInterfaceRebuilt(UCSInterface* NewInterface)
 	AddReloadedType(NewInterface);
 }
 
+void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
+{
+	TArray<FFileChangeData>& PendingChangesForProject = PendingFileChanges.FindOrAdd(ProjectName);
+	
+	for (const FFileChangeData& ChangeData : ChangedFiles)
+	{
+		bool bAlreadyPending = PendingChangesForProject.ContainsByPredicate([&ChangeData](const FFileChangeData& PendingChange)
+		{
+			if (PendingChange.Filename == ChangeData.Filename && PendingChange.Action == ChangeData.Action)
+			{
+				return true;
+			}
+			
+			return false;
+		});
+		
+		if (!bAlreadyPending)
+		{
+			PendingChangesForProject.Add(ChangeData);
+		}
+	}
+}
+
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
@@ -324,6 +347,11 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 		PauseNotification->ExpireAndFadeout();
 		PauseNotification.Reset();
 	}
+	
+	for (const TPair<FName, TArray<FFileChangeData>>& Pair : PendingFileChanges)
+	{
+		HandleScriptFileChanges(Pair.Value, Pair.Key);
+	}
 }
 
 void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
@@ -338,6 +366,12 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	
 	if (CSharpFiles.IsEmpty())
 	{
+		return;
+	}
+	
+	if (bIsHotReloadPaused)
+	{
+		AppendPendingFileChange(ChangedFiles, ProjectName);
 		return;
 	}
 	

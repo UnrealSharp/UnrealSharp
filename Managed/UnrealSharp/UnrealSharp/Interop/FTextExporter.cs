@@ -12,4 +12,9 @@ public static unsafe partial class FTextExporter
     public static delegate* unmanaged<ref FTextData, char*, int, void> FromStringView;
     public static delegate* unmanaged<ref FTextData, FName, void> FromName;
     public static delegate* unmanaged<ref FTextData, void> CreateEmptyText;
+    public static delegate* unmanaged<ref FTextData, NativeBool> IsCultureInvariant;
+    public static delegate* unmanaged<ref FTextData, NativeBool> IsFromStringTable;
+    public static delegate* unmanaged<ref FTextData, NativeBool> IsInitializedFromString;
+    public static delegate* unmanaged<ref FTextData, NativeBool> IsNumeric;
+    public static delegate* unmanaged<ref FTextData, NativeBool> IsEmpty;
 }

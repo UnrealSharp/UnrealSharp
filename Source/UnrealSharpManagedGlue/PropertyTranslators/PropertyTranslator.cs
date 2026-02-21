@@ -11,20 +11,26 @@ namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public abstract class PropertyTranslator
 {
+    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
+    {
+        _supportedPropertyUsage = supportedPropertyUsage;
+    }
+    
     private readonly EPropertyUsageFlags _supportedPropertyUsage;
     protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property
                                                                    | EPropertyUsageFlags.StructProperty
                                                                    | EPropertyUsageFlags.Parameter
                                                                    | EPropertyUsageFlags.ReturnValue;
     
-    public bool IsSupportedAsProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
-    public bool IsSupportedAsParameter() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
-    public bool IsSupportedAsReturnValue() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
-    public bool IsSupportedAsInner() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
-    public bool IsSupportedAsStructProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
+    public bool IsSupportedAsProperty => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
+    public bool IsSupportedAsParameter => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
+    public bool IsSupportedAsReturnValue => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
+    public bool IsSupportedAsInner => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
+    public bool IsSupportedAsStructProperty => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
 
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
+    
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
@@ -32,11 +38,6 @@ public abstract class PropertyTranslator
     // Should this property be declared as a parameter in the function signature? 
     // A property can support being a parameter but not be declared as one, such as WorldContextObjectPropertyTranslator
     public virtual bool ShouldBeDeclaredAsParameter => true;
-    
-    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
-    {
-        _supportedPropertyUsage = supportedPropertyUsage;
-    }
     
     // Can we export this property?
     public abstract bool CanExport(UhtProperty property);

@@ -10,7 +10,7 @@ public class BuildEmitLoadOrder : BuildToolAction
 {
     public override bool RunAction()
     {
-        string output = Program.TryGetArgument("OutputPath");
+        string output = Program.GetArgument("OutputPath");
 
         Collection<string>? extraArguments = null;
         if (!string.IsNullOrEmpty(output))

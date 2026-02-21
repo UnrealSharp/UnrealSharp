@@ -40,13 +40,6 @@ public enum OverloadMode
     SuppressOverloads,
 };
 
-public enum EBlueprintVisibility
-{
-    Call,
-    Event,
-    GetterSetter,
-};
-
 public struct FunctionOverload
 {
     public string ParamStringApiWithDefaults;
@@ -67,7 +60,6 @@ public class FunctionExporter
     protected PropertyTranslator? ReturnValueTranslator => Function.ReturnProperty != null ? ParameterTranslators.Last() : null;
     protected OverloadMode OverloadMode = OverloadMode.AllowOverloads;
     protected EFunctionProtectionMode ProtectionMode = EFunctionProtectionMode.UseUFunctionProtection;
-    protected EBlueprintVisibility BlueprintVisibility = EBlueprintVisibility.Call;
 
     protected bool BlittableFunction;
     
@@ -131,7 +123,7 @@ public class FunctionExporter
         return "";
     }
 
-    public void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode, EBlueprintVisibility blueprintVisibility)
+    public void Initialize(OverloadMode overloadMode, EFunctionProtectionMode protectionMode)
     {
         FunctionName = protectionMode != EFunctionProtectionMode.OverrideWithInternal
             ? Function.GetFunctionName()
@@ -139,7 +131,6 @@ public class FunctionExporter
         
         OverloadMode = overloadMode;
         ProtectionMode = protectionMode;
-        BlueprintVisibility = blueprintVisibility;
 
         ParameterTranslators = new List<PropertyTranslator>(Function.Children.Count);
         
@@ -436,7 +427,6 @@ public class FunctionExporter
     {
         EFunctionProtectionMode protectionMode = EFunctionProtectionMode.UseUFunctionProtection;
         OverloadMode overloadMode = OverloadMode.AllowOverloads;
-        EBlueprintVisibility blueprintVisibility = EBlueprintVisibility.Call;
 
         if (functionType == FunctionType.ExtensionOnAnotherClass)
         {
@@ -446,18 +436,16 @@ public class FunctionExporter
         else if (functionType == FunctionType.BlueprintEvent)
         {
             overloadMode = OverloadMode.SuppressOverloads;
-            blueprintVisibility = EBlueprintVisibility.Event;
         }
         else if (functionType == FunctionType.GetterSetter)
         {
             protectionMode = EFunctionProtectionMode.OverrideWithInternal;
             overloadMode = OverloadMode.SuppressOverloads;
-            blueprintVisibility = EBlueprintVisibility.GetterSetter;
         }
         
         builder.TryAddWithEditor(function);
         FunctionExporter exporter = new FunctionExporter(function);
-        exporter.Initialize(overloadMode, protectionMode, blueprintVisibility);
+        exporter.Initialize(overloadMode, protectionMode);
         if (exportedFunctions is null || !exportedFunctions.Contains(function.SourceName))
         {
             exporter.ExportFunctionVariables(builder);
@@ -622,7 +610,7 @@ public class FunctionExporter
     public static FunctionExporter ExportDelegateSignature(GeneratorStringBuilder builder, UhtFunction function, string delegateName)
     {
         FunctionExporter exporter = new FunctionExporter(function);
-        exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+        exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder();
         // Use specialized delegate attribute method with modified C# delegate name (including Outer prefix)
@@ -677,7 +665,7 @@ public class FunctionExporter
         builder.TryAddWithEditor(function);
 
         FunctionExporter exporter = new FunctionExporter(function);
-        exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection, EBlueprintVisibility.Call);
+        exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection);
         exporter.ExportSignature(builder, ScriptGeneratorUtilities.PublicKeyword);
         builder.Append(";");
         
