@@ -24,7 +24,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
         EFunctionProtectionMode protectionMode)
     {
         GetterSetterFunctionExporter exporter = new GetterSetterFunctionExporter(function, propertyGetterSetter, getterSetterMode);
-        exporter.Initialize(OverloadMode.SuppressOverloads, protectionMode, EBlueprintVisibility.GetterSetter);
+        exporter.Initialize(OverloadMode.SuppressOverloads, protectionMode);
         return exporter;
     }
     
@@ -34,7 +34,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
         _propertyGetterSetter = propertyGetterSetter;
         _getterSetterMode = getterSetterMode;
         
-        Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.OverrideWithInternal, EBlueprintVisibility.GetterSetter);
+        Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.OverrideWithInternal);
     }
 
     protected override string GetParameterName(UhtProperty parameter)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -21,30 +20,48 @@ public static class CSharpExporter
     {
         if (HasChangedGeneratorSourceRecently())
         {
-            Console.WriteLine("Detected changes in generator source, re-exporting entire API...");
-            FileExporter.CleanModuleFolders();
+            Console.WriteLine("Generator source has been modified. Re-exporting all generated C# files...");
+            
+            foreach (UhtModule module in GeneratorStatics.Factory.Session.Modules)
+            {
+                foreach (UhtPackage modulePackage in module.Packages)
+                {
+                    if (!modulePackage.ShouldExportPackage())
+                    {
+                        continue;
+                    }
+                    
+                    ModuleInfo moduleInfo = modulePackage.GetModuleInfo();
+                    FileExporter.CleanGeneratedFolder(moduleInfo.GlueBaseDirectory);
+
+                    if (moduleInfo.IsPartOfEngine || moduleInfo.ShouldFlatten || !File.Exists(moduleInfo.CsProjPath))
+                    {
+                        continue;
+                    }
+                    
+                    File.Delete(moduleInfo.CsProjPath);
+                }
+            }
         }
         else
         {
             PackageHeadersTracker.DeserializeModuleHeaders();
         }
-
+        
         Console.WriteLine("Starting C# export of Unreal Engine API...");
 
-        #if UE_5_5_OR_LATER
         foreach (UhtModule module in GeneratorStatics.Factory.Session.Modules)
         {
             foreach (UhtPackage modulePackage in module.Packages)
             {
+                if (!modulePackage.ShouldExportPackage())
+                {
+                    continue;
+                }
+                
                 ExportPackage(modulePackage);
             }
         }
-        #else
-        foreach (UhtPackage package in Program.Factory.Session.Packages)
-        {
-            ExportPackage(package);
-        }
-        #endif
         
         PreprocessorExporter.StartExportingPreprocessors();
         PackageHeadersTracker.SerializeModuleData();
@@ -67,7 +84,7 @@ public static class CSharpExporter
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
         string typeInfoFilePath = Path.Combine(generatedCodeDirectory, SpecialTypesJson);
 
-        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(GeneratorStatics.EngineGluePath))
+        if (!File.Exists(timestampFilePath) || !File.Exists(typeInfoFilePath) || !Directory.Exists(GeneratorStatics.BindingsProjectDirectory))
         {
             return true;
         }
@@ -106,18 +123,8 @@ public static class CSharpExporter
 
     private static void ExportPackage(UhtPackage package)
     {
-        if (!package.ShouldExportPackage())
-        {
-            return;
-        }
-
-        if (!package.IsPartOfEngine())
-        {
-            package.FindOrAddProjectInfo();
-        }
-
-        string packageName = package.GetShortName();
-        string generatedPath = FileExporter.GetDirectoryPath(package);
+        string packageName = package.GetModuleShortName();
+        string generatedPath = package.GetModuleUhtOutputDirectory();
         bool generatedGlueFolderExists = Directory.Exists(generatedPath);
 
         UhtHeaderFile[] processedHeaders = new UhtHeaderFile[package.Children.Count];
@@ -143,39 +150,17 @@ public static class CSharpExporter
 
     public static void ForEachChild(UhtType child, Action<UhtType> action)
     {
-        #if UE_5_5_OR_LATER
         action(child);
 
         foreach (UhtType type in child.Children)
         {
             action(type);
-        }
-        #else
-        foreach (UhtType type in child.Children)
-        {
-            action(type);
-
-            foreach (UhtType innerType in type.Children)
-            {
-                action(innerType);
-            }
-        }
-        #endif
-    }
-    
-    public static void ForEachChildRecursive(UhtType child, Action<UhtType> action)
-    {
-        action(child);
-
-        foreach (UhtType type in child.Children)
-        {
-            ForEachChildRecursive(type, action);
         }
     }
 
     private static void ExportType(UhtType type)
     {
-        if (type.HasMetadata(PackageUtilities.SkipGlueGenerationDefine) || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
+        if (type.CanSkipType() || PropertyTranslatorManager.SpecialTypeInfo.Structs.SkippedTypes.Contains(type.SourceName))
         {
             return;
         }

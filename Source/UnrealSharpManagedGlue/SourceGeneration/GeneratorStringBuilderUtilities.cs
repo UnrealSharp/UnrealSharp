@@ -85,8 +85,6 @@ public static class GeneratorStringBuilderUtilities
     
     public static void StartGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type, bool blittable = false, bool nullableEnabled = false)
     {
-        stringBuilder.TryAddWithEditor(type);
-        
         if (nullableEnabled)
         {
             stringBuilder.AppendLine("#nullable enable");
@@ -112,7 +110,7 @@ public static class GeneratorStringBuilderUtilities
     
     public static void EndGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type)
     {
-        stringBuilder.TryEndWithEditor(type);
+        // Nothing to do for now, but this is here in case we need to add any common code for glue files in the future
     }
     
     public static void DeclareType(this GeneratorStringBuilder stringBuilder, UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, string? modifiers = "", List<UhtClass>? nativeInterfaces = default, List<string>? csInterfaces = default)

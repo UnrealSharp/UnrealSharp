@@ -109,6 +109,12 @@ public:
 	// Path to the current project's glue directory
 	UFUNCTION(meta = (ScriptMethod))
 	static const FString& GetProjectGlueFolderPath();
+	
+	UFUNCTION(meta = (ScriptMethod))
+	static FString GetPluginGlueFolderPath(const FString& PluginName);
+	
+	UFUNCTION(meta = (ScriptMethod))
+	static FString AppendGlueSuffix(const FString& FileName);
 
 	// Get the name of the current managed version of the project
 	UFUNCTION(meta = (ScriptMethod))

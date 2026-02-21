@@ -12,6 +12,10 @@ class UCSRuntimeGlueSettings : public UDeveloperSettings
 	GENERATED_BODY()
 public:
 	UCSRuntimeGlueSettings();
+
+	// UObject interface
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	// End of UObject interface
 	
 	UPROPERTY(Config, EditAnywhere)
 	TArray<TSoftClassPtr<UCSGlueGenerator>> Generators;

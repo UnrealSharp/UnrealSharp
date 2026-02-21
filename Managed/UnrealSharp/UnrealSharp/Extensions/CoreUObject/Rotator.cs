@@ -31,7 +31,7 @@ public partial struct FRotator
     
     public FRotator(FQuat quat)
     {
-        UCSQuatExtensions.ToRotator(out this, this);
+        UCSQuatExtensions.ToRotator(out this, quat);
     }
     
     public bool Equals(FRotator other)

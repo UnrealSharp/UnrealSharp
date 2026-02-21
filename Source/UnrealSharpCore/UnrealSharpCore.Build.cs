@@ -7,11 +7,11 @@ public class UnrealSharpCore : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		string managedPath = Path.Combine(PluginDirectory, "Managed");
-		string engineGluePath = Path.Combine(managedPath, "UnrealSharp", "UnrealSharp", "Generated");
+		string engineGluePath = Path.Combine(managedPath, "UnrealSharp", "UnrealSharp");
 		
 		PublicDefinitions.Add("GENERATED_GLUE_PATH=" + engineGluePath.Replace("\\","/"));
 		PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory.Replace("\\","/"));
-		PublicDefinitions.Add("BUILDING_EDITOR=" + (Target.bBuildEditor ? "1" : "0"));
+		PublicDefinitions.Add("BUILD_TARGET=" + (int)Target.Type);
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]

@@ -42,12 +42,9 @@ public static class DelegateExporter
         stringBuilder.CloseBrace();
         
         FunctionExporter.ExportDelegateExtensions(stringBuilder, functionExporter, superClass);
-        
-        // Use modified delegate name (with Outer prefix) as file name to prevent same-named delegates from overwriting each other
-        string directory = FileExporter.GetDirectoryPath(function.Package);
 
         stringBuilder.EndGlueFile(function);
-        FileExporter.SaveGlueToDisk(function.Package, directory, delegateName, stringBuilder.ToString());
+        FileExporter.SaveGlueToDisk(function.Package, function.Package.GetModuleUhtOutputDirectory(), delegateName, stringBuilder.ToString());
     }
 
     private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)

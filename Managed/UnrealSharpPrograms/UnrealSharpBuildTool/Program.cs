@@ -50,9 +50,14 @@ public static class Program
         return 0;
     }
 
-    public static string TryGetArgument(string argument)
+    public static string GetArgument(string argument)
     {
-        return BuildToolOptions.TryGetArgument(argument);
+        return BuildToolOptions.GetArgument(argument);
+    }
+
+    public static bool GetArgumentBool(string argument)
+    {
+        return BuildToolOptions.GetArgumentBool(argument);
     }
 
     public static IEnumerable<string> GetArguments(string argument)
@@ -77,7 +82,7 @@ public static class Program
 
     public static string GetBuildConfiguration()
     {
-        string buildConfig = TryGetArgument("BuildConfig");
+        string buildConfig = GetArgument("BuildConfig");
         if (string.IsNullOrEmpty(buildConfig))
         {
             buildConfig = "Debug";
@@ -111,6 +116,11 @@ public static class Program
     public static string GetPluginsFolder()
     {
         return Path.Combine(BuildToolOptions.ProjectDirectory, "Plugins");
+    }
+    
+    public static string GetPluginDirectory()
+    {
+        return BuildToolOptions.PluginDirectory;
     }
 
     public static string GetProjectDirectory()

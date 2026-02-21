@@ -9,6 +9,11 @@ namespace UnrealSharpManagedGlue;
 
 public static class USharpBuildToolUtilities
 {
+    static USharpBuildToolUtilities()
+    {
+        CompileUSharpBuildTool();
+    }
+    
     public static bool InvokeUSharpBuildTool(string action, List<KeyValuePair<string, string>>? arguments = null)
     {
         string path = Path.Combine(GeneratorStatics.ManagedBinariesPath, DotNetUtilities.DOTNET_MAJOR_VERSION_DISPLAY);
@@ -19,8 +24,8 @@ public static class USharpBuildToolUtilities
             GeneratorStatics.Factory.Session.EngineDirectory!,
             arguments);
     }
-    
-    public static void CompileUSharpBuildTool()
+
+    private static void CompileUSharpBuildTool()
     {
         Console.WriteLine("Compiling USharpBuildTool...");
         

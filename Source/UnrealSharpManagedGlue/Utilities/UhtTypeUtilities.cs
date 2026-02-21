@@ -30,4 +30,9 @@ public static class UhtTypeUtilities
     {
         return type.MetaData.GetValueOrDefault(metadataName, nameIndex);
     }
+    
+    public static bool CanSkipType(this UhtType type)
+    {
+        return type.HasMetadata("NoGlue");
+    }
 }
