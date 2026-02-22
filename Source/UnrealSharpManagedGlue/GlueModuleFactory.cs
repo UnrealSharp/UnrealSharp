@@ -21,7 +21,7 @@ public static class GlueModuleFactory
         bool hasProjectGlue = false;
         foreach (ModuleInfo module in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            if (module.ShouldFlatten || module.IsPartOfEngine || !module.Module.ShouldExportPackage())
+            if (module.IsPartOfEngine || !module.Module.ShouldExportPackage())
             {
                 continue;
             }
