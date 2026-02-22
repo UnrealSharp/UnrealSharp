@@ -239,6 +239,13 @@ public partial class UTestClass : ACharacter, ITestInterface
     {
         throw new NotImplementedException();
     }
+
+    [UFunction(FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintEvent)]
+    public partial void MyFunctionWithCallback(TDelegate<FTestDelegate2> singleDelegate);
+    public partial void MyFunctionWithCallback_Implementation(TDelegate<FTestDelegate2> singleDelegate)
+    {
+        
+    }
     
     public void CallInterfaceFunction(int intParam, string strParam)
     {

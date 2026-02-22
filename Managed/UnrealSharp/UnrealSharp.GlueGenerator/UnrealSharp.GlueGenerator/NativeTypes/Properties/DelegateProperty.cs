@@ -4,8 +4,6 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record DelegateProperty : TemplateProperty
 {
-    public override bool NeedsBackingNativeProperty => true;
-
     public DelegateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) : base(templateParameters, fieldName, propertyType, marshaller, sourceName, accessibility, outer)
     {
 
@@ -16,23 +14,15 @@ public record DelegateProperty : TemplateProperty
     {
         
     }
-
-    private string BackingFieldName => $"{SourceName}_BackingField";
     
-    protected void AppendFromNative(GeneratorStringBuilder builder, string? nativeProperty = null)
-    {
-        string nativePropertyParam = nativeProperty != null ? $", {nativeProperty}" : string.Empty;
-        builder.AppendLine($"{BackingFieldName} ??= {CallFromNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}{nativePropertyParam}, 0);");
-        builder.AppendLine($"return {BackingFieldName};");
-    }
+    public override bool NeedsBackingNativeProperty => true;
+    
+    protected string BackingFieldName => $"{SourceName}_BackingField";
 
-    public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
+    public override void ExportBackingVariables(GeneratorStringBuilder builder)
     {
-        builder.AppendEditorBrowsableAttribute();
-        builder.AppendLine($"{ManagedType}? {BackingFieldName} = null;");
-        builder.AppendLine();
-        
-        base.ExportType(builder, spc);
+        base.ExportBackingVariables(builder);
+        builder.AppendNewBackingField($"{ManagedType}? {BackingFieldName} = null;");
     }
 
     protected override void ExportGetter(GeneratorStringBuilder builder)
@@ -42,19 +32,32 @@ public record DelegateProperty : TemplateProperty
         builder.CloseBrace();
     }
 
+    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+    {
+        builder.AppendLine($"{BackingFieldName} ??= {CallFromNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0, {NativePropertyVariable});");
+        
+        if (assignmentOperator != null)
+        {
+            builder.AppendLine($"{assignmentOperator}{BackingFieldName};");
+        }
+    }
+
     public override void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)
     {
-        builder.AppendLine($"if (value == {BackingFieldName})");
-        builder.AppendLine("{");
-        builder.AppendLine("   return;");
-        builder.AppendLine("}");
-        builder.AppendLine($"{BackingFieldName} = value;");
-        builder.AppendLine($"{CallToNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0, value);");
+        builder.AppendLine($"{CallToNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0, {value});");
     }
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
         builder.OpenBrace();
+        
+        builder.AppendLine($"if (value == {BackingFieldName})");
+        builder.OpenBrace();
+        builder.AppendLine("return;");
+        builder.CloseBrace();
+        
+        builder.AppendLine($"{BackingFieldName} = value;");
+        
         ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
         builder.CloseBrace();
     }

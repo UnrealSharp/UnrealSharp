@@ -64,7 +64,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         
         builder.AppendLine($"if ({backingField} == null)");
         builder.OpenBrace();
-        builder.AppendLine($"{backingField} = MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, {propertyFieldName}, 0);");
+        builder.AppendLine($"{backingField} = MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, 0, {propertyFieldName});");
         builder.CloseBrace();
         builder.AppendLine($"return {backingField};");
     }
