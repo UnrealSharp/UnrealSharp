@@ -119,6 +119,19 @@ public static class ModuleUtilities
 		
 		return moduleInfo;
 	}
+	
+	public static ModuleInfo GetModuleInfo(string packageName)
+	{
+		foreach (KeyValuePair<UhtPackage, ModuleInfo> kvp in PackageToModuleInfo)
+		{
+			if (kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
+			{
+				return kvp.Value;
+			}
+		}
+		
+		throw new KeyNotFoundException($"ModuleInfo not found for package name: {packageName}");
+	}
 
 	private static ModuleInfo? TryRegisterModule(UhtPackage targetPackage)
 	{

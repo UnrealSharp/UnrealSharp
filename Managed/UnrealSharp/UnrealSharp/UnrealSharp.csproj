@@ -16,9 +16,9 @@
       <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
       <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
     </PropertyGroup>
-    
-    <Import Project="obj/UE5Rules.Defines.props" Condition="Exists('obj/UE5Rules.Defines.props')" />
+
     <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
+    <Import Project="$(UHTTargetDir)\UE5Rules.Defines.props" Condition="Exists('$(UHTTargetDir)\UE5Rules.Defines.props')" />
     
     <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />

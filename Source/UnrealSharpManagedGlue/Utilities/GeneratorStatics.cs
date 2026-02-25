@@ -13,6 +13,9 @@ public static class GeneratorStatics
 	public static IUhtExportFactory Factory => _factory ?? throw new InvalidOperationException("GeneratorStatics not initialized");
 
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
+	
+	public static UhtPackage PluginPackage = null!;
+	public static ModuleInfo PluginModuleInfo;
 
 	public static string BindingsProjectDirectory { get; private set; } = "";
 	public static string PluginsPath { get; private set; } = "";
@@ -43,5 +46,9 @@ public static class GeneratorStatics
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
 		
 		BlueprintFunctionLibrary = (Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary") as UhtClass)!;
+		
+		ModuleInfo moduleInfo = ModuleUtilities.GetModuleInfo($"/Script/{factory.PluginModule!.Name}");
+		PluginPackage = moduleInfo.Module;
+		PluginModuleInfo = moduleInfo;
 	}
 }
