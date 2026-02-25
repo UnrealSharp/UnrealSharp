@@ -82,9 +82,8 @@ public static class PreprocessorExporter
         stringBuilder.AppendLine("</PropertyGroup>");
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
-
-        ModuleInfo moduleInfo = GeneratorStatics.PluginPackage.GetModuleInfo();
-        string propsPath = Path.Combine(moduleInfo.GlueBaseDirectory, "UE5Rules.Defines.props");
+        
+        string propsPath = Path.Combine(GeneratorStatics.PluginModuleInfo.GlueBaseDirectory, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 
