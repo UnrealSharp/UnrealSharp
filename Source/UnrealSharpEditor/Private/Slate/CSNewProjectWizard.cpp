@@ -273,6 +273,7 @@ void SCSNewProjectDialog::OnFinish()
 	
 	Arguments.Add(TEXT("EditorOnly"), EditorOnlyCheckBox->IsChecked() ? TEXT("true") : TEXT("false"));
 	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
+	Arguments.Add(TEXT("CreateModuleClass"), TEXT("true"));
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);
 	CloseWindow();
