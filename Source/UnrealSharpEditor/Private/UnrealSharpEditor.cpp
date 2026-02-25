@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
-#include "CSUnrealSharpEditorCommands.h"
+#include "CSEditorCommands.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
 #include "IPluginBrowser.h"
@@ -8,7 +8,6 @@
 #include "LevelEditor.h"
 #include "SourceCodeNavigation.h"
 #include "SubobjectDataSubsystem.h"
-#include "UnrealSharpRuntimeGlue.h"
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "CSManager.h"
@@ -25,7 +24,6 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
-#include "Utilities/CSTemplateUtilities.h"
 #include "Containers/Set.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
@@ -69,9 +67,11 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterCommands();
 	RegisterToolbar();
     RegisterPluginTemplates();
-
-	UCSManager& CSharpManager = UCSManager::Get();
-	CSharpManager.LoadPluginAssemblyByName(TEXT("UnrealSharp.Editor"), false);
+	
+	UCSManager::Get().AddOrExecuteOnManagerInitialized(UCSManager::FCSManagerInitializedEvent::FDelegate::CreateLambda([this](UCSManager& Manager)
+	{
+		Manager.LoadPluginAssemblyByName("UnrealSharp.Editor");
+	}));
 }
 
 void FUnrealSharpEditorModule::ShutdownModule()
@@ -438,13 +438,6 @@ void FUnrealSharpEditorModule::OnReportBug()
 	FPlatformProcess::LaunchURL(TEXT("https://github.com/UnrealSharp/UnrealSharp/issues"), nullptr, nullptr);
 }
 
-void FUnrealSharpEditorModule::OnRefreshRuntimeGlue()
-{
-	FUnrealSharpRuntimeGlueModule& RuntimeGlueModule = FModuleManager::LoadModuleChecked<FUnrealSharpRuntimeGlueModule>(
-		"UnrealSharpRuntimeGlue");
-	RuntimeGlueModule.ForceRefreshRuntimeGlue();
-}
-
 void FUnrealSharpEditorModule::OnExploreArchiveDirectory(FString ArchiveDirectory)
 {
 	FPlatformProcess::ExploreFolder(*ArchiveDirectory);
@@ -516,11 +509,12 @@ void FUnrealSharpEditorModule::OpenSolution()
 	}
 
 	FString ExceptionMessage;
-	if (!ManagedUnrealSharpEditorCallbacks.OpenSolution(*SolutionPath, &ExceptionMessage))
+	if (ManagedUnrealSharpEditorCallbacks.OpenSolution(*SolutionPath, &ExceptionMessage))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
 		return;
 	}
+	
+	FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("Opening C# Project Failed")));
 };
 
 FString FUnrealSharpEditorModule::SelectArchiveDirectory()
@@ -545,7 +539,7 @@ FString FUnrealSharpEditorModule::SelectArchiveDirectory()
 
 TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpToolbar() const
 {
-	const FCSUnrealSharpEditorCommands& CSCommands = FCSUnrealSharpEditorCommands::Get();
+	const FCSEditorCommands& CSCommands = FCSEditorCommands::Get();
 	FMenuBuilder MenuBuilder(true, UnrealSharpCommands);
 
 	// Build
@@ -594,13 +588,8 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpToolbar() const
 	                         FSlateIcon(FAppStyle::Get().GetStyleSetName(), "MainFrame.ReportABug"));
 
 	MenuBuilder.EndSection();
-
-	MenuBuilder.BeginSection("Glue", LOCTEXT("Glue", "Glue"));
-
-	MenuBuilder.AddMenuEntry(CSCommands.RefreshRuntimeGlue, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
-	                         FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
-
-	MenuBuilder.EndSection();
+	
+	OnBuildingToolbar.Broadcast(MenuBuilder);
 
 	return MenuBuilder.MakeWidget();
 }
@@ -633,28 +622,26 @@ void FUnrealSharpEditorModule::SuggestProjectSetup()
 
 void FUnrealSharpEditorModule::RegisterCommands()
 {
-	FCSUnrealSharpEditorCommands::Register();
+	FCSEditorCommands::Register();
 	UnrealSharpCommands = MakeShareable(new FUICommandList);
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().CreateNewProject,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().CreateNewProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().HotReload,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().HotReload,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RegenerateSolution,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().RegenerateSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenSolution,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().OpenSolution,
 	                               FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().MergeManagedSlnAndNativeSln,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().MergeManagedSlnAndNativeSln,
 								   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().PackageProject,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().PackageProject,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnPackageProject));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenSettings,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().OpenSettings,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenSettings));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().OpenDocumentation,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().OpenDocumentation,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnOpenDocumentation));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().ReportBug,
+	UnrealSharpCommands->MapAction(FCSEditorCommands::Get().ReportBug,
 	                               FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnReportBug));
-	UnrealSharpCommands->MapAction(FCSUnrealSharpEditorCommands::Get().RefreshRuntimeGlue,
-							   FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnRefreshRuntimeGlue));
 
 	const FLevelEditorModule& LevelEditorModule = FModuleManager::GetModuleChecked<FLevelEditorModule>("LevelEditor");
 	const TSharedRef<FUICommandList> Commands = LevelEditorModule.GetGlobalLevelEditorActions();
@@ -713,7 +700,7 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
     }
 }
 
-void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const FString& ModulePath) const
+void FUnrealSharpEditorModule::LoadNewProject(const FString& ModulePath) const
 {
 	UCSProcUtilities::BuildUserSolution();
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
@@ -729,34 +716,35 @@ void FUnrealSharpEditorModule::OnProjectLoaded()
 	});
 }
 
-void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& ExtraArguments)
+void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> ExtraArguments, bool bOpenProject)
 {
-	TMap<FString, FString> Arguments = ExtraArguments;
-
-	TMap<FString, FString> SolutionArguments;
-	SolutionArguments.Add(TEXT("MODULENAME"), ModuleName);
-
 	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
-	FString ModuleFilePath = FPaths::Combine(ProjectFolder, ModuleName + ".cs");
+	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
 	
-	FCSTemplateUtilities::FillTemplateFile(TEXT("Module"), SolutionArguments, ModuleFilePath);
-
-	Arguments.Add(TEXT("NewProjectName"), ModuleName);
-	Arguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	if (FPaths::FileExists(CsProjPath))
+	{
+		return;
+	}
+	
+	ExtraArguments.Add(TEXT("NewProjectName"), ModuleName);
+	ExtraArguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
-	Arguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
+	ExtraArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
 
-	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, Arguments))
+	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, ExtraArguments))
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project %s in %s", *ModuleName, *ProjectParentFolder);
 		return;
 	}
 	
-	OpenSolution();
+	if (!bOpenProject)
+	{
+		return;
+	}
 	
-	FString ModulePath = FPaths::Combine(ProjectFolder, ModuleName + TEXT(".csproj"));
-	LoadNewProject(ModuleName, ModulePath);
+	LoadNewProject(CsProjPath);
+	OpenSolution();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -21,6 +21,8 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	
 	UCSManager& Manager = UCSManager::Get();
+	ensure(Manager.IsInitialized());
+	
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
 	Manager.OnNewClassEvent().AddUObject(this, &UCSHotReloadSubsystem::OnClassRebuilt);
 	Manager.OnNewEnumEvent().AddUObject(this, &UCSHotReloadSubsystem::OnEnumRebuilt);
@@ -81,7 +83,7 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 	bool bHasPendingChanges = false;
 	for (const UCSManagedAssembly* Assembly : PendingModifiedAssemblies)
 	{
-		if (!IsValid(Assembly) || FCSAssemblyUtilities::IsGlueAssembly(Assembly))
+		if (!IsValid(Assembly) || FCSAssemblyUtilities::IsRuntimeGlueAssembly(Assembly))
 		{
 			continue;
 		}
@@ -369,6 +371,13 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
+	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindOrLoadAssembly(ProjectName);
+	if (!ModifiedAssembly->IsCollectible())
+	{
+		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Assembly {0} is not collectible. Hot reload will be skipped for changes to this assembly.", *ModifiedAssembly->GetAssemblyName().ToString());
+		return;
+	}
+	
 	if (bIsHotReloadPaused)
 	{
 		AppendPendingFileChange(ChangedFiles, ProjectName);
@@ -387,13 +396,6 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	if (!FCSHotReloadUtilities::ApplyDirtiedFiles(ProjectName.ToString(), DirtiedFiles, ExceptionMessage))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Hot Reload Error")));
-		return;
-	}
-	
-	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindOrLoadAssembly(ProjectName);
-	if (!IsValid(ModifiedAssembly))
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Could not find assembly for project {0} during hot reload.", *ProjectName.ToString());
 		return;
 	}
 	

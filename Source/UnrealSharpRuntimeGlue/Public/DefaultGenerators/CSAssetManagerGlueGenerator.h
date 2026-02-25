@@ -39,7 +39,7 @@ private:
 
 	void WaitUpdateAssetTypes()
 	{
-		GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ProcessAssetIds));
+		GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ForceRefresh));
 	}
 
 	void ProcessAssetIds();

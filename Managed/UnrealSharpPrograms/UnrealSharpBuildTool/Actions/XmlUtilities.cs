@@ -148,4 +148,29 @@ public static class XmlUtilities
     
     public static XmlElement FindOrMakeGeneratedLabeledItemGroup(this XmlDocument doc, XmlElement root, string label) => FindOrMakeGeneratedGroup(doc, root, "ItemGroup", label);
     public static XmlElement FindOrMakeGeneratedLabeledPropertyGroup(this XmlDocument doc, XmlElement root, string label) => FindOrMakeGeneratedGroup(doc, root, "PropertyGroup", label);
+    
+    public static void SetProjectProperty(this XmlDocument doc, string propertyName, string value)
+    {
+        XmlElement root = doc.DocumentElement!;
+        
+        XmlElement? propertyGroup = root
+            .SelectNodes("PropertyGroup")?
+            .OfType<XmlElement>()
+            .FirstOrDefault(pg => !pg.HasAttribute("Condition"));
+
+        if (propertyGroup == null)
+        {
+            propertyGroup = doc.CreateElement("PropertyGroup");
+            root.AppendChild(propertyGroup);
+        }
+
+        XmlElement property = propertyGroup[propertyName] ?? doc.CreateElement(propertyName);
+
+        property.InnerText = value;
+
+        if (property.ParentNode == null)
+        {
+            propertyGroup.AppendChild(property);
+        }
+    }
 }

@@ -16,46 +16,38 @@ void UCSGameplayTagsGlueGenerator::Initialize()
 
 void UCSGameplayTagsGlueGenerator::ProcessGameplayTags()
 {
-	TArray<const FGameplayTagSource*> Sources;
 	UGameplayTagsManager& GameplayTagsManager = UGameplayTagsManager::Get();
-
-	const int32 NumValues = StaticEnum<EGameplayTagSourceType>()->NumEnums();
-	for (int32 Index = 0; Index < NumValues; Index++)
-	{
-		EGameplayTagSourceType SourceType = static_cast<EGameplayTagSourceType>(Index);
-		GameplayTagsManager.FindTagSourcesWithType(SourceType, Sources);
-	}
 
 	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
 	ScriptBuilder.AppendLine(TEXT("using UnrealSharp.GameplayTags;"));
 	ScriptBuilder.AppendLine();
 	ScriptBuilder.AppendLine(TEXT("public static class GameplayTags"));
 	ScriptBuilder.OpenBrace();
-	
+
 	FGameplayTagContainer AllTags;
 	GameplayTagsManager.RequestAllGameplayTags(AllTags, false);
-	
+
 	TArray<FGameplayTag> GameplayTagArray = AllTags.GetGameplayTagArray();
+	
 	GameplayTagArray.Sort([](const FGameplayTag& A, const FGameplayTag& B)
 	{
-		return A.ToString() < B.ToString();
+		return A.GetTagName().LexicalLess(B.GetTagName());
 	});
-	
+
 	for (const FGameplayTag& GameplayTag : GameplayTagArray)
 	{
-		TSharedPtr<FGameplayTagNode> TagSource = GameplayTagsManager.FindTagNode(GameplayTag);
-		
-		if (!TagSource.IsValid())
+		TSharedPtr<FGameplayTagNode> TagNode = GameplayTagsManager.FindTagNode(GameplayTag);
+		if (!TagNode.IsValid())
 		{
 			continue;
 		}
 		
-		FName FirstSourceName = TagSource->GetFirstSourceName();
-		if (FirstSourceName == TEXT("UnrealSharpCore"))
+		const TArray<FName>& SourceNames = TagNode->GetAllSourceNames();
+		if (SourceNames.Contains(TEXT("UnrealSharpCore")))
 		{
 			continue;
 		}
-		
+
 		const FString TagName = GameplayTag.ToString();
 		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));

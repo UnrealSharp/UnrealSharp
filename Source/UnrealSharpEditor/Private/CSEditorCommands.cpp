@@ -1,10 +1,10 @@
-﻿#include "CSUnrealSharpEditorCommands.h"
+﻿#include "CSEditorCommands.h"
 
 #include "CSStyle.h"
 
 #define LOCTEXT_NAMESPACE "FCSCommandsModule"
 
-FCSUnrealSharpEditorCommands::FCSUnrealSharpEditorCommands() : TCommands<FCSUnrealSharpEditorCommands>(
+FCSEditorCommands::FCSEditorCommands() : TCommands<FCSEditorCommands>(
 	TEXT("CSCommands"),
 	NSLOCTEXT("Contexts", "UnrealSharpCommands", "UnrealSharp"),
 	NAME_None,
@@ -13,7 +13,7 @@ FCSUnrealSharpEditorCommands::FCSUnrealSharpEditorCommands() : TCommands<FCSUnre
 	
 }
 
-void FCSUnrealSharpEditorCommands::RegisterCommands()
+void FCSEditorCommands::RegisterCommands()
 {
 	UI_COMMAND(CreateNewProject, "Create C# Project", "Create a new C# project with all necessary dependencies and initial setup", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(HotReload, "Force Hot Reload", "Manually reloads any modified C# code into the editor. Only required if Automatic Hot Reloading is disabled", EUserInterfaceActionType::Button, FInputChord(EKeys::F5, EModifierKey::Control | EModifierKey::Alt));
@@ -24,7 +24,6 @@ void FCSUnrealSharpEditorCommands::RegisterCommands()
 	UI_COMMAND(OpenSettings, "Open Settings...", "Open the Editor Settings", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(OpenDocumentation, "Open Documentation", "Open the Documentation website", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(ReportBug, "Report a Bug", "Open the Issues Github page", EUserInterfaceActionType::Button, FInputChord());
-	UI_COMMAND(RefreshRuntimeGlue, "Refresh Runtime Glue", "Refresh the generated runtime glue such as the GameplayTags, AssetIds, AssetTypes, TraceChannel", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

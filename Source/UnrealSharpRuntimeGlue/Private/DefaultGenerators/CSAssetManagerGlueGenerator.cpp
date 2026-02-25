@@ -1,11 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "DefaultGenerators/CSAssetManagerGlueGenerator.h"
-
 #include "UnrealSharpRuntimeGlue.h"
 #include "Engine/AssetManager.h"
 #include "Engine/AssetManagerSettings.h"
+#include "Utilities/CSEditorUtilities.h"
 
 void UCSAssetManagerGlueGenerator::Initialize()
 {
@@ -26,8 +25,7 @@ void UCSAssetManagerGlueGenerator::TryRegisterAssetTypes()
 		return;
 	}
 
-	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(
-		FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnCompletedInitialScan));
+	UAssetManager::Get().CallOrRegister_OnCompletedInitialScan(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnCompletedInitialScan));
 	bHasRegisteredAssetTypes = true;
 }
 
@@ -49,13 +47,12 @@ void UCSAssetManagerGlueGenerator::OnCompletedInitialScan()
 	AssetRegistry.OnInMemoryAssetCreated().AddUObject(this, &ThisClass::OnInMemoryAssetCreated);
 	AssetRegistry.OnInMemoryAssetDeleted().AddUObject(this, &ThisClass::OnInMemoryAssetDeleted);
 
-	UAssetManager::Get().Register_OnAddedAssetSearchRoot(
-		FOnAddedAssetSearchRoot::FDelegate::CreateUObject(this, &ThisClass::OnAssetSearchRootAdded));
+	UAssetManager::Get().Register_OnAddedAssetSearchRoot(FOnAddedAssetSearchRoot::FDelegate::CreateUObject(this, &ThisClass::OnAssetSearchRootAdded));
 
 	UAssetManagerSettings* Settings = UAssetManagerSettings::StaticClass()->GetDefaultObject<UAssetManagerSettings>();
 	Settings->OnSettingChanged().AddUObject(this, &ThisClass::OnAssetManagerSettingsChanged);
 
-	ProcessAssetIds();
+	ForceRefresh();
 }
 
 void UCSAssetManagerGlueGenerator::OnAssetRemoved(const FAssetData& AssetData)
@@ -64,6 +61,7 @@ void UCSAssetManagerGlueGenerator::OnAssetRemoved(const FAssetData& AssetData)
 	{
 		return;
 	}
+	
 	WaitUpdateAssetTypes();
 }
 
@@ -78,6 +76,7 @@ void UCSAssetManagerGlueGenerator::OnInMemoryAssetCreated(UObject* Object)
 	{
 		return;
 	}
+	
 	WaitUpdateAssetTypes();
 }
 
@@ -95,8 +94,7 @@ void UCSAssetManagerGlueGenerator::OnAssetManagerSettingsChanged(UObject* Object
 	FPropertyChangedEvent& PropertyChangedEvent)
 {
 	WaitUpdateAssetTypes();
-	GEditor->GetTimerManager()->SetTimerForNextTick(
-		FTimerDelegate::CreateUObject(this, &ThisClass::ProcessAssetTypes));
+	GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ProcessAssetTypes));
 }
 
 bool UCSAssetManagerGlueGenerator::IsRegisteredAssetType(UClass* Class)
@@ -136,7 +134,7 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 	TArray<FPrimaryAssetTypeInfo> SortedPrimaryAssetTypes = Settings.PrimaryAssetTypesToScan;
 	SortedPrimaryAssetTypes.Sort([](const FPrimaryAssetTypeInfo& A, const FPrimaryAssetTypeInfo& B)
 	{
-		return A.PrimaryAssetType.ToString() < B.PrimaryAssetType.ToString();
+		return A.PrimaryAssetType.LexicalLess(B.PrimaryAssetType);
 	});
 
 	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : SortedPrimaryAssetTypes)
@@ -146,7 +144,7 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 		
 		PrimaryAssetIdList.Sort([](const FPrimaryAssetId& A, const FPrimaryAssetId& B)
 		{
-			return A.PrimaryAssetName.ToString() < B.PrimaryAssetName.ToString();
+			return A.PrimaryAssetName.LexicalLess(B.PrimaryAssetName);
 		});
 		
 		for (const FPrimaryAssetId& AssetType : PrimaryAssetIdList)
@@ -155,7 +153,7 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 			PrimaryAssetName = PrimaryAssetName.Replace(TEXT("Default__"), TEXT(""));
 			
 			FString AssetName = PrimaryAssetType.PrimaryAssetType.ToString() + TEXT(".") + PrimaryAssetName;
-			AssetName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(AssetName);
+			AssetName = FCSEditorUtilities::ReplaceSpecialCharacters(AssetName);
 			AssetName.RemoveFromEnd(TEXT("_C"));
 			
 			ScriptBuilder.AppendLine(FString::Printf(
@@ -183,12 +181,12 @@ void UCSAssetManagerGlueGenerator::ProcessAssetTypes()
 	TArray<FPrimaryAssetTypeInfo> SortedPrimaryAssetTypes = Settings.PrimaryAssetTypesToScan;
 	SortedPrimaryAssetTypes.Sort([](const FPrimaryAssetTypeInfo& A, const FPrimaryAssetTypeInfo& B)
 	{
-		return A.PrimaryAssetType.ToString() < B.PrimaryAssetType.ToString();
+		return A.PrimaryAssetType.LexicalLess(B.PrimaryAssetType);
 	});
 
 	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : SortedPrimaryAssetTypes)
 	{
-		FString AssetTypeName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
+		FString AssetTypeName = FCSEditorUtilities::ReplaceSpecialCharacters(PrimaryAssetType.PrimaryAssetType.ToString());
 
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FPrimaryAssetType %s = new(\"%s\");"),
 		                                         *AssetTypeName, *PrimaryAssetType.PrimaryAssetType.ToString()));

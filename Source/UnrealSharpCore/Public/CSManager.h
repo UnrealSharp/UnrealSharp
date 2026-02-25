@@ -40,32 +40,33 @@ class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUO
 {
     GENERATED_BODY()
 public:
+	DECLARE_MULTICAST_DELEGATE_OneParam(FCSManagerInitializedEvent, UCSManager&);
 
-	static UCSManager& Get() { return *Instance; }
+	static UCSManager& Get()
+	{
+		if (!Instance)
+		{
+			check(IsInGameThread());
+			Instance = NewObject<UCSManager>(GetTransientPackage(), "CSManager", RF_Public | RF_MarkAsRootSet);
+		}
+
+		return *Instance;
+	}
 	
-    static UCSManager& GetOrCreate()
-    {
-        if (!Instance)
-        {
-        	check(IsInGameThread());
-            Instance = NewObject<UCSManager>(GetTransientPackage(), TEXT("CSManager"), RF_Public | RF_MarkAsRootSet);
-        }
-
-        return *Instance;
-    }
+	bool IsInitialized() const { return bIsInitialized; }
 
     // The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
     UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
 	
     UPackage* FindOrAddManagedPackage(const FCSNamespace& Namespace);
 
-    UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = false);
 
     // Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-    UCSManagedAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = false);
 
     // Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-    UCSManagedAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = true);
+    UCSManagedAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = false);
 
     UCSManagedAssembly* FindOwningAssembly(UClass* Class);
     UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
@@ -102,6 +103,8 @@ public:
     UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
     const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
+	
+	void AddOrExecuteOnManagerInitialized(const FCSManagerInitializedEvent::FDelegate& Delegate);
 
     FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
     FOnManagedAssemblyUnloaded& OnManagedAssemblyUnloadedEvent() { return OnManagedAssemblyUnloaded; }
@@ -114,7 +117,7 @@ public:
 	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
 #endif
 
-	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
+    void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
 	{
 		for (UPackage* Package : AllPackages)
 		{
@@ -208,6 +211,9 @@ private:
 	TMap<FName, TObjectPtr<UCSManagedAssembly>> LoadedAssemblies;
 
 	TWeakObjectPtr<UObject> CurrentWorldContext;
+	
+	FCSManagerInitializedEvent OnCSManagerInitialized;
+	bool bIsInitialized = false;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
     FOnManagedAssemblyUnloaded OnManagedAssemblyUnloaded;

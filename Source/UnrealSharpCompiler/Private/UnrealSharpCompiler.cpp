@@ -22,7 +22,7 @@ DEFINE_LOG_CATEGORY(LogUnrealSharpCompiler);
 
 void FUnrealSharpCompilerModule::StartupModule()
 {
-	UCSManager& CSManager = UCSManager::GetOrCreate();
+	UCSManager& CSManager = UCSManager::Get();
 	
 	FKismetCompilerContext::RegisterCompilerForBP(UCSBlueprint::StaticClass(), [](UBlueprint* InBlueprint, FCompilerResultsLog& InMessageLog, const FKismetCompilerOptions& InCompileOptions)
 	{

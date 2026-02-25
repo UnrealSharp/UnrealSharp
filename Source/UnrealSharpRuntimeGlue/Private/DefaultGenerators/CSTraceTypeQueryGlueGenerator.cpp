@@ -4,6 +4,7 @@
 #include "DefaultGenerators/CSTraceTypeQueryGlueGenerator.h"
 
 #include "UnrealSharpRuntimeGlue.h"
+#include "Utilities/CSEditorUtilities.h"
 
 void UCSTraceTypeQueryGlueGenerator::Initialize()
 {
@@ -58,7 +59,7 @@ void UCSTraceTypeQueryGlueGenerator::ProcessCollisionProfile()
 			ChannelName = TEXT("_") + ChannelName;
 		}
 
-		ChannelName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(ChannelName);
+		ChannelName = FCSEditorUtilities::ReplaceSpecialCharacters(ChannelName);
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ChannelName, i));
 	}
 
@@ -80,7 +81,7 @@ void UCSTraceTypeQueryGlueGenerator::ProcessCollisionProfile()
 		}
 		
 		ObjectTypeName.RemoveFromStart(TEXT("ECC_"));
-		ObjectTypeName = FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(ObjectTypeName);
+		ObjectTypeName = FCSEditorUtilities::ReplaceSpecialCharacters(ObjectTypeName);
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("%s = %d,"), *ObjectTypeName, i));
 	}
 

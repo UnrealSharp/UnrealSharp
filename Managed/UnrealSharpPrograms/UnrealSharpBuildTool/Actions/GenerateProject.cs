@@ -45,7 +45,22 @@ public class GenerateProject : BuildToolAction
         _projectFolder = Path.Combine(folder, projectName);
         _projectPath = Path.Combine(_projectFolder, csProjFileName);
         
-        TemplateUtilities.WriteTemplateToFile("Csproj", projectName, "csproj", _projectFolder, [Program.GetVersion()]);
+        Dictionary<string, string> templateValues = new Dictionary<string, string>
+        {
+            { "DOTNET_VERSION", Program.GetVersion() }
+        };
+        
+        TemplateUtilities.WriteTemplateToFile("Csproj", projectName, "csproj", _projectFolder, templateValues);
+
+        if (Program.GetArgumentBool("CreateModuleClass"))
+        {
+            Dictionary<string, string> moduleTemplateValues = new Dictionary<string, string>
+            {
+                { "MODULE_NAME", projectName }
+            };
+            
+            TemplateUtilities.WriteTemplateToFile("Module", projectName, "cs", _projectFolder, moduleTemplateValues);
+        }
         
         ModifyModuleFile();
         
@@ -78,17 +93,12 @@ public class GenerateProject : BuildToolAction
                 newItemGroup = csprojDocument.CreateElement("ItemGroup");
                 csprojDocument.DocumentElement!.AppendChild(newItemGroup);
             }
+            
+            bool isEditorOnly = Program.GetArgumentBool("EditorOnly");
+            bool isCollectible = Program.GetArgumentBool("IsCollectible");
 
-            if (!Program.HasArgument("SkipIncludeProjectGlue"))
-            {
-                AppendGeneratedCode(csprojDocument, newItemGroup);
-            }
-            
-            XmlElement newPropertyGroup = csprojDocument.MakePropertyGroup(csprojDocument.DocumentElement!);
-            XmlElement outputType = csprojDocument.GetOrCreateChild(newPropertyGroup, "IsPublishable");
-            
-			bool isEditorOnly = Program.GetArgumentBool("EditorOnly");
-            outputType.InnerText = (!isEditorOnly).ToString();
+            csprojDocument.SetProjectProperty("IsPublishable", (!isEditorOnly).ToString());
+            csprojDocument.SetProjectProperty("IsCollectible", isCollectible.ToString());
 
             string unrealSharpPluginPath = Program.GetUnrealSharpSharedProps();
             string relativeUnrealSharpPath = GetRelativePath(_projectFolder, unrealSharpPluginPath);
@@ -105,14 +115,6 @@ public class GenerateProject : BuildToolAction
         {
             throw new InvalidOperationException($"An error occurred while updating the .csproj file: {ex.Message}", ex);
         }
-    }
-
-    private void AppendGeneratedCode(XmlDocument doc, XmlElement itemGroup)
-    {
-        string providedGlueName = Program.GetArgument("GlueProjectName");
-        string scriptFolder = string.IsNullOrEmpty(_projectRoot) ? Program.GetScriptFolder() : Path.Combine(_projectRoot, "Script");
-        string generatedGluePath = Path.Combine(scriptFolder, providedGlueName, $"{providedGlueName}.csproj");
-        AddDependency(doc, itemGroup, generatedGluePath);
     }
 
     private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)

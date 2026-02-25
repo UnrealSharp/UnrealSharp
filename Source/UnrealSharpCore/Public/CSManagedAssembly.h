@@ -26,9 +26,9 @@ class UCSManagedAssembly : public UObject
 {
 	GENERATED_BODY()
 public:
-	void InitializeManagedAssembly(const FStringView InAssemblyPath);
+	void InitializeManagedAssembly(const FStringView InAssemblyPath, bool bIsCollectible = false);
 
-	UNREALSHARPCORE_API bool LoadManagedAssembly(bool bIsCollectible = true);
+	UNREALSHARPCORE_API bool LoadManagedAssembly();
 	UNREALSHARPCORE_API bool UnloadManagedAssembly();
 
 	UNREALSHARPCORE_API bool IsAssemblyLoading() const { return bIsLoading; }
@@ -40,6 +40,8 @@ public:
 	UNREALSHARPCORE_API FString GetAssemblyFileName() const { return FPaths::GetCleanFilename(AssemblyFilePath); }
 	
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
+	
+	UNREALSHARPCORE_API bool IsCollectible() const { return bIsCollectible; }
 	
 #if WITH_EDITOR
 	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { DependentAssemblies.Add(DependencyAssembly); }
@@ -156,6 +158,7 @@ private:
 	FName AssemblyName;
 	
 	bool bIsLoading = false;
+	bool bIsCollectible = false;
 	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Transient)

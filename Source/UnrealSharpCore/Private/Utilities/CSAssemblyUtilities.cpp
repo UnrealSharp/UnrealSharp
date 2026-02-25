@@ -126,15 +126,15 @@ void FCSAssemblyUtilities::SortAssembliesByDependencyOrder(const TArray<UCSManag
 		}
 	}
 }
-#endif
 
-bool FCSAssemblyUtilities::IsGlueAssembly(const UCSManagedAssembly* Assembly)
+bool FCSAssemblyUtilities::IsRuntimeGlueAssembly(const UCSManagedAssembly* Assembly)
 {
 	if (!IsValid(Assembly))
 	{
 		return false;
 	}
-	
-	FString AssemblyName = Assembly->GetAssemblyName().ToString();
-	return AssemblyName.EndsWith(TEXT(".Glue"));
+
+	const FString& AssemblyName = Assembly->GetAssemblyName().ToString();
+	return AssemblyName.EndsWith(".RuntimeGlue", ESearchCase::IgnoreCase);
 }
+#endif

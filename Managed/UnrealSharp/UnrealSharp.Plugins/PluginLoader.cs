@@ -18,7 +18,7 @@ public static class PluginLoader
 
             foreach (Plugin loadedPlugin in LoadedPlugins)
             {
-                if (loadedPlugin.WeakRefAssembly?.Target is not Assembly assembly)
+                if (loadedPlugin.Assembly?.Target is not Assembly assembly)
                 {
                     continue;
                 }
@@ -33,7 +33,7 @@ public static class PluginLoader
             }
             
             Plugin plugin = new Plugin(assemblyName, isCollectible, assemblyPath);
-            if (!plugin.Load() || plugin.WeakRefAssembly == null || plugin.WeakRefAssembly.Target is not Assembly loadedAssembly)
+            if (!plugin.Load() || plugin.Assembly == null || plugin.Assembly.Target is not Assembly loadedAssembly)
             {
                 throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
             }
