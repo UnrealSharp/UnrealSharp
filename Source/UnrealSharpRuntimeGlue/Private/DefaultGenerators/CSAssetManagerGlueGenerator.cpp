@@ -72,7 +72,17 @@ void UCSAssetManagerGlueGenerator::OnAssetRenamed(const FAssetData& AssetData, c
 
 void UCSAssetManagerGlueGenerator::OnInMemoryAssetCreated(UObject* Object)
 {
-	if (!IsRegisteredAssetType(Object))
+	UClass* AssetClass;
+	if (UBlueprint* Blueprint = Cast<UBlueprint>(Object))
+	{
+		AssetClass = Blueprint->GeneratedClass;
+	}
+	else
+	{
+		AssetClass = Object->GetClass();
+	}
+	
+	if (!IsRegisteredAssetType(AssetClass))
 	{
 		return;
 	}
@@ -103,19 +113,22 @@ bool UCSAssetManagerGlueGenerator::IsRegisteredAssetType(UClass* Class)
 	{
 		return false;
 	}
-
-	UAssetManager& AssetManager = UAssetManager::Get();
-	const UAssetManagerSettings& Settings = AssetManager.GetSettings();
+	
+	const UAssetManagerSettings& Settings = UAssetManager::Get().GetSettings();
 
 	bool bIsPrimaryAsset = false;
 	for (const FPrimaryAssetTypeInfo& PrimaryAssetType : Settings.PrimaryAssetTypesToScan)
 	{
-		if (Class->IsChildOf(PrimaryAssetType.GetAssetBaseClass().Get()))
+		UClass* AssetBaseClass = PrimaryAssetType.GetAssetBaseClass().Get();
+		if (!Class->IsChildOf(AssetBaseClass))
 		{
-			bIsPrimaryAsset = true;
-			break;
+			continue;
 		}
+		
+		bIsPrimaryAsset = true;
+		break;
 	}
+	
 	return bIsPrimaryAsset;
 }
 
