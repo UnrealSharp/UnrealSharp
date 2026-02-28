@@ -9,7 +9,8 @@ public class UnrealSharpRuntimeGlue : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core",
+                "Core", 
+                "UnrealSharpEditor",
             }
         );
 

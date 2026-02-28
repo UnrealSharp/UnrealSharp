@@ -40,7 +40,6 @@ public class UnrealSharpEditor : ModuleRules
                 "BlueprintEditorLibrary",
                 "SubobjectDataInterface",
                 "AssetTools",
-                "UnrealSharpRuntimeGlue",
                 "PluginBrowser", 
                 "UnrealSharpUtilities", 
                 "PlacementMode"

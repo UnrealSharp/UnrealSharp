@@ -213,7 +213,7 @@ FReply SCSNewProjectDialog::OnExplorerButtonClicked()
 
 	FString FolderName;
 	const FString Title = TEXT("Choose a location for new project");
-	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title,UCSProcUtilities::GetScriptFolderDirectory(), FolderName))
+	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title, UCSProcUtilities::GetScriptFolderDirectory(), FolderName))
 	{
 		if (!FolderName.EndsWith(TEXT("/")) )
 		{
@@ -273,6 +273,7 @@ void SCSNewProjectDialog::OnFinish()
 	
 	Arguments.Add(TEXT("EditorOnly"), EditorOnlyCheckBox->IsChecked() ? TEXT("true") : TEXT("false"));
 	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
+	Arguments.Add(TEXT("CreateModuleClass"), TEXT("true"));
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);
 	CloseWindow();

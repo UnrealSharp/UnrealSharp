@@ -39,7 +39,7 @@ public partial struct FSoftObjectPath
     public bool Null => AssetPath.Null;
     
     public UObject? Object => UCSSoftObjectPathExtensions.ResolveObject(this);
-    public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId(this);
+    public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId_Internal(this);
     
     public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)
     {

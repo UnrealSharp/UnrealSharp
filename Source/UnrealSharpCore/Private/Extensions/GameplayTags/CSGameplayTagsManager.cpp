@@ -15,8 +15,7 @@ UCSGameplayTagsManager& UCSGameplayTagsManager::Get()
 		Instance->AddToRoot();
 
 #if WITH_EDITOR
-		UCSManager& Manager = UCSManager::GetOrCreate();
-		Manager.OnManagedAssemblyUnloadedEvent().AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
+		UCSManager::Get().OnManagedAssemblyUnloadedEvent().AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
 #endif
 	}
 

@@ -144,6 +144,14 @@ void UCSManager::ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass)
 
 void UCSManager::Initialize()
 {
+#if WITH_EDITOR
+	if (!FCSUtilities::VerifyCSharpEnvironment())
+	{
+		Initialize();
+		return;
+	}
+#endif
+	
 	if (!InitializeDotNetRuntime())
 	{
 		return;
@@ -161,6 +169,9 @@ void UCSManager::Initialize()
 
 	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
 	LoadAllUserAssemblies();
+	
+	bIsInitialized = true;
+	OnCSManagerInitialized.Broadcast(*this);
 }
 
 bool UCSManager::InitializeDotNetRuntime()
@@ -265,7 +276,9 @@ bool UCSManager::LoadAllUserAssemblies()
 	
 	for (const FString& UserAssemblyPath : UserAssemblyPaths)
 	{
-		LoadAssemblyByPath(UserAssemblyPath);
+		FString FileName = FPaths::GetBaseFilename(UserAssemblyPath);
+		bool IsGlueAssembly = FileName.EndsWith(".Glue");
+		LoadAssemblyByPath(UserAssemblyPath, !IsGlueAssembly);
 	}
 
 	OnAssembliesLoaded.Broadcast();
@@ -453,11 +466,11 @@ UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, 
 	}
 	
 	UCSManagedAssembly* NewAssembly = NewObject<UCSManagedAssembly>(this, *AssemblyName);
-	NewAssembly->InitializeManagedAssembly(AssemblyPath);
+	NewAssembly->InitializeManagedAssembly(AssemblyPath, bIsCollectible);
 	
 	LoadedAssemblies.Add(NewAssembly->GetAssemblyName(), NewAssembly);
 
-	if (!NewAssembly->LoadManagedAssembly(bIsCollectible))
+	if (!NewAssembly->LoadManagedAssembly())
 	{
 		return nullptr;
 	}
@@ -578,4 +591,16 @@ FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClas
 	}
 
 	return *FoundHandle;
+}
+
+void UCSManager::AddOrExecuteOnManagerInitialized(const FCSManagerInitializedEvent::FDelegate& Delegate)
+{
+	if (bIsInitialized)
+	{
+		Delegate.Execute(*this);
+	}
+	else
+	{
+		OnCSManagerInitialized.Add(Delegate);
+	}
 }

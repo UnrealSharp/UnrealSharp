@@ -312,7 +312,7 @@ void FCSHotReloadUtilities::GetChangedCSharpFiles(const TArray<FFileChangeData>&
 
 bool FCSHotReloadUtilities::ShouldDeferHotReloadRequest(const UCSManagedAssembly* ModifiedAssembly)
 {
-	if (FCSAssemblyUtilities::IsGlueAssembly(ModifiedAssembly))
+	if (FCSAssemblyUtilities::IsRuntimeGlueAssembly(ModifiedAssembly))
 	{
 		return true;
 	}

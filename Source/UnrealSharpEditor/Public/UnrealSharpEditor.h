@@ -43,11 +43,12 @@ struct FCSManagedEditorCallbacks
 };
 
 DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpEditor, Log, All);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCSOnBuildingToolbar, FMenuBuilder&);
 
 class FUnrealSharpEditorModule : public IModuleInterface
 {
 public:
-    static FUnrealSharpEditorModule& Get();
+    UNREALSHARPEDITOR_API static FUnrealSharpEditorModule& Get();
 
     // IModuleInterface interface begin
     virtual void StartupModule() override;
@@ -57,7 +58,10 @@ public:
     void InitializeManagedEditorCallbacks(FCSManagedEditorCallbacks Callbacks);
     FCSManagedEditorCallbacks& GetManagedEditorCallbacks() { return ManagedUnrealSharpEditorCallbacks; }
 
-    void AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, const TMap<FString, FString>& Arguments = {});
+    UNREALSHARPEDITOR_API void AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString>
+                                             Arguments = {}, bool bOpenProject = true);
+    
+    UNREALSHARPEDITOR_API FCSOnBuildingToolbar& OnBuildingToolbarEvent() { return OnBuildingToolbar; }
 
 private:
     
@@ -80,7 +84,6 @@ private:
     static void OnOpenSettings();
     static void OnOpenDocumentation();
     static void OnReportBug();
-    static void OnRefreshRuntimeGlue();
     
     static void OnExploreArchiveDirectory(FString ArchiveDirectory);
     static void PackageProject();
@@ -101,4 +104,6 @@ private:
     FCSManagedEditorCallbacks ManagedUnrealSharpEditorCallbacks;
     TSharedPtr<FUICommandList> UnrealSharpCommands;
     TArray<TSharedRef<FPluginTemplateDescription>> PluginTemplates;
+    
+    FCSOnBuildingToolbar OnBuildingToolbar;
 };

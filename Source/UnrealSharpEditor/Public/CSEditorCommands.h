@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-class FCSUnrealSharpEditorCommands : public TCommands<FCSUnrealSharpEditorCommands>
+class FCSEditorCommands : public TCommands<FCSEditorCommands>
 {
 public:
-	FCSUnrealSharpEditorCommands();
+	FCSEditorCommands();
 
 	// TCommands<> interface
 	virtual void RegisterCommands() override;
@@ -18,6 +18,5 @@ public:
 	TSharedPtr<FUICommandInfo> OpenSettings;
 	TSharedPtr<FUICommandInfo> OpenDocumentation;
 	TSharedPtr<FUICommandInfo> ReportBug;
-	TSharedPtr<FUICommandInfo> RefreshRuntimeGlue;
 };
 

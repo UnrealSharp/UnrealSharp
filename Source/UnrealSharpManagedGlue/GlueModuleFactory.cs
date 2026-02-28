@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
 using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
@@ -18,31 +17,14 @@ public static class GlueModuleFactory
         LoadModuleDependencies();
         
         bool anyChanges = false;
-        bool hasProjectGlue = false;
-        foreach (ModuleInfo module in ModuleUtilities.PackageToModuleInfo.Values)
+        foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            if (module.IsPartOfEngine || !module.Module.ShouldExportPackage())
+            if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine)
             {
                 continue;
             }
             
-            CreateOrUpdateGlueModule(module.CsProjPath, module.ProjectName, module.Dependencies, module.ModuleRoot, module.Module, out bool createdNewModule);
-            
-            anyChanges |= createdNewModule;
-            hasProjectGlue |= module.IsUProject;
-        }
-        
-        // If the user doesn't have any C++ in their project, we need to create a Glue module for the project manually.
-        // Used for runtime generated code such as GameplayTags.
-        if (!hasProjectGlue)
-        {
-            UhtSession session = GeneratorStatics.Factory.Session;
-            string projectRoot = session.ProjectDirectory!;
-            string baseName = Path.GetFileNameWithoutExtension(session.ProjectFile!);
-            string projectName = baseName + ".Glue";
-            string csprojPath = Path.Join(projectRoot, "Script", projectName, projectName + ".csproj");
-
-            CreateOrUpdateGlueModule(csprojPath, projectName, null, projectRoot, null, out bool createdNewModule);
+            CreateOrUpdateGlueModule(moduleInfo.CsProjPath, moduleInfo.ProjectName, moduleInfo.Dependencies, moduleInfo.ModuleRoot, moduleInfo.Module, out bool createdNewModule);
             anyChanges |= createdNewModule;
         }
 
@@ -84,7 +66,8 @@ public static class GlueModuleFactory
                 new("SkipSolutionGeneration", "true"),
                 new("SkipUSharpProjSetup", "true"),
                 new("ProjectRoot", projectRoot),
-                new("EditorOnly", isEditorOnly.ToString())
+                new("EditorOnly", isEditorOnly.ToString()),
+                new("IsCollectible", "false"),
             };
             
             if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateProject", arguments))
