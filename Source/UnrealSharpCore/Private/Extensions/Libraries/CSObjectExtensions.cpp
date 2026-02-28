@@ -50,7 +50,7 @@ UObject* UCSObjectExtensions::GetOuter(const UObject* Object)
 	return Object->GetOuter();
 }
 
-FPrimaryAssetId UCSObjectExtensions::GetPrimaryAssetId(const UObject* Object)
+FPrimaryAssetId UCSObjectExtensions::GetPrimaryAssetId_Internal(const UObject* Object)
 {
 	if (!IsValid(Object))
 	{

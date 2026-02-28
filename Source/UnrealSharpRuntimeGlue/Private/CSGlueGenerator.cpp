@@ -8,7 +8,7 @@ FString UCSGlueGenerator::GetPluginGlueFolder(const FString& PluginName)
 	return UCSProcUtilities::GetPluginGlueFolderPath(PluginName);
 }
 
-void UCSGlueGenerator::SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
+void UCSGlueGenerator::SaveRuntimeGlue(FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
 {
 	FString FullFileName = FileName + Suffix;
 	FString Path = FPaths::Combine(FUnrealSharpRuntimeGlueModule::GetGlueFolder(), FullFileName);

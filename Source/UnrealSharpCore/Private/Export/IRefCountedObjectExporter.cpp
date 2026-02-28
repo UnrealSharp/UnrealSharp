@@ -10,11 +10,11 @@ uint32 UIRefCountedObjectExporter::GetRefCount(const IRefCountedObject* Object)
 	return Object->GetRefCount();
 }
 
-uint32 UIRefCountedObjectExporter::AddRef(const IRefCountedObject* Object)
+FReturnedRefCountValue UIRefCountedObjectExporter::AddRef(const IRefCountedObject* Object)
 {
 	if (!Object || Object->GetRefCount() == 0)
 	{
-		return 0;
+		return FReturnedRefCountValue(0);
 	}
 	
 	return Object->AddRef();

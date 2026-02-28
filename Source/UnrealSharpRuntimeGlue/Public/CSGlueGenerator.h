@@ -19,5 +19,5 @@ public:
 
 	static FString GetPluginGlueFolder(const FString& PluginName);
 protected:
-	void SaveRuntimeGlue(const FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
+	void SaveRuntimeGlue(FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
 };
