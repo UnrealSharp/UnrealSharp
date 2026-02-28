@@ -16,7 +16,7 @@ public:
 	static uint32 GetRefCount(const IRefCountedObject* Object);
 
 	UNREALSHARP_FUNCTION()
-	static FReturnedRefCountValue AddRef(const IRefCountedObject* Object);
+	static uint32 AddRef(const IRefCountedObject* Object);
 
 	UNREALSHARP_FUNCTION()
 	static uint32 Release(const IRefCountedObject* Object);
