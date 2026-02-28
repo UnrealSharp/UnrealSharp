@@ -78,14 +78,14 @@ public:
     }
 
 	UFUNCTION(meta = (ScriptMethod))
-    UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName)
+    UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName, bool bIsCollectible = false)
     {
         if (UCSManagedAssembly* Assembly = FindAssembly(AssemblyName))
         {
             return Assembly;
         }
 
-        return LoadUserAssemblyByName(AssemblyName);
+        return LoadUserAssemblyByName(AssemblyName, bIsCollectible);
     }
 
 	UFUNCTION(meta = (ScriptMethod))

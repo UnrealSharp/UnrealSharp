@@ -98,7 +98,7 @@ private:
     void RegisterPluginTemplates();
     void UnregisterPluginTemplates();
 
-    void LoadNewProject(const FString& ModulePath) const;
+    void LoadNewProject(const FString& ModuleName, const FString& ModulePath) const;
     static void OnProjectLoaded();
 
     FCSManagedEditorCallbacks ManagedUnrealSharpEditorCallbacks;

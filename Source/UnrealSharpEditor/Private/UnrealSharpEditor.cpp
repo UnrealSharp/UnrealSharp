@@ -700,9 +700,10 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
     }
 }
 
-void FUnrealSharpEditorModule::LoadNewProject(const FString& ModulePath) const
+void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const FString& ModulePath) const
 {
 	UCSProcUtilities::BuildUserSolution();
+	UCSManager::Get().LoadUserAssemblyByName(*ModuleName, true);
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
 	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, &FUnrealSharpEditorModule::OnProjectLoaded);
 }
@@ -743,7 +744,7 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 		return;
 	}
 	
-	LoadNewProject(CsProjPath);
+	LoadNewProject(ModuleName, CsProjPath);
 	OpenSolution();
 }
 

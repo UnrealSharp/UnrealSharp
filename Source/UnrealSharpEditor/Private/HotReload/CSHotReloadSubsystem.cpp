@@ -371,7 +371,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindOrLoadAssembly(ProjectName);
+	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
 	if (!ModifiedAssembly->IsCollectible())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Assembly {0} is not collectible. Hot reload will be skipped for changes to this assembly.", *ModifiedAssembly->GetAssemblyName().ToString());
