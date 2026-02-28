@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "CSBindsManager.h"
 #include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
 #include "FMulticastDelegatePropertyExporter.generated.h"
 
 struct Interop_FScriptDelegate
