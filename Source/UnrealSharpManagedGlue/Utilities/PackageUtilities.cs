@@ -10,7 +10,6 @@ namespace UnrealSharpManagedGlue.Utilities;
 public static class PackageUtilities
 {
     public const string SkipGlueGenerationDefine = "SkipGlueGeneration";
-    public const string FlattenGlueDefine = "FlattenGlue";
 
     public static string GetModuleShortName(this UhtPackage package)
     {
@@ -33,11 +32,6 @@ public static class PackageUtilities
         return package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly | EPackageFlags.Developer);
     }
 
-    public static bool ShouldFlattenGlue(this UhtPackage package)
-    {
-        return package.IsDefineActive(FlattenGlueDefine);
-    }
-
     public static bool IsForcedAsEngineGlue(this UhtPackage package)
     {
         bool hasDefine = package.GetModule().TryGetDefine("ForceAsEngineGlue", out int treatedAsEngineGlue);
@@ -53,11 +47,6 @@ public static class PackageUtilities
     {
         bool foundDefine = package.IsDefineActive(SkipGlueGenerationDefine);
         return !foundDefine;
-    }
-    
-    public static IReadOnlyCollection<UhtHeaderFile> GetHeaderFiles(this UhtPackage package)
-    {
-        return package.Module.Headers;
     }
 
     public static string GetBaseDirectoryForPackage(this UhtPackage package)
@@ -95,7 +84,7 @@ public static class PackageUtilities
     public static string GetUhtBaseOutputDirectory(this UhtPackage package)
     {
         ModuleInfo moduleInfo = package.GetModuleInfo();
-        string root = moduleInfo.IsPartOfEngine ? GeneratorStatics.BindingsProjectDirectory : moduleInfo.ProjectDirectory;
+        string root = moduleInfo.IsPartOfEngine && !package.IsExtractedEngineModule() ? GeneratorStatics.BindingsProjectDirectory : moduleInfo.ProjectDirectory;
         string subPath = Path.Combine(root, "obj", "UHT", GeneratorStatics.BuildTarget.ToString());
         return subPath;
     }

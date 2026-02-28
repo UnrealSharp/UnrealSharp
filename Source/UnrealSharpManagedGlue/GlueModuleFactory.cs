@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Types;
-using EpicGames.UHT.Utils;
 using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
@@ -18,14 +17,14 @@ public static class GlueModuleFactory
         LoadModuleDependencies();
         
         bool anyChanges = false;
-        foreach (ModuleInfo module in ModuleUtilities.PackageToModuleInfo.Values)
+        foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            if (module.IsPartOfEngine || !module.Module.ShouldExportPackage())
+            if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine)
             {
                 continue;
             }
             
-            CreateOrUpdateGlueModule(module.CsProjPath, module.ProjectName, module.Dependencies, module.ModuleRoot, module.Module, out bool createdNewModule);
+            CreateOrUpdateGlueModule(moduleInfo.CsProjPath, moduleInfo.ProjectName, moduleInfo.Dependencies, moduleInfo.ModuleRoot, moduleInfo.Module, out bool createdNewModule);
             anyChanges |= createdNewModule;
         }
 

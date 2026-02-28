@@ -169,49 +169,57 @@ public static class PropertyTranslatorManager
         // Custom arithmetic needed
         InclusionLists.BanArithmetic("FQuat");
     }
-
     public static void AddTranslationManifest(TypeTranslationManifest manifest)
     {
-        foreach (string skippedStruct in manifest.Structs.CustomTypes)
+        if (!manifest.Structs.CustomTypes.IsDefaultOrEmpty)
         {
-            SpecialTypeInfo.Structs.SkippedTypes.Add(skippedStruct);
-        }
-        
-        foreach (BlittableStructInfo structInfo in manifest.Structs.BlittableTypes)
-        {
-            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
+            foreach (string skippedStruct in manifest.Structs.CustomTypes)
             {
-                throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                SpecialTypeInfo.Structs.SkippedTypes.Add(skippedStruct);
             }
-            
-            if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out BlittableStructInfo existing))
+        }
+
+        if (!manifest.Structs.BlittableTypes.IsDefaultOrEmpty)
+        {
+            foreach (BlittableStructInfo structInfo in manifest.Structs.BlittableTypes)
             {
-                if (structInfo.ManagedType is not null && existing.ManagedType is not null && structInfo.ManagedType != existing.ManagedType)
+                if (SpecialTypeInfo.Structs.NativelyCopyableTypes.ContainsKey(structInfo.Name))
                 {
-                    throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+                    throw new InvalidOperationException($"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
                 }
-            }
-            else
-            {
-                SpecialTypeInfo.Structs.BlittableTypes.Add(structInfo.Name, structInfo);
-            }
+            
+                if (SpecialTypeInfo.Structs.BlittableTypes.TryGetValue(structInfo.Name, out BlittableStructInfo existing))
+                {
+                    if (structInfo.ManagedType is not null && existing.ManagedType is not null && structInfo.ManagedType != existing.ManagedType)
+                    {
+                        throw new InvalidOperationException($"Duplicate struct name specified: {structInfo.Name}");
+                    }
+                }
+                else
+                {
+                    SpecialTypeInfo.Structs.BlittableTypes.Add(structInfo.Name, structInfo);
+                }
+            } 
         }
 
-        foreach (NativelyTranslatableStructInfo structInfo in manifest.Structs.NativelyTranslatableTypes)
+        if (!manifest.Structs.NativelyTranslatableTypes.IsDefaultOrEmpty)
         {
-            if (SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structInfo.Name, out NativelyTranslatableStructInfo existing))
+            foreach (NativelyTranslatableStructInfo structInfo in manifest.Structs.NativelyTranslatableTypes)
             {
-                SpecialTypeInfo.Structs.NativelyCopyableTypes[structInfo.Name] = existing with { HasDestructor = existing.HasDestructor || structInfo.HasDestructor };
-                continue;
-            }
+                if (SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structInfo.Name, out NativelyTranslatableStructInfo existing))
+                {
+                    SpecialTypeInfo.Structs.NativelyCopyableTypes[structInfo.Name] = existing with { HasDestructor = existing.HasDestructor || structInfo.HasDestructor };
+                    continue;
+                }
             
-            if (SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structInfo.Name))
-            {
-                throw new InvalidOperationException(
-                    $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
-            }
+                if (SpecialTypeInfo.Structs.BlittableTypes.ContainsKey(structInfo.Name))
+                {
+                    throw new InvalidOperationException(
+                        $"A struct cannot be both blittable and natively copyable: {structInfo.Name}");
+                }
 
-            SpecialTypeInfo.Structs.NativelyCopyableTypes.Add(structInfo.Name, structInfo);
+                SpecialTypeInfo.Structs.NativelyCopyableTypes.Add(structInfo.Name, structInfo);
+            }
         }
     }
     
