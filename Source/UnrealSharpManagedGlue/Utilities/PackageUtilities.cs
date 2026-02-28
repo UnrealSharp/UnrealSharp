@@ -51,7 +51,12 @@ public static class PackageUtilities
 
     public static string GetBaseDirectoryForPackage(this UhtPackage package)
     {
-        DirectoryInfo? currentDirectory = new DirectoryInfo(package.GetModule().BaseDirectory);
+        return FindUnrealModuleRoot(package.GetModule().BaseDirectory);
+    }
+    
+    public static string FindUnrealModuleRoot(string directory)
+    {
+        DirectoryInfo? currentDirectory = new DirectoryInfo(directory);
         FileInfo? projectFile = null;
 
         while (currentDirectory != null)
@@ -70,7 +75,7 @@ public static class PackageUtilities
 
         if (projectFile == null || currentDirectory == null)
         {
-            throw new InvalidOperationException($"Could not find .uplugin or .uproject for {package.SourceName}");
+            throw new InvalidOperationException($"Could not find .uplugin or .uproject from directory: {directory}");
         }
 
         return currentDirectory.FullName;

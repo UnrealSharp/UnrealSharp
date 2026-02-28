@@ -66,24 +66,24 @@ public static class ModuleUtilities
 			try
 			{
 				string? configDir = Path.GetDirectoryName(manifestPath);
-
 				if (string.IsNullOrEmpty(configDir))
 				{
 					continue;
 				}
+				
+				string rootDir = PackageUtilities.FindUnrealModuleRoot(configDir);
 
-				using (FileStream stream = File.OpenRead(manifestPath))
+				using FileStream stream = File.OpenRead(manifestPath);
+				List<string>? moduleNames = JsonSerializer.Deserialize<List<string>>(stream);
+				
+				if (moduleNames == null)
 				{
-					List<string>? manifest = JsonSerializer.Deserialize<List<string>>(stream);
-					if (manifest == null)
-					{
-						continue;
-					}
+					continue;
+				}
 
-					foreach (string moduleName in manifest)
-					{
-						ExtractedEngineModules[$"/Script/{moduleName}"] = configDir;
-					}
+				foreach (string moduleName in moduleNames)
+				{
+					ExtractedEngineModules[$"/Script/{moduleName}"] = rootDir;
 				}
 			}
 			catch (Exception e)
