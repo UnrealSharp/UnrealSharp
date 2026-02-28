@@ -168,6 +168,17 @@ public static class PropertyTranslatorManager
 
         // Custom arithmetic needed
         InclusionLists.BanArithmetic("FQuat");
+
+        // Renamed variable
+        InclusionLists.BanConstructor("FPlane");
+
+        // Has constructor with with defaults
+        InclusionLists.BanConstructor("FGameplayTagContainer");
+        InclusionLists.BanConstructor("FLinearColor");
+
+        // Calls native to init
+        InclusionLists.BanConstructor("FGameplayTag");
+        InclusionLists.BanConstructor("FPrimaryAssetType");
     }
     public static void AddTranslationManifest(TypeTranslationManifest manifest)
     {
