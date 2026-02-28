@@ -12,15 +12,13 @@ public class Plugin
     
     private AssemblyLoadContext? _loadContext;
     private readonly List<IModuleInterface> _moduleInterfaces;
-    private readonly AssemblyDependencyResolver _resolver;
     
     public Plugin(AssemblyName assemblyName, bool isCollectible, string assemblyPath)
     {
         AssemblyName = assemblyName;
         _moduleInterfaces = new List<IModuleInterface>();
-        _resolver = new AssemblyDependencyResolver(assemblyPath);
         
-        Assembly? existingAssembly = AssemblyCache.GetAssembly(assemblyName.Name!);
+        Assembly? existingAssembly = AssemblyCache.GetUniqueAssembly(assemblyName.Name!);
         if (existingAssembly != null)
         {
             AssemblyLoadContext? existingLoadContext = AssemblyLoadContext.GetLoadContext(existingAssembly);
@@ -39,47 +37,8 @@ public class Plugin
         }
         else
         {
-            _loadContext = new AssemblyLoadContext(assemblyName.Name, isCollectible);
-            _loadContext.Resolving += ResolveAssembly;
+            _loadContext = new PluginLoadContext(assemblyName.Name!, new AssemblyDependencyResolver(assemblyPath), isCollectible);
         }
-    }
-
-    private Assembly? ResolveAssembly(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName)
-    {
-        if (string.IsNullOrEmpty(assemblyName.Name))
-        {
-            return null;
-        }
-        
-        Assembly? loadedAssembly = AssemblyCache.GetAssembly(assemblyName.Name!);
-        if (loadedAssembly != null)
-        {
-            return loadedAssembly;
-        }
-
-        string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-
-        if (string.IsNullOrEmpty(assemblyPath))
-        {
-            return null;
-        }
-
-        using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
-
-        Assembly? newAssembly;
-        if (!File.Exists(pdbPath))
-        {
-            newAssembly = assemblyLoadContext.LoadFromAssemblyPath(assemblyPath);
-        }
-        else
-        {
-            using FileStream pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            newAssembly = assemblyLoadContext.LoadFromStream(assemblyFile, pdbFile);
-        }
-        
-        AssemblyCache.AddAssembly(newAssembly);
-        return newAssembly;
     }
 
     public bool Load()
@@ -122,8 +81,7 @@ public class Plugin
         Assembly = null;
         
         WeakReference loadContextWeak = new WeakReference(_loadContext);
-        _loadContext!.Resolving -= ResolveAssembly;
-        _loadContext.Unload();
+        _loadContext!.Unload();
         _loadContext = null;
         
         return loadContextWeak;

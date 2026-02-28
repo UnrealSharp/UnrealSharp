@@ -8,7 +8,7 @@ namespace UnrealSharp.Plugins;
 
 public static class AssemblyCache
 {
-	private static readonly Dictionary<string, WeakReference> LoadedAssemblies = new();
+	private static readonly Dictionary<string, List<WeakReference<Assembly>>> LoadedAssemblies = new();
 	
 	static AssemblyCache()
 	{
@@ -21,7 +21,15 @@ public static class AssemblyCache
     
 	public static void AddAssembly(Assembly assembly)
 	{
-		LoadedAssemblies[assembly.GetName().Name!] = new WeakReference(assembly);
+		string assemblyName = assembly.GetName().Name!;
+		
+		if (!LoadedAssemblies.TryGetValue(assemblyName, out List<WeakReference<Assembly>>? assemblies))
+		{
+			assemblies = new List<WeakReference<Assembly>>();
+			LoadedAssemblies[assemblyName] = assemblies;
+		}
+		
+		assemblies.Add(new WeakReference<Assembly>(assembly));
 	}
 	
 	public static void RemoveAssembly(string assemblyName)
@@ -29,13 +37,62 @@ public static class AssemblyCache
 		LoadedAssemblies.Remove(assemblyName);
 	}
 	
-	public static Assembly? GetAssembly(string assemblyName)
+	public static Assembly? GetUniqueAssembly(string assemblyName)
 	{
-		if (LoadedAssemblies.TryGetValue(assemblyName, out var assemblyRef) && assemblyRef.IsAlive)
+		if (!LoadedAssemblies.TryGetValue(assemblyName, out List<WeakReference<Assembly>>? assemblies))
 		{
-			return (Assembly)assemblyRef.Target!;
+			return null;
+		}
+
+		if (assemblies.Count == 0)
+		{
+			return null;
 		}
 		
-		return null;
+		WeakReference<Assembly> assemblyReference = assemblies[0];
+		if (!assemblyReference.TryGetTarget(out Assembly? assembly))
+		{
+			return null;
+		}
+		
+		return assembly;
+	}
+	
+	public static Assembly? GetAssembly(string assemblyName, AssemblyLoadContext loadContext)
+	{
+		if (!LoadedAssemblies.TryGetValue(assemblyName, out List<WeakReference<Assembly>>? assemblies))
+		{
+			return null;
+		}
+
+		Assembly? fallbackCandidate = null;
+
+		foreach (WeakReference<Assembly> weakAssembly in assemblies)
+		{
+			if (!weakAssembly.TryGetTarget(out Assembly? assembly))
+			{
+				continue;
+			}
+
+			AssemblyLoadContext foundLoadContext = AssemblyLoadContext.GetLoadContext(assembly)!;
+
+			if (foundLoadContext == loadContext)
+			{
+				return assembly;
+			}
+
+			if (!foundLoadContext.IsCollectible)
+			{
+				fallbackCandidate = assembly;
+				continue;
+			}
+
+			if (loadContext.IsCollectible && fallbackCandidate == null)
+			{
+				fallbackCandidate = assembly;
+			}
+		}
+
+		return fallbackCandidate;
 	}
 }
