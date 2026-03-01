@@ -10,14 +10,6 @@ public partial struct FMargin
 		Bottom = uniformMargin;
 	}
 	
-	public FMargin(float left, float top, float right, float bottom)
-	{
-		Left = left;
-		Top = top;
-		Right = right;
-		Bottom = bottom;
-	}
-	
 	public FMargin(float horizontal, float vertical)
 	{
 		Left = horizontal;
