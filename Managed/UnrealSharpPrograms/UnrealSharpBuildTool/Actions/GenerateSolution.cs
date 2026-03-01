@@ -12,7 +12,7 @@ public class GenerateSolution : BuildToolAction
         generateSln.StartInfo.ArgumentList.Add("sln");
         
         generateSln.StartInfo.ArgumentList.Add("--format");
-        generateSln.StartInfo.ArgumentList.Add("sln");
+        generateSln.StartInfo.ArgumentList.Add("slnx");
 
         generateSln.StartInfo.ArgumentList.Add("-n");
         generateSln.StartInfo.ArgumentList.Add(Program.GetProjectNameAsManaged());
@@ -51,7 +51,7 @@ public class GenerateSolution : BuildToolAction
 
     private static void AddProjectToSlnx(List<string> relativePaths)
     {
-        string slnxPath = Path.Combine(Program.GetScriptFolder(), $"{Program.GetProjectNameAsManaged()}.sln");
+        string slnxPath = Path.Combine(Program.GetScriptFolder(), $"{Program.GetProjectNameAsManaged()}.slnx");
 
         foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
         {
