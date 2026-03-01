@@ -6,12 +6,6 @@ namespace UnrealSharp.CoreUObject;
 [StructLayout(LayoutKind.Sequential)]
 public partial struct FTopLevelAssetPath
 {
-    public FTopLevelAssetPath(FName packageName, FName assetName)
-    {
-        PackageName = packageName;
-        AssetName = assetName;
-    }
-    
     public override bool Equals(object? obj)
     {
         if (obj is FTopLevelAssetPath other)
