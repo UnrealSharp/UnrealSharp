@@ -5,11 +5,6 @@ namespace UnrealSharp.CoreUObject;
 
 public partial struct FSoftObjectPath
 {
-    public FSoftObjectPath(FTopLevelAssetPath assetPath)
-    {
-        AssetPath = assetPath;
-    }
-    
     public FSoftObjectPath(string packageName, string assetName)
     {
         AssetPath = new FTopLevelAssetPath(packageName, assetName);
