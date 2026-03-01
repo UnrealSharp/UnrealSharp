@@ -67,8 +67,7 @@ public:
 	UNREALSHARP_FUNCTION()
 	static uint8 GetBoolPropertyFieldMaskFromName(UStruct* InStruct, const char* InPropertyName);
 
-#if WITH_EDITOR
 	UNREALSHARP_FUNCTION()
 	static void BroadcastFieldValueChanged(UObject* Object, FProperty* Property);
-#endif
+
 };

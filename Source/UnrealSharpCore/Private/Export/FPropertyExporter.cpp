@@ -1,8 +1,5 @@
 ﻿#include "Export/FPropertyExporter.h"
-
-#if WITH_EDITOR
 #include "INotifyFieldValueChanged.h"
-#endif
 
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
 {
@@ -109,7 +106,6 @@ int32 UFPropertyExporter::GetPropertyArrayDimFromName(UStruct* InStruct, const c
 	return GetArrayDim(Property);
 }
 
-#if WITH_EDITOR
 void UFPropertyExporter::BroadcastFieldValueChanged(UObject* Object, FProperty* Property)
 {
 	TScriptInterface<INotifyFieldValueChanged> NotifyFieldSelf = Object;
@@ -123,4 +119,3 @@ void UFPropertyExporter::BroadcastFieldValueChanged(UObject* Object, FProperty* 
 		}
 	}
 }
-#endif

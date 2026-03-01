@@ -15,10 +15,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     /// <inheritdoc />
     public bool IsReadOnly => false;
 
-#if WITH_EDITOR
     private IntPtr _observableNativeObject;
     private bool _isObservable;
-#endif
 
     public TArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
@@ -47,14 +45,12 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
         }
     }
 
-    [System.Diagnostics.Conditional("WITH_EDITOR")]
     internal void MakeObservable(IntPtr observableNativeObject)
     {
         _observableNativeObject = observableNativeObject;
         _isObservable = true;
     }
 
-    [System.Diagnostics.Conditional("WITH_EDITOR")]
     private void BroadcastChanged()
     {
         if (_isObservable)
@@ -229,7 +225,6 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
     }
 }
 
-#if WITH_EDITOR
 public class ObservableArrayMarshaller<T>(IntPtr nativeProperty,
     MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative,
     IntPtr nativeObject) : ArrayMarshaller<T>(nativeProperty, toNative, fromNative)
@@ -241,4 +236,3 @@ public class ObservableArrayMarshaller<T>(IntPtr nativeProperty,
         return arrayWrapper;
     }
 }
-#endif

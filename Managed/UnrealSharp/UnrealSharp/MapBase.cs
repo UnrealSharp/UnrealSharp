@@ -19,10 +19,8 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     private readonly NativeProperty _keyProperty;
     private readonly NativeProperty _valueProperty;
 
-#if WITH_EDITOR
     private IntPtr _observableNativeObject;
     private bool _isObservable;
-#endif
 
     public int Count => _helper.Num();
 
@@ -41,14 +39,12 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         _valueToNative = valueToNative;
     }
 
-    [System.Diagnostics.Conditional("WITH_EDITOR")]
     internal void MakeObservable(IntPtr observableNativeObject)
     {
         _observableNativeObject = observableNativeObject;
         _isObservable = true;
     }
 
-    [System.Diagnostics.Conditional("WITH_EDITOR")]
     private void BroadcastChanged()
     {
         if (_isObservable)
@@ -615,7 +611,6 @@ public class MapCopyMarshaller<TKey, TValue> where TKey : notnull
     }
 }
 
-#if WITH_EDITOR
 public class ObservableMapMarshaller<TKey, TValue>(IntPtr mapProperty,
         MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative,
         MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative,
@@ -628,4 +623,3 @@ public class ObservableMapMarshaller<TKey, TValue>(IntPtr mapProperty,
         return map;
     }
 }
-#endif

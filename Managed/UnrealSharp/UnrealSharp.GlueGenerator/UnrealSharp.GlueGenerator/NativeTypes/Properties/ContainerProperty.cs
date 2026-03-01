@@ -31,45 +31,19 @@ public record ContainerProperty : TemplateProperty
 
     public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
     {
-        if (FieldNotify && IsObservable)
-        {
-            builder.BeginWithEditorPreproccesorBlock();
-            ExportMarshaller(builder, true);
-            builder.ElsePreproccesor();
-            ExportMarshaller(builder);
-            builder.EndPreproccesorBlock();
-        }
-        else
-        {
-            ExportMarshaller(builder);
-        }
-
-        builder.AppendLine();
+        ExportMarshaller(builder);
         AppendCallFromNative(builder, InstancedMarshallerVariable, buffer, assignmentOperator);
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)
     {
-        if (FieldNotify && IsObservable)
-        {
-            builder.BeginWithEditorPreproccesorBlock();
-            ExportMarshaller(builder, true);
-            builder.ElsePreproccesor();
-            ExportMarshaller(builder);
-            builder.EndPreproccesorBlock();
-        }
-        else
-        {
-            ExportMarshaller(builder);
-        }
-
-        builder.AppendLine();
+        ExportMarshaller(builder);
         AppendCallToNative(builder, InstancedMarshallerVariable, buffer, value);
     }
     
-    private void ExportMarshaller(GeneratorStringBuilder builder, bool observe = false)
+    private void ExportMarshaller(GeneratorStringBuilder builder)
     {
-        if (observe)
+        if (FieldNotify && IsObservable)
         {
             builder.AppendLine($"{InstancedMarshallerVariable} ??= new {ObservableMarshallerType}({NativePropertyVariable}");
         }
@@ -84,12 +58,13 @@ public record ContainerProperty : TemplateProperty
             builder.Append(string.Join(", ", TemplateParameters.Select(t => $"{t.CallToNative}, {t.CallFromNative}")));
         }
 
-        if (observe)
+        if (FieldNotify && IsObservable)
         {
             builder.Append(", NativeObject");
         }
 
         builder.Append(");");
+        builder.AppendLine();
     }
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
