@@ -8,9 +8,4 @@ public record SingleDelegateProperty : DelegateProperty
         : base(memberSymbol, typeSymbol, PropertyType.Delegate, outer, "SingleDelegateMarshaller", syntaxNode)
     {
     }
-    
-    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
-    {
-        AppendFromNative(builder);
-    }
 }

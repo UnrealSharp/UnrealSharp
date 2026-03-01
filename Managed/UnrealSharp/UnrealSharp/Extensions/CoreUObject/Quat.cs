@@ -25,21 +25,6 @@ public partial struct FQuat
     }
     
     /// <summary>
-    /// Constructs a Quat from the given components.
-    /// </summary>
-    /// <param name="x">The X component of the Quat.</param>
-    /// <param name="y">The Y component of the Quat.</param>
-    /// <param name="z">The Z component of the Quat.</param>
-    /// <param name="w">The W component of the Quat.</param>
-    public FQuat(double x, double y, double z, double w)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-        W = w;
-    }
-    
-    /// <summary>
     /// Constructs a Quat from the given vector and rotation parts.
     /// </summary>
     /// <param name="vectorPart">The vector part of the Quat.</param>

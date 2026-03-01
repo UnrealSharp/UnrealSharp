@@ -10,6 +10,7 @@ public static class InclusionLists
     private static readonly IDictionary<string, HashSet<string>> BannedFunctions = new Dictionary<string, HashSet<string>>();
     private static readonly HashSet<string> BannedEquality = new();
     private static readonly HashSet<string> BannedArithmetic = new();
+    private static readonly HashSet<string> BannedConstructors = new HashSet<string>();
 
     public static void BanProperty(string structName, string propertyName)
     {
@@ -61,5 +62,15 @@ public static class InclusionLists
     public static bool HasBannedArithmetic(UhtStruct scriptStruct)
     {
         return BannedArithmetic.Contains(scriptStruct.GetStructName());
+    }
+
+    public static void BanConstructor(string structName)
+    {
+        BannedConstructors.Add(structName);
+    }
+
+    public static bool HasBannedConstructor(UhtStruct scriptStruct)
+    {
+        return BannedConstructors.Contains(scriptStruct.GetStructName());
     }
 }

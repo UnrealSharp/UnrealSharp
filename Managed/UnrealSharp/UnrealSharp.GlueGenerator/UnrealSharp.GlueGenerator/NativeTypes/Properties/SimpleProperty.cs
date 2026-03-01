@@ -14,4 +14,20 @@ public record SimpleProperty : UnrealProperty
     {
         ManagedType = managedType;
     }
+
+    protected override void ExportSetter(GeneratorStringBuilder builder)
+    {
+        if (FieldNotify)
+        {
+            builder.OpenBrace();
+            builder.AppendLine();
+            ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
+            builder.AppendLine($"UnrealSharp.Engine.UFieldNotificationLibrary.BroadcastFieldValueChanged(this, new UnrealSharp.FieldNotification.FFieldNotificationId(nameof({SourceName})));");
+            builder.CloseBrace();
+        }
+        else
+        {
+            base.ExportSetter(builder);
+        }
+    }
 }

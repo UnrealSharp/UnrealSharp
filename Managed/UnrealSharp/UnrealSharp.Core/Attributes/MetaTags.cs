@@ -722,4 +722,11 @@ public sealed class BindWidgetAnimAttribute : Attribute { }
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter), CustomMetaData]
 public sealed class CategoriesAttribute(string categories) : Attribute { }
 
+/// <summary>
+/// [FieldNotify]
+/// Allows variables and functions to broadcast change notifications to bound UI elements (UMG) or systems
+/// </summary>
+[AttributeUsage(AttributeTargets.Property), CustomMetaData]
+public sealed class FieldNotifyAttribute : Attribute { }
+
 #endregion

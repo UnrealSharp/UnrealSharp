@@ -39,5 +39,6 @@ namespace FCSUtilities
 
 		return FindObject<T>(Package, *FieldName.GetName());
 	}
-
+	
+	bool VerifyCSharpEnvironment();
 };

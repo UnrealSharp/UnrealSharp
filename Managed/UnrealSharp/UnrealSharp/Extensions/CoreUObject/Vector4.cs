@@ -15,21 +15,6 @@ public partial struct FVector4
     }
     
     /// <summary>
-    /// Constructs a vector with the given individual elements.
-    /// </summary>
-    /// <param name="w">W component.</param>
-    /// <param name="x">X component.</param>
-    /// <param name="y">Y component.</param>
-    /// <param name="z">Z component.</param>
-    public FVector4(double x, double y, double z, double w)
-    {
-        W = w;
-        X = x;
-        Y = y;
-        Z = z;
-    }
-
-    /// <summary>
     /// Constructs a Vector4 from the given Vector2D and a Z and W component.
     /// </summary>
     /// <param name="value">The vector to use as the X and Y components.</param>

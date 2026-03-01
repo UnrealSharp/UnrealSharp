@@ -1,5 +1,7 @@
 #include "Utilities/CSUtilities.h"
 #include "CSManagedAssembly.h"
+#include "CSProcUtilities.h"
+#include "UnrealSharpUtils.h"
 #include "Compilers/CSManagedClassCompiler.h"
 #include "Compilers/CSManagedDelegateCompiler.h"
 #include "Compilers/CSManagedEnumCompiler.h"
@@ -227,5 +229,41 @@ void FCSUtilities::ParseClassFlags(EClassFlags InFlags, TArray<const TCHAR*>& Re
 			Results.Add(ClassFlags[Bit]);
 		}
 	}
+}
+
+bool FCSUtilities::VerifyCSharpEnvironment()
+{
+#if WITH_EDITOR
+	FString DotNetInstallationPath = UCSProcUtilities::GetDotNetDirectory();
+	if (DotNetInstallationPath.IsEmpty())
+	{
+		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return false;
+	}
+
+	FString UnrealSharpLibraryPath = UCSProcUtilities::GetUnrealSharpPluginsPath();
+	if (!FPaths::FileExists(UnrealSharpLibraryPath))
+	{
+		FString FullPath = FPaths::ConvertRelativePathToFull(UnrealSharpLibraryPath);
+		FString DialogText = FString::Printf(TEXT(
+			"The bindings library could not be found at the following location:\n%s\n\n"
+			"Most likely, the bindings library failed to build due to invalid generated glue."
+		), *FullPath);
+
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
+		return false;
+	}
+
+	TArray<FString> ProjectPaths;
+	UCSProcUtilities::GetAllProjectPaths(ProjectPaths, true);
+
+	// Compile the C# project for any changes done outside the editor.
+	if (!ProjectPaths.IsEmpty() && !FCSUnrealSharpUtils::IsStandalonePIE() && !FApp::IsUnattended() && !UCSProcUtilities::BuildUserSolution())
+	{
+		return false;
+	}
+#endif
+	return true;
 }
 

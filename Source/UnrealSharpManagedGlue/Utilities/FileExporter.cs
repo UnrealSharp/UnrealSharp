@@ -86,11 +86,6 @@ public static class FileExporter
 
         foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            if (plugin.ShouldFlatten)
-            {
-                continue;
-            }
-            
             CleanOldFilesInDirectories(plugin.GlueModuleDirectory);
         }
     }

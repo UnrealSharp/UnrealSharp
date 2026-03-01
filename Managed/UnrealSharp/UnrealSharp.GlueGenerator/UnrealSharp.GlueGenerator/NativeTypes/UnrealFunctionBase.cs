@@ -279,7 +279,6 @@ public abstract record UnrealFunctionBase : UnrealStruct
         
         foreach (UnrealProperty parameter in Properties)
         {
-            builder.AppendLine();
             parameter.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{parameter.ManagedType} {parameter.SourceName} = ");
         }
         
@@ -287,13 +286,11 @@ public abstract record UnrealFunctionBase : UnrealStruct
         
         if (HasReturnValue)
         {
-            builder.AppendLine();
             ReturnType.ExportToNative(builder, "returnBuffer", "returnValue");
         }
         
         foreach (UnrealProperty parameter in Properties.Where(p => p.PropertyFlags.HasFlag(EPropertyFlags.OutParm)))
         {
-            builder.AppendLine();
             parameter.ExportToNative(builder, SourceGenUtilities.Buffer, parameter.SourceName);
         }
         

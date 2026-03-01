@@ -7,28 +7,49 @@ namespace UnrealSharp.Plugins;
 
 public class Plugin
 {
+    public readonly AssemblyName AssemblyName;
+    public WeakReference? Assembly { get; private set; }
+    
+    private AssemblyLoadContext? _loadContext;
+    private readonly List<IModuleInterface> _moduleInterfaces;
+    
     public Plugin(AssemblyName assemblyName, bool isCollectible, string assemblyPath)
     {
         AssemblyName = assemblyName;
-        _loadContext = new PluginLoadContext(assemblyName.Name! + "_AssemblyLoadContext", new AssemblyDependencyResolver(assemblyPath), isCollectible);
         _moduleInterfaces = new List<IModuleInterface>();
+        
+        Assembly? existingAssembly = AssemblyCache.GetUniqueAssembly(assemblyName.Name!);
+        if (existingAssembly != null)
+        {
+            AssemblyLoadContext? existingLoadContext = AssemblyLoadContext.GetLoadContext(existingAssembly);
+            
+            if (existingLoadContext == null)
+            {
+                throw new InvalidOperationException($"Unable to determine load context for existing assembly {assemblyName}.");
+            }
+            
+            if (existingLoadContext.IsCollectible)
+            {
+                throw new InvalidOperationException($"Shared collectible context detected for {assemblyName}.");
+            }
+            
+            _loadContext = existingLoadContext;
+        }
+        else
+        {
+            _loadContext = new PluginLoadContext(assemblyName.Name!, new AssemblyDependencyResolver(assemblyPath), isCollectible);
+        }
     }
-    
-    public readonly AssemblyName AssemblyName;
-    public WeakReference? WeakRefAssembly { get; private set; }
-    
-    private PluginLoadContext? _loadContext;
-    private readonly List<IModuleInterface> _moduleInterfaces;
 
     public bool Load()
     {
-        if (_loadContext == null || (WeakRefAssembly != null && WeakRefAssembly.IsAlive))
+        if (_loadContext == null || (Assembly != null && Assembly.IsAlive))
         {
             return false;
         }
         
         Assembly assembly = _loadContext.LoadFromAssemblyName(AssemblyName);
-        WeakRefAssembly = new WeakReference(assembly);
+        Assembly = new WeakReference(assembly);
         
         Type[] types = assembly.GetTypes();
             
@@ -55,19 +76,13 @@ public class Plugin
     public WeakReference Unload()
     {
         ShutdownModule();
-
-        if (_loadContext == null)
-        {
-            throw new InvalidOperationException("Cannot unload a plugin that is not loaded.");
-        }
         
-        PluginLoadContext.RemoveAssemblyFromCache(AssemblyName.Name!);
+        AssemblyCache.RemoveAssembly(AssemblyName.Name!);
+        Assembly = null;
         
         WeakReference loadContextWeak = new WeakReference(_loadContext);
-        
-        _loadContext.Unload();
+        _loadContext!.Unload();
         _loadContext = null;
-        WeakRefAssembly = null;
         
         return loadContextWeak;
     }

@@ -26,23 +26,18 @@ public readonly struct ModuleInfo
 	public string ScriptDirectory => Path.Combine(_moduleDirectory, "Script");
 	public string ProjectDirectory => Path.Combine(ScriptDirectory, ProjectName);
 	public string CsProjPath => Path.Combine(ProjectDirectory, ProjectFile);
-    
-	public bool ShouldFlatten => Module.ShouldFlattenGlue();
+	
 	public bool IsPartOfEngine => Module.IsPartOfEngine();
 	public string ModuleRoot => _moduleDirectory;
 
 	public string GlueBaseDirectory => Module.GetUhtBaseOutputDirectory();
 	public string GlueModuleDirectory => Module.GetModuleUhtOutputDirectory();
-    
-	public bool IsUProject => _moduleDirectory.EndsWith(".uproject", StringComparison.OrdinalIgnoreCase);
 }
 
 public static class ModuleUtilities
 {
 	public static readonly Dictionary<UhtPackage, ModuleInfo> PackageToModuleInfo = new();
-    
 	private static readonly Dictionary<string, string> ExtractedEngineModules = new();
-	private static readonly HashSet<UhtPackage> ProcessedPackages = new();
 
 	static ModuleUtilities()
 	{
@@ -71,25 +66,24 @@ public static class ModuleUtilities
 			try
 			{
 				string? configDir = Path.GetDirectoryName(manifestPath);
-				string? pluginDir = Path.GetDirectoryName(configDir);
+				if (string.IsNullOrEmpty(configDir))
+				{
+					continue;
+				}
+				
+				string rootDir = PackageUtilities.FindUnrealModuleRoot(configDir);
 
-				if (string.IsNullOrEmpty(pluginDir))
+				using FileStream stream = File.OpenRead(manifestPath);
+				List<string>? moduleNames = JsonSerializer.Deserialize<List<string>>(stream);
+				
+				if (moduleNames == null)
 				{
 					continue;
 				}
 
-				using (FileStream stream = File.OpenRead(manifestPath))
+				foreach (string moduleName in moduleNames)
 				{
-					List<string>? manifest = JsonSerializer.Deserialize<List<string>>(stream);
-					if (manifest == null)
-					{
-						continue;
-					}
-
-					foreach (string moduleName in manifest)
-					{
-						ExtractedEngineModules[$"/Script/{moduleName}"] = pluginDir;
-					}
+					ExtractedEngineModules[$"/Script/{moduleName}"] = rootDir;
 				}
 			}
 			catch (Exception e)
@@ -109,6 +103,11 @@ public static class ModuleUtilities
 			}
 		}
 	}
+	
+	public static bool IsExtractedEngineModule(this UhtPackage package)
+	{
+		return ExtractedEngineModules.ContainsKey(package.SourceName);
+	}
     
 	public static ModuleInfo GetModuleInfo(this UhtPackage package)
 	{
@@ -118,6 +117,19 @@ public static class ModuleUtilities
 		}
 		
 		return moduleInfo;
+	}
+	
+	public static ModuleInfo GetModuleInfo(string packageName)
+	{
+		foreach (KeyValuePair<UhtPackage, ModuleInfo> kvp in PackageToModuleInfo)
+		{
+			if (kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
+			{
+				return kvp.Value;
+			}
+		}
+		
+		throw new KeyNotFoundException($"ModuleInfo not found for package name: {packageName}");
 	}
 
 	private static ModuleInfo? TryRegisterModule(UhtPackage targetPackage)
@@ -157,11 +169,7 @@ public static class ModuleUtilities
 		ModuleInfo moduleInfo = new ModuleInfo(moduleName, modulePath, targetPackage, dependencies);
 		PackageToModuleInfo.Add(targetPackage, moduleInfo);
         
-		if (ProcessedPackages.Add(targetPackage))
-		{
-			GatherDependencies(targetPackage, moduleInfo, dependencies);
-		}
-    
+		GatherDependencies(targetPackage, moduleInfo, dependencies);
 		return moduleInfo;
 	}
 
@@ -211,7 +219,7 @@ public static class ModuleUtilities
 			return;
 		}
         
-		if (referencedPackage.IsPartOfEngine() && !ExtractedEngineModules.ContainsKey(referencedPackage.SourceName))
+		if (referencedPackage.IsPartOfEngine())
 		{
 			return;
 		}

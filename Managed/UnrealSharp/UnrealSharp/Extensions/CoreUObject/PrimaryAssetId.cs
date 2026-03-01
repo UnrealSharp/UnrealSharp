@@ -5,12 +5,6 @@ namespace UnrealSharp.CoreUObject;
 
 public partial struct FPrimaryAssetId
 {
-    public FPrimaryAssetId(FPrimaryAssetType type, FName name)
-    {
-        PrimaryAssetType = type;
-        PrimaryAssetName = name;
-    }
-    
     /// <summary>
     /// Is this a valid primary asset ID?
     /// </summary>

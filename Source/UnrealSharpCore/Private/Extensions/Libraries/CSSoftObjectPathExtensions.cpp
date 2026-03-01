@@ -6,7 +6,7 @@ UObject* UCSSoftObjectPathExtensions::ResolveObject(const FSoftObjectPath& SoftO
 	return SoftObjectPath.ResolveObject();
 }
 
-FPrimaryAssetId UCSSoftObjectPathExtensions::GetPrimaryAssetId(const FSoftObjectPath& SoftObjectPath)
+FPrimaryAssetId UCSSoftObjectPathExtensions::GetPrimaryAssetId_Internal(const FSoftObjectPath& SoftObjectPath)
 {
 	return UAssetManager::Get().GetPrimaryAssetIdForPath(SoftObjectPath);
 }

@@ -19,12 +19,19 @@
   <Import Project="$(UnrealSharpPluginDir)UnrealSharp.GeneratedFiles.props" />
 
   <ItemGroup>
+  
     <Reference Include="UnrealSharp">
       <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.dll</HintPath>
     </Reference>
+	
+	<Reference Include="UnrealSharp.Binds">
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Binds.dll</HintPath>
+    </Reference>
+	
     <Reference Include="UnrealSharp.Core">
       <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Core.dll</HintPath>
     </Reference>
+	
     <Reference Include="UnrealSharp.Log">
       <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Log.dll</HintPath>
     </Reference>

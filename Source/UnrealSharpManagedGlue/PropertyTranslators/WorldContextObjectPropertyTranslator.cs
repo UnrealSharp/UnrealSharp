@@ -10,6 +10,11 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
 
     public override bool CanExport(UhtProperty property)
     {
+        if (property.Outer is UhtFunction function && function.IsBlueprintEvent())
+        {
+            return false;
+        }
+        
         return base.CanExport(property) && property.IsWorldContextParameter();
     }
 

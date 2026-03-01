@@ -646,7 +646,7 @@ public partial class UObject
     /// <summary>
     /// Gets the primary asset id of the object
     /// </summary>
-    public FPrimaryAssetId PrimaryAssetId => UCSObjectExtensions.GetPrimaryAssetId(this);
+    public FPrimaryAssetId PrimaryAssetId => UCSObjectExtensions.GetPrimaryAssetId_Internal(this);
 
     /// <summary>
     /// Returns whether this object is contained in or part of a blueprint object

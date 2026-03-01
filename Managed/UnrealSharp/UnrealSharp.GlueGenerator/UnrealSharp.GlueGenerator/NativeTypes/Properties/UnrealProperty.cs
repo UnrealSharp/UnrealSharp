@@ -40,6 +40,7 @@ public record UnrealProperty : UnrealType
     public readonly bool IsPartial = true;
     public readonly bool IsNullable;
     public readonly bool IsRequired;
+    public readonly bool FieldNotify;
 
     // Type and marshaling information
     public PropertyType PropertyType = PropertyType.Unknown;
@@ -86,6 +87,7 @@ public record UnrealProperty : UnrealType
             GetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.GetMethod);
             SetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.SetMethod);
             IsRequired = propertySymbol.IsRequired;
+            FieldNotify = propertySymbol.HasAttribute("FieldNotifyAttribute");
         }
     }
     

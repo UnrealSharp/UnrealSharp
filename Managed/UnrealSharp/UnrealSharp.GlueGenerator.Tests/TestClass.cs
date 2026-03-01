@@ -108,7 +108,9 @@ public partial class UTestClass : ACharacter, ITestInterface
     [UProperty] public required partial double DoubleRequiredProp { get; set; }
     
     [UProperty] public partial int CharProp { set; }
-    
+    [UProperty, FieldNotify] public partial int FieldNotifyProp { get; set; }
+
+
     [UProperty] public partial string StringProp { get; set; }
     [UProperty] public partial FName NameProp { get; set; }
     [UProperty] public partial FText TextProp { get; set; }
@@ -155,7 +157,8 @@ public partial class UTestClass : ACharacter, ITestInterface
     [UProperty] public partial TArray<AActor?> ActorArray_TArray { get; set; }
     [UProperty] public partial TArray<TSoftObjectPtr<UTexture2D>> SoftTexArray_TArray { get; set; }
     [UProperty] public partial TArray<TSubclassOf<AActor>> SubclassArray_TArray { get; set; }
-    
+    [UProperty, FieldNotify] public partial TArray<int> IntArray_FieldNotify { get; set; }
+
     [UProperty] public partial IList<int> IntArray_IList { get; set; }
     [UProperty] public partial IList<FVector> VectorArray_IList { get; set; }
     [UProperty] public partial IList<AActor?> ActorArray_IList { get; set; }
@@ -174,7 +177,8 @@ public partial class UTestClass : ACharacter, ITestInterface
     [UProperty] public partial TMap<FName, AActor?> NameToActor_TMap { get; set; }
     [UProperty] public partial TMap<string, TSoftObjectPtr<UTexture2D>> stringToSoftTex_TMap { get; set; }
     [UProperty] public partial TMap<TSubclassOf<AActor>, FGuid> SubclassToGuid_TMap { get; set; }
-    
+    [UProperty, FieldNotify] public partial TMap<string, int> FieldNotify_TMap { get; set; }
+
     [UProperty] public partial IDictionary<string, int> StringToInt_IDict { get; set; }
     [UProperty] public partial IDictionary<FName, AActor?> NameToActor_IDict { get; set; }
     [UProperty] public partial IDictionary<string, TSoftObjectPtr<UTexture2D>> stringToSoftTex_IDict { get; set; }
@@ -238,6 +242,13 @@ public partial class UTestClass : ACharacter, ITestInterface
     public partial void InterfaceFunction_Implementation(int intParam, string strParam)
     {
         throw new NotImplementedException();
+    }
+
+    [UFunction(FunctionFlags.BlueprintCallable | FunctionFlags.BlueprintEvent)]
+    public partial void MyFunctionWithCallback(TDelegate<FTestDelegate2> singleDelegate);
+    public partial void MyFunctionWithCallback_Implementation(TDelegate<FTestDelegate2> singleDelegate)
+    {
+        
     }
     
     public void CallInterfaceFunction(int intParam, string strParam)

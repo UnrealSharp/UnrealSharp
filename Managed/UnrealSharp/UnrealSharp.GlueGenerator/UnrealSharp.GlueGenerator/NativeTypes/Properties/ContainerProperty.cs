@@ -7,9 +7,12 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record ContainerProperty : TemplateProperty
 {
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
-    
+
     public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+    public string ObservableMarshallerType => MakeMarshallerType(GetObservableMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+
     public override bool NeedsCachedMarshaller => true;
+    public virtual bool IsObservable => false;
 
     protected bool NeedsMarshallingDelegates = true;
 
@@ -40,12 +43,24 @@ public record ContainerProperty : TemplateProperty
     
     private void ExportMarshaller(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}");
+        if (FieldNotify && IsObservable)
+        {
+            builder.AppendLine($"{InstancedMarshallerVariable} ??= new {ObservableMarshallerType}({NativePropertyVariable}");
+        }
+        else
+        {
+            builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}");
+        }
 
         if (NeedsMarshallingDelegates)
         {
             builder.Append(", ");
             builder.Append(string.Join(", ", TemplateParameters.Select(t => $"{t.CallToNative}, {t.CallFromNative}")));
+        }
+
+        if (FieldNotify && IsObservable)
+        {
+            builder.Append(", NativeObject");
         }
 
         builder.Append(");");
@@ -58,6 +73,7 @@ public record ContainerProperty : TemplateProperty
     }
 
     protected virtual string GetFieldMarshaller() => throw new NotImplementedException();
+    protected virtual string GetObservableMarshaller() => throw new NotImplementedException();
     protected virtual string GetCopyMarshaller() => throw new NotImplementedException();
 
     public virtual bool Equals(ContainerProperty? other)

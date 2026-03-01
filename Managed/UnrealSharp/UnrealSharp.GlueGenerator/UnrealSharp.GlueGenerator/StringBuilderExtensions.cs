@@ -148,7 +148,12 @@ public static class StringBuilderExtensions
     {
         builder.AppendLine($"#if {condition}");
     }
-    
+
+    public static void ElsePreproccesor(this GeneratorStringBuilder builder)
+    {
+        builder.AppendLine($"#else");
+    }
+
     public static void EndPreproccesorBlock(this GeneratorStringBuilder builder)
     {
         builder.AppendLine("#endif");

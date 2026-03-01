@@ -24,4 +24,6 @@ public static unsafe partial class FPropertyExporter
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, void> GetValue_InContainer;
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, void> SetValue_InContainer;
     public static delegate* unmanaged<IntPtr, string, byte> GetBoolPropertyFieldMaskFromName;
+    public static delegate* unmanaged<IntPtr, IntPtr, void> BroadcastFieldValueChanged;
+
 }

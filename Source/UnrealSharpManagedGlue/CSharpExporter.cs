@@ -34,7 +34,7 @@ public static class CSharpExporter
                     ModuleInfo moduleInfo = modulePackage.GetModuleInfo();
                     FileExporter.CleanGeneratedFolder(moduleInfo.GlueBaseDirectory);
 
-                    if (moduleInfo.IsPartOfEngine || moduleInfo.ShouldFlatten || !File.Exists(moduleInfo.CsProjPath))
+                    if (moduleInfo.IsPartOfEngine || !File.Exists(moduleInfo.CsProjPath))
                     {
                         continue;
                     }

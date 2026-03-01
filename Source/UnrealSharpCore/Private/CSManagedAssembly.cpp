@@ -9,7 +9,7 @@
 #include "Utilities/CSClassUtilities.h"
 #include "Utilities/CSUtilities.h"
 
-void UCSManagedAssembly::InitializeManagedAssembly(const FStringView InAssemblyPath)
+void UCSManagedAssembly::InitializeManagedAssembly(const FStringView InAssemblyPath, bool bInIsCollectible)
 {
 	if (!AssemblyFilePath.IsEmpty())
 	{
@@ -22,14 +22,15 @@ void UCSManagedAssembly::InitializeManagedAssembly(const FStringView InAssemblyP
 	// Replace forward slashes with backslashes
 	AssemblyFilePath.ReplaceInline(TEXT("/"), TEXT("\\"));
 #endif
-
+	
 	AssemblyName = *FPaths::GetBaseFilename(AssemblyFilePath);
+	bIsCollectible = bInIsCollectible;
 
 	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateUObject(this, &UCSManagedAssembly::OnTypeReflectionDataChanged);
 	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
 }
 
-bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
+bool UCSManagedAssembly::LoadManagedAssembly()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::LoadManagedAssembly: " + AssemblyName.ToString())));
 
@@ -46,7 +47,7 @@ bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
 	}
 
 	bIsLoading = true;
-	FGCHandle NewAssemblyGCHandle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyFilePath, bisCollectible);
+	FGCHandle NewAssemblyGCHandle = UCSManager::Get().GetManagedPluginsCallbacks().LoadPlugin(*AssemblyFilePath, bIsCollectible);
 	NewAssemblyGCHandle.Type = GCHandleType::WeakHandle;
 
 	if (NewAssemblyGCHandle.IsNull())
@@ -71,9 +72,14 @@ bool UCSManagedAssembly::LoadManagedAssembly(bool bisCollectible)
 
 bool UCSManagedAssembly::UnloadManagedAssembly()
 {
+	if (!bIsCollectible)
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "Assembly {0} is not collectible and will not be unloaded. It will be unloaded when the editor shuts down.", *AssemblyName.ToString());
+		return true;
+	}
+	
 	if (!IsAssemblyLoaded())
 	{
-		// Assembly is already unloaded.
 		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", *AssemblyName.ToString());
 		return true;
 	}

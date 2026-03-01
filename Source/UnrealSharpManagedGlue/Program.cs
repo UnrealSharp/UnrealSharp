@@ -17,6 +17,7 @@ public static class Program
     {
         Console.WriteLine("Initializing C# exporter...");
         GeneratorStatics.Initialize(factory);
+        USharpBuildToolUtilities.CompileUSharpBuildTool();
             
         try
         {

@@ -13,9 +13,8 @@ public static class PreprocessorExporter
     private static HashSet<string> LoadUE5RulesDefines(string engineDirectory)
     {
         HashSet<string> definesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
+        
         string csproj = Path.Combine(engineDirectory, "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
-
         if (!File.Exists(csproj))
         {
             return definesSet;
@@ -32,7 +31,6 @@ public static class PreprocessorExporter
         }
 
         IEnumerable<string> values = doc.Descendants("DefineConstants").Select(x => x.Value);
-
         foreach (string value in values)
         {
             foreach (string raw in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
@@ -84,8 +82,8 @@ public static class PreprocessorExporter
         stringBuilder.AppendLine("</PropertyGroup>");
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
-
-        string propsPath = Path.Combine(GeneratorStatics.BindingsProjectDirectory, "UE5Rules.Defines.props");
+        
+        string propsPath = Path.Combine(GeneratorStatics.PluginModuleInfo.GlueBaseDirectory, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
 

@@ -112,8 +112,11 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	}
 	
 	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 6
 	const EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::UserRaisedError;
-
+#else
+	const EBlueprintExceptionType::Type ExceptionType = EBlueprintExceptionType::FatalError;
+#endif
 	const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 	FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 }

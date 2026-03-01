@@ -139,12 +139,11 @@ public:
 		Report.Reset();
 	}
 
-	FText ToText() const
-	{
-		return FText::FromString(ToString());
-	}
-
+#if ENGINE_MINOR_VERSION >= 6
+	FString ToString()
+#else
 	FString ToString() const
+#endif
 	{
 		return Report.ToString();
 	}

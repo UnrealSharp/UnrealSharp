@@ -1,8 +1,8 @@
 using UnrealSharp.Engine.Core.Modules;
 
-namespace %MODULENAME%;
+namespace {MODULE_NAME};
 
-public class F%MODULENAME% : IModuleInterface
+public class F{MODULE_NAME} : IModuleInterface
 {
     public void StartupModule()
     {

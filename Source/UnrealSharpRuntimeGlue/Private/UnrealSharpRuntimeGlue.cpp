@@ -1,6 +1,9 @@
 ﻿#include "UnrealSharpRuntimeGlue.h"
 #include "CSGlueGenerator.h"
+#include "CSProcUtilities.h"
+#include "CSRuntimeGlueCommands.h"
 #include "CSRuntimeGlueSettings.h"
+#include "UnrealSharpEditor.h"
 #include "Logging/StructuredLog.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpRuntimeGlueModule"
@@ -9,8 +12,14 @@ DEFINE_LOG_CATEGORY(LogUnrealSharpRuntimeGlue);
 
 void FUnrealSharpRuntimeGlueModule::StartupModule()
 {
+	FUnrealSharpEditorModule& UnrealSharpEditor = FUnrealSharpEditorModule::Get();
+	UnrealSharpEditor.OnBuildingToolbarEvent().AddStatic(&FUnrealSharpRuntimeGlueModule::OnBuildingToolbar);
+	UnrealSharpEditor.AddNewProject(GetRuntimeGlueName(), UCSProcUtilities::GetScriptFolderDirectory(), FPaths::ProjectDir(), {}, false);
+	
 	FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpRuntimeGlueModule::OnModulesChanged);
+	
 	InitializeRuntimeGlueGenerators();
+	InitializeCommands();
 }
 
 void FUnrealSharpRuntimeGlueModule::ShutdownModule()
@@ -33,21 +42,9 @@ void FUnrealSharpRuntimeGlueModule::ForceRefreshRuntimeGlue()
 	}
 }
 
-FString FUnrealSharpRuntimeGlueModule::ReplaceSpecialCharacters(const FString& Input)
+FString FUnrealSharpRuntimeGlueModule::GetGlueFolder()
 {
-	FString ModifiedString = Input;
-	FRegexPattern Pattern(TEXT("[^a-zA-Z0-9_]"));
-	FRegexMatcher Matcher(Pattern, ModifiedString);
-
-	while (Matcher.FindNext())
-	{
-		int32 MatchStart = Matcher.GetMatchBeginning();
-		int32 MatchEnd = Matcher.GetMatchEnding();
-		ModifiedString = ModifiedString.Mid(0, MatchStart) + TEXT("_") + ModifiedString.Mid(MatchEnd);
-		Matcher = FRegexMatcher(Pattern, ModifiedString);
-	}
-
-	return ModifiedString;
+	return FPaths::Combine(UCSProcUtilities::GetScriptFolderDirectory(), GetRuntimeGlueName());
 }
 
 void FUnrealSharpRuntimeGlueModule::InitializeRuntimeGlueGenerators()
@@ -83,6 +80,23 @@ void FUnrealSharpRuntimeGlueModule::OnModulesChanged(FName ModuleName, EModuleCh
 	}
 
 	InitializeRuntimeGlueGenerators();
+}
+
+void FUnrealSharpRuntimeGlueModule::InitializeCommands()
+{
+	FCSRuntimeGlueCommands::Register();
+	RuntimeGlueCommands = MakeShareable(new FUICommandList);
+	RuntimeGlueCommands->MapAction(FCSRuntimeGlueCommands::Get().RefreshRuntimeGlue, FExecuteAction::CreateRaw(this, &FUnrealSharpRuntimeGlueModule::ForceRefreshRuntimeGlue));
+}
+
+void FUnrealSharpRuntimeGlueModule::OnBuildingToolbar(FMenuBuilder& MenuBuilder)
+{
+	MenuBuilder.BeginSection("Glue", LOCTEXT("Glue", "Glue"));
+	
+	MenuBuilder.AddMenuEntry(FCSRuntimeGlueCommands::Get().RefreshRuntimeGlue, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+	                         FSlateIcon(FAppStyle::GetAppStyleSetName(), "SourceControl.Actions.Refresh"));
+	
+	MenuBuilder.EndSection();
 }
 
 #undef LOCTEXT_NAMESPACE

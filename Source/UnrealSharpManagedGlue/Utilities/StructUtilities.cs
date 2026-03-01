@@ -98,4 +98,30 @@ public static class StructUtilities
         
         return true;
     }
+
+    public static bool CanSupportConstructor(this UhtStruct structObj, List<UhtProperty> exportedProperties)
+    {
+        if (exportedProperties.Count == 0)
+        {
+            return false;
+        }
+
+        bool isRecordStruct = structObj.HasMetadata("RecordStruct");
+        if (isRecordStruct)
+        {
+            return false;
+        }
+
+        if (InclusionLists.HasBannedEquality(structObj))
+        {
+            return false;
+        }
+
+        if (InclusionLists.HasBannedConstructor(structObj))
+        {
+            return false;
+        }
+
+        return true;
+    }
 }

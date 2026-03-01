@@ -9,7 +9,7 @@ public class UnrealSharpProcHelper : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core",
+                "Core"
             }
         );
 

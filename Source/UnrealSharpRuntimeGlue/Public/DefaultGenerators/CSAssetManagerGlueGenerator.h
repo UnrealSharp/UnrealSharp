@@ -34,12 +34,12 @@ private:
 
 	void OnAssetManagerSettingsChanged(UObject* Object, FPropertyChangedEvent& PropertyChangedEvent);
 
-	bool IsRegisteredAssetType(const FAssetData& AssetData) { return IsRegisteredAssetType(AssetData.GetClass()); }
-	bool IsRegisteredAssetType(UClass* Class);
+	static bool IsRegisteredAssetType(const FAssetData& AssetData) { return IsRegisteredAssetType(AssetData.GetClass()); }
+	static bool IsRegisteredAssetType(UClass* Class);
 
 	void WaitUpdateAssetTypes()
 	{
-		GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ProcessAssetIds));
+		GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &ThisClass::ForceRefresh));
 	}
 
 	void ProcessAssetIds();
