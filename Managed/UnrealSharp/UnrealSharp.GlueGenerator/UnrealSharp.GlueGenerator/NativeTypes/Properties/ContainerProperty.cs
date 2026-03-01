@@ -7,9 +7,12 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record ContainerProperty : TemplateProperty
 {
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
-    
+
     public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+    public string ObservableMarshallerType => MakeMarshallerType(GetObservableMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+
     public override bool NeedsCachedMarshaller => true;
+    public virtual bool IsObservable => false;
 
     protected bool NeedsMarshallingDelegates = true;
 
@@ -28,19 +31,52 @@ public record ContainerProperty : TemplateProperty
 
     public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
     {
-        ExportMarshaller(builder);
+        if (FieldNotify && IsObservable)
+        {
+            builder.BeginWithEditorPreproccesorBlock();
+            ExportMarshaller(builder, true);
+            builder.ElsePreproccesor();
+            ExportMarshaller(builder);
+            builder.EndPreproccesorBlock();
+        }
+        else
+        {
+            ExportMarshaller(builder);
+        }
+
+        builder.AppendLine();
         AppendCallFromNative(builder, InstancedMarshallerVariable, buffer, assignmentOperator);
     }
 
     public override void ExportToNative(GeneratorStringBuilder builder, string buffer, string value)
     {
-        ExportMarshaller(builder);
+        if (FieldNotify && IsObservable)
+        {
+            builder.BeginWithEditorPreproccesorBlock();
+            ExportMarshaller(builder, true);
+            builder.ElsePreproccesor();
+            ExportMarshaller(builder);
+            builder.EndPreproccesorBlock();
+        }
+        else
+        {
+            ExportMarshaller(builder);
+        }
+
+        builder.AppendLine();
         AppendCallToNative(builder, InstancedMarshallerVariable, buffer, value);
     }
     
-    private void ExportMarshaller(GeneratorStringBuilder builder)
+    private void ExportMarshaller(GeneratorStringBuilder builder, bool observe = false)
     {
-        builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}");
+        if (observe)
+        {
+            builder.AppendLine($"{InstancedMarshallerVariable} ??= new {ObservableMarshallerType}({NativePropertyVariable}");
+        }
+        else
+        {
+            builder.AppendLine($"{InstancedMarshallerVariable} ??= new {MarshallerType}({NativePropertyVariable}");
+        }
 
         if (NeedsMarshallingDelegates)
         {
@@ -48,8 +84,12 @@ public record ContainerProperty : TemplateProperty
             builder.Append(string.Join(", ", TemplateParameters.Select(t => $"{t.CallToNative}, {t.CallFromNative}")));
         }
 
+        if (observe)
+        {
+            builder.Append(", NativeObject");
+        }
+
         builder.Append(");");
-        builder.AppendLine();
     }
 
     protected override void ExportSetter(GeneratorStringBuilder builder)
@@ -58,6 +98,7 @@ public record ContainerProperty : TemplateProperty
     }
 
     protected virtual string GetFieldMarshaller() => throw new NotImplementedException();
+    protected virtual string GetObservableMarshaller() => throw new NotImplementedException();
     protected virtual string GetCopyMarshaller() => throw new NotImplementedException();
 
     public virtual bool Equals(ContainerProperty? other)

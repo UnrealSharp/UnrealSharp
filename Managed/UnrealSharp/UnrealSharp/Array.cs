@@ -15,6 +15,11 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     /// <inheritdoc />
     public bool IsReadOnly => false;
 
+#if WITH_EDITOR
+    private IntPtr _observableNativeObject;
+    private bool _isObservable;
+#endif
+
     public TArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
@@ -38,10 +43,26 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
                 throw new IndexOutOfRangeException($"Index {index} is out of bounds. Array size is {Count}.");
             }
             ToNative(NativeArrayBuffer, index, value);
+            BroadcastChanged();
         }
     }
 
-    
+    [System.Diagnostics.Conditional("WITH_EDITOR")]
+    internal void MakeObservable(IntPtr observableNativeObject)
+    {
+        _observableNativeObject = observableNativeObject;
+        _isObservable = true;
+    }
+
+    [System.Diagnostics.Conditional("WITH_EDITOR")]
+    private void BroadcastChanged()
+    {
+        if (_isObservable)
+        {
+            FPropertyExporter.CallBroadcastFieldValueChanged(_observableNativeObject, NativeProperty);
+        }
+    }
+
     /// <summary>
     /// Adds an element to the end of the array.
     /// </summary>
@@ -51,6 +72,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
         int newIndex = Count;
         AddInternal();
         this[newIndex] = item;
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -59,6 +81,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     public void Clear()
     {
         ClearInternal();
+        BroadcastChanged();
     }
     
     /// <summary>
@@ -72,6 +95,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
         {
             FArrayPropertyExporter.CallResizeArray(NativeProperty, NativeBuffer, newSize);
         }
+
+        BroadcastChanged();
     }
     
     /// <summary>
@@ -85,6 +110,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
         {
             FArrayPropertyExporter.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
         }
+
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -143,6 +170,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     {
         InsertInternal(index);
         this[index] = item;
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -152,6 +180,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     public void RemoveAt(int index)
     {
         RemoveAtInternal(index);
+        BroadcastChanged();
     }
 }
 
@@ -187,7 +216,7 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
         }
     }
 
-    public TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public virtual TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_arrayWrapper == null)
         {
@@ -199,3 +228,17 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
         return _arrayWrapper;
     }
 }
+
+#if WITH_EDITOR
+public class ObservableArrayMarshaller<T>(IntPtr nativeProperty,
+    MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative,
+    IntPtr nativeObject) : ArrayMarshaller<T>(nativeProperty, toNative, fromNative)
+{
+    public override TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    {
+        var arrayWrapper = base.FromNative(nativeBuffer, arrayIndex);
+        arrayWrapper.MakeObservable(nativeObject);
+        return arrayWrapper;
+    }
+}
+#endif

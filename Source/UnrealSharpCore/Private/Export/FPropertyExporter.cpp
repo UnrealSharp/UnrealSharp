@@ -1,5 +1,9 @@
 ﻿#include "Export/FPropertyExporter.h"
 
+#if WITH_EDITOR
+#include "INotifyFieldValueChanged.h"
+#endif
+
 FProperty* UFPropertyExporter::GetNativePropertyFromName(UStruct* Struct, const char* PropertyName)
 {
 	FProperty* Property = FindFProperty<FProperty>(Struct, PropertyName);
@@ -104,3 +108,19 @@ int32 UFPropertyExporter::GetPropertyArrayDimFromName(UStruct* InStruct, const c
 	FProperty* Property = GetNativePropertyFromName(InStruct, PropertyName);
 	return GetArrayDim(Property);
 }
+
+#if WITH_EDITOR
+void UFPropertyExporter::BroadcastFieldValueChanged(UObject* Object, FProperty* Property)
+{
+	TScriptInterface<INotifyFieldValueChanged> NotifyFieldSelf = Object;
+	FName FieldName = Property->GetFName();
+	if (NotifyFieldSelf.GetObject() != nullptr && NotifyFieldSelf.GetInterface() != nullptr && FieldName.IsValid())
+	{
+		const UE::FieldNotification::FFieldId FieldId = NotifyFieldSelf->GetFieldNotificationDescriptor().GetField(Object->GetClass(), FieldName);
+		if (FieldId.IsValid())
+		{
+			NotifyFieldSelf->BroadcastFieldValueChanged(FieldId);
+		}
+	}
+}
+#endif

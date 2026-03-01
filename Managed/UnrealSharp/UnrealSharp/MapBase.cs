@@ -18,7 +18,12 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
 
     private readonly NativeProperty _keyProperty;
     private readonly NativeProperty _valueProperty;
-    
+
+#if WITH_EDITOR
+    private IntPtr _observableNativeObject;
+    private bool _isObservable;
+#endif
+
     public int Count => _helper.Num();
 
     public MapBase(IntPtr mapProperty, IntPtr address,
@@ -35,7 +40,23 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         _valueFromNative = valueFromNative;
         _valueToNative = valueToNative;
     }
-    
+
+    [System.Diagnostics.Conditional("WITH_EDITOR")]
+    internal void MakeObservable(IntPtr observableNativeObject)
+    {
+        _observableNativeObject = observableNativeObject;
+        _isObservable = true;
+    }
+
+    [System.Diagnostics.Conditional("WITH_EDITOR")]
+    private void BroadcastChanged()
+    {
+        if (_isObservable)
+        {
+            FPropertyExporter.CallBroadcastFieldValueChanged(_observableNativeObject, _nativeProperty.Property);
+        }
+    }
+
     internal int GetMaxIndex()
     {
         return _helper.GetMaxIndex();
@@ -54,11 +75,13 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     protected void ClearInternal()
     {
         _helper.EmptyValues();
+        BroadcastChanged();
     }
 
     protected void AddInternal(TKey key, TValue value)
     {
         _helper.AddPair(key, value, _keyToNative, _valueToNative);
+        BroadcastChanged();
     }
 
     protected bool RemoveInternal(TKey key)
@@ -70,6 +93,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         }
         
         _helper.RemoveAt(index);
+        BroadcastChanged();
         return true;
     }
 
@@ -417,7 +441,7 @@ public class MapMarshaller<TKey, TValue> where TKey : notnull
         _valueToNative = valueToNative;
     }
     
-    public TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
+    public virtual TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
     {
         return new TMap<TKey, TValue>(_nativeProperty, nativeBuffer, _keyFromNative, _keyToNative, _valueFromNative, _valueToNative);
     }
@@ -590,3 +614,18 @@ public class MapCopyMarshaller<TKey, TValue> where TKey : notnull
         _helper.EmptyValues();
     }
 }
+
+#if WITH_EDITOR
+public class ObservableMapMarshaller<TKey, TValue>(IntPtr mapProperty,
+        MarshallingDelegates<TKey>.ToNative keyToNative, MarshallingDelegates<TKey>.FromNative keyFromNative,
+        MarshallingDelegates<TValue>.ToNative valueToNative, MarshallingDelegates<TValue>.FromNative valueFromNative,
+    IntPtr nativeObject) : MapMarshaller<TKey, TValue>(mapProperty, keyToNative, keyFromNative, valueToNative, valueFromNative) where TKey : notnull
+{
+    public override TMap<TKey, TValue> MakeWrapper(IntPtr nativeBuffer)
+    {
+        var map = new TMap<TKey, TValue>(mapProperty, nativeBuffer, keyFromNative, keyToNative, valueFromNative, valueToNative);
+        map.MakeObservable(nativeObject);
+        return map;
+    }
+}
+#endif
