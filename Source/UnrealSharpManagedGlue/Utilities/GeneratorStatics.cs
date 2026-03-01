@@ -26,6 +26,8 @@ public static class GeneratorStatics
 	public static string PluginDirectory { get; private set; } = "";
 	public static string EngineDirectory => Factory.Session.EngineDirectory!;
 	
+	public static string ManagedSolutionPath => Path.Combine(ScriptFolder, "Managed" + ProjectName + ".sln");
+	
 	public static string ManagedBinariesPath { get; private set; } = "";
 	public static string ManagedPath { get; private set; } = "";
 	public static string ScriptFolder { get; private set; } = "";
