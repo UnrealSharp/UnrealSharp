@@ -112,6 +112,11 @@ public static class StructExporter
             ExportStructProperties(structObj, stringBuilder, exportedProperties, isBlittable, reservedNames, isReadOnly, useProperties);
         }
 
+        if (!isManualExport && structObj.CanSupportConstructor(exportedProperties))
+        {
+            ExportConstructor(structObj, structName, stringBuilder, exportedProperties);
+        }
+
         if (isBlittable)
         {
             StaticConstructorUtilities.ExportStaticConstructor(stringBuilder, structObj, 
@@ -168,6 +173,33 @@ public static class StructExporter
         
         stringBuilder.EndGlueFile(structObj);
         FileExporter.SaveGlueToDisk(structObj, stringBuilder);
+    }
+
+    public static void ExportConstructor(UhtStruct structObj, string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)
+    {
+        stringBuilder.AppendLine();
+        stringBuilder.Append($"public {structName}(");
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+
+            translator.ExportConstructorParameter(stringBuilder, property, scriptName);
+            if (i < exportedProperties.Count - 1)
+            {
+                stringBuilder.Append(", ");
+            }
+        }
+        stringBuilder.Append(")");
+        stringBuilder.OpenBrace();
+        for (int i = 0; i < exportedProperties.Count; i++)
+        {
+            UhtProperty property = exportedProperties[i];
+            string scriptName = property.GetPropertyName();
+            stringBuilder.AppendLine($"this.{scriptName} = {scriptName};");
+        }
+        stringBuilder.CloseBrace();
     }
 
     public static void ExportStructEquality(string structName, GeneratorStringBuilder stringBuilder, List<UhtProperty> exportedProperties)

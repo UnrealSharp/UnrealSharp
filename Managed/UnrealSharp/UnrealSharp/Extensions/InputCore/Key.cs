@@ -10,11 +10,6 @@ public partial struct FKey
         KeyName = new FName(keyName);
     }
     
-    public FKey(FName keyName)
-    {
-        KeyName = keyName;
-    }
-    
     public override string ToString() => UCSKeyExtensions.ToString(this);
 
     public bool IsValid => UCSKeyExtensions.IsValid(this);
