@@ -67,6 +67,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
 	bool bSuffixGeneratedTypes = false;
 
+	/** by: dahai-li-1993
+	* Whether to show build warnings in the build error dialog.
+	* Only affects the full dotnet build (editor startup / manual rebuild), not the incremental hot reload compiler.
+	*/
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Build Output")
+	bool bShowBuildWarnings = false;
+
 	FString GetBuildConfigurationString() const;
 
 	FString GetLogVerbosityString() const;
