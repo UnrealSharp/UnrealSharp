@@ -12,7 +12,7 @@ public class GenerateSolution : BuildToolAction
         generateSln.StartInfo.ArgumentList.Add("sln");
         
         generateSln.StartInfo.ArgumentList.Add("--format");
-        generateSln.StartInfo.ArgumentList.Add("sln");
+        generateSln.StartInfo.ArgumentList.Add("slnx");
 
         generateSln.StartInfo.ArgumentList.Add("-n");
         generateSln.StartInfo.ArgumentList.Add(Program.GetProjectNameAsManaged());
@@ -25,7 +25,7 @@ public class GenerateSolution : BuildToolAction
             .Select(x => Path.GetRelativePath(Program.GetScriptFolder(), x))
             .ToList();
 
-        AddProjectToSln(existingProjectsList);
+        AddProjectToSlnx(existingProjectsList);
         
         Program.CopyGlobalJson();
         return true;
@@ -49,16 +49,16 @@ public class GenerateSolution : BuildToolAction
         return files;
     }
 
-    private static void AddProjectToSln(List<string> relativePaths)
+    private static void AddProjectToSlnx(List<string> relativePaths)
     {
-        string slnPath = Path.Combine(Program.GetScriptFolder(), $"{Program.GetProjectNameAsManaged()}.sln");
+        string slnxPath = Path.Combine(Program.GetScriptFolder(), $"{Program.GetProjectNameAsManaged()}.slnx");
 
         foreach (IGrouping<string, string> projects in GroupPathsBySolutionFolder(relativePaths))
         {
-            bool unlocked = WaitForFileUnlock(slnPath, 10000, 200);
+            bool unlocked = WaitForFileUnlock(slnxPath, 10000, 200);
             if (!unlocked)
             {
-                Console.WriteLine($"Warning: timed out waiting for {slnPath} to become available. Will still try to add projects.");
+                Console.WriteLine($"Warning: timed out waiting for {slnxPath} to become available. Will still try to add projects.");
             }
             
             const int maxAttempts = 10;
@@ -70,20 +70,20 @@ public class GenerateSolution : BuildToolAction
                 attempt++;
                 try
                 {
-                    using BuildToolProcess addProjectToSln = new BuildToolProcess();
-                    addProjectToSln.StartInfo.ArgumentList.Add("sln");
-                    addProjectToSln.StartInfo.ArgumentList.Add("add");
+                    using BuildToolProcess addProjectToSlnx = new BuildToolProcess();
+                    addProjectToSlnx.StartInfo.ArgumentList.Add("sln");
+                    addProjectToSlnx.StartInfo.ArgumentList.Add("add");
 					
                     foreach (string relativePath in projects)
                     {
-                        addProjectToSln.StartInfo.ArgumentList.Add(relativePath);
+                        addProjectToSlnx.StartInfo.ArgumentList.Add(relativePath);
                     }
 
-                    addProjectToSln.StartInfo.ArgumentList.Add("-s");
-                    addProjectToSln.StartInfo.ArgumentList.Add(projects.Key);
-                    addProjectToSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+                    addProjectToSlnx.StartInfo.ArgumentList.Add("-s");
+                    addProjectToSlnx.StartInfo.ArgumentList.Add(projects.Key);
+                    addProjectToSlnx.StartInfo.WorkingDirectory = Program.GetScriptFolder();
 
-                    addProjectToSln.StartBuildToolProcess();
+                    addProjectToSlnx.StartBuildToolProcess();
                     success = true;
                 }
                 catch (IOException ex)
@@ -100,7 +100,7 @@ public class GenerateSolution : BuildToolAction
 
             if (!success)
             {
-                throw new Exception($"Failed to add projects to solution '{slnPath}' after {maxAttempts} attempts.");
+                throw new Exception($"Failed to add projects to solution '{slnxPath}' after {maxAttempts} attempts.");
             }
         }
     }

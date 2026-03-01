@@ -79,7 +79,7 @@ private:
     void OpenSolution();
     
     static void OnPackageProject();
-    static void OnMergeManagedSlnAndNativeSln();
+    void OnMergeManagedSlnAndNativeSln();
 
     static void OnOpenSettings();
     static void OnOpenDocumentation();
