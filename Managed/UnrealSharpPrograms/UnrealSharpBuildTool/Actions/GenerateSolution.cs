@@ -38,7 +38,7 @@ public class GenerateSolution : BuildToolAction
         return FindCSharpProjects(scriptsDirectory)
             .Concat(pluginsDirectory.EnumerateFiles("*.uplugin", SearchOption.AllDirectories)
                 .Select(x => x.Directory)
-                .SelectMany(x => x!.EnumerateDirectories("Script"))
+                .SelectMany(x => x!.EnumerateDirectories("ScriptCSharp"))
                 .SelectMany(FindCSharpProjects))
             .Select(x => x.FullName);
     }
