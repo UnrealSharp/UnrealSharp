@@ -20,7 +20,7 @@ public class ClassFilePathGenerator : IIncrementalGenerator
     {
         filePath = filePath.Replace("\\", "/");
         
-        int index = filePath.IndexOf("/Script", StringComparison.OrdinalIgnoreCase);
+        int index = filePath.IndexOf("/ScriptCSharp", StringComparison.OrdinalIgnoreCase);
         if (index >= 0)
         {
             return filePath.Substring(index);
