@@ -36,7 +36,7 @@ public class GenerateProject : BuildToolAction
         
         if (folder == _projectRoot)
         {
-            folder = Path.Combine(folder, "Script");
+            folder = Path.Combine(folder, "ScriptCSharp");
         }
 
         string projectName = Program.GetArgument("NewProjectName");

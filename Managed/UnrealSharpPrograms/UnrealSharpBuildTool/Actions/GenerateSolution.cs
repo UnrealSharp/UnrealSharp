@@ -160,6 +160,6 @@ public class GenerateSolution : BuildToolAction
         // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
         // be in the directory for the plugin itself.
         string containingDirName = Path.GetDirectoryName(projectDirName)!;
-        return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
+        return containingDirName == "ScriptCSharp" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 }

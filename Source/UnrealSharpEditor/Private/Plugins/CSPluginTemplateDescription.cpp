@@ -9,7 +9,7 @@ void FCSPluginTemplateDescription::OnPluginCreated(const TSharedPtr<IPlugin> New
     FPluginTemplateDescription::OnPluginCreated(NewPlugin);
 
     const FString ModuleName = FString::Printf(TEXT("Managed%s"), *NewPlugin->GetName());
-    const FString ProjectPath = NewPlugin->GetBaseDir() / "Script";
+    const FString ProjectPath = NewPlugin->GetBaseDir() / "ScriptCSharp";
     const FString GlueProjectName = FString::Printf(TEXT("%s.Glue"), *NewPlugin->GetName());
 
     if (bRequiresGlue)

@@ -27,7 +27,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
             continue;
         }
     	
-        FString ScriptDirectory = PluginFilePath / "Script";
+        FString ScriptDirectory = PluginFilePath / "ScriptCSharp";
         ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
             FText::FromString(Plugin->GetFriendlyName()), Plugin->GetName(), ScriptDirectory, ProjectDestinations.Num(), Plugin));
     }

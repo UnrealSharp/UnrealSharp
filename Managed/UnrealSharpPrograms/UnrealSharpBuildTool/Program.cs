@@ -110,7 +110,7 @@ public static class Program
 
     public static string GetScriptFolder()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, "Script");
+        return Path.Combine(BuildToolOptions.ProjectDirectory, "ScriptCSharp");
     }
 
     public static string GetPluginsFolder()
@@ -213,12 +213,12 @@ public static class Program
 
     public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
     {
-        return folder.GetDirectories("Script")
+        return folder.GetDirectories("ScriptCSharp")
                 .SelectMany(GetProjectsInDirectory)
                 .Concat(folder.GetDirectories("Plugins")
                         .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
                         .Select(x => x.Directory)
-                        .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                        .Select(x => x!.GetDirectories("ScriptCSharp").FirstOrDefault())
                         .Where(x => x is not null)
                         .SelectMany(GetProjectsInDirectory!))
                 .ToList();
@@ -227,7 +227,7 @@ public static class Program
     public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
     {
         Dictionary<string, List<FileInfo>> result = new Dictionary<string, List<FileInfo>>();
-        DirectoryInfo? scriptsFolder = folder.GetDirectories("Script").FirstOrDefault();
+        DirectoryInfo? scriptsFolder = folder.GetDirectories("ScriptCSharp").FirstOrDefault();
         
         if (scriptsFolder is not null)
         {
@@ -237,7 +237,7 @@ public static class Program
         foreach (DirectoryInfo? pluginFolder in folder.GetDirectories("Plugins")
                          .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
                          .Select(x => x.Directory)
-                         .Select(x => x!.GetDirectories("Script").FirstOrDefault())
+                         .Select(x => x!.GetDirectories("ScriptCSharp").FirstOrDefault())
                          .Where(x => x is not null))
         {
             result.Add(GetOutputPathForDirectory(pluginFolder!), GetProjectsInDirectory(pluginFolder!).ToList());

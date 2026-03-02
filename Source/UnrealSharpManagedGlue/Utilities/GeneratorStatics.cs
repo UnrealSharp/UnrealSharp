@@ -42,7 +42,7 @@ public static class GeneratorStatics
 		BindingsProjectDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("GENERATED_GLUE_PATH");
 		BuildTarget = (TargetType) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_TARGET");
 		
-		ScriptFolder = Path.Combine(Factory.Session.ProjectDirectory!, "Script");
+		ScriptFolder = Path.Combine(Factory.Session.ProjectDirectory!, "ScriptCSharp");
 		PluginsPath = Path.Combine(Factory.Session.ProjectDirectory!, "Plugins");
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");

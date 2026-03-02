@@ -232,7 +232,7 @@ void UCSProcUtilities::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bI
 	
     for (const FString& PluginFilePath : PluginFilePaths)
     {
-        FString ScriptDirectory = FPaths::GetPath(PluginFilePath) / "Script";
+        FString ScriptDirectory = FPaths::GetPath(PluginFilePath) / "ScriptCSharp";
         IFileManager::Get().FindFilesRecursive(ProjectPaths,
             *ScriptDirectory,
             TEXT("*.csproj"),
@@ -327,7 +327,7 @@ FString UCSProcUtilities::GetGeneratedClassesDirectory()
 
 const FString& UCSProcUtilities::GetScriptFolderDirectory()
 {
-	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "Script";
+	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "ScriptCSharp";
 	return ScriptFolderDirectory;
 }
 
@@ -354,7 +354,7 @@ FString UCSProcUtilities::GetPluginGlueFolderPath(const FString& PluginName)
 		return "";
 	}
 	
-	return FPaths::Combine(Plugin->GetBaseDir(), "Script", AppendGlueSuffix(PluginName));
+	return FPaths::Combine(Plugin->GetBaseDir(), "ScriptCSharp", AppendGlueSuffix(PluginName));
 }
 
 FString UCSProcUtilities::AppendGlueSuffix(const FString& FileName)
