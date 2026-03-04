@@ -1,4 +1,7 @@
 ﻿#include "CSProcUtilities.h"
+
+#include "CSCommonUnrealSharpSettings.h"
+#include "CSUnrealSharpSettingsUtilities.h"
 #include "UnrealSharpProcHelper.h"
 #include "Misc/App.h"
 #include "Misc/Paths.h"
@@ -232,7 +235,7 @@ void UCSProcUtilities::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bI
 	
     for (const FString& PluginFilePath : PluginFilePaths)
     {
-        FString ScriptDirectory = FPaths::GetPath(PluginFilePath) / "ScriptCSharp";
+        FString ScriptDirectory = FPaths::GetPath(PluginFilePath) / FCSCommonUnrealSharpSettings::GetScriptDirectoryName();
         IFileManager::Get().FindFilesRecursive(ProjectPaths,
             *ScriptDirectory,
             TEXT("*.csproj"),
@@ -327,13 +330,13 @@ FString UCSProcUtilities::GetGeneratedClassesDirectory()
 
 const FString& UCSProcUtilities::GetScriptFolderDirectory()
 {
-	static FString ScriptFolderDirectory = FPaths::ProjectDir() / "ScriptCSharp";
+	static FString ScriptFolderDirectory = FPaths::Combine(FPaths::ProjectDir(), FCSCommonUnrealSharpSettings::GetScriptDirectoryName());
 	return ScriptFolderDirectory;
 }
 
 const FString& UCSProcUtilities::GetPluginsDirectory()
 {
-    static FString PluginsDirectory = FPaths::ProjectDir() / "Plugins";
+    static FString PluginsDirectory = FPaths::Combine(FPaths::ProjectDir(), "Plugins");
     return PluginsDirectory;
 }
 
@@ -354,7 +357,7 @@ FString UCSProcUtilities::GetPluginGlueFolderPath(const FString& PluginName)
 		return "";
 	}
 	
-	return FPaths::Combine(Plugin->GetBaseDir(), "ScriptCSharp", AppendGlueSuffix(PluginName));
+	return FPaths::Combine(Plugin->GetBaseDir(), FCSCommonUnrealSharpSettings::GetScriptDirectoryName(), AppendGlueSuffix(PluginName));
 }
 
 FString UCSProcUtilities::AppendGlueSuffix(const FString& FileName)

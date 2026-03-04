@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Newtonsoft.Json;
+using UnrealSharp.Shared;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharpBuildTool;
@@ -15,6 +16,8 @@ public static class Program
             Console.WriteLine(">>> UnrealSharpBuildTool");
             Parser parser = new Parser(with => with.HelpWriter = null);
             ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
+            
+            UnrealSharpSettingsUtilities.InitializeConfigFile(result.Value.ProjectDirectory, result.Value.PluginDirectory);
 
             if (result.Tag == ParserResultType.NotParsed)
             {
@@ -110,7 +113,7 @@ public static class Program
 
     public static string GetScriptFolder()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, "ScriptCSharp");
+        return Path.Combine(BuildToolOptions.ProjectDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
     }
 
     public static string GetPluginsFolder()
@@ -213,12 +216,14 @@ public static class Program
 
     public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
     {
-        return folder.GetDirectories("ScriptCSharp")
+        string scriptDirectoryName = CommonUnrealSharpSettings.ScriptDirectoryName;
+        
+        return folder.GetDirectories(scriptDirectoryName)
                 .SelectMany(GetProjectsInDirectory)
                 .Concat(folder.GetDirectories("Plugins")
                         .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
                         .Select(x => x.Directory)
-                        .Select(x => x!.GetDirectories("ScriptCSharp").FirstOrDefault())
+                        .Select(x => x!.GetDirectories(scriptDirectoryName).FirstOrDefault())
                         .Where(x => x is not null)
                         .SelectMany(GetProjectsInDirectory!))
                 .ToList();
@@ -227,7 +232,7 @@ public static class Program
     public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
     {
         Dictionary<string, List<FileInfo>> result = new Dictionary<string, List<FileInfo>>();
-        DirectoryInfo? scriptsFolder = folder.GetDirectories("ScriptCSharp").FirstOrDefault();
+        DirectoryInfo? scriptsFolder = folder.GetDirectories(CommonUnrealSharpSettings.ScriptDirectoryName).FirstOrDefault();
         
         if (scriptsFolder is not null)
         {
@@ -237,7 +242,7 @@ public static class Program
         foreach (DirectoryInfo? pluginFolder in folder.GetDirectories("Plugins")
                          .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
                          .Select(x => x.Directory)
-                         .Select(x => x!.GetDirectories("ScriptCSharp").FirstOrDefault())
+                         .Select(x => x!.GetDirectories(CommonUnrealSharpSettings.ScriptDirectoryName).FirstOrDefault())
                          .Where(x => x is not null))
         {
             result.Add(GetOutputPathForDirectory(pluginFolder!), GetProjectsInDirectory(pluginFolder!).ToList());

@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealBuildTool;
+using UnrealSharp.Shared;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -41,8 +44,10 @@ public static class GeneratorStatics
 		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("PLUGIN_PATH");
 		BindingsProjectDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("GENERATED_GLUE_PATH");
 		BuildTarget = (TargetType) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_TARGET");
+
+		UnrealSharpSettingsUtilities.InitializeConfigFile(Factory.Session.ProjectDirectory!, PluginDirectory);
 		
-		ScriptFolder = Path.Combine(Factory.Session.ProjectDirectory!, "ScriptCSharp");
+		ScriptFolder = Path.Combine(Factory.Session.ProjectDirectory!, CommonUnrealSharpSettings.ScriptDirectoryName);
 		PluginsPath = Path.Combine(Factory.Session.ProjectDirectory!, "Plugins");
 		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");

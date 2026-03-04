@@ -1,5 +1,6 @@
 ﻿using System.Xml;
 using Newtonsoft.Json;
+using UnrealSharp.Shared;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -36,7 +37,7 @@ public class GenerateProject : BuildToolAction
         
         if (folder == _projectRoot)
         {
-            folder = Path.Combine(folder, "ScriptCSharp");
+            folder = Path.Combine(folder, CommonUnrealSharpSettings.ScriptDirectoryName);
         }
 
         string projectName = Program.GetArgument("NewProjectName");

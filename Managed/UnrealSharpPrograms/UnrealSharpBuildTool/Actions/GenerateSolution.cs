@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using UnrealSharp.Shared;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -38,7 +39,7 @@ public class GenerateSolution : BuildToolAction
         return FindCSharpProjects(scriptsDirectory)
             .Concat(pluginsDirectory.EnumerateFiles("*.uplugin", SearchOption.AllDirectories)
                 .Select(x => x.Directory)
-                .SelectMany(x => x!.EnumerateDirectories("ScriptCSharp"))
+                .SelectMany(x => x!.EnumerateDirectories(CommonUnrealSharpSettings.ScriptDirectoryName))
                 .SelectMany(FindCSharpProjects))
             .Select(x => x.FullName);
     }
@@ -160,6 +161,6 @@ public class GenerateSolution : BuildToolAction
         // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
         // be in the directory for the plugin itself.
         string containingDirName = Path.GetDirectoryName(projectDirName)!;
-        return containingDirName == "ScriptCSharp" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
+        return containingDirName == CommonUnrealSharpSettings.ScriptDirectoryName ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using EpicGames.UHT.Types;
+using UnrealSharp.Shared;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -23,7 +24,7 @@ public readonly struct ModuleInfo
 
 	public string ProjectName => $"{_moduleName}.Glue";
 	public string ProjectFile => $"{ProjectName}.csproj";
-	public string ScriptDirectory => Path.Combine(_moduleDirectory, "ScriptCSharp");
+	public string ScriptDirectory => Path.Combine(_moduleDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
 	public string ProjectDirectory => Path.Combine(ScriptDirectory, ProjectName);
 	public string CsProjPath => Path.Combine(ProjectDirectory, ProjectFile);
 	
