@@ -7,7 +7,7 @@ TMap<FString, TSharedPtr<FJsonValue>> FCSUnrealSharpSettingsUtilities::Config;
 TSharedPtr<FJsonValue> FCSUnrealSharpSettingsUtilities::GetElement(const FString& ElementName)
 {
 #if WITH_EDITOR
-	InitializeConfigFile(FPaths::ProjectConfigDir(), UCSProcUtilities::GetPluginDirectory());
+	InitializeConfigFile(FPaths::ProjectDir(), UCSProcUtilities::GetPluginDirectory());
 
 	TSharedPtr<FJsonValue>* Found = Config.Find(ElementName);
 	if (!Found)
@@ -28,8 +28,8 @@ void FCSUnrealSharpSettingsUtilities::InitializeConfigFile(const FString& Projec
 		return;
 	}
 
-	const FString PluginConfigPath = GetConfigFile(UnrealSharpRoot);
 	const FString ProjectConfigPath = GetConfigFile(ProjectRoot);
+	const FString PluginConfigPath = GetConfigFile(UnrealSharpRoot);
 
 	Config = PluginConfigPath.IsEmpty() ? TMap<FString, TSharedPtr<FJsonValue>>() : LoadJsonAsDictionary(PluginConfigPath);
 
