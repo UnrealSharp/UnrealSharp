@@ -8,6 +8,13 @@ public class GenerateSolution : BuildToolAction
     public override bool RunAction()
     {
         using BuildToolProcess generateSln = new BuildToolProcess();
+        
+        string scriptDirectory = Program.GetScriptFolder();
+
+        if (!Directory.Exists(scriptDirectory))
+        {
+            Directory.CreateDirectory(scriptDirectory);
+        }
 
         generateSln.StartInfo.ArgumentList.Add("new");
         generateSln.StartInfo.ArgumentList.Add("sln");
@@ -17,7 +24,7 @@ public class GenerateSolution : BuildToolAction
 
         generateSln.StartInfo.ArgumentList.Add("-n");
         generateSln.StartInfo.ArgumentList.Add(Program.GetProjectNameAsManaged());
-        generateSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+        generateSln.StartInfo.WorkingDirectory = scriptDirectory;
 
         generateSln.StartInfo.ArgumentList.Add("--force");
         generateSln.StartBuildToolProcess();
