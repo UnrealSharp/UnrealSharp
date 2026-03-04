@@ -27,19 +27,18 @@ void FCSUnrealSharpSettingsUtilities::InitializeConfigFile(const FString& Projec
 	{
 		return;
 	}
-
-	const FString ProjectConfigPath = GetConfigFile(ProjectRoot);
+	
 	const FString PluginConfigPath = GetConfigFile(UnrealSharpRoot);
+	Config = LoadJsonAsDictionary(PluginConfigPath);
 
-	Config = PluginConfigPath.IsEmpty() ? TMap<FString, TSharedPtr<FJsonValue>>() : LoadJsonAsDictionary(PluginConfigPath);
-
-	if (!ProjectConfigPath.IsEmpty())
+	const FString ProjectOverrideConfigPath = GetConfigFile(ProjectRoot);
+	if (!ProjectOverrideConfigPath.IsEmpty())
 	{
-		TMap<FString, TSharedPtr<FJsonValue>> ProjectDict = LoadJsonAsDictionary(ProjectConfigPath);
+		TMap<FString, TSharedPtr<FJsonValue>> ProjectOverrides = LoadJsonAsDictionary(ProjectOverrideConfigPath);
 		
-		for (const TPair<FString, TSharedPtr<FJsonValue>>& Kvp : ProjectDict)
+		for (const TPair<FString, TSharedPtr<FJsonValue>>& ProjectOverrideKVP : ProjectOverrides)
 		{
-			Config.Add(Kvp.Key, Kvp.Value);
+			Config.Add(ProjectOverrideKVP.Key, ProjectOverrideKVP.Value);
 		}
 	}
 }
