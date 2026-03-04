@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Shared\*.cs" Link="..\..\Shared\*.cs" />
+  </ItemGroup>
 </Project>
