@@ -25,6 +25,9 @@ namespace FCSUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
 
+#if PLATFORM_MAC
+	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
+#else
 	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromString(const FString& Name)
 	{
 		if (Name.IsEmpty())
@@ -38,6 +41,7 @@ namespace FCSUnrealSharpUtils
 		FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer)); 
 		return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]);
 	}
+#endif
 	
 	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromName(const FName& Name)
 	{
