@@ -257,7 +257,7 @@ void UCSProcUtilities::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bI
 
 FString UCSProcUtilities::GetUnrealSharpBuildToolPath()
 {
-#if PLATFORM_WINDOWS
+#if PLATFORM_WINDOWS || PLATFORM_MAC
 	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool.dll");
 #else
 	return FPaths::ConvertRelativePathToFull(GetPluginAssembliesPath() / "UnrealSharpBuildTool");
