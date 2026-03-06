@@ -93,7 +93,6 @@ FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
 	return FString::Printf(TEXT("\"%s\""), *Path);
 }
 
-#if PLATFORM_MAC
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 {
 	if (Name.IsEmpty())
@@ -107,4 +106,4 @@ FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 	FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer));
 	return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]);
 }
-#endif
+
