@@ -36,7 +36,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	UnrealSharpEditorModule = &FUnrealSharpEditorModule::Get();
 	
 	FString PathToManagedSolution = UCSProcUtilities::GetPathToManagedSolution();
-	UnrealSharpEditorModule->GetManagedEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, &OnHotReloadReady_Callback);
+	UnrealSharpEditorModule->GetManagedEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, (void*)&OnHotReloadReady_Callback);
 	
 	RefreshDirectoryWatchers();
 	

@@ -25,19 +25,7 @@ namespace FCSUnrealSharpUtils
 
 	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
 
-	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromString(const FString& Name)
-	{
-		if (Name.IsEmpty())
-		{
-			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Tried to construct a GUID from an empty string. Returning an invalid GUID.");
-			return FGuid();
-		}
-		
-		const uint32 BufferLength = Name.Len() * sizeof(Name[0]); 
-		uint32 HashBuffer[5]; 
-		FSHA1::HashBuffer(*Name, BufferLength, reinterpret_cast<uint8*>(HashBuffer)); 
-		return FGuid(HashBuffer[1], HashBuffer[2], HashBuffer[3], HashBuffer[4]);
-	}
+	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
 	
 	UNREALSHARPUTILITIES_API inline FGuid ConstructGUIDFromName(const FName& Name)
 	{
