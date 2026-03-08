@@ -15,6 +15,7 @@
 #include "Types/CSInterface.h"
 #include "Types/CSScriptStruct.h"
 #include "UnrealSharpUtils.h"
+#include "Compilers/CSManagedClassCompiler.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpCompilerModule"
 
@@ -97,7 +98,8 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 
 			if (!FCSUnrealSharpUtils::IsEngineStartingUp())
 			{
-				InvalidateReferences(Blueprint);
+				RefreshDependentLoaders(Blueprint);
+				RefreshInstanceTickSettings(Blueprint);
 			}
 		}
 		
@@ -122,7 +124,7 @@ void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollec
 	});
 }
 
-void FUnrealSharpCompilerModule::InvalidateReferences(UBlueprint* Blueprint)
+void FUnrealSharpCompilerModule::RefreshDependentLoaders(UBlueprint* Blueprint)
 {
 	// This is mostly for sub-levels, not sure why but sometimes the references are not properly updated for sub-levels and causes a crash on loading the level.
 	// There are probably better ways to do this.
@@ -143,6 +145,19 @@ void FUnrealSharpCompilerModule::InvalidateReferences(UBlueprint* Blueprint)
 		}
 
 		ResetLoaders(ReferencePackage);
+	}
+}
+
+void FUnrealSharpCompilerModule::RefreshInstanceTickSettings(const UBlueprint* Blueprint)
+{
+	UClass* GeneratedClass = Blueprint->GeneratedClass;
+	
+	TArray<UObject*> Objects;
+	GetObjectsOfClass(GeneratedClass, Objects, false, RF_NoFlags);
+	
+	for (UObject* Object : Objects)
+	{
+		UCSManagedClassCompiler::SetupDefaultTickSettings(Object, GeneratedClass);
 	}
 }
 
