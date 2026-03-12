@@ -373,4 +373,76 @@ public abstract record UnrealFunctionBase : UnrealStruct
             ReturnType.PopulateJsonWithUnrealType(jsonWriter, "ReturnValue");
         }
     }
+
+    public virtual void ExportInterfaceExecuteMethod(GeneratorStringBuilder builder, UnrealInterface interfaceType)
+    {
+        if (FunctionFlags.HasFlag(EFunctionFlags.Static) || FunctionFlags.HasFlag(EFunctionFlags.Delegate))
+        {
+            return;
+        }
+
+        string parameters = string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"));
+        string parameterList = string.IsNullOrWhiteSpace(parameters) ? string.Empty : ", " + parameters;
+
+        builder.AppendLine();
+        builder.AppendLine($"public static {ReturnType.ManagedType} Execute_{SourceName}(UnrealSharp.CoreUObject.UObject __target{parameterList})");
+        builder.OpenBrace();
+
+        builder.AppendLine("ArgumentNullException.ThrowIfNull(__target);");
+        builder.AppendLine($"if (!{interfaceType.SourceName}.Implements(__target))");
+        builder.OpenBrace();
+        builder.AppendLine($"throw new InvalidOperationException($\"Object '{{__target.Name}}' does not implement {interfaceType.SourceName}.\");");
+        builder.CloseBrace();
+
+        builder.AppendLine($"nint instanceFunction = CallGetNativeFunctionFromInstanceAndName(__target.NativeObject, \"{SourceName}\");");
+        builder.AppendLine("if (instanceFunction == IntPtr.Zero)");
+        builder.OpenBrace();
+        builder.AppendLine($"throw new MissingMethodException(\"Could not resolve interface function '{SourceName}' on target object.\");");
+        builder.CloseBrace();
+
+        if (HasParamsOrReturnValue)
+        {
+            ExportCallToNative(builder, (paramsBuffer, returnBuffer) =>
+            {
+                builder.AppendLine($"UObjectExporter.CallInvokeNativeFunctionOutParms(__target.NativeObject, instanceFunction, {paramsBuffer}, {returnBuffer});");
+            });
+        }
+        else
+        {
+            builder.AppendLine("UObjectExporter.CallInvokeNativeFunction(__target.NativeObject, instanceFunction, IntPtr.Zero, IntPtr.Zero);");
+        }
+
+        builder.CloseBrace();
+    }
+
+    public virtual void ExportInterfaceExtensionMethod(GeneratorStringBuilder builder, UnrealInterface interfaceType)
+    {
+        if (FunctionFlags.HasFlag(EFunctionFlags.Static) || FunctionFlags.HasFlag(EFunctionFlags.Delegate))
+        {
+            return;
+        }
+
+        string parameters = string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"));
+        string extensionParameters = string.IsNullOrWhiteSpace(parameters)
+            ? "this UnrealSharp.CoreUObject.UObject __target"
+            : $"this UnrealSharp.CoreUObject.UObject __target, {parameters}";
+
+        string arguments = string.Join(", ", Properties.Select(p => p.SourceName));
+        string forwardedArguments = string.IsNullOrWhiteSpace(arguments) ? "__target" : $"__target, {arguments}";
+
+        builder.AppendLine();
+        builder.AppendLine($"public static {ReturnType.ManagedType} Execute{SourceName}({extensionParameters})");
+        builder.OpenBrace();
+
+        if (HasReturnValue)
+        {
+            builder.AppendLine($"return {interfaceType.SourceName}.Execute_{SourceName}({forwardedArguments});");
+        }
+        else
+        {
+            builder.AppendLine($"{interfaceType.SourceName}.Execute_{SourceName}({forwardedArguments});");
+        }
+
+        builder.CloseBrace();
+    }
 }

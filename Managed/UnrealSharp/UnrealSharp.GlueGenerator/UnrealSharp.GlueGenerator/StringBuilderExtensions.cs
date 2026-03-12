@@ -43,6 +43,7 @@ public static class StringBuilderExtensions
         
         builder.AppendLine("using System.ComponentModel;");
         builder.AppendLine("using UnrealSharp;");
+        builder.AppendLine("using UnrealSharp.Core;");
         builder.AppendLine("using UnrealSharp.Core.Marshallers;");
         builder.AppendLine("using UnrealSharp.Core.Attributes;");
         
