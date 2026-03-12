@@ -32,7 +32,8 @@ private:
 
     void AddManagedReferences(FCSManagedReferencesCollection& Collection);
 
-    static void InvalidateReferences(UBlueprint* Blueprint);
+    static void RefreshDependentLoaders(UBlueprint* Blueprint);
+    static void RefreshInstanceTickSettings(const UBlueprint* Blueprint);
     
     FCSBlueprintCompiler BlueprintCompiler;
     

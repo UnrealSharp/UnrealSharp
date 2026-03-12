@@ -705,7 +705,7 @@ void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const F
 	UCSProcUtilities::BuildUserSolution();
 	UCSManager::Get().LoadUserAssemblyByName(*ModuleName, true);
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
-	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, &FUnrealSharpEditorModule::OnProjectLoaded);
+	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, (void*)&FUnrealSharpEditorModule::OnProjectLoaded);
 }
 
 void FUnrealSharpEditorModule::OnProjectLoaded()
