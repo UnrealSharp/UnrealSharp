@@ -9,7 +9,7 @@ namespace UnrealSharp.Shared;
 
 public static class DotNetUtilities
 {
-	public const string DOTNET_MAJOR_VERSION = "9.0";
+	public const string DOTNET_MAJOR_VERSION = "10.0";
 	public const string DOTNET_MAJOR_VERSION_DISPLAY = "net" + DOTNET_MAJOR_VERSION;
 
     public static string FindDotNetExecutable()

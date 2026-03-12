@@ -91,7 +91,7 @@ void UK2Node_CSAsyncAction::GetMenuActions(FBlueprintActionDatabaseRegistrar& Ac
 
 void UK2Node_CSAsyncAction::ExpandNode(class FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph)
 {
-	if (ProxyClass->bLayoutChanging)
+	if (!IsValid(ProxyClass) || ProxyClass->bLayoutChanging)
 	{
 		// Don't compile while the async wrapper class is being hot reloaded. Will be compiled later.
 		return;

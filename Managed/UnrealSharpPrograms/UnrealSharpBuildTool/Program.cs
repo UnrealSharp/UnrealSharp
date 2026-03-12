@@ -265,8 +265,8 @@ public static class Program
     
     public static void CopyGlobalJson()
     {
-        string sourceGlobalJsonPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "global.json");
-        string destinationGlobalJsonPath = Path.Combine(Program.GetScriptFolder(), "global.json");
+        string sourceGlobalJsonPath = Path.Combine(BuildToolOptions.PluginDirectory, "Managed", "global.json");
+        string destinationGlobalJsonPath = Path.Combine(GetScriptFolder(), "global.json");
         File.Copy(sourceGlobalJsonPath, destinationGlobalJsonPath, overwrite: true);
     }
 }
