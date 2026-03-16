@@ -22,7 +22,7 @@ UnrealSharp is a plugin for Unreal Engine 5 that allows game developers to use C
 
 ## Prerequisites
 - Unreal Engine 5.5 - 5.7
-- .NET 9.0.305+
+- .NET 10.0.5+
 
 ## Frequently Asked Questions
 
