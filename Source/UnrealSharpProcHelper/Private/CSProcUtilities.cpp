@@ -8,6 +8,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 #include "Logging/StructuredLog.h"
+#include "Misc/ConfigCacheIni.h"
 
 bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
@@ -143,6 +144,20 @@ bool UCSProcUtilities::BuildUserSolution()
 {
 	TMap<FString, FString> Arguments;
 	Arguments.Add("OutputPath", GetUserAssemblyDirectory());
+	
+	bool bShowBuildWarnings = true;
+	GConfig->GetBool(
+		TEXT("/Script/UnrealSharpEditor.CSUnrealSharpEditorSettings"),
+		TEXT("bShowBuildWarnings"),
+		bShowBuildWarnings,
+		GEditorPerProjectIni
+	);
+
+	if (!bShowBuildWarnings)
+	{
+		Arguments.Add("clp", "ErrorsOnly");
+	}
+
 	return InvokeUnrealSharpBuildTool(BUILD_ACTION_BUILD_EMIT_LOAD_ORDER, Arguments);
 }
 
