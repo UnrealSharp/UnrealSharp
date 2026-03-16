@@ -735,7 +735,7 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 
 	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, ExtraArguments))
 	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project %s in %s", *ModuleName, *ProjectParentFolder);
+		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project {0} in {1}", *ModuleName, *ProjectParentFolder);
 		return;
 	}
 	
