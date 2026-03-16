@@ -207,3 +207,10 @@ void* UUObjectExporter::StaticLoadObject(UClass* BaseClass, UObject* InOuter, co
 	}
 	return UCSManager::Get().FindManagedObject(LoadedObj);
 }
+
+bool UUObjectExporter::ImplementsInterface(UObject* Object, UClass* InterfaceClass)
+{
+	return IsValid(Object)
+		&& IsValid(InterfaceClass)
+		&& Object->GetClass()->ImplementsInterface(InterfaceClass);
+}
