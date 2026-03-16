@@ -81,6 +81,8 @@ public class GenerateSolution : BuildToolAction
                     using BuildToolProcess addProjectToSln = new BuildToolProcess();
                     addProjectToSln.StartInfo.ArgumentList.Add("sln");
                     addProjectToSln.StartInfo.ArgumentList.Add("add");
+                    addProjectToSln.StartInfo.ArgumentList.Add("--include-references");
+                    addProjectToSln.StartInfo.ArgumentList.Add("false");
 					
                     foreach (string relativePath in projects)
                     {
