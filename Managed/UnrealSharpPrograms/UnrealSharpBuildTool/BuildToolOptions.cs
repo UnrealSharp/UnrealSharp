@@ -32,7 +32,7 @@ public class BuildToolOptions
     [Option("ProjectDirectory", Required = true, HelpText = "The directory where the .uproject file resides.")]
     public string ProjectDirectory { get; set; } = string.Empty;
 
-    [Option("PluginDirectory", Required = false, HelpText = "The UnrealSharp plugin directory.")]
+    [Option("PluginDirectory", Required = true, HelpText = "The UnrealSharp plugin directory.")]
     public string PluginDirectory { get; set; } = string.Empty;
 
     [Option("EngineDirectory", Required = false, HelpText = "The Unreal Engine directory.")]

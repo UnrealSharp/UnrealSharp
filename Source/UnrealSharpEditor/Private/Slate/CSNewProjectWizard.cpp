@@ -1,4 +1,6 @@
 ﻿#include "Slate/CSNewProjectWizard.h"
+
+#include "CSCommonUnrealSharpSettings.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
 #include "Interfaces/IPluginManager.h"
@@ -27,7 +29,7 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
             continue;
         }
     	
-        FString ScriptDirectory = PluginFilePath / "Script";
+        FString ScriptDirectory = PluginFilePath / FCSCommonUnrealSharpSettings::GetScriptDirectoryName();
         ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
             FText::FromString(Plugin->GetFriendlyName()), Plugin->GetName(), ScriptDirectory, ProjectDestinations.Num(), Plugin));
     }
