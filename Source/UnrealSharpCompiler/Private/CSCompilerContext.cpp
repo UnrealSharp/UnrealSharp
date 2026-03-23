@@ -292,9 +292,9 @@ void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 	// FGraphNodeClassHelper::BuildClassGraph()
 	// FStateTreeNodeClassCache::CacheClasses()
 	
-	// Ignore "SKEL_" classes, which otherwise may unintentionally show up in the systems reading from the AssetRegistry.
-	// This happened for C# state tree tasks, showing both the SKEL_ class and the "regular" class in the state tree task selection.
-	if (Class->GetName().StartsWith(TEXT("SKEL_")))
+	// Ignore Skeleton classes, which otherwise may unintentionally show up in the systems reading from the AssetRegistry.
+	// This happened for C# state tree tasks, showing both the Skeleton class and the regular class in the state tree task selection.
+	if (Cast<UCSSkeletonClass>(Class))
 	{
 		return;
 	}
