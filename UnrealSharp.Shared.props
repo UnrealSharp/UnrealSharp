@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)..\..\</SolutionDir>
     <UnrealSharpPluginDir>$(MSBuildThisFileDirectory)</UnrealSharpPluginDir>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
