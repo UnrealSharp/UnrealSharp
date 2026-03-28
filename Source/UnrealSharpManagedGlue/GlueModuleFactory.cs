@@ -28,7 +28,7 @@ public static class GlueModuleFactory
             anyChanges |= createdNewModule;
         }
 
-        if (anyChanges || !File.Exists(GeneratorStatics.ManagedSolutionPath))
+        //if (anyChanges)
         {
             USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateSolution");
         }
