@@ -1,6 +1,7 @@
 ﻿#include "CSProcUtilities.h"
 
 #include "CSCommonUnrealSharpSettings.h"
+#include "CSUnrealSharpProcHelperSettings.h"
 #include "CSUnrealSharpSettingsUtilities.h"
 #include "UnrealSharpProcHelper.h"
 #include "Misc/App.h"
@@ -145,14 +146,7 @@ bool UCSProcUtilities::BuildUserSolution()
 	TMap<FString, FString> Arguments;
 	Arguments.Add("OutputPath", GetUserAssemblyDirectory());
 	
-	bool bShowBuildWarnings = true;
-	GConfig->GetBool(
-		TEXT("/Script/UnrealSharpEditor.CSUnrealSharpEditorSettings"),
-		TEXT("bShowBuildWarnings"),
-		bShowBuildWarnings,
-		GEditorPerProjectIni
-	);
-
+	bool bShowBuildWarnings = GetDefault<UCSUnrealSharpProcHelperSettings>()->bShowBuildWarnings;
 	if (!bShowBuildWarnings)
 	{
 		Arguments.Add("clp", "ErrorsOnly");
