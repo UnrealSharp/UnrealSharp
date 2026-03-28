@@ -54,7 +54,10 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         
         Outer.AddSourceGeneratorDependency(asyncWrapperClass);
 
-        builder.BeginType(asyncWrapperClass, SourceGenUtilities.ClassKeyword, baseType: asyncWrapperClass.FullParentName);
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(asyncWrapperClass, SourceGenUtilities.ClassKeyword)
+            .Extends(asyncWrapperClass.FullParentName);
+        
+        typeDeclarationBuilder.Build(builder);
         
         AppendWrapperVariables(builder, asyncWrapperClass, wrapperDelegateName, hasCancellationToken);
         

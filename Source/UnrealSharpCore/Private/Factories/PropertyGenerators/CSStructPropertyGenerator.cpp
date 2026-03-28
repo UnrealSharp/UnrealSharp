@@ -7,7 +7,7 @@ FProperty* UCSStructPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	FStructProperty* StructProperty = NewProperty<FStructProperty>(Outer, PropertyReflectionData);
 	
 	TSharedPtr<FCSFieldType> FieldType = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
-	StructProperty->Struct = FieldType->InnerType.GetAsStruct();
+	StructProperty->Struct = FieldType->InnerType.ResolveUField<UScriptStruct>();
 
 #if WITH_EDITOR
 	if (UCSScriptStruct* ManagedStruct = Cast<UCSScriptStruct>(StructProperty->Struct))

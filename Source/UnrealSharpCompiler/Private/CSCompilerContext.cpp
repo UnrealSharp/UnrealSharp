@@ -291,6 +291,14 @@ void FCSCompilerContext::TryFakeNativeClass(UClass* Class)
 	// The functions that are used to find classes are:
 	// FGraphNodeClassHelper::BuildClassGraph()
 	// FStateTreeNodeClassCache::CacheClasses()
+	
+	// Ignore Skeleton classes, which otherwise may unintentionally show up in the systems reading from the AssetRegistry.
+	// This happened for C# state tree tasks, showing both the Skeleton class and the regular class in the state tree task selection.
+	if (Cast<UCSSkeletonClass>(Class))
+	{
+		return;
+	}
+	
 	Class->ClassFlags |= CLASS_Native;
 }
 

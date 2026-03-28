@@ -28,7 +28,12 @@ public record UnrealScriptStruct : UnrealStruct
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
         string recordModifier = IsRecord ? "record " : string.Empty;
-        builder.BeginType(this, SourceGenUtilities.StructKeyword, modifiers: recordModifier, interfaceDeclarations: [$"MarshalledStruct<{SourceName}>"]);
+        
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.StructKeyword)
+            .WithModifiers(recordModifier)
+            .Implements($"MarshalledStruct<{SourceName}>");
+        
+        typeDeclarationBuilder.Build(builder);
         
         ExportBackingVariables(builder);
         

@@ -30,12 +30,12 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 		TSharedPtr<FCSTemplateType> TemplateType = PropertyReflectionData.GetInnerTypeData<FCSTemplateType>();
 		const FCSPropertyReflectionData* ArgumentReflectionData = TemplateType->GetTemplateArgument(0);
 		TSharedPtr<FCSFieldType> FieldType = ArgumentReflectionData->GetInnerTypeData<FCSFieldType>();
-		Class = FieldType->InnerType.GetAsClass();
+		Class = FieldType->InnerType.ResolveUField<UClass>();
 	}
 	else
 	{
 		TSharedPtr<FCSFieldType> FieldType = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
-		Class = FieldType->InnerType.GetAsClass();
+		Class = FieldType->InnerType.ResolveUField<UClass>();
 	}
 	
 	ObjectProperty->SetPropertyClass(Class);

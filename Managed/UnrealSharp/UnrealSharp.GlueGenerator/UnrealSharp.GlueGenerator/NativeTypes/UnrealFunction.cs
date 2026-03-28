@@ -36,21 +36,7 @@ public record UnrealFunction : UnrealFunctionBase
 
         if (NeedsImplementationFunction)
         {
-            string instanceFunctionName;
-            if (IsEvent)
-            {
-                instanceFunctionName = $"{SourceName}_InstanceFunction";
-                
-                builder.AppendLine();
-                builder.AppendEditorBrowsableAttribute();
-                builder.AppendLine($"IntPtr {instanceFunctionName} = IntPtr.Zero;");
-            }
-            else
-            {
-                instanceFunctionName = FunctionNativePtr;
-            }
-            
-            ExportWrapperMethod(builder, instanceFunctionName);
+            ExportWrapperMethod(builder, "partial ");
             ExportImplementationMethod(builder);
         }
     }
@@ -61,18 +47,32 @@ public record UnrealFunction : UnrealFunctionBase
         builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}{virtualModifier}partial {ReturnType.ManagedType} {SourceName}_Implementation({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))});");
     }
 
-    public void ExportWrapperMethod(GeneratorStringBuilder builder, string instanceFunction)
+    public void ExportWrapperMethod(GeneratorStringBuilder builder, string modifiers)
     {
+        string instanceFunctionName;
+        if (IsEvent)
+        {
+            instanceFunctionName = $"{SourceName}_InstanceFunction";
+                
+            builder.AppendLine();
+            builder.AppendEditorBrowsableAttribute();
+            builder.AppendLine($"IntPtr {instanceFunctionName} = IntPtr.Zero;");
+        }
+        else
+        {
+            instanceFunctionName = FunctionNativePtr;
+        }
+        
         builder.AppendLine();
         
-        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}partial {ReturnType.ManagedType} {SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))})");
+        builder.AppendLine($"{TypeAccessibility.AccessibilityToString()}{modifiers}{ReturnType.ManagedType} {SourceName}({string.Join(", ", Properties.Select(p => $"{p.ManagedType} {p.SourceName}"))})");
         builder.OpenBrace();
 
         if (FunctionFlags.HasFlag(EFunctionFlags.Event))
         {
-            builder.AppendLine($"if ({instanceFunction} == IntPtr.Zero)");
+            builder.AppendLine($"if ({instanceFunctionName} == IntPtr.Zero)");
             builder.OpenBrace();
-            builder.AppendLine($"{instanceFunction} = CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{SourceName}\");");
+            builder.AppendLine($"{instanceFunctionName} = CallGetNativeFunctionFromInstanceAndName(NativeObject, \"{SourceName}\");");
             builder.CloseBrace();
         }
         
@@ -80,12 +80,12 @@ public record UnrealFunction : UnrealFunctionBase
         {
             ExportCallToNative(builder, (paramsBuffer, returnBuffer) =>
             {
-                AppendCallInvokeNativeFunction(builder, instanceFunction, paramsBuffer, returnBuffer);
+                AppendCallInvokeNativeFunction(builder, instanceFunctionName, paramsBuffer, returnBuffer);
             });
         }
         else
         {
-            AppendCallInvokeNativeFunction(builder, instanceFunction, SourceGenUtilities.IntPtrZero, SourceGenUtilities.IntPtrZero);
+            AppendCallInvokeNativeFunction(builder, instanceFunctionName, SourceGenUtilities.IntPtrZero, SourceGenUtilities.IntPtrZero);
         }
         
         builder.CloseBrace();

@@ -55,4 +55,6 @@ public:
 	UNREALSHARP_FUNCTION()
 	static void* StaticLoadObject(UClass* BaseClass, UObject* InOuter, const char* Name);
 
+	UNREALSHARP_FUNCTION()
+	static bool ImplementsInterface(UObject* Object, UClass* InterfaceClass);
 };

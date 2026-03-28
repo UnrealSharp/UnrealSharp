@@ -61,7 +61,7 @@ void UCSManagedClassCompiler::CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassR
 	if (!IsValid(Blueprint))
 	{
 		FString BlueprintName = FCSMetaDataUtils::GetAdjustedFieldName(ClassReflectionData->FieldName);
-		UPackage* Package = ClassReflectionData->GetAsPackage();
+		UPackage* Package = ClassReflectionData->GetDefinitionFieldPackage();
 	
 		Blueprint = NewObject<UCSBlueprint>(Package, *BlueprintName, RF_Public | RF_LoadCompleted);
 		Blueprint->GeneratedClass = Field;
@@ -136,7 +136,7 @@ void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClas
 	
 	for (const FCSComponentOverrideReflectionData& OverrideData : ClassReflectionData->ComponentOverrides)
 	{
-		UClass* ComponentClass = OverrideData.ComponentType.GetAsClass();
+		UClass* ComponentClass = OverrideData.ComponentType.ResolveUField<UClass>();
 		
 		if (!IsValid(ComponentClass))
 		{
@@ -144,7 +144,7 @@ void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClas
 			continue;
 		}
 		
-		UClass* ParentClass = OverrideData.OwningClass.GetAsClass();
+		UClass* ParentClass = OverrideData.OwningClass.ResolveUField<UClass>();
 		
 		if (!IsValid(ParentClass) || !FCSClassUtilities::IsNativeClass(ParentClass))
 		{
@@ -185,7 +185,7 @@ UClass* UCSManagedClassCompiler::TryRedirectSuperClass(TSharedPtr<FCSClassReflec
 {
 	if (!IsValid(CurrentSuperClass) || CurrentSuperClass->GetFName() != ClassReflectionData->ParentClass.FieldName.GetName())
 	{
-		UClass* SuperClass = ClassReflectionData->ParentClass.GetAsClass();
+		UClass* SuperClass = ClassReflectionData->ParentClass.ResolveUField<UClass>();
 		if (const TWeakObjectPtr<UClass>* RedirectedClass = RedirectClasses.Find(SuperClass))
 		{
 			SuperClass = RedirectedClass->Get();
@@ -276,7 +276,7 @@ void UCSManagedClassCompiler::ImplementInterfaces(UClass* ManagedClass, const TA
 {
 	for (const FCSTypeReferenceReflectionData& InterfaceData : Interfaces)
 	{
-		UClass* InterfaceClass = InterfaceData.GetAsInterface();
+		UClass* InterfaceClass = InterfaceData.ResolveUField<UClass>();
 
 		if (!IsValid(InterfaceClass))
 		{

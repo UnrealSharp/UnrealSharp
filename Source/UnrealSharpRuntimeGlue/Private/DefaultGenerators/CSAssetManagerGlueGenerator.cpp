@@ -177,6 +177,11 @@ void UCSAssetManagerGlueGenerator::ProcessAssetIds()
 			PrimaryAssetName.RemoveFromEnd(TEXT("_C"));
 			PrimaryAssetName = FCSEditorUtilities::ReplaceSpecialCharacters(PrimaryAssetName);
 			
+			if (PrimaryAssetName.Len() > 0 && FChar::IsDigit(PrimaryAssetName[0]))
+			{
+				PrimaryAssetName = FString::Printf(TEXT("_%s"), *PrimaryAssetName);
+			}
+			
 			ScriptBuilder.AppendLine(FString::Printf(
 				TEXT("public static readonly FPrimaryAssetId %s = new(nameof(%s), \"%s\");"),
 				*PrimaryAssetName, *AssetType.PrimaryAssetType.GetName().ToString(), *AssetType.PrimaryAssetName.ToString()));

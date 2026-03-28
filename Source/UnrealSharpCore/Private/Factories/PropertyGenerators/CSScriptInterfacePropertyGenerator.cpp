@@ -6,7 +6,7 @@ FProperty* UCSScriptInterfacePropertyGenerator::CreateProperty(UField* Outer, co
 	FInterfaceProperty* InterfaceProperty = NewProperty<FInterfaceProperty>(Outer, PropertyReflectionData);
 	
 	TSharedPtr<FCSFieldType> InterfaceData = PropertyReflectionData.GetInnerTypeData<FCSFieldType>();
-	InterfaceProperty->SetInterfaceClass(InterfaceData->InnerType.GetAsInterface());
+	InterfaceProperty->SetInterfaceClass(InterfaceData->InnerType.ResolveUField<UClass>());
 	
 	return InterfaceProperty;
 }

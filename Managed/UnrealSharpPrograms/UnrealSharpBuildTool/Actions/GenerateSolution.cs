@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using UnrealSharp.Shared;
 
 namespace UnrealSharpBuildTool.Actions;
 
@@ -7,6 +8,13 @@ public class GenerateSolution : BuildToolAction
     public override bool RunAction()
     {
         using BuildToolProcess generateSln = new BuildToolProcess();
+        
+        string scriptDirectory = Program.GetScriptFolder();
+
+        if (!Directory.Exists(scriptDirectory))
+        {
+            Directory.CreateDirectory(scriptDirectory);
+        }
 
         generateSln.StartInfo.ArgumentList.Add("new");
         generateSln.StartInfo.ArgumentList.Add("sln");
@@ -16,7 +24,7 @@ public class GenerateSolution : BuildToolAction
 
         generateSln.StartInfo.ArgumentList.Add("-n");
         generateSln.StartInfo.ArgumentList.Add(Program.GetProjectNameAsManaged());
-        generateSln.StartInfo.WorkingDirectory = Program.GetScriptFolder();
+        generateSln.StartInfo.WorkingDirectory = scriptDirectory;
 
         generateSln.StartInfo.ArgumentList.Add("--force");
         generateSln.StartBuildToolProcess();
@@ -38,7 +46,7 @@ public class GenerateSolution : BuildToolAction
         return FindCSharpProjects(scriptsDirectory)
             .Concat(pluginsDirectory.EnumerateFiles("*.uplugin", SearchOption.AllDirectories)
                 .Select(x => x.Directory)
-                .SelectMany(x => x!.EnumerateDirectories("Script"))
+                .SelectMany(x => x!.EnumerateDirectories(CommonUnrealSharpSettings.ScriptDirectoryName))
                 .SelectMany(FindCSharpProjects))
             .Select(x => x.FullName);
     }
@@ -73,6 +81,8 @@ public class GenerateSolution : BuildToolAction
                     using BuildToolProcess addProjectToSln = new BuildToolProcess();
                     addProjectToSln.StartInfo.ArgumentList.Add("sln");
                     addProjectToSln.StartInfo.ArgumentList.Add("add");
+                    addProjectToSln.StartInfo.ArgumentList.Add("--include-references");
+                    addProjectToSln.StartInfo.ArgumentList.Add("false");
 					
                     foreach (string relativePath in projects)
                     {
@@ -160,6 +170,6 @@ public class GenerateSolution : BuildToolAction
         // If we're in the script folder we want these to be in the Script solution folder, otherwise we want these to
         // be in the directory for the plugin itself.
         string containingDirName = Path.GetDirectoryName(projectDirName)!;
-        return containingDirName == "Script" ? containingDirName : Path.GetDirectoryName(containingDirName)!;
+        return containingDirName == CommonUnrealSharpSettings.ScriptDirectoryName ? containingDirName : Path.GetDirectoryName(containingDirName)!;
     }
 }
