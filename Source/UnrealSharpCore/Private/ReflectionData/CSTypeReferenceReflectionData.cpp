@@ -52,43 +52,20 @@ bool FCSTypeReferenceReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObjec
 	END_JSON_SERIALIZE
 }
 
-UCSManagedAssembly* FCSTypeReferenceReflectionData::GetOwningAssemblyChecked() const
+UCSManagedAssembly* FCSTypeReferenceReflectionData::GetDefinitionFieldAssembly() const
 {
 	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
 	check(::IsValid(Assembly));
 	return Assembly;
 }
 
-UClass* FCSTypeReferenceReflectionData::GetAsClass() const
+UField* FCSTypeReferenceReflectionData::ResolveUField() const
 {
-	UClass* Class = GetOwningAssemblyChecked()->ResolveUField<UClass>(FieldName);
-	ensure(Class);
-	return Class;
+	UCSManagedAssembly* Assembly = GetDefinitionFieldAssembly();
+	return Assembly->ResolveUField(FieldName);
 }
 
-UScriptStruct* FCSTypeReferenceReflectionData::GetAsStruct() const
-{
-	UScriptStruct* Struct = GetOwningAssemblyChecked()->ResolveUField<UScriptStruct>(FieldName);
-	ensure(Struct);
-	return Struct;
-}
-
-UEnum* FCSTypeReferenceReflectionData::GetAsEnum() const
-{
-	return GetOwningAssemblyChecked()->ResolveUField<UEnum>(FieldName);
-}
-
-UClass* FCSTypeReferenceReflectionData::GetAsInterface() const
-{
-	return GetOwningAssemblyChecked()->ResolveUField<UClass>(FieldName);
-}
-
-UDelegateFunction* FCSTypeReferenceReflectionData::GetAsDelegate() const
-{
-	return GetOwningAssemblyChecked()->ResolveUField<UDelegateFunction>(FieldName);
-}
-
-UPackage* FCSTypeReferenceReflectionData::GetAsPackage() const
+UPackage* FCSTypeReferenceReflectionData::GetDefinitionFieldPackage() const
 {
 	return UCSManager::Get().GetPackage(FieldName.GetNamespace());
 }

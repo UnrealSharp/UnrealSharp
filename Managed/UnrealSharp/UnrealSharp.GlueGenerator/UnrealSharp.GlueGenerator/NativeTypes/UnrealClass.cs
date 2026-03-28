@@ -245,7 +245,8 @@ public record UnrealClass : UnrealClassBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        builder.BeginType(this, SourceGenUtilities.ClassKeyword);
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.ClassKeyword);
+        typeDeclarationBuilder.Build(builder);
             
         builder.BeginTypeStaticConstructor(this);
         ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);

@@ -17,8 +17,7 @@ public:
 		return Class->GetClass() == UCSClass::StaticClass();
 #endif
 	}
-	
-	static bool IsManagedType(const UClass* Class);
+
 	static bool IsSkeletonType(const UClass* Class) { return Class->GetClass() == UCSSkeletonClass::StaticClass(); }
 	static bool IsNativeClass(UClass* Class){ return Class->GetClass() == UClass::StaticClass(); }
 
@@ -72,14 +71,22 @@ public:
 		return Class;
 	}
 
-	static UClass* GetFirstNonBlueprintClass(UClass* Class)
+	static UClass* GetFirstNonBlueprintClass(UClass* InClass)
 	{
-		while (!IsNativeClass(Class) && !IsManagedClass(Class))
+		UClass* CurrentClass = InClass;
+		
+		while (CurrentClass)
 		{
-			Class = Class->GetSuperClass();
+			UPackage* ClassPackage = CurrentClass->GetPackage();
+			if (ClassPackage && ClassPackage->HasAnyPackageFlags(PKG_CompiledIn))
+			{
+				break;
+			}
+
+			CurrentClass = CurrentClass->GetSuperClass();
 		}
-	
-		return Class;
+		
+		return CurrentClass;
 	}
 
 	static bool HasImplementedFunction(const UClass* Class, const FName& FunctionName)

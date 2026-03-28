@@ -34,14 +34,16 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 	
 	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }
 
-	UCSManagedAssembly* GetOwningAssemblyChecked() const;
+	UCSManagedAssembly* GetDefinitionFieldAssembly() const;
 	
-	UClass* GetAsClass() const;
-	UScriptStruct* GetAsStruct() const;
-	UEnum* GetAsEnum() const;
-	UClass* GetAsInterface() const;
-	UDelegateFunction* GetAsDelegate() const;
-	UPackage* GetAsPackage() const;
+	template<typename T>
+	T* ResolveUField() const
+	{
+		return CastChecked<T>(ResolveUField());
+	}
+	
+	UField* ResolveUField() const;
+	UPackage* GetDefinitionFieldPackage() const;
 
 	bool HasMetaData(const FString& Key) const
 	{

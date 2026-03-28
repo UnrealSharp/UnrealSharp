@@ -35,19 +35,20 @@ public record UnrealInterface : UnrealClassBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        builder.BeginType(this, SourceGenUtilities.InterfaceKeyword);
-
-        foreach (UnrealFunctionBase function in Functions.List)
-        {
-            function.ExportBackingVariables(builder);
-        }
+        TypeDeclarationBuilder typeBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.InterfaceKeyword);
+        
+        typeBuilder.Build(builder);
+        
+        builder.AppendLine($"static {SourceName} Wrap(UnrealSharp.CoreUObject.UObject obj)");
+        builder.OpenBrace();
+        builder.AppendLine($"return new {SourceName}Wrapper(obj);");
+        builder.CloseBrace();
 
         ExportImplementsMethod(builder);
-        ExportExecuteMethods(builder);
 
         builder.CloseBrace();
 
-        ExportExtensionClass(builder);
+        ExportWrapperClass(builder);
         ExportMarshaller(builder);
     }
     
@@ -66,28 +67,41 @@ public record UnrealInterface : UnrealClassBase
 
     private void ExportImplementsMethod(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"public static bool Implements(UnrealSharp.Core.UnrealSharpObject? obj) => obj != null && (UObjectExporter.CallImplementsInterface(obj.NativeObject, NativeTypePtr).ToManagedBool());");
+        builder.AppendLine("public static bool Implements(UnrealSharp.Core.UnrealSharpObject? obj) => obj != null && (UObjectExporter.CallImplementsInterface(obj.NativeObject, NativeTypePtr).ToManagedBool());");
     }
 
-    private void ExportExecuteMethods(GeneratorStringBuilder builder)
+    private void ExportWrapperClass(GeneratorStringBuilder builder)
     {
+        string wrapperName = $"{SourceName}Wrapper";
+        
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder
+            .FromUnrealType(this, SourceGenUtilities.ClassKeyword)
+            .WithDeclarationName(wrapperName)
+            .Accessibility("file ")
+            .Implements(SourceName)
+            .Implements("UnrealSharp.CoreUObject.IScriptInterface");
+        
+        typeDeclarationBuilder.Build(builder);
+        
+        builder.AppendLine("public UnrealSharp.CoreUObject.UObject Object { get; }");
+        builder.AppendLine("private IntPtr NativeObject => Object.NativeObject;");
+        builder.AppendLine($"public {wrapperName}(UnrealSharp.CoreUObject.UObject obj) => Object = obj;");
+        
+        builder.BeginTypeStaticConstructor(wrapperName);
         foreach (UnrealFunctionBase function in Functions.List)
         {
-            function.ExportInterfaceExecuteMethod(builder, this);
+            UnrealFunction unrealFunction = (UnrealFunction) function;
+            unrealFunction.ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
         }
-    }
-
-    private void ExportExtensionClass(GeneratorStringBuilder builder)
-    {
-        builder.AppendLine();
-        builder.AppendLine($"public static class {SourceName}Extensions");
-        builder.OpenBrace();
-
+        builder.EndTypeStaticConstructor();
+        
         foreach (UnrealFunctionBase function in Functions.List)
         {
-            function.ExportInterfaceExtensionMethod(builder, this);
+            UnrealFunction unrealFunction = (UnrealFunction) function;
+            unrealFunction.ExportBackingVariables(builder);
+            unrealFunction.ExportWrapperMethod(builder, string.Empty);
         }
-
+        
         builder.CloseBrace();
     }
 }

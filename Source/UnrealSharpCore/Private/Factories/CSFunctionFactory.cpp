@@ -119,7 +119,7 @@ void FCSFunctionFactory::GetOverriddenFunctions(const UClass* Outer, const TShar
 	// The BP compiler purges the interfaces from the UClass pre-compilation, so we need to get them from the metadata instead.
 	for (const FCSTypeReferenceReflectionData& InterfaceInfo : ClassReflectionData->Interfaces)
 	{
-		if (UClass* Interface = InterfaceInfo.GetAsInterface())
+		if (UClass* Interface = InterfaceInfo.ResolveUField<UClass>())
 		{
 			IterateInterfaceFunctions(Interface);
 		}

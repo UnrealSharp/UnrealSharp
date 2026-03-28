@@ -33,37 +33,14 @@ public static class ScriptInterfaceExtensions
     /// <returns>The cast interface, or null if the conversion could not be made.</returns>
     public static T? AsInterface<T>(this UObject? uobject) where T : class
     {
-        switch (uobject)
-        {
-            case null:
-                return null;
-            case T typedObj:
-                return typedObj;
-        }
-
-        var nativeClass = typeof(T).TryGetNativeInterface();
-        if (nativeClass == IntPtr.Zero)
-        {
-            return null;
-        }
-            
-        var wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject.NativeObject, nativeClass);
-		if(wrapperHandle == IntPtr.Zero)
-        {
-            return null;
-        }
-        GCHandle wrapperGcHandle = GCHandle.FromIntPtr(wrapperHandle);
-        if (!wrapperGcHandle.IsAllocated)
+        if (!uobject.IsValid())
         {
             return null;
         }
 
-        if (wrapperGcHandle.Target is T typedWrapper)
-        {
-            return typedWrapper;
-        }
-			
-        return null;
+        IntPtr nativeClass = typeof(T).TryGetNativeInterface();
+        IntPtr wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject!.NativeObject, nativeClass);
+        return GCHandleUtilities.GetObjectFromHandlePtrFast<T>(wrapperHandle);
     }
 
     /// <summary>
@@ -76,12 +53,7 @@ public static class ScriptInterfaceExtensions
     [return: NotNullIfNotNull(nameof(uobject))]
     public static T? CastInterface<T>(this UObject? uobject) where T : class
     {
-        if (uobject is null)
-        {
-            return null;
-        }
-        
-        return uobject.AsInterface<T>() ?? throw new InvalidCastException($"Cannot cast {uobject.GetType()} to {typeof(T)}");
+        return uobject.AsInterface<T>() ?? throw new InvalidCastException($"Cannot cast {uobject?.GetType()} to {typeof(T)}");
     }
     
     /// <summary>
@@ -97,7 +69,6 @@ public static class ScriptInterfaceExtensions
             IScriptInterface scriptInterfaceObject => scriptInterfaceObject.Object,
             _ => null
         };
-
     }
 
     /// <summary>
