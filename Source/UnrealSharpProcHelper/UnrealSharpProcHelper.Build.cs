@@ -23,7 +23,8 @@ public class UnrealSharpProcHelper : ModuleRules
                 "Projects",
                 "Json",
                 "XmlParser",
-                "UnrealSharpUtilities"
+                "UnrealSharpUtilities",
+                "DeveloperSettings"
             }
         );
         
