@@ -15,7 +15,7 @@ public record UnrealInterface : UnrealClassBase
         ClassFlags |= EClassFlags.Interface;
         AddMetaData("BlueprintType", "true");
     }
-    
+
     [Inspect("UnrealSharp.Attributes.UInterfaceAttribute", "UInterfaceAttribute", "Global")]
     public static UnrealType UInterfaceAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
@@ -35,8 +35,20 @@ public record UnrealInterface : UnrealClassBase
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        builder.BeginType(this, SourceGenUtilities.InterfaceKeyword);
+        TypeDeclarationBuilder typeBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.InterfaceKeyword);
+        
+        typeBuilder.Build(builder);
+        
+        builder.AppendLine($"static {SourceName} Wrap(UnrealSharp.CoreUObject.UObject obj)");
+        builder.OpenBrace();
+        builder.AppendLine($"return new {SourceName}Wrapper(obj);");
         builder.CloseBrace();
+
+        ExportImplementsMethod(builder);
+
+        builder.CloseBrace();
+
+        ExportWrapperClass(builder);
         ExportMarshaller(builder);
     }
     
@@ -49,6 +61,46 @@ public record UnrealInterface : UnrealClassBase
         
         builder.AppendLine($"public static void ToNative(IntPtr nativeBuffer, int arrayIndex, {SourceName} obj) => {marshallerDeclaration}.ToNative(nativeBuffer, arrayIndex, obj);");
         builder.AppendLine($"public static {SourceName} FromNative(IntPtr nativeBuffer, int arrayIndex) => {marshallerDeclaration}.FromNative(nativeBuffer, arrayIndex);");
+        
+        builder.CloseBrace();
+    }
+
+    private void ExportImplementsMethod(GeneratorStringBuilder builder)
+    {
+        builder.AppendLine("public static bool Implements(UnrealSharp.Core.UnrealSharpObject? obj) => obj != null && (UObjectExporter.CallImplementsInterface(obj.NativeObject, NativeTypePtr).ToManagedBool());");
+    }
+
+    private void ExportWrapperClass(GeneratorStringBuilder builder)
+    {
+        string wrapperName = $"{SourceName}Wrapper";
+        
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder
+            .FromUnrealType(this, SourceGenUtilities.ClassKeyword)
+            .WithDeclarationName(wrapperName)
+            .Accessibility("file ")
+            .Implements(SourceName)
+            .Implements("UnrealSharp.CoreUObject.IScriptInterface");
+        
+        typeDeclarationBuilder.Build(builder);
+        
+        builder.AppendLine("public UnrealSharp.CoreUObject.UObject Object { get; }");
+        builder.AppendLine("private IntPtr NativeObject => Object.NativeObject;");
+        builder.AppendLine($"public {wrapperName}(UnrealSharp.CoreUObject.UObject obj) => Object = obj;");
+        
+        builder.BeginTypeStaticConstructor(wrapperName);
+        foreach (UnrealFunctionBase function in Functions.List)
+        {
+            UnrealFunction unrealFunction = (UnrealFunction) function;
+            unrealFunction.ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
+        }
+        builder.EndTypeStaticConstructor();
+        
+        foreach (UnrealFunctionBase function in Functions.List)
+        {
+            UnrealFunction unrealFunction = (UnrealFunction) function;
+            unrealFunction.ExportBackingVariables(builder);
+            unrealFunction.ExportWrapperMethod(builder, string.Empty);
+        }
         
         builder.CloseBrace();
     }

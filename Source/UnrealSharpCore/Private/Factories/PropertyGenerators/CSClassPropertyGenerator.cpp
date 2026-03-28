@@ -10,7 +10,7 @@ FProperty* UCSClassPropertyGenerator::CreateProperty(UField* Outer, const FCSPro
 	const FCSPropertyReflectionData* TemplateArgument = ClassTemplateType->GetTemplateArgument(0);
 	
 	TSharedPtr<FCSFieldType> FieldType = TemplateArgument->GetInnerTypeData<FCSFieldType>();
-	UClass* Class = FieldType->InnerType.GetAsClass();
+	UClass* Class = FieldType->InnerType.ResolveUField<UClass>();
 	
 	ClassProperty->PropertyClass = UClass::StaticClass();
 	ClassProperty->SetMetaClass(Class);

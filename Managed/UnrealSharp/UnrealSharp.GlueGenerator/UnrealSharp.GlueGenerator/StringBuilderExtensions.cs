@@ -43,6 +43,7 @@ public static class StringBuilderExtensions
         
         builder.AppendLine("using System.ComponentModel;");
         builder.AppendLine("using UnrealSharp;");
+        builder.AppendLine("using UnrealSharp.Core;");
         builder.AppendLine("using UnrealSharp.Core.Marshallers;");
         builder.AppendLine("using UnrealSharp.Core.Attributes;");
         
@@ -69,37 +70,6 @@ public static class StringBuilderExtensions
         builder.AppendLine($"static string JsonReflectionData => \"\"\"\n {jsonString} \n\"\"\";");
         builder.AppendLine($"static void Initialize() => RegisterManagedType(\"{type.EngineName}\", JsonReflectionData, {(byte) type.FieldType}, typeof({type.FullName}));");
         builder.CloseBrace();
-    }
-    
-    public static void BeginType(this GeneratorStringBuilder builder, UnrealType type, string typeKeyword, string? modifiers = null, string nativeTypePtrName = SourceGenUtilities.NativeTypePtr, string overrideTypeName = "", string baseType = "", List<string>? interfaceDeclarations = null)
-    {
-        string protection = type.TypeAccessibility.AccessibilityToString();
-        
-        string declarationName = string.IsNullOrEmpty(overrideTypeName) ? type.SourceName : overrideTypeName;
-        builder.AppendLine($"[GeneratedType(\"{type.EngineName}\", \"{type.Namespace}.{type.EngineName}\")]");
-        builder.AppendLine($"{protection}partial {modifiers}{typeKeyword} {declarationName}");
-        
-        if (!string.IsNullOrEmpty(baseType))
-        {
-            builder.Append($" : {baseType}");
-        }
-        
-        if (interfaceDeclarations != null && interfaceDeclarations.Count > 0)
-        {
-            builder.Append(" : ");
-            for (int i = 0; i < interfaceDeclarations.Count; i++)
-            {
-                builder.Append(interfaceDeclarations[i]);
-                if (i < interfaceDeclarations.Count - 1)
-                {
-                    builder.Append(", ");
-                }
-            }
-        }
-        
-        builder.OpenBrace();
-        string engineName = string.IsNullOrEmpty(overrideTypeName) ? type.EngineName : overrideTypeName.Substring(1);
-        builder.AppendNewBackingField($"static IntPtr {nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{type.AssemblyName}\", \"{type.Namespace}\", \"{engineName}\");");
     }
     
     public static void BeginTypeStaticConstructor(this GeneratorStringBuilder builder, UnrealType unrealType)

@@ -25,7 +25,7 @@ FProperty* UCSDelegatePropertyGenerator::CreateProperty(UField* Outer, const FCS
 	const FCSPropertyReflectionData* InnerType = TemplateType->GetTemplateArgument(0);
 	TSharedPtr<FCSFieldType> FieldType = InnerType->GetInnerTypeData<FCSFieldType>();
 	
-	DelegateProperty->SignatureFunction = FieldType->InnerType.GetAsDelegate();
+	DelegateProperty->SignatureFunction = FieldType->InnerType.ResolveUField<UFunction>();
 
 	if (!IsValid(DelegateProperty->SignatureFunction))
 	{
