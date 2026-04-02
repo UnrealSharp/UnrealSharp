@@ -1,58 +1,64 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class FileExporter
 {
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
-    
-    private static readonly List<string> ChangedFiles = new();
-    private static readonly List<string> UnchangedFiles = new();
-    
+    private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
+
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
-        string directory = GetDirectoryPath(type.Package);
+        string directory =type.Package.GetModuleUhtOutputDirectory();
         SaveGlueToDisk(type.Package, directory, type.EngineName, stringBuilder.ToString());
     }
-    
+
     public static string GetFilePath(string typeName, string directory)
     {
         return Path.Combine(directory, $"{typeName}.generated.cs");
     }
-    
+
     public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
     {
         string absoluteFilePath = GetFilePath(typeName, directory);
-        bool directoryExists = Directory.Exists(directory);
-        bool glueExists = File.Exists(absoluteFilePath);
-        
+        bool needsWrite = true;
+
+        if (File.Exists(absoluteFilePath))
+        {
+            FileInfo fileInfo = new(absoluteFilePath);
+            if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
+            {
+                needsWrite = false;
+            }
+        }
+
         ReadWriteLock.EnterWriteLock();
         try
         {
-            bool matchingGlue = glueExists && File.ReadAllText(absoluteFilePath) == text;
-            
-            // If the directory exists and the file exists with the same text, we can return early
-            if (directoryExists && matchingGlue)
+            AffectedFiles.Add(absoluteFilePath);
+
+            if (!needsWrite)
             {
-                UnchangedFiles.Add(absoluteFilePath);
                 return;
             }
-            
-            if (!directoryExists)
+
+            if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             File.WriteAllText(absoluteFilePath, text);
-            ChangedFiles.Add(absoluteFilePath);
-            
+
             if (package.IsPartOfEngine())
             {
-                CSharpExporter.HasModifiedEngineGlue = true; 
+                CSharpExporter.HasModifiedEngineGlue = true;
             }
         }
         finally
@@ -60,102 +66,81 @@ public static class FileExporter
             ReadWriteLock.ExitWriteLock();
         }
     }
-    
+
     public static void AddUnchangedType(UhtType type)
     {
-        string directory = GetDirectoryPath(type.Package);
-        string filePath = GetFilePath(type.EngineName, directory);
-        UnchangedFiles.Add(filePath);
-    }
-    
-    public static string GetDirectoryPath(UhtPackage package)
-    {
-        if (package == null)
-        {
-            throw new Exception("Package is null");
-        }
+        string engineName = type is UhtFunction function ? DelegateBasePropertyTranslator.GetDelegateName(function) : type.EngineName;
 
-        string rootPath = package.IsPartOfEngine() ? Program.EngineGluePath : Program.ProjectGluePath;
-        return Path.Combine(rootPath, package.GetShortName());
+        string directory = type.Package.GetModuleUhtOutputDirectory();
+        AffectedFiles.Add(GetFilePath(engineName, directory));
+
+        if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
+        {
+            AffectedFiles.Add(GetFilePath($"{engineName}_Extensions", directory));
+        }
     }
-    
+
     public static void CleanOldExportedFiles()
     {
         Console.WriteLine("Cleaning up old generated C# glue files...");
-        CleanFilesInDirectories(Program.EngineGluePath);
-        CleanFilesInDirectories(Program.ProjectGluePath, true);
+
+        foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
+        {
+            CleanOldFilesInDirectories(plugin.GlueModuleDirectory);
+        }
     }
-    
-    public static void CleanModuleFolders()
-    {
-        CleanGeneratedFolder(Program.EngineGluePath);
-        CleanGeneratedFolder(Program.ProjectGluePath);
-    }
-    
-    
+
     public static void CleanGeneratedFolder(string path)
     {
         if (!Directory.Exists(path))
         {
             return;
         }
-        
-        // TODO: Move runtime glue to a separate csproj. So we can fully clean the ProjectGlue folder.
-        // Below is a temporary solution to not delete runtime glue that can cause compilation errors on editor startup,
-        // and avoid having to restore nuget packages.
-        string[] directories = Directory.GetDirectories(path);
-        foreach (string directory in directories)
+    
+        DirectoryInfo root = new DirectoryInfo(path);
+        foreach (FileSystemInfo item in root.GetFileSystemInfos())
         {
-            if (IsIntermediateDirectory(directory))
+            if (item is DirectoryInfo dir)
             {
-                continue;
+                dir.Delete(true);
             }
-            
-            Directory.Delete(directory, true);
+            else
+            {
+                item.Delete();
+            }
         }
     }
-    
-    private static void CleanFilesInDirectories(string path, bool recursive = false)
+
+    private static void CleanOldFilesInDirectories(string path)
     {
         if (!Directory.Exists(path))
         {
             return;
         }
-        
-        string[] directories = Directory.GetDirectories(path);
-        
-        foreach (var directory in directories)
+
+        if (!PackageHeadersTracker.HasModuleBeenExported(Path.GetFileName(path)))
         {
-            string moduleName = Path.GetFileName(directory);
-            if (!CSharpExporter.HasBeenExported(moduleName))
+            return;
+        }
+        
+        foreach (string directory in Directory.GetDirectories(path))
+        {
+            CleanOldFilesInDirectories(directory);
+        }
+        
+        string[] files = Directory.GetFiles(path);
+        foreach (string file in files)
+        {
+            if (!AffectedFiles.Contains(file))
             {
-                continue;
-            }
-            
-            int removedFiles = 0;
-            string[] files = Directory.GetFiles(directory);
-            
-            foreach (var file in files)
-            {
-                if (ChangedFiles.Contains(file) || UnchangedFiles.Contains(file))
-                {
-                    continue;
-                }
-                
                 File.Delete(file);
-                removedFiles++;
-            }
-            
-            if (removedFiles == files.Length)
-            {
-                Directory.Delete(directory, recursive);
             }
         }
-    }
-    
-    static bool IsIntermediateDirectory(string path)
-    {
-        string directoryName = Path.GetFileName(path);
-        return directoryName is "obj" or "bin" or "Properties";
+        
+        string[] remainingFiles = Directory.GetFiles(path);
+        if (remainingFiles.Length == 0)
+        {
+            Directory.Delete(path, false); 
+        }
     }
 }

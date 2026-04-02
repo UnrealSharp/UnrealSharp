@@ -2,10 +2,10 @@
 
 #include "CSBindsManager.h"
 
-FCSExportedFunction::FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InSize):
+FCSExportedFunction::FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize):
 	Name(Name),
 	FunctionPointer(InFunctionPointer),
-	Size(InSize)
+	ParameterSize(InParameterSize)
 {
 	FCSBindsManager::RegisterExportedFunction(OuterName, *this);
 }

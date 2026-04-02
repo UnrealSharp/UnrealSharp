@@ -309,7 +309,7 @@ public abstract class TSetBase<T> : IEnumerable<T>
 
         public T Current => set.Get(_index);
 
-        object IEnumerator.Current => Current;
+        object? IEnumerator.Current => Current;
 
         public void Dispose()
         {

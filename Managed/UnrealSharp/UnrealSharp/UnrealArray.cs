@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.Interop;
@@ -10,7 +10,7 @@ public class UnrealArrayEnumerator<T>(UnrealArrayBase<T> array) : IEnumerator<T>
     private int _index = -1;
     public T Current => array.Get(_index);
     
-    object System.Collections.IEnumerator.Current => Current;
+    object? System.Collections.IEnumerator.Current => Current;
 
     public void Dispose()
     {
@@ -37,7 +37,6 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     
     protected UnmanagedArray* NativeBuffer { get; }
 
-    [CLSCompliant(false)]
     protected UnrealArrayBase(IntPtr nativeProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         NativeProperty = nativeProperty;
@@ -115,7 +114,7 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     {
         foreach (T element in this)
         {
-            if (element.Equals(item))
+            if (EqualityComparer<T>.Default.Equals(element, item))
             {
                 return true;
             }

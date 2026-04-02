@@ -1,13 +1,15 @@
-using UnrealSharp.Attributes;
-using UnrealSharp.Core.Attributes;
 using UnrealSharp.UnrealSharpAsync;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-[Binding]
 public partial struct FSoftObjectPath
 {
+    public FSoftObjectPath(string packageName, string assetName)
+    {
+        AssetPath = new FTopLevelAssetPath(packageName, assetName);
+    }
+    
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
@@ -29,10 +31,10 @@ public partial struct FSoftObjectPath
     }
 
     public bool Valid => AssetPath.Valid;
-
     public bool Null => AssetPath.Null;
     
     public UObject? Object => UCSSoftObjectPathExtensions.ResolveObject(this);
+    public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId_Internal(this);
     
     public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)
     {

@@ -1,19 +1,18 @@
 using System.Text;
-using Microsoft.CodeAnalysis;
 
 namespace UnrealSharp.ExtensionSourceGenerators;
 
-public class ActorExtensionGenerator : ExtensionGenerator
+public record ActorExtensionGenerator : ExtensionGenerator
 {
-    public override void Generate(ref StringBuilder builder, INamedTypeSymbol classSymbol)
+    public override void Generate(StringBuilder builder, ParseResult parseResult)
     {
-        GenerateSpawnMethod(ref builder, classSymbol);
-        GenerateGetActorsOfClassMethod(ref builder, classSymbol);
+        GenerateSpawnMethod(builder, parseResult);
+        GenerateGetActorsOfClassMethod(builder, parseResult);
     }
     
-    private void GenerateSpawnMethod(ref StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
+    private void GenerateSpawnMethod(StringBuilder stringBuilder, ParseResult parseResult)
     {
-        string fullTypeName = classSymbol.ToDisplayString();
+        string fullTypeName = parseResult.FullTypeName;
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("     /// <summary>");
         stringBuilder.AppendLine("     /// Spawns an actor of the specified class.");
@@ -31,16 +30,15 @@ public class ActorExtensionGenerator : ExtensionGenerator
         stringBuilder.AppendLine("     }");
     }
     
-    private void GenerateGetActorsOfClassMethod(ref StringBuilder stringBuilder, INamedTypeSymbol classSymbol)
+    private void GenerateGetActorsOfClassMethod(StringBuilder stringBuilder, ParseResult parseResult)
     {
-        string fullTypeName = classSymbol.ToDisplayString();
         stringBuilder.AppendLine();
         stringBuilder.AppendLine("     /// <summary>");
         stringBuilder.AppendLine("     /// Gets all actors of the specified class in the world.");
         stringBuilder.AppendLine("     /// </summary>");
         stringBuilder.AppendLine("     /// <param name=\"worldContextObject\">The object to get the actors from.</param>");
         stringBuilder.AppendLine("     /// <param name=\"outActors\">The list to store the actors in.</param>");
-        stringBuilder.AppendLine($"     public static new void GetAllActorsOfClass(out IList<{fullTypeName}> outActors)");
+        stringBuilder.AppendLine($"     public static new void GetAllActorsOfClass(out IList<{parseResult.FullTypeName}> outActors)");
         stringBuilder.AppendLine("     {");
         stringBuilder.AppendLine("         UGameplayStatics.GetAllActorsOfClass(out outActors);");
         stringBuilder.AppendLine("     }");

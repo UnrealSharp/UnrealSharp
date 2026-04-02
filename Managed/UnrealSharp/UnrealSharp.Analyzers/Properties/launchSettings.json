@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "DebugRoslynAnalyzers": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "../UnrealSharp.Analyzers.Sample/UnrealSharp.Analyzers.Sample.csproj"
+    }
+  }
+}

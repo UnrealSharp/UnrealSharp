@@ -1,3 +1,4 @@
+using UnrealSharp.Core;
 using UnrealSharp.Engine;
 
 namespace UnrealSharp.CoreUObject;

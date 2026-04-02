@@ -1,4 +1,5 @@
-﻿using UnrealSharp.Engine;
+﻿using System.Collections.Generic;
+using UnrealSharp.Engine;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.UMG;
@@ -41,4 +42,14 @@ public partial class UUserWidget
     /// Get the owning player controller of this widget as a specific type.
     /// </summary>
     public T OwningPlayerControllerAs<T>() where T : APlayerController => (T) OwningPlayerController;
+
+    /// <summary>
+    /// Get all widgets in this widget's tree.
+    /// </summary>
+    public IList<UWidget> AllWidgets => UCSUserWidgetExtensions.GetAllWidgets(this);
+
+    /// <summary>
+    /// Get all widgets of a specific type in this widget's tree.
+    /// </summary>
+    public IList<T> AllWidgetsAs<T>() where T : UWidget => AllWidgets.OfType<T>().ToList();
 }

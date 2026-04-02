@@ -1,24 +1,26 @@
-using UnrealSharp.Interop;
+using UnrealSharp.Core.Interop;
 
 namespace UnrealSharp.Core.Marshallers;
 
 public static class StringMarshaller
 {
-    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string obj)
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, string stringToMarshal)
     {
         unsafe
         {
-            if (string.IsNullOrEmpty(obj)) 
+            if (string.IsNullOrEmpty(stringToMarshal)) 
             {
                 //Guard against C# null strings (use string.Empty instead)
-                obj = string.Empty; 
+                stringToMarshal = string.Empty; 
             }
             
-            IntPtr unrealString = nativeBuffer + arrayIndex * sizeof(UnmanagedArray);
-            
-            fixed (char* stringPtr = obj)
+            UnmanagedArray* unrealString = (UnmanagedArray*) (nativeBuffer + arrayIndex * sizeof(UnmanagedArray));
+
+            // NOTE: do not pass a string directly to native (the runtime marshals it as ANSI and replaces non-ASCII with '?').
+            // Pin the UTF-16 buffer and let the UE side convert it to TCHAR/FString.
+            fixed (char* stringPtr = stringToMarshal)
             {
-                FStringExporter.CallMarshalToNativeString(unrealString, stringPtr);
+                FStringExporter.CallMarshalToNativeStringView(unrealString, stringPtr, stringToMarshal.Length);
             }
         }
     }

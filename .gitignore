@@ -81,3 +81,7 @@ Generated/
 obj/
 
 *.props
+!Directory.Packages.props
+!Directory.Build.props
+!UnrealSharp.Shared.props
+!UnrealSharp.GeneratedFiles.props

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.PropertyTranslators;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class StaticConstructorUtilities
 {
@@ -14,7 +14,7 @@ public static class StaticConstructorUtilities
         Dictionary<string, GetterSetterPair> exportedGetterSetters,
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties,
         List<UhtFunction> overrides,
-        bool isBlittable = false)
+        bool isBlittable = false, string? customStaticConstructorName = null)
     {
         UhtClass? classObj = structObj as UhtClass;
         UhtScriptStruct? scriptStructObj = structObj as UhtScriptStruct;
@@ -28,47 +28,14 @@ public static class StaticConstructorUtilities
         {
             return;
         }
-
-        bool hasStaticFunctions = true;
-        void CheckIfStaticFunction(UhtFunction function)
-        {
-            if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
-            {
-                hasStaticFunctions = true;
-            }
-        }
         
-        foreach (UhtFunction function in exportedFunctions)
-        {
-            CheckIfStaticFunction(function);
-        }
-        
-        foreach (GetterSetterPair pair in exportedGetterSetters.Values)
-        {
-            if (pair.Getter != null)
-            {
-                CheckIfStaticFunction(pair.Getter);
-            }
-            
-            if (pair.Setter != null)
-            {
-                CheckIfStaticFunction(pair.Setter);
-            }
-        }
-
-        string nativeClassPtrDeclaration = string.Empty;
-        if (hasStaticFunctions)
-        {
-            generatorStringBuilder.AppendLine("static readonly IntPtr NativeClassPtr;");
-        }
-        else
-        {
-            nativeClassPtrDeclaration = "IntPtr ";
-        }
-
         if (scriptStructObj != null)
         {
-            if(classObj == null) generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
+            if (classObj == null)
+            {
+                generatorStringBuilder.AppendLine("public static IntPtr GetNativeClassPtr() => NativeClassPtr;");
+            }
+            
             if (isBlittable)
             {
                 generatorStringBuilder.AppendLine("public static int GetNativeDataSize()");
@@ -88,13 +55,9 @@ public static class StaticConstructorUtilities
             }
         }
         
-        generatorStringBuilder.AppendLine($"static {structName}()");
+        string staticCtorName = customStaticConstructorName != null ? customStaticConstructorName : structName;
+        generatorStringBuilder.AppendLine($"static {staticCtorName}()");
         generatorStringBuilder.OpenBrace();
-        
-        string type = classObj != null ? "Class" : "Struct";
-        
-        string engineName = structObj.EngineName;
-        generatorStringBuilder.AppendLine($"{nativeClassPtrDeclaration}NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetNative{type}FromName({structObj.ExportGetAssemblyName()}, \"{structObj.GetNamespace()}\", \"{engineName}\");");
         
         ExportPropertiesStaticConstructor(generatorStringBuilder, exportedProperties);
         ExportGetSetBackedPropertyStaticConstructor(generatorStringBuilder, getSetBackedProperties);
@@ -117,7 +80,10 @@ public static class StaticConstructorUtilities
             ExportClassFunctionsStaticConstructor(generatorStringBuilder, exportedFunctions);
             ExportClassOverridesStaticConstructor(generatorStringBuilder, overrides);
         }
-        else if (!isBlittable) generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
+        else if (!isBlittable)
+        {
+            generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
+        }
         
         generatorStringBuilder.CloseBrace();
     }
@@ -152,15 +118,14 @@ public static class StaticConstructorUtilities
                     continue;
                 }
 
-                PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                PropertyTranslator translator = property.GetTranslator()!;
                 translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
             }
             
             if (hasCustomStructParams)
             {
                 List<string> customStructParams = function.GetCustomStructParams();
-                List<string> initializerElements = customStructParams.ConvertAll(param =>
-                    $"{ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName({nativeFunctionName}, \"{param}\")");
+                List<string> initializerElements = customStructParams.ConvertAll(param => $"CallGetNativePropertyFromName({nativeFunctionName}, \"{param}\")");
                 generatorStringBuilder.AppendLine($"{functionName}_CustomStructureNativeProperties = new IntPtr[]{{{string.Join(", ", initializerElements)}}};");
             }
         }
@@ -188,7 +153,7 @@ public static class StaticConstructorUtilities
                         continue;
                     }
                 
-                    PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+                    PropertyTranslator translator = property.GetTranslator()!;
                     translator.ExportParameterStaticConstructor(generatorStringBuilder, property, function, property.SourceName, functionName);
                 }
             }
@@ -216,7 +181,7 @@ public static class StaticConstructorUtilities
     private static void ExportPropertyStaticConstructor(GeneratorStringBuilder generatorStringBuilder, UhtProperty property)
     {
         generatorStringBuilder.TryAddWithEditor(property);
-        PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+        PropertyTranslator translator = property.GetTranslator()!;
         translator.ExportPropertyStaticConstructor(generatorStringBuilder, property, property.SourceName);
         generatorStringBuilder.TryEndWithEditor(property);
     }

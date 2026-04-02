@@ -1,7 +1,7 @@
-﻿using System;
-using EpicGames.UHT.Types;
+﻿using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class NamePropertyTranslator : BlittableTypePropertyTranslator
 {

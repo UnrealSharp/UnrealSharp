@@ -4,6 +4,7 @@ using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
+using UnrealSharp.Engine;
 using UnrealSharp.UnrealSharpCore;
 using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpAsync;
@@ -14,7 +15,6 @@ namespace UnrealSharp;
 /// Holds a soft reference to a class. Useful for holding a reference to a class that may be unloaded.
 /// </summary>
 /// <typeparam name="T"> The type of the object. </typeparam>
-[Binding]
 public struct TSoftClassPtr<T> where T : UObject
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -24,6 +24,11 @@ public struct TSoftClassPtr<T> where T : UObject
     /// The path to the object.
     /// </summary>
     public FSoftObjectPath SoftObjectPath => SoftObjectPtr.GetUniqueId();
+
+    /// <summary>
+    /// The primary asset ID of the object, if it has one.
+    /// </summary>
+    public FPrimaryAssetId PrimaryAssetId => SoftObjectPath.PrimaryAssetId;
 
     /// <summary>
     /// The class of the object.
@@ -45,6 +50,12 @@ public struct TSoftClassPtr<T> where T : UObject
     public TSoftClassPtr(UObject obj)
     {
         SoftObjectPtr = new FPersistentObjectPtr(obj);
+    }
+    
+    public TSoftClassPtr(FPrimaryAssetId primaryAssetId)
+    {
+        UAssetManager assetManager = UAssetManager.Get();
+        this = assetManager.GetSoftClassReferenceFromPrimaryAssetId<T>(primaryAssetId);
     }
 
     public TSoftClassPtr(Type obj) : this(new TSubclassOf<T>(obj))
@@ -75,11 +86,11 @@ public struct TSoftClassPtr<T> where T : UObject
     /// <summary>
     /// Casts this SoftClass to another class.
     /// </summary>
-    public TSoftClassPtr<T> Cast<T2>() where T2 : UObject
+    public TSoftClassPtr<T2> Cast<T2>() where T2 : UObject
     {
         if (typeof(T).IsAssignableFrom(typeof(T2)) || typeof(T2).IsAssignableFrom(typeof(T)))
         {
-            return new TSoftClassPtr<T>(this);
+            return Class.IsValid ? new TSoftClassPtr<T2>(Class) : new TSoftClassPtr<T2>(SoftObjectPtr.Data);
         }
 
         throw new Exception($"Cannot cast {typeof(T).Name} to {typeof(T2).Name}");

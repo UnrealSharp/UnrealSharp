@@ -13,7 +13,7 @@ namespace UnrealSharp.StaticVars;
 /// <typeparam name="T">The type of the static variable</typeparam>
 public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
 {
-#if !PACKAGE
+#if WITH_EDITOR
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly FDelegateHandle _onPieStartEndHandle;
     
@@ -70,8 +70,13 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
     }
 #endif
     
-    public static implicit operator T(FGameStaticVar<T> value)
+    public static implicit operator T?(FGameStaticVar<T> value)
     {
-        return value.Value;
+        if (value.Value != null)
+        {
+            return value.Value;
+        }
+        
+        return default;
     }
 }

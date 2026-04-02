@@ -5,7 +5,7 @@ namespace UnrealSharp;
 
 public class TSetReadOnly<T> : TSetBase<T>, IReadOnlySet<T>
 {
-    public TSetReadOnly(IntPtr nativeProperty, IntPtr address, MarshallingDelegates<T>.FromNative fromNative) : base(nativeProperty, address, fromNative, null)
+    public TSetReadOnly(IntPtr nativeProperty, IntPtr address, MarshallingDelegates<T>.FromNative fromNative, MarshallingDelegates<T>.ToNative toNative) : base(nativeProperty, address, fromNative, toNative)
     {
     }
 
@@ -43,33 +43,31 @@ public class TSetReadOnly<T> : TSetBase<T>, IReadOnlySet<T>
 public class SetReadOnlyMarshaller<T>
 {
     readonly NativeProperty _property;
+    private readonly FScriptSetHelper _helper;
     readonly MarshallingDelegates<T>.FromNative _elementFromNative;
+    readonly MarshallingDelegates<T>.ToNative _elementToNative;
     private TSetReadOnly<T>? _readonlySetWrapper;
 
-    public SetReadOnlyMarshaller(IntPtr setProperty,
-        MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
+    public SetReadOnlyMarshaller(IntPtr setProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
     {
         _property = new NativeProperty(setProperty);
+        _helper = new FScriptSetHelper(_property);
         _elementFromNative = fromNative;
+        _elementToNative = toNative;
     }
 
     public TSetReadOnly<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_readonlySetWrapper == null)
         {
-            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, _property.ValueAddress(nativeBuffer), _elementFromNative);
+            _readonlySetWrapper = new TSetReadOnly<T>(_property.Property, nativeBuffer, _elementFromNative, _elementToNative);
         }
         
         return _readonlySetWrapper;
     }
 
-    public void ToNative(IntPtr nativeBuffer, IReadOnlyCollection<T> value)
+    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IEnumerable<T> value)
     {
-        ToNative(nativeBuffer, 0, IntPtr.Zero, value);
-    }
-
-    public void ToNative(IntPtr nativeBuffer, int arrayIndex, IntPtr prop, IReadOnlyCollection<T> value)
-    {
-        throw new NotImplementedException("Read-only TSet cannot write to native memory.");
+        SetMarshaller<T>.ToNativeInternal(nativeBuffer, arrayIndex, value, _helper, _elementToNative);
     }
 }

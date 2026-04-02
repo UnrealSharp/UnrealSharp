@@ -14,7 +14,7 @@ public class FBaseStaticVar<T>
         set => _value = value;
     }
     
-#if !PACKAGE
+#if WITH_EDITOR
     public FBaseStaticVar()
     {
         AssemblyLoadContext alc = AssemblyLoadContext.GetLoadContext(GetType().Assembly)!;
@@ -29,6 +29,12 @@ public class FBaseStaticVar<T>
     
     public override string ToString()
     {
-        return Value.ToString();
+        var value = Value;
+        if (value == null)
+        {
+            return "null value";
+        }
+        
+        return value.ToString()!;
     }
 }

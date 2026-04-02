@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace UnrealSharpScriptGenerator.Tooltip;
+namespace UnrealSharpManagedGlue.Tooltip;
 
 public class ParsedTooltip
 {

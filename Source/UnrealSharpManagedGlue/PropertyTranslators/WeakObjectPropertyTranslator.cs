@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+﻿using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class WeakObjectPropertyTranslator : BlittableTypePropertyTranslator
 {

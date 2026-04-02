@@ -1,4 +1,4 @@
-﻿namespace UnrealSharpScriptGenerator.Utilities;
+﻿namespace UnrealSharpManagedGlue.Utilities;
 
 public static class ExporterCallbacks
 {

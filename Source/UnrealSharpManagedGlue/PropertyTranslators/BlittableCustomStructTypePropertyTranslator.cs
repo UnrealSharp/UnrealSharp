@@ -1,11 +1,12 @@
 ﻿using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.SourceGeneration;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class BlittableCustomStructTypePropertyTranslator : BlittableTypePropertyTranslator
 {
-    private readonly string _nativeName;
     public override bool ExportDefaultParameter => false;
+    private readonly string _nativeName;
     
     public BlittableCustomStructTypePropertyTranslator(string nativeName, string managedType) : base(typeof(UhtStructProperty), managedType)
     {

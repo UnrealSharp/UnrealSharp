@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using EpicGames.Core;
+using System.Text;
 using EpicGames.UHT.Parsers;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
-using UnrealSharpScriptGenerator.Utilities;
 
-namespace UnrealSharpScriptGenerator.Exporters;
+namespace UnrealSharpManagedGlue.Exporters;
 
 [UnrealHeaderTool]
 public static class NativeBindExporter
@@ -41,10 +39,11 @@ public static class NativeBindExporter
 
     [UhtExporter(Name = "UnrealSharpNativeGlue", 
         Description = "Exports Native Glue", 
-        Options = UhtExporterOptions.Default, 
-        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.gen.cpp" })]
+        Options = UhtExporterOptions.Default | UhtExporterOptions.CompileOutput,
+        ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.cpp" })]
     private static void Main(IUhtExportFactory factory)
     {
+        Console.WriteLine("Exporting UnrealSharp Native Binds...");
         ExportBindMethods(factory);
     }
     
@@ -109,7 +108,7 @@ public static class NativeBindExporter
             UhtHeaderFile headerFile = bindMethod.Key;
             List<NativeBindTypeInfo> containingTypesInHeader = bindMethod.Value;
             
-            GeneratorStringBuilder builder = new();
+            StringBuilder builder = new();
             builder.AppendLine("#include \"UnrealSharpBinds.h\"");
             builder.AppendLine($"#include \"{headerFile.FilePath}\"");
             builder.AppendLine();
@@ -121,16 +120,15 @@ public static class NativeBindExporter
                 
                 string typeName = $"Z_Construct_U{topType.EngineClassName}_UnrealSharp_Binds_" + topType.SourceName;
                 builder.Append($"struct {typeName}");
-            
-                builder.OpenBrace();
+
+                builder.AppendLine("{");
             
                 foreach (NativeBindMethod method in methods)
                 {
                     builder.AppendLine($"static const FCSExportedFunction UnrealSharpBind_{method.MethodName};");
                 }
             
-                builder.CloseBrace();
-                builder.Append(";");
+                builder.AppendLine("};");
             
                 foreach (NativeBindMethod method in methods)
                 {
@@ -142,19 +140,12 @@ public static class NativeBindExporter
                 builder.AppendLine();
                 builder.AppendLine();
             }
-
-            UHTManifest.Module manifestModule;
-            #if UE_5_5_OR_LATER
-            manifestModule = headerFile.Module.Module;
-            #else
-            manifestModule= headerFile.Package.GetModule();
-            #endif
             
-            string outputDirectory = manifestModule.OutputDirectory;
-            string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.gen.cpp";
+            string outputDirectory = headerFile.Module.Module.OutputDirectory;
+            string fileName = headerFile.FileNameWithoutExtension + ".unrealsharp.cpp";
             string filePath = Path.Combine(outputDirectory, fileName);
             
-            factory.CommitOutput(filePath, builder.ToString());
+            factory.CommitOutput(filePath, builder);
         }
     }
 }

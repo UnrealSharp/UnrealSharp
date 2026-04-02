@@ -20,57 +20,55 @@ public class BuildToolProcess : Process
         }
         
         StartInfo.FileName = fileName;
-        StartInfo.RedirectStandardOutput = true;
-        StartInfo.RedirectStandardError = true;
-        StartInfo.UseShellExecute = false;
         StartInfo.CreateNoWindow = true;
-    }
-
-    private void WriteOutProcess()
-    {
-        string command = StartInfo.FileName;
-        string arguments = string.Join(" ", StartInfo.ArgumentList);
-        Console.WriteLine($"Command: {command} {arguments}");
+        StartInfo.ErrorDialog = false;
+        StartInfo.UseShellExecute = false;
+        StartInfo.RedirectStandardError = true;
+        StartInfo.RedirectStandardInput = true;
+        StartInfo.RedirectStandardOutput = true;
+        EnableRaisingEvents = true;
     }
     
     public bool StartBuildToolProcess()
     {
-        try
+        StringBuilder output = new StringBuilder();
+        OutputDataReceived += (sender, e) =>
         {
-            if (!Start())
+            if (e.Data != null)
             {
-                throw new Exception("Failed to start process");
+                output.AppendLine(e.Data);
+            }
+        };
+            
+        ErrorDataReceived += (sender, e) =>
+        {
+            if (e.Data != null)
+            {
+                output.AppendLine(e.Data);
+            }
+        };
+            
+        if (!Start())
+        {
+            throw new Exception("Failed to start process");
+        }
+            
+        BeginErrorReadLine();
+        BeginOutputReadLine();
+        WaitForExit();
+
+        if (ExitCode != 0)
+        {
+            string errorMessage = output.ToString();
+            if (string.IsNullOrEmpty(errorMessage))
+            {
+                errorMessage = "BuildTool process exited with non-zero exit code, but no output was captured.";
             }
             
-            WriteOutProcess();
-
-            StringBuilder output = new();
-            OutputDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    output.AppendLine(args.Data);
-                }
-            };
-            
-            // To avoid deadlocks, use an asynchronous read operation on at least one of the streams.
-            BeginOutputReadLine();
-
-            string error = StandardError.ReadToEnd();
-            
-            WaitForExit();
-
-            if (ExitCode != 0)
-            {
-                throw new Exception($"Error in executing build command {StartInfo.Arguments}: {Environment.NewLine + error + Environment.NewLine + output}");
-            }
+            throw new Exception($"BuildTool process failed with exit code {ExitCode}:\n{errorMessage}");
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            return false;
-        }
-
+        
+        Close();
         return true;
     }
 }

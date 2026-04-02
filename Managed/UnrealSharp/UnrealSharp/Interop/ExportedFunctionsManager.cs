@@ -1,4 +1,5 @@
-using System.Reflection;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Binds;
 
@@ -6,12 +7,6 @@ namespace UnrealSharp.Interop;
 
 public static class ExportedFunctionsManager
 {
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] 
-    delegate void NativeFunctionDelegate(IntPtr nativeFunctionPtr);
-    
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    unsafe delegate void RegisterFunctionsCallback(IntPtr nativeFunctionPtr, char* nativeFunctionName);
-    
     private static readonly Dictionary<string, FieldInfo> UnmanagedDelegates = new();
 
     public static unsafe void Initialize(IntPtr nativeExportFunctionsPtr)
@@ -39,10 +34,8 @@ public static class ExportedFunctionsManager
             }
 
             
-            NativeFunctionDelegate registerFunctions =
-                Marshal.GetDelegateForFunctionPointer<NativeFunctionDelegate>(nativeExportFunctionsPtr);
-            IntPtr registerFunctionsCallback =
-                Marshal.GetFunctionPointerForDelegate<RegisterFunctionsCallback>(RegisterFunctions);
+            delegate* unmanaged[Cdecl]<IntPtr, void> registerFunctions = (delegate* unmanaged[Cdecl]<IntPtr, void>)nativeExportFunctionsPtr;
+            IntPtr registerFunctionsCallback = (IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, char*, void>)&RegisterFunctions;
 
             registerFunctions(registerFunctionsCallback);
                 
@@ -60,13 +53,14 @@ public static class ExportedFunctionsManager
         }
     }
 
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static unsafe void RegisterFunctions(IntPtr nativeFunctionPtr, char* nativeFunctionName)
     {
         string nativeFunctionNameString = new string(nativeFunctionName);
         
         try
         {
-            if (!UnmanagedDelegates.TryGetValue(nativeFunctionNameString, out FieldInfo unmanagedDelegate))
+            if (!UnmanagedDelegates.TryGetValue(nativeFunctionNameString, out FieldInfo? unmanagedDelegate))
             {
                 throw new Exception($"Failed to find {nativeFunctionNameString} in {nameof(UnmanagedDelegates)}.");
             }

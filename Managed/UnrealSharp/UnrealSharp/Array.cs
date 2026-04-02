@@ -1,4 +1,4 @@
-using UnrealSharp.Attributes;
+﻿using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
@@ -10,13 +10,14 @@ namespace UnrealSharp;
 /// An array that can be used to interact with Unreal Engine arrays.
 /// </summary>
 /// <typeparam name="T"> The type of elements in the array. </typeparam>
-[Binding]
-public class TArray<T> : UnrealArrayBase<T>, IList<T>
+public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
 {
     /// <inheritdoc />
     public bool IsReadOnly => false;
-    
-    [CLSCompliant(false)]
+
+    private IntPtr _observableNativeObject;
+    private bool _isObservable;
+
     public TArray(IntPtr nativeUnrealProperty, IntPtr nativeBuffer, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
         : base(nativeUnrealProperty, nativeBuffer, toNative, fromNative)
     {
@@ -40,10 +41,24 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
                 throw new IndexOutOfRangeException($"Index {index} is out of bounds. Array size is {Count}.");
             }
             ToNative(NativeArrayBuffer, index, value);
+            BroadcastChanged();
         }
     }
 
-    
+    internal void MakeObservable(IntPtr observableNativeObject)
+    {
+        _observableNativeObject = observableNativeObject;
+        _isObservable = true;
+    }
+
+    private void BroadcastChanged()
+    {
+        if (_isObservable)
+        {
+            FPropertyExporter.CallBroadcastFieldValueChanged(_observableNativeObject, NativeProperty);
+        }
+    }
+
     /// <summary>
     /// Adds an element to the end of the array.
     /// </summary>
@@ -53,6 +68,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
         int newIndex = Count;
         AddInternal();
         this[newIndex] = item;
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -61,6 +77,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     public void Clear()
     {
         ClearInternal();
+        BroadcastChanged();
     }
     
     /// <summary>
@@ -74,6 +91,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
         {
             FArrayPropertyExporter.CallResizeArray(NativeProperty, NativeBuffer, newSize);
         }
+
+        BroadcastChanged();
     }
     
     /// <summary>
@@ -87,6 +106,8 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
         {
             FArrayPropertyExporter.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
         }
+
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -145,6 +166,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     {
         InsertInternal(index);
         this[index] = item;
+        BroadcastChanged();
     }
 
     /// <summary>
@@ -154,14 +176,20 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>
     public void RemoveAt(int index)
     {
         RemoveAtInternal(index);
+        BroadcastChanged();
     }
 }
 
 public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative)
 {
     private TArray<T>? _arrayWrapper;
-    
+
     public void ToNative(IntPtr nativeBuffer, int arrayIndex, IList<T> obj)
+    {
+        ToNative(nativeBuffer, obj);
+    }
+
+    public void ToNative(IntPtr nativeBuffer, IList<T> obj)
     {
         unsafe
         {
@@ -184,7 +212,7 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
         }
     }
 
-    public TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public virtual TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
         if (_arrayWrapper == null)
         {
@@ -194,5 +222,17 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
             }
         }
         return _arrayWrapper;
+    }
+}
+
+public class ObservableArrayMarshaller<T>(IntPtr nativeProperty,
+    MarshallingDelegates<T>.ToNative toNative, MarshallingDelegates<T>.FromNative fromNative,
+    IntPtr nativeObject) : ArrayMarshaller<T>(nativeProperty, toNative, fromNative)
+{
+    public override TArray<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    {
+        var arrayWrapper = base.FromNative(nativeBuffer, arrayIndex);
+        arrayWrapper.MakeObservable(nativeObject);
+        return arrayWrapper;
     }
 }

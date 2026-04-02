@@ -1,34 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	    <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591</NoWarn>
+        <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500</NoWarn>
     </PropertyGroup>
 
 	<PropertyGroup>
-		<DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
-	</PropertyGroup>
+      <DefineConstants>WITH_EDITOR</DefineConstants>
+      <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
+      <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+    </PropertyGroup>
 
+    <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
+    <Import Project="$(UHTTargetDir)\UE5Rules.Defines.props" Condition="Exists('$(UHTTargetDir)\UE5Rules.Defines.props')" />
+    
     <ItemGroup>
-        <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />
-        <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
-        <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
+      <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />
+      <ProjectReference Include="..\UnrealSharp.Core\UnrealSharp.Core.csproj" />
+      <ProjectReference Include="..\UnrealSharp.Log\UnrealSharp.Log.csproj" />
         
-        <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
-            <OutputItemType>Analyzer</OutputItemType>
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
+      <ProjectReference Include="..\UnrealSharp.SourceGenerators\UnrealSharp.SourceGenerators.csproj">
+          <OutputItemType>Analyzer</OutputItemType>
+          <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      </ProjectReference>
 
-        <ProjectReference Include="..\UnrealSharp.ExtensionSourceGenerators\UnrealSharp.ExtensionSourceGenerators.csproj">
+      <ProjectReference Include="..\UnrealSharp.ExtensionSourceGenerators\UnrealSharp.ExtensionSourceGenerators.csproj">
             <OutputItemType>Analyzer</OutputItemType>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
+      </ProjectReference>
     </ItemGroup>
     
 </Project>

@@ -4,7 +4,7 @@ using UnrealSharp.Core.Marshallers;
 namespace UnrealSharp;
 
 [UClass]
-public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>
+public class TMapReadOnly<TKey, TValue> : MapBase<TKey, TValue>, IReadOnlyDictionary<TKey, TValue> where TKey : notnull
 {
     /// <inheritdoc />
     public TMapReadOnly(IntPtr mapProperty, IntPtr address,

@@ -1,123 +1,113 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.SourceGenerator.Utilities;
 
 namespace UnrealSharp.ExtensionSourceGenerators;
 
-[Generator]
-public class ClassExtenderGenerator : ISourceGenerator
+public enum ExtensionType
 {
-    private readonly Dictionary<INamedTypeSymbol, ExtensionGenerator> _generators = new();
-
-    public void Initialize(GeneratorInitializationContext context)
+    Unknown,
+    Actor,
+    ActorComponent
+}
+    
+public readonly record struct ParseResult
+{
+    public readonly string TypeName;
+    public readonly string TypeNamespace;
+    public string FullTypeName => $"{TypeNamespace}.{TypeName}";
+    public readonly ExtensionType ExtensionType;
+    
+    public bool IsEmpty => string.IsNullOrEmpty(TypeName);
+        
+    public ParseResult(string typeName, string typeNamespace, ExtensionType extensionType)
     {
-        context.RegisterForSyntaxNotifications(() => new ClassSyntaxReceiver());
-    }
-
-    private void RegisterGenerator(INamedTypeSymbol symbol, ExtensionGenerator generator)
-    {
-        _generators.Add(symbol, generator);
-    }
-
-    private ExtensionGenerator? GetGenerator(ITypeSymbol symbol)
-    {
-        foreach (var baseType in _generators)
-        {
-            if (IsA(symbol, baseType.Key))
-            {
-                return baseType.Value;
-            }
-        }
-
-        return null;
+        TypeName = typeName;
+        TypeNamespace = typeNamespace;
+        ExtensionType = extensionType;
     }
     
-    void InitializeGenerators(GeneratorExecutionContext context)
+    public static ParseResult Empty => new ParseResult(string.Empty, string.Empty, ExtensionType.Unknown);
+}
+
+[Generator]
+public class ClassExtenderGenerator : IIncrementalGenerator
+{
+    private record struct GeneratorInfo(ExtensionType ExtensionType, ExtensionGenerator Generator);
+    
+    private readonly List<GeneratorInfo> _generators =
+    [
+        new(ExtensionType.Actor, new ActorExtensionGenerator()),
+        new(ExtensionType.ActorComponent, new ActorComponentExtensionGenerator())
+    ];
+    
+    private ExtensionGenerator GetGenerator(ExtensionType extensionType)
     {
-        if (_generators.Count > 0)
+        foreach (GeneratorInfo generatorInfo in _generators)
         {
-            return;
+            if (generatorInfo.ExtensionType == extensionType)
+            {
+                return generatorInfo.Generator;
+            }
         }
-        
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.AActor")!, new ActorExtensionGenerator());
-        RegisterGenerator(context.Compilation.GetTypeByMetadataName("UnrealSharp.Engine.UActorComponent")!, new ActorComponentExtensionGenerator());
+
+        throw new System.Exception($"No generator found for extension type {extensionType}.");
     }
-
-    public void Execute(GeneratorExecutionContext context)
+    
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        if (context.SyntaxReceiver is not ClassSyntaxReceiver receiver)
-        {
-            return;
-        }
+        IncrementalValuesProvider<ParseResult> discoveryResults = context.SyntaxProvider.ForAttributeWithMetadataName(
+            "UnrealSharp.Attributes.UClassAttribute", Predicate, GetResult);
         
-        InitializeGenerators(context);
-        
-        foreach (var classDeclaration in receiver.CandidateClasses)
-        {
-            var model = context.Compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+        discoveryResults = discoveryResults.Where(result => !result.IsEmpty);
 
-            if (model.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
-            {
-                continue;
-            }
-            
-            ExtensionGenerator? generator = GetGenerator(classSymbol);
-            
-            if (generator == null)
-            {
-                continue;
-            }
-                
+        context.RegisterSourceOutput(discoveryResults, (outputContext, parseResult) =>
+        {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("#nullable disable");
             stringBuilder.AppendLine();
-            
+
             stringBuilder.AppendLine("using UnrealSharp.Engine;");
             stringBuilder.AppendLine("using UnrealSharp.CoreUObject;");
             stringBuilder.AppendLine("using UnrealSharp;");
             stringBuilder.AppendLine();
-        
-            stringBuilder.AppendLine($"namespace {classSymbol.ContainingNamespace};");
+
+            stringBuilder.AppendLine($"namespace {parseResult.TypeNamespace};");
             stringBuilder.AppendLine();
-            stringBuilder.AppendLine($"public partial class {classSymbol.Name}");
+            stringBuilder.AppendLine($"public partial class {parseResult.TypeName}");
             stringBuilder.AppendLine("{");
-            
-            generator.Generate(ref stringBuilder, classSymbol);
-                
+
+            ExtensionGenerator generator = GetGenerator(parseResult.ExtensionType);
+            generator.Generate(stringBuilder, parseResult);
+
             stringBuilder.AppendLine("}");
-            context.AddSource($"{classSymbol.Name}.generated.extension.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
-        }
-    }
-    
-    private static bool IsA(ITypeSymbol classSymbol, ITypeSymbol otherSymbol)
-    {
-        var currentSymbol = classSymbol.BaseType;
-
-        while (currentSymbol != null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(currentSymbol, otherSymbol))
-            {
-                return true;
-            }
-
-            currentSymbol = currentSymbol.BaseType;
-        }
-
-        return false;
+            outputContext.AddSource($"{parseResult.TypeName}.generated.extension.cs", SourceText.From(stringBuilder.ToString(), Encoding.UTF8));
+        });
     }
 
-    private class ClassSyntaxReceiver : ISyntaxReceiver
+    private ParseResult GetResult(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
-        public List<ClassDeclarationSyntax> CandidateClasses { get; } = [];
+        ITypeSymbol typeSymbol = (ITypeSymbol)context.TargetSymbol;
 
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+        if (typeSymbol.InheritsFrom("AActor"))
         {
-            if (syntaxNode is ClassDeclarationSyntax { BaseList: not null } classDeclaration)
-            {
-                CandidateClasses.Add(classDeclaration);
-            }
+            return new ParseResult(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString(), ExtensionType.Actor);
         }
+
+        if (typeSymbol.InheritsFrom("UActorComponent"))
+        {
+            return new ParseResult(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString(), ExtensionType.ActorComponent);
+        }
+        
+        return ParseResult.Empty;
+    }
+
+    private bool Predicate(SyntaxNode syntaxNode, CancellationToken cancellationToken)
+    {
+        return true;
     }
 }

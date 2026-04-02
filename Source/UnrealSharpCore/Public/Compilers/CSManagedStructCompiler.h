@@ -1,0 +1,21 @@
+﻿#pragma once
+
+#include "CSManagedTypeCompiler.h"
+#include "CSManagedStructCompiler.generated.h"
+
+class UCSScriptStruct;
+
+UCLASS()
+class UCSManagedStructCompiler : public UCSManagedTypeCompiler
+{
+	GENERATED_BODY()
+public:
+	UCSManagedStructCompiler();
+	
+	// UCSManagedTypeCompiler interface implementation
+	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const override;
+	// End of implementation
+private:
+	static void PurgeStruct(UCSScriptStruct* Field);
+};

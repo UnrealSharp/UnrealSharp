@@ -34,6 +34,8 @@ public static class PackageProjectAction
         {
             throw new DirectoryNotFoundException(parameters.ArchiveDirectory);
         }
+        
+        Program.CopyGlobalJson();
 
         string buildOutput = Program.GetIntermediateBuildPathForPlatform(
             parameters.TargetArchitecture,
@@ -41,13 +43,29 @@ public static class PackageProjectAction
             parameters.BuildConfig);
         
         string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
+        string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
+
+        string UETargetType = Program.GetArgument("UETargetType");
+        
+        if (string.IsNullOrEmpty(UETargetType))
+        {
+            throw new Exception("UETargetType argument is required for the Publish action.");
+        }
         
         Collection<string> extraArguments =
         [
+            "--self-contained",
+            
             "--runtime",
             "win-x64",
-			"-p:DefineAdditionalConstants=PACKAGE",
-            $"-p:PublishDir=\"{buildOutput}\""
+            
+			"-p:DisableWithEditor=true",
+            "-p:GenerateDocumentationFile=false",
+            
+            $"-p:UETargetType={UETargetType}",
+            
+            $"-p:PublishDir=\"{publishFolder}\"",
+            $"-p:OutputPath=\"{packageOutputFolder}\"",
         ];
 
         bool selfContained = !parameters.NativeAOT;
@@ -287,5 +305,12 @@ public static class PackageProjectAction
         ilcProcess.StartBuildToolProcess();
         
         Console.WriteLine("Creating response file for Native AOT compilation...");
+
+        BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
+        buildUserSolution.RunAction();
+
+        BuildEmitLoadOrder.EmitLoadOrder(packageOutputFolder, publishFolder);
+        return true;
+
     }
 }

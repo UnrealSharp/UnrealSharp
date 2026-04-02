@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class ClassUtilities
 {

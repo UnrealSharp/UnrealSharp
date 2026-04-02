@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <UETargetType Condition="'$(UETargetType)' == ''">Editor</UETargetType>
+    <UHTBaseDir>$(MSBuildProjectDirectory)\obj\UHT</UHTBaseDir>
+    <UHTTargetDir>$(UHTBaseDir)\$(UETargetType)</UHTTargetDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(UHTTargetDir)\**\*.cs">
+      <Link>Generated\$(GeneratedTypeDir)\%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="DebugUETargetType" BeforeTargets="Build">
+    <Message Importance="high" Text="Building for UETargetType: $(UETargetType)" />
+    <Message Importance="high" Text="Using UHT base dir: $(UHTBaseDir)" />
+  </Target>
+</Project>

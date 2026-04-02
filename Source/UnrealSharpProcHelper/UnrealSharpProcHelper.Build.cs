@@ -9,7 +9,7 @@ public class UnrealSharpProcHelper : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core",
+                "Core"
             }
         );
 
@@ -19,10 +19,15 @@ public class UnrealSharpProcHelper : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore", 
+                "SlateCore",
                 "Projects",
-                "Json"
+                "Json",
+                "XmlParser",
+                "UnrealSharpUtilities",
+                "DeveloperSettings"
             }
         );
+        
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
     }
 }

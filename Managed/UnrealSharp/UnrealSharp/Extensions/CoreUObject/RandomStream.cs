@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
@@ -40,7 +40,7 @@ public partial struct FRandomStream
 		return InitialSeed == other.InitialSeed && Seed == other.Seed;
 	}
 
-	public override bool Equals(object obj)
+	public override bool Equals(object? obj)
 	{
 		return obj is FRandomStream other && Equals(other);
 	}

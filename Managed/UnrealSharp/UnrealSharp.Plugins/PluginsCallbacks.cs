@@ -1,13 +1,14 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using UnrealSharp.Core;
+using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.Plugins;
 
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct PluginsCallbacks
 {
-    public delegate* unmanaged<char*, NativeBool, nint> LoadPlugin;
+    public delegate* unmanaged<char*, NativeBool, IntPtr> LoadPlugin;
     public delegate* unmanaged<char*, NativeBool> UnloadPlugin;
     
     [UnmanagedCallersOnly]
@@ -30,9 +31,9 @@ public unsafe struct PluginsCallbacks
         return PluginLoader.UnloadPlugin(assemblyPathStr).ToNativeBool();
     }
 
-    public static PluginsCallbacks Create()
+    public static void Initialize(PluginsCallbacks* outCallbacks)
     {
-        return new PluginsCallbacks
+        *outCallbacks = new PluginsCallbacks
         {
             LoadPlugin = &ManagedLoadPlugin,
             UnloadPlugin = &ManagedUnloadPlugin,

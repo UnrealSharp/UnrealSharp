@@ -1,8 +1,8 @@
 ﻿using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 {
@@ -33,20 +33,30 @@ public class ObjectPropertyTranslator : SimpleTypePropertyTranslator
 
     public override string GetManagedType(UhtProperty property)
     {
-        if (property.IsGenericType()) return "DOT";
+        return GetManagedType(property, property.HasMetadata("Nullable"));   
+    }
+
+    private static string GetManagedType(UhtProperty property, bool isNullable)
+    {
+        string nullableAnnotation = isNullable ? "?" : string.Empty;
+        
+        if (property.IsGenericType())
+        {
+            return $"DOT{nullableAnnotation}";
+        }
 
         UhtObjectProperty objectProperty = (UhtObjectProperty)property;
-        return objectProperty.Class.GetFullManagedName();
+        return $"{objectProperty.Class.GetFullManagedName()}{nullableAnnotation}";
     }
 
     public override string GetMarshaller(UhtProperty property)
     {
         if (property.Outer is UhtProperty outerProperty && outerProperty.IsGenericType())
         {
-            return $"ObjectMarshaller<DOT>";
+            return "ObjectMarshaller<DOT>";
         }
 
-        return $"ObjectMarshaller<{GetManagedType(property)}>";
+        return $"ObjectMarshaller<{GetManagedType(property, false)}>";
     }
 
     public override bool CanSupportGenericType(UhtProperty property) => true;

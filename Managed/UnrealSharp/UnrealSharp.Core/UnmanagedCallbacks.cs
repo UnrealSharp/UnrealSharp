@@ -8,7 +8,7 @@ namespace UnrealSharp.Core;
 public static class UnmanagedCallbacks
 {
     [UnmanagedCallersOnly]
-    public static IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandlePtr)
+    public static unsafe IntPtr CreateNewManagedObject(IntPtr nativeObject, IntPtr typeHandlePtr, char** error)
     {
         try
         {
@@ -25,6 +25,52 @@ public static class UnmanagedCallbacks
             }
 
             return UnrealSharpObject.Create(type, nativeObject);
+        }
+        catch (Exception ex)
+        {
+            LogUnrealSharpCore.LogError($"Failed to create new managed object: {ex.Message}");
+            *error = (char*)Marshal.StringToHGlobalUni(ex.ToString());
+        }
+
+        return IntPtr.Zero;
+    }
+
+    [UnmanagedCallersOnly]
+    public static IntPtr CreateNewManagedObjectWrapper(IntPtr managedObjectHandle, IntPtr typeHandlePtr)
+    {
+        try
+        {
+            if (managedObjectHandle == IntPtr.Zero)
+            {
+                throw new ArgumentNullException(nameof(managedObjectHandle));
+            }
+            
+            Type? type = GCHandleUtilities.GetObjectFromHandlePtr<Type>(typeHandlePtr);
+            
+            if (type is null)
+            {
+                throw new InvalidOperationException("The provided type handle does not point to a valid type.");
+            }
+            
+            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
+            if (managedObject is null)
+            {
+                throw new InvalidOperationException("The provided managed object handle does not point to a valid object.");
+            }
+
+            MethodInfo? wrapMethod = type.GetMethod("Wrap", BindingFlags.Public | BindingFlags.Static);
+            if (wrapMethod is null)
+            {
+                throw new InvalidOperationException("The provided type does not have a static Wrap method.");
+            }
+            
+            object? createdObject = wrapMethod.Invoke(null, [managedObject]);
+            if (createdObject is null)
+            {
+                throw new InvalidOperationException("The Wrap method did not return a valid object.");
+            }
+
+            return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(createdObject, createdObject.GetType().Assembly));
         }
         catch (Exception ex)
         {
@@ -72,6 +118,40 @@ public static class UnmanagedCallbacks
         }
 
         return IntPtr.Zero;
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void InitializeStruct(IntPtr structHandle, IntPtr buffer)
+    {
+        try
+        {
+            Type? structType = GCHandleUtilities.GetObjectFromHandlePtr<Type>(structHandle);
+            
+            if (structType == null)
+            {
+                throw new Exception("Invalid struct type handle");
+            }
+            
+            object? structInstance = Activator.CreateInstance(structType);
+            
+            if (structInstance == null)
+            {
+                throw new Exception("Failed to create struct instance");
+            }
+
+            MethodInfo? methodInfo = structType.GetMethod("ToNative");
+            
+            if (methodInfo == null)
+            {
+                throw new Exception("The struct type does not have a ToNative method");
+            }
+            
+            methodInfo.Invoke(structInstance, [buffer]);
+        }
+        catch (Exception e)
+        {
+            LogUnrealSharpCore.LogError($"Exception while trying to initialize struct: {e.Message}");
+        }
     }
     
     [UnmanagedCallersOnly]
@@ -133,14 +213,8 @@ public static class UnmanagedCallbacks
     {
         try
         {
-            IntPtr? methodHandle = GCHandleUtilities.GetObjectFromHandlePtr<IntPtr>(methodHandlePtr);
-            object? managedObject = GCHandleUtilities.GetObjectFromHandlePtr<object>(managedObjectHandle);
-            
-            if (methodHandle == null || managedObject == null)
-            {
-                throw new Exception("Invalid method or target handle");
-            }
-            
+            IntPtr methodHandle = GCHandleUtilities.GetObjectFromHandlePtrFast<IntPtr>(methodHandlePtr)!;
+            object managedObject = GCHandleUtilities.GetObjectFromHandlePtrFast<object>(managedObjectHandle)!;
             delegate*<object, IntPtr, IntPtr, void> methodPtr = (delegate*<object, IntPtr, IntPtr, void>) methodHandle;
             methodPtr(managedObject, argumentsBuffer, returnValueBuffer);
             return 0;
@@ -190,5 +264,19 @@ public static class UnmanagedCallbacks
 
         Assembly? foundAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Assembly>(assemblyHandle);
         GCHandleUtilities.Free(foundHandle, foundAssembly);
+    }
+
+    [UnmanagedCallersOnly]
+    public static void FreeHandle(IntPtr handle)
+    {
+        GCHandle foundHandle = GCHandle.FromIntPtr(handle);
+        if (!foundHandle.IsAllocated) return;
+        
+        if (foundHandle.Target is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+            
+        foundHandle.Free();
     }
 }

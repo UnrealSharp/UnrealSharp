@@ -1,51 +1,96 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 
-namespace UnrealSharpScriptGenerator.Utilities;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PackageUtilities
 {
     public const string SkipGlueGenerationDefine = "SkipGlueGeneration";
-    
-    public static string GetShortName(this UhtPackage package)
+
+    public static string GetModuleShortName(this UhtPackage package)
     {
-        #if UE_5_5_OR_LATER 
         return package.Module.ShortName;
-        #else
-        return package.ShortName;
-        #endif
     }
-    
+
     public static bool IsPartOfEngine(this UhtPackage package)
     {
-        bool isPartOfEngine = false;
-        #if UE_5_5_OR_LATER 
-        isPartOfEngine = package.Module.IsPartOfEngine;
-        #else
-        isPartOfEngine = package.IsPartOfEngine;
-        #endif
-        
-        return isPartOfEngine || package.IsForcedAsEngineGlue();
+        return package.Module.IsPartOfEngine || package.IsForcedAsEngineGlue();
     }
     
+    public static bool IsDefineActive(this UhtPackage package, string define)
+    {
+        UHTManifest.Module module = package.GetModule();
+        return module.TryGetDefine(define, out int value) && value != 0;
+    }
+    
+    public static bool IsEditorOnly(this UhtPackage package)
+    {
+        return package.PackageFlags.HasAnyFlags(EPackageFlags.EditorOnly | EPackageFlags.UncookedOnly | EPackageFlags.Developer);
+    }
+
     public static bool IsForcedAsEngineGlue(this UhtPackage package)
     {
         bool hasDefine = package.GetModule().TryGetDefine("ForceAsEngineGlue", out int treatedAsEngineGlue);
         return hasDefine && treatedAsEngineGlue != 0;
     }
-    
+
     public static UHTManifest.Module GetModule(this UhtPackage package)
     {
-        #if UE_5_5_OR_LATER 
         return package.Module.Module;
-        #else
-        return package.Module;
-        #endif
+    }
+
+    public static bool ShouldExportPackage(this UhtPackage package)
+    {
+        bool foundDefine = package.IsDefineActive(SkipGlueGenerationDefine);
+        return !foundDefine;
+    }
+
+    public static string GetBaseDirectoryForPackage(this UhtPackage package)
+    {
+        return FindUnrealModuleRoot(package.GetModule().BaseDirectory);
     }
     
-    public static bool ShouldExport(this UhtPackage package)
+    public static string FindUnrealModuleRoot(string directory)
     {
-        bool foundDefine = package.GetModule().TryGetDefine(SkipGlueGenerationDefine, out int skipGlueGeneration);
-        return !foundDefine || skipGlueGeneration == 0;
+        DirectoryInfo? currentDirectory = new DirectoryInfo(directory);
+        FileInfo? projectFile = null;
+
+        while (currentDirectory != null)
+        {
+            projectFile = currentDirectory.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(f => f.Extension.Equals(".uplugin", StringComparison.OrdinalIgnoreCase) || 
+                                     f.Extension.Equals(".uproject", StringComparison.OrdinalIgnoreCase));
+
+            if (projectFile != null)
+            {
+                break;
+            }
+                
+            currentDirectory = currentDirectory.Parent;
+        }
+
+        if (projectFile == null || currentDirectory == null)
+        {
+            throw new InvalidOperationException($"Could not find .uplugin or .uproject from directory: {directory}");
+        }
+
+        return currentDirectory.FullName;
+    }
+    
+    public static string GetModuleUhtOutputDirectory(this UhtPackage package)
+    {
+        return Path.Combine(package.GetUhtBaseOutputDirectory(), package.GetModuleShortName());
+    }
+    
+    public static string GetUhtBaseOutputDirectory(this UhtPackage package)
+    {
+        ModuleInfo moduleInfo = package.GetModuleInfo();
+        string root = moduleInfo.IsPartOfEngine && !package.IsExtractedEngineModule() ? GeneratorStatics.BindingsProjectDirectory : moduleInfo.ProjectDirectory;
+        string subPath = Path.Combine(root, "obj", "UHT", GeneratorStatics.BuildTarget.ToString());
+        return subPath;
     }
 }

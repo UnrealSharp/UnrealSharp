@@ -15,21 +15,6 @@ public partial struct FVector4
     }
     
     /// <summary>
-    /// Constructs a vector with the given individual elements.
-    /// </summary>
-    /// <param name="w">W component.</param>
-    /// <param name="x">X component.</param>
-    /// <param name="y">Y component.</param>
-    /// <param name="z">Z component.</param>
-    public FVector4(double x, double y, double z, double w)
-    {
-        W = w;
-        X = x;
-        Y = y;
-        Z = z;
-    }
-
-    /// <summary>
     /// Constructs a Vector4 from the given Vector2D and a Z and W component.
     /// </summary>
     /// <param name="value">The vector to use as the X and Y components.</param>
@@ -91,16 +76,6 @@ public partial struct FVector4
         array[index + 1] = Y;
         array[index + 2] = Z;
         array[index + 3] = W;
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Vector4 is equal to this Vector4 instance.
-    /// </summary>
-    /// <param name="other">The Vector4 to compare this instance to.</param>
-    /// <returns>True if the other Vector4 is equal to this instance; False otherwise.</returns>
-    public bool Equals(FVector4 other)
-    {
-        return X == other.X && Y == other.Y && Z == other.Z && W == other.W;
     }
 
     /// <summary>
@@ -174,42 +149,6 @@ public partial struct FVector4
 
     #region Public static operators
     /// <summary>
-    /// Adds two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The summed vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator +(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X + right.X, left.Y + right.Y, left.Z + right.Z, left.W + right.W);
-    }
-
-    /// <summary>
-    /// Subtracts the second vector from the first.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The difference vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator -(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X - right.X, left.Y - right.Y, left.Z - right.Z, left.W - right.W);
-    }
-
-    /// <summary>
-    /// Multiplies two vectors together.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The product vector.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator *(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X * right.X, left.Y * right.Y, left.Z * right.Z, left.W * right.W);
-    }
-
-    /// <summary>
     /// Multiplies a vector by the given scalar.
     /// </summary>
     /// <param name="left">The source vector.</param>
@@ -231,18 +170,6 @@ public partial struct FVector4
     public static FVector4 operator *(double left, FVector4 right)
     {
         return new FVector4(left) * right;
-    }
-
-    /// <summary>
-    /// Divides the first vector by the second.
-    /// </summary>
-    /// <param name="left">The first source vector.</param>
-    /// <param name="right">The second source vector.</param>
-    /// <returns>The vector resulting from the division.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FVector4 operator /(FVector4 left, FVector4 right)
-    {
-        return new FVector4(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
     }
 
     /// <summary>
@@ -274,29 +201,6 @@ public partial struct FVector4
         return Zero - value;
     }
 
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are equal; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(FVector4 left, FVector4 right)
-    {
-        return left.Equals(right);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the two given vectors are not equal.
-    /// </summary>
-    /// <param name="left">The first vector to compare.</param>
-    /// <param name="right">The second vector to compare.</param>
-    /// <returns>True if the vectors are not equal; False if they are equal.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(FVector4 left, FVector4 right)
-    {
-        return !(left == right);
-    }
     #endregion Public static operators
     /// <summary>
     /// Returns the vector (0,0,0,0).
@@ -322,31 +226,6 @@ public partial struct FVector4
     /// Returns the vector (0,0,0,1).
     /// </summary>
     public static FVector4 UnitW { get { return new FVector4(0.0, 0.0, 0.0, 1.0); } }
-
-    /// <summary>
-    /// Returns the hash code for this instance.
-    /// </summary>
-    /// <returns>The hash code.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z, W);
-    }
-
-    /// <summary>
-    /// Returns a boolean indicating whether the given Object is equal to this Vector4 instance.
-    /// </summary>
-    /// <param name="obj">The Object to compare against.</param>
-    /// <returns>True if the Object is equal to this Vector4; False otherwise.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override bool Equals(object obj)
-    {
-        if (obj is not FVector4)
-        {
-            return false;
-        }
-
-        return Equals((FVector4)obj);
-    }
 
     /// <summary>
     /// Returns a String representing this Vector4 instance.

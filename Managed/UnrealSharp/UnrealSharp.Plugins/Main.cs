@@ -1,9 +1,11 @@
-﻿using System.Reflection;
+
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using System.Runtime.InteropServices;
+using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
-using UnrealSharp.Shared;
 
 #if !PACKAGE
 using Microsoft.Build.Locator;
@@ -13,36 +15,37 @@ namespace UnrealSharp.Plugins;
 
 public static class Main
 {
-    internal static DllImportResolver _dllImportResolver = null!;
-    
-    public static readonly AssemblyLoadContext MainLoadContext =
-        AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ??
-        AssemblyLoadContext.Default;
-
     [UnmanagedCallersOnly]
     private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
     {
         try
         {
-            #if !PACKAGE
-            string dotnetSdk = DotNetUtilities.GetLatestDotNetSdkPath();
-            MSBuildLocator.RegisterMSBuildPath(dotnetSdk);
+            #if WITH_EDITOR
+            IEnumerable<VisualStudioInstance> instances = MSBuildLocator.QueryVisualStudioInstances();
+            VisualStudioInstance? visualStudioInstance = instances.OrderByDescending(i => i.Version).FirstOrDefault();
+            
+            if (visualStudioInstance is not null)
+            {
+                MSBuildLocator.RegisterInstance(visualStudioInstance);
+            }
+            else
+            {
+                MSBuildLocator.RegisterDefaults();
+            }
             #endif
             
             AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-
-            // Initialize plugin and managed callbacks
-            *pluginCallbacks = PluginsCallbacks.Create();
             
-            NativeBinds.InitializeNativeBinds(bindsCallbacks);
+            PluginsCallbacks.Initialize(pluginCallbacks);
             ManagedCallbacks.Initialize(managedCallbacks);
+            NativeBinds.Initialize(bindsCallbacks);
 
-            LogUnrealSharpPlugins.Log("UnrealSharp successfully setup!");
+            Console.WriteLine("UnrealSharp initialized successfully.");
             return NativeBool.True;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            LogUnrealSharpPlugins.LogError($"Error initializing UnrealSharp: {ex.Message}");
+            Console.WriteLine(exception);
             return NativeBool.False;
         }
     }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UnrealSharpScriptGenerator;
+namespace UnrealSharpManagedGlue;
 
 [Flags]
 public enum EPropertyUsageFlags : byte

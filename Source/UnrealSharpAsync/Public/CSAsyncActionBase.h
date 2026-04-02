@@ -10,7 +10,7 @@
 #include "CSAsyncActionBase.generated.h"
 
 UCLASS()
-class UNREALSHARPASYNC_API UCSAsyncActionBase : public UObject
+class UCSAsyncActionBase : public UObject
 {
 	GENERATED_BODY()
 public:
@@ -20,12 +20,13 @@ protected:
 	friend class UUCSAsyncBaseExporter;
 
 	void InvokeManagedCallback(bool bDispose = true);
+    void InvokeManagedCallback(UObject* WorldContextObject, bool bDispose = true);
 	void InitializeManagedCallback(FGCHandleIntPtr Callback);
 	
 	FCSManagedDelegate ManagedCallback;
 };
 
-UCLASS(meta = (Internal))
+UCLASS(meta = (InternalType))
 class UUCSAsyncBaseExporter : public UObject
 {
 	GENERATED_BODY()

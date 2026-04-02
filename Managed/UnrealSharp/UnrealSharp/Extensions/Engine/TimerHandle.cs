@@ -22,32 +22,4 @@ public partial struct FTimerHandle
     {
         return Handle != 0;
     }
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is FTimerHandle other)
-        {
-            return Handle == other.Handle;
-        }
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return Handle.GetHashCode();
-    }
-
-    public static bool operator ==(FTimerHandle left, FTimerHandle right)
-    {
-        return left.Handle == right.Handle;
-    }
-
-    public static bool operator !=(FTimerHandle left, FTimerHandle right)
-    {
-        return left.Handle != right.Handle;
-    }
-    public override string ToString()
-    {
-        return Handle.ToString();
-    }
 }

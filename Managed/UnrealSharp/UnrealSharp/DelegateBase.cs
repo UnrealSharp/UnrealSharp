@@ -1,18 +1,13 @@
-using UnrealSharp.Attributes;
-using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp;
 
-[Binding]
 public abstract class DelegateBase<TDelegate> where TDelegate : Delegate
 {
     public TDelegate Invoke => GetInvoker();
 
-    protected virtual TDelegate GetInvoker()
-    {
-        return null;
-    }
+    protected abstract TDelegate GetInvoker();
 
     public abstract void FromNative(IntPtr address, IntPtr nativeProperty);
     public abstract void ToNative(IntPtr address);
@@ -56,7 +51,7 @@ internal class DelegateMarshaller<TWrapperDelegate, TDelegate> where TWrapperDel
 
 public class MulticastDelegateMarshaller<T> where T : Delegate
 {
-    public static TMulticastDelegate<T> FromNative(IntPtr nativeBuffer, IntPtr nativeProperty, int arrayIndex)
+    public static TMulticastDelegate<T> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr nativeProperty)
     {
         return DelegateMarshaller<TMulticastDelegate<T>, T>.FromNative(nativeBuffer, nativeProperty, arrayIndex);
     }
@@ -69,9 +64,9 @@ public class MulticastDelegateMarshaller<T> where T : Delegate
 
 public class SingleDelegateMarshaller<T> where T : Delegate
 {
-    public static TDelegate<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
+    public static TDelegate<T> FromNative(IntPtr nativeBuffer, int arrayIndex, IntPtr nativeProperty)
     {
-        return DelegateMarshaller<TDelegate<T>, T>.FromNative(nativeBuffer, IntPtr.Zero, arrayIndex);
+        return DelegateMarshaller<TDelegate<T>, T>.FromNative(nativeBuffer, nativeProperty, arrayIndex);
     }
 
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, object obj)
@@ -83,24 +78,28 @@ public class SingleDelegateMarshaller<T> where T : Delegate
 public abstract class TDelegateBase<T> where T : Delegate
 {
     private static readonly Type Wrapper;
+    
     public readonly DelegateBase<T> InnerDelegate;
+    
+    static TDelegateBase()
+    {
+        Type delegateType = typeof(T);
+        string wrapperName = $"{delegateType.Name}__DelegateSignature";
+        string fullName = $"{delegateType.Namespace}.{wrapperName}";
+        
+        Type? foundWrapper = delegateType.Assembly.GetType(fullName);
+
+        if (foundWrapper == null)
+        {
+            throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
+        }
+        
+        Wrapper = foundWrapper;
+    }
 
     internal TDelegateBase()
     {
         InnerDelegate = (DelegateBase<T>) Activator.CreateInstance(Wrapper);
-    }
-
-    static TDelegateBase()
-    {
-        Type delegateType = typeof(T);
-        string wrapperName = $"U{delegateType.Name}";
-        string fullName = $"{delegateType.Namespace}.{wrapperName}";
-        
-        Wrapper = delegateType.Assembly.GetType(fullName);
-        if (Wrapper == null)
-        {
-            throw new TypeLoadException($"Could not find wrapper type '{fullName}' for '{typeof(T).FullName}'");
-        }
     }
     
     /// <summary>
@@ -167,10 +166,6 @@ public abstract class TDelegateBase<T> where T : Delegate
 
 public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public TMulticastDelegate() : base()
-    {
-    }
-
     public static TMulticastDelegate<T> operator +(TMulticastDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);
@@ -186,11 +181,6 @@ public class TMulticastDelegate<T> : TDelegateBase<T> where T : Delegate
 
 public class TDelegate<T> : TDelegateBase<T> where T : Delegate
 {
-    public TDelegate() : base()
-    {
-        
-    }
-    
     public static TDelegate<T> operator +(TDelegate<T> thisDelegate, T handler)
     {
         thisDelegate.InnerDelegate.Add(handler);

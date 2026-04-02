@@ -1,103 +1,64 @@
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace UnrealSharp.SourceGenerators;
 
 [Generator]
-public class CustomLogSourceGenerator : ISourceGenerator
+public class CustomLogSourceGenerator : IIncrementalGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    readonly record struct ClassLogInfo
     {
-        context.RegisterForSyntaxNotifications(() => new CustomLogSyntaxReceiver());
-    }
-
-    public void Execute(GeneratorExecutionContext context)
-    {
-        if (context.SyntaxReceiver is not CustomLogSyntaxReceiver receiver)
-        {
-            return;
-        }
+        public readonly string Name;
+        public readonly string Namespace;
+        public readonly string LogVerbosity;
         
-        foreach (var classDeclaration in receiver.ClassesWithCustomLog)
+        public ClassLogInfo(ISymbol classSymbol, string logVerbosity)
         {
-            SemanticModel semanticModel = context.Compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            INamedTypeSymbol? classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration);
-
-            if (classSymbol == null)
-            {
-                continue;
-            }
-            
-            foreach (var attributeList in classDeclaration.AttributeLists)
-            {
-                foreach (var attribute in attributeList.Attributes)
-                {
-                    if (attribute.Name.ToString() != "CustomLog")
-                    {
-                        continue;
-                    }
-                    
-                    AttributeArgumentSyntax? firstArgument = attribute.ArgumentList?.Arguments.FirstOrDefault();
-                    
-                    string logVerbosity;
-                    if (firstArgument != null)
-                    {
-                        logVerbosity = firstArgument.Expression.ToString();
-                    }
-                    else
-                    {
-                        logVerbosity = "ELogVerbosity.Display";
-                    }
-                    
-                    string generatedCode = GenerateLoggerClass(classSymbol, classSymbol.Name, logVerbosity);
-                    context.AddSource($"{classSymbol.Name}_CustomLog.generated.cs", SourceText.From(generatedCode, Encoding.UTF8));
-                }
-            }
+            Name = classSymbol.Name;
+            Namespace = classSymbol.ContainingNamespace.IsGlobalNamespace ? string.Empty : classSymbol.ContainingNamespace.ToDisplayString();
+            LogVerbosity = logVerbosity;
         }
     }
 
-    private string GenerateLoggerClass(INamedTypeSymbol classSymbol, string logFieldName, string logVerbosity)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        string namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
-            ? string.Empty
-            : classSymbol.ContainingNamespace.ToDisplayString();
+        IncrementalValuesProvider<ClassLogInfo> discoveryResults = context.SyntaxProvider.ForAttributeWithMetadataName("UnrealSharp.Log.CustomLog", Predicate, Transform);
+        context.RegisterSourceOutput(discoveryResults, GenerateSource);
+    }
 
-        string className = classSymbol.Name;
+    private void GenerateSource(SourceProductionContext sourceProductionContext, ClassLogInfo classLogInfo)
+    {
         StringBuilder builder = new StringBuilder();
-        
+
         builder.AppendLine("using UnrealSharp.Log;");
 
-        if (!string.IsNullOrEmpty(namespaceName))
+        if (!string.IsNullOrEmpty(classLogInfo.Namespace))
         {
-            builder.AppendLine($"namespace {namespaceName};");
+            builder.AppendLine($"namespace {classLogInfo.Namespace};");
         }
 
-        builder.AppendLine($"public partial class {className}");
+        builder.AppendLine($"public partial class {classLogInfo.Name}");
         builder.AppendLine("{");
-        builder.AppendLine($"    public static void Log(string message) => UnrealLogger.Log(\"{logFieldName}\", message, {logVerbosity});");
-        builder.AppendLine($"    public static void LogWarning(string message) => UnrealLogger.LogWarning(\"{logFieldName}\", message);");
-        builder.AppendLine($"    public static void LogError(string message) => UnrealLogger.LogError(\"{logFieldName}\", message);");
-        builder.AppendLine($"    public static void LogFatal(string message) => UnrealLogger.LogFatal(\"{logFieldName}\", message);");
+        builder.AppendLine($"    public static void Log(string message) => UnrealLogger.Log(\"{classLogInfo.Name}\", message, (ELogVerbosity){classLogInfo.LogVerbosity});");
+        builder.AppendLine($"    public static void LogWarning(string message) => UnrealLogger.LogWarning(\"{classLogInfo.Name}\", message);");
+        builder.AppendLine($"    public static void LogError(string message) => UnrealLogger.LogError(\"{classLogInfo.Name}\", message);");
+        builder.AppendLine($"    public static void LogFatal(string message) => UnrealLogger.LogFatal(\"{classLogInfo.Name}\", message);");
         builder.AppendLine("}");
 
-        return builder.ToString();
+        sourceProductionContext.AddSource($"{classLogInfo.Name}_CustomLog.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
-    private class CustomLogSyntaxReceiver : ISyntaxReceiver
+    private ClassLogInfo Transform(GeneratorAttributeSyntaxContext arg1, CancellationToken arg2)
     {
-        public List<ClassDeclarationSyntax> ClassesWithCustomLog { get; } = new();
-
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode is ClassDeclarationSyntax classDeclaration && classDeclaration.AttributeLists.Count > 0)
-            {
-                ClassesWithCustomLog.Add(classDeclaration);
-            }
-        }
+        const string logVerbosityDisplay = "ELogVerbosity.Display";
+        AttributeData attribute = arg1.Attributes.First();
+        TypedConstant firstArgument = attribute.ConstructorArguments.FirstOrDefault();
+        string logVerbosity = firstArgument.IsNull ? logVerbosityDisplay : firstArgument.Value?.ToString() ?? logVerbosityDisplay;
+        return new ClassLogInfo(arg1.TargetSymbol, logVerbosity);
     }
+
+    private static bool Predicate(SyntaxNode arg1, CancellationToken arg2) => true;
 }

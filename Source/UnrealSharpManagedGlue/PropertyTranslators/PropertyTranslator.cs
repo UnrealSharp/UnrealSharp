@@ -1,42 +1,43 @@
-﻿using System;
+﻿using EpicGames.UHT.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using EpicGames.Core;
-using EpicGames.UHT.Types;
-using UnrealSharpScriptGenerator.Exporters;
-using UnrealSharpScriptGenerator.Tooltip;
-using UnrealSharpScriptGenerator.Utilities;
+using UnrealSharpManagedGlue.Exporters;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+using UnrealSharpManagedGlue.Tooltip;
 
-namespace UnrealSharpScriptGenerator.PropertyTranslators;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 public abstract class PropertyTranslator
 {
+    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
+    {
+        _supportedPropertyUsage = supportedPropertyUsage;
+    }
+    
     private readonly EPropertyUsageFlags _supportedPropertyUsage;
     protected const EPropertyUsageFlags ContainerSupportedUsages = EPropertyUsageFlags.Property
                                                                    | EPropertyUsageFlags.StructProperty
                                                                    | EPropertyUsageFlags.Parameter
                                                                    | EPropertyUsageFlags.ReturnValue;
     
-    public bool IsSupportedAsProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
-    public bool IsSupportedAsParameter() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
-    public bool IsSupportedAsReturnValue() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
-    public bool IsSupportedAsInner() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
-    public bool IsSupportedAsStructProperty() => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
-    
+    public bool IsSupportedAsProperty => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Property);
+    public bool IsSupportedAsParameter => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Parameter);
+    public bool IsSupportedAsReturnValue => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.ReturnValue);
+    public bool IsSupportedAsInner => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.Inner);
+    public bool IsSupportedAsStructProperty => _supportedPropertyUsage.HasFlag(EPropertyUsageFlags.StructProperty);
+
     // Is this property the same memory layout as the C++ type?
     public virtual bool IsBlittable => false;
+    
     public virtual bool SupportsSetter => true;
     public virtual bool ExportDefaultParameter => true;
     public virtual bool CacheProperty => false;
-    
+
     // Should this property be declared as a parameter in the function signature? 
     // A property can support being a parameter but not be declared as one, such as WorldContextObjectPropertyTranslator
     public virtual bool ShouldBeDeclaredAsParameter => true;
-    
-    public PropertyTranslator(EPropertyUsageFlags supportedPropertyUsage)
-    {
-        _supportedPropertyUsage = supportedPropertyUsage;
-    }
     
     // Can we export this property?
     public abstract bool CanExport(UhtProperty property);
@@ -76,21 +77,15 @@ public abstract class PropertyTranslator
         if (hasNativeGetterSetter || !hasBlueprintGetterSetter)
         {
             string variableDeclaration = CacheProperty || hasNativeGetterSetter ? "" : "IntPtr ";
-            builder.AppendLine($"{variableDeclaration}{propertyPointerName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetNativePropertyFromName(NativeClassPtr, \"{adjustedNativePropertyName}\");");
-            builder.AppendLine($"{nativePropertyName}_Offset = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffset({propertyPointerName});");
+            builder.AppendLine($"{variableDeclaration}{propertyPointerName} = CallGetNativePropertyFromName(NativeClassPtr, \"{adjustedNativePropertyName}\");");
+            builder.AppendLine($"{nativePropertyName}_Offset = CallGetPropertyOffset({propertyPointerName});");
         }
         
         if (hasNativeGetterSetter)
         {
-            builder.AppendLine($"{nativePropertyName}_Size = {ExporterCallbacks.FPropertyCallbacks}.CallGetSize({propertyPointerName});");
+            builder.AppendLine($"{nativePropertyName}_Size = CallGetSize({propertyPointerName});");
         }
         
-        // Export the static constructors for the getter and setter
-        TryExportGetterSetterStaticConstructor(property, builder);
-    }
-    
-    private void TryExportGetterSetterStaticConstructor(UhtProperty property, GeneratorStringBuilder builder)
-    {
         if (!property.HasNativeGetter())
         {
             UhtFunction? getter = property.GetBlueprintGetter();
@@ -113,7 +108,7 @@ public abstract class PropertyTranslator
     public virtual void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)
     {
         string variableName = $"{functionName}_{propertyEngineName}_{(property.GetPrecedingCustomStructParams() > 0 ? "NativeOffset" : "Offset")}";
-        builder.AppendLine($"{variableName} = {ExporterCallbacks.FPropertyCallbacks}.CallGetPropertyOffsetFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
+        builder.AppendLine($"{variableName} = CallGetPropertyOffsetFromName({functionName}_NativeFunction, \"{propertyEngineName}\");");
     }
     
     public virtual void ExportPropertyVariables(GeneratorStringBuilder builder, UhtProperty property, string propertyEngineName)
@@ -140,8 +135,7 @@ public abstract class PropertyTranslator
             if (precedingCustomStructProperties > 0)
             {
                 builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_NativeOffset;");
-                List<string> customStructParamTypes =
-                    function.GetCustomStructParamTypes().GetRange(0, precedingCustomStructProperties);
+                List<string> customStructParamTypes = function.GetCustomStructParamTypes().GetRange(0, precedingCustomStructProperties);
                 builder.AppendLine($"static int {nativeMethodName}_{propertyEngineName}_Offset<{string.Join(", ", customStructParamTypes)}>()");
                 builder.Indent();
                 foreach (string customStructParamType in customStructParamTypes)
@@ -149,12 +143,14 @@ public abstract class PropertyTranslator
                     builder.AppendLine($"where {customStructParamType} : MarshalledStruct<{customStructParamType}>");
                 }
 
-                string variableNames = string.Join(" + ",
-                    customStructParamTypes.ConvertAll(customStructParamType =>
-                        $"{customStructParamType}.GetNativeDataSize()"));
+                string variableNames = string.Join(" + ", customStructParamTypes.ConvertAll(customStructParamType => $"{customStructParamType}.GetNativeDataSize()"));
                 string nativeOffsetSubtractionMultiplier = string.Empty;
+                
                 if (precedingCustomStructProperties > 1)
+                {
                     nativeOffsetSubtractionMultiplier += $"{precedingCustomStructProperties} * ";
+                }
+
                 builder.AppendLine($"=> {nativeMethodName}_{propertyEngineName}_NativeOffset + {variableNames} - {nativeOffsetSubtractionMultiplier}sizeof(int);");
                 builder.UnIndent();
                 return;
@@ -170,22 +166,13 @@ public abstract class PropertyTranslator
 
     public virtual void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
-        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value");
+        ExportToNative(builder, property, propertyManagedName, "NativeObject", $"{propertyManagedName}_Offset", "value", false);
     }
 
     public virtual void ExportCppDefaultParameterAsLocalVariable(GeneratorStringBuilder builder, string variableName,
         string defaultValue, UhtFunction function, UhtProperty paramProperty)
     {
         
-    }
-
-    public virtual void ExportFunctionReturnStatement(GeneratorStringBuilder builder,
-        UhtProperty property,
-        string nativePropertyName, 
-        string functionName, 
-        string paramsCallString)
-    {
-        throw new NotImplementedException();
     }
     
     // Cleanup the marshalling buffer
@@ -197,29 +184,38 @@ public abstract class PropertyTranslator
     
     // Build the C# code to marshal this property from C++ to C#
     public abstract void ExportFromNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
-        string assignmentOrReturn, string sourceBuffer, string offset, bool bCleanupSourceBuffer,
+        string assignmentOrReturn, string sourceBuffer, string offset, bool cleanupSourceBuffer,
         bool reuseRefMarshallers);
     
     // Build the C# code to marshal this property from C# to C++
-    public abstract void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName, string destinationBuffer, string offset, string source);
+    public abstract void ExportToNative(GeneratorStringBuilder builder, UhtProperty property, string propertyName,
+        string destinationBuffer, string offset, string source, bool reuseRefMarshallers);
     
     // Convert a C++ default value to a C# default value
     // Example: "0.0f" for a float property
-    public abstract string ConvertCPPDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
+    public abstract string ConvertCppDefaultValue(string defaultValue, UhtFunction function, UhtProperty parameter);
 
-    public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, string propertyName, UhtProperty property)
+    public void ExportConstructorParameter(GeneratorStringBuilder builder, UhtProperty property, string propertyName)
+    {
+        string managedType = GetManagedType(property);
+        builder.Append($"{managedType} {propertyName}");
+    }
+
+    public void ExportCustomProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, 
+                                     string propertyName, UhtProperty property, bool isExplicitImplementation = false,
+                                     HashSet<string>? exportedFunctionNames = null)
     {
         GetterSetterFunctionExporter? getterExporter = getterSetterPair.GetterExporter;
         GetterSetterFunctionExporter? setterExporter = getterSetterPair.SetterExporter;
         
         void ExportBackingFields()
         {
-            if (getterExporter != null)
+            if (getterExporter != null && (exportedFunctionNames is null || !exportedFunctionNames.Contains(getterExporter.Function.SourceName)))
             {
                 getterExporter.ExportFunctionVariables(builder);
             }
             
-            if (setterExporter != null)
+            if (setterExporter != null && (exportedFunctionNames is null || !exportedFunctionNames.Contains(setterExporter.Function.SourceName)))
             {
                 setterExporter.ExportFunctionVariables(builder);
             }
@@ -243,17 +239,21 @@ public abstract class PropertyTranslator
         Action? exportGetterAction = getterExporter != null ? () => AppendInvoke(builder, getterExporter) : null;
         Action? exportSetterAction = setterExporter != null ? () => AppendInvoke(builder, setterExporter) : null;
         
-        ExportProperty_Internal(builder, property, propertyName, ExportBackingFields, ExportProtection, exportGetterAction, exportSetterAction);
+        string? interfaceName = isExplicitImplementation ? getterSetterPair.Accessors.First().Outer?.GetFullManagedName() : null;
+        
+        ExportProperty_Internal(builder, property, propertyName, ExportBackingFields, ExportProtection, exportGetterAction, exportSetterAction, interfaceName: interfaceName);
     }
     
-    public void ExportGetSetProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, UhtProperty property, Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters)
+    public void ExportGetSetProperty(GeneratorStringBuilder builder, GetterSetterPair getterSetterPair, UhtProperty property, 
+                                     Dictionary<UhtFunction, FunctionExporter> exportedGetterSetters,
+                                     HashSet<string>? exportedFunctionName = null)
     {
         void ExportNativeGetter()
         {
             builder.BeginUnsafeBlock();
             builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
-            builder.AppendLine($"FPropertyExporter.CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);");
-            ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "paramsBuffer", "0", false, false);
+            builder.AppendLine($"CallGetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);");
+            ExportFromNative(builder, property, property.SourceName, $"{GetManagedType(property)} newValue =", "paramsBuffer", "0", true, false);
             builder.AppendLine("return newValue;");
             builder.EndUnsafeBlock();
         }
@@ -272,8 +272,9 @@ public abstract class PropertyTranslator
         {
             builder.BeginUnsafeBlock();
             builder.AppendStackAllocProperty($"{property.SourceName}_Size", property.GetNativePropertyName());
-            ExportToNative(builder, property, property.SourceName, "paramsBuffer", "0", "value");
-            builder.AppendLine($"FPropertyExporter.CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);"); 
+            ExportToNative(builder, property, property.SourceName, "paramsBuffer", "0", "value", false);
+            builder.AppendLine($"CallSetValue_InContainer({property.GetNativePropertyName()}, NativeObject, paramsBuffer);"); 
+            ExportCleanupMarshallingBuffer(builder, property, property.SourceName);
             builder.EndUnsafeBlock();
         }
         
@@ -317,13 +318,13 @@ public abstract class PropertyTranslator
         
         void ExportBackingFields()
         {
-            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter!))
+            if (getterSetterPair.GetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Getter!) && (exportedFunctionName is null || !exportedFunctionName.Contains(getterSetterPair.Getter!.SourceName)))
             {
                 getterSetterPair.GetterExporter.ExportFunctionVariables(builder);
                 exportedGetterSetters.Add(getterSetterPair.Getter!, getterSetterPair.GetterExporter);
             }   
             
-            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter!))
+            if (getterSetterPair.SetterExporter is not null && !exportedGetterSetters.ContainsKey(getterSetterPair.Setter!) && (exportedFunctionName is null || !exportedFunctionName.Contains(getterSetterPair.Setter!.SourceName)))
             {
                 getterSetterPair.SetterExporter.ExportFunctionVariables(builder);
                 exportedGetterSetters.Add(getterSetterPair.Setter!, getterSetterPair.SetterExporter);
@@ -357,10 +358,10 @@ public abstract class PropertyTranslator
         
         bool isReadWrite = property.IsReadWrite();
         bool isEditDefaultsOnly = property.IsEditDefaultsOnly();
-        
-        Action? exportSetterAction = SupportsSetter && (isReadWrite || isEditDefaultsOnly) ? ExportSetter : null;
+
+        Action? exportSetterAction = SupportsSetter && (isReadWrite || property.IsEditAnywhere()) ? ExportSetter : null;
         string setterOperation = isEditDefaultsOnly && !isReadWrite ? "init" : "set";
-        
+
         ExportProperty_Internal(builder, property, property.GetPropertyName(), ExportBackingFields, null, ExportGetter, exportSetterAction, setterOperation); 
     }
     
@@ -369,7 +370,8 @@ public abstract class PropertyTranslator
         Func<string>? exportProtection,
         Action? exportGetter, 
         Action? exportSetter,
-        string setterOperation = "set")
+        string setterOperation = "set",
+        string? interfaceName = null)
     {
         builder.AppendLine();
         builder.TryAddWithEditor(property);
@@ -384,7 +386,15 @@ public abstract class PropertyTranslator
         builder.AppendTooltip(property);
         
         string managedType = GetManagedType(property);
-        builder.AppendLine($"{protection}{managedType} {propertyName}");
+        if (interfaceName is not null)
+        {
+            builder.AppendLine($"{managedType} {interfaceName}.{propertyName}");
+        }
+        else
+        {
+            builder.AppendLine($"{protection}{managedType} {propertyName}");
+        }
+
         builder.OpenBrace();
 
         if (exportGetter is not null)
@@ -413,7 +423,7 @@ public abstract class PropertyTranslator
         exportedFunction.ExportInvoke(builder);
     }
 
-    public void ExportMirrorProperty(GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames)
+    public void ExportMirrorProperty(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool suppressOffsets, List<string> reservedNames, bool isReadOnly, bool useProperties)
     {
         string propertyScriptName = property.GetPropertyName();
         
@@ -427,11 +437,82 @@ public abstract class PropertyTranslator
         
         string protection = property.GetProtection();
         string managedType = GetManagedType(property);
+        string required = property.HasMetadata("Required") ? "required " : "";;
         builder.AppendTooltip(property);
-        builder.AppendLine($"{protection}{managedType} {propertyScriptName};");
+        if (structObj.IsStructNativelyCopyable())
+        {
+            
+            builder.AppendLine($"{protection}{required}{managedType} {propertyScriptName}");
+            builder.OpenBrace();
+            builder.AppendLine("get");
+            builder.OpenBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, true);
+            builder.CloseBrace();
+            
+            builder.AppendLine(isReadOnly ? "init" : "set");
+            builder.OpenBrace();
+            GenerateMirrorPropertyBody(structObj, builder, property, false);
+            builder.CloseBrace();
+            builder.CloseBrace();
+        }
+        else if (useProperties)
+        {
+            string setter = isReadOnly ? "init;" : "set;";
+            builder.AppendLine($"{protection}{required}{managedType} {propertyScriptName} {{ get; {setter} }}");
+        }
+        else
+        {
+            string @readonly = isReadOnly ? "readonly " : "";
+            builder.AppendLine($"{protection}{required}{@readonly}{managedType} {propertyScriptName};");
+        }
         builder.AppendLine();
     }
-    
+
+    private void GenerateMirrorPropertyBody(UhtStruct structObj, GeneratorStringBuilder builder, UhtProperty property, bool isGetter)
+    {
+        bool isDestructible = structObj.IsStructNativelyDestructible();
+        builder.BeginUnsafeBlock();
+        if (isDestructible)
+        {
+            builder.AppendLine("if (NativeHandle is null)");
+            builder.OpenBrace();
+            builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("if (Allocation is null)");
+            builder.OpenBrace();
+            builder.AppendLine("Allocation = new byte[NativeDataSize];");
+        }
+
+        builder.CloseBrace();
+        builder.AppendLine();
+
+        if (isDestructible)
+        {
+            builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
+            builder.OpenBrace();
+            builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+        }
+        else
+        {
+            builder.AppendLine("fixed (byte* AllocationPointer = Allocation)");
+            builder.OpenBrace();
+        }
+
+        if (isGetter)
+        {
+            ExportFromNative(builder, property, property.SourceName, "return", "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", false, false);
+        }
+        else
+        {
+            ExportToNative(builder, property, property.SourceName, "(IntPtr) AllocationPointer", $"{property.SourceName}_Offset", "value", false);
+        }
+        
+        builder.CloseBrace();
+        builder.CloseBrace();
+    }
+
     public string GetCppDefaultValue(UhtFunction function, UhtProperty parameter)
     {
         string metaDataKey = $"CPP_Default_{parameter.SourceName}";
@@ -446,5 +527,26 @@ public abstract class PropertyTranslator
     protected string GetNativePropertyField(string propertyName)
     {
         return $"{propertyName}_NativeProperty";
+    }
+
+    public void ExportPropertyArithmetic(GeneratorStringBuilder stringBuilder, UhtProperty property, ArithmeticKind arithmeticKind)
+    {
+        string scriptName = property.GetScriptName();
+
+        static string Bin(string op, string lhs, string rhs) => $"{lhs} {op} {rhs}";
+
+        string rhsExpr = arithmeticKind switch
+        {
+            ArithmeticKind.Add => Bin("+", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Subtract => Bin("-", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Multiply => Bin("*", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Divide => Bin("/", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            ArithmeticKind.Modulo => Bin("%", $"lhs.{scriptName}", $"rhs.{scriptName}"),
+            _ => throw new NotSupportedException($"Arithmetic kind {arithmeticKind} not supported.")
+        };
+
+        string managedType = GetManagedType(property);
+
+        stringBuilder.Append($"{scriptName} = ({managedType})({rhsExpr})");
     }
 }

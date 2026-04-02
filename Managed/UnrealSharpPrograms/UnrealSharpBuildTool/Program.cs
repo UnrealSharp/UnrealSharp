@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using CommandLine;
 using Newtonsoft.Json;
+using UnrealSharp.Shared;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharpBuildTool;
@@ -18,10 +19,12 @@ public static class Program
             Parser parser = new Parser(with => with.HelpWriter = null);
             ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
             
+            UnrealSharpSettingsUtilities.InitializeConfigFile(result.Value.ProjectDirectory, result.Value.PluginDirectory);
+
             if (result.Tag == ParserResultType.NotParsed)
             {
                 BuildToolOptions.PrintHelp(result);
-                
+
                 string errors = string.Empty;
                 foreach (Error error in result.Errors)
                 {
@@ -30,7 +33,7 @@ public static class Program
                         errors += $"{tokenError.Tag}: {tokenError.Token} \n";
                     }
                 }
-                
+
                 throw new Exception($"Invalid arguments. Errors: {errors}");
             }
             
@@ -49,7 +52,7 @@ public static class Program
             Console.WriteLine("An error occurred: " + exception.Message + Environment.NewLine + exception.StackTrace);
             return 1;
         }
-        
+
         return 0;
     }
     
@@ -65,21 +68,31 @@ public static class Program
     
     public static string GetScriptFolder()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, "Script");
+        return Path.Combine(BuildToolOptions.ProjectDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
+    }
+
+    public static string GetPluginsFolder()
+    {
+        return Path.Combine(BuildToolOptions.ProjectDirectory, "Plugins");
     }
     
+    public static string GetPluginDirectory()
+    {
+        return BuildToolOptions.PluginDirectory;
+    }
+
     public static string GetProjectDirectory()
     {
         return BuildToolOptions.ProjectDirectory;
     }
-    
+
     public static string FixPath(string path)
     {
         if (OperatingSystem.IsWindows())
         {
             return path.Replace('/', '\\');
         }
-        
+
         return path;
     }
 
@@ -87,25 +100,22 @@ public static class Program
     {
         return "Managed" + BuildToolOptions.ProjectName;
     }
-    
-    public static string GetOutputPath(string rootDir = "")
+
+    public static string GetOutputPath(string rootDir = "", bool includeVersion = true)
     {
         if (string.IsNullOrEmpty(rootDir))
         {
             rootDir = BuildToolOptions.ProjectDirectory;
         }
-        
-        return Path.Combine(rootDir, "Binaries", "Managed");
-    }
 
-    public static string GetWeaver()
-    {
-        return Path.Combine(GetManagedBinariesDirectory(), "UnrealSharpWeaver.dll");
-    }
-
-    public static string GetManagedBinariesDirectory()
-    {
-        return Path.Combine(BuildToolOptions.PluginDirectory, "Binaries", "Managed");
+        if (includeVersion)
+        {
+            return Path.Combine(rootDir, "Binaries", "Managed", GetVersion());
+        }
+        else
+        {
+            return Path.Combine(rootDir, "Binaries", "Managed");
+        }
     }
     
     public static string IntermediateDirectory => Path.Combine(BuildToolOptions.PluginDirectory, "Intermediate");
@@ -119,6 +129,11 @@ public static class Program
         return Path.Combine(IntermediateBuildDirectory, architectureString, platformString, buildConfigString);
     }
     
+    public static string GetUnrealSharpSharedProps()
+    {
+        return Path.GetFullPath(Path.Combine(BuildToolOptions.PluginDirectory, "UnrealSharp.Shared.props"));
+    }
+
     public static string GetVersion()
     {
         Version currentVersion = Environment.Version;
@@ -126,6 +141,11 @@ public static class Program
         return "net" + currentVersionStr;
     }
     
+    public static string GetNetStandardVersion()
+    {
+        return "netstandard2.0";
+    }
+
     public static void CreateOrUpdateLaunchSettings(string launchSettingsPath)
     {
         Root root = new Root();
@@ -133,28 +153,28 @@ public static class Program
         string executablePath = string.Empty;
         if (OperatingSystem.IsWindows())
         {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            executablePath = Path.Combine(Program.BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
         }
-        string commandLineArgs = Program.FixPath(Program.GetUProjectFilePath());
-        
+        string commandLineArgs = FixPath(GetUProjectFilePath());
+
         // Create a new profile if it doesn't exist
         if (root.Profiles == null)
         {
             root.Profiles = new Profiles();
         }
-            
+
         root.Profiles.ProfileName = new Profile
         {
             CommandName = "Executable",
             ExecutablePath = executablePath,
             CommandLineArgs = $"\"{commandLineArgs}\"",
         };
-        
-        string newJsonString = JsonConvert.SerializeObject(root, Newtonsoft.Json.Formatting.Indented);
+
+        string newJsonString = JsonConvert.SerializeObject(root, Formatting.Indented);
         StreamWriter writer = File.CreateText(launchSettingsPath);
         writer.Write(newJsonString);
         writer.Close();
@@ -162,11 +182,57 @@ public static class Program
 
     public static List<FileInfo> GetAllProjectFiles(DirectoryInfo folder)
     {
-        FileInfo[] csprojFiles = folder.GetFiles("*.csproj", SearchOption.AllDirectories);
-        FileInfo[] fsprojFiles = folder.GetFiles("*.fsproj", SearchOption.AllDirectories);
-        List<FileInfo> allProjectFiles = new List<FileInfo>(csprojFiles.Length + fsprojFiles.Length);
-        allProjectFiles.AddRange(csprojFiles);
-        allProjectFiles.AddRange(fsprojFiles);
-        return allProjectFiles;
+        string scriptDirectoryName = CommonUnrealSharpSettings.ScriptDirectoryName;
+        
+        return folder.GetDirectories(scriptDirectoryName)
+                .SelectMany(GetProjectsInDirectory)
+                .Concat(folder.GetDirectories("Plugins")
+                        .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                        .Select(x => x.Directory)
+                        .Select(x => x!.GetDirectories(scriptDirectoryName).FirstOrDefault())
+                        .Where(x => x is not null)
+                        .SelectMany(GetProjectsInDirectory!))
+                .ToList();
+    }
+
+    public static Dictionary<string, List<FileInfo>> GetProjectFilesByDirectory(DirectoryInfo folder)
+    {
+        Dictionary<string, List<FileInfo>> result = new Dictionary<string, List<FileInfo>>();
+        DirectoryInfo? scriptsFolder = folder.GetDirectories(CommonUnrealSharpSettings.ScriptDirectoryName).FirstOrDefault();
+        
+        if (scriptsFolder is not null)
+        {
+            result.Add(GetOutputPathForDirectory(scriptsFolder), GetProjectsInDirectory(scriptsFolder).ToList());
+        }
+
+        foreach (DirectoryInfo? pluginFolder in folder.GetDirectories("Plugins")
+                         .SelectMany(x => x.EnumerateFiles("*.uplugin", SearchOption.AllDirectories))
+                         .Select(x => x.Directory)
+                         .Select(x => x!.GetDirectories(CommonUnrealSharpSettings.ScriptDirectoryName).FirstOrDefault())
+                         .Where(x => x is not null))
+        {
+            result.Add(GetOutputPathForDirectory(pluginFolder!), GetProjectsInDirectory(pluginFolder!).ToList());
+        }
+
+        return result;
+    }
+
+    private static string GetOutputPathForDirectory(DirectoryInfo directory)
+    {
+        return Path.Combine(directory.Parent!.FullName, "Binaries", "Managed");
+    }
+
+    private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
+    {
+        IEnumerable<FileInfo> csprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
+        IEnumerable<FileInfo> fsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
+        return csprojFiles.Concat(fsprojFiles);
+    }
+    
+    public static void CopyGlobalJson()
+    {
+        string sourceGlobalJsonPath = Path.Combine(BuildToolOptions.PluginDirectory, "Managed", "global.json");
+        string destinationGlobalJsonPath = Path.Combine(GetScriptFolder(), "global.json");
+        File.Copy(sourceGlobalJsonPath, destinationGlobalJsonPath, overwrite: true);
     }
 }
