@@ -197,7 +197,7 @@ public static class DotNetUtilities
 	    string pluginDirectory,
 	    string projectDirectory,
 	    string engineDirectory,
-	    IEnumerable<KeyValuePair<string, string>>? additionalArguments = null)
+	    IEnumerable<KeyValuePair<string, string>>? actionArgs = null)
     {
 	    string dotNetExe = FindDotNetExecutable();
 	    string unrealSharpBuildToolPath = Path.Combine(managedBinariesPath, "UnrealSharpBuildTool.dll");
@@ -230,11 +230,11 @@ public static class DotNetUtilities
 		    $"{dotNetExe}"
 	    };
 
-	    if (additionalArguments != null)
+	    if (actionArgs != null)
 	    {
-		    arguments.Add("--AdditionalArgs");
+		    arguments.Add("--ActionArgs");
 
-		    foreach (KeyValuePair<string, string> argument in additionalArguments)
+		    foreach (KeyValuePair<string, string> argument in actionArgs)
 		    {
 			    arguments.Add($"{argument.Key}={argument.Value}");
 		    }

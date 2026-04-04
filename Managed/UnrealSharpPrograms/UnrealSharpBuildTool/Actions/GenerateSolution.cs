@@ -1,12 +1,18 @@
 ﻿using System.Diagnostics;
+using CommandLine;
 using UnrealSharp.Shared;
 
 namespace UnrealSharpBuildTool.Actions;
 
+[Verb("GenerateSolutionParameters", aliases: ["GenerateSolution"], HelpText = "Generates a new .sln file for the project and adds all existing C# projects to it.")]
+public struct GenerateSolutionParameters
+{
+    public GenerateSolutionParameters() { }
+}
+
 public static class GenerateSolutionAction
 {
-    [Action("Generate Solution", "Generates a solution file for the current project.")]
-    public static void GenerateSolution()
+    public static void GenerateSolution(GenerateSolutionParameters parameters)
     {
         using BuildToolProcess generateSln = new BuildToolProcess();
         
@@ -35,20 +41,8 @@ public static class GenerateSolutionAction
             .ToList();
 
         AddProjectToSln(existingProjectsList);
-        
-        string[] existingProjects = Directory.GetFiles(Program.GetScriptFolder(), "*.csproj", SearchOption.AllDirectories);
-        List<string> existingProjectsList = new List<string>(existingProjects.Length);
-        
-        foreach (string project in existingProjects)
-        {
-            string relativePath = Path.GetRelativePath(Program.GetScriptFolder(), project);
-            existingProjectsList.Add(relativePath);
-        }
-        
-        ProjectGeneration.GenerateProject.AddProjectToSln(existingProjectsList);
 
         Program.CopyGlobalJson();
-        return true;
     }
 
     private static IEnumerable<string> GetExistingProjects()

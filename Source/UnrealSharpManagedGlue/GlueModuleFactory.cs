@@ -49,7 +49,7 @@ public static class GlueModuleFactory
     private static void CreateOrUpdateGlueModule(string csprojPath, 
         string projectName, 
         IEnumerable<string>? dependencyPaths, 
-        string projectRoot, UhtPackage? package, 
+        string projectRoot, UhtPackage package, 
         out bool createdNewModule)
     {
         createdNewModule = false;
@@ -57,17 +57,14 @@ public static class GlueModuleFactory
         if (!File.Exists(csprojPath))
         {
             string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-            bool isEditorOnly = package?.IsEditorOnly() ?? false;
             List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
             {
-                new("NewProjectName", projectName),
-                new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-                new("SkipIncludeProjectGlue", "true"),
+                new("ProjectName", projectName),
+                new("ProjectFolder", Path.GetDirectoryName(projectDirectory)!),
                 new("SkipSolutionGeneration", "true"),
                 new("SkipUSharpProjSetup", "true"),
                 new("ProjectRoot", projectRoot),
-                new("EditorOnly", isEditorOnly.ToString()),
-                new("IsCollectible", "false"),
+                new("EditorOnly", package.IsEditorOnly().ToString()),
             };
             
             if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateProject", arguments))
@@ -114,9 +111,9 @@ public static class GlueModuleFactory
         
         foreach (string path in pluginDependencies)
         {
-            arguments.Add(new KeyValuePair<string, string>("Dependency", path));
+            arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
         }
-
+        
         if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", arguments))
         {
             throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");

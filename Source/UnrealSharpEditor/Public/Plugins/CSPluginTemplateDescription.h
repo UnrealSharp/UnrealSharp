@@ -10,14 +10,9 @@ class FCSPluginTemplateDescription final : public FPluginTemplateDescription
 public:
     FCSPluginTemplateDescription(FText InName, FText InDescription, FString InOnDiskPath, const bool InCanContainContent,
         const EHostType::Type InModuleDescriptorType, const ELoadingPhase::Type InLoadingPhase = ELoadingPhase::Default, const bool InRequiresGlue = true)
-    : FPluginTemplateDescription(MoveTemp(InName), MoveTemp(InDescription), MoveTemp(InOnDiskPath), InCanContainContent, InModuleDescriptorType, InLoadingPhase), bRequiresGlue(InRequiresGlue)
+    : FPluginTemplateDescription(MoveTemp(InName), MoveTemp(InDescription), MoveTemp(InOnDiskPath), InCanContainContent, InModuleDescriptorType, InLoadingPhase)
     {
     }
 
     virtual void OnPluginCreated(TSharedPtr<IPlugin> NewPlugin) override;
-
-private:
-    static void CreateCodeModule(const FString& ModuleName, const FString& ProjectPath, const FString& GlueProjectName, const FString& PluginPath, bool bIncludeGlueProject);
-
-    bool bRequiresGlue;
 };

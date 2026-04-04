@@ -153,7 +153,6 @@ void UCSManagedClassCompiler::PopulateComponentOverrides(TArray<FBPComponentClas
 		}
 		
 		FObjectProperty* FoundProperty = FindFProperty<FObjectProperty>(ParentClass, OverrideData.PropertyName);
-		
 		if (!FoundProperty)
 		{
 			UE_LOGFMT(LogUnrealSharp, Warning, "Can't find component property {0} on class {1}", *OverrideData.PropertyName.ToString(), *ParentClass->GetName());

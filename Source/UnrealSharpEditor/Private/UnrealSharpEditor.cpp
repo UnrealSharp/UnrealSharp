@@ -679,10 +679,10 @@ void FUnrealSharpEditorModule::RegisterPluginTemplates()
 	const FText CSharpOnlyDescription = LOCTEXT("UnrealSharp_CSharpOnlyTemplateDesc", "Create a blank plugin that can only contain content and C# scripts.");
 	
     const TSharedRef<FPluginTemplateDescription> BlankTemplate = MakeShared<FCSPluginTemplateDescription>(BlankTemplateName, BlankDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default, true);
+        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default);
 	
     const TSharedRef<FPluginTemplateDescription> CSharpOnlyTemplate = MakeShared<FCSPluginTemplateDescription>(CSharpOnlyTemplateName, CSharpOnlyDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default, false);
+        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default);
 
     PluginBrowser.RegisterPluginTemplate(BlankTemplate);
     PluginBrowser.RegisterPluginTemplate(CSharpOnlyTemplate);
@@ -727,8 +727,8 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 		return;
 	}
 	
-	ExtraArguments.Add(TEXT("NewProjectName"), ModuleName);
-	ExtraArguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	ExtraArguments.Add(TEXT("ProjectName"), ModuleName);
+	ExtraArguments.Add(TEXT("ProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
 	ExtraArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));

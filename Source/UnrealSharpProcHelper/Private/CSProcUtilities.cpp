@@ -9,7 +9,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 #include "Logging/StructuredLog.h"
-#include "Misc/ConfigCacheIni.h"
 
 bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& Arguments, int32& OutReturnCode, FString& Output, const FString* InWorkingDirectory)
 {
@@ -33,7 +32,7 @@ bool UCSProcUtilities::InvokeCommand(const FString& ProgramPath, const FString& 
 	return true;
 }
 
-bool UCSProcUtilities::InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& AdditionalArguments)
+bool UCSProcUtilities::InvokeUnrealSharpBuildTool(const FString& BuildAction, const TMap<FString, FString>& ActionArgs)
 {
 	FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
 	FString DotNetPath = GetDotNetExecutablePath();
@@ -47,10 +46,10 @@ bool UCSProcUtilities::InvokeUnrealSharpBuildTool(const FString& BuildAction, co
 	Args += FString::Printf(TEXT(" --PluginDirectory \"%s\""), *PluginFolder);
 	Args += FString::Printf(TEXT(" --DotNetPath \"%s\""), *DotNetPath);
 
-	if (AdditionalArguments.Num())
+	if (ActionArgs.Num())
 	{
-		Args += TEXT(" --AdditionalArgs");
-		for (const TPair<FString, FString>& Argument : AdditionalArguments)
+		Args += TEXT(" --ActionArgs");
+		for (const TPair<FString, FString>& Argument : ActionArgs)
 		{
 			Args += FString::Printf(TEXT(" %s=%s"), *Argument.Key, *Argument.Value);
 		}

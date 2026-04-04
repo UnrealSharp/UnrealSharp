@@ -4,30 +4,33 @@ using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
+[Verb("PackageProjectParameters", aliases: ["PackageProject"], HelpText = "Packages the project. This will create a self-contained package in a archived directory.")]
+public struct PackageProjectParameters
+{
+    [Option("ArchiveDirectory", Required = true, HelpText = "The directory base directory where the packaged game is located")]
+    public string ArchiveDirectory { get; set; }
+        
+    [Option("TargetPlatform", Required = true, HelpText = "The target platform for the package")]
+    public TargetPlatform TargetPlatform { get; set; }
+
+    [Option("TargetArchitecture", Required = true, HelpText = "The target architecture for the package")]
+    public TargetArchitecture TargetArchitecture { get; set; }
+         
+    [Option("BuildConfig", Required = false, HelpText = "The build configuration for the package (Debug, Release, etc.)")]
+    public TargetConfiguration BuildConfig { get; set; }
+        
+    [Option("NativeAOT", Required = false, HelpText = "Enable Native AOT compilation. Will overwrite the BuildConfig to Release if set to true.")]
+    public bool NativeAOT { get; set; }
+        
+    [Option("IncludeDebugSymbols", Required = false, HelpText = "Include debug symbols in the package. Defaults to false.")]
+    public bool IncludeDebugSymbols { get; set; }
+        
+    [Option("UETargetType", Required = false, HelpText = "The type of Unreal Engine target (Editor, Game, etc.). Required for the Publish action.")]
+    public string UETargetType { get; set; }
+}
+
 public static class PackageProjectAction
 {
-    public struct PackageProjectParameters
-    {
-        [Option("ArchiveDirectory", Required = true, HelpText = "The directory base directory where the packaged game is located")]
-        public string ArchiveDirectory { get; set; }
-        
-        [Option("TargetPlatform", Required = true, HelpText = "The target platform for the package")]
-        public TargetPlatform TargetPlatform { get; set; }
-
-        [Option("TargetArchitecture", Required = true, HelpText = "The target architecture for the package")]
-        public TargetArchitecture TargetArchitecture { get; set; }
-         
-        [Option("BuildConfig", Required = false, HelpText = "The build configuration for the package (Debug, Release, etc.)")]
-        public TargetConfiguration BuildConfig { get; set; }
-        
-        [Option("NativeAOT", Required = false, HelpText = "Enable Native AOT compilation. Will overwrite the BuildConfig to Release if set to true.")]
-        public bool NativeAOT { get; set; }
-        
-        [Option("IncludeDebugSymbols", Required = false, HelpText = "Include debug symbols in the package. Defaults to false.")]
-        public bool IncludeDebugSymbols { get; set; }
-    }
-    
-    [Action("PackageProject", "Packages the project for distribution.")]
     public static void PackageProject(PackageProjectParameters parameters)
     {
         if (!Directory.Exists(parameters.ArchiveDirectory))
@@ -42,10 +45,10 @@ public static class PackageProjectAction
             parameters.TargetPlatform,
             parameters.BuildConfig);
         
-        string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
-        string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
+        string bindingsPath = Path.Combine(BuildToolOptions.Instance.PluginDirectory, "Managed", "UnrealSharp");
+        string packageOutputFolder = Path.Combine(BuildToolOptions.Instance.PluginDirectory, "Intermediate", "Build", "Managed");
 
-        string UETargetType = Program.GetArgument("UETargetType");
+        string UETargetType = parameters.UETargetType;
         
         if (string.IsNullOrEmpty(UETargetType))
         {
@@ -64,7 +67,7 @@ public static class PackageProjectAction
             
             $"-p:UETargetType={UETargetType}",
             
-            $"-p:PublishDir=\"{publishFolder}\"",
+            $"-p:PublishDir=\"{parameters.ArchiveDirectory}\"",
             $"-p:OutputPath=\"{packageOutputFolder}\"",
         ];
 
@@ -74,49 +77,25 @@ public static class PackageProjectAction
             extraArguments.Add("--self-contained");
         }
         
-        BuildSolutionAction.BuildSolutionParameters buildParameters = new BuildSolutionAction.BuildSolutionParameters
+        BuildSolutionParameters buildParameters = new BuildSolutionParameters
         {
             ExtraArguments = extraArguments,
             BuildConfig = parameters.BuildConfig,
             Publish = true,
             Folders = [bindingsPath, Program.GetScriptFolder()],
         };
+        
         BuildSolutionAction.BuildSolution(buildParameters);
         
-        string outputWeaver = Path.Combine(buildOutput, "weaved");
-        Weaving.WeaveParameters weaveParameters = new Weaving.WeaveParameters
-        {
-            OutputDirectory = outputWeaver,
-            BuildConfig = parameters.BuildConfig,
-            AssemblyPaths = GetAssemblyPathsToWeave(buildOutput),
-            CopyDependencies = false,
-        };
-        Weaving.WeaveProject(weaveParameters);
-
         if (parameters.NativeAOT)
         {
-            PublishAsAOT(parameters, outputWeaver, buildOutput);
+            PublishAsAot(parameters, packageOutputFolder, buildOutput);
         }
     }
 
-    static IEnumerable<string> GetAssemblyPathsToWeave(string output)
+    private static void PublishAsAot(PackageProjectParameters parameters, string output, string outputPath)
     {
-        List<FileInfo> projectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetScriptFolder()));
-        
-        List<string> assemblyPaths = new List<string>(projectFiles.Count);
-        foreach (FileInfo projectFile in projectFiles)
-        {
-            string assemblyPath = Path.Combine(output, projectFile.Name.Replace(".csproj", ".dll"));
-            assemblyPaths.Add(assemblyPath);
-        }
-        
-        return assemblyPaths;
-    }
-
-    static void PublishAsAOT(PackageProjectParameters parameters, string outputWeaver, string outputPath)
-    {
-        // get all dlls in outputWeaver
-        string[] dlls = Directory.GetFiles(outputWeaver, "*.dll", SearchOption.AllDirectories);
+        string[] dlls = Directory.GetFiles(output, "*.dll", SearchOption.AllDirectories);
 
         List<FileInfo> userWeavedAssemblies = new List<FileInfo>();
         foreach (string dll in dlls)
@@ -300,17 +279,10 @@ public static class PackageProjectAction
             throw new FileNotFoundException($"ILC executable not found at: {ilcExePath}");
         }
         
+        Console.WriteLine("Creating response file for Native AOT compilation...");
+        
         BuildToolProcess ilcProcess = new BuildToolProcess(ilcExePath);
         ilcProcess.StartInfo.ArgumentList.Add($"@{ilcResponseFile}");
         ilcProcess.StartBuildToolProcess();
-        
-        Console.WriteLine("Creating response file for Native AOT compilation...");
-
-        BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
-        buildUserSolution.RunAction();
-
-        BuildEmitLoadOrder.EmitLoadOrder(packageOutputFolder, publishFolder);
-        return true;
-
     }
 }

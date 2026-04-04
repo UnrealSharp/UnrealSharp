@@ -2,10 +2,11 @@
 #include "Factories/CSFunctionFactory.h"
 #include "CSManagedTypeDefinition.h"
 #include "UnrealSharpUtils.h"
+#include "Types/CSDelegateFunction.h"
 
 UCSManagedDelegateCompiler::UCSManagedDelegateCompiler()
 {
-	FieldType = UDelegateFunction::StaticClass();
+	FieldType = UCSDelegateFunction::StaticClass();
 }
 
 void UCSManagedDelegateCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const

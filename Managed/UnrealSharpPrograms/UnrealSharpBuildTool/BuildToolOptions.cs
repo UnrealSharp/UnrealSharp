@@ -6,8 +6,10 @@ namespace UnrealSharpBuildTool;
 
 public class BuildToolOptions
 {
+    public static BuildToolOptions Instance = null!;
+    
     [Option('a', "Action", Required = true, HelpText = "The action the build tool should process")]
-    public string Action { get; set; }
+    public required string Action { get; set; }
     
     [Option("ActionArgs", Required = false, HelpText = "Additional arguments to pass to the action. Use the format 'key=value'.")]
     public IEnumerable<string> ActionArgs { get; set; } = new List<string>();
@@ -26,64 +28,32 @@ public class BuildToolOptions
 
     [Option("ProjectName", Required = true, HelpText = "The name of the Unreal Engine project.")]
     public string ProjectName { get; set; } = string.Empty;
-
-    [Option("AdditionalArgs", Required = false, HelpText = "Additional key-value arguments.")]
-    public IEnumerable<string> AdditionalArgs { get; set; } = new List<string>();
-
-    public string GetArgument(string argument, string defaultValue = "")
+    
+    public static void ParseArguments(string[] args)
     {
-        string? result = AdditionalArgs.FirstOrDefault(arg => arg.StartsWith(argument));
-        
-        if (result == null)
+        Parser parser = new Parser(with => with.HelpWriter = null);
+        ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
+
+        if (result.Tag == ParserResultType.NotParsed)
         {
-            return defaultValue;
+            PrintHelp(result);
+
+            string errors = string.Empty;
+            foreach (Error error in result.Errors)
+            {
+                if (error is TokenError tokenError)
+                {
+                    errors += $"{tokenError.Tag}: {tokenError.Token} \n";
+                }
+            }
+
+            throw new Exception($"Invalid arguments. Errors: {errors}");
         }
-        
-        return result[(argument.Length + 1)..];
+            
+        Instance = result.Value;
     }
 
-    public bool GetArgumentBool(string argument, bool defaultValue = false)
-    {
-        string value = GetArgument(argument);
-        
-        if (string.IsNullOrEmpty(value))
-        {
-            return defaultValue;
-        }
-
-        if (bool.TryParse(value, out bool result))
-        {
-            return result;
-        }
-        
-        return defaultValue;
-    }
-
-    public int GetArgumentInt(string argument, int defaultValue = 0)
-    {
-        string value = GetArgument(argument);
-        
-        if (int.TryParse(value, out int result))
-        {
-            return result;
-        }
-        
-        return defaultValue;
-    }
-
-    public IEnumerable<string> GetArguments(string argument)
-    {
-        return AdditionalArgs
-            .Where(arg => arg.StartsWith(argument))
-            .Select(arg => arg[(argument.Length + 1)..]);
-    }
-
-    public bool HasArgument(string argument)
-    {
-        return AdditionalArgs.Any(arg => arg.StartsWith(argument));
-    }
-
-    public static void PrintHelp(ParserResult<BuildToolOptions> result)
+    private static void PrintHelp(ParserResult<BuildToolOptions> result)
     {
         string name = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly()!.Location);
         Console.Error.WriteLine($"Usage: {name} [options]");

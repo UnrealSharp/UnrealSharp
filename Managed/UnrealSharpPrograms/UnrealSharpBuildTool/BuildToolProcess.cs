@@ -9,13 +9,13 @@ public class BuildToolProcess : Process
     {
         if (fileName == null)
         {
-            if (string.IsNullOrEmpty(Program.BuildToolOptions.DotNetPath))
+            if (string.IsNullOrEmpty(BuildToolOptions.Instance.DotNetPath))
             {
                 fileName = "dotnet";
             }
             else
             {
-                fileName = Program.BuildToolOptions.DotNetPath;
+                fileName = BuildToolOptions.Instance.DotNetPath;
             }
         }
         
