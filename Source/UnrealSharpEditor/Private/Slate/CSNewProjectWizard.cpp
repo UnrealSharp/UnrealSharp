@@ -240,42 +240,23 @@ void SCSNewProjectDialog::OnCancel()
 
 void SCSNewProjectDialog::OnFinish()
 {
-	TMap<FString, FString> Arguments;
-	FString ModuleName = NameTextBox->GetText().ToString();
-	FString ProjectParentFolder = PathTextBox->GetText().ToString();
-
 	FString ProjectRoot;
-	FString GlueProjectLocation;
-	FString GlueProjectName;
-
-	auto MakeGlueNameAndLocation = [](FString& GlueLocation, FString& GlueName, const FString& PluginName, const FString& CsProjFolder)
-	{
-		GlueName = FString::Printf(TEXT("%s.Glue"), *PluginName);
-		GlueLocation = FPaths::Combine(CsProjFolder, FString::Printf(TEXT("%s.csproj"), *GlueName));
-	};
-	
     if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex) && SelectedProjectDestinationIndex > 0)
     {
     	const TSharedRef<FCSProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
-    	const TSharedPtr<IPlugin>& Plugin = Destination->GetPlugin();
-
-    	ProjectRoot = Plugin->GetBaseDir();
-    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, Plugin->GetName(), FPaths::Combine(Destination->GetPath(), GlueProjectName));
+    	ProjectRoot = Destination->GetPlugin()->GetBaseDir();
     }
     else
     {
     	ProjectRoot = FPaths::ProjectDir();
-    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, FApp::GetProjectName(), UCSProcUtilities::GetProjectGlueFolderPath());
     }
-
-	if (!FPaths::FileExists(GlueProjectLocation))
-	{
-		Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
-	}
 	
+	TMap<FString, FString> Arguments;
 	Arguments.Add(TEXT("EditorOnly"), EditorOnlyCheckBox->IsChecked() ? TEXT("true") : TEXT("false"));
-	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
 	Arguments.Add(TEXT("CreateModuleClass"), TEXT("true"));
+	
+	FString ModuleName = NameTextBox->GetText().ToString();
+	FString ProjectParentFolder = PathTextBox->GetText().ToString();
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);
 	CloseWindow();
