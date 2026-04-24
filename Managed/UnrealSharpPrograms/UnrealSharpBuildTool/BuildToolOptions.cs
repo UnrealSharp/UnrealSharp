@@ -11,6 +11,7 @@ public enum BuildAction
     PackageProject,
     GenerateSolution,
     BuildEmitLoadOrder,
+    MergeSolution
 }
 
 public enum BuildConfig

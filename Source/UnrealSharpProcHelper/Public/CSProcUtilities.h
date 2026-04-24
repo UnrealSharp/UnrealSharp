@@ -6,6 +6,7 @@ const FString BUILD_ACTION_GENERATE_PROJECT = TEXT("GenerateProject");
 const FString BUILD_ACTION_GENERATE_SOLUTION = TEXT("GenerateSolution");
 const FString BUILD_ACTION_BUILD_EMIT_LOAD_ORDER = TEXT("BuildEmitLoadOrder");
 const FString BUILD_ACTION_PACKAGE_PROJECT = TEXT("PackageProject");
+const FString BUILD_ACTION_MERGE_SOLUTION = TEXT("MergeSolution");
 
 #define HOSTFXR_WINDOWS "hostfxr.dll"
 #define HOSTFXR_MAC "libhostfxr.dylib"
