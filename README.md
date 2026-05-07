@@ -7,7 +7,7 @@ UnrealSharp is a free, open-source plugin for writing Unreal Engine 5 games in C
 ## Features
 
 - **Unreal Engine API in C#**: Derive from any UClass. Implement Actors, ActorComponents, and more in C# with access to the Unreal Engine API.
-- **Generated bindings**: The C# API is generated from anything UE exposes to reflection, so new code and types from engine updates or plugins shows up automatically.
+- **Generated bindings**: The C# API is automatically generated from all reflected C++ code. This includes the engine, plugins, and your own project, so any new reflected types or members are immediately available for use in C#.
 - **Hot reload**: Recompile and reload C# code without restarting the editor.
 - **Full .NET ecosystem**: Pull in any NuGet package you need.
 - **MIT licensed**
