@@ -40,6 +40,7 @@ public record UnrealProperty : UnrealType
     public readonly bool IsPartial = true;
     public readonly bool IsNullable;
     public readonly bool IsRequired;
+    public readonly bool IsInitOnly;
     public readonly bool FieldNotify;
 
     // Type and marshaling information
@@ -87,6 +88,7 @@ public record UnrealProperty : UnrealType
             GetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.GetMethod);
             SetterMethod = propertySymbol.GetPropertyMethodInfo(this, propertyDeclarationSyntax, propertySymbol.SetMethod);
             IsRequired = propertySymbol.IsRequired;
+            IsInitOnly = propertySymbol.SetMethod?.IsInitOnly ?? false;
             FieldNotify = propertySymbol.HasAttribute("FieldNotifyAttribute");
         }
     }
@@ -228,7 +230,14 @@ public record UnrealProperty : UnrealType
         
         if (SetterMethod != null)
         {
-            builder.AppendSet(SetterMethod.Value.Accessibility);
+            if (IsInitOnly)
+            {
+                builder.AppendInit(SetterMethod.Value.Accessibility);
+            }
+            else
+            {
+                builder.AppendSet(SetterMethod.Value.Accessibility);
+            }
             ExportSetter(builder);
         }
         
