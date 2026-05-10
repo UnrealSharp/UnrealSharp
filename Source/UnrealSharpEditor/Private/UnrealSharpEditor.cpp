@@ -103,7 +103,7 @@ void FUnrealSharpEditorModule::OnCompileManagedCode()
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateSolution))
+	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateSolution))
 	{
 		return;
 	}
@@ -471,14 +471,14 @@ void FUnrealSharpEditorModule::PackageProject()
 	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
 	
 	TMap<FString, FString> Arguments;
-	Arguments.Add(TEXT("ArchiveDirectory"), FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
+	Arguments.Add(TEXT("ArchiveDirectory"), UnrealSharp::Paths::MakeQuotedPath(ArchiveDirectory));
 	
 	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
 	
-	UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::PackageProject, &Arguments);
+	UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::PackageProject, &Arguments);
 
 	FNotificationInfo Info(FText::FromString(FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
 	Info.ExpireDuration = 15.0f;
@@ -734,12 +734,12 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	}
 	
 	AdditionalArguments.Add(TEXT("ProjectName"), ModuleName);
-	AdditionalArguments.Add(TEXT("ProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	AdditionalArguments.Add(TEXT("ProjectFolder"), UnrealSharp::Paths::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
-	AdditionalArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
+	AdditionalArguments.Add(TEXT("ProjectRoot"), UnrealSharp::Paths::MakeQuotedPath(FullProjectRoot));
 
-	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateProject, &AdditionalArguments))
+	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateProject, &AdditionalArguments))
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project {0} in {1}", *ModuleName, *ProjectParentFolder);
 		return;

@@ -33,8 +33,6 @@ namespace FCSUnrealSharpUtils
 	}
 	
 	UNREALSHARPUTILITIES_API inline bool IsEngineStartingUp() { return GIsInitialLoad; }
-	
-	UNREALSHARPUTILITIES_API FString MakeQuotedPath(const FString& Path);
 
 	template<typename T>
 	static void GetAllCDOsOfClass(TArray<T*>& OutObjects)

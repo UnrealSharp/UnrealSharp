@@ -1,3 +1,5 @@
+using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using UnrealBuildTool;
 using UnrealSharp.Shared;
@@ -14,6 +16,14 @@ public static class BuildUtilities
         }
         
         ConsoleUtilities.Log("Engine glue has been modified since the last build. Rebuilding bindings...");
-        DotNetUtilities.BuildSolution(Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharp"));
+        string projectRootDirectory = Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharp");
+        
+        if (!Directory.Exists(projectRootDirectory))
+        {
+            throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
+        }
+
+        Collection<string> arguments = new Collection<string> { "build" };
+        DotNetUtilities.InvokeDotNet(arguments, projectRootDirectory);
     }
 }

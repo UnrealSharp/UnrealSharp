@@ -30,7 +30,6 @@ public static class GeneratorStatics
 	
 	public static string ManagedSolutionPath => Path.Combine(ScriptFolder, "Managed" + ProjectName + ".sln");
 	
-	public static string ManagedBinariesPath { get; private set; } = "";
 	public static string ManagedPath { get; private set; } = "";
 	public static string ScriptFolder { get; private set; } = "";
 	
@@ -48,7 +47,6 @@ public static class GeneratorStatics
 		
 		ScriptFolder = Path.Combine(Factory.Session.ProjectDirectory!, CommonUnrealSharpSettings.ScriptDirectoryName);
 		PluginsPath = Path.Combine(Factory.Session.ProjectDirectory!, "Plugins");
-		ManagedBinariesPath = Path.Combine(PluginDirectory, "Binaries", "Managed");
 		ManagedPath = Path.Combine(PluginDirectory, "Managed");
 		
 		BlueprintFunctionLibrary = (Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary") as UhtClass)!;

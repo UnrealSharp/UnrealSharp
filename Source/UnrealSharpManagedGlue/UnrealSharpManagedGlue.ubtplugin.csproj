@@ -45,8 +45,7 @@
             <TargetFramework>$(_TargetFrameworkToUse)</TargetFramework>
         </PropertyGroup>
     </Target>
-
-
+    
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
         <OutputType>Library</OutputType>
@@ -96,6 +95,10 @@
         <Compile Update="..\..\Managed\Shared\ConsoleUtilities.cs">
           <Link>Shared\ConsoleUtilities.cs</Link>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Build\Scripts\UnrealSharp.Automation.csproj" />
     </ItemGroup>
     
 </Project>

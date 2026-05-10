@@ -13,8 +13,6 @@ public static class Program
     private static void Main(IUhtExportFactory factory)
     {
         GeneratorStatics.Initialize(factory);
-        USharpBuildToolUtilities.CompileUSharpBuildTool();
-        
         ExportBindings();
         
         FileExporter.CleanOldExportedFiles();

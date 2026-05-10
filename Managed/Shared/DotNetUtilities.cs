@@ -1,245 +1,266 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-
 namespace UnrealSharp.Shared;
 
 public static class DotNetUtilities
 {
-	public const string DOTNET_MAJOR_VERSION = "10.0";
-	public const string DOTNET_MAJOR_VERSION_DISPLAY = "net" + DOTNET_MAJOR_VERSION;
+	public const string DotnetMajorVersion = "10.0";
 
-    public static string FindDotNetExecutable()
-    {
-		const string DOTNET_WIN = "dotnet.exe";
-		const string DOTNET_UNIX = "dotnet";
+	private static readonly Version RequiredVersion = new Version(10, 0);
 
-		var dotnetExe = OperatingSystem.IsWindows() ? DOTNET_WIN : DOTNET_UNIX;
+	private static string? _cachedExecutable;
+	private static string? _cachedSdkPath;
+	
+	public static string GetVersion()
+	{
+		return "net" + DotnetMajorVersion;
+	}
 
-    	var pathVariable = Environment.GetEnvironmentVariable("PATH");
+	public static string FindDotNetExecutable()
+	{
+		if (_cachedExecutable != null)
+		{
+			return _cachedExecutable;
+		}
 
-    	if (pathVariable == null)
-    	{
-    		throw new Exception($"Couldn't find {dotnetExe}!");
-    	}
+		const string dotnetWin = "dotnet.exe";
+		const string dotnetUnix = "dotnet";
 
-    	var paths = pathVariable.Split(Path.PathSeparator);
+		string DotnetExe = OperatingSystem.IsWindows() ? dotnetWin : dotnetUnix;
 
-    	foreach (var path in paths)
-    	{
-    		// This is a hack to avoid using the dotnet.exe from the Unreal Engine installation directory.
-    		// Can't use the dotnet.exe from the Unreal Engine installation directory because it's .NET 6.0
-    		if (!path.Contains(@"\dotnet\"))
-    		{
-    			continue;
-    		}
-
-    		var dotnetExePath = Path.Combine(path, dotnetExe);
-
-    		if (File.Exists(dotnetExePath))
-    		{
-    			return dotnetExePath;
-    		}
-    	}
-
-    	if ( OperatingSystem.IsMacOS() ) {
-			if ( File.Exists( "/usr/local/share/dotnet/dotnet" ) ) {
-				return "/usr/local/share/dotnet/dotnet";
+		string? DotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
+		if (!string.IsNullOrEmpty(DotnetRoot))
+		{
+			string Candidate = Path.Combine(DotnetRoot, DotnetExe);
+			if (File.Exists(Candidate) && !IsUnrealBundledDotNet(Candidate))
+			{
+				_cachedExecutable = Candidate;
+				return _cachedExecutable;
 			}
-			if ( File.Exists( "/opt/homebrew/bin/dotnet" ) ) {
-				return "/opt/homebrew/bin/dotnet";
+		}
+		
+		string? PathVariable = Environment.GetEnvironmentVariable("PATH");
+		if (PathVariable != null)
+		{
+			string[] Paths = PathVariable.Split(Path.PathSeparator);
+
+			foreach (string Path in Paths)
+			{
+				if (string.IsNullOrWhiteSpace(Path))
+				{
+					continue;
+				}
+
+				string DotnetExePath = System.IO.Path.Combine(Path.Trim(), DotnetExe);
+
+				if (!File.Exists(DotnetExePath) || IsUnrealBundledDotNet(DotnetExePath))
+				{
+					continue;
+				}
+
+				_cachedExecutable = DotnetExePath;
+				return _cachedExecutable;
+			}
+		}
+		
+		string[] Fallbacks = GetWellKnownInstallPaths();
+
+		foreach (string Fallback in Fallbacks)
+		{
+			if (File.Exists(Fallback))
+			{
+				_cachedExecutable = Fallback;
+				return _cachedExecutable;
 			}
 		}
 
-		throw new Exception($"Couldn't find {dotnetExe} in PATH!");
-    }
+		throw new Exception($"Couldn't find {DotnetExe}! Set DOTNET_ROOT or ensure dotnet is on PATH.");
+	}
 
-    public static string GetLatestDotNetSdkPath()
-    {
-	    string dotNetExecutable = FindDotNetExecutable();
-	    string dotNetExecutableDirectory = Path.GetDirectoryName(dotNetExecutable)!;
-	    string dotNetSdkDirectory = Path.Combine(dotNetExecutableDirectory!, "sdk");
+	public static string GetLatestDotNetSdkPath()
+	{
+		if (_cachedSdkPath != null)
+		{
+			return _cachedSdkPath;
+		}
 
-	    string[] folderPaths = Directory.GetDirectories(dotNetSdkDirectory);
+		string DotNetExecutable = FindDotNetExecutable();
+		string DotNetExecutableDirectory = Path.GetDirectoryName(DotNetExecutable)!;
+		string DotNetSdkDirectory = Path.Combine(DotNetExecutableDirectory, "sdk");
 
-	    string? versionName = null;
-	    Version latestVersion = new Version(0, 0);
-	    
-	    foreach (string folderPath in folderPaths)
-	    {
-		    string folderName = Path.GetFileName(folderPath);
+		if (!Directory.Exists(DotNetSdkDirectory))
+		{
+			throw new Exception($".NET SDK directory not found: {DotNetSdkDirectory}");
+		}
 
-		    if (!Version.TryParse(folderName, out var version))
-		    {
-			    continue;
-		    }
-		    
-		    string versionString = version.ToString();
-		    if (!versionString.StartsWith(DOTNET_MAJOR_VERSION) || version <= latestVersion)
-		    {
-			    continue;
-		    }
-		    
-		    latestVersion = version;
-		    versionName = folderName;
-	    }
-	    
-	    if (versionName == null)
-	    {
-		    throw new Exception($"Couldn't find .NET SDK version starting with {DOTNET_MAJOR_VERSION} in {dotNetSdkDirectory}");
-	    }
+		string[] FolderPaths = Directory.GetDirectories(DotNetSdkDirectory);
 
-	    return Path.Combine(dotNetSdkDirectory, versionName);
-    }
+		string? VersionName = null;
+		Version LatestVersion = new Version(0, 0);
 
-    public static void BuildSolution(string projectRootDirectory)
-    {
-    	if (!Directory.Exists(projectRootDirectory))
-    	{
-    		throw new Exception($"Couldn't find project root directory: {projectRootDirectory}");
-    	}
+		foreach (string FolderPath in FolderPaths)
+		{
+			string FolderName = Path.GetFileName(FolderPath);
+			int DashIndex = FolderName.IndexOf('-');
+			string NumericPart = DashIndex < 0 ? FolderName : FolderName.Substring(0, DashIndex);
 
-    	Collection<string> arguments = new Collection<string> { "build" };
-	    InvokeDotNet(arguments, projectRootDirectory);
-    }
+			if (!System.Version.TryParse(NumericPart, out Version? Version))
+			{
+				continue;
+			}
 
-    public static bool InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
-    {
-	    string dotnetPath = FindDotNetExecutable();
+			if (Version.Major != RequiredVersion.Major || Version.Minor != RequiredVersion.Minor)
+			{
+				continue;
+			}
 
-	    ProcessStartInfo startInfo = new ProcessStartInfo
-	    {
-		    FileName = dotnetPath,
-		    RedirectStandardOutput = true,
-		    RedirectStandardError = true
-	    };
+			if (Version <= LatestVersion)
+			{
+				continue;
+			}
 
-	    foreach (string argument in arguments)
-	    {
-		    startInfo.ArgumentList.Add(argument);
-	    }
+			LatestVersion = Version;
+			VersionName = FolderName;
+		}
 
-	    if (workingDirectory != null)
-	    {
-		    startInfo.WorkingDirectory = workingDirectory;
-	    }
+		if (VersionName == null)
+		{
+			throw new Exception($"Couldn't find .NET SDK version {DotnetMajorVersion}.x in {DotNetSdkDirectory}");
+		}
 
-	    // Set the MSBuild environment variables to the latest .NET SDK that U# supports.
-	    // Otherwise, we'll use the .NET SDK that comes with the Unreal Engine.
-	    {
-		    string latestDotNetSdkPath = GetLatestDotNetSdkPath();
-		    startInfo.Environment["MSBuildExtensionsPath"] = latestDotNetSdkPath;
-		    startInfo.Environment["MSBUILD_EXE_PATH"] = $@"{latestDotNetSdkPath}\MSBuild.dll";
-		    startInfo.Environment["MSBuildSDKsPath"] = $@"{latestDotNetSdkPath}\Sdks";
-	    }
+		_cachedSdkPath = Path.Combine(DotNetSdkDirectory, VersionName);
+		return _cachedSdkPath;
+	}
 
-        // Disable roll forward to avoid using wrong .NET runtimes, this propagates to child processes.
-        startInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
+	public static bool InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
+	{
+		string DotnetPath = FindDotNetExecutable();
 
-	    using Process process = new Process();
-	    process.StartInfo = startInfo;
+		ProcessStartInfo StartInfo = new ProcessStartInfo
+		{
+			FileName = DotnetPath,
+			RedirectStandardOutput = true,
+			RedirectStandardError = true,
+			UseShellExecute = false,
+			CreateNoWindow = true
+		};
 
-	    try
-	    {
-		    StringBuilder outputBuilder = new StringBuilder();
-		    process.OutputDataReceived += (sender, e) =>
-		    {
-			    if (e.Data != null)
-			    {
-				    outputBuilder.AppendLine(e.Data);
-			    }
-		    };
-            
-		    process.ErrorDataReceived += (sender, e) =>
-		    {
-			    if (e.Data != null)
-			    {
-				    outputBuilder.AppendLine(e.Data);
-			    }
-		    };
-            
-		    if (!process.Start())
-		    {
-			    throw new Exception("Failed to start process");
-		    }
-            
-		    process.BeginErrorReadLine();
-		    process.BeginOutputReadLine();
-		    process.WaitForExit();
+		foreach (string Argument in arguments)
+		{
+			StartInfo.ArgumentList.Add(Argument);
+		}
 
-		    if (process.ExitCode != 0)
-		    {
-			    string errorMessage = outputBuilder.ToString();
-			    
-			    if (string.IsNullOrEmpty(errorMessage))
-			    {
-				    errorMessage = "Process exited with non-zero exit code but no output was captured.";
-			    }
-			    
-			    throw new Exception($"Process failed with exit code {process.ExitCode}: {errorMessage}. Arguments: {string.Join(" ", arguments)}" );
-		    }
-	    }
-	    catch (Exception ex)
-	    {
-		    Console.WriteLine($"An error occurred: {ex.Message}");
-		    return false;
-	    }
-	    
-	    return true;
-    }
+		if (workingDirectory != null)
+		{
+			StartInfo.WorkingDirectory = workingDirectory;
+		}
 
-    public static bool InvokeUSharpBuildTool(string action,
-	    string managedBinariesPath,
-	    string projectName,
-	    string pluginDirectory,
-	    string projectDirectory,
-	    string engineDirectory,
-	    IEnumerable<KeyValuePair<string, string>>? actionArgs = null)
-    {
-	    string dotNetExe = FindDotNetExecutable();
-	    string unrealSharpBuildToolPath = Path.Combine(managedBinariesPath, "UnrealSharpBuildTool.dll");
+		{
+			string LatestDotNetSdkPath = GetLatestDotNetSdkPath();
+			StartInfo.Environment["MSBuildExtensionsPath"] = LatestDotNetSdkPath;
+			StartInfo.Environment["MSBUILD_EXE_PATH"] = Path.Combine(LatestDotNetSdkPath, "MSBuild.dll");
+			StartInfo.Environment["MSBuildSDKsPath"] = Path.Combine(LatestDotNetSdkPath, "Sdks");
+		}
 
-	    if (!File.Exists(unrealSharpBuildToolPath))
-	    {
-		    throw new Exception($"Failed to find UnrealSharpBuildTool.dll at: {unrealSharpBuildToolPath}");
-	    }
+		StartInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
 
-	    Collection<string> arguments = new Collection<string>
-	    {
-		    unrealSharpBuildToolPath,
+		using Process Process = new Process();
+		Process.StartInfo = StartInfo;
 
-		    "--Action",
-		    action,
+		try
+		{
+			StringBuilder StdoutBuilder = new StringBuilder();
+			StringBuilder StderrBuilder = new StringBuilder();
 
-		    "--EngineDirectory",
-		    $"{engineDirectory}",
+			Process.OutputDataReceived += (sender, e) =>
+			{
+				if (e.Data != null)
+				{
+					StdoutBuilder.AppendLine(e.Data);
+				}
+			};
 
-		    "--ProjectDirectory",
-		    $"{projectDirectory}",
+			Process.ErrorDataReceived += (sender, e) =>
+			{
+				if (e.Data != null)
+				{
+					StderrBuilder.AppendLine(e.Data);
+				}
+			};
 
-		    "--ProjectName",
-		    projectName,
+			if (!Process.Start())
+			{
+				throw new Exception("Failed to start process");
+			}
 
-		    "--PluginDirectory",
-		    $"{pluginDirectory}",
+			Process.BeginErrorReadLine();
+			Process.BeginOutputReadLine();
+			Process.WaitForExit();
 
-		    "--DotNetPath",
-		    $"{dotNetExe}"
-	    };
+			if (Process.ExitCode != 0)
+			{
+				string Stderr = StderrBuilder.ToString();
+				string Stdout = StdoutBuilder.ToString();
+				string ErrorMessage = !string.IsNullOrWhiteSpace(Stderr) ? Stderr : Stdout;
 
-	    if (actionArgs != null)
-	    {
-		    arguments.Add("--ActionArgs");
+				if (string.IsNullOrEmpty(ErrorMessage))
+				{
+					ErrorMessage = "Process exited with non-zero exit code but no output was captured.";
+				}
 
-		    foreach (KeyValuePair<string, string> argument in actionArgs)
-		    {
-			    arguments.Add($"{argument.Key}={argument.Value}");
-		    }
-	    }
+				throw new Exception($"Process failed with exit code {Process.ExitCode}: {ErrorMessage}. Arguments: {string.Join(" ", arguments)}");
+			}
+		}
+		catch (Exception Ex)
+		{
+			Console.WriteLine($"An error occurred: {Ex.Message}");
+			return false;
+		}
 
-	    return InvokeDotNet(arguments);
-    }
+		return true;
+	}
+
+	private static bool IsUnrealBundledDotNet(string path)
+	{
+		string Normalised = path.Replace('\\', '/');
+		return Normalised.Contains("/Binaries/ThirdParty/DotNet/", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static string[] GetWellKnownInstallPaths()
+	{
+		if (OperatingSystem.IsWindows())
+		{
+			string ProgramFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+			return
+			[
+				Path.Combine(ProgramFiles, "dotnet", "dotnet.exe")
+			];
+		}
+
+		if (OperatingSystem.IsMacOS())
+		{
+			return new[]
+			{
+				"/usr/local/share/dotnet/dotnet",
+				"/opt/homebrew/bin/dotnet",
+				"/opt/homebrew/Cellar/dotnet/dotnet"
+			};
+		}
+
+		if (OperatingSystem.IsLinux())
+		{
+			return new[]
+			{
+				"/usr/share/dotnet/dotnet",
+				"/usr/local/share/dotnet/dotnet",
+				"/usr/bin/dotnet",
+				"/snap/bin/dotnet"
+			};
+		}
+
+		return Array.Empty<string>();
+	}
 }

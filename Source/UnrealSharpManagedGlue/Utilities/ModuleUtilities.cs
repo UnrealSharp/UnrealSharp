@@ -144,7 +144,7 @@ public static class ModuleUtilities
 			return null;
 		}
 		
-		if (PackageToModuleInfo.TryGetValue(targetPackage, out ModuleInfo existingModule))
+		if (PackageToModuleInfo.TryGetValue(targetPackage, out ModuleInfo? existingModule))
 		{
 			return existingModule;
 		}

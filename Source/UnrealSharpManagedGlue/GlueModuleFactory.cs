@@ -31,10 +31,16 @@ public static class GlueModuleFactory
 
         if (anyChanges || !File.Exists(GeneratorStatics.ManagedSolutionPath))
         {
-            USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateSolution");
+            GenerateSolution();
         }
         
         JsonUtilities.SerializeObjectToJson(_moduleDependencies!, ModuleDependenciesFileName);
+    }
+
+    private static void GenerateSolution()
+    {
+        ConsoleUtilities.Log("Changes detected in glue modules or solution file missing. Regenerating solution...");
+        USharpBuildToolUtilities.InvokeUnrealSharpAutomation("GenerateSolution");
     }
 
     private static void LoadModuleDependencies()
@@ -72,7 +78,7 @@ public static class GlueModuleFactory
                 arguments.Add(new KeyValuePair<string, string>("EditorOnly", "true"));
             }
             
-            if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateProject", arguments))
+            if (!USharpBuildToolUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments))
             {
                 throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
             }
@@ -119,7 +125,7 @@ public static class GlueModuleFactory
             arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
         }
         
-        if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", arguments))
+        if (!USharpBuildToolUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments))
         {
             throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
         }
