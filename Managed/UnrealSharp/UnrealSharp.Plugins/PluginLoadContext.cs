@@ -20,44 +20,38 @@ public class PluginLoadContext : AssemblyLoadContext
         {
             return null;
         }
-
-        // cache
+        
         Assembly? loadedAssembly = AssemblyCache.GetAssembly(assemblyName.Name!, this);
         if (loadedAssembly != null)
         {
             return loadedAssembly;
         }
-
-        // resolver local
+        
         string? assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
-        if (!string.IsNullOrEmpty(assemblyPath))
+        
+        Assembly? newAssembly;
+        if (string.IsNullOrEmpty(assemblyPath))
+        {
+            newAssembly = Default.LoadFromAssemblyName(assemblyName);
+        }
+        else
         {
             using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
-
-            Assembly newAssembly;
-            if (!File.Exists(pdbPath))
-            {
-                newAssembly = LoadFromAssemblyPath(assemblyPath);
-            }
-            else
+        
+            if (File.Exists(pdbPath))
             {
                 using FileStream pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 newAssembly = LoadFromStream(assemblyFile, pdbFile);
             }
-
-            AssemblyCache.AddAssembly(newAssembly);
-            return newAssembly;
+            else
+            {
+                newAssembly = LoadFromAssemblyPath(assemblyPath);
+            }
         }
 
-        // FALLBACK
-        try
-        {
-            return AssemblyLoadContext.Default.LoadFromAssemblyName(assemblyName);
-        }
-        catch
-        {
-            return null;
-        }
+        AssemblyCache.AddAssembly(newAssembly);
+        return newAssembly;
+
     }
 }
