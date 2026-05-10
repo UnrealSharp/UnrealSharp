@@ -1,6 +1,6 @@
 ﻿#include "UnrealSharpRuntimeGlue.h"
 #include "CSGlueGenerator.h"
-#include "CSProcUtilities.h"
+#include "CSPathsUtilities.h"
 #include "CSRuntimeGlueCommands.h"
 #include "CSRuntimeGlueSettings.h"
 #include "UnrealSharpEditor.h"
@@ -14,7 +14,7 @@ void FUnrealSharpRuntimeGlueModule::StartupModule()
 {
 	FUnrealSharpEditorModule& UnrealSharpEditor = FUnrealSharpEditorModule::Get();
 	UnrealSharpEditor.OnBuildingToolbarEvent().AddStatic(&FUnrealSharpRuntimeGlueModule::OnBuildingToolbar);
-	UnrealSharpEditor.AddNewProject(GetRuntimeGlueName(), UCSProcUtilities::GetScriptFolderDirectory(), FPaths::ProjectDir(), {}, false);
+	UnrealSharpEditor.AddNewProject(GetRuntimeGlueName(), UnrealSharp::Paths::GetScriptFolderDirectory(), FPaths::ProjectDir(), {}, false);
 	
 	FModuleManager::Get().OnModulesChanged().AddRaw(this, &FUnrealSharpRuntimeGlueModule::OnModulesChanged);
 	
@@ -44,7 +44,7 @@ void FUnrealSharpRuntimeGlueModule::ForceRefreshRuntimeGlue()
 
 FString FUnrealSharpRuntimeGlueModule::GetGlueFolder()
 {
-	return FPaths::Combine(UCSProcUtilities::GetScriptFolderDirectory(), GetRuntimeGlueName());
+	return FPaths::Combine(UnrealSharp::Paths::GetScriptFolderDirectory(), GetRuntimeGlueName());
 }
 
 void FUnrealSharpRuntimeGlueModule::InitializeRuntimeGlueGenerators()

@@ -52,7 +52,7 @@ public partial struct FGameplayTag
     /// Is tag valid?
     /// </summary>
     /// <returns>True if tag is valid</returns>
-    public bool IsValid => TagName.IsValid;
+    public bool IsValid => !TagName.IsNone;
 
     /// <summary>
     /// Parses the tag name and returns the name of the leaf.

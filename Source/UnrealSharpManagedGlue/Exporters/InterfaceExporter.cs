@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.Core;
@@ -44,10 +45,10 @@ public static class InterfaceExporter
 
         if (interfaceObj.AlternateObject is UhtClass alternateObject)
         {
-            ScriptGeneratorUtilities.GetExportedFunctions(alternateObject, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
+            alternateObject.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         }
         
-        ScriptGeneratorUtilities.GetExportedFunctions(interfaceObj, exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
+        interfaceObj.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
         
         ExportInterfaceProperties(stringBuilder, exportedGetterSetters);
         ExportInterfaceFunctions(stringBuilder, exportedFunctions);
@@ -146,7 +147,7 @@ public static class InterfaceExporter
     {
         AttributeBuilder attributeBuilder = new AttributeBuilder(function);
         
-        if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
+        if (function.IsBlueprintEvent())
         {
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
@@ -169,10 +170,7 @@ public static class InterfaceExporter
     {
         foreach (UhtFunction function in exportedFunctions)
         {
-            FunctionType functionType = function.FunctionFlags.HasFlag(EFunctionFlags.BlueprintEvent) 
-                ? FunctionType.BlueprintEvent 
-                : FunctionType.Normal;
-            
+            FunctionType functionType = function.IsBlueprintEvent() ? FunctionType.BlueprintEvent : FunctionType.Normal;
             FunctionExporter.ExportFunction(stringBuilder, function, functionType);
         }
     }

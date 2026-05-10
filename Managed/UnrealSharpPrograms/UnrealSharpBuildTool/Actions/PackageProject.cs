@@ -1,31 +1,53 @@
 ﻿using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
+using System.Text;
+using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class PackageProject : BuildToolAction
+[Verb("PackageProjectParameters", aliases: ["PackageProject"], HelpText = "Packages the project. This will create a self-contained package in a archived directory.")]
+public struct PackageProjectParameters
 {
-    public override bool RunAction()
-    {
-        string archiveDirectoryPath = Program.GetArgument("ArchiveDirectory");
+    [Option("ArchiveDirectory", Required = true, HelpText = "The directory base directory where the packaged game is located")]
+    public string ArchiveDirectory { get; set; }
         
-        if (string.IsNullOrEmpty(archiveDirectoryPath))
+    [Option("TargetPlatform", Required = false, HelpText = "The target platform for the package")]
+    public TargetPlatform TargetPlatform { get; set; }
+
+    [Option("TargetArchitecture", Required = false, HelpText = "The target architecture for the package")]
+    public TargetArchitecture TargetArchitecture { get; set; }
+         
+    [Option("UEBuildConfig", Required = false, HelpText = "The build configuration for the package (Debug, Release, etc.)")]
+    public TargetConfiguration UEBuildConfig { get; set; }
+        
+    [Option("NativeAOT", Required = false, HelpText = "Enable Native AOT compilation. Will overwrite the BuildConfig to Release if set to true.")]
+    public bool NativeAOT { get; set; }
+        
+    [Option("UETargetType", Required = false, HelpText = "The type of Unreal Engine target (Editor, Game, etc.). Required for the Publish action.")]
+    public string UETargetType { get; set; }
+}
+
+public static class PackageProjectAction
+{
+    public static void PackageProject(PackageProjectParameters parameters)
+    {
+        if (!Directory.Exists(parameters.ArchiveDirectory))
         {
-            throw new Exception("ArchiveDirectory argument is required for the Publish action.");
+            throw new DirectoryNotFoundException(parameters.ArchiveDirectory);
         }
         
         Program.CopyGlobalJson();
 
-        string rootProjectPath = Path.Combine(archiveDirectoryPath, Program.BuildToolOptions.ProjectName);
-        string publishFolder = Program.GetOutputPath(rootProjectPath);
-        string bindingsPath = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Managed", "UnrealSharp");
-        string packageOutputFolder = Path.Combine(Program.BuildToolOptions.PluginDirectory, "Intermediate", "Build", "Managed");
-
-        string UETargetType = Program.GetArgument("UETargetType");
-        
+        string UETargetType = parameters.UETargetType;
         if (string.IsNullOrEmpty(UETargetType))
         {
             throw new Exception("UETargetType argument is required for the Publish action.");
         }
+        
+        string bindingsPath = Path.Combine(BuildToolOptions.Instance.PluginDirectory, "Managed", "UnrealSharp");
+        string buildOutput = Program.GetIntermediateBuildPathForPlatform(parameters.TargetArchitecture, parameters.TargetPlatform, parameters.UEBuildConfig);
+        string rootProjectPath = Path.Combine(parameters.ArchiveDirectory, BuildToolOptions.Instance.ProjectName);
+        string publishFolder = Program.GetOutputPath(rootProjectPath);
         
         Collection<string> extraArguments =
         [
@@ -38,18 +60,26 @@ public class PackageProject : BuildToolAction
             "-p:GenerateDocumentationFile=false",
             
             $"-p:UETargetType={UETargetType}",
+            $"-p:UEBuildConfig={parameters.UEBuildConfig}",
             
             $"-p:PublishDir=\"{publishFolder}\"",
-            $"-p:OutputPath=\"{packageOutputFolder}\"",
+            $"-p:OutputPath=\"{buildOutput}\"",
         ];
-
-        BuildSolution buildBindings = new BuildSolution(bindingsPath, extraArguments, BuildConfig.Publish);
-        buildBindings.RunAction();
         
-        BuildSolution buildUserSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments, BuildConfig.Publish);
-        buildUserSolution.RunAction();
-
-        BuildEmitLoadOrder.EmitLoadOrder(packageOutputFolder, publishFolder);
-        return true;
+        if (!parameters.NativeAOT)
+        {
+            extraArguments.Add("--self-contained");
+        }
+        
+        BuildSolutionParameters buildParameters = new BuildSolutionParameters
+        {
+            ExtraArguments = extraArguments,
+            BuildConfig = parameters.UEBuildConfig,
+            Publish = true,
+            Folders = [bindingsPath, Program.GetScriptFolder()],
+        };
+        
+        BuildSolutionAction.BuildSolution(buildParameters);
+        BuildEmitLoadOrderAction.EmitLoadOrder(publishFolder, publishFolder);
     }
 }

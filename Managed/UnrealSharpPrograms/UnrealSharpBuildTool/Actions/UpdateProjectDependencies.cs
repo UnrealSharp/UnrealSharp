@@ -1,86 +1,104 @@
-﻿using System.Collections.Immutable;
-using System.Xml;
+﻿using System.Xml;
+using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class UpdateProjectDependencies : BuildToolAction
+[Verb("UpdateProjectDependenciesParameters", aliases: ["UpdateProjectDependencies"], HelpText = "Updates the specified .csproj file to include dependencies as ProjectReferences.")]
+public struct UpdateProjectDependenciesParameters
 {
-    private string _projectPath = string.Empty;
-    private string _projectFolder = string.Empty;
-    private ImmutableList<string> _dependencies = ImmutableList<string>.Empty;
-    private HashSet<string> _existingDependencies = new HashSet<string>();
+    [Option("ProjectPath", Required = true, HelpText = "The path to the .csproj file to update.")]
+    public string ProjectPath { get; set; }
 
-    public override bool RunAction()
+    [Option("Dependencies", Required = false, HelpText = "The list of dependencies to add as ProjectReferences.")]
+    public IEnumerable<string>? Dependencies { get; set; }
+}
+
+public static class UpdateProjectDependenciesAction
+{
+    public static void UpdateProjectDependencies(UpdateProjectDependenciesParameters parameters)
     {
-        _projectPath = Program.GetArgument("ProjectPath");
-        _projectFolder = Directory.GetParent(_projectPath)!.FullName;
-        _dependencies = Program.GetArguments("Dependency").ToImmutableList();
+        if (!File.Exists(parameters.ProjectPath))
+        {
+            throw new FileNotFoundException("The specified project file does not exist.", parameters.ProjectPath);
+        }
 
-        Console.WriteLine($"Project Path: {_projectPath}");
-        Console.WriteLine($"Project Folder: {_projectFolder}");
+        string projectFolder = Directory.GetParent(parameters.ProjectPath)!.FullName;
 
-        UpdateProject();
-        return true;
+        Console.WriteLine($"Project Path: {parameters.ProjectPath}");
+        Console.WriteLine($"Project Folder: {projectFolder}");
+
+        UpdateProject(parameters.ProjectPath, projectFolder, parameters.Dependencies ?? Enumerable.Empty<string>());
     }
 
-    private void UpdateProject()
+    private static void UpdateProject(string projectPath, string projectFolder, IEnumerable<string> dependencies)
     {
         try
         {
             XmlDocument csprojDocument = new XmlDocument();
-            csprojDocument.Load(_projectPath);
+            csprojDocument.Load(projectPath);
 
             XmlNodeList itemGroups = csprojDocument.SelectNodes("//ItemGroup")!;
 
-            _existingDependencies = itemGroups
-                    .OfType<XmlElement>()
-                    .Where(x => x.Name == "ItemGroup")
-                    .SelectMany(x => x.ChildNodes.OfType<XmlElement>())
-                    .Where(x => x.Name == "ProjectReference")
-                    .Select(x => x.GetAttribute("Include"))
-                    .ToHashSet();
+            HashSet<string> existingDependencies = itemGroups
+                .OfType<XmlElement>()
+                .SelectMany(x => x.ChildNodes.OfType<XmlElement>())
+                .Where(x => x.Name == "ProjectReference")
+                .Select(x => x.GetAttribute("Include"))
+                .ToHashSet();
 
-            XmlElement? newItemGroup = itemGroups.OfType<XmlElement>().FirstOrDefault();
+            // Find an existing ItemGroup or create a new one
+            XmlElement? targetItemGroup = itemGroups.OfType<XmlElement>().FirstOrDefault();
             
-            if (newItemGroup is null)
+            if (targetItemGroup is null)
             {
-                newItemGroup = csprojDocument.CreateElement("ItemGroup");
-                csprojDocument.DocumentElement!.AppendChild(newItemGroup);
+                targetItemGroup = csprojDocument.CreateElement("ItemGroup");
+                csprojDocument.DocumentElement!.AppendChild(targetItemGroup);
             }
 
-            foreach (string dependency in _dependencies)
+            bool wasModified = false;
+            foreach (string dependency in dependencies)
             {
-                AddDependency(csprojDocument, newItemGroup, dependency);
+                string relativePath = GetRelativePath(projectFolder, dependency);
+
+                if (existingDependencies.Contains(relativePath))
+                {
+                    continue;
+                }
+
+                XmlElement projectReference = csprojDocument.CreateElement("ProjectReference");
+                projectReference.SetAttribute("Include", relativePath);
+                targetItemGroup.AppendChild(projectReference);
+                wasModified = true;
+                
+                Console.WriteLine($"Added dependency: {relativePath}");
             }
 
-            csprojDocument.Save(_projectPath);
+            if (wasModified)
+            {
+                csprojDocument.Save(projectPath);
+            }
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException($"An error occurred while updating the .csproj file: {ex.Message}", ex);
         }
     }
-    
+
     public static string GetRelativePath(string basePath, string targetPath)
     {
-        Uri baseUri = new Uri(basePath.EndsWith(Path.DirectorySeparatorChar.ToString()) ? basePath : basePath + Path.DirectorySeparatorChar);
-        Uri targetUri = new Uri(targetPath);
-        Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
-        string s = Uri.UnescapeDataString(relativeUri.ToString());
-        return OperatingSystem.IsWindows() ? s.Replace('/', '\\') : s;
-    }
-
-    private void AddDependency(XmlDocument doc, XmlElement itemGroup, string dependency)
-    {
-        string relativePath = GetRelativePath(_projectFolder, dependency);
-        
-        if (_existingDependencies.Contains(relativePath))
+        if (!basePath.EndsWith(Path.DirectorySeparatorChar.ToString()))
         {
-            return;
+            basePath += Path.DirectorySeparatorChar;
         }
 
-        XmlElement generatedCode = doc.CreateElement("ProjectReference");
-        generatedCode.SetAttribute("Include", relativePath);
-        itemGroup.AppendChild(generatedCode);
+        Uri baseUri = new Uri(basePath);
+        Uri targetUri = new Uri(targetPath);
+        Uri relativeUri = baseUri.MakeRelativeUri(targetUri);
+        
+        string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+        
+        return OperatingSystem.IsWindows() 
+            ? relativePath.Replace('/', '\\') 
+            : relativePath.Replace('\\', '/');
     }
 }

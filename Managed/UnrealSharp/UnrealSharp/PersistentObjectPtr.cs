@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using UnrealSharp.Core;
 using UnrealSharp.CoreUObject;
@@ -6,10 +7,10 @@ using UnrealSharp.Interop;
 namespace UnrealSharp;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct FPersistentObjectPtrData<ObjectID> where ObjectID : struct
+public struct FPersistentObjectPtrData<ObjectId> where ObjectId : struct
 { 
     public WeakObjectData _weakPtr;
-    public ObjectID _objectId;
+    public ObjectId _objectId;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -20,7 +21,7 @@ public struct FSoftObjectPathUnsafe
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct FPersistentObjectPtr
+public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
 {
     internal FPersistentObjectPtrData<FSoftObjectPathUnsafe> Data;
     
@@ -50,23 +51,24 @@ public struct FPersistentObjectPtr
         IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
-    
+
     public override bool Equals(object? obj)
     {
-        if (ReferenceEquals(null, obj))
+        if (obj is not FPersistentObjectPtr other)
         {
             return false;
         }
-        
-        return obj.GetType() == GetType() && Equals((FPersistentObjectPtr)obj);
+
+        return TPersistentObjectPtrExporter.CallEquals(ref Data, ref other.Data).ToManagedBool();
     }
-    
-    public static bool operator == (FPersistentObjectPtr a, FPersistentObjectPtr b)
+
+    public bool Equals(FPersistentObjectPtr other)
     {
-        return a.Equals(b);
+        return Equals((object)other);
     }
-    public static bool operator !=(FPersistentObjectPtr a, FPersistentObjectPtr b)
+
+    public override int GetHashCode()
     {
-        return !(a == b);
+        return TPersistentObjectPtrExporter.CallGetHashCode(ref Data);
     }
 }

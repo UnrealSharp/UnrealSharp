@@ -1,8 +1,7 @@
 using System.IO;
 using System.Text.Json;
-using UnrealSharpManagedGlue.Utilities;
 
-namespace UnrealSharpManagedGlue;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class JsonUtilities
 {

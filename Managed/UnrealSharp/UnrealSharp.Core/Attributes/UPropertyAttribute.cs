@@ -55,13 +55,13 @@ public enum PropertyFlags : ulong
     BlueprintCallable = NativePropertyFlags.BlueprintCallable,
     
     [PropertyFlagsMap(NativePropertyFlags.VisibleAnywhere)]
-    VisibleAnywhere = NativePropertyFlags.VisibleAnywhere,
+    VisibleAnywhere = NativePropertyFlags.Edit | NativePropertyFlags.EditConst,
     
     [PropertyFlagsMap(NativePropertyFlags.VisibleDefaultsOnly)]
-    VisibleDefaultsOnly = NativePropertyFlags.VisibleDefaultsOnly,
+    VisibleDefaultsOnly = NativePropertyFlags.Edit | NativePropertyFlags.EditConst | NativePropertyFlags.DisableEditOnInstance,
     
     [PropertyFlagsMap(NativePropertyFlags.VisibleInstanceOnly)]
-    VisibleInstanceOnly = NativePropertyFlags.VisibleInstanceOnly,
+    VisibleInstanceOnly = NativePropertyFlags.Edit | NativePropertyFlags.EditConst | NativePropertyFlags.DisableEditOnTemplate,
     
     [PropertyFlagsMap(NativePropertyFlags.Transient)]
     Transient = NativePropertyFlags.Transient,

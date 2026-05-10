@@ -22,7 +22,7 @@ public static class EnumExporter
         
         stringBuilder.AppendLine(attributeBuilder.ToString());
         
-        string underlyingType = UnderlyingTypeToString(enumObj.UnderlyingType);
+        string underlyingType = UnderlyingEnumTypeToString(enumObj.UnderlyingType);
         stringBuilder.DeclareType(enumObj, "enum", enumObj.GetStructName(), underlyingType, isPartial: false);
         
         int enumValuesCount = enumObj.EnumValues.Count;
@@ -44,8 +44,8 @@ public static class EnumExporter
         
         FileExporter.SaveGlueToDisk(enumObj, stringBuilder);
     }
-    
-    public static string UnderlyingTypeToString(UhtEnumUnderlyingType underlyingType)
+
+    private static string UnderlyingEnumTypeToString(UhtEnumUnderlyingType underlyingType)
     {
         return underlyingType switch
         {

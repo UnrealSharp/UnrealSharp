@@ -17,7 +17,8 @@ public class UnrealSharpCore : ModuleRules
 			new string[]
 			{
 				"Core", 
-				"GameplayTags",
+				"GameplayTags", 
+				"UnrealSharpUtilities",
 			}
 			);
 		
@@ -32,7 +33,7 @@ public class UnrealSharpCore : ModuleRules
 				"Projects",
 				"UMG", 
 				"DeveloperSettings", 
-				"UnrealSharpProcHelper", 
+				"UnrealSharpUtilities", 
 				"EnhancedInput", 
 				"UnrealSharpUtilities",
 				"GameplayTags", 
@@ -41,13 +42,7 @@ public class UnrealSharpCore : ModuleRules
 				"FieldNotification",
 				"InputCore",
 				"Json"
-			}
-			);
-
-		if (Target.Version.MajorVersion == 5 && Target.Version.MinorVersion < 5)
-		{
-            PrivateDependencyModuleNames.Add("StructUtils");
-        }
+			});
 
         PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
         PublicDefinitions.Add("ForceAsEngineGlue=1");

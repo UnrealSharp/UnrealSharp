@@ -1,6 +1,9 @@
 #include "ReflectionData/CSEnumReflectionData.h"
 
-bool FCSEnumReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
+
+bool FCSEnumReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

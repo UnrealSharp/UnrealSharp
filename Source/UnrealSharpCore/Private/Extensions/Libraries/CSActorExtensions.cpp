@@ -3,6 +3,7 @@
 #include "Engine/InheritableComponentHandler.h"
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
+#include "Logging/StructuredLog.h"
 #include "Types/CSClass.h"
 #include "Utilities/CSClassUtilities.h"
 

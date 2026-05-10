@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Logging/StructuredLog.h"
 
 class UCSUnrealSharpSettings;
 template <typename T>

@@ -10,7 +10,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	virtual ~FCSPropertyReflectionData() override = default;
 
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
 	FName GetName() const { return FieldName.GetFName(); }

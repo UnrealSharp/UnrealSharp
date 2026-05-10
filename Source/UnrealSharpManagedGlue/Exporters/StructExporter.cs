@@ -28,7 +28,7 @@ public static class StructExporter
         inheritanceHierarchy.Reverse();
         foreach (UhtStruct inheritance in inheritanceHierarchy)
         {
-            ScriptGeneratorUtilities.GetExportedProperties(inheritance, exportedProperties, getSetBackedProperties);
+            inheritance.GetExportedProperties(exportedProperties, getSetBackedProperties);
         }
         
         // Check there are not properties with the same name, remove otherwise

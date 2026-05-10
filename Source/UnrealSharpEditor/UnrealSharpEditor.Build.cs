@@ -24,7 +24,7 @@ public class UnrealSharpEditor : ModuleRules
                 "SlateCore",
                 "EditorSubsystem",
                 "UnrealEd",
-                "UnrealSharpProcHelper",
+                "UnrealSharpUtilities",
                 "BlueprintGraph",
                 "ToolMenus",
                 "EditorFramework",
@@ -42,7 +42,8 @@ public class UnrealSharpEditor : ModuleRules
                 "AssetTools",
                 "PluginBrowser", 
                 "UnrealSharpUtilities", 
-                "PlacementMode"
+                "PlacementMode",
+                "DeveloperToolSettings"
             }
         );
 

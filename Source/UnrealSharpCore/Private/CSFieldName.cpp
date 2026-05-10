@@ -1,6 +1,8 @@
 #include "CSFieldName.h"
 
 #include "UnrealSharpUtils.h"
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
 #include "Utilities/CSClassUtilities.h"
 
 FCSFieldName::FCSFieldName(UField* NativeField)
@@ -14,12 +16,10 @@ FCSFieldName::FCSFieldName(UField* NativeField)
 	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeField);
 }
 
-bool FCSFieldName::Serialize(TSharedPtr<FJsonObject> JsonObject)
+bool FCSFieldName::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
-	
 	JSON_READ_STRING(Name, IS_REQUIRED);
 	CALL_SERIALIZE(Namespace.Serialize(JsonObject));	
-	
 	END_JSON_SERIALIZE
 }

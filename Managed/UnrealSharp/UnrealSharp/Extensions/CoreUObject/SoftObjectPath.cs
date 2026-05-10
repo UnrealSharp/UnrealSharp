@@ -9,15 +9,16 @@ public partial struct FSoftObjectPath
     {
         AssetPath = new FTopLevelAssetPath(packageName, assetName);
     }
+
+    public bool Valid => AssetPath.Valid;
+    public bool Null => AssetPath.Null;
+    
+    public UObject? Object => UCSSoftObjectPathExtensions.ResolveObject(this);
+    public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId_Internal(this);
     
     public override bool Equals(object? obj)
     {
-        if (ReferenceEquals(null, obj))
-        {
-            return false;
-        }
-        
-        return obj.GetType() == GetType() && Equals((FSoftObjectPath)obj);
+        return obj is FSoftObjectPath other && this == other;
     }
 
     public override string ToString()
@@ -29,12 +30,6 @@ public partial struct FSoftObjectPath
     {
         return AssetPath.GetHashCode();
     }
-
-    public bool Valid => AssetPath.Valid;
-    public bool Null => AssetPath.Null;
-    
-    public UObject? Object => UCSSoftObjectPathExtensions.ResolveObject(this);
-    public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId_Internal(this);
     
     public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)
     {

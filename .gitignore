@@ -85,3 +85,4 @@ obj/
 !Directory.Build.props
 !UnrealSharp.Shared.props
 !UnrealSharp.GeneratedFiles.props
+!UnrealSharp.AOT.props

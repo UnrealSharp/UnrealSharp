@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
+using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.PropertyTranslators;
 using UnrealSharpManagedGlue.SourceGeneration;
 
@@ -13,6 +14,8 @@ public static class FileExporter
 {
     private static readonly ReaderWriterLockSlim ReadWriteLock = new();
     private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
+    
+    public static bool HasModifiedEngineGlue { get; private set; }
 
     public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
     {
@@ -58,7 +61,7 @@ public static class FileExporter
 
             if (package.IsPartOfEngine())
             {
-                CSharpExporter.HasModifiedEngineGlue = true;
+                HasModifiedEngineGlue = true;
             }
         }
         finally
@@ -82,7 +85,7 @@ public static class FileExporter
 
     public static void CleanOldExportedFiles()
     {
-        Console.WriteLine("Cleaning up old generated C# glue files...");
+        ConsoleUtilities.Log("Cleaning up old generated C# glue files...");
 
         foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
         {

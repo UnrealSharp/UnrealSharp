@@ -7,7 +7,9 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
-#include "CSProcUtilities.h"
+#include "CSPathsBlueprintFunctionLibrary.h"
+#include "CSPathsUtilities.h"
+#include "CSProjectUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
 #include "Kismet2/StructureEditorUtils.h"
 #include "Utilities/CSAssemblyUtilities.h"
@@ -35,7 +37,7 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	UnrealSharpEditorModule = &FUnrealSharpEditorModule::Get();
 	
-	FString PathToManagedSolution = UCSProcUtilities::GetPathToManagedSolution();
+	FString PathToManagedSolution = UnrealSharp::Paths::GetPathToManagedSolution();
 	UnrealSharpEditorModule->GetManagedEditorCallbacks().LoadSolutionAsync(*PathToManagedSolution, (void*)&OnHotReloadReady_Callback);
 	
 	RefreshDirectoryWatchers();
@@ -245,7 +247,7 @@ void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
-	UCSProcUtilities::GetAllProjectPaths(ProjectPaths, true);
+	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths, true);
 
 	for (const FString& ProjectPath : ProjectPaths)
 	{

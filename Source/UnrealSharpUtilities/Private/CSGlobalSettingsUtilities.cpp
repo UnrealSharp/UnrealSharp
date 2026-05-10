@@ -1,18 +1,19 @@
-#include "CSUnrealSharpSettingsUtilities.h"
-#include "CSProcUtilities.h"
-#include "UnrealSharpProcHelper.h"
+#include "CSGlobalSettingsUtilities.h"
+#include "CSPathsBlueprintFunctionLibrary.h"
+#include "UnrealSharpUtilities.h"
+#include "Logging/StructuredLog.h"
 
-TMap<FString, TSharedPtr<FJsonValue>> FCSUnrealSharpSettingsUtilities::Config;
+static TMap<FString, TSharedPtr<FJsonValue>> Config;
 
-TSharedPtr<FJsonValue> FCSUnrealSharpSettingsUtilities::GetElement(const FString& ElementName)
+TSharedPtr<FJsonValue> UnrealSharp::GlobalSettings::GetElement(const FString& ElementName)
 {
 #if WITH_EDITOR
-	InitializeConfigFile(FPaths::ProjectDir(), UCSProcUtilities::GetPluginDirectory());
+	Private::InitializeConfigFile(FPaths::ProjectDir(), UCSPathsBlueprintFunctionLibrary::GetPluginDirectory());
 
 	TSharedPtr<FJsonValue>* Found = Config.Find(ElementName);
 	if (!Found)
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Config element '%s' not found."), *ElementName);
+		UE_LOG(LogUnrealSharpUtilities, Fatal, TEXT("Config element '%s' not found."), *ElementName);
 	}
 
 	return *Found;
@@ -21,7 +22,7 @@ TSharedPtr<FJsonValue> FCSUnrealSharpSettingsUtilities::GetElement(const FString
 #endif
 }
 
-void FCSUnrealSharpSettingsUtilities::InitializeConfigFile(const FString& ProjectRoot, const FString& UnrealSharpRoot)
+void UnrealSharp::GlobalSettings::Private::InitializeConfigFile(const FString& ProjectRoot, const FString& UnrealSharpRoot)
 {
 	if (!Config.IsEmpty())
 	{
@@ -43,7 +44,7 @@ void FCSUnrealSharpSettingsUtilities::InitializeConfigFile(const FString& Projec
 	}
 }
 
-FString FCSUnrealSharpSettingsUtilities::GetConfigFile(const FString& RootDirectory)
+FString UnrealSharp::GlobalSettings::Private::GetConfigFile(const FString& RootDirectory)
 {
 	const FString ConfigDirectory = FPaths::Combine(RootDirectory, TEXT("Config"));
 
@@ -57,20 +58,20 @@ FString FCSUnrealSharpSettingsUtilities::GetConfigFile(const FString& RootDirect
 	
 	if (FoundConfigs.Num() > 1)
 	{
-		UE_LOGFMT(LogUnrealSharpProcHelper, Fatal, "Found multiple config files in {0}", *ConfigDirectory);
+		UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Found multiple config files in {0}", *ConfigDirectory);
 	}
 
 	return FoundConfigs[0];
 }
 
-TMap<FString, TSharedPtr<FJsonValue>> FCSUnrealSharpSettingsUtilities::LoadJsonAsDictionary(const FString& Path)
+TMap<FString, TSharedPtr<FJsonValue>> UnrealSharp::GlobalSettings::Private::LoadJsonAsDictionary(const FString& Path)
 {
 	TMap<FString, TSharedPtr<FJsonValue>> Result;
 
 	FString JsonString;
 	if (!FFileHelper::LoadFileToString(JsonString, *Path))
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Failed to read config file: %s"), *Path);
+		UE_LOG(LogUnrealSharpUtilities, Fatal, TEXT("Failed to read config file: %s"), *Path);
 	}
 
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
@@ -78,7 +79,7 @@ TMap<FString, TSharedPtr<FJsonValue>> FCSUnrealSharpSettingsUtilities::LoadJsonA
 
 	if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
 	{
-		UE_LOG(LogUnrealSharpProcHelper, Fatal, TEXT("Invalid JSON in config file: %s"), *Path);
+		UE_LOG(LogUnrealSharpUtilities, Fatal, TEXT("Invalid JSON in config file: %s"), *Path);
 	}
 
 	for (const TPair<FString, TSharedPtr<FJsonValue>>& Pair : JsonObject->Values)

@@ -1,6 +1,9 @@
 #include "ReflectionData/CSTemplateType.h"
 
-bool FCSTemplateType::Serialize(TSharedPtr<FJsonObject> JsonObject)
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
+
+bool FCSTemplateType::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

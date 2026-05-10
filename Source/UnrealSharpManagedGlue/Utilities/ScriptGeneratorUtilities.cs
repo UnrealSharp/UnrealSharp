@@ -1,47 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.Exporters;
-using UnrealSharpManagedGlue.PropertyTranslators;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
 public class GetterSetterPair
 {
-    public GetterSetterPair(UhtProperty property)
-    {
-        PropertyName = property.GetPropertyName();
-
-        if (!property.HasNativeGetter())
-        {
-            UhtFunction? foundGetter = property.GetBlueprintGetter();
-            if (foundGetter != null)
-            {
-                Getter = foundGetter;
-                GetterExporter = GetterSetterFunctionExporter.Create(foundGetter, property, GetterSetterMode.Get,
-                    EFunctionProtectionMode.UseUFunctionProtection);
-            }
-        }
-
-        if (!property.HasNativeSetter())
-        {
-            UhtFunction? foundSetter = property.GetBlueprintSetter();
-            if (foundSetter != null)
-            {
-                Setter = foundSetter;
-                SetterExporter = GetterSetterFunctionExporter.Create(foundSetter, property, GetterSetterMode.Set,
-                    EFunctionProtectionMode.UseUFunctionProtection);
-            }
-        }
-    }
-
-    public GetterSetterPair(string propertyName)
-    {
-        PropertyName = propertyName;
-    }
-
     public readonly string PropertyName;
 
     public UhtFunction? Getter { get; set; }
@@ -72,7 +37,40 @@ public class GetterSetterPair
         }
     }
 
-    public UhtProperty? Property { get; set; }
+    public readonly UhtProperty Property;
+    
+    public GetterSetterPair(UhtProperty property)
+    {
+        PropertyName = property.GetPropertyName();
+
+        if (!property.HasNativeGetter())
+        {
+            UhtFunction? foundGetter = property.GetBlueprintGetter();
+            if (foundGetter != null)
+            {
+                Getter = foundGetter;
+                GetterExporter = GetterSetterFunctionExporter.Create(foundGetter, property, GetterSetterMode.Get, EFunctionProtectionMode.UseUFunctionProtection);
+            }
+        }
+
+        if (!property.HasNativeSetter())
+        {
+            UhtFunction? foundSetter = property.GetBlueprintSetter();
+            if (foundSetter != null)
+            {
+                Setter = foundSetter;
+                SetterExporter = GetterSetterFunctionExporter.Create(foundSetter, property, GetterSetterMode.Set, EFunctionProtectionMode.UseUFunctionProtection);
+            }
+        }
+        
+        Property = property;
+    }
+
+    public GetterSetterPair(string propertyName, UhtProperty primaryProperty)
+    {
+        PropertyName = propertyName;
+        Property = primaryProperty;
+    }
 }
 
 public static class ScriptGeneratorUtilities
@@ -102,59 +100,6 @@ public static class ScriptGeneratorUtilities
         return valueStr;
     }
 
-    public static bool CanExportFunction(UhtFunction function)
-    {
-        if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
-        {
-            return false;
-        }
-        
-        if (InclusionLists.HasBannedFunction(function))
-        {
-            return false;
-        }
-
-        return CanExportParameters(function);
-    }
-
-    public static bool CanExportParameters(UhtFunction function)
-    {
-        bool CanExportParameter(UhtProperty property, Func<PropertyTranslator, bool> isSupported)
-        {
-            PropertyTranslator? translator = property.GetTranslator();
-            return translator != null && isSupported(translator) && translator.CanExport(property);
-        }
-
-        if (function.ReturnProperty != null && !CanExportParameter(function.ReturnProperty, translator => translator.IsSupportedAsReturnValue))
-        {
-            return false;
-        }
-
-        foreach (UhtProperty parameter in function.Properties)
-        {
-            if (!CanExportParameter(parameter, translator => translator.IsSupportedAsParameter))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public static bool CanExportProperty(UhtProperty property)
-    {
-        PropertyTranslator? translator = property.GetTranslator();
-        if (translator == null || !translator.CanExport(property))
-        {
-            return false;
-        }
-
-        bool isClassProperty = property.Outer!.EngineType == UhtEngineType.Class;
-        bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty;
-        bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty;
-        return canBeClassProperty || canBeStructProperty;
-    }
-
     public static string GetCleanEnumValueName(UhtEnum enumObj, UhtEnumValue enumValue)
     {
         if (enumObj.CppForm == UhtEnumCppForm.Regular)
@@ -165,273 +110,5 @@ public static class ScriptGeneratorUtilities
         int delimiterIndex = enumValue.Name.IndexOf("::", StringComparison.Ordinal);
         return delimiterIndex < 0 ? enumValue.Name : enumValue.Name.Substring(delimiterIndex + 2);
     }
-
-    public static void GetExportedProperties(UhtStruct structObj, List<UhtProperty> properties,
-        Dictionary<UhtProperty, GetterSetterPair> getterSetterBackedProperties)
-    {
-        if (!structObj.Properties.Any())
-        {
-            return;
-        }
-
-        UhtClass? classObj = structObj as UhtClass;
-        foreach (UhtProperty property in structObj.Properties)
-        {
-            if (!CanExportProperty(property) || InclusionLists.HasBannedProperty(property))
-            {
-                continue;
-            }
-
-            if (classObj != null && (property.HasAnyGetter() || property.HasAnySetter()))
-            {
-                GetterSetterPair pair = new GetterSetterPair(property);
-                getterSetterBackedProperties.Add(property, pair);
-            }
-            else
-            {
-                properties.Add(property);
-            }
-        }
-    }
-
-    public static void GetExportedFunctions(UhtClass classObj, List<UhtFunction> functions,
-                                            List<UhtFunction> overridableFunctions,
-                                            Dictionary<string, GetterSetterPair> getterSetterPairs,
-                                            Dictionary<string, GetterSetterPair> getSetOverrides)
-    {
-        List<UhtFunction> exportedFunctions = new();
-
-        bool HasFunction(List<UhtFunction> functionsToCheck, UhtFunction functionToTest)
-        {
-            foreach (UhtFunction function in functionsToCheck)
-            {
-                if (function.SourceName == functionToTest.SourceName ||
-                    function.CppImplName == functionToTest.CppImplName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        foreach (UhtFunction function in classObj.Functions)
-        {
-            if (!CanExportFunction(function))
-            {
-                continue;
-            }
-
-            if (function.IsAnyGetter() || function.IsAnySetter())
-            {
-                continue;
-            }
-
-            if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
-            {
-                overridableFunctions.Add(function);
-            }
-            else if (function.IsAutocast())
-            {
-                functions.Add(function);
-
-                if (function.Properties.First() is not UhtStructProperty structToConvertProperty)
-                {
-                    continue;
-                }
-
-                if (structToConvertProperty.Package.IsPartOfEngine() != function.Package.IsPartOfEngine())
-                {
-                    // For auto-casts to work, they both need to be in the same generated assembly. 
-                    // Currently not supported, as we separate engine and project generated assemblies.
-                    continue;
-                }
-
-                AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
-            }
-            else if (!TryMakeFunctionGetterSetterPair(function, classObj, getterSetterPairs, false))
-            {
-                functions.Add(function);
-            }
-
-            exportedFunctions.Add(function);
-        }
-
-        foreach (UhtClass declaration in classObj.GetInterfaces())
-        {
-            UhtClass? interfaceClass = declaration.GetInterfaceAlternateClass();
-
-            if (interfaceClass == null)
-            {
-                continue;
-            }
-
-            foreach (UhtFunction function in interfaceClass.Functions)
-            {
-                if (TryMakeFunctionGetterSetterPair(function, interfaceClass, getSetOverrides, true) 
-                    || HasFunction(exportedFunctions, function) || !CanExportFunction(function))
-                {
-                    continue;
-                }
-
-                if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent))
-                {
-                    overridableFunctions.Add(function);
-                }
-                else
-                {
-                    functions.Add(function);
-                }
-            }
-        }
-    }
-
-    public static List<UhtClass> GetInterfaces(this UhtClass classObj)
-    {
-        List<UhtClass> interfaces = new();
-        foreach (UhtStruct interfaceClass in classObj.Bases)
-        {
-            UhtEngineType engineType = interfaceClass.EngineType;
-            if (engineType is UhtEngineType.Interface or UhtEngineType.NativeInterface)
-            {
-                interfaces.Add((UhtClass)interfaceClass);
-            }
-        }
-
-        return interfaces;
-    }
-
-    public static bool TryMakeFunctionGetterSetterPair(UhtFunction function, UhtClass classObj,
-        Dictionary<string, GetterSetterPair> getterSetterPairs, bool ignoreMatchingProperty)
-    {
-        string scriptName = function.GetFunctionName();
-        bool isGetter = CheckIfGetter(scriptName, function);
-        bool isSetter = CheckIfSetter(scriptName, function);
-
-        if (!isGetter && !isSetter)
-        {
-            return false;
-        }
-
-        string propertyName = scriptName.Length > 3 ? scriptName.Substring(3) : function.SourceName;
-        propertyName = NameMapper.EscapeKeywords(propertyName);
-
-        UhtFunction? sameNameFunction = classObj.FindFunctionByName(propertyName);
-
-        if (sameNameFunction != null && sameNameFunction != function)
-        {
-            return false;
-        }
-
-        bool ComparePropertyName(UhtProperty prop, string name)
-        {
-            return prop.SourceName == name || prop.GetPropertyName() == name;
-        }
-
-        UhtProperty? classProperty = !ignoreMatchingProperty ? classObj.FindPropertyByName(propertyName, ComparePropertyName) : null;
-        UhtProperty firstProperty = function.ReturnProperty ?? function.Properties.First();
-
-        if (classProperty != null && (!classProperty.IsSameType(firstProperty) || classProperty.HasAnyGetter() ||
-                                      classProperty.HasAnySetter()))
-        {
-            return false;
-        }
-
-        if (!getterSetterPairs.TryGetValue(propertyName, out GetterSetterPair? pair))
-        {
-            pair = new GetterSetterPair(propertyName);
-            getterSetterPairs[propertyName] = pair;
-        }
-
-        if (pair.Accessors.Count == 2)
-        {
-            return true;
-        }
-
-        bool isOutParm = function.Properties.Any(p => p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
-        if (function.ReturnProperty != null || isOutParm)
-        {
-            pair.Getter = function;
-            // When creating the getter, bind it to the getter's own value type (return or out param)
-            UhtProperty getterValueProperty = function.ReturnProperty ?? function.Properties.First(p =>
-                p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
-            pair.GetterExporter = GetterSetterFunctionExporter.Create(function, getterValueProperty, GetterSetterMode.Get,
-                EFunctionProtectionMode.UseUFunctionProtection);
-
-            UhtFunction? setter = classObj.FindFunctionByName("Set" + propertyName, null, true);
-            if (setter != null && CheckIfSetter(setter))
-            {
-                pair.Setter = setter;
-                // Keep using the getter's value type as the canonical property type
-                pair.SetterExporter = GetterSetterFunctionExporter.Create(setter, getterValueProperty, GetterSetterMode.Set,
-                    EFunctionProtectionMode.UseUFunctionProtection);
-            }
-        }
-        else
-        {
-            pair.Setter = function;
-            pair.SetterExporter = GetterSetterFunctionExporter.Create(function, firstProperty, GetterSetterMode.Set,
-                EFunctionProtectionMode.UseUFunctionProtection);
-
-            UhtFunction? getter = classObj.FindFunctionByName("Get" + propertyName, null, true);
-            if (getter != null && CheckIfGetter(getter))
-            {
-                pair.Getter = getter;
-                // Prefer the getter's own value type (return or out param) for the property type
-                UhtProperty getterValueProperty = getter.ReturnProperty ?? getter.Properties.First(p =>
-                    p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
-                pair.GetterExporter = GetterSetterFunctionExporter.Create(getter, getterValueProperty, GetterSetterMode.Get,
-                    EFunctionProtectionMode.UseUFunctionProtection);
-                // Also re-bind the setter exporter to the getter's value type so signatures align
-                pair.SetterExporter = GetterSetterFunctionExporter.Create(function, getterValueProperty, GetterSetterMode.Set,
-                    EFunctionProtectionMode.UseUFunctionProtection);
-            }
-        }
-
-        // Canonical property type: prefer getter value type when available, else fall back to current function's type
-        if (pair.Getter != null)
-        {
-            pair.Property = pair.Getter.ReturnProperty ?? pair.Getter.Properties.First(p =>
-                p.HasAllFlags(EPropertyFlags.OutParm) && !p.HasAllFlags(EPropertyFlags.ConstParm));
-        }
-        else
-        {
-            pair.Property = firstProperty;
-        }
-        getterSetterPairs[propertyName] = pair;
-        return true;
-    }
-
-    static bool CheckIfGetter(string scriptName, UhtFunction function)
-    {
-        return scriptName.StartsWith("Get") && CheckIfGetter(function);
-    }
-
-    static bool CheckIfGetter(UhtFunction function)
-    {
-        int childrenCount = function.Children.Count;
-        bool hasReturnProperty = function.ReturnProperty != null;
-        bool hasNoParameters = !function.HasParameters;
-        bool hasSingleOutParam = !hasNoParameters && childrenCount == 1 && function.HasOutParams();
-        bool hasWorldContextPassParam =
-            childrenCount == 2 && function.Properties.Any(property => property.IsWorldContextParameter());
-        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
-        return hasReturnProperty && isNotBlueprintEvent && (hasNoParameters || hasSingleOutParam || hasWorldContextPassParam);
-    }
-
-    static bool CheckIfSetter(string scriptName, UhtFunction function)
-    {
-        return scriptName.StartsWith("Set") && CheckIfSetter(function);
-    }
-
-    static bool CheckIfSetter(UhtFunction function)
-    {
-        bool hasSingleParameter = function.Properties.Count() == 1;
-        var property = function.Properties.FirstOrDefault();
-        bool isNotOutOrReferenceParam = function.HasParameters && property is not null 
-                                                               && (!property.HasAllFlags(EPropertyFlags.OutParm | EPropertyFlags.ReferenceParm) 
-                                                                   || property.HasAllFlags(EPropertyFlags.ConstParm));
-        bool isNotBlueprintEvent = !function.FunctionFlags.HasAnyFlags(EFunctionFlags.BlueprintEvent);
-        return hasSingleParameter && isNotBlueprintEvent && isNotOutOrReferenceParam;
-    }
+    
 }

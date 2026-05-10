@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UnrealSharpManagedGlue;
+namespace UnrealSharpManagedGlue.PropertyTranslators;
 
 [Flags]
 public enum EPropertyUsageFlags : byte

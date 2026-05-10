@@ -7,21 +7,13 @@ using UnrealSharp.Shared;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public readonly struct ModuleInfo
+public class ModuleInfo
 {
 	private readonly string _moduleName;
 	private readonly string _moduleDirectory;
 	public readonly HashSet<string>? Dependencies;
 	public readonly UhtPackage Module;
-
-	public ModuleInfo(string moduleName, string moduleDirectory, UhtPackage package, HashSet<string>? dependencies = null)
-	{
-		_moduleName = moduleName;
-		_moduleDirectory = moduleDirectory;
-		Dependencies = dependencies;
-		Module = package;
-	}
-
+	
 	public string ProjectName => $"{_moduleName}.Glue";
 	public string ProjectFile => $"{ProjectName}.csproj";
 	public string ScriptDirectory => Path.Combine(_moduleDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
@@ -33,6 +25,14 @@ public readonly struct ModuleInfo
 
 	public string GlueBaseDirectory => Module.GetUhtBaseOutputDirectory();
 	public string GlueModuleDirectory => Module.GetModuleUhtOutputDirectory();
+
+	public ModuleInfo(string moduleName, string moduleDirectory, UhtPackage package, HashSet<string>? dependencies = null)
+	{
+		_moduleName = moduleName;
+		_moduleDirectory = moduleDirectory;
+		Dependencies = dependencies;
+		Module = package;
+	}
 }
 
 public static class ModuleUtilities
@@ -45,6 +45,8 @@ public static class ModuleUtilities
 		InitializeManifests();
 		InitializeModules();
 	}
+	
+	public static IEnumerable<ModuleInfo> Modules => PackageToModuleInfo.Values;
 
 	private static void InitializeManifests()
 	{
@@ -72,7 +74,7 @@ public static class ModuleUtilities
 					continue;
 				}
 				
-				string rootDir = PackageUtilities.FindUnrealModuleRoot(configDir);
+				string rootDir = PackageUtilities.LocateProjectOrPluginRoot(configDir);
 
 				using FileStream stream = File.OpenRead(manifestPath);
 				List<string>? moduleNames = JsonSerializer.Deserialize<List<string>>(stream);
@@ -89,7 +91,7 @@ public static class ModuleUtilities
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"Failed to load manifest {manifestPath}: {e.Message}");
+				ConsoleUtilities.Log($"Failed to load manifest {manifestPath}: {e.Message}");
 			}
 		}
 	}
@@ -112,7 +114,7 @@ public static class ModuleUtilities
     
 	public static ModuleInfo GetModuleInfo(this UhtPackage package)
 	{
-		if (!PackageToModuleInfo.TryGetValue(package, out ModuleInfo moduleInfo))
+		if (!PackageToModuleInfo.TryGetValue(package, out ModuleInfo? moduleInfo))
 		{
 			throw new KeyNotFoundException($"ModuleInfo not found for package: {package.SourceName}");
 		}
@@ -124,10 +126,12 @@ public static class ModuleUtilities
 	{
 		foreach (KeyValuePair<UhtPackage, ModuleInfo> kvp in PackageToModuleInfo)
 		{
-			if (kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
+			if (!kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
 			{
-				return kvp.Value;
+				continue;
 			}
+			
+			return kvp.Value;
 		}
 		
 		throw new KeyNotFoundException($"ModuleInfo not found for package name: {packageName}");
@@ -232,9 +236,9 @@ public static class ModuleUtilities
 			return;
 		}
 		
-		if (sourceModule.CsProjPath != referencedModule.Value.CsProjPath)
+		if (sourceModule.CsProjPath != referencedModule.CsProjPath)
 		{
-			uniqueDependencies.Add(referencedModule.Value.CsProjPath);
+			uniqueDependencies.Add(referencedModule.CsProjPath);
 		}
 	}
 }

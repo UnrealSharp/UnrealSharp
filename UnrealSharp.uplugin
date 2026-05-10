@@ -20,11 +20,6 @@
 			"LoadingPhase": "PostDefault"
 		},
 		{
-			"Name": "UnrealSharpProcHelper",
-			"Type": "Runtime",
-			"LoadingPhase": "PostDefault"
-		},
-		{
 			"Name": "UnrealSharpEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PostDefault"

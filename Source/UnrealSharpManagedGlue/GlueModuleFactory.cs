@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Types;
+using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
@@ -49,7 +50,7 @@ public static class GlueModuleFactory
     private static void CreateOrUpdateGlueModule(string csprojPath, 
         string projectName, 
         IEnumerable<string>? dependencyPaths, 
-        string projectRoot, UhtPackage? package, 
+        string projectRoot, UhtPackage package, 
         out bool createdNewModule)
     {
         createdNewModule = false;
@@ -57,31 +58,32 @@ public static class GlueModuleFactory
         if (!File.Exists(csprojPath))
         {
             string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-            bool isEditorOnly = package?.IsEditorOnly() ?? false;
             List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
             {
-                new("NewProjectName", projectName),
-                new("NewProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-                new("SkipIncludeProjectGlue", "true"),
+                new("ProjectName", projectName),
+                new("ProjectFolder", Path.GetDirectoryName(projectDirectory)!),
                 new("SkipSolutionGeneration", "true"),
                 new("SkipUSharpProjSetup", "true"),
                 new("ProjectRoot", projectRoot),
-                new("EditorOnly", isEditorOnly.ToString()),
-                new("IsCollectible", "false"),
             };
+
+            if (package.IsEditorOnly())
+            {
+                arguments.Add(new KeyValuePair<string, string>("EditorOnly", "true"));
+            }
             
             if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("GenerateProject", arguments))
             {
                 throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
             }
             
-            Console.WriteLine($"Successfully created project file: {projectName}");
+            ConsoleUtilities.Log($"Successfully created project file: {projectName}");
             
             createdNewModule = true;
         }
         else
         {
-            Console.WriteLine($"Project file already exists: {projectName}. Skipping creation.");
+            ConsoleUtilities.Log($"Project file already exists: {projectName}. Skipping creation.");
         }
         
         AddPluginDependencies(projectName, csprojPath, dependencyPaths, createdNewModule);
@@ -100,7 +102,7 @@ public static class GlueModuleFactory
         {
             if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
             {
-                Console.WriteLine($"No changes in dependencies for project {projectName}. Skipping update.");
+                ConsoleUtilities.Log($"No changes in dependencies for project {projectName}. Skipping update.");
                 return;
             }
         }
@@ -114,14 +116,14 @@ public static class GlueModuleFactory
         
         foreach (string path in pluginDependencies)
         {
-            arguments.Add(new KeyValuePair<string, string>("Dependency", path));
+            arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
         }
-
+        
         if (!USharpBuildToolUtilities.InvokeUSharpBuildTool("UpdateProjectDependencies", arguments))
         {
             throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
         }
         
-        Console.WriteLine($"Updated project dependencies for {projectName}");
+        ConsoleUtilities.Log($"Updated project dependencies for {projectName}");
     }
 }

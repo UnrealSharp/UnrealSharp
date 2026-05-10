@@ -2,11 +2,12 @@
 
 #include "CSFunctionReflectionData.h"
 #include "CSStructReflectionData.h"
+#include "Json/CSRapidJsonUtilties.h"
 
 struct FCSClassBaseReflectionData : FCSStructReflectionData
 {
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 	
 	TArray<FCSFunctionReflectionData> Functions;

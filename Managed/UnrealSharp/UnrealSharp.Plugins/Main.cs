@@ -1,7 +1,15 @@
-﻿using System.Runtime.InteropServices;
+
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+using System.Runtime.InteropServices;
 using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
+
+#if !PACKAGE
+using Microsoft.Build.Locator;
+#endif
 
 namespace UnrealSharp.Plugins;
 

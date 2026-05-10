@@ -3,15 +3,26 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json.Nodes;
+using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class BuildEmitLoadOrder : BuildToolAction
+[Verb("BuildEmitLoadOrderParameters", aliases: ["BuildEmitLoadOrder"], HelpText = "Builds the solution and emits a JSON file with the load order of the assemblies.")]
+public struct BuildEmitLoadOrderParameters
 {
-    public override bool RunAction()
+    [Option("OutputPath", Required = false, HelpText = "Optional output path for the build output.")]
+    public string OutputPath { get; set; }
+        
+    [Option("clp", Required = false, HelpText = "Optional CLP arguments to pass to the build process.")]
+    public IEnumerable<string>? Clp { get; set; }
+}
+
+public static class BuildEmitLoadOrderAction
+{
+    public static void BuildEmitLoadOrder(BuildEmitLoadOrderParameters parameters)
     {
-        string output = Program.GetArgument("OutputPath");
-        string clp = Program.GetArgument("clp");
+        string output = parameters.OutputPath;
+        string clp = parameters.Clp != null ? string.Join(';', parameters.Clp) : string.Empty;
         
         Collection<string>? extraArguments = null;
         if (!string.IsNullOrEmpty(output))
@@ -28,15 +39,19 @@ public class BuildEmitLoadOrder : BuildToolAction
             extraArguments.Add($"-clp:{clp}");
         }
 
-        BuildSolution buildSolution = new BuildSolution(Program.GetScriptFolder(), extraArguments);
-        if (!buildSolution.RunAction())
+        BuildSolutionParameters buildParameters = new BuildSolutionParameters
         {
-            return false;
-        }
+            BuildConfig = TargetConfiguration.DebugGame,
+            Publish = true,
+            Folders = [Program.GetScriptFolder()],
+            ExtraArguments = extraArguments ?? new Collection<string>()
+        };
+        
+        BuildSolutionAction.BuildSolution(buildParameters);
 
         string outputPath = Program.GetOutputPath();
         EmitLoadOrder(outputPath, outputPath);
-        return AddLaunchSettings();
+        AddLaunchSettings();
     }
     
     public static void EmitLoadOrder(string assemblyFolder, string publishPath)
@@ -69,7 +84,7 @@ public class BuildEmitLoadOrder : BuildToolAction
         AssemblyLoadOrder.EmitLoadOrder(assemblyPaths, publishPath);
     }
     
-    bool AddLaunchSettings()
+    static void AddLaunchSettings()
     {
         List<FileInfo> allProjectFiles = Program.GetAllProjectFiles(new DirectoryInfo(Program.GetProjectDirectory()));
 
@@ -89,12 +104,10 @@ public class BuildEmitLoadOrder : BuildToolAction
             }
             if (File.Exists(launchSettingsPath))
             {
-                return true;
+                return;
             }
             Program.CreateOrUpdateLaunchSettings(launchSettingsPath);
         }
-        
-        return true;
     }
 }
 

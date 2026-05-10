@@ -1,5 +1,7 @@
 #include "CSNamespace.h"
 #include "CSManager.h"
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
 
 FString FCSNamespace::GetLastNamespace() const
 {
@@ -34,11 +36,9 @@ UPackage* FCSNamespace::GetPackage() const
 	return UCSManager::Get().FindOrAddManagedPackage(*this);
 }
 
-bool FCSNamespace::Serialize(TSharedPtr<FJsonObject> JsonObject)
+bool FCSNamespace::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
-	
 	JSON_READ_STRING(Namespace, IS_REQUIRED);
-	
 	END_JSON_SERIALIZE
 }

@@ -1,11 +1,10 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using UnrealSharp.Core;
-using UnrealSharp.Core.Attributes;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
 using UnrealSharp.Interop;
-using UnrealSharp.UnrealSharpAsync;
 
 namespace UnrealSharp;
 
@@ -13,7 +12,7 @@ namespace UnrealSharp;
 /// Holds a soft reference to an object. Useful for holding a reference to an object that may be unloaded.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public struct TSoftObjectPtr<T> where T : UObject
+public struct TSoftObjectPtr<T> : IEquatable<TSoftObjectPtr<T>> where T : UObject
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     internal FPersistentObjectPtr SoftObjectPtr;
@@ -98,6 +97,31 @@ public struct TSoftObjectPtr<T> where T : UObject
     {
         var foundObject = SoftObjectPtr.Get();
         return foundObject as T;
+    }
+
+    public static bool operator ==(TSoftObjectPtr<T> left, TSoftObjectPtr<T> right)
+    {
+        return left.SoftObjectPtr.Equals(right.SoftObjectPtr);
+    }
+
+    public static bool operator !=(TSoftObjectPtr<T> left, TSoftObjectPtr<T> right)
+    {
+        return !(left == right);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is TSoftObjectPtr<T> other && SoftObjectPtr.Equals(other.SoftObjectPtr);
+    }
+
+    public bool Equals(TSoftObjectPtr<T> other)
+    {
+        return SoftObjectPtr.Equals(other.SoftObjectPtr);
+    }
+
+    public override int GetHashCode()
+    {
+        return SoftObjectPtr.GetHashCode();
     }
 };
 

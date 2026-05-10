@@ -5,7 +5,9 @@
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
 #include "CSManager.h"
-#include "CSProcUtilities.h"
+#include "CSPathsBlueprintFunctionLibrary.h"
+#include "CSPathsUtilities.h"
+#include "CSProjectUtilities.h"
 #include "KismetCompiler.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
@@ -228,7 +230,7 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
 {
 	TArray<FString> Projects;
-	UCSProcUtilities::GetProjectNamesByLoadOrder(Projects);
+	UnrealSharp::Project::GetProjectNamesByLoadOrder(Projects);
 	
 	if (!Projects.Contains(Assembly->GetName()))
 	{

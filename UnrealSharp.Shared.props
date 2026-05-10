@@ -17,6 +17,7 @@
   </PropertyGroup>
 
   <Import Project="$(UnrealSharpPluginDir)UnrealSharp.GeneratedFiles.props" />
+  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.AOT.Props" />
 
   <ItemGroup>
   

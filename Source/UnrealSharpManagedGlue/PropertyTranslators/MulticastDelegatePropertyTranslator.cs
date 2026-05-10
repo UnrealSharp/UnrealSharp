@@ -18,7 +18,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
     public override bool CanExport(UhtProperty property)
     {
         UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
-        return ScriptGeneratorUtilities.CanExportParameters(multicastDelegateProperty.Function);
+        return multicastDelegateProperty.Function.CanExportParameters();
     }
 
     public override string GetManagedType(UhtProperty property)

@@ -22,14 +22,11 @@ public static class AutocastExporter
         value.Add(function);
     }
     
-    public static void StartExportingAutocastFunctions()
+    public static void BindAutocasts()
     {
         foreach (KeyValuePair<UhtStruct, List<UhtFunction>> pair in ExportedAutocasts)
         {
-            TaskManager.StartTask(_ => 
-            {
-                ExportAutocast(pair.Key, pair.Value);
-            });
+            ExportAutocast(pair.Key, pair.Value);
         }
     }
     

@@ -9,7 +9,9 @@ public class UnrealSharpUtilities : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core",
+                "Core", 
+                "Json", 
+                "Projects",
             }
         );
 
@@ -19,8 +21,12 @@ public class UnrealSharpUtilities : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore"
+                "SlateCore",
+                "DeveloperSettings",
+                "Projects"
             }
         );
+        
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
     }
 }

@@ -5,7 +5,7 @@
 struct FCSDefaultComponentType : FCSFieldType
 {
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
 	bool HasValidAttachment() const { return AttachmentComponent != NAME_None; }

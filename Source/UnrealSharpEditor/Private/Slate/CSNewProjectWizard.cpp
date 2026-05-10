@@ -1,19 +1,19 @@
 ﻿#include "Slate/CSNewProjectWizard.h"
 
-#include "CSCommonUnrealSharpSettings.h"
+#include "CSCommonGlobalSettings.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
 #include "Interfaces/IPluginManager.h"
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
 #include "UnrealSharpEditor.h"
-#include "CSProcUtilities.h"
+#include "CSPathsUtilities.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
 void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
     static FName ProjectDestination(TEXT("<ProjectDestination>"));
-	const FString ScriptPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetScriptFolderDirectory());
+	const FString ScriptPath = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetScriptFolderDirectory());
 
 	FText ProjectDestinationName = FText::FromString(FString::Printf(TEXT("%s (This Project)"), FApp::GetProjectName()));
     ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, FApp::GetProjectName(), ScriptPath, 0));
@@ -24,12 +24,12 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
     for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
     {
         const FString PluginFilePath = FPaths::ConvertRelativePathToFull(Plugin->GetBaseDir());
-        if (!FPaths::IsUnderDirectory(PluginFilePath, UCSProcUtilities::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
+        if (!FPaths::IsUnderDirectory(PluginFilePath, UnrealSharp::Paths::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
         {
             continue;
         }
     	
-        FString ScriptDirectory = PluginFilePath / FCSCommonUnrealSharpSettings::GetScriptDirectoryName();
+        FString ScriptDirectory = PluginFilePath / UnrealSharp::GlobalSettings::Common::GetScriptDirectoryName();
         ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
             FText::FromString(Plugin->GetFriendlyName()), Plugin->GetName(), ScriptDirectory, ProjectDestinations.Num(), Plugin));
     }
@@ -215,7 +215,7 @@ FReply SCSNewProjectDialog::OnExplorerButtonClicked()
 
 	FString FolderName;
 	const FString Title = TEXT("Choose a location for new project");
-	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title, UCSProcUtilities::GetScriptFolderDirectory(), FolderName))
+	if (DesktopPlatform->OpenDirectoryDialog(ParentWindowWindowHandle, Title, UnrealSharp::Paths::GetScriptFolderDirectory(), FolderName))
 	{
 		if (!FolderName.EndsWith(TEXT("/")) )
 		{
@@ -240,42 +240,28 @@ void SCSNewProjectDialog::OnCancel()
 
 void SCSNewProjectDialog::OnFinish()
 {
-	TMap<FString, FString> Arguments;
-	FString ModuleName = NameTextBox->GetText().ToString();
-	FString ProjectParentFolder = PathTextBox->GetText().ToString();
-
 	FString ProjectRoot;
-	FString GlueProjectLocation;
-	FString GlueProjectName;
-
-	auto MakeGlueNameAndLocation = [](FString& GlueLocation, FString& GlueName, const FString& PluginName, const FString& CsProjFolder)
-	{
-		GlueName = FString::Printf(TEXT("%s.Glue"), *PluginName);
-		GlueLocation = FPaths::Combine(CsProjFolder, FString::Printf(TEXT("%s.csproj"), *GlueName));
-	};
-	
     if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex) && SelectedProjectDestinationIndex > 0)
     {
     	const TSharedRef<FCSProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
-    	const TSharedPtr<IPlugin>& Plugin = Destination->GetPlugin();
-
-    	ProjectRoot = Plugin->GetBaseDir();
-    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, Plugin->GetName(), FPaths::Combine(Destination->GetPath(), GlueProjectName));
+    	ProjectRoot = Destination->GetPlugin()->GetBaseDir();
     }
     else
     {
     	ProjectRoot = FPaths::ProjectDir();
-    	MakeGlueNameAndLocation(GlueProjectLocation, GlueProjectName, FApp::GetProjectName(), UCSProcUtilities::GetProjectGlueFolderPath());
     }
-
-	if (!FPaths::FileExists(GlueProjectLocation))
+	
+	TMap<FString, FString> Arguments;
+	
+	if (EditorOnlyCheckBox->IsChecked())
 	{
-		Arguments.Add(TEXT("SkipIncludeProjectGlue"), TEXT("true"));
+		Arguments.Add(TEXT("EditorOnly"), TEXT("true"));
 	}
 	
-	Arguments.Add(TEXT("EditorOnly"), EditorOnlyCheckBox->IsChecked() ? TEXT("true") : TEXT("false"));
-	Arguments.Add(TEXT("GlueProjectName"), GlueProjectName);
 	Arguments.Add(TEXT("CreateModuleClass"), TEXT("true"));
+	
+	FString ModuleName = NameTextBox->GetText().ToString();
+	FString ProjectParentFolder = PathTextBox->GetText().ToString();
 	
 	FUnrealSharpEditorModule::Get().AddNewProject(ModuleName, ProjectParentFolder, ProjectRoot, Arguments);
 	CloseWindow();

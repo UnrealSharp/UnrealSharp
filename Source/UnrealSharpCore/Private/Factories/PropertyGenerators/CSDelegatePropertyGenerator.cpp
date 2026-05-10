@@ -1,5 +1,7 @@
 #include "Factories/PropertyGenerators/CSDelegatePropertyGenerator.h"
 
+#include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
 #include "ReflectionData/CSTemplateType.h"
 #include "ReflectionData/CSFieldType.h"
 

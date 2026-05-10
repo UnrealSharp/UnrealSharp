@@ -38,7 +38,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FCSEnumEvent, UCSEnum*);
 UCLASS()
 class UNREALSHARPCORE_API UCSManager : public UObject, public FUObjectArray::FUObjectDeleteListener
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FCSManagerInitializedEvent, UCSManager&);
 
@@ -49,65 +49,58 @@ public:
 			check(IsInGameThread());
 			Instance = NewObject<UCSManager>(GetTransientPackage(), "CSManager", RF_Public | RF_MarkAsRootSet);
 		}
-
 		return *Instance;
 	}
 	
 	bool IsInitialized() const { return bIsInitialized; }
 
-    // The outermost package for all managed packages. If namespace support is off, this is the only package that will be used.
-    UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
+	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
+	UPackage* FindOrAddManagedPackage(const FCSNamespace& Namespace);
+	UPackage* GetPackage(FCSNamespace Namespace);
+
+	UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = false);
+	UCSManagedAssembly* LoadUserAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
+	UCSManagedAssembly* LoadPluginAssemblyByName(FName AssemblyName, bool bIsCollectible = false);
+
+	UCSManagedAssembly* FindOwningAssembly(UClass* Class);
+	UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
+	UCSManagedAssembly* FindOwningAssembly(UEnum* Enum);
 	
-    UPackage* FindOrAddManagedPackage(const FCSNamespace& Namespace);
-
-    UCSManagedAssembly* LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible = false);
-
-    // Load an assembly by name that exists in the ProjectRoot/Binaries/Managed folder
-    UCSManagedAssembly* LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible = false);
-
-    // Load an assembly by name that exists in the UnrealSharp/Binaries/Managed folder
-    UCSManagedAssembly* LoadPluginAssemblyByName(const FName AssemblyName, bool bIsCollectible = false);
-
-    UCSManagedAssembly* FindOwningAssembly(UClass* Class);
-    UCSManagedAssembly* FindOwningAssembly(UScriptStruct* Struct);
-    UCSManagedAssembly* FindOwningAssembly(UEnum* Enum);
-	
-    UCSManagedAssembly* FindAssembly(FName AssemblyName) const
-    {
-        return LoadedAssemblies.FindRef(AssemblyName);
-    }
+	UCSManagedAssembly* FindAssembly(FName AssemblyName) const
+	{
+		return LoadedAssemblies.FindRef(AssemblyName);
+	}
 
 	UFUNCTION(meta = (ScriptMethod))
-    UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName, bool bIsCollectible = false)
-    {
-        if (UCSManagedAssembly* Assembly = FindAssembly(AssemblyName))
-        {
-            return Assembly;
-        }
-
-        return LoadUserAssemblyByName(AssemblyName, bIsCollectible);
-    }
+	UCSManagedAssembly* FindOrLoadAssembly(FName AssemblyName, bool bIsCollectible = false)
+	{
+		if (UCSManagedAssembly* Assembly = FindAssembly(AssemblyName))
+		{
+			return Assembly;
+		}
+		return LoadUserAssemblyByName(AssemblyName, bIsCollectible);
+	}
 
 	UFUNCTION(meta = (ScriptMethod))
 	void GetLoadedAssemblies(TArray<UCSManagedAssembly*>& Assemblies) const
-    {
-    	TArray<TObjectPtr<UCSManagedAssembly>> FoundAssemblies;
-	    LoadedAssemblies.GenerateValueArray(FoundAssemblies);
-    	Assemblies.Append(FoundAssemblies);
-    }
+	{
+		TArray<TObjectPtr<UCSManagedAssembly>> FoundAssemblies;
+		LoadedAssemblies.GenerateValueArray(FoundAssemblies);
+		Assemblies.Append(FoundAssemblies);
+	}
 	
-    FGCHandle FindManagedObject(const UObject* Object);
-    FGCHandle FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
+	FGCHandle FindManagedObject(const UObject* Object);
+	FGCHandle FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass);
 
-    void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-    UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
+	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
+	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
 
-    const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
+	const FCSManagedPluginCallbacks& GetManagedPluginsCallbacks() const { return ManagedPluginsCallbacks; }
 	
 	void AddOrExecuteOnManagerInitialized(const FCSManagerInitializedEvent::FDelegate& Delegate);
 
-    FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
-    FOnManagedAssemblyUnloaded& OnManagedAssemblyUnloadedEvent() { return OnManagedAssemblyUnloaded; }
+	FOnManagedAssemblyLoaded& OnManagedAssemblyLoadedEvent() { return OnManagedAssemblyLoaded; }
+	FOnManagedAssemblyUnloaded& OnManagedAssemblyUnloadedEvent() { return OnManagedAssemblyUnloaded; }
 	FOnAssembliesReloaded& OnAssembliesLoadedEvent() { return OnAssembliesLoaded; }
 
 #if WITH_EDITOR
@@ -117,7 +110,7 @@ public:
 	FCSEnumEvent& OnNewEnumEvent() { return OnNewEnum; }
 #endif
 
-    void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
+	void ForEachManagedPackage(const TFunction<void(UPackage*)>& Callback) const
 	{
 		for (UPackage* Package : AllPackages)
 		{
@@ -126,17 +119,13 @@ public:
 	}
 	void ForEachManagedField(const TFunction<void(UObject*)>& Callback) const;
 
-	bool IsManagedPackage(const UPackage* Package) const { 	return AllPackages.Contains(Package); }
-	UPackage* GetPackage(const FCSNamespace Namespace);
-
+	bool IsManagedPackage(const UPackage* Package) const { return AllPackages.Contains(Package); }
 	bool IsManagedType(const UObject* Field) const { return IsManagedPackage(Field->GetOutermost()); }
-
 	bool IsLoadingAnyAssembly() const;
 
 	void ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass);
 
 private:
-
 	friend UCSManagedAssembly;
 	friend FUnrealSharpCoreModule;
 
@@ -149,11 +138,11 @@ private:
 	bool InitializeDotNetRuntime();
 	bool LoadAllUserAssemblies();
 
-	// UObjectArray listener interface
+	// FUObjectDeleteListener overrides
 	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectDeleteListener(this); }
+	// End FUObjectDeleteListener overrides
 	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
-	// End of interface
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);
 	void InitializeSubsystems();
@@ -170,14 +159,11 @@ private:
 
 		if (Cast<TUserDefined>(Object))
 		{
-			// Blueprint-defined type. They have no associated assembly.
 			return nullptr;
 		}
 
-		uint32 ClassID = Object->GetUniqueID();
-		TObjectPtr<UCSManagedAssembly> Assembly = NativeClassToAssemblyMap.FindOrAddByHash(ClassID, ClassID);
-
-		if (IsValid(Assembly))
+		const uint32 ClassID = Object->GetUniqueID();
+		if (TObjectPtr<UCSManagedAssembly> Assembly = NativeClassToAssemblyMap.FindRef(ClassID))
 		{
 			return Assembly;
 		}
@@ -196,14 +182,9 @@ private:
 	UPROPERTY(Transient)
 	TArray<TSubclassOf<USubsystem>> PendingSubsystems;
 
-	// Handles to all active UObjects that has a C# counterpart. The key is the unique ID of the UObject.
 	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
-
-	// Handles all active UObjects that have interface wrappers in C#. The primary key is the unique ID of the UObject.
-	// The second key is the unique ID of the interface class.
 	TMap<uint32, TMap<uint32, TSharedPtr<FGCHandle>>> ManagedInterfaceWrappers;
 	
-	// Map to cache assemblies that native classes are associated with, for quick lookup.
 	UPROPERTY()
 	TMap<uint32, TObjectPtr<UCSManagedAssembly>> NativeClassToAssemblyMap;
 
@@ -216,7 +197,7 @@ private:
 	bool bIsInitialized = false;
 
 	FOnManagedAssemblyLoaded OnManagedAssemblyLoaded;
-    FOnManagedAssemblyUnloaded OnManagedAssemblyUnloaded;
+	FOnManagedAssemblyUnloaded OnManagedAssemblyUnloaded;
 	FOnAssembliesReloaded OnAssembliesLoaded;
 
 #if WITH_EDITORONLY_DATA
@@ -228,14 +209,12 @@ private:
 
 	FCSManagedPluginCallbacks ManagedPluginsCallbacks;
 
-	//.NET Core Host API
 	hostfxr_initialize_for_dotnet_command_line_fn Hostfxr_Initialize_For_Dotnet_Command_Line = nullptr;
 	hostfxr_initialize_for_runtime_config_fn Hostfxr_Initialize_For_Runtime_Config = nullptr;
 	hostfxr_get_runtime_delegate_fn Hostfxr_Get_Runtime_Delegate = nullptr;
 	hostfxr_close_fn Hostfxr_Close = nullptr;
 
 	void* RuntimeHost = nullptr;
-	//End
 	
 	static UCSManager* Instance;
 };

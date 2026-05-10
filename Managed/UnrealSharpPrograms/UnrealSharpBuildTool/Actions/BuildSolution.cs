@@ -1,52 +1,57 @@
 ﻿using System.Collections.ObjectModel;
+using CommandLine;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class BuildSolution : BuildToolAction
+[Verb("BuildSolutionParameters", aliases: ["BuildSolution"], HelpText = "Builds the .sln file.")]
+public struct BuildSolutionParameters
 {
-    private readonly BuildConfig _buildConfig;
-    private readonly string _folder;
-    private readonly Collection<string>? _extraArguments;
-
-    public BuildSolution(string folder, Collection<string>? extraArguments = null, BuildConfig buildConfig = BuildConfig.Debug)
-    {
-        _folder = Program.FixPath(folder);
-        _buildConfig = buildConfig;
-        _extraArguments = extraArguments;
-    }
-
-    public override bool RunAction()
-    {
-        if (!Directory.Exists(_folder))
-        {
-            throw new Exception($"Couldn't find the solution file at \"{_folder}\"");
-        }
-
-        using BuildToolProcess buildSolutionProcess = new BuildToolProcess();
-
-        if (_buildConfig == BuildConfig.Publish)
-        {
-            buildSolutionProcess.StartInfo.ArgumentList.Add("publish");
-        }
-        else
-        {
-            buildSolutionProcess.StartInfo.ArgumentList.Add("build");
-        }
-
-        buildSolutionProcess.StartInfo.ArgumentList.Add($"{_folder}");
-
-        buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
-        buildSolutionProcess.StartInfo.ArgumentList.Add(Program.GetBuildConfiguration(_buildConfig));
-        buildSolutionProcess.StartInfo.WorkingDirectory = _folder;
+    [Option("BuildConfig", Required = true, HelpText = "The build configuration to use (Debug, Release, or Publish).")]
+    public TargetConfiguration BuildConfig { get; set; }
         
-        if (_extraArguments != null)
-        {
-            foreach (var argument in _extraArguments)
-            {
-                buildSolutionProcess.StartInfo.ArgumentList.Add(argument);
-            }
-        }
+    [Option("Publish", Required = false, Default = false, HelpText = "If true, the solution will be published instead of built. Defaults to false.")]
+    public bool Publish { get; set; }
+        
+    [Option("Folders", Required = true, HelpText = "The folder containing the solution files to build.")]
+    public List<string> Folders { get; set; }
+        
+    [Option("ExtraArguments", HelpText = "Additional arguments to pass to the build tool.")]
+    public Collection<string> ExtraArguments { get; set; }
+}
 
-        return buildSolutionProcess.StartBuildToolProcess();
+public static class BuildSolutionAction
+{
+    public static void BuildSolution(BuildSolutionParameters parameters)
+    {
+        foreach (string folder in parameters.Folders)
+        {
+            if (!Directory.Exists(folder))
+            {
+                throw new Exception($"Couldn't find the solution file at \"{folder}\"");
+            }
+        
+            BuildToolProcess buildSolutionProcess = new BuildToolProcess();
+        
+            if (parameters.Publish)
+            {
+                buildSolutionProcess.StartInfo.ArgumentList.Add("publish");
+            }
+            else
+            {
+                buildSolutionProcess.StartInfo.ArgumentList.Add("build");
+            }
+        
+            buildSolutionProcess.StartInfo.ArgumentList.Add($"\"{folder}\"");
+        
+            buildSolutionProcess.StartInfo.ArgumentList.Add("--configuration");
+            buildSolutionProcess.StartInfo.ArgumentList.Add(parameters.BuildConfig.GetDotNetBuildConfiguration());
+        
+            foreach (string extraArgument in parameters.ExtraArguments)
+            {
+                buildSolutionProcess.StartInfo.ArgumentList.Add(extraArgument);
+            }
+        
+            buildSolutionProcess.StartBuildToolProcess();
+        }
     }
 }

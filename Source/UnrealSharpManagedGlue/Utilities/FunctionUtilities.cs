@@ -16,6 +16,49 @@ public struct GenericFunctionInfo
 
 public static class FunctionUtilities
 {
+    public static bool CanExportFunction(this UhtFunction function)
+    {
+        if (function.HasAnyFlags(EFunctionFlags.Delegate | EFunctionFlags.MulticastDelegate))
+        {
+            return false;
+        }
+        
+        if (InclusionLists.HasBannedFunction(function))
+        {
+            return false;
+        }
+
+        return CanExportParameters(function);
+    }
+
+    public static bool CanExportParameters(this UhtFunction function)
+    {
+        static bool CanExportParameter(UhtProperty property, Func<PropertyTranslator, bool> isSupported)
+        {
+            PropertyTranslator? translator = property.GetTranslator();
+            return translator != null && isSupported(translator) && translator.CanExport(property);
+        }
+
+        if (function.ReturnProperty != null && !CanExportParameter(function.ReturnProperty, translator => translator.IsSupportedAsReturnValue))
+        {
+            return false;
+        }
+
+        bool canExportParams = true;
+        foreach (UhtProperty parameter in function.Properties)
+        {
+            if (CanExportParameter(parameter, translator => translator.IsSupportedAsParameter))
+            {
+                continue;
+            }
+            
+            canExportParams = false;
+            break;
+        }
+
+        return canExportParams;
+    }
+    
     public static bool HasAnyFlags(this UhtFunction function, EFunctionFlags flags)
     {
         return (function.FunctionFlags & flags) != 0;
@@ -53,8 +96,9 @@ public static class FunctionUtilities
         {
             foreach (UhtClass currentInterface in currentClass.GetInterfaces())
             {
-                UhtClass? interfaceClass = currentInterface.GetInterfaceAlternateClass();
-                if (interfaceClass != null && interfaceClass.FindFunctionByName(sourceName) != null)
+                UhtClass interfaceClass = currentInterface.GetInterfaceAlternateClass();
+                
+                if (interfaceClass.FindFunctionByName(sourceName) != null)
                 {
                     return true;
                 }
@@ -191,22 +235,24 @@ public static class FunctionUtilities
         UhtClass classObj = (function.Outer as UhtClass)!;
         foreach (UhtProperty property in classObj.Properties)
         {
-            if (accessorType + property.EngineName == function.SourceName)
+            if (accessorType + property.EngineName != function.SourceName)
             {
-                switch (accessorType)
-                {
-                    case GetterSetterMode.Get:
-                        return property.HasNativeGetter();
-                    case GetterSetterMode.Set:
-                        return property.HasNativeSetter();
-                }
+                continue;
+            }
+            
+            switch (accessorType)
+            {
+                case GetterSetterMode.Get:
+                    return property.HasNativeGetter();
+                case GetterSetterMode.Set:
+                    return property.HasNativeSetter();
             }
         }
         
         return false;
     }
     
-    public static bool IsAnyGetter(this UhtFunction function)
+    public static bool IsAnyPropertyGetter(this UhtFunction function)
     {
         if (function.Properties.Count() != 1)
         {
@@ -216,15 +262,14 @@ public static class FunctionUtilities
         return function.IsBlueprintAccessor("BlueprintGetter", property => property.GetBlueprintGetter()) || function.IsNativeAccessor(GetterSetterMode.Get);
     }
 
-    public static bool IsAnySetter(this UhtFunction function)
+    public static bool IsAnyPropertySetter(this UhtFunction function)
     {
         if (function.Properties.Count() != 1)
         {
             return false;
         }
         
-        return function.IsBlueprintAccessor("BlueprintSetter", property => property.GetBlueprintSetter()) 
-               || function.IsNativeAccessor(GetterSetterMode.Set);
+        return function.IsBlueprintAccessor("BlueprintSetter", property => property.GetBlueprintSetter()) || function.IsNativeAccessor(GetterSetterMode.Set);
     }
     
     public static bool TryGetGenericFunctionInfo(this UhtFunction function, out GenericFunctionInfo info)
@@ -356,5 +401,10 @@ public static class FunctionUtilities
     public static bool IsBlueprintEvent(this UhtFunction function)
     {
         return function.HasAllFlags(EFunctionFlags.BlueprintEvent);
+    }
+    
+    public static bool IsBlueprintCallable(this UhtFunction function)
+    {
+        return function.HasAllFlags(EFunctionFlags.BlueprintCallable);
     }
 }

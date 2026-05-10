@@ -4,7 +4,7 @@
 struct FCSTemplateType : FCSUnrealType
 {
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
 	const FCSPropertyReflectionData* GetTemplateArgument(int32 Index) const

@@ -1,134 +1,71 @@
-﻿using CommandLine;
+﻿using System.Diagnostics;
 using Newtonsoft.Json;
 using UnrealSharp.Shared;
 using UnrealSharpBuildTool.Actions;
+using UnrealSharpBuildTool.Exceptions;
 
 namespace UnrealSharpBuildTool;
 
 public static class Program
 {
-    public static BuildToolOptions BuildToolOptions = null!;
-
     public static int Main(string[] args)
     {
+        Console.WriteLine("UnrealSharpBuildTool Initializing...");
+        Stopwatch stopwatch = Stopwatch.StartNew();
+    
         try
         {
-            Console.WriteLine(">>> UnrealSharpBuildTool");
-            Parser parser = new Parser(with => with.HelpWriter = null);
-            ParserResult<BuildToolOptions> result = parser.ParseArguments<BuildToolOptions>(args);
-            
-            UnrealSharpSettingsUtilities.InitializeConfigFile(result.Value.ProjectDirectory, result.Value.PluginDirectory);
-
-            if (result.Tag == ParserResultType.NotParsed)
-            {
-                BuildToolOptions.PrintHelp(result);
-
-                string errors = string.Empty;
-                foreach (Error error in result.Errors)
-                {
-                    if (error is TokenError tokenError)
-                    {
-                        errors += $"{tokenError.Tag}: {tokenError.Token} \n";
-                    }
-                }
-
-                throw new Exception($"Invalid arguments. Errors: {errors}");
-            }
-
-            BuildToolOptions = result.Value;
-            
-            if (!BuildToolAction.InitializeAction())
-            {
-                return 1;
-            }
-
-            Console.WriteLine($"UnrealSharpBuildTool executed {BuildToolOptions.Action.ToString()} action successfully.");
+            BuildToolOptions.ParseArguments(args);
+            UnrealSharpSettingsUtilities.InitializeConfigFile(BuildToolOptionsInstance.ProjectDirectory,BuildToolOptionsInstance.PluginDirectory);
+        
+            ActionManager.RunAction(BuildToolOptionsInstance.Action, BuildToolOptionsInstance.ActionArgs.ToArray());
+        
+            stopwatch.Stop();
+            Console.WriteLine($"\nAction '{BuildToolOptionsInstance.Action}' completed in {stopwatch.Elapsed.TotalSeconds:F2}s.");
+            return 0;
         }
-        catch (Exception exception)
+        catch (BuildToolException ex)
         {
-            Console.WriteLine("An error occurred: " + exception.Message + Environment.NewLine + exception.StackTrace);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n[Build Error] {ex.Message}");
+            Console.ResetColor();
             return 1;
         }
-
-        return 0;
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine($"\n[Exception] {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            Console.ResetColor();
+            return -1;
+        }
     }
-
-    public static string GetArgument(string argument)
-    {
-        return BuildToolOptions.GetArgument(argument);
-    }
-
-    public static bool GetArgumentBool(string argument)
-    {
-        return BuildToolOptions.GetArgumentBool(argument);
-    }
-
-    public static IEnumerable<string> GetArguments(string argument)
-    {
-        return BuildToolOptions.GetArguments(argument);
-    }
-
-    public static bool HasArgument(string argument)
-    {
-        return BuildToolOptions.HasArgument(argument);
-    }
-
-    public static string GetSolutionFile()
-    {
-        return Path.Combine(GetScriptFolder(), BuildToolOptions.ProjectName + ".sln");
-    }
+    
+    private static BuildToolOptions BuildToolOptionsInstance => BuildToolOptions.Instance;
 
     public static string GetUProjectFilePath()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, BuildToolOptions.ProjectName + ".uproject");
+        return Path.Combine(BuildToolOptionsInstance.ProjectDirectory, BuildToolOptionsInstance.ProjectName + ".uproject");
     }
-
-    public static string GetBuildConfiguration()
-    {
-        string buildConfig = GetArgument("BuildConfig");
-        if (string.IsNullOrEmpty(buildConfig))
-        {
-            buildConfig = "Debug";
-        }
-        return buildConfig;
-    }
-
-    public static BuildConfig GetBuildConfig()
-    {
-        string buildConfig = GetBuildConfiguration();
-        Enum.TryParse(buildConfig, out BuildConfig config);
-        return config;
-    }
-
-    public static string GetBuildConfiguration(BuildConfig buildConfig)
-    {
-        return buildConfig switch
-        {
-            BuildConfig.Debug => "Debug",
-            BuildConfig.Release => "Release",
-            BuildConfig.Publish => "Release",
-            _ => "Release"
-        };
-    }
-
+    
     public static string GetScriptFolder()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
+        return Path.Combine(BuildToolOptionsInstance.ProjectDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
     }
 
     public static string GetPluginsFolder()
     {
-        return Path.Combine(BuildToolOptions.ProjectDirectory, "Plugins");
+        return Path.Combine(BuildToolOptionsInstance.ProjectDirectory, "Plugins");
     }
     
     public static string GetPluginDirectory()
     {
-        return BuildToolOptions.PluginDirectory;
+        return BuildToolOptionsInstance.PluginDirectory;
     }
 
     public static string GetProjectDirectory()
     {
-        return BuildToolOptions.ProjectDirectory;
+        return BuildToolOptionsInstance.ProjectDirectory;
     }
 
     public static string FixPath(string path)
@@ -143,14 +80,14 @@ public static class Program
 
     public static string GetProjectNameAsManaged()
     {
-        return "Managed" + BuildToolOptions.ProjectName;
+        return "Managed" + BuildToolOptionsInstance.ProjectName;
     }
 
     public static string GetOutputPath(string rootDir = "", bool includeVersion = true)
     {
         if (string.IsNullOrEmpty(rootDir))
         {
-            rootDir = BuildToolOptions.ProjectDirectory;
+            rootDir = BuildToolOptionsInstance.ProjectDirectory;
         }
 
         if (includeVersion)
@@ -163,9 +100,20 @@ public static class Program
         }
     }
     
+    public static string IntermediateDirectory => Path.Combine(BuildToolOptionsInstance.PluginDirectory, "Intermediate");
+    public static string IntermediateBuildDirectory => Path.Combine(BuildToolOptionsInstance.PluginDirectory, "Intermediate", "Build");
+    
+    public static string GetIntermediateBuildPathForPlatform(TargetArchitecture architecture, TargetPlatform configuration, TargetConfiguration targetConfiguration)
+    {
+        string architectureString = architecture.GetTargetArchitecture();
+        string platformString = configuration.GetTargetPlatform();
+        string buildConfigString = targetConfiguration.GetDotNetBuildConfiguration();
+        return Path.Combine(IntermediateBuildDirectory, architectureString, platformString, buildConfigString);
+    }
+    
     public static string GetUnrealSharpSharedProps()
     {
-        return Path.GetFullPath(Path.Combine(BuildToolOptions.PluginDirectory, "UnrealSharp.Shared.props"));
+        return Path.GetFullPath(Path.Combine(BuildToolOptionsInstance.PluginDirectory, "UnrealSharp.Shared.props"));
     }
 
     public static string GetVersion()
@@ -173,11 +121,6 @@ public static class Program
         Version currentVersion = Environment.Version;
         string currentVersionStr = $"{currentVersion.Major}.{currentVersion.Minor}";
         return "net" + currentVersionStr;
-    }
-    
-    public static string GetNetStandardVersion()
-    {
-        return "netstandard2.0";
     }
 
     public static void CreateOrUpdateLaunchSettings(string launchSettingsPath)
@@ -187,11 +130,11 @@ public static class Program
         string executablePath = string.Empty;
         if (OperatingSystem.IsWindows())
         {
-            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
+            executablePath = Path.Combine(BuildToolOptionsInstance.EngineDirectory, "Binaries", "Win64", "UnrealEditor.exe");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            executablePath = Path.Combine(BuildToolOptions.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
+            executablePath = Path.Combine(BuildToolOptionsInstance.EngineDirectory, "Binaries", "Mac", "UnrealEditor");
         }
         string commandLineArgs = FixPath(GetUProjectFilePath());
 
@@ -265,7 +208,7 @@ public static class Program
     
     public static void CopyGlobalJson()
     {
-        string sourceGlobalJsonPath = Path.Combine(BuildToolOptions.PluginDirectory, "Managed", "global.json");
+        string sourceGlobalJsonPath = Path.Combine(BuildToolOptionsInstance.PluginDirectory, "Managed", "global.json");
         string destinationGlobalJsonPath = Path.Combine(GetScriptFolder(), "global.json");
         File.Copy(sourceGlobalJsonPath, destinationGlobalJsonPath, overwrite: true);
     }

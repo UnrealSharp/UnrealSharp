@@ -1,5 +1,7 @@
 ﻿#include "UnrealSharpEditor.h"
 #include "AssetToolsModule.h"
+#include "CSBuildActionUtilities.h"
+#include "CSBuildUtilties.h"
 #include "CSEditorCommands.h"
 #include "CSStyle.h"
 #include "DesktopPlatformModule.h"
@@ -19,12 +21,15 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
-#include "CSProcUtilities.h"
+#include "CSPathsBlueprintFunctionLibrary.h"
+#include "CSPathsUtilities.h"
+#include "CSProjectUtilities.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Containers/Set.h"
+#include "Settings/PlatformsMenuSettings.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -41,7 +46,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	AssetTools.RegisterAssetTypeActions(MakeShared<FCSAssetTypeAction_CSBlueprint>());
 
 	TArray<FString> ProjectPaths;
-	UCSProcUtilities::GetAllProjectPaths(ProjectPaths);
+	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
 	
 	if (ProjectPaths.IsEmpty())
 	{
@@ -98,7 +103,7 @@ void FUnrealSharpEditorModule::OnCompileManagedCode()
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_SOLUTION))
+	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateSolution))
 	{
 		return;
 	}
@@ -119,7 +124,7 @@ void FUnrealSharpEditorModule::OnPackageProject()
 void FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln()
 {
 	static FString NativeSolutionPath = FPaths::ProjectDir() / FApp::GetProjectName() + ".sln";
-	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetPathToManagedSolution());
+	static FString ManagedSolutionPath = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(NativeSolutionPath))
 	{
@@ -452,29 +457,30 @@ void FUnrealSharpEditorModule::PackageProject()
 		return;
 	}
 
-	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + ".exe";
+	FString ExecutablePath = ArchiveDirectory / FApp::GetProjectName() + TEXT(".exe");
 	if (!FPaths::FileExists(ExecutablePath))
 	{
-		FString DialogText = FString::Printf(
-			TEXT(
-				"The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."),
-			FApp::GetProjectName(), *ArchiveDirectory);
+		FString DialogText = FString::Printf(TEXT("The executable for project '%s' could not be found in the directory: %s. Please select the root directory where you packaged your game."), FApp::GetProjectName(), *ArchiveDirectory);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
 
 	FScopedSlowTask Progress(1, LOCTEXT("USharpPackaging", "Packaging Project..."));
 	Progress.MakeDialog();
-
+	
+	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
+	
 	TMap<FString, FString> Arguments;
-	Arguments.Add("ArchiveDirectory", FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
-	Arguments.Add("BuildConfig", "Release");
-	Arguments.Add("UETargetType", "Game");
-	UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_PACKAGE_PROJECT, Arguments);
+	Arguments.Add(TEXT("ArchiveDirectory"), FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
+	
+	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
+	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
+	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
+	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	
+	UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::PackageProject, &Arguments);
 
-	FNotificationInfo Info(
-		FText::FromString(
-			FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
+	FNotificationInfo Info(FText::FromString(FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
 	Info.ExpireDuration = 15.0f;
 	Info.bFireAndForget = true;
 	Info.ButtonDetails.Add(FNotificationButtonInfo(
@@ -501,7 +507,7 @@ void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
 
 void FUnrealSharpEditorModule::OpenSolution()
 {
-	FString SolutionPath = FPaths::ConvertRelativePathToFull(UCSProcUtilities::GetPathToManagedSolution());
+	FString SolutionPath = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetPathToManagedSolution());
 
 	if (!FPaths::FileExists(SolutionPath))
 	{
@@ -679,10 +685,10 @@ void FUnrealSharpEditorModule::RegisterPluginTemplates()
 	const FText CSharpOnlyDescription = LOCTEXT("UnrealSharp_CSharpOnlyTemplateDesc", "Create a blank plugin that can only contain content and C# scripts.");
 	
     const TSharedRef<FPluginTemplateDescription> BlankTemplate = MakeShared<FCSPluginTemplateDescription>(BlankTemplateName, BlankDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default, true);
+        PluginBaseDir / TEXT("Templates") / TEXT("Blank"), true, EHostType::Runtime, ELoadingPhase::Default);
 	
     const TSharedRef<FPluginTemplateDescription> CSharpOnlyTemplate = MakeShared<FCSPluginTemplateDescription>(CSharpOnlyTemplateName, CSharpOnlyDescription,
-        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default, false);
+        PluginBaseDir / TEXT("Templates") / TEXT("CSharpOnly"), true, EHostType::Runtime, ELoadingPhase::Default);
 
     PluginBrowser.RegisterPluginTemplate(BlankTemplate);
     PluginBrowser.RegisterPluginTemplate(CSharpOnlyTemplate);
@@ -702,7 +708,7 @@ void FUnrealSharpEditorModule::UnregisterPluginTemplates()
 
 void FUnrealSharpEditorModule::LoadNewProject(const FString& ModuleName, const FString& ModulePath) const
 {
-	UCSProcUtilities::BuildUserSolution();
+	UnrealSharp::Build::BuildUserSolution();
 	UCSManager::Get().LoadUserAssemblyByName(*ModuleName, true);
 	UCSHotReloadSubsystem::Get()->PauseHotReload(TEXT("Loading new C# project"));
 	ManagedUnrealSharpEditorCallbacks.LoadProject(*ModulePath, (void*)&FUnrealSharpEditorModule::OnProjectLoaded);
@@ -717,7 +723,7 @@ void FUnrealSharpEditorModule::OnProjectLoaded()
 	});
 }
 
-void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> ExtraArguments, bool bOpenProject)
+void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> AdditionalArguments, bool bOpenProject)
 {
 	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
 	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
@@ -727,13 +733,13 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 		return;
 	}
 	
-	ExtraArguments.Add(TEXT("NewProjectName"), ModuleName);
-	ExtraArguments.Add(TEXT("NewProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	AdditionalArguments.Add(TEXT("ProjectName"), ModuleName);
+	AdditionalArguments.Add(TEXT("ProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
-	ExtraArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
+	AdditionalArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
 
-	if (!UCSProcUtilities::InvokeUnrealSharpBuildTool(BUILD_ACTION_GENERATE_PROJECT, ExtraArguments))
+	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateProject, &AdditionalArguments))
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project {0} in {1}", *ModuleName, *ProjectParentFolder);
 		return;

@@ -17,7 +17,6 @@ public static class GeneratorStatics
 
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
 	
-	public static UhtPackage PluginPackage = null!;
 	public static ModuleInfo PluginModuleInfo;
 
 	public static string BindingsProjectDirectory { get; private set; } = "";
@@ -55,7 +54,6 @@ public static class GeneratorStatics
 		BlueprintFunctionLibrary = (Factory.Session.FindType(null, UhtFindOptions.SourceName | UhtFindOptions.Class, "UBlueprintFunctionLibrary") as UhtClass)!;
 		
 		ModuleInfo moduleInfo = ModuleUtilities.GetModuleInfo($"/Script/{factory.PluginModule!.Name}");
-		PluginPackage = moduleInfo.Module;
 		PluginModuleInfo = moduleInfo;
 	}
 }

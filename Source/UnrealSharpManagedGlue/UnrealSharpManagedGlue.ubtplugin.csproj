@@ -93,6 +93,9 @@
 
     <ItemGroup>
         <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
+        <Compile Update="..\..\Managed\Shared\ConsoleUtilities.cs">
+          <Link>Shared\ConsoleUtilities.cs</Link>
+        </Compile>
     </ItemGroup>
     
 </Project>

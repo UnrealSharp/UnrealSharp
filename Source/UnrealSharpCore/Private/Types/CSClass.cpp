@@ -15,22 +15,24 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 	FirstNativeClass->ClassConstructor(ObjectInitializer);
 
 	// Initialize managed properties that are not zero initialized such as FText.
-	for (TFieldIterator<FProperty> PropertyIt(FirstManagedClass); PropertyIt; ++PropertyIt)
+	for (UClass* ClassItr = FirstManagedClass; ClassItr != nullptr; ClassItr = ClassItr->GetSuperClass())
 	{
-		FProperty* Property = *PropertyIt;
-
-		if (!FCSClassUtilities::IsManagedClass(Property->GetOwnerClass()))
+		if (!FCSClassUtilities::IsManagedClass(ClassItr))
 		{
-			// We don't want to initialize properties that are not from a managed class
 			break;
 		}
 		
-		if (Property->HasAnyPropertyFlags(CPF_ZeroConstructor))
+		for (TFieldIterator<FProperty> PropertyIt(ClassItr, EFieldIterationFlags::None); PropertyIt; ++PropertyIt)
 		{
-			continue;
-		}
+			FProperty* Property = *PropertyIt;
+		
+			if (Property->HasAnyPropertyFlags(CPF_ZeroConstructor))
+			{
+				continue;
+			}
 
-		Property->InitializeValue_InContainer(Object);
+			Property->InitializeValue_InContainer(Object);
+		}
 	}
 	
 	if (FirstManagedClass->IsCreationDeferred())

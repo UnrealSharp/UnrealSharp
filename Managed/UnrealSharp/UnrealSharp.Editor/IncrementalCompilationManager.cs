@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Editor.Utilities;
-using UnrealSharp.UnrealSharpProcHelper;
+using UnrealSharp.UnrealSharpUtilities;
 using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharp.Editor;
@@ -293,7 +293,7 @@ public static class IncrementalCompilationManager
     
     private static string GetOutputPath(Project project, string extension)
     {
-        string userAssemblyDir = UCSProcUtilities.UserAssemblyDirectory;
+        string userAssemblyDir = UCSPathsBlueprintFunctionLibrary.UserAssemblyDirectory;
 
         if (!Directory.Exists(userAssemblyDir))
         {

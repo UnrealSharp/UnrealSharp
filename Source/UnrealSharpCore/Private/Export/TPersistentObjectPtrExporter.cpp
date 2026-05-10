@@ -27,3 +27,15 @@ void* UTPersistentObjectPtrExporter::GetUniqueID(TPersistentObjectPtr<FSoftObjec
 	return &Path->GetUniqueID();
 }
 
+bool UTPersistentObjectPtrExporter::Equals(const TPersistentObjectPtr<FSoftObjectPath>* Path, const TPersistentObjectPtr<FSoftObjectPath>* Other)
+{
+	UObject* Object = Path->Get();
+	UObject* OtherObject = Other->Get();
+	return Object == OtherObject;
+}
+
+int32 UTPersistentObjectPtrExporter::GetHashCode(const TPersistentObjectPtr<FSoftObjectPath>* Path)
+{
+	return GetTypeHash(Path->GetUniqueID());
+}
+

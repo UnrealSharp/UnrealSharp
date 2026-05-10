@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
-#include "CSUnrealSharpProcHelperSettings.generated.h"
+#include "CSUnrealSharpUtilitiesSettings.generated.h"
 
 UCLASS(config = EditorPerProjectUserSettings, meta = (DisplayName = "UnrealSharp Proc Helper Settings"))
-class UCSUnrealSharpProcHelperSettings : public UDeveloperSettings
+class UCSUnrealSharpUtilitiesSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
 public:
 	
-	UCSUnrealSharpProcHelperSettings()
+	UCSUnrealSharpUtilitiesSettings()
 	{
 		CategoryName = "Plugins";
 	}

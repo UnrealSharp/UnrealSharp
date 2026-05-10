@@ -7,34 +7,36 @@ using EpicGames.UHT.Tables;
 using EpicGames.UHT.Tokenizer;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
+using UnrealSharp.Shared;
+using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue.Exporters;
 
-[UnrealHeaderTool]
-public static class NativeBindExporter
+file struct NativeBindMethod
 {
-    private struct NativeBindMethod
-    {
-        public readonly string MethodName;
+    public readonly string MethodName;
     
-        public NativeBindMethod(string methodName)
-        {
-            MethodName = methodName;
-        }
-    }
-
-    private class NativeBindTypeInfo
+    public NativeBindMethod(string methodName)
     {
-        public readonly UhtType Type;
-        public readonly List<NativeBindMethod> Methods;
-
-        public NativeBindTypeInfo(UhtType type, List<NativeBindMethod> methods)
-        {
-            Type = type;
-            Methods = methods;
-        }
+        MethodName = methodName;
     }
+}
 
+file class NativeBindTypeInfo
+{
+    public readonly UhtType Type;
+    public readonly List<NativeBindMethod> Methods;
+
+    public NativeBindTypeInfo(UhtType type, List<NativeBindMethod> methods)
+    {
+        Type = type;
+        Methods = methods;
+    }
+}
+
+[UnrealHeaderTool]
+file static class NativeBindExporter
+{
     private static readonly Dictionary<UhtHeaderFile, List<NativeBindTypeInfo>> NativeBindTypes = new();
 
     [UhtExporter(Name = "UnrealSharpNativeGlue", 
@@ -43,8 +45,9 @@ public static class NativeBindExporter
         ModuleName = "UnrealSharpCore", CppFilters = new string [] { "*.unrealsharp.cpp" })]
     private static void Main(IUhtExportFactory factory)
     {
-        Console.WriteLine("Exporting UnrealSharp Native Binds...");
+        ConsoleUtilities.Log("Exporting native binds...");
         ExportBindMethods(factory);
+        ConsoleUtilities.Log("Finished exporting native binds.");
     }
     
     [UhtKeyword(Extends = UhtTableNames.Default, Keyword = "UNREALSHARP_FUNCTION")]

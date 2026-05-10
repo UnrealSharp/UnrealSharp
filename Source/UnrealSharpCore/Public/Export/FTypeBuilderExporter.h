@@ -25,5 +25,5 @@ class UFTypeBuilderExporter : public UObject
 	GENERATED_BODY()
 public:
 	UNREALSHARP_FUNCTION()
-	static void RegisterManagedType_Native(char* FieldName, char* Namespace, char* AssemblyName, char* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle);
+	static void RegisterManagedType_Native(TCHAR* FieldName, TCHAR* Namespace, TCHAR* AssemblyName, TCHAR* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle);
 };

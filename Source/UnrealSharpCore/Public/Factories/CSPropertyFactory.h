@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
 #include "ReflectionData/CSPropertyReflectionData.h"
 #include "ReflectionData/CSPropertyType.h"
 #include "UObject/UnrealType.h"

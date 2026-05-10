@@ -1,9 +1,9 @@
 ﻿#include "ReflectionData/CSTypeReferenceReflectionData.h"
-#include "ReflectionData/CSReflectionDataBase.h"
 #include "CSManager.h"
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
 
-
-bool FCSMetaDataEntry::Serialize(TSharedPtr<FJsonObject> JsonObject)
+bool FCSMetaDataEntry::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	
@@ -13,34 +13,26 @@ bool FCSMetaDataEntry::Serialize(TSharedPtr<FJsonObject> JsonObject)
 	END_JSON_SERIALIZE
 }
 
-void FCSTypeReferenceReflectionData::SerializeFromJsonString(const char* RawJsonString)
+void FCSTypeReferenceReflectionData::SerializeFromJsonString(TCHAR* RawJsonString)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSTypeReferenceReflectionData::StartSerializeFromJson);
 	
-	if (!RawReflectionData.IsEmpty())
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Attempted to re-serialize reflection data for type {0}", *FieldName.GetFullName().ToString());
-	}
-	
 	RawReflectionData = RawJsonString;
 	
-	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(RawReflectionData);
-		
-	TSharedPtr<FJsonObject> JsonReflectionData;
-	if (!FJsonSerializer::Deserialize(JsonReader, JsonReflectionData))
+	UnrealSharp::RapidJson::FDocument ParsedDocument;
+	if (!UnrealSharp::RapidJson::ParseJsonString(RawJsonString, ParsedDocument))
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to deserialize reflection data JSON for type {0}", *FieldName.GetFullName().ToString());
-	}
-
-	if (Serialize(JsonReflectionData))
-	{
-		return;
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
 	}
 	
-	UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
+	TOptional<UnrealSharp::RapidJson::FConstObject> RootObject = UnrealSharp::RapidJson::GetRootObject(ParsedDocument);
+	if (!Serialize(RootObject.GetValue()))
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
+	}
 }
 
-bool FCSTypeReferenceReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
+bool FCSTypeReferenceReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	

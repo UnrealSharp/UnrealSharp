@@ -17,7 +17,7 @@ struct FCSMetaDataEntry : FCSReflectionDataBase
 	FCSMetaDataEntry() {}
 
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
 	FString Key;
@@ -26,10 +26,10 @@ struct FCSMetaDataEntry : FCSReflectionDataBase
 
 struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 {
-	void SerializeFromJsonString(const char* RawJsonString);
+	void SerializeFromJsonString(TCHAR* RawJsonString);
 	
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(TSharedPtr<FJsonObject> JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 	
 	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }

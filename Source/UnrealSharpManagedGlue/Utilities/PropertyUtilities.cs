@@ -10,6 +10,25 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class PropertyUtilities
 {
+    public static bool CanExportProperty(this UhtProperty property)
+    {
+        if (InclusionLists.HasBannedProperty(property))
+        {
+            return false;
+        }
+        
+        PropertyTranslator? translator = property.GetTranslator();
+        if (translator == null || !translator.CanExport(property))
+        {
+            return false;
+        }
+
+        bool isClassProperty = property.Outer!.EngineType == UhtEngineType.Class;
+        bool canBeClassProperty = isClassProperty && translator.IsSupportedAsProperty;
+        bool canBeStructProperty = !isClassProperty && translator.IsSupportedAsStructProperty;
+        return canBeClassProperty || canBeStructProperty;
+    }
+    
     public static bool IsOuter<T>(this UhtProperty property)
     {
         return property.Outer is T;

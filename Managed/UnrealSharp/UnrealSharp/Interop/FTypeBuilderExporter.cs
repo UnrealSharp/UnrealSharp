@@ -7,11 +7,18 @@ namespace UnrealSharp.Interop;
 [NativeCallbacks]
 public static unsafe partial class FTypeBuilderExporter
 {
-    public static delegate* unmanaged<string, string, string, string, byte, IntPtr, void> RegisterManagedType_Native;
+    public static delegate* unmanaged<char*, char*, char*, char*, byte, IntPtr, void> RegisterManagedType_Native;
     
     public static void RegisterManagedType(string typeName, string jsonString, byte fieldType, Type type)
     {
         IntPtr handlePtr = GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(type, type.Assembly));
-        RegisterManagedType_Native(typeName, type.Namespace!, type.Assembly.GetName().Name!, jsonString, fieldType, handlePtr);
+        
+        fixed (char* nTypeName = typeName)
+        fixed (char* nNamespace = type.Namespace)
+        fixed (char* nAssemblyName = type.Assembly.GetName().Name)
+        fixed (char* nJson = jsonString)
+        {
+            RegisterManagedType_Native(nTypeName, nNamespace, nAssemblyName, nJson, fieldType, handlePtr);
+        }
     }
 }

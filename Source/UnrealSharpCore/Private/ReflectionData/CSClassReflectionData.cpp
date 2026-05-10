@@ -1,6 +1,9 @@
 #include "ReflectionData/CSClassReflectionData.h"
 
-bool FCSClassReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
+
+bool FCSClassReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

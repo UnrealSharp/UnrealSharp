@@ -53,8 +53,7 @@ public class GetterSetterFunctionExporter : FunctionExporter
     {
         if (Function.ReturnProperty != null && Function.ReturnProperty.IsSameType(_propertyGetterSetter))
         {
-            string castOperation = _propertyGetterSetter.HasAllFlags(EPropertyFlags.BlueprintReadOnly) 
-                ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;
+            string castOperation = _propertyGetterSetter.HasAllFlags(EPropertyFlags.BlueprintReadOnly) ? $"({ReturnValueTranslator!.GetManagedType(_propertyGetterSetter)})" : string.Empty;
             builder.AppendLine($"return {castOperation}returnValue;");
         }
         else if (Function.ReturnProperty != null)

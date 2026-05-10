@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using EpicGames.UHT.Types;
+using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.Model;
 using UnrealSharpManagedGlue.Utilities;
 
@@ -41,7 +42,7 @@ public static class PropertyTranslatorManager
             }
             catch (JsonException e)
             {
-                Console.WriteLine($"Error reading {pluginFile}: {e.Message}");
+                ConsoleUtilities.Log($"Error reading {pluginFile}: {e.Message}");
             }
         }
         

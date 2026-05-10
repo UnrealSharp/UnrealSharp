@@ -28,4 +28,10 @@ public:
 	UNREALSHARP_FUNCTION()
 	static void* GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path);
 	
+	UNREALSHARP_FUNCTION()
+	static bool Equals(const TPersistentObjectPtr<FSoftObjectPath>* Path, const TPersistentObjectPtr<FSoftObjectPath>* Other);
+	
+	UNREALSHARP_FUNCTION()
+	static int32 GetHashCode(const TPersistentObjectPtr<FSoftObjectPath>* Path);
+	
 };

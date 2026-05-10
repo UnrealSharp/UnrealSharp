@@ -1,19 +1,21 @@
 #include "ReflectionData/CSPropertyReflectionData.h"
 #include "Factories/CSPropertyFactory.h"
 #include "Factories/PropertyGenerators/CSPropertyGenerator.h"
+#include "Json/CSJsonMacros.h"
+#include "Json/CSJsonUtilities.h"
 #include "ReflectionData/CSFunctionReflectionData.h"
 
 #define JSON_PARSE_GETTER_SETTER(MemberPtr, Optional) \
 	{ \
 		FCSFunctionReflectionData MemberPtr##Data; \
-		bSuccess &= ParseObjectField(MemberPtr##Data, JsonObject, TEXT(#MemberPtr), Optional); \
+		bSuccess &= UnrealSharp::Json::ParseObjectField(MemberPtr##Data, JsonObject, TEXT(#MemberPtr), Optional); \
 		if (MemberPtr##Data.FieldName.IsValid()) \
 		{ \
 			MemberPtr = MakeShared<FCSFunctionReflectionData>(MemberPtr##Data); \
 		} \
 	}
 
-bool FCSPropertyReflectionData::Serialize(TSharedPtr<FJsonObject> JsonObject)
+bool FCSPropertyReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	

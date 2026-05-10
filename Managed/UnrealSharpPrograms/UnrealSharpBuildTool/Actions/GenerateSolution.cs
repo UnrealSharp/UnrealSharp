@@ -1,11 +1,18 @@
 ﻿using System.Diagnostics;
+using CommandLine;
 using UnrealSharp.Shared;
 
 namespace UnrealSharpBuildTool.Actions;
 
-public class GenerateSolution : BuildToolAction
+[Verb("GenerateSolutionParameters", aliases: ["GenerateSolution"], HelpText = "Generates a new .sln file for the project and adds all existing C# projects to it.")]
+public struct GenerateSolutionParameters
 {
-    public override bool RunAction()
+    public GenerateSolutionParameters() { }
+}
+
+public static class GenerateSolutionAction
+{
+    public static void GenerateSolution(GenerateSolutionParameters parameters)
     {
         using BuildToolProcess generateSln = new BuildToolProcess();
         
@@ -34,9 +41,8 @@ public class GenerateSolution : BuildToolAction
             .ToList();
 
         AddProjectToSln(existingProjectsList);
-        
+
         Program.CopyGlobalJson();
-        return true;
     }
 
     private static IEnumerable<string> GetExistingProjects()

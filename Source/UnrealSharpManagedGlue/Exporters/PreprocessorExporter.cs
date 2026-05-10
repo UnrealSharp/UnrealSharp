@@ -10,7 +10,12 @@ namespace UnrealSharpManagedGlue.Exporters;
 
 public static class PreprocessorExporter
 {
-    private static HashSet<string> LoadUE5RulesDefines(string engineDirectory)
+    public static void ExportBuildDefines()
+    {
+        GenerateMSBuildProps(ParseBuildRulesProject(GeneratorStatics.EngineDirectory));
+    }
+    
+    private static HashSet<string> ParseBuildRulesProject(string engineDirectory)
     {
         HashSet<string> definesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         
@@ -53,16 +58,8 @@ public static class PreprocessorExporter
 
         return definesSet;
     }
-    
-    public static void StartExportingPreprocessors()
-    {
-        TaskManager.StartTask(static _ =>
-        {
-            ExportDirective(LoadUE5RulesDefines(GeneratorStatics.EngineDirectory));
-        });
-    }
 
-    private static void ExportDirective(HashSet<string> defines)
+    private static void GenerateMSBuildProps(HashSet<string> defines)
     {
         IOrderedEnumerable<string> ordered = defines
             .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -86,5 +83,4 @@ public static class PreprocessorExporter
         string propsPath = Path.Combine(GeneratorStatics.PluginModuleInfo.GlueBaseDirectory, "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }
-
 }

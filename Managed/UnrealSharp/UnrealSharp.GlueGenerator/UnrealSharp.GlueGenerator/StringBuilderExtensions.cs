@@ -58,7 +58,7 @@ public static class StringBuilderExtensions
         using StringWriter stringWriter = new StringWriter(stringBuilder);
         
         using JsonWriter jsonWriter = new JsonTextWriter(stringWriter);
-        jsonWriter.Formatting = Formatting.Indented;
+        jsonWriter.Formatting = Formatting.None;
 
         builder.StartModuleInitializer(type);
 

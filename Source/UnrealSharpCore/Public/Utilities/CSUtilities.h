@@ -3,6 +3,7 @@
 #include "CSFieldName.h"
 #include "CSFieldType.h"
 #include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
 
 struct FCSManagedTypeDefinition;
 class UCSManagedAssembly;
@@ -12,7 +13,7 @@ class UCSManagedTypeCompiler;
 namespace FCSUtilities
 {
 	UCSManagedTypeCompiler* ResolveCompilerFromFieldType(ECSFieldType FieldType);
-	bool ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const char* NewJsonReflectionData);
+	bool ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const TCHAR* NewJsonReflectionData);
 	
 	UNREALSHARPCORE_API void ParseFunctionFlags(uint32 Flags, TArray<const TCHAR*>& Results);
 	UNREALSHARPCORE_API void ParsePropertyFlags(EPropertyFlags InFlags, TArray<const TCHAR*>& Results);
@@ -39,6 +40,4 @@ namespace FCSUtilities
 
 		return FindObject<T>(Package, *FieldName.GetName());
 	}
-	
-	bool VerifyCSharpEnvironment();
 };

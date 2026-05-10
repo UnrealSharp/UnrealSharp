@@ -2,7 +2,7 @@
 #include "CSManager.h"
 #include "Factories/CSPropertyFactory.h"
 
-void UFTypeBuilderExporter::RegisterManagedType_Native(char* InFieldName, char* InNamespace, char* InAssemblyName, char* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle)
+void UFTypeBuilderExporter::RegisterManagedType_Native(TCHAR* InFieldName, TCHAR* InNamespace, TCHAR* InAssemblyName, TCHAR* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::RegisterManagedType_Native);
 	
