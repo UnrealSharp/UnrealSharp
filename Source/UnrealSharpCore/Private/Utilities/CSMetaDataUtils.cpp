@@ -12,6 +12,13 @@ void FCSMetaDataUtils::ApplyMetaData(const TArray<FCSMetaDataEntry>& MetaDataMap
 #endif
 }
 
+void FCSMetaDataUtils::ApplyBaseMetaData(UField* Field)
+{
+#if WITH_EDITOR
+	Field->SetMetaData(TEXT("BlueprintType"), TEXT("true"));
+#endif
+}
+
 void FCSMetaDataUtils::ApplyMetaData(const TArray<FCSMetaDataEntry>& MetaDataMap, FField* Field)
 {
 #if WITH_EDITOR

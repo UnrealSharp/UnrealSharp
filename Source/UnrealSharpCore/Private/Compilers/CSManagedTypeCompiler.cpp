@@ -37,6 +37,7 @@ void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedRef<FCS
 	Recompile(TypeToRecompile, ManagedTypeDefinition);
 	
 	FCSMetaDataUtils::ApplyMetaData(ManagedTypeDefinition->GetReflectionData()->MetaData, TypeToRecompile);
+	FCSMetaDataUtils::ApplyBaseMetaData(TypeToRecompile);
 }
 
 FString UCSManagedTypeCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const
