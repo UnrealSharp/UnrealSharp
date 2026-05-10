@@ -156,4 +156,10 @@ public static class StringBuilderExtensions
         builder.AppendLine(accessibility.AccessibilityToString());
         builder.Append("set");
     }
+
+    public static void AppendInit(this GeneratorStringBuilder builder, Accessibility accessibility)
+    {
+        builder.AppendLine(accessibility.AccessibilityToString());
+        builder.Append("init");
+    }
 }

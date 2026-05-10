@@ -132,7 +132,9 @@ public partial class UTestClass : ACharacter, ITestInterface
     [UProperty] public partial UObject? ObjectProp { get; set; }
     [UProperty] public partial AActor? ActorProp { get; set; }
     [UProperty] public partial UTexture2D? TextureProp { get; set; }
-    
+
+    [UProperty] public partial int InitOnlyProp { get; init; }
+
     [UProperty] public partial AActor? ObjectPtrActor { get; set; }
     
     [UProperty] public partial TWeakObjectPtr<AActor> WeakActor { get; set; }
