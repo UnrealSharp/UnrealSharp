@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealBuildTool;
+using UnrealSharp.Automation.Utilities;
 using UnrealSharp.Shared;
+using UnrealSharpSettingsUtilities = UnrealSharpManagedGlue.Utilities.UnrealSharpSettingsUtilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -17,7 +17,7 @@ public static class GeneratorStatics
 
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
 	
-	public static ModuleInfo PluginModuleInfo;
+	public static ModuleInfo PluginModuleInfo { get; private set; } = null!;
 
 	public static string BindingsProjectDirectory { get; private set; } = "";
 	public static string PluginsPath { get; private set; } = "";
@@ -34,6 +34,7 @@ public static class GeneratorStatics
 	public static string ScriptFolder { get; private set; } = "";
 	
 	public static TargetType BuildTarget { get; private set; }
+	public static UnrealTargetConfiguration BuildConfiguration;
 	
 	public static void Initialize(IUhtExportFactory factory)
 	{
@@ -42,6 +43,7 @@ public static class GeneratorStatics
 		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("PLUGIN_PATH");
 		BindingsProjectDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("GENERATED_GLUE_PATH");
 		BuildTarget = (TargetType) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_TARGET");
+		BuildConfiguration = (UnrealTargetConfiguration) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_CONFIGURATION");
 
 		UnrealSharpSettingsUtilities.InitializeConfigFile(Factory.Session.ProjectDirectory!, PluginDirectory);
 		
@@ -53,5 +55,7 @@ public static class GeneratorStatics
 		
 		ModuleInfo moduleInfo = ModuleUtilities.GetModuleInfo($"/Script/{factory.PluginModule!.Name}");
 		PluginModuleInfo = moduleInfo;
+
+		PathUtilities.InitPaths(factory.Session.EngineDirectory!);
 	}
 }

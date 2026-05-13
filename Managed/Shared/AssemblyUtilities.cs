@@ -6,7 +6,7 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace UnrealSharp.Shared;
+namespace UnrealSharp.Automation;
 
 public static class AssemblyUtilities
 {

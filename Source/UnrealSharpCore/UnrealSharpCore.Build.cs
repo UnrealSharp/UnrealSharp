@@ -12,6 +12,7 @@ public class UnrealSharpCore : ModuleRules
 		PublicDefinitions.Add("GENERATED_GLUE_PATH=" + engineGluePath.Replace("\\","/"));
 		PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory.Replace("\\","/"));
 		PublicDefinitions.Add("BUILD_TARGET=" + (int)Target.Type);
+		PublicDefinitions.Add("BUILD_CONFIGURATION=" + (int)Target.Configuration);
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace UnrealSharp.Shared;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class UnrealSharpSettingsUtilities
 {

@@ -1,13 +1,11 @@
 using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
-namespace UnrealSharp.Shared;
+
+namespace UnrealSharp.Automation.Utilities;
 
 public static class DotNetUtilities
 {
-	public const string DotnetMajorVersion = "10.0";
+	private const string DotnetMajorVersion = "10.0";
 
 	private static readonly Version RequiredVersion = new Version(10, 0);
 
@@ -134,95 +132,7 @@ public static class DotNetUtilities
 		_cachedSdkPath = Path.Combine(DotNetSdkDirectory, VersionName);
 		return _cachedSdkPath;
 	}
-
-	public static bool InvokeDotNet(Collection<string> arguments, string? workingDirectory = null)
-	{
-		string DotnetPath = FindDotNetExecutable();
-
-		ProcessStartInfo StartInfo = new ProcessStartInfo
-		{
-			FileName = DotnetPath,
-			RedirectStandardOutput = true,
-			RedirectStandardError = true,
-			UseShellExecute = false,
-			CreateNoWindow = true
-		};
-
-		foreach (string Argument in arguments)
-		{
-			StartInfo.ArgumentList.Add(Argument);
-		}
-
-		if (workingDirectory != null)
-		{
-			StartInfo.WorkingDirectory = workingDirectory;
-		}
-
-		{
-			string LatestDotNetSdkPath = GetLatestDotNetSdkPath();
-			StartInfo.Environment["MSBuildExtensionsPath"] = LatestDotNetSdkPath;
-			StartInfo.Environment["MSBUILD_EXE_PATH"] = Path.Combine(LatestDotNetSdkPath, "MSBuild.dll");
-			StartInfo.Environment["MSBuildSDKsPath"] = Path.Combine(LatestDotNetSdkPath, "Sdks");
-		}
-
-		StartInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
-
-		using Process Process = new Process();
-		Process.StartInfo = StartInfo;
-
-		try
-		{
-			StringBuilder StdoutBuilder = new StringBuilder();
-			StringBuilder StderrBuilder = new StringBuilder();
-
-			Process.OutputDataReceived += (sender, e) =>
-			{
-				if (e.Data != null)
-				{
-					StdoutBuilder.AppendLine(e.Data);
-				}
-			};
-
-			Process.ErrorDataReceived += (sender, e) =>
-			{
-				if (e.Data != null)
-				{
-					StderrBuilder.AppendLine(e.Data);
-				}
-			};
-
-			if (!Process.Start())
-			{
-				throw new Exception("Failed to start process");
-			}
-
-			Process.BeginErrorReadLine();
-			Process.BeginOutputReadLine();
-			Process.WaitForExit();
-
-			if (Process.ExitCode != 0)
-			{
-				string Stderr = StderrBuilder.ToString();
-				string Stdout = StdoutBuilder.ToString();
-				string ErrorMessage = !string.IsNullOrWhiteSpace(Stderr) ? Stderr : Stdout;
-
-				if (string.IsNullOrEmpty(ErrorMessage))
-				{
-					ErrorMessage = "Process exited with non-zero exit code but no output was captured.";
-				}
-
-				throw new Exception($"Process failed with exit code {Process.ExitCode}: {ErrorMessage}. Arguments: {string.Join(" ", arguments)}");
-			}
-		}
-		catch (Exception Ex)
-		{
-			Console.WriteLine($"An error occurred: {Ex.Message}");
-			return false;
-		}
-
-		return true;
-	}
-
+	
 	private static bool IsUnrealBundledDotNet(string path)
 	{
 		string Normalised = path.Replace('\\', '/');

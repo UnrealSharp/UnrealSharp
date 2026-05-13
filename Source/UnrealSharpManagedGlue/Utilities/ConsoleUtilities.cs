@@ -1,6 +1,6 @@
 using System;
 
-namespace UnrealSharp.Shared;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public static class ConsoleUtilities
 {

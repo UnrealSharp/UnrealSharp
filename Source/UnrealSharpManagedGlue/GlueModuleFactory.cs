@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EpicGames.UHT.Types;
+using UnrealSharp.Automation.Utilities;
 using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.Utilities;
 
@@ -40,7 +41,7 @@ public static class GlueModuleFactory
     private static void GenerateSolution()
     {
         ConsoleUtilities.Log("Changes detected in glue modules or solution file missing. Regenerating solution...");
-        USharpBuildToolUtilities.InvokeUnrealSharpAutomation("GenerateSolution");
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateSolution");
     }
 
     private static void LoadModuleDependencies()
@@ -78,7 +79,7 @@ public static class GlueModuleFactory
                 arguments.Add(new KeyValuePair<string, string>("EditorOnly", "true"));
             }
             
-            if (!USharpBuildToolUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments))
+            if (!UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments))
             {
                 throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
             }
@@ -125,7 +126,7 @@ public static class GlueModuleFactory
             arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
         }
         
-        if (!USharpBuildToolUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments))
+        if (!UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments))
         {
             throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
         }

@@ -1,6 +1,7 @@
 using System.Text.Json;
+using UnrealSharp.Shared;
 
-namespace UnrealSharp.Shared;
+namespace UnrealSharpManagedGlue.Utilities;
 
 public class CommonUnrealSharpSettings
 {
