@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Xml;
 using AutomationTool;
+using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharp.Automation.BuildCommands;
 
@@ -22,77 +21,33 @@ public class UpdateProjectDependencies : BuildCommand
             throw new FileNotFoundException("The specified project file does not exist.", ProjectPath);
         }
 
-        string ProjectFolder = Directory.GetParent(ProjectPath)!.FullName;
+        if (Dependencies.Length == 0)
+        {
+            // Nothing to do, document is unchanged.
+            return;
+        }
+
+        string ProjectFolder = Directory.GetParent(ProjectPath)?.FullName ?? throw new AutomationException($"Could not determine parent directory of '{ProjectPath}'.");
         UpdateProject(ProjectPath, ProjectFolder, Dependencies);
     }
 
-    private static void UpdateProject(string projectPath, string projectFolder, IEnumerable<string> dependencies)
+    private static void UpdateProject(string projectPath, string projectFolder, string[] dependencies)
     {
         try
         {
             XmlDocument CsprojDocument = new XmlDocument();
             CsprojDocument.Load(projectPath);
 
-            XmlNodeList ItemGroups = CsprojDocument.SelectNodes("//ItemGroup")!;
+            XmlElement TargetItemGroup = CsProjectUtilities.GetOrCreateItemGroup(CsprojDocument);
 
-            HashSet<string> ExistingDependencies = ItemGroups
-                .OfType<XmlElement>()
-                .SelectMany(x => x.ChildNodes.OfType<XmlElement>())
-                .Where(x => x.Name == "ProjectReference")
-                .Select(x => x.GetAttribute("Include"))
-                .ToHashSet();
-
-            // Find an existing ItemGroup or create a new one
-            XmlElement? TargetItemGroup = ItemGroups.OfType<XmlElement>().FirstOrDefault();
-
-            if (TargetItemGroup is null)
-            {
-                TargetItemGroup = CsprojDocument.CreateElement("ItemGroup");
-                CsprojDocument.DocumentElement!.AppendChild(TargetItemGroup);
-            }
-
-            bool WasModified = false;
-            foreach (string Dependency in dependencies)
-            {
-                string RelativePath = GetRelativePath(projectFolder, Dependency);
-
-                if (ExistingDependencies.Contains(RelativePath))
-                {
-                    continue;
-                }
-
-                XmlElement ProjectReference = CsprojDocument.CreateElement("ProjectReference");
-                ProjectReference.SetAttribute("Include", RelativePath);
-                TargetItemGroup.AppendChild(ProjectReference);
-                WasModified = true;
-            }
-
-            if (WasModified)
+            if (CsProjectUtilities.AddProjectReferences(CsprojDocument, TargetItemGroup, projectFolder, dependencies))
             {
                 CsprojDocument.Save(projectPath);
             }
         }
-        catch (Exception Ex)
+        catch (Exception Exception)
         {
-            throw new InvalidOperationException($"An error occurred while updating the .csproj file: {Ex.Message}", Ex);
+            throw new AutomationException($"Failed to update project dependencies for '{projectPath}'. See inner exception for details.", Exception);
         }
-    }
-
-    public static string GetRelativePath(string basePath, string targetPath)
-    {
-        if (!basePath.EndsWith(Path.DirectorySeparatorChar.ToString()))
-        {
-            basePath += Path.DirectorySeparatorChar;
-        }
-
-        Uri BaseUri = new Uri(basePath);
-        Uri TargetUri = new Uri(targetPath);
-        Uri RelativeUri = BaseUri.MakeRelativeUri(TargetUri);
-
-        string RelativePath = Uri.UnescapeDataString(RelativeUri.ToString());
-
-        return OperatingSystem.IsWindows()
-            ? RelativePath.Replace('/', '\\')
-            : RelativePath.Replace('\\', '/');
     }
 }

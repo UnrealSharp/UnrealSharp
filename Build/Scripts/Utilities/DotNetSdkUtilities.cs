@@ -7,6 +7,53 @@ namespace UnrealSharp.Automation.Utilities;
 
 public static class DotNetSdkUtilities
 {
+    public static string GetDotNetRuntimeIdentifier(UnrealTargetPlatform platform, UnrealArch architecture)
+    {
+        string PlatformPart = GetPlatformIdentifier(platform);
+        string ArchitecturePart = GetArchitectureIdentifier(architecture);
+        return $"{PlatformPart}-{ArchitecturePart}";
+    }
+
+    public static string GetPlatformIdentifier(UnrealTargetPlatform platform)
+    {
+        if (platform == UnrealTargetPlatform.Win64)
+        {
+            return "win";
+        }
+
+        if (platform == UnrealTargetPlatform.Mac)
+        {
+            return "osx";
+        }
+
+        if (platform == UnrealTargetPlatform.Linux)
+        {
+            return "linux";
+        }
+
+        if (platform == UnrealTargetPlatform.LinuxArm64)
+        {
+            return "linux";
+        }
+
+        throw new NotSupportedException($"Unsupported target platform for .NET publish: '{platform}'. " + $"Supported platforms: Win64, Mac, Linux, LinuxArm64.");
+    }
+
+    public static string GetArchitectureIdentifier(UnrealArch architecture)
+    {
+        if (architecture == UnrealArch.X64)
+        {
+            return "x64";
+        }
+
+        if (architecture == UnrealArch.Arm64)
+        {
+            return "arm64";
+        }
+
+        throw new NotSupportedException($"Unsupported target architecture for .NET publish: '{architecture}'. " + $"Supported architectures: X64, Arm64.");
+    }
+    
     public static string GetTargetArchitecture(this UnrealArch architecture)
     {
         return architecture.ToString();
@@ -30,21 +77,6 @@ public static class DotNetSdkUtilities
         }
 
         throw new ArgumentOutOfRangeException(nameof(configuration), configuration, "Unsupported configuration");
-    }
-    
-    public static string GetAssemblyExtension()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return ".dll";
-        }
-
-        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-        {
-            return ".so";
-        }
-
-        throw new PlatformNotSupportedException("Unsupported platform");
     }
     
     public static void CopyGlobalJson(BuildCommand buildCommand)

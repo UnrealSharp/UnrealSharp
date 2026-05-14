@@ -464,9 +464,6 @@ void FUnrealSharpEditorModule::PackageProject()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
-	FScopedSlowTask Progress(1, LOCTEXT("USharpPackaging", "Packaging Project..."));
-	Progress.MakeDialog();
 	
 	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
 	
@@ -478,25 +475,8 @@ void FUnrealSharpEditorModule::PackageProject()
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
 	
-	UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::PackageProject, &Arguments);
-
-	FNotificationInfo Info(FText::FromString(FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
-	Info.ExpireDuration = 15.0f;
-	Info.bFireAndForget = true;
-	Info.ButtonDetails.Add(FNotificationButtonInfo(
-		LOCTEXT("USharpRunPackagedGame", "Run Packaged Game"),
-		LOCTEXT("", ""),
-		FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::RunGame, ExecutablePath),
-		SNotificationItem::CS_None));
-
-	Info.ButtonDetails.Add(FNotificationButtonInfo(
-		LOCTEXT("USharpOpenPackagedGame", "Open Folder"),
-		LOCTEXT("", ""),
-		FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::OnExploreArchiveDirectory, ArchiveDirectory),
-		SNotificationItem::CS_None));
-
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_None);
+	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
+	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
 }
 
 void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)

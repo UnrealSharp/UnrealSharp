@@ -13,6 +13,11 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("Generates a new .sln file for the project and adds all existing C# projects to it.")]
 public class GenerateSolution : BuildCommand
 {
+    private const int MaxAddProjectAttempts = 10;
+    private const int FileUnlockTimeoutMs = 10_000;
+    private const int FileUnlockPollIntervalMs = 200;
+    private const int RetryBackoffMs = 250;
+
     public override void ExecuteBuild()
     {
         GenerateManagedSolution(this);
@@ -20,7 +25,7 @@ public class GenerateSolution : BuildCommand
 
     public static void GenerateManagedSolution(BuildCommand buildCommand)
     {
-        DotnetProcess GenerateSlnProcess = new DotnetProcess();
+        ArgumentNullException.ThrowIfNull(buildCommand);
 
         string ScriptDirectory = buildCommand.GetProjectScriptFolder();
 
@@ -29,24 +34,22 @@ public class GenerateSolution : BuildCommand
             Directory.CreateDirectory(ScriptDirectory);
         }
 
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
-
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("--format");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
-
         string SolutionName = "Managed" + buildCommand.GetProjectName();
         string SolutionPath = Path.Combine(ScriptDirectory, $"{SolutionName}.sln");
 
+        DotnetProcess GenerateSlnProcess = new DotnetProcess();
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("--format");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
         GenerateSlnProcess.StartInfo.ArgumentList.Add("-n");
         GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionName);
-        GenerateSlnProcess.StartInfo.WorkingDirectory = ScriptDirectory;
-
         GenerateSlnProcess.StartInfo.ArgumentList.Add("--force");
+        GenerateSlnProcess.StartInfo.WorkingDirectory = ScriptDirectory;
         GenerateSlnProcess.StartBuildToolProcess();
 
         List<string> ExistingProjectsList = buildCommand.GetUnrealSharpProjectFiles()
-            .Select(x => Path.GetRelativePath(ScriptDirectory, x.FullName))
+            .Select(projectFile => Path.GetRelativePath(ScriptDirectory, projectFile.FullName))
             .ToList();
 
         AddProjectToSln(buildCommand.GetProjectRootFolder(), ExistingProjectsList, SolutionPath);
@@ -57,73 +60,66 @@ public class GenerateSolution : BuildCommand
     private static void AddProjectToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
     {
         string SolutionDirectory = Path.GetDirectoryName(solutionPath)!;
+
         IEnumerable<IGrouping<string, string>> GroupedProjects = GroupPathsBySolutionFolder(SolutionDirectory, projectDirectory, relativePaths);
-        
+
         foreach (IGrouping<string, string> Projects in GroupedProjects)
         {
-            bool Unlocked = WaitForFileUnlock(solutionPath, 10000, 200);
-            if (!Unlocked)
+            if (!WaitForFileUnlock(solutionPath, FileUnlockTimeoutMs, FileUnlockPollIntervalMs))
             {
-                Console.WriteLine($"Warning: timed out waiting for {solutionPath} to become available. Will still try to add projects.");
+                LoggerUtilities.LogUnrealSharpWarning($"Timed out waiting for {solutionPath} to become available. Attempting to add projects anyway.");
             }
 
-            const int maxAttempts = 10;
-            int Attempt = 0;
-            bool Success = false;
-
-            while (Attempt < maxAttempts && !Success)
-            {
-                Attempt++;
-                try
-                {
-                    DotnetProcess AddProjectProcess = new DotnetProcess();
-                    AddProjectProcess.StartInfo.ArgumentList.Add("sln");
-                    AddProjectProcess.StartInfo.ArgumentList.Add("add");
-                    AddProjectProcess.StartInfo.ArgumentList.Add("--include-references");
-                    AddProjectProcess.StartInfo.ArgumentList.Add("false");
-
-                    foreach (string RelativePath in Projects)
-                    {
-                        AddProjectProcess.StartInfo.ArgumentList.Add(RelativePath);
-                    }
-
-                    AddProjectProcess.StartInfo.ArgumentList.Add("-s");
-                    AddProjectProcess.StartInfo.ArgumentList.Add(Projects.Key);
-                    AddProjectProcess.StartInfo.WorkingDirectory = SolutionDirectory;
-
-                    AddProjectProcess.StartBuildToolProcess();
-                    Success = true;
-                }
-                catch (IOException Ex)
-                {
-                    Console.WriteLine($"Attempt {Attempt}/{maxAttempts}: IOException while adding projects to sln: {Ex.Message}. Retrying...");
-                    Thread.Sleep(250 * Attempt);
-                }
-                catch (Exception Ex)
-                {
-                    Console.WriteLine($"Attempt {Attempt}/{maxAttempts}: error while adding projects to sln: {Ex.Message}. Retrying...");
-                    Thread.Sleep(250 * Attempt);
-                }
-            }
-
-            if (!Success)
-            {
-                throw new Exception($"Failed to add projects to solution '{solutionPath}' after {maxAttempts} attempts.");
-            }
+            RunAddProjectsWithRetry(SolutionDirectory, Projects, solutionPath);
         }
     }
 
-    private static bool WaitForFileUnlock(string filePath, int timeoutMs = 10000, int pollIntervalMs = 150)
+    private static void RunAddProjectsWithRetry(string solutionDirectory, IGrouping<string, string> projects, string solutionPath)
+    {
+        for (int Attempt = 1; Attempt <= MaxAddProjectAttempts; Attempt++)
+        {
+            try
+            {
+                DotnetProcess AddProjectProcess = new DotnetProcess();
+                AddProjectProcess.StartInfo.ArgumentList.Add("sln");
+                AddProjectProcess.StartInfo.ArgumentList.Add("add");
+                AddProjectProcess.StartInfo.ArgumentList.Add("--include-references");
+                AddProjectProcess.StartInfo.ArgumentList.Add("false");
+
+                foreach (string RelativePath in projects)
+                {
+                    AddProjectProcess.StartInfo.ArgumentList.Add(RelativePath);
+                }
+
+                AddProjectProcess.StartInfo.ArgumentList.Add("-s");
+                AddProjectProcess.StartInfo.ArgumentList.Add(projects.Key);
+                AddProjectProcess.StartInfo.WorkingDirectory = solutionDirectory;
+
+                AddProjectProcess.StartBuildToolProcess();
+                return;
+            }
+            catch (Exception Ex)
+            {
+                LoggerUtilities.LogUnrealSharpWarning($"Attempt {Attempt} to add projects to solution failed: {Ex.Message}");
+
+                if (Attempt == MaxAddProjectAttempts)
+                {
+                    break;
+                }
+
+                Thread.Sleep(RetryBackoffMs);
+            }
+        }
+
+        throw new AutomationException($"Failed to add projects to solution '{solutionPath}' after {MaxAddProjectAttempts} attempts.");
+    }
+
+    private static bool WaitForFileUnlock(string filePath, int timeoutMs, int pollIntervalMs)
     {
         Stopwatch Stopwatch = Stopwatch.StartNew();
 
-        while (Stopwatch.ElapsedMilliseconds < timeoutMs)
+        while (Stopwatch.ElapsedMilliseconds < timeoutMs && !File.Exists(filePath))
         {
-            if (File.Exists(filePath))
-            {
-                break;
-            }
-
             Thread.Sleep(pollIntervalMs);
         }
 
@@ -136,10 +132,8 @@ public class GenerateSolution : BuildCommand
         {
             try
             {
-                using (new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-                {
-                    return true;
-                }
+                using FileStream Stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                return true;
             }
             catch (IOException)
             {
@@ -154,20 +148,20 @@ public class GenerateSolution : BuildCommand
         return false;
     }
 
-    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(string scriptDirectory, string projectDirectory, List<string> relativePaths)
+    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(string solutionDirectory, string projectDirectory, List<string> relativePaths)
     {
-        return relativePaths.GroupBy(path => GetPathRelativeToProject(scriptDirectory, projectDirectory, path));
+        return relativePaths.GroupBy(path => GetSolutionFolderForProject(solutionDirectory, projectDirectory, path));
     }
-
-    private static string GetPathRelativeToProject(string scriptDirectory, string projectDirectory, string relativePath)
+    
+    private static string GetSolutionFolderForProject(string solutionDirectory, string projectDirectory, string relativePath)
     {
-        string ScriptDirectoryName = Path.GetDirectoryName(scriptDirectory)!;
-        
-        string FullPath = Path.GetFullPath(relativePath, scriptDirectory);
+        string SolutionParentDirectory = Path.GetDirectoryName(solutionDirectory)!;
+
+        string FullPath = Path.GetFullPath(relativePath, solutionDirectory);
         string ProjectRelativePath = Path.GetRelativePath(projectDirectory, FullPath);
         string ProjectDirName = Path.GetDirectoryName(ProjectRelativePath)!;
-        
+
         string ContainingDirName = Path.GetDirectoryName(ProjectDirName)!;
-        return ContainingDirName == ScriptDirectoryName ? ContainingDirName : Path.GetDirectoryName(ContainingDirName)!;
+        return ContainingDirName == SolutionParentDirectory ? ContainingDirName : Path.GetDirectoryName(ContainingDirName)!;
     }
 }
