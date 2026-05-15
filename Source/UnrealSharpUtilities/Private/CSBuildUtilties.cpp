@@ -1,5 +1,7 @@
-#include "CSBuildUtilties.h"
 
+#if WITH_EDITOR
+
+#include "CSBuildUtilties.h"
 #include "CSBuildActionUtilities.h"
 #include "CSPathsUtilities.h"
 #include "CSProcessUtilities.h"
@@ -10,24 +12,32 @@
 #include "Misc/MonitoredProcess.h"
 #include "Styling/SlateStyleRegistry.h"
 
-#define LOCTEXT_NAMESPACE "FUnrealSharpBuildUtilities"
-
 bool UnrealSharp::Build::InvokeUnrealSharpAutomation(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, const FCSCommandError& OnError)
 {
-#if WITH_EDITOR
 	FString Arguments;
 	BuildArguments(BuildAction, ActionArgs, Arguments);
 
 	int32 ReturnCode = 0;
 	FString Output;
 	return Process::InvokeCommand(FSerializedUATProcess::GetUATPath(), Arguments, ReturnCode, Output, nullptr, OnError);
-#else
-	return false;
-#endif
 }
 
 void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildAction, const FText& BuildActionDisplayName, const TMap<FString, FString>* ActionArgs, const IUATHelperModule::UatTaskResultCallack& ResultCallback)
 {
+	if (!IsValid(GEditor))
+	{
+		if (InvokeUnrealSharpAutomation(BuildAction, ActionArgs))
+		{
+			 ResultCallback(TEXT("Completed"), 1.0);
+		}
+		else
+		{
+			 ResultCallback(TEXT("Failed"), 0.0);
+		}
+		
+		return;
+	}
+	
 	FString Arguments;
 	BuildArguments(BuildAction, ActionArgs, Arguments);
 	
@@ -61,7 +71,7 @@ void UnrealSharp::Build::BuildArguments(const FString& BuildAction, const TMap<F
 	const FString DotNetPath = Paths::GetDotNetExecutablePath();
 	
 	OutArgs.Reset();
-	OutArgs += FString::Printf(TEXT("%s"), *BuildAction);
+	OutArgs += BuildAction;
 	OutArgs += FString::Printf(TEXT(" -ScriptDir=\"%s\""), *FPaths::Combine(PluginFolder, TEXT("Build"), TEXT("Scripts")));
 	OutArgs += FString::Printf(TEXT(" -Project=\"%s\""), *FPaths::ConvertRelativePathToFull(FPaths::GetProjectFilePath()));
 	
@@ -80,4 +90,4 @@ const FSlateBrush* UnrealSharp::Build::GetBuildActionIcon()
 	return Style->GetBrush("UnrealSharp.Toolbar");
 }
 
-#undef LOCTEXT_NAMESPACE
+#endif

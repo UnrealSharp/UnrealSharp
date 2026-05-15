@@ -1,5 +1,7 @@
 #pragma once
 #include "CSProcessUtilities.h"
+
+#if WITH_EDITOR
 #include "IUATHelperModule.h"
 
 namespace UnrealSharp::Build
@@ -11,3 +13,5 @@ namespace UnrealSharp::Build
 	void BuildArguments(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, FString& OutArgs);
 	const FSlateBrush* GetBuildActionIcon();
 }
+
+#endif

@@ -33,6 +33,7 @@ public class UnrealSharpUtilities : ModuleRules
                 new string[]
                 {
                     "UATHelper",
+                    "UnrealEd",
                 }
             );
         }

@@ -1,5 +1,5 @@
 <Project>
   <PropertyGroup>
-    <OutputPath>$(SolutionDir)..\..\Binaries\Managed\</OutputPath>
+    <OutputPath Condition="'$(UseDefaultOutputPath)' != 'true'">$(SolutionDir)..\..\Binaries\Managed\</OutputPath>
   </PropertyGroup>
 </Project>

@@ -13,7 +13,6 @@
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "CSManager.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
@@ -21,12 +20,9 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "CSUnrealSharpEditorSettings.h"
-#include "Widgets/Notifications/SNotificationList.h"
-#include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Containers/Set.h"
 #include "Settings/PlatformsMenuSettings.h"
@@ -703,7 +699,7 @@ void FUnrealSharpEditorModule::OnProjectLoaded()
 	});
 }
 
-void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> AdditionalArguments, bool bOpenProject)
+void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> ActionArgs, bool bOpenProject)
 {
 	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
 	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
@@ -713,25 +709,33 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 		return;
 	}
 	
-	AdditionalArguments.Add(TEXT("ProjectName"), ModuleName);
-	AdditionalArguments.Add(TEXT("ProjectFolder"), UnrealSharp::Paths::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	ActionArgs.Add(TEXT("ProjectName"), ModuleName);
+	ActionArgs.Add(TEXT("ProjectFolder"), UnrealSharp::Paths::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
-	AdditionalArguments.Add(TEXT("ProjectRoot"), UnrealSharp::Paths::MakeQuotedPath(FullProjectRoot));
-
-	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateProject, &AdditionalArguments))
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project {0} in {1}", *ModuleName, *ProjectParentFolder);
-		return;
-	}
+	ActionArgs.Add(TEXT("ProjectRoot"), UnrealSharp::Paths::MakeQuotedPath(FullProjectRoot));
 	
-	if (!bOpenProject)
+	IUATHelperModule::UatTaskResultCallack UATCallback = [this, ModuleName, CsProjPath, bOpenProject](FString ReturnCode, double)
 	{
-		return;
-	}
+		if (ReturnCode != TEXT("Completed"))
+		{
+			return;
+		}
+		
+		AsyncTask(ENamedThreads::GameThread, [this, ModuleName, CsProjPath, bOpenProject]()
+		{
+			if (!bOpenProject)
+			{
+				return;
+			}
 	
-	LoadNewProject(ModuleName, CsProjPath);
-	OpenSolution();
+			LoadNewProject(ModuleName, CsProjPath);
+			OpenSolution();
+		});
+	};
+	
+	FText BuildActionDisplayName = FText::Format(LOCTEXT("GeneratingProject", "Generating C# Project '{0}'"), FText::FromString(ModuleName));
+	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::GenerateProject, BuildActionDisplayName, &ActionArgs, UATCallback);
 }
 
 #undef LOCTEXT_NAMESPACE

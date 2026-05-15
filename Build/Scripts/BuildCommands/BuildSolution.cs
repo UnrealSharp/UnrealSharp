@@ -82,7 +82,7 @@ public class BuildSolution : BuildCommand
                     }
                 }
 
-                BuildSolutionProcess.StartBuildToolProcess();
+                BuildSolutionProcess.StartProcess();
             }
         }
     }

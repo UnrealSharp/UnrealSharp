@@ -85,4 +85,24 @@ public static class ProjectUtilities
         IEnumerable<FileInfo> FsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
         return CsprojFiles.Concat(FsprojFiles);
     }
+    
+    public static bool ContainsUPluginOrUProjectFile(string folder)
+    {
+        if (!Directory.Exists(folder))
+        {
+            return false;
+        }
+
+        foreach (string FilePath in Directory.EnumerateFiles(folder, "*.*", SearchOption.TopDirectoryOnly))
+        {
+            string Extension = Path.GetExtension(FilePath);
+            
+            if (Extension.Equals(".uplugin", StringComparison.OrdinalIgnoreCase) || Extension.Equals(".uproject", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

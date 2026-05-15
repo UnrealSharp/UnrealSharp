@@ -46,7 +46,7 @@ public class GenerateSolution : BuildCommand
         GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionName);
         GenerateSlnProcess.StartInfo.ArgumentList.Add("--force");
         GenerateSlnProcess.StartInfo.WorkingDirectory = ScriptDirectory;
-        GenerateSlnProcess.StartBuildToolProcess();
+        GenerateSlnProcess.StartProcess();
 
         List<string> ExistingProjectsList = buildCommand.GetUnrealSharpProjectFiles()
             .Select(projectFile => Path.GetRelativePath(ScriptDirectory, projectFile.FullName))
@@ -95,7 +95,7 @@ public class GenerateSolution : BuildCommand
                 AddProjectProcess.StartInfo.ArgumentList.Add(projects.Key);
                 AddProjectProcess.StartInfo.WorkingDirectory = solutionDirectory;
 
-                AddProjectProcess.StartBuildToolProcess();
+                AddProjectProcess.StartProcess();
                 return;
             }
             catch (Exception Ex)

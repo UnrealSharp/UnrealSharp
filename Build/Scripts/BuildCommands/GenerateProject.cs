@@ -34,7 +34,7 @@ public class GenerateProject : BuildCommand
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
 
-        if (!ContainsUPluginOrUProjectFile(ProjectRoot))
+        if (!ProjectUtilities.ContainsUPluginOrUProjectFile(ProjectRoot))
         {
             throw new AutomationException($"ProjectRoot '{ProjectRoot}' must contain a .uplugin or .uproject file at its top level.");
         }
@@ -66,19 +66,19 @@ public class GenerateProject : BuildCommand
         }
 
         UpdateCsprojDocument(ProjectPath, OutputProjectFolder, Dependencies, EditorOnly);
-
+        
+        LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
+        
         if (!SkipSolutionGeneration)
         {
             GenerateSolution.GenerateManagedSolution(this);
         }
 
-        if (SkipUSharpProjSetup)
+        if (!SkipUSharpProjSetup)
         {
-            return;
+            AddLaunchSettings(OutputProjectFolder);
+            BuildProject(ProjectPath, OutputProjectFolder);
         }
-
-        AddLaunchSettings(OutputProjectFolder);
-        BuildProject(ProjectPath, OutputProjectFolder);
     }
 
     private void UpdateCsprojDocument(string projectPath, string projectFolder, IEnumerable<string>? dependencies, bool isEditorOnly)
@@ -136,34 +136,9 @@ public class GenerateProject : BuildCommand
     private static void BuildProject(string projectPath, string projectFolder)
     {
         DotnetProcess BuildProjectProcess = new DotnetProcess();
-
         BuildProjectProcess.StartInfo.ArgumentList.Add("build");
         BuildProjectProcess.StartInfo.ArgumentList.Add(projectPath);
         BuildProjectProcess.StartInfo.WorkingDirectory = projectFolder;
-
-        if (!BuildProjectProcess.StartBuildToolProcess())
-        {
-            throw new AutomationException($"Failed to build the generated project '{projectPath}'.");
-        }
-    }
-    
-    private static bool ContainsUPluginOrUProjectFile(string folder)
-    {
-        if (!Directory.Exists(folder))
-        {
-            return false;
-        }
-
-        foreach (string FilePath in Directory.EnumerateFiles(folder, "*.*", SearchOption.TopDirectoryOnly))
-        {
-            string Extension = Path.GetExtension(FilePath);
-            
-            if (Extension.Equals(".uplugin", StringComparison.OrdinalIgnoreCase) || Extension.Equals(".uproject", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        BuildProjectProcess.StartProcess();
     }
 }

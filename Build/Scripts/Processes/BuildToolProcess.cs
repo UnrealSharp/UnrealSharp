@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text;
+using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharp.Automation.Processes;
 
@@ -18,14 +19,14 @@ public class BuildToolProcess : Process
         EnableRaisingEvents = true;
     }
     
-    public bool StartBuildToolProcess()
+    public void StartProcess()
     {
         StringBuilder Output = new StringBuilder();
         OutputDataReceived += (sender, e) =>
         {
             if (e.Data != null)
             {
-                Output.AppendLine(e.Data);
+                LoggerUtilities.LogUnrealSharpInfo(e.Data);
             }
         };
             
@@ -33,7 +34,7 @@ public class BuildToolProcess : Process
         {
             if (e.Data != null)
             {
-                Output.AppendLine(e.Data);
+                LoggerUtilities.LogUnrealSharpError(e.Data);
             }
         };
             
@@ -48,16 +49,9 @@ public class BuildToolProcess : Process
 
         if (ExitCode != 0)
         {
-            string ErrorMessage = Output.ToString();
-            if (string.IsNullOrEmpty(ErrorMessage))
-            {
-                ErrorMessage = "BuildTool process exited with non-zero exit code, but no output was captured.";
-            }
-            
-            throw new Exception($"BuildTool process failed with exit code {ExitCode}:\n{ErrorMessage}");
+            throw new Exception($"Process exited with code {ExitCode}");
         }
         
         Close();
-        return true;
     }
 }
