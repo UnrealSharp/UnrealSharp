@@ -12,7 +12,9 @@
     </ItemGroup>
 
     <Target Name="BuildAutomation" BeforeTargets="BeforeBuild">
-        <MSBuild Projects="..\..\Build\Scripts\UnrealSharp.Automation.csproj" Targets="Restore;Build" Properties="OutDir=$(TargetDir)" />
+        <MSBuild Projects="..\..\Build\Scripts\UnrealSharp.Automation.csproj"
+                 Targets="Restore;Build"
+                 Properties="OutDir=$(TargetDir);EngineDir=$(EngineDir)" />
     </Target>
     
     <PropertyGroup>
