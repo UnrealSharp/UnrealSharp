@@ -1,0 +1,44 @@
+<Project>
+    <PropertyGroup>
+        <UE5RulesProjPath>$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj</UE5RulesProjPath>
+    </PropertyGroup>
+
+    <Target Name="ImportUE5RulesDefineConstants"
+            BeforeTargets="CoreCompile"
+            Condition="Exists('$(UE5RulesProjPath)')">
+
+        <XmlPeek XmlInputPath="$(UE5RulesProjPath)"
+                 Query="//Project/PropertyGroup/DefineConstants/text()">
+            <Output TaskParameter="Result" ItemName="UE5Rules_DefineConstants" />
+        </XmlPeek>
+
+        <PropertyGroup>
+            <DefineConstantsJoined>$([System.String]::Join(';', %(UE5Rules_DefineConstants.Identity)))</DefineConstantsJoined>
+            <DefineConstantsJoined>$(DefineConstantsJoined.Replace('%24(DefineConstants);', ''))</DefineConstantsJoined>
+            
+            <DefineConstants Condition="'$(DefineConstants)' != '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstants);$(DefineConstantsJoined)
+            </DefineConstants>
+            
+            <DefineConstants Condition="'$(DefineConstants)' == '' and '$(DefineConstantsJoined)' != ''">
+                $(DefineConstantsJoined)
+            </DefineConstants>
+
+            <DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(DefineConstants), '\s+', ''))</DefineConstants>
+        </PropertyGroup>
+    </Target>
+
+    <PropertyGroup>
+        <_TargetFrameworkToUse>net8.0</_TargetFrameworkToUse>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <Target Name="SetTargetFramework"
+            AfterTargets="ImportUE5RulesDefineConstants"
+            BeforeTargets="CoreCompile">
+        <PropertyGroup>
+            <_TargetFrameworkToUse Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">net6.0</_TargetFrameworkToUse>
+            <TargetFramework>$(_TargetFrameworkToUse)</TargetFramework>
+        </PropertyGroup>
+    </Target>
+</Project>
