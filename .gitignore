@@ -49,9 +49,8 @@ Binaries/*
 Plugins/*/Binaries/*
 
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
-!Build/*/
-Build/*/**
-!Build/*/PakBlacklist*.txt
+Build/*/Intermediate/*
+Build/*/Properties/*
 
 # Don't ignore icon files in Build
 !Build/**/*.ico
