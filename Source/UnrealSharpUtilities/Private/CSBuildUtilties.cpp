@@ -7,10 +7,11 @@
 #include "CSProcessUtilities.h"
 #include "CSUnrealSharpUtilitiesSettings.h"
 #include "IUATHelperModule.h"
-#include "Engine/PlatformSettingsManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MonitoredProcess.h"
 #include "Styling/SlateStyleRegistry.h"
+
+#define LOCTEXT_NAMESPACE "UnrealSharpBuildUtilities"
 
 bool UnrealSharp::Build::InvokeUnrealSharpAutomation(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, const FCSCommandError& OnError)
 {
@@ -28,11 +29,11 @@ void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildA
 	{
 		if (InvokeUnrealSharpAutomation(BuildAction, ActionArgs))
 		{
-			 ResultCallback(TEXT("Completed"), 1.0);
+			 ResultCallback(TEXT("Completed"), 0.0);
 		}
 		else
 		{
-			 ResultCallback(TEXT("Failed"), 0.0);
+			 ResultCallback(TEXT("Failed"), -1.0);
 		}
 		
 		return;
@@ -41,10 +42,18 @@ void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildA
 	FString Arguments;
 	BuildArguments(BuildAction, ActionArgs, Arguments);
 	
-	FName PlatformName = UPlatformSettingsManager::Get().GetCurrentPlatformName();
+#if PLATFORM_WINDOWS
+	FText PlatformName = LOCTEXT("PlatformName_Windows", "Windows");
+#elif PLATFORM_MAC
+	FText PlatformName = LOCTEXT("PlatformName_Mac", "Mac");
+#elif PLATFORM_LINUX
+	FText PlatformName = LOCTEXT("PlatformName_Linux", "Linux");
+#else
+	FText PlatformName = LOCTEXT("PlatformName_Other", "Other OS");
+#endif
 	
 	IUATHelperModule::Get().CreateUatTask(Arguments, 
-		FText::FromString(PlatformName.ToString()), 
+		PlatformName, 
 		BuildActionDisplayName,
 	BuildActionDisplayName, 
 	GetBuildActionIcon(),
@@ -91,3 +100,5 @@ const FSlateBrush* UnrealSharp::Build::GetBuildActionIcon()
 }
 
 #endif
+
+#undef LOCTEXT_NAMESPACE

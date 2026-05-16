@@ -139,10 +139,6 @@ public class GenerateSolution : BuildCommand
             {
                 Thread.Sleep(pollIntervalMs);
             }
-            catch (UnauthorizedAccessException)
-            {
-                Thread.Sleep(pollIntervalMs);
-            }
         }
 
         return false;

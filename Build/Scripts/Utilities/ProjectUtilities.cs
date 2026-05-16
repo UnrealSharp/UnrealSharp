@@ -50,20 +50,23 @@ public static class ProjectUtilities
         return false;
     }
 
-    public static List<FileReference> GetUnrealProjectFiles(this BuildCommand buildCommand)
+    public static List<FileReference> GetUnrealProjectAndPluginFiles(this BuildCommand buildCommand)
     {
         FileReference? Project = buildCommand.ParseProjectParam();
-        List<FileReference> FoundProjectFiles = PluginsBase.EnumeratePlugins(Project);
-        FoundProjectFiles.Add(Project!);
-        return FoundProjectFiles;
+        IEnumerable<FileReference> AllPlugins = PluginsBase.EnumeratePlugins(Project);
+        
+        List<FileReference> ProjectAndPluginFiles = AllPlugins.ToList();
+        ProjectAndPluginFiles.Add(Project!);
+        
+        return ProjectAndPluginFiles.ToList();
     }
     
     public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand)
     {
-        List<FileReference> UnrealProjectFiles = GetUnrealProjectFiles(buildCommand);
+        List<FileReference> ProjectAndPluginFiles = GetUnrealProjectAndPluginFiles(buildCommand);
         List<FileInfo> UnrealSharpProjectFiles = new List<FileInfo>();
         
-        foreach (FileReference ProjectFile in UnrealProjectFiles)
+        foreach (FileReference ProjectFile in ProjectAndPluginFiles)
         {
             string ProjectScriptFolder = buildCommand.GetScriptFolder(ProjectFile.Directory.FullName);
 
@@ -72,14 +75,14 @@ public static class ProjectUtilities
                 continue;
             }
             
-            IEnumerable<FileInfo> ScriptFiles = GetProjectsInDirectory(new DirectoryInfo(ProjectScriptFolder));
+            IEnumerable<FileInfo> ScriptFiles = GetManagedProjectsInDirectory(new DirectoryInfo(ProjectScriptFolder));
             UnrealSharpProjectFiles.AddRange(ScriptFiles);
         }
         
         return UnrealSharpProjectFiles;
     }
     
-    private static IEnumerable<FileInfo> GetProjectsInDirectory(DirectoryInfo folder)
+    private static IEnumerable<FileInfo> GetManagedProjectsInDirectory(DirectoryInfo folder)
     {
         IEnumerable<FileInfo> CsprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
         IEnumerable<FileInfo> FsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);

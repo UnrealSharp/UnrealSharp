@@ -2,6 +2,7 @@
   
   <Import Project="UnrealSharp.Automation.csproj.props" Condition="Exists('UnrealSharp.Automation.csproj.props')" />
   <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
+  
   <Import Project="..\..\UnrealSharp.Automation.props" Condition="Exists('..\..\UnrealSharp.Automation.props')" />
   
   <PropertyGroup>
@@ -28,9 +29,6 @@
     </Reference>
     <Reference Include="Microsoft.Extensions.Logging.Abstractions">
       <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(EngineDir)\Binaries\ThirdParty\DotNet\8.0.412\win-x64\sdk\8.0.412\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="UnrealBuildTool">
       <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>

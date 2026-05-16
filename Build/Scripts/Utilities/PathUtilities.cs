@@ -29,7 +29,7 @@ public static class PathUtilities
     public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
     {
         FileReference? Project = command.ParseProjectParam();
-        List<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
+        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
         
         FileReference? UnrealSharpPlugin = null;
         foreach (FileReference Plugin in FoundPlugins)
