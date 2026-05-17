@@ -13,6 +13,7 @@ public class DotnetProcess : BuildToolProcess
         StartInfo.Environment["MSBuildSDKsPath"] = Path.Combine(LatestDotNetSdkPath, "Sdks");
         StartInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
         
-        LoggerUtilities.LogUnrealSharpInfo($"Using .NET SDK from path: '{LatestDotNetSdkPath}'");
+        string SdkVersionFolderName = new DirectoryInfo(LatestDotNetSdkPath).Name;
+        LoggerUtilities.LogUnrealSharpInfo($"DotnetProcess initialized with SDK version: {SdkVersionFolderName}");
     }
 }
