@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnrealBuildTool;
 using UnrealSharp.Shared;
@@ -14,6 +15,10 @@ public static class BuildUtilities
         }
         
         ConsoleUtilities.Log("Engine glue has been modified since the last build. Rebuilding bindings...");
-        DotNetUtilities.BuildSolution(Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharp"));
+
+        List<KeyValuePair<string, string>> actionArgs = new List<KeyValuePair<string, string>>();
+        actionArgs.Add(new KeyValuePair<string, string>("Folders", Path.Combine(GeneratorStatics.ManagedPath, "UnrealSharp")));
+        actionArgs.Add(new KeyValuePair<string, string>("BuildConfig", GeneratorStatics.BuildConfiguration.ToString()));
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildSolution", actionArgs);
     }
 }

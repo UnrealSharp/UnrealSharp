@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  
+  <Import Project="UnrealSharp.Automation.csproj.props" Condition="Exists('UnrealSharp.Automation.csproj.props')" />
+  <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
+  
+  <Import Project="..\..\UnrealSharp.Automation.props" Condition="Exists('..\..\UnrealSharp.Automation.props')" />
+  
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Configurations>Debug;Release;Development</Configurations>
+    <RootNamespace>UnrealSharp.Automation</RootNamespace>
+    <AssemblyName>UnrealSharp.Automation</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AutomationScripts.Automation">
+      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Scripts\AutomationScripts.Automation.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AutomationUtils.Automation">
+      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="UnrealBuildTool">
+      <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="EpicGames.Core">
+      <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\EpicGames.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Gauntlet.Automation">
+      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Gauntlet\Gauntlet.Automation.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="EpicGames.Build">
+      <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\EpicGames.Build.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
+  </ItemGroup>
+  
+</Project>

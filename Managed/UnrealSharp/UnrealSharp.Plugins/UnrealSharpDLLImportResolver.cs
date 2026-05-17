@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace UnrealSharp;
+namespace UnrealSharp.Plugins;
 
 public class UnrealSharpDllImportResolver(IntPtr internalHandle)
 {

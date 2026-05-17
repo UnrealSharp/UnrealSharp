@@ -83,13 +83,8 @@ public static class GeneratorStringBuilderUtilities
         stringBuilder.CloseBrace();
     }
     
-    public static void StartGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type, bool blittable = false, bool nullableEnabled = false)
+    public static void StartGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type, bool blittable = false)
     {
-        if (nullableEnabled)
-        {
-            stringBuilder.AppendLine("#nullable enable");
-        }
-        
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.CoreNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.CoreAttributeNamespace);
@@ -97,6 +92,7 @@ public static class GeneratorStringBuilderUtilities
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.MarshallerNamespace);
         
         stringBuilder.AppendLine($"using static UnrealSharp.Interop.{ExporterCallbacks.FPropertyCallbacks};");
+        stringBuilder.AppendLine("#nullable enable");
         
         if (blittable)
         {

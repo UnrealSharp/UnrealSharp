@@ -79,7 +79,14 @@ public struct TSoftClassPtr<T> where T : UObject
     public TSubclassOf<T> LoadSynchronous()
     {
         IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
-        UClass loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
+        UClass? loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
+        
+        if (loadedClass == null)
+        {
+            LogUnrealSharpCore.LogWarning($"Failed to load or cast asset at '{SoftObjectPath}' to '{typeof(T).Name}'");
+            return new TSubclassOf<T>();
+        }
+        
         return new TSubclassOf<T>(loadedClass);
     }
     

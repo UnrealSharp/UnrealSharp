@@ -48,13 +48,9 @@ SourceArt/**/*.tga
 Binaries/*
 Plugins/*/Binaries/*
 
-# Builds
-Build/*
-
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
-!Build/*/
-Build/*/**
-!Build/*/PakBlacklist*.txt
+Build/*/Intermediate/*
+Build/*/Properties/*
 
 # Don't ignore icon files in Build
 !Build/**/*.ico
@@ -86,3 +82,4 @@ obj/
 !UnrealSharp.Shared.props
 !UnrealSharp.GeneratedFiles.props
 !UnrealSharp.AOT.props
+!UnrealSharp.Automation.props

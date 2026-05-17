@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using UnrealSharp.Editor.Utilities;
+using UnrealSharp.Shared;
 using UnrealSharp.UnrealSharpUtilities;
-using UnrealSharpBuildTool.Actions;
 
 namespace UnrealSharp.Editor;
 
@@ -236,7 +236,7 @@ public static class IncrementalCompilationManager
         }
 
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
-        AssemblyLoadOrder.EmitLoadOrder(assemblies, outputDir);
+        AssemblyUtilities.EmitLoadOrder(assemblies, outputDir);
     }
     
     private static void UpdateDependentProjectsWithNewCompilation(Compilation newCompilation, Project producedProject)

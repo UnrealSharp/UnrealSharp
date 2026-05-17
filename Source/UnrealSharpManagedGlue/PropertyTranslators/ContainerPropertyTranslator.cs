@@ -86,11 +86,11 @@ public class ContainerPropertyTranslator : PropertyTranslator
         string wrapperType = GetWrapperType(property);
         if (property.IsOuter<UhtScriptStruct>() || property.HasAnyNativeGetterSetter())
         {
-            builder.AppendLine($"static {wrapperType} {propertyEngineName}_Marshaller = null;");
+            builder.AppendLine($"static {wrapperType}? {propertyEngineName}_Marshaller = null;");
         }
         else
         {
-            builder.AppendLine($"{wrapperType} {propertyEngineName}_Marshaller = null;");
+            builder.AppendLine($"{wrapperType}? {propertyEngineName}_Marshaller = null;");
         }
     }
 
@@ -109,7 +109,7 @@ public class ContainerPropertyTranslator : PropertyTranslator
             builder.AppendLine("static ");
         }
         
-        builder.Append($"{GetWrapperType(property)} {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
+        builder.Append($"{GetWrapperType(property)}? {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
     }
 
     public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)

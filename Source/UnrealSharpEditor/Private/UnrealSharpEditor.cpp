@@ -13,7 +13,6 @@
 #include "AssetActions/CSAssetTypeAction_CSBlueprint.h"
 #include "Features/IPluginsEditorFeature.h"
 #include "CSManager.h"
-#include "Framework/Notifications/NotificationManager.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
@@ -21,12 +20,9 @@
 #include "Misc/ScopedSlowTask.h"
 #include "Plugins/CSPluginTemplateDescription.h"
 #include "Slate/CSNewProjectWizard.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "CSUnrealSharpEditorSettings.h"
-#include "Widgets/Notifications/SNotificationList.h"
-#include "UnrealSharpUtils.h"
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Containers/Set.h"
 #include "Settings/PlatformsMenuSettings.h"
@@ -103,7 +99,7 @@ void FUnrealSharpEditorModule::OnCompileManagedCode()
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateSolution))
+	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateSolution))
 	{
 		return;
 	}
@@ -464,39 +460,19 @@ void FUnrealSharpEditorModule::PackageProject()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return;
 	}
-
-	FScopedSlowTask Progress(1, LOCTEXT("USharpPackaging", "Packaging Project..."));
-	Progress.MakeDialog();
 	
 	const UProjectPackagingSettings* PlatformsPackagingSettings = GetDefault<UProjectPackagingSettings>();
 	
 	TMap<FString, FString> Arguments;
-	Arguments.Add(TEXT("ArchiveDirectory"), FCSUnrealSharpUtils::MakeQuotedPath(ArchiveDirectory));
+	Arguments.Add(TEXT("ArchiveDirectory"), UnrealSharp::Paths::MakeQuotedPath(ArchiveDirectory));
 	
 	int32 BuildConfigValue = static_cast<int32>(PlatformsPackagingSettings->BuildConfiguration);
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
 	
-	UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::PackageProject, &Arguments);
-
-	FNotificationInfo Info(FText::FromString(FString::Printf(TEXT("Project '%s' has been packaged successfully."), FApp::GetProjectName())));
-	Info.ExpireDuration = 15.0f;
-	Info.bFireAndForget = true;
-	Info.ButtonDetails.Add(FNotificationButtonInfo(
-		LOCTEXT("USharpRunPackagedGame", "Run Packaged Game"),
-		LOCTEXT("", ""),
-		FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::RunGame, ExecutablePath),
-		SNotificationItem::CS_None));
-
-	Info.ButtonDetails.Add(FNotificationButtonInfo(
-		LOCTEXT("USharpOpenPackagedGame", "Open Folder"),
-		LOCTEXT("", ""),
-		FSimpleDelegate::CreateStatic(&FUnrealSharpEditorModule::OnExploreArchiveDirectory, ArchiveDirectory),
-		SNotificationItem::CS_None));
-
-	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
-	NotificationItem->SetCompletionState(SNotificationItem::CS_None);
+	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
+	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
 }
 
 void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
@@ -723,7 +699,7 @@ void FUnrealSharpEditorModule::OnProjectLoaded()
 	});
 }
 
-void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> AdditionalArguments, bool bOpenProject)
+void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FString& ProjectParentFolder, const FString& ProjectRoot, TMap<FString, FString> ActionArgs, bool bOpenProject)
 {
 	FString ProjectFolder = FPaths::Combine(ProjectParentFolder, ModuleName);
 	FString CsProjPath = FPaths::Combine(ProjectFolder, ModuleName + ".csproj");
@@ -733,25 +709,33 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 		return;
 	}
 	
-	AdditionalArguments.Add(TEXT("ProjectName"), ModuleName);
-	AdditionalArguments.Add(TEXT("ProjectFolder"), FCSUnrealSharpUtils::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	ActionArgs.Add(TEXT("ProjectName"), ModuleName);
+	ActionArgs.Add(TEXT("ProjectFolder"), UnrealSharp::Paths::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
-	AdditionalArguments.Add(TEXT("ProjectRoot"), FCSUnrealSharpUtils::MakeQuotedPath(FullProjectRoot));
-
-	if (!UnrealSharp::Build::InvokeUnrealSharpBuildTool(UnrealSharp::BuildAction::GenerateProject, &AdditionalArguments))
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Failed to generate project {0} in {1}", *ModuleName, *ProjectParentFolder);
-		return;
-	}
+	ActionArgs.Add(TEXT("ProjectRoot"), UnrealSharp::Paths::MakeQuotedPath(FullProjectRoot));
 	
-	if (!bOpenProject)
+	IUATHelperModule::UatTaskResultCallack UATCallback = [this, ModuleName, CsProjPath, bOpenProject](FString ReturnCode, double)
 	{
-		return;
-	}
+		if (ReturnCode != TEXT("Completed"))
+		{
+			return;
+		}
+		
+		AsyncTask(ENamedThreads::GameThread, [this, ModuleName, CsProjPath, bOpenProject]()
+		{
+			if (!bOpenProject)
+			{
+				return;
+			}
 	
-	LoadNewProject(ModuleName, CsProjPath);
-	OpenSolution();
+			LoadNewProject(ModuleName, CsProjPath);
+			OpenSolution();
+		});
+	};
+	
+	FText BuildActionDisplayName = FText::Format(LOCTEXT("GeneratingProject", "Generating C# Project '{0}'"), FText::FromString(ModuleName));
+	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::GenerateProject, BuildActionDisplayName, &ActionArgs, UATCallback);
 }
 
 #undef LOCTEXT_NAMESPACE

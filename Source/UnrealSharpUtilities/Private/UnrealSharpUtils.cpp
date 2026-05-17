@@ -78,21 +78,6 @@ void FCSUnrealSharpUtils::PurgeStruct(UStruct* Struct)
 	Struct->ScriptAndPropertyObjectReferences.Empty();
 }
 
-FString FCSUnrealSharpUtils::MakeQuotedPath(const FString& Path)
-{
-	if (Path.IsEmpty())
-	{
-		return TEXT("");
-	}
-
-	if (Path.StartsWith(TEXT("\"")) && Path.EndsWith(TEXT("\"")))
-	{
-		return Path;
-	}
-
-	return FString::Printf(TEXT("\"%s\""), *Path);
-}
-
 FGuid FCSUnrealSharpUtils::ConstructGUIDFromString(const FString& Name)
 {
 	if (Name.IsEmpty())

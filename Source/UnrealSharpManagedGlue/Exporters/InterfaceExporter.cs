@@ -21,7 +21,7 @@ public static class InterfaceExporter
         bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
         
-        stringBuilder.StartGlueFile(interfaceObj, nullableEnabled: nullableEnabled);
+        stringBuilder.StartGlueFile(interfaceObj);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);

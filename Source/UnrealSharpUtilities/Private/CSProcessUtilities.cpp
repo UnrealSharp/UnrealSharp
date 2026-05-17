@@ -10,19 +10,70 @@ bool UnrealSharp::Process::InvokeCommand(const FString& ProgramPath, const FStri
 	const FString ProgramName = FPaths::GetBaseFilename(ProgramPath);
 	const FString WorkingDirectory = InWorkingDirectory ? *InWorkingDirectory : FPaths::GetPath(ProgramPath);
 
-	FString ErrorMessage;
-	FPlatformProcess::ExecProcess(*ProgramPath, *Arguments, &OutReturnCode, &Output, &ErrorMessage, *WorkingDirectory);
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+    
+	if (!FPlatformProcess::CreatePipe(ReadPipe, WritePipe))
+	{
+		const FString FullError = FString::Printf(TEXT("%s: failed to create pipe."), *ProgramName);
+		UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}", FullError);
+        
+		if (OnError.IsBound())
+		{
+			OnError.Execute(FullError);
+		}
+        
+		return false;
+	}
+
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*ProgramPath, 
+		*Arguments, 
+		false, 
+		true, 
+		true, 
+		nullptr, 
+		0, 
+		*WorkingDirectory, 
+		WritePipe, 
+		nullptr);
+
+	if (!ProcHandle.IsValid())
+	{
+		FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
+        
+		const FString FullError = FString::Printf(TEXT("%s: failed to launch process."), *ProgramName);
+		UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}", FullError);
+        
+		if (OnError.IsBound())
+		{
+			OnError.Execute(FullError);
+		}
+        
+		return false;
+	}
+
+	Output.Reset();
+	while (FPlatformProcess::IsProcRunning(ProcHandle))
+	{
+		Output += FPlatformProcess::ReadPipe(ReadPipe);
+		FPlatformProcess::Sleep(0.01f);
+	}
+	Output += FPlatformProcess::ReadPipe(ReadPipe);
+
+	FPlatformProcess::GetProcReturnCode(ProcHandle, &OutReturnCode);
+	FPlatformProcess::CloseProc(ProcHandle);
+	FPlatformProcess::ClosePipe(ReadPipe, WritePipe);
 
 	if (OutReturnCode != 0)
 	{
 		const FString FullError = FString::Printf(TEXT("%s task failed:\n%s"), *ProgramName, *Output);
 		UE_LOGFMT(LogUnrealSharpUtilities, Error, "{0}", FullError);
-
+        
 		if (OnError.IsBound())
 		{
 			OnError.Execute(FullError);
 		}
-
+        
 		return false;
 	}
 

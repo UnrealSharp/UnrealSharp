@@ -4,7 +4,7 @@ public class UnrealSharpUtilities : ModuleRules
 {
     public UnrealSharpUtilities(ReadOnlyTargetRules Target) : base(Target)
     {
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
             new string[]
@@ -23,9 +23,20 @@ public class UnrealSharpUtilities : ModuleRules
                 "Slate",
                 "SlateCore",
                 "DeveloperSettings",
-                "Projects"
+                "Projects", 
             }
         );
+
+        if (Target.bBuildEditor)
+        {
+            PublicDependencyModuleNames.AddRange(
+                new string[]
+                {
+                    "UATHelper",
+                    "UnrealEd",
+                }
+            );
+        }
         
         PublicDefinitions.Add("ForceAsEngineGlue=1");
     }

@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using UnrealSharp.SourceGenerator.Utilities;
 
@@ -101,7 +99,7 @@ public class UnrealTypeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        Dictionary<string, string> properties = new Dictionary<string, string>
+        Dictionary<string, string?> properties = new Dictionary<string, string?>
         {
             { "Prefix", prefix }
         };

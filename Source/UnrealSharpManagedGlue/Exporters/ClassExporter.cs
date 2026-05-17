@@ -27,8 +27,7 @@ public static class ClassExporter
         Dictionary<UhtProperty, GetterSetterPair> getSetBackedProperties = new();
         classObj.GetExportedProperties(exportedProperties, getSetBackedProperties);
         
-        bool nullableEnabled = classObj.HasMetadata(UhtTypeUtilities.NullableEnable);
-        stringBuilder.StartGlueFile(classObj, nullableEnabled: nullableEnabled);
+        stringBuilder.StartGlueFile(classObj);
         stringBuilder.AppendTooltip(classObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(classObj);

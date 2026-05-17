@@ -31,8 +31,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="UnrealSharpBuildTool">
-            <HintPath>..\..\..\Binaries\Managed\$(TargetFramework)\UnrealSharpBuildTool.dll</HintPath>
-        </Reference>
+        <Compile Include="..\..\..\Managed\Shared\*.cs" Link="..\..\..\Managed\Shared\*.cs" />
     </ItemGroup>
 </Project>

@@ -29,8 +29,5 @@
         <PackageReference Include="Microsoft.Build.Locator" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Include="..\..\Shared\DotNetUtilities.cs" Link="..\..\Shared\DotNetUtilities.cs" />
-    </ItemGroup>
     
 </Project>

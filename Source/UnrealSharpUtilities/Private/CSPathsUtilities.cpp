@@ -202,3 +202,18 @@ FString UnrealSharp::Paths::GetPathToManagedSolution()
     static FString SolutionPath = GetScriptFolderDirectory() / Project::GetUserManagedProjectName() + TEXT(".sln");
     return SolutionPath;
 }
+
+FString UnrealSharp::Paths::MakeQuotedPath(const FString& Path)
+{
+    if (Path.IsEmpty())
+    {
+        return TEXT("");
+    }
+
+    if (Path.StartsWith(TEXT("\"")) && Path.EndsWith(TEXT("\"")))
+    {
+        return Path;
+    }
+
+    return FString::Printf(TEXT("\"%s\""), *Path);
+}

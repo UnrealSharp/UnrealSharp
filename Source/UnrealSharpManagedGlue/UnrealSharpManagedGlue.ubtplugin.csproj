@@ -2,51 +2,27 @@
     
     <Import Project="UnrealSharpManagedGlue.ubtplugin.csproj.props" Condition="Exists('UnrealSharpManagedGlue.ubtplugin.csproj.props')" />
     <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
+    <Import Project="..\..\UnrealSharp.Automation.props" Condition="Exists('..\..\UnrealSharp.Automation.props')" />
 
-    <PropertyGroup>
-        <UE5RulesProjPath>$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj</UE5RulesProjPath>
-    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="UnrealSharp.Automation">
+            <HintPath>$(TargetDir)UnrealSharp.Automation.dll</HintPath>
+            <Private>True</Private>
+        </Reference>
+    </ItemGroup>
 
-    <Target Name="ImportUE5RulesDefineConstants"
-            BeforeTargets="CoreCompile"
-            Condition="Exists('$(UE5RulesProjPath)')">
+    <Target Name="BuildAutomation" BeforeTargets="BeforeBuild">
+        <Message Importance="High" Text="Building UnrealSharp.Automation..." />
+        <Message Importance="High" Text="TargetDir: '$(TargetDir)'" />
+        <Message Importance="High" Text="EngineDir: '$(EngineDir)'" />
 
-        <XmlPeek XmlInputPath="$(UE5RulesProjPath)"
-                 Query="//Project/PropertyGroup/DefineConstants/text()">
-            <Output TaskParameter="Result" ItemName="UE5Rules_DefineConstants" />
-        </XmlPeek>
-
-        <PropertyGroup>
-            <DefineConstantsJoined>$([System.String]::Join(';', %(UE5Rules_DefineConstants.Identity)))</DefineConstantsJoined>
-            <DefineConstantsJoined>$(DefineConstantsJoined.Replace('%24(DefineConstants);', ''))</DefineConstantsJoined>
-            
-            <DefineConstants Condition="'$(DefineConstants)' != '' and '$(DefineConstantsJoined)' != ''">
-                $(DefineConstants);$(DefineConstantsJoined)
-            </DefineConstants>
-            
-            <DefineConstants Condition="'$(DefineConstants)' == '' and '$(DefineConstantsJoined)' != ''">
-                $(DefineConstantsJoined)
-            </DefineConstants>
-
-            <DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(DefineConstants), '\s+', ''))</DefineConstants>
-        </PropertyGroup>
+        <MSBuild Projects="..\..\Build\Scripts\UnrealSharp.Automation.csproj"
+                 Targets="Restore;Build"
+                 Properties="OutDir=$(TargetDir);EngineDir=$(EngineDir)" />
+        
+        <Message Importance="High" Text="Finished building UnrealSharp.Automation." />
     </Target>
-
-    <PropertyGroup>
-        <_TargetFrameworkToUse>net8.0</_TargetFrameworkToUse>
-        <TargetFramework>net8.0</TargetFramework>
-    </PropertyGroup>
-
-    <Target Name="SetTargetFramework"
-            AfterTargets="ImportUE5RulesDefineConstants"
-            BeforeTargets="CoreCompile">
-        <PropertyGroup>
-            <_TargetFrameworkToUse Condition="!$(DefineConstants.Contains('UE_5_5_OR_LATER'))">net6.0</_TargetFrameworkToUse>
-            <TargetFramework>$(_TargetFrameworkToUse)</TargetFramework>
-        </PropertyGroup>
-    </Target>
-
-
+    
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Development</Configuration>
         <OutputType>Library</OutputType>
@@ -89,12 +65,24 @@
         <Reference Include="UnrealBuildTool">
             <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
         </Reference>
+        <Reference Include="AutomationUtils.Automation">
+            <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
         <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
         <Compile Update="..\..\Managed\Shared\ConsoleUtilities.cs">
           <Link>Shared\ConsoleUtilities.cs</Link>
+        </Compile>
+        <Compile Update="ConsoleUtilities.cs">
+          <Link>Utilities\ConsoleUtilities.cs</Link>
+        </Compile>
+        <Compile Update="..\..\Managed\Shared\UnrealSharpSettingsUtilities.cs">
+          <Link>Utilities\UnrealSharpSettingsUtilities.cs</Link>
+        </Compile>
+        <Compile Update="..\..\Managed\Shared\CommonUnrealSharpSettings.cs">
+          <Link>Utilities\CommonUnrealSharpSettings.cs</Link>
         </Compile>
     </ItemGroup>
     

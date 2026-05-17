@@ -1,20 +1,53 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Runtime.Loader;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Utils;
-using UnrealSharp.Shared;
 using UnrealSharpManagedGlue;
 using UnrealSharpManagedGlue.Utilities;
 
 [UnrealHeaderTool]
 public static class Program
 {
+    static Program()
+    {
+        AssemblyLoadContext.Default.Resolving += (context, assemblyName) =>
+        {
+            string? baseDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location);
+            
+            if (baseDirectory == null)
+            {
+                return null;
+            }
+            
+            string assemblyPath = Path.Combine(baseDirectory, $"{assemblyName.Name}.dll");
+
+            Assembly newAssembly;
+            using FileStream assemblyFile = File.Open(assemblyPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            string pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+        
+            if (File.Exists(pdbPath))
+            {
+                using FileStream pdbFile = File.Open(pdbPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                newAssembly = AssemblyLoadContext.Default.LoadFromStream(assemblyFile, pdbFile);
+            }
+            else
+            {
+                newAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+            }
+            
+            return newAssembly;
+        };
+    }
+    
     [UhtExporter(Name = "UnrealSharpCore", Description = "Exports C++ to C# code", Options = UhtExporterOptions.Default, ModuleName = "UnrealSharpCore")]
     private static void Main(IUhtExportFactory factory)
     {
-        GeneratorStatics.Initialize(factory);
-        USharpBuildToolUtilities.CompileUSharpBuildTool();
+        ConsoleUtilities.Log("Initializing UnrealSharp C# bindings generator...");
         
+        GeneratorStatics.Initialize(factory);
         ExportBindings();
         
         FileExporter.CleanOldExportedFiles();

@@ -163,6 +163,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         : base(sourceName, typeNameSpace, accessibility, assemblyName, outer)
     {
         FunctionFlags = flags;
+        ReturnType = new VoidProperty(this);
     }
 
     [Inspect(UFunctionAttributeFullName, UFunctionAttributeName)]
