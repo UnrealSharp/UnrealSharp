@@ -114,7 +114,7 @@ public partial class AResourceBase : AActor, IInteractable
         UExperienceComponent experienceComponent = UExperienceComponent.Get(player.PlayerState);
         experienceComponent.AddExperience(PickUpAmount);
 
-        SetTimer(OnRespawned, RespawnTime, false);
+        SystemLibrary.SetTimer(OnRespawned, RespawnTime, false);
 
         bIsPickedUp = true;
         OnRep_IsPickedUp();
