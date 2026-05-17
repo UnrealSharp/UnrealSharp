@@ -5,16 +5,14 @@ namespace UnrealSharp.Automation.Utilities;
 
 public static class DotNetUtilities
 {
-	private const string DotnetMajorVersion = "10.0";
-
-	private static readonly Version RequiredVersion = new Version(10, 0);
+	private const int DotnetMajorVersion = 10;
 
 	private static string? _cachedExecutable;
 	private static string? _cachedSdkPath;
-	
+
 	public static string GetVersion()
 	{
-		return "net" + DotnetMajorVersion;
+		return $"net{DotnetMajorVersion}.0";
 	}
 
 	public static string FindDotNetExecutable()
@@ -24,10 +22,7 @@ public static class DotNetUtilities
 			return _cachedExecutable;
 		}
 
-		const string dotnetWin = "dotnet.exe";
-		const string dotnetUnix = "dotnet";
-
-		string DotnetExe = OperatingSystem.IsWindows() ? dotnetWin : dotnetUnix;
+		string DotnetExe = OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
 
 		string? DotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
 		if (!string.IsNullOrEmpty(DotnetRoot))
@@ -39,36 +34,36 @@ public static class DotNetUtilities
 				return _cachedExecutable;
 			}
 		}
-		
+
 		string? PathVariable = Environment.GetEnvironmentVariable("PATH");
 		if (PathVariable != null)
 		{
-			string[] Paths = PathVariable.Split(Path.PathSeparator);
+			string[] PathEntries = PathVariable.Split(Path.PathSeparator);
 
-			foreach (string Path in Paths)
+			foreach (string PathEntry in PathEntries)
 			{
-				if (string.IsNullOrWhiteSpace(Path))
+				if (string.IsNullOrWhiteSpace(PathEntry))
 				{
 					continue;
 				}
 
-				string DotnetExePath = System.IO.Path.Combine(Path.Trim(), DotnetExe);
+				string Candidate = Path.Combine(PathEntry.Trim(), DotnetExe);
 
-				if (!File.Exists(DotnetExePath) || IsUnrealBundledDotNet(DotnetExePath))
+				if (!File.Exists(Candidate) || IsUnrealBundledDotNet(Candidate))
 				{
 					continue;
 				}
 
-				_cachedExecutable = DotnetExePath;
+				_cachedExecutable = Candidate;
 				return _cachedExecutable;
 			}
 		}
-		
+
 		string[] Fallbacks = GetWellKnownInstallPaths();
 
 		foreach (string Fallback in Fallbacks)
 		{
-			if (File.Exists(Fallback))
+			if (File.Exists(Fallback) && !IsUnrealBundledDotNet(Fallback))
 			{
 				_cachedExecutable = Fallback;
 				return _cachedExecutable;
@@ -105,22 +100,22 @@ public static class DotNetUtilities
 			int DashIndex = FolderName.IndexOf('-');
 			string NumericPart = DashIndex < 0 ? FolderName : FolderName.Substring(0, DashIndex);
 
-			if (!System.Version.TryParse(NumericPart, out Version? Version))
+			if (!Version.TryParse(NumericPart, out Version? ParsedVersion))
 			{
 				continue;
 			}
 
-			if (Version.Major != RequiredVersion.Major || Version.Minor != RequiredVersion.Minor)
+			if (ParsedVersion.Major != DotnetMajorVersion)
 			{
 				continue;
 			}
 
-			if (Version <= LatestVersion)
+			if (ParsedVersion <= LatestVersion)
 			{
 				continue;
 			}
 
-			LatestVersion = Version;
+			LatestVersion = ParsedVersion;
 			VersionName = FolderName;
 		}
 
@@ -132,10 +127,10 @@ public static class DotNetUtilities
 		_cachedSdkPath = Path.Combine(DotNetSdkDirectory, VersionName);
 		return _cachedSdkPath;
 	}
-	
-	private static bool IsUnrealBundledDotNet(string path)
+
+	private static bool IsUnrealBundledDotNet(string dotnetPath)
 	{
-		string Normalised = path.Replace('\\', '/');
+		string Normalised = dotnetPath.Replace('\\', '/');
 		return Normalised.Contains("/Binaries/ThirdParty/DotNet/", StringComparison.OrdinalIgnoreCase);
 	}
 
@@ -152,25 +147,25 @@ public static class DotNetUtilities
 
 		if (OperatingSystem.IsMacOS())
 		{
-			return new[]
-			{
+			return
+			[
 				"/usr/local/share/dotnet/dotnet",
 				"/opt/homebrew/bin/dotnet",
 				"/opt/homebrew/Cellar/dotnet/dotnet"
-			};
+			];
 		}
 
 		if (OperatingSystem.IsLinux())
 		{
-			return new[]
-			{
+			return
+			[
 				"/usr/share/dotnet/dotnet",
 				"/usr/local/share/dotnet/dotnet",
 				"/usr/bin/dotnet",
 				"/snap/bin/dotnet"
-			};
+			];
 		}
 
-		return Array.Empty<string>();
+		return [];
 	}
 }

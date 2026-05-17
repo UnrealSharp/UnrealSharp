@@ -12,5 +12,7 @@ public class DotnetProcess : BuildToolProcess
         StartInfo.Environment["MSBUILD_EXE_PATH"] = Path.Combine(LatestDotNetSdkPath, "MSBuild.dll");
         StartInfo.Environment["MSBuildSDKsPath"] = Path.Combine(LatestDotNetSdkPath, "Sdks");
         StartInfo.Environment["DOTNET_ROLL_FORWARD"] = "LatestMinor";
+        
+        LoggerUtilities.LogUnrealSharpInfo($"Using .NET SDK from path: '{LatestDotNetSdkPath}'");
     }
 }
