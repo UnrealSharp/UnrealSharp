@@ -12,9 +12,15 @@
     </ItemGroup>
 
     <Target Name="BuildAutomation" BeforeTargets="BeforeBuild">
+        <Message Importance="High" Text="Building UnrealSharp.Automation..." />
+        <Message Importance="High" Text="TargetDir: '$(TargetDir)'" />
+        <Message Importance="High" Text="EngineDir: '$(EngineDir)'" />
+
         <MSBuild Projects="..\..\Build\Scripts\UnrealSharp.Automation.csproj"
                  Targets="Restore;Build"
                  Properties="OutDir=$(TargetDir);EngineDir=$(EngineDir)" />
+        
+        <Message Importance="High" Text="Finished building UnrealSharp.Automation." />
     </Target>
     
     <PropertyGroup>
