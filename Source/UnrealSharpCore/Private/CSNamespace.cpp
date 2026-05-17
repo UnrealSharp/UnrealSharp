@@ -36,7 +36,7 @@ UPackage* FCSNamespace::GetPackage() const
 	return UCSManager::Get().FindOrAddManagedPackage(*this);
 }
 
-bool FCSNamespace::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSNamespace::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	JSON_READ_STRING(Namespace, IS_REQUIRED);

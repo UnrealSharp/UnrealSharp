@@ -3,7 +3,7 @@
 #include "Json/CSJsonMacros.h"
 #include "Json/CSJsonUtilities.h"
 
-bool FCSDefaultComponentType::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSDefaultComponentType::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

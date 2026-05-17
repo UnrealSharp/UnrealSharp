@@ -15,7 +15,7 @@
 		} \
 	}
 
-bool FCSPropertyReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSPropertyReflectionData::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	

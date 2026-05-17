@@ -44,7 +44,7 @@ struct FCSNamespace : FCSReflectionDataBase
 	}
 
 	// FCSReflectionDataBase interface
-	virtual bool Serialize(UnrealSharp::RapidJson::FConstObject JsonObject) override;
+	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
 private:

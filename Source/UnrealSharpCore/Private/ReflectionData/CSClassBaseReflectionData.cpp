@@ -3,7 +3,7 @@
 #include "Json/CSJsonMacros.h"
 #include "Json/CSJsonUtilities.h"
 
-bool FCSClassBaseReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSClassBaseReflectionData::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

@@ -16,7 +16,7 @@ FCSFieldName::FCSFieldName(UField* NativeField)
 	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeField);
 }
 
-bool FCSFieldName::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSFieldName::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	JSON_READ_STRING(Name, IS_REQUIRED);

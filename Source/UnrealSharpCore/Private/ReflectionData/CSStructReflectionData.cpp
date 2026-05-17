@@ -4,7 +4,7 @@
 #include "Json/CSJsonUtilities.h"
 #include "ReflectionData/CSPropertyReflectionData.h"
 
-bool FCSStructReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSStructReflectionData::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 		

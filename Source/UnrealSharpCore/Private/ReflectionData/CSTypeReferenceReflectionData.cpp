@@ -3,7 +3,7 @@
 #include "Json/CSJsonMacros.h"
 #include "Json/CSJsonUtilities.h"
 
-bool FCSMetaDataEntry::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSMetaDataEntry::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	
@@ -19,20 +19,20 @@ void FCSTypeReferenceReflectionData::SerializeFromJsonString(TCHAR* RawJsonStrin
 	
 	RawReflectionData = RawJsonString;
 	
-	UnrealSharp::RapidJson::FDocument ParsedDocument;
-	if (!UnrealSharp::RapidJson::ParseJsonString(RawJsonString, ParsedDocument))
+	FDocument ParsedDocument;
+	if (!ParseJsonString(RawJsonString, ParsedDocument))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
 	}
 	
-	TOptional<UnrealSharp::RapidJson::FConstObject> RootObject = UnrealSharp::RapidJson::GetRootObject(ParsedDocument);
+	TOptional<FConstObject> RootObject = GetRootObject(ParsedDocument);
 	if (!Serialize(RootObject.GetValue()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
 	}
 }
 
-bool FCSTypeReferenceReflectionData::Serialize(UnrealSharp::RapidJson::FConstObject JsonObject)
+bool FCSTypeReferenceReflectionData::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	
