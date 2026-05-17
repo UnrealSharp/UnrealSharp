@@ -5,10 +5,14 @@
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <NoWarn>$(NoWarn);RS2007</NoWarn>
+
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
-        <NoWarn>$(NoWarn);1570;0649;0169;0108;0109</NoWarn>
-        <Nullable>enable</Nullable>
+
+        <RootNamespace>UnrealSharp.CodeFixer</RootNamespace>
+        <AssemblyName>UnrealSharp.CodeFixer</AssemblyName>
+
         <IsPublishable>false</IsPublishable>
     </PropertyGroup>
 
@@ -18,16 +22,16 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
-
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\UnrealSharp.SourceGenerator.Utilities\*.cs" />
+      <ProjectReference Include="..\UnrealSharp.Analyzers\UnrealSharp.Analyzers.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
-      <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+      <AdditionalFiles Remove="AnalyzerReleases.Shipped.md" />
+      <AdditionalFiles Remove="AnalyzerReleases.Unshipped.md" />
     </ItemGroup>
 
 </Project>

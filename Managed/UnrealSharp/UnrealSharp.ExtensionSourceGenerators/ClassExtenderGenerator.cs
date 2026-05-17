@@ -68,7 +68,7 @@ public class ClassExtenderGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(discoveryResults, (outputContext, parseResult) =>
         {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine("#nullable disable");
+            stringBuilder.AppendLine("#nullable enable");
             stringBuilder.AppendLine();
 
             stringBuilder.AppendLine("using UnrealSharp.Engine;");

@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
@@ -10,22 +11,30 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
+using UnrealSharp.Analyzers;
 
-namespace UnrealSharp.Analyzers;
+namespace UnrealSharp.CodeFixer;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UnrealTypeCodeFixProvider)), Shared]
 public class UnrealTypeCodeFixProvider : CodeFixProvider
 {
-    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
+    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
+    [
         UnrealTypeAnalyzer.StructAnalyzerId,
         UnrealTypeAnalyzer.ClassAnalyzerId,
-        UnrealTypeAnalyzer.PrefixAnalyzerId);
+        UnrealTypeAnalyzer.PrefixAnalyzerId
+    ];
 
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken);
+        
+        if (root == null)
+        {
+            return;
+        }
 
         foreach (Diagnostic? diagnostic in context.Diagnostics)
         {
@@ -38,10 +47,11 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
                     if (node is PropertyDeclarationSyntax propertyNode)
                     {
                         string name = propertyNode.Identifier.Text;
+                        PropertyDeclarationSyntax propertyNodeCopy = propertyNode;
+                        
                         context.RegisterCodeFix(
-                            CodeAction.Create(
-                                title: $"Convert '{name}' to field",
-                                createChangedDocument: c => ConvertPropertyToFieldAsync(context.Document, propertyNode, c),
+                            CodeAction.Create(title: $"Convert '{name}' to field",
+                                createChangedDocument: c => ConvertPropertyToFieldAsync(context.Document, propertyNodeCopy, c),
                                 equivalenceKey: "ConvertToField"),
                             diagnostic);
                     }
@@ -51,10 +61,12 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
                     if (node is VariableDeclaratorSyntax fieldNode)
                     {
                         string name = fieldNode.Identifier.Text;
+                        var fieldNodeCopy = fieldNode;
+                        
                         context.RegisterCodeFix(
                             CodeAction.Create(
                                 title: $"Convert '{name}' to property",
-                                createChangedDocument: c => ConvertFieldToPropertyAsync(context.Document, fieldNode, c),
+                                createChangedDocument: cancellationToken => ConvertFieldToPropertyAsync(context.Document, fieldNodeCopy, cancellationToken),
                                 equivalenceKey: "ConvertToProperty"),
                             diagnostic);
                     }
@@ -63,11 +75,19 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
                 case UnrealTypeAnalyzer.PrefixAnalyzerId:
                     if (node is BaseTypeDeclarationSyntax declaration)
                     {
-                        var prefix = diagnostic.Properties["Prefix"];
+                        string? prefix = diagnostic.Properties["Prefix"];
+                        
+                        if (prefix == null)
+                        {
+                            break;
+                        }
+
+                        BaseTypeDeclarationSyntax declarationCopy = declaration;
+                        
                         context.RegisterCodeFix(
                             CodeAction.Create(
                                 title: $"Add prefix '{prefix}' to '{declaration.Identifier.Text}'",
-                                createChangedDocument: c => AddPrefixToDeclarationAsync(context.Document, declaration, prefix, c),
+                                createChangedDocument: c => AddPrefixToDeclarationAsync(context.Document, declarationCopy, prefix, c),
                                 equivalenceKey: "AddPrefix"),
                             diagnostic);
                     }
@@ -91,15 +111,20 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
         
         if (leadingTrivia.Any(t => t.IsKind(SyntaxKind.EndOfLineTrivia)))
         {
-            var newLeadingTrivia = leadingTrivia.Where(t => !t.IsKind(SyntaxKind.EndOfLineTrivia));
+            IEnumerable<SyntaxTrivia> newLeadingTrivia = leadingTrivia.Where(t => !t.IsKind(SyntaxKind.EndOfLineTrivia));
             fieldDeclaration = fieldDeclaration.WithLeadingTrivia(newLeadingTrivia);
         }
 
         fieldDeclaration = fieldDeclaration.WithLeadingTrivia(leadingTrivia).WithTrailingTrivia(trailingTrivia);
 
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        SyntaxNode? newRoot = root.ReplaceNode(propertyDeclaration, fieldDeclaration);
-
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken);
+        
+        if (root == null)
+        {
+            return document;
+        }
+        
+        SyntaxNode newRoot = root.ReplaceNode(propertyDeclaration, fieldDeclaration);
         return document.WithSyntaxRoot(newRoot);
     }
     
@@ -127,32 +152,48 @@ public class UnrealTypeCodeFixProvider : CodeFixProvider
             .WithTriviaFrom(fieldDecl)
             .WithAttributeLists(fieldDecl.AttributeLists);
 
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        SyntaxNode? newRoot = root.ReplaceNode(fieldDecl, propertyDeclaration);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken);
+        
+        if (root == null)
+        {
+            return document;
+        }
+        
+        SyntaxNode newRoot = root.ReplaceNode(fieldDecl, propertyDeclaration);
 
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private async Task<Document> AddPrefixToDeclarationAsync(Document document, BaseTypeDeclarationSyntax declaration, string prefix,
-        CancellationToken cancellationToken)
+    private async Task<Document> AddPrefixToDeclarationAsync(Document document, BaseTypeDeclarationSyntax declaration, string prefix, CancellationToken cancellationToken)
     {
         SyntaxToken identifierToken = declaration.Identifier;
         string newName = prefix + identifierToken.Text;
         SyntaxToken newIdentifierToken = SyntaxFactory.Identifier(newName);
         
-        MemberDeclarationSyntax newDeclaration = declaration.WithIdentifier(newIdentifierToken)
-            .WithTriviaFrom(declaration);
+        MemberDeclarationSyntax newDeclaration = declaration.WithIdentifier(newIdentifierToken).WithTriviaFrom(declaration);
         
-        SyntaxNode root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        
+        if (root == null)
+        {
+            return document;
+        }
+        
         SyntaxNode newRoot = root.ReplaceNode(declaration, newDeclaration);
         
-        SemanticModel semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        ISymbol symbol = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
+        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        ISymbol? symbol = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
+        
+        if (symbol == null)
+        {
+            return document.WithSyntaxRoot(newRoot);
+        }
         
         Solution solution = document.Project.Solution;
-        Solution newSolution = await Renamer
-            .RenameSymbolAsync(solution, symbol, newName, solution.Options, cancellationToken).ConfigureAwait(false);
         
-        return newSolution.GetDocument(document.Id);
+        SymbolRenameOptions options = new SymbolRenameOptions();
+        Solution newSolution = await Renamer.RenameSymbolAsync(solution, symbol, options, newName, cancellationToken);
+        
+        return newSolution.GetDocument(document.Id)!;
     }
 }

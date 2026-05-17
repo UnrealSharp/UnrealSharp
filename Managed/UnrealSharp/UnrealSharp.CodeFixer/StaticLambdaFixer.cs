@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.Formatting;
 using UnrealSharp.SourceGenerator.Utilities;
 
-namespace UnrealSharp.Analyzers;
+namespace UnrealSharp.CodeFixer;
 
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UFunctionLambdaCodeFixProvider)), Shared]
 public class UFunctionLambdaCodeFixProvider : CodeFixProvider

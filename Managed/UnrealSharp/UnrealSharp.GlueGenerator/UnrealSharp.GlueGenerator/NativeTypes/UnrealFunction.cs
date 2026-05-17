@@ -11,7 +11,8 @@ public record UnrealFunction : UnrealFunctionBase
     {
     }
 
-    public UnrealFunction(EFunctionFlags flags, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) : base(flags, sourceName, typeNameSpace, accessibility, assemblyName, outer)
+    public UnrealFunction(EFunctionFlags flags, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) 
+        : base(flags, sourceName, typeNameSpace, accessibility, assemblyName, outer)
     {
     }
 

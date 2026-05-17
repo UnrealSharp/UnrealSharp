@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.Analyzers", "Un
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.SourceGenerator.Utilities", "UnrealSharp.SourceGenerator.Utilities\UnrealSharp.SourceGenerator.Utilities.csproj", "{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnrealSharp.CodeFixer", "UnrealSharp.CodeFixer\UnrealSharp.CodeFixer.csproj", "{05BD22AD-321A-47B8-9C55-08853BA71489}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,5 +92,9 @@ Global
 		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D243D2E8-47F4-4B3F-B813-E1C5F6A2F1E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05BD22AD-321A-47B8-9C55-08853BA71489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05BD22AD-321A-47B8-9C55-08853BA71489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05BD22AD-321A-47B8-9C55-08853BA71489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05BD22AD-321A-47B8-9C55-08853BA71489}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

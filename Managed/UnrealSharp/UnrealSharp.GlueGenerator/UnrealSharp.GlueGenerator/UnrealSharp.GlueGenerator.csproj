@@ -16,6 +16,9 @@
 
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <IncludeBuildOutput>true</IncludeBuildOutput>
+
+    <NoWarn>$(NoWarn);RS2007</NoWarn>
+    
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +27,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     <PackageReference Include="Newtonsoft.Json" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 

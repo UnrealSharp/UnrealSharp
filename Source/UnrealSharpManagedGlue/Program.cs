@@ -5,10 +5,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using EpicGames.UHT.Tables;
 using EpicGames.UHT.Utils;
-using UnrealSharp.Shared;
 using UnrealSharpManagedGlue;
 using UnrealSharpManagedGlue.Utilities;
-using BuildUtilities = UnrealSharpManagedGlue.Utilities.BuildUtilities;
 
 [UnrealHeaderTool]
 public static class Program

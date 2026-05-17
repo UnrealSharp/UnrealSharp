@@ -31,15 +31,11 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
     {
         base.ExportPropertyVariables(builder, property, propertyEngineName);
         string backingField = GetBackingField(property);
-        
-        UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
-        string fullDelegateName = GetFullDelegateName(multicastDelegateProperty.Function);
-        
-        builder.AppendLine($"private TMulticastDelegate<{fullDelegateName}> {backingField};");
+        string managedType = GetManagedType(property);
+        builder.AppendLine($"private {managedType}? {backingField} = null;");
     }
 
-    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property,
-        string propertyManagedName)
+    public override void ExportPropertySetter(GeneratorStringBuilder builder, UhtProperty property, string propertyManagedName)
     {
         string backingField = GetBackingField(property);
         
@@ -62,10 +58,7 @@ public class MulticastDelegatePropertyTranslator : DelegateBasePropertyTranslato
         UhtMulticastDelegateProperty multicastDelegateProperty = (UhtMulticastDelegateProperty) property;
         string fullDelegateName = GetFullDelegateName(multicastDelegateProperty.Function);
         
-        builder.AppendLine($"if ({backingField} == null)");
-        builder.OpenBrace();
-        builder.AppendLine($"{backingField} = MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, 0, {propertyFieldName});");
-        builder.CloseBrace();
+        builder.AppendLine($"{backingField} ??= MulticastDelegateMarshaller<{fullDelegateName}>.FromNative(NativeObject + {propertyManagedName}_Offset, 0, {propertyFieldName});");
         builder.AppendLine($"return {backingField};");
     }
 

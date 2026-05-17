@@ -42,6 +42,7 @@
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\Newtonsoft.Json.dll" Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.GlueGenerator.dll" Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.Analyzers.dll" Private="false" CopyToPublishDirectory="Never" />
+    <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.CodeFixer.dll" Private="false" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <ItemGroup>
