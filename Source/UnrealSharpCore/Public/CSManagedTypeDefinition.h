@@ -72,7 +72,7 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 	
 	void SetTypeGCHandle(uint8* GCHandlePtr);
 	
-	void SetDirtyFlags(ECSTypeStructuralFlags InFlags);
+	void SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags);
 	ECSTypeStructuralFlags GetDirtyFlags() const { return DirtyFlags; }
 	
 	bool HasStructuralChanges() const { return EnumHasAnyFlags(DirtyFlags, StructuralChanges); }

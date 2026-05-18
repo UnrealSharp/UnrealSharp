@@ -47,9 +47,9 @@ void FCSManagedTypeDefinition::SetTypeGCHandle(uint8* GCHandlePtr)
 	TypeGCHandle = OwningAssembly->AddTypeHandle(ReflectionData->FieldName, GCHandlePtr);
 }
 
-void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InFlags)
+void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags)
 {
-	DirtyFlags = InFlags;
+	DirtyFlags = InDirtyFlags;
 	
 	// Notify dependent types to rebuild as well. These are spawned by source generators and depend on this type's structure.
 	// Such as the async wrapper classes.
@@ -63,8 +63,13 @@ void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InFlags)
 			UE_LOGFMT(LogUnrealSharp, Verbose, "Failed to find dependent type {0} for dirty propagation of {1}", *SourceGeneratorDependency.GetFullName().ToString(), *ReflectionData->FieldName.GetFullName().ToString());
 			continue;
 		}
+		
+		if (ManagedTypeDefinition->GetDirtyFlags() >= InDirtyFlags)
+		{
+			continue;
+		}
 
-		ManagedTypeDefinition->SetDirtyFlags(InFlags);
+		ManagedTypeDefinition->SetDirtyFlags(InDirtyFlags);
 	}
 }
 

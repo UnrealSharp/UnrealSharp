@@ -64,7 +64,7 @@ public:
 		return FCSUtilities::FindField<T>(FieldName);
 	}
 
-	TSharedPtr<FCSManagedTypeDefinition> RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData);
+	void RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData);
 
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object);
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle);

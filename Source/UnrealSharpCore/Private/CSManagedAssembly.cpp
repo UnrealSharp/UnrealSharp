@@ -200,7 +200,7 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindManagedTypeDefiniti
 	return *ManagedTypeDefinition;
 }
 
-TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData)
+void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::RegisterManagedType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
@@ -213,7 +213,7 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(TCH
 	{
 		ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
 		ManagedTypeDefinition->SetDirtyFlags(None);
-		return ManagedTypeDefinition;
+		return;
 	}
 #endif
 	
@@ -236,7 +236,6 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::RegisterManagedType(TCH
 	}
 	
 	ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
-	return ManagedTypeDefinition;
 }
 
 TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UObject* Object)
