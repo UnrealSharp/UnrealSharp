@@ -26,11 +26,22 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     public bool HasVoidReturn => ReturnType is VoidProperty;
 
+    public bool HasValueTaskReturn
+    {
+        get
+        {
+            string fullName = ReturnType.ManagedType.FullName;
+            return fullName == "System.Threading.Tasks.ValueTask" 
+                   || fullName.StartsWith("System.Threading.Tasks.ValueTask<") 
+                   || fullName.StartsWith("System.Threading.Tasks.ValueTask`");
+        }
+    }
+
     public UnrealAsyncFunction(IMethodSymbol typeSymbol, UnrealType outer) : base(typeSymbol, outer)
     {
     }
 
-    public override void ExportType(GeneratorStringBuilder _, SourceProductionContext spc)
+    public override void ExportType(GeneratorStringBuilder generatorStringBuilder, SourceProductionContext spc)
     {
         bool hasCancellationToken = TryRemoveCancellationToken(Properties.List);
 
@@ -151,7 +162,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         if (!HasVoidReturn)
         {
-            builder.AppendLine($"private {ReturnType.ManagedType} _task;");
+            builder.AppendLine($"private {ReturnType.ManagedType}? _task;");
         }
 
         if (hasCancellationToken)
@@ -225,6 +236,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
     private void AppendRunAsync(GeneratorStringBuilder builder, bool hasCancellationToken)
     {
         string cancellationTokenArg = hasCancellationToken ? "_cancellationTokenSource.Token" : string.Empty;
+        string taskValueAccess = HasValueTaskReturn ? "_task.Value" : "_task";
 
         builder.AppendLine("async void RunAsync()");
         builder.OpenBrace();
@@ -239,7 +251,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         else
         {
             builder.AppendLine($"_task = asyncDelegate({cancellationTokenArg});");
-            builder.AppendLine("await _task.ConfigureWithUnrealContext();");
+            builder.AppendLine($"await {taskValueAccess}.ConfigureWithUnrealContext();");
         }
         builder.CloseBrace();
 
@@ -261,7 +273,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
     private void AppendOnTaskCompleted(GeneratorStringBuilder builder, bool hasCancellationToken)
     {
-        builder.AppendLine(HasVoidReturn ? "void OnTaskCompleted(string? exception)" : $"void OnTaskCompleted({ReturnType.ManagedType} t, string? exception)");
+        builder.AppendLine(HasVoidReturn ? "void OnTaskCompleted(string? exception)" : $"void OnTaskCompleted({ReturnType.ManagedType}? t, string? exception)");
         builder.OpenBrace();
 
         if (hasCancellationToken)
@@ -271,7 +283,8 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         builder.AppendLine("if (IsDestroyed) { return; }");
 
-        string faultedCondition = HasVoidReturn ? "!string.IsNullOrEmpty(exception)" : "t.IsFaulted || !string.IsNullOrEmpty(exception)";
+        string taskValueAccess = HasValueTaskReturn ? "t.Value" : "t";
+        string faultedCondition = HasVoidReturn ? "!string.IsNullOrEmpty(exception)" : $"t is null || {taskValueAccess}.IsFaulted || !string.IsNullOrEmpty(exception)";
         builder.AppendLine($"if ({faultedCondition})");
         builder.OpenBrace();
         string defaultResultArg = HasTaskResultReturnValue ? "default!, " : string.Empty;
@@ -280,7 +293,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         builder.AppendLine("else");
         builder.OpenBrace();
-        builder.AppendLine(HasTaskResultReturnValue ? "Completed?.InnerDelegate.Invoke(t.Result, string.Empty);" : "Completed?.InnerDelegate.Invoke(null);");
+        builder.AppendLine(HasTaskResultReturnValue ? $"Completed?.InnerDelegate.Invoke({taskValueAccess}.Result, string.Empty);" : "Completed?.InnerDelegate.Invoke(null);");
         builder.CloseBrace();
 
         builder.CloseBrace();
