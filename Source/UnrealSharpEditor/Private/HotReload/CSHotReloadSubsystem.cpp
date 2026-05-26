@@ -7,7 +7,6 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
@@ -247,7 +246,7 @@ void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
-	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths, true);
+	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
 
 	for (const FString& ProjectPath : ProjectPaths)
 	{
@@ -373,13 +372,6 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
-	if (!ModifiedAssembly->IsCollectible())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Assembly {0} is not collectible. Hot reload will be skipped for changes to this assembly.", *ModifiedAssembly->GetAssemblyName().ToString());
-		return;
-	}
-	
 	if (bIsHotReloadPaused)
 	{
 		AppendPendingFileChange(ChangedFiles, ProjectName);
@@ -401,6 +393,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
+	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
 	if (!PendingModifiedAssemblies.Contains(ModifiedAssembly))
 	{
 		PendingModifiedAssemblies.Add(ModifiedAssembly);

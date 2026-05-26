@@ -3,33 +3,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using EpicGames.UHT.Types;
-using UnrealSharp.Shared;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
 public class ModuleInfo
 {
-	private readonly string _moduleName;
-	private readonly string _moduleDirectory;
 	public readonly HashSet<string>? Dependencies;
 	public readonly UhtPackage Module;
 	
-	public string ProjectName => $"{_moduleName}.Glue";
-	public string ProjectFile => $"{ProjectName}.csproj";
-	public string ScriptDirectory => Path.Combine(_moduleDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
-	public string ProjectDirectory => Path.Combine(ScriptDirectory, ProjectName);
-	public string CsProjPath => Path.Combine(ProjectDirectory, ProjectFile);
+	public string ProjectName { get; }
 	
-	public bool IsPartOfEngine => Module.IsPartOfEngine();
-	public string ModuleRoot => _moduleDirectory;
+	public string ModuleRoot { get; private set; }
+	public string GlueOutputDirectory => Module.GetModuleUhtOutputDirectory();
+	public string CsProjPath => Path.Combine(GlueOutputDirectory, $"{ProjectName}.csproj");
 
-	public string GlueBaseDirectory => Module.GetUhtBaseOutputDirectory();
-	public string GlueModuleDirectory => Module.GetModuleUhtOutputDirectory();
+	public bool IsPartOfEngine => Module.IsPartOfEngine() && !Module.IsExtractedEngineModule();
 
 	public ModuleInfo(string moduleName, string moduleDirectory, UhtPackage package, HashSet<string>? dependencies = null)
 	{
-		_moduleName = moduleName;
-		_moduleDirectory = moduleDirectory;
+		ProjectName = moduleName;
+		ModuleRoot = moduleDirectory;
 		Dependencies = dependencies;
 		Module = package;
 	}
@@ -151,26 +144,24 @@ public static class ModuleUtilities
 
 		string moduleName = targetPackage.GetModuleShortName();
 		string modulePath;
-		HashSet<string> dependencies = new HashSet<string>();
-
+		
 		if (targetPackage.IsPartOfEngine())
 		{
 			if (ExtractedEngineModules.TryGetValue(targetPackage.SourceName, out string? extractedModulePath))
 			{
-				DirectoryInfo pluginDir = new(extractedModulePath);
-				moduleName = pluginDir.Name;
 				modulePath = extractedModulePath;
 			}
 			else
 			{
-				modulePath = GeneratorStatics.BindingsProjectDirectory;
+				modulePath = GeneratorStatics.PluginDirectory;
 			}
 		}
 		else
 		{
 			modulePath = targetPackage.GetBaseDirectoryForPackage();
 		}
-
+		
+		HashSet<string> dependencies = new HashSet<string>();
 		ModuleInfo moduleInfo = new ModuleInfo(moduleName, modulePath, targetPackage, dependencies);
 		PackageToModuleInfo.Add(targetPackage, moduleInfo);
         
@@ -224,7 +215,7 @@ public static class ModuleUtilities
 			return;
 		}
         
-		if (referencedPackage.IsPartOfEngine())
+		if (referencedPackage.IsPartOfEngine() && !referencedPackage.IsExtractedEngineModule())
 		{
 			return;
 		}

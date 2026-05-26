@@ -5,6 +5,7 @@ using System.Linq;
 using AutomationTool;
 using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
+using UnrealSharp.Shared;
 
 namespace UnrealSharp.Automation.BuildCommands;
 
@@ -20,14 +21,6 @@ public class PackageProject : BuildCommand
 {
     private const string ManagedFolderName = "Managed";
     private const string BindingsProjectFolder = "UnrealSharp";
-
-    private const int CleanupMaxAttempts = 5;
-
-    private static readonly string[] CommonMsBuildProperties =
-    [
-        "-p:DisableWithEditor=true",
-        "-p:GenerateDocumentationFile=false",
-    ];
 
     public sealed record PackagingOptions(
         string ArchiveDirectory,
@@ -51,7 +44,7 @@ public class PackageProject : BuildCommand
 
         DotNetSdkUtilities.CopyGlobalJson(this);
         
-        string PublishFolder = PathUtilities.GetOutputPath(Path.Combine(options.ArchiveDirectory, this.GetProjectName()));
+        string PublishFolder = PathUtilities.BuildOutputPath(Path.Combine(options.ArchiveDirectory, this.GetProjectName()));
         CleanBuildArtifacts(PublishFolder);
 
         string RuntimeIdentifier = DotNetSdkUtilities.GetDotNetRuntimeIdentifier(options.TargetPlatform, options.TargetArchitecture);
@@ -65,7 +58,9 @@ public class PackageProject : BuildCommand
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
         BuildUserSolution(Arguments, options.BuildConfiguration, options.UserParams);
 
-        EmitLoadOrder(PublishFolder);
+        EmitLoadOrder(PublishFolder, options);
+        EmitInstalledFlagFile(PublishFolder);
+        
         LoggerUtilities.LogUnrealSharpInfo($"Packaging complete. Published files: {PublishFolder}");
     }
 
@@ -132,6 +127,8 @@ public class PackageProject : BuildCommand
 
     private static void CleanBuildArtifacts(string folder)
     {
+        const int cleanupMaxAttempts = 5;
+        
         if (!Directory.Exists(folder))
         {
             return;
@@ -139,7 +136,7 @@ public class PackageProject : BuildCommand
 
         LoggerUtilities.LogUnrealSharpInfo($"Cleaning existing output at '{folder}'.");
 
-        for (int Attempt = 1; Attempt <= CleanupMaxAttempts; Attempt++)
+        for (int Attempt = 1; Attempt <= cleanupMaxAttempts; Attempt++)
         {
             try
             {
@@ -148,9 +145,9 @@ public class PackageProject : BuildCommand
             }
             catch (Exception Ex)
             {
-                if (Attempt == CleanupMaxAttempts)
+                if (Attempt == cleanupMaxAttempts)
                 {
-                    throw new IOException($"Failed to clean output directory '{folder}' after {CleanupMaxAttempts} attempts. See inner exception for details.", Ex);
+                    throw new IOException($"Failed to clean output directory '{folder}' after {cleanupMaxAttempts} attempts. See inner exception for details.", Ex);
                 }
 
                 LoggerUtilities.LogUnrealSharpWarning($"Attempt {Attempt} to clean output directory '{folder}' failed. Retrying... Exception: {Ex.Message}");
@@ -165,7 +162,8 @@ public class PackageProject : BuildCommand
         [
             "--runtime", runtimeIdentifier,
 
-            .. CommonMsBuildProperties,
+            "-p:DisableWithEditor=true",
+            "-p:GenerateDocumentationFile=false",
             
             "-p:UseDefaultOutputPath=true",
 
@@ -199,18 +197,81 @@ public class PackageProject : BuildCommand
         BuildCommands.BuildSolution.RunBuild(ScriptFolder, buildConfig, publish: true, BuildUserSolutionArguments);
     }
 
-    private void EmitLoadOrder(string publishFolder)
+    private void EmitLoadOrder(string publishFolder, PackagingOptions options)
     {
-        List<FileInfo> RuntimeProjectFiles = this.GetUnrealSharpProjectFiles()
+        EmitGlueLoadOrder(publishFolder, options);
+        EmitUserLoadOrder(publishFolder);
+    }
+
+    private void EmitGlueLoadOrder(string publishFolder, PackagingOptions options)
+    {
+        if (this.IsInstalledUnrealSharpBuild())
+        {
+            CopyInstalledGlue(publishFolder);
+            return;
+        }
+
+        LoggerUtilities.LogUnrealSharpInfo("Source build detected. Building glue from generated projects and emitting glue load order...");
+
+        TargetType GlueTargetType = Enum.Parse<TargetType>(options.TargetType, ignoreCase: true);
+        BuildUserGlue.Build(this, GlueTargetType, options.BuildConfiguration, publishFolder);
+    }
+
+    private void EmitUserLoadOrder(string publishFolder)
+    {
+        List<FileInfo> RuntimeProjectFiles = this.GetManagedProjectFiles()
             .Where(file => !ProjectUtilities.IsEditorOnlyProject(file.FullName))
             .ToList();
 
         if (RuntimeProjectFiles.Count == 0)
         {
-            LoggerUtilities.LogUnrealSharpInfo("No runtime projects found. Skipping load order emission.");
+            LoggerUtilities.LogUnrealSharpInfo("No runtime projects found. Skipping user load order emission.");
+            return;
+        }
+
+        LoadOrderOptions Options = new LoadOrderOptions
+        {
+            Collectible = false,
+            Priority = LoadOrderUtilities.UserLoadOrderPriority
+        };
+
+        LoadOrderUtilities.TryEmitLoadOrder(RuntimeProjectFiles.Select(file => file.FullName), publishFolder, LoadOrderUtilities.UserLoadOrderName, Options);
+    }
+
+    private void CopyInstalledGlue(string publishFolder)
+    {
+        string GlueFileName = AssemblyUtilities.MakeLoadOrderFileName(LoadOrderUtilities.GlueLoadOrderName);
+        string GlueSource = PathUtilities.BuildOutputPath(this.GetProjectRootFolder());
+        string GlueManifest = Path.Combine(GlueSource, GlueFileName);
+
+        if (!File.Exists(GlueManifest))
+        {
+            LoggerUtilities.LogUnrealSharpWarning($"Runtime glue manifest not found at {GlueManifest}. Was the C++ project built at least once? Packaged build may be missing generated glue.");
             return;
         }
         
-        BuildEmitLoadOrder.EmitLoadOrder(RuntimeProjectFiles, publishFolder, publishFolder);
+        File.Copy(GlueManifest, Path.Combine(publishFolder, GlueFileName), true);
+
+        foreach (string AssemblyName in AssemblyUtilities.ReadLoadOrder(GlueManifest))
+        {
+            CopyIfExists(Path.Combine(GlueSource, AssemblyName + ".dll"), publishFolder);
+            CopyIfExists(Path.Combine(GlueSource, AssemblyName + ".pdb"), publishFolder);
+        }
+    }
+
+    private static void CopyIfExists(string sourceFile, string destFolder)
+    {
+        if (!File.Exists(sourceFile))
+        {
+            return;
+        }
+        
+        File.Copy(sourceFile, Path.Combine(destFolder, Path.GetFileName(sourceFile)), true);
+    }
+
+    private void EmitInstalledFlagFile(string publishFolder)
+    {
+        string InstalledFlagFilePath = Path.Combine(publishFolder, BuildUtilities.UnrealSharpBuildFlagFileName);
+        File.WriteAllText(InstalledFlagFilePath, string.Empty);
     }
 }

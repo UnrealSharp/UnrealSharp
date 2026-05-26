@@ -2,135 +2,87 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EpicGames.UHT.Types;
 using UnrealSharp.Automation.Utilities;
-using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
 
 public static class GlueModuleFactory
 {
-    private const string ModuleDependenciesFileName = "ModuleDependencies";
-    private static Dictionary<string, List<string>>? _moduleDependencies;
-    
     public static void CreateGlueProjects()
     {
-        LoadModuleDependencies();
-        
-        bool anyChanges = false;
         foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
         {
             if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine)
             {
                 continue;
             }
-            
-            CreateOrUpdateGlueModule(moduleInfo.CsProjPath, moduleInfo.ProjectName, moduleInfo.Dependencies, moduleInfo.ModuleRoot, moduleInfo.Module, out bool createdNewModule);
-            anyChanges |= createdNewModule;
-        }
-
-        if (anyChanges || !File.Exists(GeneratorStatics.ManagedSolutionPath))
-        {
-            GenerateSolution();
-        }
         
-        JsonUtilities.SerializeObjectToJson(_moduleDependencies!, ModuleDependenciesFileName);
-    }
-
-    private static void GenerateSolution()
-    {
-        ConsoleUtilities.Log("Changes detected in glue modules or solution file missing. Regenerating solution...");
-        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateSolution");
-    }
-
-    private static void LoadModuleDependencies()
-    {
-        _moduleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(ModuleDependenciesFileName);
-        
-        if (_moduleDependencies == null)
-        {
-            _moduleDependencies = new Dictionary<string, List<string>>();
-        }
-    }
-
-    private static void CreateOrUpdateGlueModule(string csprojPath, 
-        string projectName, 
-        IEnumerable<string>? dependencyPaths, 
-        string projectRoot, UhtPackage package, 
-        out bool createdNewModule)
-    {
-        createdNewModule = false;
-        
-        if (!File.Exists(csprojPath))
-        {
-            string projectDirectory = Path.GetDirectoryName(csprojPath)!;
-            List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
+            if (!File.Exists(moduleInfo.CsProjPath))
             {
-                new("ProjectName", projectName),
-                new("ProjectFolder", Path.GetDirectoryName(projectDirectory)!),
-                new("SkipSolutionGeneration", "true"),
-                new("SkipUSharpProjSetup", "true"),
-                new("ProjectRoot", projectRoot),
-            };
-
-            if (package.IsEditorOnly())
-            {
-                arguments.Add(new KeyValuePair<string, string>("EditorOnly", "true"));
+                CreateGlueModule(moduleInfo);
             }
-            
-            if (!UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments))
-            {
-                throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
-            }
-            
-            ConsoleUtilities.Log($"Successfully created project file: {projectName}");
-            
-            createdNewModule = true;
-        }
-        else
-        {
-            ConsoleUtilities.Log($"Project file already exists: {projectName}. Skipping creation.");
+
+            AddPluginDependencies(moduleInfo);
         }
         
-        AddPluginDependencies(projectName, csprojPath, dependencyPaths, createdNewModule);
+        BuildGlueProjects();
     }
 
-    private static void AddPluginDependencies(string projectName, string projectPath, IEnumerable<string>? dependencyPaths, bool forceUpdate)
+    private static void BuildGlueProjects()
     {
-        if (dependencyPaths == null)
+        List<KeyValuePair<string, string>> commandArgs = new List<KeyValuePair<string, string>>
         {
-            return;
-        }
+            new("BuildConfig", GeneratorStatics.BuildConfiguration.ToString()),
+            new("TargetType", GeneratorStatics.BuildTarget.ToString()),
+            new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
+        };
         
-        List<string> pluginDependencies = dependencyPaths.ToList();
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildUserGlue", commandArgs);
+    }
+
+    private static void CreateGlueModule(ModuleInfo moduleInfo)
+    {
+        string csprojPath = moduleInfo.CsProjPath;
+        string projectDirectory = Path.GetDirectoryName(csprojPath)!;
         
-        if (!forceUpdate && _moduleDependencies!.TryGetValue(projectName, out List<string>? existingDependencies))
+        List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
         {
-            if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
-            {
-                ConsoleUtilities.Log($"No changes in dependencies for project {projectName}. Skipping update.");
-                return;
-            }
-        }
+            new("ProjectName", moduleInfo.ProjectName),
+            new("ProjectFolder", projectDirectory),
+            new("SkipSolutionGeneration", "true"),
+            new("SkipUSharpProjSetup", "true"),
+            new("ProjectRoot", moduleInfo.ModuleRoot),
+            new("SkipIncludeAnalyzers", "true"),
+        };
         
-        _moduleDependencies![projectName] = pluginDependencies;
+        if (moduleInfo.Module.IsEditorOnly())
+        {
+            arguments.Add(new KeyValuePair<string, string>("EditorOnly", "true"));
+        }
+            
+        if (!UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments))
+        {
+            throw new InvalidOperationException($"Failed to create project file at {csprojPath}");
+        }
+            
+        ConsoleUtilities.Log($"Successfully created project file: {csprojPath}");
+    }
+
+    private static void AddPluginDependencies(ModuleInfo moduleInfo)
+    {
+        List<string> pluginDependencies = moduleInfo.Dependencies != null ? moduleInfo.Dependencies.Select(Path.GetFullPath).ToList() : new List<string>();
         
         List<KeyValuePair<string, string>> arguments = new()
         {
-            new KeyValuePair<string, string>("ProjectPath", projectPath),
+            new KeyValuePair<string, string>("ProjectPath", moduleInfo.CsProjPath),
         };
         
         foreach (string path in pluginDependencies)
         {
             arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
         }
-        
-        if (!UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments))
-        {
-            throw new InvalidOperationException($"Failed to update project dependencies for {projectPath}");
-        }
-        
-        ConsoleUtilities.Log($"Updated project dependencies for {projectName}");
+
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments);
     }
 }

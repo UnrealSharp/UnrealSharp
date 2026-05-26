@@ -229,15 +229,32 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 
 void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
 {
-	TArray<FString> Projects;
-	UnrealSharp::Project::GetProjectNamesByLoadOrder(Projects);
-	
-	if (!Projects.Contains(Assembly->GetName()))
+	if (!IsAssemblyHotReloadable(Assembly))
 	{
 		return;
 	}
 	
 	RecompileAndReinstanceBlueprints();
+}
+
+bool FUnrealSharpCompilerModule::IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly)
+{
+	TArray<FLoadOrderManifest> OutManifests;
+	UnrealSharp::Project::DiscoverLoadOrderManifests(OutManifests);
+	
+	bool CanRecompileAndReinstanceBlueprints = false;
+	for (const FLoadOrderManifest& Manifest : OutManifests)
+	{
+		if (!Manifest.bCollectible || !Manifest.ContainsAssembly(Assembly->GetAssemblyFileName()))
+		{
+			continue;
+		}
+		
+		CanRecompileAndReinstanceBlueprints = true;
+		break;
+	}
+	
+	return CanRecompileAndReinstanceBlueprints;
 }
 
 #undef LOCTEXT_NAMESPACE

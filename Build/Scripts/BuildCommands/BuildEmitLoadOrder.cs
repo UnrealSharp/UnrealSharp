@@ -10,21 +10,24 @@ using UnrealSharp.Shared;
 namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Builds the solution and emits a JSON file with the load order of the assemblies.")]
+[Help("SolutionDirectory=<Path>", "Path to the solution to build.")]
+[Help("LoadOrderName=<Name>", "Name for the emitted load order file, without extension.")]
 [Help("OutputPath=<Path>", "Optional output path for the build output.")]
+[Help("BuildConfig=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("clp=<Args>", "Optional CLP arguments to pass to the build process.")]
+[Help("IsCollectible=<true/false>", "Whether the emitted assemblies should be marked as collectible. Defaults to true.")]
+[Help("Priority=<Number>", "Optional priority for the emitted load order. Higher priority load orders will be loaded first.")]
+[Help("Projects=<Path>+<Path>", "Optional list of project files to include in the load order. If not specified, all projects in the solution will be included.")]
 public class BuildEmitLoadOrder : BuildCommand
 {
     private const string GlueProjectSuffix = ".Glue";
-    private const string PropertiesFolderName = "Properties";
-    private const string LaunchSettingsFileName = "launchSettings.json";
 
     public override void ExecuteBuild()
     {
         string OutputPath = ParseRequiredStringParam("OutputPath");
-
         List<string> ExtraArguments = new List<string>
         {
-            $"-p:OutputPath=\"{OutputPath}\""
+            $"-p:PublishDir={OutputPath}"
         };
 
         string[] Clp = ParseParamValues("clp");
@@ -32,64 +35,35 @@ public class BuildEmitLoadOrder : BuildCommand
         {
             ExtraArguments.Add($"-clp:{string.Join(';', Clp)}");
         }
+        
+        UnrealTargetConfiguration BuildConfig = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("BuildConfig");
+        string SolutionPath = ParseRequiredStringParam("SolutionDirectory");
+        
+        BuildCommands.BuildSolution.RunBuild(SolutionPath, BuildConfig, publish: true, ExtraArguments);
+        
+        string LoadOrderName = ParseRequiredStringParam("LoadOrderName");
+        IEnumerable<string> Projects = ParseParamValues("Projects");
+        
+        LoadOrderOptions Options = new LoadOrderOptions
+        {
+            Collectible = ParseParamBool("IsCollectible"),
+            Priority = ParseParamInt("Priority")
+        };
 
-        List<string> Folders = new List<string> { this.GetProjectScriptFolder() };
-        BuildCommands.BuildSolution.RunBuild(Folders, UnrealTargetConfiguration.DebugGame, publish: true, ExtraArguments);
-
-        string ResolvedOutputPath = PathUtilities.GetOutputPath(this.GetProjectRootFolder());
-        EmitLoadOrder(this.GetUnrealSharpProjectFiles(), ResolvedOutputPath, ResolvedOutputPath);
+        EmitLoadOrder(Projects.ToList(), LoadOrderName, OutputPath, Options);
         AddLaunchSettings(this);
     }
-    
-    public static void EmitLoadOrder(IReadOnlyList<FileInfo> projectFiles, string assemblyFolder, string publishPath)
+
+    public static void EmitLoadOrder(List<string> projectFiles, string loadOrderName, string outputPath, LoadOrderOptions options)
     {
-        LoggerUtilities.LogUnrealSharpInfo($"Emitting assembly load order for assemblies: {string.Join(", ", projectFiles.Select(file => Path.GetFileNameWithoutExtension(file.Name)))}");
-        
-        ArgumentNullException.ThrowIfNull(projectFiles);
-        ArgumentException.ThrowIfNullOrEmpty(assemblyFolder);
-        ArgumentException.ThrowIfNullOrEmpty(publishPath);
-
-        if (projectFiles.Count == 0)
-        {
-            LoggerUtilities.LogUnrealSharpWarning("No project files found. Skipping assembly load order emission.");
-            return;
-        }
-
-        if (!Directory.Exists(assemblyFolder))
-        {
-            throw new DirectoryNotFoundException($"Assembly folder does not exist: {assemblyFolder}");
-        }
-
-        List<string> AssemblyPaths = new List<string>(projectFiles.Count);
-        foreach (FileInfo ProjectFile in projectFiles)
-        {
-            string CsProjName = Path.GetFileNameWithoutExtension(ProjectFile.Name);
-            string AssemblyPath = Path.Combine(assemblyFolder, CsProjName + ".dll");
-
-            if (!File.Exists(AssemblyPath))
-            {
-                LoggerUtilities.LogUnrealSharpWarning($"Could not find assembly for project {CsProjName} at expected path {AssemblyPath}. Skipping.");
-                continue;
-            }
-
-            AssemblyPaths.Add(AssemblyPath);
-        }
-
-        if (AssemblyPaths.Count == 0)
-        {
-            LoggerUtilities.LogUnrealSharpWarning("No assemblies could be resolved for the supplied projects. Skipping load order emission.");
-            return;
-        }
-
-        AssemblyUtilities.EmitLoadOrder(AssemblyPaths, publishPath);
+        LoadOrderUtilities.TryEmitLoadOrder(projectFiles, outputPath, loadOrderName, options);
     }
 
     private static void AddLaunchSettings(BuildCommand buildCommand)
     {
         ArgumentNullException.ThrowIfNull(buildCommand);
 
-        List<FileInfo> AllProjectFiles = buildCommand.GetUnrealSharpProjectFiles();
-        string ScriptFolder = buildCommand.GetProjectScriptFolder();
+        List<FileInfo> AllProjectFiles = buildCommand.GetManagedProjectFiles();
 
         foreach (FileInfo ProjectFile in AllProjectFiles)
         {
@@ -105,21 +79,7 @@ public class BuildEmitLoadOrder : BuildCommand
                 continue;
             }
 
-            string CsProjectPath = Path.Combine(ScriptFolder, ProjectDirectory.Name);
-            string PropertiesDirectoryPath = Path.Combine(CsProjectPath, PropertiesFolderName);
-            string LaunchSettingsPath = Path.Combine(PropertiesDirectoryPath, LaunchSettingsFileName);
-
-            if (!Directory.Exists(PropertiesDirectoryPath))
-            {
-                Directory.CreateDirectory(PropertiesDirectoryPath);
-            }
-            
-            if (File.Exists(LaunchSettingsPath))
-            {
-                continue;
-            }
-
-            LaunchSettingsUtilities.CreateOrUpdateLaunchSettings(buildCommand, LaunchSettingsPath);
+            LaunchSettingsScaffolding.EnsureProjectLaunchSettings(buildCommand, ProjectDirectory.Name);
         }
     }
 }

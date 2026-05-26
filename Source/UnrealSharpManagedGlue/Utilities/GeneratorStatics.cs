@@ -5,8 +5,6 @@ using EpicGames.UHT.Types;
 using EpicGames.UHT.Utils;
 using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
-using UnrealSharp.Shared;
-using UnrealSharpSettingsUtilities = UnrealSharpManagedGlue.Utilities.UnrealSharpSettingsUtilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -18,17 +16,13 @@ public static class GeneratorStatics
 	public static UHTManifest.Module PluginModule => Factory.PluginModule!;
 	
 	public static ModuleInfo PluginModuleInfo { get; private set; } = null!;
-
-	public static string BindingsProjectDirectory { get; private set; } = "";
+	
 	public static string PluginsPath { get; private set; } = "";
-	public static string ProjectName => Path.GetFileNameWithoutExtension(Factory.Session.ProjectFile!);
 	
 	public static UhtClass BlueprintFunctionLibrary { get; private set; } = null!;
 
 	public static string PluginDirectory { get; private set; } = "";
 	public static string EngineDirectory => Factory.Session.EngineDirectory!;
-	
-	public static string ManagedSolutionPath => Path.Combine(ScriptFolder, "Managed" + ProjectName + ".sln");
 	
 	public static string ManagedPath { get; private set; } = "";
 	public static string ScriptFolder { get; private set; } = "";
@@ -41,7 +35,6 @@ public static class GeneratorStatics
 		_factory = factory;
 		
 		PluginDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("PLUGIN_PATH");
-		BindingsProjectDirectory = ScriptGeneratorUtilities.TryGetPluginStringDefine("GENERATED_GLUE_PATH");
 		BuildTarget = (TargetType) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_TARGET");
 		BuildConfiguration = (UnrealTargetConfiguration) ScriptGeneratorUtilities.TryGetPluginIntDefine("BUILD_CONFIGURATION");
 

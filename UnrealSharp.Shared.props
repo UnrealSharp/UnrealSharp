@@ -15,8 +15,7 @@
       $(DefineConstants);$(DefineAdditionalConstants)
     </DefineConstants>
   </PropertyGroup>
-
-  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.GeneratedFiles.props" />
+  
   <Import Project="$(UnrealSharpPluginDir)UnrealSharp.AOT.Props" />
 
   <ItemGroup>
@@ -38,7 +37,7 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('.Glue'))">
+  <ItemGroup Condition="'$(SkipIncludeAnalyzers)' == ''">
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\Newtonsoft.Json.dll" Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.GlueGenerator.dll" Private="false" CopyToPublishDirectory="Never" />
     <Analyzer Include="$(UnrealSharpPluginDir)Binaries\Managed\netstandard2.0\UnrealSharp.Analyzers.dll" Private="false" CopyToPublishDirectory="Never" />

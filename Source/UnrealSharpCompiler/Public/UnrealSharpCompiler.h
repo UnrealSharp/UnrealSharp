@@ -28,6 +28,7 @@ private:
     void OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
     
     void OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly);
+    static bool IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();
 
     void AddManagedReferences(FCSManagedReferencesCollection& Collection);

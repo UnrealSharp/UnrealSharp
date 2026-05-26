@@ -1,13 +1,7 @@
 ﻿#include "CSGlueGenerator.h"
 
-#include "CSPathsUtilities.h"
 #include "UnrealSharpRuntimeGlue.h"
 #include "Logging/StructuredLog.h"
-
-FString UCSGlueGenerator::GetPluginGlueFolder(const FString& PluginName)
-{
-	return UnrealSharp::Paths::GetPluginGlueFolderPath(PluginName);
-}
 
 void UCSGlueGenerator::SaveRuntimeGlue(FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix)
 {

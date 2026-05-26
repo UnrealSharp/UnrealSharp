@@ -31,7 +31,7 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 	}
 
 	TArray<FString> ProjectPaths;
-	Project::GetAllProjectPaths(ProjectPaths, true);
+	Project::GetAllProjectPaths(ProjectPaths);
 	
 	if (ProjectPaths.IsEmpty())
 	{

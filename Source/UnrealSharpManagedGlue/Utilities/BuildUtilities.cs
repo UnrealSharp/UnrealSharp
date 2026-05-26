@@ -21,4 +21,14 @@ public static class BuildUtilities
         actionArgs.Add(new KeyValuePair<string, string>("BuildConfig", GeneratorStatics.BuildConfiguration.ToString()));
         UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildSolution", actionArgs);
     }
+    
+    public static void GenerateUserSolution()
+    {
+        ConsoleUtilities.Log("Generating user solution...");
+        
+        List<KeyValuePair<string, string>> actionArgs = new List<KeyValuePair<string, string>>();
+        actionArgs.Add(new KeyValuePair<string, string>("SearchFolders", CommonUnrealSharpSettings.ScriptDirectoryName));
+        
+        UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateSolution", actionArgs);
+    }
 }

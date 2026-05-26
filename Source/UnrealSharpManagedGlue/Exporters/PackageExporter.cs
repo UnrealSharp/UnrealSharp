@@ -13,9 +13,7 @@ public static class PackageExporter
 {
     public static void ExportPackages()
     {
-        IEnumerable<ModuleInfo> modules = ModuleUtilities.Modules;
-        
-        foreach (ModuleInfo moduleInfo in modules)
+        foreach (ModuleInfo moduleInfo in ModuleUtilities.Modules)
         {
             ExportPackage(moduleInfo.Module);
         }

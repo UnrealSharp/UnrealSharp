@@ -20,8 +20,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 public class GenerateProject : BuildCommand
 {
     private const string CsProjFileExtension = "csproj";
-    private const string PropertiesFolderName = "Properties";
-    private const string LaunchSettingsFileName = "launchSettings.json";
+    private const string SkipIncludeAnalyzersPropertyName = "SkipIncludeAnalyzers";
 
     public override void ExecuteBuild()
     {
@@ -45,15 +44,14 @@ public class GenerateProject : BuildCommand
         }
 
         string CsProjFileName = $"{ProjectName}.{CsProjFileExtension}";
-        string OutputProjectFolder = Path.Combine(ProjectFolder, ProjectName);
-        string ProjectPath = Path.Combine(OutputProjectFolder, CsProjFileName);
+        string ProjectPath = Path.Combine(ProjectFolder, CsProjFileName);
 
         Dictionary<string, string> TemplateValues = new Dictionary<string, string>
         {
             { "DOTNET_VERSION", DotNetUtilities.GetVersion() }
         };
 
-        TemplateUtilities.WriteTemplateToFile(this, "Csproj", ProjectName, CsProjFileExtension, OutputProjectFolder, TemplateValues);
+        TemplateUtilities.WriteTemplateToFile(this, "Csproj", ProjectName, CsProjFileExtension, ProjectFolder, TemplateValues);
 
         if (CreateModuleClass)
         {
@@ -62,10 +60,10 @@ public class GenerateProject : BuildCommand
                 { "MODULE_NAME", ProjectName }
             };
 
-            TemplateUtilities.WriteTemplateToFile(this, "Module", ProjectName, "cs", OutputProjectFolder, ModuleTemplateValues);
+            TemplateUtilities.WriteTemplateToFile(this, "Module", ProjectName, "cs", ProjectFolder, ModuleTemplateValues);
         }
 
-        UpdateCsprojDocument(ProjectPath, OutputProjectFolder, Dependencies, EditorOnly);
+        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, EditorOnly);
         
         LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
         
@@ -76,8 +74,8 @@ public class GenerateProject : BuildCommand
 
         if (!SkipUSharpProjSetup)
         {
-            AddLaunchSettings(OutputProjectFolder);
-            BuildProject(ProjectPath, OutputProjectFolder);
+            AddLaunchSettings(ProjectFolder);
+            BuildProject(ProjectPath, ProjectFolder);
         }
     }
 
@@ -96,6 +94,8 @@ public class GenerateProject : BuildCommand
                 CsprojDocument.SetProjectProperty("IsPublishable", "false", "'$(DisableWithEditor)' == 'true'");
                 CsprojDocument.SetProjectProperty("IsEditorOnly", "true");
             }
+            
+            CsprojDocument.SetProjectProperty(SkipIncludeAnalyzersPropertyName, ParseParam(SkipIncludeAnalyzersPropertyName) ? "true" : "false");
 
             string UnrealSharpPluginPath = this.GetUnrealSharpSharedPropsPath();
             string RelativeUnrealSharpPath = CsProjectUtilities.GetRelativePath(projectFolder, UnrealSharpPluginPath);
@@ -116,21 +116,7 @@ public class GenerateProject : BuildCommand
 
     private void AddLaunchSettings(string projectFolder)
     {
-        string CsProjectPath = Path.Combine(this.GetProjectScriptFolder(), projectFolder);
-        string PropertiesDirectoryPath = Path.Combine(CsProjectPath, PropertiesFolderName);
-        string LaunchSettingsPath = Path.Combine(PropertiesDirectoryPath, LaunchSettingsFileName);
-
-        if (!Directory.Exists(PropertiesDirectoryPath))
-        {
-            Directory.CreateDirectory(PropertiesDirectoryPath);
-        }
-
-        if (File.Exists(LaunchSettingsPath))
-        {
-            return;
-        }
-
-        LaunchSettingsUtilities.CreateOrUpdateLaunchSettings(this, LaunchSettingsPath);
+        LaunchSettingsScaffolding.EnsureProjectLaunchSettings(this, projectFolder);
     }
 
     private static void BuildProject(string projectPath, string projectFolder)

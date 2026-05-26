@@ -10,7 +10,7 @@ void UFUnrealSharpEditorModuleExporter::InitializeUnrealSharpEditorCallbacks(FCS
 
 void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)
 {
-	UnrealSharp::Project::GetAllProjectPaths(*Paths, true);
+	UnrealSharp::Project::GetAllProjectPaths(*Paths);
 }
 
 void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)

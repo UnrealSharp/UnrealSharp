@@ -61,14 +61,14 @@ public static class ProjectUtilities
         return ProjectAndPluginFiles.ToList();
     }
     
-    public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand)
+    public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand, string folder)
     {
         List<FileReference> ProjectAndPluginFiles = GetUnrealProjectAndPluginFiles(buildCommand);
         List<FileInfo> UnrealSharpProjectFiles = new List<FileInfo>();
         
         foreach (FileReference ProjectFile in ProjectAndPluginFiles)
         {
-            string ProjectScriptFolder = buildCommand.GetScriptFolder(ProjectFile.Directory.FullName);
+            string ProjectScriptFolder = Path.Combine(ProjectFile.Directory.FullName, folder);
 
             if (!Directory.Exists(ProjectScriptFolder))
             {
@@ -82,11 +82,60 @@ public static class ProjectUtilities
         return UnrealSharpProjectFiles;
     }
     
+    public static IEnumerable<FileReference> GetGameModules(this BuildCommand buildCommand)
+    {
+        FileReference? Project = buildCommand.ParseProjectParam();
+        
+        if (Project == null)
+        {
+            throw new Exception("No project file specified. Please specify a project file using the -Project=... parameter.");
+        }
+        
+        string PluginsFolder = Path.Combine(Project.Directory.FullName, "Plugins");
+        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(new DirectoryReference(PluginsFolder));
+        
+        List<FileReference> GameModules = new List<FileReference>();
+        GameModules.AddRange(FoundPlugins);
+        GameModules.Add(Project);
+        
+        return GameModules;
+    }
+    
+    public static List<FileInfo> GetManagedProjectFiles(this BuildCommand buildCommand)
+    {
+        return GetUnrealSharpProjectFiles(buildCommand, buildCommand.GetScriptDirectoryName());
+    }
+    
     private static IEnumerable<FileInfo> GetManagedProjectsInDirectory(DirectoryInfo folder)
     {
         IEnumerable<FileInfo> CsprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
         IEnumerable<FileInfo> FsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
         return CsprojFiles.Concat(FsprojFiles);
+    }
+    
+    public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
+    {
+        FileReference? Project = command.ParseProjectParam();
+        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
+        
+        FileReference? UnrealSharpPlugin = null;
+        foreach (FileReference Plugin in FoundPlugins)
+        {
+            if (Plugin.GetFileName() != "UnrealSharp.uplugin")
+            {
+                continue;
+            }
+            
+            UnrealSharpPlugin = Plugin;
+            break;
+        }
+        
+        if (UnrealSharpPlugin == null)
+        {
+            throw new Exception("Failed to find UnrealSharp.uplugin in the project plugins folder. Make sure UnrealSharp is properly installed and added to your project.");
+        }
+        
+        return UnrealSharpPlugin;
     }
     
     public static bool ContainsUPluginOrUProjectFile(string folder)

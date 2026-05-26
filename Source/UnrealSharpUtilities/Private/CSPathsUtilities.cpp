@@ -158,7 +158,7 @@ FString UnrealSharp::Paths::GetUserAssemblyDirectory()
 
 FString UnrealSharp::Paths::GetUnrealSharpMetadataPath()
 {
-    return FPaths::Combine(GetUserAssemblyDirectory(), TEXT("AssemblyLoadOrder.json"));
+    return FPaths::Combine(GetUserAssemblyDirectory(), TEXT("Assembly.LoadOrder.json"));
 }
 
 FString UnrealSharp::Paths::GetGeneratedClassesDirectory()
@@ -176,25 +176,6 @@ const FString& UnrealSharp::Paths::GetPluginsDirectory()
 {
     static FString PluginsDirectory = FPaths::Combine(FPaths::ProjectDir(), TEXT("Plugins"));
     return PluginsDirectory;
-}
-
-const FString& UnrealSharp::Paths::GetProjectGlueFolderPath()
-{
-    static FString ProjectGlueFolderPath = GetScriptFolderDirectory() / Project::AppendGlueSuffix(FApp::GetProjectName());
-    return ProjectGlueFolderPath;
-}
-
-FString UnrealSharp::Paths::GetPluginGlueFolderPath(const FString& PluginName)
-{
-    TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(PluginName);
-    
-    if (!Plugin.IsValid())
-    {
-       UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Plugin {0} not found. Can't get glue folder path.", PluginName);
-       return {};
-    }
-    
-    return FPaths::Combine(Plugin->GetBaseDir(), GlobalSettings::Common::GetScriptDirectoryName(), Project::AppendGlueSuffix(PluginName));
 }
 
 FString UnrealSharp::Paths::GetPathToManagedSolution()

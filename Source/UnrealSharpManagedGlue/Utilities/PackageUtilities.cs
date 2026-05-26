@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
+using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -18,7 +19,7 @@ public static class PackageUtilities
 
     public static bool IsPartOfEngine(this UhtPackage package)
     {
-        return package.Module.IsPartOfEngine || package.IsForcedAsEngineGlue();
+        return (package.Module.IsPartOfEngine || package.IsForcedAsEngineGlue());
     }
     
     public static bool IsDefineActive(this UhtPackage package, string define)
@@ -88,9 +89,8 @@ public static class PackageUtilities
     public static string GetUhtBaseOutputDirectory(this UhtPackage package)
     {
         ModuleInfo moduleInfo = package.GetModuleInfo();
-        string root = moduleInfo.IsPartOfEngine && !package.IsExtractedEngineModule() ? GeneratorStatics.BindingsProjectDirectory : moduleInfo.ProjectDirectory;
-        string subPath = Path.Combine(root, "obj", "UHT", GeneratorStatics.BuildTarget.ToString());
-        return subPath;
+        string root = moduleInfo.IsPartOfEngine ? GeneratorStatics.PluginDirectory : moduleInfo.ModuleRoot;
+        return PathUtilities.GetUhtGeneratedOutputPath(root, GeneratorStatics.BuildTarget);
     }
     
     private static bool IsUPluginFile(string filePath)

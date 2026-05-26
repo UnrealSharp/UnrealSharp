@@ -89,7 +89,7 @@ public static class FileExporter
 
         foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
         {
-            CleanOldFilesInDirectories(plugin.GlueModuleDirectory);
+            CleanOldFilesInDirectories(plugin.GlueOutputDirectory);
         }
     }
 
@@ -134,16 +134,33 @@ public static class FileExporter
         string[] files = Directory.GetFiles(path);
         foreach (string file in files)
         {
-            if (!AffectedFiles.Contains(file))
+            if (AffectedFiles.Contains(file))
+            {
+                continue;
+            }
+            
+            try 
             {
                 File.Delete(file);
             }
+            catch (IOException exception) 
+            {
+                ConsoleUtilities.Log($"Failed to delete file {file}: {exception.Message}");
+            }
+        }
+
+        if (!Directory.Exists(path) || Directory.GetFileSystemEntries(path).Length != 0)
+        {
+            return;
         }
         
-        string[] remainingFiles = Directory.GetFiles(path);
-        if (remainingFiles.Length == 0)
+        try 
         {
-            Directory.Delete(path, false); 
+            Directory.Delete(path, false);
+        }
+        catch (IOException exception)
+        {
+            ConsoleUtilities.Log($"Failed to delete directory {path}: {exception.Message}");
         }
     }
 }

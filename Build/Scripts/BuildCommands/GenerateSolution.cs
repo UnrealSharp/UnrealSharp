@@ -11,6 +11,10 @@ using UnrealSharp.Automation.Utilities;
 namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Generates a new .sln file for the project and adds all existing C# projects to it.")]
+[Help("SearchFolders=<Path>+<Path>", "The list of folders to search for .csproj files to add to the solution. Paths are relative to the plugin/project root folder.")]
+[Help("ProjectPaths=<Path>+<Path>", "The list of individual .csproj file paths to add to the solution. Paths are relative to the plugin/project root folder.")]
+[Help("OutputFolder=<Path>", "The folder to output the generated solution file to. Defaults to the project script folder if not specified.")]
+[Help("SolutionName=<Name>", "The name of the generated solution file, without the .sln extension. Defaults to the project name.")]
 public class GenerateSolution : BuildCommand
 {
     private const int MaxAddProjectAttempts = 10;
@@ -27,15 +31,17 @@ public class GenerateSolution : BuildCommand
     {
         ArgumentNullException.ThrowIfNull(buildCommand);
 
-        string ScriptDirectory = buildCommand.GetProjectScriptFolder();
-
-        if (!Directory.Exists(ScriptDirectory))
+        string[] SearchFolders = buildCommand.ParseParamValues("SearchFolders");
+        string SolutionName = buildCommand.ParseParamValue("SolutionName", "Managed" + buildCommand.GetProjectName());
+        string OutputFolder = buildCommand.ParseParamValue("OutputFolder", buildCommand.GetProjectScriptFolder());
+        string SolutionPath = Path.Combine(OutputFolder, $"{SolutionName}.sln");
+        
+        if (!Directory.Exists(OutputFolder))
         {
-            Directory.CreateDirectory(ScriptDirectory);
+            Directory.CreateDirectory(OutputFolder);
         }
-
-        string SolutionName = "Managed" + buildCommand.GetProjectName();
-        string SolutionPath = Path.Combine(ScriptDirectory, $"{SolutionName}.sln");
+        
+        LoggerUtilities.LogUnrealSharpInfo($"Generating solution '{SolutionName}.sln' in '{OutputFolder}'...");
 
         DotnetProcess GenerateSlnProcess = new DotnetProcess();
         GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
@@ -45,19 +51,26 @@ public class GenerateSolution : BuildCommand
         GenerateSlnProcess.StartInfo.ArgumentList.Add("-n");
         GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionName);
         GenerateSlnProcess.StartInfo.ArgumentList.Add("--force");
-        GenerateSlnProcess.StartInfo.WorkingDirectory = ScriptDirectory;
+        GenerateSlnProcess.StartInfo.WorkingDirectory = OutputFolder;
         GenerateSlnProcess.StartProcess();
 
-        List<string> ExistingProjectsList = buildCommand.GetUnrealSharpProjectFiles()
-            .Select(projectFile => Path.GetRelativePath(ScriptDirectory, projectFile.FullName))
-            .ToList();
+        List<string> Projects = new List<string>();
+        Projects.AddRange(buildCommand.ParseParamValues("ProjectPaths"));
+        
+        foreach (string SearchFolder in SearchFolders)
+        {
+            List<string> FoundProjects = buildCommand.GetUnrealSharpProjectFiles(SearchFolder)
+                .Select(projectFile => Path.GetRelativePath(OutputFolder, projectFile.FullName)).ToList();
+            
+            Projects.AddRange(FoundProjects);
+        }
 
-        AddProjectToSln(buildCommand.GetProjectRootFolder(), ExistingProjectsList, SolutionPath);
+        AddProjectsToSln(buildCommand.GetProjectRootFolder(), Projects, SolutionPath);
 
         DotNetSdkUtilities.CopyGlobalJson(buildCommand);
     }
 
-    private static void AddProjectToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
+    private static void AddProjectsToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
     {
         string SolutionDirectory = Path.GetDirectoryName(solutionPath)!;
 
@@ -67,7 +80,7 @@ public class GenerateSolution : BuildCommand
         {
             if (!WaitForFileUnlock(solutionPath, FileUnlockTimeoutMs, FileUnlockPollIntervalMs))
             {
-                LoggerUtilities.LogUnrealSharpWarning($"Timed out waiting for {solutionPath} to become available. Attempting to add projects anyway.");
+                throw new AutomationException($"Timed out waiting for solution file '{solutionPath}' to be unlocked for editing.");
             }
 
             RunAddProjectsWithRetry(SolutionDirectory, Projects, solutionPath);

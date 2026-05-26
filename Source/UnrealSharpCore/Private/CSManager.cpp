@@ -151,7 +151,8 @@ void UCSManager::Initialize()
 	FCSPropertyFactory::Initialize();
 
 	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
-	LoadAllUserAssemblies();
+	
+	LoadAssembliesFromManifests();
 	
 	bIsInitialized = true;
 	OnCSManagerInitialized.Broadcast(*this);
@@ -228,20 +229,22 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Initialize_For_Runtime_Config && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close;
 }
 
-bool UCSManager::LoadAllUserAssemblies()
+bool UCSManager::LoadAssembliesFromManifests()
 {
-	TArray<FString> UserAssemblyPaths;
-	UnrealSharp::Project::GetAssemblyPathsByLoadOrder(UserAssemblyPaths, true);
+	TArray<FLoadOrderManifest> Manifests;
+	UnrealSharp::Project::DiscoverLoadOrderManifests(Manifests);
 
-	if (UserAssemblyPaths.IsEmpty())
+	if (Manifests.IsEmpty())
 	{
 		return true;
 	}
-	
-	for (const FString& UserAssemblyPath : UserAssemblyPaths)
+
+	for (const FLoadOrderManifest& Manifest : Manifests)
 	{
-		const bool bIsCollectible = !FPaths::GetBaseFilename(UserAssemblyPath).EndsWith(TEXT(".Glue"));
-		LoadAssemblyByPath(UserAssemblyPath, bIsCollectible);
+		for (const FString& Path : Manifest.AssemblyPaths)
+		{
+			LoadAssemblyByPath(Path, Manifest.bCollectible);
+		}
 	}
 
 	OnAssembliesLoaded.Broadcast();

@@ -1,9 +1,8 @@
 using System.Text.Json;
-using UnrealSharp.Shared;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public class CommonUnrealSharpSettings
+public static class CommonUnrealSharpSettings
 {
     public static string ScriptDirectoryName 
     {

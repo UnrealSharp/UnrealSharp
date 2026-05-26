@@ -16,7 +16,7 @@ public static class ExporterValidator
         string generatedCodeDirectory = GeneratorStatics.PluginModule.OutputDirectory;
         string timestampFilePath = Path.Combine(generatedCodeDirectory, "Timestamp");
 
-        if (!File.Exists(timestampFilePath) || !Directory.Exists(GeneratorStatics.BindingsProjectDirectory))
+        if (!File.Exists(timestampFilePath) || !Directory.Exists(GeneratorStatics.PluginDirectory))
         {
             return true;
         }
@@ -44,7 +44,7 @@ public static class ExporterValidator
         IEnumerable<ModuleInfo> modules = ModuleUtilities.Modules;
         foreach (ModuleInfo module in modules)
         {
-            FileExporter.CleanGeneratedFolder(module.GlueBaseDirectory);
+            FileExporter.CleanGeneratedFolder(module.Module.GetUhtBaseOutputDirectory());
 
             if (module.IsPartOfEngine || !File.Exists(module.CsProjPath))
             {

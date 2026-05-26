@@ -4,6 +4,7 @@ using System.IO;
 using AutomationTool;
 using EpicGames.Core;
 using UnrealBuildBase;
+using UnrealBuildTool;
 
 namespace UnrealSharp.Automation.Utilities;
 
@@ -26,38 +27,28 @@ public static class PathUtilities
         return Project.Directory.FullName;
     }
     
-    public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
+    public static string GetUnrealSharpIntermediateDirectory(this BuildCommand buildCommand)
     {
-        FileReference? Project = command.ParseProjectParam();
-        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
-        
-        FileReference? UnrealSharpPlugin = null;
-        foreach (FileReference Plugin in FoundPlugins)
-        {
-            if (Plugin.GetFileName() != "UnrealSharp.uplugin")
-            {
-                continue;
-            }
-            
-            UnrealSharpPlugin = Plugin;
-            break;
-        }
-        
-        if (UnrealSharpPlugin == null)
-        {
-            throw new Exception("Failed to find UnrealSharp.uplugin in the project plugins folder. Make sure UnrealSharp is properly installed and added to your project.");
-        }
-        
-        return UnrealSharpPlugin;
+        return Path.Combine(buildCommand.GetProjectRootFolder(), "Intermediate", "UnrealSharp");
+    }
+    
+    public static string GetUhtGeneratedOutputPath(string root, TargetType targetType)
+    {
+        return Path.Combine(GetIntermediateOutputPath(root), "UHT", targetType.ToString());
+    }
+    
+    public static string GetIntermediateOutputPath(string root)
+    {
+        return Path.Combine(root, "Intermediate", "UnrealSharp");
     }
     
     public static string GetUnrealSharpRootFolder(this BuildCommand buildCommand)
     {
-        FileReference UnrealSharpUPlugin = GetUnrealSharpUPlugin(buildCommand);
+        FileReference UnrealSharpUPlugin = buildCommand.GetUnrealSharpUPlugin();
         return UnrealSharpUPlugin.Directory.FullName;
     }
     
-    public static string GetOutputPath(string rootDirectory)
+    public static string BuildOutputPath(string rootDirectory)
     {
         return Path.Combine(rootDirectory, "Binaries", "Managed", DotNetUtilities.GetVersion());
     }
@@ -66,5 +57,10 @@ public static class PathUtilities
     {
         string UnrealSharpRootFolder = GetUnrealSharpRootFolder(buildCommand);
         return Path.Combine(UnrealSharpRootFolder, "UnrealSharp.Shared.props");
+    }
+    
+    public static string QuotePath(string path)
+    {
+        return path.Contains(' ') ? $"\"{path}\"" : path;
     }
 }

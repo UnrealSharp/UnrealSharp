@@ -61,17 +61,26 @@ void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildA
 	ResultCallback);
 }
 
+bool UnrealSharp::Build::IsInstalled()
+{
+	FString InstalledFlagFile = FPaths::Combine(Paths::GetUserAssemblyDirectory(), TEXT("InstalledUnrealSharp.flag"));
+	return FPaths::FileExists(InstalledFlagFile) && FApp::IsInstalled();
+}
+
 bool UnrealSharp::Build::BuildUserSolution(const FCSCommandError& OnError)
 {
+	FString SolutionDirectory = FPaths::ConvertRelativePathToFull(Paths::GetScriptFolderDirectory());
+	
 	TMap<FString, FString> Arguments;
 	Arguments.Add(TEXT("OutputPath"), Paths::MakeQuotedPath(Paths::GetUserAssemblyDirectory()));
+	Arguments.Add(TEXT("BuildConfig"), LexToString(FApp::GetBuildConfiguration()));
 	
 	if (!GetDefault<UCSUnrealSharpUtilitiesSettings>()->bShowBuildWarnings)
 	{
 		Arguments.Add(TEXT("clp"), TEXT("ErrorsOnly"));
 	}
 
-	return InvokeUnrealSharpAutomation(BuildAction::BuildEmitLoadOrder, &Arguments, OnError);
+	return InvokeUnrealSharpAutomation(BuildAction::BuildUserCode, &Arguments, OnError);
 }
 
 void UnrealSharp::Build::BuildArguments(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, FString& OutArgs)

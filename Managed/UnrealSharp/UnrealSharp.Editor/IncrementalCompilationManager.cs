@@ -38,7 +38,7 @@ public static class IncrementalCompilationManager
         {
             throw new Exception($"Project '{projectName}' not found in solution.");
         }
-        
+
         GenState? state = SolutionManager.GetProjectState(foundProject.Id);
         if (state == null)
         {
@@ -55,7 +55,7 @@ public static class IncrementalCompilationManager
         {
             return;
         }
-        
+
         state.InitialCompilation = state.InitialCompilation!.RemoveSyntaxTrees(existingTree);
         state.TreesByPath.Remove(fullPath);
     }
@@ -116,11 +116,11 @@ public static class IncrementalCompilationManager
         {
             state.InitialCompilation = state.InitialCompilation!.AddSyntaxTrees(newTree);
         }
-        
+
         SyntaxUtilities.LookForChangesInUnrealTypes(newTree, existingTree, foundProject);
-        
+
         state.TreesByPath[fullPath] = newTree;
-        
+
         stopwatch.Stop();
         LogUnrealSharpEditor.Log($"Processed dirty file '{Path.GetFileName(filepath)}' in project '{projectName}' in {stopwatch.Elapsed.TotalMilliseconds:F2}ms.");
     }
@@ -128,14 +128,14 @@ public static class IncrementalCompilationManager
     public static void RecompileDirtyProjects(List<string> modifiedAssemblyNames)
     {
         List<Project> projects = ProjectUtilities.GetProjectsFromNames(modifiedAssemblyNames, SolutionManager.CurrentProjects);
-        
+
         for (int i = projects.Count - 1; i >= 0; i--)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             Project project = projects[i];
-            
+
             LogUnrealSharpEditor.Log($"Starting source generation for project '{project.Name}'.");
-            
+
             GenState? state = SolutionManager.GetProjectState(project.Id);
 
             if (NeedsProjectStateRefresh(state))
@@ -145,20 +145,20 @@ public static class IncrementalCompilationManager
                 SolutionManager.ProcessProject(project).GetAwaiter().GetResult();
                 state = SolutionManager.GetProjectState(project.Id);
             }
-            
+
             if (state is null)
             {
                 throw new Exception($"Project '{project.Name}' not initialized for incremental generation.");
             }
-            
+
             CSharpParseOptions parseOptions = (CSharpParseOptions)project.ParseOptions!;
             AnalyzerConfigOptionsProvider analyzerOptions = project.AnalyzerOptions.AnalyzerConfigOptionsProvider;
-            
+
             bool firstTime = state.Driver == null;
             bool analyzersChanged = state.AnalyzerRefCount != project.AnalyzerReferences.Count;
             bool additionalChanged = state.AdditionalDocCount != project.AdditionalDocuments.Count();
             bool optionsChanged = !ReferenceEquals(state.ParseOptions, parseOptions) ||
-                                  !ReferenceEquals(state.AnalyzerOptions, analyzerOptions); 
+                                  !ReferenceEquals(state.AnalyzerOptions, analyzerOptions);
             bool refsChanged = state.MetadataRefCount != project.MetadataReferences.Count;
 
             if (firstTime || analyzersChanged)
@@ -172,7 +172,7 @@ public static class IncrementalCompilationManager
                 foreach (TextDocument textDocument in project.AdditionalDocuments)
                 {
                     Document document = (Document)textDocument;
-                    
+
                     if (document.FilePath is not null)
                     {
                         additionalTexts.Add(new FileAdditionalText(document.FilePath));
@@ -220,7 +220,7 @@ public static class IncrementalCompilationManager
 
             state.ParseOptions = parseOptions;
             state.AnalyzerOptions = analyzerOptions;
-            
+
             UpdateDependentProjectsWithNewCompilation(updatedCompilation, project);
 
             stopwatch.Stop();
@@ -236,27 +236,29 @@ public static class IncrementalCompilationManager
         }
 
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
-        AssemblyUtilities.EmitLoadOrder(assemblies, outputDir);
+        
+        LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 100 };
+        AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserModules");
     }
-    
+
     private static void UpdateDependentProjectsWithNewCompilation(Compilation newCompilation, Project producedProject)
     {
         IEnumerable<Project> dependentProjects = producedProject.GetDependentProjects(SolutionManager.CurrentProjects);
-        
+
         foreach (Project dependentProject in dependentProjects)
         {
             GenState? projectState = SolutionManager.GetProjectState(dependentProject.Id);
-            
+
             if (projectState is null)
             {
                 throw new Exception($"Project '{dependentProject.Name}' not initialized for incremental generation.");
             }
-            
+
             if (projectState.InitialCompilation is null)
             {
                 throw new Exception($"Project '{dependentProject.Name}' has no initial compilation.");
             }
-            
+
             Compilation depCompilation = projectState.InitialCompilation;
 
             MetadataReference? oldCompilationReference = null;
@@ -271,13 +273,13 @@ public static class IncrementalCompilationManager
                 {
                     continue;
                 }
-                
+
                 oldCompilationReference = reference;
                 break;
             }
 
             CompilationReference newCompilationReference = newCompilation.ToMetadataReference();
-            
+
             if (oldCompilationReference != null)
             {
                 depCompilation = depCompilation.ReplaceReference(oldCompilationReference, newCompilationReference);
@@ -286,11 +288,11 @@ public static class IncrementalCompilationManager
             {
                 depCompilation = depCompilation.AddReferences(newCompilationReference);
             }
-            
+
             projectState.InitialCompilation = depCompilation;
         }
     }
-    
+
     private static string GetOutputPath(Project project, string extension)
     {
         string userAssemblyDir = UCSPathsBlueprintFunctionLibrary.UserAssemblyDirectory;
@@ -299,7 +301,7 @@ public static class IncrementalCompilationManager
         {
             Directory.CreateDirectory(userAssemblyDir);
         }
-        
+
         return Path.Combine(userAssemblyDir, project.AssemblyName + extension);
     }
 
@@ -308,7 +310,7 @@ public static class IncrementalCompilationManager
         string extension = project.OutputFilePath != null ? Path.GetExtension(project.OutputFilePath) : ".dll";
         return GetOutputPath(project, extension);
     }
-    
+
     private static string GetDebugSymbolExtension()
     {
         if (OperatingSystem.IsWindows())
@@ -320,7 +322,7 @@ public static class IncrementalCompilationManager
         {
             return ".dSYM";
         }
-        
+
         return ".so.debug";
     }
 

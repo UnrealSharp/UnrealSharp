@@ -17,8 +17,21 @@
     </PropertyGroup>
 
     <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
+    <PropertyGroup>
+        <UHTGeneratedPath>..\..\..\Intermediate\UnrealSharp\UHT\$(UETargetType)</UHTGeneratedPath>
+        <UHTFullPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(UHTGeneratedPath)'))</UHTFullPath>
+    </PropertyGroup>
+    
     <Import Project="..\..\..\UnrealSharp.AOT.props" Condition="Exists('..\..\..\UnrealSharp.AOT.props')" />
-    <Import Project="$(UHTTargetDir)\UE5Rules.Defines.props" Condition="Exists('$(UHTTargetDir)\UE5Rules.Defines.props')" />
+    <Import Project="$(UHTGeneratedPath)\UE5Rules.Defines.props" Condition="Exists('$(UHTGeneratedPath)\UE5Rules.Defines.props')" />
+
+    <ItemGroup>
+        <Compile Include="$(UHTGeneratedPath)\**\*.cs"/>
+    </ItemGroup>
+
+    <Target Name="LogUnrealSharpFiles" AfterTargets="BeforeBuild">
+        <Message Importance="high" Text="[UnrealSharp] Including files from: $(UHTFullPath)" />
+    </Target>
     
     <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />

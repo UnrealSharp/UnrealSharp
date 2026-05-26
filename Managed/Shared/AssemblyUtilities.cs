@@ -8,8 +8,17 @@ using System.Text.Json.Nodes;
 
 namespace UnrealSharp.Shared;
 
+public sealed class LoadOrderOptions
+{
+    public bool Collectible { get; init; } = true;
+    public int Priority { get; init; } = 0;
+}
+
 public static class AssemblyUtilities
 {
+    private const string ManifestSuffix = ".LoadOrder.json";
+    private const string DefaultManifestName = "Assembly";
+
     private sealed class AssemblyInfo
     {
         public readonly string Name;
@@ -21,9 +30,16 @@ public static class AssemblyUtilities
             References = references;
         }
     }
-
-    public static void EmitLoadOrder(List<string> pathsList, string publishPath)
+    
+    public static string MakeLoadOrderFileName(string baseName)
     {
+        return baseName + ManifestSuffix;
+    }
+
+    public static void EmitLoadOrder(List<string> pathsList, string publishPath, LoadOrderOptions loadOrderOptions, string? optionalName = null)
+    {
+        string OutputFileName = (string.IsNullOrEmpty(optionalName) ? DefaultManifestName : optionalName) + ManifestSuffix;
+
         List<AssemblyInfo> AssemblyInfos = new List<AssemblyInfo>();
         for (int I = 0; I < pathsList.Count; I++)
         {
@@ -153,18 +169,18 @@ public static class AssemblyUtilities
         }
 
         JsonObject Root = new JsonObject();
-        JsonArray Array = new JsonArray();
+        Root["Priority"] = loadOrderOptions.Priority;
+        Root["Collectible"] = loadOrderOptions.Collectible;
 
+        JsonArray Array = new JsonArray();
         for (int I = 0; I < OrderedAssemblies.Count; I++)
         {
-            string AssemblyName = OrderedAssemblies[I];
-            Array.Add(AssemblyName);
+            Array.Add(OrderedAssemblies[I]);
         }
-
         Root["LoadOrder"] = Array;
 
         string JsonString = Root.ToJsonString();
-        string FullPath = Path.Combine(publishPath, "AssemblyLoadOrder.json");
+        string FullPath = Path.Combine(publishPath, OutputFileName);
         File.WriteAllText(FullPath, JsonString);
     }
 
@@ -185,5 +201,50 @@ public static class AssemblyUtilities
         }
 
         return new AssemblyInfo(AssemblyName, References);
+    }
+    
+    public static List<string> ReadLoadOrder(string manifestPath)
+    {
+        List<string> Names = new();
+
+        JsonNode? Root = JsonNode.Parse(File.ReadAllText(manifestPath));
+        
+        if (Root is not JsonObject Obj || Obj["LoadOrder"] is not JsonArray Array)
+        {
+            return Names;
+        }
+        
+        foreach (JsonNode? Item in Array)
+        {
+            string? Name = Item?.GetValue<string?>();
+            
+            if (string.IsNullOrEmpty(Name))
+            {
+                continue;
+            }
+            
+            Names.Add(Name);
+        }
+
+        return Names;
+    }
+    
+    public static List<string> GetLoadOrdersInFolder(string folderPath)
+    {
+        List<string> LoadOrders = new();
+
+        if (!Directory.Exists(folderPath))
+        {
+            return LoadOrders;
+        }
+
+        IEnumerable<string> ManifestFiles = Directory.EnumerateFiles(folderPath, "*.LoadOrder.json", SearchOption.AllDirectories);
+
+        foreach (string ManifestFile in ManifestFiles)
+        {
+            LoadOrders.AddRange(ReadLoadOrder(ManifestFile));
+        }
+
+        return LoadOrders;
     }
 }

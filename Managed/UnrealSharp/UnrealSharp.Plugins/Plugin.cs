@@ -30,7 +30,7 @@ public class Plugin
             
             if (existingLoadContext.IsCollectible)
             {
-                throw new InvalidOperationException($"Shared collectible context detected for {assemblyName}.");
+                throw new InvalidOperationException($"Shared collectible context detected for {assemblyName}. '{existingLoadContext.Name}' is collectible.");
             }
             
             _loadContext = existingLoadContext;

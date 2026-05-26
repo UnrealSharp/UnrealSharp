@@ -136,12 +136,13 @@ private:
 
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
-	bool LoadAllUserAssemblies();
+	bool LoadAssembliesFromManifests();
 
 	// FUObjectDeleteListener overrides
 	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
 	virtual void OnUObjectArrayShutdown() override { GUObjectArray.RemoveUObjectDeleteListener(this); }
 	// End FUObjectDeleteListener overrides
+	
 	void OnEnginePreExit() { GUObjectArray.RemoveUObjectDeleteListener(this); }
 
 	void OnModulesChanged(FName InModuleName, EModuleChangeReason InModuleChangeReason);

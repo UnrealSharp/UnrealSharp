@@ -1,23 +1,17 @@
 ﻿using System.IO;
 using AutomationTool;
+using UnrealBuildBase;
 using UnrealBuildTool;
 
 namespace UnrealSharp.Automation.Utilities;
 
 public static class BuildUtilities
 {
-    public static string GetIntermediateBuildDirectory(this BuildCommand buildCommand)
-    {
-        return Path.Combine(buildCommand.GetProjectRootFolder(), "Intermediate", "Build", "UnrealSharp");
-    }
+    public const string UnrealSharpBuildFlagFileName = "UnrealSharpBuild.flag";
     
-    public static string GetIntermediateBuildPathForPlatform(BuildCommand buildCommand, UnrealArch architecture, UnrealTargetPlatform configuration, UnrealTargetConfiguration targetConfiguration)
+    public static bool IsInstalledUnrealSharpBuild(this BuildCommand buildCommand)
     {
-        string ArchitectureString = architecture.GetTargetArchitecture();
-        string PlatformString = configuration.GetTargetPlatform();
-        string BuildConfigString = targetConfiguration.GetDotNetBuildConfiguration();
-        
-        string IntermediateBuildDirectory = buildCommand.GetIntermediateBuildDirectory();
-        return Path.Combine(IntermediateBuildDirectory, ArchitectureString, PlatformString, BuildConfigString);
+        string InstalledUnrealSharpBuildPath = Path.Combine(buildCommand.GetProjectRootFolder(), "Binaries", "UnrealSharp", "InstalledUnrealSharp.flag");
+        return File.Exists(InstalledUnrealSharpBuildPath) && Unreal.IsProjectInstalled();
     }
 }

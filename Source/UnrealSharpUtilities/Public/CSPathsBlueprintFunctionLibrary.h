@@ -47,12 +47,6 @@ public:
 	static const FString& GetPluginsDirectory();
 
 	UFUNCTION(meta = (ScriptMethod))
-	static const FString& GetProjectGlueFolderPath();
-
-	UFUNCTION(meta = (ScriptMethod))
-	static FString GetPluginGlueFolderPath(const FString& PluginName);
-
-	UFUNCTION(meta = (ScriptMethod))
 	static FString GetLatestHostFxrPath();
 
 	UFUNCTION(meta = (ScriptMethod))
@@ -62,17 +56,8 @@ public:
 	static FString GetPathToManagedSolution();
 
 	UFUNCTION(meta = (ScriptMethod))
-	static FString AppendGlueSuffix(const FString& FileName);
-
-	UFUNCTION(meta = (ScriptMethod))
 	static FString GetUserManagedProjectName();
 
 	UFUNCTION(meta = (ScriptMethod))
-	static void GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeGlue = false);
-
-	UFUNCTION(meta = (ScriptMethod))
-	static void GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeGlue = false);
-
-	UFUNCTION(meta = (ScriptMethod))
-	static void GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue = false);
+	static void GetAllProjectPaths(TArray<FString>& ProjectPaths);
 };

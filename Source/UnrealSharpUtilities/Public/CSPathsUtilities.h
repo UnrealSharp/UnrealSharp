@@ -18,8 +18,6 @@ namespace UnrealSharp::Paths
 	UNREALSHARPUTILITIES_API FString GetGeneratedClassesDirectory();
 	UNREALSHARPUTILITIES_API const FString& GetScriptFolderDirectory();
 	UNREALSHARPUTILITIES_API const FString& GetPluginsDirectory();
-	UNREALSHARPUTILITIES_API const FString& GetProjectGlueFolderPath();
-	UNREALSHARPUTILITIES_API FString GetPluginGlueFolderPath(const FString& PluginName);
 	UNREALSHARPUTILITIES_API FString GetPathToManagedSolution();
 	
 	UNREALSHARPUTILITIES_API FString MakeQuotedPath(const FString& Path);
