@@ -10,12 +10,6 @@
         <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500;CS1572</NoWarn>
     </PropertyGroup>
 
-	<PropertyGroup>
-      <DefineConstants>WITH_EDITOR</DefineConstants>
-      <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
-      <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
-    </PropertyGroup>
-
     <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
     <PropertyGroup>
         <UHTGeneratedPath>..\..\..\Intermediate\UnrealSharp\UHT\$(UETargetType)</UHTGeneratedPath>
@@ -28,10 +22,6 @@
     <ItemGroup>
         <Compile Include="$(UHTGeneratedPath)\**\*.cs"/>
     </ItemGroup>
-
-    <Target Name="LogUnrealSharpFiles" AfterTargets="BeforeBuild">
-        <Message Importance="high" Text="[UnrealSharp] Including files from: $(UHTFullPath)" />
-    </Target>
     
     <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />

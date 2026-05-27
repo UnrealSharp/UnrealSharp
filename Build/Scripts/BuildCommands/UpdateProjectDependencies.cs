@@ -11,6 +11,8 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("Dependencies=<Path>+<Path>", "The list of dependencies to add as ProjectReferences.")]
 public class UpdateProjectDependencies : BuildCommand
 {
+    private const string CsprojExtension = ".csproj";
+
     public override void ExecuteBuild()
     {
         string ProjectPath = ParseRequiredStringParam("ProjectPath");
@@ -21,13 +23,23 @@ public class UpdateProjectDependencies : BuildCommand
             throw new FileNotFoundException("The specified project file does not exist.", ProjectPath);
         }
 
+        if (!ProjectPath.EndsWith(CsprojExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AutomationException($"The specified project file must have a '{CsprojExtension}' extension: '{ProjectPath}'.");
+        }
+
         if (Dependencies.Length == 0)
         {
             // Nothing to do, document is unchanged.
             return;
         }
 
-        string ProjectFolder = Directory.GetParent(ProjectPath)?.FullName ?? throw new AutomationException($"Could not determine parent directory of '{ProjectPath}'.");
+        string? ProjectFolder = Path.GetDirectoryName(ProjectPath);
+        if (string.IsNullOrEmpty(ProjectFolder))
+        {
+            throw new AutomationException($"Could not determine parent directory of '{ProjectPath}'.");
+        }
+
         UpdateProject(ProjectPath, ProjectFolder, Dependencies);
     }
 

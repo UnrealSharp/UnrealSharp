@@ -475,12 +475,6 @@ void FUnrealSharpEditorModule::PackageProject()
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
 }
 
-void FUnrealSharpEditorModule::RunGame(FString ExecutablePath)
-{
-	FString OpenSolutionArgs = FString::Printf(TEXT("/c \"%s\""), *ExecutablePath);
-	FPlatformProcess::ExecProcess(TEXT("cmd.exe"), *OpenSolutionArgs, nullptr, nullptr, nullptr);
-}
-
 void FUnrealSharpEditorModule::OpenSolution()
 {
 	FString SolutionPath = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetPathToManagedSolution());

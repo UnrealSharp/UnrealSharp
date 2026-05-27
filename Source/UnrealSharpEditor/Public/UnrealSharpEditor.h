@@ -67,8 +67,6 @@ private:
 
     static FString SelectArchiveDirectory();
 
-    static void RunGame(FString ExecutablePath);
-
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
     

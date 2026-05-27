@@ -21,6 +21,8 @@ public class PackageProject : BuildCommand
 {
     private const string ManagedFolderName = "Managed";
     private const string BindingsProjectFolder = "UnrealSharp";
+    private const int CleanupMaxAttempts = 5;
+    private const int CleanupRetryDelayMs = 1000;
 
     public sealed record PackagingOptions(
         string ArchiveDirectory,
@@ -28,7 +30,7 @@ public class PackageProject : BuildCommand
         UnrealTargetConfiguration BuildConfiguration,
         UnrealTargetPlatform TargetPlatform,
         UnrealArch TargetArchitecture,
-        bool NativeAot, 
+        bool NativeAot,
         string[]? UserParams = null);
 
     public override void ExecuteBuild()
@@ -43,13 +45,13 @@ public class PackageProject : BuildCommand
         LogOptions(options);
 
         DotNetSdkUtilities.CopyGlobalJson(this);
-        
+
         string PublishFolder = PathUtilities.BuildOutputPath(Path.Combine(options.ArchiveDirectory, this.GetProjectName()));
         CleanBuildArtifacts(PublishFolder);
 
         string RuntimeIdentifier = DotNetSdkUtilities.GetDotNetRuntimeIdentifier(options.TargetPlatform, options.TargetArchitecture);
         IList<string> Arguments = BuildBaseArguments(RuntimeIdentifier, options, PublishFolder);
-        
+
         if (!options.NativeAot)
         {
             Arguments.Add("--self-contained");
@@ -58,9 +60,9 @@ public class PackageProject : BuildCommand
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
         BuildUserSolution(Arguments, options.BuildConfiguration, options.UserParams);
 
-        EmitLoadOrder(PublishFolder, options);
+        EmitLoadOrder(PublishFolder, options, Arguments);
         EmitInstalledFlagFile(PublishFolder);
-        
+
         LoggerUtilities.LogUnrealSharpInfo($"Packaging complete. Published files: {PublishFolder}");
     }
 
@@ -77,12 +79,12 @@ public class PackageProject : BuildCommand
         UnrealArch TargetArchitecture = string.IsNullOrEmpty(ArchString) ? UnrealArch.X64 : UnrealArch.Parse(ArchString);
 
         bool NativeAot = ParseParam("NativeAOT");
-        
+
         string[] UserParams = ParseParamValues("UserParams");
 
         return new PackagingOptions(ArchiveDirectory, TargetType, BuildConfig, TargetPlatform, TargetArchitecture, NativeAot, UserParams);
     }
-    
+
     private static void LogOptions(PackagingOptions options)
     {
         LoggerUtilities.LogUnrealSharpInfo("Packaging project with parameters:");
@@ -108,7 +110,7 @@ public class PackageProject : BuildCommand
         {
             throw new DirectoryNotFoundException($"Archive directory does not exist: {options.ArchiveDirectory}");
         }
-        
+
         if (options.NativeAot)
         {
             throw new NotSupportedException("Native AOT packaging is not currently supported. This option is reserved for future use and should not be set.");
@@ -127,8 +129,6 @@ public class PackageProject : BuildCommand
 
     private static void CleanBuildArtifacts(string folder)
     {
-        const int cleanupMaxAttempts = 5;
-        
         if (!Directory.Exists(folder))
         {
             return;
@@ -136,7 +136,7 @@ public class PackageProject : BuildCommand
 
         LoggerUtilities.LogUnrealSharpInfo($"Cleaning existing output at '{folder}'.");
 
-        for (int Attempt = 1; Attempt <= cleanupMaxAttempts; Attempt++)
+        for (int Attempt = 1; Attempt <= CleanupMaxAttempts; Attempt++)
         {
             try
             {
@@ -145,13 +145,13 @@ public class PackageProject : BuildCommand
             }
             catch (Exception Ex)
             {
-                if (Attempt == cleanupMaxAttempts)
+                if (Attempt == CleanupMaxAttempts)
                 {
-                    throw new IOException($"Failed to clean output directory '{folder}' after {cleanupMaxAttempts} attempts. See inner exception for details.", Ex);
+                    throw new IOException($"Failed to clean output directory '{folder}' after {CleanupMaxAttempts} attempts. See inner exception for details.", Ex);
                 }
 
                 LoggerUtilities.LogUnrealSharpWarning($"Attempt {Attempt} to clean output directory '{folder}' failed. Retrying... Exception: {Ex.Message}");
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(CleanupRetryDelayMs);
             }
         }
     }
@@ -162,9 +162,8 @@ public class PackageProject : BuildCommand
         [
             "--runtime", runtimeIdentifier,
 
-            "-p:DisableWithEditor=true",
             "-p:GenerateDocumentationFile=false",
-            
+
             "-p:UseDefaultOutputPath=true",
 
             $"-p:UETargetType={options.TargetType}",
@@ -185,7 +184,7 @@ public class PackageProject : BuildCommand
         string ScriptFolder = this.GetProjectScriptFolder();
 
         IList<string> BuildUserSolutionArguments = buildArguments;
-        if (userParams != null && userParams.Length > 0)
+        if (userParams is { Length: > 0 })
         {
             BuildUserSolutionArguments = new List<string>(buildArguments);
             foreach (string UserParam in userParams)
@@ -197,13 +196,13 @@ public class PackageProject : BuildCommand
         BuildCommands.BuildSolution.RunBuild(ScriptFolder, buildConfig, publish: true, BuildUserSolutionArguments);
     }
 
-    private void EmitLoadOrder(string publishFolder, PackagingOptions options)
+    private void EmitLoadOrder(string publishFolder, PackagingOptions options, IList<string> buildArguments)
     {
-        EmitGlueLoadOrder(publishFolder, options);
+        EmitGlueLoadOrder(publishFolder, options, buildArguments);
         EmitUserLoadOrder(publishFolder);
     }
 
-    private void EmitGlueLoadOrder(string publishFolder, PackagingOptions options)
+    private void EmitGlueLoadOrder(string publishFolder, PackagingOptions options, IList<string> buildArguments)
     {
         if (this.IsInstalledUnrealSharpBuild())
         {
@@ -214,7 +213,7 @@ public class PackageProject : BuildCommand
         LoggerUtilities.LogUnrealSharpInfo("Source build detected. Building glue from generated projects and emitting glue load order...");
 
         TargetType GlueTargetType = Enum.Parse<TargetType>(options.TargetType, ignoreCase: true);
-        BuildUserGlue.Build(this, GlueTargetType, options.BuildConfiguration, publishFolder);
+        BuildUserGlue.Build(this, GlueTargetType, options.BuildConfiguration, publishFolder, buildArguments);
     }
 
     private void EmitUserLoadOrder(string publishFolder)
@@ -249,7 +248,7 @@ public class PackageProject : BuildCommand
             LoggerUtilities.LogUnrealSharpWarning($"Runtime glue manifest not found at {GlueManifest}. Was the C++ project built at least once? Packaged build may be missing generated glue.");
             return;
         }
-        
+
         File.Copy(GlueManifest, Path.Combine(publishFolder, GlueFileName), true);
 
         foreach (string AssemblyName in AssemblyUtilities.ReadLoadOrder(GlueManifest))
@@ -265,7 +264,7 @@ public class PackageProject : BuildCommand
         {
             return;
         }
-        
+
         File.Copy(sourceFile, Path.Combine(destFolder, Path.GetFileName(sourceFile)), true);
     }
 

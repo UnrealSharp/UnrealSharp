@@ -199,6 +199,13 @@ bool UCSManager::InitializeDotNetRuntime()
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp!");
 		return false;
 	}
+	
+#if !(UE_BUILD_SHIPPING)
+	if (FParse::Param(FCommandLine::Get(), TEXT("-waitformanageddebugger")))
+	{
+		while (!FPlatformMisc::IsDebuggerPresent());
+	}
+#endif
 
 	return true;
 }

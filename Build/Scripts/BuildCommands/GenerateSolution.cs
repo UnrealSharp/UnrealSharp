@@ -21,6 +21,8 @@ public class GenerateSolution : BuildCommand
     private const int FileUnlockTimeoutMs = 10_000;
     private const int FileUnlockPollIntervalMs = 200;
     private const int RetryBackoffMs = 250;
+    private const string SolutionFormat = "sln";
+    private const string SolutionNamePrefix = "Managed";
 
     public override void ExecuteBuild()
     {
@@ -32,42 +34,55 @@ public class GenerateSolution : BuildCommand
         ArgumentNullException.ThrowIfNull(buildCommand);
 
         string[] SearchFolders = buildCommand.ParseParamValues("SearchFolders");
-        string SolutionName = buildCommand.ParseParamValue("SolutionName", "Managed" + buildCommand.GetProjectName());
+        string SolutionName = buildCommand.ParseParamValue("SolutionName", SolutionNamePrefix + buildCommand.GetProjectName());
         string OutputFolder = buildCommand.ParseParamValue("OutputFolder", buildCommand.GetProjectScriptFolder());
-        string SolutionPath = Path.Combine(OutputFolder, $"{SolutionName}.sln");
-        
+        string SolutionPath = Path.Combine(OutputFolder, $"{SolutionName}.{SolutionFormat}");
+
         if (!Directory.Exists(OutputFolder))
         {
             Directory.CreateDirectory(OutputFolder);
         }
-        
-        LoggerUtilities.LogUnrealSharpInfo($"Generating solution '{SolutionName}.sln' in '{OutputFolder}'...");
 
-        DotnetProcess GenerateSlnProcess = new DotnetProcess();
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("--format");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("-n");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionName);
-        GenerateSlnProcess.StartInfo.ArgumentList.Add("--force");
-        GenerateSlnProcess.StartInfo.WorkingDirectory = OutputFolder;
-        GenerateSlnProcess.StartProcess();
+        LoggerUtilities.LogUnrealSharpInfo($"Generating solution '{SolutionName}.{SolutionFormat}' in '{OutputFolder}'...");
 
-        List<string> Projects = new List<string>();
-        Projects.AddRange(buildCommand.ParseParamValues("ProjectPaths"));
-        
-        foreach (string SearchFolder in SearchFolders)
-        {
-            List<string> FoundProjects = buildCommand.GetUnrealSharpProjectFiles(SearchFolder)
-                .Select(projectFile => Path.GetRelativePath(OutputFolder, projectFile.FullName)).ToList();
-            
-            Projects.AddRange(FoundProjects);
-        }
+        CreateEmptySolution(OutputFolder, SolutionName);
+
+        List<string> Projects = CollectProjectPaths(buildCommand, SearchFolders, OutputFolder);
 
         AddProjectsToSln(buildCommand.GetProjectRootFolder(), Projects, SolutionPath);
 
         DotNetSdkUtilities.CopyGlobalJson(buildCommand);
+    }
+
+    private static void CreateEmptySolution(string outputFolder, string solutionName)
+    {
+        using DotnetProcess GenerateSlnProcess = new DotnetProcess();
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionFormat);
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("--format");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionFormat);
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("-n");
+        GenerateSlnProcess.StartInfo.ArgumentList.Add(solutionName);
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("--force");
+        GenerateSlnProcess.StartInfo.WorkingDirectory = outputFolder;
+        GenerateSlnProcess.StartProcess();
+    }
+
+    private static List<string> CollectProjectPaths(BuildCommand buildCommand, string[] searchFolders, string outputFolder)
+    {
+        List<string> Projects = new List<string>();
+        Projects.AddRange(buildCommand.ParseParamValues("ProjectPaths"));
+
+        foreach (string SearchFolder in searchFolders)
+        {
+            List<string> FoundProjects = buildCommand.GetUnrealSharpProjectFiles(SearchFolder)
+                .Select(projectFile => Path.GetRelativePath(outputFolder, projectFile.FullName))
+                .ToList();
+
+            Projects.AddRange(FoundProjects);
+        }
+
+        return Projects;
     }
 
     private static void AddProjectsToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
@@ -93,8 +108,8 @@ public class GenerateSolution : BuildCommand
         {
             try
             {
-                DotnetProcess AddProjectProcess = new DotnetProcess();
-                AddProjectProcess.StartInfo.ArgumentList.Add("sln");
+                using DotnetProcess AddProjectProcess = new DotnetProcess();
+                AddProjectProcess.StartInfo.ArgumentList.Add(SolutionFormat);
                 AddProjectProcess.StartInfo.ArgumentList.Add("add");
                 AddProjectProcess.StartInfo.ArgumentList.Add("--include-references");
                 AddProjectProcess.StartInfo.ArgumentList.Add("false");

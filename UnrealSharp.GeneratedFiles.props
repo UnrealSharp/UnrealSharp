@@ -5,6 +5,14 @@
 
   <Target Name="DebugUETargetType" BeforeTargets="Build">
     <Message Importance="high" Text="Building for UETargetType: $(UETargetType)" />
-    <Message Importance="high" Text="Using UHTTargetDir: $(UHTTargetDir)" />
   </Target>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);WITH_$(UETargetType.ToUpper())</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DefineAdditionalConstants)' != ''">
+    <DefineConstants>$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+  </PropertyGroup>
+  
 </Project>
