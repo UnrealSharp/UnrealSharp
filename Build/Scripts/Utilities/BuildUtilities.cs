@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using AutomationTool;
 using UnrealBuildBase;
-using UnrealBuildTool;
 
 namespace UnrealSharp.Automation.Utilities;
 

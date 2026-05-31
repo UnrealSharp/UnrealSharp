@@ -1,11 +1,12 @@
 #include "CSPathsBlueprintFunctionLibrary.h"
 
+#include "CSDotnetUtilties.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 
 FString UCSPathsBlueprintFunctionLibrary::GetRuntimeConfigPath()
 {
-	return UnrealSharp::Paths::GetRuntimeConfigPath();
+	return UnrealSharp::DotNetUtilities::GetRuntimeConfigPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetPluginAssembliesPath()
@@ -35,15 +36,15 @@ FString UCSPathsBlueprintFunctionLibrary::GetUnrealSharpMetadataPath()
 
 FString UCSPathsBlueprintFunctionLibrary::GetDotNetDirectory()
 {
-	return UnrealSharp::Paths::GetDotNetDirectory();
+	return UnrealSharp::DotNetUtilities::GetDotNetDirectory();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetDotNetExecutablePath()
 {
-	return UnrealSharp::Paths::GetDotNetExecutablePath();
+	return UnrealSharp::DotNetUtilities::GetDotNetExecutablePath();
 }
 
-FString& UCSPathsBlueprintFunctionLibrary::GetPluginDirectory()
+FString UCSPathsBlueprintFunctionLibrary::GetPluginDirectory()
 {
 	return UnrealSharp::Paths::GetPluginDirectory();
 }
@@ -70,12 +71,12 @@ const FString& UCSPathsBlueprintFunctionLibrary::GetPluginsDirectory()
 
 FString UCSPathsBlueprintFunctionLibrary::GetLatestHostFxrPath()
 { 
-	return UnrealSharp::Paths::GetLatestHostFxrPath();
+	return UnrealSharp::DotNetUtilities::GetLatestHostFxrPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetRuntimeHostPath()
 {
-	return UnrealSharp::Paths::GetRuntimeHostPath();
+	return UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetPathToManagedSolution()

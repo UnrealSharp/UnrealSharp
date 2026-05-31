@@ -8,7 +8,9 @@
 #include "Engine/Blueprint.h"
 #include <vector>
 #include "CSBindsManager.h"
+#include "CSBuildUtilties.h"
 #include "CSDotnetUtilties.h"
+#include "CSInstallationUtilities.h"
 #include "CSNamespace.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
@@ -133,7 +135,7 @@ void UCSManager::ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass)
 void UCSManager::Initialize()
 {
 #if WITH_EDITOR
-	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment())
+	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
 	{
 		Initialize();
 		return;
@@ -187,7 +189,6 @@ bool UCSManager::InitializeDotNetRuntime()
 	if (ErrorCode != 0)
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", ErrorCode);
-		return false;
 	}
 
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
@@ -197,7 +198,6 @@ bool UCSManager::InitializeDotNetRuntime()
 		&FCSManagedCallbacks::ManagedCallbacks))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp!");
-		return false;
 	}
 	
 #if !(UE_BUILD_SHIPPING)
@@ -212,7 +212,7 @@ bool UCSManager::InitializeDotNetRuntime()
 
 bool UCSManager::LoadRuntimeHost()
 {
-	const FString RuntimeHostPath = UnrealSharp::Paths::GetRuntimeHostPath();
+	const FString RuntimeHostPath = UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Couldn't find Hostfxr at: {0}", RuntimeHostPath);
@@ -328,19 +328,23 @@ void UCSManager::InitializeSubsystems()
 
 load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() const
 {
-#if WITH_EDITOR
-	const FString DotNetPath = UnrealSharp::Paths::GetDotNetDirectory();
-#else
-	const FString DotNetPath = UnrealSharp::Paths::GetPluginAssembliesPath();
-#endif
-
+	FString DotNetPath;
+	if (UnrealSharp::InstallationUtilities::IsUnrealSharpInstalled())
+	{
+		DotNetPath = UnrealSharp::Paths::GetPluginAssembliesPath();
+	}
+	else
+	{
+		DotNetPath = UnrealSharp::DotNetUtilities::GetDotNetDirectory();
+	}
+	
 	if (!FPaths::DirectoryExists(DotNetPath))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Dotnet directory does not exist at: {0}", DotNetPath);
 		return nullptr;
 	}
 
-	const FString RuntimeHostPath = UnrealSharp::Paths::GetRuntimeHostPath();
+	const FString RuntimeHostPath = UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
 	if (!FPaths::FileExists(RuntimeHostPath))
 	{
 		UE_LOGFMT(LogUnrealSharp, Error, "Runtime host path does not exist at: {0}", RuntimeHostPath);
@@ -356,39 +360,41 @@ load_assembly_and_get_function_pointer_fn UCSManager::InitializeNativeHost() con
 	InitializeParameters.size = sizeof(hostfxr_initialize_parameters);
 
 	hostfxr_handle HostFXR_Handle = nullptr;
-	int32 ErrorCode = 0;
-
-#if WITH_EDITOR
-	const FString RuntimeConfigPath = UnrealSharp::Paths::GetRuntimeConfigPath();
-	if (!FPaths::FileExists(RuntimeConfigPath))
+	int32 ErrorCode;
+	
+	if (UnrealSharp::InstallationUtilities::IsUnrealSharpInstalled())
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "No runtime config found");
-		return nullptr;
-	}
+		const FString PluginAssemblyPath = UnrealSharp::Paths::GetUnrealSharpPluginsPath();
+		
+		if (!FPaths::FileExists(PluginAssemblyPath))
+		{
+			UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp.Plugins.dll does not exist at: {0}", PluginAssemblyPath);
+			return nullptr;
+		}
+
+		std::vector Args { PLATFORM_STRING(*PluginAssemblyPath) };
 
 #if defined(_WIN32)
-	ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), &InitializeParameters, &HostFXR_Handle);
+		ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
 #else
-	ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), nullptr, &HostFXR_Handle);
+		ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), const_cast<const char**>(Args.data()), &InitializeParameters, &HostFXR_Handle);
 #endif
-
-#else
-	const FString PluginAssemblyPath = UnrealSharp::Paths::GetUnrealSharpPluginsPath();
-	if (!FPaths::FileExists(PluginAssemblyPath))
-	{
-		UE_LOGFMT(LogUnrealSharp, Error, "UnrealSharp.Plugins.dll does not exist at: {0}", PluginAssemblyPath);
-		return nullptr;
 	}
-
-	std::vector Args { PLATFORM_STRING(*PluginAssemblyPath) };
+	else
+	{
+		const FString RuntimeConfigPath = UnrealSharp::DotNetUtilities::GetRuntimeConfigPath();
+		if (!FPaths::FileExists(RuntimeConfigPath))
+		{
+			UE_LOGFMT(LogUnrealSharp, Error, "No runtime config found");
+			return nullptr;
+		}
 
 #if defined(_WIN32)
-	ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), Args.data(), &InitializeParameters, &HostFXR_Handle);
+		ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), &InitializeParameters, &HostFXR_Handle);
 #else
-	ErrorCode = Hostfxr_Initialize_For_Dotnet_Command_Line(Args.size(), const_cast<const char**>(Args.data()), &InitializeParameters, &HostFXR_Handle);
+		ErrorCode = Hostfxr_Initialize_For_Runtime_Config(PLATFORM_STRING(*RuntimeConfigPath), nullptr, &HostFXR_Handle);
 #endif
-
-#endif
+	}
 
 	if (ErrorCode != 0)
 	{

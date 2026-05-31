@@ -32,7 +32,7 @@ public:
 	static FString GetDotNetExecutablePath();
 
 	UFUNCTION(meta = (ScriptMethod))
-	static FString& GetPluginDirectory();
+	static FString GetPluginDirectory();
 
 	UFUNCTION(meta = (ScriptMethod))
 	static FString GetUnrealSharpDirectory();

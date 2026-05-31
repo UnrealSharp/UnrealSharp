@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using AutomationTool;
 using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
@@ -39,14 +40,14 @@ public class PackageProject : BuildCommand
         StartPackaging(Options);
     }
 
-    public void StartPackaging(PackagingOptions options)
+    private void StartPackaging(PackagingOptions options)
     {
         ValidateOptions(options);
         LogOptions(options);
 
         DotNetSdkUtilities.CopyGlobalJson(this);
 
-        string PublishFolder = PathUtilities.BuildOutputPath(Path.Combine(options.ArchiveDirectory, this.GetProjectName()));
+        string PublishFolder = PathUtilities.BuildOutputPath(options.ArchiveDirectory);
         CleanBuildArtifacts(PublishFolder);
 
         string RuntimeIdentifier = DotNetSdkUtilities.GetDotNetRuntimeIdentifier(options.TargetPlatform, options.TargetArchitecture);
@@ -58,9 +59,10 @@ public class PackageProject : BuildCommand
         }
 
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
-        BuildUserSolution(Arguments, options.BuildConfiguration, options.UserParams);
-
-        EmitLoadOrder(PublishFolder, options, Arguments);
+        
+        BuildUserBindings(PublishFolder, options, Arguments);
+        BuildUserSolution(PublishFolder, Arguments, options.BuildConfiguration, options.UserParams);
+        
         EmitInstalledFlagFile(PublishFolder);
 
         LoggerUtilities.LogUnrealSharpInfo($"Packaging complete. Published files: {PublishFolder}");
@@ -101,7 +103,7 @@ public class PackageProject : BuildCommand
         }
     }
 
-    private static void ValidateOptions(PackagingOptions options)
+    private void ValidateOptions(PackagingOptions options)
     {
         ArgumentException.ThrowIfNullOrEmpty(options.ArchiveDirectory);
         ArgumentException.ThrowIfNullOrEmpty(options.TargetType);
@@ -114,6 +116,12 @@ public class PackageProject : BuildCommand
         if (options.NativeAot)
         {
             throw new NotSupportedException("Native AOT packaging is not currently supported. This option is reserved for future use and should not be set.");
+        }
+
+        string HostFxrPath = DotNetUtilities.LatestHostFxrPath;
+        if (!File.Exists(HostFxrPath))
+        {
+            throw new FileNotFoundException($"Could not locate hostfxr library at expected path: {HostFxrPath}. Ensure that the .NET SDK is installed and accessible.");
         }
 
         ValidatePlatformArchitecture(options.TargetPlatform, options.TargetArchitecture);
@@ -179,7 +187,7 @@ public class PackageProject : BuildCommand
         BuildCommands.BuildSolution.RunBuild(BindingsPath, buildConfig, publish: true, arguments);
     }
 
-    private void BuildUserSolution(IList<string> buildArguments, UnrealTargetConfiguration buildConfig, string[]? userParams)
+    private void BuildUserSolution(string publishFolder, IList<string> buildArguments, UnrealTargetConfiguration buildConfig, string[]? userParams)
     {
         string ScriptFolder = this.GetProjectScriptFolder();
 
@@ -194,15 +202,11 @@ public class PackageProject : BuildCommand
         }
 
         BuildCommands.BuildSolution.RunBuild(ScriptFolder, buildConfig, publish: true, BuildUserSolutionArguments);
-    }
-
-    private void EmitLoadOrder(string publishFolder, PackagingOptions options, IList<string> buildArguments)
-    {
-        EmitGlueLoadOrder(publishFolder, options, buildArguments);
+        
         EmitUserLoadOrder(publishFolder);
     }
 
-    private void EmitGlueLoadOrder(string publishFolder, PackagingOptions options, IList<string> buildArguments)
+    private void BuildUserBindings(string publishFolder, PackagingOptions options, IList<string> buildArguments)
     {
         if (this.IsInstalledUnrealSharpBuild())
         {
@@ -211,8 +215,12 @@ public class PackageProject : BuildCommand
         }
 
         LoggerUtilities.LogUnrealSharpInfo("Source build detected. Building glue from generated projects and emitting glue load order...");
+        
+        if (!Enum.TryParse(options.TargetType, ignoreCase: true, out TargetType GlueTargetType))
+        {
+            throw new AutomationException($"Invalid UETargetType '{options.TargetType}'. Expected one of: {string.Join(", ", Enum.GetNames<TargetType>())}.");
+        }
 
-        TargetType GlueTargetType = Enum.Parse<TargetType>(options.TargetType, ignoreCase: true);
         BuildUserGlue.Build(this, GlueTargetType, options.BuildConfiguration, publishFolder, buildArguments);
     }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using AutomationTool;
 using EpicGames.Core;
@@ -50,17 +49,12 @@ public static class PathUtilities
     
     public static string BuildOutputPath(string rootDirectory)
     {
-        return Path.Combine(rootDirectory, "Binaries", "Managed", DotNetUtilities.GetVersion());
+        return Path.Combine(rootDirectory, "Binaries", "Managed", DotNetUtilities.Version);
     }
     
     public static string GetUnrealSharpSharedPropsPath(this BuildCommand buildCommand)
     {
         string UnrealSharpRootFolder = GetUnrealSharpRootFolder(buildCommand);
         return Path.Combine(UnrealSharpRootFolder, "UnrealSharp.Shared.props");
-    }
-    
-    public static string QuotePath(string path)
-    {
-        return path.Contains(' ') ? $"\"{path}\"" : path;
     }
 }

@@ -37,7 +37,7 @@ void UCSFunctionBase::Bind()
 
 bool UCSFunctionBase::UpdateMethodHandle()
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunctionBase::TryUpdateMethodHandle);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunctionBase::UpdateMethodHandle);
 	
 	// Ignore delegate signatures and classes that are not the generated class.
 	// The Blueprint skeleton class is an example of a class that is not the generated class, but still has managed functions.

@@ -1,4 +1,7 @@
 #include "HotReload/CSHotReloadSubsystem.h"
+
+#include "CSDotnetUtilties.h"
+#include "CSInstallationUtilities.h"
 #include "CSManager.h"
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
@@ -44,6 +47,11 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	PauseHotReload(TEXT("Waiting for initial C# load..."));
 }
 
+bool UCSHotReloadSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	return !FApp::IsUnattended() && !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
+}
+
 void UCSHotReloadSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
@@ -62,21 +70,6 @@ void UCSHotReloadSubsystem::OnHotReloadReady()
 {
 	ResumeHotReload();
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "C# Hot Reload is ready.");
-}
-
-FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
-{
-	if (HasHotReloadFailed())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Fail");
-	}
-	
-	if (HasPendingHotReloadChanges())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Modified");
-	}
-
-	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
 bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
@@ -330,7 +323,7 @@ void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
 	}
 	
 	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
-	PauseNotification = FCSEditorUtilities::MakeNotification(GetMenuIcon(), NotificationFormat);
+	PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
 	bIsHotReloadPaused = true;
 }
 

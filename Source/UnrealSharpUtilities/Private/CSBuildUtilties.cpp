@@ -61,12 +61,6 @@ void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildA
 	ResultCallback);
 }
 
-bool UnrealSharp::Build::IsInstalled()
-{
-	FString InstalledFlagFile = FPaths::Combine(Paths::GetUserAssemblyDirectory(), TEXT("InstalledUnrealSharp.flag"));
-	return FPaths::FileExists(InstalledFlagFile) && FApp::IsInstalled();
-}
-
 bool UnrealSharp::Build::BuildUserSolution(const FCSCommandError& OnError)
 {
 	FString SolutionDirectory = FPaths::ConvertRelativePathToFull(Paths::GetScriptFolderDirectory());
@@ -80,13 +74,12 @@ bool UnrealSharp::Build::BuildUserSolution(const FCSCommandError& OnError)
 		Arguments.Add(TEXT("clp"), TEXT("ErrorsOnly"));
 	}
 
-	return InvokeUnrealSharpAutomation(BuildAction::BuildUserCode, &Arguments, OnError);
+	return InvokeUnrealSharpAutomation(BuildAction::BuildUserSolution, &Arguments, OnError);
 }
 
 void UnrealSharp::Build::BuildArguments(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, FString& OutArgs)
 {
 	const FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-	const FString DotNetPath = Paths::GetDotNetExecutablePath();
 	
 	OutArgs.Reset();
 	OutArgs += BuildAction;

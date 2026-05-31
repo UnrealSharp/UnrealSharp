@@ -2,15 +2,137 @@
 
 #include "CSBuildUtilties.h"
 #include "CSDialogUtilities.h"
+#include "CSInstallationUtilities.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "UnrealSharpUtils.h"
 
-bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
+static TAutoConsoleVariable<int32> CVarSimulateInstalledBuild(
+	TEXT("UnrealSharp.SimulateNoDotNetSDK"),
+	0,
+	TEXT("Simulate an environment where no .NET SDK is installed. This is useful for testing the UnrealSharp installation experience. Note that this will not affect UnrealSharp's ability to find a bundled .NET runtime, so it can be used to test both installed and non-installed scenarios."),
+	ECVF_Default);
+
+FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 {
 #if WITH_EDITOR
-	FString DotNetInstallationPath = Paths::GetDotNetDirectory();
-	if (DotNetInstallationPath.IsEmpty())
+	if (CVarSimulateInstalledBuild.GetValueOnAnyThread() == 1)
+	{
+		return FString();
+	}
+#endif
+	
+#if defined(__APPLE__)
+    constexpr const TCHAR* DefaultDotNetPath = TEXT("/usr/local/share/dotnet/");
+    if (FPaths::DirectoryExists(DefaultDotNetPath))
+    {
+       return DefaultDotNetPath;
+    }
+#endif
+
+    const FString PathVariable = FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"));
+    
+    TArray<FString> Paths;
+    PathVariable.ParseIntoArray(Paths, FPlatformMisc::GetPathVarDelimiter());
+
+#if defined(_WIN32)
+    const FString PathMarker = TEXT("Program Files\\dotnet\\");
+#else
+    const FString PathMarker = TEXT("dotnet");
+#endif
+
+    FString DotNetPathFromEnv;
+    for (const FString& Path : Paths)
+    {
+       if (!Path.Contains(PathMarker))
+       {
+          continue;
+       }
+
+       if (!FPaths::DirectoryExists(Path))
+       {
+          UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Found path to DotNet, but the directory doesn't exist: {0}", Path);
+          break;
+       }
+
+        DotNetPathFromEnv = Path;
+        break;
+    }
+
+    return DotNetPathFromEnv;
+}
+
+FString UnrealSharp::DotNetUtilities::GetDotNetExecutablePath()
+{
+#if defined(_WIN32)
+    return GetDotNetDirectory() + TEXT("dotnet.exe");
+#else
+    return GetDotNetDirectory() + TEXT("dotnet");
+#endif
+}
+
+FString UnrealSharp::DotNetUtilities::GetLatestHostFxrPath()
+{
+    const FString DotNetRoot = GetDotNetDirectory();
+    const FString HostFxrRoot = FPaths::Combine(DotNetRoot, TEXT("host"), TEXT("fxr"));
+
+    TArray<FString> Folders;
+    IFileManager::Get().FindFiles(Folders, *(HostFxrRoot / TEXT("*")), true, true);
+
+    FString HighestVersion;
+    for (const FString& Folder : Folders)
+    {
+       if (HighestVersion.IsEmpty() || IsVersionHigher(Folder, HighestVersion))
+       {
+          HighestVersion = Folder;
+       }
+    }
+
+    if (HighestVersion.IsEmpty())
+    {
+       UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Failed to find hostfxr version in {0}", HostFxrRoot);
+    }
+
+    if (!IsVersionGreaterOrEqual(HighestVersion, TEXT(DOTNET_MAJOR_VERSION)))
+    {
+       UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Hostfxr version {0} is less than the required version " DOTNET_MAJOR_VERSION, HighestVersion);
+    }
+
+#if defined(_WIN32)
+    return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_WINDOWS);
+#elif defined(__APPLE__)
+    return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_MAC);
+#else
+    return FPaths::Combine(HostFxrRoot, HighestVersion, HOSTFXR_LINUX);
+#endif
+}
+
+FString UnrealSharp::DotNetUtilities::GetRuntimeHostPath()
+{
+    if (InstallationUtilities::IsUnrealSharpInstalled())
+    {
+#if defined(_WIN32)
+    return FPaths::Combine(Paths::GetPluginAssembliesPath(), HOSTFXR_WINDOWS);
+#elif defined(__APPLE__)
+    return FPaths::Combine(GetPluginAssembliesPath(), HOSTFXR_MAC);
+#else
+    return FPaths::Combine(GetPluginAssembliesPath(), HOSTFXR_LINUX);
+#endif
+    }
+
+    return GetLatestHostFxrPath();
+}
+
+FString UnrealSharp::DotNetUtilities::GetRuntimeConfigPath()
+{
+    return Paths::GetPluginAssembliesPath() / TEXT("UnrealSharp.runtimeconfig.json");
+}
+
+#if WITH_EDITOR
+bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
+{
+	FString DotNetInstallationPath = GetDotNetDirectory();
+	if (DotNetInstallationPath.IsEmpty() && !InstallationUtilities::IsUnrealSharpInstalled())
 	{
 		FString DialogText = FString::Printf(TEXT("UnrealSharp can't be initialized. An installation of .NET %s SDK can't be found on your system."), TEXT(DOTNET_MAJOR_VERSION));
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
@@ -29,7 +151,12 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DialogText));
 		return false;
 	}
+	
+	return true;
+}
 
+bool UnrealSharp::DotNetUtilities::BuildUserSolution()
+{
 	TArray<FString> ProjectPaths;
 	Project::GetAllProjectPaths(ProjectPaths);
 	
@@ -38,16 +165,14 @@ bool UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment()
 		return true;
 	}
 	
-	bool IsStandalonePIE = FCSUnrealSharpUtils::IsStandalonePIE();
-	bool IsUnattended = FApp::IsUnattended();
-	if (!IsStandalonePIE && !IsUnattended && !Build::BuildUserSolution(Dialogs::MakeOkCancelDialogOnError()))
+	if (FCSUnrealSharpUtils::IsStandalonePIE() || FApp::IsUnattended())
 	{
-		return false;
+		return true;
 	}
 	
-#endif
-	return true;
+	return Build::BuildUserSolution(Dialogs::MakeOkCancelDialogOnError());
 }
+#endif
 
 FString& UnrealSharp::DotNetUtilities::GetManagedBinaries()
 {

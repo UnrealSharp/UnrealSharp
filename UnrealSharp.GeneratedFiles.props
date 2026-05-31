@@ -1,18 +1,16 @@
 <Project>
   <PropertyGroup>
     <UETargetType Condition="'$(UETargetType)' == ''">Editor</UETargetType>
+    <UEBuildConfig Condition="'$(UEBuildConfig)' == ''">Development</UEBuildConfig>
+    <WithTargetType>WITH_$(UETargetType.ToUpper())</WithTargetType>
+    <WithBuildConfig>WITH_$(UEBuildConfig.ToUpper())</WithBuildConfig>
   </PropertyGroup>
-
-  <Target Name="DebugUETargetType" BeforeTargets="Build">
-    <Message Importance="high" Text="Building for UETargetType: $(UETargetType)" />
-  </Target>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);WITH_$(UETargetType.ToUpper())</DefineConstants>
+    <DefineConstants>$(DefineConstants);$(WithTargetType);$(WithBuildConfig)</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(DefineAdditionalConstants)' != ''">
-    <DefineConstants>$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
-  </PropertyGroup>
-  
+  <Target Name="DebugUETargetType" BeforeTargets="Compile">
+    <Message Importance="high" Text="Build Parameters: Target Type: $(UETargetType) ($(WithTargetType)) | Configuration: $(UEBuildConfig) ($(WithBuildConfig))" />
+  </Target>
 </Project>

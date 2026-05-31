@@ -39,12 +39,12 @@ public class BuildEmitLoadOrder : BuildCommand
         List<string> BuildArguments = BuildSolutionArguments(OutputPath);
 
         BuildCommands.BuildSolution.RunBuild(SolutionPath, BuildConfig, publish: true, BuildArguments);
-
-        EmitLoadOrder(new List<string>(Projects), LoadOrderName, OutputPath, Options);
+        
+        EmitLoadOrder(Projects, LoadOrderName, OutputPath, Options);
         AddLaunchSettings(this);
     }
-
-    public static void EmitLoadOrder(List<string> projectFiles, string loadOrderName, string outputPath, LoadOrderOptions options)
+    
+    public static void EmitLoadOrder(IEnumerable<string> projectFiles, string loadOrderName, string outputPath, LoadOrderOptions options)
     {
         LoadOrderUtilities.TryEmitLoadOrder(projectFiles, outputPath, loadOrderName, options);
     }

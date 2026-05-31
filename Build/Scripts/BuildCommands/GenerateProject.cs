@@ -17,6 +17,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("SkipUSharpProjSetup", "If set, the generated .csproj will not be modified to include UnrealSharp properties and dependencies.")]
 [Help("EditorOnly", "If set, the generated project will be marked as not publishable.")]
 [Help("Dependencies=<Path>+<Path>", "Additional project dependencies to include in the generated .csproj file.")]
+[Help("SkipIncludeAnalyzers", "If set, the generated .csproj will not reference the UnrealSharp analyzers.")]
 public class GenerateProject : BuildCommand
 {
     private const string CsProjFileExtension = "csproj";
@@ -24,9 +25,6 @@ public class GenerateProject : BuildCommand
     private const string CsprojTemplateName = "Csproj";
     private const string ModuleTemplateName = "Module";
     private const string SkipIncludeAnalyzersPropertyName = "SkipIncludeAnalyzers";
-    private const string IsPublishablePropertyName = "IsPublishable";
-    private const string IsEditorOnlyPropertyName = "IsEditorOnly";
-    private const string DisableWithEditorCondition = "'$(DisableWithEditor)' == 'true'";
 
     public override void ExecuteBuild()
     {
@@ -79,7 +77,7 @@ public class GenerateProject : BuildCommand
     {
         Dictionary<string, string> TemplateValues = new Dictionary<string, string>
         {
-            { "DOTNET_VERSION", DotNetUtilities.GetVersion() }
+            { "DOTNET_VERSION", DotNetUtilities.Version }
         };
 
         TemplateUtilities.WriteTemplateToFile(this, CsprojTemplateName, projectName, CsProjFileExtension, projectFolder, TemplateValues);
@@ -123,8 +121,8 @@ public class GenerateProject : BuildCommand
             return;
         }
 
-        csprojDocument.SetProjectProperty(IsPublishablePropertyName, "false", DisableWithEditorCondition);
-        csprojDocument.SetProjectProperty(IsEditorOnlyPropertyName, "true");
+        csprojDocument.SetProjectProperty("IsPublishable", "true", "'$(UETargetType)' == 'Editor'");
+        csprojDocument.SetProjectProperty("IsEditorOnly", "true");
     }
 
     private void ApplyAnalyzerFlag(XmlDocument csprojDocument)

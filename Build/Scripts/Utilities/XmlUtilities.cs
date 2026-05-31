@@ -80,7 +80,7 @@ public static class XmlUtilities
         ReferenceElement.SetAttribute("Include", referenceName);
 
         XmlElement HintPath = doc.CreateElement("HintPath");
-        HintPath.InnerText = Path.Combine(binPath, DotNetUtilities.GetVersion(), referenceName + ".dll");
+        HintPath.InnerText = Path.Combine(binPath, DotNetUtilities.Version, referenceName + ".dll");
         ReferenceElement.AppendChild(HintPath);
 
         itemGroup.AppendChild(ReferenceElement);

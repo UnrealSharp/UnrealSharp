@@ -72,7 +72,7 @@ public class NativeCallbacksWrapperGenerator : IIncrementalGenerator
         {
             sourceBuilder.AppendLine("#nullable disable");
         }
-        sourceBuilder.AppendLine("#pragma warning disable CS8500, CS0414");
+        
         sourceBuilder.AppendLine();
 
         foreach (string? ns in namespaces)

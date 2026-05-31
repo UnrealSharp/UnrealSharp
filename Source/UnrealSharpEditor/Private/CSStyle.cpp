@@ -9,6 +9,21 @@
 
 TSharedPtr<FSlateStyleSet> FCSStyle::StyleInstance = nullptr;
 
+FSlateIcon UnrealSharp::Icons::GetUnrealSharpIcon()
+{
+	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
+}
+
+FSlateIcon UnrealSharp::Icons::GetUnrealSharpIcon_HotReloadFailed()
+{
+	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Fail");
+}
+
+FSlateIcon UnrealSharp::Icons::GetUnrealSharpIcon_Modified()
+{
+	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Modified");
+}
+
 void FCSStyle::Initialize()
 {
 	if (!StyleInstance.IsValid())

@@ -15,13 +15,5 @@ void UFUnrealSharpEditorModuleExporter::GetProjectPaths(TArray<FString>* Paths)
 
 void UFUnrealSharpEditorModuleExporter::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
 {
-	UCSHotReloadSubsystem* HotReloadSubsystem = UCSHotReloadSubsystem::Get();
-	
-	if (!IsValid(HotReloadSubsystem))
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Failed to dirty Unreal type. HotReloadSubsystem is not valid.");
-		return;
-	}
-	
-	HotReloadSubsystem->DirtyUnrealType(AssemblyName, Namespace, TypeName, Flags);
+	UCSHotReloadSubsystem::Get()->DirtyUnrealType(AssemblyName, Namespace, TypeName, Flags);
 }

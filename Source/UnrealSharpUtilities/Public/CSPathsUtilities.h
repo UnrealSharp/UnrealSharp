@@ -2,13 +2,7 @@
 
 namespace UnrealSharp::Paths
 {
-	UNREALSHARPUTILITIES_API FString GetDotNetDirectory();
-	UNREALSHARPUTILITIES_API FString GetDotNetExecutablePath();
-	UNREALSHARPUTILITIES_API FString GetLatestHostFxrPath();
-	UNREALSHARPUTILITIES_API FString GetRuntimeHostPath();
-	UNREALSHARPUTILITIES_API FString GetRuntimeConfigPath();
-		
-	UNREALSHARPUTILITIES_API FString& GetPluginDirectory();
+	UNREALSHARPUTILITIES_API FString GetPluginDirectory();
 	UNREALSHARPUTILITIES_API FString GetUnrealSharpDirectory();
 	UNREALSHARPUTILITIES_API FString GetPluginAssembliesPath();
 	UNREALSHARPUTILITIES_API FString GetUnrealSharpPluginsPath();
