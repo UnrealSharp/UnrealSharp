@@ -72,7 +72,7 @@ public class PackageProject : BuildCommand
     {
         string ArchiveDirectory = ParseRequiredStringParam("ArchiveDirectory");
         string TargetType = ParseRequiredStringParam("UETargetType");
-        UnrealTargetConfiguration BuildConfig = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("UEBuildConfig");
+        UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("UEBuildConfig");
 
         string? PlatformString = ParseOptionalStringParam("TargetPlatform");
         UnrealTargetPlatform TargetPlatform = string.IsNullOrEmpty(PlatformString) ? UnrealTargetPlatform.Win64 : UnrealTargetPlatform.Parse(PlatformString);
@@ -84,7 +84,7 @@ public class PackageProject : BuildCommand
 
         string[] UserParams = ParseParamValues("UserParams");
 
-        return new PackagingOptions(ArchiveDirectory, TargetType, BuildConfig, TargetPlatform, TargetArchitecture, NativeAot, UserParams);
+        return new PackagingOptions(ArchiveDirectory, TargetType, TargetConfiguration, TargetPlatform, TargetArchitecture, NativeAot, UserParams);
     }
 
     private static void LogOptions(PackagingOptions options)

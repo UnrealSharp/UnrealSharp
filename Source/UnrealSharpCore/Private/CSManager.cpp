@@ -8,7 +8,6 @@
 #include "Engine/Blueprint.h"
 #include <vector>
 #include "CSBindsManager.h"
-#include "CSBuildUtilties.h"
 #include "CSDotnetUtilties.h"
 #include "CSInstallationUtilities.h"
 #include "CSNamespace.h"

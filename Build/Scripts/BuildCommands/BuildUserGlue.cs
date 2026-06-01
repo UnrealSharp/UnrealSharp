@@ -9,7 +9,7 @@ using UnrealSharp.Automation.Utilities;
 namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Builds the auto-generated UnrealSharp glue projects for the active project and emits the glue load order.")]
-[Help("BuildConfig=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
+[Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("TargetType=<Type>", "The target type (Editor, Game, etc.) to build glue for.")]
 [Help("OutputDirectory=<OutputDirectory>", "The directory to output the built glue assemblies to.")]
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
@@ -23,11 +23,11 @@ public class BuildUserGlue : BuildCommand
         }
 
         TargetType TargetType = ParseRequiredEnumParamEnum<TargetType>("TargetType");
-        UnrealTargetConfiguration BuildConfig = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("BuildConfig");
+        UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("TargetConfiguration");
         string OutputDirectory = ParseRequiredStringParam("OutputDirectory");
         string[] ExtraArguments = ParseParamValues("ExtraArguments");
 
-        Build(this, TargetType, BuildConfig, OutputDirectory, ExtraArguments);
+        Build(this, TargetType, TargetConfiguration, OutputDirectory, ExtraArguments);
     }
 
     public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, IList<string>? extraArguments = null)
@@ -78,7 +78,7 @@ public class BuildUserGlue : BuildCommand
         List<KeyValuePair<string, string>> ActionArgs = new List<KeyValuePair<string, string>>
         {
             new("SolutionDirectory", solutionOutputDirectory),
-            new("BuildConfig", buildConfig.ToString()),
+            new("TargetConfiguration", buildConfig.ToString()),
             new("OutputPath", publishDirectory),
             new("LoadOrderName", LoadOrderUtilities.GlueLoadOrderName),
             new("IsCollectible", "false"),

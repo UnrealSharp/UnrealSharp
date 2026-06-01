@@ -9,32 +9,68 @@ namespace UnrealSharpManagedGlue;
 
 public static class GlueModuleFactory
 {
+    private static readonly Dictionary<string, List<string>> ModuleDependencies;
+
+    static GlueModuleFactory()
+    {
+        Dictionary<string, List<string>>? moduleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(nameof(ModuleDependencies));
+        
+        if (moduleDependencies == null)
+        {
+            moduleDependencies = new Dictionary<string, List<string>>();
+        }
+        
+        ModuleDependencies = moduleDependencies;
+    }
+    
     public static void CreateGlueProjects()
     {
+        bool anyProjectChanges = false;
         foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
         {
             if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine)
             {
                 continue;
             }
-        
+            
+            bool recentlyCreatedModule = false;
             if (!File.Exists(moduleInfo.CsProjPath))
             {
                 CreateGlueModule(moduleInfo);
+                recentlyCreatedModule = true;
             }
+            
+            List<string> pluginDependencies = moduleInfo.Dependencies != null ? moduleInfo.Dependencies.Select(Path.GetFullPath).ToList() : new List<string>();
+        
+            if (!recentlyCreatedModule && ModuleDependencies.TryGetValue(moduleInfo.ProjectName, out List<string>? existingDependencies))
+            {
+                if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
+                {
+                    LoggerUtilities.LogUnrealSharpInfo($"No changes in plugin dependencies for {moduleInfo.ProjectName}, skipping update.");
+                    return;
+                }
+            }
+            
+            AddPluginDependencies(moduleInfo, pluginDependencies);
+            ModuleDependencies[moduleInfo.ProjectName] = pluginDependencies;
+            anyProjectChanges = true;
+        }
 
-            AddPluginDependencies(moduleInfo);
+        if (!anyProjectChanges)
+        {
+            return;
         }
         
         BuildGlueProjects();
+        JsonUtilities.SerializeObjectToJson(ModuleDependencies, nameof(ModuleDependencies));
     }
 
     private static void BuildGlueProjects()
     {
         List<KeyValuePair<string, string>> commandArgs = new List<KeyValuePair<string, string>>
         {
-            new("BuildConfig", GeneratorStatics.BuildConfiguration.ToString()),
-            new("TargetType", GeneratorStatics.BuildTarget.ToString()),
+            new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),
+            new("TargetType", GeneratorStatics.TargetType.ToString()),
             new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
         };
         
@@ -44,14 +80,11 @@ public static class GlueModuleFactory
     private static void CreateGlueModule(ModuleInfo moduleInfo)
     {
         string csprojPath = moduleInfo.CsProjPath;
-        string projectDirectory = Path.GetDirectoryName(csprojPath)!;
         
         List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
         {
             new("ProjectName", moduleInfo.ProjectName),
-            new("ProjectFolder", projectDirectory),
-            new("SkipSolutionGeneration", "true"),
-            new("SkipUSharpProjSetup", "true"),
+            new("ProjectFolder", Path.GetDirectoryName(csprojPath)!),
             new("ProjectRoot", moduleInfo.ModuleRoot),
             new("SkipIncludeAnalyzers", "true"),
         };
@@ -69,20 +102,21 @@ public static class GlueModuleFactory
         ConsoleUtilities.Log($"Successfully created project file: {csprojPath}");
     }
 
-    private static void AddPluginDependencies(ModuleInfo moduleInfo)
+    private static void AddPluginDependencies(ModuleInfo moduleInfo, List<string>? pluginDependencies)
     {
-        List<string> pluginDependencies = moduleInfo.Dependencies != null ? moduleInfo.Dependencies.Select(Path.GetFullPath).ToList() : new List<string>();
-        
         List<KeyValuePair<string, string>> arguments = new()
         {
             new KeyValuePair<string, string>("ProjectPath", moduleInfo.CsProjPath),
         };
         
-        foreach (string path in pluginDependencies)
+        if (pluginDependencies != null)
         {
-            arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
+            foreach (string path in pluginDependencies)
+            {
+                arguments.Add(new KeyValuePair<string, string>("Dependencies", path));
+            }
         }
-
+        
         UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("UpdateProjectDependencies", arguments);
     }
 }

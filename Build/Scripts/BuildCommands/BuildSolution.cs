@@ -11,7 +11,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("Builds a solution file using MSBuild. Can also publish the solution if the \"Publish\" parameter is set to true.")]
 [Help("Folders=<Path>+<Path>", "One or more solution folders to build. At least one is required.")]
 [Help("Publish", "If set, the solution is published instead of built.")]
-[Help("BuildConfig=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
+[Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
 public class BuildSolution : BuildCommand
 {
@@ -28,10 +28,10 @@ public class BuildSolution : BuildCommand
         }
 
         bool Publish = ParseParam("Publish");
-        UnrealTargetConfiguration BuildConfig = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("BuildConfig");
+        UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("TargetConfiguration");
         string[] ExtraArguments = ParseParamValues("ExtraArguments");
 
-        RunBuild(Folders, BuildConfig, Publish, ExtraArguments);
+        RunBuild(Folders, TargetConfiguration, Publish, ExtraArguments);
     }
 
     public static void RunBuild(string folder, UnrealTargetConfiguration buildConfig, bool publish, IList<string>? extraArguments = null)

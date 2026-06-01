@@ -185,7 +185,7 @@ void DumpTypeReflectionData(const TArray<FString>& Args)
 			continue;
 		}
 		
-		UField* Field = TypeDefinition->GetDefinitionField();
+		UField* Field = TypeDefinition->GetDefinition();
 		
 		if (!IsValid(Field))
 		{
@@ -230,22 +230,6 @@ static FAutoConsoleCommand CVarDumpTypeReflectionData(
 	FConsoleCommandWithArgsDelegate::CreateStatic(&DumpTypeReflectionData)
 );
 
-static FAutoConsoleCommand CVarDumpLoadedAssemblies(
-	TEXT("UnrealSharp.DumpLoadedAssemblies"),
-	TEXT("Lists all loaded managed assemblies."),
-	FConsoleCommandDelegate::CreateStatic([]()
-	{
-		TArray<UCSManagedAssembly*> Assemblies;
-		UCSManager::Get().GetLoadedAssemblies(Assemblies);
-		
-		UE_LOG(LogUnrealSharpEditor, Log, TEXT("Loaded Managed Assemblies:"));
-		for (UCSManagedAssembly* Assembly : Assemblies)
-		{
-			UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0}", *Assembly->GetAssemblyName().ToString());
-		}
-	})
-);
-
 static FAutoConsoleCommand CVarListTypesInAssembly(
 	TEXT("UnrealSharp.ListTypesInAssembly"),
 	TEXT("Lists all managed types in the specified assembly. Usage: UnrealSharp.ListTypesInAssembly [AssemblyName]"),
@@ -275,7 +259,7 @@ static FAutoConsoleCommand CVarListTypesInAssembly(
 			
 			if (TypeDefinition.IsValid())
 			{
-				UField* Field = TypeDefinition->GetDefinitionField();
+				UField* Field = TypeDefinition->GetDefinition();
 				if (IsValid(Field))
 				{
 					UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} ({1})", *FieldName.GetFullName().ToString(), Field->GetClass()->GetName());

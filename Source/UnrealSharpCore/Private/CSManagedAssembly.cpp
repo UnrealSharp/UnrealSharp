@@ -61,10 +61,15 @@ bool UCSManagedAssembly::LoadManagedAssembly()
 
 	for (const TSharedPtr<FCSManagedTypeDefinition>& PendingRebuildType : PendingRebuildTypes)
 	{
-		PendingRebuildType->CompileAndGetDefinitionField();
+		PendingRebuildType->Compile();
 	}
 
+#if WITH_EDITOR
 	PendingRebuildTypes.Reset();
+#else
+	PendingRebuildTypes.Empty();
+#endif
+	
 	bIsLoading = false;
 	
 	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(this);
@@ -312,5 +317,5 @@ void UCSManagedAssembly::OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDe
 		return;
 	}
 		
-	PendingRebuildTypes.Add(MoveTemp(ManagedTypeDefinition));
+	PendingRebuildTypes.Add(ManagedTypeDefinition);
 }

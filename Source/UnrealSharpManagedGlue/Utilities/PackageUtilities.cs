@@ -90,7 +90,7 @@ public static class PackageUtilities
     {
         ModuleInfo moduleInfo = package.GetModuleInfo();
         string root = moduleInfo.IsPartOfEngine ? GeneratorStatics.PluginDirectory : moduleInfo.ModuleRoot;
-        return PathUtilities.GetUhtGeneratedOutputPath(root, GeneratorStatics.BuildTarget);
+        return PathUtilities.GetUhtGeneratedOutputPath(root, GeneratorStatics.TargetType);
     }
     
     private static bool IsUPluginFile(string filePath)

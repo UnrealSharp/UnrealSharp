@@ -47,12 +47,21 @@ void FCSManagedTypeDefinition::SetTypeGCHandle(uint8* GCHandlePtr)
 	TypeGCHandle = OwningAssembly->AddTypeHandle(ReflectionData->FieldName, GCHandlePtr);
 }
 
+void FCSManagedTypeDefinition::Compile()
+{
+	if (!RequiresRecompile())
+	{
+		return;
+	}
+	
+	DirtyFlags = None;
+	Compiler->RecompileManagedTypeDefinition(SharedThis(this));
+}
+
 void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags)
 {
 	DirtyFlags = InDirtyFlags;
 	
-	// Notify dependent types to rebuild as well. These are spawned by source generators and depend on this type's structure.
-	// Such as the async wrapper classes.
 	for (int32 i = ReflectionData->SourceGeneratorDependencies.Num() - 1; i >= 0; --i)
 	{
 		const FCSFieldName& SourceGeneratorDependency = ReflectionData->SourceGeneratorDependencies[i];
@@ -71,15 +80,4 @@ void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags
 
 		ManagedTypeDefinition->SetDirtyFlags(InDirtyFlags);
 	}
-}
-
-UField* FCSManagedTypeDefinition::CompileAndGetDefinitionField()
-{
-	if (RequiresRecompile())
-	{
-		DirtyFlags = None;
-		Compiler->RecompileManagedTypeDefinition(SharedThis(this));
-	}
-	
-	return DefinitionField.Get();
 }

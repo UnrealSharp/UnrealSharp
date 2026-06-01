@@ -11,7 +11,7 @@ using UnrealSharp.Automation.Utilities;
 namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Generates a new .sln file for the project and adds all existing C# projects to it.")]
-[Help("SearchFolders=<Path>+<Path>", "The list of folders to search for .csproj files to add to the solution. Paths are relative to the plugin/project root folder.")]
+[Help("SearchFolders=<Path>+<Path>", "The list of folders to search for .csproj files to add to the solution. Paths are relative to the plugin/project root folder. If not specified, the project script directory will be used.")]
 [Help("ProjectPaths=<Path>+<Path>", "The list of individual .csproj file paths to add to the solution. Paths are relative to the plugin/project root folder.")]
 [Help("OutputFolder=<Path>", "The folder to output the generated solution file to. Defaults to the project script folder if not specified.")]
 [Help("SolutionName=<Name>", "The name of the generated solution file, without the .sln extension. Defaults to the project name.")]
@@ -22,20 +22,12 @@ public class GenerateSolution : BuildCommand
     private const int FileUnlockPollIntervalMs = 200;
     private const int RetryBackoffMs = 250;
     private const string SolutionFormat = "sln";
-    private const string SolutionNamePrefix = "Managed";
 
     public override void ExecuteBuild()
     {
-        GenerateManagedSolution(this);
-    }
-
-    public static void GenerateManagedSolution(BuildCommand buildCommand)
-    {
-        ArgumentNullException.ThrowIfNull(buildCommand);
-
-        string[] SearchFolders = buildCommand.ParseParamValues("SearchFolders");
-        string SolutionName = buildCommand.ParseParamValue("SolutionName", SolutionNamePrefix + buildCommand.GetProjectName());
-        string OutputFolder = buildCommand.ParseParamValue("OutputFolder", buildCommand.GetProjectScriptFolder());
+        string[] SearchFolders = ParseParamValues("SearchFolders");
+        string SolutionName = ParseRequiredStringParam("SolutionName");
+        string OutputFolder = ParseRequiredStringParam("OutputFolder");
         string SolutionPath = Path.Combine(OutputFolder, $"{SolutionName}.{SolutionFormat}");
 
         if (!Directory.Exists(OutputFolder))
@@ -47,11 +39,11 @@ public class GenerateSolution : BuildCommand
 
         CreateEmptySolution(OutputFolder, SolutionName);
 
-        List<string> Projects = CollectProjectPaths(buildCommand, SearchFolders, OutputFolder);
+        List<string> Projects = CollectProjectPaths(this, SearchFolders, OutputFolder);
 
-        AddProjectsToSln(buildCommand.GetProjectRootFolder(), Projects, SolutionPath);
+        AddProjectsToSln(this.GetProjectRootFolder(), Projects, SolutionPath);
 
-        DotNetSdkUtilities.CopyGlobalJson(buildCommand);
+        DotNetSdkUtilities.CopyGlobalJson(this);
     }
 
     private static void CreateEmptySolution(string outputFolder, string solutionName)
@@ -85,7 +77,7 @@ public class GenerateSolution : BuildCommand
         return Projects;
     }
 
-    private static void AddProjectsToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
+    private void AddProjectsToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
     {
         string SolutionDirectory = Path.GetDirectoryName(solutionPath)!;
 
@@ -172,7 +164,7 @@ public class GenerateSolution : BuildCommand
         return false;
     }
 
-    private static IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(string solutionDirectory, string projectDirectory, List<string> relativePaths)
+    private IEnumerable<IGrouping<string, string>> GroupPathsBySolutionFolder(string solutionDirectory, string projectDirectory, List<string> relativePaths)
     {
         return relativePaths.GroupBy(path => GetSolutionFolderForProject(solutionDirectory, projectDirectory, path));
     }

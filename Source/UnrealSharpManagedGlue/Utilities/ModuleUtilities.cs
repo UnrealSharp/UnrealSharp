@@ -117,9 +117,11 @@ public static class ModuleUtilities
 	
 	public static ModuleInfo GetModuleInfo(string packageName)
 	{
+		string fixedPackageName = packageName.StartsWith("/Script/", StringComparison.OrdinalIgnoreCase) ? packageName : $"/Script/{packageName}";
+		
 		foreach (KeyValuePair<UhtPackage, ModuleInfo> kvp in PackageToModuleInfo)
 		{
-			if (!kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
+			if (!kvp.Key.SourceName.Equals(fixedPackageName, StringComparison.OrdinalIgnoreCase))
 			{
 				continue;
 			}

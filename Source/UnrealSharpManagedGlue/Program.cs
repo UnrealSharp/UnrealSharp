@@ -54,7 +54,6 @@ public static class Program
         BuildUtilities.BuildBindings();
         
         GlueModuleFactory.CreateGlueProjects();
-        
         BuildUtilities.GenerateUserSolution();
     }
 

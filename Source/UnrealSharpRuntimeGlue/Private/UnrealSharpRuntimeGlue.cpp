@@ -1,5 +1,6 @@
 ﻿#include "UnrealSharpRuntimeGlue.h"
 #include "CSGlueGenerator.h"
+#include "CSInstallationUtilities.h"
 #include "CSPathsUtilities.h"
 #include "CSRuntimeGlueCommands.h"
 #include "CSRuntimeGlueSettings.h"
@@ -91,6 +92,11 @@ void FUnrealSharpRuntimeGlueModule::InitializeCommands()
 
 void FUnrealSharpRuntimeGlueModule::OnBuildingToolbar(FMenuBuilder& MenuBuilder)
 {
+	if (!UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled())
+	{
+		return;
+	}
+	
 	MenuBuilder.BeginSection("Glue", LOCTEXT("Glue", "Glue"));
 	
 	MenuBuilder.AddMenuEntry(FCSRuntimeGlueCommands::Get().RefreshRuntimeGlue, NAME_None, TAttribute<FText>(), TAttribute<FText>(),

@@ -36,6 +36,7 @@ public:
 #endif
 
 private:
+	
 #if WITH_EDITOR
 	static void CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UCSClass* Field, UClass* SuperClass);
 #endif

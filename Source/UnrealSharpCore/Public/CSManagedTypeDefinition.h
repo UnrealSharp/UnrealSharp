@@ -46,11 +46,17 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 #else
 	TSharedPtr<FGCHandle> GetTypeGCHandle() const { return TypeGCHandle; }
 #endif
-
-	UField* CompileAndGetDefinitionField();
-	UField* GetDefinitionField() const { return DefinitionField.Get(); }
 	
-	FCSFieldName GetFieldName() const { return ReflectionData->FieldName; }
+	void SetTypeGCHandle(uint8* GCHandlePtr);
+
+	void Compile();
+	UField* GetDefinition()
+	{
+		Compile();
+		return DefinitionField.Get();
+	}
+	
+	const FCSFieldName& GetFieldName() const { return ReflectionData->FieldName; }
 	FCSNamespace GetNamespace() const { return GetFieldName().GetNamespace(); }
 	
 	FName GetEngineName() const { return GetFieldName().GetFName(); }
@@ -69,8 +75,6 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 		ReflectionData = InReflectionData;
 		FCSManagedTypeDefinitionEvents::OnReflectionDataChanged.Broadcast(SharedThis(this));
 	}
-	
-	void SetTypeGCHandle(uint8* GCHandlePtr);
 	
 	void SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags);
 	ECSTypeStructuralFlags GetDirtyFlags() const { return DirtyFlags; }

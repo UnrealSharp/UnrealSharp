@@ -134,7 +134,7 @@ public static class FileExporter
         string[] files = Directory.GetFiles(path);
         foreach (string file in files)
         {
-            if (AffectedFiles.Contains(file))
+            if (Path.GetExtension(file) != ".cs" || AffectedFiles.Contains(file))
             {
                 continue;
             }

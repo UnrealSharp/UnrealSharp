@@ -13,8 +13,8 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("ProjectRoot=<Path>", "The root directory for the generated C# project.")]
 [Help("ProjectName=<Name>", "The name of the new C# project to generate.")]
 [Help("CreateModuleClass", "Whether to create a default module class in the generated project.")]
-[Help("SkipSolutionGeneration", "If set, the .sln file will not be regenerated.")]
-[Help("SkipUSharpProjSetup", "If set, the generated .csproj will not be modified to include UnrealSharp properties and dependencies.")]
+[Help("GenerateSolution", "If set, a solution file will be generated for the new project after generating the .csproj file.")]
+[Help("RunUSharpProjectSetup", "If set, the UnrealSharp project setup will be run after generating the project, which includes adding launch settings and building the project.")]
 [Help("EditorOnly", "If set, the generated project will be marked as not publishable.")]
 [Help("Dependencies=<Path>+<Path>", "Additional project dependencies to include in the generated .csproj file.")]
 [Help("SkipIncludeAnalyzers", "If set, the generated .csproj will not reference the UnrealSharp analyzers.")]
@@ -32,8 +32,8 @@ public class GenerateProject : BuildCommand
         string ProjectRoot = ParseRequiredStringParam("ProjectRoot");
         string ProjectName = ParseRequiredStringParam("ProjectName");
         bool CreateModuleClass = ParseParam("CreateModuleClass");
-        bool SkipSolutionGeneration = ParseParam("SkipSolutionGeneration");
-        bool SkipUSharpProjSetup = ParseParam("SkipUSharpProjSetup");
+        bool ShouldGenerateSolution = ParseParam("GenerateSolution");
+        bool RunUSharpProjectSetup = ParseParam("RunUSharpProjectSetup");
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
 
@@ -61,12 +61,17 @@ public class GenerateProject : BuildCommand
 
         LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
 
-        if (!SkipSolutionGeneration)
+        if (ShouldGenerateSolution)
         {
-            GenerateSolution.GenerateManagedSolution(this);
+            List<KeyValuePair<string, string>> ActionArgs = new List<KeyValuePair<string, string>>
+            {
+                new("ForceGenerate", "true"),
+            };
+            
+            CommandUtilities.RunCommand(nameof(GenerateUserSolution), this, ActionArgs);
         }
 
-        if (!SkipUSharpProjSetup)
+        if (RunUSharpProjectSetup)
         {
             AddLaunchSettings(ProjectFolder);
             BuildProject(ProjectPath, ProjectFolder);

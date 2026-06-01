@@ -728,6 +728,8 @@ void FUnrealSharpEditorModule::AddNewProject(const FString& ModuleName, const FS
 	
 	ActionArgs.Add(TEXT("ProjectName"), ModuleName);
 	ActionArgs.Add(TEXT("ProjectFolder"), UnrealSharp::Paths::MakeQuotedPath(FPaths::ConvertRelativePathToFull(ProjectParentFolder)));
+	ActionArgs.Add(TEXT("GenerateSolution"), TEXT("true"));
+	ActionArgs.Add(TEXT("RunUSharpProjectSetup"), TEXT("true"));
 	
 	FString FullProjectRoot = FPaths::ConvertRelativePathToFull(ProjectRoot);
 	ActionArgs.Add(TEXT("ProjectRoot"), UnrealSharp::Paths::MakeQuotedPath(FullProjectRoot));

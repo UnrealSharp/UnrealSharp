@@ -1,12 +1,9 @@
 ﻿#include "UnrealSharpCompiler.h"
 
-#include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
 #include "CSManager.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
-#include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "KismetCompiler.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -14,7 +11,6 @@
 #include "Types/CSBlueprint.h"
 #include "Types/CSClass.h"
 #include "Types/CSEnum.h"
-#include "Types/CSInterface.h"
 #include "Types/CSScriptStruct.h"
 #include "UnrealSharpUtils.h"
 #include "Compilers/CSManagedClassCompiler.h"
@@ -205,7 +201,7 @@ void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 
 void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 {
-	UClass* DefinitionClass = Cast<UClass>(ManagedTypeDefinition->GetDefinitionField());
+	UClass* DefinitionClass = Cast<UClass>(ManagedTypeDefinition->GetDefinition());
 	if (!IsValid(DefinitionClass))
 	{
 		return;

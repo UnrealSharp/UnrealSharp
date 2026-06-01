@@ -12,7 +12,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("SolutionDirectory=<Path>", "Path to the solution to build.")]
 [Help("LoadOrderName=<Name>", "Name for the emitted load order file, without extension.")]
 [Help("OutputPath=<Path>", "Output path for the build output and emitted load order.")]
-[Help("BuildConfig=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
+[Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("clp=<Args>", "Optional CLP arguments to pass to the build process.")]
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
 [Help("IsCollectible=<true/false>", "Whether the emitted assemblies should be marked as collectible. Defaults to false when omitted.")]
@@ -25,7 +25,7 @@ public class BuildEmitLoadOrder : BuildCommand
     public override void ExecuteBuild()
     {
         string SolutionPath = ParseRequiredStringParam("SolutionDirectory");
-        UnrealTargetConfiguration BuildConfig = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("BuildConfig");
+        UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("TargetConfiguration");
         string OutputPath = ParseRequiredStringParam("OutputPath");
         string LoadOrderName = ParseRequiredStringParam("LoadOrderName");
         string[] Projects = ParseParamValues("Projects");
@@ -38,7 +38,7 @@ public class BuildEmitLoadOrder : BuildCommand
 
         List<string> BuildArguments = BuildSolutionArguments(OutputPath);
 
-        BuildCommands.BuildSolution.RunBuild(SolutionPath, BuildConfig, publish: true, BuildArguments);
+        BuildCommands.BuildSolution.RunBuild(SolutionPath, TargetConfiguration, publish: true, BuildArguments);
         
         EmitLoadOrder(Projects, LoadOrderName, OutputPath, Options);
         AddLaunchSettings(this);

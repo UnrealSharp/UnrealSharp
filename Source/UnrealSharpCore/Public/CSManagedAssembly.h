@@ -2,7 +2,6 @@
 
 #include "CSFieldName.h"
 #include "CSManagedGCHandle.h"
-#include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "CSFieldType.h"
 #include "Misc/Paths.h"
@@ -37,6 +36,7 @@ public:
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 	UNREALSHARPCORE_API bool IsCollectible() const { return bIsCollectible; }
 	
+	
 #if WITH_EDITOR
 	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { DependentAssemblies.Add(DependencyAssembly); }
 	UNREALSHARPCORE_API const TArray<UCSManagedAssembly*>& GetDependentAssemblies() const { return DependentAssemblies; }
@@ -58,7 +58,7 @@ public:
 
 		if (TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindManagedTypeDefinition(FieldName))
 		{
-			return Cast<T>(ManagedTypeDefinition->CompileAndGetDefinitionField());
+			return Cast<T>(ManagedTypeDefinition->GetDefinition());
 		}
 		
 		return FCSUtilities::FindField<T>(FieldName);
