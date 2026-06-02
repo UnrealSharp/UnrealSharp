@@ -24,8 +24,8 @@ public static class LaunchSettingsUtilities
             ExecutablePath = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Mac", "UnrealEditor");
         }
 
-        string? ProjectParam = buildCommand.ParseProjectParam()?.FullName;
-        string CommandLineArgs = ProjectParam != null ? $"\"{ProjectParam}\"" : string.Empty;
+        string ProjectParam = buildCommand.GetUProjectFile().FullName;
+        string CommandLineArgs = $"\"{ProjectParam}\"";
 
         Root.Profiles.ProfileName = new Profile
         {

@@ -25,6 +25,7 @@ void FUnrealSharpCoreModule::StartupModule()
 void FUnrealSharpCoreModule::ShutdownModule()
 {
 	UCSManager::Shutdown();
+	
 	FCSPropertyGeneratorManager::Shutdown();
 }
 

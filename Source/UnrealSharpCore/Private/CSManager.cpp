@@ -40,6 +40,46 @@
 
 UCSManager* UCSManager::Instance = nullptr;
 
+void UCSManager::Initialize()
+{
+	if (bIsInitialized)
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "Tried to initialize CSManager, but it's already initialized.");
+		return;
+	}
+	
+#if WITH_EDITOR
+	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
+	{
+		Initialize();
+		return;
+	}
+#endif
+	
+	if (!InitializeDotNetRuntime())
+	{
+		return;
+	}
+	
+	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
+	GUObjectArray.AddUObjectDeleteListener(this);
+
+	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSManager::OnModulesChanged);
+	FCSPropertyFactory::Initialize();
+
+	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
+	
+	LoadAssemblies();
+	
+	bIsInitialized = true;
+	OnCSManagerInitialized.Broadcast(*this);
+}
+
+void UCSManager::Shutdown()
+{
+	Instance = nullptr;
+}
+
 UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace& Namespace)
 {
 	if (UPackage* NativePackage = Namespace.TryGetAsNativePackage())
@@ -131,34 +171,6 @@ void UCSManager::ActivateSubsystemClass(TSubclassOf<USubsystem> SubsystemClass)
 	InitializeSubsystems();
 }
 
-void UCSManager::Initialize()
-{
-#if WITH_EDITOR
-	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
-	{
-		Initialize();
-		return;
-	}
-#endif
-	
-	if (!InitializeDotNetRuntime())
-	{
-		return;
-	}
-
-	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
-	GUObjectArray.AddUObjectDeleteListener(this);
-	FModuleManager::Get().OnModulesChanged().AddUObject(this, &UCSManager::OnModulesChanged);
-	FCSPropertyFactory::Initialize();
-
-	GlobalManagedPackage = FindOrAddManagedPackage(FCSNamespace(TEXT("UnrealSharp")));
-	
-	LoadAssembliesFromManifests();
-	
-	bIsInitialized = true;
-	OnCSManagerInitialized.Broadcast(*this);
-}
-
 bool UCSManager::InitializeDotNetRuntime()
 {
 	if (!LoadRuntimeHost())
@@ -235,7 +247,7 @@ bool UCSManager::LoadRuntimeHost()
 	return Hostfxr_Initialize_For_Dotnet_Command_Line && Hostfxr_Initialize_For_Runtime_Config && Hostfxr_Get_Runtime_Delegate && Hostfxr_Close;
 }
 
-bool UCSManager::LoadAssembliesFromManifests()
+bool UCSManager::LoadAssemblies()
 {
 	TArray<FLoadOrderManifest> Manifests;
 	UnrealSharp::Project::DiscoverLoadOrderManifests(Manifests);
@@ -260,9 +272,11 @@ bool UCSManager::LoadAssembliesFromManifests()
 void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::NotifyUObjectDeleted);
+	
+	FCSObjectID ObjectID(Index);
 
 	TSharedPtr<FGCHandle> Handle;
-	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(Index, Index, Handle))
+	if (!ManagedObjectHandles.RemoveAndCopyValueByHash(ObjectID.Get(), ObjectID, Handle))
 	{
 		return;
 	}
@@ -492,8 +506,8 @@ UCSManagedAssembly* UCSManager::FindOwningAssemblySlow(UField* Field)
 			continue;
 		}
 
-		const uint32 FieldID = Field->GetUniqueID();
-		NativeClassToAssemblyMap.AddByHash(FieldID, FieldID, Assembly);
+		const FCSObjectID FieldID = Field->GetUniqueID();
+		NativeClassToAssemblyMap.AddByHash(FieldID.Get(), FieldID, Assembly);
 		return Assembly;
 	}
 
@@ -509,8 +523,8 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 		return FGCHandle::InvalidHandle();
 	}
 
-	const uint32 ObjectID = Object->GetUniqueID();
-	if (TSharedPtr<FGCHandle>* FoundHandle = ManagedObjectHandles.FindByHash(ObjectID, ObjectID))
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	if (TSharedPtr<FGCHandle>* FoundHandle = ManagedObjectHandles.FindByHash(ObjectID.Get(), ObjectID))
 	{
 		TSharedPtr<FGCHandle> HandlePtr = *FoundHandle;
 		if (HandlePtr.IsValid() && !HandlePtr->IsNull())

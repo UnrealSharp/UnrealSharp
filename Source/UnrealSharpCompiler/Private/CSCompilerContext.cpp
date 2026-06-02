@@ -1,7 +1,6 @@
 #include "CSCompilerContext.h"
 
 #include "ComponentTypeRegistry.h"
-#include "CSManager.h"
 #include "ISettingsModule.h"
 #include "BehaviorTree/Tasks/BTTask_BlueprintBase.h"
 #include "Blueprint/StateTreeTaskBlueprintBase.h"

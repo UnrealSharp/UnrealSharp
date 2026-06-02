@@ -266,8 +266,8 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UO
 	TSharedPtr<FGCHandle> Handle = MakeShared<FGCHandle>(NewObjectHandle);
 	AllocatedGCHandles.Add(Handle);
 
-	const uint32 ObjectID = Object->GetUniqueID();
-	UCSManager::Get().ManagedObjectHandles.AddByHash(ObjectID, ObjectID, Handle);
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	UCSManager::Get().ManagedObjectHandles.AddByHash(ObjectID.Get(), ObjectID, Handle);
 	
 	return Handle;
 }
@@ -280,8 +280,8 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetOrCreateManagedInterface(UObject* O
 	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = FindOrAddManagedTypeDefinition(NonBlueprintClass);
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
 	
-	const uint32 ObjectID = Object->GetUniqueID();
-	TMap<uint32, TSharedPtr<FGCHandle>>& TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID, ObjectID);
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	TMap<uint32, TSharedPtr<FGCHandle>>& TypeMap = UCSManager::Get().ManagedInterfaceWrappers.FindOrAddByHash(ObjectID.Get(), ObjectID);
 	
 	const uint32 TypeId = InterfaceClass->GetUniqueID();
 	if (TSharedPtr<FGCHandle>* Existing = TypeMap.FindByHash(TypeId, TypeId))
@@ -289,7 +289,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetOrCreateManagedInterface(UObject* O
 		return *Existing;
 	}
 
-	TSharedPtr<FGCHandle>* ObjectHandle = UCSManager::Get().ManagedObjectHandles.FindByHash(ObjectID, ObjectID);
+	TSharedPtr<FGCHandle>* ObjectHandle = UCSManager::Get().ManagedObjectHandles.FindByHash(ObjectID.Get(), ObjectID);
 	if (!ObjectHandle)
 	{
 		return nullptr;

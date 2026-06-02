@@ -29,6 +29,6 @@ public class GenerateUserSolution : BuildCommand
             new("SearchFolders", this.GetScriptDirectoryName())
         ];
 
-        CommandUtilities.RunCommand(nameof(GenerateSolution), this.GetProjectScriptFolder(), ActionArgs);
+        CommandUtilities.RunCommand(nameof(GenerateSolution), this, ActionArgs);
     }
 }

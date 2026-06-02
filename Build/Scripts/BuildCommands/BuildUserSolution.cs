@@ -6,7 +6,7 @@ using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharp.Automation.BuildCommands;
 
-[Help("Builds the user-authored C# code for the active project and emits the user load order.")]
+[Help("Builds the user written C# code for the active project and emits the user load order.")]
 [Help("OutputPath=<Path>", "Output path for the build output and emitted load order.")]
 [Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.). Defaults to Development.")]
 [Help("clp=<Args>", "Optional CLP arguments to pass to the build process.")]

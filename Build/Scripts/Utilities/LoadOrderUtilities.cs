@@ -39,7 +39,7 @@ public static class LoadOrderUtilities
     {
         if (!Directory.Exists(outputPath))
         {
-            throw new DirectoryNotFoundException($"Assembly folder does not exist: {outputPath}");
+            Directory.CreateDirectory(outputPath);
         }
 
         List<string> ProjectList = projectFilesOrNames.ToList();

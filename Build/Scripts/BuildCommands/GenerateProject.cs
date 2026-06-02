@@ -10,7 +10,6 @@ namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Generates a new C# project in the specified folder.")]
 [Help("ProjectFolder=<Path>", "The root directory of the Unreal Engine project.")]
-[Help("ProjectRoot=<Path>", "The root directory for the generated C# project.")]
 [Help("ProjectName=<Name>", "The name of the new C# project to generate.")]
 [Help("CreateModuleClass", "Whether to create a default module class in the generated project.")]
 [Help("GenerateSolution", "If set, a solution file will be generated for the new project after generating the .csproj file.")]
@@ -29,26 +28,13 @@ public class GenerateProject : BuildCommand
     public override void ExecuteBuild()
     {
         string ProjectFolder = ParseRequiredStringParam("ProjectFolder");
-        string ProjectRoot = ParseRequiredStringParam("ProjectRoot");
         string ProjectName = ParseRequiredStringParam("ProjectName");
         bool CreateModuleClass = ParseParam("CreateModuleClass");
         bool ShouldGenerateSolution = ParseParam("GenerateSolution");
         bool RunUSharpProjectSetup = ParseParam("RunUSharpProjectSetup");
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
-
-        if (!ProjectUtilities.ContainsUPluginOrUProjectFile(ProjectRoot))
-        {
-            throw new AutomationException($"ProjectRoot '{ProjectRoot}' must contain a .uplugin or .uproject file at its top level.");
-        }
-
-        if (ProjectFolder == ProjectRoot)
-        {
-            ProjectFolder = Path.Combine(ProjectFolder, this.GetScriptDirectoryName());
-        }
-
-        string CsProjFileName = $"{ProjectName}.{CsProjFileExtension}";
-        string ProjectPath = Path.Combine(ProjectFolder, CsProjFileName);
+        string ProjectPath = Path.Combine(ProjectFolder, $"{ProjectName}.{CsProjFileExtension}");
 
         WriteProjectTemplate(ProjectName, ProjectFolder);
 
@@ -132,7 +118,12 @@ public class GenerateProject : BuildCommand
 
     private void ApplyAnalyzerFlag(XmlDocument csprojDocument)
     {
-        csprojDocument.SetProjectProperty(SkipIncludeAnalyzersPropertyName, ParseParam(SkipIncludeAnalyzersPropertyName) ? "true" : "false");
+        if (!ParseParam("SkipIncludeAnalyzers"))
+        {
+            return;
+        }
+        
+        csprojDocument.SetProjectProperty(SkipIncludeAnalyzersPropertyName, "true");
     }
 
     private void ApplySharedPropsImport(XmlDocument csprojDocument, string projectFolder)

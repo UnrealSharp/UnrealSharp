@@ -14,7 +14,7 @@ UCSManagedStructCompiler::UCSManagedStructCompiler()
 	FieldType = UCSScriptStruct::StaticClass();
 }
 
-void UCSManagedStructCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSScriptStruct* Struct = static_cast<UCSScriptStruct*>(TypeToRecompile);
 	TSharedPtr<FCSStructReflectionData> StructReflectionData = ManagedTypeDefinition->GetReflectionData<FCSStructReflectionData>();

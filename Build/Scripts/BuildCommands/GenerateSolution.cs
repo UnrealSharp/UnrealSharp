@@ -36,14 +36,19 @@ public class GenerateSolution : BuildCommand
         }
 
         LoggerUtilities.LogUnrealSharpInfo($"Generating solution '{SolutionName}.{SolutionFormat}' in '{OutputFolder}'...");
-
+        
+        DotNetSdkUtilities.CopyGlobalJson(this);
         CreateEmptySolution(OutputFolder, SolutionName);
 
         List<string> Projects = CollectProjectPaths(this, SearchFolders, OutputFolder);
-
+        
+        if (Projects.Count == 0)
+        {
+            LoggerUtilities.LogUnrealSharpInfo("No projects found to add to solution.");
+            return;
+        }
+        
         AddProjectsToSln(this.GetProjectRootFolder(), Projects, SolutionPath);
-
-        DotNetSdkUtilities.CopyGlobalJson(this);
     }
 
     private static void CreateEmptySolution(string outputFolder, string solutionName)
@@ -80,7 +85,6 @@ public class GenerateSolution : BuildCommand
     private void AddProjectsToSln(string projectDirectory, List<string> relativePaths, string solutionPath)
     {
         string SolutionDirectory = Path.GetDirectoryName(solutionPath)!;
-
         IEnumerable<IGrouping<string, string>> GroupedProjects = GroupPathsBySolutionFolder(SolutionDirectory, projectDirectory, relativePaths);
 
         foreach (IGrouping<string, string> Projects in GroupedProjects)

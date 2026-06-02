@@ -4,6 +4,7 @@
 #include <hostfxr.h>
 #include "CSManagedAssembly.h"
 #include "CSManagedCallbacksCache.h"
+#include "CSObjectID.h"
 #include "CSManager.generated.h"
 
 class UCSTypeBuilderManager;
@@ -52,6 +53,8 @@ public:
 		return *Instance;
 	}
 	
+	void Initialize();
+	static void Shutdown();
 	bool IsInitialized() const { return bIsInitialized; }
 
 	UPackage* GetGlobalManagedPackage() const { return GlobalManagedPackage; }
@@ -127,16 +130,12 @@ public:
 
 private:
 	friend UCSManagedAssembly;
-	friend FUnrealSharpCoreModule;
-
-	void Initialize();
-	static void Shutdown() { Instance = nullptr; }
 
 	load_assembly_and_get_function_pointer_fn InitializeNativeHost() const;
 
 	bool LoadRuntimeHost();
 	bool InitializeDotNetRuntime();
-	bool LoadAssembliesFromManifests();
+	bool LoadAssemblies();
 
 	// FUObjectDeleteListener overrides
 	virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
@@ -163,8 +162,8 @@ private:
 			return nullptr;
 		}
 
-		const uint32 ClassID = Object->GetUniqueID();
-		if (TObjectPtr<UCSManagedAssembly> Assembly = NativeClassToAssemblyMap.FindRef(ClassID))
+		const FCSObjectID ObjectID = Object->GetUniqueID();
+		if (TObjectPtr<UCSManagedAssembly> Assembly = NativeClassToAssemblyMap.FindRef(ObjectID))
 		{
 			return Assembly;
 		}
@@ -174,23 +173,23 @@ private:
 
 	UCSManagedAssembly* FindOwningAssemblySlow(UField* Field);
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TArray<TObjectPtr<UPackage>> AllPackages;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<UPackage> GlobalManagedPackage;
 
 	UPROPERTY(Transient)
 	TArray<TSubclassOf<USubsystem>> PendingSubsystems;
-
-	TMap<uint32, TSharedPtr<FGCHandle>> ManagedObjectHandles;
-	TMap<uint32, TMap<uint32, TSharedPtr<FGCHandle>>> ManagedInterfaceWrappers;
 	
-	UPROPERTY()
-	TMap<uint32, TObjectPtr<UCSManagedAssembly>> NativeClassToAssemblyMap;
+	UPROPERTY(Transient)
+	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> NativeClassToAssemblyMap;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UCSManagedAssembly>> LoadedAssemblies;
+	
+	TMap<FCSObjectID, TSharedPtr<FGCHandle>> ManagedObjectHandles;
+	TMap<FCSObjectID, TMap<uint32, TSharedPtr<FGCHandle>>> ManagedInterfaceWrappers;
 
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 	

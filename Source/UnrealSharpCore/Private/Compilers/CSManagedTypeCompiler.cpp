@@ -21,14 +21,14 @@ UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefin
 	return NewField;
 }
 
-void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedTypeCompiler::CompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::RecompileManagedTypeDefinition);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::CompileManagedTypeDefinition);
 	
 	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinition();
 	
 	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Rebuilding type: {0}", *TypeToRecompile->GetName());
-	Recompile(TypeToRecompile, ManagedTypeDefinition);
+	Compile(TypeToRecompile, ManagedTypeDefinition);
 	
 	FCSMetaDataUtils::ApplyMetaData(ManagedTypeDefinition->GetReflectionData()->MetaData, TypeToRecompile);
 	FCSMetaDataUtils::ApplyBaseMetaData(TypeToRecompile);

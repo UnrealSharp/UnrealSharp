@@ -23,7 +23,7 @@ UCSManagedClassCompiler::UCSManagedClassCompiler()
 	FieldType = UCSClass::StaticClass();
 }
 
-void UCSManagedClassCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedClassCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSClass* Field = static_cast<UCSClass*>(TypeToRecompile);
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = ManagedTypeDefinition->GetReflectionData<FCSClassReflectionData>();

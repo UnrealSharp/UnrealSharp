@@ -16,13 +16,7 @@ public static class PathUtilities
     
     public static string GetProjectRootFolder(this BuildCommand command)
     {
-        FileReference? Project = command.ParseProjectParam();
-        
-        if (Project == null)
-        {
-            throw new Exception("No project file specified. Please specify a project file using the -Project=... parameter.");
-        }
-        
+        FileReference Project = command.GetUProjectFile();
         return Project.Directory.FullName;
     }
     

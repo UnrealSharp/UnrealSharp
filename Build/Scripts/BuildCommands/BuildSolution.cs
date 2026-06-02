@@ -15,9 +15,6 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
 public class BuildSolution : BuildCommand
 {
-    private const string BuildVerb = "build";
-    private const string PublishVerb = "publish";
-
     public override void ExecuteBuild()
     {
         string[] Folders = ParseParamValues("Folders");
@@ -52,7 +49,7 @@ public class BuildSolution : BuildCommand
 
         ValidateSolutionFolders(FolderList);
 
-        string Action = publish ? PublishVerb : BuildVerb;
+        string Action = publish ? "publish" : "build";
         string ConfigurationName = buildConfig.GetDotNetBuildConfiguration();
 
         foreach (string SolutionFolder in FolderList)
