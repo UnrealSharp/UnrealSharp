@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using AutomationTool;
+using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharp.Automation.BuildCommands;
@@ -16,8 +17,8 @@ public class StageUnrealSharp : BuildCommand
         List<KeyValuePair<string, string>> ActionArgs =
         [
             new("ArchiveDirectory", this.GetProjectRootFolder()),
-            new("UEBuildConfig", ParseParamValue("UEBuildConfig", "Development")),
-            new("UETargetType", ParseParamValue("UETargetType", "Editor")),
+            new("UEBuildConfig", ParseParamValue("UEBuildConfig", nameof(UnrealTargetConfiguration.Development))),
+            new("UETargetType", ParseParamValue("UETargetType", nameof(TargetType.Editor))),
             new("TargetPlatform", ParseParamValue("TargetPlatform", string.Empty)),
             new("TargetArchitecture", ParseParamValue("TargetArchitecture", string.Empty))
         ];

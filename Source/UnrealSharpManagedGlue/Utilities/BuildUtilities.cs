@@ -26,6 +26,11 @@ public static class BuildUtilities
     
     public static void GenerateUserSolution()
     {
+        if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
+        {
+            return;
+        }
+        
         UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateUserSolution");
     }
 }

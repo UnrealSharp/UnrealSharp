@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnrealBuildTool;
 using UnrealSharp.Automation.Utilities;
 using UnrealSharpManagedGlue.Utilities;
 
@@ -67,6 +68,11 @@ public static class GlueModuleFactory
 
     private static void BuildGlueProjects()
     {
+        if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
+        {
+            return;
+        }
+        
         List<KeyValuePair<string, string>> commandArgs = new List<KeyValuePair<string, string>>
         {
             new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),

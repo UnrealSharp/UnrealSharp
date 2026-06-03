@@ -27,7 +27,7 @@ public class PackageProject : BuildCommand
 
     public sealed record PackagingOptions(
         string ArchiveDirectory,
-        string TargetType,
+        TargetType TargetType,
         UnrealTargetConfiguration BuildConfiguration,
         UnrealTargetPlatform TargetPlatform,
         UnrealArch TargetArchitecture,
@@ -71,7 +71,7 @@ public class PackageProject : BuildCommand
     private PackagingOptions ParseOptionsFromCommandLine()
     {
         string ArchiveDirectory = ParseRequiredStringParam("ArchiveDirectory");
-        string TargetType = ParseRequiredStringParam("UETargetType");
+        TargetType TargetType = ParseRequiredEnumParamEnum<TargetType>("UETargetType");
         UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("UEBuildConfig");
 
         string? PlatformString = ParseOptionalStringParam("TargetPlatform");
@@ -106,7 +106,6 @@ public class PackageProject : BuildCommand
     private void ValidateOptions(PackagingOptions options)
     {
         ArgumentException.ThrowIfNullOrEmpty(options.ArchiveDirectory);
-        ArgumentException.ThrowIfNullOrEmpty(options.TargetType);
 
         if (!Directory.Exists(options.ArchiveDirectory))
         {
@@ -215,13 +214,7 @@ public class PackageProject : BuildCommand
         }
 
         LoggerUtilities.LogUnrealSharpInfo("Source build detected. Building glue from generated projects and emitting glue load order...");
-        
-        if (!Enum.TryParse(options.TargetType, ignoreCase: true, out TargetType GlueTargetType))
-        {
-            throw new AutomationException($"Invalid UETargetType '{options.TargetType}'. Expected one of: {string.Join(", ", Enum.GetNames<TargetType>())}.");
-        }
-
-        BuildUserGlue.Build(this, GlueTargetType, options.BuildConfiguration, publishFolder, buildArguments);
+        BuildUserGlue.Build(this, options.TargetType, options.BuildConfiguration, publishFolder, buildArguments);
     }
 
     private void EmitUserLoadOrder(string publishFolder)
