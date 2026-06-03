@@ -35,7 +35,7 @@ UCSManagedTypeCompiler* FCSUtilities::ResolveCompilerFromFieldType(ECSFieldType 
 
 bool FCSUtilities::ShouldReloadDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition, const TCHAR* NewJsonReflectionData)
 {
-	if (!ManagedTypeDefinition->RequiresRecompile())
+	if (!ManagedTypeDefinition->RequiresCompile())
 	{
 		return false;
 	}

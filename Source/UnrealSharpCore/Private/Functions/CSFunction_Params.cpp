@@ -1,5 +1,13 @@
 ﻿#include "Functions/CSFunction_Params.h"
 
+static bool IsOutParameter(const FProperty* InParam)
+{
+	const bool bIsParam = InParam->HasAnyPropertyFlags(CPF_Parm);
+	const bool bIsReturnParam = InParam->HasAnyPropertyFlags(CPF_ReturnParm);
+	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
+	return bIsParam && !bIsReturnParam && bIsOutParam;
+}
+
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params);

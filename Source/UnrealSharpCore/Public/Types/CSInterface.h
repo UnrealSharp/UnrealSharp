@@ -4,7 +4,7 @@
 #include "CSManagedTypeInterface.h"
 #include "CSInterface.generated.h"
 
-UCLASS(MinimalAPI)
+UCLASS()
 class UCSInterface : public UClass, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()

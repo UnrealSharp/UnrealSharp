@@ -99,7 +99,7 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	void* ManagedObjectPtr = ManagedObjectHandle.GetPointer();
 
 	FString ExceptionMessage;
-	int ReturnCode = FCSManagedCallbacks::ManagedCallbacks.InvokeManagedMethod(
+	int ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
 		ManagedObjectPtr,
 		MethodPtr,
 		Stack.Locals,

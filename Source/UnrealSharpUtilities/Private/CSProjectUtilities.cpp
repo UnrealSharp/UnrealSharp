@@ -8,6 +8,8 @@
 
 void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>& OutManifests)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UnrealSharp::Project::DiscoverLoadOrderManifests);
+	
 	const FString UserAssemblyDirectory = Paths::GetUserAssemblyDirectory();
 
 	TArray<FString> ManifestFiles;

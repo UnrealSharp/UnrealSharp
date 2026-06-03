@@ -60,7 +60,7 @@ FGameplayTag UCSGameplayTagsManager::AddTag_Editor(const FString& InAssemblyName
 	
 	TSharedPtr<FNativeGameplayTag> NewTag = CreateTag(TagName, DevComment);
 	
-	TArray<TSharedPtr<FNativeGameplayTag>>& Tags = Get().RegisteredTags.FindOrAdd(OwningAssembly->GetAssemblyName());
+	TArray<TSharedPtr<FNativeGameplayTag>>& Tags = Get().RegisteredTags.FindOrAdd(OwningAssembly->GetFName());
 	Tags.Add(NewTag);
 	
 	return NewTag->GetTag();
@@ -106,8 +106,7 @@ void UCSGameplayTagsManager::OnManagedAssemblyUnloaded(const UCSManagedAssembly*
 	{
 		return;
 	}
-
-	FName AssemblyName = UnloadedAssembly->GetAssemblyName();
-	RegisteredTags.Remove(AssemblyName);
+	
+	RegisteredTags.Remove(UnloadedAssembly->GetFName());
 }
 #endif

@@ -8,7 +8,7 @@
 #include "CSManagedTypeInterface.h"
 #include "CSScriptStruct.generated.h"
 
-UCLASS(MinimalAPI)
+UCLASS()
 class UCSScriptStruct : public UUserDefinedStruct, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()

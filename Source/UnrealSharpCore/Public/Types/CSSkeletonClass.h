@@ -7,7 +7,7 @@
 class UCSClass;
 
 UCLASS()
-class UNREALSHARPCORE_API UCSSkeletonClass : public UCSClass
+class UCSSkeletonClass : public UCSClass
 {
 	GENERATED_BODY()
 public:

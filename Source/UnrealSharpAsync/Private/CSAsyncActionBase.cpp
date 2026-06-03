@@ -29,7 +29,7 @@ void UCSAsyncActionBase::InvokeManagedCallback(UObject* WorldContextObject, bool
 
 void UCSAsyncActionBase::InitializeManagedCallback(FGCHandleIntPtr Callback)
 {
-	ManagedCallback = FGCHandle(Callback, GCHandleType::WeakHandle);
+	ManagedCallback = FGCHandle(Callback);
 
 	if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
 	{

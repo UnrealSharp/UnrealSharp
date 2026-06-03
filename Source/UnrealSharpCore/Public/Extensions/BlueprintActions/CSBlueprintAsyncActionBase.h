@@ -7,19 +7,14 @@
 #include "CSBlueprintAsyncActionBase.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
-class UNREALSHARPCORE_API UCSBlueprintAsyncActionBase : public UBlueprintAsyncActionBase
+class UCSBlueprintAsyncActionBase : public UBlueprintAsyncActionBase
 {
 	GENERATED_BODY()
-
 public:
-
 	// UBlueprintAsyncActionBase interface
 	virtual void Activate() override;
 	//~UBlueprintAsyncActionBase interface
-
 protected:
-
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "Activate"))
 	void ReceiveActivate();
-
 };

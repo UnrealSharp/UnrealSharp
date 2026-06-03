@@ -6,7 +6,7 @@
 #include "UObject/Object.h"
 #include "FCSManagedCallbacksExporter.generated.h"
 
-class FCSManagedCallbacks;
+struct FCSManagedCallbacks;
 
 UCLASS()
 class UFCSManagedCallbacksExporter : public UObject
@@ -14,5 +14,5 @@ class UFCSManagedCallbacksExporter : public UObject
 	GENERATED_BODY()
 public:
 	UNREALSHARP_FUNCTION()
-	static FCSManagedCallbacks::FManagedCallbacks* GetManagedCallbacks();
+	static FCSManagedCallbacks* GetManagedCallbacks();
 };

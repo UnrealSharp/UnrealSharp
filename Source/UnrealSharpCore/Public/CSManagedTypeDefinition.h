@@ -33,7 +33,7 @@ enum UNREALSHARPCORE_API ECSTypeStructuralFlags : uint8
 	ConstructorChanges = 1 << 1, 
 };
 
-struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition>
+struct FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition>
 {
 	~FCSManagedTypeDefinition() = default;
 	FCSManagedTypeDefinition() = default;
@@ -41,33 +41,27 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 	static TSharedPtr<FCSManagedTypeDefinition> CreateFromReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData, UCSManagedAssembly* InOwningAssembly, UCSManagedTypeCompiler* InCompiler);
 	static TSharedPtr<FCSManagedTypeDefinition> CreateFromNativeField(UField* InField, UCSManagedAssembly* InOwningAssembly);
 
+	UNREALSHARPCORE_API UField* GetDefinition();
+	void Compile();
+	
 #if WITH_EDITOR
-	TSharedPtr<FGCHandle> GetTypeGCHandle();
+	UNREALSHARPCORE_API TSharedPtr<FGCHandle> GetTypeGCHandle();
 #else
-	TSharedPtr<FGCHandle> GetTypeGCHandle() const { return TypeGCHandle; }
+	UNREALSHARPCORE_API TSharedPtr<FGCHandle> GetTypeGCHandle() const { return TypeGCHandle; }
 #endif
 	
 	void SetTypeGCHandle(uint8* GCHandlePtr);
-
-	void Compile();
 	
-	UField* GetDefinition()
-	{
-		Compile();
-		return DefinitionField;
-	}
+	UNREALSHARPCORE_API const FCSFieldName& GetFieldName() const { return ReflectionData->FieldName; }
+	UNREALSHARPCORE_API FCSNamespace GetNamespace() const { return GetFieldName().GetNamespace(); }
 	
-	const FCSFieldName& GetFieldName() const { return ReflectionData->FieldName; }
-	FCSNamespace GetNamespace() const { return GetFieldName().GetNamespace(); }
+	UNREALSHARPCORE_API FName GetEngineName() const { return GetFieldName().GetFName(); }
 	
-	FName GetEngineName() const { return GetFieldName().GetFName(); }
-	
-	UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
+	UNREALSHARPCORE_API UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
 	template<typename TReflectionData = FCSTypeReferenceReflectionData>
 	TSharedPtr<TReflectionData> GetReflectionData() const
 	{
-		static_assert(TIsDerivedFrom<TReflectionData, FCSTypeReferenceReflectionData>::Value, "TReflectionData must be a FCSTypeReferenceReflectionData-derived type.");
 		return StaticCastSharedPtr<TReflectionData>(ReflectionData);
 	}
 
@@ -77,12 +71,12 @@ struct UNREALSHARPCORE_API FCSManagedTypeDefinition final : TSharedFromThis<FCSM
 		FCSManagedTypeDefinitionEvents::OnReflectionDataChanged.Broadcast(SharedThis(this));
 	}
 	
-	void SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags);
-	ECSTypeStructuralFlags GetDirtyFlags() const { return DirtyFlags; }
+	UNREALSHARPCORE_API void SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags);
+	UNREALSHARPCORE_API ECSTypeStructuralFlags GetDirtyFlags() const { return DirtyFlags; }
 	
-	bool HasStructuralChanges() const { return EnumHasAnyFlags(DirtyFlags, StructuralChanges); }
-	bool HasConstructorChanges() const { return EnumHasAnyFlags(DirtyFlags, ConstructorChanges); }
-	bool RequiresRecompile() const { return DirtyFlags != None; }
+	UNREALSHARPCORE_API bool HasStructuralChanges() const { return EnumHasAnyFlags(DirtyFlags, StructuralChanges); }
+	UNREALSHARPCORE_API bool HasConstructorChanges() const { return EnumHasAnyFlags(DirtyFlags, ConstructorChanges); }
+	UNREALSHARPCORE_API bool RequiresCompile() const { return DirtyFlags != None; }
 	
 private:
 

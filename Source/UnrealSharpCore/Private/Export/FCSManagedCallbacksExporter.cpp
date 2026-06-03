@@ -1,7 +1,7 @@
 #include "Export/FCSManagedCallbacksExporter.h"
 #include "CSManagedCallbacksCache.h"
 
-FCSManagedCallbacks::FManagedCallbacks* UFCSManagedCallbacksExporter::GetManagedCallbacks()
+FCSManagedCallbacks* UFCSManagedCallbacksExporter::GetManagedCallbacks()
 {
-	return &FCSManagedCallbacks::ManagedCallbacks;
+	return &::GetManagedCallbacks();
 }

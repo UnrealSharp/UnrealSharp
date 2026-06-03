@@ -5,7 +5,7 @@ void UAsyncExporter::RunOnThread(TWeakObjectPtr<UObject> WorldContextObject, ENa
 {
 	AsyncTask(Thread, [WorldContextObject, DelegateHandle]()
 	{
-		FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle, GCHandleType::StrongHandle);
+		FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle);
 		
 		if (!WorldContextObject.IsValid())
 		{

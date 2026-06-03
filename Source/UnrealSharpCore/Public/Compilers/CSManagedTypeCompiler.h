@@ -13,7 +13,7 @@ class UCSManagedTypeCompiler : public UObject
 public:
 
 	UField* CreateField(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
-	void CompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
+	void StartCompilation(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
 
 protected:
 	// Start UCSManagedTypeCompiler interface

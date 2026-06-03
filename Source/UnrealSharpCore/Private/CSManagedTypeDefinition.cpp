@@ -29,6 +29,23 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeF
 	return NewDefinition;
 }
 
+UField* FCSManagedTypeDefinition::GetDefinition()
+{
+	Compile();
+	return DefinitionField;
+}
+
+void FCSManagedTypeDefinition::Compile()
+{
+	if (!RequiresCompile())
+	{
+		return;
+	}
+	
+	DirtyFlags = None;
+	Compiler->StartCompilation(SharedThis(this));
+}
+
 #if WITH_EDITOR
 TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 {
@@ -45,17 +62,6 @@ TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 void FCSManagedTypeDefinition::SetTypeGCHandle(uint8* GCHandlePtr)
 {
 	TypeGCHandle = OwningAssembly->AddTypeHandle(ReflectionData->FieldName, GCHandlePtr);
-}
-
-void FCSManagedTypeDefinition::Compile()
-{
-	if (!RequiresRecompile())
-	{
-		return;
-	}
-	
-	DirtyFlags = None;
-	Compiler->CompileManagedTypeDefinition(SharedThis(this));
 }
 
 void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags)

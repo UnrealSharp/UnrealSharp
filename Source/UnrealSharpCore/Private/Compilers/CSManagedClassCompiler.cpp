@@ -11,6 +11,7 @@
 #include "Factories/CSFunctionFactory.h"
 #include "Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtils.h"
+#include "Subsystems/CSManagedSubsystemManager.h"
 #include "Utilities/CSClassUtilities.h"
 
 #if WITH_EDITOR
@@ -299,7 +300,7 @@ void UCSManagedClassCompiler::ActivateSubsystem(TSubclassOf<USubsystem> Subsyste
 		return;
 	}
 	
-	UCSManager::Get().ActivateSubsystemClass(SubsystemClass);
+	UCSManagedSubsystemManager::Get()->ActivateSubsystemClass(SubsystemClass);
 }
 
 void UCSManagedClassCompiler::DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)

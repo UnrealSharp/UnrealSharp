@@ -25,8 +25,6 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	
 	UCSManager& Manager = UCSManager::Get();
-	ensure(Manager.IsInitialized());
-	
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
 	Manager.OnNewClassEvent().AddUObject(this, &UCSHotReloadSubsystem::OnClassRebuilt);
 	Manager.OnNewEnumEvent().AddUObject(this, &UCSHotReloadSubsystem::OnEnumRebuilt);
@@ -147,7 +145,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
-		if (Assembly->UnloadManagedAssembly())
+		if (Assembly->UnloadAssembly())
 		{
 			continue;
 		}
@@ -160,7 +158,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 				"Common causes include:\n"
 				"- Active references preventing unload (strong GC handles)\n"
 				"- Running or unfinished managed threads\n"
-				"- Dependent assemblies still loaded\n"), *Assembly->GetAssemblyName().ToString());
+				"- Dependent assemblies still loaded\n"), *Assembly->GetName());
 
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage), LOCTEXT("HotReloadFailure", "C# Hot Reload Failed"));
 		return;
@@ -168,7 +166,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)
 	{
-		AssembliesSortedByDependencies[i]->LoadManagedAssembly();
+		AssembliesSortedByDependencies[i]->LoadAssembly();
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Affected Blueprints..."));
@@ -394,7 +392,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	
 	if (FCSHotReloadUtilities::ShouldDeferHotReloadRequest(ModifiedAssembly))
 	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Deferring hot reload request for assembly {0}.", *ModifiedAssembly->GetAssemblyName().ToString());
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Deferring hot reload request for assembly {0}.", *ModifiedAssembly->GetName());
 		return;
 	}
 	

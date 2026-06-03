@@ -11,7 +11,7 @@ void DumpLoadedAssemblies(const TArray<FString>& Args)
 	
 	for (UCSManagedAssembly* Assembly : Assemblies)
 	{
-		UE_LOGFMT(LogUnrealSharp, Display, "- {0} (Path: {1})", *Assembly->GetAssemblyName().ToString(), *Assembly->GetAssemblyFilePath());
+		UE_LOGFMT(LogUnrealSharp, Display, "- {0} (Path: {1})", *Assembly->GetName(), *Assembly->GetAssemblyFilePath());
 	}
 }
 
@@ -154,7 +154,7 @@ bool FCSAssemblyUtilities::IsRuntimeGlueAssembly(const UCSManagedAssembly* Assem
 		return false;
 	}
 
-	const FString& AssemblyName = Assembly->GetAssemblyName().ToString();
+	const FString& AssemblyName = Assembly->GetName();
 	return AssemblyName.EndsWith(".RuntimeGlue", ESearchCase::IgnoreCase);
 }
 #endif

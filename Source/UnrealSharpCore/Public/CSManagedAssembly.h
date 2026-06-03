@@ -16,27 +16,25 @@
 struct FCSManagedMethod;
 class UCSClass;
 
-UCLASS()
+UCLASS(Transient)
 class UCSManagedAssembly : public UObject
 {
 	GENERATED_BODY()
 public:
-	void InitializeManagedAssembly(FStringView InAssemblyPath, bool bIsCollectible = false);
+	void Initialize(FStringView InAssemblyPath, bool bIsCollectible = false);
 
-	UNREALSHARPCORE_API bool LoadManagedAssembly();
-	UNREALSHARPCORE_API bool UnloadManagedAssembly();
+	UNREALSHARPCORE_API bool LoadAssembly();
+	UNREALSHARPCORE_API bool UnloadAssembly();
 
 	UNREALSHARPCORE_API bool IsAssemblyLoading() const { return bIsLoading; }
 	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return AssemblyGCHandle.IsValid() && !AssemblyGCHandle->IsNull(); }
 	
-	UNREALSHARPCORE_API FName GetAssemblyName() const { return AssemblyName; }
 	UNREALSHARPCORE_API const FString& GetAssemblyFilePath() const { return AssemblyFilePath; }
 	UNREALSHARPCORE_API FString GetAssemblyFileName() const { return FPaths::GetCleanFilename(AssemblyFilePath); }
 	
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 	UNREALSHARPCORE_API bool IsCollectible() const { return bIsCollectible; }
-	
-	
+
 #if WITH_EDITOR
 	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { DependentAssemblies.Add(DependencyAssembly); }
 	UNREALSHARPCORE_API const TArray<UCSManagedAssembly*>& GetDependentAssemblies() const { return DependentAssemblies; }
@@ -70,7 +68,7 @@ public:
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle);
 	TSharedPtr<FGCHandle> GetOrCreateManagedInterface(UObject* Object, UClass* InterfaceClass);
 
-	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return AssemblyGCHandle; }
+	TSharedPtr<const FGCHandle> GetAssemblyHandle() const { return AssemblyGCHandle; }
 
 private:
 	void OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
@@ -82,7 +80,6 @@ private:
 	TSharedPtr<FGCHandle> AssemblyGCHandle;
 
 	FString AssemblyFilePath;
-	FName AssemblyName;
 	
 	bool bIsLoading = false;
 	bool bIsCollectible = false;

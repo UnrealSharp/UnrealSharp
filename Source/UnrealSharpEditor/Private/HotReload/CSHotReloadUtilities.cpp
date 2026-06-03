@@ -95,7 +95,7 @@ bool FCSHotReloadUtilities::RecompileDirtyProjects(const TArray<UCSManagedAssemb
 			continue;
 		}
 		
-		AssemblyNames.Add(Assembly->GetAssemblyName().ToString());
+		AssemblyNames.Add(Assembly->GetName());
 	}
 	
 	return UnrealSharpEditorModule.GetManagedEditorCallbacks().RecompileDirtyProjects(&OutExceptionMessage, AssemblyNames);
