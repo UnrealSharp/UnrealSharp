@@ -35,6 +35,7 @@ public class GenerateProject : BuildCommand
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
         string ProjectPath = Path.Combine(ProjectFolder, $"{ProjectName}.{CsProjFileExtension}");
+        string[] CompileIncludeFolder = ParseParamValues("CompileIncludeFolder");
 
         WriteProjectTemplate(ProjectName, ProjectFolder);
 
@@ -43,7 +44,7 @@ public class GenerateProject : BuildCommand
             WriteModuleTemplate(ProjectName, ProjectFolder);
         }
 
-        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, EditorOnly);
+        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, EditorOnly, CompileIncludeFolder);
 
         LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
 
@@ -84,7 +85,7 @@ public class GenerateProject : BuildCommand
         TemplateUtilities.WriteTemplateToFile(this, ModuleTemplateName, projectName, CsFileExtension, projectFolder, ModuleTemplateValues);
     }
 
-    private void UpdateCsprojDocument(string projectPath, string projectFolder, IReadOnlyList<string>? dependencies, bool isEditorOnly)
+    private void UpdateCsprojDocument(string projectPath, string projectFolder, IReadOnlyList<string>? dependencies, bool isEditorOnly, string[] compileIncludeFolder)
     {
         try
         {
@@ -96,6 +97,7 @@ public class GenerateProject : BuildCommand
             ApplyAnalyzerFlag(CsprojDocument);
             ApplySharedPropsImport(CsprojDocument, projectFolder);
             ApplyDependencies(CsprojDocument, projectFolder, dependencies);
+            ApplyCompileIncludeFolder(CsprojDocument, projectFolder, compileIncludeFolder);
 
             CsprojDocument.Save(projectPath);
         }
@@ -142,6 +144,25 @@ public class GenerateProject : BuildCommand
 
         XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
         CsProjectUtilities.AddProjectReferences(csprojDocument, ItemGroup, projectFolder, dependencies);
+    }
+    
+    private static void ApplyCompileIncludeFolder(XmlDocument csprojDocument, string projectFolder, string[] compileIncludeFolders)
+    {
+        foreach (string Folder in compileIncludeFolders)
+        {
+            if (string.IsNullOrWhiteSpace(Folder))
+            {
+                return;
+            }
+
+            string Relative = Path.GetRelativePath(projectFolder, Folder);
+
+            XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
+
+            XmlElement Compile = csprojDocument.CreateElement("Compile");
+            Compile.SetAttribute("Include", Path.Combine(Relative, "**", "*.cs"));
+            ItemGroup.AppendChild(Compile);
+        }
     }
 
     private void AddLaunchSettings(string projectFolder)

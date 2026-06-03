@@ -43,17 +43,17 @@ public static class GlueModuleFactory
             
             List<string> pluginDependencies = moduleInfo.Dependencies != null ? moduleInfo.Dependencies.Select(Path.GetFullPath).ToList() : new List<string>();
         
-            if (!recentlyCreatedModule && ModuleDependencies.TryGetValue(moduleInfo.ProjectName, out List<string>? existingDependencies))
+            if (!recentlyCreatedModule && ModuleDependencies.TryGetValue(moduleInfo.ModuleName, out List<string>? existingDependencies))
             {
                 if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
                 {
-                    LoggerUtilities.LogUnrealSharpInfo($"No changes in plugin dependencies for {moduleInfo.ProjectName}, skipping update.");
+                    LoggerUtilities.LogUnrealSharpInfo($"No changes in plugin dependencies for {moduleInfo.ModuleName}, skipping update.");
                     return;
                 }
             }
             
             AddPluginDependencies(moduleInfo, pluginDependencies);
-            ModuleDependencies[moduleInfo.ProjectName] = pluginDependencies;
+            ModuleDependencies[moduleInfo.ModuleName] = pluginDependencies;
             anyProjectChanges = true;
         }
 
@@ -89,10 +89,11 @@ public static class GlueModuleFactory
         
         List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
         {
-            new("ProjectName", moduleInfo.ProjectName),
+            new("ProjectName", moduleInfo.ModuleName),
             new("ProjectFolder", Path.GetDirectoryName(csprojPath)!),
             new("ProjectRoot", moduleInfo.ModuleRoot),
             new("SkipIncludeAnalyzers", "true"),
+            new("CompileIncludeFolder", moduleInfo.ScriptPath),
         };
         
         if (moduleInfo.Module.IsEditorOnly())

@@ -12,7 +12,7 @@ struct FLoadOrderManifest
 		bool bFound = false;
 		for (const FString& Path : AssemblyPaths)
 		{
-			if (FPaths::GetCleanFilename(Path) != AssemblyName)
+			if (FPaths::GetCleanFilename(Path) != AssemblyName && FPaths::GetBaseFilename(Path) != AssemblyName)
 			{
 				continue;
 			}
@@ -28,7 +28,7 @@ struct FLoadOrderManifest
 namespace UnrealSharp::Project
 {
 	UNREALSHARPUTILITIES_API void DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>& OutManifests);
-	UNREALSHARPUTILITIES_API bool IsAssemblyInAnyManifest(const TArray<FLoadOrderManifest>& Manifests, const FString& AssemblyName);
+	UNREALSHARPUTILITIES_API bool IsAssemblyInAnyManifest(const FString& AssemblyName);
 	UNREALSHARPUTILITIES_API void GetAllProjectPaths(TArray<FString>& ProjectPaths);
 	UNREALSHARPUTILITIES_API FString GetUserManagedProjectName();
 }

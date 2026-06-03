@@ -62,9 +62,12 @@ void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>
 	});
 }
 
-bool UnrealSharp::Project::IsAssemblyInAnyManifest(const TArray<FLoadOrderManifest>& Manifests, const FString& AssemblyName)
+bool UnrealSharp::Project::IsAssemblyInAnyManifest(const FString& AssemblyName)
 {
 	bool bFound = false;
+	
+	TArray<FLoadOrderManifest> Manifests;
+	DiscoverLoadOrderManifests(Manifests);
 	
 	for (const FLoadOrderManifest& Manifest : Manifests)
 	{

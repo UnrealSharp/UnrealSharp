@@ -11,17 +11,19 @@ public class ModuleInfo
 	public readonly HashSet<string>? Dependencies;
 	public readonly UhtPackage Module;
 	
-	public string ProjectName { get; }
+	public string ModuleName { get; }
 	
 	public string ModuleRoot { get; private set; }
 	public string GlueOutputDirectory => Module.GetModuleUhtOutputDirectory();
-	public string CsProjPath => Path.Combine(GlueOutputDirectory, $"{ProjectName}.csproj");
+	
+	public string CsProjPath => Path.Combine(GlueOutputDirectory, $"{ModuleName}.csproj");
+	public string ScriptPath => Path.Combine(ModuleRoot, CommonUnrealSharpSettings.ScriptDirectoryName, ModuleName);
 
 	public bool IsPartOfEngine => Module.IsPartOfEngine() && !Module.IsExtractedEngineModule();
 
 	public ModuleInfo(string moduleName, string moduleDirectory, UhtPackage package, HashSet<string>? dependencies = null)
 	{
-		ProjectName = moduleName;
+		ModuleName = moduleName;
 		ModuleRoot = moduleDirectory;
 		Dependencies = dependencies;
 		Module = package;
