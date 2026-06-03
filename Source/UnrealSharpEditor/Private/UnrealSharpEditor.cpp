@@ -2,7 +2,6 @@
 #include "AssetToolsModule.h"
 #include "CSBuildActionUtilities.h"
 #include "CSBuildUtilties.h"
-#include "CSDotnetUtilties.h"
 #include "CSEditorCommands.h"
 #include "CSInstallationUtilities.h"
 #include "CSStyle.h"
