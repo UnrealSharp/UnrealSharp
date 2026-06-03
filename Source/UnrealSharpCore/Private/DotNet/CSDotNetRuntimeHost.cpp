@@ -21,6 +21,11 @@
 #pragma clang diagnostic ignored "-Wdangling-assignment"
 #endif
 
+FCSDotNetRuntimeHost::~FCSDotNetRuntimeHost()
+{
+	ShutdownManagedRuntime();
+}
+
 bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 {
 	load_assembly_and_get_function_pointer_fn LoadAssemblyAndGetFunctionPointer = InitializeHost();
@@ -66,6 +71,19 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 	return true;
 }
 
+void FCSDotNetRuntimeHost::ShutdownManagedRuntime()
+{
+	if (RuntimeHost)
+	{
+		FPlatformProcess::FreeDllHandle(RuntimeHost);
+	}
+	
+	Hostfxr_InitForCommandLine = nullptr;
+	Hostfxr_InitForRuntimeConfig = nullptr;
+	Hostfxr_GetRuntimeDelegate = nullptr;
+	Hostfxr_Close = nullptr;
+}
+
 load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::InitializeHost()
 {
 	const FString RuntimeHostPath = UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
@@ -96,19 +114,6 @@ load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::InitializeHost()
 	}
 
 	return ConfigureRuntime();
-}
-
-FCSDotNetRuntimeHost::~FCSDotNetRuntimeHost()
-{
-	if (RuntimeHost)
-	{
-		FPlatformProcess::FreeDllHandle(RuntimeHost);
-	}
-	
-	Hostfxr_InitForCommandLine = nullptr;
-	Hostfxr_InitForRuntimeConfig = nullptr;
-	Hostfxr_GetRuntimeDelegate = nullptr;
-	Hostfxr_Close = nullptr;
 }
 
 load_assembly_and_get_function_pointer_fn FCSDotNetRuntimeHost::ConfigureRuntime() const
