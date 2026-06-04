@@ -41,7 +41,6 @@ public static class ModuleFactory
 			{
 				if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
 				{
-					LoggerUtilities.LogUnrealSharpInfo($"No changes in plugin dependencies for {moduleInfo.ModuleName}, skipping update.");
 					continue;
 				}
 			}
