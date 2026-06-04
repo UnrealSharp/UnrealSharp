@@ -29,6 +29,11 @@ public static class PathUtilities
     {
         return Path.Combine(GetIntermediateOutputPath(root), "UHT", targetType.ToString());
     }
+
+    public static string GetUhtGeneratedModuleOutputPath(string root, TargetType targetType, string moduleName)
+    {
+        return Path.Combine(GetUhtGeneratedOutputPath(root, targetType), moduleName);
+    }
     
     public static string GetIntermediateOutputPath(string root)
     {

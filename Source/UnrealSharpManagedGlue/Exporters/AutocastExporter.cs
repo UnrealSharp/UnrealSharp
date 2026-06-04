@@ -55,7 +55,7 @@ public static class AutocastExporter
 
         stringBuilder.CloseBrace();
 
-        string directory = conversionStruct.Package.GetModuleUhtOutputDirectory();
+        string directory = conversionStruct.Package.GetPackageOutputDirectory();
         string fileName = $"{conversionStruct.EngineName}.Autocast";
         
         stringBuilder.EndGlueFile(conversionStruct);

@@ -58,6 +58,11 @@ public class PackageProject : BuildCommand
             Arguments.Add("--self-contained");
         }
 
+        if (options.TargetType != TargetType.Editor)
+        {
+            Arguments.Add("-p:GenerateDocumentation=false");
+        }
+
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
         
         BuildUserBindings(PublishFolder, options, Arguments);
@@ -168,8 +173,6 @@ public class PackageProject : BuildCommand
         return
         [
             "--runtime", runtimeIdentifier,
-
-            "-p:GenerateDocumentationFile=false",
 
             "-p:UseDefaultOutputPath=true",
 

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using EpicGames.UHT.Types;
-using UnrealSharp.Shared;
 using UnrealSharpManagedGlue.PropertyTranslators;
 using UnrealSharpManagedGlue.SourceGeneration;
 
@@ -12,155 +11,155 @@ namespace UnrealSharpManagedGlue.Utilities;
 
 public static class FileExporter
 {
-    private static readonly ReaderWriterLockSlim ReadWriteLock = new();
-    private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
+	private static readonly ReaderWriterLockSlim ReadWriteLock = new();
+	private static readonly HashSet<string> AffectedFiles = new(StringComparer.OrdinalIgnoreCase);
     
-    public static bool HasModifiedEngineGlue { get; private set; }
+	public static bool HasModifiedEngineGlue { get; private set; }
 
-    public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
-    {
-        string directory =type.Package.GetModuleUhtOutputDirectory();
-        SaveGlueToDisk(type.Package, directory, type.EngineName, stringBuilder.ToString());
-    }
+	public static void SaveGlueToDisk(UhtType type, GeneratorStringBuilder stringBuilder)
+	{
+		string directory = type.Package.GetModuleInfo().GlueOutputDirectory;
+		SaveGlueToDisk(type.Package, directory, type.EngineName, stringBuilder.ToString());
+	}
 
-    public static string GetFilePath(string typeName, string directory)
-    {
-        return Path.Combine(directory, $"{typeName}.generated.cs");
-    }
+	public static string GetFilePath(string typeName, string directory)
+	{
+		return Path.Combine(directory, $"{typeName}.generated.cs");
+	}
 
-    public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
-    {
-        string absoluteFilePath = GetFilePath(typeName, directory);
-        bool needsWrite = true;
+	public static void SaveGlueToDisk(UhtPackage package, string directory, string typeName, string text)
+	{
+		string absoluteFilePath = GetFilePath(typeName, directory);
+		bool needsWrite = true;
 
-        if (File.Exists(absoluteFilePath))
-        {
-            FileInfo fileInfo = new(absoluteFilePath);
-            if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
-            {
-                needsWrite = false;
-            }
-        }
+		if (File.Exists(absoluteFilePath))
+		{
+			FileInfo fileInfo = new(absoluteFilePath);
+			if (fileInfo.Length == text.Length && File.ReadAllText(absoluteFilePath) == text)
+			{
+				needsWrite = false;
+			}
+		}
 
-        ReadWriteLock.EnterWriteLock();
-        try
-        {
-            AffectedFiles.Add(absoluteFilePath);
+		ReadWriteLock.EnterWriteLock();
+		try
+		{
+			AffectedFiles.Add(absoluteFilePath);
 
-            if (!needsWrite)
-            {
-                return;
-            }
+			if (!needsWrite)
+			{
+				return;
+			}
 
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+			if (!Directory.Exists(directory))
+			{
+				Directory.CreateDirectory(directory);
+			}
 
-            File.WriteAllText(absoluteFilePath, text);
+			File.WriteAllText(absoluteFilePath, text);
 
-            if (package.IsPartOfEngine())
-            {
-                HasModifiedEngineGlue = true;
-            }
-        }
-        finally
-        {
-            ReadWriteLock.ExitWriteLock();
-        }
-    }
+			if (package.IsPartOfEngine())
+			{
+				HasModifiedEngineGlue = true;
+			}
+		}
+		finally
+		{
+			ReadWriteLock.ExitWriteLock();
+		}
+	}
 
-    public static void AddUnchangedType(UhtType type)
-    {
-        string engineName = type is UhtFunction function ? DelegateBasePropertyTranslator.GetDelegateName(function) : type.EngineName;
+	public static void AddUnchangedType(UhtType type)
+	{
+		string engineName = type is UhtFunction function ? DelegateBasePropertyTranslator.GetDelegateName(function) : type.EngineName;
 
-        string directory = type.Package.GetModuleUhtOutputDirectory();
-        AffectedFiles.Add(GetFilePath(engineName, directory));
+		string directory = type.Package.GetPackageOutputDirectory();
+		AffectedFiles.Add(GetFilePath(engineName, directory));
 
-        if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
-        {
-            AffectedFiles.Add(GetFilePath($"{engineName}_Extensions", directory));
-        }
-    }
+		if (type is UhtStruct uhtStruct && uhtStruct.Functions.Any(f => f.HasMetadata("ExtensionMethod")))
+		{
+			AffectedFiles.Add(GetFilePath($"{engineName}_Extensions", directory));
+		}
+	}
 
-    public static void CleanOldExportedFiles()
-    {
-        ConsoleUtilities.Log("Cleaning up old generated C# glue files...");
+	public static void CleanOldExportedFiles()
+	{
+		ConsoleUtilities.Log("Cleaning up old generated C# glue files...");
 
-        foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
-        {
-            CleanOldFilesInDirectories(plugin.GlueOutputDirectory);
-        }
-    }
+		foreach (ModuleInfo plugin in ModuleUtilities.PackageToModuleInfo.Values)
+		{
+			CleanOldFilesInDirectories(plugin.GlueOutputDirectory);
+		}
+	}
 
-    public static void CleanGeneratedFolder(string path)
-    {
-        if (!Directory.Exists(path))
-        {
-            return;
-        }
+	public static void CleanGeneratedFolder(string path)
+	{
+		if (!Directory.Exists(path))
+		{
+			return;
+		}
     
-        DirectoryInfo root = new DirectoryInfo(path);
-        foreach (FileSystemInfo item in root.GetFileSystemInfos())
-        {
-            if (item is DirectoryInfo dir)
-            {
-                dir.Delete(true);
-            }
-            else
-            {
-                item.Delete();
-            }
-        }
-    }
+		DirectoryInfo root = new DirectoryInfo(path);
+		foreach (FileSystemInfo item in root.GetFileSystemInfos())
+		{
+			if (item is DirectoryInfo dir)
+			{
+				dir.Delete(true);
+			}
+			else
+			{
+				item.Delete();
+			}
+		}
+	}
 
-    private static void CleanOldFilesInDirectories(string path)
-    {
-        if (!Directory.Exists(path))
-        {
-            return;
-        }
+	private static void CleanOldFilesInDirectories(string path)
+	{
+		if (!Directory.Exists(path))
+		{
+			return;
+		}
 
-        if (!PackageHeadersTracker.HasModuleBeenExported(Path.GetFileName(path)))
-        {
-            return;
-        }
+		if (!PackageHeadersTracker.HasModuleBeenExported(Path.GetFileName(path)))
+		{
+			return;
+		}
         
-        foreach (string directory in Directory.GetDirectories(path))
-        {
-            CleanOldFilesInDirectories(directory);
-        }
+		foreach (string directory in Directory.GetDirectories(path))
+		{
+			CleanOldFilesInDirectories(directory);
+		}
         
-        string[] files = Directory.GetFiles(path);
-        foreach (string file in files)
-        {
-            if (Path.GetExtension(file) != ".cs" || AffectedFiles.Contains(file))
-            {
-                continue;
-            }
+		string[] files = Directory.GetFiles(path);
+		foreach (string file in files)
+		{
+			if (Path.GetExtension(file) != ".cs" || AffectedFiles.Contains(file))
+			{
+				continue;
+			}
             
-            try 
-            {
-                File.Delete(file);
-            }
-            catch (IOException exception) 
-            {
-                ConsoleUtilities.Log($"Failed to delete file {file}: {exception.Message}");
-            }
-        }
+			try 
+			{
+				File.Delete(file);
+			}
+			catch (IOException exception) 
+			{
+				ConsoleUtilities.Log($"Failed to delete file {file}: {exception.Message}");
+			}
+		}
 
-        if (!Directory.Exists(path) || Directory.GetFileSystemEntries(path).Length != 0)
-        {
-            return;
-        }
+		if (!Directory.Exists(path) || Directory.GetFileSystemEntries(path).Length != 0)
+		{
+			return;
+		}
         
-        try 
-        {
-            Directory.Delete(path, false);
-        }
-        catch (IOException exception)
-        {
-            ConsoleUtilities.Log($"Failed to delete directory {path}: {exception.Message}");
-        }
-    }
+		try 
+		{
+			Directory.Delete(path, false);
+		}
+		catch (IOException exception)
+		{
+			ConsoleUtilities.Log($"Failed to delete directory {path}: {exception.Message}");
+		}
+	}
 }

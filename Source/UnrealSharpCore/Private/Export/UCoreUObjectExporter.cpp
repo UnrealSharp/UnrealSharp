@@ -31,8 +31,7 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 
 	if (!IsValid(Field))
 	{
-		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find type: {0}.{1} in assembly {2}", InNamespace, InTypeName,
-		          InAssemblyName);
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find type: {0}.{1} in assembly {2}", InNamespace, InTypeName, InAssemblyName);
 		return nullptr;
 	}
 

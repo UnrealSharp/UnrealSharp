@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using EpicGames.Core;
 using EpicGames.UHT.Types;
-using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
@@ -19,7 +18,7 @@ public static class PackageUtilities
 
     public static bool IsPartOfEngine(this UhtPackage package)
     {
-        return (package.Module.IsPartOfEngine || package.IsForcedAsEngineGlue());
+        return package.Module.IsPartOfEngine || package.IsForcedAsEngineGlue();
     }
     
     public static bool IsDefineActive(this UhtPackage package, string define)
@@ -37,6 +36,24 @@ public static class PackageUtilities
     {
         bool hasDefine = package.GetModule().TryGetDefine("ForceAsEngineGlue", out int treatedAsEngineGlue);
         return hasDefine && treatedAsEngineGlue != 0;
+    }
+
+    public static string GetPackageExtensions(this UhtPackage package)
+    {
+        package.GetModule().TryGetDefine("ExtendModule", out string? extension);
+        return extension ?? string.Empty;
+    }
+    
+    public static List<string> GetAdditionalExtensionFolders(this UhtPackage package)
+    {
+        package.GetModule().TryGetDefine("AdditionalExtensionFolder", out string? extensionFolders);
+        
+        if (string.IsNullOrEmpty(extensionFolders))
+        {
+            return [];
+        }
+        
+        return extensionFolders.Split(';').ToList();
     }
 
     public static UHTManifest.Module GetModule(this UhtPackage package)
@@ -81,16 +98,16 @@ public static class PackageUtilities
         return currentDirectory!.FullName;
     }
     
-    public static string GetModuleUhtOutputDirectory(this UhtPackage package)
-    {
-        return Path.Combine(package.GetUhtBaseOutputDirectory(), package.GetModuleShortName());
-    }
-    
-    public static string GetUhtBaseOutputDirectory(this UhtPackage package)
+    public static string GetPackageOutputDirectory(this UhtPackage package)
     {
         ModuleInfo moduleInfo = package.GetModuleInfo();
-        string root = moduleInfo.IsPartOfEngine ? GeneratorStatics.PluginDirectory : moduleInfo.ModuleRoot;
-        return PathUtilities.GetUhtGeneratedOutputPath(root, GeneratorStatics.TargetType);
+        return moduleInfo.GlueOutputDirectory;
+    }
+    
+    public static string GetUHTBaseDirectory(this UhtPackage package)
+    {
+        DirectoryInfo glueOutputDirectory = new DirectoryInfo(package.GetPackageOutputDirectory());
+        return glueOutputDirectory.Parent!.FullName;
     }
     
     private static bool IsUPluginFile(string filePath)

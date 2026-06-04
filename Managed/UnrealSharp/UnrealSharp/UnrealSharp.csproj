@@ -6,8 +6,11 @@
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500;CS1572</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GenerateDocumentation)' == ''">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />

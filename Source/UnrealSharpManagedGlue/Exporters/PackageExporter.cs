@@ -13,7 +13,7 @@ public static class PackageExporter
 {
     public static void ExportPackages()
     {
-        foreach (ModuleInfo moduleInfo in ModuleUtilities.Modules)
+        foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
         {
             ExportPackage(moduleInfo.Module);
         }
@@ -24,7 +24,7 @@ public static class PackageExporter
     private static void ExportPackage(UhtPackage package)
     {
         string packageName = package.GetModuleShortName();
-        string generatedPath = package.GetModuleUhtOutputDirectory();
+        string generatedPath = package.GetPackageOutputDirectory();
         bool generatedGlueFolderExists = Directory.Exists(generatedPath);
 
         int childrenCount = package.Children.Count;

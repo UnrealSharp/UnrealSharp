@@ -41,10 +41,11 @@ public static class ExporterValidator
 
     private static void CleanModules()
     {
-        IEnumerable<ModuleInfo> modules = ModuleUtilities.Modules;
+        IEnumerable<ModuleInfo> modules = ModuleUtilities.PackageToModuleInfo.Values;
+        
         foreach (ModuleInfo module in modules)
         {
-            FileExporter.CleanGeneratedFolder(module.Module.GetUhtBaseOutputDirectory());
+            FileExporter.CleanGeneratedFolder(module.Module.GetPackageOutputDirectory());
 
             if (module.IsPartOfEngine || !File.Exists(module.CsProjPath))
             {
