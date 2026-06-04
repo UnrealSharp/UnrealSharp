@@ -7,16 +7,18 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue;
 
-public static class GlueModuleFactory
+public static class ModuleFactory
 {
+	const string CompileIncludeFolderVerb = "CompileIncludeFolder";
+	
 	private static readonly Dictionary<string, List<string>> ModuleDependencies;
 
-	static GlueModuleFactory()
+	static ModuleFactory()
 	{
 		ModuleDependencies = JsonUtilities.DeserializeObjectFromJson<Dictionary<string, List<string>>>(nameof(ModuleDependencies)) ?? new Dictionary<string, List<string>>();
 	}
 
-	public static void CreateGlueProjects()
+	public static void SyncModuleProjects()
 	{
 		bool anyProjectChanges = false;
 		foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
@@ -29,7 +31,7 @@ public static class GlueModuleFactory
 			bool recentlyCreatedModule = false;
 			if (!File.Exists(moduleInfo.CsProjPath))
 			{
-				CreateGlueModule(moduleInfo);
+				GenerateModuleProject(moduleInfo);
 				recentlyCreatedModule = true;
 			}
 
@@ -39,13 +41,12 @@ public static class GlueModuleFactory
 			{
 				if (existingDependencies.OrderBy(d => d).SequenceEqual(pluginDependencies.OrderBy(d => d)))
 				{
-					LoggerUtilities.LogUnrealSharpInfo(
-						$"No changes in plugin dependencies for {moduleInfo.ModuleName}, skipping update.");
+					LoggerUtilities.LogUnrealSharpInfo($"No changes in plugin dependencies for {moduleInfo.ModuleName}, skipping update.");
 					continue;
 				}
 			}
 
-			AddPluginDependencies(moduleInfo, pluginDependencies);
+			UpdateModuleDependencies(moduleInfo, pluginDependencies);
 			ModuleDependencies[moduleInfo.ModuleName] = pluginDependencies;
 			anyProjectChanges = true;
 		}
@@ -55,13 +56,13 @@ public static class GlueModuleFactory
 			return;
 		}
 
-		if (BuildGlueProjects())
+		if (CompileGlueProjects())
 		{
 			JsonUtilities.SerializeObjectToJson(ModuleDependencies, nameof(ModuleDependencies));
 		}
 	}
 
-	private static bool BuildGlueProjects()
+	private static bool CompileGlueProjects()
 	{
 		if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
 		{
@@ -79,33 +80,18 @@ public static class GlueModuleFactory
 		return true;
 	}
 
-	private static void CreateGlueModule(ModuleInfo moduleInfo)
+	private static void GenerateModuleProject(ModuleInfo moduleInfo)
 	{
-		const string compileIncludeFolderVerb = "CompileIncludeFolder";
-
 		List<KeyValuePair<string, string>> arguments = new List<KeyValuePair<string, string>>
 		{
 			new("ProjectName", moduleInfo.ModuleName),
 			new("ProjectFolder", Path.GetDirectoryName(moduleInfo.CsProjPath)!),
 			new("ProjectRoot", moduleInfo.ModuleRoot),
 			new("SkipIncludeAnalyzers", "true"),
-			new(compileIncludeFolderVerb, moduleInfo.ExtensionsDirectory),
+			new(CompileIncludeFolderVerb, moduleInfo.ExtensionsDirectory),
 		};
-
-		foreach (ModuleInfo dependency in moduleInfo.Extensions)
-		{
-			arguments.Add(new KeyValuePair<string, string>(compileIncludeFolderVerb, dependency.GlueOutputDirectory));
-			arguments.Add(new KeyValuePair<string, string>(compileIncludeFolderVerb, dependency.ExtensionsDirectory));
-
-			List<string> extensionFolders = dependency.Module.GetAdditionalExtensionFolders();
-			string scriptPath = dependency.ScriptPath;
-
-			foreach (string folder in extensionFolders)
-			{
-				arguments.Add(new KeyValuePair<string, string>(compileIncludeFolderVerb,
-					Path.Combine(scriptPath, folder)));
-			}
-		}
+		
+		AppendExtensionIncludeFolders(moduleInfo, arguments);
 
 		if (moduleInfo.Module.IsEditorOnly())
 		{
@@ -115,7 +101,24 @@ public static class GlueModuleFactory
 		UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("GenerateProject", arguments);
 	}
 
-	private static void AddPluginDependencies(ModuleInfo moduleInfo, List<string>? pluginDependencies)
+	private static void AppendExtensionIncludeFolders(ModuleInfo moduleInfo, List<KeyValuePair<string, string>> arguments)
+	{
+		foreach (ModuleInfo extensionModule in moduleInfo.Extensions)
+		{
+			arguments.Add(new KeyValuePair<string, string>(CompileIncludeFolderVerb, extensionModule.GlueOutputDirectory));
+			arguments.Add(new KeyValuePair<string, string>(CompileIncludeFolderVerb, extensionModule.ExtensionsDirectory));
+
+			List<string> extensionFolders = extensionModule.Module.GetAdditionalExtensionFolders();
+			string scriptPath = extensionModule.ScriptPath;
+
+			foreach (string folder in extensionFolders)
+			{
+				arguments.Add(new KeyValuePair<string, string>(CompileIncludeFolderVerb, Path.Combine(scriptPath, folder)));
+			}
+		}
+	}
+
+	private static void UpdateModuleDependencies(ModuleInfo moduleInfo, List<string>? pluginDependencies)
 	{
 		List<KeyValuePair<string, string>> arguments = new()
 		{

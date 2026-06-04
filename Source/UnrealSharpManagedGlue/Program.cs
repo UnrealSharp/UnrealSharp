@@ -53,7 +53,7 @@ public static class Program
         FileExporter.CleanOldExportedFiles();
         BuildUtilities.BuildBindings();
         
-        GlueModuleFactory.CreateGlueProjects();
+        ModuleFactory.SyncModuleProjects();
         BuildUtilities.GenerateUserSolution();
     }
 
