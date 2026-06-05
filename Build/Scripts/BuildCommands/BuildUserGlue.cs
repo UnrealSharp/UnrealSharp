@@ -50,11 +50,11 @@ public class BuildUserGlue : BuildCommand
 
     private static void GenerateSolution(BuildCommand command, string solutionPath, List<string> glueProjectPaths)
     {
-        LoggerUtilities.LogUnrealSharpInfo($"Generating UnrealSharp user solution at {solutionPath}...");
+        const string solutionName = "UnrealSharpGlue";
 
         List<KeyValuePair<string, string>> CommandParams = new List<KeyValuePair<string, string>>
         {
-            new("SolutionName", "UnrealSharpGlue"),
+            new("SolutionName", solutionName),
             new("OutputFolder", solutionPath),
         };
 
@@ -62,7 +62,14 @@ public class BuildUserGlue : BuildCommand
         {
             CommandParams.Add(new KeyValuePair<string, string>("ProjectPaths", GlueProjectPath));
         }
-
+        
+        bool ForceRegenerateSolution = command.ParseParamBool("ForceRegenerateSolution");
+        if (!ForceRegenerateSolution && File.Exists(Path.Combine(solutionPath, solutionName + ".sln")))
+        {
+            return;
+        }
+        
+        LoggerUtilities.LogUnrealSharpInfo($"Generating UnrealSharp user solution at {solutionPath}...");
         CommandUtilities.RunCommand(nameof(BuildCommands.GenerateSolution), command, CommandParams);
     }
 

@@ -57,6 +57,7 @@ public static class FileExporter
 			}
 
 			File.WriteAllText(absoluteFilePath, text);
+			package.GetModuleInfo().MarkDirty();
 
 			if (package.IsPartOfEngine())
 			{

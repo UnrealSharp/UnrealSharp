@@ -18,6 +18,8 @@ public sealed class ModuleInfo
 
 	public bool IsExtendingModule { get; }
 	public bool IsEngineModule { get; }
+	
+	public bool IsDirty { get; private set; }
 
 	public IReadOnlyList<ModuleInfo> Extensions { get; private set; } = [];
 	public bool HasExtensions => Extensions.Count > 0;
@@ -68,6 +70,11 @@ public sealed class ModuleInfo
 
 		GlueOutputDirectory = PathUtilities.GetUhtGeneratedModuleOutputPath(root, GeneratorStatics.TargetType, ModuleName);
 		CsProjPath = Path.Combine(GlueOutputDirectory, $"{ModuleName}.csproj");
+	}
+	
+	internal void MarkDirty()
+	{
+		IsDirty = true;
 	}
 
 	public override string ToString() => ModuleName;

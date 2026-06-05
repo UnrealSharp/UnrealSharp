@@ -21,11 +21,18 @@ public static class ModuleFactory
 	public static void SyncModuleProjects()
 	{
 		bool anyProjectChanges = false;
+		bool anyGlueDirty = false;
+
 		foreach (ModuleInfo moduleInfo in ModuleUtilities.PackageToModuleInfo.Values)
 		{
 			if (!moduleInfo.Module.ShouldExportPackage() || moduleInfo.IsPartOfEngine || moduleInfo.IsExtendingModule)
 			{
 				continue;
+			}
+
+			if (moduleInfo.IsDirty)
+			{
+				anyGlueDirty = true;
 			}
 
 			bool recentlyCreatedModule = false;
@@ -49,19 +56,19 @@ public static class ModuleFactory
 			ModuleDependencies[moduleInfo.ModuleName] = pluginDependencies;
 			anyProjectChanges = true;
 		}
-
-		if (!anyProjectChanges)
+		
+		if (!anyProjectChanges && !anyGlueDirty)
 		{
 			return;
 		}
 
-		if (CompileGlueProjects())
+		if (CompileGlueProjects(anyProjectChanges))
 		{
 			JsonUtilities.SerializeObjectToJson(ModuleDependencies, nameof(ModuleDependencies));
 		}
 	}
 
-	private static bool CompileGlueProjects()
+	private static bool CompileGlueProjects(bool anyProjectChanges)
 	{
 		if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
 		{
@@ -73,6 +80,7 @@ public static class ModuleFactory
 			new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),
 			new("TargetType", GeneratorStatics.TargetType.ToString()),
 			new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
+			new("ForceRegenerateSolution", anyProjectChanges.ToString()),
 		};
 
 		UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildUserGlue", commandArgs);
