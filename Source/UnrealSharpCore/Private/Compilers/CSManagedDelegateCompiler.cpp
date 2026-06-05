@@ -18,7 +18,7 @@ void UCSManagedDelegateCompiler::Compile(UField* TypeToRecompile, const TSharedP
 	DelegateSignature->ParmsSize = 0;
 	DelegateSignature->ReturnValueOffset = 0;
 	DelegateSignature->NumParms = 0;
-	DelegateSignature->FunctionFlags = FunctionReflectionData->FunctionFlags;
+	DelegateSignature->FunctionFlags = FunctionReflectionData->FunctionFlags | FUNC_Public;
 	
 	FCSFunctionFactory::CreateParameters(DelegateSignature, *FunctionReflectionData);
 	DelegateSignature->StaticLink(true);

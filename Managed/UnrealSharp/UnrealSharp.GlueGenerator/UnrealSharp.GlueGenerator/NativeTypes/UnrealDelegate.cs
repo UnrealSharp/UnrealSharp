@@ -134,7 +134,7 @@ public record UnrealDelegate : UnrealType
 
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
-        _delegateSignature.PopulateJsonObject(jsonWriter);
         base.PopulateJsonObject(jsonWriter);
+        _delegateSignature.PopulateJsonObject(jsonWriter);
     }
 }
