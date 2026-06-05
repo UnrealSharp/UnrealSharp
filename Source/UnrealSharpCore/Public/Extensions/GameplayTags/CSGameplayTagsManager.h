@@ -30,7 +30,7 @@ private:
 	static bool IsTagRegistered(const FString& TagName, FGameplayTag& OutExistingTag);
 	
 #if WITH_EDITOR
-	void OnManagedAssemblyUnloaded(const UCSManagedAssembly* UnloadedAssembly);
+	void OnManagedAssemblyUnloaded(UCSManagedAssembly* UnloadedAssembly);
 	
 	TMap<FAssemblyName, TArray<TSharedPtr<FNativeGameplayTag>>> RegisteredTags;
 #else

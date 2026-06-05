@@ -40,7 +40,7 @@ void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedStructCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedStructCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSStructReflectionData>();
 }

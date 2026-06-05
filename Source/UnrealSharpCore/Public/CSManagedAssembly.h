@@ -16,6 +16,13 @@
 struct FCSManagedMethod;
 class UCSClass;
 
+struct FCSAssemblyEvents
+{
+	DECLARE_MULTICAST_DELEGATE_OneParam(FCSAssemblyEvent, UCSManagedAssembly*);
+	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyLoaded;
+	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyUnloaded;
+};
+
 UCLASS(Transient)
 class UCSManagedAssembly : public UObject
 {
@@ -74,7 +81,7 @@ private:
 	void OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
 
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> DefinedManagedTypes;
-	TArray<TSharedPtr<FCSManagedTypeDefinition>> PendingRebuildTypes;
+	TArray<TSharedPtr<FCSManagedTypeDefinition>> ManagedTypesQueuedForCompilation;
 	TArray<TSharedPtr<FGCHandle>> AllocatedGCHandles;
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedTypeGCHandles;
 	TSharedPtr<FGCHandle> AssemblyGCHandle;

@@ -42,7 +42,7 @@ void UCSManagedEnumCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<F
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedEnumCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedEnumCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSEnumReflectionData>();
 }

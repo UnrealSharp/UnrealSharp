@@ -11,6 +11,9 @@
 #include "Utilities/CSClassUtilities.h"
 #include "Utilities/CSUtilities.h"
 
+FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyLoaded;
+FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyUnloaded;
+
 void UCSManagedAssembly::Initialize(const FStringView InAssemblyPath, bool bInIsCollectible)
 {
 	if (!AssemblyFilePath.IsEmpty())
@@ -57,20 +60,20 @@ bool UCSManagedAssembly::LoadAssembly()
 	
 	AssemblyGCHandle = MakeShared<FGCHandle>(NewAssemblyGCHandle);
 
-	for (const TSharedPtr<FCSManagedTypeDefinition>& PendingRebuildType : PendingRebuildTypes)
+	for (const TSharedPtr<FCSManagedTypeDefinition>& QueuedType : ManagedTypesQueuedForCompilation)
 	{
-		PendingRebuildType->Compile();
+		QueuedType->Compile();
 	}
 
 #if WITH_EDITOR
-	PendingRebuildTypes.Reset();
+	ManagedTypesQueuedForCompilation.Reset();
 #else
-	PendingRebuildTypes.Empty();
+	ManagedTypesQueuedForCompilation.Empty();
 #endif
 	
 	bIsLoading = false;
 	
-	UCSManager::Get().OnManagedAssemblyLoadedEvent().Broadcast(this);
+	FCSAssemblyEvents::OnAssemblyLoaded.Broadcast(this);
 	return true;
 }
 
@@ -100,7 +103,7 @@ bool UCSManagedAssembly::UnloadAssembly()
 	AssemblyGCHandle->Dispose(AssemblyHandle);
 	AssemblyGCHandle.Reset();
 
-	UCSManager::Get().OnManagedAssemblyUnloadedEvent().Broadcast(this);
+	FCSAssemblyEvents::OnAssemblyUnloaded.Broadcast(this);
 	return GetManagedPluginCallbacks().UnloadPlugin(*AssemblyFilePath);
 }
 
@@ -226,7 +229,7 @@ void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* In
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to resolve compiler for field type {0} for type {1}", static_cast<uint8>(FieldType), FieldName.GetFullName());
 	}
 	
-	TSharedPtr<FCSTypeReferenceReflectionData> NewReflectionData = Compiler->CreateNewReflectionData();
+	TSharedPtr<FCSTypeReferenceReflectionData> NewReflectionData = Compiler->CreateReflectionData();
 	NewReflectionData->SerializeFromJsonString(NewJsonReflectionData);
 
 	if (ManagedTypeDefinition.IsValid())
@@ -312,5 +315,5 @@ void UCSManagedAssembly::OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDe
 		return;
 	}
 		
-	PendingRebuildTypes.Add(ManagedTypeDefinition);
+	ManagedTypesQueuedForCompilation.Add(ManagedTypeDefinition);
 }

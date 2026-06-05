@@ -34,7 +34,8 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
-	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
+	
+	FCSAssemblyEvents::OnAssemblyLoaded.AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 	
 	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnReflectionDataChanged);
 	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
@@ -223,7 +224,7 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 	}
 }
 
-void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
+void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(UCSManagedAssembly* Assembly)
 {
 	if (!IsAssemblyHotReloadable(Assembly))
 	{

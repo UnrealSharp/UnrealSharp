@@ -57,11 +57,11 @@ void FUnrealSharpEditorModule::StartupModule()
 	{
 		FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
 		IAssetTools& AssetToolsRef = AssetToolsModule.Get();
-
-		UCSManager::Get().ForEachManagedPackage([&AssetToolsRef](const UPackage* Package)
+		
+		for (const UPackage* Package : UCSManager::Get().GetManagedPackages())
 		{
 			AssetToolsRef.GetWritableFolderPermissionList()->AddDenyListItem(Package->GetFName(), Package->GetFName());
-		});
+		}
 	}
 
 	FCSStyle::Initialize();
@@ -70,7 +70,7 @@ void FUnrealSharpEditorModule::StartupModule()
 	RegisterToolbar();
     RegisterPluginTemplates();
 	
-	UCSManager::Get().AddOrExecuteOnManagerInitialized(UCSManager::FCSManagerInitializedEvent::FDelegate::CreateLambda([this](UCSManager& Manager)
+	UCSManager::Get().AddOrExecuteOnManagerInitialized(FCSManagerInitializedEvent::FDelegate::CreateLambda([this](UCSManager& Manager)
 	{
 		Manager.LoadPluginAssemblyByName("UnrealSharp.Editor");
 	}));

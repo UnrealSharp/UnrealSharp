@@ -205,7 +205,7 @@ FString UCSManagedClassCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceR
 	return FieldName;
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedClassCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedClassCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSClassReflectionData>();
 }

@@ -26,7 +26,7 @@ void UCSManagedDelegateCompiler::Compile(UField* TypeToRecompile, const TSharedP
 	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Struct);
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedDelegateCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedDelegateCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSFunctionReflectionData>();
 }

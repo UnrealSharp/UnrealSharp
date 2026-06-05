@@ -60,11 +60,8 @@ struct FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition
 	UNREALSHARPCORE_API UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
 
 	template<typename TReflectionData = FCSTypeReferenceReflectionData>
-	TSharedPtr<TReflectionData> GetReflectionData() const
-	{
-		return StaticCastSharedPtr<TReflectionData>(ReflectionData);
-	}
-
+	TSharedPtr<TReflectionData> GetReflectionData() const { return StaticCastSharedPtr<TReflectionData>(ReflectionData); }
+	
 	void SetReflectionData(const TSharedPtr<FCSTypeReferenceReflectionData>& InReflectionData)
 	{
 		ReflectionData = InReflectionData;

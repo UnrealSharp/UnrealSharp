@@ -7,20 +7,55 @@
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "CSUnrealSharpSettings.h"
-#include "Engine/UserDefinedEnum.h"
 #include "Logging/StructuredLog.h"
-
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
-#include "StructUtils/UserDefinedStruct.h"
-#else
 #include "Engine/UserDefinedStruct.h"
-#endif
-
 #include "Utilities/CSClassUtilities.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdangling-assignment"
 #endif
+
+UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>>& NativeClassToAssemblyMap, const TMap<FName, TObjectPtr<UCSManagedAssembly>>& Assemblies)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssemblyGeneric);
+	
+	if (FCSClassUtilities::IsBlueprintObject(Object))
+	{
+		return nullptr;
+	}
+
+	if (const ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(Object))
+	{
+		return ManagedType->GetOwningAssembly();
+	}
+
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	if (const TObjectPtr<UCSManagedAssembly>* Assembly = NativeClassToAssemblyMap.FindByHash(ObjectID.Get(), ObjectID))
+	{
+		return Assembly->Get();
+	}
+
+	const FCSFieldName FieldName(Object);
+	UCSManagedAssembly* FoundAssembly = nullptr;
+	
+	for (const TTuple<FName, TObjectPtr<UCSManagedAssembly>>& NameAssemblyKVP : Assemblies)
+	{
+		UCSManagedAssembly* Assembly = NameAssemblyKVP.Value;
+		TSharedPtr<FGCHandle> TypeHandle = Assembly->FindTypeHandle(FieldName);
+		
+		if (!TypeHandle.IsValid() || TypeHandle->IsNull())
+		{
+			continue;
+		}
+		
+		NativeClassToAssemblyMap.AddByHash(ObjectID.Get(), ObjectID, Assembly);
+		
+		FoundAssembly = Assembly;
+		break;
+	}
+
+	return FoundAssembly;
+}
 
 UCSManager* UCSManager::Instance = nullptr;
 
@@ -31,7 +66,7 @@ void UCSManager::Initialize()
 	FCoreDelegates::OnPreExit.AddUObject(this, &UCSManager::OnEnginePreExit);
 	GUObjectArray.AddUObjectDeleteListener(this);
 	
-	LoadAssemblies();
+	InitialAssemblyLoad();
 	
 	bHasInitialized = true;
 	OnCSManagerInitialized.Broadcast(*this);
@@ -60,19 +95,17 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 #endif
 	
 	Handle->Dispose(AssemblyHandle->GetHandle());
-
-	TMap<FCSObjectID, TSharedPtr<FGCHandle>>* FoundHandles = ManagedInterfaceWrappers.FindByHash(Index, Index);
-	if (!FoundHandles)
+	 
+	TMap<FCSObjectID, TSharedPtr<FGCHandle>> FoundHandles;
+	if (!ManagedInterfaceWrapperHandles.RemoveAndCopyValueByHash(Index, Index, FoundHandles))
 	{
 		return;
 	}
 
-	for (const auto& [Key, Value] : *FoundHandles)
+	for (const TTuple<FCSObjectID, TSharedPtr<FGCHandle>>& IDToHandleKVP : FoundHandles)
 	{
-		Value->Dispose(AssemblyHandle->GetHandle());
+		IDToHandleKVP.Value->Dispose(AssemblyHandle->GetHandle());
 	}
-	
-	ManagedInterfaceWrappers.RemoveByHash(Index, Index);
 }
 
 UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace& Namespace)
@@ -99,7 +132,7 @@ UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace& Namespace)
 		const FCSNamespace& ParentNamespace = ParentNamespaces[i];
 		const FName PackageName = ParentNamespace.GetPackageName();
 
-		for (UPackage* Package : AllPackages)
+		for (UPackage* Package : ManagedPackages)
 		{
 			if (PackageName == Package->GetFName())
 			{
@@ -112,26 +145,14 @@ UPackage* UCSManager::FindOrAddManagedPackage(const FCSNamespace& Namespace)
 		{
 			ParentPackage = NewObject<UPackage>(nullptr, PackageName, RF_Public);
 			ParentPackage->SetPackageFlags(PKG_CompiledIn);
-			AllPackages.Add(ParentPackage);
+			ManagedPackages.Add(ParentPackage);
 		}
 	}
 
 	return ParentPackage;
 }
 
-void UCSManager::ForEachManagedField(const TFunction<void(UObject*)>& Callback) const
-{
-	for (UPackage* Package : AllPackages)
-	{
-		ForEachObjectWithPackage(Package, [&Callback](UObject* Object)
-		{
-			Callback(Object);
-			return true;
-		}, false);
-	}
-}
-
-UPackage* UCSManager::GetPackage(const FCSNamespace Namespace)
+UPackage* UCSManager::GetPackage(const FCSNamespace& Namespace)
 {
 	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())
 	{
@@ -160,7 +181,7 @@ bool UCSManager::IsLoadingAnyAssembly() const
 	return bIsLoadingAnyAssembly;
 }
 
-void UCSManager::LoadAssemblies()
+void UCSManager::InitialAssemblyLoad()
 {
 	TArray<FLoadOrderManifest> Manifests;
 	UnrealSharp::Project::DiscoverLoadOrderManifests(Manifests);
@@ -180,6 +201,10 @@ void UCSManager::LoadAssemblies()
 
 UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
 {
+	ensure(IsInGameThread());
+	
+	UCSManagedAssembly* Assembly;
+	
 	const FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);
 	if (UCSManagedAssembly* ExistingAssembly = FindAssembly(*AssemblyName))
 	{
@@ -188,20 +213,24 @@ UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, 
 			UE_LOGFMT(LogUnrealSharp, Display, "Assembly {0} is already loaded.", AssemblyName);
 			return ExistingAssembly;
 		}
+		
+		Assembly = ExistingAssembly;
 	}
-	
-	UCSManagedAssembly* NewAssembly = NewObject<UCSManagedAssembly>(this, *AssemblyName);
-	Assemblies.Add(NewAssembly->GetFName(), NewAssembly);
-	
-	NewAssembly->Initialize(AssemblyPath, bIsCollectible);
+	else
+	{
+		Assembly = NewObject<UCSManagedAssembly>(this, *AssemblyName);
+		Assembly->Initialize(AssemblyPath, bIsCollectible);
+		
+		Assemblies.Add(Assembly->GetFName(), Assembly);
+	}
 
-	if (!NewAssembly->LoadAssembly())
+	if (!Assembly->LoadAssembly())
 	{
 		return nullptr;
 	}
 
 	UE_LOGFMT(LogUnrealSharp, Display, "Successfully loaded assembly at {0}.", AssemblyPath);
-	return NewAssembly;
+	return Assembly;
 }
 
 UCSManagedAssembly* UCSManager::LoadUserAssemblyByName(const FName AssemblyName, bool bIsCollectible)
@@ -219,43 +248,23 @@ UCSManagedAssembly* UCSManager::LoadPluginAssemblyByName(const FName AssemblyNam
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 {
 	UClass* FirstNonBlueprintClass = FCSClassUtilities::GetFirstNonBlueprintClass(Class);
+	
 	if (ICSManagedTypeInterface* ManagedType = Cast<ICSManagedTypeInterface>(FirstNonBlueprintClass))
 	{
 		return ManagedType->GetOwningAssembly();
 	}
 	
-	return FindOwningAssemblyGeneric<UClass, UBlueprintGeneratedClass>(FirstNonBlueprintClass);
+	return FindOwningAssemblyGeneric(FirstNonBlueprintClass, NativeTypeToAssembly, Assemblies);
 }
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UScriptStruct* Struct)
 {
-	return FindOwningAssemblyGeneric<UScriptStruct, UUserDefinedStruct>(Struct);
+	return FindOwningAssemblyGeneric(Struct, NativeTypeToAssembly, Assemblies);
 }
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
 {
-	return FindOwningAssemblyGeneric<UEnum, UUserDefinedEnum>(Enum);
-}
-
-UCSManagedAssembly* UCSManager::FindOwningAssemblySlow(UField* Field)
-{
-	const FCSFieldName FieldName(Field);
-
-	for (auto& [Name, Assembly] : Assemblies)
-	{
-		TSharedPtr<FGCHandle> TypeHandle = Assembly->FindTypeHandle(FieldName);
-		
-		if (!TypeHandle.IsValid() || TypeHandle->IsNull())
-		{
-			continue;
-		}
-
-		const FCSObjectID ObjectID = Field->GetUniqueID();
-		NativeClassToAssemblyMap.AddByHash(ObjectID.Get(), ObjectID, Assembly);
-		return Assembly;
-	}
-
-	return nullptr;
+	return FindOwningAssemblyGeneric(Enum, NativeTypeToAssembly, Assemblies);
 }
 
 FGCHandle UCSManager::FindManagedObject(const UObject* Object)
@@ -287,7 +296,7 @@ FGCHandle UCSManager::FindManagedObject(const UObject* Object)
 	return *OwningAssembly->CreateManagedObjectFromNative(Object);
 }
 
-FGCHandle UCSManager::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass)
+FGCHandle UCSManager::FindManagedInterfaceWrapper(UObject* Object, UClass* InterfaceClass)
 {
 	if (!Object->GetClass()->ImplementsInterface(InterfaceClass))
 	{

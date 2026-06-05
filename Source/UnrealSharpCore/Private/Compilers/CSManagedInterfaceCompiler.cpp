@@ -51,7 +51,7 @@ void UCSManagedInterfaceCompiler::Compile(UField* TypeToRecompile, const TShared
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedInterfaceCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedInterfaceCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSClassBaseReflectionData>();
 }

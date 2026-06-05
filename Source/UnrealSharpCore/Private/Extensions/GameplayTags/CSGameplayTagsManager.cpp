@@ -15,7 +15,7 @@ UCSGameplayTagsManager& UCSGameplayTagsManager::Get()
 		Instance->AddToRoot();
 
 #if WITH_EDITOR
-		UCSManager::Get().OnManagedAssemblyUnloadedEvent().AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
+		FCSAssemblyEvents::OnAssemblyUnloaded.AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
 #endif
 	}
 
@@ -100,7 +100,7 @@ bool UCSGameplayTagsManager::IsTagRegistered(const FString& TagName, FGameplayTa
 }
 
 #if WITH_EDITOR
-void UCSGameplayTagsManager::OnManagedAssemblyUnloaded(const UCSManagedAssembly* UnloadedAssembly)
+void UCSGameplayTagsManager::OnManagedAssemblyUnloaded(UCSManagedAssembly* UnloadedAssembly)
 {
 	if (!IsValid(UnloadedAssembly))
 	{

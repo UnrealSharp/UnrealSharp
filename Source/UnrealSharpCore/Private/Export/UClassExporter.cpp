@@ -51,15 +51,15 @@ void* UUClassExporter::GetDefaultFromName(const char* AssemblyName, const char* 
 	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
 	FCSFieldName FieldName(ClassName, Namespace);
 	
-	UClass* Class = Assembly->ResolveUField<UClass>(FieldName);
+	UClass* ResolvedClass = Assembly->ResolveUField<UClass>(FieldName);
 	
-	if (!IsValid(Class))
+	if (!IsValid(ResolvedClass))
 	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to get default object for class {0} in assembly {1}.", *FieldName.GetName(), *AssemblyName);
 		return nullptr;
 	}
 	
-	return UCSManager::Get().FindManagedObject(Class->GetDefaultObject());
+	return UCSManager::Get().FindManagedObject(ResolvedClass->GetDefaultObject());
 }
 
 void* UUClassExporter::GetDefaultFromInstance(UObject* Object)

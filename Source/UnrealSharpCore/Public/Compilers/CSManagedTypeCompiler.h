@@ -17,10 +17,10 @@ public:
 
 protected:
 	// Start UCSManagedTypeCompiler interface
-	virtual void Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
+	virtual void Compile(UField* TypeToCompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const;
 public:
-	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const { PURE_VIRTUAL(UCSManagedTypeCompiler::CreateNewReflectionData, return nullptr;); }
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateReflectionData() const { PURE_VIRTUAL(UCSManagedTypeCompiler::CreateNewReflectionData, return nullptr;); }
 	// End of interface
 	
 protected:

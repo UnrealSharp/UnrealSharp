@@ -23,7 +23,7 @@ UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefin
 
 void UCSManagedTypeCompiler::StartCompilation(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::CompileManagedTypeDefinition);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::StartCompilation);
 	
 	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinition();
 	
