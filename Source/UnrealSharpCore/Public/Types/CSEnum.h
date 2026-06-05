@@ -5,7 +5,7 @@
 #include "Engine/UserDefinedEnum.h"
 #include "CSEnum.generated.h"
 
-UCLASS(MinimalAPI)
+UCLASS()
 class UCSEnum : public UUserDefinedEnum, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()

@@ -1,110 +1,68 @@
 ﻿#pragma once
+
 #include "CSManagedCallbacksCache.h"
 #include "CSManagedGCHandle.generated.h"
 
-enum class GCHandleType : char
-{
-	Null,
-	StrongHandle,
-	WeakHandle,
-	PinnedHandle,
-};
-
 struct FGCHandleIntPtr
 {
-	bool operator == (const FGCHandleIntPtr& Other) const
-	{
-		return IntPtr == Other.IntPtr;
-	}
-
-	bool operator != (const FGCHandleIntPtr& Other) const
-	{
-		return IntPtr != Other.IntPtr;
-	}
-	
-	// Pointer to the managed object in C#
-	uint8* IntPtr = nullptr;
+    bool operator==(const FGCHandleIntPtr& Other) const = default;
+    uint8* ManagedHandlePtr = nullptr;
 };
 
-static_assert(sizeof(FGCHandleIntPtr) == sizeof(void *));
+static_assert(sizeof(FGCHandleIntPtr) == sizeof(void*));
 
 struct FGCHandle
 {
-	FGCHandleIntPtr Handle;
-	GCHandleType Type = GCHandleType::Null;
+    FGCHandle() = default;
+    FGCHandle(FGCHandleIntPtr InHandle) : Handle(InHandle) {}
+    FGCHandle(uint8* InHandle) : Handle{InHandle} {}
 
-	static FGCHandle InvalidHandle() { return FGCHandle(nullptr, GCHandleType::Null); }
+    static FGCHandle InvalidHandle() { return FGCHandle(nullptr); }
 
-	bool IsNull() const { return !Handle.IntPtr; }
-	bool IsWeakPointer() const { return Type == GCHandleType::WeakHandle; }
-	
-	FGCHandleIntPtr GetHandle() const { return Handle; }
-	uint8* GetPointer() const { return Handle.IntPtr; };
-	
-	void Dispose(FGCHandleIntPtr AssemblyHandle = FGCHandleIntPtr())
-	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FGCHandle::Dispose);
-		
-		if (!Handle.IntPtr || Type == GCHandleType::Null)
-		{
-			return;
-		}
+    FGCHandleIntPtr GetHandle() const { return Handle; }
+    uint8* GetPointer() const { return Handle.ManagedHandlePtr; }
+    bool IsNull() const { return Handle.ManagedHandlePtr == nullptr; }
 
-		FCSManagedCallbacks::ManagedCallbacks.Dispose(Handle, AssemblyHandle);
-		Invalidate();
-	}
-	
-	void Invalidate()
-	{
-		Handle.IntPtr = nullptr;
-		Type = GCHandleType::Null;
-	}
+    void Dispose(FGCHandleIntPtr AssemblyHandle = {})
+    {
+        TRACE_CPUPROFILER_EVENT_SCOPE(FGCHandle::Dispose);
 
-	void operator = (const FGCHandle& Other)
-	{
-		Handle = Other.Handle;
-		Type = Other.Type;
-	}
-	
-	operator void*() const
-	{
-		return Handle.IntPtr;
-	}
+        if (IsNull())
+        {
+            return;
+        }
 
-	FGCHandle(){}
-	FGCHandle(const FGCHandleIntPtr InHandle, const GCHandleType InType) : Handle(InHandle), Type(InType) {}
+        GetManagedCallbacks().Dispose(Handle, AssemblyHandle);
+        Invalidate();
+    }
 
-	FGCHandle(uint8* InHandle, const GCHandleType InType) : Type(InType)
-	{
-		Handle.IntPtr = InHandle;
-	}
+    void Invalidate() { Handle.ManagedHandlePtr = nullptr; }
 
-	FGCHandle(const FGCHandleIntPtr InHandle) : Handle(InHandle)
-	{
-		Type = GCHandleType::Null;
-	}
+    operator void*() const { return Handle.ManagedHandlePtr; }
+    
+private:
+    FGCHandleIntPtr Handle;
 };
 
 struct FScopedGCHandle
 {
-    
-    FGCHandleIntPtr Handle;
-
     explicit FScopedGCHandle(FGCHandleIntPtr InHandle) : Handle(InHandle) {}
 
     FScopedGCHandle(const FScopedGCHandle&) = delete;
-    FScopedGCHandle(FScopedGCHandle&&) = delete;
+    FScopedGCHandle& operator=(const FScopedGCHandle&) = delete;
 
     ~FScopedGCHandle()
     {
-        if (Handle.IntPtr != nullptr) 
+        if (Handle.ManagedHandlePtr != nullptr)
         {
-            FCSManagedCallbacks::ManagedCallbacks.FreeHandle(Handle);
+            GetManagedCallbacks().FreeHandle(Handle);
         }
     }
     
-    FScopedGCHandle& operator=(const FScopedGCHandle&) = delete;
-    FScopedGCHandle& operator=(FScopedGCHandle&&) = delete;
+    FGCHandleIntPtr GetHandle() const { return Handle; }
+    
+private:
+    FGCHandleIntPtr Handle;
 };
 
 USTRUCT()
@@ -117,14 +75,9 @@ struct FSharedGCHandle
 
     FGCHandleIntPtr GetHandle() const
     {
-        if (Handle == nullptr) 
-        {
-            return FGCHandleIntPtr();
-        }
-        
-        return Handle->Handle;
+        return Handle ? Handle->GetHandle() : FGCHandleIntPtr{};
     }
-    
+
 private:
     TSharedPtr<FScopedGCHandle> Handle;
 };

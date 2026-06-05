@@ -13,14 +13,14 @@ class UCSManagedTypeCompiler : public UObject
 public:
 
 	UField* CreateField(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
-	void RecompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
+	void StartCompilation(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const;
 
 protected:
 	// Start UCSManagedTypeCompiler interface
-	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
+	virtual void Compile(UField* TypeToCompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const { }              
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const;
 public:
-	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const { PURE_VIRTUAL(UCSManagedTypeCompiler::CreateNewReflectionData, return nullptr;); }
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateReflectionData() const { PURE_VIRTUAL(UCSManagedTypeCompiler::CreateNewReflectionData, return nullptr;); }
 	// End of interface
 	
 protected:

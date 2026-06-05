@@ -13,10 +13,19 @@
 
 namespace UnrealSharp::DotNetUtilities
 {
+#if WITH_EDITOR
 	UNREALSHARPUTILITIES_API bool VerifyCSharpEnvironment();
+	UNREALSHARPUTILITIES_API bool BuildUserSolution();
+#endif
 	
 	UNREALSHARPUTILITIES_API FString& GetManagedBinaries();
 	UNREALSHARPUTILITIES_API bool ParseDotNetVersion(const FString& VersionString, int32& OutMajor, int32& OutMinor, int32& OutPatch);
 	UNREALSHARPUTILITIES_API bool IsVersionGreaterOrEqual(const FString& Version, const FString& MinVersion);
 	UNREALSHARPUTILITIES_API bool IsVersionHigher(const FString& A, const FString& B);
+	
+	UNREALSHARPUTILITIES_API FString GetDotNetDirectory();
+	UNREALSHARPUTILITIES_API FString GetDotNetExecutablePath();
+	UNREALSHARPUTILITIES_API FString GetLatestHostFxrPath();
+	UNREALSHARPUTILITIES_API FString GetRuntimeHostPath();
+	UNREALSHARPUTILITIES_API FString GetRuntimeConfigPath();
 };

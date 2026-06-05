@@ -14,7 +14,7 @@ UCSManagedStructCompiler::UCSManagedStructCompiler()
 	FieldType = UCSScriptStruct::StaticClass();
 }
 
-void UCSManagedStructCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedStructCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSScriptStruct* Struct = static_cast<UCSScriptStruct*>(TypeToRecompile);
 	TSharedPtr<FCSStructReflectionData> StructReflectionData = ManagedTypeDefinition->GetReflectionData<FCSStructReflectionData>();
@@ -40,7 +40,7 @@ void UCSManagedStructCompiler::Recompile(UField* TypeToRecompile, const TSharedP
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedStructCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedStructCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSStructReflectionData>();
 }

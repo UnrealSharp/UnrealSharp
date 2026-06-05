@@ -1,5 +1,6 @@
 #include "CSProcessUtilities.h"
 
+#include "CSDotnetUtilties.h"
 #include "CSPathsUtilities.h"
 #include "UnrealSharpUtilities.h"
 #include "Logging/StructuredLog.h"
@@ -86,7 +87,7 @@ bool UnrealSharp::Process::InvokeDotNet(const FString& Arguments, const FString*
 {
 	FString Output;
 	int32 OutReturnCode = 0;
-	return InvokeCommand(Paths::GetDotNetExecutablePath(), Arguments, OutReturnCode, Output, InWorkingDirectory, OnError);
+	return InvokeCommand(DotNetUtilities::GetDotNetExecutablePath(), Arguments, OutReturnCode, Output, InWorkingDirectory, OnError);
 }
 
 bool UnrealSharp::Process::InvokeDotNetBuild(const FString& RootFolder, const FString& AdditionalArguments, const FCSCommandError& OnError)

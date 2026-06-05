@@ -6,13 +6,10 @@ public class UnrealSharpCore : ModuleRules
 	public UnrealSharpCore(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		string managedPath = Path.Combine(PluginDirectory, "Managed");
-		string engineGluePath = Path.Combine(managedPath, "UnrealSharp", "UnrealSharp");
 		
-		PublicDefinitions.Add("GENERATED_GLUE_PATH=" + engineGluePath.Replace("\\","/"));
 		PublicDefinitions.Add("PLUGIN_PATH=" + PluginDirectory.Replace("\\","/"));
-		PublicDefinitions.Add("BUILD_TARGET=" + (int)Target.Type);
-		PublicDefinitions.Add("BUILD_CONFIGURATION=" + (int)Target.Configuration);
+		PublicDefinitions.Add("TARGET_TYPE=" + (int)Target.Type);
+		PublicDefinitions.Add("TARGET_CONFIGURATION=" + (int)Target.Configuration);
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
@@ -47,8 +44,7 @@ public class UnrealSharpCore : ModuleRules
 
         PublicIncludePaths.AddRange(new string[] { ModuleDirectory });
         PublicDefinitions.Add("ForceAsEngineGlue=1");
-
-        PublicSystemIncludePaths.Add(Path.Combine(managedPath, "DotNetRuntime", "inc"));
+        PublicSystemIncludePaths.Add(Path.Combine(PluginDirectory, "Managed", "DotNetRuntime", "inc"));
 
 		if (Target.bBuildEditor)
 		{

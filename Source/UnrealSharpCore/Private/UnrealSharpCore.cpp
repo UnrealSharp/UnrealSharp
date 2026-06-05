@@ -1,4 +1,11 @@
-﻿#if defined(__APPLE__)
+﻿#include "UnrealSharpCore.h"
+#include "CoreMinimal.h"
+#include "CSManager.h"
+#include "CSDotnetUtilties.h"
+#include "Properties/CSPropertyGeneratorManager.h"
+#include "Modules/ModuleManager.h"
+
+#if defined(__APPLE__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpragma-once-outside-header"
 #endif
@@ -7,24 +14,30 @@
 #pragma clang diagnostic pop
 #endif
 
-#include "UnrealSharpCore.h"
-#include "CoreMinimal.h"
-#include "CSManager.h"
-#include "Properties/CSPropertyGeneratorManager.h"
-#include "Modules/ModuleManager.h"
-
 #define LOCTEXT_NAMESPACE "FUnrealSharpCoreModule"
 
 DEFINE_LOG_CATEGORY(LogUnrealSharp);
 
 void FUnrealSharpCoreModule::StartupModule()
 {
+#if WITH_EDITOR
+	if (!UnrealSharp::DotNetUtilities::VerifyCSharpEnvironment() || !UnrealSharp::DotNetUtilities::BuildUserSolution())
+	{
+		StartupModule();
+		return;
+	}
+#endif
+	
+	if (!DotNetRuntimeHost.InitializeManagedRuntime())
+	{
+		return;
+	}
+	
 	UCSManager::Get().Initialize();
 }
 
 void FUnrealSharpCoreModule::ShutdownModule()
 {
-	UCSManager::Shutdown();
 	FCSPropertyGeneratorManager::Shutdown();
 }
 

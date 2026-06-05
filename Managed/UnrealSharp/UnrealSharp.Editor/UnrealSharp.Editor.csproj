@@ -1,18 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" />
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <EnableDynamicLoading>true</EnableDynamicLoading>
-        <IsPublishable>false</IsPublishable>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <DefineConstants>WITH_EDITOR</DefineConstants>
-        <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
-        <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+        <IsPublishable Condition="'$(UETargetType)' != 'Editor'">false</IsPublishable>
+        <IsEditorOnly>true</IsEditorOnly>
     </PropertyGroup>
 
     <ItemGroup>

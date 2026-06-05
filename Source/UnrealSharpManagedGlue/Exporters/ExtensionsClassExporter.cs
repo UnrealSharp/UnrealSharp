@@ -51,6 +51,6 @@ public static class ExtensionsClassExporter
         stringBuilder.CloseBrace();
         stringBuilder.EndGlueFile(libraryClass);
         
-        FileExporter.SaveGlueToDisk(package, package.GetModuleUhtOutputDirectory(), className, stringBuilder.ToString());
+        FileExporter.SaveGlueToDisk(package, package.GetPackageOutputDirectory(), className, stringBuilder.ToString());
     }
 }

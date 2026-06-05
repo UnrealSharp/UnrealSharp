@@ -7,6 +7,7 @@
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
 #include "UnrealSharpEditor.h"
 #include "CSPathsUtilities.h"
+#include "CSProjectUtilities.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
@@ -272,42 +273,24 @@ bool SCSNewProjectDialog::CanFinish() const
 	FString Name = NameTextBox->GetText().ToString();
 	FString Path = PathTextBox->GetText().ToString();
 	FString Filename = Name + ".csproj";
-	FString AbsolutePath = Path / Filename;
-
-	// Path can't be empty, name can't be empty, and path must contain the script path
-	if (Path.IsEmpty() || Name.IsEmpty() || SelectedProjectDestinationIndex == INDEX_NONE
-	    || !Path.Contains(ProjectDestinations[SelectedProjectDestinationIndex]->GetPath()))
+	FString AbsolutePath = FPaths::Combine(Path, Filename);
+	
+	if (Path.IsEmpty() || Name.IsEmpty() || SelectedProjectDestinationIndex == INDEX_NONE || !Path.Contains(ProjectDestinations[SelectedProjectDestinationIndex]->GetPath()))
 	{
 		return false;
 	}
-
-	// Name can't contain spaces
+	
 	if (Name.Contains(TEXT(" ")))
 	{
 		return false;
 	}
-
-	// Path must be a valid directory
+	
 	if (FPaths::DirectoryExists(Path / Name))
 	{
 		return false;
 	}
 
-	// File must not already exist
-	IFileManager& FileManager = IFileManager::Get();
-	TArray<FString> AssemblyPaths;
-	FileManager.FindFiles(AssemblyPaths, *Path, TEXT(".csproj"));
-
-	for (const FString& AssemblyPath : AssemblyPaths)
-	{
-		FString ProjectName = FPaths::GetBaseFilename(AssemblyPath);
-		if (ProjectName == Name)
-		{
-			return false;
-		}
-	}
-
-	return true;
+	return !UnrealSharp::Project::IsAssemblyInAnyManifest(Name);
 }
 
 void SCSNewProjectDialog::CloseWindow()

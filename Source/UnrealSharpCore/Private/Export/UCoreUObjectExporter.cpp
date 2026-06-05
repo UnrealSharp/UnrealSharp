@@ -19,7 +19,7 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 	FCSFieldName FieldName(InTypeName, InNamespace);
 
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);
-	UField* Field = ManagedTypeDefinition->CompileAndGetDefinitionField();
+	UField* Field = ManagedTypeDefinition->GetDefinition();
 
 #if WITH_EDITOR
 	if (UCSClass* Class = Cast<UCSClass>(Field))
@@ -31,8 +31,7 @@ UField* UUCoreUObjectExporter::GetType(const char* InAssemblyName, const char* I
 
 	if (!IsValid(Field))
 	{
-		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find type: {0}.{1} in assembly {2}", InNamespace, InTypeName,
-		          InAssemblyName);
+		UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find type: {0}.{1} in assembly {2}", InNamespace, InTypeName, InAssemblyName);
 		return nullptr;
 	}
 

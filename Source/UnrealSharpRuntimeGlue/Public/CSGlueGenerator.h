@@ -17,7 +17,6 @@ public:
 	
 	virtual TArray<FString> GetReferences() const { return {}; }
 
-	static FString GetPluginGlueFolder(const FString& PluginName);
 protected:
 	void SaveRuntimeGlue(FCSScriptBuilder& ScriptBuilder, const FString& FileName, const FString& Suffix = FString(TEXT(".cs")));
 };

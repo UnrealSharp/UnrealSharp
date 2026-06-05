@@ -6,19 +6,25 @@
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1570;0649;0169;0108;0109;CS1587;CS1591;CS0414;CS8500;CS1572</NoWarn>
     </PropertyGroup>
 
-	<PropertyGroup>
-      <DefineConstants>WITH_EDITOR</DefineConstants>
-      <DefineConstants Condition="'$(DisableWithEditor)' == 'true'">$(DefineConstants.Replace('WITH_EDITOR;', '').Replace('WITH_EDITOR', ''))</DefineConstants>
-      <DefineConstants Condition="'$(DefineAdditionalConstants)' != ''">$(DefineConstants);$(DefineAdditionalConstants)</DefineConstants>
+    <PropertyGroup Condition="'$(GenerateDocumentation)' == ''">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
+    <PropertyGroup>
+        <UHTGeneratedPath>..\..\..\Intermediate\UnrealSharp\UHT\$(UETargetType)</UHTGeneratedPath>
+        <UHTFullPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(UHTGeneratedPath)'))</UHTFullPath>
+    </PropertyGroup>
+    
     <Import Project="..\..\..\UnrealSharp.AOT.props" Condition="Exists('..\..\..\UnrealSharp.AOT.props')" />
-    <Import Project="$(UHTTargetDir)\UE5Rules.Defines.props" Condition="Exists('$(UHTTargetDir)\UE5Rules.Defines.props')" />
+    <Import Project="$(UHTGeneratedPath)\UE5Rules.Defines.props" Condition="Exists('$(UHTGeneratedPath)\UE5Rules.Defines.props')" />
+
+    <ItemGroup>
+        <Compile Include="$(UHTGeneratedPath)\**\*.cs"/>
+    </ItemGroup>
     
     <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />

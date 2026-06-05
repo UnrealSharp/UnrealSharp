@@ -9,7 +9,7 @@
 
 TMap<uint32, UCSPropertyGenerator*> FCSPropertyFactory::PropertyGeneratorMap;
 
-void FCSPropertyFactory::Initialize()
+void FCSPropertyFactory::EnsureInitialized()
 {
 	if (PropertyGeneratorMap.Num() > 0)
 	{

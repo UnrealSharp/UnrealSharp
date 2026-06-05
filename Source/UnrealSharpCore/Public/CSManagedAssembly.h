@@ -2,7 +2,6 @@
 
 #include "CSFieldName.h"
 #include "CSManagedGCHandle.h"
-#include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 #include "CSFieldType.h"
 #include "Misc/Paths.h"
@@ -17,26 +16,32 @@
 struct FCSManagedMethod;
 class UCSClass;
 
-UCLASS()
+struct FCSAssemblyEvents
+{
+	DECLARE_MULTICAST_DELEGATE_OneParam(FCSAssemblyEvent, UCSManagedAssembly*);
+	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyLoaded;
+	UNREALSHARPCORE_API static FCSAssemblyEvent OnAssemblyUnloaded;
+};
+
+UCLASS(Transient)
 class UCSManagedAssembly : public UObject
 {
 	GENERATED_BODY()
 public:
-	void InitializeManagedAssembly(FStringView InAssemblyPath, bool bIsCollectible = false);
+	void Initialize(FStringView InAssemblyPath, bool bIsCollectible = false);
 
-	UNREALSHARPCORE_API bool LoadManagedAssembly();
-	UNREALSHARPCORE_API bool UnloadManagedAssembly();
+	UNREALSHARPCORE_API bool LoadAssembly();
+	UNREALSHARPCORE_API bool UnloadAssembly();
 
 	UNREALSHARPCORE_API bool IsAssemblyLoading() const { return bIsLoading; }
 	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return AssemblyGCHandle.IsValid() && !AssemblyGCHandle->IsNull(); }
 	
-	UNREALSHARPCORE_API FName GetAssemblyName() const { return AssemblyName; }
 	UNREALSHARPCORE_API const FString& GetAssemblyFilePath() const { return AssemblyFilePath; }
 	UNREALSHARPCORE_API FString GetAssemblyFileName() const { return FPaths::GetCleanFilename(AssemblyFilePath); }
 	
 	UNREALSHARPCORE_API const TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>>& GetDefinedManagedTypes() const { return DefinedManagedTypes; }
 	UNREALSHARPCORE_API bool IsCollectible() const { return bIsCollectible; }
-	
+
 #if WITH_EDITOR
 	UNREALSHARPCORE_API void AddDependentAssembly(UCSManagedAssembly* DependencyAssembly) { DependentAssemblies.Add(DependencyAssembly); }
 	UNREALSHARPCORE_API const TArray<UCSManagedAssembly*>& GetDependentAssemblies() const { return DependentAssemblies; }
@@ -58,7 +63,7 @@ public:
 
 		if (TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindManagedTypeDefinition(FieldName))
 		{
-			return Cast<T>(ManagedTypeDefinition->CompileAndGetDefinitionField());
+			return Cast<T>(ManagedTypeDefinition->GetDefinition());
 		}
 		
 		return FCSUtilities::FindField<T>(FieldName);
@@ -70,19 +75,18 @@ public:
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle);
 	TSharedPtr<FGCHandle> GetOrCreateManagedInterface(UObject* Object, UClass* InterfaceClass);
 
-	TSharedPtr<const FGCHandle> GetManagedAssemblyHandle() const { return AssemblyGCHandle; }
+	TSharedPtr<const FGCHandle> GetAssemblyHandle() const { return AssemblyGCHandle; }
 
 private:
 	void OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
 
 	TMap<FCSFieldName, TSharedPtr<FCSManagedTypeDefinition>> DefinedManagedTypes;
-	TArray<TSharedPtr<FCSManagedTypeDefinition>> PendingRebuildTypes;
+	TArray<TSharedPtr<FCSManagedTypeDefinition>> ManagedTypesQueuedForCompilation;
 	TArray<TSharedPtr<FGCHandle>> AllocatedGCHandles;
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedTypeGCHandles;
 	TSharedPtr<FGCHandle> AssemblyGCHandle;
 
 	FString AssemblyFilePath;
-	FName AssemblyName;
 	
 	bool bIsLoading = false;
 	bool bIsCollectible = false;

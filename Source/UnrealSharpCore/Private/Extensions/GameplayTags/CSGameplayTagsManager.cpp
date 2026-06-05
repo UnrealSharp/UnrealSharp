@@ -15,7 +15,7 @@ UCSGameplayTagsManager& UCSGameplayTagsManager::Get()
 		Instance->AddToRoot();
 
 #if WITH_EDITOR
-		UCSManager::Get().OnManagedAssemblyUnloadedEvent().AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
+		FCSAssemblyEvents::OnAssemblyUnloaded.AddUObject(Instance, &UCSGameplayTagsManager::OnManagedAssemblyUnloaded);
 #endif
 	}
 
@@ -60,7 +60,7 @@ FGameplayTag UCSGameplayTagsManager::AddTag_Editor(const FString& InAssemblyName
 	
 	TSharedPtr<FNativeGameplayTag> NewTag = CreateTag(TagName, DevComment);
 	
-	TArray<TSharedPtr<FNativeGameplayTag>>& Tags = Get().RegisteredTags.FindOrAdd(OwningAssembly->GetAssemblyName());
+	TArray<TSharedPtr<FNativeGameplayTag>>& Tags = Get().RegisteredTags.FindOrAdd(OwningAssembly->GetFName());
 	Tags.Add(NewTag);
 	
 	return NewTag->GetTag();
@@ -100,14 +100,13 @@ bool UCSGameplayTagsManager::IsTagRegistered(const FString& TagName, FGameplayTa
 }
 
 #if WITH_EDITOR
-void UCSGameplayTagsManager::OnManagedAssemblyUnloaded(const UCSManagedAssembly* UnloadedAssembly)
+void UCSGameplayTagsManager::OnManagedAssemblyUnloaded(UCSManagedAssembly* UnloadedAssembly)
 {
 	if (!IsValid(UnloadedAssembly))
 	{
 		return;
 	}
-
-	FName AssemblyName = UnloadedAssembly->GetAssemblyName();
-	RegisteredTags.Remove(AssemblyName);
+	
+	RegisteredTags.Remove(UnloadedAssembly->GetFName());
 }
 #endif

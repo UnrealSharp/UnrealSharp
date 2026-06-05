@@ -1,5 +1,25 @@
 #include "Utilities/CSAssemblyUtilities.h"
 #include "CSManagedAssembly.h"
+#include "CSManager.h"
+
+void DumpLoadedAssemblies(const TArray<FString>& Args)
+{
+	UE_LOG(LogUnrealSharp, Display, TEXT("Loaded Managed Assemblies:"));
+	
+	TArray<UCSManagedAssembly*> Assemblies;
+	UCSManager::Get().GetLoadedAssemblies(Assemblies);
+	
+	for (UCSManagedAssembly* Assembly : Assemblies)
+	{
+		UE_LOGFMT(LogUnrealSharp, Display, "- {0} (Path: {1})", *Assembly->GetName(), *Assembly->GetAssemblyFilePath());
+	}
+}
+
+static FAutoConsoleCommand CVarDumpLoadedAssemblies(
+	TEXT("UnrealSharp.DumpLoadedAssemblies"),
+	TEXT("Dumps the names of all currently loaded managed assemblies to the log."),
+	FConsoleCommandWithArgsDelegate::CreateStatic(&DumpLoadedAssemblies)
+);
 
 #if WITH_EDITOR
 void FCSAssemblyUtilities::SortAssembliesByDependencyOrder(const TArray<UCSManagedAssembly*>& InputAssemblies, TArray<UCSManagedAssembly*>& OutSortedAssemblies)
@@ -134,7 +154,7 @@ bool FCSAssemblyUtilities::IsRuntimeGlueAssembly(const UCSManagedAssembly* Assem
 		return false;
 	}
 
-	const FString& AssemblyName = Assembly->GetAssemblyName().ToString();
+	const FString& AssemblyName = Assembly->GetName();
 	return AssemblyName.EndsWith(".RuntimeGlue", ESearchCase::IgnoreCase);
 }
 #endif

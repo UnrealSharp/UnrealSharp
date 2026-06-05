@@ -21,20 +21,14 @@ UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefin
 	return NewField;
 }
 
-void UCSManagedTypeCompiler::RecompileManagedTypeDefinition(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedTypeCompiler::StartCompilation(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::RecompileManagedTypeDefinition);
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::StartCompilation);
 	
-	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinitionField();
+	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinition();
 	
-	if (!IsValid(TypeToRecompile))
-	{
-		FName TypeName = ManagedTypeDefinition->GetEngineName();
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Type to recompile is invalid. Needs to be created first. Type name: {0}", *TypeName.ToString());
-	}
-	
-	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Rebuilding type: {0}", *TypeToRecompile->GetName());
-	Recompile(TypeToRecompile, ManagedTypeDefinition);
+	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Compiling type: {0}", *TypeToRecompile->GetName());
+	Compile(TypeToRecompile, ManagedTypeDefinition);
 	
 	FCSMetaDataUtils::ApplyMetaData(ManagedTypeDefinition->GetReflectionData()->MetaData, TypeToRecompile);
 	FCSMetaDataUtils::ApplyBaseMetaData(TypeToRecompile);

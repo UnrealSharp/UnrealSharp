@@ -13,7 +13,7 @@ UCSManagedEnumCompiler::UCSManagedEnumCompiler()
 	FieldType = UCSEnum::StaticClass();
 }
 
-void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedEnumCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSEnum* Enum = static_cast<UCSEnum*>(TypeToRecompile);
 	TSharedPtr<FCSEnumReflectionData> EnumReflectionData = ManagedTypeDefinition->GetReflectionData<FCSEnumReflectionData>();
@@ -42,7 +42,7 @@ void UCSManagedEnumCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedEnumCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedEnumCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSEnumReflectionData>();
 }

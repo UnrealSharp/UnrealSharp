@@ -5,7 +5,7 @@
 #include "CSBlueprint.generated.h"
 
 UCLASS()
-class UNREALSHARPCORE_API UCSBlueprint : public UBlueprint
+class UCSBlueprint : public UBlueprint
 {
 	GENERATED_BODY()
 };

@@ -15,9 +15,9 @@ public:
 	UCSManagedClassCompiler();
 	
 	// UCSManagedTypeCompiler interface implementation
-	virtual void Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
+	virtual void Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
 	virtual FString GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const override;
-	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateNewReflectionData() const override;
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateReflectionData() const override;
 	// End of implementation
 	
 	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceReflectionData>& Interfaces);
@@ -36,6 +36,7 @@ public:
 #endif
 
 private:
+	
 #if WITH_EDITOR
 	static void CreateOrUpdateOwningBlueprint(TSharedPtr<FCSClassReflectionData> ClassReflectionData, UCSClass* Field, UClass* SuperClass);
 #endif

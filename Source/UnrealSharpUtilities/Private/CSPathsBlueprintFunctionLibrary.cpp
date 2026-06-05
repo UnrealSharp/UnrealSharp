@@ -1,11 +1,12 @@
 #include "CSPathsBlueprintFunctionLibrary.h"
 
+#include "CSDotnetUtilties.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 
 FString UCSPathsBlueprintFunctionLibrary::GetRuntimeConfigPath()
 {
-	return UnrealSharp::Paths::GetRuntimeConfigPath();
+	return UnrealSharp::DotNetUtilities::GetRuntimeConfigPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetPluginAssembliesPath()
@@ -35,15 +36,15 @@ FString UCSPathsBlueprintFunctionLibrary::GetUnrealSharpMetadataPath()
 
 FString UCSPathsBlueprintFunctionLibrary::GetDotNetDirectory()
 {
-	return UnrealSharp::Paths::GetDotNetDirectory();
+	return UnrealSharp::DotNetUtilities::GetDotNetDirectory();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetDotNetExecutablePath()
 {
-	return UnrealSharp::Paths::GetDotNetExecutablePath();
+	return UnrealSharp::DotNetUtilities::GetDotNetExecutablePath();
 }
 
-FString& UCSPathsBlueprintFunctionLibrary::GetPluginDirectory()
+FString UCSPathsBlueprintFunctionLibrary::GetPluginDirectory()
 {
 	return UnrealSharp::Paths::GetPluginDirectory();
 }
@@ -68,24 +69,14 @@ const FString& UCSPathsBlueprintFunctionLibrary::GetPluginsDirectory()
 	return UnrealSharp::Paths::GetPluginsDirectory();
 }
 
-const FString& UCSPathsBlueprintFunctionLibrary::GetProjectGlueFolderPath()
-{
-	return UnrealSharp::Paths::GetProjectGlueFolderPath();
-}
-
-FString UCSPathsBlueprintFunctionLibrary::GetPluginGlueFolderPath(const FString& PluginName)
-{
-	return UnrealSharp::Paths::GetPluginGlueFolderPath(PluginName);
-}
-
 FString UCSPathsBlueprintFunctionLibrary::GetLatestHostFxrPath()
 { 
-	return UnrealSharp::Paths::GetLatestHostFxrPath();
+	return UnrealSharp::DotNetUtilities::GetLatestHostFxrPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetRuntimeHostPath()
 {
-	return UnrealSharp::Paths::GetRuntimeHostPath();
+	return UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetPathToManagedSolution()
@@ -93,27 +84,12 @@ FString UCSPathsBlueprintFunctionLibrary::GetPathToManagedSolution()
 	return UnrealSharp::Paths::GetPathToManagedSolution();
 }
 
-FString UCSPathsBlueprintFunctionLibrary::AppendGlueSuffix(const FString& FileName)
-{
-	return UnrealSharp::Project::AppendGlueSuffix(FileName);
-}
-
 FString UCSPathsBlueprintFunctionLibrary::GetUserManagedProjectName()
 {
 	return UnrealSharp::Project::GetUserManagedProjectName();
 }
 
-void UCSPathsBlueprintFunctionLibrary::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeGlue)
+void UCSPathsBlueprintFunctionLibrary::GetAllProjectPaths(TArray<FString>& ProjectPaths)
 {
-	UnrealSharp::Project::GetProjectNamesByLoadOrder(UserProjectNames, bIncludeGlue);
-}
-
-void UCSPathsBlueprintFunctionLibrary::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeGlue)
-{
-	UnrealSharp::Project::GetAssemblyPathsByLoadOrder(AssemblyPaths, bIncludeGlue);
-}
-
-void UCSPathsBlueprintFunctionLibrary::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue)
-{
-	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths, bIncludeProjectGlue);
+	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
 }

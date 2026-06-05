@@ -51,8 +51,10 @@ public static class Program
         ExportBindings();
         
         FileExporter.CleanOldExportedFiles();
-        GlueModuleFactory.CreateGlueProjects();
         BuildUtilities.BuildBindings();
+        
+        ModuleFactory.SyncModuleProjects();
+        BuildUtilities.GenerateUserSolution();
     }
 
     private static void ExportBindings()

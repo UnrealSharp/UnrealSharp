@@ -13,13 +13,7 @@ public static class ProjectUtilities
 {
     public static string GetProjectName(this BuildCommand buildCommand)
     {
-        FileReference? Project = buildCommand.ParseProjectParam();
-        
-        if (Project == null)
-        {
-            throw new Exception("No project file specified. Please specify a project file using the -Project=... parameter.");
-        }
-        
+        FileReference Project = buildCommand.GetUProjectFile();
         return Path.GetFileNameWithoutExtension(Project.FullName);
     }
     
@@ -52,7 +46,7 @@ public static class ProjectUtilities
 
     public static List<FileReference> GetUnrealProjectAndPluginFiles(this BuildCommand buildCommand)
     {
-        FileReference? Project = buildCommand.ParseProjectParam();
+        FileReference Project = buildCommand.GetUProjectFile();
         IEnumerable<FileReference> AllPlugins = PluginsBase.EnumeratePlugins(Project);
         
         List<FileReference> ProjectAndPluginFiles = AllPlugins.ToList();
@@ -61,14 +55,14 @@ public static class ProjectUtilities
         return ProjectAndPluginFiles.ToList();
     }
     
-    public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand)
+    public static List<FileInfo> GetUnrealSharpProjectFiles(this BuildCommand buildCommand, string folder)
     {
         List<FileReference> ProjectAndPluginFiles = GetUnrealProjectAndPluginFiles(buildCommand);
         List<FileInfo> UnrealSharpProjectFiles = new List<FileInfo>();
         
         foreach (FileReference ProjectFile in ProjectAndPluginFiles)
         {
-            string ProjectScriptFolder = buildCommand.GetScriptFolder(ProjectFile.Directory.FullName);
+            string ProjectScriptFolder = Path.Combine(ProjectFile.Directory.FullName, folder);
 
             if (!Directory.Exists(ProjectScriptFolder))
             {
@@ -82,11 +76,67 @@ public static class ProjectUtilities
         return UnrealSharpProjectFiles;
     }
     
+    public static IEnumerable<FileReference> GetGameModules(this BuildCommand buildCommand)
+    {
+        FileReference Project = buildCommand.GetUProjectFile();
+        
+        string PluginsFolder = Path.Combine(Project.Directory.FullName, "Plugins");
+        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(new DirectoryReference(PluginsFolder));
+        
+        List<FileReference> GameModules = new List<FileReference>();
+        GameModules.AddRange(FoundPlugins);
+        GameModules.Add(Project);
+        
+        return GameModules;
+    }
+    
+    public static List<FileInfo> GetManagedProjectFiles(this BuildCommand buildCommand)
+    {
+        return GetUnrealSharpProjectFiles(buildCommand, buildCommand.GetScriptDirectoryName());
+    }
+    
     private static IEnumerable<FileInfo> GetManagedProjectsInDirectory(DirectoryInfo folder)
     {
         IEnumerable<FileInfo> CsprojFiles = folder.EnumerateFiles("*.csproj", SearchOption.AllDirectories);
         IEnumerable<FileInfo> FsprojFiles = folder.EnumerateFiles("*.fsproj", SearchOption.AllDirectories);
         return CsprojFiles.Concat(FsprojFiles);
+    }
+    
+    public static FileReference GetUnrealSharpUPlugin(this BuildCommand command)
+    {
+        FileReference Project = command.GetUProjectFile();
+        IEnumerable<FileReference> FoundPlugins = PluginsBase.EnumeratePlugins(Project);
+        
+        FileReference? UnrealSharpPlugin = null;
+        foreach (FileReference Plugin in FoundPlugins)
+        {
+            if (Plugin.GetFileName() != "UnrealSharp.uplugin")
+            {
+                continue;
+            }
+            
+            UnrealSharpPlugin = Plugin;
+            break;
+        }
+        
+        if (UnrealSharpPlugin == null)
+        {
+            throw new Exception("Failed to find UnrealSharp.uplugin in the project plugins folder. Make sure UnrealSharp is properly installed and added to your project.");
+        }
+        
+        return UnrealSharpPlugin;
+    }
+
+    public static FileReference GetUProjectFile(this BuildCommand command)
+    {
+        string ProjectPath = command.ParseRequiredStringParam("Project");
+        
+        if (!File.Exists(ProjectPath))
+        {
+            throw new FileNotFoundException($"UProject file not found at path: {ProjectPath}");
+        }
+        
+        return new FileReference(ProjectPath);
     }
     
     public static bool ContainsUPluginOrUProjectFile(string folder)

@@ -38,6 +38,24 @@ public static class PackageUtilities
         return hasDefine && treatedAsEngineGlue != 0;
     }
 
+    public static string GetPackageExtensions(this UhtPackage package)
+    {
+        package.GetModule().TryGetDefine("ExtendModule", out string? extension);
+        return extension ?? string.Empty;
+    }
+    
+    public static List<string> GetAdditionalExtensionFolders(this UhtPackage package)
+    {
+        package.GetModule().TryGetDefine("AdditionalExtensionFolder", out string? extensionFolders);
+        
+        if (string.IsNullOrEmpty(extensionFolders))
+        {
+            return [];
+        }
+        
+        return extensionFolders.Split(';').ToList();
+    }
+
     public static UHTManifest.Module GetModule(this UhtPackage package)
     {
         return package.Module.Module;
@@ -80,17 +98,16 @@ public static class PackageUtilities
         return currentDirectory!.FullName;
     }
     
-    public static string GetModuleUhtOutputDirectory(this UhtPackage package)
-    {
-        return Path.Combine(package.GetUhtBaseOutputDirectory(), package.GetModuleShortName());
-    }
-    
-    public static string GetUhtBaseOutputDirectory(this UhtPackage package)
+    public static string GetPackageOutputDirectory(this UhtPackage package)
     {
         ModuleInfo moduleInfo = package.GetModuleInfo();
-        string root = moduleInfo.IsPartOfEngine && !package.IsExtractedEngineModule() ? GeneratorStatics.BindingsProjectDirectory : moduleInfo.ProjectDirectory;
-        string subPath = Path.Combine(root, "obj", "UHT", GeneratorStatics.BuildTarget.ToString());
-        return subPath;
+        return moduleInfo.GlueOutputDirectory;
+    }
+    
+    public static string GetUHTBaseDirectory(this UhtPackage package)
+    {
+        DirectoryInfo glueOutputDirectory = new DirectoryInfo(package.GetPackageOutputDirectory());
+        return glueOutputDirectory.Parent!.FullName;
     }
     
     private static bool IsUPluginFile(string filePath)

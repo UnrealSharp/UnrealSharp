@@ -78,7 +78,8 @@ public:
 		while (CurrentClass)
 		{
 			UPackage* ClassPackage = CurrentClass->GetPackage();
-			if (ClassPackage && ClassPackage->HasAnyPackageFlags(PKG_CompiledIn))
+			
+			if (!IsBlueprintField(ClassPackage))
 			{
 				break;
 			}
@@ -88,17 +89,20 @@ public:
 		
 		return CurrentClass;
 	}
+	
+	static bool IsBlueprintField(UPackage* FieldPackage)
+	{
+		return FieldPackage && !FieldPackage->HasAnyPackageFlags(PKG_CompiledIn);
+	}
+	
+	static bool IsBlueprintObject(const UObject* Object)
+	{
+		return IsBlueprintField(Object->GetPackage());
+	}
 
 	static bool HasImplementedFunction(const UClass* Class, const FName& FunctionName)
 	{
-		auto ImplementedInBlueprint = [](const UFunction* Func) -> bool
-		{
-			return IsValid(Func) && Func->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass());
-		};
-
 		UFunction* Function = Class->FindFunctionByName(FunctionName);
-		bool ImplementsFunction = ImplementedInBlueprint(Function);
-		
-		return ImplementsFunction;
+		return IsValid(Function) && Function->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass());
 	}
 };

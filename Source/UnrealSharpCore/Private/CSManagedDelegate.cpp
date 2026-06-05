@@ -26,7 +26,7 @@ void FCSManagedDelegate::Invoke(UObject* WorldContextObject, bool bDispose)
 		UCSManager::Get().SetCurrentWorldContext(WorldContext);
 	}
 
-	FCSManagedCallbacks::ManagedCallbacks.InvokeDelegate(CallbackHandle.GetHandle());
+	GetManagedCallbacks().InvokeDelegate(CallbackHandle.GetHandle());
 
 	if (bDispose)
 	{

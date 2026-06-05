@@ -17,7 +17,7 @@ void UCSScriptStruct::InitializeStructDefaults()
 	
 	InitializeStructIgnoreDefaults(StructDefaults.Get());
 	
-	FCSManagedCallbacks::ManagedCallbacks.InitializeStructure(GetTypeGCHandle()->GetHandle(), StructDefaults.Get());
+	GetManagedCallbacks().InitializeStructure(GetTypeGCHandle()->GetHandle(), StructDefaults.Get());
 	
 	DefaultStructInstance = FUserStructOnScopeIgnoreDefaults(this, StructDefaults.Get());
 	DefaultStructInstance.SetPackage(GetOutermost());

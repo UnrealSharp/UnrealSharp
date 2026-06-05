@@ -1,205 +1,259 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Text.Json;
+using System.Linq;
 using EpicGames.UHT.Types;
-using UnrealSharp.Shared;
+using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharpManagedGlue.Utilities;
 
-public class ModuleInfo
+public sealed class ModuleInfo
 {
-	private readonly string _moduleName;
-	private readonly string _moduleDirectory;
-	public readonly HashSet<string>? Dependencies;
-	public readonly UhtPackage Module;
-	
-	public string ProjectName => $"{_moduleName}.Glue";
-	public string ProjectFile => $"{ProjectName}.csproj";
-	public string ScriptDirectory => Path.Combine(_moduleDirectory, CommonUnrealSharpSettings.ScriptDirectoryName);
-	public string ProjectDirectory => Path.Combine(ScriptDirectory, ProjectName);
-	public string CsProjPath => Path.Combine(ProjectDirectory, ProjectFile);
-	
-	public bool IsPartOfEngine => Module.IsPartOfEngine();
-	public string ModuleRoot => _moduleDirectory;
+	public UhtPackage Module { get; }
 
-	public string GlueBaseDirectory => Module.GetUhtBaseOutputDirectory();
-	public string GlueModuleDirectory => Module.GetModuleUhtOutputDirectory();
+	public string ModuleName { get; }
+	public string ModuleRoot { get; }
+	public string ScriptPath { get; }
 
-	public ModuleInfo(string moduleName, string moduleDirectory, UhtPackage package, HashSet<string>? dependencies = null)
+	public bool IsExtendingModule { get; }
+	public bool IsEngineModule { get; }
+
+	public IReadOnlyList<ModuleInfo> Extensions { get; private set; } = [];
+	public bool HasExtensions => Extensions.Count > 0;
+	
+	public bool EmitsToProjectDirectory { get; private set; }
+	
+	public bool IsPartOfEngine => IsEngineModule && !EmitsToProjectDirectory;
+
+	public string GlueOutputDirectory { get; private set; } = string.Empty;
+	public string CsProjPath { get; private set; } = string.Empty;
+	public string ExtensionsDirectory => Path.Combine(ScriptPath, "Extensions");
+
+	internal readonly HashSet<ModuleInfo> DirectDependencies = new();
+	internal readonly HashSet<ModuleInfo> DependencyModules = new();
+
+	public IReadOnlyCollection<ModuleInfo> Dependencies => DependencyModules;
+
+	internal ModuleInfo(string moduleName, string moduleRoot, UhtPackage package)
 	{
-		_moduleName = moduleName;
-		_moduleDirectory = moduleDirectory;
-		Dependencies = dependencies;
 		Module = package;
+		ModuleName = moduleName;
+		ModuleRoot = moduleRoot;
+		IsExtendingModule = package.GetPackageExtensions() != string.Empty;
+		IsEngineModule = package.IsPartOfEngine();
+		ScriptPath = Path.Combine(moduleRoot, CommonUnrealSharpSettings.ScriptDirectoryName, moduleName);
 	}
+	
+	internal void ResolveExtensions(IReadOnlyList<ModuleInfo>? extensions)
+	{
+		Extensions = extensions ?? [];
+		EmitsToProjectDirectory = IsEngineModule && HasExtensions;
+	}
+	
+	internal bool MarkEmitsToProjectDirectory()
+	{
+		if (EmitsToProjectDirectory)
+		{
+			return false;
+		}
+
+		EmitsToProjectDirectory = true;
+		return true;
+	}
+	
+	internal void ResolveOutputPaths()
+	{
+		string root = EmitsToProjectDirectory ? GeneratorStatics.Factory.Session.ProjectDirectory! : ModuleRoot;
+
+		GlueOutputDirectory = PathUtilities.GetUhtGeneratedModuleOutputPath(root, GeneratorStatics.TargetType, ModuleName);
+		CsProjPath = Path.Combine(GlueOutputDirectory, $"{ModuleName}.csproj");
+	}
+
+	public override string ToString() => ModuleName;
 }
 
 public static class ModuleUtilities
 {
 	public static readonly Dictionary<UhtPackage, ModuleInfo> PackageToModuleInfo = new();
-	private static readonly Dictionary<string, string> ExtractedEngineModules = new();
+	private static readonly Dictionary<string, ModuleInfo> BySourceName = new(StringComparer.OrdinalIgnoreCase);
+	private static readonly Dictionary<string, List<ModuleInfo>> ModuleExtensions = new();
 
 	static ModuleUtilities()
 	{
-		InitializeManifests();
-		InitializeModules();
+		Build();
 	}
-	
-	public static IEnumerable<ModuleInfo> Modules => PackageToModuleInfo.Values;
 
-	private static void InitializeManifests()
+	private static void Build()
 	{
-		string? projectDirectory = GeneratorStatics.Factory.Session.ProjectDirectory;
-		if (string.IsNullOrEmpty(projectDirectory))
+		Dictionary<UhtPackage, List<UhtPackage>> referencedPackages = DiscoverModules();
+		
+		foreach (ModuleInfo module in PackageToModuleInfo.Values)
 		{
-			return;
+			ModuleExtensions.TryGetValue(module.ModuleName, out List<ModuleInfo>? extensions);
+			module.ResolveExtensions(extensions);
 		}
-
-		string pluginsDirectory = Path.Combine(projectDirectory, "Plugins");
-		if (!Directory.Exists(pluginsDirectory))
+		
+		foreach ((UhtPackage package, List<UhtPackage> references) in referencedPackages)
 		{
-			return;
+			ModuleInfo sourceModule = PackageToModuleInfo[package];
+
+			foreach (UhtPackage referenced in references)
+			{
+				AddDirectDependency(package, referenced, sourceModule);
+			}
 		}
-
-		IEnumerable<string> manifestFiles = Directory.EnumerateFiles(pluginsDirectory, "*.ExtractedModules.json", SearchOption.AllDirectories);
-
-		foreach (string manifestPath in manifestFiles)
+		
+		foreach (ModuleInfo module in PackageToModuleInfo.Values)
 		{
-			try
-			{
-				string? configDir = Path.GetDirectoryName(manifestPath);
-				if (string.IsNullOrEmpty(configDir))
-				{
-					continue;
-				}
-				
-				string rootDir = PackageUtilities.LocateProjectOrPluginRoot(configDir);
-
-				using FileStream stream = File.OpenRead(manifestPath);
-				List<string>? moduleNames = JsonSerializer.Deserialize<List<string>>(stream);
-				
-				if (moduleNames == null)
-				{
-					continue;
-				}
-
-				foreach (string moduleName in moduleNames)
-				{
-					ExtractedEngineModules[$"/Script/{moduleName}"] = rootDir;
-				}
-			}
-			catch (Exception e)
-			{
-				ConsoleUtilities.Log($"Failed to load manifest {manifestPath}: {e.Message}");
-			}
+			FlattenDependencies(module);
+		}
+		
+		PropagateProjectRedirection();
+		
+		foreach (ModuleInfo module in PackageToModuleInfo.Values)
+		{
+			module.DependencyModules.RemoveWhere(static dependency => dependency.IsPartOfEngine);
+			module.ResolveOutputPaths();
 		}
 	}
 
-	private static void InitializeModules()
+	public static ModuleInfo GetModuleInfo(this UhtPackage package)
 	{
+		if (PackageToModuleInfo.TryGetValue(package, out ModuleInfo? moduleInfo))
+		{
+			return moduleInfo;
+		}
+
+		throw new KeyNotFoundException($"No ModuleInfo registered for package '{package.SourceName}'.");
+	}
+
+	public static ModuleInfo GetModuleInfo(string packageName)
+	{
+		if (TryGetModuleInfo(packageName, out ModuleInfo? moduleInfo))
+		{
+			return moduleInfo;
+		}
+
+		throw new KeyNotFoundException($"No ModuleInfo registered for package name '{packageName}'.");
+	}
+
+	public static bool TryGetModuleInfo(string packageName, [NotNullWhen(true)] out ModuleInfo? moduleInfo)
+	{
+		string sourceName = packageName.StartsWith("/Script/", StringComparison.OrdinalIgnoreCase) ? packageName : $"/Script/{packageName}";
+		return BySourceName.TryGetValue(sourceName, out moduleInfo);
+	}
+
+	private static Dictionary<UhtPackage, List<UhtPackage>> DiscoverModules()
+	{
+		Dictionary<UhtPackage, List<UhtPackage>> referencedPackages = new();
+		Queue<UhtPackage> pending = new();
+		HashSet<UhtPackage> seen = new();
+
 		foreach (UhtModule module in GeneratorStatics.Factory.Session.Modules)
 		{
 			foreach (UhtPackage package in module.Packages)
 			{
-				TryRegisterModule(package);
+				pending.Enqueue(package);
 			}
 		}
-	}
-	
-	public static bool IsExtractedEngineModule(this UhtPackage package)
-	{
-		return ExtractedEngineModules.ContainsKey(package.SourceName);
-	}
-    
-	public static ModuleInfo GetModuleInfo(this UhtPackage package)
-	{
-		if (!PackageToModuleInfo.TryGetValue(package, out ModuleInfo? moduleInfo))
+
+		while (pending.Count > 0)
 		{
-			throw new KeyNotFoundException($"ModuleInfo not found for package: {package.SourceName}");
-		}
-		
-		return moduleInfo;
-	}
-	
-	public static ModuleInfo GetModuleInfo(string packageName)
-	{
-		foreach (KeyValuePair<UhtPackage, ModuleInfo> kvp in PackageToModuleInfo)
-		{
-			if (!kvp.Key.SourceName.Equals(packageName, StringComparison.OrdinalIgnoreCase))
+			UhtPackage package = pending.Dequeue();
+
+			if (!seen.Add(package))
 			{
 				continue;
 			}
-			
-			return kvp.Value;
+
+			if (TryRegisterModule(package) == null)
+			{
+				continue;
+			}
+
+			List<UhtPackage> references = CollectReferencedPackages(package);
+			referencedPackages[package] = references;
+
+			foreach (UhtPackage reference in references)
+			{
+				if (!seen.Contains(reference))
+				{
+					pending.Enqueue(reference);
+				}
+			}
 		}
-		
-		throw new KeyNotFoundException($"ModuleInfo not found for package name: {packageName}");
+
+		return referencedPackages;
 	}
 
-	private static ModuleInfo? TryRegisterModule(UhtPackage targetPackage)
+	private static ModuleInfo? TryRegisterModule(UhtPackage package)
 	{
-		if (!targetPackage.ShouldExportPackage())
+		if (PackageToModuleInfo.TryGetValue(package, out ModuleInfo? existing))
+		{
+			return existing;
+		}
+
+		if (!package.ShouldExportPackage())
 		{
 			return null;
 		}
-		
-		if (PackageToModuleInfo.TryGetValue(targetPackage, out ModuleInfo? existingModule))
-		{
-			return existingModule;
-		}
 
-		string moduleName = targetPackage.GetModuleShortName();
-		string modulePath;
-		HashSet<string> dependencies = new HashSet<string>();
+		string moduleName = package.GetModuleShortName();
+		string moduleRoot = package.IsPartOfEngine() ? GeneratorStatics.PluginDirectory : package.GetBaseDirectoryForPackage();
 
-		if (targetPackage.IsPartOfEngine())
-		{
-			if (ExtractedEngineModules.TryGetValue(targetPackage.SourceName, out string? extractedModulePath))
-			{
-				DirectoryInfo pluginDir = new(extractedModulePath);
-				moduleName = pluginDir.Name;
-				modulePath = extractedModulePath;
-			}
-			else
-			{
-				modulePath = GeneratorStatics.BindingsProjectDirectory;
-			}
-		}
-		else
-		{
-			modulePath = targetPackage.GetBaseDirectoryForPackage();
-		}
+		ModuleInfo moduleInfo = new(moduleName, moduleRoot, package);
 
-		ModuleInfo moduleInfo = new ModuleInfo(moduleName, modulePath, targetPackage, dependencies);
-		PackageToModuleInfo.Add(targetPackage, moduleInfo);
-        
-		GatherDependencies(targetPackage, moduleInfo, dependencies);
+		PackageToModuleInfo.Add(package, moduleInfo);
+		BySourceName[package.SourceName] = moduleInfo;
+		RegisterExtensionTargets(moduleInfo, package);
+
 		return moduleInfo;
 	}
 
-	private static void GatherDependencies(UhtPackage sourcePackage, ModuleInfo info, HashSet<string> dependencies)
+	private static void RegisterExtensionTargets(ModuleInfo moduleInfo, UhtPackage package)
 	{
-		foreach (UhtType child in sourcePackage.Children)
+		string extendedModuleName = package.GetPackageExtensions();
+		if (string.IsNullOrEmpty(extendedModuleName))
 		{
-			ProcessTypeDependencies(child, sourcePackage, info, dependencies);
+			return;
 		}
+		
+		if (!ModuleExtensions.TryGetValue(extendedModuleName, out List<ModuleInfo>? extenders))
+		{
+			extenders = new List<ModuleInfo>();
+			ModuleExtensions[extendedModuleName] = extenders;
+		}
+
+		extenders.Add(moduleInfo);
 	}
 
-	private static void ProcessTypeDependencies(UhtType type, UhtPackage sourcePackage, ModuleInfo info, HashSet<string> dependencies)
+	private static List<UhtPackage> CollectReferencedPackages(UhtPackage package)
+	{
+		HashSet<UhtPackage> references = new();
+
+		foreach (UhtType child in package.Children)
+		{
+			CollectTypeReferences(child, references);
+		}
+
+		return references.ToList();
+	}
+
+	private static void CollectTypeReferences(UhtType type, HashSet<UhtPackage> references)
 	{
 		if (type is UhtStruct uhtStruct)
 		{
 			if (uhtStruct.Super != null)
 			{
-				AddDependency(sourcePackage, uhtStruct.Super.Package, info, dependencies);
+				references.Add(uhtStruct.Super.Package);
 			}
 
 			if (uhtStruct is UhtClass uhtClass)
 			{
 				foreach (UhtClass implementedInterface in uhtClass.GetInterfaces())
 				{
-					AddDependency(sourcePackage, implementedInterface.Package, info, dependencies);
+					references.Add(implementedInterface.Package);
 				}
 			}
 		}
@@ -207,38 +261,105 @@ public static class ModuleUtilities
 		{
 			foreach (UhtType referencedType in property.EnumerateReferencedTypes())
 			{
-				AddDependency(sourcePackage, referencedType.Package, info, dependencies);
+				references.Add(referencedType.Package);
 			}
 		}
-        
+
 		foreach (UhtType child in type.Children)
 		{
-			ProcessTypeDependencies(child, sourcePackage, info, dependencies);
+			CollectTypeReferences(child, references);
 		}
 	}
 
-	private static void AddDependency(UhtPackage sourcePackage, UhtPackage referencedPackage, ModuleInfo sourceModule, HashSet<string> uniqueDependencies)
+	private static void AddDirectDependency(UhtPackage sourcePackage, UhtPackage referencedPackage, ModuleInfo sourceModule)
 	{
 		if (referencedPackage == sourcePackage)
 		{
 			return;
 		}
-        
-		if (referencedPackage.IsPartOfEngine())
+
+		if (!PackageToModuleInfo.TryGetValue(referencedPackage, out ModuleInfo? referencedModule))
 		{
 			return;
 		}
 
-		ModuleInfo? referencedModule = TryRegisterModule(referencedPackage);
-		
-		if (referencedModule == null)
+		if (referencedModule == sourceModule)
 		{
 			return;
 		}
-		
-		if (sourceModule.CsProjPath != referencedModule.CsProjPath)
+
+		sourceModule.DirectDependencies.Add(referencedModule);
+	}
+
+	private static void FlattenDependencies(ModuleInfo module)
+	{
+		HashSet<ModuleInfo> visited = new();
+
+		foreach (ModuleInfo dependency in module.DirectDependencies)
 		{
-			uniqueDependencies.Add(referencedModule.CsProjPath);
+			CollectFlattenedDependency(dependency, module.DependencyModules, visited);
+		}
+	}
+
+	private static void CollectFlattenedDependency(ModuleInfo dependency, HashSet<ModuleInfo> result, HashSet<ModuleInfo> visited)
+	{
+		if (!dependency.IsExtendingModule)
+		{
+			result.Add(dependency);
+			return;
+		}
+
+		if (!visited.Add(dependency))
+		{
+			return;
+		}
+
+		foreach (ModuleInfo transitive in dependency.DirectDependencies)
+		{
+			CollectFlattenedDependency(transitive, result, visited);
+		}
+	}
+	
+	private static void PropagateProjectRedirection()
+	{
+		Dictionary<ModuleInfo, List<ModuleInfo>> dependents = new();
+		Queue<ModuleInfo> queue = new();
+
+		foreach (ModuleInfo module in PackageToModuleInfo.Values)
+		{
+			foreach (ModuleInfo dependency in module.DependencyModules)
+			{
+				if (!dependents.TryGetValue(dependency, out List<ModuleInfo>? referencingModules))
+				{
+					referencingModules = new List<ModuleInfo>();
+					dependents[dependency] = referencingModules;
+				}
+
+				referencingModules.Add(module);
+			}
+			
+			if (module.EmitsToProjectDirectory)
+			{
+				queue.Enqueue(module);
+			}
+		}
+
+		while (queue.Count > 0)
+		{
+			ModuleInfo redirected = queue.Dequeue();
+
+			if (!dependents.TryGetValue(redirected, out List<ModuleInfo>? referencingModules))
+			{
+				continue;
+			}
+
+			foreach (ModuleInfo referencing in referencingModules)
+			{
+				if (referencing.IsEngineModule && referencing.MarkEmitsToProjectDirectory())
+				{
+					queue.Enqueue(referencing);
+				}
+			}
 		}
 	}
 }

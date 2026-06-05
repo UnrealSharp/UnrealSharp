@@ -9,7 +9,7 @@ UCSManagedInterfaceCompiler::UCSManagedInterfaceCompiler()
 	FieldType = UCSInterface::StaticClass();
 }
 
-void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedInterfaceCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSInterface* Interface = static_cast<UCSInterface*>(TypeToRecompile);
 	TSharedPtr<FCSClassBaseReflectionData> ClassReflectionData = ManagedTypeDefinition->GetReflectionData<FCSClassBaseReflectionData>();
@@ -51,7 +51,7 @@ void UCSManagedInterfaceCompiler::Recompile(UField* TypeToRecompile, const TShar
 #endif
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedInterfaceCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedInterfaceCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSClassBaseReflectionData>();
 }

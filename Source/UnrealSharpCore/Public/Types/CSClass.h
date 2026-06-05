@@ -5,7 +5,7 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "CSClass.generated.h"
 
-UCLASS(MinimalAPI)
+UCLASS()
 class UCSClass : public UBlueprintGeneratedClass, public ICSManagedTypeInterface
 {
 	GENERATED_BODY()

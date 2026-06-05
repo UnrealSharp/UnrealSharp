@@ -1,5 +1,12 @@
 ﻿#pragma once
 
+namespace UnrealSharp::Icons
+{
+	UNREALSHARPEDITOR_API FSlateIcon GetUnrealSharpIcon();
+	UNREALSHARPEDITOR_API FSlateIcon GetUnrealSharpIcon_HotReloadFailed();
+	UNREALSHARPEDITOR_API FSlateIcon GetUnrealSharpIcon_Modified();
+}
+
 class FCSStyle
 {
 public:

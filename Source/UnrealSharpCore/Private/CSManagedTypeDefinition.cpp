@@ -29,6 +29,23 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeF
 	return NewDefinition;
 }
 
+UField* FCSManagedTypeDefinition::GetDefinition()
+{
+	Compile();
+	return DefinitionField.Get();
+}
+
+void FCSManagedTypeDefinition::Compile()
+{
+	if (!RequiresCompile())
+	{
+		return;
+	}
+	
+	DirtyFlags = None;
+	Compiler->StartCompilation(SharedThis(this));
+}
+
 #if WITH_EDITOR
 TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 {
@@ -51,8 +68,6 @@ void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags
 {
 	DirtyFlags = InDirtyFlags;
 	
-	// Notify dependent types to rebuild as well. These are spawned by source generators and depend on this type's structure.
-	// Such as the async wrapper classes.
 	for (int32 i = ReflectionData->SourceGeneratorDependencies.Num() - 1; i >= 0; --i)
 	{
 		const FCSFieldName& SourceGeneratorDependency = ReflectionData->SourceGeneratorDependencies[i];
@@ -71,15 +86,4 @@ void FCSManagedTypeDefinition::SetDirtyFlags(ECSTypeStructuralFlags InDirtyFlags
 
 		ManagedTypeDefinition->SetDirtyFlags(InDirtyFlags);
 	}
-}
-
-UField* FCSManagedTypeDefinition::CompileAndGetDefinitionField()
-{
-	if (RequiresRecompile())
-	{
-		DirtyFlags = None;
-		Compiler->RecompileManagedTypeDefinition(SharedThis(this));
-	}
-	
-	return DefinitionField.Get();
 }

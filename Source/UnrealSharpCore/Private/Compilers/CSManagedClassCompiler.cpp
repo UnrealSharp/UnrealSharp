@@ -11,6 +11,7 @@
 #include "Factories/CSFunctionFactory.h"
 #include "Factories/CSPropertyFactory.h"
 #include "UnrealSharpUtils.h"
+#include "Subsystems/CSManagedSubsystemManager.h"
 #include "Utilities/CSClassUtilities.h"
 
 #if WITH_EDITOR
@@ -23,7 +24,7 @@ UCSManagedClassCompiler::UCSManagedClassCompiler()
 	FieldType = UCSClass::StaticClass();
 }
 
-void UCSManagedClassCompiler::Recompile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+void UCSManagedClassCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
 {
 	UCSClass* Field = static_cast<UCSClass*>(TypeToRecompile);
 	TSharedPtr<FCSClassReflectionData> ClassReflectionData = ManagedTypeDefinition->GetReflectionData<FCSClassReflectionData>();
@@ -204,7 +205,7 @@ FString UCSManagedClassCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceR
 	return FieldName;
 }
 
-TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedClassCompiler::CreateNewReflectionData() const
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedClassCompiler::CreateReflectionData() const
 {
 	return MakeShared<FCSClassReflectionData>();
 }
@@ -299,7 +300,7 @@ void UCSManagedClassCompiler::ActivateSubsystem(TSubclassOf<USubsystem> Subsyste
 		return;
 	}
 	
-	UCSManager::Get().ActivateSubsystemClass(SubsystemClass);
+	UCSManagedSubsystemManager::Get()->ActivateSubsystemClass(SubsystemClass);
 }
 
 void UCSManagedClassCompiler::DeactivateSubsystem(TSubclassOf<USubsystem> SubsystemClass)

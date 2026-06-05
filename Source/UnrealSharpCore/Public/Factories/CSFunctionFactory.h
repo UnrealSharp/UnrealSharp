@@ -6,7 +6,7 @@
 class UCSBlueprint;
 class UClass;
 
-class UNREALSHARPCORE_API FCSFunctionFactory
+class FCSFunctionFactory
 {
 public:
 	
@@ -14,8 +14,8 @@ public:
 	static UCSFunctionBase* CreateOverriddenFunction(UClass* Outer, UFunction* ParentFunction);
 	
 	static void GetOverriddenFunctions(const UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData, TArray<UFunction*>& VirtualFunctions);
-	static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
-	static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionReflectionData>& FunctionsReflectionData);
+	UNREALSHARPCORE_API static void GenerateVirtualFunctions(UClass* Outer, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
+	UNREALSHARPCORE_API static void GenerateFunctions(UClass* Outer, const TArray<FCSFunctionReflectionData>& FunctionsReflectionData);
 
 	static void AddFunctionToOuter(UClass* Outer, UCSFunctionBase* Function);
 	

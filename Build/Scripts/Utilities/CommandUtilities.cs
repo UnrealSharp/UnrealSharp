@@ -7,7 +7,7 @@ namespace UnrealSharp.Automation.Utilities;
 
 public static class CommandUtilities
 {
-    public static bool RunCommand(string commandName, string projectPath, List<KeyValuePair<string, string>>? actionArgs = null)
+    public static bool RunCommand(string commandName, string projectPath, List<KeyValuePair<string, string>>? commandArguments = null)
     {
         foreach (Type Type in Assembly.GetExecutingAssembly().GetTypes())
         {
@@ -18,26 +18,26 @@ public static class CommandUtilities
             
             BuildCommand CommandInstance = (BuildCommand)Activator.CreateInstance(Type)!;
 
-            List<string> args = new List<string>();
-            args.Add($"Project={projectPath}");
+            List<string> Arguments = new List<string>();
+            Arguments.Add($"Project={projectPath}");
             
-            if (actionArgs != null)
+            if (commandArguments != null)
             {
-                foreach (KeyValuePair<string, string> arg in actionArgs)
+                foreach (KeyValuePair<string, string> Argument in commandArguments)
                 {
-                    args.Add($"{arg.Key}={arg.Value}");
+                    Arguments.Add($"{Argument.Key}={Argument.Value}");
                 }
             }
             
-            CommandInstance.Params = args.ToArray();
+            CommandInstance.Params = Arguments.ToArray();
             return CommandInstance.Execute() == 0;
         }
         
         throw new Exception($"Failed to find and execute UnrealSharp automation action '{commandName}'.");
     }
     
-    internal static bool RunCommand(string commandName, BuildCommand caller, List<KeyValuePair<string, string>>? actionArgs = null)
+    internal static bool RunCommand(string commandName, BuildCommand commandCaller, List<KeyValuePair<string, string>>? commandArguments = null)
     {
-        return RunCommand(commandName, caller.ParseRequiredStringParam("Project"), actionArgs);
+        return RunCommand(commandName, commandCaller.ParseRequiredStringParam("Project"), commandArguments);
     }
 }

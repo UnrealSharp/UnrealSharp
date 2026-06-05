@@ -10,78 +10,82 @@ namespace UnrealSharp.Automation.BuildCommands;
 
 [Help("Generates a new C# project in the specified folder.")]
 [Help("ProjectFolder=<Path>", "The root directory of the Unreal Engine project.")]
-[Help("ProjectRoot=<Path>", "The root directory for the generated C# project.")]
 [Help("ProjectName=<Name>", "The name of the new C# project to generate.")]
 [Help("CreateModuleClass", "Whether to create a default module class in the generated project.")]
-[Help("SkipSolutionGeneration", "If set, the .sln file will not be regenerated.")]
-[Help("SkipUSharpProjSetup", "If set, the generated .csproj will not be modified to include UnrealSharp properties and dependencies.")]
+[Help("GenerateSolution", "If set, a solution file will be generated for the new project after generating the .csproj file.")]
+[Help("RunUSharpProjectSetup", "If set, the UnrealSharp project setup will be run after generating the project, which includes adding launch settings and building the project.")]
 [Help("EditorOnly", "If set, the generated project will be marked as not publishable.")]
 [Help("Dependencies=<Path>+<Path>", "Additional project dependencies to include in the generated .csproj file.")]
+[Help("SkipIncludeAnalyzers", "If set, the generated .csproj will not reference the UnrealSharp analyzers.")]
 public class GenerateProject : BuildCommand
 {
     private const string CsProjFileExtension = "csproj";
-    private const string PropertiesFolderName = "Properties";
-    private const string LaunchSettingsFileName = "launchSettings.json";
+    private const string CsFileExtension = "cs";
+    private const string CsprojTemplateName = "Csproj";
+    private const string ModuleTemplateName = "Module";
+    private const string SkipIncludeAnalyzersPropertyName = "SkipIncludeAnalyzers";
 
     public override void ExecuteBuild()
     {
         string ProjectFolder = ParseRequiredStringParam("ProjectFolder");
-        string ProjectRoot = ParseRequiredStringParam("ProjectRoot");
         string ProjectName = ParseRequiredStringParam("ProjectName");
         bool CreateModuleClass = ParseParam("CreateModuleClass");
-        bool SkipSolutionGeneration = ParseParam("SkipSolutionGeneration");
-        bool SkipUSharpProjSetup = ParseParam("SkipUSharpProjSetup");
+        bool ShouldGenerateSolution = ParseParam("GenerateSolution");
+        bool RunUSharpProjectSetup = ParseParam("RunUSharpProjectSetup");
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
+        string ProjectPath = Path.Combine(ProjectFolder, $"{ProjectName}.{CsProjFileExtension}");
+        string[] CompileIncludeFolder = ParseParamValues("CompileIncludeFolder");
 
-        if (!ProjectUtilities.ContainsUPluginOrUProjectFile(ProjectRoot))
-        {
-            throw new AutomationException($"ProjectRoot '{ProjectRoot}' must contain a .uplugin or .uproject file at its top level.");
-        }
-
-        if (ProjectFolder == ProjectRoot)
-        {
-            ProjectFolder = Path.Combine(ProjectFolder, this.GetScriptDirectoryName());
-        }
-
-        string CsProjFileName = $"{ProjectName}.{CsProjFileExtension}";
-        string OutputProjectFolder = Path.Combine(ProjectFolder, ProjectName);
-        string ProjectPath = Path.Combine(OutputProjectFolder, CsProjFileName);
-
-        Dictionary<string, string> TemplateValues = new Dictionary<string, string>
-        {
-            { "DOTNET_VERSION", DotNetUtilities.GetVersion() }
-        };
-
-        TemplateUtilities.WriteTemplateToFile(this, "Csproj", ProjectName, CsProjFileExtension, OutputProjectFolder, TemplateValues);
+        WriteProjectTemplate(ProjectName, ProjectFolder);
 
         if (CreateModuleClass)
         {
-            Dictionary<string, string> ModuleTemplateValues = new Dictionary<string, string>
-            {
-                { "MODULE_NAME", ProjectName }
-            };
-
-            TemplateUtilities.WriteTemplateToFile(this, "Module", ProjectName, "cs", OutputProjectFolder, ModuleTemplateValues);
+            WriteModuleTemplate(ProjectName, ProjectFolder);
         }
 
-        UpdateCsprojDocument(ProjectPath, OutputProjectFolder, Dependencies, EditorOnly);
-        
+        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, EditorOnly, CompileIncludeFolder);
+
         LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
-        
-        if (!SkipSolutionGeneration)
+
+        if (ShouldGenerateSolution)
         {
-            GenerateSolution.GenerateManagedSolution(this);
+            List<KeyValuePair<string, string>> ActionArgs = new List<KeyValuePair<string, string>>
+            {
+                new("ForceGenerate", "true"),
+            };
+            
+            CommandUtilities.RunCommand(nameof(GenerateUserSolution), this, ActionArgs);
         }
 
-        if (!SkipUSharpProjSetup)
+        if (RunUSharpProjectSetup)
         {
-            AddLaunchSettings(OutputProjectFolder);
-            BuildProject(ProjectPath, OutputProjectFolder);
+            AddLaunchSettings(ProjectFolder);
+            BuildProject(ProjectPath, ProjectFolder);
         }
     }
 
-    private void UpdateCsprojDocument(string projectPath, string projectFolder, IEnumerable<string>? dependencies, bool isEditorOnly)
+    private void WriteProjectTemplate(string projectName, string projectFolder)
+    {
+        Dictionary<string, string> TemplateValues = new Dictionary<string, string>
+        {
+            { "DOTNET_VERSION", DotNetUtilities.Version }
+        };
+
+        TemplateUtilities.WriteTemplateToFile(this, CsprojTemplateName, projectName, CsProjFileExtension, projectFolder, TemplateValues);
+    }
+
+    private void WriteModuleTemplate(string projectName, string projectFolder)
+    {
+        Dictionary<string, string> ModuleTemplateValues = new Dictionary<string, string>
+        {
+            { "MODULE_NAME", projectName }
+        };
+
+        TemplateUtilities.WriteTemplateToFile(this, ModuleTemplateName, projectName, CsFileExtension, projectFolder, ModuleTemplateValues);
+    }
+
+    private void UpdateCsprojDocument(string projectPath, string projectFolder, IReadOnlyList<string>? dependencies, bool isEditorOnly, string[] compileIncludeFolder)
     {
         try
         {
@@ -89,22 +93,11 @@ public class GenerateProject : BuildCommand
             CsprojDocument.Load(projectPath);
             CsprojDocument.EnsureProjectRoot();
 
-            XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(CsprojDocument);
-
-            if (isEditorOnly)
-            {
-                CsprojDocument.SetProjectProperty("IsPublishable", "false", "'$(DisableWithEditor)' == 'true'");
-                CsprojDocument.SetProjectProperty("IsEditorOnly", "true");
-            }
-
-            string UnrealSharpPluginPath = this.GetUnrealSharpSharedPropsPath();
-            string RelativeUnrealSharpPath = CsProjectUtilities.GetRelativePath(projectFolder, UnrealSharpPluginPath);
-            CsprojDocument.MakeProjectImport(CsprojDocument.DocumentElement!, RelativeUnrealSharpPath);
-
-            if (dependencies != null)
-            {
-                CsProjectUtilities.AddProjectReferences(CsprojDocument, ItemGroup, projectFolder, dependencies);
-            }
+            ApplyEditorOnlyFlags(CsprojDocument, isEditorOnly);
+            ApplyAnalyzerFlag(CsprojDocument);
+            ApplySharedPropsImport(CsprojDocument, projectFolder);
+            ApplyDependencies(CsprojDocument, projectFolder, dependencies);
+            ApplyCompileIncludeFolder(CsprojDocument, projectFolder, compileIncludeFolder);
 
             CsprojDocument.Save(projectPath);
         }
@@ -114,28 +107,72 @@ public class GenerateProject : BuildCommand
         }
     }
 
-    private void AddLaunchSettings(string projectFolder)
+    private static void ApplyEditorOnlyFlags(XmlDocument csprojDocument, bool isEditorOnly)
     {
-        string CsProjectPath = Path.Combine(this.GetProjectScriptFolder(), projectFolder);
-        string PropertiesDirectoryPath = Path.Combine(CsProjectPath, PropertiesFolderName);
-        string LaunchSettingsPath = Path.Combine(PropertiesDirectoryPath, LaunchSettingsFileName);
-
-        if (!Directory.Exists(PropertiesDirectoryPath))
-        {
-            Directory.CreateDirectory(PropertiesDirectoryPath);
-        }
-
-        if (File.Exists(LaunchSettingsPath))
+        if (!isEditorOnly)
         {
             return;
         }
 
-        LaunchSettingsUtilities.CreateOrUpdateLaunchSettings(this, LaunchSettingsPath);
+        csprojDocument.SetProjectProperty("IsPublishable", "true", "'$(UETargetType)' == 'Editor'");
+        csprojDocument.SetProjectProperty("IsEditorOnly", "true");
+    }
+
+    private void ApplyAnalyzerFlag(XmlDocument csprojDocument)
+    {
+        if (!ParseParam("SkipIncludeAnalyzers"))
+        {
+            return;
+        }
+        
+        csprojDocument.SetProjectProperty(SkipIncludeAnalyzersPropertyName, "true");
+    }
+
+    private void ApplySharedPropsImport(XmlDocument csprojDocument, string projectFolder)
+    {
+        string UnrealSharpPluginPath = this.GetUnrealSharpSharedPropsPath();
+        string RelativeUnrealSharpPath = CsProjectUtilities.GetRelativePath(projectFolder, UnrealSharpPluginPath);
+        csprojDocument.MakeProjectImport(csprojDocument.DocumentElement!, RelativeUnrealSharpPath);
+    }
+
+    private static void ApplyDependencies(XmlDocument csprojDocument, string projectFolder, IReadOnlyList<string>? dependencies)
+    {
+        if (dependencies is null || dependencies.Count == 0)
+        {
+            return;
+        }
+
+        XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
+        CsProjectUtilities.AddProjectReferences(csprojDocument, ItemGroup, projectFolder, dependencies);
+    }
+    
+    private static void ApplyCompileIncludeFolder(XmlDocument csprojDocument, string projectFolder, string[] compileIncludeFolders)
+    {
+        foreach (string Folder in compileIncludeFolders)
+        {
+            if (string.IsNullOrWhiteSpace(Folder))
+            {
+                return;
+            }
+
+            string Relative = Path.GetRelativePath(projectFolder, Folder);
+
+            XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
+
+            XmlElement Compile = csprojDocument.CreateElement("Compile");
+            Compile.SetAttribute("Include", Path.Combine(Relative, "**", "*.cs"));
+            ItemGroup.AppendChild(Compile);
+        }
+    }
+
+    private void AddLaunchSettings(string projectFolder)
+    {
+        LaunchSettingsScaffolding.EnsureProjectLaunchSettings(this, projectFolder);
     }
 
     private static void BuildProject(string projectPath, string projectFolder)
     {
-        DotnetProcess BuildProjectProcess = new DotnetProcess();
+        using DotnetProcess BuildProjectProcess = new DotnetProcess();
         BuildProjectProcess.StartInfo.ArgumentList.Add("build");
         BuildProjectProcess.StartInfo.ArgumentList.Add(projectPath);
         BuildProjectProcess.StartInfo.WorkingDirectory = projectFolder;

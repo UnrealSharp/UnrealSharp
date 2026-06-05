@@ -1,12 +1,9 @@
 ﻿#include "UnrealSharpCompiler.h"
 
-#include "BlueprintActionDatabase.h"
 #include "BlueprintCompilationManager.h"
 #include "CSBlueprintCompiler.h"
 #include "CSCompilerContext.h"
 #include "CSManager.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
-#include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "KismetCompiler.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -14,7 +11,6 @@
 #include "Types/CSBlueprint.h"
 #include "Types/CSClass.h"
 #include "Types/CSEnum.h"
-#include "Types/CSInterface.h"
 #include "Types/CSScriptStruct.h"
 #include "UnrealSharpUtils.h"
 #include "Compilers/CSManagedClassCompiler.h"
@@ -38,7 +34,8 @@ void FUnrealSharpCompilerModule::StartupModule()
 	CSManager.OnNewClassEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewClass);
 	CSManager.OnNewEnumEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewEnum);
 	CSManager.OnNewStructEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnNewStruct);
-	CSManager.OnManagedAssemblyLoadedEvent().AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
+	
+	FCSAssemblyEvents::OnAssemblyLoaded.AddRaw(this, &FUnrealSharpCompilerModule::OnManagedAssemblyLoaded);
 	
 	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateRaw(this, &FUnrealSharpCompilerModule::OnReflectionDataChanged);
 	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
@@ -77,18 +74,6 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		for (int32 i = 0; i < Blueprints.Num(); ++i)
 		{
 			UCSBlueprint* Blueprint = Blueprints[i];
-
-			if (!Blueprint)
-			{
-				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint is null, skipping compilation.");
-				continue;
-			}
-			
-			if (!IsValid(Blueprint))
-			{
-				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
-				continue;
-			}
 
 			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection 
 			| EBlueprintCompileOptions::SkipSave 
@@ -205,7 +190,7 @@ void FUnrealSharpCompilerModule::OnNewEnum(UCSEnum* NewEnum)
 
 void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
 {
-	UClass* DefinitionClass = Cast<UClass>(ManagedTypeDefinition->GetDefinitionField());
+	UClass* DefinitionClass = Cast<UClass>(ManagedTypeDefinition->GetDefinition());
 	if (!IsValid(DefinitionClass))
 	{
 		return;
@@ -227,17 +212,34 @@ void FUnrealSharpCompilerModule::OnReflectionDataChanged(TSharedPtr<FCSManagedTy
 	}
 }
 
-void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(const UCSManagedAssembly* Assembly)
+void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(UCSManagedAssembly* Assembly)
 {
-	TArray<FString> Projects;
-	UnrealSharp::Project::GetProjectNamesByLoadOrder(Projects);
-	
-	if (!Projects.Contains(Assembly->GetName()))
+	if (!IsAssemblyHotReloadable(Assembly))
 	{
 		return;
 	}
 	
 	RecompileAndReinstanceBlueprints();
+}
+
+bool FUnrealSharpCompilerModule::IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly)
+{
+	TArray<FLoadOrderManifest> OutManifests;
+	UnrealSharp::Project::DiscoverLoadOrderManifests(OutManifests);
+	
+	bool CanRecompileAndReinstanceBlueprints = false;
+	for (const FLoadOrderManifest& Manifest : OutManifests)
+	{
+		if (!Manifest.bCollectible || !Manifest.ContainsAssembly(Assembly->GetAssemblyFileName()))
+		{
+			continue;
+		}
+		
+		CanRecompileAndReinstanceBlueprints = true;
+		break;
+	}
+	
+	return CanRecompileAndReinstanceBlueprints;
 }
 
 #undef LOCTEXT_NAMESPACE

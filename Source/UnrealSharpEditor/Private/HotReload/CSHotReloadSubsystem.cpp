@@ -1,4 +1,6 @@
 #include "HotReload/CSHotReloadSubsystem.h"
+
+#include "CSInstallationUtilities.h"
 #include "CSManager.h"
 #include "CSStyle.h"
 #include "CSUnrealSharpEditorSettings.h"
@@ -7,7 +9,6 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Types/CSEnum.h"
 #include "Types/CSScriptStruct.h"
-#include "CSPathsBlueprintFunctionLibrary.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "HotReload/CSHotReloadUtilities.h"
@@ -23,8 +24,6 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	
 	UCSManager& Manager = UCSManager::Get();
-	ensure(Manager.IsInitialized());
-	
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
 	Manager.OnNewClassEvent().AddUObject(this, &UCSHotReloadSubsystem::OnClassRebuilt);
 	Manager.OnNewEnumEvent().AddUObject(this, &UCSHotReloadSubsystem::OnEnumRebuilt);
@@ -45,6 +44,11 @@ void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	PauseHotReload(TEXT("Waiting for initial C# load..."));
 }
 
+bool UCSHotReloadSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	return !FApp::IsUnattended() && !IsRunningCommandlet() && UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled();
+}
+
 void UCSHotReloadSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
@@ -63,21 +67,6 @@ void UCSHotReloadSubsystem::OnHotReloadReady()
 {
 	ResumeHotReload();
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "C# Hot Reload is ready.");
-}
-
-FSlateIcon UCSHotReloadSubsystem::GetMenuIcon() const
-{
-	if (HasHotReloadFailed())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Fail");
-	}
-	
-	if (HasPendingHotReloadChanges())
-	{
-		return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar.Modified");
-	}
-
-	return FSlateIcon(FCSStyle::GetStyleSetName(), "UnrealSharp.Toolbar");
 }
 
 bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
@@ -155,7 +144,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
-		if (Assembly->UnloadManagedAssembly())
+		if (Assembly->UnloadAssembly())
 		{
 			continue;
 		}
@@ -168,7 +157,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 				"Common causes include:\n"
 				"- Active references preventing unload (strong GC handles)\n"
 				"- Running or unfinished managed threads\n"
-				"- Dependent assemblies still loaded\n"), *Assembly->GetAssemblyName().ToString());
+				"- Dependent assemblies still loaded\n"), *Assembly->GetName());
 
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage), LOCTEXT("HotReloadFailure", "C# Hot Reload Failed"));
 		return;
@@ -176,7 +165,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)
 	{
-		AssembliesSortedByDependencies[i]->LoadManagedAssembly();
+		AssembliesSortedByDependencies[i]->LoadAssembly();
 	}
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Refreshing", "Refreshing Affected Blueprints..."));
@@ -247,7 +236,7 @@ void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData
 void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 {
 	TArray<FString> ProjectPaths;
-	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths, true);
+	UnrealSharp::Project::GetAllProjectPaths(ProjectPaths);
 
 	for (const FString& ProjectPath : ProjectPaths)
 	{
@@ -331,7 +320,7 @@ void UCSHotReloadSubsystem::PauseHotReload(const FString& Reason)
 	}
 	
 	FString NotificationFormat = FString::Printf(TEXT("C# Reload Paused: %s"), *Reason);
-	PauseNotification = FCSEditorUtilities::MakeNotification(GetMenuIcon(), NotificationFormat);
+	PauseNotification = FCSEditorUtilities::MakeNotification(UnrealSharp::Icons::GetUnrealSharpIcon(), NotificationFormat);
 	bIsHotReloadPaused = true;
 }
 
@@ -373,13 +362,6 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
-	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
-	if (!ModifiedAssembly->IsCollectible())
-	{
-		UE_LOGFMT(LogUnrealSharpEditor, Warning, "Assembly {0} is not collectible. Hot reload will be skipped for changes to this assembly.", *ModifiedAssembly->GetAssemblyName().ToString());
-		return;
-	}
-	
 	if (bIsHotReloadPaused)
 	{
 		AppendPendingFileChange(ChangedFiles, ProjectName);
@@ -401,6 +383,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 		return;
 	}
 	
+	UCSManagedAssembly* ModifiedAssembly = UCSManager::Get().FindAssembly(ProjectName);
 	if (!PendingModifiedAssemblies.Contains(ModifiedAssembly))
 	{
 		PendingModifiedAssemblies.Add(ModifiedAssembly);
@@ -408,7 +391,7 @@ void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData
 	
 	if (FCSHotReloadUtilities::ShouldDeferHotReloadRequest(ModifiedAssembly))
 	{
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Deferring hot reload request for assembly {0}.", *ModifiedAssembly->GetAssemblyName().ToString());
+		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Deferring hot reload request for assembly {0}.", *ModifiedAssembly->GetName());
 		return;
 	}
 	

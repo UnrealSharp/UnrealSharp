@@ -6,64 +6,86 @@
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
 
-void UnrealSharp::Project::GetProjectNamesByLoadOrder(TArray<FString>& UserProjectNames, bool bIncludeGlue)
+void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>& OutManifests)
 {
-	const FString ProjectMetadataPath = Paths::GetUnrealSharpMetadataPath();
+	TRACE_CPUPROFILER_EVENT_SCOPE(UnrealSharp::Project::DiscoverLoadOrderManifests);
+	
+	const FString UserAssemblyDirectory = Paths::GetUserAssemblyDirectory();
 
-	if (!FPaths::FileExists(ProjectMetadataPath))
+	TArray<FString> ManifestFiles;
+	IFileManager::Get().FindFiles(ManifestFiles, *(UserAssemblyDirectory / TEXT("*.LoadOrder.json")), true, false);
+
+	OutManifests.Reserve(ManifestFiles.Num());
+
+	for (const FString& File : ManifestFiles)
 	{
-		return;
-	}
+		const FString FullPath = FPaths::Combine(UserAssemblyDirectory, File);
 
-	FString JsonString;
-	if (!FFileHelper::LoadFileToString(JsonString, *ProjectMetadataPath))
-	{
-		UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Failed to load UnrealSharp metadata file at: {0}", ProjectMetadataPath);
-	}
-
-	TSharedPtr<FJsonObject> JsonObject;
-	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject) || !JsonObject.IsValid())
-	{
-		UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Failed to parse UnrealSharp metadata at: {0}", ProjectMetadataPath);
-	}
-
-	const TArray<TSharedPtr<FJsonValue>>* LoadOrderArray;
-	if (!JsonObject->TryGetArrayField(TEXT("LoadOrder"), LoadOrderArray))
-	{
-		UE_LOGFMT(LogUnrealSharpUtilities, Fatal, "Failed to find LoadOrder array in UnrealSharp metadata at: {0}", ProjectMetadataPath);
-	}
-
-	for (const TSharedPtr<FJsonValue>& OrderEntry : *LoadOrderArray)
-	{
-		const FString ProjectName = OrderEntry->AsString();
-
-		if (!bIncludeGlue && ProjectName.EndsWith(TEXT(".Glue")))
+		FString JsonString;
+		if (!FFileHelper::LoadFileToString(JsonString, *FullPath))
 		{
+			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Failed to load load-order manifest: {0}", FullPath);
 			continue;
 		}
 
-		UserProjectNames.Add(ProjectName);
+		TSharedPtr<FJsonObject> JsonObject;
+		if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject) || !JsonObject.IsValid())
+		{
+			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Failed to parse load-order manifest: {0}", FullPath);
+			continue;
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* Order;
+		if (!JsonObject->TryGetArrayField(TEXT("LoadOrder"), Order))
+		{
+			UE_LOGFMT(LogUnrealSharpUtilities, Warning, "Manifest missing LoadOrder array: {0}", FullPath);
+			continue;
+		}
+
+		FLoadOrderManifest Manifest;
+		Manifest.Name = FPaths::GetBaseFilename(File);
+		JsonObject->TryGetNumberField(TEXT("Priority"), Manifest.Priority);
+		JsonObject->TryGetBoolField(TEXT("Collectible"), Manifest.bCollectible);
+
+		Manifest.AssemblyPaths.Reserve(Order->Num());
+		for (const TSharedPtr<FJsonValue>& Entry : *Order)
+		{
+			Manifest.AssemblyPaths.Add(FPaths::Combine(UserAssemblyDirectory, Entry->AsString() + TEXT(".dll")));
+		}
+
+		OutManifests.Add(MoveTemp(Manifest));
 	}
-}
 
-void UnrealSharp::Project::GetAssemblyPathsByLoadOrder(TArray<FString>& AssemblyPaths, bool bIncludeGlue)
-{
-	const FString AbsoluteFolderPath = Paths::GetUserAssemblyDirectory();
-
-	TArray<FString> ProjectNames;
-	GetProjectNamesByLoadOrder(ProjectNames, bIncludeGlue);
-
-	AssemblyPaths.Reserve(ProjectNames.Num());
-	for (const FString& ProjectName : ProjectNames)
+	OutManifests.Sort([](const FLoadOrderManifest& A, const FLoadOrderManifest& B)
 	{
-		AssemblyPaths.Emplace(FPaths::Combine(AbsoluteFolderPath, ProjectName + TEXT(".dll")));
-	}
+		return A.Priority > B.Priority;
+	});
 }
 
-void UnrealSharp::Project::GetAllProjectPaths(TArray<FString>& ProjectPaths, bool bIncludeProjectGlue)
+bool UnrealSharp::Project::IsAssemblyInAnyManifest(const FString& AssemblyName)
 {
-	IFileManager::Get().FindFilesRecursive(ProjectPaths,
-	*Paths::GetScriptFolderDirectory(),
+	bool bFound = false;
+	
+	TArray<FLoadOrderManifest> Manifests;
+	DiscoverLoadOrderManifests(Manifests);
+	
+	for (const FLoadOrderManifest& Manifest : Manifests)
+	{
+		if (!Manifest.ContainsAssembly(AssemblyName))
+		{
+			continue;
+		}
+		
+		bFound = true;
+		break;
+	}
+	
+	return bFound;
+}
+
+void UnrealSharp::Project::GetAllProjectPaths(TArray<FString>& ProjectPaths)
+{
+	IFileManager::Get().FindFilesRecursive(ProjectPaths, *Paths::GetScriptFolderDirectory(),
 	TEXT("*.csproj"),
 	true,
 	false,
@@ -82,26 +104,9 @@ void UnrealSharp::Project::GetAllProjectPaths(TArray<FString>& ProjectPaths, boo
 			false,
 			false);
 	}
-
-	if (!bIncludeProjectGlue)
-	{
-		ProjectPaths.RemoveAll([](const FString& Path)
-		{
-			return Path.EndsWith(TEXT("Glue.csproj"));
-		});
-	}
 }
 
 FString UnrealSharp::Project::GetUserManagedProjectName()
 {
 	return FString::Printf(TEXT("Managed%s"), FApp::GetProjectName());
-}
-
-FString UnrealSharp::Project::AppendGlueSuffix(const FString& FileName)
-{
-	if (FileName.EndsWith(TEXT(".Glue")))
-	{
-		return FileName;
-	}
-	return FileName + TEXT(".Glue");
 }

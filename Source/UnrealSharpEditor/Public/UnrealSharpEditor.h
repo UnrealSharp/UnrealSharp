@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "CSEditorCommands.h"
 #include "Modules/ModuleManager.h"
 #include "Containers/Ticker.h"
 
@@ -67,8 +68,6 @@ private:
 
     static FString SelectArchiveDirectory();
 
-    static void RunGame(FString ExecutablePath);
-
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
     
@@ -87,6 +86,11 @@ private:
     static void PackageProject();
 
     TSharedRef<SWidget> GenerateUnrealSharpToolbar() const;
+    
+    static void AppendProjectMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
+    static void AppendPackageMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
+    static void AppendBuildMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
+    static void AppendPluginMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
 
     static void OpenNewProjectDialog();
 

@@ -69,21 +69,4 @@
             <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
         </Reference>
     </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="..\..\Managed\Shared\*.cs" Link="..\..\Managed\Shared\*.cs" />
-        <Compile Update="..\..\Managed\Shared\ConsoleUtilities.cs">
-          <Link>Shared\ConsoleUtilities.cs</Link>
-        </Compile>
-        <Compile Update="ConsoleUtilities.cs">
-          <Link>Utilities\ConsoleUtilities.cs</Link>
-        </Compile>
-        <Compile Update="..\..\Managed\Shared\UnrealSharpSettingsUtilities.cs">
-          <Link>Utilities\UnrealSharpSettingsUtilities.cs</Link>
-        </Compile>
-        <Compile Update="..\..\Managed\Shared\CommonUnrealSharpSettings.cs">
-          <Link>Utilities\CommonUnrealSharpSettings.cs</Link>
-        </Compile>
-    </ItemGroup>
-    
 </Project>

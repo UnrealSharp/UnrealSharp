@@ -23,8 +23,6 @@ public:
     static FString GetGlueFolder();
     static FString GetRuntimeGlueName() { return FString::Printf(TEXT("%s.RuntimeGlue"), FApp::GetProjectName()); }
 
-
-
 private:
     
     void InitializeRuntimeGlueGenerators();

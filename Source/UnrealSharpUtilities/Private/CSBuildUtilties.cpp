@@ -63,21 +63,23 @@ void UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(const FString& BuildA
 
 bool UnrealSharp::Build::BuildUserSolution(const FCSCommandError& OnError)
 {
+	FString SolutionDirectory = FPaths::ConvertRelativePathToFull(Paths::GetScriptFolderDirectory());
+	
 	TMap<FString, FString> Arguments;
 	Arguments.Add(TEXT("OutputPath"), Paths::MakeQuotedPath(Paths::GetUserAssemblyDirectory()));
+	Arguments.Add(TEXT("BuildConfig"), LexToString(FApp::GetBuildConfiguration()));
 	
 	if (!GetDefault<UCSUnrealSharpUtilitiesSettings>()->bShowBuildWarnings)
 	{
 		Arguments.Add(TEXT("clp"), TEXT("ErrorsOnly"));
 	}
 
-	return InvokeUnrealSharpAutomation(BuildAction::BuildEmitLoadOrder, &Arguments, OnError);
+	return InvokeUnrealSharpAutomation(BuildAction::BuildUserSolution, &Arguments, OnError);
 }
 
 void UnrealSharp::Build::BuildArguments(const FString& BuildAction, const TMap<FString, FString>* ActionArgs, FString& OutArgs)
 {
 	const FString PluginFolder = FPaths::ConvertRelativePathToFull(IPluginManager::Get().FindPlugin(UE_PLUGIN_NAME)->GetBaseDir());
-	const FString DotNetPath = Paths::GetDotNetExecutablePath();
 	
 	OutArgs.Reset();
 	OutArgs += BuildAction;
