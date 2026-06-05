@@ -201,8 +201,6 @@ void UCSManager::InitialAssemblyLoad()
 
 UCSManagedAssembly* UCSManager::LoadAssemblyByPath(const FString& AssemblyPath, bool bIsCollectible)
 {
-	ensure(IsInGameThread());
-	
 	UCSManagedAssembly* Assembly;
 	
 	const FString AssemblyName = FPaths::GetBaseFilename(AssemblyPath);

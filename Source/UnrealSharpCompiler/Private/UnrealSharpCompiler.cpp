@@ -75,18 +75,6 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		{
 			UCSBlueprint* Blueprint = Blueprints[i];
 
-			if (!Blueprint)
-			{
-				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint is null, skipping compilation.");
-				continue;
-			}
-			
-			if (!IsValid(Blueprint))
-			{
-				UE_LOGFMT(LogUnrealSharpCompiler, Error, "Blueprint {0} is garbage, skipping compilation.", *Blueprint->GetName());
-				continue;
-			}
-
 			constexpr EBlueprintCompileOptions Flags = EBlueprintCompileOptions::SkipGarbageCollection 
 			| EBlueprintCompileOptions::SkipSave 
 			| EBlueprintCompileOptions::SkipDefaultObjectValidation

@@ -62,9 +62,10 @@ public:
 	
 	UNREALSHARPCORE_API void GetLoadedAssemblies(TArray<UCSManagedAssembly*>& OutAssemblies) const
 	{
-		TArray<TObjectPtr<UCSManagedAssembly>> FoundAssemblies;
-		Assemblies.GenerateValueArray(FoundAssemblies);
-		OutAssemblies.Append(OutAssemblies);
+		TArray<TObjectPtr<UCSManagedAssembly>> LoadedAssemblies;
+		Assemblies.GenerateValueArray(LoadedAssemblies);
+		
+		OutAssemblies.Append(LoadedAssemblies);
 	}
 	
 	UNREALSHARPCORE_API FGCHandle FindManagedObject(const UObject* Object);

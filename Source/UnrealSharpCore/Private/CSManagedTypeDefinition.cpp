@@ -13,7 +13,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflect
 	NewDefinition->Compiler = Compiler;
 	NewDefinition->SetReflectionData(InReflectionData);
 	
-	NewDefinition->DefinitionField = Compiler->CreateField(NewDefinition);
+	NewDefinition->DefinitionField = TStrongObjectPtr(Compiler->CreateField(NewDefinition));
 	NewDefinition->SetDirtyFlags(StructuralChanges);
 	
 	return NewDefinition;
@@ -22,7 +22,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromReflect
 TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeField(UField* InField, UCSManagedAssembly* InOwningAssembly)
 {
 	TSharedPtr<FCSManagedTypeDefinition> NewDefinition = MakeShared<FCSManagedTypeDefinition>();
-	NewDefinition->DefinitionField = InField;
+	NewDefinition->DefinitionField = TStrongObjectPtr(InField);
 	NewDefinition->OwningAssembly = InOwningAssembly;
 	NewDefinition->TypeGCHandle = InOwningAssembly->FindTypeHandle(FCSFieldName(InField));
 	
@@ -32,7 +32,7 @@ TSharedPtr<FCSManagedTypeDefinition> FCSManagedTypeDefinition::CreateFromNativeF
 UField* FCSManagedTypeDefinition::GetDefinition()
 {
 	Compile();
-	return DefinitionField;
+	return DefinitionField.Get();
 }
 
 void FCSManagedTypeDefinition::Compile()
@@ -51,7 +51,7 @@ TSharedPtr<FGCHandle> FCSManagedTypeDefinition::GetTypeGCHandle()
 {
 	if (!TypeGCHandle.IsValid() || TypeGCHandle->IsNull())
 	{
-		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName(DefinitionField);
+		FCSFieldName FieldName = ReflectionData.IsValid() ? ReflectionData->FieldName : FCSFieldName(DefinitionField.Get());
 		TypeGCHandle = OwningAssembly->FindTypeHandle(FieldName);
 	}
 	

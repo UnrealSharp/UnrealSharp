@@ -79,7 +79,7 @@ private:
 
 	// The Unreal reflection type generated for this managed definition.
 	// This may be a UClass, UScriptStruct, UEnum, UInterface, UFunction (Delegate), et.c depending on ReflectionData.
-	UField* DefinitionField;
+	TStrongObjectPtr<UField> DefinitionField;
 
 	// Compiler responsible for creating and updating the native Unreal type from the managed reflection data.
 	UCSManagedTypeCompiler* Compiler;
