@@ -238,7 +238,7 @@ public static class IncrementalCompilationManager
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
         
         LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 100 };
-        AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserModules");
+        AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserCode");
     }
 
     private static void UpdateDependentProjectsWithNewCompilation(Compilation newCompilation, Project producedProject)
