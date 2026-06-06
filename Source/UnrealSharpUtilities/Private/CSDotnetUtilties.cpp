@@ -7,7 +7,7 @@
 #include "CSProjectUtilities.h"
 #include "UnrealSharpUtils.h"
 
-static TAutoConsoleVariable<int32> CVarSimulateInstalledBuild(
+static TAutoConsoleVariable<int32> CVarSimulateNoDotNetSDK(
 	TEXT("UnrealSharp.SimulateNoDotNetSDK"),
 	0,
 	TEXT("Simulate an environment where no .NET SDK is installed. This is useful for testing the UnrealSharp installation experience. Note that this will not affect UnrealSharp's ability to find a bundled .NET runtime, so it can be used to test both installed and non-installed scenarios."),
@@ -16,7 +16,7 @@ static TAutoConsoleVariable<int32> CVarSimulateInstalledBuild(
 FString UnrealSharp::DotNetUtilities::GetDotNetDirectory()
 {
 #if WITH_EDITOR
-	if (CVarSimulateInstalledBuild.GetValueOnAnyThread() == 1)
+	if (CVarSimulateNoDotNetSDK.GetValueOnAnyThread() == 1)
 	{
 		return FString();
 	}
