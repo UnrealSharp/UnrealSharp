@@ -85,6 +85,12 @@ public static class DotNetSdkUtilities
         string ScriptDirectory = buildCommand.GetProjectScriptFolder();
         string SourceGlobalJsonPath = Path.Combine(PluginRootDirectory, "Managed", "global.json");
         string DestinationGlobalJsonPath = Path.Combine(ScriptDirectory, "global.json");
+        
+        if (!Directory.Exists(ScriptDirectory))
+        {
+            Directory.CreateDirectory(ScriptDirectory);
+        }
+        
         File.Copy(SourceGlobalJsonPath, DestinationGlobalJsonPath, overwrite: true);
     }
 }
