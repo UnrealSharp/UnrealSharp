@@ -37,7 +37,7 @@ UField* FCSManagedTypeDefinition::GetDefinition()
 
 void FCSManagedTypeDefinition::Compile()
 {
-	if (!RequiresCompile())
+	if (!RequiresCompile() || !GetOwningAssembly()->IsAssemblyLoaded())
 	{
 		return;
 	}
