@@ -48,7 +48,7 @@ public static class PluginLoader
             
             StartupJobManager.RunForAssembly(loadedAssembly);
             
-            LogUnrealSharpPlugins.Log($"Successfully loaded plugin: {assemblyName}");
+            LogUnrealSharpPlugins.Log($"Successfully loaded plugin: '{assemblyName}' at '{assemblyPath}'");
             return loadedAssembly;
         }
         catch (Exception ex)
@@ -78,7 +78,7 @@ public static class PluginLoader
         return weakRefLoadContext;
     }
 
-    public static bool UnloadPlugin(string assemblyPath)
+    public static void UnloadPlugin(string assemblyPath)
     {
         const int warnThresholdMs = 200;
         const int timeoutMs = 2000;
@@ -91,7 +91,7 @@ public static class PluginLoader
         if (weakAlc == null)
         {
             LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is not loaded or already removed from registry.");
-            return true;
+            return;
         }
 
         try
@@ -114,24 +114,29 @@ public static class PluginLoader
                 
                 if (!hasWarned && stopWatch.ElapsedMilliseconds >= warnThresholdMs)
                 {
+                    LogUnrealSharpPlugins.LogWarning($"Plugin {assemblyName} is taking longer than expected to unload...");
                     hasWarned = true;
-                    LogUnrealSharpPlugins.LogError($"Unloading {assemblyName} is taking longer than expected...");
                 }
 
-                if (stopWatch.ElapsedMilliseconds >= timeoutMs)
+                if (stopWatch.ElapsedMilliseconds < timeoutMs)
                 {
-                    LogUnrealSharpPlugins.LogError($"Failed to unload {assemblyName} within {timeoutMs}ms. Common causes: static references, GCHandles, background threads.");
-                    return false;
+                    // https://github.com/dotnet/runtime/issues/124876
+                    LogUnrealSharpPlugins.LogWarning(
+                        $"'{assemblyName}' did not fully unload. " +
+                        "A known Visual Studio/Rider debugger issue may be holding strong references to assembly types, preventing the old assembly from being collected. " +
+                        "Hot reload will continue to work with some additional memory overhead. " +
+                        "Re-attaching the debugger usually releases these references and allows the assembly to be GC'd on the next hot reload.");
+                    return;
                 }
+                
+                Thread.Sleep(1);
             }
 
             LogUnrealSharpPlugins.Log($"{assemblyName} unloaded successfully in {stopWatch.ElapsedMilliseconds}ms.");
-            return true;
         }
         catch (Exception exception)
         {
             LogUnrealSharpPlugins.LogError($"An error occurred while unloading the plugin: {exception}");
-            return false;
         }
     }
     
