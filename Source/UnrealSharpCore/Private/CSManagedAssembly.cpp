@@ -77,18 +77,18 @@ bool UCSManagedAssembly::LoadAssembly()
 	return true;
 }
 
-bool UCSManagedAssembly::UnloadAssembly()
+void UCSManagedAssembly::UnloadAssembly()
 {
 	if (!bIsCollectible)
 	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Assembly {0} is not collectible and will not be unloaded. It will be unloaded when the editor shuts down.", GetName());
-		return true;
+		return;
 	}
 	
 	if (!IsAssemblyLoaded())
 	{
 		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", GetName());
-		return true;
+		return;
 	}
 	
 	const FGCHandleIntPtr AssemblyHandle = AssemblyGCHandle->GetHandle();
@@ -104,7 +104,7 @@ bool UCSManagedAssembly::UnloadAssembly()
 	AssemblyGCHandle.Reset();
 
 	FCSAssemblyEvents::OnAssemblyUnloaded.Broadcast(this);
-	return GetManagedPluginCallbacks().UnloadPlugin(*AssemblyFilePath);
+	GetManagedPluginCallbacks().UnloadPlugin(*AssemblyFilePath);
 }
 
 TSharedPtr<FGCHandle> UCSManagedAssembly::FindTypeHandle(const FCSFieldName& FieldName)

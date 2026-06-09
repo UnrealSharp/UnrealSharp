@@ -31,7 +31,7 @@ public:
 	void Initialize(FStringView InAssemblyPath, bool bIsCollectible = false);
 
 	UNREALSHARPCORE_API bool LoadAssembly();
-	UNREALSHARPCORE_API bool UnloadAssembly();
+	UNREALSHARPCORE_API void UnloadAssembly();
 
 	UNREALSHARPCORE_API bool IsAssemblyLoading() const { return bIsLoading; }
 	UNREALSHARPCORE_API bool IsAssemblyLoaded() const { return AssemblyGCHandle.IsValid() && !AssemblyGCHandle->IsNull(); }

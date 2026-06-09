@@ -112,13 +112,6 @@ void UCSHotReloadSubsystem::PerformHotReload()
 		return;
 	}
 	
-	if (CurrentHotReloadStatus == FailedToUnload)
-	{
-		// If we failed to unload an assembly, we can't hot reload until the editor is restarted.
-		UE_LOGFMT(LogUnrealSharpEditor, Error, "Hot reload is disabled until the editor is restarted.");
-		return;
-	}
-	
 	UE_LOGFMT(LogUnrealSharpEditor, Display, "Starting C# Hot Reload...");
 	
 	CurrentHotReloadStatus = Active;
@@ -144,23 +137,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
-		if (Assembly->UnloadAssembly())
-		{
-			continue;
-		}
-		
-		CurrentHotReloadStatus = FailedToUnload;
-
-		FString ErrorMessage = FString::Printf(
-			TEXT("Failed to unload assembly: %s\n\n"
-				"C# Hot Reload has been disabled for the remainder of this editor session.\n\n"
-				"Common causes include:\n"
-				"- Active references preventing unload (strong GC handles)\n"
-				"- Running or unfinished managed threads\n"
-				"- Dependent assemblies still loaded\n"), *Assembly->GetName());
-
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ErrorMessage), LOCTEXT("HotReloadFailure", "C# Hot Reload Failed"));
-		return;
+		Assembly->UnloadAssembly();
 	}
 	
 	for (int32 i = AssembliesSortedByDependencies.Num() - 1; i >= 0; --i)

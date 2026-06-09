@@ -648,11 +648,6 @@ void FUnrealSharpEditorModule::RegisterToolbar()
 		{
 			if (UCSHotReloadSubsystem* HotReloadSubsystem = UCSHotReloadSubsystem::Get())
 			{
-				if (HotReloadSubsystem->HasHotReloadFailed())
-				{
-					return UnrealSharp::Icons::GetUnrealSharpIcon_HotReloadFailed();
-				}
-	
 				if (HotReloadSubsystem->HasPendingHotReloadChanges())
 				{
 					return UnrealSharp::Icons::GetUnrealSharpIcon_Modified();

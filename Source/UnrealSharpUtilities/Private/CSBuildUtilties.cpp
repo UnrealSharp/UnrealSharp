@@ -67,7 +67,7 @@ bool UnrealSharp::Build::BuildUserSolution(const FCSCommandError& OnError)
 	
 	TMap<FString, FString> Arguments;
 	Arguments.Add(TEXT("OutputPath"), Paths::MakeQuotedPath(Paths::GetUserAssemblyDirectory()));
-	Arguments.Add(TEXT("BuildConfig"), LexToString(FApp::GetBuildConfiguration()));
+	Arguments.Add(TEXT("TargetConfiguration"), LexToString(FApp::GetBuildConfiguration()));
 	
 	if (!GetDefault<UCSUnrealSharpUtilitiesSettings>()->bShowBuildWarnings)
 	{
