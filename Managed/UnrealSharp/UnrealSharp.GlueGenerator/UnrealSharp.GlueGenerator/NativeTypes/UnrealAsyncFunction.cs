@@ -68,6 +68,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         AppendStaticConstructor(builder, asyncWrapperClass);
 
         builder.CloseBrace();
+        
         builder.GenerateTypeRegistration(asyncWrapperClass);
 
         spc.AddSource($"{WrapperName}.g.cs", builder.ToString());
@@ -147,8 +148,7 @@ public record UnrealAsyncFunction : UnrealFunctionBase
 
         asyncDelegate.AppendFunctionAsDelegate(builder);
         asyncDelegate.ExportType(builder, spc);
-
-        builder.GenerateTypeRegistration(asyncDelegate);
+        
         builder.AppendLine();
 
         Outer.AddSourceGeneratorDependency(asyncDelegate);

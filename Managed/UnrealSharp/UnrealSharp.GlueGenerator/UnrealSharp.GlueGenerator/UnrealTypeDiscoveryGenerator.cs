@@ -10,7 +10,7 @@ using UnrealSharp.GlueGenerator.NativeTypes;
 
 namespace UnrealSharp.GlueGenerator;
 
-public record struct ParseResult
+public readonly record struct ParseResult
 {
     public readonly UnrealType? Type;
     public readonly string SymbolName;
@@ -55,14 +55,9 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
         "Failed to generate source for '{0}' due to {1}",
         UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
     
-    private static readonly DiagnosticDescriptor StartStackTraceErrorDescriptor = new("USG002",
-        UnrealSharpStackTraceTitle, "StackTrace:", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
-
-    private static readonly DiagnosticDescriptor StackTraceErrorDescriptor = new("USG003",
-        UnrealSharpStackTraceTitle, "{0}", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
-
-    private static readonly DiagnosticDescriptor EndStackTraceErrorDescriptor = new("USG004",
-        UnrealSharpStackTraceTitle, "End of StackTrace", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor StartStackTraceErrorDescriptor = new("USG002", UnrealSharpStackTraceTitle, "StackTrace:", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor StackTraceErrorDescriptor = new("USG003", UnrealSharpStackTraceTitle, "{0}", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
+    private static readonly DiagnosticDescriptor EndStackTraceErrorDescriptor = new("USG004", UnrealSharpStackTraceTitle, "End of StackTrace", UnrealSharpGeneratorCategory, DiagnosticSeverity.Error, true);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -71,14 +66,12 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
         foreach (InspectorData inspector in globalInspectors)
         {
             string attributeName = inspector.InspectAttribute.FullyQualifiedAttributeName;
-            IncrementalValuesProvider<ParseResult> parsedUnrealTypes = context.SyntaxProvider.ForAttributeWithMetadataName(
-                attributeName, IsGenerationCandidate, ParseUnrealType);
-            
+            IncrementalValuesProvider<ParseResult> parsedUnrealTypes = context.SyntaxProvider.ForAttributeWithMetadataName(attributeName, IsGenerationCandidate, ParseUnrealType);
             context.RegisterSourceOutput(parsedUnrealTypes, ProcessParsedUnrealType);
         }
     }
 
-    private bool IsGenerationCandidate(SyntaxNode token, CancellationToken cancellationToken)
+    private static bool IsGenerationCandidate(SyntaxNode token, CancellationToken cancellationToken)
     {
         return true;
     }
@@ -140,7 +133,6 @@ public sealed class UnrealTypeDiscoveryGenerator : IIncrementalGenerator
             builder.BeginGeneratedSourceFile(unrealType);
 
             unrealType.ExportType(builder, sourceProductionContext);
-            builder.GenerateTypeRegistration(unrealType);
 
             sourceProductionContext.AddSource($"{unrealType.SourceName}.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
         }

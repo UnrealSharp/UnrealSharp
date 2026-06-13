@@ -25,7 +25,8 @@ public class UnrealSharpRuntimeGlue : ModuleRules
                 "DeveloperSettings",
                 "UnrealEd",
                 "GameplayTags",
-                "UnrealSharpUtilities"
+                "UnrealSharpUtilities",
+                "UnrealSharpCore"
             }
         );
 

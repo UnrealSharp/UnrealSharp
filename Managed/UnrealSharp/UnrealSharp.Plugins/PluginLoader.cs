@@ -1,14 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Loader;
-using UnrealSharp.Core;
 
 namespace UnrealSharp.Plugins;
 
 public static class PluginLoader
 {
-    public static readonly List<Plugin> LoadedPlugins = [];
+    public static readonly Dictionary<string, Plugin> Plugins = [];
 
     public static Assembly? LoadPlugin(string assemblyPath, bool isCollectible)
     {
@@ -16,40 +14,22 @@ public static class PluginLoader
         {
             AssemblyName assemblyName = new AssemblyName(Path.GetFileNameWithoutExtension(assemblyPath));
 
-            foreach (Plugin loadedPlugin in LoadedPlugins)
+            if (Plugins.TryGetValue(assemblyName.Name!, out Plugin? loadedPlugin))
             {
-                if (loadedPlugin.Assembly?.Target is not Assembly assembly)
-                {
-                    continue;
-                }
-
-                if (assembly.GetName() != assemblyName)
-                {
-                    continue;
-                }
-
-                LogUnrealSharpPlugins.Log($"Plugin {assemblyName} is already loaded.");
-                return assembly;
+                return (Assembly) loadedPlugin.Assembly!.Target!;
             }
-            
+
             Plugin plugin = new Plugin(assemblyName, isCollectible, assemblyPath);
-            if (!plugin.Load() || plugin.Assembly == null || plugin.Assembly.Target is not Assembly loadedAssembly)
+            Plugins.Add(assemblyName.Name!, plugin);
+
+            if (!plugin.Load())
             {
+                Plugins.Remove(assemblyName.Name!);
                 throw new InvalidOperationException($"Failed to load plugin: {assemblyName}");
             }
-
-            LoadedPlugins.Add(plugin);
-
-            if (!StartupJobManager.HasJobs(loadedAssembly))
-            {
-                // Sometimes the module initializer doesn't run automatically, so we force it here
-                RuntimeHelpers.RunModuleConstructor(loadedAssembly.ManifestModule.ModuleHandle);
-            }
-            
-            StartupJobManager.RunForAssembly(loadedAssembly);
             
             LogUnrealSharpPlugins.Log($"Successfully loaded plugin: '{assemblyName}' at '{assemblyPath}'");
-            return loadedAssembly;
+            return (Assembly) plugin.Assembly!.Target!;
         }
         catch (Exception ex)
         {
@@ -62,20 +42,12 @@ public static class PluginLoader
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference? RemovePlugin(string assemblyName)
     {
-        WeakReference? weakRefLoadContext = null;
-        foreach (Plugin loadedPlugin in LoadedPlugins)
+        if (!Plugins.Remove(assemblyName, out Plugin? value))
         {
-            if (loadedPlugin.AssemblyName.Name != assemblyName)
-            {
-                continue;
-            }
-            
-            LoadedPlugins.Remove(loadedPlugin);
-            weakRefLoadContext = loadedPlugin.Unload();
-            break;
+            return null;
         }
         
-        return weakRefLoadContext;
+        return value.Unload();
     }
 
     public static void UnloadPlugin(string assemblyPath)
@@ -132,17 +104,20 @@ public static class PluginLoader
             LogUnrealSharpPlugins.LogError($"An error occurred while unloading the plugin: {exception}");
         }
     }
-    
-    public static Plugin? FindPluginByName(string assemblyName)
-    {
-        foreach (Plugin loadedPlugin in LoadedPlugins)
-        {
-            if (loadedPlugin.AssemblyName.Name == assemblyName)
-            {
-                return loadedPlugin;
-            }
-        }
 
-        return null;
+    public static Plugin? FindPlugin(Type type)
+    {
+        Assembly assembly = type.Assembly;
+        return FindPlugin(assembly);
+    }
+
+    public static Plugin? FindPlugin(Assembly assembly)
+    {
+        return FindPlugin(assembly.GetName().Name!);
+    }
+    
+    public static Plugin? FindPlugin(string assemblyName)
+    {
+        return Plugins.GetValueOrDefault(assemblyName);
     }
 }

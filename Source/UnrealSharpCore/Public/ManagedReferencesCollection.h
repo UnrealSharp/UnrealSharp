@@ -2,11 +2,13 @@
 
 // Collection of weak references to keep track of managed references for fast access during hot reload.
 // To keep track of types that needs to be recompiled due to structural changes.
-struct UNREALSHARPCORE_API FCSManagedReferencesCollection
+#if WITH_EDITOR
+struct UNREALSHARPCORE_API FCSReferencesCollection
 {
 	void AddReference(UStruct* Struct);
 	void RemoveReference(UStruct* Struct);
-	void ForEachManagedReference(const TFunction<void(UStruct*)>& Func);
+	const TArray<TWeakObjectPtr<UStruct>>& GetReferences() { return References; }
 private:
-	TArray<TWeakObjectPtr<UStruct>> ManagedWeakReferences;
+	TArray<TWeakObjectPtr<UStruct>> References;
 };
+#endif

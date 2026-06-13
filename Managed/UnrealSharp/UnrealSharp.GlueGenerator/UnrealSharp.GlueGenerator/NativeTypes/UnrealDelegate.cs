@@ -66,6 +66,8 @@ public record UnrealDelegate : UnrealType
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
+        builder.GenerateTypeRegistration(this);
+        
         string baseTypeName = _isMulticast ? "MulticastDelegate" : "Delegate";
         string delegateWrapperClassName = DelegateProperty.MakeDelegateSignatureName(_delegateSignature.SourceName);
         

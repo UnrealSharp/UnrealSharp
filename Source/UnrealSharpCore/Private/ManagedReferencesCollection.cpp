@@ -1,44 +1,19 @@
 #include "ManagedReferencesCollection.h"
-#include "CSManager.h"
-#include "UnrealSharpCore.h"
 #include "Logging/StructuredLog.h"
 
-void FCSManagedReferencesCollection::AddReference(UStruct* Struct)
+#if WITH_EDITOR
+void FCSReferencesCollection::AddReference(UStruct* Struct)
 {
-	if (!IsValid(Struct))
-	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Invalid struct reference: {0}", *GetNameSafe(Struct));
-		return;
-	}
-	
-	if (!UCSManager::Get().IsManagedType(Struct))
-	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Struct {0} is not a managed type", *GetNameSafe(Struct));
-		return;
-	}
-
-	if (ManagedWeakReferences.Contains(Struct))
+	if (References.Contains(Struct))
 	{
 		return;
 	}
 
-	ManagedWeakReferences.Add(Struct);
+	References.Add(Struct);
 }
 
-void FCSManagedReferencesCollection::RemoveReference(UStruct* Struct)
+void FCSReferencesCollection::RemoveReference(UStruct* Struct)
 {
-	ManagedWeakReferences.Remove(Struct);
+	References.Remove(Struct);
 }
-
-void FCSManagedReferencesCollection::ForEachManagedReference(const TFunction<void(UStruct*)>& Func)
-{
-	for (TWeakObjectPtr<UStruct> Struct : ManagedWeakReferences)
-	{
-		if (!Struct.IsValid())
-		{
-			continue;
-		}
-
-		Func(Struct.Get());
-	}
-}
+#endif

@@ -259,6 +259,8 @@ public record UnrealClass : UnrealClassBase
         ExportList(builder, spc, AsyncFunctions);
         
         builder.CloseBrace();
+        
+        builder.GenerateTypeRegistration(this);
     }
     
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)

@@ -7,7 +7,7 @@
 class UCSManagedAssembly;
 struct FCSManagedTypeDefinition;
 class UCSInterface;
-struct FCSManagedReferencesCollection;
+struct FCSReferencesCollection;
 class UCSEnum;
 class UCSScriptStruct;
 class FCSBlueprintCompiler;
@@ -31,7 +31,7 @@ private:
     static bool IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly);
     void RecompileAndReinstanceBlueprints();
 
-    void AddManagedReferences(FCSManagedReferencesCollection& Collection);
+    void AddManagedReferences(FCSReferencesCollection& Collection);
 
     static void RefreshDependentLoaders(UBlueprint* Blueprint);
     static void RefreshInstanceTickSettings(const UBlueprint* Blueprint);

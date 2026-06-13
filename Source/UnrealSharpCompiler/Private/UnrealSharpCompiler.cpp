@@ -56,7 +56,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		return;
 	}
 	
-	if (ManagedComponentsToCompile.IsEmpty() && ManagedClassesToCompile.IsEmpty())
+	if (ManagedClassesToCompile.IsEmpty())
 	{
 		// Nothing to compile.
 		return;
@@ -100,15 +100,18 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 	UE_LOG(LogUnrealSharpCompiler, Log, TEXT("Recompiled and reinstanced blueprints in %.2f seconds"), FPlatformTime::Seconds() - StartTime);
 }
 
-void FUnrealSharpCompilerModule::AddManagedReferences(FCSManagedReferencesCollection& Collection)
+void FUnrealSharpCompilerModule::AddManagedReferences(FCSReferencesCollection& Collection)
 {
-	Collection.ForEachManagedReference([&](UStruct* Struct)
+	for (const TWeakObjectPtr<UStruct> Reference : Collection.GetReferences())
 	{
-		if (UCSClass* Class = Cast<UCSClass>(Struct))
+		UCSClass* ClassReference = Cast<UCSClass>(Reference.Get());
+		if (!ClassReference)
 		{
-			OnNewClass(Class);
+			continue;
 		}
-	});
+		
+		OnNewClass(ClassReference);
+	}
 }
 
 void FUnrealSharpCompilerModule::RefreshDependentLoaders(UBlueprint* Blueprint)
@@ -150,29 +153,14 @@ void FUnrealSharpCompilerModule::RefreshInstanceTickSettings(const UBlueprint* B
 
 void FUnrealSharpCompilerModule::OnNewClass(UCSClass* NewClass)
 {
-	UCSBlueprint* Blueprint = Cast<UCSBlueprint>(NewClass->ClassGeneratedBy);
-	if (!IsValid(Blueprint))
-	{
-		return;
-	}
-
-	auto AddToCompileList = [this](TArray<UCSBlueprint*>& List, UCSBlueprint* Blueprint)
-	{
-		if (List.Contains(Blueprint))
-		{
-			return;
-		}
-
-		List.Add(Blueprint);
-	};
-		
+	UCSBlueprint* Blueprint = static_cast<UCSBlueprint*>(NewClass->ClassGeneratedBy);
 	if (NewClass->IsChildOf(UActorComponent::StaticClass()))
 	{
-		AddToCompileList(ManagedComponentsToCompile, Blueprint);
+		ManagedComponentsToCompile.Add(Blueprint);
 	}
 	else
 	{
-		AddToCompileList(ManagedClassesToCompile, Blueprint);
+		ManagedClassesToCompile.Add(Blueprint);
 	}
 
 	AddManagedReferences(NewClass->GetManagedReferencesCollection());

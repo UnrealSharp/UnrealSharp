@@ -24,6 +24,8 @@ static FAutoConsoleCommand CVarDumpLoadedAssemblies(
 #if WITH_EDITOR
 void FCSAssemblyUtilities::SortAssembliesByDependencyOrder(const TArray<UCSManagedAssembly*>& InputAssemblies, TArray<UCSManagedAssembly*>& OutSortedAssemblies)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(FCSAssemblyUtilities::SortAssembliesByDependencyOrder)
+	
 	OutSortedAssemblies.Reset();
 	
 	TSet<UCSManagedAssembly*> AllAssemblies;
@@ -149,11 +151,6 @@ void FCSAssemblyUtilities::SortAssembliesByDependencyOrder(const TArray<UCSManag
 
 bool FCSAssemblyUtilities::IsRuntimeGlueAssembly(const UCSManagedAssembly* Assembly)
 {
-	if (!IsValid(Assembly))
-	{
-		return false;
-	}
-
 	const FString& AssemblyName = Assembly->GetName();
 	return AssemblyName.EndsWith(".RuntimeGlue", ESearchCase::IgnoreCase);
 }

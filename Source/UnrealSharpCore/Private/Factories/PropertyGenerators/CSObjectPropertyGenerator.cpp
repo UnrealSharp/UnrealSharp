@@ -42,11 +42,7 @@ FProperty* UCSObjectPropertyGenerator::CreateProperty(UField* Outer, const FCSPr
 	
 	if (FLinkerLoad::IsImportLazyLoadEnabled())
 	{
-#if ENGINE_MINOR_VERSION >= 4
 		ObjectProperty->SetPropertyFlags(CPF_TObjectPtrWrapper);
-#else
-		ObjectProperty->SetPropertyFlags(CPF_UObjectWrapper);
-#endif
 	}
 	
 	return ObjectProperty;

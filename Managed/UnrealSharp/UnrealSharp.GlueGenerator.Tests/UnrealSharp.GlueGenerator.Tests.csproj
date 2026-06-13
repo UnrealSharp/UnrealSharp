@@ -11,6 +11,7 @@
     
     <ItemGroup>
         <ProjectReference Include="..\UnrealSharp\UnrealSharp.csproj" />
+        <ProjectReference Include="..\UnrealSharp.Plugins\UnrealSharp.Plugins.csproj" />
         <ProjectReference Include="..\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator\UnrealSharp.GlueGenerator.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />

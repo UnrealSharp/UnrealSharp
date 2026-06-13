@@ -5,6 +5,7 @@ using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
+using UnrealSharp.Engine.Core.Modules;
 using UnrealSharp.EnhancedInput;
 
 namespace TestSourceGen;
@@ -34,6 +35,20 @@ public partial interface ITestInterface
     
     [UFunction(FunctionFlags.BlueprintCallable)]
     public void CallInterfaceFunction(int intParam, string strParam);
+}
+
+[UModule]
+public class MyModule : IModuleInterface
+{
+    public void StartupModule()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ShutdownModule()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 [UClass]

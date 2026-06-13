@@ -2,6 +2,7 @@ using UnrealSharp.Engine.Core.Modules;
 
 namespace {MODULE_NAME};
 
+[UnrealSharp.Attributes.UModule]
 public class F{MODULE_NAME} : IModuleInterface
 {
     public void StartupModule()

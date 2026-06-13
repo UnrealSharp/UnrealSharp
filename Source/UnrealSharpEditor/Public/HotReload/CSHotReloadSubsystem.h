@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CSManagedTypeDefinition.h"
+#include "CSObjectID.h"
 #include "EditorSubsystem.h"
 #include "UnrealSharpEditor.h"
 #include "IDirectoryWatcher.h"
@@ -93,6 +94,6 @@ private:
 
 	TMap<FName, TArray<FFileChangeData>> PendingFileChanges;
 
-	TSet<uint32> ReloadedTypes;
+	TSet<FCSObjectID> ReloadedTypes;
 	bool bDetectedNewManagedType = false;
 };

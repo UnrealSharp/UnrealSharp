@@ -79,6 +79,8 @@ bool UCSManagedAssembly::LoadAssembly()
 
 void UCSManagedAssembly::UnloadAssembly()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::UnloadAssembly: ") + GetName()));
+	
 	if (!bIsCollectible)
 	{
 		UE_LOGFMT(LogUnrealSharp, Warning, "Assembly {0} is not collectible and will not be unloaded. It will be unloaded when the editor shuts down.", GetName());
@@ -193,20 +195,7 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDef
 	return ManagedTypeDefinition;
 }
 
-TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindManagedTypeDefinition(const FCSFieldName& FieldName) const
-{
-	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindManagedTypeDefinition);
-
-	const TSharedPtr<FCSManagedTypeDefinition>* ManagedTypeDefinition = DefinedManagedTypes.Find(FieldName);
-	if (!ManagedTypeDefinition || !ManagedTypeDefinition->IsValid())
-	{
-		return nullptr;
-	}
-
-	return *ManagedTypeDefinition;
-}
-
-void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData)
+void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* ReflectionJsonString)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::RegisterManagedType);
 	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
@@ -215,7 +204,7 @@ void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* In
 	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = DefinedManagedTypes.FindOrAdd(FieldName);
 
 #if WITH_EDITOR
-	if (ManagedTypeDefinition.IsValid() && !FCSUtilities::ShouldReloadDefinition(ManagedTypeDefinition.ToSharedRef(), NewJsonReflectionData))
+	if (ManagedTypeDefinition.IsValid() && !FCSUtilities::ShouldReloadDefinition(ManagedTypeDefinition.ToSharedRef(), ReflectionJsonString))
 	{
 		ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
 		ManagedTypeDefinition->SetDirtyFlags(None);
@@ -224,13 +213,8 @@ void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* In
 #endif
 	
 	UCSManagedTypeCompiler* Compiler = FCSUtilities::ResolveCompilerFromFieldType(FieldType);
-	if (!IsValid(Compiler))
-	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to resolve compiler for field type {0} for type {1}", static_cast<uint8>(FieldType), FieldName.GetFullName());
-	}
-	
 	TSharedPtr<FCSTypeReferenceReflectionData> NewReflectionData = Compiler->CreateReflectionData();
-	NewReflectionData->SerializeFromJsonString(NewJsonReflectionData);
+	NewReflectionData->SerializeFromJsonString(ReflectionJsonString);
 
 	if (ManagedTypeDefinition.IsValid())
 	{

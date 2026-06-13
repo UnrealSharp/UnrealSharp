@@ -56,19 +56,22 @@ public static class StringBuilderExtensions
     {
         StringBuilder stringBuilder = new StringBuilder();
         using StringWriter stringWriter = new StringWriter(stringBuilder);
-        
         using JsonWriter jsonWriter = new JsonTextWriter(stringWriter);
         jsonWriter.Formatting = Formatting.None;
-
-        builder.StartModuleInitializer(type);
-
+        
         jsonWriter.WriteStartObject();
         type.PopulateJsonObject(jsonWriter);
         jsonWriter.WriteEndObject();
+        
+        string registrarClassName = $"{type.SourceName}_Registration";
+        string jsonPropertyName = $"ReflectionMetadata_{type.SourceName}";
+        string registrationMethodName = $"Register_{type.SourceName}";
 
-        string jsonString = stringBuilder.ToString();
-        builder.AppendLine($"static string JsonReflectionData => \"\"\"\n {jsonString} \n\"\"\";");
-        builder.AppendLine($"static void Initialize() => RegisterManagedType(\"{type.EngineName}\", JsonReflectionData, {(byte) type.FieldType}, typeof({type.FullName}));");
+        builder.StartModuleInitializer(registrarClassName);
+        
+        builder.AppendLine($"public static void {registrationMethodName}() => " + $"RegisterManagedType(\"{type.EngineName}\", {jsonPropertyName}, {(byte)type.FieldType}, typeof({type.FullName}));");
+        builder.AppendLine($"static string {jsonPropertyName} => \"\"\"{stringBuilder}\"\"\";");
+
         builder.CloseBrace();
     }
     
@@ -90,17 +93,14 @@ public static class StringBuilderExtensions
         builder.AppendLine();
     }
 
-    public static void StartModuleInitializer(this GeneratorStringBuilder builder, UnrealType type)
+    public static void StartModuleInitializer(this GeneratorStringBuilder builder, string initializerName)
     {
-        string initializerName = $"{type.SourceName}_Initializer";
-        
         builder.AppendLine();
         builder.AppendLine($"file static class {initializerName}");
         builder.OpenBrace();
         builder.AppendLine("#pragma warning disable CA2255");
         builder.AppendLine("[System.Runtime.CompilerServices.ModuleInitializer]");
         builder.AppendLine("#pragma warning restore CA2255");
-        builder.AppendLine($"public static void Register() => UnrealSharp.Core.StartupJobManager.Register(typeof({initializerName}).Assembly, Initialize);");
     }
     
     public static void AllocateParameterBuffer(this GeneratorStringBuilder builder, string sizeName)

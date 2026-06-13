@@ -50,6 +50,8 @@ public record UnrealInterface : UnrealClassBase
 
         ExportWrapperClass(builder);
         ExportMarshaller(builder);
+        
+        builder.GenerateTypeRegistration(this);
     }
     
     private void ExportMarshaller(GeneratorStringBuilder builder)

@@ -28,6 +28,11 @@
     <Reference Include="UnrealSharp.Log">
       <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Log.dll</HintPath>
     </Reference>
+
+    <Reference Include="UnrealSharp.Plugins">
+      <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Plugins.dll</HintPath>
+    </Reference>
+    
   </ItemGroup>
 
   <ItemGroup Condition="'$(SkipIncludeAnalyzers)' == ''">

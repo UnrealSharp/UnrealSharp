@@ -20,8 +20,6 @@ namespace FCSHotReloadUtilities
 
 	inline bool IsCSharpFile(const FString& Path) { return Path.EndsWith(TEXT(".cs")); }
 	inline bool IsSkippablePath(const FString& Path) { return Path.Contains(TEXT("/obj/")) || Path.Contains(TEXT("/bin/")) || !IsCSharpFile(Path); }
-
-	void SortDirtiedFiles(TArray<FCSChangedFile>& Files);
 	
 	bool HasFileBeenDirtied(const TArray<FCSChangedFile>& DirtiedFiles, const FString& FilePath, FFileChangeData::EFileChangeAction Action);
 
@@ -30,12 +28,12 @@ namespace FCSHotReloadUtilities
 	
 	bool RecompileDirtyProjects(const TArray<UCSManagedAssembly*>& Assemblies, FString& OutExceptionMessage);
 	
-	void RebuildDependentBlueprints(const TSet<uint32>& RebuiltTypes);
+	void RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes);
 	void RefreshPlacementMode();
 	
-	bool IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<uint32>& RebuiltTypes);
-	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<uint32>& RebuiltTypes);
-	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<uint32>& RebuiltTypes);
+	bool IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<FCSObjectID>& RebuiltTypes);
+	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<FCSObjectID>& RebuiltTypes);
+	bool HasDefaultComponentsBeenAffected(const UBlueprint* Blueprint, const TSet<FCSObjectID>& RebuiltTypes);
 	
 	void GetChangedCSharpFiles(const TArray<FFileChangeData>& ChangedFiles, TArray<FFileChangeData>& OutFilteredFiles);
 	

@@ -35,7 +35,7 @@ public class BuildUserGlue : BuildCommand
         ArgumentNullException.ThrowIfNull(command);
         ArgumentException.ThrowIfNullOrEmpty(outputDirectory);
 
-        string SolutionDirectory = Path.Combine(command.GetUnrealSharpIntermediateDirectory(), "Temp");
+        string SolutionDirectory = Path.Combine(command.GetUnrealSharpIntermediateDirectory(), "Temp", targetType.ToString());
         List<string> GlueProjectPaths = GetGlueProjectPaths(command, targetType);
 
         if (GlueProjectPaths.Count == 0)

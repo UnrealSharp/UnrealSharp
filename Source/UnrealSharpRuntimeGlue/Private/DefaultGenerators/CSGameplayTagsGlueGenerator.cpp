@@ -1,8 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "DefaultGenerators/CSGameplayTagsGlueGenerator.h"
-
+﻿#include "DefaultGenerators/CSGameplayTagsGlueGenerator.h"
+#include "CSManager.h"
 #include "CSScriptBuilder.h"
 #include "GameplayTagsModule.h"
 #include "GameplayTagsSettings.h"
@@ -16,6 +13,11 @@ void UCSGameplayTagsGlueGenerator::Initialize()
 
 void UCSGameplayTagsGlueGenerator::ProcessGameplayTags()
 {
+	if (UCSManager::Get().IsLoadingAnyAssembly())
+	{
+		return;
+	}
+	
 	UGameplayTagsManager& GameplayTagsManager = UGameplayTagsManager::Get();
 
 	FCSScriptBuilder ScriptBuilder(FCSScriptBuilder::IndentType::Tabs);
@@ -36,18 +38,12 @@ void UCSGameplayTagsGlueGenerator::ProcessGameplayTags()
 
 	for (const FGameplayTag& GameplayTag : GameplayTagArray)
 	{
-		TSharedPtr<FGameplayTagNode> TagNode = GameplayTagsManager.FindTagNode(GameplayTag);
-		if (!TagNode.IsValid())
-		{
-			continue;
-		}
-		
-		const TArray<FName>& SourceNames = TagNode->GetAllSourceNames();
+		const TArray<FName>& SourceNames = GameplayTagsManager.FindTagNode(GameplayTag)->GetAllSourceNames();
 		if (SourceNames.Contains(TEXT("UnrealSharpCore")))
 		{
 			continue;
 		}
-
+		
 		const FString TagName = GameplayTag.ToString();
 		const FString TagNameVariable = TagName.Replace(TEXT("."), TEXT("_"));
 		ScriptBuilder.AppendLine(FString::Printf(TEXT("public static readonly FGameplayTag %s = new(\"%s\");"), *TagNameVariable, *TagName));

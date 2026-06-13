@@ -111,7 +111,7 @@ private:
 
 	TWeakObjectPtr<UObject> CurrentWorldContext;
 	
-	FCSManagerInitializedEvent OnCSManagerInitialized;
+	FCSManagerInitializedEvent OnInitialized;
 
 #if WITH_EDITORONLY_DATA
 	FCSClassEvent OnNewClass;

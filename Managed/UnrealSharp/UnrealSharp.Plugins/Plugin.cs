@@ -11,12 +11,13 @@ public class Plugin
     public WeakReference? Assembly { get; private set; }
     
     private AssemblyLoadContext? _loadContext;
-    private readonly List<IModuleInterface> _moduleInterfaces;
+
+    private readonly List<IModuleInterface> _moduleInterfaces = new List<IModuleInterface>();
+    private readonly List<Func<IModuleInterface>> _moduleInitFunctions = new List<Func<IModuleInterface>>();
     
     public Plugin(AssemblyName assemblyName, bool isCollectible, string assemblyPath)
     {
         AssemblyName = assemblyName;
-        _moduleInterfaces = new List<IModuleInterface>();
         
         Assembly? existingAssembly = AssemblyCache.GetUniqueAssembly(assemblyName.Name!);
         if (existingAssembly != null)
@@ -41,9 +42,14 @@ public class Plugin
         }
     }
 
+    public void AddModuleInterfaceInit(Func<IModuleInterface> initFunction)
+    {
+        _moduleInitFunctions.Add(initFunction);
+    }
+
     public bool Load()
     {
-        if (_loadContext == null || (Assembly != null && Assembly.IsAlive))
+        if (_loadContext == null || Assembly != null)
         {
             return false;
         }
@@ -51,25 +57,32 @@ public class Plugin
         Assembly assembly = _loadContext.LoadFromAssemblyName(AssemblyName);
         Assembly = new WeakReference(assembly);
         
-        Type[] types = assembly.GetTypes();
-            
-        foreach (Type type in types)
+        RuntimeHelpers.RunModuleConstructor(assembly.ManifestModule.ModuleHandle);
+        
+        StartupModule();
+        return true;
+    }
+
+    // Gets first module in the list
+    WeakReference<IModuleInterface>? Module => _moduleInterfaces.Count == 0 ? null : new WeakReference<IModuleInterface>(_moduleInterfaces[0]);
+    
+    // Gets the module of type
+    WeakReference<IModuleInterface>? GetModule(Type moduleType)
+    {
+        WeakReference<IModuleInterface>? foundModule = null;
+
+        foreach (IModuleInterface moduleInterface in _moduleInterfaces)
         {
-            if (type == typeof(IModuleInterface) || !typeof(IModuleInterface).IsAssignableFrom(type))
+            if (moduleInterface.GetType() != moduleType)
             {
                 continue;
             }
 
-            if (Activator.CreateInstance(type) is not IModuleInterface moduleInterface)
-            {
-                continue;
-            }
-
-            moduleInterface.StartupModule();
-            _moduleInterfaces.Add(moduleInterface);
+            foundModule = new WeakReference<IModuleInterface>(moduleInterface);
+            break;
         }
 
-        return true;
+        return foundModule;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -87,6 +100,19 @@ public class Plugin
         return loadContextWeak;
     }
 
+    public void StartupModule()
+    {
+        _moduleInterfaces.Capacity = _moduleInitFunctions.Count;
+        
+        foreach (Func<IModuleInterface> moduleInterfaceInitFunc in _moduleInitFunctions)
+        {
+            IModuleInterface moduleInterface = moduleInterfaceInitFunc();
+            moduleInterface.StartupModule();
+            
+            _moduleInterfaces.Add(moduleInterface);
+        }
+    }
+    
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void ShutdownModule()
     {
@@ -96,6 +122,7 @@ public class Plugin
         }
 
         _moduleInterfaces.Clear();
+        _moduleInitFunctions.Clear();
     }
 
     public override string ToString()

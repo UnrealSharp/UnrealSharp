@@ -1,19 +1,14 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#if ENGINE_MINOR_VERSION >= 5
 #include "Streaming/StreamingWorldSubsystemInterface.h"
-#endif
 #include "SubsystemCollectionBaseRef.h"
 #include "Extensions/Libraries/CSWorldExtensions.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "CSWorldSubsystem.generated.h"
 
 UCLASS(Blueprintable, BlueprintType, Abstract)
-class UCSWorldSubsystem : public UTickableWorldSubsystem
-#if ENGINE_MINOR_VERSION >= 5
-	, public IStreamingWorldSubsystemInterface
-#endif
+class UCSWorldSubsystem : public UTickableWorldSubsystem, public IStreamingWorldSubsystemInterface
 {
 	GENERATED_BODY()
 
@@ -29,19 +24,10 @@ class UCSWorldSubsystem : public UTickableWorldSubsystem
 	virtual void PostInitialize() override;
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	virtual void OnWorldComponentsUpdated(UWorld& World) override;
-
-#if ENGINE_MINOR_VERSION >= 5
 	virtual void OnUpdateStreamingState() override
 	{
         K2_UpdateStreamingState();
 	}
-#else
-	virtual void UpdateStreamingState() override
-	{
-		Super::UpdateStreamingState();
-		K2_UpdateStreamingState();
-	}
-#endif
 	virtual TStatId GetStatId() const override;
 	virtual void Tick(float DeltaTime) override;
 	// End

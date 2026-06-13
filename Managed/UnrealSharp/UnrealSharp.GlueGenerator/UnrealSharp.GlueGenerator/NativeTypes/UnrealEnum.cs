@@ -49,6 +49,11 @@ public record UnrealEnum : UnrealType
         return new UnrealEnum((ITypeSymbol) symbol, outer);
     }
 
+    public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
+    {
+        builder.GenerateTypeRegistration(this);
+    }
+
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
         base.PopulateJsonObject(jsonWriter);

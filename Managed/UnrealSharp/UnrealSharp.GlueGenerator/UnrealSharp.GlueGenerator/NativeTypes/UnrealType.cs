@@ -101,8 +101,8 @@ public record UnrealType
     }
     
     public virtual void PostParse(ISymbol symbol) { }
-    
-    public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) { }
+
+    public virtual void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc) {}
     
     public virtual void ExportBackingVariables(GeneratorStringBuilder builder) { }
     public virtual void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType) { }

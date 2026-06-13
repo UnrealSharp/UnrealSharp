@@ -13,6 +13,11 @@ public partial struct FPrimaryAssetId
     
     public override string ToString()
     {
+        if (!Valid)
+        {
+            return "Invalid Id";
+        }
+        
         return $"{PrimaryAssetType.Name.ToString()}:{PrimaryAssetName.ToString()}";
     }
     

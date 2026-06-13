@@ -53,12 +53,12 @@ public:
 	}
 
 #if WITH_EDITOR
-	FCSManagedReferencesCollection& GetManagedReferencesCollection() { return ManagedReferences; }
+	FCSReferencesCollection& GetManagedReferencesCollection() { return ManagedReferences; }
 #endif
 	
 private:
 	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition;
 #if WITH_EDITORONLY_DATA
-	FCSManagedReferencesCollection ManagedReferences;
+	FCSReferencesCollection ManagedReferences;
 #endif
 };

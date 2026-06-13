@@ -6,9 +6,7 @@
 #include "Types/CSSkeletonClass.h"
 #include "Engine/World.h"
 
-#if ENGINE_MINOR_VERSION >= 4
 #include "Blueprint/BlueprintExceptionInfo.h"
-#endif
 
 void UCSFunctionBase::Bind()
 {

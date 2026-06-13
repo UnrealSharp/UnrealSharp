@@ -69,7 +69,7 @@ void UCSManager::Initialize()
 	InitialAssemblyLoad();
 	
 	bHasInitialized = true;
-	OnCSManagerInitialized.Broadcast(*this);
+	OnInitialized.Broadcast(*this);
 }
 
 void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
@@ -169,7 +169,7 @@ bool UCSManager::IsLoadingAnyAssembly() const
 	{
 		UCSManagedAssembly* Assembly = NameToAssembly.Value;
 		
-		if (!Assembly->IsAssemblyLoading() || Assembly->IsAssemblyLoaded())
+		if (!Assembly->IsAssemblyLoading() && Assembly->IsAssemblyLoaded())
 		{
 			continue;
 		}
@@ -325,6 +325,6 @@ void UCSManager::AddOrExecuteOnManagerInitialized(const FCSManagerInitializedEve
 	}
 	else
 	{
-		OnCSManagerInitialized.Add(Delegate);
+		OnInitialized.Add(Delegate);
 	}
 }

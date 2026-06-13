@@ -53,7 +53,7 @@ public:
 
 	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(UClass* Field);
 	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(const FCSFieldName& ClassName);
-	UNREALSHARPCORE_API TSharedPtr<FCSManagedTypeDefinition> FindManagedTypeDefinition(const FCSFieldName& FieldName) const;
+	UNREALSHARPCORE_API TSharedPtr<FCSManagedTypeDefinition> FindManagedTypeDefinition(const FCSFieldName& FieldName) const { return DefinedManagedTypes.FindRef(FieldName); }
 
 	template<typename T = UField>
 	T* ResolveUField(const FCSFieldName& FieldName) const
@@ -69,7 +69,7 @@ public:
 		return FCSUtilities::FindField<T>(FieldName);
 	}
 
-	void RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* NewJsonReflectionData);
+	void RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* ReflectionJsonString);
 
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object);
 	TSharedPtr<FGCHandle> CreateManagedObjectFromNative(const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle);

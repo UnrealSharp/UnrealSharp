@@ -105,6 +105,8 @@ public record UnrealScriptStruct : UnrealStruct
         builder.CloseBrace();
         
         MakeMarshaller(builder);
+        
+        builder.GenerateTypeRegistration(this);
     }
 
     public override void ExportBackingVariables(GeneratorStringBuilder builder)

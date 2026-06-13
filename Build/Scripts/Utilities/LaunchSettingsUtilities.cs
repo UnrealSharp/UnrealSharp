@@ -10,34 +10,49 @@ namespace UnrealSharp.Automation.Utilities;
 
 public static class LaunchSettingsUtilities
 {
+    private const string ExecutableVerb = "Executable";
+    
     public static void CreateOrUpdateLaunchSettings(BuildCommand buildCommand, string launchSettingsPath)
     {
         Root Root = new Root();
 
-        string ExecutablePath = string.Empty;
+        string DevelopmentExecutablePath = string.Empty;
+        string DebugExecutablePath = string.Empty;
+
         if (OperatingSystem.IsWindows())
         {
-            ExecutablePath = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Win64", "UnrealEditor.exe");
+            string Win64Dir = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Win64");
+            DevelopmentExecutablePath = Path.Combine(Win64Dir, "UnrealEditor.exe");
+            DebugExecutablePath = Path.Combine(Win64Dir, "UnrealEditor-Win64-DebugGame.exe");
         }
         else if (OperatingSystem.IsMacOS())
         {
-            ExecutablePath = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Mac", "UnrealEditor");
+            string MacDir = Path.Combine(Unreal.EngineDirectory.FullName, "Binaries", "Mac");
+            DevelopmentExecutablePath = Path.Combine(MacDir, "UnrealEditor");
+            DebugExecutablePath = Path.Combine(MacDir, "UnrealEditor-Mac-DebugGame");
         }
 
         string ProjectParam = buildCommand.GetUProjectFile().FullName;
         string CommandLineArgs = $"\"{ProjectParam}\"";
 
-        Root.Profiles.ProfileName = new Profile
+        Root.Profiles.Development = new Profile
         {
-            CommandName = "Executable",
-            ExecutablePath = ExecutablePath,
+            CommandName = ExecutableVerb,
+            ExecutablePath = DevelopmentExecutablePath,
             CommandLineArgs = CommandLineArgs
         };
-        
+
+        Root.Profiles.Debug = new Profile
+        {
+            CommandName = ExecutableVerb,
+            ExecutablePath = DebugExecutablePath,
+            CommandLineArgs = CommandLineArgs
+        };
+
         JsonSerializerOptions Options = new JsonSerializerOptions
         {
             WriteIndented = true,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
         string JsonString = JsonSerializer.Serialize(Root, Options);
@@ -50,10 +65,14 @@ public class Root
     [JsonPropertyName("profiles")]
     public Profiles Profiles { get; set; } = new Profiles();
 }
+
 public class Profiles
 {
-    [JsonPropertyName("UnrealSharp")]
-    public Profile ProfileName { get; set; } = new Profile();
+    [JsonPropertyName("Development")]
+    public Profile Development { get; set; } = new Profile();
+
+    [JsonPropertyName("Debug")]
+    public Profile Debug { get; set; } = new Profile();
 }
 
 public class Profile

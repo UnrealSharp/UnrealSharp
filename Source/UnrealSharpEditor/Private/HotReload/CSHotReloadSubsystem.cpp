@@ -74,7 +74,7 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 	bool bHasPendingChanges = false;
 	for (const UCSManagedAssembly* Assembly : PendingModifiedAssemblies)
 	{
-		if (!IsValid(Assembly) || FCSAssemblyUtilities::IsRuntimeGlueAssembly(Assembly))
+		if (FCSAssemblyUtilities::IsRuntimeGlueAssembly(Assembly))
 		{
 			continue;
 		}
@@ -88,6 +88,8 @@ bool UCSHotReloadSubsystem::HasPendingHotReloadChanges() const
 
 void UCSHotReloadSubsystem::PerformHotReload()
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::PerformHotReload)
+	
 	if (FPlayWorldCommandCallbacks::IsInPIE() || FPlayWorldCommandCallbacks::IsInSIE())
 	{
 		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Cannot perform C# hot reload while in PIE or SIE.");
@@ -127,7 +129,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (!FCSHotReloadUtilities::RecompileDirtyProjects(AssembliesSortedByDependencies, ExceptionMessage))
 	{
 		CurrentHotReloadStatus = FailedToCompile;
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Reload Failed")));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(ExceptionMessage), FText::FromString(TEXT("C# Compilation Failed")));
 		return;
 	}
 	
@@ -153,9 +155,12 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
 	}
-
-	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
-	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+	
+	if (ReloadedTypes.Num() > 0)
+	{
+		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+	}
 	
 	CurrentHotReloadStatus = Inactive;
 	bDetectedNewManagedType = false;
@@ -189,6 +194,8 @@ void UCSHotReloadSubsystem::OnInterfaceRebuilt(UCSInterface* NewInterface)
 
 void UCSHotReloadSubsystem::AppendPendingFileChange(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::AppendPendingFileChange)
+	
 	TArray<FFileChangeData>& PendingChangesForProject = PendingFileChanges.FindOrAdd(ProjectName);
 	
 	for (const FFileChangeData& ChangeData : ChangedFiles)
@@ -326,6 +333,8 @@ void UCSHotReloadSubsystem::ResumeHotReload()
 
 void UCSHotReloadSubsystem::HandleScriptFileChanges(const TArray<FFileChangeData>& ChangedFiles, FName ProjectName)
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSHotReloadSubsystem::HandleScriptFileChanges)
+	
 	if (IsHotReloading())
 	{
 		return;
