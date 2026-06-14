@@ -62,27 +62,17 @@ public class Plugin
         StartupModule();
         return true;
     }
-
-    // Gets first module in the list
-    WeakReference<IModuleInterface>? Module => _moduleInterfaces.Count == 0 ? null : new WeakReference<IModuleInterface>(_moduleInterfaces[0]);
     
-    // Gets the module of type
-    WeakReference<IModuleInterface>? GetModule(Type moduleType)
+    public T GetModule<T>() where T : class, IModuleInterface
     {
-        WeakReference<IModuleInterface>? foundModule = null;
+        T? module = _moduleInterfaces.OfType<T>().FirstOrDefault();
 
-        foreach (IModuleInterface moduleInterface in _moduleInterfaces)
+        if (module == null)
         {
-            if (moduleInterface.GetType() != moduleType)
-            {
-                continue;
-            }
-
-            foundModule = new WeakReference<IModuleInterface>(moduleInterface);
-            break;
+            throw new Exception($"Module of type '{typeof(T).Name}' not found.");
         }
 
-        return foundModule;
+        return module;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -107,9 +97,9 @@ public class Plugin
         foreach (Func<IModuleInterface> moduleInterfaceInitFunc in _moduleInitFunctions)
         {
             IModuleInterface moduleInterface = moduleInterfaceInitFunc();
-            moduleInterface.StartupModule();
-            
             _moduleInterfaces.Add(moduleInterface);
+            
+            moduleInterface.StartupModule();
         }
     }
     

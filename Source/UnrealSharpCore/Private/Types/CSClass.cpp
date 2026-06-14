@@ -62,6 +62,7 @@ void UCSClass::PostDuplicate(bool bDuplicateForPIE)
 	if (!IsValid(ManagedClass))
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("PostDuplicate called on a class that is not a UCSClass: %s"), *GetName());
+		return;
 	}
 	
 	SetManagedTypeDefinition(ManagedClass->GetManagedTypeDefinition());
