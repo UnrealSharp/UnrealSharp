@@ -30,4 +30,8 @@ public:
 	// Needs restart to take effect.
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Type Generation")
 	bool bSuffixGeneratedTypes = false;
+	
+	// The maximum allowed character length for C# .csproj names
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Projects")
+	int32 MaxProjectNameLength = 32;
 };

@@ -9,6 +9,7 @@
 #include "UnrealSharpEditor.h"
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
+#include "CSUnrealSharpEditorSettings.h"
 
 #define LOCTEXT_NAMESPACE "UnrealSharpEditor"
 
@@ -446,6 +447,18 @@ FText SCSNewProjectDialog::GetValidationError() const
 	if (FPaths::MakeValidFileName(Filename) != Filename)
 	{
 		return LOCTEXT("NameErrorInvalidFile", "The name contains characters that are not allowed in a file name.");
+	}
+	
+	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
+	const int32 MaxLength = Settings->MaxProjectNameLength;
+
+	if (Filename.Len() > MaxLength)
+	{
+		return FText::Format(
+			LOCTEXT("ProjectNameTooLong", "Project name is too long. The maximum allowed length is {0} characters (current length: {1})."),
+			FText::AsNumber(MaxLength),
+			FText::AsNumber(Filename.Len())
+		);
 	}
 
 	if (UnrealSharp::Project::IsAssemblyInAnyManifest(Name))
