@@ -1,34 +1,44 @@
-﻿#include "Export/FInstancedStructExporter.h"
+﻿#include "CSBindsManager.h"
 #include "StructUtils/InstancedStruct.h"
 
-const UScriptStruct* UFInstancedStructExporter::GetNativeStruct(const FInstancedStruct& Struct)
+DECLARE_UNREALSHARP_EXPORTER(FInstancedStructExporter)
 {
-	check(&Struct != nullptr);
-	return Struct.GetScriptStruct();
-}
+	const UScriptStruct* GetNativeStruct(const FInstancedStruct& Struct)
+	{
+		check(&Struct != nullptr);
+		return Struct.GetScriptStruct();
+	}
 
-void UFInstancedStructExporter::NativeInit(FInstancedStruct& Struct)
-{
-	std::construct_at(&Struct);
-}
+	void NativeInit(FInstancedStruct& Struct)
+	{
+		std::construct_at(&Struct);
+	}
 
-void UFInstancedStructExporter::NativeCopy(FInstancedStruct& Dest, const FInstancedStruct& Src)
-{
-	std::construct_at(&Dest, Src);
-}
+	void NativeCopy(FInstancedStruct& Dest, const FInstancedStruct& Src)
+	{
+		std::construct_at(&Dest, Src);
+	}
 
-void UFInstancedStructExporter::NativeDestroy(FInstancedStruct& Struct)
-{
-	std::destroy_at(&Struct);
-}
+	void NativeDestroy(FInstancedStruct& Struct)
+	{
+		std::destroy_at(&Struct);
+	}
 
-void UFInstancedStructExporter::InitializeAs(FInstancedStruct& Struct, const UScriptStruct* ScriptStruct, const uint8* StructData)
-{
-	check(ScriptStruct != nullptr);
-	Struct.InitializeAs(ScriptStruct, StructData);
-}
+	void InitializeAs(FInstancedStruct& Struct, const UScriptStruct* ScriptStruct, const uint8* StructData)
+	{
+		check(ScriptStruct != nullptr);
+		Struct.InitializeAs(ScriptStruct, StructData);
+	}
 
-const uint8* UFInstancedStructExporter::GetMemory(const FInstancedStruct& Struct)
-{
-	return Struct.GetMemory();
+	const uint8* GetMemory(const FInstancedStruct& Struct)
+	{
+		return Struct.GetMemory();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetNativeStruct)
+	EXPORT_UNREALSHARP_FUNCTION(NativeInit)
+	EXPORT_UNREALSHARP_FUNCTION(NativeCopy)
+	EXPORT_UNREALSHARP_FUNCTION(NativeDestroy)
+	EXPORT_UNREALSHARP_FUNCTION(InitializeAs)
+	EXPORT_UNREALSHARP_FUNCTION(GetMemory)
 }

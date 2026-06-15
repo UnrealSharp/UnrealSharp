@@ -1,37 +1,47 @@
-﻿#include "Export/FRandomStreamExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UFRandomStreamExporter::GenerateNewSeed(FRandomStream* RandomStream)
+DECLARE_UNREALSHARP_EXPORTER(FRandomStreamExporter)
 {
-	RandomStream->GenerateNewSeed();
-}
+	void GenerateNewSeed(FRandomStream* RandomStream)
+	{
+		RandomStream->GenerateNewSeed();
+	}
 
-float UFRandomStreamExporter::GetFraction(FRandomStream* RandomStream)
-{
-	return RandomStream->GetFraction();
-}
+	float GetFraction(FRandomStream* RandomStream)
+	{
+		return RandomStream->GetFraction();
+	}
 
-uint32 UFRandomStreamExporter::GetUnsignedInt(FRandomStream* RandomStream)
-{
-	return RandomStream->GetUnsignedInt();
-}
+	uint32 GetUnsignedInt(FRandomStream* RandomStream)
+	{
+		return RandomStream->GetUnsignedInt();
+	}
 
-FVector UFRandomStreamExporter::GetUnitVector(FRandomStream* RandomStream)
-{
-	return RandomStream->GetUnitVector();
-}
+	FVector GetUnitVector(FRandomStream* RandomStream)
+	{
+		return RandomStream->GetUnitVector();
+	}
 
-int UFRandomStreamExporter::RandRange(FRandomStream* RandomStream, int32 Min, int32 Max)
-{
-	return RandomStream->RandRange(Min, Max);
-}
+	int RandRange(FRandomStream* RandomStream, int32 Min, int32 Max)
+	{
+		return RandomStream->RandRange(Min, Max);
+	}
 
-FVector UFRandomStreamExporter::VRandCone(FRandomStream* RandomStream, FVector Dir, float ConeHalfAngleRad)
-{
-	return RandomStream->VRandCone(Dir, ConeHalfAngleRad);
-}
+	FVector VRandCone(FRandomStream* RandomStream, FVector Dir, float ConeHalfAngleRad)
+	{
+		return RandomStream->VRandCone(Dir, ConeHalfAngleRad);
+	}
 
-FVector UFRandomStreamExporter::VRandCone2(FRandomStream* RandomStream, FVector Dir, float HorizontalConeHalfAngleRad, float VerticalConeHalfAngleRad)
-{
-	return RandomStream->VRandCone(Dir, HorizontalConeHalfAngleRad, VerticalConeHalfAngleRad);
-}
+	FVector VRandCone2(FRandomStream* RandomStream, FVector Dir, float HorizontalConeHalfAngleRad, float VerticalConeHalfAngleRad)
+	{
+		return RandomStream->VRandCone(Dir, HorizontalConeHalfAngleRad, VerticalConeHalfAngleRad);
+	}
 
+	EXPORT_UNREALSHARP_FUNCTION(GenerateNewSeed)
+	EXPORT_UNREALSHARP_FUNCTION(GetFraction)
+	EXPORT_UNREALSHARP_FUNCTION(GetUnsignedInt)
+	EXPORT_UNREALSHARP_FUNCTION(GetUnitVector)
+	EXPORT_UNREALSHARP_FUNCTION(RandRange)
+	EXPORT_UNREALSHARP_FUNCTION(VRandCone)
+	EXPORT_UNREALSHARP_FUNCTION(VRandCone2)
+}

@@ -1,41 +1,47 @@
-﻿#include "Export/UWorldExporter.h"
-
-#include "CSManager.h"
+﻿#include "CSManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-void UUWorldExporter::SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle)
+DECLARE_UNREALSHARP_EXPORTER(UWorldExporter)
 {
-	FTimerDynamicDelegate Delegate;
-	Delegate.BindUFunction(Object, FunctionName);
-	*TimerHandle = UKismetSystemLibrary::K2_SetTimerDelegate(Delegate, Rate, Loop, false, InitialDelay);
-}
-
-void UUWorldExporter::InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle)
-{
-	if (!IsValid(Object))
+	void SetTimer(UObject* Object, FName FunctionName, float Rate, bool Loop, float InitialDelay, FTimerHandle* TimerHandle)
 	{
-		return;
+		FTimerDynamicDelegate Delegate;
+		Delegate.BindUFunction(Object, FunctionName);
+		*TimerHandle = UKismetSystemLibrary::K2_SetTimerDelegate(Delegate, Rate, Loop, false, InitialDelay);
 	}
 
-	Object->GetWorld()->GetTimerManager().ClearTimer(*TimerHandle);
-}
-
-void* UUWorldExporter::GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)
-{
-	if (!IsValid(WorldContextObject))
+	void InvalidateTimer(UObject* Object, FTimerHandle* TimerHandle)
 	{
-		return nullptr;
+		if (!IsValid(Object))
+		{
+			return;
+		}
+
+		Object->GetWorld()->GetTimerManager().ClearTimer(*TimerHandle);
+	}
+
+	void* GetWorldSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)
+	{
+		if (!IsValid(WorldContextObject))
+		{
+			return nullptr;
+		}
+	
+		UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
+		return UCSManager::Get().FindManagedObject(WorldSubsystem);
+	}
+
+	void* GetNetMode(UObject* WorldContextObject)
+	{
+		if (!IsValid(WorldContextObject))
+		{
+			return nullptr;
+		}
+		return (void*)WorldContextObject->GetWorld()->GetNetMode();
 	}
 	
-	UWorldSubsystem* WorldSubsystem = WorldContextObject->GetWorld()->GetSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(WorldSubsystem);
-}
-
-void* UUWorldExporter::GetNetMode(UObject* WorldContextObject)
-{
-	if (!IsValid(WorldContextObject))
-	{
-		return nullptr;
-	}
-	return (void*)WorldContextObject->GetWorld()->GetNetMode();
+	EXPORT_UNREALSHARP_FUNCTION(SetTimer)
+	EXPORT_UNREALSHARP_FUNCTION(InvalidateTimer)
+	EXPORT_UNREALSHARP_FUNCTION(GetWorldSubsystem)
+	EXPORT_UNREALSHARP_FUNCTION(GetNetMode)
 }

@@ -1,14 +1,20 @@
-﻿#include "Export/FSoftObjectPtrExporter.h"
-
+﻿#include "CSBindsManager.h"
 #include "CSManager.h"
 
-void* UFSoftObjectPtrExporter::LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr)
+DECLARE_UNREALSHARP_EXPORTER(FSoftObjectPtrExporter)
 {
-	if (SoftObjectPtr->IsNull())
+	void* LoadSynchronous(const TSoftObjectPtr<UObject>* SoftObjectPtr)
 	{
-		return nullptr;
+		if (SoftObjectPtr->IsNull())
+		{
+			return nullptr;
+		}
+	
+		UObject* LoadedObject = SoftObjectPtr->LoadSynchronous();
+		return UCSManager::Get().FindManagedObject(LoadedObject);
 	}
 	
-	UObject* LoadedObject = SoftObjectPtr->LoadSynchronous();
-	return UCSManager::Get().FindManagedObject(LoadedObject);
+	EXPORT_UNREALSHARP_FUNCTION(LoadSynchronous)
 }
+
+

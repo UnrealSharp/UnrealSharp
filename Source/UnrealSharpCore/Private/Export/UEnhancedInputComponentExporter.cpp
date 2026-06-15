@@ -1,22 +1,28 @@
-﻿#include "Export/UEnhancedInputComponentExporter.h"
+﻿#include "CSBindsManager.h"
 #include "EnhancedInputComponent.h"
 
-bool UUEnhancedInputComponentExporter::BindAction(UEnhancedInputComponent* InputComponent, UInputAction* InputAction, ETriggerEvent TriggerEvent, UObject* Object, const FName FunctionName, uint32* OutHandle)
+DECLARE_UNREALSHARP_EXPORTER(UEnhancedInputComponentExporter)
 {
-	if (!IsValid(InputComponent) || !IsValid(InputAction))
+	bool BindAction(UEnhancedInputComponent* InputComponent, UInputAction* InputAction, ETriggerEvent TriggerEvent, UObject* Object, const FName FunctionName, uint32* OutHandle)
 	{
-		return false;
-	}
-	*OutHandle = InputComponent->BindAction(InputAction, TriggerEvent, Object, FunctionName).GetHandle();
-	return true;
-}
-
-bool UUEnhancedInputComponentExporter::RemoveBindingByHandle(UEnhancedInputComponent* InputComponent, const uint32 Handle)
-{
-	if (!IsValid(InputComponent))
-	{
-		return false;
+		if (!IsValid(InputComponent) || !IsValid(InputAction))
+		{
+			return false;
+		}
+		*OutHandle = InputComponent->BindAction(InputAction, TriggerEvent, Object, FunctionName).GetHandle();
+		return true;
 	}
 
-	return InputComponent->RemoveBindingByHandle(Handle);
+	bool RemoveBindingByHandle(UEnhancedInputComponent* InputComponent, const uint32 Handle)
+	{
+		if (!IsValid(InputComponent))
+		{
+			return false;
+		}
+
+		return InputComponent->RemoveBindingByHandle(Handle);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(BindAction)
+	EXPORT_UNREALSHARP_FUNCTION(RemoveBindingByHandle)
 }

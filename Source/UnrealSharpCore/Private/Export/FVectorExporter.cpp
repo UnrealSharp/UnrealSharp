@@ -1,6 +1,11 @@
-﻿#include "Export/FVectorExporter.h"
+﻿#include "CSBindsManager.h"
 
-FVector UFVectorExporter::FromRotator(FRotator Rotator)
+DECLARE_UNREALSHARP_EXPORTER(FVectorExporter)
 {
-	return Rotator.Vector();
+	FVector FromRotator(FRotator Rotator)
+	{
+		return Rotator.Vector();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(FromRotator)
 }

@@ -1,96 +1,102 @@
-﻿#include "Export/UFunctionExporter.h"
-#include "UnrealSharpCore.h"
+﻿#include "CSBindsManager.h"
 #include "Utilities/CSClassUtilities.h"
 
-uint16 UUFunctionExporter::GetNativeFunctionParamsSize(const UFunction* NativeFunction)
+DECLARE_UNREALSHARP_EXPORTER(UFunctionExporter)
 {
-	check(NativeFunction);
-	return NativeFunction->ParmsSize;
-}
-
-UFunction* UUFunctionExporter::CreateNativeFunctionCustomStructSpecialization(UFunction* NativeFunction,
-	FProperty** CustomStructParams, UScriptStruct** CustomStructs)
-{
-	UClass* Outer = NativeFunction->GetOuterUClass();
-	UFunction* Specialization = NewObject<UFunction>(Outer, UFunction::StaticClass());
-	Specialization->FunctionFlags = NativeFunction->FunctionFlags;
-	Specialization->SetSuperStruct(NativeFunction);
-	Specialization->SetNativeFunc(NativeFunction->GetNativeFunc());
-
-	TArray<FProperty*> FunctionProperties;
-	for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
+	uint16 GetNativeFunctionParamsSize(const UFunction* NativeFunction)
 	{
-		FProperty* Property = *PropIt;
-		FProperty* OutProperty;
-		if(Property == *CustomStructParams)
+		check(NativeFunction);
+		return NativeFunction->ParmsSize;
+	}
+
+	UFunction* CreateNativeFunctionCustomStructSpecialization(UFunction* NativeFunction,
+		FProperty** CustomStructParams, UScriptStruct** CustomStructs)
+	{
+		UClass* Outer = NativeFunction->GetOuterUClass();
+		UFunction* Specialization = NewObject<UFunction>(Outer, UFunction::StaticClass());
+		Specialization->FunctionFlags = NativeFunction->FunctionFlags;
+		Specialization->SetSuperStruct(NativeFunction);
+		Specialization->SetNativeFunc(NativeFunction->GetNativeFunc());
+
+		TArray<FProperty*> FunctionProperties;
+		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
 		{
-			FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName(), Property->GetFlags());
-			UScriptStruct* Struct = *CustomStructs++;
-			CustomStructParam->Struct = Struct;
-			EPropertyFlags Flags = Property->GetPropertyFlags() | CPF_BlueprintVisible | CPF_BlueprintReadOnly;
-			if (const auto CppStructOps = Struct->GetCppStructOps())
+			FProperty* Property = *PropIt;
+			FProperty* OutProperty;
+			if(Property == *CustomStructParams)
 			{
-				const auto Capabilities = CppStructOps->GetCapabilities();
-				if(Capabilities.HasZeroConstructor)
+				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName(), Property->GetFlags());
+				UScriptStruct* Struct = *CustomStructs++;
+				CustomStructParam->Struct = Struct;
+				EPropertyFlags Flags = Property->GetPropertyFlags() | CPF_BlueprintVisible | CPF_BlueprintReadOnly;
+				if (const auto CppStructOps = Struct->GetCppStructOps())
 				{
-					Flags |= CPF_ZeroConstructor;
+					const auto Capabilities = CppStructOps->GetCapabilities();
+					if(Capabilities.HasZeroConstructor)
+					{
+						Flags |= CPF_ZeroConstructor;
+					}
+					else
+					{
+						Flags &= ~(CPF_ZeroConstructor);
+					}
+					if(Capabilities.IsPlainOldData)
+					{
+						Flags |= CPF_IsPlainOldData;
+					}
+					else
+					{
+						Flags &= ~(CPF_IsPlainOldData);
+					}
 				}
 				else
 				{
-					Flags &= ~(CPF_ZeroConstructor);
+					Flags &= ~(CPF_ZeroConstructor | CPF_IsPlainOldData);
 				}
-				if(Capabilities.IsPlainOldData)
-				{
-					Flags |= CPF_IsPlainOldData;
-				}
-				else
-				{
-					Flags &= ~(CPF_IsPlainOldData);
-				}
+				CustomStructParam->PropertyFlags = Flags;
+				OutProperty = CastField<FProperty>(CustomStructParam);
+				CustomStructParams++;
 			}
 			else
 			{
-				Flags &= ~(CPF_ZeroConstructor | CPF_IsPlainOldData);
+				OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~EInternalObjectFlags::Native));
+				OutProperty->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
+				OutProperty->Next = nullptr;
 			}
-			CustomStructParam->PropertyFlags = Flags;
-			OutProperty = CastField<FProperty>(CustomStructParam);
-			CustomStructParams++;
+			Specialization->Script.Add(OutProperty->PropertyFlags & CPF_OutParm ? EX_LocalOutVariable : EX_LocalVariable);
+			Specialization->Script.Append((uint8*)&OutProperty, sizeof(FProperty*));
+			FunctionProperties.Add(OutProperty);
 		}
-		else
+
+		for(int32 i = FunctionProperties.Num(); i-- > 0;)
 		{
-			OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~EInternalObjectFlags::Native));
-			OutProperty->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
-			OutProperty->Next = nullptr;
+			Specialization->AddCppProperty(FunctionProperties[i]);
 		}
-		Specialization->Script.Add(OutProperty->PropertyFlags & CPF_OutParm ? EX_LocalOutVariable : EX_LocalVariable);
-		Specialization->Script.Append((uint8*)&OutProperty, sizeof(FProperty*));
-		FunctionProperties.Add(OutProperty);
+
+		Specialization->Next = Outer->Children;
+		Outer->Children = Specialization;
+
+		Specialization->StaticLink(true);
+
+		return Specialization;
 	}
 
-	for(int32 i = FunctionProperties.Num(); i-- > 0;)
+	void InitializeFunctionParams(UFunction* NativeFunction, void* Params)
 	{
-		Specialization->AddCppProperty(FunctionProperties[i]);
+		check(NativeFunction && Params);
+		//make sure we only initialize the actual function parameters.
+		//if the function is a BP prototype calls to any Nodes are also contained as parameters.
+		//if this check is not done we would initialize past our Params memory and cause a memory corruption
+		//the assumption is that our parameters are always at front.
+		uint8 ParamsLeft = NativeFunction->NumParms;
+		for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && ParamsLeft; ++PropIt, --ParamsLeft)
+		{
+			PropIt->InitializeValue_InContainer(Params);
+		}
 	}
-
-	Specialization->Next = Outer->Children;
-	Outer->Children = Specialization;
-
-	Specialization->StaticLink(true);
-
-	return Specialization;
-}
-
-void UUFunctionExporter::InitializeFunctionParams(UFunction* NativeFunction, void* Params)
-{
-	check(NativeFunction && Params);
-	//make sure we only initialize the actual function parameters.
-	//if the function is a BP prototype calls to any Nodes are also contained as parameters.
-	//if this check is not done we would initialize past our Params memory and cause a memory corruption
-	//the assumption is that our parameters are always at front.
-	uint8 ParamsLeft = NativeFunction->NumParms;
-	for (TFieldIterator<FProperty> PropIt(NativeFunction); PropIt && ParamsLeft; ++PropIt, --ParamsLeft)
-	{
-		PropIt->InitializeValue_InContainer(Params);
-	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetNativeFunctionParamsSize)
+	EXPORT_UNREALSHARP_FUNCTION(CreateNativeFunctionCustomStructSpecialization)
+	EXPORT_UNREALSHARP_FUNCTION(InitializeFunctionParams)
 }
 

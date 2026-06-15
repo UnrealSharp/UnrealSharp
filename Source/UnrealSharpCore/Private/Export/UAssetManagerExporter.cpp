@@ -1,9 +1,13 @@
-﻿#include "Export/UAssetManagerExporter.h"
-#include "CSManager.h"
+﻿#include "CSManager.h"
 #include "Engine/AssetManager.h"
 
-void* UUAssetManagerExporter::GetAssetManager()
+DECLARE_UNREALSHARP_EXPORTER(UAssetManagerExporter)
 {
-	UAssetManager& AssetManager = UAssetManager::Get();
-	return UCSManager::Get().FindManagedObject(&AssetManager);
+	void* GetAssetManager()
+	{
+		UAssetManager& AssetManager = UAssetManager::Get();
+		return UCSManager::Get().FindManagedObject(&AssetManager);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetAssetManager)
 }

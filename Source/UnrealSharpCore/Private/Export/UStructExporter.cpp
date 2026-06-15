@@ -1,7 +1,12 @@
-﻿#include "Export/UStructExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UUStructExporter::InitializeStruct(UStruct* Struct, void* Data)
+DECLARE_UNREALSHARP_EXPORTER(UStructExporter)
 {
-	check(Struct && Data);
-	Struct->InitializeStruct(Data);
+	void InitializeStruct(UStruct* Struct, void* Data)
+	{
+		check(Struct && Data);
+		Struct->InitializeStruct(Data);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(InitializeStruct)
 }

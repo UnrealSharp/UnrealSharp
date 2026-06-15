@@ -1,32 +1,39 @@
-﻿#include "Export/IRefCountedObjectExporter.h"
+﻿#include "CSBindsManager.h"
 
-uint32 UIRefCountedObjectExporter::GetRefCount(const IRefCountedObject* Object)
+DECLARE_UNREALSHARP_EXPORTER(IRefCountedObjectExporter)
 {
-	if (!Object || Object->GetRefCount() == 0)
+	uint32 GetRefCount(const IRefCountedObject* Object)
 	{
-		return 0;
+		if (!Object || Object->GetRefCount() == 0)
+		{
+			return 0;
+		}
+	
+		return Object->GetRefCount();
+	}
+
+	uint32 AddRef(const IRefCountedObject* Object)
+	{
+		if (!Object || Object->GetRefCount() == 0)
+		{
+			return 0;
+		}
+	
+		(void)Object->AddRef();
+		return Object->GetRefCount();
+	}
+
+	uint32 Release(const IRefCountedObject* Object)
+	{
+		if (!Object || Object->GetRefCount() == 0)
+		{
+			return 0;
+		}
+	
+		return Object->Release();
 	}
 	
-	return Object->GetRefCount();
-}
-
-uint32 UIRefCountedObjectExporter::AddRef(const IRefCountedObject* Object)
-{
-	if (!Object || Object->GetRefCount() == 0)
-	{
-		return 0;
-	}
-	
-	(void)Object->AddRef();
-	return Object->GetRefCount();
-}
-
-uint32 UIRefCountedObjectExporter::Release(const IRefCountedObject* Object)
-{
-	if (!Object || Object->GetRefCount() == 0)
-	{
-		return 0;
-	}
-	
-	return Object->Release();
+	EXPORT_UNREALSHARP_FUNCTION(GetRefCount)
+	EXPORT_UNREALSHARP_FUNCTION(AddRef)
+	EXPORT_UNREALSHARP_FUNCTION(Release)
 }

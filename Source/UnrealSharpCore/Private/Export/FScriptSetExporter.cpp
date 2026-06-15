@@ -1,52 +1,71 @@
-﻿#include "Export/FScriptSetExporter.h"
+﻿#include "CSBindsManager.h"
 
-bool UFScriptSetExporter::IsValidIndex(FScriptSet* ScriptSet, int32 Index)
+DECLARE_UNREALSHARP_EXPORTER(FScriptSetExporter)
 {
-	return ScriptSet->IsValidIndex(Index);
-}
+	using FGetKeyHash = uint32(*)(const void*);
+	using FEqualityFn = bool(*)(const void*, const void*);
+	using FConstructFn = void(*)(void*);
+	using FDestructFn = void(*)(void*);
+	
+	bool IsValidIndex(FScriptSet* ScriptSet, int32 Index)
+	{
+		return ScriptSet->IsValidIndex(Index);
+	}
 
-int UFScriptSetExporter::Num(FScriptSet* ScriptSet)
-{
-	int Num = ScriptSet->Num();
-	return Num;
-}
+	int Num(FScriptSet* ScriptSet)
+	{
+		int Num = ScriptSet->Num();
+		return Num;
+	}
 
-int UFScriptSetExporter::GetMaxIndex(FScriptSet* ScriptSet)
-{
-	return ScriptSet->GetMaxIndex();
-}
+	int GetMaxIndex(FScriptSet* ScriptSet)
+	{
+		return ScriptSet->GetMaxIndex();
+	}
 
-void* UFScriptSetExporter::GetData(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
-{
-	return ScriptSet->GetData(Index, Property->SetLayout);
-}
+	void* GetData(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
+	{
+		return ScriptSet->GetData(Index, Property->SetLayout);
+	}
 
-void UFScriptSetExporter::Empty(int Slack, FScriptSet* ScriptSet, FSetProperty* Property)
-{
-	return ScriptSet->Empty(Slack, Property->SetLayout);
-}
+	void Empty(int Slack, FScriptSet* ScriptSet, FSetProperty* Property)
+	{
+		return ScriptSet->Empty(Slack, Property->SetLayout);
+	}
 
-void UFScriptSetExporter::RemoveAt(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
-{
-	return ScriptSet->RemoveAt(Index, Property->SetLayout);
-}
+	void RemoveAt(int Index, FScriptSet* ScriptSet, FSetProperty* Property)
+	{
+		return ScriptSet->RemoveAt(Index, Property->SetLayout);
+	}
 
-int UFScriptSetExporter::AddUninitialized(FScriptSet* ScriptSet, FSetProperty* Property)
-{
-	return ScriptSet->AddUninitialized(Property->SetLayout);
-}
+	int AddUninitialized(FScriptSet* ScriptSet, FSetProperty* Property)
+	{
+		return ScriptSet->AddUninitialized(Property->SetLayout);
+	}
 
-void UFScriptSetExporter::Add(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element,FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn)
-{
-	ScriptSet->Add(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn, DestructFn);
-}
+	void Add(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn, FDestructFn DestructFn)
+	{
+		ScriptSet->Add(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn, DestructFn);
+	}
 
-int32 UFScriptSetExporter::FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn)
-{
-	return ScriptSet->FindOrAdd(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn);
-}
+	int32 FindOrAdd(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn, FConstructFn ConstructFn)
+	{
+		return ScriptSet->FindOrAdd(Element, Property->SetLayout, GetKeyHash, EqualityFn, ConstructFn);
+	}
 
-int UFScriptSetExporter::FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn)
-{
-	return ScriptSet->FindIndex(Element, Property->SetLayout, GetKeyHash, EqualityFn);
+	int FindIndex(FScriptSet* ScriptSet, FSetProperty* Property, const void* Element, FGetKeyHash GetKeyHash, FEqualityFn EqualityFn)
+	{
+		return ScriptSet->FindIndex(Element, Property->SetLayout, GetKeyHash, EqualityFn);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(IsValidIndex)
+	EXPORT_UNREALSHARP_FUNCTION(Num)
+	EXPORT_UNREALSHARP_FUNCTION(GetMaxIndex)
+	EXPORT_UNREALSHARP_FUNCTION(GetData)
+	EXPORT_UNREALSHARP_FUNCTION(Empty)
+	EXPORT_UNREALSHARP_FUNCTION(RemoveAt)
+	EXPORT_UNREALSHARP_FUNCTION(AddUninitialized)
+	EXPORT_UNREALSHARP_FUNCTION(Add)
+	EXPORT_UNREALSHARP_FUNCTION(FindOrAdd)
+	EXPORT_UNREALSHARP_FUNCTION(FindIndex)
 }

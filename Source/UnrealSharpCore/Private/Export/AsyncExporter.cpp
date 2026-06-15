@@ -1,23 +1,30 @@
-﻿#include "Export/AsyncExporter.h"
+﻿#include "CSBindsManager.h"
 #include "CSManagedDelegate.h"
+#include "CSManagedGCHandle.h"
 
-void UAsyncExporter::RunOnThread(TWeakObjectPtr<UObject> WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
+DECLARE_UNREALSHARP_EXPORTER(AsyncExporter)
 {
-	AsyncTask(Thread, [WorldContextObject, DelegateHandle]()
+	void RunOnThread(TWeakObjectPtr<UObject> WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
 	{
-		FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle);
-		
-		if (!WorldContextObject.IsValid())
+		AsyncTask(Thread, [WorldContextObject, DelegateHandle]()
 		{
-			ManagedDelegate.Dispose();
-			return;
-		}
+			FCSManagedDelegate ManagedDelegate = FGCHandle(DelegateHandle);
 		
-		ManagedDelegate.Invoke(WorldContextObject.Get());
-	});
-}
+			if (!WorldContextObject.IsValid())
+			{
+				ManagedDelegate.Dispose();
+				return;
+			}
+		
+			ManagedDelegate.Invoke(WorldContextObject.Get());
+		});
+	}
 
-int UAsyncExporter::GetCurrentNamedThread()
-{
-	return FTaskGraphInterface::Get().GetCurrentThreadIfKnown();
+	int GetCurrentNamedThread()
+	{
+		return FTaskGraphInterface::Get().GetCurrentThreadIfKnown();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(RunOnThread)
+	EXPORT_UNREALSHARP_FUNCTION(GetCurrentNamedThread)
 }

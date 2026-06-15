@@ -2,9 +2,16 @@
 
 #include "CSExportedFunction.h"
 
-// Native bound function. If you want to bind a function to C#, use this macro.
-// The managed delegate signature must match the native function signature + outer name, and all params need to be blittable.
-#define UNREALSHARP_FUNCTION()
+#define DECLARE_UNREALSHARP_EXPORTER(Name) \
+namespace Name { static const FName UnrealSharpBinderName(#Name); } \
+namespace Name
+
+#define EXPORT_UNREALSHARP_FUNCTION(FunctionName) \
+static const FCSExportedFunction ANONYMOUS_VARIABLE(ZUnrealSharpBind_) = FCSExportedFunction( \
+UnrealSharpBinderName, \
+FName(#FunctionName), \
+(void*)&FunctionName, \
+static_cast<int32>(GetFunctionSize(&FunctionName)));
 
 class FCSBindsManager
 {

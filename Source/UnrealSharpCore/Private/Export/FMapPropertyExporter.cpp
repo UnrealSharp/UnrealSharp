@@ -1,11 +1,17 @@
-﻿#include "Export/FMapPropertyExporter.h"
+﻿#include "CSBindsManager.h"
 
-void* UFMapPropertyExporter::GetKey(FMapProperty* MapProperty)
+DECLARE_UNREALSHARP_EXPORTER(FMapPropertyExporter)
 {
-	return MapProperty->KeyProp;
-}
+	void* GetKey(FMapProperty* MapProperty)
+	{
+		return MapProperty->KeyProp;
+	}
 
-void* UFMapPropertyExporter::GetValue(FMapProperty* MapProperty)
-{
-	return MapProperty->ValueProp;
+	void* GetValue(FMapProperty* MapProperty)
+	{
+		return MapProperty->ValueProp;
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetKey)
+	EXPORT_UNREALSHARP_FUNCTION(GetValue)
 }

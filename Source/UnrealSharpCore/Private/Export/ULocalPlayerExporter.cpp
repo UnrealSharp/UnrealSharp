@@ -1,14 +1,17 @@
-﻿#include "Export/ULocalPlayerExporter.h"
+﻿#include "CSManager.h"
 
-#include "CSManager.h"
-
-void* UULocalPlayerExporter::GetLocalPlayerSubsystem(UClass* SubsystemClass, APlayerController* PlayerController)
+DECLARE_UNREALSHARP_EXPORTER(ULocalPlayerExporter)
 {
-	if (!IsValid(PlayerController) || !IsValid(SubsystemClass))
+	void* GetLocalPlayerSubsystem(UClass* SubsystemClass, APlayerController* PlayerController)
 	{
-		return nullptr;
-	}
+		if (!IsValid(PlayerController) || !IsValid(SubsystemClass))
+		{
+			return nullptr;
+		}
 
-	ULocalPlayerSubsystem* LocalPlayerSubsystem = PlayerController->GetLocalPlayer()->GetSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(LocalPlayerSubsystem);
+		ULocalPlayerSubsystem* LocalPlayerSubsystem = PlayerController->GetLocalPlayer()->GetSubsystemBase(SubsystemClass);
+		return UCSManager::Get().FindManagedObject(LocalPlayerSubsystem);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetLocalPlayerSubsystem)
 }

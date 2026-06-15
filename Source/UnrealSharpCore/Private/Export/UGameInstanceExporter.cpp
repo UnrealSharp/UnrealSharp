@@ -1,14 +1,17 @@
-﻿#include "Export/UGameInstanceExporter.h"
+﻿#include "CSManager.h"
 
-#include "CSManager.h"
-
-void* UUGameInstanceExporter::GetGameInstanceSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)
+DECLARE_UNREALSHARP_EXPORTER(UGameInstanceExporter)
 {
-	if (!IsValid(WorldContextObject))
+	void* GetGameInstanceSubsystem(UClass* SubsystemClass, UObject* WorldContextObject)
 	{
-		return nullptr;
+		if (!IsValid(WorldContextObject))
+		{
+			return nullptr;
+		}
+	
+		UGameInstanceSubsystem* GameInstanceSubsystem = WorldContextObject->GetWorld()->GetGameInstance()->GetSubsystemBase(SubsystemClass);
+		return UCSManager::Get().FindManagedObject(GameInstanceSubsystem);
 	}
 	
-	UGameInstanceSubsystem* GameInstanceSubsystem = WorldContextObject->GetWorld()->GetGameInstance()->GetSubsystemBase(SubsystemClass);
-	return UCSManager::Get().FindManagedObject(GameInstanceSubsystem);
+	EXPORT_UNREALSHARP_FUNCTION(GetGameInstanceSubsystem)
 }

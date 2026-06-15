@@ -1,34 +1,46 @@
-#include "Export/FEditorDelegatesExporter.h"
+
 
 #if WITH_EDITOR
 #include "Editor.h"
 #endif
 
-void UFEditorDelegatesExporter::BindEndPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
-{
-#if WITH_EDITOR
-	*DelegateHandle = FEditorDelegates::EndPIE.AddLambda(Delegate);
-#endif
-}
+#include "CSBindsManager.h"
 
-void UFEditorDelegatesExporter::BindStartPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
-{
-#if WITH_EDITOR
-	*DelegateHandle = FEditorDelegates::BeginPIE.AddLambda(Delegate);
-#endif
-}
+using FPIEEvent = void(*)(bool);
 
-void UFEditorDelegatesExporter::UnbindStartPIE(FDelegateHandle DelegateHandle)
+DECLARE_UNREALSHARP_EXPORTER(FEditorDelegatesExporter)
 {
+	void BindEndPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
+	{
 #if WITH_EDITOR
-	FEditorDelegates::BeginPIE.Remove(DelegateHandle);
+		*DelegateHandle = FEditorDelegates::EndPIE.AddLambda(Delegate);
 #endif
-}
+	}
 
-void UFEditorDelegatesExporter::UnbindEndPIE(FDelegateHandle DelegateHandle)
-{
+	void BindStartPIE(FPIEEvent Delegate, FDelegateHandle* DelegateHandle)
+	{
 #if WITH_EDITOR
-	FEditorDelegates::EndPIE.Remove(DelegateHandle);
+		*DelegateHandle = FEditorDelegates::BeginPIE.AddLambda(Delegate);
 #endif
+	}
+
+	void UnbindStartPIE(FDelegateHandle DelegateHandle)
+	{
+#if WITH_EDITOR
+		FEditorDelegates::BeginPIE.Remove(DelegateHandle);
+#endif
+	}
+
+	void UnbindEndPIE(FDelegateHandle DelegateHandle)
+	{
+#if WITH_EDITOR
+		FEditorDelegates::EndPIE.Remove(DelegateHandle);
+#endif
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(BindEndPIE)
+	EXPORT_UNREALSHARP_FUNCTION(BindStartPIE)
+	EXPORT_UNREALSHARP_FUNCTION(UnbindStartPIE)
+	EXPORT_UNREALSHARP_FUNCTION(UnbindEndPIE)
 }
 

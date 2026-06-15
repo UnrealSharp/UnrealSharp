@@ -1,26 +1,35 @@
-﻿#include "Export/FScriptArrayExporter.h"
+﻿#include "CSBindsManager.h"
 
-void* UFScriptArrayExporter::GetData(FScriptArray* Instance)
+DECLARE_UNREALSHARP_EXPORTER(FScriptArrayExporter)
 {
-	return Instance->GetData();
-}
+	void* GetData(FScriptArray* Instance)
+	{
+		return Instance->GetData();
+	}
 
-bool UFScriptArrayExporter::IsValidIndex(FScriptArray* Instance, int32 i)
-{
-	return Instance->IsValidIndex(i);
-}
+	bool IsValidIndex(FScriptArray* Instance, int32 i)
+	{
+		return Instance->IsValidIndex(i);
+	}
 
-void UFScriptArrayExporter::Add(FScriptArray* Instance, int32 Count, int32 NumBytesPerElement, uint32 AlignmentOfElement)
-{
-	Instance->Add(Count, NumBytesPerElement, AlignmentOfElement);
-}
+	void Add(FScriptArray* Instance, int32 Count, int32 NumBytesPerElement, uint32 AlignmentOfElement)
+	{
+		Instance->Add(Count, NumBytesPerElement, AlignmentOfElement);
+	}
 
-int UFScriptArrayExporter::Num(FScriptArray* Instance)
-{
-	return Instance->Num();
-}
+	int Num(FScriptArray* Instance)
+	{
+		return Instance->Num();
+	}
 
-void UFScriptArrayExporter::Destroy(FScriptArray* Instance)
-{
-	Instance->~FScriptArray();
+	void Destroy(FScriptArray* Instance)
+	{
+		Instance->~FScriptArray();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetData)
+	EXPORT_UNREALSHARP_FUNCTION(IsValidIndex)
+	EXPORT_UNREALSHARP_FUNCTION(Add)
+	EXPORT_UNREALSHARP_FUNCTION(Num)
+	EXPORT_UNREALSHARP_FUNCTION(Destroy)
 }

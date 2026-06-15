@@ -1,41 +1,51 @@
-﻿#include "Export/TPersistentObjectPtrExporter.h"
-#include "CSManager.h"
+﻿#include "CSManager.h"
 
-void UTPersistentObjectPtrExporter::FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* InObject)
+DECLARE_UNREALSHARP_EXPORTER(TPersistentObjectPtrExporter)
 {
-	*Path = InObject;
-}
+	void FromObject(TPersistentObjectPtr<FSoftObjectPath>* Path, UObject* InObject)
+	{
+		*Path = InObject;
+	}
 
-void UTPersistentObjectPtrExporter::FromSoftObjectPath(TPersistentObjectPtr<FSoftObjectPath>* Path, const FSoftObjectPath* SoftObjectPath)
-{
-	*Path = *SoftObjectPath;
-}
+	void FromSoftObjectPath(TPersistentObjectPtr<FSoftObjectPath>* Path, const FSoftObjectPath* SoftObjectPath)
+	{
+		*Path = *SoftObjectPath;
+	}
 
-void* UTPersistentObjectPtrExporter::Get(TPersistentObjectPtr<FSoftObjectPath>* Path)
-{
-	UObject* Object = Path->Get();
-	return UCSManager::Get().FindManagedObject(Object);
-}
+	void* Get(TPersistentObjectPtr<FSoftObjectPath>* Path)
+	{
+		UObject* Object = Path->Get();
+		return UCSManager::Get().FindManagedObject(Object);
+	}
 
-void* UTPersistentObjectPtrExporter::GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path)
-{
-	return Path->Get();
-}
+	void* GetNativePointer(TPersistentObjectPtr<FSoftObjectPath>* Path)
+	{
+		return Path->Get();
+	}
 
-void* UTPersistentObjectPtrExporter::GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path)
-{
-	return &Path->GetUniqueID();
-}
+	void* GetUniqueID(TPersistentObjectPtr<FSoftObjectPath>* Path)
+	{
+		return &Path->GetUniqueID();
+	}
 
-bool UTPersistentObjectPtrExporter::Equals(const TPersistentObjectPtr<FSoftObjectPath>* Path, const TPersistentObjectPtr<FSoftObjectPath>* Other)
-{
-	UObject* Object = Path->Get();
-	UObject* OtherObject = Other->Get();
-	return Object == OtherObject;
-}
+	bool Equals(const TPersistentObjectPtr<FSoftObjectPath>* Path, const TPersistentObjectPtr<FSoftObjectPath>* Other)
+	{
+		UObject* Object = Path->Get();
+		UObject* OtherObject = Other->Get();
+		return Object == OtherObject;
+	}
 
-int32 UTPersistentObjectPtrExporter::GetHashCode(const TPersistentObjectPtr<FSoftObjectPath>* Path)
-{
-	return GetTypeHash(Path->GetUniqueID());
+	int32 GetHashCode(const TPersistentObjectPtr<FSoftObjectPath>* Path)
+	{
+		return GetTypeHash(Path->GetUniqueID());
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(FromObject)
+	EXPORT_UNREALSHARP_FUNCTION(FromSoftObjectPath)
+	EXPORT_UNREALSHARP_FUNCTION(Get)
+	EXPORT_UNREALSHARP_FUNCTION(GetNativePointer)
+	EXPORT_UNREALSHARP_FUNCTION(GetUniqueID)
+	EXPORT_UNREALSHARP_FUNCTION(Equals)
+	EXPORT_UNREALSHARP_FUNCTION(GetHashCode)
 }
 

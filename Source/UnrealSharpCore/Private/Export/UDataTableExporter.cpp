@@ -1,11 +1,17 @@
-#include "Export/UDataTableExporter.h"
+#include "CSBindsManager.h"
 
-uint8* UUDataTableExporter::GetRow(const UDataTable* DataTable, FName RowName)
+DECLARE_UNREALSHARP_EXPORTER(UDataTableExporter)
 {
-	if (!IsValid(DataTable))
+	uint8* GetRow(const UDataTable* DataTable, FName RowName)
 	{
-		return nullptr;
-	}
+		if (!IsValid(DataTable))
+		{
+			return nullptr;
+		}
 
-	return DataTable->FindRowUnchecked(RowName);
+		return DataTable->FindRowUnchecked(RowName);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetRow)
 }
+

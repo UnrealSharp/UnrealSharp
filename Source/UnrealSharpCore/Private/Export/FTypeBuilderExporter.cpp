@@ -1,17 +1,13 @@
-#include "Export/FTypeBuilderExporter.h"
 #include "CSManager.h"
-#include "Factories/CSPropertyFactory.h"
 
-void UFTypeBuilderExporter::RegisterManagedType_Native(TCHAR* InFieldName, TCHAR* InNamespace, TCHAR* InAssemblyName, TCHAR* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle)
+DECLARE_UNREALSHARP_EXPORTER(FTypeBuilderExporter)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::RegisterManagedType_Native);
-	
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
-
-	if (!IsValid(Assembly))
+	void RegisterManagedType_Native(TCHAR* InFieldName, TCHAR* InNamespace, TCHAR* InAssemblyName, TCHAR* NewJsonReflectionData, ECSFieldType FieldType, uint8* TypeHandle)
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to find or load assembly: {0}", InAssemblyName);
+		TRACE_CPUPROFILER_EVENT_SCOPE(UFTypeBuilderExporter::RegisterManagedType_Native);
+		UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(InAssemblyName);
+		Assembly->RegisterManagedType(InFieldName, InNamespace, FieldType, TypeHandle, NewJsonReflectionData);
 	}
 	
-	Assembly->RegisterManagedType(InFieldName, InNamespace, FieldType, TypeHandle, NewJsonReflectionData);
+	EXPORT_UNREALSHARP_FUNCTION(RegisterManagedType_Native)
 }

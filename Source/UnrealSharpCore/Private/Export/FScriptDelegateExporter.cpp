@@ -1,24 +1,32 @@
-﻿#include "Export/FScriptDelegateExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UFScriptDelegateExporter::BroadcastDelegate(UObject* Object, FName FunctionName, void* Params)
+DECLARE_UNREALSHARP_EXPORTER(FScriptDelegateExporter)
 {
-	FScriptDelegate Delegate;
-	Delegate.BindUFunction(Object, FunctionName);
-	Delegate.ProcessDelegate<UObject>(Params);
-}
+	void BroadcastDelegate(UObject* Object, FName FunctionName, void* Params)
+	{
+		FScriptDelegate Delegate;
+		Delegate.BindUFunction(Object, FunctionName);
+		Delegate.ProcessDelegate<UObject>(Params);
+	}
 
-bool UFScriptDelegateExporter::IsBound(FScriptDelegate* Delegate)
-{
-	return Delegate->IsBound();
-}
+	bool IsBound(FScriptDelegate* Delegate)
+	{
+		return Delegate->IsBound();
+	}
 
-void UFScriptDelegateExporter::MakeDelegate(FScriptDelegate* OutDelegate, UObject* Object, FName FunctionName)
-{
-    OutDelegate->BindUFunction(Object, FunctionName);
-}
+	void MakeDelegate(FScriptDelegate* OutDelegate, UObject* Object, FName FunctionName)
+	{
+		OutDelegate->BindUFunction(Object, FunctionName);
+	}
 
-void UFScriptDelegateExporter::GetDelegateInfo(FScriptDelegate* Delegate, UObject** OutObject, FName* OutFunctionName)
-{
-	*OutObject = Delegate->GetUObject();
-    *OutFunctionName = Delegate->GetFunctionName();
+	void GetDelegateInfo(FScriptDelegate* Delegate, UObject** OutObject, FName* OutFunctionName)
+	{
+		*OutObject = Delegate->GetUObject();
+		*OutFunctionName = Delegate->GetFunctionName();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(BroadcastDelegate)
+	EXPORT_UNREALSHARP_FUNCTION(IsBound)
+	EXPORT_UNREALSHARP_FUNCTION(MakeDelegate)
+	EXPORT_UNREALSHARP_FUNCTION(GetDelegateInfo)
 }

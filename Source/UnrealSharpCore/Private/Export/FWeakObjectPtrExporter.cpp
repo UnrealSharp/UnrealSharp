@@ -1,36 +1,43 @@
-﻿#include "Export/FWeakObjectPtrExporter.h"
+﻿#include "CSManager.h"
 
-#include "CSManager.h"
-
-void UFWeakObjectPtrExporter::SetObject(TWeakObjectPtr<UObject>& WeakObject, UObject* Object)
+DECLARE_UNREALSHARP_EXPORTER(FWeakObjectPtrExporter)
 {
-	WeakObject = Object;
-}
-
-void* UFWeakObjectPtrExporter::GetObject(TWeakObjectPtr<UObject> WeakObjectPtr)
-{
-	if (!WeakObjectPtr.IsValid())
+	void SetObject(TWeakObjectPtr<UObject>& WeakObject, UObject* Object)
 	{
-		return nullptr;
+		WeakObject = Object;
 	}
 
-	UObject* Object = WeakObjectPtr.Get();
-	return UCSManager::Get().FindManagedObject(Object);
-}
+	void* GetObject(TWeakObjectPtr<UObject> WeakObjectPtr)
+	{
+		if (!WeakObjectPtr.IsValid())
+		{
+			return nullptr;
+		}
 
-bool UFWeakObjectPtrExporter::IsValid(TWeakObjectPtr<UObject> WeakObjectPtr)
-{
-	return WeakObjectPtr.IsValid();
-}
+		UObject* Object = WeakObjectPtr.Get();
+		return UCSManager::Get().FindManagedObject(Object);
+	}
 
-bool UFWeakObjectPtrExporter::IsStale(TWeakObjectPtr<UObject> WeakObjectPtr)
-{
-	return WeakObjectPtr.IsStale();
-}
+	bool IsValid(TWeakObjectPtr<UObject> WeakObjectPtr)
+	{
+		return WeakObjectPtr.IsValid();
+	}
 
-bool UFWeakObjectPtrExporter::NativeEquals(TWeakObjectPtr<UObject> A, TWeakObjectPtr<UObject> B)
-{
-	return A == B;
+	bool IsStale(TWeakObjectPtr<UObject> WeakObjectPtr)
+	{
+		return WeakObjectPtr.IsStale();
+	}
+
+	bool NativeEquals(TWeakObjectPtr<UObject> A, TWeakObjectPtr<UObject> B)
+	{
+		return A == B;
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(SetObject)
+	EXPORT_UNREALSHARP_FUNCTION(GetObject)
+	EXPORT_UNREALSHARP_FUNCTION(IsValid)
+	EXPORT_UNREALSHARP_FUNCTION(IsStale)
+	EXPORT_UNREALSHARP_FUNCTION(NativeEquals)
 }
 
 

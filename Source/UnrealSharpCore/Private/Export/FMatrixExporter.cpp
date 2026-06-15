@@ -1,6 +1,12 @@
-﻿#include "Export/FMatrixExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UFMatrixExporter::FromRotator(FMatrix* Matrix, const FRotator Rotator)
+DECLARE_UNREALSHARP_EXPORTER(FMatrixExporter)
 {
-	*Matrix = Rotator.Quaternion().ToMatrix();
+	void FromRotator(FMatrix* Matrix, const FRotator Rotator)
+	{
+		*Matrix = Rotator.Quaternion().ToMatrix();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(FromRotator)
 }
+

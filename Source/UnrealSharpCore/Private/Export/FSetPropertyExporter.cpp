@@ -1,6 +1,11 @@
-﻿#include "Export/FSetPropertyExporter.h"
+﻿#include "CSBindsManager.h"
 
-void* UFSetPropertyExporter::GetElement(FSetProperty* Property)
+DECLARE_UNREALSHARP_EXPORTER(FSetPropertyExporter)
 {
-	return Property->ElementProp;
+	void* GetElement(FSetProperty* Property)
+	{
+		return Property->ElementProp;
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetElement)
 }

@@ -1,6 +1,11 @@
-﻿#include "Export/FSubsystemCollectionBaseRefExporter.h"
+﻿#include "CSBindsManager.h"
 
-USubsystem* UFSubsystemCollectionBaseRefExporter::InitializeDependency(FSubsystemCollectionBase* Collection, UClass* SubsystemClass)
+DECLARE_UNREALSHARP_EXPORTER(FSubsystemCollectionBaseRefExporter)
 {
-    return Collection->InitializeDependency(SubsystemClass);
+    USubsystem* InitializeDependency(FSubsystemCollectionBase* Collection, UClass* SubsystemClass)
+    {
+        return Collection->InitializeDependency(SubsystemClass);
+    }
+    
+    EXPORT_UNREALSHARP_FUNCTION(InitializeDependency)
 }

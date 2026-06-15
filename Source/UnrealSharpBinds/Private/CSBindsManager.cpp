@@ -16,8 +16,7 @@ FCSBindsManager* FCSBindsManager::Get()
 
 void FCSBindsManager::RegisterExportedFunction(const FName& ClassName, const FCSExportedFunction& ExportedFunction)
 {
-	FCSBindsManager* Instance = Get();
-	TArray<FCSExportedFunction>& ExportedFunctions = Instance->ExportedFunctions.FindOrAdd(ClassName);
+	TArray<FCSExportedFunction>& ExportedFunctions = Get()->ExportedFunctions.FindOrAdd(ClassName);
 	ExportedFunctions.Add(ExportedFunction);
 }
 
@@ -25,11 +24,10 @@ void* FCSBindsManager::GetBoundFunction(const TCHAR* InOuterName, const TCHAR* I
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FCSBindsManager::GetBoundFunction);
 	
-	FCSBindsManager* Instance = Get();
 	FName ManagedOuterName = FName(InOuterName);
 	FName ManagedFunctionName = FName(InFunctionName);
 	
-	TArray<FCSExportedFunction>* ExportedFunctions = Instance->ExportedFunctions.Find(ManagedOuterName);
+	TArray<FCSExportedFunction>* ExportedFunctions = Get()->ExportedFunctions.Find(ManagedOuterName);
 
 	if (!ExportedFunctions)
 	{

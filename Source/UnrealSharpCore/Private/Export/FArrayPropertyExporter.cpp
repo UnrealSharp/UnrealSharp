@@ -1,43 +1,54 @@
-﻿#include "Export/FArrayPropertyExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UFArrayPropertyExporter::InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
+DECLARE_UNREALSHARP_EXPORTER(FArrayPropertyExporter)
 {
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.EmptyAndAddValues(Length);
-}
+	void InitializeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.EmptyAndAddValues(Length);
+	}
 
-void UFArrayPropertyExporter::EmptyArray(FArrayProperty* ArrayProperty, const void* ScriptArray)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.EmptyValues();
-}
+	void EmptyArray(FArrayProperty* ArrayProperty, const void* ScriptArray)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.EmptyValues();
+	}
 
-void UFArrayPropertyExporter::AddToArray(FArrayProperty* ArrayProperty, const void* ScriptArray)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.AddValue();
-}
+	void AddToArray(FArrayProperty* ArrayProperty, const void* ScriptArray)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.AddValue();
+	}
 
-void UFArrayPropertyExporter::InsertInArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.InsertValues(index);
-}
+	void InsertInArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.InsertValues(index);
+	}
 
-void UFArrayPropertyExporter::RemoveFromArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.RemoveValues(index);
-}
+	void RemoveFromArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int index)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.RemoveValues(index);
+	}
 
-void UFArrayPropertyExporter::ResizeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.Resize(Length);
-}
+	void ResizeArray(FArrayProperty* ArrayProperty, const void* ScriptArray, int Length)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.Resize(Length);
+	}
 
-void UFArrayPropertyExporter::SwapValues(FArrayProperty* ArrayProperty, const void* ScriptArray, int indexA, int indexB)
-{
-	FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
-	Helper.SwapValues(indexA, indexB);
+	void SwapValues(FArrayProperty* ArrayProperty, const void* ScriptArray, int indexA, int indexB)
+	{
+		FScriptArrayHelper Helper(ArrayProperty, ScriptArray);
+		Helper.SwapValues(indexA, indexB);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(InitializeArray)
+	EXPORT_UNREALSHARP_FUNCTION(EmptyArray)
+	EXPORT_UNREALSHARP_FUNCTION(AddToArray)
+	EXPORT_UNREALSHARP_FUNCTION(InsertInArray)
+	EXPORT_UNREALSHARP_FUNCTION(RemoveFromArray)
+	EXPORT_UNREALSHARP_FUNCTION(ResizeArray)
+	EXPORT_UNREALSHARP_FUNCTION(SwapValues)
 }

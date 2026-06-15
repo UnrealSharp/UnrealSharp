@@ -1,26 +1,30 @@
-﻿#include "Export/UEnumExporter.h"
-#include "CSManager.h"
+﻿#include "CSManager.h"
 #include "Types/CSEnum.h"
 
-FGCHandleIntPtr UUEnumExporter::GetManagedEnumType(UEnum* ScriptEnum)
+DECLARE_UNREALSHARP_EXPORTER(UEnumExporter)
 {
-	if (const UCSEnum* CSEnum = Cast<UCSEnum>(ScriptEnum); CSEnum != nullptr)
+	FGCHandleIntPtr GetManagedEnumType(UEnum* ScriptEnum)
 	{
-		return CSEnum->GetManagedTypeDefinition()->GetTypeGCHandle()->GetHandle();
-	}
+		if (const UCSEnum* CSEnum = Cast<UCSEnum>(ScriptEnum); CSEnum != nullptr)
+		{
+			return CSEnum->GetManagedTypeDefinition()->GetTypeGCHandle()->GetHandle();
+		}
 
-	const UCSManagedAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptEnum);
-	if (Assembly == nullptr)
-	{
-		return FGCHandleIntPtr();
-	}
+		const UCSManagedAssembly* Assembly = UCSManager::Get().FindOwningAssembly(ScriptEnum);
+		if (Assembly == nullptr)
+		{
+			return FGCHandleIntPtr();
+		}
 
-	const FCSFieldName FieldName(ScriptEnum);
-	const TSharedPtr<FCSManagedTypeDefinition> Info = Assembly->FindManagedTypeDefinition(FieldName);
-	if (!Info.IsValid())
-	{
-		return FGCHandleIntPtr();
-	}
+		const FCSFieldName FieldName(ScriptEnum);
+		const TSharedPtr<FCSManagedTypeDefinition> Info = Assembly->FindManagedTypeDefinition(FieldName);
+		if (!Info.IsValid())
+		{
+			return FGCHandleIntPtr();
+		}
 
-	return Info->GetTypeGCHandle()->GetHandle();   
+		return Info->GetTypeGCHandle()->GetHandle();   
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetManagedEnumType)
 }

@@ -1,11 +1,19 @@
-#include "Export/CSTimerExtensions.h"
+#include "CSBindsManager.h"
 
-void UCSTimerExtensions::SetTimerForNextTick(FNextTickEvent NextTickEvent)
+DECLARE_UNREALSHARP_EXPORTER(CSTimerExtensions)
 {
-#if WITH_EDITOR
-	FFunctionGraphTask::CreateAndDispatchWhenReady([NextTickEvent]
+	using FNextTickEvent = void(*)();
+	
+	void SetTimerForNextTick(FNextTickEvent NextTickEvent)
 	{
-		GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateLambda(NextTickEvent));
-	}, TStatId(), nullptr, ENamedThreads::GameThread);
+#if WITH_EDITOR
+		FFunctionGraphTask::CreateAndDispatchWhenReady([NextTickEvent]
+		{
+			GEditor->GetTimerManager()->SetTimerForNextTick(FTimerDelegate::CreateLambda(NextTickEvent));
+		}, TStatId(), nullptr, ENamedThreads::GameThread);
 #endif
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(SetTimerForNextTick)
 }
+

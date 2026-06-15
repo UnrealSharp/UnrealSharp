@@ -1,25 +1,31 @@
-﻿#include "Export/FCSManagerExporter.h"
+﻿#include "CSManager.h"
 
-#include "CSManager.h"
-
-void* UFCSManagerExporter::FindManagedObject(UObject* Object)
+DECLARE_UNREALSHARP_EXPORTER(FCSManagerExporter)
 {
-	return UCSManager::Get().FindManagedObject(Object);
-}
+	void* FindManagedObject(UObject* Object)
+	{
+		return UCSManager::Get().FindManagedObject(Object);
+	}
 
-void* UFCSManagerExporter::FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* NativeClass)
-{
-	return UCSManager::Get().FindManagedInterfaceWrapper(Object, NativeClass);
-}
+	void* FindOrCreateManagedInterfaceWrapper(UObject* Object, UClass* NativeClass)
+	{
+		return UCSManager::Get().FindManagedInterfaceWrapper(Object, NativeClass);
+	}
 
-void* UFCSManagerExporter::GetCurrentWorldContext()
-{
-	void* WorldContext = UCSManager::Get().GetCurrentWorldContext();
-	return WorldContext;
-}
+	void* GetCurrentWorldContext()
+	{
+		void* WorldContext = UCSManager::Get().GetCurrentWorldContext();
+		return WorldContext;
+	}
 
-void* UFCSManagerExporter::GetCurrentWorldPtr()
-{
-	UObject* WorldContext = UCSManager::Get().GetCurrentWorldContext();
-	return GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull);
+	void* GetCurrentWorldPtr()
+	{
+		UObject* WorldContext = UCSManager::Get().GetCurrentWorldContext();
+		return GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(FindManagedObject)
+	EXPORT_UNREALSHARP_FUNCTION(FindOrCreateManagedInterfaceWrapper)
+	EXPORT_UNREALSHARP_FUNCTION(GetCurrentWorldContext)
+	EXPORT_UNREALSHARP_FUNCTION(GetCurrentWorldPtr)
 }

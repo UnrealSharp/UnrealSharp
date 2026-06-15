@@ -1,4 +1,6 @@
 ﻿#include "CSAsyncActionBase.h"
+
+#include "CSBindsManager.h"
 #include "UnrealSharpAsync.h"
 
 void UCSAsyncActionBase::Destroy()
@@ -37,13 +39,18 @@ void UCSAsyncActionBase::InitializeManagedCallback(FGCHandleIntPtr Callback)
 	}
 }
 
-void UUCSAsyncBaseExporter::InitializeAsyncObject(UCSAsyncActionBase* AsyncAction, FGCHandleIntPtr Callback)
+DECLARE_UNREALSHARP_EXPORTER(UCSAsyncBaseExporter)
 {
-	if (!IsValid(AsyncAction))
+	void InitializeAsyncObject(UCSAsyncActionBase* AsyncAction, FGCHandleIntPtr Callback)
 	{
-		UE_LOG(LogUnrealSharpAsync, Warning, TEXT("UUCSAsyncBaseExporter::InitializeAsyncObject: AsyncAction is null"));
-		return;
-	}
+		if (!IsValid(AsyncAction))
+		{
+			UE_LOG(LogUnrealSharpAsync, Warning, TEXT("UUCSAsyncBaseExporter::InitializeAsyncObject: AsyncAction is null"));
+			return;
+		}
 	
-	AsyncAction->InitializeManagedCallback(Callback);
+		AsyncAction->InitializeManagedCallback(Callback);
+	}
+
+	EXPORT_UNREALSHARP_FUNCTION(InitializeAsyncObject)
 }

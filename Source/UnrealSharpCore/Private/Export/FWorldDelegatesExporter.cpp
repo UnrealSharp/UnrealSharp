@@ -1,11 +1,19 @@
-#include "Export/FWorldDelegatesExporter.h"
+#include "CSBindsManager.h"
 
-void UFWorldDelegatesExporter::BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle* Handle)
+DECLARE_UNREALSHARP_EXPORTER(FWorldDelegatesExporter)
 {
-	*Handle = FWorldDelegates::OnWorldCleanup.AddLambda(Delegate);
-}
+	using FWorldCleanupEventDelegate = void(*)(UWorld*, bool, bool);
+	
+	void BindOnWorldCleanup(FWorldCleanupEventDelegate Delegate, FDelegateHandle* Handle)
+	{
+		*Handle = FWorldDelegates::OnWorldCleanup.AddLambda(Delegate);
+	}
 
-void UFWorldDelegatesExporter::UnbindOnWorldCleanup(const FDelegateHandle Handle)
-{
-	FWorldDelegates::OnWorldCleanup.Remove(Handle);
+	void UnbindOnWorldCleanup(const FDelegateHandle Handle)
+	{
+		FWorldDelegates::OnWorldCleanup.Remove(Handle);
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(BindOnWorldCleanup)
+	EXPORT_UNREALSHARP_FUNCTION(UnbindOnWorldCleanup)
 }

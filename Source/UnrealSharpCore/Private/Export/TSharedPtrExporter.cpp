@@ -1,21 +1,28 @@
-﻿#include "Export/TSharedPtrExporter.h"
+﻿#include "CSBindsManager.h"
 
-void UTSharedPtrExporter::AddSharedReference(SharedPointerInternals::TReferenceControllerBase<ESPMode::ThreadSafe>* ReferenceController)
+DECLARE_UNREALSHARP_EXPORTER(TSharedPtrExporter)
 {
-	if (!ReferenceController)
+	void AddSharedReference(SharedPointerInternals::TReferenceControllerBase<ESPMode::ThreadSafe>* ReferenceController)
 	{
-		return;
+		if (!ReferenceController)
+		{
+			return;
+		}
+	
+		ReferenceController->AddSharedReference();
+	}
+
+	void ReleaseSharedReference(SharedPointerInternals::TReferenceControllerBase<ESPMode::ThreadSafe>* ReferenceController)
+	{
+		if (!ReferenceController)
+		{
+			return;
+		}
+
+		ReferenceController->ReleaseSharedReference();
 	}
 	
-	ReferenceController->AddSharedReference();
-}
-
-void UTSharedPtrExporter::ReleaseSharedReference(SharedPointerInternals::TReferenceControllerBase<ESPMode::ThreadSafe>* ReferenceController)
-{
-	if (!ReferenceController)
-	{
-		return;
-	}
-
-	ReferenceController->ReleaseSharedReference();
+	EXPORT_UNREALSHARP_FUNCTION(AddSharedReference)
+	EXPORT_UNREALSHARP_FUNCTION(ReleaseSharedReference)
+	
 }

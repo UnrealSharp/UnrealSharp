@@ -1,7 +1,12 @@
-#include "Export/FCSManagedCallbacksExporter.h"
+#include "CSBindsManager.h"
 #include "CSManagedCallbacksCache.h"
 
-FCSManagedCallbacks* UFCSManagedCallbacksExporter::GetManagedCallbacks()
+DECLARE_UNREALSHARP_EXPORTER(FCSManagedCallbacksExporter)
 {
-	return &::GetManagedCallbacks();
+	FCSManagedCallbacks* GetManagedCallbacks()
+	{
+		return &::GetManagedCallbacks();
+	}
+	
+	EXPORT_UNREALSHARP_FUNCTION(GetManagedCallbacks)
 }
