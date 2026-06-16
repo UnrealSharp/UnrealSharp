@@ -18,7 +18,7 @@ public sealed class NativeStructHandle : IDisposable
 
     public NativeStructHandle(IntPtr nativeScriptStruct)
     {
-        UScriptStructExporter.CallAllocateNativeStruct(ref _nativeStructHandleData, nativeScriptStruct);
+        Bind_UScriptStruct.CallAllocateNativeStruct(ref _nativeStructHandleData, nativeScriptStruct);
         _nativeScriptStruct = nativeScriptStruct;
     }
     
@@ -31,9 +31,12 @@ public sealed class NativeStructHandle : IDisposable
 
     public void Dispose()
     {
-        if (_nativeScriptStruct == IntPtr.Zero) return;
+        if (_nativeScriptStruct == IntPtr.Zero)
+        {
+            return;
+        }
         
-        UScriptStructExporter.CallDeallocateNativeStruct(ref _nativeStructHandleData, _nativeScriptStruct);
+        Bind_UScriptStruct.CallDeallocateNativeStruct(ref _nativeStructHandleData, _nativeScriptStruct);
         _nativeScriptStruct = IntPtr.Zero;
         GC.SuppressFinalize(this);
     }

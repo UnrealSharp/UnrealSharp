@@ -9,7 +9,7 @@ public static class UnrealLogger
             fixed (char* logNamePtr = logName)
             fixed (char* stringPtr = message)
             {
-                FMsgExporter.CallLog(logNamePtr, logVerbosity, stringPtr);
+                Bind_FMsg.CallLog(logNamePtr, logVerbosity, stringPtr);
             }
         }
     }

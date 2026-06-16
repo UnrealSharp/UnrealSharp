@@ -22,7 +22,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
 
     public override void FromNative(IntPtr address, IntPtr nativeProperty)
     {
-        FScriptDelegateExporter.CallGetDelegateInfo(address, out IntPtr targetObjectPtr, out FName functionName);
+        Bind_FScriptDelegate.CallGetDelegateInfo(address, out IntPtr targetObjectPtr, out FName functionName);
         TargetObject = new TWeakObjectPtr<UObject>(targetObjectPtr);
         FunctionName = functionName;
     }
@@ -30,7 +30,7 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
     public override void ToNative(IntPtr address)
     {
         UObject? targetObject = TargetObject.Object;
-        FScriptDelegateExporter.CallMakeDelegate(address, targetObject?.NativeObject ?? IntPtr.Zero, FunctionName);
+        Bind_FScriptDelegate.CallMakeDelegate(address, targetObject?.NativeObject ?? IntPtr.Zero, FunctionName);
     }
 
     public override bool Contains(TDelegate handler)
@@ -103,6 +103,6 @@ public abstract class Delegate<TDelegate> : DelegateBase<TDelegate> where TDeleg
             return;
         }
         
-        FScriptDelegateExporter.CallBroadcastDelegate(targetObject.NativeObject, FunctionName, parameters);
+        Bind_FScriptDelegate.CallBroadcastDelegate(targetObject.NativeObject, FunctionName, parameters);
     }
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
@@ -39,7 +40,7 @@ public static class ScriptInterfaceExtensions
         }
 
         IntPtr nativeClass = typeof(T).TryGetNativeInterface();
-        IntPtr wrapperHandle = FCSManagerExporter.CallFindOrCreateManagedInterfaceWrapper(uobject!.NativeObject, nativeClass);
+        IntPtr wrapperHandle = Bind_UCSManager.CallFindOrCreateManagedInterfaceWrapper(uobject!.NativeObject, nativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtrFast<T>(wrapperHandle);
     }
 
@@ -109,7 +110,7 @@ public static class ScriptInterfaceMarshaller<T> where T : class
         unsafe
         {
             FScriptInterface* scriptInterface = (FScriptInterface*)(nativeBuffer + arrayIndex * sizeof(FScriptInterface));
-            IntPtr handle = FCSManagerExporter.CallFindManagedObject(scriptInterface->ObjectPointer);
+            IntPtr handle = Bind_UCSManager.CallFindManagedObject(scriptInterface->ObjectPointer);
             var uobject = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
             return uobject.AsInterface<T>();
         }

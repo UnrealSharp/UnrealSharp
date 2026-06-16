@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Core.Marshallers;
 
 #if UE_5_5_OR_LATER
@@ -34,7 +35,7 @@ internal sealed class FInstancedStructManager : IDisposable
 
     public FInstancedStructManager()
     {
-        FInstancedStructExporter.CallNativeInit(ref _structData);
+        Bind_FInstancedStruct.CallNativeInit(ref _structData);
     }
 
     public FInstancedStructManager(IntPtr data)
@@ -42,7 +43,7 @@ internal sealed class FInstancedStructManager : IDisposable
         unsafe
         {
             var structData = (FInstancedStructData*)data;
-            FInstancedStructExporter.CallNativeCopy(ref _structData, ref *structData);
+            Bind_FInstancedStruct.CallNativeCopy(ref _structData, ref *structData);
         }
     }
 
@@ -53,7 +54,7 @@ internal sealed class FInstancedStructManager : IDisposable
     
     public void Dispose()
     {
-        FInstancedStructExporter.CallNativeDestroy(ref _structData);
+        Bind_FInstancedStruct.CallNativeDestroy(ref _structData);
         GC.SuppressFinalize(this);   
     }
 }
@@ -72,8 +73,8 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
     
     static FInstancedStruct()
     {
-        NativeClassPtr = UCoreUObjectExporter.CallGetType(typeof(FInstancedStruct).GetAssemblyName(), "UnrealSharp.CoreUObject", "InstancedStruct");
-        NativeDataSize = UScriptStructExporter.CallGetNativeStructSize(NativeClassPtr);
+        NativeClassPtr = Bind_UCoreUObject.CallGetType(typeof(FInstancedStruct).GetAssemblyName(), "UnrealSharp.CoreUObject", "InstancedStruct");
+        NativeDataSize = Bind_UScriptStruct.CallGetNativeStructSize(NativeClassPtr);
     }
 
     public FInstancedStruct()
@@ -91,8 +92,8 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
         get
         {
             _manager ??= new FInstancedStructManager();  
-            var nativeStruct = FInstancedStructExporter.CallGetNativeStruct(ref _manager.StructData);
-            IntPtr handle = FCSManagerExporter.CallFindManagedObject(nativeStruct);
+            var nativeStruct = Bind_FInstancedStruct.CallGetNativeStruct(ref _manager.StructData);
+            IntPtr handle = Bind_UCSManager.CallFindManagedObject(nativeStruct);
             return GCHandleUtilities.GetObjectFromHandlePtr<UScriptStruct>(handle);
         }
     }
@@ -100,7 +101,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
     public static FInstancedStruct Make<T>() where T : struct, MarshalledStruct<T>
     {
         var instancedStruct = new FInstancedStruct();
-        FInstancedStructExporter.CallInitializeAs(ref instancedStruct._manager!.StructData, T.GetNativeClassPtr(), IntPtr.Zero);
+        Bind_FInstancedStruct.CallInitializeAs(ref instancedStruct._manager!.StructData, T.GetNativeClassPtr(), IntPtr.Zero);
         return instancedStruct;   
     }
 
@@ -114,8 +115,8 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
             fixed (byte* dataPtr = data)
             {
                 value.ToNative((IntPtr) dataPtr);
-                FInstancedStructExporter.CallInitializeAs(ref instancedStruct._manager!.StructData, nativeStruct, (IntPtr)dataPtr);
-                UScriptStructExporter.CallNativeDestroy(nativeStruct, (IntPtr)dataPtr);
+                Bind_FInstancedStruct.CallInitializeAs(ref instancedStruct._manager!.StructData, nativeStruct, (IntPtr)dataPtr);
+                Bind_UScriptStruct.CallNativeDestroy(nativeStruct, (IntPtr)dataPtr);
             }
             return instancedStruct; 
         }
@@ -137,7 +138,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
     private bool IsA(IntPtr scriptStruct)
     {
         _manager ??= new FInstancedStructManager(); 
-        IntPtr nativeStruct = FInstancedStructExporter.CallGetNativeStruct(ref _manager.StructData);
+        IntPtr nativeStruct = Bind_FInstancedStruct.CallGetNativeStruct(ref _manager.StructData);
         return nativeStruct == scriptStruct;
     }
 
@@ -154,7 +155,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
             return false;
         }
         
-        value = T.FromNative(FInstancedStructExporter.CallGetMemory(ref _manager.StructData));
+        value = T.FromNative(Bind_FInstancedStruct.CallGetMemory(ref _manager.StructData));
         return true;   
     }
 
@@ -169,7 +170,7 @@ public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
         unsafe
         {
             var structData = (FInstancedStructData*)buffer;
-            FInstancedStructExporter.CallNativeCopy(ref *structData, ref _manager.StructData);
+            Bind_FInstancedStruct.CallNativeCopy(ref *structData, ref _manager.StructData);
         }
     }
 

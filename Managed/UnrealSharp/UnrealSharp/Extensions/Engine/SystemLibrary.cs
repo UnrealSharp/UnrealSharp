@@ -25,7 +25,7 @@ public partial class SystemLibrary
             }
             
             FTimerHandle timerHandle = new FTimerHandle();
-            UWorldExporter.CallSetTimer(owner.NativeObject, action.Method.Name, time, bLooping.ToNativeBool(), initialStartDelay, &timerHandle);
+            Bind_UWorld.CallSetTimer(owner.NativeObject, action.Method.Name, time, bLooping.ToNativeBool(), initialStartDelay, &timerHandle);
             return timerHandle;
         }
     }

@@ -39,7 +39,7 @@ internal unsafe struct FScriptSetHelper
     {           
         Set = new FScriptSet(set);
         _setProperty = setProperty;
-        _elementProp = new NativeProperty(FSetPropertyExporter.CallGetElement(setProperty.Property));
+        _elementProp = new NativeProperty(Bind_FSetProperty.CallGetElement(setProperty.Property));
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ internal unsafe struct FScriptSetHelper
             if (IsValidIndex(index))
             {
                 IntPtr elementToCheck = GetElementPtrWithoutCheck(index);
-                if (FPropertyExporter.CallIdentical(_elementProp.Property, elementToFind, elementToCheck).ToManagedBool())
+                if (Bind_FProperty.CallIdentical(_elementProp.Property, elementToFind, elementToCheck).ToManagedBool())
                 {
                     return index;
                 }
@@ -247,18 +247,18 @@ internal unsafe struct FScriptSetHelper
 
         uint ElementHash(IntPtr elementKey)
         {
-            return FPropertyExporter.CallGetValueTypeHash(property.Property, elementKey);
+            return Bind_FProperty.CallGetValueTypeHash(property.Property, elementKey);
         }
 
         NativeBool ElementEquality(IntPtr a, IntPtr b)
         {
-            return FPropertyExporter.CallIdentical(property.Property, a, b);
+            return Bind_FProperty.CallIdentical(property.Property, a, b);
         }
 
         void ElementConstruct(IntPtr newElement)
         {
             property.InitializeValue(newElement);
-            FPropertyExporter.CallCopySingleValue(property.Property, newElement, elementToAdd);
+            Bind_FProperty.CallCopySingleValue(property.Property, newElement, elementToAdd);
         }
 
         void ElementDestruct(IntPtr element)
@@ -280,18 +280,18 @@ internal unsafe struct FScriptSetHelper
 
         uint ElementHash(IntPtr elementKey)
         {
-            return FPropertyExporter.CallGetValueTypeHash(property.Property, elementKey);
+            return Bind_FProperty.CallGetValueTypeHash(property.Property, elementKey);
         }
 
         NativeBool ElementEquality(IntPtr a, IntPtr b)
         {
-            return FPropertyExporter.CallIdentical(property.Property, a, b);
+            return Bind_FProperty.CallIdentical(property.Property, a, b);
         }
 
         void ElementConstruct(IntPtr newElement)
         {
             property.InitializeValue(newElement);
-            FPropertyExporter.CallCopySingleValue(property.Property, newElement, elementToAdd);
+            Bind_FProperty.CallCopySingleValue(property.Property, newElement, elementToAdd);
         }
 
         return Set.FindOrAdd(elementToAdd, _setProperty.Property, ElementHash, ElementEquality, ElementConstruct);

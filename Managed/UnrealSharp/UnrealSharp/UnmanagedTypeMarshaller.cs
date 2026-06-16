@@ -9,7 +9,7 @@ public class UnmanagedTypeMarshaller<T> where T : unmanaged
     {
         unsafe
         {
-            ManagedHandleExporter.CallStoreUnmanagedMemory((IntPtr)(&obj), nativeBuffer + arrayIndex * FUnmanagedDataStore.GetNativeDataSize(), sizeof(T));
+            Bind_ManagedHandle.CallStoreUnmanagedMemory((IntPtr)(&obj), nativeBuffer + arrayIndex * FUnmanagedDataStore.GetNativeDataSize(), sizeof(T));
         }
     }
     
@@ -23,8 +23,7 @@ public class UnmanagedTypeMarshaller<T> where T : unmanaged
         unsafe
         {
             T output = default;
-            ManagedHandleExporter.CallLoadUnmanagedMemory(
-                nativeBuffer + arrayIndex * FUnmanagedDataStore.GetNativeDataSize(), (IntPtr)(&output), sizeof(T));
+            Bind_ManagedHandle.CallLoadUnmanagedMemory(nativeBuffer + arrayIndex * FUnmanagedDataStore.GetNativeDataSize(), (IntPtr)(&output), sizeof(T));
             return output;
         }
     }

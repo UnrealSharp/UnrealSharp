@@ -4,7 +4,7 @@ using UnrealSharp.Core;
 namespace UnrealSharp.Interop;
 
 [NativeCallbacks]
-public static unsafe partial class FScriptMapHelperExporter
+public static unsafe partial class Bind_FScriptMapHelper
 {
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, void> AddPair;
     public static delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> FindOrAdd;

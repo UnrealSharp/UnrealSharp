@@ -91,7 +91,7 @@ public static class GeneratorStringBuilderUtilities
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.InteropNamespace);
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.MarshallerNamespace);
         
-        stringBuilder.AppendLine($"using static UnrealSharp.Interop.{ExporterCallbacks.FPropertyCallbacks};");
+        stringBuilder.AppendLine($"using static UnrealSharp.Interop.{ExporterCallbacks.Bind_FProperty};");
         stringBuilder.AppendLine("#nullable enable");
         
         if (blittable)
@@ -147,7 +147,7 @@ public static class GeneratorStringBuilderUtilities
 
     public static void AppendNativeTypePtr(this GeneratorStringBuilder stringBuilder, UhtStruct structType)
     {
-        stringBuilder.AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
+        stringBuilder.AppendLine($"static readonly IntPtr NativeClassPtr = {ExporterCallbacks.Bind_CoreUObject}.CallGetType({structType.ExportGetAssemblyName()}, \"{structType.GetNamespace()}\", \"{structType.EngineName}\");");
     }
     
     public static void AppendStackAlloc(this GeneratorStringBuilder stringBuilder, string sizeVariableName)
@@ -162,7 +162,7 @@ public static class GeneratorStringBuilderUtilities
         
         if (appendInitializer)
         {
-            stringBuilder.AppendLine($"{ExporterCallbacks.UFunctionCallbacks}.CallInitializeFunctionParams({structName}, paramsBuffer);");
+            stringBuilder.AppendLine($"{ExporterCallbacks.Bind_UFunction}.CallInitializeFunctionParams({structName}, paramsBuffer);");
         }
     }
 

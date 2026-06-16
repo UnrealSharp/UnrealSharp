@@ -176,24 +176,28 @@ public class OptionalMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T
     {
         if (obj.HasValue)
         {
-            IntPtr result = FOptionalPropertyExporter.CallMarkSetAndGetInitializedValuePointerToReplace(nativeProperty, nativeBuffer);
+            IntPtr result = Bind_FOptionalProperty.CallMarkSetAndGetInitializedValuePointerToReplace(nativeProperty, nativeBuffer);
             toNative(result, 0, obj.Value);
         }
         else
         {
-            FOptionalPropertyExporter.CallMarkUnset(nativeProperty, nativeBuffer);
+            Bind_FOptionalProperty.CallMarkUnset(nativeProperty, nativeBuffer);
         }
     }
 
     public TOptional<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {
-        if (!FOptionalPropertyExporter.CallIsSet(nativeProperty, nativeBuffer).ToManagedBool()) return TOptional<T>.None;
-        var result = FOptionalPropertyExporter.CallGetValuePointerForRead(nativeProperty, nativeBuffer);
+        if (!Bind_FOptionalProperty.CallIsSet(nativeProperty, nativeBuffer).ToManagedBool())
+        {
+            return TOptional<T>.None;
+        }
+        
+        IntPtr result = Bind_FOptionalProperty.CallGetValuePointerForRead(nativeProperty, nativeBuffer);
         return fromNative(result, 0);
     }
 
     public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        FOptionalPropertyExporter.CallDestructInstance(nativeProperty, nativeBuffer);
+        Bind_FOptionalProperty.CallDestructInstance(nativeProperty, nativeBuffer);
     }
 }

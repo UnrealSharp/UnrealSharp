@@ -18,7 +18,7 @@ public partial class UInputComponent
     {
         if (action.Target is UObject unrealObject)
         {
-            UInputComponentExporter.CallBindAction(NativeObject, 
+            Bind_UInputComponent.CallBindAction(NativeObject, 
                 actionName, 
                 inputEvent, 
                 unrealObject.NativeObject, 
@@ -40,7 +40,7 @@ public partial class UInputComponent
     {
         if (action.Target is UObject unrealObject)
         {
-            UInputComponentExporter.CallBindActionKeySignature(NativeObject, 
+            Bind_UInputComponent.CallBindActionKeySignature(NativeObject, 
                 actionName, 
                 inputEvent, 
                 unrealObject.NativeObject, 
@@ -61,7 +61,7 @@ public partial class UInputComponent
     {
         if (action.Target is UObject unrealObject)
         {
-            UInputComponentExporter.CallBindAxis(NativeObject,
+            Bind_UInputComponent.CallBindAxis(NativeObject,
                 axisName, 
                 unrealObject.NativeObject, 
                 action.Method.Name,

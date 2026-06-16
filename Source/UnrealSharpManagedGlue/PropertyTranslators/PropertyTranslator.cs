@@ -492,7 +492,7 @@ public abstract class PropertyTranslator
         {
             builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
             builder.OpenBrace();
-            builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+            builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.Bind_UScriptStruct}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
         }
         else
         {

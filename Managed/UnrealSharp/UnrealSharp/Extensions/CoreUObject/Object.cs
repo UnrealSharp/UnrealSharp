@@ -22,7 +22,7 @@ public partial class UObject
                 return FName.None;
             }
 
-            UObjectExporter.CallNativeGetName(NativeObject, out FName objectName);
+            Bind_UObject.CallNativeGetName(NativeObject, out FName objectName);
             return objectName;
         }
     }
@@ -36,7 +36,7 @@ public partial class UObject
                 throw new InvalidOperationException("Object is not valid.");
             }
 
-            IntPtr outerPtr = UObjectExporter.CallGetOuter(NativeObject);
+            IntPtr outerPtr = Bind_UObject.CallGetOuter(NativeObject);
             UObject? foundOuter = GCHandleUtilities.GetObjectFromHandlePtr<UObject>(outerPtr);
 
             if (foundOuter == null)
@@ -56,12 +56,12 @@ public partial class UObject
     /// <summary>
     /// Whether the object has been destroyed.
     /// </summary>
-    public bool IsDestroyed => NativeObject == IntPtr.Zero || !UObjectExporter.CallNativeIsValid(NativeObject).ToManagedBool();
+    public bool IsDestroyed => NativeObject == IntPtr.Zero || !Bind_UObject.CallNativeIsValid(NativeObject).ToManagedBool();
 
     /// <summary>
     /// The unique ID of the object... These are reused so it is only unique while the object is alive.
     /// </summary>
-    public int UniqueID => UObjectExporter.CallGetUniqueID(NativeObject);
+    public int UniqueID => Bind_UObject.CallGetUniqueID(NativeObject);
 
     /// <summary>
     /// The world that the object belongs to.
@@ -75,19 +75,19 @@ public partial class UObject
                 throw new InvalidOperationException("Object is not valid.");
             }
 
-            IntPtr worldGcHandle = UObjectExporter.CallGetWorld_Internal(NativeObject);
+            IntPtr worldGcHandle = Bind_UObject.CallGetWorld_Internal(NativeObject);
             return GCHandleUtilities.GetObjectFromHandlePtr<UWorld>(worldGcHandle)!;
         }
     }
 
     public bool IsA<T>(TSubclassOf<T> classType) where T : UObject
     {
-        return UObjectExporter.CallIsA(NativeObject, classType.NativeClass).ToManagedBool();
+        return Bind_UObject.CallIsA(NativeObject, classType.NativeClass).ToManagedBool();
     }
 
     public bool IsA(UClass classType)
     {
-        return UObjectExporter.CallIsA(NativeObject, classType.NativeObject).ToManagedBool();
+        return Bind_UObject.CallIsA(NativeObject, classType.NativeObject).ToManagedBool();
     }
 
     /// <inheritdoc />
@@ -166,7 +166,7 @@ public partial class UObject
             outer = GetTransientPackage();
         }
 
-        IntPtr handle = UObjectExporter.CallCreateNewObject(outer.NativeObject, classType.NativeClass, nativeTemplate);
+        IntPtr handle = Bind_UObject.CallCreateNewObject(outer.NativeObject, classType.NativeClass, nativeTemplate);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -176,7 +176,7 @@ public partial class UObject
     /// <returns> The transient package. </returns>
     public static UPackage GetTransientPackage()
     {
-        IntPtr handle = UObjectExporter.CallGetTransientPackage();
+        IntPtr handle = Bind_UObject.CallGetTransientPackage();
         return GCHandleUtilities.GetObjectFromHandlePtr<UPackage>(handle)!;
     }
 
@@ -199,7 +199,7 @@ public partial class UObject
     /// <returns> The default object of the specified type. </returns>
     public static T GetDefault<T>(UObject obj) where T : UnrealSharpObject
     {
-        IntPtr handle = UClassExporter.CallGetDefaultFromInstance(obj.NativeObject);
+        IntPtr handle = Bind_UClass.CallGetDefaultFromInstance(obj.NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -226,7 +226,7 @@ public partial class UObject
         }
 
         IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
-        IntPtr handle = UObjectExporter.CallStaticLoadClass(basePtr, outerPtr, path);
+        IntPtr handle = Bind_UObject.CallStaticLoadClass(basePtr, outerPtr, path);
 
         if (handle == IntPtr.Zero)
         {
@@ -265,7 +265,7 @@ public partial class UObject
         }
 
         IntPtr outerPtr = outer?.NativeObject ?? IntPtr.Zero;
-        IntPtr handle = UObjectExporter.CallStaticLoadObject(basePtr, outerPtr, path);
+        IntPtr handle = Bind_UObject.CallStaticLoadObject(basePtr, outerPtr, path);
 
         if (handle == IntPtr.Zero)
         {
@@ -446,7 +446,7 @@ public partial class UObject
     /// <returns> The world subsystem of the specified type. </returns>
     public T GetWorldSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UWorldSubsystem
     {
-        IntPtr handle = UWorldExporter.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
+        IntPtr handle = Bind_UWorld.CallGetWorldSubsystem(subsystemClass.NativeClass, NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -478,7 +478,7 @@ public partial class UObject
     /// <returns> The game instance subsystem of the specified type. </returns>
     public T GetGameInstanceSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UGameInstanceSubsystem
     {
-        IntPtr handle = UGameInstanceExporter.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
+        IntPtr handle = Bind_UGameInstance.CallGetGameInstanceSubsystem(subsystemClass.NativeClass, NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -510,7 +510,7 @@ public partial class UObject
     /// <returns></returns>
     public static T GetEditorSubsystem<T>(TSubclassOf<T> subsystemClass) where T : EditorSubsystem.UEditorSubsystem
     {
-        IntPtr handle = GEditorExporter.CallGetEditorSubsystem(subsystemClass.NativeClass);
+        IntPtr handle = Bind_GEditor.CallGetEditorSubsystem(subsystemClass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -538,7 +538,7 @@ public partial class UObject
     /// <returns> The engine subsystem of the specified type. </returns>
     public static T GetEngineSubsystem<T>(TSubclassOf<T> subsystemClass) where T : UEngineSubsystem
     {
-        IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
+        IntPtr handle = Bind_GEngine.CallGetEngineSubsystem(subsystemClass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -560,7 +560,7 @@ public partial class UObject
     public static T GetEngineSubsystem<T>() where T : UEngineSubsystem
     {
         var subsystemClass = new TSubclassOf<T>(typeof(T));
-        IntPtr handle = GEngineExporter.CallGetEngineSubsystem(subsystemClass.NativeClass);
+        IntPtr handle = Bind_GEngine.CallGetEngineSubsystem(subsystemClass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -573,7 +573,7 @@ public partial class UObject
     /// <returns> The local player subsystem of the specified type. </returns>
     public static T GetLocalPlayerSubsystem<T>(APlayerController playerController, TSubclassOf<T> subsystemClass) where T : ULocalPlayerSubsystem
     {
-        IntPtr handle = ULocalPlayerExporter.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
+        IntPtr handle = Bind_ULocalPlayer.CallGetLocalPlayerSubsystem(subsystemClass.NativeClass, playerController.NativeObject);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 
@@ -704,16 +704,16 @@ internal static class ReflectionHelper
 
     internal static IntPtr TryGetNativeClass(this Type type)
     {
-        return UCoreUObjectExporter.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
     
     internal static IntPtr TryGetNativeInterface(this Type type)
     {
-        return UCoreUObjectExporter.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
     
     internal static IntPtr TryGetNativeClassDefaults(this Type type)
     {
-        return UClassExporter.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+        return Bind_UClass.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
 }

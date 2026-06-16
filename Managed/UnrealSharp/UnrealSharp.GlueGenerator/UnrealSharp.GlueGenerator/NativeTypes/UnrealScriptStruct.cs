@@ -118,7 +118,7 @@ public record UnrealScriptStruct : UnrealStruct
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
     {
         base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
-        builder.AppendLine($"NativeDataSize = UScriptStructExporter.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
+        builder.AppendLine($"NativeDataSize = Bind_UScriptStruct.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
     }
 
     void MakeMarshaller(GeneratorStringBuilder builder)

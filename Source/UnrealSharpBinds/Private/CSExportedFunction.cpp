@@ -1,11 +1,10 @@
 #include "CSExportedFunction.h"
+#include "CSBindsRegistry.h"
 
-#include "CSBindsManager.h"
-
-FCSExportedFunction::FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize):
+FCSBoundFunction::FCSBoundFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize) :
 	Name(Name),
-	FunctionPointer(InFunctionPointer),
-	ParameterSize(InParameterSize)
+	ParameterSize(InParameterSize),
+	FunctionPointer(InFunctionPointer)
 {
-	FCSBindsManager::RegisterExportedFunction(OuterName, *this);
+	FCSBindsRegistry::RegisterBoundFunction(OuterName, *this);
 }

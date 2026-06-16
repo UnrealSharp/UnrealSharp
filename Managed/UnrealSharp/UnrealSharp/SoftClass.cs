@@ -64,7 +64,7 @@ public struct TSoftClassPtr<T> where T : UObject
 
     public TSoftClassPtr(TSubclassOf<T> obj)
     {
-        TPersistentObjectPtrExporter.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
+        Bind_TPersistentObjectPtr.CallFromObject(ref SoftObjectPtr.Data, obj.NativeClass);
     }
     
     internal TSoftClassPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> data)
@@ -78,7 +78,7 @@ public struct TSoftClassPtr<T> where T : UObject
     /// <returns> The class. </returns>
     public TSubclassOf<T> LoadSynchronous()
     {
-        IntPtr handle = FSoftObjectPtrExporter.CallLoadSynchronous(ref SoftObjectPtr.Data);
+        IntPtr handle = Bind_FSoftObjectPtr.CallLoadSynchronous(ref SoftObjectPtr.Data);
         UClass? loadedClass = GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle);
         
         if (loadedClass == null)
@@ -105,7 +105,7 @@ public struct TSoftClassPtr<T> where T : UObject
 
     private TSubclassOf<T> GetClass()
     {
-        IntPtr nativeClass = TPersistentObjectPtrExporter.CallGetNativePointer(ref SoftObjectPtr.Data);
+        IntPtr nativeClass = Bind_TPersistentObjectPtr.CallGetNativePointer(ref SoftObjectPtr.Data);
         return new TSubclassOf<T>(nativeClass);
     }
     

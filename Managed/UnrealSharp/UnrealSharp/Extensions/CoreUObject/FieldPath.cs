@@ -25,8 +25,8 @@ public struct FFieldPath : IEquatable<FFieldPath>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     internal FFieldPathUnsafe PathUnsafe;
 
-    public bool IsValid => FFieldPathExporter.CallIsValid(ref PathUnsafe).ToManagedBool();
-    public bool IsStale => FFieldPathExporter.CallIsStale(ref PathUnsafe).ToManagedBool();
+    public bool IsValid => Bind_FFieldPath.CallIsValid(ref PathUnsafe).ToManagedBool();
+    public bool IsStale => Bind_FFieldPath.CallIsStale(ref PathUnsafe).ToManagedBool();
 
     public FFieldPath(FFieldPathUnsafe pathUnsafe)
     {
@@ -40,7 +40,7 @@ public struct FFieldPath : IEquatable<FFieldPath>
             UnmanagedArray buffer = new();
             try
             {
-                FFieldPathExporter.CallFieldPathToString(ref PathUnsafe, ref buffer);
+                Bind_FFieldPath.CallFieldPathToString(ref PathUnsafe, ref buffer);
                 return new string((char*)buffer.Data);
             }
             finally
@@ -52,7 +52,7 @@ public struct FFieldPath : IEquatable<FFieldPath>
 
     public bool Equals(FFieldPath other)
     {
-        return FFieldPathExporter.CallFieldPathsEqual(ref PathUnsafe, ref other.PathUnsafe).ToManagedBool();
+        return Bind_FFieldPath.CallFieldPathsEqual(ref PathUnsafe, ref other.PathUnsafe).ToManagedBool();
     }
 
     public override bool Equals(object? obj)
@@ -72,7 +72,7 @@ public struct FFieldPath : IEquatable<FFieldPath>
 
     public override int GetHashCode()
     {
-        return FFieldPathExporter.CallGetFieldPathHashCode(ref PathUnsafe);
+        return Bind_FFieldPath.CallGetFieldPathHashCode(ref PathUnsafe);
     }
 }
 

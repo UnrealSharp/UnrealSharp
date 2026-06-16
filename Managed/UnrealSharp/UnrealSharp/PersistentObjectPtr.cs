@@ -32,7 +32,7 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
             return;
         }
 
-        TPersistentObjectPtrExporter.CallFromObject(ref Data, obj.NativeObject);
+        Bind_TPersistentObjectPtr.CallFromObject(ref Data, obj.NativeObject);
     }
     
     internal FPersistentObjectPtr(FPersistentObjectPtrData<FSoftObjectPathUnsafe> nativeBuffer)
@@ -42,13 +42,13 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
     
     public FSoftObjectPath GetUniqueId()
     {
-        IntPtr uniqueId = TPersistentObjectPtrExporter.CallGetUniqueID(ref Data);
+        IntPtr uniqueId = Bind_TPersistentObjectPtr.CallGetUniqueID(ref Data);
         return FSoftObjectPathMarshaller.FromNative(uniqueId, 0);
     }
     
     public UObject? Get()
     {
-        IntPtr handle = TPersistentObjectPtrExporter.CallGet(ref Data);
+        IntPtr handle = Bind_TPersistentObjectPtr.CallGet(ref Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
 
@@ -59,7 +59,7 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
             return false;
         }
 
-        return TPersistentObjectPtrExporter.CallEquals(ref Data, ref other.Data).ToManagedBool();
+        return Bind_TPersistentObjectPtr.CallEquals(ref Data, ref other.Data).ToManagedBool();
     }
 
     public bool Equals(FPersistentObjectPtr other)
@@ -69,6 +69,6 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
 
     public override int GetHashCode()
     {
-        return TPersistentObjectPtrExporter.CallGetHashCode(ref Data);
+        return Bind_TPersistentObjectPtr.CallGetHashCode(ref Data);
     }
 }

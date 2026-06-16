@@ -24,12 +24,12 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
 
     protected override void ProcessDelegate(IntPtr parameters)
     {
-        FMulticastDelegatePropertyExporter.CallBroadcastDelegate(_nativeProperty, _nativeDelegate, parameters);
+        Bind_FMulticastDelegateProperty.CallBroadcastDelegate(_nativeProperty, _nativeDelegate, parameters);
     }
 
     public override void BindUFunction(UObject targetObject, FName functionName)
     {
-        FMulticastDelegatePropertyExporter.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, functionName.ToString());
+        Bind_FMulticastDelegateProperty.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, functionName.ToString());
     }
 
     public override void BindUFunction(TWeakObjectPtr<UObject> targetObjectPtr, FName functionName)
@@ -49,7 +49,7 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
             throw new ArgumentException("The callback for a multicast delegate must be a valid UFunction defined on a UClass", nameof(handler));
         }
         
-        FMulticastDelegatePropertyExporter.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
+        Bind_FMulticastDelegateProperty.CallAddDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
     public override void Remove(TDelegate handler)
@@ -59,7 +59,7 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
             return;
         }
         
-        FMulticastDelegatePropertyExporter.CallRemoveDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
+        Bind_FMulticastDelegateProperty.CallRemoveDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name);
     }
 
     public override bool Contains(TDelegate handler)
@@ -69,13 +69,13 @@ public abstract class MulticastDelegate<TDelegate> : DelegateBase<TDelegate> whe
             return false;
         }
         
-        return FMulticastDelegatePropertyExporter.CallContainsDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
+        return Bind_FMulticastDelegateProperty.CallContainsDelegate(_nativeProperty, _nativeDelegate, targetObject.NativeObject, handler.Method.Name).ToManagedBool();
     }
 
-    public override bool IsBound => FMulticastDelegatePropertyExporter.CallIsBound(_nativeDelegate).ToManagedBool();
+    public override bool IsBound => Bind_FMulticastDelegateProperty.CallIsBound(_nativeDelegate).ToManagedBool();
 
     public override void Clear()
     {
-        FMulticastDelegatePropertyExporter.CallClearDelegate(_nativeProperty, _nativeDelegate);
+        Bind_FMulticastDelegateProperty.CallClearDelegate(_nativeProperty, _nativeDelegate);
     }
 }

@@ -120,7 +120,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::FindTypeHandle(const FCSFieldName& Fie
 	}
 
 	const FString FullName = FieldName.GetFullName().ToString();
-	uint8* TypeHandle = GetManagedCallbacks().LookupManagedType(AssemblyGCHandle->GetPointer(), *FullName);
+	uint8* TypeHandle = GetManagedCallbacks().GetManagedTypeHandle(AssemblyGCHandle->GetPointer(), *FullName);
 
 	if (!TypeHandle)
 	{
@@ -149,7 +149,7 @@ TSharedPtr<FGCHandle> UCSManagedAssembly::GetManagedMethod(const TSharedPtr<FGCH
 		return nullptr;
 	}
 
-	uint8* MethodHandle = GetManagedCallbacks().LookupManagedMethod(TypeHandle->GetPointer(), *MethodName);
+	uint8* MethodHandle = GetManagedCallbacks().GetManagedMethod(TypeHandle->GetPointer(), *MethodName);
 
 	if (!MethodHandle)
 	{

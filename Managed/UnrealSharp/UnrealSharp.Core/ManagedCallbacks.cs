@@ -11,8 +11,8 @@ public unsafe struct ManagedCallbacks
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, int> InvokeManagedMethod;
     
     public delegate* unmanaged<IntPtr, void> InvokeDelegate;
-    public delegate* unmanaged<IntPtr, char*, IntPtr> LookupManagedMethod;
-    public delegate* unmanaged<IntPtr, char*, IntPtr> LookupManagedType;
+    public delegate* unmanaged<IntPtr, char*, IntPtr> GetManagedMethod;
+    public delegate* unmanaged<IntPtr, char*, IntPtr> GetManagedTypeHandle;
     
     public delegate* unmanaged<IntPtr, IntPtr, void> InitializeStruct;
     
@@ -27,8 +27,8 @@ public unsafe struct ManagedCallbacks
             CreateNewManagedObjectWrapper = &UnmanagedCallbacks.CreateNewManagedObjectWrapper,
             InvokeManagedMethod = &UnmanagedCallbacks.InvokeManagedMethod,
             InvokeDelegate = &UnmanagedCallbacks.InvokeDelegate,
-            LookupManagedMethod = &UnmanagedCallbacks.LookupManagedMethod,
-            LookupManagedType = &UnmanagedCallbacks.LookupManagedType,
+            GetManagedMethod = &UnmanagedCallbacks.GetManagedMethod,
+            GetManagedTypeHandle = &UnmanagedCallbacks.GetManagedTypeHandle,
             InitializeStruct = &UnmanagedCallbacks.InitializeStruct,
             
             Dispose = &UnmanagedCallbacks.Dispose,

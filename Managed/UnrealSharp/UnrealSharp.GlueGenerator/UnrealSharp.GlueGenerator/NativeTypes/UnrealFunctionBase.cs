@@ -254,7 +254,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
         
         if (HasParamsOrReturnValue)
         {
-            builder.AppendLine($"{SizeVariableName} = UFunctionExporter.CallGetNativeFunctionParamsSize({FunctionNativePtr});");
+            builder.AppendLine($"{SizeVariableName} = CallGetNativeFunctionParamsSize({FunctionNativePtr});");
         }
         
         if (HasReturnValue)
@@ -346,7 +346,7 @@ public abstract record UnrealFunctionBase : UnrealStruct
 
     protected void AppendCallInvokeNativeFunction(GeneratorStringBuilder builder, string instanceFunction, string paramsBuffer, string returnBuffer)
     {
-        builder.AppendLine("UObjectExporter.");
+        builder.AppendLine("Bind_UObject.");
         
         if (IsNetworkFunction)
         {

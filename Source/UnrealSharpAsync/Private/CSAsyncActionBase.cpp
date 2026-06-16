@@ -1,8 +1,5 @@
 ﻿#include "CSAsyncActionBase.h"
 
-#include "CSBindsManager.h"
-#include "UnrealSharpAsync.h"
-
 void UCSAsyncActionBase::Destroy()
 {
 	if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
@@ -37,20 +34,4 @@ void UCSAsyncActionBase::InitializeManagedCallback(FGCHandleIntPtr Callback)
 	{
 		GameInstance->RegisterReferencedObject(this);
 	}
-}
-
-DECLARE_UNREALSHARP_EXPORTER(UCSAsyncBaseExporter)
-{
-	void InitializeAsyncObject(UCSAsyncActionBase* AsyncAction, FGCHandleIntPtr Callback)
-	{
-		if (!IsValid(AsyncAction))
-		{
-			UE_LOG(LogUnrealSharpAsync, Warning, TEXT("UUCSAsyncBaseExporter::InitializeAsyncObject: AsyncAction is null"));
-			return;
-		}
-	
-		AsyncAction->InitializeManagedCallback(Callback);
-	}
-
-	EXPORT_UNREALSHARP_FUNCTION(InitializeAsyncObject)
 }

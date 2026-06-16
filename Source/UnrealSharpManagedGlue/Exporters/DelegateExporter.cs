@@ -53,11 +53,11 @@ public static class DelegateExporter
         string moduleName = function.Package.EngineName;
         string outerName = function.Outer is UhtField ? $"\"{function.Outer!.EngineName}\"" : "null";
         
-        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.CoreUObjectCallbacks}.CallGetNativeDelegate(\"{moduleName}\", {outerName}, \"{function.EngineName}\");");
+        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.Bind_CoreUObject}.CallGetNativeDelegate(\"{moduleName}\", {outerName}, \"{function.EngineName}\");");
         
         if (function.HasParameters)
         {
-            builder.AppendLine($"{delegateName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({delegateName}_NativeFunction);");
+            builder.AppendLine($"{delegateName}_ParamsSize = {ExporterCallbacks.Bind_UFunction}.CallGetNativeFunctionParamsSize({delegateName}_NativeFunction);");
         }
         
         foreach (UhtProperty parameter in function.Properties)

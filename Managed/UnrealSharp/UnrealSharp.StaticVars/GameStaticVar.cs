@@ -26,8 +26,8 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
     {
         _onPIEndDelegate = OnPIEStartEnd;
         IntPtr onPIEStartEndFuncPtr = Marshal.GetFunctionPointerForDelegate(_onPIEndDelegate);
-        FEditorDelegatesExporter.CallBindEndPIE(onPIEStartEndFuncPtr, out _onPieEndHandle);
-        FEditorDelegatesExporter.CallBindStartPIE(onPIEStartEndFuncPtr, out _onPieStartEndHandle);
+        Bind_FEditorDelegates.CallBindEndPIE(onPIEStartEndFuncPtr, out _onPieEndHandle);
+        Bind_FEditorDelegates.CallBindStartPIE(onPIEStartEndFuncPtr, out _onPieStartEndHandle);
     }
     
     public FGameStaticVar(T value) : this()
@@ -54,8 +54,8 @@ public sealed class FGameStaticVar<T> : FBaseStaticVar<T>
     void Cleanup()
     {
         ResetToDefault();
-        FEditorDelegatesExporter.CallUnbindStartPIE(_onPieStartEndHandle);
-        FEditorDelegatesExporter.CallUnbindEndPIE(_onPieEndHandle);
+        Bind_FEditorDelegates.CallUnbindStartPIE(_onPieStartEndHandle);
+        Bind_FEditorDelegates.CallUnbindEndPIE(_onPieEndHandle);
     }
     
     void ResetToDefault()

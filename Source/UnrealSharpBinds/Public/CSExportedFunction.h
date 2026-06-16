@@ -1,29 +1,17 @@
 #pragma once
 
-/**
- * Thin wrapper around sizeof(T) used for getting the size of a function's arguments.
- * @tparam T The type we want the size of
- */
 template <typename T>
 struct TArgSize
 {
 	constexpr static size_t Size = sizeof(T);
 };
 
-/**
- * Specialization for reference qualified types so we can get the size of the pointer instead of the object itself.
- * @tparam T The type we want the size of
- */
 template <typename T>
 struct TArgSize<T&>
 {
 	constexpr static size_t Size = sizeof(T*);
 };
 
-/**
- * Constant expression for the size of an argument
- * @tparam T The type we want the size of
- */
 template <typename T>
 constexpr size_t ArgSize = TArgSize<T>::Size;
 
@@ -40,11 +28,11 @@ constexpr size_t GetFunctionSize(ReturnType (*)(Args...))
 	}
 }
 
-struct UNREALSHARPBINDS_API FCSExportedFunction
+struct UNREALSHARPBINDS_API FCSBoundFunction
 {
+	FCSBoundFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize);
+	
 	FName Name;
-	void* FunctionPointer;
 	int32 ParameterSize;
-
-	FCSExportedFunction(const FName& OuterName, const FName& Name, void* InFunctionPointer, int32 InParameterSize);
+	void* FunctionPointer;
 };

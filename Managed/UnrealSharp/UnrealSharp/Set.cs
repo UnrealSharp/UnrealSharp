@@ -336,6 +336,6 @@ public class SetCopyMarshaller<T>
     
     public void DestructInstance(IntPtr nativeBuffer, int arrayIndex)
     {
-        FScriptSetExporter.CallEmpty(0, _helper.Set.SetPointer, _property.Property);
+        Bind_FScriptSet.CallEmpty(0, _helper.Set.SetPointer, _property.Property);
     }
 }

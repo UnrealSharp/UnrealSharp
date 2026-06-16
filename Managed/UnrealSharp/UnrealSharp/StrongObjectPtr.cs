@@ -1,11 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using UnrealSharp.Attributes;
 using UnrealSharp.Core;
-using UnrealSharp.Core.Attributes;
-using UnrealSharp.Core.Marshallers;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.CoreUObject;
-using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -25,7 +22,7 @@ public abstract class TStrongObjectPtr : IEquatable<TStrongObjectPtr>, IDisposab
 
     protected TStrongObjectPtr(UObject? obj = null)
     {
-        TStrongObjectPtrExporter.CallConstructStrongObjectPtr(ref _nativePtr, obj?.NativeObject ?? IntPtr.Zero);
+        Bind_TStrongObjectPtr.CallConstructStrongObjectPtr(ref _nativePtr, obj?.NativeObject ?? IntPtr.Zero);
     }
 
     ~TStrongObjectPtr()
@@ -43,7 +40,7 @@ public abstract class TStrongObjectPtr : IEquatable<TStrongObjectPtr>, IDisposab
                 return null;
             }
             
-            IntPtr handle = FCSManagerExporter.CallFindManagedObject(_nativePtr.NativeObject);
+            IntPtr handle = Bind_UCSManager.CallFindManagedObject(_nativePtr.NativeObject);
             return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
         }
     }
@@ -85,7 +82,7 @@ public abstract class TStrongObjectPtr : IEquatable<TStrongObjectPtr>, IDisposab
             return;
         }
         
-        TStrongObjectPtrExporter.CallDestroyStrongObjectPtr(ref _nativePtr);
+        Bind_TStrongObjectPtr.CallDestroyStrongObjectPtr(ref _nativePtr);
         _isDisposed = true;
         GC.SuppressFinalize(this);
     }

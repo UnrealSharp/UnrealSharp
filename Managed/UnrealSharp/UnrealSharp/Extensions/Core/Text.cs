@@ -21,14 +21,14 @@ public class FText : IEquatable<FText>, IDisposable
     
     public FText()
     {
-        FTextExporter.CallCreateEmptyText(ref Data);
+        Bind_FText.CallCreateEmptyText(ref Data);
     }
     
     public FText(string? text)
     {
         if (string.IsNullOrEmpty(text))
         {
-            FTextExporter.CallCreateEmptyText(ref Data);
+            Bind_FText.CallCreateEmptyText(ref Data);
             return;
         }
 
@@ -36,7 +36,7 @@ public class FText : IEquatable<FText>, IDisposable
         {
             fixed (char* textPtr = text)
             {
-                FTextExporter.CallFromStringView(ref Data, textPtr, text.Length);
+                Bind_FText.CallFromStringView(ref Data, textPtr, text.Length);
             }
         }
     }
@@ -45,7 +45,7 @@ public class FText : IEquatable<FText>, IDisposable
     {
         if (text.IsEmpty)
         {
-            FTextExporter.CallCreateEmptyText(ref Data);
+            Bind_FText.CallCreateEmptyText(ref Data);
             return;
         }
 
@@ -53,7 +53,7 @@ public class FText : IEquatable<FText>, IDisposable
         {
             fixed (char* textPtr = text)
             {
-                FTextExporter.CallFromStringView(ref Data, textPtr, text.Length);
+                Bind_FText.CallFromStringView(ref Data, textPtr, text.Length);
             }
         }
     }
@@ -110,11 +110,11 @@ public class FText : IEquatable<FText>, IDisposable
         return UCSTextExtensions.Format((FText)format, args);
     }
     
-    public bool IsCultureInvariant => FTextExporter.CallIsCultureInvariant(ref Data).ToManagedBool();
-    public bool IsEmpty => FTextExporter.CallIsEmpty(ref Data).ToManagedBool();
-    public bool IsFromStringTable => FTextExporter.CallIsFromStringTable(ref Data).ToManagedBool();
-    public bool IsNumeric => FTextExporter.CallIsNumeric(ref Data).ToManagedBool();
-    public bool IsInitializedFromString => FTextExporter.CallIsInitializedFromString(ref Data).ToManagedBool();
+    public bool IsCultureInvariant => Bind_FText.CallIsCultureInvariant(ref Data).ToManagedBool();
+    public bool IsEmpty => Bind_FText.CallIsEmpty(ref Data).ToManagedBool();
+    public bool IsFromStringTable => Bind_FText.CallIsFromStringTable(ref Data).ToManagedBool();
+    public bool IsNumeric => Bind_FText.CallIsNumeric(ref Data).ToManagedBool();
+    public bool IsInitializedFromString => Bind_FText.CallIsInitializedFromString(ref Data).ToManagedBool();
 
     /// <inheritdoc />
     public override bool Equals(object? obj)
@@ -153,7 +153,7 @@ public class FText : IEquatable<FText>, IDisposable
         
         unsafe
         {
-            return new string(FTextExporter.CallToString(ref Data));
+            return new string(Bind_FText.CallToString(ref Data));
         }
     }
 
@@ -166,7 +166,7 @@ public class FText : IEquatable<FText>, IDisposable
 
         unsafe
         {
-            FTextExporter.CallToStringView(ref Data, out char* textPtr, out int length);
+            Bind_FText.CallToStringView(ref Data, out char* textPtr, out int length);
             return new ReadOnlySpan<char>(textPtr, length);
         }
     }

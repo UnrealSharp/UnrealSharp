@@ -15,7 +15,7 @@ public partial class UEnhancedInputComponent
         {
             fixed (uint* handlePtr = &handle)
             {
-                return UEnhancedInputComponentExporter.CallBindAction(NativeObject, action.NativeObject, triggerEvent, unrealObject.NativeObject, callback.Method.Name, (IntPtr) handlePtr);
+                return Bind_UEnhancedInputComponent.CallBindAction(NativeObject, action.NativeObject, triggerEvent, unrealObject.NativeObject, callback.Method.Name, (IntPtr) handlePtr);
             }
         }
     }
@@ -26,6 +26,6 @@ public partial class UEnhancedInputComponent
 
     public bool RemoveBinding(uint handle)
     {
-        return UEnhancedInputComponentExporter.CallRemoveBindingByHandle(NativeObject, handle);
+        return Bind_UEnhancedInputComponent.CallRemoveBindingByHandle(NativeObject, handle);
     }
 }

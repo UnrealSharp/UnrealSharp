@@ -52,7 +52,7 @@ public partial class UWorld
     /// <summary>
     /// Returns the net mode this world is running under
     /// </summary>
-    public ENetMode NetMode => (ENetMode)(int)UWorldExporter.CallGetNetMode(NativeObject);
+    public ENetMode NetMode => (ENetMode)(int)Bind_UWorld.CallGetNetMode(NativeObject);
 
     /// <summary>
     /// Returns the type of this world

@@ -83,7 +83,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// <param name="array"> The array to copy the elements from. </param>
     public void CopyFrom(T[] array)
     {
-        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, array.Length);
+        Bind_FArrayProperty.CallResizeArray(NativeUnrealProperty, NativeBuffer, array.Length);
 
         Span<T> source = new Span<T>(array);
         Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), array.Length);
@@ -98,7 +98,7 @@ public unsafe class TNativeArray<T> : IEnumerable<T> where T : INumber<T>
     /// <param name="array"> The array to copy the elements from. </param>
     public void CopyFrom(ReadOnlySpan<T> span)
     {
-        FArrayPropertyExporter.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
+        Bind_FArrayProperty.CallResizeArray(NativeUnrealProperty, NativeBuffer, span.Length);
 
         Span<T> destination = new Span<T>(NativeArrayBuffer.ToPointer(), span.Length);
         span.CopyTo(destination);
@@ -184,7 +184,7 @@ public class NativeArrayMarshaller<T>(IntPtr nativeProperty) where T : INumber<T
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(nativeProperty, mirror, obj.Length);
+            Bind_FArrayProperty.CallInitializeArray(nativeProperty, mirror, obj.Length);
 
             Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
 
@@ -217,7 +217,7 @@ public class NativeArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, obj.Length);
+            Bind_FArrayProperty.CallInitializeArray(_nativeProperty, mirror, obj.Length);
 
             Span<T> destination = new Span<T>(mirror->Data.ToPointer(), obj.Length);
 
@@ -245,7 +245,7 @@ public class NativeArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
+            Bind_FArrayProperty.CallEmptyArray(_nativeProperty, mirror);
         }
     }
 }
