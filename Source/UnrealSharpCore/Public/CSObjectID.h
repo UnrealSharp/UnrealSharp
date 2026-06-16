@@ -19,7 +19,7 @@ struct FCSObjectID
 	UObject* GetUObject() const
 	{
 		FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(Index);
-		return UObjectItem ? static_cast<UObject*>(UObjectItem->Object) : nullptr;
+		return UObjectItem ? static_cast<UObject*>(UObjectItem->GetObject()) : nullptr;
 	}
 	
 	friend uint32 GetTypeHash(const FCSObjectID& ObjectID) { return ObjectID.Index; }
