@@ -97,7 +97,7 @@ void UCSManager::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
 	Handle->Dispose(AssemblyHandle->GetHandle());
 	 
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>> FoundHandles;
-	if (!ManagedInterfaceWrapperHandles.RemoveAndCopyValueByHash(Index, Index, FoundHandles))
+	if (!ManagedInterfaceWrapperHandles.RemoveAndCopyValueByHash(ObjectID.Get(), ObjectID, FoundHandles))
 	{
 		return;
 	}
