@@ -16,6 +16,11 @@ struct FCSObjectID
 	}
 	
 	int32 Get() const { return Index; }
+	UObject* GetUObject() const
+	{
+		FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(Index);
+		return UObjectItem ? static_cast<UObject*>(UObjectItem->Object) : nullptr;
+	}
 	
 	friend uint32 GetTypeHash(const FCSObjectID& ObjectID) { return ObjectID.Index; }
 	bool operator==(const FCSObjectID& Other) const { return Index == Other.Index; }

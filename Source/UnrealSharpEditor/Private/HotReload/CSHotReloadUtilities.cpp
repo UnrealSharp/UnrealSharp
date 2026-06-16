@@ -1,5 +1,6 @@
 #include "HotReload/CSHotReloadUtilities.h"
 
+#include "BlueprintActionDatabase.h"
 #include "CSManager.h"
 #include "CSUnrealSharpEditorSettings.h"
 #include "IDirectoryWatcher.h"
@@ -190,6 +191,16 @@ void FCSHotReloadUtilities::RefreshPlacementMode()
 {
 	IPlacementModeModule::Get().OnAllPlaceableAssetsChanged().Broadcast();
 	IPlacementModeModule::Get().OnPlaceableItemFilteringChanged().Broadcast();
+}
+
+void FCSHotReloadUtilities::RefreshBlueprintActionDatabase(const TSet<FCSObjectID>& RebuiltTypes)
+{
+	FBlueprintActionDatabase& ActionDatabase = FBlueprintActionDatabase::Get();
+	
+	for (const FCSObjectID& ObjectID : RebuiltTypes)
+	{
+		ActionDatabase.RefreshAssetActions(ObjectID.GetUObject());
+	}
 }
 
 bool FCSHotReloadUtilities::IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<FCSObjectID>& RebuiltTypes)

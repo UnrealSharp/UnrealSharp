@@ -22,7 +22,6 @@
 void UCSHotReloadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	
 	UCSManager& Manager = UCSManager::Get();
 	Manager.OnNewStructEvent().AddUObject(this, &UCSHotReloadSubsystem::OnStructRebuilt);
 	Manager.OnNewClassEvent().AddUObject(this, &UCSHotReloadSubsystem::OnClassRebuilt);
@@ -154,6 +153,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (bDetectedNewManagedType)
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
+		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 	}
 	
 	if (ReloadedTypes.Num() > 0)
