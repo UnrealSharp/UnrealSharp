@@ -47,8 +47,7 @@ public static class StructExporter
                 propertyNames.Add(scriptName);
             }
         }
-
-        bool nullableEnabled = structObj.HasMetadata(UhtTypeUtilities.NullableEnable);
+        
         bool isRecordStruct = structObj.HasMetadata("RecordStruct");
         bool isReadOnly = structObj.HasMetadata("ReadOnly");
         bool useProperties = structObj.HasMetadata("UseProperties");
@@ -183,7 +182,7 @@ public static class StructExporter
         {
             UhtProperty property = exportedProperties[i];
             string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportConstructorParameter(stringBuilder, property, scriptName);
             if (i < exportedProperties.Count - 1)

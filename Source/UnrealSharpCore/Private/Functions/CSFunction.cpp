@@ -92,14 +92,10 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	}
 #endif
 
-	const FGCHandle ManagedObjectHandle = UCSManager::Get().FindManagedObject(ObjectToInvokeOn);
-	void* MethodPtr = ManagedFunction->MethodHandle->GetPointer();
-	void* ManagedObjectPtr = ManagedObjectHandle.GetPointer();
-
 	FString ExceptionMessage;
 	int ReturnCode = GetManagedCallbacks().InvokeManagedMethod(
-		ManagedObjectPtr,
-		MethodPtr,
+		UCSManager::Get().FindManagedObject(ObjectToInvokeOn).GetPointer(),
+		ManagedFunction->MethodHandle->GetPointer(),
 		Stack.Locals,
 		RESULT_PARAM,
 		&ExceptionMessage);
@@ -108,13 +104,13 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	{
 		return;
 	}
-	
-	const UCSUnrealSharpSettings* Settings = GetDefault<UCSUnrealSharpSettings>();
+
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 6
-	const EBlueprintExceptionType::Type ExceptionType = Settings->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::UserRaisedError;
+	const EBlueprintExceptionType::Type ExceptionType = GetDefault<UCSUnrealSharpSettings>()->bCrashOnException ? EBlueprintExceptionType::FatalError : EBlueprintExceptionType::UserRaisedError;
 #else
 	const EBlueprintExceptionType::Type ExceptionType = EBlueprintExceptionType::FatalError;
 #endif
+	
 	const FBlueprintExceptionInfo ExceptionInfo(ExceptionType, FText::FromString(ExceptionMessage));
 	FBlueprintCoreDelegates::ThrowScriptException(ObjectToInvokeOn, Stack, ExceptionInfo);
 }

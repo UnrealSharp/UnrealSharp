@@ -5,7 +5,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 {
 	void* CreateNewObject(UObject* Outer, UClass* Class, UObject* Template)
 	{
-		if (!IsValid(Outer))
+		if (!IsValid(Outer) || !IsValid(Class))
 		{
 			return nullptr;
 		}
@@ -34,9 +34,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	void InvokeNativeFunctionOutParms(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeFunctionOutParms);
-
-		//choose a most fast path. the assumption is that functions defined in U# which are not overridden in BP code can choose a fast path.
-		//if the function calls into BP code we need dedicated stack memory to not risk a stack corruption for BP to use.
+		
 		if (!NativeFunction->HasAnyFunctionFlags(FUNC_Native) && NativeFunction->HasAnyFunctionFlags(FUNC_Event))
 		{
 			NativeObject->ProcessEvent(NativeFunction, Params);
@@ -59,35 +57,26 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 
 				Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Params);
 				Out->Property = Property;
-
-				if (*LastOut)
-				{
-					(*LastOut)->NextOutParm = Out;
-					LastOut = &(*LastOut)->NextOutParm;
-				}
-				else
-				{
-					*LastOut = Out;
-				}
+				
+				*LastOut = Out;
+				LastOut  = &Out->NextOutParm;
 			}
-
-			if (*LastOut)
-			{
-				(*LastOut)->NextOutParm = nullptr;
-			}
-
+			
+			*LastOut = nullptr;
 			NativeFunction->Invoke(NativeObject, NewStack, ReturnValueAddress);
 		}
 	}
 
 	void EvaluateInvokePath(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
-		if (NativeFunction->HasAllFunctionFlags(FUNC_HasOutParms))
+		const EFunctionFlags FunctionFlags = NativeFunction->FunctionFlags;
+
+		if (FunctionFlags & FUNC_HasOutParms)
 		{
 			InvokeNativeFunctionOutParms(NativeObject, NativeFunction, Params, ReturnValueAddress);
 		}
 	    //if the function is an event and not native we would go through UObject::ProcessEvent to avoid stack corruption since it will call into BP code
-		else if (!NativeFunction->HasAnyFunctionFlags(FUNC_Native) && NativeFunction->HasAnyFunctionFlags(FUNC_Event))
+		else if (!(FunctionFlags & FUNC_Native) && FunctionFlags & FUNC_Event)
 		{
 			NativeObject->ProcessEvent(NativeFunction, Params);
 		}
@@ -102,14 +91,12 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	void InvokeNativeFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeFunction);
-
 	    EvaluateInvokePath(NativeObject, NativeFunction, Params, ReturnValueAddress);
 	}
 
 	void InvokeNativeStaticFunction(UClass* NativeClass, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeStaticFunction);
-
 		UObject* ClassDefaultObject = NativeClass->GetDefaultObject();
 		EvaluateInvokePath(ClassDefaultObject, NativeFunction, Params, ReturnValueAddress);
 	}
@@ -117,7 +104,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 	void InvokeNativeNetFunction(UObject* NativeObject, UFunction* NativeFunction, uint8* Params, uint8* ReturnValueAddress)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(InvokeNativeNetFunction);
-
+		
 		int32 FunctionCallspace = NativeObject->GetFunctionCallspace(NativeFunction, nullptr);
 
 		if (FunctionCallspace & FunctionCallspace::Remote)
@@ -154,7 +141,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UObject)
 		UWorld* World = Object->GetWorld();
 		return UCSManager::Get().FindManagedObject(World);
 	}
-
+	
 	bool IsA(const UObject* Object, UClass* Class)
 	{
 	    return Object->IsA(Class);

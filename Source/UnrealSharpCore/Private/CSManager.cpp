@@ -183,12 +183,12 @@ bool UCSManager::IsLoadingAnyAssembly() const
 
 void UCSManager::InitialAssemblyLoad()
 {
-	TArray<FLoadOrderManifest> Manifests;
-	UnrealSharp::Project::DiscoverLoadOrderManifests(Manifests);
+	TArray<FCSLoadOrderManifest> LoadOrderManifests;
+	UnrealSharp::Project::DiscoverLoadOrderManifests(LoadOrderManifests);
 	
-	UE_LOGFMT(LogUnrealSharp, Display, "Discovered {0} load order manifests.", Manifests.Num());
+	UE_LOGFMT(LogUnrealSharp, Display, "Discovered {0} load order manifests.", LoadOrderManifests.Num());
 
-	for (const FLoadOrderManifest& Manifest : Manifests)
+	for (const FCSLoadOrderManifest& Manifest : LoadOrderManifests)
 	{
 		UE_LOGFMT(LogUnrealSharp, Display, "Loading assemblies from manifest: {0} (Priority: {1}", Manifest.Name, Manifest.Priority);
 		

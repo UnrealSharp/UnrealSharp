@@ -6,7 +6,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Logging/StructuredLog.h"
 
-void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>& OutManifests)
+void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FCSLoadOrderManifest>& OutManifests)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UnrealSharp::Project::DiscoverLoadOrderManifests);
 	
@@ -42,7 +42,7 @@ void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>
 			continue;
 		}
 
-		FLoadOrderManifest Manifest;
+		FCSLoadOrderManifest Manifest;
 		Manifest.Name = FPaths::GetBaseFilename(File);
 		JsonObject->TryGetNumberField(TEXT("Priority"), Manifest.Priority);
 		JsonObject->TryGetBoolField(TEXT("Collectible"), Manifest.bCollectible);
@@ -56,7 +56,7 @@ void UnrealSharp::Project::DiscoverLoadOrderManifests(TArray<FLoadOrderManifest>
 		OutManifests.Add(MoveTemp(Manifest));
 	}
 
-	OutManifests.Sort([](const FLoadOrderManifest& A, const FLoadOrderManifest& B)
+	OutManifests.Sort([](const FCSLoadOrderManifest& A, const FCSLoadOrderManifest& B)
 	{
 		return A.Priority > B.Priority;
 	});
@@ -66,10 +66,10 @@ bool UnrealSharp::Project::IsAssemblyInAnyManifest(const FString& AssemblyName)
 {
 	bool bFound = false;
 	
-	TArray<FLoadOrderManifest> Manifests;
+	TArray<FCSLoadOrderManifest> Manifests;
 	DiscoverLoadOrderManifests(Manifests);
 	
-	for (const FLoadOrderManifest& Manifest : Manifests)
+	for (const FCSLoadOrderManifest& Manifest : Manifests)
 	{
 		if (!Manifest.ContainsAssembly(AssemblyName))
 		{

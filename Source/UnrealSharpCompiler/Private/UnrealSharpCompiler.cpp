@@ -212,11 +212,11 @@ void FUnrealSharpCompilerModule::OnManagedAssemblyLoaded(UCSManagedAssembly* Ass
 
 bool FUnrealSharpCompilerModule::IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly)
 {
-	TArray<FLoadOrderManifest> OutManifests;
+	TArray<FCSLoadOrderManifest> OutManifests;
 	UnrealSharp::Project::DiscoverLoadOrderManifests(OutManifests);
 	
 	bool CanRecompileAndReinstanceBlueprints = false;
-	for (const FLoadOrderManifest& Manifest : OutManifests)
+	for (const FCSLoadOrderManifest& Manifest : OutManifests)
 	{
 		if (!Manifest.bCollectible || !Manifest.ContainsAssembly(Assembly->GetAssemblyFileName()))
 		{
