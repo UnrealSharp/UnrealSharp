@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "CSBindsManager.h"
+#include "CSBindsRegistry.h"
 #include "UnrealSharpCore.h"
 #include "CSDotnetUtilties.h"
 #include "CSInstallationUtilities.h"
@@ -55,7 +55,7 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
 		*UnrealSharpLibraryAssembly,
 		&GetManagedPluginCallbacks(),
-		(const void*)&FCSBindsManager::GetBoundFunction,
+		(const void*)&FCSBindsRegistry::GetBoundFunction,
 		&GetManagedCallbacks()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp!");

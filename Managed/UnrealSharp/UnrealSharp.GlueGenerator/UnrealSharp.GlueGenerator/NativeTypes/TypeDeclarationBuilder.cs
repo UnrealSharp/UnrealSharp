@@ -113,6 +113,6 @@ public class TypeDeclarationBuilder
         }
 
         builder.OpenBrace();
-        builder.AppendNewBackingField($"static IntPtr {_nativeTypePtrName} = UCoreUObjectExporter.CallGetType(\"{_assemblyName}\", \"{_namespace}\", \"{_engineName}\");");
+        builder.AppendNewBackingField($"static IntPtr {_nativeTypePtrName} = Bind_UCoreUObject.CallGetType(\"{_assemblyName}\", \"{_namespace}\", \"{_engineName}\");");
     }
 }

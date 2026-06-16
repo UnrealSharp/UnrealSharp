@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "CSBindsRegistry.h"
 #include "CSManagedAssembly.h"
 #include "CSObjectID.h"
 #include "CSManager.generated.h"

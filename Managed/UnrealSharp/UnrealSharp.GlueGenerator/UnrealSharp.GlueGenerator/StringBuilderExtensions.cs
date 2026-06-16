@@ -35,11 +35,11 @@ public static class StringBuilderExtensions
         
         builder.AppendLine("using UnrealSharp.Interop;");
         
-        builder.AppendLine("using static UnrealSharp.Interop.FTypeBuilderExporter;");
-        builder.AppendLine("using static UnrealSharp.Interop.FPropertyExporter;"); 
+        builder.AppendLine("using static UnrealSharp.Interop.Bind_FTypeBuilder;");
+        builder.AppendLine("using static UnrealSharp.Interop.Bind_FProperty;"); 
         builder.AppendLine("using static System.ComponentModel.EditorBrowsableState;");  
-        builder.AppendLine("using static UnrealSharp.Interop.UClassExporter;");
-        builder.AppendLine("using static UnrealSharp.Interop.UFunctionExporter;");
+        builder.AppendLine("using static UnrealSharp.Interop.Bind_UClass;");
+        builder.AppendLine("using static UnrealSharp.Interop.Bind_UFunction;");
         
         builder.AppendLine("using System.ComponentModel;");
         builder.AppendLine("using UnrealSharp;");

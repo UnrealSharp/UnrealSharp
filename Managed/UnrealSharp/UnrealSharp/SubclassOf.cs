@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using UnrealSharp.Attributes;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Attributes;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Core.Marshallers;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
@@ -42,10 +43,10 @@ public struct TSubclassOf<T>
             if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
             {
                 string typeName = classType.GetEngineName();
-                NativeClass = UCoreUObjectExporter.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
+                NativeClass = Bind_UCoreUObject.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
                 
                 #if WITH_EDITOR
-                IntPtr skeletonClass = UCoreUObjectExporter.CallGetGeneratedClassFromSkeleton(NativeClass);
+                IntPtr skeletonClass = Bind_UCoreUObject.CallGetGeneratedClassFromSkeleton(NativeClass);
                 if (skeletonClass != IntPtr.Zero)
                 {
                     NativeClass = skeletonClass;
@@ -76,7 +77,7 @@ public struct TSubclassOf<T>
     {
         get
         {
-            IntPtr handle = UClassExporter.CallGetDefaultFromInstance(NativeClass);
+            IntPtr handle = Bind_UClass.CallGetDefaultFromInstance(NativeClass);
             return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
         }
     }
@@ -122,7 +123,7 @@ public struct TSubclassOf<T>
             return false;
         }
         
-        return UClassExporter.CallIsChildOf(NativeClass, nativeClass).ToManagedBool();
+        return Bind_UClass.CallIsChildOf(NativeClass, nativeClass).ToManagedBool();
     }
     
     /// <summary>
@@ -140,7 +141,7 @@ public struct TSubclassOf<T>
             return false;
         }
         
-        return UClassExporter.CallIsChildOf(nativeClass, NativeClass).ToManagedBool();
+        return Bind_UClass.CallIsChildOf(nativeClass, NativeClass).ToManagedBool();
     }
     
     public static implicit operator TSubclassOf<T>(Type inClass)
@@ -155,7 +156,7 @@ public struct TSubclassOf<T>
     
     public static implicit operator UClass(TSubclassOf<T> subclass)
     {
-        IntPtr handle = FCSManagerExporter.CallFindManagedObject(subclass.NativeClass);
+        IntPtr handle = Bind_UCSManager.CallFindManagedObject(subclass.NativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtr<UClass>(handle)!;
     }
 
@@ -188,7 +189,7 @@ public struct TSubclassOf<T>
             return "None";
         }
         
-        UObjectExporter.CallNativeGetName(NativeClass, out FName className);
+        Bind_UObject.CallNativeGetName(NativeClass, out FName className);
         return className.ToString();
     }
 }

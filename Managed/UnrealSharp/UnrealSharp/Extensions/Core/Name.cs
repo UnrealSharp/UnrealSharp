@@ -26,7 +26,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         {
             fixed (char* stringPtr = name)
             {
-                FNameExporter.CallStringToName(ref this, stringPtr, name.Length);
+                Bind_FName.CallStringToName(ref this, stringPtr, name.Length);
             }
         }
     }
@@ -37,7 +37,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
         {
             fixed (char* stringPtr = name)
             {
-                FNameExporter.CallStringToName(ref this, stringPtr, name.Length);
+                Bind_FName.CallStringToName(ref this, stringPtr, name.Length);
             }
         }
     }
@@ -56,7 +56,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
             UnmanagedArray buffer = new UnmanagedArray();
             try
             {
-                FNameExporter.CallNameToString(this, ref buffer);
+                Bind_FName.CallNameToString(this, ref buffer);
                 return new string((char*)buffer.Data);
             }
             finally
@@ -70,7 +70,7 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     /// Check if the name is valid.
     /// </summary>
     /// <returns>True if the name is valid, false otherwise.</returns>
-    public bool IsValid => FNameExporter.CallIsValid(this).ToManagedBool();
+    public bool IsValid => Bind_FName.CallIsValid(this).ToManagedBool();
     
     /// <summary>
     /// Check if the name is None.

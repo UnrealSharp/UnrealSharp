@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Interop;
 
@@ -231,14 +232,14 @@ public static class UnrealContextTaskExtension
     
 public sealed class UnrealSynchronizationContext : SynchronizationContext
 {
-    public static NamedThread CurrentThread => (NamedThread)AsyncExporter.CallGetCurrentNamedThread();
+    public static NamedThread CurrentThread => (NamedThread)Bind_Async.CallGetCurrentNamedThread();
         
     private readonly NamedThread _thread;
     private readonly TWeakObjectPtr<UObject> _worldContext;
 
     public UnrealSynchronizationContext(NamedThread thread)
     {
-        if (FCSManagerExporter.WorldContextObject is not UObject worldContext || !worldContext.IsValid())
+        if (Bind_UCSManager.WorldContextObject is not UObject worldContext || !worldContext.IsValid())
         {
             throw new InvalidOperationException("World context object is not valid.");
         }
@@ -280,6 +281,6 @@ public sealed class UnrealSynchronizationContext : SynchronizationContext
         }
         
         GCHandle callbackHandle = GCHandle.Alloc(callback);
-        AsyncExporter.CallRunOnThread(worldContextObject.Data, (int) thread, GCHandle.ToIntPtr(callbackHandle));
+        Bind_Async.CallRunOnThread(worldContextObject.Data, (int) thread, GCHandle.ToIntPtr(callbackHandle));
     }
 }

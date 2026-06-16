@@ -10,7 +10,7 @@ public class FUnrealSharpEditor : IModuleInterface
     public void StartupModule()
     {
         FManagedUnrealSharpEditorCallbacks callbacks = new FManagedUnrealSharpEditorCallbacks();
-        FUnrealSharpEditorModuleExporter.CallInitializeUnrealSharpEditorCallbacks(callbacks);
+        Bind_FUnrealSharpEditorModule.CallInitializeUnrealSharpEditorCallbacks(callbacks);
     }
 
     public void ShutdownModule()

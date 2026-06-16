@@ -47,8 +47,7 @@ public static class StructExporter
                 propertyNames.Add(scriptName);
             }
         }
-
-        bool nullableEnabled = structObj.HasMetadata(UhtTypeUtilities.NullableEnable);
+        
         bool isRecordStruct = structObj.HasMetadata("RecordStruct");
         bool isReadOnly = structObj.HasMetadata("ReadOnly");
         bool useProperties = structObj.HasMetadata("UseProperties");
@@ -183,7 +182,7 @@ public static class StructExporter
         {
             UhtProperty property = exportedProperties[i];
             string scriptName = property.GetPropertyName();
-            PropertyTranslator translator = PropertyTranslatorManager.GetTranslator(property)!;
+            PropertyTranslator translator = property.GetTranslator()!;
 
             translator.ExportConstructorParameter(stringBuilder, property, scriptName);
             if (i < exportedProperties.Count - 1)
@@ -498,7 +497,7 @@ public static class StructExporter
                 builder.AppendLine("NativeHandle = new NativeStructHandle(NativeClassPtr);");
                 builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
                 builder.OpenBrace();
-                builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+                builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.Bind_UScriptStruct}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
             }
             else
             {
@@ -507,7 +506,7 @@ public static class StructExporter
                 builder.OpenBrace();
             }
             
-            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, InNativeStruct, (nint) AllocationPointer);");
+            builder.AppendLine($"{ExporterCallbacks.Bind_UScriptStruct}.CallNativeCopy(NativeClassPtr, InNativeStruct, (nint) AllocationPointer);");
             builder.CloseBrace();
         }
         else
@@ -546,7 +545,7 @@ public static class StructExporter
                 builder.AppendLine();
                 builder.AppendLine("fixed (NativeStructHandleData* StructDataPointer = &NativeHandle.Data)");
                 builder.OpenBrace();
-                builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.UScriptStructCallbacks}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
+                builder.AppendLine($"IntPtr AllocationPointer = {ExporterCallbacks.Bind_UScriptStruct}.CallGetStructLocation(StructDataPointer, NativeClassPtr);");
             }
             else
             {
@@ -559,7 +558,7 @@ public static class StructExporter
                 builder.OpenBrace();
             }
             
-            builder.AppendLine($"{ExporterCallbacks.UScriptStructCallbacks}.CallNativeCopy(NativeClassPtr, (nint) AllocationPointer, buffer);");
+            builder.AppendLine($"{ExporterCallbacks.Bind_UScriptStruct}.CallNativeCopy(NativeClassPtr, (nint) AllocationPointer, buffer);");
             builder.CloseBrace();
         }
         else

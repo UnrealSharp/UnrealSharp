@@ -925,7 +925,7 @@ public class FunctionExporter
 
             string nativeCall = BlueprintCallable ? "GetNativeFunctionFromInstanceAndName" : "GetFirstNativeImplementationFromInstanceAndName";
             
-            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.UClassCallbacks}.Call{nativeCall}(NativeObject, \"{Function.EngineName}\");");
+            builder.AppendLine($"{InstanceFunctionPtr} = {ExporterCallbacks.Bind_UClass}.Call{nativeCall}(NativeObject, \"{Function.EngineName}\");");
             builder.CloseBrace();
             
             ExportInvoke(builder, InstanceFunctionPtr);
@@ -1192,7 +1192,7 @@ public class FunctionExporter
             string customStructNativePropertiesIntPtr = $"{Function.SourceName}_CustomStructureNativeProperties";
             builder.AppendLine($"fixed(nint* nativePropertyBuffer = {customStructNativePropertiesIntPtr})");
             builder.OpenBrace();
-            builder.AppendLine($"specializationNativeFunction = {ExporterCallbacks.UFunctionCallbacks}.CallCreateNativeFunctionCustomStructSpecialization({nativeFunctionIntPtr}, (nint) nativePropertyBuffer, customStructBuffer);");
+            builder.AppendLine($"specializationNativeFunction = {ExporterCallbacks.Bind_UFunction}.CallCreateNativeFunctionCustomStructSpecialization({nativeFunctionIntPtr}, (nint) nativePropertyBuffer, customStructBuffer);");
             builder.CloseBrace();
             builder.AppendLine($"{Function.SourceName}_Specializations.Add(specializationKey, specializationNativeFunction);");
             builder.EndUnsafeBlock();
@@ -1235,7 +1235,7 @@ public class FunctionExporter
 
     string DetermineInvokeFunction()
     {
-        string invokeFunction = ExporterCallbacks.UObjectCallbacks;
+        string invokeFunction = ExporterCallbacks.Bind_UObject;
         
         if (Function.HasAllFlags(EFunctionFlags.Static))
         {

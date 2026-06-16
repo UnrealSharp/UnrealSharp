@@ -43,7 +43,7 @@ public partial class UDataTable
     /// <returns>The row if found, otherwise the default value of the type</returns>
     public T FindRow<T>(FName rowName) where T : MarshalledStruct<T>
     {
-        IntPtr rowPtr = UDataTableExporter.CallGetRow(NativeObject, rowName);
+        IntPtr rowPtr = Bind_UDataTable.CallGetRow(NativeObject, rowName);
         return T.FromNative(rowPtr);
     }
     
@@ -58,7 +58,7 @@ public partial class UDataTable
     {
         value = default;
         
-        IntPtr rowPtr = UDataTableExporter.CallGetRow(NativeObject, rowName);
+        IntPtr rowPtr = Bind_UDataTable.CallGetRow(NativeObject, rowName);
         if (rowPtr == IntPtr.Zero)
         {
             return false;

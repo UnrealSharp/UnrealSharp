@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.StaticVars;
@@ -22,7 +23,7 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     {
         FWorldDelegates.FWorldCleanupEvent onWorldCleanupDelegate = OnWorldCleanup;
         IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(onWorldCleanupDelegate);
-        FWorldDelegatesExporter.CallBindOnWorldCleanup(onWorldCleanup, out _onWorldCleanupHandle);
+        Bind_FWorldDelegates.CallBindOnWorldCleanup(onWorldCleanup, out _onWorldCleanupHandle);
     }
     
     public FWorldStaticVar(T value) : this()
@@ -32,7 +33,7 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     
     ~FWorldStaticVar()
     {
-        FWorldDelegatesExporter.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
+        Bind_FWorldDelegates.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
     }
     
     public override T? Value
@@ -43,13 +44,13 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     
     private T? GetWorldValue()
     {
-        IntPtr worldPtr = FCSManagerExporter.CallGetCurrentWorldPtr();
+        IntPtr worldPtr = Bind_UCSManager.CallGetCurrentWorldPtr();
         return _worldToValue.GetValueOrDefault(worldPtr);
     }
     
     private void SetWorldValue(T value)
     {
-        IntPtr worldPtr = FCSManagerExporter.CallGetCurrentWorldPtr();
+        IntPtr worldPtr = Bind_UCSManager.CallGetCurrentWorldPtr();
         if (_worldToValue.TryAdd(worldPtr, value))
         {
             return;
@@ -67,7 +68,7 @@ public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
     protected override void OnAlcUnloading(AssemblyLoadContext alc)
     {
         base.OnAlcUnloading(alc);
-        FWorldDelegatesExporter.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
+        Bind_FWorldDelegates.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
     }
 #endif
 }

@@ -237,7 +237,7 @@ public static class IncrementalCompilationManager
 
         string outputDir = Path.GetDirectoryName(assemblies[0])!;
         
-        LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 100 };
+        LoadOrderOptions loadOrderOptions = new LoadOrderOptions() { Collectible = true, Priority = 0 };
         AssemblyUtilities.EmitLoadOrder(assemblies, outputDir, loadOrderOptions, "UserCode");
     }
 

@@ -81,7 +81,7 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
-    public static unsafe IntPtr LookupManagedMethod(IntPtr typeHandlePtr, char* methodName)
+    public static unsafe IntPtr GetManagedMethod(IntPtr typeHandlePtr, char* methodName)
     {
         try
         {
@@ -155,7 +155,7 @@ public static class UnmanagedCallbacks
     }
     
     [UnmanagedCallersOnly]
-    public static unsafe IntPtr LookupManagedType(IntPtr assemblyHandle, char* fullTypeName)
+    public static unsafe IntPtr GetManagedTypeHandle(IntPtr assemblyHandle, char* fullTypeName)
     {
         try
         {

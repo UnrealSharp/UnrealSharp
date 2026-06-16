@@ -65,7 +65,7 @@ public static class SyntaxUtilities
         string typeName = syntax.Identifier.Text.Substring(1);
         string assemblyName = owningProject.AssemblyName;
         
-        FUnrealSharpEditorModuleExporter.CallDirtyUnrealType(assemblyName, typeNameSpace, typeName, flags);
+        Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(assemblyName, typeNameSpace, typeName, flags);
     }
     
     private static bool HasConstructorChanged(BaseTypeDeclarationSyntax newBaseType, BaseTypeDeclarationSyntax oldBaseType)

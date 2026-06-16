@@ -22,7 +22,7 @@ public class WorldContextObjectPropertyTranslator : ObjectPropertyTranslator
         string destinationBuffer,
         string offset, string source, bool reuseRefMarshallers)
     {
-        builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative({destinationBuffer} + {offset}, 0, UnrealSharp.Core.FCSManagerExporter.CallGetCurrentWorldContext());");
+        builder.AppendLine($"BlittableMarshaller<IntPtr>.ToNative({destinationBuffer} + {offset}, 0, UnrealSharp.Core.Interop.{ExporterCallbacks.Bind_UCSManager}.CallGetCurrentWorldContext());");
     }
 
     public override bool CanSupportGenericType(UhtProperty property) => false;

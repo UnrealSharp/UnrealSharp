@@ -55,7 +55,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     {
         if (_isObservable)
         {
-            FPropertyExporter.CallBroadcastFieldValueChanged(_observableNativeObject, NativeProperty);
+            Bind_FProperty.CallBroadcastFieldValueChanged(_observableNativeObject, NativeProperty);
         }
     }
 
@@ -89,7 +89,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     {
         unsafe
         {
-            FArrayPropertyExporter.CallResizeArray(NativeProperty, NativeBuffer, newSize);
+            Bind_FArrayProperty.CallResizeArray(NativeProperty, NativeBuffer, newSize);
         }
 
         BroadcastChanged();
@@ -104,7 +104,7 @@ public class TArray<T> : UnrealArrayBase<T>, IList<T>, IReadOnlyList<T>
     {
         unsafe
         {
-            FArrayPropertyExporter.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
+            Bind_FArrayProperty.CallSwapValues(NativeProperty, NativeBuffer, indexA, indexB);
         }
 
         BroadcastChanged();
@@ -203,7 +203,7 @@ public class ArrayMarshaller<T>(IntPtr nativeProperty, MarshallingDelegates<T>.T
             }
             else
             {
-                FArrayPropertyExporter.CallResizeArray(nativeProperty, mirror, obj.Count);
+                Bind_FArrayProperty.CallResizeArray(nativeProperty, mirror, obj.Count);
                 for (int i = 0; i < obj.Count; ++i)
                 {
                     toNative(mirror->Data, i, obj[i]);

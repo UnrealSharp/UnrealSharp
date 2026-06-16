@@ -20,7 +20,7 @@ public static class StringMarshaller
             // Pin the UTF-16 buffer and let the UE side convert it to TCHAR/FString.
             fixed (char* stringPtr = stringToMarshal)
             {
-                FStringExporter.CallMarshalToNativeStringView(unrealString, stringPtr, stringToMarshal.Length);
+                Bind_FString.CallMarshalToNativeStringView(unrealString, stringPtr, stringToMarshal.Length);
             }
         }
     }

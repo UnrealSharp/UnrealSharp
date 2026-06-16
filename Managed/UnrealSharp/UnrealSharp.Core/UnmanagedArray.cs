@@ -19,7 +19,7 @@ public struct UnmanagedArray
         {
             fixed (UnmanagedArray* ptr = &this)
             {
-                FScriptArrayExporter.CallDestroy(ptr);
+                Bind_FScriptArray.CallDestroy(ptr);
             }
             
             Data = IntPtr.Zero;
@@ -76,7 +76,7 @@ public struct UnmanagedArray
         {
             fixed (UnmanagedArray* ptr = &this)
             {
-                FScriptArrayExporter.CallAdd(ptr, list.Count, size, list.Count);
+                Bind_FScriptArray.CallAdd(ptr, list.Count, size, list.Count);
             }
             
             for (int i = 0; i < list.Count; i++)

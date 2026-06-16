@@ -15,8 +15,8 @@ struct FCSManagedCallbacks
 	using ManagedCallbacks_CreateNewManagedObjectWrapper = FGCHandleIntPtr(__stdcall*)(void*, void*);
 	using ManagedCallbacks_InvokeManagedMethod = int(__stdcall*)(void*, void*, void*, void*, void*);
 	using ManagedCallbacks_InvokeDelegate = int(__stdcall*)(FGCHandleIntPtr);
-	using ManagedCallbacks_LookupMethod = uint8*(__stdcall*)(void*, const TCHAR*);
-	using ManagedCallbacks_LookupType = uint8*(__stdcall*)(uint8*, const TCHAR*);
+	using ManagedCallbacks_GetManagedMethod = uint8*(__stdcall*)(void*, const TCHAR*);
+	using ManagedCallbacks_GetManagedTypeHandle = uint8*(__stdcall*)(uint8*, const TCHAR*);
 	using ManagedCallbacks_InitializeStructure = void(__stdcall*)(FGCHandleIntPtr, void*);
 	using ManagedCallbacks_Dispose = void(__stdcall*)(FGCHandleIntPtr, FGCHandleIntPtr);
 	using ManagedCallbacks_FreeHandle = void(__stdcall*)(FGCHandleIntPtr);
@@ -27,8 +27,8 @@ struct FCSManagedCallbacks
 	ManagedCallbacks_InvokeManagedMethod InvokeManagedMethod;
 		
 	ManagedCallbacks_InvokeDelegate InvokeDelegate;
-	ManagedCallbacks_LookupMethod LookupManagedMethod;
-	ManagedCallbacks_LookupType LookupManagedType;
+	ManagedCallbacks_GetManagedMethod GetManagedMethod;
+	ManagedCallbacks_GetManagedTypeHandle GetManagedTypeHandle;
 	
 	ManagedCallbacks_InitializeStructure InitializeStructure;
 	

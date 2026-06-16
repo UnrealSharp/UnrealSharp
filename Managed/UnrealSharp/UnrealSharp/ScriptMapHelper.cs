@@ -28,8 +28,8 @@ internal unsafe struct ScriptMapHelper
         MapAddress = IntPtr.Zero;
         
         _mapProperty = new NativeProperty(mapProperty);
-        _keyProp = new NativeProperty(FMapPropertyExporter.CallGetKey(mapProperty));
-        _valueProp = new NativeProperty(FMapPropertyExporter.CallGetValue(mapProperty));
+        _keyProp = new NativeProperty(Bind_FMapProperty.CallGetKey(mapProperty));
+        _valueProp = new NativeProperty(Bind_FMapProperty.CallGetValue(mapProperty));
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ internal unsafe struct ScriptMapHelper
     /// <returns>true if accessing this element is legal.</returns>
     public bool IsValidIndex(int index)
     {
-        return FScriptMapHelperExporter.CallIsValidIndex(_mapProperty.Property, MapAddress, index).ToManagedBool();
+        return Bind_FScriptMapHelper.CallIsValidIndex(_mapProperty.Property, MapAddress, index).ToManagedBool();
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ internal unsafe struct ScriptMapHelper
     /// <returns>The number of elements in the map.</returns>
     public int Num()
     {
-        return FScriptMapHelperExporter.CallNum(_mapProperty.Property, MapAddress);
+        return Bind_FScriptMapHelper.CallNum(_mapProperty.Property, MapAddress);
     }
 
     /// <summary>
@@ -57,12 +57,12 @@ internal unsafe struct ScriptMapHelper
     /// <returns>The (non-inclusive) maximum index of elements in the map.</returns>
     public int GetMaxIndex()
     {
-        return FScriptMapHelperExporter.CallGetMaxIndex(_mapProperty.Property, MapAddress);
+        return Bind_FScriptMapHelper.CallGetMaxIndex(_mapProperty.Property, MapAddress);
     }
 
     public bool GetPairPtr(int index, out IntPtr keyPtr, out IntPtr valuePtr)
     {
-        IntPtr pairPtr = FScriptMapHelperExporter.CallGetPairPtr(_mapProperty.Property, MapAddress, index);
+        IntPtr pairPtr = Bind_FScriptMapHelper.CallGetPairPtr(_mapProperty.Property, MapAddress, index);
         
         if (pairPtr == IntPtr.Zero)
         {
@@ -82,7 +82,7 @@ internal unsafe struct ScriptMapHelper
     /// <param name="slack">used to presize the array for a subsequent add, to avoid reallocation.</param>
     public void EmptyValues(int slack = 0)
     {
-        FScriptMapHelperExporter.CallEmptyValues(_mapProperty.Property, MapAddress);
+        Bind_FScriptMapHelper.CallEmptyValues(_mapProperty.Property, MapAddress);
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ internal unsafe struct ScriptMapHelper
             return;
         }
 
-        FScriptMapHelperExporter.CallRemoveIndex(_mapProperty.Property, MapAddress, index);
+        Bind_FScriptMapHelper.CallRemoveIndex(_mapProperty.Property, MapAddress, index);
     }
     
     public void AddPair<TKey, TValue>(TKey key, TValue value, MarshallingDelegates<TKey>.ToNative keyToNative,
@@ -114,7 +114,7 @@ internal unsafe struct ScriptMapHelper
         _valueProp.InitializeValue(valuePtr);
         valueToNative(valuePtr, 0, value);
         
-        FScriptMapHelperExporter.CallAddPair(_mapProperty.Property, MapAddress, keyPtr, valuePtr);
+        Bind_FScriptMapHelper.CallAddPair(_mapProperty.Property, MapAddress, keyPtr, valuePtr);
         
         _keyProp.DestroyValue(keyPtr);
         _valueProp.DestroyValue(valuePtr);

@@ -28,12 +28,12 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     
     public TWeakObjectPtr(T obj)
     { 
-        FWeakObjectPtrExporter.CallSetObject(ref Data, obj?.NativeObject ?? IntPtr.Zero);
+        Bind_FWeakObjectPtr.CallSetObject(ref Data, obj?.NativeObject ?? IntPtr.Zero);
     }
 
     internal TWeakObjectPtr(IntPtr nativePtr)
     {
-        FWeakObjectPtrExporter.CallSetObject(ref Data, nativePtr);
+        Bind_FWeakObjectPtr.CallSetObject(ref Data, nativePtr);
     }
     
     internal TWeakObjectPtr(WeakObjectData data)
@@ -43,7 +43,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     
     internal TWeakObjectPtr(UObject targetObject)
     {
-        FWeakObjectPtrExporter.CallSetObject(ref Data, targetObject.NativeObject);
+        Bind_FWeakObjectPtr.CallSetObject(ref Data, targetObject.NativeObject);
     }
     
     public static implicit operator TWeakObjectPtr<T>(T obj)
@@ -53,7 +53,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     
     private T? Get()
     {
-        IntPtr handle = FWeakObjectPtrExporter.CallGetObject(Data);
+        IntPtr handle = Bind_FWeakObjectPtr.CallGetObject(Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
 
@@ -61,7 +61,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     /// Check if the object that this weak object points to is valid.
     /// </summary>
     /// <returns>True if the object is valid, false otherwise.</returns>
-    public bool IsValid => FWeakObjectPtrExporter.CallIsValid(Data).ToManagedBool();
+    public bool IsValid => Bind_FWeakObjectPtr.CallIsValid(Data).ToManagedBool();
 
     /// <summary>
     /// Check if the object that this weak object points to is stale.
@@ -69,7 +69,7 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     /// <returns>True if the object is stale, false otherwise.</returns>
     public bool IsStale()
     {
-        return FWeakObjectPtrExporter.CallIsStale(Data).ToManagedBool();
+        return Bind_FWeakObjectPtr.CallIsStale(Data).ToManagedBool();
     }
 
     /// <inheritdoc />
@@ -98,6 +98,6 @@ public readonly struct TWeakObjectPtr<T> : IEquatable<TWeakObjectPtr<T>> where T
     /// <inheritdoc />
     public bool Equals(TWeakObjectPtr<T> other)
     {
-        return FWeakObjectPtrExporter.CallNativeEquals(Data, other.Data).ToManagedBool();
+        return Bind_FWeakObjectPtr.CallNativeEquals(Data, other.Data).ToManagedBool();
     }
 }

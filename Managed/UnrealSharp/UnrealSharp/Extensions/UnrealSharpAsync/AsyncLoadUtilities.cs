@@ -1,4 +1,5 @@
 using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.CoreUObject;
 using UnrealSharp.Engine;
 
@@ -10,8 +11,8 @@ internal static class AsyncLoadUtilities
     {
         get
         {
-            IntPtr worldContextObject = FCSManagerExporter.CallGetCurrentWorldContext();
-            IntPtr worldContextHandle = FCSManagerExporter.CallFindManagedObject(worldContextObject);
+            IntPtr worldContextObject = Bind_UCSManager.CallGetCurrentWorldContext();
+            IntPtr worldContextHandle = Bind_UCSManager.CallFindManagedObject(worldContextObject);
             return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(worldContextHandle)!;
         }
     }

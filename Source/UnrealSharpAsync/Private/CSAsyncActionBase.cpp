@@ -1,5 +1,4 @@
 ﻿#include "CSAsyncActionBase.h"
-#include "UnrealSharpAsync.h"
 
 void UCSAsyncActionBase::Destroy()
 {
@@ -35,15 +34,4 @@ void UCSAsyncActionBase::InitializeManagedCallback(FGCHandleIntPtr Callback)
 	{
 		GameInstance->RegisterReferencedObject(this);
 	}
-}
-
-void UUCSAsyncBaseExporter::InitializeAsyncObject(UCSAsyncActionBase* AsyncAction, FGCHandleIntPtr Callback)
-{
-	if (!IsValid(AsyncAction))
-	{
-		UE_LOG(LogUnrealSharpAsync, Warning, TEXT("UUCSAsyncBaseExporter::InitializeAsyncObject: AsyncAction is null"));
-		return;
-	}
-	
-	AsyncAction->InitializeManagedCallback(Callback);
 }

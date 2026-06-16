@@ -9,7 +9,7 @@ public partial class UEnum
     {
         get
         {
-            IntPtr managedStruct = UEnumExporter.CallGetManagedEnumType(NativeObject);
+            IntPtr managedStruct = Bind_UEnum.CallGetManagedEnumType(NativeObject);
             return GCHandleUtilities.GetObjectFromHandlePtr<Type>(managedStruct);
         }
     }

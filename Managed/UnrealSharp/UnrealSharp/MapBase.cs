@@ -29,8 +29,8 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         MarshallingDelegates<TValue>.FromNative valueFromNative, MarshallingDelegates<TValue>.ToNative valueToNative)
     {
         _nativeProperty = new NativeProperty(mapProperty);
-        _keyProperty = new NativeProperty(FMapPropertyExporter.CallGetKey(mapProperty));
-        _valueProperty = new NativeProperty(FMapPropertyExporter.CallGetValue(mapProperty));
+        _keyProperty = new NativeProperty(Bind_FMapProperty.CallGetKey(mapProperty));
+        _valueProperty = new NativeProperty(Bind_FMapProperty.CallGetValue(mapProperty));
         
         _helper = new ScriptMapHelper(_nativeProperty, _keyProperty, _valueProperty, address);
         _keyFromNative = keyFromNative;
@@ -49,7 +49,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
     {
         if (_isObservable)
         {
-            FPropertyExporter.CallBroadcastFieldValueChanged(_observableNativeObject, _nativeProperty.Property);
+            Bind_FProperty.CallBroadcastFieldValueChanged(_observableNativeObject, _nativeProperty.Property);
         }
     }
 
@@ -174,7 +174,7 @@ public unsafe class MapBase<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValu
         _keyProperty.InitializeValue(keyPtr);
         _keyToNative(keyPtr, 0, value);
         
-        int index = FScriptMapHelperExporter.CallFindMapPairIndexFromHash(_nativeProperty.Property, _helper.MapAddress, keyPtr);
+        int index = Bind_FScriptMapHelper.CallFindMapPairIndexFromHash(_nativeProperty.Property, _helper.MapAddress, keyPtr);
         
         _keyProperty.DestroyValue(keyPtr);
         return index;

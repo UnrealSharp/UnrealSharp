@@ -57,36 +57,36 @@ public partial struct FRandomStream
 
 	public void GenerateNewSeed()
 	{
-		FRandomStreamExporter.CallGenerateNewSeed(ref this);
+		Bind_FRandomStream.CallGenerateNewSeed(ref this);
 	}
 	
 	public float GetFraction( )
 	{
-		return FRandomStreamExporter.CallGetFraction(ref this);
+		return Bind_FRandomStream.CallGetFraction(ref this);
 	}
 
 	public uint GetUnsignedInt( )
 	{
-		return FRandomStreamExporter.CallGetUnsignedInt(ref this);
+		return Bind_FRandomStream.CallGetUnsignedInt(ref this);
 	}
 	
 	public FVector GetUnitVector( )
 	{
-		return FRandomStreamExporter.CallGetUnitVector(ref this);
+		return Bind_FRandomStream.CallGetUnitVector(ref this);
 	}
 	
 	public int RandRange(int min, int max) 
 	{
-		return FRandomStreamExporter.CallRandRange(ref this, min, max);
+		return Bind_FRandomStream.CallRandRange(ref this, min, max);
 	}
 	
 	public FVector GetUnitVectorInCone(FVector dir, float coneHalfAngleRad)
 	{
-		return FRandomStreamExporter.CallVRandCone(ref this, dir, coneHalfAngleRad);
+		return Bind_FRandomStream.CallVRandCone(ref this, dir, coneHalfAngleRad);
 	}
 
 	public FVector GetUnitVectorInCone(FVector dir, float horizontalConeHalfAngleRad, float verticalConeHalfAngleRad)
 	{
-		return FRandomStreamExporter.CallVRandCone2(ref this, dir, horizontalConeHalfAngleRad, verticalConeHalfAngleRad);
+		return Bind_FRandomStream.CallVRandCone2(ref this, dir, horizontalConeHalfAngleRad, verticalConeHalfAngleRad);
 	}
 }

@@ -7,7 +7,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
     public static void ToNative(IntPtr nativeBuffer, int arrayIndex, T? obj)
     {
         IntPtr nativeTObjectPtr = nativeBuffer + arrayIndex * IntPtr.Size;
-        TObjectPtrExporter.CallSetTObjectPtrPropertyValue(nativeTObjectPtr, obj?.NativeObject ?? IntPtr.Zero);
+        Bind_TObjectPtr.CallSetTObjectPtrPropertyValue(nativeTObjectPtr, obj?.NativeObject ?? IntPtr.Zero);
     }
     
     public static T FromNative(IntPtr nativeBuffer, int arrayIndex)
@@ -19,7 +19,7 @@ public static class ObjectMarshaller<T> where T : UnrealSharpObject
             return null!;
         }
         
-        IntPtr handle = FCSManagerExporter.CallFindManagedObject(uObjectPointer);
+        IntPtr handle = Bind_UCSManager.CallFindManagedObject(uObjectPointer);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle)!;
     }
 }

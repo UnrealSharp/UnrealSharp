@@ -1,4 +1,5 @@
 ﻿using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
@@ -9,7 +10,7 @@ public partial class UScriptStruct
     {
         get
         {
-            IntPtr managedStruct = UScriptStructExporter.CallGetManagedStructType(NativeObject);
+            IntPtr managedStruct = Bind_UScriptStruct.CallGetManagedStructType(NativeObject);
             return GCHandleUtilities.GetObjectFromHandlePtr<Type>(managedStruct);
         }
     }
@@ -17,7 +18,7 @@ public partial class UScriptStruct
     public static UScriptStruct GetScriptStruct<T>() where T : MarshalledStruct<T>
     {
         IntPtr structPtr = T.GetNativeClassPtr();
-        IntPtr handle = FCSManagerExporter.CallFindManagedObject(structPtr);
+        IntPtr handle = Bind_UCSManager.CallFindManagedObject(structPtr);
         return GCHandleUtilities.GetObjectFromHandlePtrFast<UScriptStruct>(handle)!;
     }
 }

@@ -82,7 +82,7 @@ public static class StaticConstructorUtilities
         }
         else if (!isBlittable)
         {
-            generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.UScriptStructCallbacks}.CallGetNativeStructSize(NativeClassPtr);");
+            generatorStringBuilder.AppendLine($"NativeDataSize = {ExporterCallbacks.Bind_UScriptStruct}.CallGetNativeStructSize(NativeClassPtr);");
         }
         
         generatorStringBuilder.CloseBrace();
@@ -103,13 +103,13 @@ public static class StaticConstructorUtilities
         string nativeFunctionName = function.GetNativeFunctionName();
             
         generatorStringBuilder.TryAddWithEditor(function);
-        generatorStringBuilder.AppendLine($"{nativeFunctionName} = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
+        generatorStringBuilder.AppendLine($"{nativeFunctionName} = {ExporterCallbacks.Bind_UClass}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             
         if (function.HasParametersOrReturnValue())
         {
             bool hasCustomStructParams = function.HasCustomStructParamSupport();
             string variableName = hasCustomStructParams ? $"{functionName}_NativeParamsSize" : $"{functionName}_ParamsSize";
-            generatorStringBuilder.AppendLine($"{variableName} = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+            generatorStringBuilder.AppendLine($"{variableName} = {ExporterCallbacks.Bind_UFunction}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
                 
             foreach (UhtType parameter in function.Children)
             {
@@ -140,11 +140,11 @@ public static class StaticConstructorUtilities
             string functionName = function.SourceName;
             
             string intPtrDeclaration = function.IsBlueprintImplementableEvent() ? "IntPtr " : "";
-            generatorStringBuilder.AppendLine($"{intPtrDeclaration}{functionName}_NativeFunction = {ExporterCallbacks.UClassCallbacks}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
+            generatorStringBuilder.AppendLine($"{intPtrDeclaration}{functionName}_NativeFunction = {ExporterCallbacks.Bind_UClass}.CallGetNativeFunctionFromClassAndName(NativeClassPtr, \"{function.EngineName}\");");
             
             if (function.HasParametersOrReturnValue())
             {
-                generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.UFunctionCallbacks}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
+                generatorStringBuilder.AppendLine($"{functionName}_ParamsSize = {ExporterCallbacks.Bind_UFunction}.CallGetNativeFunctionParamsSize({functionName}_NativeFunction);");
             
                 foreach (UhtType parameter in function.Children)
                 {

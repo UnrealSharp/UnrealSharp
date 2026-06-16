@@ -38,7 +38,7 @@ public class ArrayReadOnlyMarshaller<T>(IntPtr nativeProperty, MarshallingDelega
             }
             else
             {
-                FArrayPropertyExporter.CallResizeArray(nativeProperty, mirror, obj.Count);
+                Bind_FArrayProperty.CallResizeArray(nativeProperty, mirror, obj.Count);
                 for (int i = 0; i < obj.Count; ++i)
                 {
                     toNative(mirror->Data, i, obj[i]);

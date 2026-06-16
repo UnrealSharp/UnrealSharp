@@ -1,74 +1,64 @@
 ﻿#include "Functions/CSFunction_Params.h"
 
-static bool IsOutParameter(const FProperty* InParam)
-{
-	const bool bIsParam = InParam->HasAnyPropertyFlags(CPF_Parm);
-	const bool bIsReturnParam = InParam->HasAnyPropertyFlags(CPF_ReturnParm);
-	const bool bIsOutParam = InParam->HasAnyPropertyFlags(CPF_OutParm) && !InParam->HasAnyPropertyFlags(CPF_ConstParm);
-	return bIsParam && !bIsReturnParam && bIsOutParam;
-}
-
 void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, FFrame& Stack, RESULT_DECL)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params);
 	
-	UFunction* Function = Stack.CurrentNativeFunction;
 	FOutParmRec* OutParameters = nullptr;
 	FOutParmRec** LastOut = &OutParameters;
 	uint8* ArgumentBuffer = Stack.Locals;
 	uint8* LocalsCache = Stack.Locals;
-
-	// If we're calling this from BP, we need to copy the parameters to a new buffer
-	if (Stack.Code)
+	bool IsCalledFromBlueprint = Stack.Code != nullptr;
+	
+	if (IsCalledFromBlueprint)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunction_Params::InvokeManagedMethod_Params::CopyParametersToBuffer);
 		
-		int LocalStructSize = Function->GetStructureSize();
-		TArrayView<uint8> ArgumentData((uint8*)FMemory_Alloca(FMath::Max<int32>(1, LocalStructSize)), LocalStructSize);
-		ArgumentBuffer = ArgumentData.GetData();
-		Function->InitializeStruct(ArgumentBuffer);
+		ArgumentBuffer = (uint8*)FMemory_Alloca(FMath::Max<int32>(1, Stack.CurrentNativeFunction->GetStructureSize()));
+		Stack.CurrentNativeFunction->InitializeStruct(ArgumentBuffer);
 	
-		for (TFieldIterator<FProperty> ParamIt(Function, EFieldIteratorFlags::ExcludeSuper); ParamIt; ++ParamIt)
+		for (TFieldIterator<FProperty> ParamIt(Stack.CurrentNativeFunction, EFieldIteratorFlags::ExcludeSuper); ParamIt; ++ParamIt)
 		{
 			FProperty* FunctionParameter = *ParamIt;
 
-			if (FunctionParameter->HasAnyPropertyFlags(CPF_ReturnParm))
+			const EPropertyFlags ParamFlags = FunctionParameter->GetPropertyFlags();
+
+			if (ParamFlags & CPF_ReturnParm)
 			{
 				continue;
 			}
 
 			Stack.MostRecentPropertyAddress = nullptr;
 			Stack.MostRecentPropertyContainer = nullptr;
-			uint8* LocalValue = FunctionParameter->ContainerPtrToValuePtr<uint8>(ArgumentData.GetData());
+			
+			uint8* LocalValue = FunctionParameter->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
 			Stack.StepCompiledIn(LocalValue, FunctionParameter->GetClass());
 		
 			uint8* ValueAddress = LocalValue;
-			if (FunctionParameter->HasAnyPropertyFlags(CPF_OutParm) && Stack.MostRecentPropertyAddress)
+			
+			if ((ParamFlags & CPF_OutParm) && Stack.MostRecentPropertyAddress)
 			{
 				ValueAddress = Stack.MostRecentPropertyAddress;
 			}
-
-			// Add any output parameters to the output params chain
-			if (IsOutParameter(FunctionParameter))
+			
+			constexpr EPropertyFlags Relevant = CPF_Parm | CPF_ReturnParm | CPF_OutParm | CPF_ConstParm;
+			constexpr EPropertyFlags Wanted = CPF_Parm | CPF_OutParm;
+			
+			if ((ParamFlags & Relevant) == Wanted)
 			{
 				FOutParmRec* Out = static_cast<FOutParmRec*>(FMemory_Alloca(sizeof(FOutParmRec)));
 				Out->Property = FunctionParameter;
 				Out->PropAddr = ValueAddress;
 				Out->NextOutParm = nullptr;
-
-				// Link it to the end of the list
-				if (*LastOut)
-				{
-					(*LastOut)->NextOutParm = Out;
-					LastOut = &(*LastOut)->NextOutParm;
-				}
-				else
-				{
-					*LastOut = Out;
-				}
+				
+				*LastOut = Out;
+				LastOut = &Out->NextOutParm;
 			}
 			
-			FunctionParameter->CopyCompleteValue(ArgumentData.GetData() + FunctionParameter->GetOffset_ForInternal(), ValueAddress);
+			if (ValueAddress != LocalValue)
+			{
+				FunctionParameter->CopyCompleteValue(LocalValue, ValueAddress);
+			}
 		}
 
 		Stack.Locals = ArgumentBuffer;
@@ -87,16 +77,17 @@ void UCSFunction_Params::InvokeManagedMethod_Params(UObject* ObjectToInvokeOn, F
 			continue;
 		}
 		
-		const uint8* ValueAddress = ArgumentBuffer + OutParameter->Property->GetOffset_ForUFunction();
-		OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
+		const uint8* ValueAddress = OutParameter->Property->ContainerPtrToValuePtr<uint8>(ArgumentBuffer);
+		if (OutParameter->PropAddr != ValueAddress)
+		{
+			OutParameter->Property->CopyCompleteValue(OutParameter->PropAddr, ValueAddress);
+		}
 	}
-
-	// Only free up the buffer if we're calling from BP
-	if (Stack.Code)
+	
+	if (IsCalledFromBlueprint)
 	{
-		Function->DestroyStruct(ArgumentBuffer);
+		Stack.CurrentNativeFunction->DestroyStruct(ArgumentBuffer);
 	}
 
-	// Restore the local pointer so we are still pointing to the right location
 	Stack.Locals = LocalsCache;
 }

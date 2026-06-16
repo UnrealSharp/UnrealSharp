@@ -1,4 +1,5 @@
 ﻿using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
 using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 
@@ -10,8 +11,8 @@ public readonly ref partial struct FSubsystemCollectionBaseRef
 
     public T? InitializeDependency<T>(TSubclassOf<T> subsystemClass) where T : USubsystem
     {
-        IntPtr obj = FSubsystemCollectionBaseRefExporter.CallInitializeDependency(_collectionRef, subsystemClass.NativeClass);
-        IntPtr handle = FCSManagerExporter.CallFindManagedObject(obj);
+        IntPtr obj = Bind_FSubsystemCollectionBaseRef.CallInitializeDependency(_collectionRef, subsystemClass.NativeClass);
+        IntPtr handle = Bind_UCSManager.CallFindManagedObject(obj);
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(handle);
     }
 

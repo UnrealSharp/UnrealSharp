@@ -51,7 +51,7 @@ public partial struct FRotator
     
     public FRotator(FMatrix rotationMatrix)
     {
-        FRotatorExporter.CallFromMatrix(ref this, rotationMatrix);
+        Bind_FRotator.CallFromMatrix(ref this, rotationMatrix);
     }
 
     public FRotator(FVector vec)
@@ -74,12 +74,12 @@ public partial struct FRotator
     {
         get
         {
-            FMatrixExporter.CallFromRotator(out FMatrix rotationMatrix, this);
+            Bind_FMatrix.CallFromRotator(out FMatrix rotationMatrix, this);
             return rotationMatrix;
         }
     }
     
-    public FVector ToVector => FVectorExporter.CallFromRotator(this);
+    public FVector ToVector => Bind_FVector.CallFromRotator(this);
     public bool IsZero => Pitch == 0 && Yaw == 0 && Roll == 0;
     
     public bool IsNearlyZero(float tolerance = 0.0001f)

@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "CSManagedDelegate.h"
 #include "CSManagedGCHandle.h"
-#include "UnrealSharpBinds/Public/CSBindsManager.h"
 #include "UObject/Object.h"
 #include "CSAsyncActionBase.generated.h"
 
@@ -16,21 +15,11 @@ class UCSAsyncActionBase : public UObject
 public:
 	UFUNCTION(meta = (ScriptMethod))
 	void Destroy();
+	void InitializeManagedCallback(FGCHandleIntPtr Callback);
 protected:
-	friend class UUCSAsyncBaseExporter;
 
 	void InvokeManagedCallback(bool bDispose = true);
     void InvokeManagedCallback(UObject* WorldContextObject, bool bDispose = true);
-	void InitializeManagedCallback(FGCHandleIntPtr Callback);
 	
 	FCSManagedDelegate ManagedCallback;
-};
-
-UCLASS(meta = (InternalType))
-class UUCSAsyncBaseExporter : public UObject
-{
-	GENERATED_BODY()
-public:
-	UNREALSHARP_FUNCTION()
-	static void InitializeAsyncObject(UCSAsyncActionBase* AsyncAction, FGCHandleIntPtr Callback);
 };

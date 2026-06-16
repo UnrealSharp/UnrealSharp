@@ -9,14 +9,6 @@ public enum NativeBool : byte
 
 public static class BoolConverter
 { 
-    public static NativeBool ToNativeBool(this bool value)
-    {
-        return value ? NativeBool.True : NativeBool.False;
-    }
-
-    public static bool ToManagedBool(this NativeBool value)
-    {
-        byte byteValue = (byte) value;
-        return byteValue != 0;
-    }
+    public static NativeBool ToNativeBool(this bool value) => value ? NativeBool.True : NativeBool.False;
+    public static bool ToManagedBool(this NativeBool value) => (byte) value != 0;
 }

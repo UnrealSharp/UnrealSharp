@@ -60,7 +60,7 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     /// </summary>
     protected void ClearInternal()
     {
-        FArrayPropertyExporter.CallEmptyArray(NativeProperty, NativeBuffer);
+        Bind_FArrayProperty.CallEmptyArray(NativeProperty, NativeBuffer);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     /// </summary>
     protected void AddInternal()
     {
-        FArrayPropertyExporter.CallAddToArray(NativeProperty, NativeBuffer);
+        Bind_FArrayProperty.CallAddToArray(NativeProperty, NativeBuffer);
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     /// <param name="index"> The index to insert the element at. </param>
     protected void InsertInternal(int index)
     {
-        FArrayPropertyExporter.CallInsertInArray(NativeProperty, NativeBuffer, index);
+        Bind_FArrayProperty.CallInsertInArray(NativeProperty, NativeBuffer, index);
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public abstract unsafe class UnrealArrayBase<T> : IEnumerable<T>
     /// <param name="index"> The index to remove the element at. </param>
     protected void RemoveAtInternal(int index)
     {
-        FArrayPropertyExporter.CallRemoveFromArray(NativeProperty, NativeBuffer, index);
+        Bind_FArrayProperty.CallRemoveFromArray(NativeProperty, NativeBuffer, index);
     }
 
     /// <summary>
@@ -157,14 +157,14 @@ public class ArrayCopyMarshaller<T>
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
             if (obj == null)
             {
-                FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
+                Bind_FArrayProperty.CallEmptyArray(_nativeProperty, mirror);
                 return;
             }
 
             var enumerable = obj.ToList();
             int count = enumerable.Count;
             
-            FArrayPropertyExporter.CallInitializeArray(_nativeProperty, mirror, count);
+            Bind_FArrayProperty.CallInitializeArray(_nativeProperty, mirror, count);
             
             for (int i = 0; i < count; ++i)
             {
@@ -192,7 +192,7 @@ public class ArrayCopyMarshaller<T>
         unsafe
         {
             UnmanagedArray* mirror = (UnmanagedArray*)(nativeBuffer + arrayIndex * Marshal.SizeOf(typeof(UnmanagedArray)));
-            FArrayPropertyExporter.CallEmptyArray(_nativeProperty, mirror);
+            Bind_FArrayProperty.CallEmptyArray(_nativeProperty, mirror);
         }
     }
 }

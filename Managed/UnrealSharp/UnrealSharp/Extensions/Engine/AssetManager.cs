@@ -12,7 +12,7 @@ public partial class UAssetManager
     /// </summary>
     public static T Get<T>() where T : UAssetManager
     {
-        IntPtr handle = UAssetManagerExporter.CallGetAssetManager();
+        IntPtr handle = Bind_UAssetManager.CallGetAssetManager();
 
         if (handle == IntPtr.Zero)
         {
