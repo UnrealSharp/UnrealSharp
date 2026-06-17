@@ -2,7 +2,7 @@
 #include "CSManagedDelegate.h"
 #include "CSManagedGCHandle.h"
 
-DECLARE_UNREALSHARP_BINDER(Bind_AsyncExporter)
+DECLARE_UNREALSHARP_BINDER(Bind_Async)
 {
 	void RunOnThread(TWeakObjectPtr<UObject> WorldContextObject, ENamedThreads::Type Thread, FGCHandleIntPtr DelegateHandle)
 	{
