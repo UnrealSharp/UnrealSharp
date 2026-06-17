@@ -3,6 +3,7 @@
 #include "ReflectionData/CSEnumReflectionData.h"
 #include "Types/CSEnum.h"
 #include "UnrealSharpUtils.h"
+#include "Serialization/AsyncLoadingEvents.h"
 
 #if WITH_EDITOR
 #include "Kismet2/EnumEditorUtils.h"
@@ -33,7 +34,12 @@ void UCSManagedEnumCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<F
 		Enum->DisplayNameMap.Add(*ItemName, FText::FromString(ItemName));
 	}
 	
+#if ENGINE_MINOR_VERSION >= 8
+	Enum->SetEnums(Entries, UEnum::ECppForm::EnumClass, UEnum::EUnderlyingType::uint8, EEnumFlags::None, UEnum::EAddMaxKeyIfMissing::Yes);
+#else
 	Enum->SetEnums(Entries, UEnum::ECppForm::EnumClass);
+#endif
+	
 	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Enum);
 
 #if WITH_EDITOR

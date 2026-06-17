@@ -200,6 +200,11 @@ public static class SubclassOfMarshaller<T>
     {
         BlittableMarshaller<IntPtr>.ToNative(nativeBuffer, arrayIndex, obj.NativeClass);
     }
+    
+    public static void ToNative(IntPtr nativeBuffer, int arrayIndex, TSubclassOf<UObject> obj)
+    {
+        BlittableMarshaller<IntPtr>.ToNative(nativeBuffer, arrayIndex, obj.As<T>().NativeClass);
+    }
 
     public static TSubclassOf<T> FromNative(IntPtr nativeBuffer, int arrayIndex)
     {

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "UObject/ObjectMacros.h"
+
 UENUM()
 enum class ECSPropertyType : uint8
 {
@@ -46,4 +48,6 @@ enum class ECSPropertyType : uint8
 	String,
 	Name,
 	Text,
+	
+	MAX,
 };

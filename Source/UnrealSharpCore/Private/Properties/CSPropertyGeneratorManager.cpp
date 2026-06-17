@@ -34,7 +34,11 @@ public:
 		}
 		else
 		{
+#if ENGINE_MINOR_VERSION >= 8
+			NewProperty = new T(Outer, PropertyName);
+#else
 			NewProperty = new T(Outer, PropertyName, RF_Public);
+#endif
 		}
 		
 		NewProperty->PropertyFlags = PropertyReflectionData.PropertyFlags;
@@ -127,7 +131,7 @@ FProperty* FCSPropertyGeneratorManager::ConstructProperty(const FFieldClass* Fie
 	if (PropertyInitializer == nullptr)
 	{
 		UE_LOG(LogUnrealSharp, Error, TEXT("Property generator for %s is not implemented"), *FieldClass->GetName());
-		return static_cast<FProperty*>(FieldClass->Construct(Owner, PropertyName, RF_Public));
+		return nullptr;
 	}
 
 	return PropertyInitializer->Get().ConstructProperty(Owner, PropertyName, PropertyReflectionData);

@@ -8,8 +8,10 @@
 #include "CSProjectUtilities.h"
 #include "CSUnrealSharpSettings.h"
 #include "Logging/StructuredLog.h"
-#include "Engine/UserDefinedStruct.h"
 #include "Utilities/CSClassUtilities.h"
+
+#include "Misc/CoreDelegates.h"
+#include "UObject/Package.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdangling-assignment"

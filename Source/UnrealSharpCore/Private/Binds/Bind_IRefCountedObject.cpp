@@ -2,37 +2,57 @@
 
 DECLARE_UNREALSHARP_BINDER(Bind_IRefCountedObject)
 {
-	uint32 GetRefCount(const IRefCountedObject* Object)
+	struct FCSRefCountType
 	{
-		if (!Object || Object->GetRefCount() == 0)
+		static FCSRefCountType Invalid()
 		{
-			return 0;
+#if ENGINE_MINOR_VERSION >= 8
+			return FCSRefCountType(FReturnedRefCountValue(0));
+#else
+			return FCSRefCountType(0);
+#endif
 		}
-	
-		return Object->GetRefCount();
+       
+#if ENGINE_MINOR_VERSION >= 8
+		FCSRefCountType(FReturnedRefCountValue InRefCountType) : RefCountType(InRefCountType) {}
+		FReturnedRefCountValue RefCountType;
+#else
+		FCSRefCountType(uint32 InRefCountType) : RefCountType(InRefCountType) {}
+		uint32 RefCountType;
+#endif
+	};
+
+	FCSRefCountType GetRefCount(const IRefCountedObject* Object)
+	{
+		if (!Object)
+		{
+			return FCSRefCountType::Invalid();
+		}
+    
+		return FCSRefCountType(Object->GetRefCount());
 	}
 
-	uint32 AddRef(const IRefCountedObject* Object)
+	FCSRefCountType AddRef(const IRefCountedObject* Object)
 	{
-		if (!Object || Object->GetRefCount() == 0)
+		if (!Object)
 		{
-			return 0;
+			return FCSRefCountType::Invalid();
 		}
-	
+    
 		(void)Object->AddRef();
-		return Object->GetRefCount();
+		return FCSRefCountType(Object->GetRefCount());
 	}
 
-	uint32 Release(const IRefCountedObject* Object)
+	FCSRefCountType Release(const IRefCountedObject* Object)
 	{
-		if (!Object || Object->GetRefCount() == 0)
+		if (!Object)
 		{
-			return 0;
+			return FCSRefCountType::Invalid();
 		}
-	
-		return Object->Release();
+    
+		return FCSRefCountType(Object->Release());
 	}
-	
+    
 	BIND_UNREALSHARP_FUNCTION(GetRefCount)
 	BIND_UNREALSHARP_FUNCTION(AddRef)
 	BIND_UNREALSHARP_FUNCTION(Release)

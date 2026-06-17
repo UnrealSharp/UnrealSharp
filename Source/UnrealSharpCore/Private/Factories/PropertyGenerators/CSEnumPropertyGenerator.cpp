@@ -44,7 +44,12 @@ FProperty* UCSEnumPropertyGenerator::CreateProperty(UField* Outer, const FCSProp
 	if (Enum->GetCppForm() == UEnum::ECppForm::EnumClass)
 	{
 		FEnumProperty* EnumProperty = NewProperty<FEnumProperty>(Outer, PropertyReflectionData, FEnumProperty::StaticClass());
+		
+#if ENGINE_MINOR_VERSION >= 8
+		FByteProperty* UnderlyingProp = new FByteProperty(EnumProperty, "UnderlyingType");
+#else
 		FByteProperty* UnderlyingProp = new FByteProperty(EnumProperty, "UnderlyingType", RF_Public);
+#endif
 		
 		EnumProperty->SetEnum(Enum);
 		EnumProperty->AddCppProperty(UnderlyingProp);

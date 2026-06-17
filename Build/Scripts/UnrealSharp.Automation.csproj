@@ -17,29 +17,33 @@
   </PropertyGroup>
 
   <ItemGroup>
+
     <Reference Include="AutomationScripts.Automation">
-      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Scripts\AutomationScripts.Automation.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' == 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Scripts\$(TargetFramework)\AutomationScripts.Automation.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' != 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Scripts\AutomationScripts.Automation.dll</HintPath>
       <Private>false</Private>
     </Reference>
+
     <Reference Include="AutomationUtils.Automation">
-      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' == 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\net10.0\AutomationUtils.Automation.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' != 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    
     <Reference Include="Microsoft.Extensions.Logging.Abstractions">
       <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
+    
     <Reference Include="UnrealBuildTool">
       <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    
     <Reference Include="EpicGames.Core">
       <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\EpicGames.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="Gauntlet.Automation">
-      <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Gauntlet\Gauntlet.Automation.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    
     <Reference Include="EpicGames.Build">
       <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\EpicGames.Build.dll</HintPath>
       <Private>false</Private>

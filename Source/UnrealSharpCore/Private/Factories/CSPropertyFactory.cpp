@@ -6,6 +6,7 @@
 #include "UObject/Class.h"
 #include "Utilities/CSMetaDataUtils.h"
 #include "UnrealSharpUtils.h"
+#include "Engine/BlueprintGeneratedClass.h"
 
 TMap<uint32, UCSPropertyGenerator*> FCSPropertyFactory::PropertyGeneratorMap;
 
@@ -29,7 +30,7 @@ void FCSPropertyFactory::EnsureInitialized()
 		PropertyGenerators.Add(PropertyGenerator);
 	}
 
-	int64 MaxValue = StaticEnum<ECSPropertyType>()->GetMaxEnumValue();
+	uint8 MaxValue = static_cast<uint8>(ECSPropertyType::MAX);
 	PropertyGeneratorMap.Reserve(MaxValue);
 	
 	for (int64 i = 0; i < MaxValue; ++i)
@@ -83,7 +84,10 @@ FProperty* FCSPropertyFactory::CreateProperty(UField* Outer, const FCSPropertyRe
 		TryAddPropertyAsFieldNotify(PropertyReflectionData, OwningClass);
 	}
 
+#if ENGINE_MINOR_VERSION < 8
 	NewProperty->SetFlags(RF_LoadCompleted);
+#endif
+	
 	return NewProperty;
 }
 

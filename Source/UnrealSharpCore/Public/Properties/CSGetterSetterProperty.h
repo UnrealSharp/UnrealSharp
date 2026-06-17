@@ -16,7 +16,14 @@ concept ValidProperty = std::derived_from<T, FProperty>
 template <ValidProperty PropertyBaseClass>
 class TCSGetterSetterProperty : public PropertyBaseClass {
 public:
-    TCSGetterSetterProperty(FFieldVariant InOwner, FName InName, EObjectFlags InFlags, UFunction* InSetterFunc, UFunction* InGetterFunc) : PropertyBaseClass(InOwner, InName, InFlags), SetterFunc(MoveTemp(InSetterFunc)), GetterFunc(MoveTemp(InGetterFunc)) {
+    TCSGetterSetterProperty(FFieldVariant InOwner, FName InName, EObjectFlags InFlags, UFunction* InSetterFunc, UFunction* InGetterFunc)
+#if ENGINE_MINOR_VERSION >= 8
+        : PropertyBaseClass(InOwner, InName)
+#else
+        : PropertyBaseClass(InOwner, InName, InFlags)
+#endif
+        , SetterFunc(MoveTemp(InSetterFunc)), GetterFunc(MoveTemp(InGetterFunc))
+    {
     }
 	
     // FProperty interface
@@ -49,9 +56,21 @@ public:
         static_cast<const FProperty*>(this)->SetValue_InContainer(const_cast<void*>(Container), OutValue);
     }
 
+#if ENGINE_MINOR_VERSION >= 8
+    virtual void ExportText_Internal(FString& ValueStr, TNotNull<const void*> PropertyValueOrContainer, EPropertyPointerType PointerType, const void* DefaultValue, UObject* Parent, int32 PortFlags, UObject* ExportRootScope) const override
+    {
+        if (PointerType == EPropertyPointerType::Direct)
+        {
+            const void* RawValueOrContainer = PropertyValueOrContainer;
+            const uint8* ObjectPointer = static_cast<const uint8*>(RawValueOrContainer) - this->GetOffset_ForInternal();
+            CallGetterInternal(const_cast<uint8*>(ObjectPointer), const_cast<void*>(RawValueOrContainer));
+        }
+        
+        PropertyBaseClass::ExportText_Internal(ValueStr, PropertyValueOrContainer, PointerType, DefaultValue, Parent, PortFlags, ExportRootScope);
+    }
+#else
     virtual void ExportText_Internal(FString& ValueStr, const void* PropertyValueOrContainer, EPropertyPointerType PointerType, const void* DefaultValue, UObject* Parent, int32 PortFlags, UObject* ExportRootScope) const override
     {
-        // In the case of direct access we want to call C# to write to the native buffer before we proceed
         if (PointerType == EPropertyPointerType::Direct)
         {
             const uint8* ObjectPointer = static_cast<const uint8*>(PropertyValueOrContainer) - this->GetOffset_ForInternal();
@@ -60,7 +79,24 @@ public:
         
         PropertyBaseClass::ExportText_Internal(ValueStr, PropertyValueOrContainer, PointerType, DefaultValue, Parent, PortFlags, ExportRootScope);
     }
+#endif
     
+#if ENGINE_MINOR_VERSION >= 8
+    virtual const TCHAR* ImportText_Internal(const TCHAR* Buffer, TNotNull<void*> ContainerOrPropertyPtr, EPropertyPointerType PointerType, UObject* OwnerObject, int32 PortFlags, FOutputDevice* ErrorText) const override
+    {
+        const TCHAR* Result = PropertyBaseClass::ImportText_Internal(Buffer, ContainerOrPropertyPtr, PointerType, OwnerObject, PortFlags, ErrorText);
+
+        // After setting the native memory from text we want to write the value into managed memory
+        if (PointerType == EPropertyPointerType::Direct)
+        {
+            void* RawContainerOrPropertyPtr = ContainerOrPropertyPtr;
+            uint8* ObjectPointer = static_cast<uint8*>(RawContainerOrPropertyPtr) - this->GetOffset_ForInternal();
+            CallSetterInternal(ObjectPointer, RawContainerOrPropertyPtr);
+        }
+        
+        return Result;
+    }
+#else
     virtual const TCHAR* ImportText_Internal(const TCHAR* Buffer, void* ContainerOrPropertyPtr, EPropertyPointerType PointerType, UObject* OwnerObject, int32 PortFlags, FOutputDevice* ErrorText) const override
     {
         const TCHAR* Result = PropertyBaseClass::ImportText_Internal(Buffer, ContainerOrPropertyPtr, PointerType, OwnerObject, PortFlags, ErrorText);
@@ -74,6 +110,7 @@ public:
         
         return Result;
     }
+#endif
 
 #if ENGINE_MINOR_VERSION <= 6
     virtual EConvertFromTypeResult ConvertFromType(const FPropertyTag& Tag, FStructuredArchive::FSlot Slot, uint8* Data, UStruct* DefaultsStruct, const uint8* Defaults)
@@ -84,7 +121,27 @@ public:
         return Result;
     }
 #endif
-    
+
+#if ENGINE_MINOR_VERSION >= 8
+    virtual void SerializeItem(FStructuredArchive::FSlot Slot, TNotNull<void*> Value, void const* Defaults) const override
+    {
+        const FArchive& UnderlyingArchive = Slot.GetUnderlyingArchive();
+        void* RawValue = Value;
+        if (UnderlyingArchive.IsSaving())
+        {
+            // When saving we want to get the most up-to-date value of the property
+            CallGetterInternal(static_cast<uint8*>(RawValue) - this->GetOffset_ForInternal(), RawValue);
+        }
+
+        PropertyBaseClass::SerializeItem(Slot, Value, Defaults);
+
+        if (UnderlyingArchive.IsLoading())
+        {
+            // When loading we want to update the property with what we pulled out of the archive
+            CallSetterInternal(static_cast<uint8*>(RawValue) - this->GetOffset_ForInternal(), RawValue);
+        }
+    }
+#else
     virtual void SerializeItem(FStructuredArchive::FSlot Slot, void* Value, void const* Defaults) const
     {
         const FArchive &UnderlyingArchive = Slot.GetUnderlyingArchive();
@@ -102,7 +159,29 @@ public:
             CallSetterInternal(static_cast<uint8*>(Value) - this->GetOffset_ForInternal(), Value);
         }
     }
-    
+#endif
+
+#if ENGINE_MINOR_VERSION >= 8
+    virtual bool NetSerializeItem(FArchive& Ar, UPackageMap* Map, TNotNull<void*> Data, TArray<uint8>* MetaData) const override
+    {
+        void* RawData = Data;
+        if (Ar.IsSaving())
+        {
+            // When saving we want to get the most up-to-date value of the property
+            CallGetterInternal(static_cast<uint8*>(RawData) - this->GetOffset_ForInternal(), RawData);
+        }
+
+        const bool Result = PropertyBaseClass::NetSerializeItem(Ar, Map, Data, MetaData);
+
+        if (Ar.IsLoading())
+        {
+            // When loading we want to update the property with what we pulled out of the archive
+            CallSetterInternal(static_cast<uint8*>(RawData) - this->GetOffset_ForInternal(), RawData);
+        }
+
+        return Result;
+    }
+#else
     virtual bool NetSerializeItem(FArchive& Ar, UPackageMap* Map, void* Data, TArray<uint8> * MetaData) const
     {
         if (Ar.IsSaving())
@@ -121,6 +200,7 @@ public:
 
         return Result;
     }
+#endif
     // End of FProperty interface
 
 private:
