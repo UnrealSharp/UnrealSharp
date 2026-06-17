@@ -28,7 +28,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 #if ENGINE_MINOR_VERSION >= 8
 				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName());
 #else
-				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName());
+				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName(), Property->GetFlags());
 #endif
 				UScriptStruct* Struct = *CustomStructs++;
 				CustomStructParam->Struct = Struct;

@@ -65,7 +65,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 #if ENGINE_MINOR_VERSION >= 8
 		Delegate->ProcessDelegate<UObject>(Parameters);
 #else
-		Delegate->ProcessMulticastDelegate(Parameters);
+		Delegate->ProcessMulticastDelegate<UObject>(Parameters);
 #endif
 	}
 
