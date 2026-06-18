@@ -61,7 +61,12 @@ UCSFunctionBase* FCSFunctionFactory::CreateOverriddenFunction(UClass* Outer, UFu
 	TArray<FProperty*> FunctionProperties;
 	for (TFieldIterator<FProperty> PropIt(ParentFunction); PropIt && PropIt->PropertyFlags & CPF_Parm; ++PropIt)
 	{
+#if ENGINE_MINOR_VERSION >= 8
+		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName()));
+#else
 		FProperty* ClonedParam = CastField<FProperty>(FField::Duplicate(*PropIt, NewFunction, PropIt->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~(EInternalObjectFlags::Native)));
+#endif
+		
 		ClonedParam->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
 		ClonedParam->Next = nullptr;
 		FunctionProperties.Add(ClonedParam);

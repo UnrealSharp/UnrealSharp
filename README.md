@@ -24,7 +24,7 @@ UnrealSharp is a free, open-source plugin for writing Unreal Engine 5 games in C
 
 ## Prerequisites
 
-- Unreal Engine 5.5 - 5.7
+- Unreal Engine 5.6 - 5.8
 - .NET 10.0.5 or newer
 - A C++ project (strongly recommended, pure Blueprint projects work but are harder to support)
 

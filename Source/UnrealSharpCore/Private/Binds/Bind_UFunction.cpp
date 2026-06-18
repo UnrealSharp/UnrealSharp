@@ -25,7 +25,11 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 			FProperty* OutProperty;
 			if(Property == *CustomStructParams)
 			{
+#if ENGINE_MINOR_VERSION >= 8
+				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName());
+#else
 				FStructProperty* CustomStructParam = new FStructProperty(Specialization, Property->GetFName(), Property->GetFlags());
+#endif
 				UScriptStruct* Struct = *CustomStructs++;
 				CustomStructParam->Struct = Struct;
 				EPropertyFlags Flags = Property->GetPropertyFlags() | CPF_BlueprintVisible | CPF_BlueprintReadOnly;
@@ -59,7 +63,12 @@ DECLARE_UNREALSHARP_BINDER(Bind_UFunction)
 			}
 			else
 			{
+#if ENGINE_MINOR_VERSION >= 8
+				OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName()));
+#else
 				OutProperty = CastField<FProperty>(FField::Duplicate(Property, Specialization, Property->GetFName(), RF_AllFlags, EInternalObjectFlags_AllFlags & ~EInternalObjectFlags::Native));
+#endif
+				
 				OutProperty->PropertyFlags |= CPF_BlueprintVisible | CPF_BlueprintReadOnly;
 				OutProperty->Next = nullptr;
 			}

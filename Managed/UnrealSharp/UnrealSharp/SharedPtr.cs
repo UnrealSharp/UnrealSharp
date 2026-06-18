@@ -6,9 +6,8 @@ namespace UnrealSharp;
 [NativeCallbacks]
 public static unsafe partial class Bind_IRefCountedObject
 {
-    public static delegate* unmanaged<IntPtr, uint> AddRef;
-    public static delegate* unmanaged<IntPtr, uint> Release;
-    public static delegate* unmanaged<IntPtr, uint> GetRefCount;
+    public static delegate* unmanaged<IntPtr, void> AddRef;
+    public static delegate* unmanaged<IntPtr, void> Release;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -42,7 +41,6 @@ public struct FSharedPtr
         return HashCode.Combine(ReferenceController);
     }
 
-    public uint RefCount => Bind_IRefCountedObject.CallGetRefCount(ReferenceController);
     public bool Valid => ReferenceController != IntPtr.Zero;
 
     public static bool operator ==(FSharedPtr a, FSharedPtr b)

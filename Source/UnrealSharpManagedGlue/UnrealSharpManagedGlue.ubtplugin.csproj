@@ -32,25 +32,12 @@
         <RootNamespace>UnrealSharpManagedGlue</RootNamespace>
         <AssemblyName>UnrealSharpManagedGlue</AssemblyName>
         <Configurations>Debug;Release;Development</Configurations>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <DebugType>pdbonly</DebugType>
         <Nullable>enable</Nullable>
 
         <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND '$(PackAsTool)' != 'true'">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="Microsoft.CSharp" />
-    </ItemGroup>
-
-    <PropertyGroup>
-        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-    </PropertyGroup>
-
-    <Target Name="GetDependencyTargetPaths">
-        <ItemGroup>
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGCppAst)\lib\net8.0\CppAst.dll" IncludeRuntimeDependency="true" />
-        </ItemGroup>
-    </Target>
     
     <ItemGroup>
         <Reference Include="EpicGames.Build">
@@ -65,8 +52,11 @@
         <Reference Include="UnrealBuildTool">
             <HintPath>$(EngineDir)\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll</HintPath>
         </Reference>
+
         <Reference Include="AutomationUtils.Automation">
-            <HintPath>$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
+            <HintPath Condition="'$(TargetFramework)' == 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\net10.0\AutomationUtils.Automation.dll</HintPath>
+            <HintPath Condition="'$(TargetFramework)' != 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationUtils\AutomationUtils.Automation.dll</HintPath>
         </Reference>
+        
     </ItemGroup>
 </Project>

@@ -1,5 +1,10 @@
 ﻿#include "CSBindsRegistry.h"
 #include "UnrealSharpCore.h"
+#include "Logging/StructuredLog.h"
+
+#if ENGINE_MINOR_VERSION >= 8
+#include "UObject/ScriptDelegateFwd.h"
+#endif
 
 DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 {
@@ -57,7 +62,11 @@ DECLARE_UNREALSHARP_BINDER(Bind_FMulticastDelegateProperty)
 	void BroadcastDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, void* Parameters)
 	{
 		Delegate = TryGetSparseMulticastDelegate(DelegateProperty, Delegate);
+#if ENGINE_MINOR_VERSION >= 8
+		Delegate->ProcessDelegate<UObject>(Parameters);
+#else
 		Delegate->ProcessMulticastDelegate<UObject>(Parameters);
+#endif
 	}
 
 	bool ContainsDelegate(FMulticastDelegateProperty* DelegateProperty, const FMulticastScriptDelegate* Delegate, UObject* Target, const char* FunctionName)

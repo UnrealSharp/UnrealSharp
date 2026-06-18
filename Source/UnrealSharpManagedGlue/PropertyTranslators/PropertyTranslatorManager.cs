@@ -79,26 +79,17 @@ public static class PropertyTranslatorManager
         
         WorldContextObjectPropertyTranslator worldContextObjectPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtObjectPropertyBase), worldContextObjectPropertyTranslator);
-#if !UE_5_6_OR_LATER
-        AddPropertyTranslator(typeof(UhtObjectPtrProperty), worldContextObjectPropertyTranslator);
-#endif
         AddPropertyTranslator(typeof(UhtObjectProperty), worldContextObjectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), worldContextObjectPropertyTranslator);
         
         ObjectPropertyTranslator objectPropertyTranslator = new();
         AddPropertyTranslator(typeof(UhtObjectPropertyBase), objectPropertyTranslator);
-#if !UE_5_6_OR_LATER
-        AddPropertyTranslator(typeof(UhtObjectPtrProperty), objectPropertyTranslator);
-#endif
         AddPropertyTranslator(typeof(UhtObjectProperty), objectPropertyTranslator);
         AddPropertyTranslator(typeof(UhtLazyObjectPtrProperty), objectPropertyTranslator);
         
         AddPropertyTranslator(typeof(UhtInterfaceProperty), new InterfacePropertyTranslator());
         
         AddPropertyTranslator(typeof(UhtClassProperty), new SubclassOfPropertyTranslator());
-#if !UE_5_6_OR_LATER
-        AddPropertyTranslator(typeof(UhtClassPtrProperty), new SubclassOfPropertyTranslator());
-#endif
         AddPropertyTranslator(typeof(UhtSoftClassProperty), new SoftClassPropertyTranslator());
         AddPropertyTranslator(typeof(UhtSoftObjectProperty), new SoftObjectPropertyTranslator());
         AddPropertyTranslator(typeof(UhtFieldPathProperty), new FieldPathPropertyTranslator());

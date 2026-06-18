@@ -2,38 +2,27 @@
 
 DECLARE_UNREALSHARP_BINDER(Bind_IRefCountedObject)
 {
-	uint32 GetRefCount(const IRefCountedObject* Object)
+	void AddRef(const IRefCountedObject* Object)
 	{
-		if (!Object || Object->GetRefCount() == 0)
+		if (!Object)
 		{
-			return 0;
+			return;
+
 		}
-	
-		return Object->GetRefCount();
+		
+		Object->AddRef();
 	}
 
-	uint32 AddRef(const IRefCountedObject* Object)
+	void Release(const IRefCountedObject* Object)
 	{
-		if (!Object || Object->GetRefCount() == 0)
+		if (!Object)
 		{
-			return 0;
+			return;
 		}
-	
-		(void)Object->AddRef();
-		return Object->GetRefCount();
-	}
-
-	uint32 Release(const IRefCountedObject* Object)
-	{
-		if (!Object || Object->GetRefCount() == 0)
-		{
-			return 0;
-		}
-	
-		return Object->Release();
+		
+		Object->Release();
 	}
 	
-	BIND_UNREALSHARP_FUNCTION(GetRefCount)
 	BIND_UNREALSHARP_FUNCTION(AddRef)
 	BIND_UNREALSHARP_FUNCTION(Release)
 }
