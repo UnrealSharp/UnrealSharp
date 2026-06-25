@@ -711,7 +711,11 @@ public class FunctionExporter
             {
                 PropertyTranslator translator = ParameterTranslators[0];
                 string paramType = ClassBeingExtended != null ? ClassBeingExtended.GetFullManagedName() : translator.GetManagedType(SelfParameter!);
-                builder.AppendLine($"{Modifiers}{returnType} {FunctionName}<{genericTypeString}>(this {paramType} {SelfParameter!.GetParameterName()}, {overload.ParamStringApiWithDefaults})");
+                string arguments = $"this {paramType} {SelfParameter!.GetParameterName()}";
+                if (!String.IsNullOrEmpty(overload.ParamStringApiWithDefaults)) {
+                    arguments += $", {overload.ParamStringApiWithDefaults}";
+                }
+                builder.AppendLine($"{Modifiers}{returnType} {FunctionName}<{genericTypeString}>({arguments})");
                 builder.Indent();
                 
                 foreach ((string genericType, string constraint) in genericTypes.Zip(genericConstraints))
