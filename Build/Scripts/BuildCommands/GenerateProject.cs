@@ -16,6 +16,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("RunUSharpProjectSetup", "If set, the UnrealSharp project setup will be run after generating the project, which includes adding launch settings and building the project.")]
 [Help("EditorOnly", "If set, the generated project will be marked as not publishable.")]
 [Help("Dependencies=<Path>+<Path>", "Additional project dependencies to include in the generated .csproj file.")]
+[Help("AssemblyDependencies=<Path>+<Path>", "Additional assembly dependencies to include in the generated .csproj file. These should be paths to .dll files.")]
 [Help("SkipIncludeAnalyzers", "If set, the generated .csproj will not reference the UnrealSharp analyzers.")]
 public class GenerateProject : BuildCommand
 {
@@ -34,6 +35,7 @@ public class GenerateProject : BuildCommand
         bool RunUSharpProjectSetup = ParseParam("RunUSharpProjectSetup");
         bool EditorOnly = ParseParam("EditorOnly");
         string[] Dependencies = ParseParamValues("Dependencies");
+        string[] References = ParseParamValues("References");
         string ProjectPath = Path.Combine(ProjectFolder, $"{ProjectName}.{CsProjFileExtension}");
         string[] CompileIncludeFolder = ParseParamValues("CompileIncludeFolder");
 
@@ -44,7 +46,7 @@ public class GenerateProject : BuildCommand
             WriteModuleTemplate(ProjectName, ProjectFolder);
         }
 
-        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, EditorOnly, CompileIncludeFolder);
+        UpdateCsprojDocument(ProjectPath, ProjectFolder, Dependencies, References, EditorOnly, CompileIncludeFolder);
 
         LoggerUtilities.LogUnrealSharpInfo($"Generated project '{ProjectName}' successfully.");
 
@@ -85,7 +87,7 @@ public class GenerateProject : BuildCommand
         TemplateUtilities.WriteTemplateToFile(this, ModuleTemplateName, projectName, CsFileExtension, projectFolder, ModuleTemplateValues);
     }
 
-    private void UpdateCsprojDocument(string projectPath, string projectFolder, IReadOnlyList<string>? dependencies, bool isEditorOnly, string[] compileIncludeFolder)
+    private void UpdateCsprojDocument(string projectPath, string projectFolder, IReadOnlyList<string>? dependencies, IReadOnlyList<string>? references, bool isEditorOnly, string[] compileIncludeFolder)
     {
         try
         {
@@ -97,6 +99,7 @@ public class GenerateProject : BuildCommand
             ApplyAnalyzerFlag(CsprojDocument);
             ApplySharedPropsImport(CsprojDocument, projectFolder);
             ApplyDependencies(CsprojDocument, projectFolder, dependencies);
+            ApplyReferences(CsprojDocument, projectFolder, references);
             ApplyCompileIncludeFolder(CsprojDocument, projectFolder, compileIncludeFolder);
 
             CsprojDocument.Save(projectPath);
@@ -144,6 +147,17 @@ public class GenerateProject : BuildCommand
 
         XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
         CsProjectUtilities.AddProjectReferences(csprojDocument, ItemGroup, projectFolder, dependencies);
+    }
+    
+    private static void ApplyReferences(XmlDocument csprojDocument, string projectFolder, IReadOnlyList<string>? assemblyDependencies)
+    {
+        if (assemblyDependencies is null || assemblyDependencies.Count == 0)
+        {
+            return;
+        }
+
+        XmlElement ItemGroup = CsProjectUtilities.GetOrCreateItemGroup(csprojDocument);
+        CsProjectUtilities.AddReferences(csprojDocument, ItemGroup, projectFolder, assemblyDependencies);
     }
     
     private static void ApplyCompileIncludeFolder(XmlDocument csprojDocument, string projectFolder, string[] compileIncludeFolders)

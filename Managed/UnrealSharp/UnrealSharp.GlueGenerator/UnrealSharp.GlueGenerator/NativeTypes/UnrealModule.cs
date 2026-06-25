@@ -25,9 +25,12 @@ public record UnrealModule : UnrealType
 		builder.AppendLine("using UnrealSharp.Engine.Core.Modules;");
 		builder.AppendLine("using UnrealSharp.Plugins;");
 		
-		builder.StartModuleInitializer($"{SourceName}ModuleRegistrar");
+		string moduleRegistrarName = $"{SourceName}ModuleRegistrar";
 		
-		builder.AppendLine("public static void Register()");
+		builder.StartModuleInitializer(moduleRegistrarName);
+		builder.AppendLine($"public static void Initialize() => ModuleInitializerJobManager.AddJob(typeof({moduleRegistrarName}), ModuleInitializerJobType.ModuleInterfaceInit, RegisterModule);");
+		
+		builder.AppendLine("public static void RegisterModule()");
 		builder.OpenBrace();
 		builder.AppendLine($"Plugin hostPlugin = PluginLoader.FindPlugin(typeof({SourceName}))!;");
 		builder.AppendLine("hostPlugin.AddModuleInterfaceInit(CreateModule);");

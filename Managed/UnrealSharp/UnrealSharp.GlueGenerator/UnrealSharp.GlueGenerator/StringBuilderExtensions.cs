@@ -68,6 +68,7 @@ public static class StringBuilderExtensions
         string registrationMethodName = $"Register_{type.SourceName}";
 
         builder.StartModuleInitializer(registrarClassName);
+        builder.AppendLine($"public static void Initialize() => ModuleInitializerJobManager.AddJob(typeof({registrarClassName}), ModuleInitializerJobType.TypeRegistration, {registrationMethodName});");
         
         builder.AppendLine($"public static void {registrationMethodName}() => " + $"RegisterManagedType(\"{type.EngineName}\", {jsonPropertyName}, {(byte)type.FieldType}, typeof({type.FullName}));");
         builder.AppendLine($"static string {jsonPropertyName} => \"\"\"{stringBuilder}\"\"\";");

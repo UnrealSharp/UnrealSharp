@@ -8,8 +8,7 @@ public class PluginLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
 
-    public PluginLoadContext(string pluginName, AssemblyDependencyResolver resolver, bool isCollectible) 
-        : base(pluginName, isCollectible)
+    public PluginLoadContext(string pluginName, AssemblyDependencyResolver resolver, bool isCollectible) : base(pluginName, isCollectible)
     {
         _resolver = resolver;
     }
@@ -52,6 +51,5 @@ public class PluginLoadContext : AssemblyLoadContext
 
         AssemblyCache.AddAssembly(newAssembly);
         return newAssembly;
-
     }
 }

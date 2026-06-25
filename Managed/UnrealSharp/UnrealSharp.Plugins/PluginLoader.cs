@@ -34,7 +34,7 @@ public static class PluginLoader
 		}
 		catch (Exception ex)
 		{
-			LogUnrealSharpPlugins.LogError($"An error occurred while loading the plugin: {ex.Message}");
+			LogUnrealSharpPlugins.LogError($"An error occurred while loading the plugin: {ex.Message}, Stack Trace: {ex.StackTrace}");
 		}
 
 		return null;

@@ -19,6 +19,7 @@ public class Plugin
     {
         AssemblyName = assemblyName;
         
+#if !NATIVE_AOT
         Assembly? existingAssembly = AssemblyCache.GetUniqueAssembly(assemblyName.Name!);
         if (existingAssembly != null)
         {
@@ -40,6 +41,7 @@ public class Plugin
         {
             _loadContext = new PluginLoadContext(assemblyName.Name!, new AssemblyDependencyResolver(assemblyPath), isCollectible);
         }
+#endif
     }
 
     public void AddModuleInterfaceInit(Func<IModuleInterface> initFunction)
@@ -49,15 +51,17 @@ public class Plugin
 
     public bool Load()
     {
-        if (_loadContext == null || Assembly != null)
-        {
-            return false;
-        }
+        #if NATIVE_AOT
+        Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == AssemblyName.Name) 
+                            ?? throw new InvalidOperationException($"Assembly '{AssemblyName}' not found in current AppDomain.");
+        #else
+        Assembly assembly = _loadContext!.LoadFromAssemblyName(AssemblyName);
+        #endif
         
-        Assembly assembly = _loadContext.LoadFromAssemblyName(AssemblyName);
         Assembly = new WeakReference(assembly);
         
         RuntimeHelpers.RunModuleConstructor(assembly.ManifestModule.ModuleHandle);
+        ModuleInitializerJobManager.ExecuteAllJobsForModule(assembly);
         
         StartupModule();
         return true;

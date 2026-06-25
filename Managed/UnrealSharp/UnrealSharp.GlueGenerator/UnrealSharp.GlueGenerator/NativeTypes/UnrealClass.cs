@@ -128,12 +128,7 @@ public record UnrealClass : UnrealClassBase
         ImmutableArray<ISymbol> classMembers = typeSymbol.GetMembers();
         foreach (ISymbol member in classMembers)
         {
-            if (member.Kind != SymbolKind.Method)
-            {
-                continue;
-            }
-            
-            if (!member.IsOverride)
+            if (member.Kind != SymbolKind.Method || !member.IsOverride)
             {
                 continue;
             }

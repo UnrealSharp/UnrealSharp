@@ -33,30 +33,43 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize Runtime Host. Check logs for more details.");
 	}
-
-	const FString EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
-	const FString EntryPointFunctionName = TEXT("InitializeUnrealSharp");
+	
 	const FString UnrealSharpLibraryAssembly = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetUnrealSharpPluginsPath());
 	const FString UserWorkingDirectory = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetUserAssemblyDirectory());
-
+	
 	FInitializeRuntimeHost InitializeUnrealSharp = nullptr;
-	const int32 ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
-		PLATFORM_STRING(*EntryPointClassName),
-		PLATFORM_STRING(*EntryPointFunctionName),
-		UNMANAGEDCALLERSONLY_METHOD,
-		nullptr,
-		reinterpret_cast<void**>(&InitializeUnrealSharp));
-
+	int32 ErrorCode = 0;
+	
+	// TODO: Just for testing for now 
+	const FString NativeAOT = FPaths::Combine(UserWorkingDirectory, FString::Printf(TEXT("%s.AOT.dll"), FApp::GetProjectName()));
+	if (FPaths::FileExists(NativeAOT))
+	{
+		RuntimeHost = FPlatformProcess::GetDllHandle(*NativeAOT);
+		InitializeUnrealSharp = static_cast<FInitializeRuntimeHost>(FPlatformProcess::GetDllExport(RuntimeHost, 
+			TEXT("InitializeAotRuntime")));
+	}
+	else
+	{
+		const FString EntryPointClassName = TEXT("UnrealSharp.Plugins.Main, UnrealSharp.Plugins");
+		const FString EntryPointFunctionName = TEXT("InitializeJitRuntime");
+		
+		ErrorCode = LoadAssemblyAndGetFunctionPointer(PLATFORM_STRING(*UnrealSharpLibraryAssembly),
+	PLATFORM_STRING(*EntryPointClassName),
+	PLATFORM_STRING(*EntryPointFunctionName),
+	UNMANAGEDCALLERSONLY_METHOD,
+	nullptr,
+	reinterpret_cast<void**>(&InitializeUnrealSharp));
+	}
+	
 	if (ErrorCode != 0)
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", ErrorCode);
 	}
 
 	if (!InitializeUnrealSharp(*UserWorkingDirectory,
-		*UnrealSharpLibraryAssembly,
-		&GetManagedPluginCallbacks(),
-		(const void*)&FCSBindsRegistry::GetBoundFunction,
-		&GetManagedCallbacks()))
+	(const void*)&GetManagedPluginCallbacks(),
+	(const void*)&FCSBindsRegistry::GetBoundFunction,
+	(const void*)&GetManagedCallbacks()))
 	{
 		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to initialize UnrealSharp!");
 	}
@@ -67,7 +80,7 @@ bool FCSDotNetRuntimeHost::InitializeManagedRuntime()
 		while (!FPlatformMisc::IsDebuggerPresent());
 	}
 #endif
-
+	
 	return true;
 }
 

@@ -104,12 +104,8 @@ public class ContainerPropertyTranslator : PropertyTranslator
             return;
         }
         
-        if (function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static))
-        {
-            builder.AppendLine("static ");
-        }
-        
-        builder.Append($"{GetWrapperType(property)}? {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
+        string staticDeclaration = function.FunctionFlags.HasAnyFlags(EFunctionFlags.Static) ? "static " : string.Empty;
+        builder.Append($"{staticDeclaration}{GetWrapperType(property)}? {nativeMethodName}_{propertyEngineName}_Marshaller = null;");
     }
 
     public override void ExportParameterStaticConstructor(GeneratorStringBuilder builder, UhtProperty property, UhtFunction function, string propertyEngineName, string functionName)

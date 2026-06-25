@@ -1,22 +1,17 @@
-
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Loader;
 using System.Runtime.InteropServices;
 using Microsoft.Build.Locator;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
-
-#if !PACKAGE
-using Microsoft.Build.Locator;
-#endif
 
 namespace UnrealSharp.Plugins;
 
 public static class Main
 {
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
+    private static unsafe NativeBool InitializeJitRuntime(char* workingDirectoryPath, 
+        PluginsCallbacks* pluginCallbacks, 
+        IntPtr bindsCallbacks, 
+        IntPtr managedCallbacks)
     {
         try
         {

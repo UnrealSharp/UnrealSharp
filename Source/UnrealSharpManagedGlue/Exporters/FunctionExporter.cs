@@ -507,11 +507,12 @@ public class FunctionExporter
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(function);
         attributeBuilder.AddGeneratedTypeAttribute(function);
-        attributeBuilder.Finish();
-        builder.AppendLine(attributeBuilder.ToString());
 
         if (function.IsBlueprintCallable())
         {
+            attributeBuilder.Finish();
+            builder.AppendLine(attributeBuilder.ToString());
+            
             builder.AppendLine($"protected virtual {returnType} {methodName}_Implementation({paramsStringApi})");
         
             builder.OpenBrace();
@@ -542,9 +543,16 @@ public class FunctionExporter
             }
             builder.CloseBrace();
         }
+        else
+        {
+            attributeBuilder.AddAttribute("UnmanagedCallersOnly");
+            attributeBuilder.Finish();
+            builder.AppendLine(attributeBuilder.ToString());
+        }
         
-        builder.AppendLine($"void Invoke_{function.EngineName}(IntPtr buffer, IntPtr returnBuffer)");
+        builder.AppendLine($"static void Invoke_{function.EngineName}(GCHandle handle, IntPtr buffer, IntPtr returnBuffer)");
         builder.OpenBrace();
+        builder.AppendLine($"var instance = ({function.Outer!.GetFullManagedName()}) handle.Target!;");
         builder.BeginUnsafeBlock();
         
         string returnAssignment = "";
@@ -570,11 +578,8 @@ public class FunctionExporter
             }
         });
         
-        string implementationFunctionName = function.IsBlueprintCallable()
-            ? "_Implementation"
-            : string.Empty;
-        
-        builder.AppendLine($"{returnAssignment}{methodName}{implementationFunctionName}({paramsCallString});");
+        string implementationFunctionName = function.IsBlueprintCallable() ? "_Implementation" : string.Empty;
+        builder.AppendLine($"{returnAssignment}instance.{methodName}{implementationFunctionName}({paramsCallString});");
 
         if (function.ReturnProperty != null)
         {

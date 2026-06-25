@@ -6,10 +6,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>latest</LangVersion>
+    <IsAotCompatible>true</IsAotCompatible>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
   
   <Import Project="$(UnrealSharpPluginDir)UnrealSharp.AOT.props" />
-  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.GeneratedFiles.props" />
+  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.Build.props" />
 
   <ItemGroup>
   
@@ -32,6 +34,11 @@
     <Reference Include="UnrealSharp.Plugins">
       <HintPath>$(UnrealSharpPluginDir)Binaries\Managed\$(TargetFramework)\UnrealSharp.Plugins.dll</HintPath>
     </Reference>
+
+    <TrimmerRootAssembly Include="$(TargetName)" />
+    <TrimmerRootAssembly Include="UnrealSharp" />
+    <TrimmerRootAssembly Include="UnrealSharp.Core" />
+    <TrimmerRootAssembly Include="UnrealSharp.Plugins" />
     
   </ItemGroup>
 

@@ -7,7 +7,7 @@
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*);
+using FInitializeRuntimeHost = bool (*)(const TCHAR*, const void*, const void*, const void*);
 
 class FCSDotNetRuntimeHost
 {

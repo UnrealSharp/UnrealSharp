@@ -56,7 +56,7 @@ public static class StructExporter
         bool isDestructible = structObj.IsStructNativelyDestructible();
         bool isEquatable = structObj.IsStructEquatable(exportedProperties);
         
-        stringBuilder.StartGlueFile(structObj, isBlittable);
+        stringBuilder.StartGlueFile(structObj);
                 
         stringBuilder.AppendTooltip(structObj);
         

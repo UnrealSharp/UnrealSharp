@@ -471,6 +471,7 @@ void FUnrealSharpEditorModule::PackageProject()
 	UProjectPackagingSettings::FConfigurationInfo ConfigurationInfo = UProjectPackagingSettings::ConfigurationInfo[BuildConfigValue];
 	Arguments.Add(TEXT("UEBuildConfig"), ConfigurationInfo.Name.ToString());
 	Arguments.Add(TEXT("UETargetType"), TEXT("Game"));
+	Arguments.Add(TEXT("NativeAOT"), TEXT("true"));
 	
 	FText BuildActionDisplayName = FText::Format(LOCTEXT("PackagingInProgress", "Packaging C# Project '{0}'"), FText::FromString(FApp::GetProjectName()));
 	UnrealSharp::Build::InvokeUnrealSharpAutomation_Async(UnrealSharp::BuildAction::PackageProject, BuildActionDisplayName, &Arguments);
