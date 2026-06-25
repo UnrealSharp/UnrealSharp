@@ -154,6 +154,7 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
 		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
+		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
 	}
 	
 	if (ReloadedTypes.Num() > 0)
@@ -172,9 +173,6 @@ void UCSHotReloadSubsystem::PerformHotReload()
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
 {
 	AddReloadedType(NewStruct);
-	
-	NewStruct->OnChanged();
-	FStructureEditorUtils::BroadcastPostChange(NewStruct);
 }
 
 void UCSHotReloadSubsystem::OnClassRebuilt(UCSClass* NewClass)

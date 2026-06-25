@@ -9,6 +9,8 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "Kismet2/StructureEditorUtils.h"
+#include "Types/CSScriptStruct.h"
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSClassUtilities.h"
 
@@ -200,6 +202,22 @@ void FCSHotReloadUtilities::RefreshBlueprintActionDatabase(const TSet<FCSObjectI
 	for (const FCSObjectID& ObjectID : RebuiltTypes)
 	{
 		ActionDatabase.RefreshAssetActions(ObjectID.GetUObject());
+	}
+}
+
+void FCSHotReloadUtilities::RefreshStructs(const TSet<FCSObjectID>& RebuiltTypes)
+{
+	for (const FCSObjectID& ObjectID : RebuiltTypes)
+	{
+		UCSScriptStruct* RebuiltStruct = ObjectID.GetUObject<UCSScriptStruct>();
+		
+		if (!IsValid(RebuiltStruct))
+		{
+			continue;
+		}
+		
+		RebuiltStruct->OnChanged();
+		FStructureEditorUtils::BroadcastPostChange(RebuiltStruct);
 	}
 }
 

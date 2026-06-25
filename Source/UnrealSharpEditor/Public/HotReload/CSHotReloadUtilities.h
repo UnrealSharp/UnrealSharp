@@ -31,6 +31,7 @@ namespace FCSHotReloadUtilities
 	void RebuildDependentBlueprints(const TSet<FCSObjectID>& RebuiltTypes);
 	void RefreshPlacementMode();
 	void RefreshBlueprintActionDatabase(const TSet<FCSObjectID>& RebuiltTypes);
+	void RefreshStructs(const TSet<FCSObjectID>& RebuiltTypes);
 	
 	bool IsPinAffectedByReload(const FEdGraphPinType& PinType, const TSet<FCSObjectID>& RebuiltTypes);
 	bool IsNodeAffectedByReload(const UEdGraphNode* Node, const TSet<FCSObjectID>& RebuiltTypes);
