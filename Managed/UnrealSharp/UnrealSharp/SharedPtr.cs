@@ -11,7 +11,7 @@ public static unsafe partial class Bind_IRefCountedObject
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct FSharedPtr
+public record struct FSharedPtr
 {
     private IntPtr ReferenceController;
     
@@ -31,25 +31,10 @@ public struct FSharedPtr
         }
     }
 
-    public override bool Equals(object? obj)
-    {
-        return obj is FSharedPtr ptr && ReferenceController == ptr.ReferenceController;
-    }
-
     public override int GetHashCode()
     {
         return HashCode.Combine(ReferenceController);
     }
 
     public bool Valid => ReferenceController != IntPtr.Zero;
-
-    public static bool operator ==(FSharedPtr a, FSharedPtr b)
-    {
-        return a.ReferenceController == b.ReferenceController;
-    }
-
-    public static bool operator !=(FSharedPtr a, FSharedPtr b)
-    {
-        return !(a == b);
-    }
 }

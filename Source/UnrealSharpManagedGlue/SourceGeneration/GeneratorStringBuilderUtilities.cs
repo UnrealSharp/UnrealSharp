@@ -83,6 +83,23 @@ public static class GeneratorStringBuilderUtilities
         stringBuilder.CloseBrace();
     }
     
+    public static void BeginNamespace(this GeneratorStringBuilder stringBuilder, UhtField type)
+    {
+        BeginNamespace(stringBuilder, type.Package);
+    }
+    
+    public static void BeginNamespace(this GeneratorStringBuilder stringBuilder, UhtPackage package)
+    {
+        stringBuilder.AppendLine($"namespace {package.GetNamespace()}");
+        stringBuilder.OpenBrace();
+    }
+    
+    public static void EndNamespace(this GeneratorStringBuilder stringBuilder)
+    {
+        stringBuilder.CloseBrace();
+    }
+    
+    
     public static void StartGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type, bool blittable = false)
     {
         stringBuilder.DeclareDirective(ScriptGeneratorUtilities.AttributeNamespace);
@@ -100,13 +117,13 @@ public static class GeneratorStringBuilderUtilities
         }
 
         stringBuilder.AppendLine();
-        stringBuilder.AppendLine($"namespace {type.GetNamespace()};");
+        BeginNamespace(stringBuilder, type);
         stringBuilder.AppendLine();
     }
     
     public static void EndGlueFile(this GeneratorStringBuilder stringBuilder, UhtField type)
     {
-        // Nothing to do for now, but this is here in case we need to add any common code for glue files in the future
+        stringBuilder.CloseBrace();
     }
     
     public static void DeclareType(this GeneratorStringBuilder stringBuilder, UhtType? type , string typeName, string declaredTypeName, string? baseType = null, bool isPartial = true, string? modifiers = "", List<UhtClass>? nativeInterfaces = default, List<string>? csInterfaces = default)

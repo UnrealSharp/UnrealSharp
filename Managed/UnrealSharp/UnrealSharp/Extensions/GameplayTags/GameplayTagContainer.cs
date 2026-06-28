@@ -2,7 +2,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
 
-public partial struct FGameplayTagContainer
+public partial record struct FGameplayTagContainer
 {
     public FGameplayTagContainer(FGameplayTag[] tags, FGameplayTag[]? parentTags = null)
     {
@@ -151,10 +151,5 @@ public partial struct FGameplayTagContainer
                 break;
             }
         }
-    }
-    
-    public override string ToString()
-    {
-        return UCSGameplayTagContainerExtensions.ToString(this);
     }
 }

@@ -3,23 +3,13 @@ using UnrealSharp.Engine;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FPrimaryAssetId
+public partial record struct FPrimaryAssetId
 {
     /// <summary>
     /// Is this a valid primary asset ID?
     /// </summary>
     /// <returns></returns>
     public bool Valid => PrimaryAssetType.Valid && !PrimaryAssetName.IsNone;
-    
-    public override string ToString()
-    {
-        if (!Valid)
-        {
-            return "Invalid Id";
-        }
-        
-        return $"{PrimaryAssetType.Name.ToString()}:{PrimaryAssetName.ToString()}";
-    }
     
     /// <summary>
     /// Gets the asset associated with this primary asset ID. Use AssetClass if this asset ID belongs to a primary asset which is a Blueprint class.

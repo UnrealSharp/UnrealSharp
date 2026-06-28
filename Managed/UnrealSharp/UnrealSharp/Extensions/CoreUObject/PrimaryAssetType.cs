@@ -3,7 +3,7 @@ using UnrealSharp.Engine;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FPrimaryAssetType
+public partial record struct FPrimaryAssetType
 {
     public FPrimaryAssetType(FName name)
     {
@@ -21,11 +21,6 @@ public partial struct FPrimaryAssetType
     }
     
     public bool Valid => !Name.IsNone;
-    
-    public override string ToString()
-    {
-        return Name.ToString();
-    }
     
     /// <summary>
     /// Gets the list of primary assets of this type.

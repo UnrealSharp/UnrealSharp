@@ -2,7 +2,7 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.Engine;
 
-public partial struct FLatentActionInfo
+public partial record struct FLatentActionInfo
 {
     public FLatentActionInfo(Action action)
     {

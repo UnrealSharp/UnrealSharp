@@ -4,7 +4,7 @@ using System.Text;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FVector
+public partial record struct FVector
 {
     public double X;
     public double Y;
@@ -38,20 +38,12 @@ public partial struct FVector
     public static FVector Right => new(0, 1, 0);
     public static FVector Up => new(0, 0, 1);
     
-    public static implicit operator System.Numerics.Vector3(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z);
-    public static implicit operator FVector(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
-    public static implicit operator System.Numerics.Vector4(FVector v) => new((float)v.X, (float)v.Y, (float)v.Z, 0f);
-    public static implicit operator FVector(System.Numerics.Vector4 v) => new(v.X, v.Y, v.Z);
-    public static implicit operator FVector(FVector2D v) => new(v.X, v.Y, 0);
-
-    /// <summary>
-    /// Returns a String representing this Vector instance.
-    /// </summary>
-    /// <returns>The string representation.</returns>
-    public override string ToString()
-    {
-        return ToString("G", CultureInfo.CurrentCulture);
-    }
+    public static implicit operator FVector(System.Numerics.Vector3 vector) => new(vector.X, vector.Y, vector.Z);
+    public static implicit operator FVector(System.Numerics.Vector4 vector) => new(vector.X, vector.Y, vector.Z);
+    public static implicit operator FVector(FVector2D vector) => new(vector.X, vector.Y, 0);
+    public static implicit operator FVector(FIntVector vector) => new(vector.X, vector.Y, vector.Z);
+    public static implicit operator FVector(FIntPoint vector) => new(vector.X, vector.Y, 0);
+    public static implicit operator FVector(FVector4 vector) => new(vector.X, vector.Y, vector.Z);
 
     /// <summary>
     /// Returns a String representing this Vector instance, using the specified format to format individual elements.

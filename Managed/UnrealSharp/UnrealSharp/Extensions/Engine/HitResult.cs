@@ -1,6 +1,6 @@
 namespace UnrealSharp.Engine;
 
-public partial struct FHitResult
+public partial record struct FHitResult
 {
     /// <summary>
     /// The hit Actor.

@@ -8,9 +8,8 @@ public static class InclusionLists
 {
     private static readonly IDictionary<string, HashSet<string>> BannedProperties = new Dictionary<string, HashSet<string>>();
     private static readonly IDictionary<string, HashSet<string>> BannedFunctions = new Dictionary<string, HashSet<string>>();
-    private static readonly HashSet<string> BannedEquality = new();
     private static readonly HashSet<string> BannedArithmetic = new();
-    private static readonly HashSet<string> BannedConstructors = new HashSet<string>();
+    private static readonly HashSet<string> BannedConstructors = new();
 
     public static void BanProperty(string structName, string propertyName)
     {
@@ -42,16 +41,6 @@ public static class InclusionLists
     public static bool HasBannedFunction(UhtFunction function)
     {
         return BannedFunctions.TryGetValue(function.Outer!.SourceName, out HashSet<string>? functionSet) && functionSet.Contains(function.SourceName);
-    }
-
-    public static void BanEquality(string structName)
-    {
-        BannedEquality.Add(structName);
-    }
-
-    public static bool HasBannedEquality(UhtStruct scriptStruct)
-    {
-        return BannedEquality.Contains(scriptStruct.GetStructName());
     }
 
     public static void BanArithmetic(string structName)

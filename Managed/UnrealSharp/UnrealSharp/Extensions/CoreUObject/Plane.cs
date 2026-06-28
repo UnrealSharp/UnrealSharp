@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FPlane
+public partial record struct FPlane
 {
     /// <summary>
     /// Constructs a FPlane from the X, Y, and Z components of its normal, and its distance from the origin on that normal.

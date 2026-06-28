@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FGuid
+public partial record struct FGuid
 {
     public FGuid(Guid guid)
     {

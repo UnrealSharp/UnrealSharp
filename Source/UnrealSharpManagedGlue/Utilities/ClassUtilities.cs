@@ -84,7 +84,12 @@ public static class ClassUtilities
         }
     }
 
-    public static void GetExportedFunctions(this UhtClass classObj, List<UhtFunction> functions, List<UhtFunction> exportedOverrides, Dictionary<string, GetterSetterPair> getterSetterPairs, Dictionary<string, GetterSetterPair> getSetOverrides)
+    public static void GetExportedFunctions(this UhtClass classObj, List<UhtFunction> functions, 
+        List<UhtFunction> exportedOverrides, 
+        Dictionary<string, GetterSetterPair> getterSetterPairs, 
+        Dictionary<string, GetterSetterPair> getSetOverrides, 
+        List<ExtensionMethod> extensionMethods, 
+        List<UhtFunction> autocastFunctions)
     {
         List<UhtFunction> exportedFunctions = new();
 
@@ -128,12 +133,18 @@ public static class ClassUtilities
                     continue;
                 }
 
-                AutocastExporter.AddAutocastFunction(structToConvertProperty.ScriptStruct, function);
+                autocastFunctions.Add(function);
             }
             else if (!function.MakeGetterSetterPair(getterSetterPairs))
             {
                 functions.Add(function);
             }
+            
+            if (function.HasAllFlags(EFunctionFlags.Static) && classObj.IsChildOf(GeneratorStatics.BlueprintFunctionLibrary))
+            {
+                FunctionExporter.TryAddExtensionMethod(function, extensionMethods);
+            }
+
 
             exportedFunctions.Add(function);
         }

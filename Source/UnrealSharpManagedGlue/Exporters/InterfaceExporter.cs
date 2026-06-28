@@ -42,13 +42,15 @@ public static class InterfaceExporter
         List<UhtFunction> exportedOverrides = new();
         Dictionary<string, GetterSetterPair> exportedGetterSetters = new();
         Dictionary<string, GetterSetterPair> getSetOverrides = new();
+        List<ExtensionMethod> exportedExtensionMethods = new();
+        List<UhtFunction> autoCastFunctions = new();
 
         if (interfaceObj.AlternateObject is UhtClass alternateObject)
         {
-            alternateObject.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
+            alternateObject.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides, exportedExtensionMethods, autoCastFunctions);
         }
         
-        interfaceObj.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides);
+        interfaceObj.GetExportedFunctions(exportedFunctions, exportedOverrides, exportedGetterSetters, getSetOverrides, exportedExtensionMethods, autoCastFunctions);
         
         ExportInterfaceProperties(stringBuilder, exportedGetterSetters);
         ExportInterfaceFunctions(stringBuilder, exportedFunctions);

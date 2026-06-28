@@ -3,7 +3,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FRandomStream
+public partial record struct FRandomStream
 {
 	public int InitialSeed { get; private set; }
 	public uint Seed { get; private set; }
@@ -25,24 +25,9 @@ public partial struct FRandomStream
 		Seed = (uint) InitialSeed;
 	}
 	
-	public static bool operator ==(FRandomStream a, FRandomStream b)
-	{
-		return a.Seed == b.Seed;
-	}
-
-	public static bool operator !=(FRandomStream a, FRandomStream b)
-	{
-		return !(a == b);
-	}
-	
 	public bool Equals(FRandomStream other)
 	{
 		return InitialSeed == other.InitialSeed && Seed == other.Seed;
-	}
-
-	public override bool Equals(object? obj)
-	{
-		return obj is FRandomStream other && Equals(other);
 	}
 
 	public override int GetHashCode()

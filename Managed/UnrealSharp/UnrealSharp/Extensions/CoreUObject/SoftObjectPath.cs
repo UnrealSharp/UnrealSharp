@@ -3,7 +3,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FSoftObjectPath
+public partial record struct FSoftObjectPath
 {
     public FSoftObjectPath(string packageName, string assetName)
     {
@@ -15,11 +15,6 @@ public partial struct FSoftObjectPath
     
     public UObject? Object => UCSSoftObjectPathExtensions.ResolveObject(this);
     public FPrimaryAssetId PrimaryAssetId => UCSSoftObjectPathExtensions.GetPrimaryAssetId_Internal(this);
-    
-    public override bool Equals(object? obj)
-    {
-        return obj is FSoftObjectPath other && this == other;
-    }
 
     public override string ToString()
     {
@@ -29,16 +24,6 @@ public partial struct FSoftObjectPath
     public override int GetHashCode()
     {
         return AssetPath.GetHashCode();
-    }
-    
-    public static bool operator == (FSoftObjectPath a, FSoftObjectPath b)
-    {
-        return a.AssetPath == b.AssetPath;
-    }
-
-    public static bool operator != (FSoftObjectPath a, FSoftObjectPath b)
-    {
-        return !(a == b);
     }
 }
 

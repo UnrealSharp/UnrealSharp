@@ -4,7 +4,7 @@ using UnrealSharp.CoreUObject;
 
 namespace UnrealSharp.EnhancedInput;
 
-public partial struct FInputActionValue
+public partial record struct FInputActionValue
 {
     private FVector AxisValue;
     private EInputActionValueType ValueType;

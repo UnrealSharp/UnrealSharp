@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 namespace UnrealSharp.GlueGenerator.NativeTypes;
@@ -11,26 +12,28 @@ public record UnrealScriptStruct : UnrealStruct
     public override FieldType FieldType => FieldType.Struct;
     
     public readonly bool IsRecord;
+    public readonly bool HasPrimaryConstructor;
     
-    public UnrealScriptStruct(ISymbol symbol, UnrealType? outer = null) : base(symbol, outer)
+    public UnrealScriptStruct(ISymbol symbol, SyntaxNode syntaxNode, UnrealType outer) : base(symbol, outer)
     {
         ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
         IsRecord = typeSymbol.IsRecord;
+        
+        TypeDeclarationSyntax typeDeclaration = (TypeDeclarationSyntax) syntaxNode;
+        HasPrimaryConstructor = typeDeclaration.ParameterList != null && typeDeclaration.ParameterList.Parameters.Count > 0;
     }
     
     [Inspect("UnrealSharp.Attributes.UStructAttribute", "UStructAttribute", "Global")]
     public static UnrealType UStructAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
-        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(symbol, outer);
+        UnrealScriptStruct unrealStruct = new UnrealScriptStruct(symbol, syntaxNode!, outer!);
         return unrealStruct;
     }
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        string recordModifier = IsRecord ? "record " : string.Empty;
-        
         TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.StructKeyword)
-            .WithModifiers(recordModifier)
+            .WithModifiers(IsRecord ? "record " : string.Empty)
             .Implements($"MarshalledStruct<{SourceName}>");
         
         typeDeclarationBuilder.Build(builder);
@@ -77,7 +80,7 @@ public record UnrealScriptStruct : UnrealStruct
         
         builder.AppendLine($"public {SourceName}(IntPtr buffer)");
         
-        if (IsRecord)
+        if (HasPrimaryConstructor)
         {
             string constructorArgs = string.Join(", ", Properties.List.Select(p => p.NullValue));
             builder.Append($" : this({constructorArgs})");

@@ -3,7 +3,7 @@ using UnrealSharp.Attributes;
 
 namespace UnrealSharp.Engine;
 
-public partial struct FTimerHandle
+public partial record struct FTimerHandle
 {
     private const uint IndexBits = 24;
     private const uint SerialNumberBits = 40;

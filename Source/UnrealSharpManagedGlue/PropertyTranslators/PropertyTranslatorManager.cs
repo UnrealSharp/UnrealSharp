@@ -140,23 +140,17 @@ public static class PropertyTranslatorManager
         InclusionLists.BanProperty("UActorComponent", "bReplicates");
         InclusionLists.BanFunction("UActorComponent", "SetIsReplicated");
 
-        // Some reason == equality differs from .Equals
-        InclusionLists.BanEquality("FRandomStream");
-
-        // Renamed variables X/Y/Z to Pitch/Yaw/Roll
-        InclusionLists.BanEquality("FRotator");
-
-        // Fields not generating correctly
-        InclusionLists.BanEquality("FVector3f");
-        InclusionLists.BanEquality("FVector2f");
-        InclusionLists.BanEquality("FVector4f");
-        InclusionLists.BanEquality("FVector_NetQuantize");
-        InclusionLists.BanEquality("FVector_NetQuantize10");
-        InclusionLists.BanEquality("FVector_NetQuantize100");
-        InclusionLists.BanEquality("FVector_NetQuantizeNormal");
-
         // Doesn't have any fields
-        InclusionLists.BanEquality("FSubsystemCollectionBaseRef");
+        InclusionLists.BanArithmetic("FSubsystemCollectionBaseRef");
+        InclusionLists.BanArithmetic("FRandomStream");
+        InclusionLists.BanArithmetic("FRotator");
+        InclusionLists.BanArithmetic("FVector3f");
+        InclusionLists.BanArithmetic("FVector2f");
+        InclusionLists.BanArithmetic("FVector4f");
+        InclusionLists.BanArithmetic("FVector_NetQuantize");
+        InclusionLists.BanArithmetic("FVector_NetQuantize10");
+        InclusionLists.BanArithmetic("FVector_NetQuantize100");
+        InclusionLists.BanArithmetic("FVector_NetQuantizeNormal");
 
         // Custom arithmetic needed
         InclusionLists.BanArithmetic("FQuat");

@@ -1,10 +1,9 @@
 using System.Globalization;
-using UnrealSharp.Interop;
 using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FQuat
+public partial record struct FQuat
 {
     /// <summary>
     /// Returns a Quat representing no rotation. 
@@ -35,15 +34,6 @@ public partial struct FQuat
         Y = vectorPart.Y;
         Z = vectorPart.Z;
         W = scalarPart;
-    }
-    
-    /// <summary>
-    /// Returns a Rotator view of this Quat.
-    /// </summary>
-    public FRotator ToRotator()
-    {
-        UCSQuatExtensions.ToRotator(out var rotator, this);
-        return rotator;
     }
 
     /// <summary>
@@ -643,4 +633,6 @@ public partial struct FQuat
         CultureInfo ci = CultureInfo.CurrentCulture;
         return String.Format(ci, "{{X:{0} Y:{1} Z:{2} W:{3}}}", X.ToString(ci), Y.ToString(ci), Z.ToString(ci), W.ToString(ci));
     }
+    
+    public static implicit operator FQuat(FRotator rotator) => new(rotator);
 }

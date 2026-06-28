@@ -3,7 +3,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.SlateCore;
 
-public partial struct FInputEvent
+public partial record struct FInputEvent
 {
     public bool IsRepeat => UCSInputEventExtensions.IsRepeat(this);
 

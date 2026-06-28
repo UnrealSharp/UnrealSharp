@@ -12,9 +12,6 @@ public static class GlueGenerator
         ConsoleUtilities.Log("Generating C# bindings...");
         PackageExporter.ExportPackages();
         PreprocessorExporter.ExportBuildDefines();
-        FunctionExporter.BindExtensionMethods();
-        AutocastExporter.BindAutocasts();
-        
         PackageHeadersTracker.SerializeModuleData();
     }
 }
