@@ -158,6 +158,8 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	
 	if (ReloadedTypes.Num() > 0)
 	{
+		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
+		
 		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
@@ -172,9 +174,6 @@ void UCSHotReloadSubsystem::PerformHotReload()
 void UCSHotReloadSubsystem::OnStructRebuilt(UCSScriptStruct* NewStruct)
 {
 	AddReloadedType(NewStruct);
-	
-	NewStruct->OnChanged();
-	FStructureEditorUtils::BroadcastPostChange(NewStruct);
 }
 
 void UCSHotReloadSubsystem::OnClassRebuilt(UCSClass* NewClass)

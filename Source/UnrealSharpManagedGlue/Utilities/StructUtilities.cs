@@ -48,36 +48,8 @@ public static class StructUtilities
         return PropertyTranslatorManager.SpecialTypeInfo.Structs.NativelyCopyableTypes.TryGetValue(structObj.SourceName, out var info) && info.HasDestructor;
     }
 
-    public static bool IsStructEquatable(this UhtStruct structObj, List<UhtProperty> exportedProperties)
-    {
-        if (InclusionLists.HasBannedEquality(structObj))
-        {
-            return false;
-        }
-
-        if (exportedProperties.Count == 0)
-        {
-            return false;
-        }
-
-        foreach (UhtProperty property in exportedProperties)
-        {
-            if (property is not UhtNumericProperty or UhtBoolProperty or UhtStrProperty or UhtEnumProperty)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public static bool CanSupportArithmetic(this UhtStruct structObj, List<UhtProperty> exportedProperties)
     {
-        if (InclusionLists.HasBannedEquality(structObj))
-        {
-            return false;
-        }
-
         if (InclusionLists.HasBannedArithmetic(structObj))
         {
             return false;
@@ -106,22 +78,6 @@ public static class StructUtilities
             return false;
         }
 
-        bool isRecordStruct = structObj.HasMetadata("RecordStruct");
-        if (isRecordStruct)
-        {
-            return false;
-        }
-
-        if (InclusionLists.HasBannedEquality(structObj))
-        {
-            return false;
-        }
-
-        if (InclusionLists.HasBannedConstructor(structObj))
-        {
-            return false;
-        }
-
-        return true;
+        return !InclusionLists.HasBannedConstructor(structObj);
     }
 }

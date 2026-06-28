@@ -5,7 +5,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp.UnrealSharpCore;
 
-public readonly ref partial struct FSubsystemCollectionBaseRef
+public readonly partial record struct FSubsystemCollectionBaseRef
 {
     private readonly IntPtr _collectionRef;
 
@@ -23,7 +23,7 @@ public readonly ref partial struct FSubsystemCollectionBaseRef
 
     public T InitializeRequiredSubsystem<T>(TSubclassOf<T> subsystemClass) where T : USubsystem
     {
-        return InitializeDependency<T>(subsystemClass) ?? throw new InvalidOperationException($"Subsystem {typeof(T).Name} is not initialized.");
+        return InitializeDependency(subsystemClass) ?? throw new InvalidOperationException($"Subsystem {typeof(T).Name} is not initialized.");
     }
 
     public T InitializeRequiredSubsystem<T>() where T : USubsystem

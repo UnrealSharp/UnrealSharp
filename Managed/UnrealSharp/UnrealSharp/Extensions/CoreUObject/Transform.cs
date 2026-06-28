@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace UnrealSharp.CoreUObject;
 
 [StructLayout(LayoutKind.Explicit, Size = 96)]
-public partial struct FTransform : IEquatable<FTransform>
+public partial record struct FTransform
 {
     public FTransform(FQuat rotation, FVector location, FVector? scale = null) : this()
     {
@@ -124,26 +124,21 @@ public partial struct FTransform : IEquatable<FTransform>
     public static readonly FTransform ZeroTransform = new(FQuat.Identity, FVector.Zero, FVector.Zero);
     public static readonly FTransform Identity = new(FQuat.Identity, FVector.Zero, FVector.One);
     
-    public bool Equals(FTransform other)
+    public static FTransform operator *(FTransform a, FTransform b)
     {
-        return Rotation.Equals(other.Rotation) && Location.Equals(other.Location) && Scale.Equals(other.Scale);
+        FQuat combinedRotation = a.Rotation * b.Rotation;
+        FVector combinedScale = a.Scale * b.Scale;
+        FVector combinedLocation = a.TransformPosition(b.Location);
+        return new FTransform(combinedRotation, combinedLocation, combinedScale);
     }
-
-    public override bool Equals(object? obj)
+    
+    public static FTransform operator *(FTransform a, FVector b)
     {
-        return obj is FTransform other && Equals(other);
+        return new FTransform(a.Rotation, a.TransformPosition(b), a.Scale);
     }
 
     public override int GetHashCode()
     {
         return HashCode.Combine(Rotation, Location, Scale);
     }
-
-    public override string ToString()
-    {
-        return $"Location: {Location}, Rotation: {Rotation}, Scale: {Scale}";
-    }
-
-    public static bool operator ==(FTransform left, FTransform right) => left.Rotation == right.Rotation && left.Location == right.Location && left.Scale == right.Scale;
-    public static bool operator !=(FTransform left, FTransform right) => !(left == right);
 }

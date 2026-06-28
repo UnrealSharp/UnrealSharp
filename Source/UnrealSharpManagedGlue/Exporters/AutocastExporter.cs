@@ -1,5 +1,6 @@
-using System.Collections.Concurrent;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.PropertyTranslators;
 using UnrealSharpManagedGlue.SourceGeneration;
@@ -7,106 +8,171 @@ using UnrealSharpManagedGlue.Utilities;
 
 namespace UnrealSharpManagedGlue.Exporters;
 
-public static class AutocastExporter 
+file static class AutocastNaming
 {
-    private static readonly ConcurrentDictionary<UhtStruct, List<UhtFunction>> ExportedAutocasts = new();
-    
-    public static void AddAutocastFunction(UhtStruct conversionStruct, UhtFunction function)
-    {
-        if (!ExportedAutocasts.TryGetValue(conversionStruct, out List<UhtFunction>? value))
-        {
-            value = new List<UhtFunction>();
-            ExportedAutocasts[conversionStruct] = value;
-        }
+	private static string StripFPrefix(string name) => name.Length > 1 && name[0] == 'F' && char.IsUpper(name[1]) ? name.Substring(1) : name;
+	private static string StripConvPrefix(string name) => name.StartsWith("Conv_", StringComparison.OrdinalIgnoreCase) ? name.Substring("Conv_".Length) : name;
 
-        value.Add(function);
-    }
-    
-    public static void BindAutocasts()
-    {
-        foreach (KeyValuePair<UhtStruct, List<UhtFunction>> pair in ExportedAutocasts)
-        {
-            ExportAutocast(pair.Key, pair.Value);
-        }
-    }
-    
-    static void ExportAutocast(UhtStruct conversionStruct, List<UhtFunction> functions)
-    {
-        GeneratorStringBuilder stringBuilder = new();
-        stringBuilder.StartGlueFile(conversionStruct);
-        stringBuilder.DeclareType(conversionStruct, "struct", conversionStruct.GetStructName());
+	private static string GetReturnShortName(UhtFunction function)
+	{
+		if (function.ReturnProperty is UhtStructProperty structReturn)
+		{
+			return StripFPrefix(structReturn.ScriptStruct.GetStructName());
+		}
 
-        string conversionStructName = conversionStruct.GetFullManagedName();
-        HashSet<UhtFunction> exportedFunctions = new();
-        
-        foreach (UhtFunction function in functions)
-        {
-            string returnType = function.ReturnProperty!.GetTranslator()!.GetManagedType(function.ReturnProperty!);
-            string functionCall = $"{function.Outer!.GetFullManagedName()}.{function.GetFunctionName()}";
-            
-            if (SharesSignature(function, exportedFunctions) || ReturnValueIsSameAsParameter(function))
-            {
-                continue;
-            }
+		string managed = function.ReturnProperty!.GetTranslator()!.GetManagedType(function.ReturnProperty!);
+		return managed.Split('.').Last();
+	}
 
-            stringBuilder.AppendLine($"public static implicit operator {returnType}({conversionStructName} value) => {functionCall}(value);");
-            exportedFunctions.Add(function);
-        }
+	private static bool TryStripPrefix(ref string name, string prefix)
+	{
+		if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
 
-        stringBuilder.CloseBrace();
+		name = name.Substring(prefix.Length);
+		return true;
+	}
 
-        string directory = conversionStruct.Package.GetPackageOutputDirectory();
-        string fileName = $"{conversionStruct.EngineName}.Autocast";
-        
-        stringBuilder.EndGlueFile(conversionStruct);
-        FileExporter.SaveGlueToDisk(conversionStruct.Package, directory, fileName, stringBuilder.ToString());
-    }
-    
-    static bool SharesSignature(UhtFunction function, IEnumerable<UhtFunction> otherFunctions)
-    {
-        foreach (UhtFunction otherFunction in otherFunctions)
-        {
-            if (function == otherFunction)
-            {
-                continue;
-            }
+	private static bool TryStripSourceToToken(ref string name, string source)
+	{
+		string token = source + "To";
+		if (!name.StartsWith(token, StringComparison.OrdinalIgnoreCase) || name.Length <= token.Length)
+		{
+			return false;
+		}
 
-            bool sharesSignature = true;
-            int parameterCount = function.Children.Count;
-            for (int i = 0; i < parameterCount; i++)
-            {
-                UhtProperty parameter = (UhtProperty) function.Children[i];
-                UhtProperty otherParameter = (UhtProperty) otherFunction.Children[i];
+		name = name.Substring(token.Length);
+		return true;
+	}
 
-                if (parameter.IsSameType(otherParameter))
-                {
-                    continue;
-                }
-                    
-                sharesSignature = false;
-                break;
-            }
-                
-            if (sharesSignature)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-        
-    static bool ReturnValueIsSameAsParameter(UhtFunction function)
-    {
-        UhtProperty returnProperty = function.ReturnProperty!;
-        foreach (UhtType uhtType in function.Children)
-        {
-            UhtProperty parameter = (UhtProperty) uhtType;
-            
-            if (parameter != returnProperty && parameter.IsSameType(returnProperty))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+	public static string GetCleanName(UhtStruct owner, UhtFunction function)
+	{
+		string originalFunctionName = function.GetFunctionName();
+		string structName = owner.GetStructName();
+		string structShortName = StripFPrefix(structName);
+		bool returningStruct = function.ReturnProperty is UhtStructProperty;
+		string returnShortName = GetReturnShortName(function);
+
+		string functionName = originalFunctionName;
+		bool mechanical = false;
+
+		if (functionName.StartsWith("Conv_", StringComparison.OrdinalIgnoreCase))
+		{
+			functionName = functionName.Substring("Conv_".Length);
+			mechanical = true;
+		}
+
+		mechanical |= TryStripPrefix(ref functionName, structName + "_") || TryStripPrefix(ref functionName, structShortName + "_");
+		mechanical |= TryStripSourceToToken(ref functionName, structShortName) || TryStripSourceToToken(ref functionName, structName);
+
+		if (!mechanical && (originalFunctionName == returnShortName || originalFunctionName == "F" + returnShortName))
+		{
+			mechanical = true;
+		}
+
+		if (returningStruct && mechanical)
+		{
+			return "To" + returnShortName;
+		}
+
+		return functionName.StartsWith("To", StringComparison.OrdinalIgnoreCase) ? functionName : "To" + StripFPrefix(functionName);
+	}
+
+	public static Dictionary<UhtFunction, string> ResolveCollisions(UhtStruct owner, IReadOnlyList<UhtFunction> functions)
+	{
+		Dictionary<UhtFunction, string> functionToResultName = new Dictionary<UhtFunction, string>();
+		Dictionary<string, int> nameCounts = new Dictionary<string, int>();
+
+		foreach (UhtFunction function in functions)
+		{
+			string name = GetCleanName(owner, function);
+			functionToResultName[function] = name;
+			nameCounts[name] = nameCounts.TryGetValue(name, out int count) ? count + 1 : 1;
+		}
+
+		foreach (UhtFunction function in functions)
+		{
+			if (nameCounts[functionToResultName[function]] > 1)
+			{
+				functionToResultName[function] = StripFPrefix(StripConvPrefix(function.GetFunctionName()));
+			}
+		}
+
+		return functionToResultName;
+	}
+}
+
+public static class AutocastExporter
+{
+	public static void ExportAutocast(GeneratorStringBuilder stringBuilder, List<UhtFunction> unorderedAutocastFunctions)
+	{
+		Dictionary<UhtStruct, List<UhtFunction>> conversionStructs = new();
+
+		foreach (UhtFunction function in unorderedAutocastFunctions)
+		{
+			UhtStructProperty structProperty = (UhtStructProperty)function.Properties.First();
+			UhtStruct conversionStruct = structProperty.ScriptStruct;
+
+			if (!conversionStructs.ContainsKey(conversionStruct))
+			{
+				conversionStructs[conversionStruct] = new List<UhtFunction>();
+			}
+
+			conversionStructs[conversionStruct].Add(function);
+		}
+
+		foreach ((UhtStruct conversionStruct, List<UhtFunction> functions) in conversionStructs)
+		{
+			List<UhtFunction> exported = functions
+				.Where(function => !ReturnValueIsSameAsParameter(function))
+				.ToList();
+
+			if (exported.Count == 0)
+			{
+				continue;
+			}
+
+			Dictionary<UhtFunction, string> names = AutocastNaming.ResolveCollisions(conversionStruct, exported);
+
+			stringBuilder.AppendLine();
+			stringBuilder.AppendLine($"namespace {conversionStruct.GetNamespace()}");
+			stringBuilder.OpenBrace();
+
+			stringBuilder.DeclareType(conversionStruct, "record struct", conversionStruct.GetStructName());
+
+			foreach (UhtFunction function in exported)
+			{
+				string methodName = names[function];
+				string returnType = function.ReturnProperty!.GetTranslator()!.GetManagedType(function.ReturnProperty!);
+				string functionCall = $"{function.Outer!.GetFullManagedName()}.{function.GetFunctionName()}";
+
+				bool isToString = methodName == "ToString";
+				string modifiers = isToString ? "override " : "";
+				string memberSuffix = isToString ? "()" : "";
+
+				stringBuilder.AppendLine($"public {modifiers}{returnType} {methodName}{memberSuffix} => {functionCall}(this);");
+			}
+
+			stringBuilder.CloseBrace();
+			stringBuilder.CloseBrace();
+		}
+	}
+
+	static bool ReturnValueIsSameAsParameter(UhtFunction function)
+	{
+		UhtProperty returnProperty = function.ReturnProperty!;
+		foreach (UhtType uhtType in function.Children)
+		{
+			UhtProperty parameter = (UhtProperty)uhtType;
+
+			if (parameter != returnProperty && parameter.IsSameType(returnProperty))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

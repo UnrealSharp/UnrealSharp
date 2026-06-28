@@ -194,24 +194,24 @@ public static class InspectionDispatcher
     
     public static void InspectMembers(UnrealType topType, ITypeSymbol typeSymbol, TypeDeclarationSyntax typeDeclaration, GeneratorAttributeSyntaxContext ctx)
     {
-        bool iteratedMembersFromSyntax  = false;
-        foreach (MemberDeclarationSyntax memberDecl in typeDeclaration.Members)
+        if (typeDeclaration.ParameterList != null)
         {
-            ImmutableArray<ISymbol> memberSymbols = GetDeclaredSymbolsForMember(memberDecl, ctx.SemanticModel);
-            
-            if (memberSymbols.IsDefaultOrEmpty)
-            {
-                continue;
-            }
-            
-            RunMemberInspections(topType, memberDecl, memberSymbols, ctx);
-            iteratedMembersFromSyntax  = true;
+            // Record primary constructor parameters are not represented as members in the syntax tree, so we need to inspect them directly from the type symbol.
+            RunMemberInspections(topType, null, typeSymbol.GetMembers(), ctx); 
         }
-
-        // Fallback: iterate all members from the symbol. Records with primary constructors don't have member declarations.
-        if (!iteratedMembersFromSyntax)
+        else
         {
-            RunMemberInspections(topType, null, typeSymbol.GetMembers(), ctx);
+            foreach (MemberDeclarationSyntax memberDeclaration in typeDeclaration.Members)
+            {
+                ImmutableArray<ISymbol> memberSymbols = GetDeclaredSymbolsForMember(memberDeclaration, ctx.SemanticModel);
+            
+                if (memberSymbols.IsDefaultOrEmpty)
+                {
+                    continue;
+                }
+            
+                RunMemberInspections(topType, memberDeclaration, memberSymbols, ctx);
+            }  
         }
     }
 

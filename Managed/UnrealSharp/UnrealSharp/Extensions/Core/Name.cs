@@ -7,7 +7,7 @@ using UnrealSharp.Interop;
 namespace UnrealSharp.Core;
 
 [UStruct, StructLayout(LayoutKind.Sequential), BlittableType]
-public struct FName : IEquatable<FName>, IComparable<FName>
+public record struct FName : IComparable<FName>
 {
 #if WITH_EDITOR
     private uint ComparisonIndex;
@@ -78,16 +78,6 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     /// <returns>True if the name is None, false otherwise.</returns>
     public bool IsNone => this == None;
     
-    public static bool operator == (FName lhs, FName rhs)
-    {
-        return lhs.ComparisonIndex == rhs.ComparisonIndex && lhs.Number == rhs.Number;
-    }
-    
-    public static bool operator != (FName lhs, FName rhs)
-    {
-        return !(lhs == rhs);
-    }
-    
     public static implicit operator FName(string name)
     {
         return name.Length != 0 ? new FName(name) : None;
@@ -106,21 +96,6 @@ public struct FName : IEquatable<FName>, IComparable<FName>
     public static implicit operator FName(FText text)
     {
         return text.IsEmpty ? None : new FName(text.ToString());
-    }
-    
-    public bool Equals(FName other)
-    {
-        return this == other;
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        return obj is FName other && Equals(other);
-    }
-    
-    public override int GetHashCode()
-    {
-        return (int)ComparisonIndex;
     }
     
     /// <summary>

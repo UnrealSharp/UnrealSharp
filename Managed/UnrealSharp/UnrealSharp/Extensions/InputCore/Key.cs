@@ -3,14 +3,12 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.InputCore;
 
-public partial struct FKey
+public partial record struct FKey
 {
     public FKey(string keyName)
     {
         KeyName = new FName(keyName);
     }
-    
-    public override string ToString() => UCSKeyExtensions.ToString(this);
 
     public bool IsValid => UCSKeyExtensions.IsValid(this);
     public bool IsModifierKey => UCSKeyExtensions.IsModifierKey(this);

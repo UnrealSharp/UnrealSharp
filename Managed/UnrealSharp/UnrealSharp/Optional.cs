@@ -7,8 +7,7 @@ using UnrealSharp.Interop;
 
 namespace UnrealSharp;
 
-public readonly struct TOptional<T>
-    : IEquatable<TOptional<T>>, IComparable<TOptional<T>> where T : notnull
+public readonly record struct TOptional<T> : IComparable<TOptional<T>> where T : notnull
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly T? _value;
@@ -105,17 +104,6 @@ public readonly struct TOptional<T>
         return EqualityComparer<T>.Default.Equals(_value, other.Value);
     }
 
-    public override bool Equals(object? obj)
-    {
-        if (obj is TOptional<T> o) return Equals(o);
-        if (!HasValue) return obj is null;
-        if (obj is null) return false;
-        return obj is T t && EqualityComparer<T>.Default.Equals(_value, t);
-    }
-
-    public override int GetHashCode()
-        => HasValue ? _value is null ? 0 : EqualityComparer<T>.Default.GetHashCode(_value) : 0;
-
     public int CompareTo(TOptional<T> other)
     {
         if (HasValue)
@@ -144,9 +132,7 @@ public readonly struct TOptional<T>
         if (a is IComparable c) return c.CompareTo(other);
         return 0;
     }
-
-    public static bool operator ==(TOptional<T> left, TOptional<T> right) => left.Equals(right);
-    public static bool operator !=(TOptional<T> left, TOptional<T> right) => !left.Equals(right);
+    
     public static bool operator true(TOptional<T> opt) => opt.HasValue;
     public static bool operator false(TOptional<T> opt) => !opt.HasValue;
     public static bool operator !(TOptional<T> opt) => !opt.HasValue;

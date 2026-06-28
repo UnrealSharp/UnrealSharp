@@ -51,7 +51,7 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
         IntPtr handle = Bind_TPersistentObjectPtr.CallGet(ref Data);
         return GCHandleUtilities.GetObjectFromHandlePtr<UObject>(handle);
     }
-
+    
     public override bool Equals(object? obj)
     {
         if (obj is not FPersistentObjectPtr other)
@@ -66,9 +66,19 @@ public struct FPersistentObjectPtr : IEquatable<FPersistentObjectPtr>
     {
         return Equals((object)other);
     }
-
+    
     public override int GetHashCode()
     {
         return Bind_TPersistentObjectPtr.CallGetHashCode(ref Data);
+    }
+
+    public static bool operator ==(FPersistentObjectPtr left, FPersistentObjectPtr right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(FPersistentObjectPtr left, FPersistentObjectPtr right)
+    {
+        return !(left == right);
     }
 }

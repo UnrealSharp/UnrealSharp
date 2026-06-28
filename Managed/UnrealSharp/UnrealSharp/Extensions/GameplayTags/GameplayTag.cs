@@ -5,7 +5,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.GameplayTags;
 
-public partial struct FGameplayTag
+public partial record struct FGameplayTag
 {
     /// <summary>
     /// Registers a gameplay tag tracked by the calling assembly for editor cleanup during hot reload.
@@ -65,11 +65,6 @@ public partial struct FGameplayTag
         return TagName.Equals(other.TagName);
     }
 
-    public override bool Equals(object? obj)
-    {
-        return obj is FGameplayTag other && Equals(other);
-    }
-
     public override int GetHashCode()
     {
         return TagName.GetHashCode();
@@ -78,16 +73,6 @@ public partial struct FGameplayTag
     public override string ToString()
     {
         return TagName.ToString();
-    }
-    
-    public static bool operator == (FGameplayTag lhs, FGameplayTag rhs)
-    {
-        return lhs.TagName == rhs.TagName;
-    }
-
-    public static bool operator !=(FGameplayTag lhs, FGameplayTag rhs)
-    {
-        return !(lhs == rhs);
     }
     
     public static implicit operator FGameplayTag(string tagName)

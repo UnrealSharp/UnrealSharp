@@ -1,6 +1,6 @@
 namespace UnrealSharp.SlateCore;
 
-public partial struct FMargin
+public partial record struct FMargin
 {
 	public FMargin(float uniformMargin)
 	{

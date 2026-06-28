@@ -4,7 +4,7 @@ using System.Text;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FVector4
+public partial record struct FVector4
 {
     /// <summary>
     /// Constructs a vector whose elements are all the single specified value.

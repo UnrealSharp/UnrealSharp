@@ -5,7 +5,7 @@ using System.Text;
 
 namespace UnrealSharp.CoreUObject;
 
-public partial struct FVector2D
+public partial record struct FVector2D
 {
     public double X;
     public double Y;
@@ -16,26 +16,23 @@ public partial struct FVector2D
         Y = y;
     }
     
-    public FVector2D(FVector2D vec)
+    public FVector2D(FVector2D vector)
     {
-        X = vec.X;
-        Y = vec.Y;
+        X = vector.X;
+        Y = vector.Y;
     }
     
-    public FVector2D(Vector2 vec)
+    public FVector2D(Vector2 vector)
     {
-        X = vec.X;
-        Y = vec.Y;
+        X = vector.X;
+        Y = vector.Y;
     }
     
-    public FVector2D(FVector vec)
+    public FVector2D(FVector vector)
     {
-        X = vec.X;
-        Y = vec.Y;
+        X = vector.X;
+        Y = vector.Y;
     }
-
-    public static implicit operator FVector2D(Vector2 vec) => new FVector2D(vec.X, vec.Y);
-    public static implicit operator Vector2(FVector2D vec) => new Vector2((float)vec.X, (float)vec.Y);
     
     /// <summary>
     /// Returns the vector (0,0).
@@ -56,15 +53,6 @@ public partial struct FVector2D
     /// Returns the vector (0,1).
     /// </summary>
     public static FVector2D UnitY => new(0.0, 1.0);
-   
-    /// <summary>
-    /// Returns a String representing this FVector2D instance.
-    /// </summary>
-    /// <returns>The string representation.</returns>
-    public override string ToString()
-    {
-        return ToString("G", CultureInfo.CurrentCulture);
-    }
 
     /// <summary>
     /// Returns a String representing this FVector2D instance, using the specified format to format individual elements.
@@ -470,4 +458,10 @@ public partial struct FVector2D
     {
         return Zero - value;
     }
+    
+    public static implicit operator Vector2(FVector2D vector) => new Vector2((float)vector.X, (float)vector.Y);
+    
+    public static implicit operator FVector2D(Vector2 vector) => new FVector2D(vector.X, vector.Y);
+    public static implicit operator FVector2D(FVector vector) => new FVector2D(vector.X, vector.Y);
+    public static implicit operator FVector2D(FVector4 vector) => new FVector2D(vector.X, vector.Y);
 }

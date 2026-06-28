@@ -5,7 +5,7 @@ using UnrealSharp.UnrealSharpCore;
 
 namespace UnrealSharp.SlateCore;
 
-public partial struct FKeyEvent
+public partial record struct FKeyEvent
 {
     public override string ToString()
     {

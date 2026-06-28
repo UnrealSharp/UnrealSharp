@@ -381,19 +381,11 @@ public class FunctionExporter
         return parameter.GetParameterName();
     }
     
-    public static void TryAddExtensionMethod(UhtFunction function)
+    public static void TryAddExtensionMethod(UhtFunction function, List<ExtensionMethod> extensionMethods)
     {
         if (!function.HasMetadata("ExtensionMethod") && !function.IsAutocast())
         {
             return;
-        }
-        
-        UhtPackage package = function.Outer!.Package;
-        
-        if (!ExtensionMethods.TryGetValue(package, out var extensionMethods))
-        {
-            extensionMethods = new List<ExtensionMethod>();
-            ExtensionMethods.TryAdd(package, extensionMethods);
         }
         
         UhtProperty firstParameter = (function.Children[0] as UhtProperty)!;
@@ -409,14 +401,6 @@ public class FunctionExporter
         }
         
         extensionMethods.Add(newExtensionMethod);
-    }
-
-    public static void BindExtensionMethods()
-    {
-        foreach (KeyValuePair<UhtPackage, List<ExtensionMethod>> extensionInfo in ExtensionMethods)
-        {
-            ExtensionsClassExporter.ExportExtensionsClass(extensionInfo.Key, extensionInfo.Value); 
-        }
     }
     
     public static FunctionExporter ExportFunction(GeneratorStringBuilder builder, UhtFunction function, FunctionType functionType, HashSet<string>? exportedFunctions = null)
@@ -716,7 +700,11 @@ public class FunctionExporter
             {
                 PropertyTranslator translator = ParameterTranslators[0];
                 string paramType = ClassBeingExtended != null ? ClassBeingExtended.GetFullManagedName() : translator.GetManagedType(SelfParameter!);
-                builder.AppendLine($"{Modifiers}{returnType} {FunctionName}<{genericTypeString}>(this {paramType} {SelfParameter!.GetParameterName()}, {overload.ParamStringApiWithDefaults})");
+                string arguments = $"this {paramType} {SelfParameter!.GetParameterName()}";
+                if (!String.IsNullOrEmpty(overload.ParamStringApiWithDefaults)) {
+                    arguments += $", {overload.ParamStringApiWithDefaults}";
+                }
+                builder.AppendLine($"{Modifiers}{returnType} {FunctionName}<{genericTypeString}>({arguments})");
                 builder.Indent();
                 
                 foreach ((string genericType, string constraint) in genericTypes.Zip(genericConstraints))
