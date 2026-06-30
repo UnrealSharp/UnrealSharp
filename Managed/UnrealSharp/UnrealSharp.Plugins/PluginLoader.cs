@@ -43,12 +43,12 @@ public static class PluginLoader
 	[MethodImpl(MethodImplOptions.NoInlining)]
 	private static WeakReference? RemovePlugin(string assemblyName)
 	{
-		if (!Plugins.Remove(assemblyName, out Plugin? value))
+		if (!Plugins.Remove(assemblyName, out Plugin? plugin))
 		{
 			return null;
 		}
 
-		return value.Unload();
+		return plugin.Unload();
 	}
 
 	public static void UnloadPlugin(string assemblyPath)

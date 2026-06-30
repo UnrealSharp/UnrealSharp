@@ -12,19 +12,20 @@
     <PropertyGroup Condition="'$(GenerateDocumentation)' == ''">
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
+    
+    <Import Project="..\..\..\UnrealSharp.AOT.props" Condition="Exists('..\..\..\UnrealSharp.AOT.props')" />
+    <Import Project="..\..\..\UnrealSharp.Build.props" Condition="Exists('..\..\..\UnrealSharp.Build.props')" />
 
-    <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" Condition="Exists('..\..\..\UnrealSharp.GeneratedFiles.props')" />
     <PropertyGroup>
         <UHTGeneratedPath>..\..\..\Intermediate\UnrealSharp\UHT\$(UETargetType)</UHTGeneratedPath>
         <UHTFullPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(UHTGeneratedPath)'))</UHTFullPath>
     </PropertyGroup>
-    
-    <Import Project="..\..\..\UnrealSharp.AOT.props" Condition="Exists('..\..\..\UnrealSharp.AOT.props')" />
-    <Import Project="$(UHTGeneratedPath)\UE5Rules.Defines.props" Condition="Exists('$(UHTGeneratedPath)\UE5Rules.Defines.props')" />
 
     <ItemGroup>
         <Compile Include="$(UHTGeneratedPath)\**\*.cs"/>
     </ItemGroup>
+
+    <Import Project="$(UHTGeneratedPath)\UE5Rules.Defines.props" Condition="Exists('$(UHTGeneratedPath)\UE5Rules.Defines.props')" />
     
     <ItemGroup>
       <ProjectReference Include="..\UnrealSharp.Binds\UnrealSharp.Binds.csproj" />

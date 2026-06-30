@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
+using UnrealSharp.Core;
 using UnrealSharp.Engine.Core.Modules;
 
 namespace UnrealSharp.Plugins;
@@ -12,8 +13,8 @@ public class Plugin
     
     private AssemblyLoadContext? _loadContext;
 
-    private readonly List<IModuleInterface> _moduleInterfaces = new List<IModuleInterface>();
-    private readonly List<Func<IModuleInterface>> _moduleInitFunctions = new List<Func<IModuleInterface>>();
+    private readonly List<IModuleInterface> _moduleInterfaces = new();
+    private readonly List<Func<IModuleInterface>> _moduleInitFunctions = new();
     
     public Plugin(AssemblyName assemblyName, bool isCollectible, string assemblyPath)
     {
@@ -81,6 +82,7 @@ public class Plugin
         ShutdownModule();
         
         AssemblyCache.RemoveAssembly(AssemblyName.Name!);
+        GCHandleUtilities.FreeAssembly((Assembly)Assembly!.Target!);
         Assembly = null;
         
         WeakReference loadContextWeak = new WeakReference(_loadContext);

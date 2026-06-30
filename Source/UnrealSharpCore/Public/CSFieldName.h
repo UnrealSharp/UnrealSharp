@@ -30,7 +30,7 @@ struct UNREALSHARPCORE_API FCSFieldName : FCSReflectionDataBase
 
 	friend uint32 GetTypeHash(const FCSFieldName& Field)
 	{
-		return GetTypeHash(Field.Name) ^ GetTypeHash(Field.Namespace);
+		return HashCombine(GetTypeHash(Field.Name), GetTypeHash(Field.Namespace));
 	}
 
 	// FCSReflectionDataBase interface

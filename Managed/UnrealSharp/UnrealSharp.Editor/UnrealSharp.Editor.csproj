@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\UnrealSharp.GeneratedFiles.props" />
+    <Import Project="..\..\..\UnrealSharp.Shared.props" Condition="Exists('..\..\..\UnrealSharp.Shared.props')" />
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>

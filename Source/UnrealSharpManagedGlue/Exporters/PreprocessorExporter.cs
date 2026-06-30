@@ -25,17 +25,17 @@ public static class PreprocessorExporter
             return definesSet;
         }
 
-        XDocument doc;
+        XDocument document;
         try 
         { 
-            doc = XDocument.Load(csproj); 
+            document = XDocument.Load(csproj); 
         }
         catch 
         {
             return definesSet; 
         }
 
-        IEnumerable<string> values = doc.Descendants("DefineConstants").Select(x => x.Value);
+        IEnumerable<string> values = document.Descendants("DefineConstants").Select(x => x.Value);
         foreach (string value in values)
         {
             foreach (string raw in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
@@ -79,7 +79,7 @@ public static class PreprocessorExporter
         stringBuilder.AppendLine("</PropertyGroup>");
         stringBuilder.UnIndent();
         stringBuilder.AppendLine("</Project>");
-        
+
         string propsPath = Path.Combine(GeneratorStatics.PluginModuleInfo.Module.GetUHTBaseDirectory(), "UE5Rules.Defines.props");
         File.WriteAllText(propsPath, stringBuilder.ToString());
     }

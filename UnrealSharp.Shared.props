@@ -8,8 +8,8 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
-  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.AOT.props" />
-  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.GeneratedFiles.props" />
+  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.AOT.props" Condition="Exists('$(UnrealSharpPluginDir)UnrealSharp.AOT.props')" />
+  <Import Project="$(UnrealSharpPluginDir)UnrealSharp.Build.props" Condition="Exists('$(UnrealSharpPluginDir)UnrealSharp.Build.props')" />
 
   <ItemGroup>
   
