@@ -80,6 +80,6 @@ obj/
 !Directory.Packages.props
 !Directory.Build.props
 !UnrealSharp.Shared.props
-!UnrealSharp.GeneratedFiles.props
+!UnrealSharp.Build.props
 !UnrealSharp.AOT.props
 !UnrealSharp.Automation.props

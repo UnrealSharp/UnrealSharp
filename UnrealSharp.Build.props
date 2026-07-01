@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <UETargetType Condition="'$(UETargetType)' == ''">Editor</UETargetType>
+    <UEBuildConfig Condition="'$(UEBuildConfig)' == ''">Development</UEBuildConfig>
+    <WithTargetType>WITH_$(UETargetType.ToUpperInvariant())</WithTargetType>
+    <WithBuildConfig>WITH_$(UEBuildConfig.ToUpperInvariant())</WithBuildConfig>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);$(WithTargetType);$(WithBuildConfig)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BuildingAOT)' == 'true'">
+    <DefineConstants>$(DefineConstants);NATIVE_AOT</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="DebugUETargetType" BeforeTargets="Compile">
+    <Message Importance="high" Text="Build Parameters: Target Type: $(UETargetType) ($(WithTargetType)) | Configuration: $(UEBuildConfig) ($(WithBuildConfig))" />
+  </Target>
+</Project>
