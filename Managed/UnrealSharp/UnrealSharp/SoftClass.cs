@@ -83,7 +83,7 @@ public struct TSoftClassPtr<T> where T : UObject
         
         if (loadedClass == null)
         {
-            LogUnrealSharpCore.LogWarning($"Failed to load or cast asset at '{SoftObjectPath}' to '{typeof(T).Name}'");
+            LogUnrealSharp.LogWarning($"Failed to load or cast asset at '{SoftObjectPath}' to '{typeof(T).Name}'");
             return new TSubclassOf<T>();
         }
         

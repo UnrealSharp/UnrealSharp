@@ -60,7 +60,7 @@ public struct TSubclassOf<T>
         }
         catch (Exception exception)
         {
-            LogUnrealSharpCore.Log("Failed to create TSubclassOf instance: " + exception.Message);
+            LogUnrealSharp.Log("Failed to create TSubclassOf instance: " + exception.Message);
         }
     }
     
@@ -119,7 +119,7 @@ public struct TSubclassOf<T>
         
         if (nativeClass == IntPtr.Zero)
         {
-            LogUnrealSharpCore.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
+            LogUnrealSharp.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
             return false;
         }
         
@@ -137,7 +137,7 @@ public struct TSubclassOf<T>
         
         if (nativeClass == IntPtr.Zero)
         {
-            LogUnrealSharpCore.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
+            LogUnrealSharp.Log($"Failed to get native class for type {type.FullName}. Is it a UClass?");
             return false;
         }
         
