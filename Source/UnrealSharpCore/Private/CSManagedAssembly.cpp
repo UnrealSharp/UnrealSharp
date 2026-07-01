@@ -104,9 +104,10 @@ void UCSManagedAssembly::UnloadAssembly()
 
 	AssemblyHandle->Dispose(AssemblyHandlePtr);
 	AssemblyHandle.Reset();
-
-	FCSAssemblyEvents::OnAssemblyUnloaded.Broadcast(this);
+	
 	GetManagedPluginCallbacks().UnloadPlugin(*AssemblyFilePath);
+	
+	FCSAssemblyEvents::OnAssemblyUnloaded.Broadcast(this);
 }
 
 TSharedPtr<FGCHandle> UCSManagedAssembly::FindTypeHandle(const FCSFieldName& FieldName)
