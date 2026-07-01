@@ -50,7 +50,7 @@ bool UCSFunctionBase::UpdateMethodHandle()
 	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = ManagedClass->GetManagedTypeDefinition();
 	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
 	
-	MethodHandle = Assembly->GetManagedMethod(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
+	MethodHandle = Assembly->FindMethodHandle(TypeHandle, FString::Printf(TEXT("Invoke_%s"), *GetName()));
 	return MethodHandle.IsValid();
 }
 

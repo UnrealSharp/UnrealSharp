@@ -49,7 +49,7 @@ public:
 
 	TSharedPtr<FGCHandle> FindTypeHandle(const FCSFieldName& FieldName);
 	TSharedPtr<FGCHandle> AddTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle);
-	TSharedPtr<FGCHandle> GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
+	TSharedPtr<FGCHandle> FindMethodHandle(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 
 	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(UClass* Field);
 	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(const FCSFieldName& ClassName);
@@ -84,6 +84,8 @@ private:
 	TArray<TSharedPtr<FCSManagedTypeDefinition>> PendingCompilationTypes;
 	
 	TMap<FCSFieldName, TSharedPtr<FGCHandle>> ManagedTypeHandles;
+	TArray<TSharedPtr<FGCHandle>> ManagedHandles;
+	
 	TSharedPtr<FGCHandle> AssemblyHandle;
 
 	FString AssemblyFilePath;
