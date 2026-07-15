@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CSBindsRegistry.h"
 #include "CSManagedAssembly.h"
@@ -7,6 +7,7 @@
 
 class UCSScriptStruct;
 class UCSEnum;
+class UWorld;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSClassEvent, UCSClass*);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCSStructEvent, UCSScriptStruct*);
@@ -85,8 +86,10 @@ public:
 	UNREALSHARPCORE_API bool IsManagedType(const UField* Field) const { return IsManagedPackage(Field->GetOutermost()); }
 	UNREALSHARPCORE_API bool IsLoadingAnyAssembly() const;
 	
-	void SetCurrentWorldContext(UObject* WorldContext) { CurrentWorldContext = WorldContext; }
-	UObject* GetCurrentWorldContext() const { return CurrentWorldContext.Get(); }
+	UNREALSHARPCORE_API UWorld* ResolveWorldContext(UObject* WorldContextObject) const;
+	UNREALSHARPCORE_API void PushWorldContext(UObject* WorldContextObject, bool bInheritIfUnresolved = true);
+	UNREALSHARPCORE_API void PopWorldContext();
+	UNREALSHARPCORE_API UWorld* GetCurrentWorldContext() const;
 	
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>>& GetManagedObjectHandles() { return ManagedObjectHandles; }
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>>& GetManagedInterfaceWrappers() { return ManagedInterfaceWrapperHandles; }
@@ -110,8 +113,6 @@ private:
 	TMap<FCSObjectID, TSharedPtr<FGCHandle>> ManagedObjectHandles;
 	TMap<FCSObjectID, TMap<FCSObjectID, TSharedPtr<FGCHandle>>> ManagedInterfaceWrapperHandles;
 
-	TWeakObjectPtr<UObject> CurrentWorldContext;
-	
 	FCSManagerInitializedEvent OnInitialized;
 
 #if WITH_EDITORONLY_DATA

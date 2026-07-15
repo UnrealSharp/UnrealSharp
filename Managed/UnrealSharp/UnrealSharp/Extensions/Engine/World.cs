@@ -8,13 +8,27 @@ public partial class UWorld
     /// <summary>
     /// The URL that was used when loading this World.
     /// </summary>
-    public FURL URL => UCSWorldExtensions.WorldURL();
+    public FURL URL
+    {
+        get
+        {
+            using var worldContext = global::UnrealSharp.WorldContext.Push(this);
+            return UCSWorldExtensions.WorldURL();
+        }
+    }
 
     /// <summary>
     /// Get the game mode of this world.
     /// </summary>
     /// <returns>The game mode of this world.</returns>
-    public AGameModeBase GameMode => UGameplayStatics.GameMode;
+    public AGameModeBase GameMode
+    {
+        get
+        {
+            using var worldContext = global::UnrealSharp.WorldContext.Push(this);
+            return UGameplayStatics.GameMode;
+        }
+    }
     
     /// <summary>
     /// Get the game mode of this world as a specific type.
@@ -27,7 +41,14 @@ public partial class UWorld
     /// Get the game instance of this world.
     /// </summary>
     /// <returns>The game instance of this world.</returns>
-    public UGameInstance GameInstance => UGameplayStatics.GameInstance;
+    public UGameInstance GameInstance
+    {
+        get
+        {
+            using var worldContext = global::UnrealSharp.WorldContext.Push(this);
+            return UGameplayStatics.GameInstance;
+        }
+    }
     
     /// <summary>
     /// Get the game instance of this world as a specific type.
@@ -40,7 +61,14 @@ public partial class UWorld
     /// Get the game state of this world.
     /// </summary>
     /// <returns>The game state of this world.</returns>
-    public AGameStateBase GameState => UGameplayStatics.GameState;
+    public AGameStateBase GameState
+    {
+        get
+        {
+            using var worldContext = global::UnrealSharp.WorldContext.Push(this);
+            return UGameplayStatics.GameState;
+        }
+    }
     
     /// <summary>
     /// Get the game state of this world as a specific type.
@@ -57,7 +85,14 @@ public partial class UWorld
     /// <summary>
     /// Returns the type of this world
     /// </summary>
-    public ECSWorldType WorldType => UCSWorldExtensions.WorldType;
+    public ECSWorldType WorldType
+    {
+        get
+        {
+            using var worldContext = global::UnrealSharp.WorldContext.Push(this);
+            return UCSWorldExtensions.WorldType;
+        }
+    }
 
     /// <summary>
     /// Returns true if this world is a game world (Game, PIE, GamePreview, GameRPC)
@@ -119,6 +154,7 @@ public partial class UWorld
     /// <param name="bShouldSkipGameNotify">Whether to notify the clients/game or not</param>
     public void ServerTravel(string url, bool bAbsolute = false, bool bShouldSkipGameNotify = false)
 	{
+		using var worldContext = global::UnrealSharp.WorldContext.Push(this);
 		UCSWorldExtensions.ServerTravel(url, bAbsolute, bShouldSkipGameNotify);
 	}
     
@@ -141,6 +177,7 @@ public partial class UWorld
 	/// <param name="isAbsolute">If true, URL is absolute; otherwise, it is relative.</param>
     public void SeamlessTravel(string url, bool isAbsolute = false)
 	{
+		using var worldContext = global::UnrealSharp.WorldContext.Push(this);
 		UCSWorldExtensions.SeamlessTravel(url, isAbsolute);
 	}
 }

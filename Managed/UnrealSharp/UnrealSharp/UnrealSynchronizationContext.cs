@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using UnrealSharp.Core;
 using UnrealSharp.Core.Interop;
 using UnrealSharp.CoreUObject;
+using UnrealSharp.Engine;
 using UnrealSharp.Interop;
 
 namespace UnrealSharp;
@@ -243,9 +244,15 @@ public sealed class UnrealSynchronizationContext : SynchronizationContext
         {
             throw new InvalidOperationException("World context object is not valid.");
         }
-            
+
+        UWorld? world = worldContext as UWorld ?? worldContext.World;
+        if (world is null || !world.IsValid())
+        {
+            throw new InvalidOperationException("World context object does not resolve to a valid world.");
+        }
+
         _thread = thread;
-        _worldContext = new TWeakObjectPtr<UObject>(worldContext.World);
+        _worldContext = new TWeakObjectPtr<UObject>(world);
     }
 
     public override void Post(SendOrPostCallback d, object? state) => RunOnThread(_worldContext, _thread, () => d(state));

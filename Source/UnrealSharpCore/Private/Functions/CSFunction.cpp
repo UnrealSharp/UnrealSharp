@@ -2,14 +2,86 @@
 #include "CSManagedGCHandle.h"
 #include "CSManager.h"
 #include "CSUnrealSharpSettings.h"
+#include "CSWorldContextScope.h"
 #include "Types/CSClass.h"
 #include "Types/CSSkeletonClass.h"
-#include "Engine/World.h"
+#include "UObject/UnrealType.h"
 
 #include "Blueprint/BlueprintExceptionInfo.h"
 
+FObjectPropertyBase* UCSFunctionBase::FindWorldContextProperty(UFunction* Function, bool& bHasWorldContextMetadata)
+{
+	const FString WorldContextParameterName = Function->GetMetaData(TEXT("WorldContext"));
+	bHasWorldContextMetadata = !WorldContextParameterName.IsEmpty();
+
+	if (bHasWorldContextMetadata)
+	{
+		return FindFProperty<FObjectPropertyBase>(Function, *WorldContextParameterName);
+	}
+
+	// Match the names recognized by the managed glue generator for native APIs
+	// which omit explicit WorldContext metadata.
+	static const FName WorldContextObjectName(TEXT("WorldContextObject"));
+	static const FName WorldContextName(TEXT("WorldContext"));
+	static const FName ContextObjectName(TEXT("ContextObject"));
+
+	for (TFieldIterator<FProperty> PropertyIt(Function, EFieldIteratorFlags::ExcludeSuper); PropertyIt; ++PropertyIt)
+	{
+		FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(*PropertyIt);
+		if (!ObjectProperty || !ObjectProperty->HasAnyPropertyFlags(CPF_Parm) || ObjectProperty->HasAnyPropertyFlags(CPF_ReturnParm))
+		{
+			continue;
+		}
+
+		const FName PropertyName = ObjectProperty->GetFName();
+		if (PropertyName == WorldContextObjectName || PropertyName == WorldContextName || PropertyName == ContextObjectName)
+		{
+			return ObjectProperty;
+		}
+	}
+
+	return nullptr;
+}
+
+void UCSFunctionBase::CacheWorldContextProperty()
+{
+	bool bHasWorldContextMetadata = false;
+	CachedWorldContextProperty = FindWorldContextProperty(this, bHasWorldContextMetadata);
+	bHasExplicitWorldContext = CachedWorldContextProperty != nullptr || bHasWorldContextMetadata;
+	bWorldContextPropertyCached = true;
+
+	if (!CachedWorldContextProperty && bHasWorldContextMetadata)
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning,
+			"Function {0} declares WorldContext metadata, but parameter {1} is not an object property",
+			GetName(), GetMetaData(TEXT("WorldContext")));
+	}
+}
+
+bool UCSFunctionBase::TryGetExplicitWorldContext(uint8* ParameterBuffer, UObject*& OutWorldContextObject) const
+{
+	check(bWorldContextPropertyCached);
+
+	if (!bHasExplicitWorldContext)
+	{
+		return false;
+	}
+
+	if (!CachedWorldContextProperty || !ParameterBuffer)
+	{
+		return true;
+	}
+
+	const void* ValueAddress = CachedWorldContextProperty->ContainerPtrToValuePtr<void>(ParameterBuffer);
+	OutWorldContextObject = CachedWorldContextProperty->GetObjectPropertyValue(ValueAddress);
+	return true;
+}
+
 void UCSFunctionBase::Bind()
 {
+	// Cache our world context property so we don't have to look it up every time we invoke this function.
+	CacheWorldContextProperty();
+
 	UClass* ClassToFindFunction = GetOwnerClass();
 
 #if WITH_EDITOR
@@ -68,21 +140,18 @@ void UCSFunctionBase::InvokeManagedMethod(UObject* ObjectToInvokeOn, FFrame& Sta
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSFunctionBase::InvokeManagedMethod);
 	
 	Stack.Code += !!Stack.Code;
-
-	// Prefer using World as context since it's more stable
-	UObject* WorldContext = nullptr;
-	if (Stack.Object)
-	{
-		UWorld* World = Stack.Object->GetWorld();
-		WorldContext = World ? World : Stack.Object;
-	}
-
-	if (WorldContext)
-	{
-		UCSManager::Get().SetCurrentWorldContext(WorldContext);
-	}
-
 	UCSFunctionBase* ManagedFunction = static_cast<UCSFunctionBase*>(Stack.CurrentNativeFunction);
+
+	UObject* WorldContextObject = nullptr;
+	const bool bHasExplicitWorldContext = ManagedFunction->TryGetExplicitWorldContext(Stack.Locals, WorldContextObject);
+	if (!bHasExplicitWorldContext)
+	{
+		WorldContextObject = IsValid(ObjectToInvokeOn) ? ObjectToInvokeOn : Stack.Object;
+	}
+
+	// An explicit context, including an explicitly null context.
+	// Receiver-less nested calls inherit the caller's active scope.
+	FCSWorldContextScope WorldContextScope(WorldContextObject, !bHasExplicitWorldContext);
 
 #if WITH_EDITOR
 	// After a full reload, method pointers are stale, so we just lazy update them here.
