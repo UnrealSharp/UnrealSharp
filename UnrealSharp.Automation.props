@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
     <PropertyGroup>
         <UE5RulesProjPath>$(EngineDir)\Intermediate\Build\BuildRulesProjects\UE5Rules\UE5Rules.csproj</UE5RulesProjPath>
     </PropertyGroup>
@@ -9,9 +9,16 @@
         <UE5Rules_DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(UE5Rules_DefineConstants), '\s+', ''))</UE5Rules_DefineConstants>
     </PropertyGroup>
 
+    <PropertyGroup Condition="!Exists('$(UE5RulesProjPath)')">
+        <UEVersionHeaderPath>$(EngineDir)\Source\Runtime\Launch\Resources\Version.h</UEVersionHeaderPath>
+        <UEVersionHeaderContent Condition="Exists('$(UEVersionHeaderPath)')">$([System.IO.File]::ReadAllText('$(UEVersionHeaderPath)'))</UEVersionHeaderContent>
+        <UEEngineMajorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEVersionHeaderContent), 'ENGINE_MAJOR_VERSION\s+(\d+)').Groups[1].Value)</UEEngineMajorVersion>
+        <UEEngineMinorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEVersionHeaderContent), 'ENGINE_MINOR_VERSION\s+(\d+)').Groups[1].Value)</UEEngineMinorVersion>
+    </PropertyGroup>
+
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <TargetFramework Condition="$(UE5Rules_DefineConstants.Contains('UE_5_8_OR_LATER'))">net10.0</TargetFramework>
+        <TargetFramework Condition="$(UE5Rules_DefineConstants.Contains('UE_5_8_OR_LATER')) Or ('$(UEEngineMajorVersion)' == '5' And '$(UEEngineMinorVersion)' == '8')">net10.0</TargetFramework>
     </PropertyGroup>
     
 </Project>
