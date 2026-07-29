@@ -10,10 +10,10 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="!Exists('$(UE5RulesProjPath)')">
-        <UEVersionHeaderPath>$(EngineDir)\Source\Runtime\Launch\Resources\Version.h</UEVersionHeaderPath>
-        <UEVersionHeaderContent Condition="Exists('$(UEVersionHeaderPath)')">$([System.IO.File]::ReadAllText('$(UEVersionHeaderPath)'))</UEVersionHeaderContent>
-        <UEEngineMajorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEVersionHeaderContent), 'ENGINE_MAJOR_VERSION\s+(\d+)').Groups[1].Value)</UEEngineMajorVersion>
-        <UEEngineMinorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEVersionHeaderContent), 'ENGINE_MINOR_VERSION\s+(\d+)').Groups[1].Value)</UEEngineMinorVersion>
+        <UEBuildVersionPath>$(EngineDir)\Build\Build.version</UEBuildVersionPath>
+        <UEBuildVersionContent Condition="Exists('$(UEBuildVersionPath)')">$([System.IO.File]::ReadAllText('$(UEBuildVersionPath)'))</UEBuildVersionContent>
+        <UEEngineMajorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '&quot;MajorVersion&quot;\s*:\s*(\d+)').Groups[1].Value)</UEEngineMajorVersion>
+        <UEEngineMinorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '&quot;MinorVersion&quot;\s*:\s*(\d+)').Groups[1].Value)</UEEngineMinorVersion>
     </PropertyGroup>
 
     <PropertyGroup>

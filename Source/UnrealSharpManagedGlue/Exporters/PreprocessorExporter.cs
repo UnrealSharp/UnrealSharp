@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using System.Xml.Linq;
 using UnrealSharpManagedGlue.SourceGeneration;
 using UnrealSharpManagedGlue.Utilities;
@@ -54,24 +54,17 @@ public static class PreprocessorExporter
 
     private static void AddEngineVersionDefines(string engineDirectory, HashSet<string> definesSet)
     {
-        string versionHeader = Path.Combine(engineDirectory, "Source", "Runtime", "Launch", "Resources", "Version.h");
-        if (!File.Exists(versionHeader))
+        string buildVersionPath = Path.Combine(engineDirectory, "Build", "Build.version");
+        if (!File.Exists(buildVersionPath))
         {
             return;
         }
 
         try
         {
-            string contents = File.ReadAllText(versionHeader);
-            Match majorMatch = Regex.Match(contents, @"^\s*#define\s+ENGINE_MAJOR_VERSION\s+(\d+)", RegexOptions.Multiline);
-            Match minorMatch = Regex.Match(contents, @"^\s*#define\s+ENGINE_MINOR_VERSION\s+(\d+)", RegexOptions.Multiline);
-            if (!majorMatch.Success || !minorMatch.Success)
-            {
-                return;
-            }
-
-            int engineMajor = int.Parse(majorMatch.Groups[1].Value);
-            int engineMinor = int.Parse(minorMatch.Groups[1].Value);
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(buildVersionPath));
+            int engineMajor = document.RootElement.GetProperty("MajorVersion").GetInt32();
+            int engineMinor = document.RootElement.GetProperty("MinorVersion").GetInt32();
 
             // Match UnrealBuildTool's UE_X_Y_OR_LATER convention.
             for (int major = 4; major <= engineMajor; major++)
@@ -86,7 +79,7 @@ public static class PreprocessorExporter
         }
         catch
         {
-            // Keep defines parsed from UE5Rules.csproj if Version.h is unavailable.
+            // Keep defines parsed from UE5Rules.csproj if Build.version is unavailable or invalid.
         }
     }
 
