@@ -56,7 +56,7 @@ void FUnrealSharpCompilerModule::RecompileAndReinstanceBlueprints()
 		return;
 	}
 	
-	if (ManagedClassesToCompile.IsEmpty())
+	if (ManagedClassesToCompile.IsEmpty() && ManagedComponentsToCompile.IsEmpty())
 	{
 		// Nothing to compile.
 		return;
