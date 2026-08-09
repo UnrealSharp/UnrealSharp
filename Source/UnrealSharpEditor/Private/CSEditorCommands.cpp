@@ -15,7 +15,8 @@ FCSEditorCommands::FCSEditorCommands() : TCommands<FCSEditorCommands>(
 
 void FCSEditorCommands::RegisterCommands()
 {
-	UI_COMMAND(CreateNewProject, "Create C# Project", "Create a new C# project with all necessary dependencies and initial setup", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CreateNewProject, "Create New C# Project", "Create a new C# project with all necessary dependencies and initial setup", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CreateNewClass, "Create New C# Type", "Create a new C# type in the project", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(HotReload, "Force Hot Reload", "Manually reloads any modified C# code into the editor. Only required if Automatic Hot Reloading is disabled", EUserInterfaceActionType::Button, FInputChord(EKeys::F5, EModifierKey::Control | EModifierKey::Alt));
 	UI_COMMAND(RegenerateSolution, "Regenerate Solution", "Rebuild the C# solution file to reflect the latest project changes", EUserInterfaceActionType::Button, FInputChord(EKeys::F9, EModifierKey::Control | EModifierKey::Alt));
 	UI_COMMAND(OpenSolution, "Open C# Solution", "Launch the project's C# solution file in the default IDE.", EUserInterfaceActionType::Button, FInputChord());

@@ -34,4 +34,9 @@ public:
 	// The maximum allowed character length for C# .csproj names
 	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Projects")
 	int32 MaxProjectNameLength = 32;
+	
+	// Common parent classes to choose from in the class creation wizard. 
+	// NOTE: Blueprint classes are not supported.
+	UPROPERTY(EditDefaultsOnly, config, Category = "UnrealSharp | Code")
+	TArray<TSoftClassPtr<UObject>> CommonParentClasses;
 };

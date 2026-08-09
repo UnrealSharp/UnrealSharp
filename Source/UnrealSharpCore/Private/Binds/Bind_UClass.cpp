@@ -42,7 +42,7 @@ DECLARE_UNREALSHARP_BINDER(Bind_UClass)
 			return nullptr;
 		}
 		
-		UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(NativeObject->GetClass());
+		const UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(NativeObject->GetClass());
 		return FirstNativeClass->FindFunctionByName(FunctionName);
 	}
 

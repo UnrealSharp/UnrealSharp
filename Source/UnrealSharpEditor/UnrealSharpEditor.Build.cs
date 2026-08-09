@@ -43,7 +43,9 @@ public class UnrealSharpEditor : ModuleRules
                 "PluginBrowser", 
                 "UnrealSharpUtilities", 
                 "PlacementMode",
-                "DeveloperToolSettings"
+                "DeveloperToolSettings",
+                "UMG",
+                "ToolWidgets"
             }
         );
 

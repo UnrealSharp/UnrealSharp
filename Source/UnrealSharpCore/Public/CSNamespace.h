@@ -2,7 +2,7 @@
 
 #include "ReflectionData/CSReflectionDataBase.h"
 
-struct FCSNamespace : FCSReflectionDataBase
+struct UNREALSHARPCORE_API FCSNamespace : FCSReflectionDataBase
 {
 	FCSNamespace(FName InNamespace = NAME_None) : Namespace(InNamespace)
 	{

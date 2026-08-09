@@ -422,7 +422,7 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 	if (!RootComponentNode.IsValid())
 	{
 		// See if the actor's default root component can be used
-		UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(Outer);
+		const UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(Outer);
 		AActor* DefaultActor = Cast<AActor>(FirstNativeClass->GetDefaultObject());
 		
 		if (IsValid(DefaultActor) && IsValid(DefaultActor->GetRootComponent()))

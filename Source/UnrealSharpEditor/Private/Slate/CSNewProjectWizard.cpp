@@ -1,9 +1,7 @@
 ﻿#include "Slate/CSNewProjectWizard.h"
 
-#include "CSCommonGlobalSettings.h"
 #include "DesktopPlatformModule.h"
 #include "IDesktopPlatform.h"
-#include "Interfaces/IPluginManager.h"
 #include "Runtime/AppFramework/Public/Widgets/Workflow/SWizard.h"
 #include "Styling/StyleColors.h"
 #include "UnrealSharpEditor.h"
@@ -15,29 +13,7 @@
 
 void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 {
-	static FName ProjectDestination(TEXT("<ProjectDestination>"));
 	const FString ScriptPath = FPaths::ConvertRelativePathToFull(UnrealSharp::Paths::GetScriptFolderDirectory());
-
-	FText ProjectDestinationName = FText::FromString(FString::Printf(TEXT("%s (This Project)"), FApp::GetProjectName()));
-	ProjectDestinations.Add(MakeShared<FCSProjectDestination>(ProjectDestination, ProjectDestinationName, FApp::GetProjectName(), ScriptPath, 0));
-
-	IPluginManager& PluginManager = IPluginManager::Get();
-	TArray<TSharedRef<IPlugin>> EnabledPlugins = PluginManager.GetEnabledPlugins();
-
-	for (const TSharedRef<IPlugin>& Plugin : EnabledPlugins)
-	{
-		const FString PluginFilePath = FPaths::ConvertRelativePathToFull(Plugin->GetBaseDir());
-		if (!FPaths::IsUnderDirectory(PluginFilePath, UnrealSharp::Paths::GetPluginsDirectory()) || Plugin->GetName() == UE_PLUGIN_NAME)
-		{
-			continue;
-		}
-
-		FString ScriptDirectory = PluginFilePath / UnrealSharp::GlobalSettings::Common::GetScriptDirectoryName();
-		ProjectDestinations.Add(MakeShared<FCSProjectDestination>(FName(Plugin->GetName()),
-		                                                          FText::FromString(Plugin->GetFriendlyName()), Plugin->GetName(), ScriptDirectory, ProjectDestinations.Num(), Plugin));
-	}
-	
-	SelectedProjectDestinationIndex = 0;
 
 	constexpr float LabelColumnWidth = 84.0f;
 
@@ -152,22 +128,9 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 							[
 								MakeRow(
 									LOCTEXT("NewProjectOwner", "Owner"),
-									SAssignNew(ProjectDestinationComboBox, SComboBox<TSharedRef<FCSProjectDestination>>)
-									.OptionsSource(&ProjectDestinations)
-									.InitiallySelectedItem(ProjectDestinations[SelectedProjectDestinationIndex])
-									.OnSelectionChanged(this, &SCSNewProjectDialog::OnProjectDestinationChanged)
-									.OnGenerateWidget_Static(&SCSNewProjectDialog::OnGenerateProjectDestinationWidget)
-									.Content()
-									[
-										SNew(STextBlock).Text_Lambda([this]
-										{
-											if (!ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex))
-											{
-												return FText();
-											}
-											return ProjectDestinations[SelectedProjectDestinationIndex]->GetDisplayName();
-										})
-									]
+									SAssignNew(ProjectDestinationPicker, SCSProjectDestinationPicker)
+									.Mode(ECSProjectDestinationMode::Owners)
+									.OnDestinationChanged(this, &SCSNewProjectDialog::OnProjectDestinationChanged)
 								)
 							]
 
@@ -299,18 +262,15 @@ void SCSNewProjectDialog::Construct(const FArguments& InArgs)
 		return EActiveTimerReturnType::Stop;
 	}));
 
-	OnProjectDestinationChanged(ProjectDestinations[SelectedProjectDestinationIndex], ESelectInfo::Direct);
+	OnProjectDestinationChanged(ProjectDestinationPicker->GetSelectedDestination(), ESelectInfo::Direct);
 }
 
 void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDestination> NewProjectDestination, ESelectInfo::Type)
 {
 	if (!NewProjectDestination.IsValid())
 	{
-		SelectedProjectDestinationIndex = INDEX_NONE;
 		return;
 	}
-
-	SelectedProjectDestinationIndex = NewProjectDestination->GetIndex();
 
 	if (PathTextBox.IsValid())
 	{
@@ -322,6 +282,7 @@ void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDesti
 	if (NameTextBox.IsValid())
 	{
 		const FString CurrentName = NameTextBox->GetText().ToString();
+		
 		if (CurrentName.IsEmpty() || CurrentName == SuggestedProjectName)
 		{
 			NameTextBox->SetText(FText::FromString(NewSuggestedName));
@@ -329,12 +290,6 @@ void SCSNewProjectDialog::OnProjectDestinationChanged(TSharedPtr<FCSProjectDesti
 	}
 
 	SuggestedProjectName = NewSuggestedName;
-}
-
-TSharedRef<SWidget> SCSNewProjectDialog::OnGenerateProjectDestinationWidget(TSharedRef<FCSProjectDestination> Destination)
-{
-	return SNew(STextBlock)
-		.Text(Destination->GetDisplayName());
 }
 
 void SCSNewProjectDialog::OnPathSelected(const FString& NewPath)
@@ -393,16 +348,8 @@ void SCSNewProjectDialog::OnFinish()
 		return;
 	}
 
-	FString ProjectRoot;
-	if (ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex) && SelectedProjectDestinationIndex > 0)
-	{
-		const TSharedRef<FCSProjectDestination>& Destination = ProjectDestinations[SelectedProjectDestinationIndex];
-		ProjectRoot = Destination->GetPlugin()->GetBaseDir();
-	}
-	else
-	{
-		ProjectRoot = FPaths::ProjectDir();
-	}
+	const TSharedPtr<FCSProjectDestination> Destination = ProjectDestinationPicker->GetSelectedDestination();
+	const FString ProjectRoot = Destination->GetRootDirectory();
 
 	TMap<FString, FString> Arguments;
 
@@ -448,7 +395,7 @@ FText SCSNewProjectDialog::GetValidationError() const
 	{
 		return LOCTEXT("NameErrorInvalidFile", "The name contains characters that are not allowed in a file name.");
 	}
-	
+
 	const UCSUnrealSharpEditorSettings* Settings = GetDefault<UCSUnrealSharpEditorSettings>();
 	const int32 MaxLength = Settings->MaxProjectNameLength;
 
@@ -471,12 +418,13 @@ FText SCSNewProjectDialog::GetValidationError() const
 		return LOCTEXT("PathErrorEmpty", "Choose a location for the project.");
 	}
 
-	if (!ProjectDestinations.IsValidIndex(SelectedProjectDestinationIndex))
+	const TSharedPtr<FCSProjectDestination> Destination = ProjectDestinationPicker.IsValid() ? ProjectDestinationPicker->GetSelectedDestination() : nullptr;
+	if (!Destination.IsValid())
 	{
 		return LOCTEXT("OwnerErrorNone", "Select an owner for the project.");
 	}
 
-	const FString DestinationPath = ProjectDestinations[SelectedProjectDestinationIndex]->GetPath();
+	const FString DestinationPath = Destination->GetPath();
 	if (!Path.Contains(DestinationPath))
 	{
 		return FText::Format(

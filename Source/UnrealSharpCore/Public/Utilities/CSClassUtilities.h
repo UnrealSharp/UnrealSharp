@@ -19,7 +19,7 @@ public:
 	}
 
 	static bool IsSkeletonType(const UClass* Class) { return Class->GetClass() == UCSSkeletonClass::StaticClass(); }
-	static bool IsNativeClass(UClass* Class){ return Class->GetClass() == UClass::StaticClass(); }
+	static bool IsNativeClass(const UClass* Class){ return Class->GetClass() == UClass::StaticClass(); }
 
 	static bool IsDeveloperSettingsClass(const UBlueprint* Blueprint, const UClass* NewClass)
 	{
@@ -60,15 +60,16 @@ public:
 		return nullptr;
 	}
 
-	
-	static UClass* GetFirstNativeClass(UClass* Class)
+	static const UClass* GetFirstNativeClass(const UClass* Class)
 	{
-		while (!IsNativeClass(Class))
+		const UClass* CurrentClass = Class;
+		
+		while (!IsNativeClass(CurrentClass))
 		{
-			Class = Class->GetSuperClass();
+			CurrentClass = CurrentClass->GetSuperClass();
 		}
 	
-		return Class;
+		return CurrentClass;
 	}
 
 	static UClass* GetFirstNonBlueprintClass(UClass* InClass)

@@ -1,6 +1,6 @@
 #pragma once
 
-class UNREALSHARPRUNTIMEGLUE_API FCSScriptBuilder
+class FCSScriptBuilder
 {
 public:
 	enum class IndentType
@@ -154,11 +154,9 @@ public:
 	}
 
 private:
-
 	TStringBuilder<2048> Report;
 	TArray<FString> Directives;
 	int32 UnsafeBlockCount;
 	int32 IndentCount;
 	IndentType IndentMode;
-	
 };

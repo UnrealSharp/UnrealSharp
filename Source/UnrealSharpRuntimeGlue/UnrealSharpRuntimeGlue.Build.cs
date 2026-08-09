@@ -11,6 +11,7 @@ public class UnrealSharpRuntimeGlue : ModuleRules
             {
                 "Core", 
                 "UnrealSharpEditor",
+                "UnrealSharpUtilities"
             }
         );
 
@@ -20,12 +21,10 @@ public class UnrealSharpRuntimeGlue : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "UnrealSharpUtilities",
                 "SlateCore",
                 "DeveloperSettings",
                 "UnrealEd",
                 "GameplayTags",
-                "UnrealSharpUtilities",
                 "UnrealSharpCore"
             }
         );

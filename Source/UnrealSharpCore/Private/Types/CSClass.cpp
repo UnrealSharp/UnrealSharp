@@ -9,7 +9,7 @@ void UCSClass::ManagedObjectConstructor(const FObjectInitializer& ObjectInitiali
 	UObject* Object = ObjectInitializer.GetObj();
 	
 	UCSClass* FirstManagedClass = FCSClassUtilities::GetFirstManagedClass(Object->GetClass());
-	UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(FirstManagedClass);
+	const UClass* FirstNativeClass = FCSClassUtilities::GetFirstNativeClass(FirstManagedClass);
 	
 	// Execute the native class' constructor first.
 	FirstNativeClass->ClassConstructor(ObjectInitializer);

@@ -27,6 +27,7 @@
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Containers/Set.h"
 #include "Settings/PlatformsMenuSettings.h"
+#include "Slate/SCSTypeWizard.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealSharpEditorModule"
 
@@ -96,6 +97,16 @@ void FUnrealSharpEditorModule::OnCreateNewProject()
 void FUnrealSharpEditorModule::OnCompileManagedCode()
 {
 	UCSHotReloadSubsystem::Get()->PerformHotReload();
+}
+
+void FUnrealSharpEditorModule::OnCreateNewClass()
+{
+	SCSTypeWizard::OpenDialog(SCSTypeWizard::FOnClassCreated::CreateRaw(this, &FUnrealSharpEditorModule::HandleNewClassCreated));
+}
+
+void FUnrealSharpEditorModule::HandleNewClassCreated(const FString& ClassName, const FString& FilePath)
+{
+	OpenSolution();
 }
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
@@ -516,6 +527,7 @@ TSharedRef<SWidget> FUnrealSharpEditorModule::GenerateUnrealSharpToolbar() const
     if (UnrealSharp::InstallationUtilities::IsDotNetSdkInstalled())
     {
     	AppendBuildMenu(CSCommands, MenuBuilder);
+    	AppendCodeMenu(CSCommands, MenuBuilder);
     	AppendProjectMenu(CSCommands, MenuBuilder);
     	AppendPackageMenu(CSCommands, MenuBuilder);
     }
@@ -532,7 +544,7 @@ void FUnrealSharpEditorModule::AppendProjectMenu(const FCSEditorCommands& CSComm
 	MenuBuilder.BeginSection("Project", LOCTEXT("Project", "Project"));
 
 	MenuBuilder.AddMenuEntry(CSCommands.CreateNewProject, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
-							 FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
+							 FSlateIcon(FAppStyle::Get().GetStyleSetName(), "Icons.Plus"));
 
 	MenuBuilder.AddMenuEntry(CSCommands.OpenSolution, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 							 FSourceCodeNavigation::GetOpenSourceCodeIDEIcon());
@@ -552,6 +564,16 @@ void FUnrealSharpEditorModule::AppendPackageMenu(const FCSEditorCommands& CSComm
 
 	MenuBuilder.AddMenuEntry(CSCommands.PackageProject, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
 							 FSlateIcon(FAppStyle::Get().GetStyleSetName(), "LevelEditor.Recompile"));
+
+	MenuBuilder.EndSection();
+}
+
+void FUnrealSharpEditorModule::AppendCodeMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder)
+{
+	MenuBuilder.BeginSection("Code", LOCTEXT("Code", "Code"));
+
+	MenuBuilder.AddMenuEntry(CSCommands.CreateNewClass, NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+							 FSlateIcon(FAppStyle::Get().GetStyleSetName(), "Icons.Plus"));
 
 	MenuBuilder.EndSection();
 }
@@ -622,6 +644,7 @@ void FUnrealSharpEditorModule::RegisterCommands()
 	{
 		UnrealSharpCommands->MapAction(EditorCommands.HotReload, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCompileManagedCode));
 		UnrealSharpCommands->MapAction(EditorCommands.CreateNewProject, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnCreateNewProject));
+		UnrealSharpCommands->MapAction(EditorCommands.CreateNewClass, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnCreateNewClass));
 		UnrealSharpCommands->MapAction(EditorCommands.RegenerateSolution, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnRegenerateSolution));
 		UnrealSharpCommands->MapAction(EditorCommands.OpenSolution, FExecuteAction::CreateRaw(this, &FUnrealSharpEditorModule::OnOpenSolution));
 		UnrealSharpCommands->MapAction(EditorCommands.MergeManagedSlnAndNativeSln, FExecuteAction::CreateStatic(&FUnrealSharpEditorModule::OnMergeManagedSlnAndNativeSln));

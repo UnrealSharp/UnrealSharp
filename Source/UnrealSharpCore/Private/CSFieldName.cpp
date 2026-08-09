@@ -5,9 +5,9 @@
 #include "Json/CSJsonUtilities.h"
 #include "Utilities/CSClassUtilities.h"
 
-FCSFieldName::FCSFieldName(UField* NativeField)
+FCSFieldName::FCSFieldName(const UField* NativeField)
 {
-	if (UClass* Class = Cast<UClass>(NativeField))
+	if (const UClass* Class = Cast<UClass>(NativeField))
 	{
 		NativeField = FCSClassUtilities::GetFirstNativeClass(Class);
 	}

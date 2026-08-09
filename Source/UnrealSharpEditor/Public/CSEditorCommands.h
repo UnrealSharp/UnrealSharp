@@ -10,6 +10,7 @@ public:
 	// End
 
 	TSharedPtr<FUICommandInfo> CreateNewProject;
+	TSharedPtr<FUICommandInfo> CreateNewClass;
     TSharedPtr<FUICommandInfo> HotReload;
 	TSharedPtr<FUICommandInfo> RegenerateSolution;
 	TSharedPtr<FUICommandInfo> OpenSolution;

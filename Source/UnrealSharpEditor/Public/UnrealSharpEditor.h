@@ -71,6 +71,9 @@ private:
     static void OnCreateNewProject();
     static void OnCompileManagedCode();
     
+    void OnCreateNewClass();
+    void HandleNewClassCreated(const FString& ClassName, const FString& FilePath);
+    
     void OnRegenerateSolution();
     void OnOpenSolution();
     void OpenSolution();
@@ -89,6 +92,7 @@ private:
     
     static void AppendProjectMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
     static void AppendPackageMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
+    static void AppendCodeMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
     static void AppendBuildMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
     static void AppendPluginMenu(const FCSEditorCommands& CSCommands, FMenuBuilder& MenuBuilder);
 

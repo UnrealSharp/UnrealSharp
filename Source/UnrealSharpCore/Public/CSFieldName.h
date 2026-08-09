@@ -7,7 +7,7 @@ struct UNREALSHARPCORE_API FCSFieldName : FCSReflectionDataBase
 	FCSFieldName() : Name(NAME_None), Namespace(NAME_None) {}
 	FCSFieldName(FName Name, FName Namespace) : Name(Name), Namespace(Namespace) {}
 	FCSFieldName(FName Name) : Name(Name), Namespace(NAME_None) {}
-	FCSFieldName(UField* NativeField);
+	FCSFieldName(const UField* NativeField);
 
 	FName GetFName() const { return Name; }
 	FString GetName() const { return Name.ToString(); }
