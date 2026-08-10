@@ -353,7 +353,10 @@ public record UnrealAsyncFunction : UnrealFunctionBase
         factory.Properties = new EquatableList<UnrealProperty>(factoryParameters);
         factory.ReturnType = returnValue;
 
-        factory.AddMetaData("DefaultToSelf", TargetParamName);
+        if (!isStatic)
+        {
+            factory.AddMetaData("DefaultToSelf", TargetParamName);
+        }
         factory.AddMetaData("BlueprintInternalUseOnly", "true");
         factory.AddMetaDataRange(MetaData);
 
