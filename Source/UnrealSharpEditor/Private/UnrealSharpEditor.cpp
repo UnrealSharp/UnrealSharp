@@ -111,7 +111,10 @@ void FUnrealSharpEditorModule::HandleNewClassCreated(const FString& ClassName, c
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateUserSolution))
+	TMap<FString, FString> ActionArgs;
+	ActionArgs.Add(TEXT("ForceGenerate"), TEXT("true"));
+	
+	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateUserSolution, &ActionArgs))
 	{
 		return;
 	}
