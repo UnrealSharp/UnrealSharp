@@ -111,7 +111,7 @@ void FUnrealSharpEditorModule::HandleNewClassCreated(const FString& ClassName, c
 
 void FUnrealSharpEditorModule::OnRegenerateSolution()
 {
-	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateSolution))
+	if (!UnrealSharp::Build::InvokeUnrealSharpAutomation(UnrealSharp::BuildAction::GenerateUserSolution))
 	{
 		return;
 	}
