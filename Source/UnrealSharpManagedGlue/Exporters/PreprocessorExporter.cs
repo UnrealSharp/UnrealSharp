@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using UnrealBuildTool;
 using UnrealSharpManagedGlue.SourceGeneration;
 using UnrealSharpManagedGlue.Utilities;
 
@@ -10,64 +11,9 @@ namespace UnrealSharpManagedGlue.Exporters;
 
 public static class PreprocessorExporter
 {
-    public static void ExportBuildDefines()
+    public static void GenerateMSBuildProps()
     {
-        GenerateMSBuildProps(ParseBuildRulesProject(GeneratorStatics.EngineDirectory));
-    }
-    
-    private static HashSet<string> ParseBuildRulesProject(string engineDirectory)
-    {
-        HashSet<string> definesSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        
-        string csproj = Path.Combine(engineDirectory, "Intermediate", "Build", "BuildRulesProjects", "UE5Rules", "UE5Rules.csproj");
-        if (!File.Exists(csproj))
-        {
-            return definesSet;
-        }
-
-        XDocument document;
-        try 
-        { 
-            document = XDocument.Load(csproj); 
-        }
-        catch 
-        {
-            return definesSet; 
-        }
-
-        IEnumerable<string> values = document.Descendants("DefineConstants").Select(x => x.Value);
-        foreach (string value in values)
-        {
-            foreach (string raw in value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                string s = raw.Trim();
-                
-                if (s.Length == 0)
-                {
-                    continue;
-                }
-
-                if (s.StartsWith("$(", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                definesSet.Add(s);
-            }
-        }
-
-        return definesSet;
-    }
-
-    private static void GenerateMSBuildProps(HashSet<string> defines)
-    {
-        IOrderedEnumerable<string> ordered = defines
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(s => s);
-
-        string joined = string.Join(";", ordered);
-
+        string joined = string.Join(";", RulesAssembly.GetPreprocessorDefinitions());
         GeneratorStringBuilder stringBuilder = new GeneratorStringBuilder();
 
         stringBuilder.AppendLine("<Project>");
