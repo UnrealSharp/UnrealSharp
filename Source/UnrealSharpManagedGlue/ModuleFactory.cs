@@ -62,13 +62,13 @@ public static class ModuleFactory
 			return;
 		}
 
-		if (CompileGlueProjects(anyProjectChanges))
+		if (CompileGlueProjects())
 		{
 			JsonUtilities.SerializeObjectToJson(ModuleDependencies, nameof(ModuleDependencies));
 		}
 	}
 
-	private static bool CompileGlueProjects(bool anyProjectChanges)
+	private static bool CompileGlueProjects()
 	{
 		if (GeneratorStatics.TargetType != TargetRules.TargetType.Editor)
 		{
@@ -80,7 +80,6 @@ public static class ModuleFactory
 			new("TargetConfiguration", GeneratorStatics.TargetConfiguration.ToString()),
 			new("TargetType", GeneratorStatics.TargetType.ToString()),
 			new("OutputDirectory", PathUtilities.BuildOutputPath(GeneratorStatics.Factory.Session.ProjectDirectory!)),
-			new("ForceRegenerateSolution", anyProjectChanges.ToString()),
 		};
 
 		UnrealSharpAutomationUtilities.InvokeUnrealSharpAutomation("BuildUserGlue", commandArgs);

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using AutomationTool;
 using EpicGames.Core;
 using UnrealBuildTool;
@@ -32,10 +35,9 @@ public class BuildUserGlue : BuildCommand
 
     public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, IList<string>? extraArguments = null)
     {
-        ArgumentNullException.ThrowIfNull(command);
         ArgumentException.ThrowIfNullOrEmpty(outputDirectory);
 
-        string SolutionDirectory = Path.Combine(command.GetUnrealSharpIntermediateDirectory(), "Temp", targetType.ToString());
+        string SolutionDirectory = Path.Combine(command.GetUnrealSharpIntermediateDirectory(), "Build", targetType.ToString());
         List<string> GlueProjectPaths = GetGlueProjectPaths(command, targetType);
 
         if (GlueProjectPaths.Count == 0)
@@ -46,16 +48,22 @@ public class BuildUserGlue : BuildCommand
 
         GenerateSolution(command, SolutionDirectory, GlueProjectPaths);
         BuildSolution(command, SolutionDirectory, outputDirectory, buildConfig, GlueProjectPaths, extraArguments);
+        CreateSolutionStamp(SolutionDirectory, GlueProjectPaths);
     }
 
-    private static void GenerateSolution(BuildCommand command, string solutionPath, List<string> glueProjectPaths)
+    private static void GenerateSolution(BuildCommand command, string solutionDirectory, List<string> glueProjectPaths)
     {
+        if (IsSolutionStampSame(solutionDirectory, glueProjectPaths))
+        {
+            return;
+        }
+        
         const string solutionName = "UnrealSharpGlue";
-
+        
         List<KeyValuePair<string, string>> CommandParams = new List<KeyValuePair<string, string>>
         {
             new("SolutionName", solutionName),
-            new("OutputFolder", solutionPath),
+            new("OutputFolder", solutionDirectory),
         };
 
         foreach (string GlueProjectPath in glueProjectPaths)
@@ -63,16 +71,52 @@ public class BuildUserGlue : BuildCommand
             CommandParams.Add(new KeyValuePair<string, string>("ProjectPaths", GlueProjectPath));
         }
         
-        bool ForceRegenerateSolution = command.ParseParamBool("ForceRegenerateSolution");
-        if (!ForceRegenerateSolution && File.Exists(Path.Combine(solutionPath, solutionName + ".sln")))
-        {
-            return;
-        }
-        
-        LoggerUtilities.LogUnrealSharpInfo($"Generating UnrealSharp user solution at {solutionPath}...");
+        LoggerUtilities.LogUnrealSharpInfo($"Generating UnrealSharp user solution at {solutionDirectory}...");
         CommandUtilities.RunCommand(nameof(BuildCommands.GenerateSolution), command, CommandParams);
     }
+    
+    private static string GetStampPath(string solutionDirectory) => Path.Combine(solutionDirectory, "UnrealSharpSolutionStamp.json");
 
+    private static bool IsSolutionStampSame(string solutionDirectory, List<string> glueProjectPaths)
+    {
+        string SolutionStampPath = GetStampPath(solutionDirectory);
+
+        if (!File.Exists(SolutionStampPath))
+        {
+            return false;
+        }
+
+        string SolutionStampContent = File.ReadAllText(SolutionStampPath);
+        JsonArray? GlueProjectsArray = JsonSerializer.Deserialize<JsonArray>(SolutionStampContent);
+
+        if (GlueProjectsArray == null)
+        {
+            return false;
+        }
+
+        return glueProjectPaths.ToList().SequenceEqual(glueProjectPaths);
+    }
+
+    private static void CreateSolutionStamp(string solutionPath, List<string> glueProjectPaths)
+    {
+        JsonSerializerOptions Options = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+        };
+        
+        JsonArray GlueProjectArray = new JsonArray();
+        foreach (string GlueProjectPath in glueProjectPaths)
+        {
+            GlueProjectArray.Add(GlueProjectPath);
+        }
+        
+        string JsonString = JsonSerializer.Serialize(GlueProjectArray, Options);
+        File.WriteAllText(GetStampPath(solutionPath), JsonString);
+        
+        LoggerUtilities.LogUnrealSharpInfo("Creating Solution Stamp...");
+    }
+        
+        
     private static void BuildSolution(BuildCommand buildCommand, string solutionOutputDirectory, string publishDirectory, UnrealTargetConfiguration buildConfig, List<string> glueProjectPaths, IList<string>? extraArguments)
     {
         LoggerUtilities.LogUnrealSharpInfo($"Building UnrealSharp glue projects in {solutionOutputDirectory} with build configuration {buildConfig}...");
