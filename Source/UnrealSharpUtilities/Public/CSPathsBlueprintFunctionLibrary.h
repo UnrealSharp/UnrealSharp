@@ -8,9 +8,6 @@ class UCSPathsBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 public:
 	UFUNCTION(meta = (ScriptMethod))
-	static FString GetRuntimeConfigPath();
-
-	UFUNCTION(meta = (ScriptMethod))
 	static FString GetPluginAssembliesPath();
 
 	UFUNCTION(meta = (ScriptMethod))
@@ -45,12 +42,6 @@ public:
 
 	UFUNCTION(meta = (ScriptMethod))
 	static const FString& GetPluginsDirectory();
-
-	UFUNCTION(meta = (ScriptMethod))
-	static FString GetLatestHostFxrPath();
-
-	UFUNCTION(meta = (ScriptMethod))
-	static FString GetRuntimeHostPath();
 
 	UFUNCTION(meta = (ScriptMethod))
 	static FString GetPathToManagedSolution();

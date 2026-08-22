@@ -13,7 +13,7 @@ public static class BuildUtilities
             return;
         }
         
-        ConsoleUtilities.Log("Engine glue has been modified since the last build. Rebuilding bindings...");
+        ConsoleUtilities.Log("Engine glue has been modified since the last build. Rebuilding UnrealSharp bindings...");
 
         List<KeyValuePair<string, string>> actionArgs =
         [

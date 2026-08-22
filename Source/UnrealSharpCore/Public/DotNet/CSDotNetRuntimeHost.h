@@ -1,27 +1,52 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
+
 #include "HAL/PlatformProcess.h"
 
 struct FCSManagedCallbacks;
 struct FCSManagedPluginCallbacks;
 
-using FInitializeRuntimeHost = bool (*)(const TCHAR*, const TCHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*);
+struct FCSInitializationResult
+{
+	bool bSuccess = false;
+	const TCHAR* Message = nullptr;
+};
+
+using FInitializeUnrealSharp = void (*)(const UTF8CHAR*, FCSManagedPluginCallbacks*, const void*, FCSManagedCallbacks*, FCSInitializationResult*);
+
+struct FCSDotNetLayout
+{
+	FString DotNetRoot;
+	FString HostFxrPath;
+	FString AppAssemblyPath;
+	FString RuntimeConfigPath;
+	bool bSelfContained = false;
+
+	bool IsValid() const
+	{
+		return !DotNetRoot.IsEmpty() && !HostFxrPath.IsEmpty() && !RuntimeConfigPath.IsEmpty();
+	}
+};
 
 class FCSDotNetRuntimeHost
 {
 public:
 	FCSDotNetRuntimeHost() = default;
 	~FCSDotNetRuntimeHost();
-	
+
 	bool InitializeManagedRuntime();
 	void ShutdownManagedRuntime();
 
 private:
+	static FCSDotNetLayout ResolveDotNetLayout(const FString& PluginAssemblyPath);
+
 	load_assembly_and_get_function_pointer_fn InitializeHost();
-	load_assembly_and_get_function_pointer_fn ConfigureRuntime() const;
-	
+	load_assembly_and_get_function_pointer_fn ConfigureRuntime(const FCSDotNetLayout& Layout) const;
+
 	template <typename FunctionPointer>
 	bool BindExport(FunctionPointer& OutFunctionPointer, const TCHAR* ExportName)
 	{

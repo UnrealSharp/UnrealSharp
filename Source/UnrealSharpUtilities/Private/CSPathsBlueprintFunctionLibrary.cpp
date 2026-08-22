@@ -4,11 +4,6 @@
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 
-FString UCSPathsBlueprintFunctionLibrary::GetRuntimeConfigPath()
-{
-	return UnrealSharp::DotNetUtilities::GetRuntimeConfigPath();
-}
-
 FString UCSPathsBlueprintFunctionLibrary::GetPluginAssembliesPath()
 {
 	return UnrealSharp::Paths::GetPluginAssembliesPath();
@@ -67,16 +62,6 @@ const FString& UCSPathsBlueprintFunctionLibrary::GetScriptFolderDirectory()
 const FString& UCSPathsBlueprintFunctionLibrary::GetPluginsDirectory()
 {
 	return UnrealSharp::Paths::GetPluginsDirectory();
-}
-
-FString UCSPathsBlueprintFunctionLibrary::GetLatestHostFxrPath()
-{ 
-	return UnrealSharp::DotNetUtilities::GetLatestHostFxrPath();
-}
-
-FString UCSPathsBlueprintFunctionLibrary::GetRuntimeHostPath()
-{
-	return UnrealSharp::DotNetUtilities::GetRuntimeHostPath();
 }
 
 FString UCSPathsBlueprintFunctionLibrary::GetPathToManagedSolution()

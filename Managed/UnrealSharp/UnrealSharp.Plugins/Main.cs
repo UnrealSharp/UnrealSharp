@@ -1,52 +1,75 @@
-
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Loader;
-using System.Runtime.InteropServices;
-using Microsoft.Build.Locator;
+using System.Text;
 using UnrealSharp.Binds;
 using UnrealSharp.Core;
 
-#if !PACKAGE
-using Microsoft.Build.Locator;
-#endif
-
 namespace UnrealSharp.Plugins;
 
-public static class Main
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct FCSInitializationResult
+{
+    public const int MessageCapacity = 4096;
+    public NativeBool Success;
+    public fixed byte Message[MessageCapacity];
+}
+
+internal static class Main
 {
     [UnmanagedCallersOnly]
-    private static unsafe NativeBool InitializeUnrealSharp(char* workingDirectoryPath, nint assemblyPath, PluginsCallbacks* pluginCallbacks, IntPtr bindsCallbacks, IntPtr managedCallbacks)
+    private static unsafe void InitializeUnrealSharp(
+        byte* workingDirectoryUtf8,
+        PluginsCallbacks* pluginCallbacks,
+        nint bindsCallbacks,
+        nint managedCallbacks,
+        FCSInitializationResult* result)
     {
         try
         {
-            #if WITH_EDITOR
-            IEnumerable<VisualStudioInstance> instances = MSBuildLocator.QueryVisualStudioInstances();
-            VisualStudioInstance? visualStudioInstance = instances.OrderByDescending(i => i.Version).FirstOrDefault();
-            
-            if (visualStudioInstance is not null)
-            {
-                MSBuildLocator.RegisterInstance(visualStudioInstance);
-            }
-            else
-            {
-                MSBuildLocator.RegisterDefaults();
-            }
-            #endif
-            
-            AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY", new string(workingDirectoryPath));
-            
+            AppDomain.CurrentDomain.SetData("APP_CONTEXT_BASE_DIRECTORY",
+                Marshal.PtrToStringUTF8((nint)workingDirectoryUtf8)!);
+
+#if WITH_EDITOR
+            TryRegisterMSBuild();
+#endif
+
             PluginsCallbacks.Initialize(pluginCallbacks);
             ManagedCallbacks.Initialize(managedCallbacks);
             NativeBinds.Initialize(bindsCallbacks);
-
-            Console.WriteLine("UnrealSharp initialized successfully.");
-            return NativeBool.True;
+            result->Success = NativeBool.True;
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception);
-            return NativeBool.False;
+            result->Success = NativeBool.False;
+            WriteMessage((nint)result->Message, exception.ToString());
         }
     }
+
+    private static void WriteMessage(nint buffer, string message)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(message);
+        int length = Math.Min(bytes.Length, FCSInitializationResult.MessageCapacity - 1);
+        Marshal.Copy(bytes, 0, buffer, length);
+        Marshal.WriteByte(buffer, length, 0);
+    }
+
+#if WITH_EDITOR
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void TryRegisterMSBuild()
+    {
+        var instance = Microsoft.Build.Locator.MSBuildLocator
+            .QueryVisualStudioInstances()
+            .OrderByDescending(i => i.Version)
+            .FirstOrDefault();
+
+        if (instance != null)
+        {
+            Microsoft.Build.Locator.MSBuildLocator.RegisterInstance(instance);
+        }
+        else
+        {
+            Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults();
+        }
+    }
+#endif
 }

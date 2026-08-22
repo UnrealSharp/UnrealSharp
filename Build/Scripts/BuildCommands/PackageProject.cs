@@ -53,18 +53,7 @@ public class PackageProject : BuildCommand
         string RuntimeIdentifier = DotNetSdkUtilities.GetDotNetRuntimeIdentifier(options.TargetPlatform, options.TargetArchitecture);
         IList<string> Arguments = BuildBaseArguments(RuntimeIdentifier, options, PublishFolder);
 
-        if (!options.NativeAot)
-        {
-            Arguments.Add("--self-contained");
-        }
-
-        if (options.TargetType != TargetType.Editor)
-        {
-            Arguments.Add("-p:GenerateDocumentation=false");
-        }
-
         BuildBindingsSolution(Arguments, options.BuildConfiguration);
-        
         BuildUserBindings(PublishFolder, options, Arguments);
         BuildUserSolution(PublishFolder, Arguments, options.BuildConfiguration, options.UserParams);
         
@@ -175,6 +164,8 @@ public class PackageProject : BuildCommand
             "--runtime", runtimeIdentifier,
 
             "-p:UseDefaultOutputPath=true",
+            
+            $"-p:PublishSelfContained={(options.NativeAot ? "false" : "true")}",
 
             $"-p:UETargetType={options.TargetType}",
             $"-p:UEBuildConfig={options.BuildConfiguration}",
