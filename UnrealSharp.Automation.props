@@ -9,6 +9,13 @@
         <UE5Rules_DefineConstants>$([System.Text.RegularExpressions.Regex]::Replace($(UE5Rules_DefineConstants), '\s+', ''))</UE5Rules_DefineConstants>
     </PropertyGroup>
 
+    <!-- Installed builds never generate UE5Rules.csproj, so fall back to the engine's Build.version -->
+    <PropertyGroup Condition="!Exists('$(UE5RulesProjPath)') AND Exists('$(EngineDir)\Build\Build.version')">
+        <UEBuildVersionContent>$([System.IO.File]::ReadAllText('$(EngineDir)\Build\Build.version'))</UEBuildVersionContent>
+        <UEMinorVersion>$([System.Text.RegularExpressions.Regex]::Match($(UEBuildVersionContent), '&quot;MinorVersion&quot;\s*:\s*(\d+)').Groups[1].Value)</UEMinorVersion>
+        <UE5Rules_DefineConstants Condition="'$(UEMinorVersion)' != '' AND '$(UEMinorVersion)' &gt;= '8'">UE_5_8_OR_LATER</UE5Rules_DefineConstants>
+    </PropertyGroup>
+
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <TargetFramework Condition="$(UE5Rules_DefineConstants.Contains('UE_5_8_OR_LATER'))">net10.0</TargetFramework>
