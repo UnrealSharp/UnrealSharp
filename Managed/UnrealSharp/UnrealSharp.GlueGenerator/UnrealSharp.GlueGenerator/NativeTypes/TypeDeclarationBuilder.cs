@@ -13,7 +13,7 @@ public class TypeDeclarationBuilder
     private readonly List<string> _interfaces = [];
     private string _nativeTypePtrName = SourceGenUtilities.NativeTypePtr;
     
-    private string _engineName = string.Empty;
+    private string _sourceName = string.Empty;
     private string _namespace = string.Empty;
     private string _declarationName = string.Empty;
     private string _assemblyName = string.Empty;
@@ -32,16 +32,16 @@ public class TypeDeclarationBuilder
     public static TypeDeclarationBuilder FromUnrealType(UnrealType type, string typeKeyword)
     {
         return Create(typeKeyword)
-            .WithEngineName(type.EngineName)
+            .WithSourceName(type.SourceName)
             .WithNamespace(type.Namespace)
             .WithDeclarationName(type.SourceName)
             .WithAssemblyName(type.AssemblyName)
             .Accessibility(type.TypeAccessibility.AccessibilityToString());
     }
 
-    public TypeDeclarationBuilder WithEngineName(string engineName)
+    public TypeDeclarationBuilder WithSourceName(string sourceName)
     {
-        _engineName = engineName;
+        _sourceName = sourceName;
         return this;
     }
 
@@ -102,7 +102,6 @@ public class TypeDeclarationBuilder
     public void Build(GeneratorStringBuilder builder)
     {
         string protection = _accessibility ?? _defaultAccessibility;
-        builder.AppendLine($"[GeneratedType(\"{_engineName}\", \"{_namespace}.{_engineName}\")]");
         builder.AppendLine($"{protection}partial {_modifiers}{_typeKeyword} {_declarationName}");
 
         List<string> inheritance = _baseType is not null ? [_baseType, .._interfaces] : _interfaces;
@@ -113,6 +112,6 @@ public class TypeDeclarationBuilder
         }
 
         builder.OpenBrace();
-        builder.AppendNewBackingField($"static IntPtr {_nativeTypePtrName} = Bind_UCoreUObject.CallGetType(\"{_assemblyName}\", \"{_namespace}\", \"{_engineName}\");");
+        builder.AppendNewBackingField($"static IntPtr {_nativeTypePtrName} = Bind_UCoreUObject.CallGetType(\"{_assemblyName}\", \"{_namespace}\", \"{_sourceName}\");");
     }
 }

@@ -38,8 +38,7 @@ public static class ClassExporter
         {
             attributeBuilder.AddArgument("ClassFlags.Abstract");
         }
-
-        attributeBuilder.AddGeneratedTypeAttribute(classObj);
+        
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
 

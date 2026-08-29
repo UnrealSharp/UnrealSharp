@@ -53,20 +53,23 @@ public static class SourceGenUtilities
     {
         return HasAttribute(symbol, "UFunctionAttribute");
     }
-    
-    public static string TryGetEngineName(this ISymbol symbol)
+
+    public static string GetFunctionEngineName(this IMethodSymbol methodSymbol)
     {
-        foreach (AttributeData attribute in symbol.GetAttributes())
+        string functionEngineName = string.Empty;
+        
+        foreach (AttributeData attribute in methodSymbol.GetAttributes())
         {
-            if (attribute.AttributeClass!.Name != "GeneratedTypeAttribute")
+            if (attribute.AttributeClass!.Name != "GeneratedFunctionAttribute")
             {
                 continue;
             }
 
-            return (string) attribute.ConstructorArguments[0].Value!;
+            functionEngineName = (string) attribute.ConstructorArguments[0].Value!;
+            break;
         }
-        
-        return string.Empty;
+
+        return functionEngineName;
     }
     
     public static List<AttributeData> GetAttributesByName(this ISymbol symbol, string attributeFullName)

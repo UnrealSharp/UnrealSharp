@@ -12,7 +12,7 @@ FCSFieldName::FCSFieldName(const UField* NativeField)
 		NativeField = FCSClassUtilities::GetFirstNativeClass(Class);
 	}
 	
-	Name = NativeField->GetFName();
+	Name = *(FCSUnrealSharpUtils::GetPrefix(NativeField) + NativeField->GetName());
 	Namespace = FCSUnrealSharpUtils::GetNamespace(NativeField);
 }
 

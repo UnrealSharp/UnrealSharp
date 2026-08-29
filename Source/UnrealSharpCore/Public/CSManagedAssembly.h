@@ -52,13 +52,12 @@ public:
 	TSharedPtr<FGCHandle> FindMethodHandle(const TSharedPtr<FGCHandle>& TypeHandle, const FString& MethodName);
 
 	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(UClass* Field);
-	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(const FCSFieldName& ClassName);
+	TSharedPtr<FCSManagedTypeDefinition> FindOrAddManagedTypeDefinition(const FCSFieldName& FieldName);
 	UNREALSHARPCORE_API TSharedPtr<FCSManagedTypeDefinition> FindManagedTypeDefinition(const FCSFieldName& FieldName) const { return ManagedTypeRegistry.FindRef(FieldName); }
 
 	template<typename T = UField>
 	T* ResolveUField(const FCSFieldName& FieldName) const
 	{
-		static_assert(TIsDerivedFrom<T, UField>::Value, "T must be a UField-derived type.");
 		TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::ResolveUField);
 
 		if (TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindManagedTypeDefinition(FieldName))

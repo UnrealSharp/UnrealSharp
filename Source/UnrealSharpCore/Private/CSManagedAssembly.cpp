@@ -172,21 +172,21 @@ TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDef
 	return FindOrAddManagedTypeDefinition(FieldName);
 }
 
-TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDefinition(const FCSFieldName& ClassName)
+TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDefinition(const FCSFieldName& FieldName)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindOrAddManagedTypeDefinition);
 
-	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = ManagedTypeRegistry.FindOrAdd(ClassName);
+	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = ManagedTypeRegistry.FindOrAdd(FieldName);
 
 	if (ManagedTypeDefinition.IsValid())
 	{
 		return ManagedTypeDefinition;
 	}
 
-	UField* Field = FCSUtilities::FindField<UField>(ClassName);
+	UField* Field = FCSUtilities::FindField<UField>(FieldName);
 	if (!IsValid(Field))
 	{
-		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find native class: {0}", ClassName.GetName());
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find native class: {0}", FieldName.GetName());
 		return nullptr;
 	}
 

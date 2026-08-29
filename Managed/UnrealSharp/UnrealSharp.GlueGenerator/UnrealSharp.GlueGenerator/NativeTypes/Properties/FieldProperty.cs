@@ -6,7 +6,6 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record FieldProperty : SimpleProperty
 {
     public FieldName InnerType;
-    protected virtual bool StripPrefix => true;
     
     public FieldProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null) 
         : base(memberSymbol, typeSymbol, propertyType, outer, syntaxNode)
@@ -29,6 +28,6 @@ public record FieldProperty : SimpleProperty
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
         base.PopulateJsonObject(jsonWriter);
-        InnerType.SerializeToJson(jsonWriter, "InnerType", StripPrefix);
+        InnerType.SerializeToJson(jsonWriter, "InnerType");
     }
 }

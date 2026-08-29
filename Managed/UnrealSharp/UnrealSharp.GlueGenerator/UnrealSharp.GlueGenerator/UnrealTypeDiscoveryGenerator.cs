@@ -23,16 +23,6 @@ public readonly record struct ParseResult
         ParseException = exception;
     }
 
-    public bool Equals(ParseResult? other)
-    {
-        if (other is null || Type is null || other.Value.Type is null)
-        {
-            return false;
-        }
-
-        return Type == other.Value.Type;
-    }
-
     public override int GetHashCode()
     {
         if (Type is null)

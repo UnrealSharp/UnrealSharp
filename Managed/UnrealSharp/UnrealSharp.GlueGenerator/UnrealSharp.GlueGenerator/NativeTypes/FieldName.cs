@@ -20,7 +20,6 @@ public readonly record struct FieldName
         Name = name;
         Namespace = nameSpace;
         Assembly = assembly;
-        
         FullName = string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}.{Name}";
     }
     
@@ -42,7 +41,7 @@ public readonly record struct FieldName
         return FullName;
     }
 
-    public void SerializeToJson(JsonWriter wtr, bool stripPrefix = false)
+    public void SerializeToJson(JsonWriter wtr)
     {
         if (string.IsNullOrEmpty(Name))
         {
@@ -52,7 +51,7 @@ public readonly record struct FieldName
 
         wtr.WriteStartObject();
         wtr.WritePropertyName("Name");
-        wtr.WriteValue(stripPrefix ? Name.Substring(1) : Name);
+        wtr.WriteValue(Name);
         wtr.WritePropertyName("Namespace");
         wtr.WriteValue(Namespace);
         wtr.WritePropertyName("AssemblyName");
@@ -60,7 +59,7 @@ public readonly record struct FieldName
         wtr.WriteEndObject();
     }
     
-    public void SerializeToJson(JsonWriter jsonWriter, string propertyName, bool stripPrefix = false)
+    public void SerializeToJson(JsonWriter jsonWriter, string propertyName)
     {
         if (string.IsNullOrEmpty(Name))
         {
@@ -68,6 +67,6 @@ public readonly record struct FieldName
         }
 
         jsonWriter.WritePropertyName(propertyName);
-        SerializeToJson(jsonWriter, stripPrefix);
+        SerializeToJson(jsonWriter);
     }
 }

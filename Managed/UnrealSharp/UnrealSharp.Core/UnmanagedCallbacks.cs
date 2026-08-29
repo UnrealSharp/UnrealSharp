@@ -160,48 +160,27 @@ public static class UnmanagedCallbacks
         try
         {
             string fullTypeNameString = new string(fullTypeName);
-            Assembly? loadedAssembly = GCHandleUtilities.GetObjectFromHandlePtr<Assembly>(assemblyHandle);
+            Assembly? loadedAssembly = GCHandleUtilities.GetObjectFromHandlePtrFast<Assembly>(assemblyHandle);
 
             if (loadedAssembly == null)
             {
                 throw new InvalidOperationException("The provided assembly handle does not point to a valid assembly.");
             }
 
-            return FindTypeInAssembly(loadedAssembly, fullTypeNameString);
+            Type? foundType = loadedAssembly.GetType(fullTypeNameString);
+
+            if (foundType == null)
+            {
+                return IntPtr.Zero;
+            }
+            
+            return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(foundType, foundType.Assembly));
         }
         catch (TypeLoadException ex)
         {
             LogUnrealSharpCore.LogError($"TypeLoadException while trying to look up managed type: {ex.Message}");
             return IntPtr.Zero;
         }
-    }
-    
-    private static IntPtr FindTypeInAssembly(Assembly assembly, string fullTypeName)
-    {
-        Type[] types = assembly.GetTypes();
-        foreach (Type type in types)
-        {
-            foreach (CustomAttributeData attributeData in type.CustomAttributes)
-            {
-                if (attributeData.AttributeType.FullName != typeof(GeneratedTypeAttribute).FullName)
-                {
-                    continue;
-                }
-
-                if (attributeData.ConstructorArguments.Count != 2)
-                {
-                    continue;
-                }
-
-                string fullName = (string)attributeData.ConstructorArguments[1].Value!;
-                if (fullName == fullTypeName)
-                {
-                    return GCHandle.ToIntPtr(GCHandleUtilities.AllocateStrongPointer(type, assembly));
-                }
-            }
-        }
-
-        return IntPtr.Zero;
     }
     
     [UnmanagedCallersOnly]

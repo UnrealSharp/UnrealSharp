@@ -83,7 +83,7 @@ public record UnrealDelegate : UnrealType
         
         TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.ClassKeyword)
             .WithNativePtr(_delegateSignature.FunctionNativePtr)
-            .WithEngineName(delegateWrapperClassName.Substring(1))
+            .WithSourceName(delegateWrapperClassName)
             .WithDeclarationName(delegateWrapperClassName)
             .Extends($"{baseTypeName}<{_delegateSignature.SourceName}>");
 
