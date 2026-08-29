@@ -110,7 +110,7 @@ public record UnrealType
     public virtual void PopulateJsonObject(JsonWriter jsonWriter)
     {
         jsonWriter.WritePropertyName("Name");
-        jsonWriter.WriteValue(EngineName);
+        jsonWriter.WriteValue(SourceName);
         jsonWriter.WritePropertyName("Namespace");
         jsonWriter.WriteValue(Namespace);
         jsonWriter.WritePropertyName("AssemblyName");

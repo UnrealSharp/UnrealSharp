@@ -62,9 +62,8 @@ public static class SyntaxUtilities
     public static void DirtyUnrealType(BaseTypeDeclarationSyntax syntax, Project owningProject, ECSTypeStructuralFlags flags)
     {
         string typeNameSpace = syntax.GetFullNamespace();
-        string typeName = syntax.Identifier.Text.Substring(1);
+        string typeName = syntax.Identifier.Text;
         string assemblyName = owningProject.AssemblyName;
-        
         Bind_FUnrealSharpEditorModule.CallDirtyUnrealType(assemblyName, typeNameSpace, typeName, flags);
     }
     
