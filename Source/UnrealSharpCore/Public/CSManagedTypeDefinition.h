@@ -53,6 +53,9 @@ struct FCSManagedTypeDefinition final : TSharedFromThis<FCSManagedTypeDefinition
 	void SetTypeGCHandle(uint8* GCHandlePtr);
 	
 	UNREALSHARPCORE_API const FCSFieldName& GetFieldName() const { return ReflectionData->FieldName; }
+	UNREALSHARPCORE_API FCSNamespace GetNamespace() const { return GetFieldName().GetNamespace(); }
+	
+	UNREALSHARPCORE_API FName GetEngineName() const { return GetFieldName().GetFName(); }
 	
 	UNREALSHARPCORE_API UCSManagedAssembly* GetOwningAssembly() const { return OwningAssembly; }
 

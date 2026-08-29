@@ -24,8 +24,6 @@ namespace FCSUnrealSharpUtils
 	UNREALSHARPUTILITIES_API bool IsStandalonePIE();
 
 	UNREALSHARPUTILITIES_API void PurgeStruct(UStruct* Struct);
-	
-	UNREALSHARPUTILITIES_API const TCHAR* GetPrefix(const UField* Field);
 
 	UNREALSHARPUTILITIES_API FGuid ConstructGUIDFromString(const FString& Name);
 	

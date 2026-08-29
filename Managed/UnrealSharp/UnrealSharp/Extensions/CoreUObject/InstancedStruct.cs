@@ -59,7 +59,7 @@ internal sealed class FInstancedStructManager : IDisposable
     }
 }
 
-[UStruct]
+[UStruct, GeneratedType("InstancedStruct", "UnrealSharp.CoreUObject.InstancedStruct")]
 public struct FInstancedStruct : MarshalledStruct<FInstancedStruct>, IDisposable
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]

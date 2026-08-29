@@ -70,6 +70,7 @@ public static class StructExporter
             }
         }
         
+        attributeBuilder.AddGeneratedTypeAttribute(structObj);
         attributeBuilder.Finish();
         stringBuilder.AppendLine(attributeBuilder.ToString());
 

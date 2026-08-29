@@ -69,7 +69,7 @@ public static class StringBuilderExtensions
 
         builder.StartModuleInitializer(registrarClassName);
         
-        builder.AppendLine($"public static void {registrationMethodName}() => " + $"RegisterManagedType(\"{type.SourceName}\", {jsonPropertyName}, {(byte)type.FieldType}, typeof({type.FullName}));");
+        builder.AppendLine($"public static void {registrationMethodName}() => " + $"RegisterManagedType(\"{type.EngineName}\", {jsonPropertyName}, {(byte)type.FieldType}, typeof({type.FullName}));");
         builder.AppendLine($"static string {jsonPropertyName} => \"\"\"{stringBuilder}\"\"\";");
 
         builder.CloseBrace();

@@ -102,7 +102,7 @@ private:
 	TObjectPtr<UPackage> GlobalManagedPackage;
 	
 	UPROPERTY(Transient)
-	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> PackageToManagedAssembly;
+	TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>> NativeTypeToAssembly;
 
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UCSManagedAssembly>> Assemblies;

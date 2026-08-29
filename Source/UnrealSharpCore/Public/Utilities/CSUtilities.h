@@ -22,32 +22,22 @@ namespace FCSUtilities
 	template<typename T = UField>
 	T* FindField(const FCSFieldName& FieldName)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(FCSUtilities::FindField);
+		TRACE_CPUPROFILER_EVENT_SCOPE(FCSUtilities::TryFindField);
+		static_assert(TIsDerivedFrom<T, UObject>::Value, "T must be a UObject-derived type.");
 
-#if WITH_EDITOR
 		if (!FieldName.IsValid())
 		{
 			UE_LOGFMT(LogUnrealSharp, Warning, "Invalid field name: {0}", *FieldName.GetName());
 			return nullptr;
 		}
-#endif
 
 		UPackage* Package = FieldName.GetPackage();
-		
-#if WITH_EDITOR
 		if (!IsValid(Package))
 		{
 			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find package for field: {0}", *FieldName.GetName());
 			return nullptr;
 		}
-#endif
 
-		if (T* FoundField = FindObjectFast<T>(Package, *FieldName.GetEngineName()))
-		{
-			return FoundField;
-		}
-		
-		// Enums are found with their prefix. 
-		return FindObjectFast<T>(Package, *FieldName.GetName());
+		return FindObject<T>(Package, *FieldName.GetName());
 	}
 };

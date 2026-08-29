@@ -490,7 +490,7 @@ public class FunctionExporter
             : "void";
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(function);
-        attributeBuilder.AddGeneratedFunctionName(function);
+        attributeBuilder.AddGeneratedTypeAttribute(function);
         attributeBuilder.Finish();
         builder.AppendLine(attributeBuilder.ToString());
 
@@ -591,6 +591,8 @@ public class FunctionExporter
         exporter.Initialize(OverloadMode.SuppressOverloads, EFunctionProtectionMode.UseUFunctionProtection);
 
         AttributeBuilder attributeBuilder = new AttributeBuilder();
+        // Use specialized delegate attribute method with modified C# delegate name (including Outer prefix)
+        attributeBuilder.AddGeneratedDelegateTypeAttribute(function, delegateName);
         
         if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
         {
@@ -1066,7 +1068,7 @@ public class FunctionExporter
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
         
-        attributeBuilder.AddGeneratedFunctionName(Function);
+        attributeBuilder.AddGeneratedTypeAttribute(Function);
 
         if (HasGenericTypeSupport)
         {

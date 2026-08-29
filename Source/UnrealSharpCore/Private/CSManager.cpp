@@ -7,7 +7,6 @@
 #include "CSPathsUtilities.h"
 #include "CSProjectUtilities.h"
 #include "CSUnrealSharpSettings.h"
-#include "UnrealSharpUtils.h"
 #include "Logging/StructuredLog.h"
 #include "Utilities/CSClassUtilities.h"
 
@@ -18,7 +17,7 @@
 #pragma clang diagnostic ignored "-Wdangling-assignment"
 #endif
 
-UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>>& PackageToAssemblyMap, const TMap<FName, TObjectPtr<UCSManagedAssembly>>& Assemblies)
+UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, TObjectPtr<UCSManagedAssembly>>& NativeClassToAssemblyMap, const TMap<FName, TObjectPtr<UCSManagedAssembly>>& Assemblies)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManager::FindOwningAssemblyGeneric);
 	
@@ -32,16 +31,13 @@ UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, 
 		return ManagedType->GetOwningAssembly();
 	}
 
-	const FCSObjectID ObjectID = Object->GetPackage()->GetUniqueID();
-	if (const TObjectPtr<UCSManagedAssembly>* Assembly = PackageToAssemblyMap.FindByHash(ObjectID.Get(), ObjectID))
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	if (const TObjectPtr<UCSManagedAssembly>* Assembly = NativeClassToAssemblyMap.FindByHash(ObjectID.Get(), ObjectID))
 	{
 		return Assembly->Get();
 	}
-	
-	FName Namespace = FCSUnrealSharpUtils::GetNamespace(Object);
-	FName Name = *FString::Printf(TEXT("%s%s"), FCSUnrealSharpUtils::GetPrefix(Object), *Object->GetName());
-	
-	const FCSFieldName FieldName(Name, Namespace);
+
+	const FCSFieldName FieldName(Object);
 	UCSManagedAssembly* FoundAssembly = nullptr;
 	
 	for (const TTuple<FName, TObjectPtr<UCSManagedAssembly>>& NameAssemblyKVP : Assemblies)
@@ -54,7 +50,7 @@ UCSManagedAssembly* FindOwningAssemblyGeneric(UField* Object, TMap<FCSObjectID, 
 			continue;
 		}
 		
-		PackageToAssemblyMap.AddByHash(ObjectID.Get(), ObjectID, Assembly);
+		NativeClassToAssemblyMap.AddByHash(ObjectID.Get(), ObjectID, Assembly);
 		
 		FoundAssembly = Assembly;
 		break;
@@ -258,17 +254,17 @@ UCSManagedAssembly* UCSManager::FindOwningAssembly(UClass* Class)
 		return ManagedType->GetOwningAssembly();
 	}
 	
-	return FindOwningAssemblyGeneric(FirstNonBlueprintClass, PackageToManagedAssembly, Assemblies);
+	return FindOwningAssemblyGeneric(FirstNonBlueprintClass, NativeTypeToAssembly, Assemblies);
 }
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UScriptStruct* Struct)
 {
-	return FindOwningAssemblyGeneric(Struct, PackageToManagedAssembly, Assemblies);
+	return FindOwningAssemblyGeneric(Struct, NativeTypeToAssembly, Assemblies);
 }
 
 UCSManagedAssembly* UCSManager::FindOwningAssembly(UEnum* Enum)
 {
-	return FindOwningAssemblyGeneric(Enum, PackageToManagedAssembly, Assemblies);
+	return FindOwningAssemblyGeneric(Enum, NativeTypeToAssembly, Assemblies);
 }
 
 FGCHandle UCSManager::FindManagedObject(const UObject* Object)

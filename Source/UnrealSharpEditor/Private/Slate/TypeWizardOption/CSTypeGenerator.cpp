@@ -83,7 +83,7 @@ FCSNamespace FCSTypeGenerator::GetManagedNamespace(const UClass* Class)
 
 	if (const UCSClass* ManagedClass = Cast<UCSClass>(Class))
 	{
-		return ManagedClass->GetManagedTypeDefinition()->GetFieldName().GetNamespace();
+		return ManagedClass->GetManagedTypeDefinition()->GetNamespace();
 	}
 	
 	FCSFieldName NativeClassFieldName(Class);

@@ -42,7 +42,8 @@ public struct TSubclassOf<T>
             
             if (classType == typeof(T) || classType.IsSubclassOf(typeof(T)) || typeof(T).IsAssignableFrom(classType))
             {
-                NativeClass = Bind_UCoreUObject.CallGetType(classType.GetAssemblyName(), classType.Namespace, classType.Name);
+                string typeName = classType.GetEngineName();
+                NativeClass = Bind_UCoreUObject.CallGetType(classType.GetAssemblyName(), classType.Namespace, typeName);
                 
                 #if WITH_EDITOR
                 IntPtr skeletonClass = Bind_UCoreUObject.CallGetGeneratedClassFromSkeleton(NativeClass);
@@ -114,7 +115,7 @@ public struct TSubclassOf<T>
     /// <returns></returns>
     public bool IsChildOf(Type type)
     {
-        IntPtr nativeClass = type.TryGetNativeType();
+        IntPtr nativeClass = type.TryGetNativeClass();
         
         if (nativeClass == IntPtr.Zero)
         {
@@ -132,7 +133,7 @@ public struct TSubclassOf<T>
     /// <returns> True if the class is a parent of the specified type, false otherwise. </returns>
     public bool IsParentOf(Type type)
     {
-        IntPtr nativeClass = type.TryGetNativeType();
+        IntPtr nativeClass = type.TryGetNativeClass();
         
         if (nativeClass == IntPtr.Zero)
         {

@@ -11,7 +11,6 @@ struct UNREALSHARPCORE_API FCSFieldName : FCSReflectionDataBase
 
 	FName GetFName() const { return Name; }
 	FString GetName() const { return Name.ToString(); }
-	FString GetEngineName() const { return Name.ToString().RightChop(1); }
 	
 	bool IsValid() const { return Name != NAME_None; }
 	

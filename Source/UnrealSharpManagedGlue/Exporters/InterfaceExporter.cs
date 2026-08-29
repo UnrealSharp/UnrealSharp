@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EpicGames.Core;
 using EpicGames.UHT.Types;
 using UnrealSharpManagedGlue.Attributes;
 using UnrealSharpManagedGlue.PropertyTranslators;
@@ -15,17 +17,19 @@ public static class InterfaceExporter
     public static void ExportInterface(UhtClass interfaceObj)
     {
         GeneratorStringBuilder stringBuilder = new();
+        
+        bool nullableEnabled = interfaceObj.HasMetadata(UhtTypeUtilities.NullableEnable);
         string interfaceName = interfaceObj.GetStructName();
         
         stringBuilder.StartGlueFile(interfaceObj);
         stringBuilder.AppendTooltip(interfaceObj);
         
         AttributeBuilder attributeBuilder = new AttributeBuilder(interfaceObj);
+        attributeBuilder.AddGeneratedTypeAttribute(interfaceObj);
         attributeBuilder.Finish();
+        
         stringBuilder.AppendLine(attributeBuilder.ToString());
-        
         stringBuilder.DeclareType(interfaceObj, "interface", interfaceName);
-        
         stringBuilder.AppendNativeTypePtr(interfaceObj);
         
         stringBuilder.AppendLine();
@@ -150,6 +154,7 @@ public static class InterfaceExporter
             attributeBuilder.AddArgument("FunctionFlags.BlueprintEvent");
         }
         
+        attributeBuilder.AddGeneratedTypeAttribute(function);
         attributeBuilder.Finish();
         
         stringBuilder.AppendLine(attributeBuilder.ToString());

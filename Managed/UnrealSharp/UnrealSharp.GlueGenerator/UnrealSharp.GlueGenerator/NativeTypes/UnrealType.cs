@@ -122,7 +122,7 @@ public record UnrealType
             jsonWriter.WriteStartArray();
             foreach (FieldName dependency in SourceGeneratorDependencies.List)
             {
-                dependency.SerializeToJson(jsonWriter);
+                dependency.SerializeToJson(jsonWriter, true);
             }
             jsonWriter.WriteEndArray();
         }

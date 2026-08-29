@@ -14,6 +14,6 @@ public record BlittableStructProperty : BlittableProperty
     public override void PopulateJsonObject(JsonWriter jsonWriter)
     {
         base.PopulateJsonObject(jsonWriter);
-        ManagedType.SerializeToJson(jsonWriter, "InnerType");
+        ManagedType.SerializeToJson(jsonWriter, "InnerType", true);
     }
 }

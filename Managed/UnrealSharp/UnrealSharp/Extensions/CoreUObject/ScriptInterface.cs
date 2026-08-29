@@ -39,7 +39,7 @@ public static class ScriptInterfaceExtensions
             return null;
         }
 
-        IntPtr nativeClass = typeof(T).TryGetNativeType();
+        IntPtr nativeClass = typeof(T).TryGetNativeInterface();
         IntPtr wrapperHandle = Bind_UCSManager.CallFindOrCreateManagedInterfaceWrapper(uobject!.NativeObject, nativeClass);
         return GCHandleUtilities.GetObjectFromHandlePtrFast<T>(wrapperHandle);
     }

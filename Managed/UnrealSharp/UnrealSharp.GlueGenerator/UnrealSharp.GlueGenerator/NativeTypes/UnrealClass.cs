@@ -83,13 +83,13 @@ public record UnrealClass : UnrealClassBase
 
         ParentClass = new FieldName(typeSymbol.BaseType!);
         
-        ImmutableArray<INamedTypeSymbol> allInterfaces = typeSymbol.Interfaces;
+        ImmutableArray<INamedTypeSymbol> immutableArray = typeSymbol.Interfaces;
         
-        if (allInterfaces.Length > 0)
+        if (immutableArray.Length > 0)
         {
-            EquatableList<FieldName> interfaces = new EquatableList<FieldName>(new List<FieldName>(allInterfaces.Length - 1));
+            EquatableList<FieldName> interfaces = new EquatableList<FieldName>(new List<FieldName>(immutableArray.Length - 1));
 
-            foreach (INamedTypeSymbol baseType in allInterfaces)
+            foreach (INamedTypeSymbol baseType in immutableArray)
             {
                 if (baseType is null || baseType.TypeKind != TypeKind.Interface || !baseType.HasAttribute("UInterfaceAttribute"))
                 {
@@ -157,7 +157,8 @@ public record UnrealClass : UnrealClassBase
                 continue;
             }
 
-            string nativeName = methodSymbol.GetFunctionEngineName();
+            string nativeName = methodSymbol.TryGetEngineName();
+            
             if (!string.IsNullOrEmpty(nativeName))
             {
                 Overrides.List.Add(nativeName);
@@ -309,7 +310,7 @@ public record UnrealClass : UnrealClassBase
     {
         base.PopulateJsonObject(jsonWriter);
         
-        ParentClass.SerializeToJson(jsonWriter, "ParentClass");
+        ParentClass.SerializeToJson(jsonWriter, "ParentClass", true);
 
         jsonWriter.TrySetJsonEnum("ClassFlags", ClassFlags);
         jsonWriter.TrySetJsonString("Config", Config);
@@ -321,16 +322,16 @@ public record UnrealClass : UnrealClassBase
         
         Interfaces.PopulateJsonWithArray(jsonWriter, "Interfaces", (writer, interfaceName) =>
         {
-            interfaceName.SerializeToJson(writer);
+            interfaceName.SerializeToJson(writer, true);
         });
         
         ComponentOverrides.PopulateJsonWithArray(jsonWriter, "ComponentOverrides", (writer, componentOverride) =>
         {
             writer.WriteStartObject();
             writer.WritePropertyName("OwningClass");
-            componentOverride.OwningClass.SerializeToJson(writer);
+            componentOverride.OwningClass.SerializeToJson(writer, true);
             writer.WritePropertyName("ComponentType");
-            componentOverride.OverrideComponentType.SerializeToJson(writer);
+            componentOverride.OverrideComponentType.SerializeToJson(writer, true);
             writer.WritePropertyName("PropertyName");
             writer.WriteValue(componentOverride.OverridePropertyName);
             writer.WriteEndObject();

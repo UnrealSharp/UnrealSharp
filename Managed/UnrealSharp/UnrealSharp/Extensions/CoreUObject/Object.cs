@@ -187,8 +187,7 @@ public partial class UObject
     /// <returns> The default object of the specified type. </returns>
     public static T GetDefault<T>() where T : UObject
     {
-        Type type = typeof(T);
-        IntPtr nativeClass = Bind_UClass.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.Name);
+        IntPtr nativeClass = typeof(T).TryGetNativeClassDefaults();
         return GCHandleUtilities.GetObjectFromHandlePtr<T>(nativeClass)!;
     }
 
@@ -220,7 +219,7 @@ public partial class UObject
             throw new ArgumentException("Path cannot be null or empty.", nameof(path));
         }
 
-        IntPtr basePtr = typeof(T).TryGetNativeType();
+        IntPtr basePtr = typeof(T).TryGetNativeClass();
         if (basePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
@@ -259,7 +258,7 @@ public partial class UObject
             throw new ArgumentException("Path cannot be null or empty.", nameof(path));
         }
 
-        IntPtr basePtr = typeof(T).TryGetNativeType();
+        IntPtr basePtr = typeof(T).TryGetNativeClass();
         if (basePtr == IntPtr.Zero)
         {
             throw new InvalidOperationException($"Failed to get native class for type {typeof(T).Name}.");
@@ -689,9 +688,32 @@ public static class UObjectExtensions
 }
 
 internal static class ReflectionHelper
-{ 
-    internal static IntPtr TryGetNativeType(this Type type)
+{
+    // Get the name without the U/A/F/E prefix.
+    internal static string GetEngineName(this Type type)
     {
-        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.Name);
+        GeneratedTypeAttribute? generatedTypeAttribute = type.GetCustomAttribute<GeneratedTypeAttribute>();
+
+        if (generatedTypeAttribute is null)
+        {
+            throw new Exception("Generated Type doesn't exist");
+        }
+
+        return generatedTypeAttribute.EngineName;
+    }
+
+    internal static IntPtr TryGetNativeClass(this Type type)
+    {
+        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+    }
+    
+    internal static IntPtr TryGetNativeInterface(this Type type)
+    {
+        return Bind_UCoreUObject.CallGetType(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
+    }
+    
+    internal static IntPtr TryGetNativeClassDefaults(this Type type)
+    {
+        return Bind_UClass.CallGetDefaultFromName(type.GetAssemblyName(), type.Namespace, type.GetEngineName());
     }
 }
