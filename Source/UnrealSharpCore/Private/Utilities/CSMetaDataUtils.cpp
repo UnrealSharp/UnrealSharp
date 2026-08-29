@@ -34,15 +34,14 @@ FString FCSMetaDataUtils::GetAdjustedFieldName(const FCSFieldName& FieldName)
 	FString Name;
 	if (GetDefault<UCSUnrealSharpSettings>()->HasNamespaceSupport())
 	{
-		FString Namespace = FieldName.GetNamespace().GetName();
-		FString EngineName = FieldName.GetEngineName();
-		
-		Name = FString::Printf(TEXT("%s.%s"), *Namespace, *EngineName);
+		Name = FieldName.GetFullName().ToString();
+
+		// Unreal doesn't really consider dots in names for editor display. So we replace them with underscores.
 		Name.ReplaceInline(TEXT("."), TEXT("_"));
 	}
 	else
 	{
-		Name = FieldName.GetEngineName();
+		Name = FieldName.GetName();
 	}
 
 	return *Name;
