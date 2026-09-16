@@ -28,9 +28,6 @@ protected:
 	typedef FKismetCompilerContext Super;
 private:
 	
-	static void UpdateInstancesWithInheritedDefault(const UClass* InstanceClass, const FProperty* OldDefaultProperty, const void* OldDefaultValue, const FProperty* NewDefaultProperty, const void* NewDefaultValue);
-	static void PropagateDefaultToBlueprintChildren(UClass* ParentClass, const FProperty* OldParentProperty, const void* OldParentValue, const FProperty* NewParentProperty, const void* NewParentValue);
-	
 	void ValidateSimpleConstructionScript() const;
 	void GenerateFunctions() const;
 	
