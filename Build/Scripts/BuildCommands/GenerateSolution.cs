@@ -10,18 +10,18 @@ using UnrealSharp.Automation.Utilities;
 
 namespace UnrealSharp.Automation.BuildCommands;
 
-[Help("Generates a new .sln file for the project and adds all existing C# projects to it.")]
+[Help("Generates a new .slnx file for the project and adds all existing C# projects to it.")]
 [Help("SearchFolders=<Path>+<Path>", "The list of folders to search for .csproj files to add to the solution. Paths are relative to the plugin/project root folder. If not specified, the project script directory will be used.")]
 [Help("ProjectPaths=<Path>+<Path>", "The list of individual .csproj file paths to add to the solution. Paths are relative to the plugin/project root folder.")]
 [Help("OutputFolder=<Path>", "The folder to output the generated solution file to. Defaults to the project script folder if not specified.")]
-[Help("SolutionName=<Name>", "The name of the generated solution file, without the .sln extension. Defaults to the project name.")]
+[Help("SolutionName=<Name>", "The name of the generated solution file, without the .slnx extension. Defaults to the project name.")]
 public class GenerateSolution : BuildCommand
 {
     private const int MaxAddProjectAttempts = 10;
     private const int FileUnlockTimeoutMs = 10_000;
     private const int FileUnlockPollIntervalMs = 200;
     private const int RetryBackoffMs = 250;
-    private const string SolutionFormat = "sln";
+    private const string SolutionFormat = "slnx";
 
     public override void ExecuteBuild()
     {
@@ -55,7 +55,7 @@ public class GenerateSolution : BuildCommand
     {
         using DotnetProcess GenerateSlnProcess = new DotnetProcess();
         GenerateSlnProcess.StartInfo.ArgumentList.Add("new");
-        GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionFormat);
+        GenerateSlnProcess.StartInfo.ArgumentList.Add("sln");
         GenerateSlnProcess.StartInfo.ArgumentList.Add("--format");
         GenerateSlnProcess.StartInfo.ArgumentList.Add(SolutionFormat);
         GenerateSlnProcess.StartInfo.ArgumentList.Add("-n");
@@ -105,7 +105,7 @@ public class GenerateSolution : BuildCommand
             try
             {
                 using DotnetProcess AddProjectProcess = new DotnetProcess();
-                AddProjectProcess.StartInfo.ArgumentList.Add(SolutionFormat);
+                AddProjectProcess.StartInfo.ArgumentList.Add("sln");
                 AddProjectProcess.StartInfo.ArgumentList.Add("add");
                 AddProjectProcess.StartInfo.ArgumentList.Add("--include-references");
                 AddProjectProcess.StartInfo.ArgumentList.Add("false");

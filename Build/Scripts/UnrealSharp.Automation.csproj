@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" />
+  </ItemGroup>
+
+  <ItemGroup>
 
     <Reference Include="AutomationScripts.Automation">
       <HintPath Condition="'$(TargetFramework)' == 'net10.0'">$(EngineDir)\Binaries\DotNET\AutomationTool\AutomationScripts\Scripts\$(TargetFramework)\AutomationScripts.Automation.dll</HintPath>
