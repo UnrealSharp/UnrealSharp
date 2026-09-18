@@ -43,14 +43,13 @@ public static class SyntaxUtilities
 
                 if (oldTypeDecl != null)
                 {
-                    if (newTypeDecl.IsEquivalentTo(oldTypeDecl, topLevel: false))
-                    {
-                        continue;
-                    }
-                    
                     if (HasConstructorChanged(newTypeDecl, oldTypeDecl))
                     {
                         dirtyFlags |= ECSTypeStructuralFlags.ConstructorChanges;
+                    }
+                    else if (newTypeDecl.IsEquivalentTo(oldTypeDecl, topLevel: false))
+                    {
+                        continue;
                     }
                 }
             }

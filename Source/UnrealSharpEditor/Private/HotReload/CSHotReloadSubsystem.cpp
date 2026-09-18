@@ -16,6 +16,8 @@
 #include "Utilities/CSAssemblyUtilities.h"
 #include "Utilities/CSEditorUtilities.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/UnrealType.h"
 
 #define LOCTEXT_NAMESPACE "UCSHotReloadSubsystem"
 
@@ -50,8 +52,95 @@ bool UCSHotReloadSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 
 void UCSHotReloadSubsystem::Deinitialize()
 {
+	PendingManagedObjectRecovery.Reset();
+	PreservedManagedObjectData.Reset();
 	Super::Deinitialize();
 	FTSTicker::GetCoreTicker().RemoveTicker(HotReloadTickDelegate);
+}
+
+void UCSHotReloadSubsystem::TransferManagedObjectRecovery(const TMap<UObject*, UObject*>& Replacements)
+{
+	for (const auto& Pair : Replacements)
+	{
+		if (PendingManagedObjectRecovery.Remove(TWeakObjectPtr<UObject>(Pair.Key)) && IsValid(Pair.Value))
+		{
+			PendingManagedObjectRecovery.Add(Pair.Value);
+		}
+	}
+}
+
+void UCSHotReloadSubsystem::TrackManagedObjectsForRecovery(const TArray<UCSManagedAssembly*>& Assemblies)
+{
+	UCSManager& Manager = UCSManager::Get();
+	for (auto It = PendingManagedObjectRecovery.CreateIterator(); It; ++It)
+	{
+		if (!It->IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+	// Only track objects with existing managed handles from affected assemblies.
+	for (const auto& Pair : Manager.GetManagedObjectHandles())
+	{
+		UObject* Object = Pair.Key.GetUObject();
+		if (IsValid(Object) && Assemblies.Contains(Manager.FindOwningAssembly(Object->GetClass())))
+		{
+			PendingManagedObjectRecovery.Add(Object);
+		}
+	}
+}
+
+void UCSHotReloadSubsystem::RecoverManagedObjects()
+{
+	UCSManager& Manager = UCSManager::Get();
+	PreservedManagedObjectData.Reset();
+	for (const TWeakObjectPtr<UObject>& Key : PendingManagedObjectRecovery)
+	{
+		UObject* Object = Key.Get();
+		if (!IsValid(Object) || Object->GetClass()->HasAnyClassFlags(CLASS_NewerVersionExists))
+		{
+			continue;
+		}
+		const TSharedPtr<FGCHandle>* Handle = Manager.GetManagedObjectHandles().Find(FCSObjectID(Object));
+		if (Handle && Handle->IsValid() && !(*Handle)->IsNull())
+		{
+			continue;
+		}
+		UCSManagedAssembly* Assembly = Manager.FindOwningAssembly(Object->GetClass());
+		if (!IsValid(Assembly) || !Assembly->IsAssemblyLoaded())
+		{
+			continue;
+		}
+
+		// Capture current values after rebuilding, including unsaved edits and new defaults.
+		TUniquePtr<FStructOnScope> Snapshot = MakeUnique<FStructOnScope>(Object->GetClass());
+		for (TFieldIterator<FProperty> It(Object->GetClass(), EFieldIteratorFlags::IncludeSuper); It; ++It)
+		{
+			It->CopyCompleteValue_InContainer(Snapshot->GetStructMemory(), Object);
+		}
+		PreservedManagedObjectData.Add(Key, MoveTemp(Snapshot));
+	}
+
+	// Snapshot the whole recovery set first: one constructor can access another object.
+	for (const auto& Pair : PreservedManagedObjectData)
+	{
+		if (UObject* Object = Pair.Key.Get())
+		{
+			Manager.FindManagedObject(Object);
+		}
+	}
+	for (const auto& Pair : PreservedManagedObjectData)
+	{
+		if (UObject* Object = Pair.Key.Get())
+		{
+			for (TFieldIterator<FProperty> It(Object->GetClass(), EFieldIteratorFlags::IncludeSuper); It; ++It)
+			{
+				It->CopyCompleteValue_InContainer(Object, Pair.Value->GetStructMemory());
+			}
+		}
+	}
+	PendingManagedObjectRecovery.Reset();
+	PreservedManagedObjectData.Reset();
 }
 
 void UCSHotReloadSubsystem::OnHotReloadReady_Callback()
@@ -135,6 +224,8 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	PendingModifiedAssemblies.Reset();
 
 	Progress.EnterProgressFrame(1, LOCTEXT("HotReload_Reloading", "Reloading Assemblies..."));
+
+	TrackManagedObjectsForRecovery(AssembliesSortedByDependencies);
 	
 	for (UCSManagedAssembly* Assembly : AssembliesSortedByDependencies)
 	{
@@ -159,7 +250,12 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (ReloadedTypes.Num() > 0)
 	{
 		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
-		
+	}
+
+	RecoverManagedObjects();
+
+	if (ReloadedTypes.Num() > 0)
+	{
 		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
 	}
