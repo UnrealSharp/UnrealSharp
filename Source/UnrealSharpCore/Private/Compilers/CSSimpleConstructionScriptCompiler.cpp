@@ -161,8 +161,57 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		}
 		
 		USCS_Node* NodeToAttach = AttachmentNode.Node;
-		
-		if (CurrentParentComponentInfo.IsNative || CurrentParentComponentInfo.IsInOtherSCS)
+		const bool bAttachAsRootNode = CurrentParentComponentInfo.IsNative || CurrentParentComponentInfo.IsInOtherSCS;
+		USCS_Node* ParentNode = bAttachAsRootNode ? nullptr : GetNodeByName(AllNodes, CurrentParentComponentInfo.Name);
+
+		if (!bAttachAsRootNode && !ensure(IsValid(ParentNode)))
+		{
+			continue;
+		}
+
+		int32 NodeRegistrationCount = 0;
+		int32 ParentReferenceCount = 0;
+		USCS_Node* ExistingParentNode = nullptr;
+		for (USCS_Node* RegisteredNode : CurrentSCS->GetAllNodes())
+		{
+			if (RegisteredNode == NodeToAttach)
+			{
+				++NodeRegistrationCount;
+			}
+
+			if (RegisteredNode != NodeToAttach && RegisteredNode->ChildNodes.Contains(NodeToAttach))
+			{
+				++ParentReferenceCount;
+				ExistingParentNode = RegisteredNode;
+			}
+		}
+
+		const bool bIsRootNode = CurrentSCS->GetRootNodes().Contains(NodeToAttach);
+		const bool bHasCorrectExternalParent = bAttachAsRootNode
+			&& bIsRootNode
+			&& ParentReferenceCount == 0
+			&& NodeToAttach->bIsParentComponentNative == CurrentParentComponentInfo.IsNative
+			&& NodeToAttach->ParentComponentOrVariableName == CurrentParentComponentInfo.Name
+			&& NodeToAttach->ParentComponentOwnerClassName == CurrentParentComponentInfo.OwningClass->GetFName();
+		const bool bHasCorrectLocalParent = !bAttachAsRootNode
+			&& !bIsRootNode
+			&& ParentReferenceCount == 1
+			&& ExistingParentNode == ParentNode
+			&& !NodeToAttach->bIsParentComponentNative
+			&& NodeToAttach->ParentComponentOrVariableName.IsNone()
+			&& NodeToAttach->ParentComponentOwnerClassName.IsNone();
+
+		if (NodeRegistrationCount == 1 && (bHasCorrectExternalParent || bHasCorrectLocalParent))
+		{
+			continue;
+		}
+
+		// A node must be registered either as a root or as one local node's child, never both.
+		// Remove every stale placement before adding the desired one. This also repairs SCS trees
+		// produced by older hot reloads where a node could be left under multiple parents.
+		DetachNodeFromOldParent(NodeToAttach, CurrentSCS);
+
+		if (bAttachAsRootNode)
 		{
 			NodeToAttach->bIsParentComponentNative = CurrentParentComponentInfo.IsNative;
 			NodeToAttach->ParentComponentOrVariableName = CurrentParentComponentInfo.Name;
@@ -173,16 +222,11 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 		}
 		else
 		{
-			USCS_Node* RootNode = GetNodeByName(AllNodes, CurrentParentComponentInfo.Name);
-				
-			if (!RootNode->ChildNodes.Contains(NodeToAttach))
-			{
-				bool bAddToAllNodes = !CurrentSCS->GetAllNodes().Contains(NodeToAttach);
-				RootNode->AddChildNode(NodeToAttach, bAddToAllNodes);
-			}
+			NodeToAttach->bIsParentComponentNative = false;
+			NodeToAttach->ParentComponentOrVariableName = NAME_None;
+			NodeToAttach->ParentComponentOwnerClassName = NAME_None;
+			ParentNode->AddChildNode(NodeToAttach, true);
 		}
-		
-		DetachNodeFromOldParent(NodeToAttach, CurrentSCS, AttachmentNode);
 	}
 }
 
@@ -474,35 +518,26 @@ void FCSSimpleConstructionScriptCompiler::TryFindOrPromoteRootComponent(USimpleC
 	}
 }
 
-void FCSSimpleConstructionScriptCompiler::DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS, const FCSAttachmentNode& AttachmentNode)
+void FCSSimpleConstructionScriptCompiler::DetachNodeFromOldParent(USCS_Node* Node, USimpleConstructionScript* CurrentSCS)
 {
-#if WITH_EDITOR
-	const TArray<USCS_Node*>& AllRegisteredNodes = CurrentSCS->GetAllNodes();
+	// RemoveNode unregisters a root node or the first local parent it finds. Keep a snapshot
+	// so any additional stale parent references can be removed as well.
+	const TArray<USCS_Node*> AllRegisteredNodes = CurrentSCS->GetAllNodes();
+	CurrentSCS->RemoveNode(Node, false);
+
 	for (USCS_Node* NodeIterator : AllRegisteredNodes)
 	{
-		FName ParentComponentName = NodeIterator->GetVariableName();
-
-		if (NodeIterator == Node)
+		if (NodeIterator == Node || !NodeIterator->ChildNodes.Contains(Node))
 		{
 			continue;
 		}
 
-		if (AttachmentNode.AttachToComponentName == NAME_None || ParentComponentName != AttachmentNode.AttachToComponentName)
-		{
-			continue;
-		}
-
-		if (NodeIterator->ChildNodes.Contains(Node))
-		{
-			// The node is already correctly attached
-			break;
-		}
-			
-		// The attachment has changed, remove the node from the old parent
 		NodeIterator->RemoveChildNode(Node, false);
-		break;
 	}
-#endif
+
+	Node->bIsParentComponentNative = false;
+	Node->ParentComponentOrVariableName = NAME_None;
+	Node->ParentComponentOwnerClassName = NAME_None;
 }
 
 USCS_Node* FCSSimpleConstructionScriptCompiler::GetNodeByName(const TArray<FCSNodeInfo>& AllNodes, FName NodeName)
