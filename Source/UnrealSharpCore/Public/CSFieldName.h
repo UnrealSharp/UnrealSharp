@@ -43,7 +43,7 @@ struct UNREALSHARPCORE_API FCSFieldName : FCSReflectionDataBase
 	
 	FString GetFullName() const
 	{
-		FStringBuilderBase Builder;
+		TStringBuilder<256> Builder;
 		AppendFullName(Builder);
 		return Builder.ToString();
 	}

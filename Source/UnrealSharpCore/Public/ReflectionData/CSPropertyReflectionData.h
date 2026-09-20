@@ -34,10 +34,10 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	}
 
 	TSharedPtr<FCSUnrealType> InnerType;
-	EPropertyFlags PropertyFlags;
-	FName ReplicatedUsing;
-	ELifetimeCondition LifetimeCondition;
+	EPropertyFlags PropertyFlags = CPF_None;
+	FName ReplicatedUsing = NAME_None;
+	ELifetimeCondition LifetimeCondition = ELifetimeCondition::COND_None;
 	
-	TSharedPtr<FCSFunctionReflectionData> GetterMethod;
-	TSharedPtr<FCSFunctionReflectionData> SetterMethod;
+	TSharedPtr<FCSFunctionReflectionData> GetterMethod = nullptr;
+	TSharedPtr<FCSFunctionReflectionData> SetterMethod = nullptr;
 };
