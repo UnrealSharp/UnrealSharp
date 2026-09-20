@@ -176,48 +176,52 @@ void DumpTypeReflectionData(const TArray<FString>& Args)
 	
 	for (UCSManagedAssembly* Assembly : Assemblies)
 	{
-		FCSFieldName TypeFieldName(*TypeName, FName(*Namespace), *Assembly->GetName(), ECSFieldType::Unknown);
-		TSharedPtr<FCSManagedTypeDefinition> TypeDefinition = Assembly->FindManagedTypeDefinition(TypeFieldName);
-		
-		if (!TypeDefinition.IsValid())
+		int32 FieldTypeMax = static_cast<int32>(ECSFieldType::MAX);
+		for (int i = 0; i < FieldTypeMax; ++i)
 		{
-			continue;
-		}
+			FCSFieldName TypeFieldName(*TypeName, FName(*Namespace), *Assembly->GetName(), static_cast<ECSFieldType>(i));
+			TSharedPtr<FCSManagedTypeDefinition> TypeDefinition = Assembly->FindManagedTypeDefinition(TypeFieldName);
 		
-		UField* Field = TypeDefinition->GetDefinition();
+			if (!TypeDefinition.IsValid())
+			{
+				continue;
+			}
 		
-		if (!IsValid(Field))
-		{
-			UE_LOGFMT(LogUnrealSharpEditor, Warning, "Managed type found but no associated UField: {0}", *TypeFullName);
+			UField* Field = TypeDefinition->GetDefinition();
+		
+			if (!IsValid(Field))
+			{
+				UE_LOGFMT(LogUnrealSharpEditor, Warning, "Managed type found but no associated UField: {0}", *TypeFullName);
+				return;
+			}
+		
+			UE_LOGFMT(LogUnrealSharpEditor, Log, "Reflection data for type: {0}", *TypeFullName);
+		
+			DumpMetaData(Field, 2);
+		
+			if (UClass* Class = Cast<UClass>(Field))
+			{
+				DumpDataAsClass(Class);
+			}
+			else if (UScriptStruct* Struct = Cast<UScriptStruct>(Field))
+			{
+				DumpDataAsStruct(Struct);
+			}
+			else if (UEnum* Enum = Cast<UEnum>(Field))
+			{
+				DumpDataAsEnum(Enum);
+			}
+			else if (UDelegateFunction* Delegate = Cast<UDelegateFunction>(Field))
+			{
+				DumpDataAsDelegate(Delegate);
+			}
+			else
+			{
+				UE_LOG(LogUnrealSharpEditor, Warning, TEXT("Unsupported type: %s"), *Field->GetClass()->GetName());
+			}
+		
 			return;
 		}
-		
-		UE_LOGFMT(LogUnrealSharpEditor, Log, "Reflection data for type: {0}", *TypeFullName);
-		
-		DumpMetaData(Field, 2);
-		
-		if (UClass* Class = Cast<UClass>(Field))
-		{
-			DumpDataAsClass(Class);
-		}
-		else if (UScriptStruct* Struct = Cast<UScriptStruct>(Field))
-		{
-			DumpDataAsStruct(Struct);
-		}
-		else if (UEnum* Enum = Cast<UEnum>(Field))
-		{
-			DumpDataAsEnum(Enum);
-		}
-		else if (UDelegateFunction* Delegate = Cast<UDelegateFunction>(Field))
-		{
-			DumpDataAsDelegate(Delegate);
-		}
-		else
-		{
-			UE_LOG(LogUnrealSharpEditor, Warning, TEXT("Unsupported type: %s"), *Field->GetClass()->GetName());
-		}
-		
-		return;
 	}
 	
 	UE_LOGFMT(LogUnrealSharpEditor, Warning, "Type not found in any Assembly: {0}", *TypeFullName);

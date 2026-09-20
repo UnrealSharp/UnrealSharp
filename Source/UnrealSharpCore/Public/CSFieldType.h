@@ -7,5 +7,6 @@ enum class ECSFieldType : uint8
 	Struct,
 	Enum,
 	Interface,
-	Delegate
+	Delegate,
+	MAX
 };
