@@ -80,7 +80,8 @@ public:
 	static UField* GetFirstNonBlueprintField(UField* InField)
 	{
 		UStruct* Struct = Cast<UStruct>(InField);
-		if (!IsValid(Struct))
+		
+		if (!Struct)
 		{
 			if (IsBlueprintObject(InField))
 			{
