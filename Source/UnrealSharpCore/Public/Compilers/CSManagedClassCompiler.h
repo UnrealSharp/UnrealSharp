@@ -20,7 +20,7 @@ public:
 	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateReflectionData() const override;
 	// End of implementation
 	
-	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSTypeReferenceReflectionData>& Interfaces);
+	static void ImplementInterfaces(UClass* ManagedClass, const TArray<FCSFieldName>& Interfaces);
 	static void SetConfigName(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
 	static void SetClassFlags(UClass* ManagedClass, const TSharedPtr<const FCSClassReflectionData>& ClassReflectionData);
 	static void SetupDefaultTickSettings(UObject* DefaultObject, const UClass* Class);

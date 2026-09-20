@@ -2,6 +2,7 @@
 #include "CSProjectUtilities.h"
 #include "HotReload/CSHotReloadSubsystem.h"
 #include "Logging/StructuredLog.h"
+#include "Types/CSManagedTypeInterface.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FUnrealSharpEditorModule)
 {
@@ -15,12 +16,19 @@ DECLARE_UNREALSHARP_BINDER(Bind_FUnrealSharpEditorModule)
 		UnrealSharp::Project::GetAllProjectPaths(*Paths);
 	}
 
-	void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
+	void DirtyUnrealType(UField* Field, ECSTypeStructuralFlags Flags)
 	{
-		UCSHotReloadSubsystem::Get()->DirtyUnrealType(AssemblyName, Namespace, TypeName, Flags);
+		ICSManagedTypeInterface* ManagedTypeInterface = Cast<ICSManagedTypeInterface>(Field);
+		ManagedTypeInterface->GetManagedTypeDefinition()->SetDirtyFlags(Flags);
+	}
+	
+	void NotifyNewType()
+	{
+		UCSHotReloadSubsystem::Get()->NotifyNewType();
 	}
 	
 	BIND_UNREALSHARP_FUNCTION(InitializeUnrealSharpEditorCallbacks)
 	BIND_UNREALSHARP_FUNCTION(GetProjectPaths)
 	BIND_UNREALSHARP_FUNCTION(DirtyUnrealType)
+	BIND_UNREALSHARP_FUNCTION(NotifyNewType)
 }

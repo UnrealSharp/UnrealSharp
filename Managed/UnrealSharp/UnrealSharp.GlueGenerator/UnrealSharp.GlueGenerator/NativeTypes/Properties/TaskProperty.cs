@@ -4,7 +4,8 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record TaskProperty : TaskPropertyBase
 {
-    public TaskProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) : base(memberSymbol, typeSymbol, outer, syntaxNode)
+    public TaskProperty(ISymbol symbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) :
+        base(symbol, typeSymbol, outer, syntaxNode)
     {
     }
 }

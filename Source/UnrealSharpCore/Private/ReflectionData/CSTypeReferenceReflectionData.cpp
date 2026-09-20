@@ -22,13 +22,13 @@ void FCSTypeReferenceReflectionData::SerializeFromJsonString(TCHAR* RawJsonStrin
 	FDocument ParsedDocument;
 	if (!ParseJsonString(RawJsonString, ParsedDocument))
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName());
 	}
 	
 	TOptional<FConstObject> RootObject = GetRootObject(ParsedDocument);
 	if (!Serialize(RootObject.GetValue()))
 	{
-		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName().ToString());
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to parse JSON reflection data for type {0}. Check logs for meta data failing to parse.", *FieldName.GetFullName());
 	}
 }
 
@@ -36,28 +36,9 @@ bool FCSTypeReferenceReflectionData::Serialize(FConstObject JsonObject)
 {
 	START_JSON_SERIALIZE
 	
-	JSON_READ_STRING(AssemblyName, IS_REQUIRED);
-	CALL_SERIALIZE(FieldName.Serialize(JsonObject));
-	JSON_PARSE_OBJECT_ARRAY(SourceGeneratorDependencies, IS_OPTIONAL);
+	JSON_PARSE_OBJECT(FieldName, IS_REQUIRED);
+	JSON_PARSE_OBJECT_ARRAY(Dependencies, IS_OPTIONAL);
 	JSON_PARSE_OBJECT_ARRAY(MetaData, IS_OPTIONAL);
 
 	END_JSON_SERIALIZE
-}
-
-UCSManagedAssembly* FCSTypeReferenceReflectionData::GetDefinitionFieldAssembly() const
-{
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(AssemblyName);
-	check(::IsValid(Assembly));
-	return Assembly;
-}
-
-UField* FCSTypeReferenceReflectionData::ResolveUField() const
-{
-	UCSManagedAssembly* Assembly = GetDefinitionFieldAssembly();
-	return Assembly->ResolveUField(FieldName);
-}
-
-UPackage* FCSTypeReferenceReflectionData::GetDefinitionFieldPackage() const
-{
-	return UCSManager::Get().GetPackage(FieldName.GetNamespace());
 }
