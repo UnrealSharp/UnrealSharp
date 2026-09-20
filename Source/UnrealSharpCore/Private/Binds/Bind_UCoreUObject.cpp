@@ -1,24 +1,17 @@
-﻿#include "CSManagedAssembly.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManagedAssembly.h"
 #include "CSManager.h"
 #include "Logging/StructuredLog.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_UCoreUObject)
 {
-	UField* GetType(const char* InAssemblyName, const char* InNamespace, const char* InTypeName)
+	UField* GetNativeField(const char* InAssemblyName, const char* InNamespace, const char* InTypeName, ECSFieldType InFieldType)
 	{
-		TRACE_CPUPROFILER_EVENT_SCOPE(GetType);
-		
-		// This gets called by the static constructor of the type, so we can cache the type info of native classes here.
+		TRACE_CPUPROFILER_EVENT_SCOPE(Bind_UCoreUObject::GetType);
 		UCSManagedAssembly* Assembly = UCSManager::Get().FindOrLoadAssembly(InAssemblyName);
+		ensure(Assembly);
 
-		if (!IsValid(Assembly))
-		{
-			UE_LOGFMT(LogUnrealSharp, Warning, "Failed to find assembly: {0}", InAssemblyName);
-			return nullptr;
-		}
-
-		FCSFieldName FieldName(InTypeName, InNamespace);
-
+		FCSFieldName FieldName(InTypeName, FCSNamespace(InNamespace), InAssemblyName, InFieldType);
 		TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindOrAddManagedTypeDefinition(FieldName);
 		UField* Field = ManagedTypeDefinition->GetDefinition();
 
@@ -88,9 +81,8 @@ DECLARE_UNREALSHARP_BINDER(Bind_UCoreUObject)
 
 		return SkeletonClass->GetGeneratedClass();
 	}
-
 	
-	BIND_UNREALSHARP_FUNCTION(GetType)
+	BIND_UNREALSHARP_FUNCTION(GetNativeField)
 	BIND_UNREALSHARP_FUNCTION(GetNativeDelegate)
 	BIND_UNREALSHARP_FUNCTION(GetGeneratedClassFromSkeleton)
 }

@@ -5,11 +5,9 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 public record EnumProperty : FieldProperty
 {
     public override string MarshallerType => $"EnumMarshaller<{ManagedType}>";
-    protected override bool StripPrefix => false;
 
-    public EnumProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
-        : base(memberSymbol, typeSymbol, PropertyType.Enum, outer, syntaxNode)
+    public EnumProperty(ISymbol symbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, PropertyType.Enum, outer, syntaxNode)
     {
-        
     }
 }

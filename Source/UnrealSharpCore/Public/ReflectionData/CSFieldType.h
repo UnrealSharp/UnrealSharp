@@ -9,5 +9,5 @@ struct FCSFieldType : FCSUnrealType
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 	
-	FCSTypeReferenceReflectionData InnerType;
+	FCSFieldName InnerType;
 };

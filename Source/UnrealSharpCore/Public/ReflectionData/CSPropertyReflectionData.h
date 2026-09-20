@@ -13,7 +13,7 @@ struct UNREALSHARPCORE_API FCSPropertyReflectionData : FCSTypeReferenceReflectio
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
 
-	FName GetName() const { return FieldName.GetFName(); }
+	FName GetName() const { return FieldName.GetEngineFName(); }
 	bool HasGetterOrSetter() const { return GetterMethod.IsValid() || SetterMethod.IsValid(); }
 
 	template<typename T>

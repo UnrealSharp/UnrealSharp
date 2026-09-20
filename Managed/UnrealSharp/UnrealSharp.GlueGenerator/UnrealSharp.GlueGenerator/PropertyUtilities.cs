@@ -9,17 +9,22 @@ public static class PropertyUtilities
 {
     public const EPropertyFlags BaseParametersFlags = EPropertyFlags.Parm;
     public const EPropertyFlags OutParameterFlags = BaseParametersFlags | EPropertyFlags.OutParm;
-    public const EPropertyFlags ReturnParameterFlags = BaseParametersFlags | OutParameterFlags | EPropertyFlags.ReturnParm;
+
+    public const EPropertyFlags ReturnParameterFlags =
+        BaseParametersFlags | OutParameterFlags | EPropertyFlags.ReturnParm;
 
     public const EPropertyFlags BaseBlueprintVisiblePropertyFlags = EPropertyFlags.BlueprintVisible;
 
-    public const EPropertyFlags BaseBlueprintReadOnlyPropertyFlags = EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
+    public const EPropertyFlags BaseBlueprintReadOnlyPropertyFlags =
+        EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
 
-    public const EPropertyFlags BaseBlueprintReadWritePropertyFlags = EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadWrite;
+    public const EPropertyFlags BaseBlueprintReadWritePropertyFlags =
+        EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadWrite;
 
     public static void MakeParameter(this UnrealProperty property)
     {
-        property.PropertyFlags |= BaseParametersFlags | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
+        property.PropertyFlags |=
+            BaseParametersFlags | EPropertyFlags.BlueprintVisible | EPropertyFlags.BlueprintReadOnly;
     }
 
     public static void MakeReturnParameter(this UnrealProperty property)
@@ -31,7 +36,7 @@ public static class PropertyUtilities
     {
         property.PropertyFlags |= OutParameterFlags;
     }
-    
+
     public static void MakeRefParameter(this UnrealProperty property)
     {
         property.PropertyFlags |= OutParameterFlags | EPropertyFlags.ReferenceParm;
@@ -57,28 +62,32 @@ public static class PropertyUtilities
         property.PropertyFlags |= EPropertyFlags.BlueprintAssignable;
     }
 
-    public static PropertyMethod? GetPropertyMethodInfo(this IPropertySymbol property, UnrealProperty unrealProperty, PropertyDeclarationSyntax declarationSyntax, IMethodSymbol? getterOrSetter)
+    public static PropertyMethod? GetPropertyMethodInfo(this IPropertySymbol property, UnrealProperty unrealProperty,
+        PropertyDeclarationSyntax declarationSyntax, IMethodSymbol? getterOrSetter)
     {
         if (getterOrSetter == null)
         {
             return null;
         }
-        
+
         UnrealFunction? customGetterSetter = null;
         if (declarationSyntax.HasCustomGetterOrSetter())
-        { 
+        {
             customGetterSetter = new UnrealGetterSetterFunction(unrealProperty, getterOrSetter, unrealProperty.Outer!);
         }
-        
+
         bool isDifferentAccessibility = getterOrSetter.DeclaredAccessibility != property.DeclaredAccessibility;
-        Accessibility accessibility = isDifferentAccessibility ? getterOrSetter.DeclaredAccessibility : Accessibility.NotApplicable;
-        
+        Accessibility accessibility = isDifferentAccessibility
+            ? getterOrSetter.DeclaredAccessibility
+            : Accessibility.NotApplicable;
+
         return new PropertyMethod(accessibility, customGetterSetter);
     }
 
     public static void AddEditInlineMeta(this UnrealProperty property) => property.AddMetaData("EditInline", "true");
 
-    public static bool IsReturnValue(this EPropertyFlags propertyFlags) => propertyFlags.HasFlag(EPropertyFlags.ReturnParm);
+    public static bool IsReturnValue(this EPropertyFlags propertyFlags) =>
+        propertyFlags.HasFlag(EPropertyFlags.ReturnParm);
 
     public static bool HasCustomGetterOrSetter(this PropertyDeclarationSyntax propertyDeclaration)
     {
@@ -99,17 +108,17 @@ public static class PropertyUtilities
 
         return false;
     }
-    
+
     public static bool HasCustomGetterOrSetter(this UnrealProperty property)
     {
         return property.GetterMethod.HasCustomPropertyMethod() || property.SetterMethod.HasCustomPropertyMethod();
     }
-    
+
     public static bool HasCustomPropertyMethod(this PropertyMethod? method)
     {
         return method != null && method.Value.CustomPropertyMethod != null;
     }
-    
+
     public static string GetNullableAnnotation(this UnrealProperty property)
     {
         return property.IsNullable ? "?" : string.Empty;

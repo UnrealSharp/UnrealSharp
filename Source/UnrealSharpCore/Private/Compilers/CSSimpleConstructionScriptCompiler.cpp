@@ -55,7 +55,7 @@ void FCSSimpleConstructionScriptCompiler::CompileSimpleConstructionScript(UClass
 			continue;
 		}
 		
-		UClass* ComponentClass = DefaultComponentData->InnerType.ResolveUField<UClass>();
+		UClass* ComponentClass = DefaultComponentData->InnerType.ResolveField<UClass>();
 		USCS_Node* ComponentNode = CurrentSCS->FindSCSNode(PropertyReflectionData.GetName());
 	
 		if (!IsValid(ComponentNode))

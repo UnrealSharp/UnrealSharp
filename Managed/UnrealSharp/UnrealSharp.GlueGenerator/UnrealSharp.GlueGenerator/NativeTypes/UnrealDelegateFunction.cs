@@ -8,9 +8,9 @@ public record UnrealDelegateFunction : UnrealFunctionBase
     {
     }
 
-    public UnrealDelegateFunction(EFunctionFlags flags, string sourceName, string typeNameSpace, Accessibility accessibility, string assemblyName, UnrealType? outer = null) : base(flags, sourceName, typeNameSpace, accessibility, assemblyName, outer)
+    public UnrealDelegateFunction(EFunctionFlags flags, string sourceName, string typeNameSpace,
+        Accessibility accessibility, string assemblyName, UnrealType? outer = null) : base(flags, sourceName,
+        typeNameSpace, accessibility, assemblyName, outer)
     {
     }
-    
-    public override string EngineName => SourceName.Substring(1);
 }

@@ -229,28 +229,6 @@ void UCSHotReloadSubsystem::RefreshDirectoryWatchers()
 	}
 }
 
-void UCSHotReloadSubsystem::DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags)
-{
-	UCSManagedAssembly* Assembly = UCSManager::Get().FindAssembly(AssemblyName);
-
-	if (!IsValid(Assembly))
-	{
-		return;
-	}
-
-	FCSFieldName FieldName(TypeName, Namespace);
-	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = Assembly->FindManagedTypeDefinition(FieldName);
-
-	if (!ManagedTypeDefinition.IsValid())
-	{
-		bDetectedNewManagedType = true;
-		UE_LOGFMT(LogUnrealSharpEditor, Verbose, "Skipping dirty check: {0}.{1} isn't registered in assembly {2}. It may be a new managed type.", Namespace, TypeName, AssemblyName);
-		return;
-	}
-	
-	ManagedTypeDefinition->SetDirtyFlags(Flags);
-}
-
 void UCSHotReloadSubsystem::OnStopPlayingPIE(bool IsSimulating)
 {
 	// Replicate UE behavior, which forces a garbage collection when exiting PIE.

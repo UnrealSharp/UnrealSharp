@@ -2,6 +2,7 @@
 
 enum class ECSFieldType : uint8
 {
+	Unknown,
 	Class,
 	Struct,
 	Enum,

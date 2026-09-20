@@ -17,14 +17,13 @@ namespace UnrealSharp::Json
         {
             return OnFound(*Value);
         }
-            
+        
         if (bIsOptional)
         {
             return true;
         }
-            
-        UE_LOGFMT(LogCSJsonUtilties, Error, "Missing or invalid {0} field '{1}'", FieldName);
-        return false;
+        
+        UE_LOGFMT(LogCSJsonUtilties, Fatal, "Missing or invalid field '{1}'", FieldName);
     }
     
     UNREALSHARPUTILITIES_API bool ReadBoolField(bool& Destination, FConstObject Object, FStringView FieldName, bool bIsOptional = false);

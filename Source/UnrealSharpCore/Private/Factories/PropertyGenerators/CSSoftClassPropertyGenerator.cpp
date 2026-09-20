@@ -11,7 +11,7 @@ FProperty* UCSSoftClassPropertyGenerator::CreateProperty(UField* Outer, const FC
 	TSharedPtr<FCSFieldType> FieldType = TemplateMetaData->GetInnerTypeData<FCSFieldType>();
 	
 	SoftClassProperty->PropertyClass = UClass::StaticClass();
-	SoftClassProperty->SetMetaClass(FieldType->InnerType.ResolveUField<UClass>());
+	SoftClassProperty->SetMetaClass(FieldType->InnerType.ResolveField<UClass>());
 	return SoftClassProperty;
 }
 

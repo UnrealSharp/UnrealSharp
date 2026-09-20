@@ -1,4 +1,5 @@
-﻿#include "CSManager.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManager.h"
 #include "Engine/Engine.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_GEngine)
