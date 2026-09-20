@@ -170,14 +170,13 @@ void DumpTypeReflectionData(const TArray<FString>& Args)
 		
 	FString Namespace = TypeFullName.Left(LastDotIndex);
 	FString TypeName = TypeFullName.Mid(LastDotIndex + 1);
-		
-	FCSFieldName TypeFieldName(*TypeName, *Namespace);
 	
 	TArray<UCSManagedAssembly*> Assemblies;
 	UCSManager::Get().GetLoadedAssemblies(Assemblies);
 	
 	for (UCSManagedAssembly* Assembly : Assemblies)
 	{
+		FCSFieldName TypeFieldName(*TypeName, FName(*Namespace), *Assembly->GetName(), ECSFieldType::Unknown);
 		TSharedPtr<FCSManagedTypeDefinition> TypeDefinition = Assembly->FindManagedTypeDefinition(TypeFieldName);
 		
 		if (!TypeDefinition.IsValid())
@@ -262,16 +261,16 @@ static FAutoConsoleCommand CVarListTypesInAssembly(
 				UField* Field = TypeDefinition->GetDefinition();
 				if (IsValid(Field))
 				{
-					UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} ({1})", *FieldName.GetFullName().ToString(), Field->GetClass()->GetName());
+					UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} ({1})", *FieldName.GetFullName(), Field->GetClass()->GetName());
 				}
 				else
 				{
-					UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} (No UField)", *FieldName.GetFullName().ToString());
+					UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} (No UField)", *FieldName.GetFullName());
 				}
 			}
 			else
 			{
-				UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} (No Type Definition)", *FieldName.GetFullName().ToString());
+				UE_LOGFMT(LogUnrealSharpEditor, Log, "- {0} (No Type Definition)", *FieldName.GetFullName());
 			}
 		}
 	})

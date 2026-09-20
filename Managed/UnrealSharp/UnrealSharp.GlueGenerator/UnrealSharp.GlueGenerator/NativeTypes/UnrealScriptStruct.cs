@@ -10,21 +10,23 @@ namespace UnrealSharp.GlueGenerator.NativeTypes;
 public record UnrealScriptStruct : UnrealStruct
 {
     public override FieldType FieldType => FieldType.Struct;
-    
+
     public readonly bool IsRecord;
     public readonly bool HasPrimaryConstructor;
-    
+
     public UnrealScriptStruct(ISymbol symbol, SyntaxNode syntaxNode, UnrealType outer) : base(symbol, outer)
     {
-        ITypeSymbol typeSymbol = (ITypeSymbol) symbol;
+        ITypeSymbol typeSymbol = (ITypeSymbol)symbol;
         IsRecord = typeSymbol.IsRecord;
-        
-        TypeDeclarationSyntax typeDeclaration = (TypeDeclarationSyntax) syntaxNode;
-        HasPrimaryConstructor = typeDeclaration.ParameterList != null && typeDeclaration.ParameterList.Parameters.Count > 0;
+
+        TypeDeclarationSyntax typeDeclaration = (TypeDeclarationSyntax)syntaxNode;
+        HasPrimaryConstructor =
+            typeDeclaration.ParameterList != null && typeDeclaration.ParameterList.Parameters.Count > 0;
     }
-    
+
     [Inspect("UnrealSharp.Attributes.UStructAttribute", "UStructAttribute", "Global")]
-    public static UnrealType UStructAttribute(UnrealType? outer, SyntaxNode? syntaxNode, GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
+    public static UnrealType UStructAttribute(UnrealType? outer, SyntaxNode? syntaxNode,
+        GeneratorAttributeSyntaxContext ctx, ISymbol symbol, IReadOnlyList<AttributeData> attributes)
     {
         UnrealScriptStruct unrealStruct = new UnrealScriptStruct(symbol, syntaxNode!, outer!);
         return unrealStruct;
@@ -32,29 +34,31 @@ public record UnrealScriptStruct : UnrealStruct
 
     public override void ExportType(GeneratorStringBuilder builder, SourceProductionContext spc)
     {
-        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder.FromUnrealType(this, SourceGenUtilities.StructKeyword)
+        TypeDeclarationBuilder typeDeclarationBuilder = TypeDeclarationBuilder
+            .FromUnrealType(this, SourceGenUtilities.StructKeyword)
             .WithModifiers(IsRecord ? "record " : string.Empty)
-            .Implements($"MarshalledStruct<{SourceName}>");
-        
+            .Implements($"MarshalledStruct<{FieldName.SourceName}>");
+
         typeDeclarationBuilder.Build(builder);
-        
+
         ExportBackingVariables(builder);
-        
+
         builder.BeginTypeStaticConstructor(this);
         ExportBackingVariablesToStaticConstructor(builder, SourceGenUtilities.NativeTypePtr);
         builder.EndTypeStaticConstructor();
-        
+
         bool isStructBlittable = true;
         foreach (UnrealProperty property in Properties.List)
         {
             isStructBlittable &= property.IsBlittable;
         }
-        
+
         builder.AppendLine("public static int GetNativeDataSize() => NativeDataSize;");
         builder.AppendLine($"public static IntPtr GetNativeClassPtr() => {SourceGenUtilities.NativeTypePtr};");
-        
-        builder.AppendLine($"public static {SourceName} FromNative(IntPtr buffer) => new {SourceName}(buffer);");
-        
+
+        builder.AppendLine(
+            $"public static {FieldName.SourceName} FromNative(IntPtr buffer) => new {FieldName.SourceName}(buffer);");
+
         builder.AppendLine();
         builder.AppendLine("public void ToNative(IntPtr buffer)");
         builder.OpenBrace();
@@ -63,52 +67,52 @@ public record UnrealScriptStruct : UnrealStruct
 
         if (isStructBlittable)
         {
-            builder.AppendLine("BlittableMarshaller<" + SourceName + ">.ToNative(buffer, 0, this);");
+            builder.AppendLine("BlittableMarshaller<" + FieldName.SourceName + ">.ToNative(buffer, 0, this);");
         }
         else
         {
             foreach (UnrealProperty property in Properties.List)
             {
-                property.ExportToNative(builder, SourceGenUtilities.Buffer, property.SourceName);
+                property.ExportToNative(builder, SourceGenUtilities.Buffer, property.FieldName.SourceName);
                 builder.AppendLine();
             }
         }
-        
+
         builder.EndUnsafeBlock();
         builder.CloseBrace();
         builder.AppendLine();
-        
-        builder.AppendLine($"public {SourceName}(IntPtr buffer)");
-        
+
+        builder.AppendLine($"public {FieldName.SourceName}(IntPtr buffer)");
+
         if (HasPrimaryConstructor)
         {
             string constructorArgs = string.Join(", ", Properties.List.Select(p => p.NullValue));
             builder.Append($" : this({constructorArgs})");
         }
-        
+
         builder.OpenBrace();
         builder.BeginUnsafeBlock();
         builder.AppendLine();
-        
+
         if (isStructBlittable)
         {
-            builder.AppendLine($"this = BlittableMarshaller<{SourceName}>.FromNative(buffer, 0);");
+            builder.AppendLine($"this = BlittableMarshaller<{FieldName.SourceName}>.FromNative(buffer, 0);");
         }
         else
         {
             foreach (UnrealProperty property in Properties.List)
             {
-                property.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{property.SourceName} = ");
+                property.ExportFromNative(builder, SourceGenUtilities.Buffer, $"{property.FieldName.SourceName} = ");
                 builder.AppendLine();
             }
         }
-        
+
         builder.EndUnsafeBlock();
         builder.CloseBrace();
         builder.CloseBrace();
-        
+
         MakeMarshaller(builder);
-        
+
         builder.GenerateTypeRegistration(this);
     }
 
@@ -121,15 +125,18 @@ public record UnrealScriptStruct : UnrealStruct
     public override void ExportBackingVariablesToStaticConstructor(GeneratorStringBuilder builder, string nativeType)
     {
         base.ExportBackingVariablesToStaticConstructor(builder, nativeType);
-        builder.AppendLine($"NativeDataSize = Bind_UScriptStruct.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
+        builder.AppendLine(
+            $"NativeDataSize = Bind_UScriptStruct.CallGetNativeStructSize({SourceGenUtilities.NativeTypePtr});");
     }
 
     void MakeMarshaller(GeneratorStringBuilder builder)
     {
-        builder.AppendLine($"public static class {SourceName}Marshaller");
+        builder.AppendLine($"public static class {FieldName.SourceName}Marshaller");
         builder.OpenBrace();
-        builder.AppendLine($"public static void ToNative(IntPtr buffer, int index, {SourceName} obj) => obj.ToNative(buffer + (index * {SourceName}.GetNativeDataSize()));");
-        builder.AppendLine($"public static {SourceName} FromNative(IntPtr buffer, int index) => new {SourceName}(buffer + (index * {SourceName}.GetNativeDataSize()));");
+        builder.AppendLine(
+            $"public static void ToNative(IntPtr buffer, int index, {FieldName.SourceName} obj) => obj.ToNative(buffer + (index * {FieldName.SourceName}.GetNativeDataSize()));");
+        builder.AppendLine(
+            $"public static {FieldName.SourceName} FromNative(IntPtr buffer, int index) => new {FieldName.SourceName}(buffer + (index * {FieldName.SourceName}.GetNativeDataSize()));");
         builder.CloseBrace();
     }
 }

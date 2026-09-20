@@ -7,19 +7,19 @@ namespace UnrealSharp.GlueGenerator;
 public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnumerable<T> where T : IEquatable<T>
 {
     private readonly T[]? _array;
-    
+
     public EquatableArray(T[] array)
     {
         _array = array;
     }
-    
+
     public bool IsNull => _array is null;
-    
+
     public bool Equals(EquatableArray<T> array)
     {
         int aCount = Count;
         int bCount = array.Count;
-        
+
         if (aCount != bCount)
         {
             return false;
@@ -32,20 +32,20 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     public override bool Equals(object? obj)
     {
         if (obj is null)
         {
             return false;
         }
-        
+
         return obj is EquatableArray<T> array && Equals(array);
     }
-    
+
     public override int GetHashCode()
     {
         if (_array is null)
@@ -62,14 +62,14 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
 
         return hashCode.ToHashCode();
     }
-    
+
     public T this[int index] => _array![index];
-    
+
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         return ((IEnumerable<T>)(_array ?? Array.Empty<T>())).GetEnumerator();
-    }    
-    
+    }
+
     IEnumerator IEnumerable.GetEnumerator()
     {
         return ((IEnumerable<T>)(_array ?? Array.Empty<T>())).GetEnumerator();
@@ -87,12 +87,12 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
             return _array.Length;
         }
     }
-    
+
     public static bool operator ==(EquatableArray<T> left, EquatableArray<T> right)
     {
         return left.Equals(right);
     }
-    
+
     public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right)
     {
         return !left.Equals(right);
@@ -103,7 +103,7 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
 {
     private readonly List<T> _list;
     public List<T> List => _list;
-    
+
     public bool IsNull => _list is null;
 
     public int Count
@@ -118,17 +118,17 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
             return _list.Count;
         }
     }
-    
+
     public EquatableList(List<T> list)
     {
         _list = list;
     }
-    
+
     public bool Equals(EquatableList<T> list)
     {
         int aCount = Count;
         int bCount = list.Count;
-        
+
         if (aCount != bCount)
         {
             return false;
@@ -141,15 +141,15 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     public override bool Equals(object? obj)
     {
         return obj is EquatableList<T> list && Equals(list);
     }
-    
+
     public override int GetHashCode()
     {
         if (_list is null)
@@ -166,12 +166,12 @@ public readonly struct EquatableList<T> : IEquatable<EquatableList<T>>, IEnumera
 
         return hashCode.ToHashCode();
     }
-    
+
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         return ((IEnumerable<T>)(_list ?? new List<T>())).GetEnumerator();
     }
-    
+
     IEnumerator IEnumerable.GetEnumerator()
     {
         return ((IEnumerable<T>)(_list ?? new List<T>())).GetEnumerator();

@@ -4,20 +4,21 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record DelegateProperty : TemplateProperty
 {
-    public DelegateProperty(EquatableArray<UnrealProperty> templateParameters, FieldName fieldName, PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer) : base(templateParameters, fieldName, propertyType, marshaller, sourceName, accessibility, outer)
+    public DelegateProperty(EquatableArray<UnrealProperty> templateParameters, ManagedTypeName openType,
+        PropertyType propertyType, string marshaller, string sourceName, Accessibility accessibility, UnrealType outer)
+        : base(templateParameters, openType, propertyType, marshaller, sourceName, accessibility, outer)
     {
+    }
 
-    }
-    
-    public DelegateProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, string marshaller, SyntaxNode? syntaxNode = null) 
-        : base(memberSymbol, typeSymbol, propertyType, outer, marshaller, syntaxNode)
+    public DelegateProperty(ISymbol symbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer,
+        string marshaller, SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, propertyType, outer, marshaller, syntaxNode)
     {
-        
     }
-    
+
     public override bool NeedsBackingNativeProperty => true;
-    
-    protected string BackingFieldName => $"{SourceName}_BackingField";
+
+    protected string BackingFieldName => $"{FieldName.SourceName}_BackingField";
 
     public override void ExportBackingVariables(GeneratorStringBuilder builder)
     {
@@ -32,10 +33,12 @@ public record DelegateProperty : TemplateProperty
         builder.CloseBrace();
     }
 
-    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer,
+        string? assignmentOperator = null)
     {
-        builder.AppendLine($"{BackingFieldName} ??= {CallFromNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0, {NativePropertyVariable});");
-        
+        builder.AppendLine(
+            $"{BackingFieldName} ??= {CallFromNative}({AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0, {NativePropertyVariable});");
+
         if (assignmentOperator != null)
         {
             builder.AppendLine($"{assignmentOperator}{BackingFieldName};");
@@ -50,26 +53,25 @@ public record DelegateProperty : TemplateProperty
     protected override void ExportSetter(GeneratorStringBuilder builder)
     {
         builder.OpenBrace();
-        
+
         builder.AppendLine($"if (value == {BackingFieldName})");
         builder.OpenBrace();
         builder.AppendLine("return;");
         builder.CloseBrace();
-        
+
         builder.AppendLine($"{BackingFieldName} = value;");
-        
+
         ExportToNative(builder, SourceGenUtilities.NativeObject, SourceGenUtilities.ValueParam);
         builder.CloseBrace();
     }
-    
+
     public static string MakeDelegateSignatureName(string fullDelegateName)
     {
-        return fullDelegateName + "__DelegateSignature";
+        return EngineNaming.MakeDelegateSignatureName(fullDelegateName);
     }
-    
+
     public static FieldName MakeFieldNameFromDelegateSymbol(ITypeSymbol typeSymbol)
     {
-        string unrealDelegateName = MakeDelegateSignatureName(typeSymbol.Name);
-        return new FieldName(unrealDelegateName, typeSymbol.GetNamespace(), typeSymbol.ContainingAssembly.Name);
+        return new FieldName(typeSymbol, FieldType.Delegate, MakeDelegateSignatureName(typeSymbol.Name));
     }
 }

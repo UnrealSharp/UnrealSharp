@@ -4,26 +4,30 @@ namespace UnrealSharp.GlueGenerator.NativeTypes.Properties;
 
 public record ObjectProperty : FieldProperty
 {
-    public override string MarshallerType => DefaultComponent ? $"DefaultComponentMarshaller<{ManagedType}>" : $"ObjectMarshaller<{ManagedType}>";
+    public override string MarshallerType => DefaultComponent
+        ? $"DefaultComponentMarshaller<{ManagedType}>"
+        : $"ObjectMarshaller<{ManagedType}>";
+
     public override string NullValue => "null!";
 
-    public ObjectProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null) 
-        : base(memberSymbol, typeSymbol, PropertyType.Object, outer, syntaxNode)
+    public ObjectProperty(ISymbol symbol, ITypeSymbol typeSymbol, UnrealType outer, SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, PropertyType.Object, outer, syntaxNode)
     {
-
-    }
-    
-    public ObjectProperty(FieldName managedType, string sourceName, Accessibility accessibility, UnrealType outer) 
-        : base(PropertyType.Object, managedType, managedType, sourceName, accessibility, outer)
-    {
-
     }
 
-    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+    public ObjectProperty(FieldName innerType, string sourceName, Accessibility accessibility, UnrealType outer)
+        : base(PropertyType.Object, ManagedTypeName.FromFieldName(innerType), innerType, sourceName, accessibility,
+            outer)
+    {
+    }
+
+    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer,
+        string? assignmentOperator = null)
     {
         if (DefaultComponent)
         {
-            builder.Append($"{MarshallerType}{FromNative}(this, \"{SourceName}\", {AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0);");
+            builder.Append(
+                $"{MarshallerType}{FromNative}(this, \"{FieldName.SourceName}\", {AppendOffsetMath(SourceGenUtilities.NativeObject)}, 0);");
         }
         else
         {

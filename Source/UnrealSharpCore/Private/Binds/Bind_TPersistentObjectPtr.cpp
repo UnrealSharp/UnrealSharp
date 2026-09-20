@@ -1,4 +1,5 @@
-﻿#include "CSManager.h"
+﻿#include "CSBindsRegistry.h"
+#include "CSManager.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_TPersistentObjectPtr)
 {

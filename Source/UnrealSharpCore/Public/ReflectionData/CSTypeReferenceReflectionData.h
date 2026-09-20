@@ -31,19 +31,6 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 	// FCSReflectionDataBase interface
 	virtual bool Serialize(FConstObject JsonObject) override;
 	// End of FCSReflectionDataBase interface
-	
-	bool IsValid() const { return FieldName.IsValid() && AssemblyName != NAME_None; }
-
-	UCSManagedAssembly* GetDefinitionFieldAssembly() const;
-	
-	template<typename T>
-	T* ResolveUField() const
-	{
-		return CastChecked<T>(ResolveUField());
-	}
-	
-	UField* ResolveUField() const;
-	UPackage* GetDefinitionFieldPackage() const;
 
 	bool HasMetaData(const FString& Key) const
 	{
@@ -59,18 +46,17 @@ struct FCSTypeReferenceReflectionData : FCSReflectionDataBase
 
 	friend uint32 GetTypeHash(const FCSTypeReferenceReflectionData& Type)
 	{
-		return GetTypeHash(Type.FieldName) ^ GetTypeHash(Type.AssemblyName);
+		return GetTypeHash(Type.FieldName);
 	}
 
 	bool operator==(const FCSTypeReferenceReflectionData& Other) const
 	{
-		return FieldName != Other.FieldName || AssemblyName != Other.AssemblyName;
+		return FieldName != Other.FieldName;
 	}
 	
 	FCSFieldName FieldName;
-	FName AssemblyName;
 	TArray<FCSMetaDataEntry> MetaData;
-	TArray<FCSFieldName> SourceGeneratorDependencies;
+	TArray<FCSFieldName> Dependencies;
 	const FString& GetRawReflectionData() const { return RawReflectionData; }
 	
 private:

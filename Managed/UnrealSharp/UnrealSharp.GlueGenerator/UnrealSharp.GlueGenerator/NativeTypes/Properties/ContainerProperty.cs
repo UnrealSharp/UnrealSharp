@@ -8,16 +8,20 @@ public record ContainerProperty : TemplateProperty
 {
     private Func<string> ContainerMarshaller => Outer is UnrealClass ? GetFieldMarshaller : GetCopyMarshaller;
 
-    public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
-    public string ObservableMarshallerType => MakeMarshallerType(GetObservableMarshaller(), TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+    public override string MarshallerType => MakeMarshallerType(ContainerMarshaller(),
+        TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
+
+    public string ObservableMarshallerType => MakeMarshallerType(GetObservableMarshaller(),
+        TemplateParameters.Select(t => t.ManagedType.FullName).ToArray());
 
     public override bool NeedsCachedMarshaller => true;
     public virtual bool IsObservable => false;
 
     protected bool NeedsMarshallingDelegates = true;
 
-    public ContainerProperty(ISymbol memberSymbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer, SyntaxNode? syntaxNode = null)
-        : base(memberSymbol, typeSymbol, propertyType, outer, "", syntaxNode)
+    public ContainerProperty(ISymbol symbol, ITypeSymbol typeSymbol, PropertyType propertyType, UnrealType outer,
+        SyntaxNode? syntaxNode = null)
+        : base(symbol, typeSymbol, propertyType, outer, "", syntaxNode)
     {
         CanInstanceMarshallerBeStatic = outer is not UnrealClass;
     }
@@ -29,7 +33,8 @@ public record ContainerProperty : TemplateProperty
         builder.CloseBrace();
     }
 
-    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer, string? assignmentOperator = null)
+    public override void ExportFromNative(GeneratorStringBuilder builder, string buffer,
+        string? assignmentOperator = null)
     {
         ExportMarshaller(builder);
         AppendCallFromNative(builder, InstancedMarshallerVariable, buffer, assignmentOperator);
@@ -40,12 +45,13 @@ public record ContainerProperty : TemplateProperty
         ExportMarshaller(builder);
         AppendCallToNative(builder, InstancedMarshallerVariable, buffer, value);
     }
-    
+
     private void ExportMarshaller(GeneratorStringBuilder builder)
     {
         if (FieldNotify && IsObservable)
         {
-            builder.AppendLine($"{InstancedMarshallerVariable} ??= new {ObservableMarshallerType}({NativePropertyVariable}");
+            builder.AppendLine(
+                $"{InstancedMarshallerVariable} ??= new {ObservableMarshallerType}({NativePropertyVariable}");
         }
         else
         {
@@ -78,7 +84,7 @@ public record ContainerProperty : TemplateProperty
 
     public virtual bool Equals(ContainerProperty? other)
     {
-       return base.Equals(other);
+        return base.Equals(other);
     }
 
     public override int GetHashCode()

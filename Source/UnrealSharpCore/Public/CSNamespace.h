@@ -8,14 +8,9 @@ struct UNREALSHARPCORE_API FCSNamespace : FCSReflectionDataBase
 	{
 		
 	}
-
-	// Get the namespace as a FName
+	
 	FName GetFName() const { return Namespace; }
-
-	// Get the namespace as a string
 	FString GetName() const { return Namespace.ToString(); }
-
-	// Gets the name of the last part of the namespace. For example, if the namespace is "UnrealSharp.Core", this will return "Core".
 	FString GetLastNamespace() const;
 
 	bool GetParentNamespace(FCSNamespace& OutParent) const;

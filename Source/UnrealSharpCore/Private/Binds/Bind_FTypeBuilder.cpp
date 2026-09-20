@@ -1,3 +1,4 @@
+#include "CSBindsRegistry.h"
 #include "CSManager.h"
 
 DECLARE_UNREALSHARP_BINDER(Bind_FTypeBuilder)

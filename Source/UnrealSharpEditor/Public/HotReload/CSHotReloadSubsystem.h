@@ -50,8 +50,7 @@ public:
 	void ResumeHotReload();
 	
 	void RefreshDirectoryWatchers();
-	
-	void DirtyUnrealType(const char* AssemblyName, const char* Namespace, const char* TypeName, ECSTypeStructuralFlags Flags);
+	void NotifyNewType() { bDetectedNewManagedType = true;}
 
 private:
 	void TrackManagedObjectsForRecovery(const TArray<UCSManagedAssembly*>& Assemblies);

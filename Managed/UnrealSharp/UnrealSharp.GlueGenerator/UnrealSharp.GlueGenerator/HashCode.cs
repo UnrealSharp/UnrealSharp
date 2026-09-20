@@ -16,7 +16,7 @@ internal struct HashCode
     private uint _v1, _v2, _v3, _v4;
     private uint _queue1, _queue2, _queue3;
     private uint _length;
-    
+
     private static uint GenerateGlobalSeed()
     {
         byte[] bytes = new byte[4];
@@ -28,12 +28,12 @@ internal struct HashCode
 
         return BitConverter.ToUInt32(bytes, 0);
     }
-    
+
     public void Add<T>(T value)
     {
         Add(value?.GetHashCode() ?? 0);
     }
-    
+
     private static void Initialize(out uint v1, out uint v2, out uint v3, out uint v4)
     {
         v1 = Seed + Prime1 + Prime2;
@@ -41,27 +41,27 @@ internal struct HashCode
         v3 = Seed;
         v4 = Seed - Prime1;
     }
-    
+
     private static uint Round(uint hash, uint input)
     {
         return RotateLeft(hash + input * Prime2, 13) * Prime1;
     }
-    
+
     private static uint QueueRound(uint hash, uint queuedValue)
     {
         return RotateLeft(hash + queuedValue * Prime3, 17) * Prime4;
     }
-    
+
     private static uint MixState(uint v1, uint v2, uint v3, uint v4)
     {
         return RotateLeft(v1, 1) + RotateLeft(v2, 7) + RotateLeft(v3, 12) + RotateLeft(v4, 18);
     }
-    
+
     private static uint MixEmptyState()
     {
         return Seed + Prime5;
     }
-    
+
     private static uint MixFinal(uint hash)
     {
         hash ^= hash >> 15;
@@ -104,7 +104,7 @@ internal struct HashCode
             _v4 = Round(_v4, val);
         }
     }
-    
+
     public int ToHashCode()
     {
         uint length = _length;
@@ -131,7 +131,7 @@ internal struct HashCode
         hash = MixFinal(hash);
         return (int)hash;
     }
-    
+
     private static uint RotateLeft(uint value, int offset)
     {
         return (value << offset) | (value >> (32 - offset));
