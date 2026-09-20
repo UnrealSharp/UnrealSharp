@@ -17,6 +17,7 @@ namespace UnrealSharp.Automation.BuildCommands;
 [Help("TargetConfiguration=<Config>", "The build configuration (Debug, DebugGame, Development, Shipping, etc.).")]
 [Help("TargetType=<Type>", "The target type (Editor, Game, etc.) to build glue for.")]
 [Help("OutputDirectory=<OutputDirectory>", "The directory to output the built glue assemblies to.")]
+[Help("AddReferences=<true|false>", "Whether to add references to the user project.")]
 [Help("ExtraArguments=<Arg>+<Arg>", "Additional arguments forwarded to dotnet build/publish.")]
 public class BuildUserGlue : BuildCommand
 {
@@ -30,12 +31,13 @@ public class BuildUserGlue : BuildCommand
         TargetType TargetType = ParseRequiredEnumParamEnum<TargetType>("TargetType");
         UnrealTargetConfiguration TargetConfiguration = ParseRequiredEnumParamEnum<UnrealTargetConfiguration>("TargetConfiguration");
         string OutputDirectory = ParseRequiredStringParam("OutputDirectory");
+        bool AddReferences = ParseParamBool("AddReferences", false);
         string[] ExtraArguments = ParseParamValues("ExtraArguments");
 
-        Build(this, TargetType, TargetConfiguration, OutputDirectory, ExtraArguments);
+        Build(this, TargetType, TargetConfiguration, OutputDirectory, AddReferences, ExtraArguments);
     }
 
-    public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, IList<string>? extraArguments = null)
+    public static void Build(BuildCommand command, TargetType targetType, UnrealTargetConfiguration buildConfig, string outputDirectory, bool addReferences, IList<string>? extraArguments = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(outputDirectory);
 
@@ -51,7 +53,11 @@ public class BuildUserGlue : BuildCommand
         GenerateSolution(command, SolutionDirectory, GlueProjectPaths);
         BuildSolution(command, SolutionDirectory, outputDirectory, buildConfig, GlueProjectPaths, extraArguments);
         CreateSolutionStamp(SolutionDirectory, GlueProjectPaths);
-        AddUserProjectReferences(command);
+
+        if (addReferences)
+        {
+            AddUserProjectReferences(command);
+        }
     }
 
     private static void GenerateSolution(BuildCommand command, string solutionDirectory, List<string> glueProjectPaths)
