@@ -153,11 +153,11 @@ void UCSHotReloadSubsystem::PerformHotReload()
 	if (bDetectedNewManagedType)
 	{
 		FCSHotReloadUtilities::RefreshPlacementMode();
-		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 	}
 	
 	if (ReloadedTypes.Num() > 0)
 	{
+		FCSHotReloadUtilities::RefreshBlueprintActionDatabase(ReloadedTypes);
 		FCSHotReloadUtilities::RefreshStructs(ReloadedTypes);
 		
 		Progress.EnterProgressFrame(1, LOCTEXT("HotReload_GC", "Performing Garbage Collection..."));
